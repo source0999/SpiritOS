@@ -1,0 +1,113 @@
+# ─── Spirit OS · Backend Services ─────────────────────────────────────────────
+#
+# AMD GPU (ROCm) stack for the Oracle voice pipeline:
+#   ollama      → LLM inference          → host:11434
+#   xtts-api    → XTTS v2 TTS synthesis  → host:8020
+#   whisper-stt → Faster-Whisper STT     → host:8000
+#
+# First-run checklist:
+#   1. Confirm your GPU's HSA GFX version:
+#        rocminfo | grep "gfx"
+#      Then uncomment HSA_OVERRIDE_GFX_VERSION below and set the correct value.
+#      Common values: RDNA2 (RX 6xxx) → 10.3.0  |  RDNA3 (RX 7xxx) → 11.0.0
+#
+#   2. Pull your Ollama model after `docker compose up -d`:
+#        docker exec -it spirit-ollama ollama pull llama3
+#
+#   3. Verify ROCm sees your GPU inside the container:
+#        docker exec -it spirit-ollama rocminfo
+# ───────────────────────────────────────────────────────────────────────────────
+
+services:
+
+  # ── 1. Ollama (AMD ROCm) ────────────────────────────────────────────────────
+  ollama:
+    image: ollama/ollama:rocm
+    container_name: spirit-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    devices:
+      - /dev/kfd:/dev/kfd      # ROCm kernel fusion driver
+      - /dev/dri:/dev/dri      # DRM render nodes
+    group_add:
+      - video                  # required for /dev/dri access
+      - render                 # required for /dev/kfd access
+    environment:
+      # Uncomment and set to match your GPU (run `rocminfo | grep gfx` to find it)
+      # - HSA_OVERRIDE_GFX_VERSION=10.3.0
+      - OLLAMA_HOST=0.0.0.0
+      - OLLAMA_KEEP_ALIVE=24h
+    networks:
+      - spirit-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
+  # ── 2. XTTS v2 Streaming Server ─────────────────────────────────────────────
+  #   API surface used by this project:
+  #     POST /tts  →  body: { text, language, speaker_wav? }
+  #                →  returns: audio/wav binary
+  xtts-api:
+    image: ghcr.io/coqui-ai/xtts-streaming-server:latest
+    container_name: spirit-xtts
+    restart: unless-stopped
+    ports:
+      - "8020:80"
+    environment:
+      - COQUI_TOS_AGREED=1
+    volumes:
+      # Drop custom .wav reference speakers here; mount at /app/speakers
+      - xtts_speakers:/app/speakers
+    networks:
+      - spirit-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/languages"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  # ── 3. Faster-Whisper STT API ───────────────────────────────────────────────
+  #   OpenAI-compatible transcription endpoint:
+  #     POST /v1/audio/transcriptions
+  #          form-data: file=<audio blob>, model=<model name>
+  #          returns:   { "text": "..." }
+  #
+  #   Model is downloaded on first start (~150 MB for base.en).
+  #   For a beefier model set WHISPER__MODEL=large-v3 (slower, more accurate).
+  whisper-stt:
+    image: fedirz/faster-whisper-server:latest-cpu
+    container_name: spirit-whisper
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - WHISPER__MODEL=Systran/faster-whisper-base.en
+      - WHISPER__LANGUAGE=en
+      # Increase to use GPU (requires CUDA image variant, not supported on ROCm yet):
+      # - WHISPER__DEVICE=cuda
+    volumes:
+      - whisper_cache:/root/.cache/huggingface
+    networks:
+      - spirit-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  ollama_data:
+  xtts_speakers:
+  whisper_cache:
+
+networks:
+  spirit-net:
+    driver: bridge
