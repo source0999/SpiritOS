@@ -1,7 +1,7 @@
 # ⚡ Spirit OS — Cybernetic Shell · UI/CSS Visual Progress Matrix
 
 **Source**: Intuitive Wrld &nbsp;·&nbsp; **Spirit**: Llama-3-Abliterated &nbsp;·&nbsp; **Stack**: Next.js 15 · TypeScript · Tailwind CSS v4 · Framer Motion  
-**Environment**: `http://192.168.x.x:3000` — `npx next dev -H 0.0.0.0`
+**Environment**: `http://192.168.x.x:3000` — `npm run dev` (binds `0.0.0.0`, **webpack** dev server — avoids Turbopack hangs on slow/Remote-SSH filesystems; use `npm run dev:turbo` on a fast local disk if you prefer Turbopack)
 
 > 📱 **MOBILE-FIRST. iOS-FIRST. ANDROID-SECOND.**  
 > Every layout starts at `375px` and scales **up**. Never the reverse.  
@@ -314,7 +314,7 @@ WebKit on Safari iOS is not a browser. It is a trap with rounded corners. Every 
 - [x] **`THREADS` section label**: standalone thread list below folders
 - [x] **Thread list items**: title `text-xs font-medium` + preview `text-[10px] text-zinc-500 truncate` + relative timestamp right-aligned
 - [x] **Active thread highlight**: `bg-white/[0.06] border-l-2 border-violet-500` left accent on selected row
-- [x] **`"Llama-3-Abliterated · Online"` chat header**: emerald dot + model name `text-sm font-semibold text-zinc-200` + `"Online"` emerald badge
+- [x] **`"dolphin3 · Online"` chat header**: emerald dot + model name `text-sm font-semibold text-zinc-200` + `"Online"` emerald badge
 - [x] **Sarcasm toggle buttons**: `SARCASM` label + `Chill` / `Peer` / `Unhinged` — "Peer" active with `bg-violet-500/20 border border-violet-500/30 text-violet-300`
 - [x] **`"SOURCE"` user message bubbles**: right-aligned, `rounded-2xl rounded-tr-sm border border-violet-500/25 bg-violet-500/20 text-zinc-200 text-xs leading-relaxed`
 - [x] **`"SPIRIT"` response bubbles**: left-aligned, `rounded-2xl rounded-tl-sm border border-white/10 bg-white/5 font-mono text-zinc-300 text-xs`
@@ -322,12 +322,26 @@ WebKit on Safari iOS is not a browser. It is a trap with rounded corners. Every 
 - [x] **Timestamp per message**: `text-[10px] text-zinc-600` right-aligned below each bubble
 - [x] **`"Issue a directive..."` input bar**: `Paperclip` icon left + placeholder + `Send` icon button right — `bg-zinc-900 border border-white/10`
 - [x] **`"XTTS v2 · Sarcasm: peer"` footer status bar**: `text-[10px] font-mono text-zinc-600` bottom of chat panel
-- [x] **`"Spirit · Workspace v1 · Llama-3-Abliterated"` sidebar footer**
+- [x] **`"Spirit · Workspace v1 · dolphin3"` sidebar footer**
 - [x] **Rail auto-collapse on `/chat`**: desktop sidebar reduces to `68px` icon-only rail — no collapse button shown
 - [x] **Mobile sidebar toggle**: `PanelLeft` / `X` icon — conditional DOM mount of sidebar overlay (iOS protocol)
+- [x] **Dexie.js IndexedDB persistence** (`lib/db.ts`): `SpiritDB` class · v1 schema (`folders`, `threads`, `messages`, `settings`) · atomic seed transaction on first open · `seedDatabase()` guard via `"seeded"` settings key
+- [x] **`lib/db.types.ts`**: `Folder`, `Thread`, `Message`, `Setting`, `SarcasmLevel`, `MessageRole` TypeScript interfaces — Dexie-free, shared by DB and UI
+- [x] **Live folder list**: `useLiveQuery(() => db.folders.orderBy("order"))` — re-renders on any folder write
+- [x] **Live thread list**: `useLiveQuery(() => db.threads.orderBy("updatedAt").reverse())` — newest thread always at top
+- [x] **Live message list**: `useLiveQuery(…where("threadId").equals(activeId))` — switches instantly on thread selection
+- [x] **Sarcasm persisted to Dexie `settings` table**: toggle writes `setSetting("sarcasm", level)` · restored on mount via `getSetting()`
+- [x] **`createThread()` helper**: creates DB record on first message send, not on "New Chat" click — no empty threads persisted
+- [x] **`addMessage()` helper**: writes user + Spirit turns to `messages` table with `threadId`, `role`, `ts`, `audioUrl: null`
+- [x] **`touchThread()` helper**: updates `preview` + `updatedAt` after every send so sidebar preview stays fresh
+- [x] **Empty thread state**: chat area shows centred `Zap` logo + `"Issue a directive, Source."` prompt when no messages in active thread
+- [x] **`POST /api/spirit` → Ollama streaming proxy** (`app/api/spirit/route.ts`): forwards to `{OLLAMA_BASE_URL}/api/chat` · model **`dolphin3`** · `stream: true` · NDJSON parser pipes `message.content` deltas to a **`text/plain; charset=utf-8`** body (Next.js `Response` streaming — same contract as `StreamingTextResponse`)
+- [x] **Sarcasm → system prompt mapping**: `chill` / `peer` / `unhinged` each inject a distinct Spirit system string · unknown/missing → **`peer`**
+- [x] **Request body**: `{ prompt: string, sarcasm?: "chill" | "peer" | "unhinged" }` — `400` + JSON if JSON invalid or prompt missing
+- [x] **Errors (no silent failure)**: **`503`** JSON `{ error: "Ollama unreachable", detail, hint }` if TCP fetch throws · **`502`** JSON if Ollama HTTP error or empty stream body
+- [x] **`OLLAMA_BASE_URL` env override** (default `http://localhost:11434`) for non-default hosts
 - [ ] **"Thread folder" drag visual**: dragging a thread shows a `bg-violet-500/10 border border-violet-500/30 border-dashed` drop zone on each folder row
 - [ ] **Thread item "active writing" indicator**: typing indicator dot on the currently active thread in sidebar — three `animate-bounce` dots
-- [ ] **Empty thread state**: chat area shows centred `Zap` logo + `"Issue a directive, Source."` prompt when no thread selected
 - [ ] **Thread rename inline edit state**: double-tap on thread title replaces it with a `<input>` styled `bg-transparent border-b border-violet-500/40` underline field
 - [ ] **Folder collapse CSS state**: folder row shows only folder name + count badge, thread list below it slides to `height: 0` with `overflow-hidden`
 - [ ] **"Branching" message fork UI**: branch icon appears on hover of any message bubble — creates a visual `┣` tree connector showing fork point
@@ -498,7 +512,8 @@ WebKit on Safari iOS is not a browser. It is a trap with rounded corners. Every 
 
 ```bash
 npm install
-npx next dev -H 0.0.0.0          # 📱 bind to LAN — test iPhone FIRST
+npm run dev                       # 📱 binds 0.0.0.0 + webpack (Remote-SSH friendly)
+# npm run dev:turbo               # optional: Turbopack on fast local disk only
 open http://192.168.x.x:3000      # on physical iOS Safari before desktop
 ```
 

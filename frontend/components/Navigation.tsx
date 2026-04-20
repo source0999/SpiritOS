@@ -88,7 +88,7 @@ export function MobileNav() {
           onClick={() => setOpen(true)}
           onTouchEnd={(e) => {
             e.preventDefault(); // iOS WebKit: bypass delayed / dropped synthetic click
-            setOpen(!isOpen);
+            setOpen(true);
           }}
           aria-label="Open navigation"
           className="relative z-[99999] flex h-11 w-11 cursor-pointer touch-manipulation items-center justify-center rounded-xl border border-white/10 bg-white/5 text-zinc-400 active:bg-white/10"

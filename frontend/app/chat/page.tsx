@@ -1,54 +1,24 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { useLiveQuery } from "dexie-react-hooks";
 import { Paperclip, Send, Zap, Plus, Search, PanelLeft, X, ChevronRight } from "lucide-react";
 
-// ─── Dev Network Reminder ────────────────────────────────────────────────────
-//
-// To test on a physical iOS device over LAN:
-//   1.  npx next dev -H 0.0.0.0          (bind to all interfaces)
-//   2.  Open http://<your-LAN-IP>:3000   (e.g. http://10.0.0.126:3000)
-//   3.  If CSS looks stale, delete .next/ and restart the dev server:
-//         rm -rf .next && npx next dev -H 0.0.0.0
-//   4.  allowedDevOrigins in next.config.ts must include your device's IP.
-//
-// ─────────────────────────────────────────────────────────────────────────────
+import {
+  db,
+  seedDatabase,
+  createThread,
+  addMessage,
+  touchThread,
+  getSetting,
+  setSetting,
+} from "@/lib/db";
+import type { Folder, Thread, Message, SarcasmLevel } from "@/lib/db.types";
 
-// ─── Utility ─────────────────────────────────────────────────────────────────
+// ─── Utility ──────────────────────────────────────────────────────────────────
 
 function cn(...classes: (string | undefined | false | null)[]) {
   return classes.filter(Boolean).join(" ");
-}
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type Role = "user" | "spirit";
-type SarcasmLevel = "chill" | "peer" | "unhinged";
-
-interface Message {
-  id: string;
-  role: Role;
-  text: string;
-  ts: string;
-}
-
-// A workspace folder that groups related threads by topic.
-interface Folder {
-  id: string;
-  name: string;
-  // Tailwind bg class for the color dot — set at the data level so the
-  // compiler sees the full class string and keeps it in the purge-safe bundle.
-  accent: string;
-}
-
-// A single conversation thread, optionally nested inside a Folder.
-// folderId === null → the thread is uncategorized and floats in "Threads".
-interface Thread {
-  id: string;
-  folderId: string | null;
-  title: string;
-  preview: string;
-  ts: string;
 }
 
 // ─── Acoustic Marker Parser ───────────────────────────────────────────────────
@@ -56,7 +26,7 @@ interface Thread {
 // Parses XTTS v2 stage directions like [sighs], [scoffs], [groan] and renders
 // them in italic violet so they visually separate from the monospace body text.
 //
-function parseAcousticMarkers(text: string): (string | JSX.Element)[] {
+function parseAcousticMarkers(text: string): (string | React.ReactElement)[] {
   const parts = text.split(/(\[[^\]]+\])/g);
   return parts.map((part, i) => {
     if (/^\[[^\]]+\]$/.test(part)) {
@@ -69,54 +39,6 @@ function parseAcousticMarkers(text: string): (string | JSX.Element)[] {
     return part;
   });
 }
-
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-
-const INITIAL_MESSAGES: Message[] = [
-  { id: "1", role: "user",   text: "Run a full threat assessment on the homelab network.", ts: "06:14" },
-  { id: "2", role: "spirit", text: "[sighs] Alright. Scanning the usual suspects on your subnet — you really need to rotate those credentials, by the way. Running nmap passive fingerprint now.", ts: "06:14" },
-  { id: "3", role: "user",   text: "What's the verdict on the Ghost Node?", ts: "06:15" },
-  { id: "4", role: "spirit", text: "[scoffs] The Pi 3 is running DNS over port 53 unencrypted. Cute. I'm also seeing an open port 22 with password auth enabled. [groan] This is fine, I guess, if you enjoy chaos.", ts: "06:15" },
-  { id: "5", role: "user",   text: "Fix it.", ts: "06:16" },
-  { id: "6", role: "spirit", text: "On it. Generating hardened sshd_config now. You're welcome. [exhales] I'll also push DoH config to the Pi. This will take approximately 40 seconds. Try not to break anything else while you wait.", ts: "06:16" },
-];
-
-// ─── Workspace Folders ───────────────────────────────────────────────────────
-
-const MOCK_FOLDERS: Folder[] = [
-  { id: "f1", name: "Homelab Configs",     accent: "bg-emerald-500" },
-  { id: "f2", name: "Prompt Engineering",  accent: "bg-violet-500"  },
-  { id: "f3", name: "Philosophy",          accent: "bg-amber-500"   },
-  { id: "f4", name: "System Architecture", accent: "bg-sky-500"     },
-];
-
-// ─── Workspace Threads ────────────────────────────────────────────────────────
-//
-// folderId matches a MOCK_FOLDERS entry.
-// folderId === null → uncategorized; floats in the flat "Threads" section.
-//
-const MOCK_THREADS: Thread[] = [
-  // ── Homelab Configs ──────────────────────────────────────────────────────
-  { id: "t1",  folderId: "f1", title: "Dell BIOS Above 4G Decoding",   preview: "MMIO window remap confirmed on X570.",            ts: "06:16"  },
-  { id: "t2",  folderId: "f1", title: "Ghost Node DNS Hardening",       preview: "DoH config pushed to Pi successfully.",           ts: "Yesterday" },
-  { id: "t3",  folderId: "f1", title: "Tesla P40 PSU Mod Planning",     preview: "Server PSU → ATX adapter wattage math.",         ts: "Mon"    },
-  { id: "t4",  folderId: "f1", title: "Proxmox VM Bridging Issue",      preview: "vmbr0 not forwarding on VLAN tag 20.",            ts: "Sun"    },
-  // ── Prompt Engineering ───────────────────────────────────────────────────
-  { id: "t5",  folderId: "f2", title: "Langfuse SQLite Integration",    preview: "Tracing pipeline wired to local SQLite.",         ts: "Mar 15" },
-  { id: "t6",  folderId: "f2", title: "RAG Pipeline Architecture",      preview: "Three retrieval strategies evaluated.",           ts: "Mar 12" },
-  { id: "t7",  folderId: "f2", title: "System Prompt Abliteration",     preview: "Abliterated Llama 3 benchmark vs base.",          ts: "Mar 10" },
-  { id: "t8",  folderId: "f2", title: "Context Window Benchmarks",      preview: "128k vs 32k — retrieval degradation rate.",      ts: "Mar 8"  },
-  // ── Philosophy ───────────────────────────────────────────────────────────
-  { id: "t9",  folderId: "f3", title: "Nietzsche vs Stoicism",          preview: "Amor fati as productive nihilism.",               ts: "Mar 7"  },
-  { id: "t10", folderId: "f3", title: "Post-AGI Identity Crisis",       preview: "What does authorship mean after 2025?",           ts: "Mar 5"  },
-  // ── System Architecture ──────────────────────────────────────────────────
-  { id: "t11", folderId: "f4", title: "Cinema Engine Config",           preview: "Plex transcoding is a crime against compute.",    ts: "Mar 3"  },
-  { id: "t12", folderId: "f4", title: "Spirit OS Bento Grid",           preview: "The bento grid looks crispy, I suppose.",        ts: "Mar 1"  },
-  // ── Uncategorized (folderId: null) ───────────────────────────────────────
-  { id: "t13", folderId: null, title: "Homelab Threat Assessment",      preview: "Running nmap passive fingerprint now...",         ts: "06:14"  },
-  { id: "t14", folderId: null, title: "Privacy Hardening Session",      preview: "CCPA compliance for homelab services.",           ts: "Mar 15" },
-  { id: "t15", folderId: null, title: "Local LLM Benchmark Run",        preview: "Llama 3.3 Q4_K_M on DDR5 — results.",           ts: "Mar 3"  },
-];
 
 // ─── Sarcasm config ───────────────────────────────────────────────────────────
 
@@ -134,23 +56,24 @@ const SARCASM_ACTIVE: Record<SarcasmLevel, string> = {
 
 // ─── Conversation Sidebar ─────────────────────────────────────────────────────
 //
-// Used twice: once as an inline desktop aside, once inside the mobile overlay.
-// `onClose` is only passed in the mobile context — it wires the X button and
-// auto-closes on thread selection.
+// Consumes live Dexie queries passed in as props so the sidebar never owns its
+// own async state — data flows down from the page, making re-renders cheap.
 //
 function ConversationSidebar({
+  folders,
+  threads,
   activeId,
   onSelect,
   onNewChat,
   onClose,
 }: {
-  activeId: string;
-  onSelect: (id: string) => void;
-  onNewChat: () => void;
-  onClose?: () => void;
+  folders:    Folder[];
+  threads:    Thread[];
+  activeId:   string;
+  onSelect:   (id: string) => void;
+  onNewChat:  () => void;
+  onClose?:   () => void;
 }) {
-  // Tracks which folders have their thread list expanded.
-  // "f1" (Homelab Configs) is open by default to demonstrate the pattern.
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
     () => new Set(["f1"]),
   );
@@ -166,15 +89,15 @@ function ConversationSidebar({
 
   function selectThread(id: string) {
     onSelect(id);
-    onClose?.(); // auto-close the mobile overlay on selection
+    onClose?.();
   }
 
-  const uncategorized = MOCK_THREADS.filter((t) => t.folderId === null);
+  const uncategorized = threads.filter((t) => t.folderId === null);
 
   return (
     <div className="flex h-full flex-col">
 
-      {/* ── Header: Spirit OS branding + mobile close ── */}
+      {/* ── Header ── */}
       <div className="flex flex-shrink-0 items-center justify-between px-4 pb-2 pt-4">
         <div className="flex items-center gap-2">
           <div className="flex h-5 w-5 items-center justify-center rounded-md border border-violet-500/30 bg-violet-500/15">
@@ -195,11 +118,6 @@ function ConversationSidebar({
       </div>
 
       {/* ── New Sovereign Chat CTA ── */}
-      {/*
-        Full-width, prominent call-to-action matching Open-WebUI / LobeChat
-        conventions for offline chat interfaces. The icon bubble intensifies
-        on hover so the interaction target is unmistakably clear.
-      */}
       <div className="flex-shrink-0 px-3 pb-3">
         <button
           type="button"
@@ -230,7 +148,7 @@ function ConversationSidebar({
       {/* ── Scrollable list ── */}
       <div className="flex-1 overflow-y-auto px-2 pb-4">
 
-        {/* ── FOLDERS ─────────────────────────────────────────────────── */}
+        {/* ── FOLDERS ──────────────────────────────────────────────────────── */}
         <div className="mb-4 mt-1">
           <div className="mb-1 flex items-center justify-between px-2">
             <span className="text-[9px] font-semibold uppercase tracking-widest text-zinc-700">
@@ -245,16 +163,13 @@ function ConversationSidebar({
             </button>
           </div>
 
-          {MOCK_FOLDERS.map((folder) => {
-            const isOpen        = expandedFolders.has(folder.id);
-            const threads       = MOCK_THREADS.filter((t) => t.folderId === folder.id);
-            // When a thread inside a collapsed folder is active, the folder row
-            // itself gets a faint background so the user knows where they are.
-            const hasActiveChild = threads.some((t) => t.id === activeId);
+          {folders.map((folder) => {
+            const isOpen         = expandedFolders.has(folder.id);
+            const folderThreads  = threads.filter((t) => t.folderId === folder.id);
+            const hasActiveChild = folderThreads.some((t) => t.id === activeId);
 
             return (
               <div key={folder.id}>
-                {/* Folder row */}
                 <button
                   type="button"
                   onClick={() => toggleFolder(folder.id)}
@@ -271,7 +186,7 @@ function ConversationSidebar({
                     {folder.name}
                   </span>
                   <span className="flex-shrink-0 tabular-nums text-[10px] text-zinc-700">
-                    {threads.length}
+                    {folderThreads.length}
                   </span>
                   <ChevronRight
                     size={12}
@@ -283,10 +198,9 @@ function ConversationSidebar({
                   />
                 </button>
 
-                {/* Thread tree — connector line establishes hierarchy visually */}
                 {isOpen && (
                   <div className="mb-1 ml-[22px] border-l border-white/[0.06]">
-                    {threads.map((thread) => {
+                    {folderThreads.map((thread) => {
                       const active = activeId === thread.id;
                       return (
                         <button
@@ -308,7 +222,9 @@ function ConversationSidebar({
                             )}>
                               {thread.title}
                             </p>
-                            <span className="flex-shrink-0 text-[10px] text-zinc-700">{thread.ts}</span>
+                            <span className="flex-shrink-0 text-[10px] text-zinc-700">
+                              {new Date(thread.updatedAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false })}
+                            </span>
                           </div>
                         </button>
                       );
@@ -320,7 +236,7 @@ function ConversationSidebar({
           })}
         </div>
 
-        {/* ── THREADS (uncategorized) ──────────────────────────────────── */}
+        {/* ── THREADS (uncategorized) ───────────────────────────────────────── */}
         {uncategorized.length > 0 && (
           <div>
             <p className="mb-1 px-2 text-[9px] font-semibold uppercase tracking-widest text-zinc-700">
@@ -348,7 +264,9 @@ function ConversationSidebar({
                     )}>
                       {thread.title}
                     </p>
-                    <span className="mt-px flex-shrink-0 text-[10px] text-zinc-700">{thread.ts}</span>
+                    <span className="mt-px flex-shrink-0 text-[10px] text-zinc-700">
+                      {new Date(thread.updatedAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false })}
+                    </span>
                   </div>
                   <p className="mt-0.5 truncate text-[11px] text-zinc-600">{thread.preview}</p>
                 </button>
@@ -361,7 +279,7 @@ function ConversationSidebar({
       {/* ── Footer ── */}
       <div className="flex-shrink-0 border-t border-white/5 px-4 py-3">
         <p className="font-mono text-[10px] text-zinc-700">Spirit · Workspace v1</p>
-        <p className="mt-0.5 font-mono text-[10px] text-zinc-700">Llama-3-Abliterated</p>
+        <p className="mt-0.5 font-mono text-[10px] text-zinc-700">dolphin3 · Ollama</p>
       </div>
     </div>
   );
@@ -370,34 +288,56 @@ function ConversationSidebar({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SovereignChatPage() {
-  const [messages, setMessages]           = useState<Message[]>(INITIAL_MESSAGES);
-  const [input, setInput]                 = useState("");
-  const [sarcasm, setSarcasm]             = useState<SarcasmLevel>("peer");
-  const [thinking, setThinking]           = useState(false);
-  const [mobileSidebarOpen, setMobileOpen] = useState(false);
-  const [activeConvId, setActiveConvId]   = useState("t13");
+  const [activeThreadId,   setActiveThreadId]   = useState<string>("t13");
+  const [input,            setInput]            = useState("");
+  const [sarcasm,          setSarcasm]          = useState<SarcasmLevel>("peer");
+  const [thinking,         setThinking]         = useState(false);
+  const [mobileSidebarOpen, setMobileOpen]      = useState(false);
+  const [seeded,           setSeeded]           = useState(false);
 
   const bottomRef   = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Dev-only network reminder — fires once on mount in development.
+  // ── Seed on first mount ────────────────────────────────────────────────────
+  useEffect(() => {
+    seedDatabase().then(() => setSeeded(true)).catch(console.error);
+  }, []);
+
+  // ── Load persisted sarcasm setting ────────────────────────────────────────
+  useEffect(() => {
+    getSetting<SarcasmLevel>("sarcasm", "peer").then(setSarcasm).catch(console.error);
+  }, []);
+
+  // ── Live queries ──────────────────────────────────────────────────────────
+  // useLiveQuery re-renders the component automatically whenever the queried
+  // Dexie table changes — inserts, updates, and deletes all trigger a re-render.
+
+  const folders  = useLiveQuery(() => db.folders.orderBy("order").toArray(), []);
+  const threads  = useLiveQuery(() => db.threads.orderBy("updatedAt").reverse().toArray(), []);
+  const messages = useLiveQuery(
+    () => db.messages.where("threadId").equals(activeThreadId).sortBy("createdAt"),
+    [activeThreadId],
+  );
+
+  // ── Auto-scroll ────────────────────────────────────────────────────────────
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, thinking]);
+
+  // ── Dev reminder ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (process.env.NODE_ENV === "development") {
       console.info(
         "%c[Spirit OS · Dev Reminder]%c\n" +
         "• Serving to LAN?  →  npx next dev -H 0.0.0.0\n" +
-        "• CSS stale on iOS?  →  rm -rf .next && npx next dev -H 0.0.0.0\n" +
-        "• Check next.config.ts allowedDevOrigins includes your device IP.",
+        "• CSS stale on iOS?  →  rm -rf .next && npx next dev -H 0.0.0.0",
         "color:#a78bfa;font-weight:bold",
         "color:#a1a1aa",
       );
     }
   }, []);
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, thinking]);
-
+  // ── Textarea auto-resize ──────────────────────────────────────────────────
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
     const ta = e.target;
@@ -405,69 +345,98 @@ export default function SovereignChatPage() {
     ta.style.height = `${Math.min(ta.scrollHeight, 160)}px`;
   };
 
-  const nowHHMM = () =>
-    new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
+  // ── Sarcasm toggle (persists to Dexie) ────────────────────────────────────
+  const handleSarcasmChange = useCallback((level: SarcasmLevel) => {
+    setSarcasm(level);
+    setSetting("sarcasm", level).catch(console.error);
+  }, []);
 
-  const send = async () => {
+  // ── Send ──────────────────────────────────────────────────────────────────
+  const send = useCallback(async () => {
     const text = input.trim();
     if (!text || thinking) return;
+
     setInput("");
     if (textareaRef.current) textareaRef.current.style.height = "auto";
-
-    setMessages((m) => [...m, { id: Date.now().toString(), role: "user", text, ts: nowHHMM() }]);
     setThinking(true);
 
+    let threadId = activeThreadId;
+
+    // If the active thread is brand-new (has no messages yet and its id
+    // doesn't exist in the DB), create it now with this first message as title.
+    const existingThread = await db.threads.get(threadId);
+    if (!existingThread) {
+      const newThread = await createThread(null, text);
+      threadId = newThread.id;
+      setActiveThreadId(threadId);
+    }
+
+    // Persist user message immediately so it appears in the live query.
+    await addMessage(threadId, "user", text);
+    await touchThread(threadId, text);
+
     try {
-      const res  = await fetch("/api/spirit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt: text, sarcasm }) });
-      const data = await res.json().catch(() => ({}));
-      const reply: string = (data as { reply?: string }).reply ?? "";
-      setMessages((m) => [...m, { id: (Date.now() + 1).toString(), role: "spirit", text: reply || "[silence] Nothing came back. Suspicious.", ts: nowHHMM() }]);
+      const res  = await fetch("/api/spirit", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ prompt: text, sarcasm, threadId }),
+      });
+      const data  = await res.json().catch(() => ({}));
+      const reply = (data as { reply?: string }).reply ?? "";
+
+      const spiritText = reply || "[silence] Nothing came back. Suspicious.";
+      await addMessage(threadId, "spirit", spiritText);
+      await touchThread(threadId, spiritText);
     } catch {
-      setMessages((m) => [...m, { id: (Date.now() + 1).toString(), role: "spirit", text: "[sighs] Network error. The irony of a homelab failing its own AI.", ts: nowHHMM() }]);
+      const errText = "[sighs] Network error. The irony of a homelab failing its own AI.";
+      await addMessage(threadId, "spirit", errText);
+      await touchThread(threadId, errText);
     } finally {
       setThinking(false);
     }
-  };
+  }, [input, thinking, activeThreadId, sarcasm]);
 
-  const handleNewChat = () => {
-    setMessages([]);
+  // ── New Chat ──────────────────────────────────────────────────────────────
+  // Creates a placeholder threadId. The actual DB record is created on first send
+  // so empty threads are never persisted (mirrors LobeChat / Open-WebUI pattern).
+  const handleNewChat = useCallback(() => {
+    setActiveThreadId(`new-${Date.now()}`);
     setMobileOpen(false);
-  };
+  }, []);
+
+  // Wait for seed to complete before rendering live data to avoid a flash of
+  // empty UI. The seed is fast (IndexedDB bulk write) so this is imperceptible.
+  if (!seeded) {
+    return (
+      <div className="flex h-[calc(100dvh-60px)] items-center justify-center bg-zinc-950 md:h-[100dvh]">
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-violet-500/30 border-t-violet-500" />
+      </div>
+    );
+  }
 
   return (
-    /*
-      relative — anchors the absolute-positioned mobile sidebar overlay.
-      flex-row — desktop sidebar + chat panel sit side by side.
-      h-[calc(100dvh-60px)] — subtracts the fixed 60px mobile nav header.
-      md:h-[100dvh] — desktop: main has no padding-top, full viewport height.
-      No h-screen, no backdrop-blur, no overflow-hidden on ancestors.
-    */
     <div className="relative flex h-[calc(100dvh-60px)] flex-row bg-zinc-950 md:h-[100dvh]">
 
-      {/* ── Desktop Conversation Sidebar ─────────────────────────────────── */}
-      {/*
-        Inline flex child on md+. Always in the document, no mounting cost.
-        hidden on mobile so it never competes with the chat panel for space.
-      */}
+      {/* ── Desktop Sidebar ────────────────────────────────────────────────── */}
       <aside
         className="hidden md:flex md:w-64 md:flex-shrink-0 md:flex-col border-r border-white/5"
         style={{ background: "#09090b" }}
       >
         <ConversationSidebar
-          activeId={activeConvId}
-          onSelect={setActiveConvId}
+          folders={folders ?? []}
+          threads={threads ?? []}
+          activeId={activeThreadId}
+          onSelect={setActiveThreadId}
           onNewChat={handleNewChat}
         />
       </aside>
 
-      {/* ── Chat Panel ───────────────────────────────────────────────────── */}
+      {/* ── Chat Panel ─────────────────────────────────────────────────────── */}
       <div className="flex min-w-0 flex-1 flex-col">
 
         {/* ── Chat Header ── */}
         <header className="flex flex-shrink-0 items-center justify-between border-b border-white/[0.07] px-4 py-3">
-
           <div className="flex items-center gap-3">
-            {/* Mobile sidebar toggle — hidden on desktop since sidebar is always visible */}
             <button
               type="button"
               onClick={() => setMobileOpen(true)}
@@ -478,7 +447,6 @@ export default function SovereignChatPage() {
               <PanelLeft size={15} className="pointer-events-none" aria-hidden />
             </button>
 
-            {/* Model status */}
             <div className="flex items-center gap-2.5">
               <div className="relative flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-violet-500/30 bg-violet-500/10">
                 <Zap size={12} className="text-violet-400" />
@@ -489,14 +457,14 @@ export default function SovereignChatPage() {
               </div>
               <div className="min-w-0">
                 <p className="truncate font-mono text-xs font-semibold leading-none text-zinc-100">
-                  Llama-3-Abliterated
+                  dolphin3
                 </p>
                 <p className="mt-0.5 text-[10px] font-semibold text-emerald-500">Online</p>
               </div>
             </div>
           </div>
 
-          {/* Sarcasm Level toggle */}
+          {/* Sarcasm toggle */}
           <div className="flex items-center gap-1.5">
             <span className="mr-1 hidden text-[10px] font-semibold uppercase tracking-widest text-zinc-600 sm:block">
               Sarcasm
@@ -505,7 +473,7 @@ export default function SovereignChatPage() {
               <button
                 key={id}
                 type="button"
-                onClick={() => setSarcasm(id)}
+                onClick={() => handleSarcasmChange(id)}
                 className={cn(
                   "rounded-lg border px-2.5 py-1 text-[11px] font-semibold touch-manipulation transition-colors",
                   sarcasm === id
@@ -523,7 +491,16 @@ export default function SovereignChatPage() {
         <div className="min-w-0 flex-1 overflow-y-auto px-4 py-6">
           <div className="mx-auto flex max-w-3xl flex-col gap-6">
 
-            {messages.map((msg) => (
+            {(messages?.length ?? 0) === 0 && !thinking && (
+              <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full border border-violet-500/20 bg-violet-500/10">
+                  <Zap size={16} className="text-violet-400" />
+                </div>
+                <p className="text-sm font-medium text-zinc-500">Issue a directive, Source.</p>
+              </div>
+            )}
+
+            {(messages ?? []).map((msg: Message) => (
               <div
                 key={msg.id}
                 className={cn("flex flex-col", msg.role === "user" ? "items-end" : "items-start")}
@@ -561,16 +538,7 @@ export default function SovereignChatPage() {
           </div>
         </div>
 
-        {/* ── Input Matrix ──────────────────────────────────────────────────
-          paddingBottom uses max(12px, env(safe-area-inset-bottom)).
-          • env(safe-area-inset-bottom) is the iOS home indicator inset.
-            It requires viewportFit:"cover" in app/layout.tsx (already set).
-          • Tailwind cannot express env() without a plugin, so this stays
-            as an inline style.
-          • bg-zinc-950 is explicit so the safe-area padding region is
-            painted with the app's background color, not resolved by climbing
-            the compositor tree (which can produce wrong colors on iOS).
-        ──────────────────────────────────────────────────────────────────── */}
+        {/* ── Input Bar ──────────────────────────────────────────────────────── */}
         <div
           className="flex-shrink-0 border-t border-white/[0.07] bg-zinc-950 px-4 pt-3"
           style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}
@@ -610,7 +578,7 @@ export default function SovereignChatPage() {
             </div>
 
             <p className="mt-2 text-center font-mono text-[10px] text-zinc-700">
-              Spirit · Llama-3-Abliterated · XTTS v2 · Sarcasm:{" "}
+              Spirit · dolphin3 · XTTS v2 · Sarcasm:{" "}
               <span className={sarcasm === "chill" ? "text-zinc-500" : sarcasm === "peer" ? "text-violet-600" : "text-red-700"}>
                 {sarcasm}
               </span>
@@ -619,18 +587,7 @@ export default function SovereignChatPage() {
         </div>
       </div>
 
-      {/* ── Mobile Sidebar Overlay ────────────────────────────────────────── */}
-      {/*
-        Conditionally mounted — fresh DOM nodes on every open, bypasses the
-        WebKit compositor cache. No CSS opacity/visibility toggle.
-
-        absolute inset-0 — positions within the chat container (below the
-        60px mobile nav), not full-screen. The conversation list stays within
-        the app chrome, not covering the system nav bar.
-
-        md:hidden — safety valve: even if state is true on desktop, the overlay
-        does not render over the already-visible inline sidebar.
-      */}
+      {/* ── Mobile Sidebar Overlay ──────────────────────────────────────────── */}
       {mobileSidebarOpen && (
         <>
           <div
@@ -643,8 +600,10 @@ export default function SovereignChatPage() {
             style={{ background: "#09090b" }}
           >
             <ConversationSidebar
-              activeId={activeConvId}
-              onSelect={setActiveConvId}
+              folders={folders ?? []}
+              threads={threads ?? []}
+              activeId={activeThreadId}
+              onSelect={setActiveThreadId}
               onNewChat={handleNewChat}
               onClose={() => setMobileOpen(false)}
             />

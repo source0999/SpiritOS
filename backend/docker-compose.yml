@@ -80,7 +80,6 @@ services:
       # ── Operational ─────────────────────────────────────────────────────────
       - OLLAMA_HOST=0.0.0.0
       - OLLAMA_KEEP_ALIVE=24h
-      - OLLAMA_DEBUG=1                 # remove after confirming GPU runner is active
     networks:
       - spirit-net
     healthcheck:

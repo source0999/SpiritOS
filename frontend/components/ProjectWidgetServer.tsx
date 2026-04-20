@@ -4,9 +4,18 @@
 
 import { PROJECTS }           from "@/lib/mockProjects";
 import { getReadmeCompletion } from "@/lib/readmeProgress";
+import { logDebugSession } from "@/lib/debugSessionLog";
 import { ProjectWidget }       from "./ProjectWidget";
 
 export default async function ProjectWidgetServer() {
+  // #region agent log
+  logDebugSession({
+    hypothesisId: "C",
+    location: "ProjectWidgetServer.tsx:entry",
+    message: "ProjectWidgetServer started",
+    data: { projectCount: PROJECTS.length },
+  });
+  // #endregion
   // For each project, attempt a README-driven completion value.
   // Repos without a REPO_SCOPE entry return null → the Client Component
   // falls back to the hardcoded value in lib/mockProjects.ts.
@@ -19,5 +28,13 @@ export default async function ProjectWidgetServer() {
     }
   }
 
+  // #region agent log
+  logDebugSession({
+    hypothesisId: "C",
+    location: "ProjectWidgetServer.tsx:exit",
+    message: "ProjectWidgetServer completed",
+    data: { overrideKeys: Object.keys(completionOverrides) },
+  });
+  // #endregion
   return <ProjectWidget completionOverrides={completionOverrides} />;
 }

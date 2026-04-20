@@ -819,6 +819,26 @@ export default function DashboardContent({
     return () => window.removeEventListener("keydown", h);
   }, []);
 
+  useEffect(() => {
+    // #region agent log
+    fetch("http://localhost:7920/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
+      body: JSON.stringify({
+        sessionId: "7d6688",
+        hypothesisId: "B",
+        location: "DashboardContent.tsx:mount",
+        message: "DashboardContent mounted",
+        data: {
+          hasNextRoot: !!document.getElementById("__next"),
+          bodyChildren: document.body.childElementCount,
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
+  }, []);
+
   return (
     <div className="relative p-4 md:p-6">
       <div className="relative z-[1] mb-5 flex items-center justify-between gap-3">
