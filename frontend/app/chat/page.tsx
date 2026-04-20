@@ -6,7 +6,7 @@ import { useTTS } from "@/hooks/useTTS";
 import { useThread } from "@/hooks/useThread";
 import { useThreadCRUD } from "@/hooks/useThreadCRUD";
 import { usePersonality } from "@/hooks/usePersonality";
-import { Paperclip, Send, Zap, Plus, Search, PanelLeft, X, ChevronRight, Volume2, VolumeX } from "lucide-react";
+import { Paperclip, Send, Zap, Plus, Search, PanelLeft, X, ChevronRight, Volume2, VolumeX, Mic, Square } from "lucide-react";
 import { MessageBubble } from "@/components/chat/MessageBubble";
 import { SortableThreadItem } from "@/components/sidebar/SortableThreadItem";
 import { ThreadDragOverlay } from "@/components/sidebar/ThreadDragOverlay";
@@ -312,6 +312,8 @@ export default function SovereignChatPage() {
   // null when idle. Used to swap the streaming placeholder for persisted text.
   const [streamingMsgId,    setStreamingMsgId]  = useState<string | null>(null);
   const [playingMessageId,  setPlayingMessageId] = useState<string | null>(null);
+  const [isRecording,       setIsRecording]     = useState(false);
+  const [isTranscribing,    setIsTranscribing]  = useState(false);
 
   // Capture activeThreadId in a ref so the onComplete closure always sees the
   // current value even though it's created inside useStream (stale closure trap).
@@ -397,6 +399,9 @@ export default function SovereignChatPage() {
 
   const bottomRef   = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const voiceChunksRef = useRef<Blob[]>([]);
 
   // ── Seed on first mount ────────────────────────────────────────────────────
   useEffect(() => {
@@ -411,6 +416,16 @@ export default function SovereignChatPage() {
   useEffect(() => {
     if (!isPlaying) setPlayingMessageId(null);
   }, [isPlaying]);
+
+  useEffect(() => {
+    return () => {
+      mediaRecorderRef.current?.stop();
+      mediaRecorderRef.current = null;
+      mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
+      mediaStreamRef.current = null;
+      voiceChunksRef.current = [];
+    };
+  }, []);
 
   // ── CRUD operations ───────────────────────────────────────────────────────
   const { renameThread, deleteThread, editMessage } = useThreadCRUD();
@@ -609,8 +624,8 @@ export default function SovereignChatPage() {
   }, []);
 
   // ── Send ──────────────────────────────────────────────────────────────────
-  const send = useCallback(async () => {
-    const text = input.trim();
+  const send = useCallback(async (overrideText?: string) => {
+    const text = (overrideText ?? input).trim();
     if (!text || thinking) return;
 
     setInput("");
@@ -715,6 +730,62 @@ export default function SovereignChatPage() {
       historyPayload.length ? historyPayload : undefined,
     );
   }, [input, thinking, activeThreadId, sarcasm, messages, startStream, captureMessageEvents, buildUserContext]);
+
+  const startRecording = useCallback(async () => {
+    if (isRecording || isTranscribing || thinking) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStreamRef.current = stream;
+      const recorder = new MediaRecorder(stream, { mimeType: "audio/webm;codecs=opus" });
+      voiceChunksRef.current = [];
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) voiceChunksRef.current.push(e.data);
+      };
+      recorder.onstop = () => {
+        setIsRecording(false);
+      };
+      recorder.start(250);
+      mediaRecorderRef.current = recorder;
+      setIsRecording(true);
+    } catch (e) {
+      console.error("[Spirit OS] Failed to start microphone recording:", e);
+      setIsRecording(false);
+    }
+  }, [isRecording, isTranscribing, thinking]);
+
+  const stopRecordingAndTranscribe = useCallback(async () => {
+    if (!mediaRecorderRef.current || !isRecording) return;
+    const recorder = mediaRecorderRef.current;
+    await new Promise<void>((resolve) => {
+      const done = () => resolve();
+      recorder.addEventListener("stop", done, { once: true });
+      recorder.stop();
+    });
+    mediaRecorderRef.current = null;
+    mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
+    mediaStreamRef.current = null;
+
+    const blob = new Blob(voiceChunksRef.current, { type: "audio/webm" });
+    voiceChunksRef.current = [];
+    if (!blob.size) return;
+
+    setIsTranscribing(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", blob, `voice-${Date.now()}.webm`);
+      const res = await fetch("/api/stt", { method: "POST", body: fd });
+      if (!res.ok) throw new Error(`STT API ${res.status}`);
+      const data = await res.json().catch(() => ({})) as { text?: string };
+      const transcript = data.text?.trim() || "";
+      if (transcript) {
+        await send(transcript);
+      }
+    } catch (e) {
+      console.error("[Spirit OS] STT failed:", e);
+    } finally {
+      setIsTranscribing(false);
+    }
+  }, [isRecording, send]);
 
   // ── New Chat ──────────────────────────────────────────────────────────────
   // Creates a placeholder threadId. The actual DB record is created on first send
@@ -946,6 +1017,27 @@ export default function SovereignChatPage() {
                 className="min-h-[36px] flex-1 resize-none bg-transparent py-1 font-mono text-sm text-zinc-100 outline-none placeholder:text-zinc-700"
                 style={{ maxHeight: "160px" }}
               />
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (isRecording) {
+                    void stopRecordingAndTranscribe();
+                  } else {
+                    void startRecording();
+                  }
+                }}
+                disabled={isTranscribing || thinking}
+                aria-label={isRecording ? "Stop recording" : "Record voice"}
+                className={cn(
+                  "mb-0.5 flex h-9 w-9 flex-shrink-0 cursor-pointer touch-manipulation items-center justify-center rounded-xl border transition-colors disabled:opacity-30 active:scale-95",
+                  isRecording
+                    ? "border-rose-500/40 bg-rose-500/15 text-rose-300"
+                    : "border-white/[0.07] bg-white/[0.04] text-zinc-500 hover:text-zinc-300",
+                )}
+              >
+                {isRecording ? <Square size={13} className="pointer-events-none" aria-hidden /> : <Mic size={14} className="pointer-events-none" aria-hidden />}
+              </button>
 
               <button
                 type="button"

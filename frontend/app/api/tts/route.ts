@@ -5,8 +5,9 @@ export const maxDuration = 120;
 
 const XTTS_BASE_URL = process.env.XTTS_BASE_URL?.replace(/\/$/, "") || "http://127.0.0.1:8020";
 const XTTS_TTS_URL = `${XTTS_BASE_URL}/tts`;
+const XTTS_TTS_STREAM_URL = `${XTTS_BASE_URL}/tts_stream`;
 const XTTS_STUDIO_SPEAKERS_URL = `${XTTS_BASE_URL}/studio_speakers`;
-const XTTS_DEFAULT_SPEAKER = process.env.XTTS_DEFAULT_SPEAKER?.trim();
+const XTTS_DEFAULT_SPEAKER = process.env.XTTS_DEFAULT_SPEAKER?.trim() || "Claribel Dervla";
 const MAX_CHARS = 500;
 
 type XttsSpeaker = {
@@ -99,9 +100,11 @@ export async function POST(req: Request) {
     language,
     speaker_embedding: speaker.speaker_embedding,
     gpt_cond_latent: speaker.gpt_cond_latent,
+    add_wav_header: true,
+    stream_chunk_size: "20",
   });
   const callXtts = async () =>
-    fetch(XTTS_TTS_URL, {
+    fetch(XTTS_TTS_STREAM_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: payload,
@@ -122,6 +125,7 @@ export async function POST(req: Request) {
         message: "XTTS fetch threw",
         data: {
           endpoint: XTTS_TTS_URL,
+          streamEndpoint: XTTS_TTS_STREAM_URL,
           error: e instanceof Error ? e.message : String(e),
           textLen: text.length,
         },
@@ -133,7 +137,7 @@ export async function POST(req: Request) {
       {
         error: "XTTS unreachable",
         detail: e instanceof Error ? e.message : String(e),
-        endpoint: XTTS_TTS_URL,
+        endpoint: XTTS_TTS_STREAM_URL,
       },
       { status: 503 },
     );
@@ -150,7 +154,7 @@ export async function POST(req: Request) {
         hypothesisId: "H10",
         location: "app/api/tts/route.ts:POST",
         message: "XTTS first response non-OK; retrying once",
-        data: { status: upstream.status, endpoint: XTTS_TTS_URL },
+        data: { status: upstream.status, endpoint: XTTS_TTS_STREAM_URL },
         timestamp: Date.now(),
       }),
     }).catch(() => {});
@@ -176,6 +180,7 @@ export async function POST(req: Request) {
         message: "XTTS non-OK response",
         data: {
           endpoint: XTTS_TTS_URL,
+          streamEndpoint: XTTS_TTS_STREAM_URL,
           status: upstream.status,
           detail: detail.slice(0, 120),
           textLen: text.length,
@@ -194,51 +199,26 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "XTTS returned empty audio body" }, { status: 502 });
   }
 
-  const upstreamContentType = upstream.headers.get("content-type") || "";
-  if (upstreamContentType.includes("application/json")) {
-    const payload = await upstream.json().catch(() => null) as unknown;
-    if (typeof payload !== "string") {
-      return NextResponse.json(
-        { error: "XTTS JSON response was not a base64 audio string" },
-        { status: 502 },
-      );
-    }
-    let audioBytes: Uint8Array;
-    try {
-      audioBytes = Uint8Array.from(Buffer.from(payload, "base64"));
-    } catch {
-      return NextResponse.json({ error: "Failed to decode XTTS base64 audio" }, { status: 502 });
-    }
-    // #region agent log
-    fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
-      body: JSON.stringify({
-        sessionId: "7d6688",
-        runId: "post-fix-tts-1",
-        hypothesisId: "H6",
-        location: "app/api/tts/route.ts:POST",
-        message: "Decoded XTTS JSON base64 payload to WAV bytes",
-        data: {
-          upstreamContentType,
-          decodedBytes: audioBytes.byteLength,
-          riffMagic: String.fromCharCode(...audioBytes.slice(0, 4)),
-        },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
-
-    const safeBytes = new Uint8Array(audioBytes);
-    return new Response(new Blob([safeBytes], { type: "audio/wav" }), {
-      status: 200,
-      headers: {
-        "Content-Type": "audio/wav",
-        "Cache-Control": "no-store",
+  // #region agent log
+  fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
+    body: JSON.stringify({
+      sessionId: "7d6688",
+      runId: "tts-stream-1",
+      hypothesisId: "S1",
+      location: "app/api/tts/route.ts:POST",
+      message: "XTTS stream connected",
+      data: {
+        endpoint: XTTS_TTS_STREAM_URL,
+        upstreamContentType: upstream.headers.get("content-type") ?? "",
       },
-    });
-  }
+      timestamp: Date.now(),
+    }),
+  }).catch(() => {});
+  // #endregion
 
+  const upstreamContentType = upstream.headers.get("content-type") || "";
   return new Response(upstream.body, {
     status: 200,
     headers: {
