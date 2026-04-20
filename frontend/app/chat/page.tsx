@@ -3,8 +3,10 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useStream } from "@/hooks/useStream";
 import { useThread } from "@/hooks/useThread";
+import { useThreadCRUD } from "@/hooks/useThreadCRUD";
 import { Paperclip, Send, Zap, Plus, Search, PanelLeft, X, ChevronRight } from "lucide-react";
 import { MessageBubble } from "@/components/chat/MessageBubble";
+import { ThreadItem } from "@/components/sidebar/ThreadItem";
 
 import {
   db,
@@ -49,6 +51,8 @@ function ConversationSidebar({
   onSelect,
   onNewChat,
   onClose,
+  onRename,
+  onDelete,
 }: {
   folders:    Folder[];
   threads:    Thread[];
@@ -56,6 +60,8 @@ function ConversationSidebar({
   onSelect:   (id: string) => void;
   onNewChat:  () => void;
   onClose?:   () => void;
+  onRename:   (id: string, newTitle: string) => Promise<void>;
+  onDelete:   (id: string) => Promise<void>;
 }) {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
     () => new Set(["f1"]),
@@ -183,35 +189,16 @@ function ConversationSidebar({
 
                 {isOpen && (
                   <div className="mb-1 ml-[22px] border-l border-white/[0.06]">
-                    {folderThreads.map((thread) => {
-                      const active = activeId === thread.id;
-                      return (
-                        <button
-                          key={thread.id}
-                          type="button"
-                          onClick={() => selectThread(thread.id)}
-                          className={cn(
-                            "relative w-full rounded-xl py-2 pl-3 pr-2 text-left touch-manipulation transition-colors",
-                            active ? "bg-white/[0.08]" : "hover:bg-white/[0.04] active:bg-white/[0.06]",
-                          )}
-                        >
-                          {active && (
-                            <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-violet-500/70" />
-                          )}
-                          <div className="flex items-baseline justify-between gap-2">
-                            <p className={cn(
-                              "truncate text-[11px] font-medium leading-snug",
-                              active ? "text-zinc-100" : "text-zinc-500",
-                            )}>
-                              {thread.title}
-                            </p>
-                            <span className="flex-shrink-0 text-[10px] text-zinc-700">
-                              {new Date(thread.updatedAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false })}
-                            </span>
-                          </div>
-                        </button>
-                      );
-                    })}
+                    {folderThreads.map((thread) => (
+                      <ThreadItem
+                        key={thread.id}
+                        thread={thread}
+                        active={activeId === thread.id}
+                        onSelect={selectThread}
+                        onRename={onRename}
+                        onDelete={onDelete}
+                      />
+                    ))}
                   </div>
                 )}
               </div>
@@ -225,36 +212,16 @@ function ConversationSidebar({
             <p className="mb-1 px-2 text-[9px] font-semibold uppercase tracking-widest text-zinc-700">
               Threads
             </p>
-            {uncategorized.map((thread) => {
-              const active = activeId === thread.id;
-              return (
-                <button
-                  key={thread.id}
-                  type="button"
-                  onClick={() => selectThread(thread.id)}
-                  className={cn(
-                    "relative w-full rounded-xl px-3 py-2.5 text-left touch-manipulation transition-colors",
-                    active ? "bg-white/[0.08]" : "hover:bg-white/[0.04] active:bg-white/[0.06]",
-                  )}
-                >
-                  {active && (
-                    <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-violet-500/70" />
-                  )}
-                  <div className="flex items-start justify-between gap-2">
-                    <p className={cn(
-                      "truncate text-[12px] font-medium leading-snug",
-                      active ? "text-zinc-100" : "text-zinc-400",
-                    )}>
-                      {thread.title}
-                    </p>
-                    <span className="mt-px flex-shrink-0 text-[10px] text-zinc-700">
-                      {new Date(thread.updatedAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false })}
-                    </span>
-                  </div>
-                  <p className="mt-0.5 truncate text-[11px] text-zinc-600">{thread.preview}</p>
-                </button>
-              );
-            })}
+            {uncategorized.map((thread) => (
+              <ThreadItem
+                key={thread.id}
+                thread={thread}
+                active={activeId === thread.id}
+                onSelect={selectThread}
+                onRename={onRename}
+                onDelete={onDelete}
+              />
+            ))}
           </div>
         )}
       </div>
@@ -331,6 +298,26 @@ export default function SovereignChatPage() {
     messagesLoading,
     autoTitle,
   } = useThread(activeThreadId);
+
+  // ── CRUD operations ───────────────────────────────────────────────────────
+  const { renameThread, deleteThread, editMessage } = useThreadCRUD();
+
+  // Tracks which message id is currently open for inline editing.
+  // null = no message is being edited.
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+
+  // ── Delete handler (switches active thread if needed) ─────────────────────
+  const handleDeleteThread = useCallback(async (id: string) => {
+    const nextId = await deleteThread(id, threads ?? []);
+    if (id === activeThreadId) {
+      if (nextId) {
+        setActiveThreadId(nextId);
+      } else {
+        // No threads left — open a fresh new chat.
+        setActiveThreadId(`new-${Date.now()}`);
+      }
+    }
+  }, [deleteThread, threads, activeThreadId]);
 
   // ── Auto-scroll ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -430,6 +417,8 @@ export default function SovereignChatPage() {
           activeId={activeThreadId}
           onSelect={setActiveThreadId}
           onNewChat={handleNewChat}
+          onRename={renameThread}
+          onDelete={handleDeleteThread}
         />
       </aside>
 
@@ -503,7 +492,20 @@ export default function SovereignChatPage() {
             )}
 
             {(messages ?? []).map((msg: Message) => (
-              <MessageBubble key={msg.id} mode="complete" message={msg} />
+              <MessageBubble
+                key={msg.id}
+                mode="complete"
+                message={msg}
+                isEditing={editingMessageId === msg.id}
+                onStartEdit={msg.role === "spirit"
+                  ? () => setEditingMessageId(msg.id)
+                  : undefined}
+                onSaveEdit={async (newText) => {
+                  await editMessage(msg.id, newText);
+                  setEditingMessageId(null);
+                }}
+                onCancelEdit={() => setEditingMessageId(null)}
+              />
             ))}
 
             {/* ── Streaming bubble (live tokens) ── */}
@@ -583,6 +585,8 @@ export default function SovereignChatPage() {
               onSelect={setActiveThreadId}
               onNewChat={handleNewChat}
               onClose={() => setMobileOpen(false)}
+              onRename={renameThread}
+              onDelete={handleDeleteThread}
             />
           </aside>
         </>

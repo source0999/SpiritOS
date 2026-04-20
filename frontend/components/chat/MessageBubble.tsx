@@ -29,6 +29,7 @@
 import ReactMarkdown from "react-markdown";
 import type { Message } from "@/lib/db.types";
 import { StreamingCursor } from "./StreamingCursor";
+import { MessageActions } from "./MessageActions";
 
 function cn(...classes: (string | undefined | false | null)[]) {
   return classes.filter(Boolean).join(" ");
@@ -125,6 +126,11 @@ const MD_COMPONENTS: React.ComponentProps<typeof ReactMarkdown>["components"] = 
 interface CompleteBubbleProps {
   mode: "complete";
   message: Message;
+  // Edit callbacks — only wired for Spirit messages.
+  isEditing?: boolean;
+  onStartEdit?: () => void;
+  onSaveEdit?: (newText: string) => void;
+  onCancelEdit?: () => void;
 }
 
 interface StreamingBubbleProps {
@@ -159,7 +165,7 @@ export function MessageBubble(props: MessageBubbleProps) {
     );
   }
 
-  const { message: msg } = props;
+  const { message: msg, isEditing, onStartEdit, onSaveEdit, onCancelEdit } = props;
   const isUser = msg.role === "user";
 
   return (
@@ -173,10 +179,38 @@ export function MessageBubble(props: MessageBubbleProps) {
           {msg.text}
         </div>
       ) : (
-        <div className="max-w-[90%] break-words font-mono text-sm leading-relaxed text-zinc-300 sm:max-w-2xl">
-          <ReactMarkdown components={MD_COMPONENTS}>
-            {msg.text}
-          </ReactMarkdown>
+        // ── Spirit bubble: Markdown + optional edit UI ──
+        <div className="group flex max-w-[90%] items-start gap-2 sm:max-w-2xl">
+          <div className="min-w-0 flex-1">
+            {isEditing ? (
+              <MessageActions
+                messageId={msg.id}
+                messageText={msg.text}
+                isEditing={true}
+                onStartEdit={onStartEdit ?? (() => {})}
+                onSave={onSaveEdit ?? (() => {})}
+                onCancel={onCancelEdit ?? (() => {})}
+              />
+            ) : (
+              <div className="break-words font-mono text-sm leading-relaxed text-zinc-300">
+                <ReactMarkdown components={MD_COMPONENTS}>
+                  {msg.text}
+                </ReactMarkdown>
+              </div>
+            )}
+          </div>
+          {!isEditing && onStartEdit && (
+            <div className="flex-shrink-0 pt-1">
+              <MessageActions
+                messageId={msg.id}
+                messageText={msg.text}
+                isEditing={false}
+                onStartEdit={onStartEdit}
+                onSave={onSaveEdit ?? (() => {})}
+                onCancel={onCancelEdit ?? (() => {})}
+              />
+            </div>
+          )}
         </div>
       )}
 

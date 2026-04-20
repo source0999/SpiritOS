@@ -322,7 +322,13 @@ WebKit on Safari iOS is not a browser. It is a trap with rounded corners. Every 
   - StrictMode double-fire guard via module-level `titledThreads` Set
   - Empty state flash on thread switch eliminated via `messagesLoading` guard
   - `useLiveQuery` removed from `page.tsx` — all data access centralised in `useThread`
-- [ ] **Step 4** — Full CRUD: rename thread, delete thread, edit messages
+- [x] **Step 4** — Full CRUD: rename thread, delete thread, edit messages
+  - `useThreadCRUD` hook: `renameThread`, `deleteThread` (atomic Dexie transaction), `editMessage`
+  - `ThreadItem` component: 4-state row (idle → menu → renaming → confirming delete) — no portal, no z-index hell
+  - `MessageActions` component: pencil icon on Spirit bubble hover → inline textarea, Ctrl+Enter commit, Escape cancel
+  - `MessageBubble` extended with `isEditing`, `onStartEdit`, `onSaveEdit`, `onCancelEdit` props
+  - Delete auto-selects next thread; last thread deletion opens a fresh new chat
+  - `editingMessageId` state in page — only one message editable at a time
 - [ ] **Step 5** — `@dnd-kit/sortable` sidebar with folder drag-and-drop
 
 ### Module 4: XTTS v2 Voice Pipeline
