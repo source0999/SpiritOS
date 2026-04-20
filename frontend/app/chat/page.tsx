@@ -45,15 +45,29 @@ function cn(...classes: (string | undefined | false | null)[]) {
 // ─── Sarcasm config ───────────────────────────────────────────────────────────
 
 const SARCASM_LEVELS: { id: SarcasmLevel; label: string }[] = [
-  { id: "chill",    label: "Chill"    },
-  { id: "peer",     label: "Peer"     },
-  { id: "unhinged", label: "Unhinged" },
+  { id: "chill",    label: "Focus"  },
+  { id: "peer",     label: "Mirror" },
+  { id: "unhinged", label: "Chaos"  },
 ];
 
 const SARCASM_ACTIVE: Record<SarcasmLevel, string> = {
-  chill:    "border-zinc-600    bg-zinc-700/60   text-zinc-200",
-  peer:     "border-violet-500/40 bg-violet-500/20 text-violet-300",
-  unhinged: "border-red-500/40   bg-red-500/15    text-red-300",
+  chill:    "border-zinc-600      bg-zinc-700/60    text-zinc-200",
+  peer:     "border-violet-500/40 bg-violet-500/20  text-violet-300",
+  unhinged: "border-red-500/40    bg-red-500/15     text-red-300",
+};
+
+// Mode-aware copy — changes the empty state and input placeholder to
+// match the active persona. Makes the mode switch feel meaningful.
+const MODE_EMPTY_STATE: Record<SarcasmLevel, string> = {
+  chill:    "Ready to work. What are we solving?",
+  peer:     "What's on your mind?",
+  unhinged: "Go ahead. Make my day.",
+};
+
+const MODE_PLACEHOLDER: Record<SarcasmLevel, string> = {
+  chill:    "What do you need to build, debug, or understand?",
+  peer:     "Talk to me...",
+  unhinged: "Say something I can work with...",
 };
 
 // ─── Conversation Sidebar ─────────────────────────────────────────────────────
@@ -261,7 +275,7 @@ function ConversationSidebar({
 
       {/* ── Footer ── */}
       <div className="flex-shrink-0 border-t border-white/5 px-4 py-3">
-        <p className="font-mono text-[10px] text-zinc-700">Spirit · Workspace v1</p>
+        <p className="font-mono text-[10px] text-zinc-700">Spirit OS · v0.2</p>
         <p className="mt-0.5 font-mono text-[10px] text-zinc-700">dolphin3 · Ollama</p>
       </div>
     </div>
@@ -643,10 +657,10 @@ export default function SovereignChatPage() {
             </div>
           </div>
 
-          {/* Sarcasm toggle */}
+          {/* Mode toggle */}
           <div className="flex items-center gap-1.5">
             <span className="mr-1 hidden text-[10px] font-semibold uppercase tracking-widest text-zinc-600 sm:block">
-              Sarcasm
+              Mode
             </span>
             {SARCASM_LEVELS.map(({ id, label }) => (
               <button
@@ -675,7 +689,7 @@ export default function SovereignChatPage() {
                 <div className="flex h-10 w-10 items-center justify-center rounded-full border border-violet-500/20 bg-violet-500/10">
                   <Zap size={16} className="text-violet-400" />
                 </div>
-                <p className="text-sm font-medium text-zinc-500">Issue a directive, Source.</p>
+                <p className="text-sm font-medium text-zinc-500">{MODE_EMPTY_STATE[sarcasm]}</p>
               </div>
             )}
 
@@ -727,7 +741,7 @@ export default function SovereignChatPage() {
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(); }
                 }}
-                placeholder="Issue a directive..."
+                placeholder={MODE_PLACEHOLDER[sarcasm]}
                 rows={1}
                 className="min-h-[36px] flex-1 resize-none bg-transparent py-1 font-mono text-sm text-zinc-100 outline-none placeholder:text-zinc-700"
                 style={{ maxHeight: "160px" }}
@@ -745,9 +759,15 @@ export default function SovereignChatPage() {
             </div>
 
             <p className="mt-2 text-center font-mono text-[10px] text-zinc-700">
-              Spirit · dolphin3 · XTTS v2 · Sarcasm:{" "}
-              <span className={sarcasm === "chill" ? "text-zinc-500" : sarcasm === "peer" ? "text-violet-600" : "text-red-700"}>
-                {sarcasm}
+              Spirit OS · dolphin3 · XTTS v2 · Mode:{" "}
+              <span className={
+                sarcasm === "chill"
+                  ? "text-zinc-400"
+                  : sarcasm === "peer"
+                  ? "text-violet-500"
+                  : "text-red-500"
+              }>
+                {SARCASM_LEVELS.find((l) => l.id === sarcasm)?.label ?? sarcasm}
               </span>
             </p>
           </div>

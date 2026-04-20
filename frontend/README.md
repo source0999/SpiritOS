@@ -348,10 +348,19 @@ WebKit on Safari iOS is not a browser. It is a trap with rounded corners. Every 
   - `version(3).upgrade()` atomically clears `folders`, `threads`, `messages` — no mock data remains
   - Deletes `"seeded"` settings key so clean defaults are re-written on next open
   - Adds `personality_events` table (indexed by `type` + `createdAt`) — foundation for Step C Mem0 integration
-  - `seedDatabase()` rewritten: writes default settings only, zero content — Source's real conversations are the only DB entries
-  - `activeThreadId` initial state changed from hardcoded `"t13"` to `new-${Date.now()}` — opens to fresh chat
-- [ ] **Step B** — Persona overhaul: Focus/Mirror/Chaos system prompts + mode-aware UI copy
-- [ ] **Step C** — Learning Tracker: `usePersonality` hook + event capture + context injection
+  - `seedDatabase()` rewritten: writes default settings only, zero content
+  - `activeThreadId` initial state: `new-${Date.now()}` — opens to fresh chat
+- [x] **Step B** — Persona overhaul: Focus / Mirror / Chaos system prompts + mode-aware UI
+  - **Focus** (was Chill): senior engineer mode — structured output, banned filler, no ceremony
+  - **Mirror** (was Peer): peer presence — matches Source's energy, banned "What is my objective", conversational-first
+  - **Chaos** (was Unhinged): co-conspirator — specific roasts, conspiracy angles, correct answers in unhinged delivery
+  - Mode-aware empty state: changes per active mode ("What's on your mind?" / "Ready to work." / "Go ahead. Make my day.")
+  - Mode-aware textarea placeholder: changes per active mode
+  - Header label: `SARCASM` → `MODE`, toggle labels: `Chill/Peer/Unhinged` → `Focus/Mirror/Chaos`
+  - Status bar: `Sarcasm: peer` → `Mode: Mirror` (uses display label, not internal id)
+  - Sidebar footer: `Spirit · Workspace v1` → `Spirit OS · v0.2`
+  - `/api/spirit/route.ts` extended to accept optional `userContext` string — ready for Step C injection
+- [ ] **Step C** — Learning Tracker: `usePersonality` hook + event capture
 
 ### Phase 2 · Interaction Models (The Workspace)
 
