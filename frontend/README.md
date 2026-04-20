@@ -309,7 +309,12 @@ WebKit on Safari iOS is not a browser. It is a trap with rounded corners. Every 
   - Single Dexie write on `onComplete` (zero mid-stream IndexedDB contention)
   - `AbortController` wired for clean stream cancellation
   - `streamingText` live state drives UI; `thinking` derived from `isStreaming`
-- [ ] **Step 2** — `MessageBubble` + `StreamingCursor` components
+- [x] **Step 2** — `MessageBubble` + `StreamingCursor` components extracted
+  - `StreamingCursor` is a standalone component (not a pseudo-element) — unmounts atomically on stream end, zero cursor flicker
+  - `MessageBubble` handles two modes: `streaming` (plain text + cursor) and `complete` (react-markdown)
+  - `react-markdown` with full `MD_COMPONENTS` override map (code blocks, lists, links, headings — all zinc-950 themed)
+  - Acoustic marker parser (`[sighs]`, `[groan]`, etc.) lives in `MessageBubble` — deleted from `page.tsx`
+  - Message Arena reduced to two lines: one `map` call + one conditional streaming bubble
 - [ ] **Step 3** — Dexie compound index upgrade + `useThread` load hook
 - [ ] **Step 4** — Full CRUD: rename thread, delete thread, edit messages
 - [ ] **Step 5** — `@dnd-kit/sortable` sidebar with folder drag-and-drop

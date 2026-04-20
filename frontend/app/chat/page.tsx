@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useStream } from "@/hooks/useStream";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Paperclip, Send, Zap, Plus, Search, PanelLeft, X, ChevronRight } from "lucide-react";
+import { MessageBubble } from "@/components/chat/MessageBubble";
 
 import {
   db,
@@ -20,25 +21,6 @@ import type { Folder, Thread, Message, SarcasmLevel } from "@/lib/db.types";
 
 function cn(...classes: (string | undefined | false | null)[]) {
   return classes.filter(Boolean).join(" ");
-}
-
-// ─── Acoustic Marker Parser ───────────────────────────────────────────────────
-//
-// Parses XTTS v2 stage directions like [sighs], [scoffs], [groan] and renders
-// them in italic violet so they visually separate from the monospace body text.
-//
-function parseAcousticMarkers(text: string): (string | React.ReactElement)[] {
-  const parts = text.split(/(\[[^\]]+\])/g);
-  return parts.map((part, i) => {
-    if (/^\[[^\]]+\]$/.test(part)) {
-      return (
-        <span key={i} className="italic text-violet-500/70">
-          {part}
-        </span>
-      );
-    }
-    return part;
-  });
 }
 
 // ─── Sarcasm config ───────────────────────────────────────────────────────────
@@ -323,7 +305,7 @@ export default function SovereignChatPage() {
   });
 
   // Derived: are we in any kind of "busy" state?
-  const thinking = useMemo(() => isStreaming || streamingMsgId !== null, [isStreaming, streamingMsgId]);
+  const thinking = isStreaming || streamingMsgId !== null;
 
   const bottomRef   = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -516,54 +498,12 @@ export default function SovereignChatPage() {
             )}
 
             {(messages ?? []).map((msg: Message) => (
-              <div
-                key={msg.id}
-                className={cn("flex flex-col", msg.role === "user" ? "items-end" : "items-start")}
-              >
-                <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-zinc-600">
-                  {msg.role === "user" ? "Source" : "Spirit"}
-                </p>
-
-                {msg.role === "user" ? (
-                  <div className="max-w-[85%] break-words rounded-2xl rounded-tr-sm border border-white/[0.07] bg-zinc-900 px-4 py-3 text-sm leading-relaxed text-zinc-100 sm:max-w-xl">
-                    {msg.text}
-                  </div>
-                ) : (
-                  <div className="max-w-[90%] break-words font-mono text-sm leading-relaxed text-zinc-300 sm:max-w-2xl">
-                    {parseAcousticMarkers(msg.text)}
-                  </div>
-                )}
-
-                <p className="mt-1.5 text-[10px] text-zinc-700">{msg.ts}</p>
-              </div>
+              <MessageBubble key={msg.id} mode="complete" message={msg} />
             ))}
 
             {/* ── Streaming bubble (live tokens) ── */}
             {isStreaming && (
-              <div className="flex flex-col items-start">
-                <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-zinc-600">
-                  Spirit
-                </p>
-                <div className="max-w-[90%] break-words font-mono text-sm leading-relaxed text-zinc-300 sm:max-w-2xl">
-                  {streamingText
-                    ? (
-                      <>
-                        {parseAcousticMarkers(streamingText)}
-                        <span className="ml-0.5 inline-block w-[2px] animate-pulse bg-violet-400 align-middle"
-                              style={{ height: "1em" }}
-                              aria-hidden />
-                      </>
-                    ) : (
-                      // Pre-first-token: show the processing indicator
-                      <p className="text-zinc-500">
-                        <span className="italic text-violet-500/60">[processing]</span>
-                        {" "}
-                        <span className="animate-pulse text-violet-400">▌</span>
-                      </p>
-                    )
-                  }
-                </div>
-              </div>
+              <MessageBubble mode="streaming" text={streamingText} />
             )}
 
             <div ref={bottomRef} />

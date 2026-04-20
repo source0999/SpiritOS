@@ -227,3 +227,38 @@
 {"sessionId":"7d6688","timestamp":1776655786884,"hypothesisId":"D","location":"WhiteScreenDebugProbe.tsx:html","message":"html attributes","data":{"htmlClass":"dark","hasDark":true},"serverReceivedAt":1776655787073}
 {"sessionId":"7d6688","timestamp":1776655786884,"hypothesisId":"E","location":"WhiteScreenDebugProbe.tsx:main","message":"main metrics","data":{"mainH":1984,"mainW":1648,"childCount":1},"serverReceivedAt":1776655787073}
 {"sessionId":"7d6688","timestamp":1776655786859,"hypothesisId":"B","location":"WhiteScreenDebugProbe.tsx:mount","message":"client mounted","data":{"path":"/chat"},"serverReceivedAt":1776655787073}
+{"sessionId":"7d6688","timestamp":1776656056834,"hypothesisId":"D","location":"app/layout.tsx:RootLayout","message":"RootLayout render (server)","data":{"childType":"object"}}
+{"sessionId":"7d6688","timestamp":1776656056886,"hypothesisId":"D","location":"app/layout.tsx:RootLayout","message":"RootLayout render (server)","data":{"childType":"object"}}
+{"sessionId":"7d6688","timestamp":1776656056888,"hypothesisId":"C","location":"app/page.tsx:Page","message":"Home Page render (server)"}
+{"sessionId":"7d6688","timestamp":1776656056889,"hypothesisId":"C","location":"ProjectWidgetServer.tsx:entry","message":"ProjectWidgetServer started","data":{"projectCount":5}}
+{"sessionId":"7d6688","timestamp":1776656056890,"hypothesisId":"C","location":"ProjectWidgetServer.tsx:exit","message":"ProjectWidgetServer completed","data":{"overrideKeys":["spirit-os-dashboard"]}}
+{"sessionId":"7d6688","timestamp":1776656057077,"hypothesisId":"D","location":"app/layout.tsx:RootLayout","message":"RootLayout render (server)","data":{"childType":"object"}}
+{"sessionId":"7d6688","timestamp":1776656057098,"hypothesisId":"D","location":"app/layout.tsx:RootLayout","message":"RootLayout render (server)","data":{"childType":"object"}}
+{"sessionId":"7d6688","timestamp":1776656057099,"hypothesisId":"C","location":"app/page.tsx:Page","message":"Home Page render (server)"}
+{"sessionId":"7d6688","timestamp":1776656057100,"hypothesisId":"C","location":"ProjectWidgetServer.tsx:entry","message":"ProjectWidgetServer started","data":{"projectCount":5}}
+{"sessionId":"7d6688","timestamp":1776656057100,"hypothesisId":"C","location":"ProjectWidgetServer.tsx:exit","message":"ProjectWidgetServer completed","data":{"overrideKeys":["spirit-os-dashboard"]}}
+{"sessionId":"7d6688","timestamp":1776656081027,"hypothesisId":"D","location":"app/layout.tsx:RootLayout","message":"RootLayout render (server)","data":{"childType":"object"}}
+{"sessionId":"7d6688","timestamp":1776656081054,"hypothesisId":"D","location":"app/layout.tsx:RootLayout","message":"RootLayout render (server)","data":{"childType":"object"}}
+{"sessionId":"7d6688","timestamp":1776656081056,"hypothesisId":"C","location":"app/page.tsx:Page","message":"Home Page render (server)"}
+{"sessionId":"7d6688","timestamp":1776656081057,"hypothesisId":"C","location":"ProjectWidgetServer.tsx:entry","message":"ProjectWidgetServer started","data":{"projectCount":5}}
+{"sessionId":"7d6688","timestamp":1776656081057,"hypothesisId":"C","location":"ProjectWidgetServer.tsx:exit","message":"ProjectWidgetServer completed","data":{"overrideKeys":["spirit-os-dashboard"]}}
+{"sessionId":"7d6688","timestamp":1776656098837,"hypothesisId":"D","location":"app/layout.tsx:RootLayout","message":"RootLayout render (server)","data":{"childType":"object"}}
+{"sessionId":"7d6688","timestamp":1776656098840,"hypothesisId":"C","location":"app/page.tsx:Page","message":"Home Page render (server)"}
+{"sessionId":"7d6688","timestamp":1776656098840,"hypothesisId":"C","location":"ProjectWidgetServer.tsx:entry","message":"ProjectWidgetServer started","data":{"projectCount":5}}
+{"sessionId":"7d6688","timestamp":1776656098841,"hypothesisId":"C","location":"ProjectWidgetServer.tsx:exit","message":"ProjectWidgetServer completed","data":{"overrideKeys":["spirit-os-dashboard"]}}
+{"sessionId":"7d6688","timestamp":1776656098931,"hypothesisId":"D","location":"app/layout.tsx:RootLayout","message":"RootLayout render (server)","data":{"childType":"object"}}
+{"sessionId":"7d6688","timestamp":1776656107072,"hypothesisId":"D","location":"app/layout.tsx:RootLayout","message":"RootLayout render (server)","data":{"childType":"object"}}
+{"sessionId":"7d6688","timestamp":1776656107091,"hypothesisId":"D","location":"app/layout.tsx:RootLayout","message":"RootLayout render (server)","data":{"childType":"object"}}
+{"sessionId":"7d6688","timestamp":1776656107093,"hypothesisId":"C","location":"app/page.tsx:Page","message":"Home Page render (server)"}
+{"sessionId":"7d6688","timestamp":1776656107093,"hypothesisId":"C","location":"ProjectWidgetServer.tsx:entry","message":"ProjectWidgetServer started","data":{"projectCount":5}}
+{"sessionId":"7d6688","timestamp":1776656107093,"hypothesisId":"C","location":"ProjectWidgetServer.tsx:exit","message":"ProjectWidgetServer completed","data":{"overrideKeys":["spirit-os-dashboard"]}}
+{"sessionId":"7d6688","timestamp":1776656128807,"hypothesisId":"D","location":"app/layout.tsx:RootLayout","message":"RootLayout render (server)","data":{"childType":"object"}}
+{"sessionId":"7d6688","timestamp":1776656128834,"hypothesisId":"D","location":"app/layout.tsx:RootLayout","message":"RootLayout render (server)","data":{"childType":"object"}}
+{"sessionId":"7d6688","timestamp":1776656128870,"hypothesisId":"D","location":"app/layout.tsx:RootLayout","message":"RootLayout render (server)","data":{"childType":"object"}}
+{"sessionId":"7d6688","timestamp":1776656128933,"hypothesisId":"D","location":"app/layout.tsx:RootLayout","message":"RootLayout render (server)","data":{"childType":"object"}}
+{"sessionId":"7d6688","timestamp":1776656128934,"hypothesisId":"C","location":"app/page.tsx:Page","message":"Home Page render (server)"}
+{"sessionId":"7d6688","timestamp":1776656128934,"hypothesisId":"C","location":"ProjectWidgetServer.tsx:entry","message":"ProjectWidgetServer started","data":{"projectCount":5}}
+{"sessionId":"7d6688","timestamp":1776656128935,"hypothesisId":"C","location":"ProjectWidgetServer.tsx:exit","message":"ProjectWidgetServer completed","data":{"overrideKeys":["spirit-os-dashboard"]}}
+{"sessionId":"7d6688","timestamp":1776656128960,"hypothesisId":"D","location":"app/layout.tsx:RootLayout","message":"RootLayout render (server)","data":{"childType":"object"}}
+{"sessionId":"7d6688","timestamp":1776656128970,"hypothesisId":"D","location":"app/layout.tsx:RootLayout","message":"RootLayout render (server)","data":{"childType":"object"}}
+{"sessionId":"7d6688","timestamp":1776656128980,"hypothesisId":"D","location":"app/layout.tsx:RootLayout","message":"RootLayout render (server)","data":{"childType":"object"}}
