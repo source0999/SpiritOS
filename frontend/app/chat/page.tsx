@@ -299,6 +299,20 @@ export default function SovereignChatPage() {
   const activeThreadIdRef = useRef(activeThreadId);
   useEffect(() => { activeThreadIdRef.current = activeThreadId; }, [activeThreadId]);
 
+  // Stores the autoTitle args from send() so onComplete can fire it AFTER
+  // the main stream finishes — not before — preventing Ollama slot contention.
+  const autoTitlePendingRef = useRef<{ threadId: string; text: string } | null>(null);
+
+  // ── Thread + message data (useThread hook) ────────────────────────────────
+  // Placed before useStream so autoTitle is available to onComplete.
+  const {
+    folders,
+    threads,
+    messages,
+    messagesLoading,
+    autoTitle,
+  } = useThread(activeThreadId);
+
   // ── useStream ─────────────────────────────────────────────────────────────
   const { streamingText, isStreaming, startStream } = useStream({
     onComplete: useCallback(async (fullText: string) => {
@@ -315,7 +329,16 @@ export default function SovereignChatPage() {
       } catch (e) {
         console.error("[Spirit OS] Failed to persist assistant message:", e);
       }
-    }, []), // stable — reads threadId via ref, not closure
+
+      // ── Fire autoTitle AFTER the main stream completes ─────────────────
+      // autoTitle makes a second Ollama call. Firing it here (not in send())
+      // means it runs sequentially, never competing for the inference slot.
+      const pending = autoTitlePendingRef.current;
+      if (pending) {
+        autoTitlePendingRef.current = null;
+        autoTitle(pending.threadId, pending.text);
+      }
+    }, [autoTitle]),
   });
 
   // Derived: are we in any kind of "busy" state?
@@ -333,18 +356,6 @@ export default function SovereignChatPage() {
   useEffect(() => {
     getSetting<SarcasmLevel>("sarcasm", "peer").then(setSarcasm).catch(console.error);
   }, []);
-
-  // ── Thread + message data (useThread hook) ────────────────────────────────
-  // All live Dexie queries and the auto-titling function live in useThread.
-  // The compound index [threadId+createdAt] (added in db.ts v2) makes the
-  // messages query a fast range scan instead of a full table scan.
-  const {
-    folders,
-    threads,
-    messages,
-    messagesLoading,
-    autoTitle,
-  } = useThread(activeThreadId);
 
   // ── CRUD operations ───────────────────────────────────────────────────────
   const { renameThread, deleteThread, editMessage } = useThreadCRUD();
@@ -566,15 +577,16 @@ export default function SovereignChatPage() {
     await addMessage(threadId, "user", text);
     await touchThread(threadId, text);
 
-    // Auto-title: fires a background Ollama call to generate a 3-word title
-    // for new threads. Internally guarded — safe to call on every send.
-    autoTitle(threadId, text);
+    // Queue autoTitle to fire AFTER the stream completes (via onComplete).
+    // Storing args in a ref avoids a second concurrent Ollama call that would
+    // compete with the main inference and cause the [processing] hang.
+    autoTitlePendingRef.current = { threadId, text };
 
-    // Kick off the stream. useStream's onComplete callback handles the
-    // Dexie write for the assistant message when the stream finishes.
+    // Kick off the stream. useStream's onComplete callback handles both
+    // the Dexie write and the deferred autoTitle call.
     setStreamingMsgId("streaming");
     startStream(text, sarcasm);
-  }, [input, thinking, activeThreadId, sarcasm, startStream, autoTitle]);
+  }, [input, thinking, activeThreadId, sarcasm, startStream]);
 
   // ── New Chat ──────────────────────────────────────────────────────────────
   // Creates a placeholder threadId. The actual DB record is created on first send

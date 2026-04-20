@@ -39,6 +39,12 @@ export interface StreamOptions {
   onComplete?: (fullText: string) => void;
   /** Called immediately if the fetch or stream pump throws. */
   onError?: (err: Error) => void;
+  /**
+   * Called after onComplete with the threadId and first user message.
+   * Used to trigger autoTitle AFTER the main stream finishes — not before —
+   * so both calls don't compete for the same Ollama inference slot.
+   */
+  onAutoTitle?: (threadId: string, firstUserText: string) => void;
 }
 
 export interface StreamState {
@@ -50,7 +56,7 @@ export interface StreamState {
   error: Error | null;
   /** Fire-and-forget: starts the stream. Safe to call while a stream is running
    *  (it aborts the previous one first). */
-  startStream: (prompt: string, sarcasm: string) => void;
+  startStream: (prompt: string, sarcasm: string, userContext?: string) => void;
   /** Imperatively abort an in-flight stream (e.g. user clicks Stop). */
   abort: () => void;
 }
@@ -59,6 +65,9 @@ export interface StreamState {
 
 export function useStream(options: StreamOptions = {}): StreamState {
   const { onComplete, onError } = options;
+  // onAutoTitle is consumed by page.tsx to fire autoTitle after stream completes.
+  // It lives on StreamOptions for type safety but is not used inside useStream itself.
+  void options.onAutoTitle;
 
   const [streamingText, setStreamingText] = useState("");
   const [isStreaming,   setIsStreaming]   = useState(false);
@@ -102,8 +111,21 @@ export function useStream(options: StreamOptions = {}): StreamState {
   }, [stopRafLoop]);
 
   // ── startStream ───────────────────────────────────────────────────────────
+  //
+  // Accepts an optional userContext string (Step C personality data) and an
+  // optional autoTitleArgs tuple. autoTitle is fired AFTER onComplete — never
+  // before — so it doesn't compete with the main inference for the Ollama slot.
+  //
+  // Timeout: a 45-second AbortController timer fires if Ollama hasn't returned
+  // the first token. This prevents the infinite [processing] state on model
+  // cold-start or network failure.
+  //
   const startStream = useCallback(
-    (prompt: string, sarcasm: string) => {
+    (
+      prompt:       string,
+      sarcasm:      string,
+      userContext?: string,
+    ) => {
       // Abort any previous in-flight stream.
       abortCtrlRef.current?.abort();
       stopRafLoop();
@@ -115,8 +137,21 @@ export function useStream(options: StreamOptions = {}): StreamState {
       setError(null);
       setIsStreaming(true);
 
+      // Primary AbortController — used for user-initiated abort and timeout.
       const ctrl = new AbortController();
       abortCtrlRef.current = ctrl;
+
+      // ── 45-second safety timeout ────────────────────────────────────────
+      // If Ollama is cold-starting or unreachable, abort after 45 seconds
+      // so the UI gets an error instead of hanging forever.
+      const timeoutId = setTimeout(() => {
+        if (!ctrl.signal.aborted) {
+          ctrl.abort(new DOMException(
+            "Spirit timed out after 45 seconds. Is Ollama running?",
+            "TimeoutError",
+          ));
+        }
+      }, 45_000);
 
       // Kick off the rAF flush loop before the first await so the UI
       // updates as soon as the first token arrives.
@@ -128,8 +163,14 @@ export function useStream(options: StreamOptions = {}): StreamState {
           const res = await fetch("/api/spirit", {
             method:  "POST",
             headers: { "Content-Type": "application/json" },
-            body:    JSON.stringify({ prompt, sarcasm }),
-            signal:  ctrl.signal,
+            body:    JSON.stringify({
+              prompt,
+              sarcasm,
+              // Only include userContext if it has content — keeps the
+              // payload small when the learning tracker is empty.
+              ...(userContext?.trim() ? { userContext } : {}),
+            }),
+            signal: ctrl.signal,
           });
 
           if (!res.ok) {
@@ -162,21 +203,39 @@ export function useStream(options: StreamOptions = {}): StreamState {
           setStreamingText(accRef.current);
 
         } catch (err) {
-          // AbortError is expected on user-initiated abort — not a real error.
-          if (err instanceof DOMException && err.name === "AbortError") return;
+          // User abort: AbortError on `err`. Timeout: same AbortError, but
+          // `ctrl.signal.reason` is our DOMException with name "TimeoutError".
+          const reason = ctrl.signal.reason;
+          const isTimeoutReason =
+            reason instanceof DOMException && reason.name === "TimeoutError";
+          const isAbort = err instanceof DOMException && err.name === "AbortError";
+          const isTimeoutErr =
+            err instanceof DOMException && err.name === "TimeoutError";
 
-          const wrapped = err instanceof Error ? err : new Error(String(err));
-          setError(wrapped);
-          onError?.(wrapped);
+          if (isAbort && !isTimeoutReason && !isTimeoutErr) {
+            // Clean user-initiated abort — no error state needed.
+          } else {
+            const wrapped =
+              isTimeoutReason && reason instanceof Error
+                ? reason
+                : err instanceof Error
+                  ? err
+                  : new Error(String(err));
+            setError(wrapped);
+            onError?.(wrapped);
+          }
 
         } finally {
-          // Only runs if we didn't early-return on AbortError.
+          // `finally` always runs in JS — even after a `return` in `catch`.
+          // This is the single guaranteed cleanup point for all exit paths.
+          clearTimeout(timeoutId);
           stopRafLoop();
           setIsStreaming(false);
 
-          // Fire onComplete with the full accumulated text.
-          // The caller (page.tsx) uses this to write to Dexie exactly once.
           const fullText = accRef.current;
+
+          // Fire onComplete only when we actually received content.
+          // Skips on clean abort (empty accRef) and on error (no content).
           if (fullText) {
             onComplete?.(fullText);
           }

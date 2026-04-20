@@ -360,6 +360,12 @@ WebKit on Safari iOS is not a browser. It is a trap with rounded corners. Every 
   - Status bar: `Sarcasm: peer` → `Mode: Mirror` (uses display label, not internal id)
   - Sidebar footer: `Spirit · Workspace v1` → `Spirit OS · v0.2`
   - `/api/spirit/route.ts` extended to accept optional `userContext` string — ready for Step C injection
+- [x] **Step 1 (Bug Fix)** — Stream hang diagnosed and resolved
+  - Root cause 1: Missing `export const dynamic = "force-dynamic"` in `/api/spirit/route.ts` — Next.js 16 was buffering the entire stream before forwarding to client
+  - Root cause 2: `autoTitle()` fired simultaneously with `startStream()`, saturating the single Ollama inference slot
+  - Fix 1: Added `export const dynamic = "force-dynamic"` to `route.ts`
+  - Fix 2: `autoTitle` moved from `send()` to `onComplete` callback — now fires sequentially after main stream
+  - `useStream`: optional `userContext` in POST body; 45s abort timeout; `finally` cleanup + `onComplete` only when tokens received
 - [ ] **Step C** — Learning Tracker: `usePersonality` hook + event capture
 
 ### Phase 2 · Interaction Models (The Workspace)

@@ -1,3 +1,10 @@
+// Force Next.js App Router to treat this route as fully dynamic.
+// Without this, Next.js 16 may buffer the entire streaming response before
+// forwarding it to the client — silently destroying the stream. This is the
+// primary cause of the [processing] hang seen in the browser.
+// Ref: https://github.com/vercel/next.js/issues/48273
+export const dynamic = "force-dynamic";
+
 import { NextResponse } from "next/server";
 
 /**
