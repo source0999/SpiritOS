@@ -315,7 +315,13 @@ WebKit on Safari iOS is not a browser. It is a trap with rounded corners. Every 
   - `react-markdown` with full `MD_COMPONENTS` override map (code blocks, lists, links, headings — all zinc-950 themed)
   - Acoustic marker parser (`[sighs]`, `[groan]`, etc.) lives in `MessageBubble` — deleted from `page.tsx`
   - Message Arena reduced to two lines: one `map` call + one conditional streaming bubble
-- [ ] **Step 3** — Dexie compound index upgrade + `useThread` load hook
+- [x] **Step 3** — Dexie schema v2 + `useThread` hook + auto-titling
+  - `db.ts` bumped to `version(2)`: `[threadId+createdAt]` compound index (O(n) → O(k) message queries), `order` index on threads for Step 5 DnD
+  - `useThread(activeThreadId)` hook owns all live Dexie queries + exposes `foldersLoading`, `threadsLoading`, `messagesLoading`
+  - `autoTitle()` fires background Ollama stream after first send, writes 3–5 word title to Dexie, sidebar updates live — no extra state
+  - StrictMode double-fire guard via module-level `titledThreads` Set
+  - Empty state flash on thread switch eliminated via `messagesLoading` guard
+  - `useLiveQuery` removed from `page.tsx` — all data access centralised in `useThread`
 - [ ] **Step 4** — Full CRUD: rename thread, delete thread, edit messages
 - [ ] **Step 5** — `@dnd-kit/sortable` sidebar with folder drag-and-drop
 

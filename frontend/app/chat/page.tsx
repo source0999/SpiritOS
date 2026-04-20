@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useStream } from "@/hooks/useStream";
-import { useLiveQuery } from "dexie-react-hooks";
+import { useThread } from "@/hooks/useThread";
 import { Paperclip, Send, Zap, Plus, Search, PanelLeft, X, ChevronRight } from "lucide-react";
 import { MessageBubble } from "@/components/chat/MessageBubble";
 
@@ -320,16 +320,17 @@ export default function SovereignChatPage() {
     getSetting<SarcasmLevel>("sarcasm", "peer").then(setSarcasm).catch(console.error);
   }, []);
 
-  // ── Live queries ──────────────────────────────────────────────────────────
-  // useLiveQuery re-renders the component automatically whenever the queried
-  // Dexie table changes — inserts, updates, and deletes all trigger a re-render.
-
-  const folders  = useLiveQuery(() => db.folders.orderBy("order").toArray(), []);
-  const threads  = useLiveQuery(() => db.threads.orderBy("updatedAt").reverse().toArray(), []);
-  const messages = useLiveQuery(
-    () => db.messages.where("threadId").equals(activeThreadId).sortBy("createdAt"),
-    [activeThreadId],
-  );
+  // ── Thread + message data (useThread hook) ────────────────────────────────
+  // All live Dexie queries and the auto-titling function live in useThread.
+  // The compound index [threadId+createdAt] (added in db.ts v2) makes the
+  // messages query a fast range scan instead of a full table scan.
+  const {
+    folders,
+    threads,
+    messages,
+    messagesLoading,
+    autoTitle,
+  } = useThread(activeThreadId);
 
   // ── Auto-scroll ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -387,11 +388,15 @@ export default function SovereignChatPage() {
     await addMessage(threadId, "user", text);
     await touchThread(threadId, text);
 
+    // Auto-title: fires a background Ollama call to generate a 3-word title
+    // for new threads. Internally guarded — safe to call on every send.
+    autoTitle(threadId, text);
+
     // Kick off the stream. useStream's onComplete callback handles the
     // Dexie write for the assistant message when the stream finishes.
     setStreamingMsgId("streaming");
     startStream(text, sarcasm);
-  }, [input, thinking, activeThreadId, sarcasm, startStream]);
+  }, [input, thinking, activeThreadId, sarcasm, startStream, autoTitle]);
 
   // ── New Chat ──────────────────────────────────────────────────────────────
   // Creates a placeholder threadId. The actual DB record is created on first send
@@ -488,7 +493,7 @@ export default function SovereignChatPage() {
         <div className="min-w-0 flex-1 overflow-y-auto px-4 py-6">
           <div className="mx-auto flex max-w-3xl flex-col gap-6">
 
-            {(messages?.length ?? 0) === 0 && !thinking && (
+            {!messagesLoading && (messages?.length ?? 0) === 0 && !thinking && (
               <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full border border-violet-500/20 bg-violet-500/10">
                   <Zap size={16} className="text-violet-400" />

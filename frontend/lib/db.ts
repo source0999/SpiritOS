@@ -53,6 +53,21 @@ class SpiritDB extends Dexie {
       messages: "id, threadId, createdAt",
       settings: "key",
     });
+
+    // v2 — adds:
+    //   • [threadId+createdAt] compound index on messages: replaces the full
+    //     table scan in useLiveQuery/sortBy("createdAt") with a ranged index
+    //     scan. Critical once threads accumulate thousands of messages.
+    //   • order index on threads: required for Step 5 dnd-kit persistence
+    //     (drag-end writes a new `order` value and the sidebar re-sorts by it).
+    // Migration: Dexie handles index addition automatically. No data is
+    // transformed — existing rows are re-indexed in place on first open.
+    this.version(2).stores({
+      folders:  "id, order, createdAt",
+      threads:  "id, folderId, order, updatedAt, createdAt",
+      messages: "id, threadId, [threadId+createdAt], createdAt",
+      settings: "key",
+    });
   }
 }
 
@@ -202,4 +217,13 @@ export async function getSetting<T>(key: string, fallback: T): Promise<T> {
 
 export async function setSetting(key: string, value: unknown): Promise<void> {
   await db.settings.put({ key, value: JSON.stringify(value) });
+}
+
+// ── Auto-title helper ─────────────────────────────────────────────────────────
+// Called by useThread's autoTitle() once the background Ollama title call
+// resolves. Updates the thread title and re-sorts the sidebar live query.
+export async function updateThreadTitle(threadId: string, title: string): Promise<void> {
+  const trimmed = title.trim().slice(0, 60);
+  if (!trimmed) return;
+  await db.threads.update(threadId, { title: trimmed });
 }
