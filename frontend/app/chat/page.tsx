@@ -39,6 +39,7 @@ import {
   logMissionOverride,
 } from "@/lib/db";
 import type { Folder, Thread, Message, SarcasmLevel } from "@/lib/db.types";
+import { buildSpiritHistoryFromMessages } from "@/lib/chatHistory";
 
 // ─── Utility ──────────────────────────────────────────────────────────────────
 
@@ -658,6 +659,29 @@ export default function SovereignChatPage() {
     // ── Normal send flow ───────────────────────────────────────────────────
     let threadId = activeThreadId;
 
+    // Prior turns for Ollama — snapshot before persisting this user message so
+    // the current prompt is not duplicated inside `history`.
+    const historyPayload = buildSpiritHistoryFromMessages(messages);
+    // #region agent log
+    fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
+      body: JSON.stringify({
+        sessionId: "7d6688",
+        runId: "post-fix",
+        hypothesisId: "H2",
+        location: "page.tsx:send",
+        message: "Built history before addMessage",
+        data: {
+          historyLen: historyPayload.length,
+          threadIdPrefix: threadId.slice(0, 8),
+          msgCount: messages?.length ?? 0,
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
+
     // Create the DB thread record on first send (never persist empty threads).
     const existingThread = await db.threads.get(threadId);
     if (!existingThread) {
@@ -689,8 +713,9 @@ export default function SovereignChatPage() {
       sarcasm,
       userContextRef.current || undefined,
       customDirectiveRef.current ?? undefined,
+      historyPayload.length ? historyPayload : undefined,
     );
-  }, [input, thinking, activeThreadId, sarcasm, startStream, captureMessageEvents, buildUserContext]);
+  }, [input, thinking, activeThreadId, sarcasm, messages, startStream, captureMessageEvents, buildUserContext]);
 
   // ── New Chat ──────────────────────────────────────────────────────────────
   // Creates a placeholder threadId. The actual DB record is created on first send

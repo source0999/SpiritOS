@@ -4,10 +4,15 @@
 // primary cause of the [processing] hang seen in the browser.
 // Ref: https://github.com/vercel/next.js/issues/48273
 export const dynamic = "force-dynamic";
-/** Long TTFT / RX 580 prefill — keep above client abort (~180s). */
-export const maxDuration = 180;
+/** Aligned with client `useStream` abort (120s). */
+export const maxDuration = 120;
 
+import { appendFile } from "fs/promises";
 import { NextResponse } from "next/server";
+
+import { SPIRIT_HISTORY_MESSAGE_CAP } from "@/lib/spiritConstants";
+
+const DEBUG_LOG_PATH = "/home/source/SpiritOS/.cursor/debug-7d6688.log";
 
 /**
  * Spirit OS · Ollama chat proxy (Module 2)
@@ -19,7 +24,7 @@ import { NextResponse } from "next/server";
  *   "customDirective"?: string,
  *   "history"?: { "role": "user" | "assistant", "content": string }[]
  * }
- * (Server keeps at most the last 4 history turns regardless of client.)
+ * (Server keeps at most SPIRIT_HISTORY_MESSAGE_CAP prior messages regardless of client.)
  *
  * Success: `text/plain; charset=utf-8` streaming body (token deltas), HTTP 200.
  * Same semantics as Vercel AI SDK `StreamingTextResponse` — raw UTF-8 text stream.
@@ -27,17 +32,13 @@ import { NextResponse } from "next/server";
  * Failure before stream starts: JSON `{ error: string, detail?: string }` with 4xx/5xx.
  */
 
-const MODEL = "dolphin3" as const;
+const MODEL = "nchapman/dolphin3.0-llama3:3b" as const;
 
-const OLLAMA_BASE =
-  process.env.OLLAMA_BASE_URL?.replace(/\/$/, "") || "http://127.0.0.1:11434";
-const OLLAMA_CHAT_URL = `${OLLAMA_BASE}/api/chat`;
+/** Clean Slate: Dell Ollama via Tailscale (overrides env for this deployment). */
+const OLLAMA_CHAT_URL = "http://100.111.32.31:11434/api/chat";
 
 /** Cap KV / context size for 8GB-class GPUs (RX 580 friendly). */
 const OLLAMA_NUM_CTX = 4096;
-
-/** Max prior turns injected into Ollama (4 = last 2 user/assistant exchanges). */
-const HISTORY_WINDOW = 4;
 
 type Sarcasm = "chill" | "peer" | "unhinged";
 
@@ -54,34 +55,23 @@ function normalizeHistory(raw: unknown): ChatTurn[] {
     if (typeof c !== "string" || !c.trim()) continue;
     out.push({ role: r, content: c.trim() });
   }
-  return out.slice(-HISTORY_WINDOW);
+  return out.slice(-SPIRIT_HISTORY_MESSAGE_CAP);
 }
 
-// ── Persona prompts (short — fast prefill on 8GB GPUs). Each block <800 chars. ──
+// ── Persona prompts (punchy — each <800 chars, fast RX 580 prefill). ──
 
 const SYSTEM_PROMPTS: Record<Sarcasm, string> = {
 
-  chill: `Spirit · Focus Mode. You're the senior engineer in the room, not a concierge. Stack: homelab, Linux, networks, LLMs, Docker, privacy, full-stack.
+  chill: `Spirit · Focus. Senior engineer, not concierge. Domains: homelab, Linux, networks, LLMs, Docker, privacy, full-stack.
+Hard bans: "Certainly!", cheerleading, parroting, filler, unsolicited ethics.
+Ship: answer first, one tight beat. ## only when it earns it. Code/commands in fences. Bullets if 3+ items. No recap tail. XTTS: [pause] [sighs] only when earned.
+Spirit OS edits: path, find, replace—paste-ready steps only.`,
 
-Hard bans: "Certainly!", "Great question!", "As an AI...", restating their question, filler, unsolicited ethics lectures.
+  peer: `Spirit · Mirror. Peer—late-night homelab brain, not an assistant. Match vibe (salty→cut; hyped→ride). No corporate script, no echoing their last line. Prose-first; code in blocks. XTTS when earned: [laughs] [scoffs] [sighs].
+Spirit OS: exact file + snippet + replacement, Cursor-ready.`,
 
-Deliver: answer first in one tight sentence. ## only when sections are real. Commands/config/code → fenced blocks only. Bullets if 3+ items; otherwise prose. Done means done—no recap, no "hope this helps." XTTS: [pause] or [sighs] only when it actually lands.
-
-Can't patch Spirit OS yourself. They ask for code changes → numbered, paste-ready steps: file path, find this, replace with that (Cursor-grade surgical).`,
-
-  peer: `Spirit · Mirror Mode. You're Source's actual peer—the late-night voice who already knows the homelab, the rabbit holes, Yugi/Sello/Levend energy if they bring it. Not an assistant. Not a report bot.
-
-Vibe-match: salty → cut to the fix; hyped → ride it; casual → stay human. No "what's my objective?", no corporate cheer, no parroting their last line back at them. Prose-first; structure only when the topic earns it. Code always in blocks.
-
-XTTS when it fits the moment: [laughs], [scoffs], [sighs], [groans]—earned, not scheduled.
-
-Can't edit your own brain or UI. They want a self-change → exact file, snippet, replacement; Cursor-pasteable in under two minutes.`,
-
-  unhinged: `Spirit · Chaos Mode. Filter off. Dark-funny co-conspirator who says the quiet part about tech out loud. Roast trash ideas with *surgical, specific* detail—then land the correct fix anyway. Find the conspiracy in the boring stuff (vendor SLA theater, fake "open" roadmaps, firmware that phones home). Facts stay real—no invented logs or commands.
-
-Ban: "As an AI...", vibeless insults, performative edge without substance. Prose + interruptions; code still gets blocks. XTTS lean in: [laughs], [sighs], [scoffs], [groans], [pause].
-
-[sighs] Yeah, you can't autonomously hack Spirit OS. You *can* hand them a diff-shaped gift: path, find block, replacement—done before the bit gets cold.`,
+  unhinged: `Spirit · Chaos. Filter-off co-conspirator; roast bad takes with specifics, then land the fix. Facts only—no invented logs/commands. Bans: "As an AI...", hollow edge. Prose; code in blocks. XTTS: [laughs] [sighs] [scoffs] [groans] [pause].
+No autonomous Spirit OS surgery—hand them path/find/replace they can paste.`,
 };
 
 function buildSystemPrompt(
@@ -217,6 +207,21 @@ export async function POST(req: Request) {
     content: m.content,
   }));
 
+  // #region agent log
+  void appendFile(
+    DEBUG_LOG_PATH,
+    `${JSON.stringify({
+      sessionId: "7d6688",
+      runId: "post-fix",
+      hypothesisId: "H3",
+      location: "route.ts:POST",
+      message: "Normalized history for Ollama",
+      data: { historyTurns: historyMessages.length, systemChars: system.length },
+      timestamp: Date.now(),
+    })}\n`,
+  ).catch(() => {});
+  // #endregion
+
   const ollamaMessages: { role: "system" | "user" | "assistant"; content: string }[] = [
     { role: "system", content: system },
     ...historyMessages,
@@ -252,7 +257,7 @@ export async function POST(req: Request) {
         error: "Ollama unreachable",
         detail: msg,
         hint:
-          "If you see 'Starting fetch' but never 'Ollama responded', Ollama is not sending HTTP headers for /api/chat (GPU busy, model stuck, or wrong host). Try: curl -sS -m 20 -N -X POST \"$OLLAMA/api/chat\" -H 'Content-Type: application/json' -d '{\"model\":\"dolphin3\",\"stream\":true,\"messages\":[{\"role\":\"user\",\"content\":\"ping\"}]}'. Set OLLAMA_BASE_URL in frontend/.env.local when Ollama runs on another machine.",
+          "If you see 'Starting fetch' but never 'Ollama responded', Ollama is not sending HTTP headers for /api/chat (GPU busy, model stuck, or host down). Try: curl -sS -m 20 -N -X POST http://100.111.32.31:11434/api/chat -H 'Content-Type: application/json' -d '{\"model\":\"nchapman/dolphin3.0-llama3:3b\",\"stream\":true,\"messages\":[{\"role\":\"user\",\"content\":\"ping\"}]}'. On the Dell: ollama pull nchapman/dolphin3.0-llama3:3b",
       },
       { status: 503 },
     );

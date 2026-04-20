@@ -32,6 +32,9 @@
 
 import { useState, useRef, useCallback } from "react";
 
+/** Prior turns for Ollama (maps Dexie `spirit` → assistant). */
+export type SpiritChatTurn = { role: "user" | "assistant"; content: string };
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface StreamOptions {
@@ -61,7 +64,13 @@ export interface StreamState {
   error: Error | null;
   /** Fire-and-forget: starts the stream. Safe to call while a stream is running
    *  (it aborts the previous one first). */
-  startStream: (prompt: string, sarcasm: string, userContext?: string, customDirective?: string) => void;
+  startStream: (
+    prompt: string,
+    sarcasm: string,
+    userContext?: string,
+    customDirective?: string,
+    history?: SpiritChatTurn[],
+  ) => void;
   /** Imperatively abort an in-flight stream (e.g. user clicks Stop). */
   abort: () => void;
 }
@@ -121,8 +130,8 @@ export function useStream(options: StreamOptions = {}): StreamState {
   // optional autoTitleArgs tuple. autoTitle is fired AFTER onComplete — never
   // before — so it doesn't compete with the main inference for the Ollama slot.
   //
-  // Timeout: abort if no terminal stream state within this window (align below
-  // `maxDuration` on `/api/spirit` so slow TTFT can complete server-side).
+  // Timeout: 120s client ceiling — avoids silent hangs on network blips; server
+  // `maxDuration` on `/api/spirit` should stay aligned.
   //
   const startStream = useCallback(
     (
@@ -130,6 +139,7 @@ export function useStream(options: StreamOptions = {}): StreamState {
       sarcasm:           string,
       userContext?:      string,
       customDirective?:  string,
+      history?:          SpiritChatTurn[],
     ) => {
       // Abort any previous in-flight stream.
       abortCtrlRef.current?.abort();
@@ -146,15 +156,15 @@ export function useStream(options: StreamOptions = {}): StreamState {
       const ctrl = new AbortController();
       abortCtrlRef.current = ctrl;
 
-      // ── Client-side safety timeout (align with route `maxDuration` ~180s) ──
+      // ── Client-side safety timeout (120s) ──
       const timeoutId = setTimeout(() => {
         if (!ctrl.signal.aborted) {
           ctrl.abort(new DOMException(
-            "Spirit timed out after 180 seconds waiting for the reply stream. Is Ollama running?",
+            "Spirit timed out after 120 seconds waiting for the reply stream. Is Ollama running?",
             "TimeoutError",
           ));
         }
-      }, 180_000);
+      }, 120_000);
 
       // Kick off the rAF flush loop before the first await so the UI
       // updates as soon as the first token arrives.
@@ -163,15 +173,33 @@ export function useStream(options: StreamOptions = {}): StreamState {
       // ── Async pump (IIFE — no async in useCallback body) ────────────────
       void (async () => {
         try {
+          const payload: Record<string, unknown> = {
+            prompt,
+            sarcasm,
+            ...(userContext?.trim()     ? { userContext }     : {}),
+            ...(customDirective?.trim() ? { customDirective } : {}),
+            ...(history?.length ? { history } : {}),
+          };
+          // #region agent log
+          fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
+            body: JSON.stringify({
+              sessionId: "7d6688",
+              runId: "post-fix",
+              hypothesisId: "H1",
+              location: "useStream.ts:fetch-body",
+              message: "POST /api/spirit payload shape",
+              data: { historyLen: history?.length ?? 0, hasPrompt: !!prompt.trim() },
+              timestamp: Date.now(),
+            }),
+          }).catch(() => {});
+          // #endregion
+
           const res = await fetch("/api/spirit", {
             method:  "POST",
             headers: { "Content-Type": "application/json" },
-            body:    JSON.stringify({
-              prompt,
-              sarcasm,
-              ...(userContext?.trim()     ? { userContext }     : {}),
-              ...(customDirective?.trim() ? { customDirective } : {}),
-            }),
+            body:    JSON.stringify(payload),
             signal: ctrl.signal,
           });
 
