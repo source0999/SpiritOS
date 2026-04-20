@@ -343,6 +343,16 @@ WebKit on Safari iOS is not a browser. It is a trap with rounded corners. Every 
 ### Module 4: XTTS v2 Voice Pipeline
 - [ ] **Step 6** — TTS parser + audio queue + `useTTS` hook + `/api/tts` route
 
+### Phase 2 · Persona Overhaul & Learning Foundation
+- [x] **Step A** — Data Reset: Dexie v3 wipe migration
+  - `version(3).upgrade()` atomically clears `folders`, `threads`, `messages` — no mock data remains
+  - Deletes `"seeded"` settings key so clean defaults are re-written on next open
+  - Adds `personality_events` table (indexed by `type` + `createdAt`) — foundation for Step C Mem0 integration
+  - `seedDatabase()` rewritten: writes default settings only, zero content — Source's real conversations are the only DB entries
+  - `activeThreadId` initial state changed from hardcoded `"t13"` to `new-${Date.now()}` — opens to fresh chat
+- [ ] **Step B** — Persona overhaul: Focus/Mirror/Chaos system prompts + mode-aware UI copy
+- [ ] **Step C** — Learning Tracker: `usePersonality` hook + event capture + context injection
+
 ### Phase 2 · Interaction Models (The Workspace)
 
 #### 💬 Sovereign Chat UI `/chat`

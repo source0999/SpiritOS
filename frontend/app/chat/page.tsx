@@ -271,7 +271,7 @@ function ConversationSidebar({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SovereignChatPage() {
-  const [activeThreadId,    setActiveThreadId]  = useState<string>("t13");
+  const [activeThreadId,    setActiveThreadId]  = useState<string>(() => `new-${Date.now()}`);
   const [input,             setInput]           = useState("");
   const [sarcasm,           setSarcasm]         = useState<SarcasmLevel>("peer");
   const [mobileSidebarOpen, setMobileOpen]      = useState(false);

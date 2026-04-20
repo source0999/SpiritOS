@@ -63,3 +63,14 @@ export interface Setting {
   key:   string;
   value: string;   // JSON.stringify'd so every primitive fits a single type
 }
+
+// ── Personality event ─────────────────────────────────────────────────────────
+// Append-only log for Step C (Mem0-style learning). Indexed in Dexie by `type`
+// and `createdAt` for range queries.
+export interface PersonalityEvent {
+  id:        string;
+  type:      string;
+  createdAt: number;
+  /** Optional structured payload (topics, tone hints, etc.) */
+  payload?:  Record<string, unknown>;
+}

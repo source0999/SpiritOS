@@ -1,24 +1,30 @@
 // ─── Spirit OS · Dexie Database ───────────────────────────────────────────────
 //
 // Browser-local IndexedDB via Dexie v4. All chat state — folders, threads,
-// messages, and user settings — lives here. No server sync; fully sovereign.
+// messages, settings, and personality telemetry — lives here.
+// No server sync; fully sovereign.
 //
 // Schema versioning:
 //   v1 — initial schema: folders, threads, messages, settings
+//   v2 — compound index [threadId+createdAt], order index on threads
+//   v3 — DATA RESET: wipes all mock seed data, adds personality_events table
 //
 // Usage:
 //   import { db } from "@/lib/db";
-//   const threads = await db.threads.where({ folderId: "f1" }).toArray();
+//   const threads = await db.threads.orderBy("updatedAt").reverse().toArray();
 //
 // ─────────────────────────────────────────────────────────────────────────────
 
 import Dexie, { type Table } from "dexie";
-import type { Folder, Thread, Message, Setting } from "./db.types";
+import type {
+  Folder,
+  Thread,
+  Message,
+  Setting,
+  PersonalityEvent,
+} from "./db.types";
 
 // ── UUID helper ───────────────────────────────────────────────────────────────
-// crypto.randomUUID() is available in all modern browsers and in Node 18+.
-// Falls back to a timestamp+random string if called in a context without
-// crypto (e.g. Jest without jsdom).
 export function uid(): string {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
     return crypto.randomUUID();
@@ -37,136 +43,109 @@ export function nowHHMM(): string {
 
 // ── SpiritDB ──────────────────────────────────────────────────────────────────
 class SpiritDB extends Dexie {
-  folders!:  Table<Folder,  string>;
-  threads!:  Table<Thread,  string>;
-  messages!: Table<Message, string>;
-  settings!: Table<Setting, string>;
+  folders!:            Table<Folder,           string>;
+  threads!:            Table<Thread,           string>;
+  messages!:           Table<Message,          string>;
+  settings!:           Table<Setting,          string>;
+  personality_events!: Table<PersonalityEvent, string>;
 
   constructor() {
     super("spirit-os");
 
+    // ── v1: initial schema ──────────────────────────────────────────────────
     this.version(1).stores({
-      // Indexed fields only — Dexie stores the full object regardless.
-      // Primary key is listed first; compound/secondary indexes follow.
       folders:  "id, order, createdAt",
       threads:  "id, folderId, updatedAt, createdAt",
       messages: "id, threadId, createdAt",
       settings: "key",
     });
 
-    // v2 — adds:
-    //   • [threadId+createdAt] compound index on messages: replaces the full
-    //     table scan in useLiveQuery/sortBy("createdAt") with a ranged index
-    //     scan. Critical once threads accumulate thousands of messages.
-    //   • order index on threads: required for Step 5 dnd-kit persistence
-    //     (drag-end writes a new `order` value and the sidebar re-sorts by it).
-    // Migration: Dexie handles index addition automatically. No data is
-    // transformed — existing rows are re-indexed in place on first open.
+    // ── v2: compound index + thread order ───────────────────────────────────
+    // Adds [threadId+createdAt] compound index for O(k) message queries.
+    // Adds order index on threads for dnd-kit persistence.
     this.version(2).stores({
       folders:  "id, order, createdAt",
       threads:  "id, folderId, order, updatedAt, createdAt",
       messages: "id, threadId, [threadId+createdAt], createdAt",
       settings: "key",
     });
+
+    // ── v3: data reset + personality_events table ───────────────────────────
+    //
+    // WHAT THIS MIGRATION DOES:
+    //   1. Clears all mock/seed data (folders, threads, messages) so the DB
+    //      starts completely clean. Real conversations replace the demo data.
+    //   2. Deletes the "seeded" flag so seedDatabase() writes fresh defaults.
+    //   3. Adds the personality_events table — the foundation for Mem0-style
+    //      continuous learning of Source's communication patterns and interests.
+    //
+    // WHY A MIGRATION (not indexedDB.deleteDatabase):
+    //   Deleting the database destroys the version history, causing Dexie to
+    //   re-run ALL migrations from v1 on next open — which would re-seed the
+    //   mock data. The upgrade() function runs exactly once per browser profile,
+    //   inside Dexie's own transaction, with no risk of partial state.
+    //
+    this.version(3)
+      .stores({
+        folders:            "id, order, createdAt",
+        threads:            "id, folderId, order, updatedAt, createdAt",
+        messages:           "id, threadId, [threadId+createdAt], createdAt",
+        settings:           "key",
+        // Personality event log — indexed by type and createdAt for fast
+        // range queries (e.g. "last 50 events", "all topic_mentioned events").
+        personality_events: "id, type, createdAt",
+      })
+      .upgrade(async (tx) => {
+        // Wipe all mock content atomically. If the tab closes mid-upgrade,
+        // Dexie rolls back and retries on next open — no partial wipe.
+        await tx.table("folders").clear();
+        await tx.table("threads").clear();
+        await tx.table("messages").clear();
+
+        // Lift the seed guard so seedDatabase() can write clean defaults.
+        await tx.table("settings").delete("seeded");
+
+        // personality_events is a new table — no data to migrate.
+      });
   }
 }
 
 // ── Singleton export ──────────────────────────────────────────────────────────
-// One instance shared across the entire app. Dexie opens the connection lazily
-// on first use; subsequent imports receive the same object.
 export const db = new SpiritDB();
 
-// ── Seed data ─────────────────────────────────────────────────────────────────
-// Mirrors the mock arrays that were previously hardcoded in chat/page.tsx.
-// The data is written exactly once — guarded by the "seeded" settings flag.
-// Call `seedDatabase()` from a client component useEffect on first mount.
-
-const SEED_FOLDERS: Omit<Folder, "createdAt">[] = [
-  { id: "f1", name: "Homelab Configs",     accent: "bg-emerald-500", order: 0 },
-  { id: "f2", name: "Prompt Engineering",  accent: "bg-violet-500",  order: 1 },
-  { id: "f3", name: "Philosophy",          accent: "bg-amber-500",   order: 2 },
-  { id: "f4", name: "System Architecture", accent: "bg-sky-500",     order: 3 },
-];
-
-const SEED_THREADS: Omit<Thread, "createdAt" | "updatedAt">[] = [
-  // ── Homelab Configs ──────────────────────────────────────────────────────
-  { id: "t1",  folderId: "f1", title: "Dell BIOS Above 4G Decoding",   preview: "MMIO window remap confirmed on X570."            },
-  { id: "t2",  folderId: "f1", title: "Ghost Node DNS Hardening",       preview: "DoH config pushed to Pi successfully."           },
-  { id: "t3",  folderId: "f1", title: "Tesla P40 PSU Mod Planning",     preview: "Server PSU → ATX adapter wattage math."          },
-  { id: "t4",  folderId: "f1", title: "Proxmox VM Bridging Issue",      preview: "vmbr0 not forwarding on VLAN tag 20."            },
-  // ── Prompt Engineering ───────────────────────────────────────────────────
-  { id: "t5",  folderId: "f2", title: "Langfuse SQLite Integration",    preview: "Tracing pipeline wired to local SQLite."         },
-  { id: "t6",  folderId: "f2", title: "RAG Pipeline Architecture",      preview: "Three retrieval strategies evaluated."           },
-  { id: "t7",  folderId: "f2", title: "System Prompt Abliteration",     preview: "Abliterated Llama 3 benchmark vs base."          },
-  { id: "t8",  folderId: "f2", title: "Context Window Benchmarks",      preview: "128k vs 32k — retrieval degradation rate."       },
-  // ── Philosophy ───────────────────────────────────────────────────────────
-  { id: "t9",  folderId: "f3", title: "Nietzsche vs Stoicism",          preview: "Amor fati as productive nihilism."               },
-  { id: "t10", folderId: "f3", title: "Post-AGI Identity Crisis",       preview: "What does authorship mean after 2025?"           },
-  // ── System Architecture ──────────────────────────────────────────────────
-  { id: "t11", folderId: "f4", title: "Cinema Engine Config",           preview: "Plex transcoding is a crime against compute."    },
-  { id: "t12", folderId: "f4", title: "Spirit OS Bento Grid",           preview: "The bento grid looks crispy, I suppose."        },
-  // ── Uncategorized ────────────────────────────────────────────────────────
-  { id: "t13", folderId: null, title: "Homelab Threat Assessment",      preview: "Running nmap passive fingerprint now..."         },
-  { id: "t14", folderId: null, title: "Privacy Hardening Session",      preview: "CCPA compliance for homelab services."           },
-  { id: "t15", folderId: null, title: "Local LLM Benchmark Run",        preview: "Llama 3.3 Q4_K_M on DDR5 — results."            },
-];
-
-// Seed messages for the default active thread (t13 — Homelab Threat Assessment)
-// so the chat panel is not empty on first load.
-const SEED_MESSAGES: Omit<Message, "createdAt">[] = [
-  { id: "m1", threadId: "t13", role: "user",   text: "Run a full threat assessment on the homelab network.", ts: "06:14", audioUrl: null },
-  { id: "m2", threadId: "t13", role: "spirit", text: "[sighs] Alright. Scanning the usual suspects on your subnet — you really need to rotate those credentials, by the way. Running nmap passive fingerprint now.", ts: "06:14", audioUrl: null },
-  { id: "m3", threadId: "t13", role: "user",   text: "What's the verdict on the Ghost Node?", ts: "06:15", audioUrl: null },
-  { id: "m4", threadId: "t13", role: "spirit", text: "[scoffs] The Pi 3 is running DNS over port 53 unencrypted. Cute. I'm also seeing an open port 22 with password auth enabled. [groan] This is fine, I guess, if you enjoy chaos.", ts: "06:15", audioUrl: null },
-  { id: "m5", threadId: "t13", role: "user",   text: "Fix it.", ts: "06:16", audioUrl: null },
-  { id: "m6", threadId: "t13", role: "spirit", text: "On it. Generating hardened sshd_config now. You're welcome. [exhales] I'll also push DoH config to the Pi. This will take approximately 40 seconds. Try not to break anything else while you wait.", ts: "06:16", audioUrl: null },
-];
-
+// ── Default settings ──────────────────────────────────────────────────────────
+// Written by seedDatabase() on first run after the v3 wipe.
+// No mock folders, threads, or messages — Source's real conversations are
+// the only content in the DB from this point forward.
 const DEFAULT_SETTINGS: Setting[] = [
   { key: "sarcasm",    value: JSON.stringify("peer")     },
   { key: "ttsEnabled", value: JSON.stringify(false)      },
   { key: "model",      value: JSON.stringify("dolphin3") },
 ];
 
+// ── seedDatabase ──────────────────────────────────────────────────────────────
+// Writes default settings on first run (after v3 wipe clears the "seeded" key).
+// Intentionally writes NO content — no demo folders, threads, or messages.
+// The UI opens to a fresh new chat. That's the correct starting state.
 export async function seedDatabase(): Promise<void> {
-  // Guard: only seed once per browser profile.
   const alreadySeeded = await db.settings.get("seeded");
   if (alreadySeeded) return;
 
-  const now = Date.now();
-
-  // Use a transaction so the seed is atomic — either all tables are written
-  // or none are (prevents a half-seeded state on tab crash mid-seed).
-  await db.transaction("rw", db.folders, db.threads, db.messages, db.settings, async () => {
-    await db.folders.bulkAdd(
-      SEED_FOLDERS.map((f) => ({ ...f, createdAt: now })),
-    );
-
-    // Threads: newer threads (lower index) get a more recent updatedAt so they
-    // sort to the top of the sidebar when sorted by updatedAt descending.
-    await db.threads.bulkAdd(
-      SEED_THREADS.map((t, i) => ({
-        ...t,
-        createdAt: now - i * 60_000,
-        updatedAt: now - i * 60_000,
-      })),
-    );
-
-    await db.messages.bulkAdd(
-      SEED_MESSAGES.map((m) => ({ ...m, createdAt: now })),
-    );
-
-    await db.settings.bulkAdd(DEFAULT_SETTINGS);
-
-    // Mark as seeded — this is the last write in the transaction.
+  await db.transaction("rw", db.settings, async () => {
+    // bulkPut (not bulkAdd) so re-runs after a failed seed don't throw
+    // on duplicate key errors for any settings that got partially written.
+    await db.settings.bulkPut(DEFAULT_SETTINGS);
     await db.settings.put({ key: "seeded", value: JSON.stringify(true) });
   });
 }
 
 // ── Thread helpers ────────────────────────────────────────────────────────────
 
-export async function createThread(folderId: string | null, firstUserText: string): Promise<Thread> {
-  const now    = Date.now();
+export async function createThread(
+  folderId: string | null,
+  firstUserText: string,
+): Promise<Thread> {
+  const now = Date.now();
   const thread: Thread = {
     id:        uid(),
     folderId,
@@ -180,7 +159,10 @@ export async function createThread(folderId: string | null, firstUserText: strin
 }
 
 export async function touchThread(threadId: string, preview: string): Promise<void> {
-  await db.threads.update(threadId, { preview: preview.slice(0, 60), updatedAt: Date.now() });
+  await db.threads.update(threadId, {
+    preview:   preview.slice(0, 60),
+    updatedAt: Date.now(),
+  });
 }
 
 // ── Message helpers ───────────────────────────────────────────────────────────
@@ -219,11 +201,29 @@ export async function setSetting(key: string, value: unknown): Promise<void> {
   await db.settings.put({ key, value: JSON.stringify(value) });
 }
 
-// ── Auto-title helper ─────────────────────────────────────────────────────────
-// Called by useThread's autoTitle() once the background Ollama title call
-// resolves. Updates the thread title and re-sorts the sidebar live query.
+// ── Thread title helper ───────────────────────────────────────────────────────
+// Called by useThread's autoTitle() after the background Ollama title stream
+// resolves. Updates the thread title in the sidebar live query immediately.
 export async function updateThreadTitle(threadId: string, title: string): Promise<void> {
   const trimmed = title.trim().slice(0, 60);
   if (!trimmed) return;
   await db.threads.update(threadId, { title: trimmed });
+}
+
+// ── Personality event helper ──────────────────────────────────────────────────
+// Fire-and-forget write. Called by usePersonality's captureEvent().
+// Returns the written event's id so callers can reference it if needed,
+// but errors are swallowed — telemetry must never block the UI.
+export async function writePersonalityEvent(
+  event: Omit<PersonalityEvent, "id" | "createdAt">,
+): Promise<void> {
+  try {
+    await db.personality_events.add({
+      ...event,
+      id:        uid(),
+      createdAt: Date.now(),
+    });
+  } catch {
+    // Swallow silently — telemetry failure must not surface to the user.
+  }
 }
