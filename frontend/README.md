@@ -360,13 +360,22 @@ WebKit on Safari iOS is not a browser. It is a trap with rounded corners. Every 
   - Status bar: `Sarcasm: peer` → `Mode: Mirror` (uses display label, not internal id)
   - Sidebar footer: `Spirit · Workspace v1` → `Spirit OS · v0.2`
   - `/api/spirit/route.ts` extended to accept optional `userContext` string — ready for Step C injection
-- [x] **Step 1 (Bug Fix)** — Stream hang diagnosed and resolved
+- [x] **Step 1 (Bug Fix)** — Stream hang: `force-dynamic` + autoTitle sequencing + 45s timeout
   - Root cause 1: Missing `export const dynamic = "force-dynamic"` in `/api/spirit/route.ts` — Next.js 16 was buffering the entire stream before forwarding to client
   - Root cause 2: `autoTitle()` fired simultaneously with `startStream()`, saturating the single Ollama inference slot
   - Fix 1: Added `export const dynamic = "force-dynamic"` to `route.ts`
   - Fix 2: `autoTitle` moved from `send()` to `onComplete` callback — now fires sequentially after main stream
   - `useStream`: optional `userContext` in POST body; 45s abort timeout; `finally` cleanup + `onComplete` only when tokens received
-- [ ] **Step C** — Learning Tracker: `usePersonality` hook + event capture
+- [x] **Step 2** — Dynamic meta-prompting + self-editing directive system
+  - `META_PROMPT_RE` regex intercepts "Spirit, change your mission to X" before any API call
+  - Directive persisted to `db.settings["customDirective"]` — survives page refresh and tab close
+  - Synthetic confirmation message injected into thread with zero Ollama latency
+  - "Spirit, clear your directive" clears the setting and confirms instantly
+  - `buildSystemPrompt()` extended with `customDirective?` param — injected as `## Active Directive` section in all three modes, highest priority
+  - `startStream()` extended to accept and forward `customDirective` in POST body
+  - `customDirectiveRef` in `page.tsx` — refreshed from Dexie on every send, zero stale-closure risk
+  - Self-awareness clause added to all three personas: Spirit explains it cannot modify its own codebase autonomously and will provide exact file/line/replacement instructions instead
+- [ ] **Step C** — Learning Tracker: `usePersonality` hook + event capture + context injection
 
 ### Phase 2 · Interaction Models (The Workspace)
 

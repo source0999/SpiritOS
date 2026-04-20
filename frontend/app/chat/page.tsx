@@ -33,6 +33,8 @@ import {
   touchThread,
   getSetting,
   setSetting,
+  getCustomDirective,
+  clearCustomDirective,
 } from "@/lib/db";
 import type { Folder, Thread, Message, SarcasmLevel } from "@/lib/db.types";
 
@@ -41,6 +43,14 @@ import type { Folder, Thread, Message, SarcasmLevel } from "@/lib/db.types";
 function cn(...classes: (string | undefined | false | null)[]) {
   return classes.filter(Boolean).join(" ");
 }
+
+// ── Meta-prompt detection regex ───────────────────────────────────────────────
+// Matches: "Spirit, change your mission to X"
+//          "Spirit, update your directive: X"
+//          "Spirit, set your instructions to X"
+// Case-insensitive. Captures the new directive text after "to" or ":".
+const META_PROMPT_RE =
+  /^spirit[,.]?\s+(change|update|set|rewrite)\s+your\s+(mission|directive|system\s*prompt|instructions?|persona)\s*(?:to|:)\s*([\s\S]+)/i;
 
 // ─── Sarcasm config ───────────────────────────────────────────────────────────
 
@@ -303,6 +313,11 @@ export default function SovereignChatPage() {
   // the main stream finishes — not before — preventing Ollama slot contention.
   const autoTitlePendingRef = useRef<{ threadId: string; text: string } | null>(null);
 
+  // Cache of the active custom directive — read from Dexie once per send()
+  // and passed to the API. Cached in a ref so we don't block send() with
+  // an async Dexie read on the hot path; it's refreshed on each send.
+  const customDirectiveRef = useRef<string | null>(null);
+
   // ── Thread + message data (useThread hook) ────────────────────────────────
   // Placed before useStream so autoTitle is available to onComplete.
   const {
@@ -554,7 +569,6 @@ export default function SovereignChatPage() {
   }, []);
 
   // ── Send ──────────────────────────────────────────────────────────────────
-  // ── Send ──────────────────────────────────────────────────────────────────
   const send = useCallback(async () => {
     const text = input.trim();
     if (!text || thinking) return;
@@ -562,6 +576,64 @@ export default function SovereignChatPage() {
     setInput("");
     if (textareaRef.current) textareaRef.current.style.height = "auto";
 
+    // ── Meta-prompt intercept ──────────────────────────────────────────────
+    // Check if Source is issuing a directive change before touching the DB
+    // or firing any API call. This is handled entirely locally — no Ollama
+    // call needed, no stream started.
+    const metaMatch = META_PROMPT_RE.exec(text);
+    if (metaMatch) {
+      const newDirective = metaMatch[3].trim();
+
+      // Persist to Dexie settings.
+      await setSetting("customDirective", newDirective);
+      customDirectiveRef.current = newDirective;
+
+      // Ensure a thread exists so the confirmation message has somewhere to live.
+      let threadId = activeThreadId;
+      const existingThread = await db.threads.get(threadId);
+      if (!existingThread) {
+        const newThread = await createThread(null, text);
+        threadId = newThread.id;
+        setActiveThreadId(threadId);
+        activeThreadIdRef.current = threadId;
+      }
+
+      // Persist the user's directive message.
+      await addMessage(threadId, "user", text);
+      await touchThread(threadId, text);
+
+      // Inject a synthetic Spirit confirmation — no API call needed.
+      const confirmationText =
+        `Directive updated. From now on: "${newDirective}"\n\n` +
+        `This is saved to your local DB and will persist across sessions. ` +
+        `To clear it, say "Spirit, clear your directive".`;
+      await addMessage(threadId, "spirit", confirmationText);
+      await touchThread(threadId, confirmationText);
+      return;
+    }
+
+    // ── Directive clear intercept ──────────────────────────────────────────
+    if (/^spirit[,.]?\s+clear\s+your\s+(directive|mission|instructions?)/i.test(text)) {
+      await clearCustomDirective();
+      customDirectiveRef.current = null;
+
+      let threadId = activeThreadId;
+      const existingThread = await db.threads.get(threadId);
+      if (!existingThread) {
+        const newThread = await createThread(null, text);
+        threadId = newThread.id;
+        setActiveThreadId(threadId);
+        activeThreadIdRef.current = threadId;
+      }
+
+      await addMessage(threadId, "user", text);
+      await touchThread(threadId, text);
+      await addMessage(threadId, "spirit", "Directive cleared. Back to factory defaults.");
+      await touchThread(threadId, "Directive cleared. Back to factory defaults.");
+      return;
+    }
+
+    // ── Normal send flow ───────────────────────────────────────────────────
     let threadId = activeThreadId;
 
     // Create the DB thread record on first send (never persist empty threads).
@@ -577,15 +649,17 @@ export default function SovereignChatPage() {
     await addMessage(threadId, "user", text);
     await touchThread(threadId, text);
 
+    // Refresh the custom directive from Dexie on every send.
+    // Cheap read — settings table is tiny. Ensures the directive is always
+    // current even if it was changed in another tab or session.
+    customDirectiveRef.current = await getCustomDirective();
+
     // Queue autoTitle to fire AFTER the stream completes (via onComplete).
-    // Storing args in a ref avoids a second concurrent Ollama call that would
-    // compete with the main inference and cause the [processing] hang.
     autoTitlePendingRef.current = { threadId, text };
 
-    // Kick off the stream. useStream's onComplete callback handles both
-    // the Dexie write and the deferred autoTitle call.
+    // Kick off the stream. userContext will be added in Step C.
     setStreamingMsgId("streaming");
-    startStream(text, sarcasm);
+    startStream(text, sarcasm, undefined, customDirectiveRef.current ?? undefined);
   }, [input, thinking, activeThreadId, sarcasm, startStream]);
 
   // ── New Chat ──────────────────────────────────────────────────────────────

@@ -56,7 +56,7 @@ export interface StreamState {
   error: Error | null;
   /** Fire-and-forget: starts the stream. Safe to call while a stream is running
    *  (it aborts the previous one first). */
-  startStream: (prompt: string, sarcasm: string, userContext?: string) => void;
+  startStream: (prompt: string, sarcasm: string, userContext?: string, customDirective?: string) => void;
   /** Imperatively abort an in-flight stream (e.g. user clicks Stop). */
   abort: () => void;
 }
@@ -122,9 +122,10 @@ export function useStream(options: StreamOptions = {}): StreamState {
   //
   const startStream = useCallback(
     (
-      prompt:       string,
-      sarcasm:      string,
-      userContext?: string,
+      prompt:            string,
+      sarcasm:           string,
+      userContext?:      string,
+      customDirective?:  string,
     ) => {
       // Abort any previous in-flight stream.
       abortCtrlRef.current?.abort();
@@ -166,9 +167,8 @@ export function useStream(options: StreamOptions = {}): StreamState {
             body:    JSON.stringify({
               prompt,
               sarcasm,
-              // Only include userContext if it has content — keeps the
-              // payload small when the learning tracker is empty.
-              ...(userContext?.trim() ? { userContext } : {}),
+              ...(userContext?.trim()     ? { userContext }     : {}),
+              ...(customDirective?.trim() ? { customDirective } : {}),
             }),
             signal: ctrl.signal,
           });

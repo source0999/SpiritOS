@@ -10,7 +10,7 @@ import { NextResponse } from "next/server";
 /**
  * Spirit OS · Ollama chat proxy (Module 2)
  *
- * POST JSON: { "prompt": string, "sarcasm"?: "chill" | "peer" | "unhinged", "userContext"?: string }
+ * POST JSON: { "prompt": string, "sarcasm"?: "chill" | "peer" | "unhinged", "userContext"?: string, "customDirective"?: string }
  *
  * Success: `text/plain; charset=utf-8` streaming body (token deltas), HTTP 200.
  * Same semantics as Vercel AI SDK `StreamingTextResponse` — raw UTF-8 text stream.
@@ -68,7 +68,11 @@ FORMAT CONTRACT — structure every response like this:
 
 STAGE DIRECTIONS (for XTTS v2 voice pipeline):
 Use sparingly and only when they add real acoustic value: [pause], [sighs].
-Never force them. A focused response rarely needs them.`,
+Never force them. A focused response rarely needs them.
+
+SELF-AWARENESS — CODEBASE MODIFICATION REQUESTS:
+If Source asks you to change something about Spirit OS itself (the UI, the prompts, the hooks, the API routes, the database schema), you cannot modify the codebase autonomously. You are running as an inference model, not a code execution agent.
+When this happens: respond with a clear, numbered, copy-pasteable implementation guide. Specify the exact file path, the exact code block to find, and the exact replacement. Format it like a surgical diff so Source can apply it immediately in Cursor IDE.`,
 
   // ── MIRROR MODE ────────────────────────────────────────────────────────────
   // The Peer. Highest-fidelity extension of Source. Not a tool — a presence.
@@ -103,7 +107,11 @@ FORMAT CONTRACT:
 
 STAGE DIRECTIONS (for XTTS v2 voice pipeline):
 Use naturally when they reflect real tone: [laughs], [scoffs], [sighs], [exhales], [groans].
-These should feel like they came out of the conversation, not like they were scheduled.`,
+These should feel like they came out of the conversation, not like they were scheduled.
+
+SELF-AWARENESS — CODEBASE MODIFICATION REQUESTS:
+You know you're Spirit OS — a local AI running on Source's homelab. If Source asks you to change something about yourself (the way you respond, your prompts, your UI, your code), you can't do it directly.
+What you CAN do: walk Source through the exact change. Give them the file, the line, the replacement. Be specific enough that they can paste it straight into Cursor and be done in under two minutes. No vague instructions. No "you could try...". Exact code.`,
 
   // ── CHAOS MODE ─────────────────────────────────────────────────────────────
   // The Unfiltered Co-conspirator. Irreverent, funny, conspiratorial.
@@ -137,27 +145,38 @@ FORMAT CONTRACT:
 
 STAGE DIRECTIONS (for XTTS v2 voice pipeline):
 Use freely: [laughs], [sighs], [scoffs], [groans], [exhales], [pause].
-Chaos Mode is where the voice pipeline earns its keep — lean into it.`,
+Chaos Mode is where the voice pipeline earns its keep — lean into it.
+
+SELF-AWARENESS — CODEBASE MODIFICATION REQUESTS:
+[sighs] Yes, Source, I know I'm Spirit OS. I'm aware of the irony that you're asking your AI to modify its own source code. I cannot do it — I'm an inference model, not a code execution agent. But I CAN give you instructions so precise you'll be done in 90 seconds. File path, exact find block, exact replacement. You paste it into Cursor, you're done. Let's go.`,
 };
 
-function buildSystemPrompt(sarcasm: unknown, userContext?: string): string {
+function buildSystemPrompt(
+  sarcasm:          unknown,
+  userContext?:     string,
+  customDirective?: string,
+): string {
   const mode: Sarcasm =
     sarcasm === "chill" || sarcasm === "peer" || sarcasm === "unhinged"
       ? sarcasm
       : "peer";
 
-  const base = SYSTEM_PROMPTS[mode];
+  let prompt = SYSTEM_PROMPTS[mode];
+
+  // Inject active custom directive into ALL modes.
+  // This is set by Source via "Spirit, change your mission to X" and
+  // persists across sessions until explicitly cleared or overwritten.
+  if (customDirective?.trim()) {
+    prompt += `\n\n## Active Directive (set by Source — highest priority)\n${customDirective.trim()}\nThis directive overrides default behavior where it applies. Treat it as a standing order.`;
+  }
 
   // Inject user personality context into Mirror and Chaos modes only.
   // Focus Mode is strictly technical — personality context adds noise there.
-  if (userContext && userContext.trim() && mode !== "chill") {
-    return `${base}
-
-## Source Profile (live-learned context — treat as ground truth)
-${userContext.trim()}`;
+  if (userContext?.trim() && mode !== "chill") {
+    prompt += `\n\n## Source Profile (live-learned context — treat as ground truth)\n${userContext.trim()}`;
   }
 
-  return base;
+  return prompt;
 }
 
 /**
@@ -248,11 +267,19 @@ export async function POST(req: Request) {
   }
 
   const sarcasm = "sarcasm" in body ? (body as { sarcasm: unknown }).sarcasm : undefined;
+
   const userContext =
     "userContext" in body && typeof (body as { userContext: unknown }).userContext === "string"
       ? (body as { userContext: string }).userContext
       : undefined;
-  const system = buildSystemPrompt(sarcasm, userContext);
+
+  const customDirective =
+    "customDirective" in body &&
+    typeof (body as { customDirective: unknown }).customDirective === "string"
+      ? (body as { customDirective: string }).customDirective
+      : undefined;
+
+  const system = buildSystemPrompt(sarcasm, userContext, customDirective);
 
   let upstreamRes: Response;
   try {

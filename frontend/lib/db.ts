@@ -227,3 +227,23 @@ export async function writePersonalityEvent(
     // Swallow silently — telemetry failure must not surface to the user.
   }
 }
+
+// ── Custom directive helper ───────────────────────────────────────────────────
+// Reads the active custom directive set by Source via "Spirit, change your
+// mission to X". Returns null if no directive has been set.
+// Called by page.tsx send() on every message to inject into the API payload.
+export async function getCustomDirective(): Promise<string | null> {
+  const row = await db.settings.get("customDirective");
+  if (!row) return null;
+  try {
+    const val = JSON.parse(row.value) as unknown;
+    return typeof val === "string" && val.trim() ? val.trim() : null;
+  } catch {
+    return null;
+  }
+}
+
+// Clears the custom directive.
+export async function clearCustomDirective(): Promise<void> {
+  await db.settings.delete("customDirective");
+}
