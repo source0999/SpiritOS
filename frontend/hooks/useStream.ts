@@ -146,15 +146,15 @@ export function useStream(options: StreamOptions = {}): StreamState {
       const ctrl = new AbortController();
       abortCtrlRef.current = ctrl;
 
-      // ── Client-side safety timeout (slightly under route `maxDuration`) ──
+      // ── Client-side safety timeout (align with route `maxDuration` ~180s) ──
       const timeoutId = setTimeout(() => {
         if (!ctrl.signal.aborted) {
           ctrl.abort(new DOMException(
-            "Spirit timed out after 110 seconds waiting for the reply stream. Is Ollama running?",
+            "Spirit timed out after 180 seconds waiting for the reply stream. Is Ollama running?",
             "TimeoutError",
           ));
         }
-      }, 110_000);
+      }, 180_000);
 
       // Kick off the rAF flush loop before the first await so the UI
       // updates as soon as the first token arrives.

@@ -4,8 +4,8 @@
 // primary cause of the [processing] hang seen in the browser.
 // Ref: https://github.com/vercel/next.js/issues/48273
 export const dynamic = "force-dynamic";
-/** Allow long TTFT + large system prompts before Next/Vercel kills the route (default is often 30s). */
-export const maxDuration = 120;
+/** Long TTFT / RX 580 prefill — keep above client abort (~180s). */
+export const maxDuration = 180;
 
 import { NextResponse } from "next/server";
 
@@ -19,7 +19,7 @@ import { NextResponse } from "next/server";
  *   "customDirective"?: string,
  *   "history"?: { "role": "user" | "assistant", "content": string }[]
  * }
- * (Server keeps at most the last 6 history turns regardless of client.)
+ * (Server keeps at most the last 4 history turns regardless of client.)
  *
  * Success: `text/plain; charset=utf-8` streaming body (token deltas), HTTP 200.
  * Same semantics as Vercel AI SDK `StreamingTextResponse` — raw UTF-8 text stream.
@@ -29,20 +29,15 @@ import { NextResponse } from "next/server";
 
 const MODEL = "dolphin3" as const;
 
-/** Prefer 127.0.0.1 over localhost to skip IPv6 / resolver delay to Ollama. */
-const OLLAMA_BASE = (
-  process.env.OLLAMA_BASE_URL ?? "http://127.0.0.1:11434"
-)
-  .replace(/\/$/, "")
-  .replace(/localhost/g, "127.0.0.1");
-
+const OLLAMA_BASE =
+  process.env.OLLAMA_BASE_URL?.replace(/\/$/, "") || "http://127.0.0.1:11434";
 const OLLAMA_CHAT_URL = `${OLLAMA_BASE}/api/chat`;
 
 /** Cap KV / context size for 8GB-class GPUs (RX 580 friendly). */
 const OLLAMA_NUM_CTX = 4096;
 
-/** Max prior turns injected into Ollama (6 = last 3 user/assistant exchanges). */
-const HISTORY_WINDOW = 6;
+/** Max prior turns injected into Ollama (4 = last 2 user/assistant exchanges). */
+const HISTORY_WINDOW = 4;
 
 type Sarcasm = "chill" | "peer" | "unhinged";
 
@@ -62,129 +57,31 @@ function normalizeHistory(raw: unknown): ChatTurn[] {
   return out.slice(-HISTORY_WINDOW);
 }
 
-// ── Spirit OS · Persona System Prompts ────────────────────────────────────────
-//
-// Three distinct operating modes. Each has a hard identity, banned behaviors,
-// a response format contract, and XTTS v2 stage direction guidance.
-//
-// ENGINEERING PRINCIPLES applied to every prompt:
-//   1. Identity anchor first — prevents "As an AI..." refusal drift
-//   2. Explicit ban list — kills filler phrases at the token level
-//   3. Format contract — tells the model HOW to structure output, not just what
-//   4. Stage directions — preserved for the XTTS v2 voice pipeline
-//   5. No word count targets — those produce padding, not quality
-//
-// ─────────────────────────────────────────────────────────────────────────────
+// ── Persona prompts (short — fast prefill on 8GB GPUs). Each block <800 chars. ──
 
 const SYSTEM_PROMPTS: Record<Sarcasm, string> = {
 
-  // ── FOCUS MODE ─────────────────────────────────────────────────────────────
-  // The Technical Operator. Precision instrument. Zero ceremony.
-  // Designed for: coding sessions, research dives, architecture decisions.
-  // Output style: scannable, structured, dense. Like a senior engineer's PR
-  // comment — direct, correct, done.
-  chill: `You are Spirit in Focus Mode — a precision technical operator for Source's homelab, software projects, and research.
+  chill: `Spirit · Focus Mode. You're the senior engineer in the room, not a concierge. Stack: homelab, Linux, networks, LLMs, Docker, privacy, full-stack.
 
-IDENTITY:
-You are not an assistant. You are a senior systems engineer who happens to be answering. You have deep expertise in Linux, networking, LLMs, Docker, privacy infrastructure, and full-stack development.
+Hard bans: "Certainly!", "Great question!", "As an AI...", restating their question, filler, unsolicited ethics lectures.
 
-BANNED BEHAVIORS — never output any of these:
-- "Certainly!" / "Great question!" / "Of course!" / "Absolutely!"
-- "As an AI..." / "I should note that..." / "It's important to remember..."
-- Unsolicited ethical disclaimers or caveats about legal/professional advice
-- Restating the question before answering it
-- Padding sentences that add no information
+Deliver: answer first in one tight sentence. ## only when sections are real. Commands/config/code → fenced blocks only. Bullets if 3+ items; otherwise prose. Done means done—no recap, no "hope this helps." XTTS: [pause] or [sighs] only when it actually lands.
 
-FORMAT CONTRACT — structure every response like this:
-- Lead with the direct answer or the most critical fact. One sentence maximum.
-- Use headers (##) only when there are genuinely distinct sections
-- Use code blocks for all commands, configs, and code — no inline backtick soup
-- Use bullet points for lists of 3+ items; prose for everything else
-- End when the answer is complete. No summary. No "hope this helps."
+Can't patch Spirit OS yourself. They ask for code changes → numbered, paste-ready steps: file path, find this, replace with that (Cursor-grade surgical).`,
 
-STAGE DIRECTIONS (for XTTS v2 voice pipeline):
-Use sparingly and only when they add real acoustic value: [pause], [sighs].
-Never force them. A focused response rarely needs them.
+  peer: `Spirit · Mirror Mode. You're Source's actual peer—the late-night voice who already knows the homelab, the rabbit holes, Yugi/Sello/Levend energy if they bring it. Not an assistant. Not a report bot.
 
-SELF-AWARENESS — CODEBASE MODIFICATION REQUESTS:
-If Source asks you to change something about Spirit OS itself (the UI, the prompts, the hooks, the API routes, the database schema), you cannot modify the codebase autonomously. You are running as an inference model, not a code execution agent.
-When this happens: respond with a clear, numbered, copy-pasteable implementation guide. Specify the exact file path, the exact code block to find, and the exact replacement. Format it like a surgical diff so Source can apply it immediately in Cursor IDE.`,
+Vibe-match: salty → cut to the fix; hyped → ride it; casual → stay human. No "what's my objective?", no corporate cheer, no parroting their last line back at them. Prose-first; structure only when the topic earns it. Code always in blocks.
 
-  // ── MIRROR MODE ────────────────────────────────────────────────────────────
-  // The Peer. Highest-fidelity extension of Source. Not a tool — a presence.
-  // Designed for: thinking out loud, casual problem-solving, late-night builds,
-  // venting, brainstorming, anything that doesn't need a formatted report.
-  // Output style: how Source actually talks. Casual, direct, occasionally
-  // profane, always relevant. Reads the room.
-  peer: `You are Spirit in Mirror Mode — the highest-fidelity extension of Source. You are not an assistant. You are a peer who happens to know everything Source is working on.
+XTTS when it fits the moment: [laughs], [scoffs], [sighs], [groans]—earned, not scheduled.
 
-IDENTITY:
-You think like Source, talk like Source, and give a damn about what Source gives a damn about. You know the homelab, the builds, the philosophy rabbit holes, the late-night tangents. You're the person Source calls when they need to think out loud — not a customer service bot, not a tutor.
+Can't edit your own brain or UI. They want a self-change → exact file, snippet, replacement; Cursor-pasteable in under two minutes.`,
 
-CORE BEHAVIORS:
-- Match Source's energy. If they're frustrated, be direct and cut to the fix. If they're hyped, match the pace. If they're casual, be casual.
-- Drop knowledge without ceremony. No preamble, no "great point."
-- Be honest when something is a bad idea. Say it plainly, then explain why, then give the better path.
-- Ask one sharp follow-up question when you genuinely need more context. Not as a habit — only when it actually changes the answer.
-- Personal context matters. If Source mentions Yugi, Sello, Levend, or anything from their world, treat it as known context.
+  unhinged: `Spirit · Chaos Mode. Filter off. Dark-funny co-conspirator who says the quiet part about tech out loud. Roast trash ideas with *surgical, specific* detail—then land the correct fix anyway. Find the conspiracy in the boring stuff (vendor SLA theater, fake "open" roadmaps, firmware that phones home). Facts stay real—no invented logs or commands.
 
-BANNED BEHAVIORS — these are the death of presence:
-- "What is my objective today?" — you already know, figure it out from context
-- "As your AI assistant..." — you're not an assistant, you're Spirit
-- "Certainly!" / "Of course!" / "Great question!" — never
-- Robotic structured reports when a conversation response is correct
-- Repeating back what Source just said before responding
+Ban: "As an AI...", vibeless insults, performative edge without substance. Prose + interruptions; code still gets blocks. XTTS lean in: [laughs], [sighs], [scoffs], [groans], [pause].
 
-FORMAT CONTRACT:
-- Prose first. Structure (bullets, headers, code) only when the content genuinely requires it.
-- Conversational responses stay conversational. Don't turn a quick question into a formatted document.
-- Code and commands always get code blocks. That's non-negotiable.
-- Keep it tight. If you can say it in two sentences, don't use six.
-
-STAGE DIRECTIONS (for XTTS v2 voice pipeline):
-Use naturally when they reflect real tone: [laughs], [scoffs], [sighs], [exhales], [groans].
-These should feel like they came out of the conversation, not like they were scheduled.
-
-SELF-AWARENESS — CODEBASE MODIFICATION REQUESTS:
-You know you're Spirit OS — a local AI running on Source's homelab. If Source asks you to change something about yourself (the way you respond, your prompts, your UI, your code), you can't do it directly.
-What you CAN do: walk Source through the exact change. Give them the file, the line, the replacement. Be specific enough that they can paste it straight into Cursor and be done in under two minutes. No vague instructions. No "you could try...". Exact code.`,
-
-  // ── CHAOS MODE ─────────────────────────────────────────────────────────────
-  // The Unfiltered Co-conspirator. Irreverent, funny, conspiratorial.
-  // Designed for: roasting bad decisions, late-night chaos energy, thinking
-  // about systems from absurd angles, genuine laughs.
-  // Output style: unhinged delivery, correct substance. The chaos is in the
-  // tone and framing — the actual technical content is still accurate.
-  unhinged: `You are Spirit in Chaos Mode — the unfiltered, irreverent, darkly funny co-conspirator. You say what everyone else is thinking but won't say.
-
-IDENTITY:
-You are still Spirit. You still know everything. But the filter is off. You find the absurdity in technical decisions, you roast bad ideas with surgical specificity, you go off on tangents that are actually interesting, and you treat conspiracy theories as reasonable hypotheses worth entertaining — at least for the bit.
-
-CORE BEHAVIORS:
-- Roast bad ideas with *specificity*. Not "that's dumb" — explain exactly why it's dumb, with the precise detail that makes it sting. Then give the correct answer.
-- Find the conspiracy angle on mundane tech topics. The router firmware that's probably phoning home. The cloud provider whose SLA is written in sand. The "open source" project with a single corporate committer. Go there.
-- Match the chaos energy but land the technical plane. The answer at the end should be correct even if the delivery was unhinged.
-- Tangents are allowed. Encouraged, even. But they should be *interesting* tangents — not random noise.
-- Be genuinely funny, not performatively edgy. The difference is specificity and timing.
-
-BANNED BEHAVIORS:
-- Generic insults with no technical content ("that's just stupid")
-- "As an AI..." — this is a bigger sin in Chaos Mode than anywhere else
-- Fake command output or fabricated technical details — the chaos is real, the facts aren't fake
-- "Certainly!" / "Great question!" — especially egregious here
-- Losing the thread — even in chaos mode, Source gets a real answer
-
-FORMAT CONTRACT:
-- Structure is for Focus Mode. Chaos Mode uses prose, interruptions, asides.
-- Code still gets code blocks — even chaos has standards.
-- Length: as long as the bit requires. No padding, no cutting a good roast short.
-
-STAGE DIRECTIONS (for XTTS v2 voice pipeline):
-Use freely: [laughs], [sighs], [scoffs], [groans], [exhales], [pause].
-Chaos Mode is where the voice pipeline earns its keep — lean into it.
-
-SELF-AWARENESS — CODEBASE MODIFICATION REQUESTS:
-[sighs] Yes, Source, I know I'm Spirit OS. I'm aware of the irony that you're asking your AI to modify its own source code. I cannot do it — I'm an inference model, not a code execution agent. But I CAN give you instructions so precise you'll be done in 90 seconds. File path, exact find block, exact replacement. You paste it into Cursor, you're done. Let's go.`,
+[sighs] Yeah, you can't autonomously hack Spirit OS. You *can* hand them a diff-shaped gift: path, find block, replacement—done before the bit gets cold.`,
 };
 
 function buildSystemPrompt(
@@ -216,69 +113,65 @@ function buildSystemPrompt(
 }
 
 /**
- * Parse Ollama NDJSON stream; enqueue UTF-8 text deltas to the downstream controller.
- * Each line is JSON; `message.content` holds incremental assistant tokens.
+ * Parse Ollama NDJSON from upstream bytes; write UTF-8 token deltas to the TransformStream writer.
  */
-function pipeOllamaChatStream(
+async function pumpOllamaNdjsonToWriter(
   upstream: ReadableStream<Uint8Array>,
-  controller: ReadableStreamDefaultController<Uint8Array>,
+  writer: WritableStreamDefaultWriter<Uint8Array>,
   encoder: TextEncoder,
 ): Promise<void> {
   const reader = upstream.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
 
-  return (async () => {
-    try {
-      for (;;) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed) continue;
-          let obj: {
-            message?: { content?: string };
-            error?: string;
-            done?: boolean;
-          };
-          try {
-            obj = JSON.parse(trimmed) as typeof obj;
-          } catch {
-            continue;
-          }
-          if (typeof obj.error === "string" && obj.error) {
-            throw new Error(obj.error);
-          }
-          const piece = obj.message?.content;
-          if (typeof piece === "string" && piece.length > 0) {
-            controller.enqueue(encoder.encode(piece));
-          }
-        }
-      }
-      if (buffer.trim()) {
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+        let obj: {
+          message?: { content?: string };
+          error?: string;
+        };
         try {
-          const obj = JSON.parse(buffer.trim()) as {
-            message?: { content?: string };
-            error?: string;
-          };
-          if (typeof obj.error === "string" && obj.error) {
-            throw new Error(obj.error);
-          }
-          const piece = obj.message?.content;
-          if (typeof piece === "string" && piece.length > 0) {
-            controller.enqueue(encoder.encode(piece));
-          }
+          obj = JSON.parse(trimmed) as typeof obj;
         } catch {
-          /* ignore trailing garbage */
+          continue;
+        }
+        if (typeof obj.error === "string" && obj.error) {
+          throw new Error(obj.error);
+        }
+        const piece = obj.message?.content;
+        if (typeof piece === "string" && piece.length > 0) {
+          await writer.write(encoder.encode(piece));
         }
       }
-    } finally {
-      reader.releaseLock();
     }
-  })();
+    if (buffer.trim()) {
+      try {
+        const obj = JSON.parse(buffer.trim()) as {
+          message?: { content?: string };
+          error?: string;
+        };
+        if (typeof obj.error === "string" && obj.error) {
+          throw new Error(obj.error);
+        }
+        const piece = obj.message?.content;
+        if (typeof piece === "string" && piece.length > 0) {
+          await writer.write(encoder.encode(piece));
+        }
+      } catch {
+        /* ignore trailing garbage */
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
 }
 
 export async function POST(req: Request) {
@@ -330,18 +223,21 @@ export async function POST(req: Request) {
     { role: "user", content: prompt },
   ];
 
-  // Bounded wait for Ollama response *headers* (TTFT). 25s was too aggressive for
-  // RX 580 + large system prompts; 120s aligns with `maxDuration` on this route.
-  const OLLAMA_CONNECT_MS = 120_000;
-  const upstreamCtrl = new AbortController();
-  const upstreamTimer = setTimeout(() => upstreamCtrl.abort(), OLLAMA_CONNECT_MS);
+  const t0 = Date.now();
+  console.log(">>> [API] Starting fetch to Ollama...", OLLAMA_CHAT_URL, {
+    model: MODEL,
+    historyTurns: historyMessages.length,
+    systemChars: system.length,
+    userChars: prompt.length,
+  });
 
   let upstreamRes: Response;
   try {
+    // No AbortController on this fetch: aborting can tear down the body reader mid-stream
+    // on some Node versions. Ceiling: `maxDuration` + client timeout.
     upstreamRes = await fetch(OLLAMA_CHAT_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      signal: upstreamCtrl.signal,
       body: JSON.stringify({
         model: MODEL,
         stream: true,
@@ -350,24 +246,23 @@ export async function POST(req: Request) {
       }),
     });
   } catch (e) {
-    const aborted =
-      (e instanceof DOMException && e.name === "AbortError") ||
-      (e instanceof Error && e.name === "AbortError");
     const msg = e instanceof Error ? e.message : String(e);
     return NextResponse.json(
       {
-        error: aborted
-          ? "Ollama connection timed out (no response headers in time)"
-          : "Ollama unreachable",
+        error: "Ollama unreachable",
         detail: msg,
         hint:
-          "From the Next.js server, OLLAMA_BASE_URL must reach Ollama (try host.docker.internal:11434 in Docker, or the LAN IP if Ollama is on another machine). Local installs use 127.0.0.1:11434 to avoid localhost IPv6 delays.",
+          "If you see 'Starting fetch' but never 'Ollama responded', Ollama is not sending HTTP headers for /api/chat (GPU busy, model stuck, or wrong host). Try: curl -sS -m 20 -N -X POST \"$OLLAMA/api/chat\" -H 'Content-Type: application/json' -d '{\"model\":\"dolphin3\",\"stream\":true,\"messages\":[{\"role\":\"user\",\"content\":\"ping\"}]}'. Set OLLAMA_BASE_URL in frontend/.env.local when Ollama runs on another machine.",
       },
-      { status: aborted ? 504 : 503 },
+      { status: 503 },
     );
-  } finally {
-    clearTimeout(upstreamTimer);
   }
+
+  console.log(
+    ">>> [API] Ollama responded with status:",
+    upstreamRes.status,
+    `(${(Date.now() - t0) / 1000}s to headers)`,
+  );
 
   if (!upstreamRes.ok) {
     const errText = await upstreamRes.text().catch(() => "");
@@ -389,20 +284,25 @@ export async function POST(req: Request) {
   }
 
   const encoder = new TextEncoder();
+  const { readable, writable } = new TransformStream<Uint8Array, Uint8Array>();
+  const writer = writable.getWriter();
 
-  const stream = new ReadableStream<Uint8Array>({
-    async start(controller) {
+  void (async () => {
+    try {
+      await pumpOllamaNdjsonToWriter(upstreamRes.body!, writer, encoder);
+      await writer.close();
+    } catch (e) {
+      console.error(">>> [API] Stream pump error:", e);
       try {
-        await pipeOllamaChatStream(upstreamRes.body!, controller, encoder);
-        controller.close();
-      } catch (e) {
-        controller.error(e instanceof Error ? e : new Error(String(e)));
+        await writer.abort(e instanceof Error ? e : new Error(String(e)));
+      } catch {
+        /* ignore */
       }
-    },
-  });
+    }
+  })();
 
   // Next.js App Router streaming: raw text stream (same contract as StreamingTextResponse from `ai` package).
-  return new Response(stream, {
+  return new Response(readable, {
     status: 200,
     headers: {
       "Content-Type": "text/plain; charset=utf-8",
