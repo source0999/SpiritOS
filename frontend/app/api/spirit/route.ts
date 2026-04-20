@@ -12,7 +12,14 @@ import { NextResponse } from "next/server";
 /**
  * Spirit OS · Ollama chat proxy (Module 2)
  *
- * POST JSON: { "prompt": string, "sarcasm"?: "chill" | "peer" | "unhinged", "userContext"?: string, "customDirective"?: string }
+ * POST JSON: {
+ *   "prompt": string,
+ *   "sarcasm"?: "chill" | "peer" | "unhinged",
+ *   "userContext"?: string,
+ *   "customDirective"?: string,
+ *   "history"?: { "role": "user" | "assistant", "content": string }[]
+ * }
+ * (Server keeps at most the last 6 history turns regardless of client.)
  *
  * Success: `text/plain; charset=utf-8` streaming body (token deltas), HTTP 200.
  * Same semantics as Vercel AI SDK `StreamingTextResponse` — raw UTF-8 text stream.
@@ -31,7 +38,29 @@ const OLLAMA_BASE = (
 
 const OLLAMA_CHAT_URL = `${OLLAMA_BASE}/api/chat`;
 
+/** Cap KV / context size for 8GB-class GPUs (RX 580 friendly). */
+const OLLAMA_NUM_CTX = 4096;
+
+/** Max prior turns injected into Ollama (6 = last 3 user/assistant exchanges). */
+const HISTORY_WINDOW = 6;
+
 type Sarcasm = "chill" | "peer" | "unhinged";
+
+type ChatTurn = { role: "user" | "assistant"; content: string };
+
+function normalizeHistory(raw: unknown): ChatTurn[] {
+  if (!Array.isArray(raw)) return [];
+  const out: ChatTurn[] = [];
+  for (const item of raw) {
+    if (typeof item !== "object" || item === null) continue;
+    const r = (item as { role?: unknown }).role;
+    const c = (item as { content?: unknown }).content;
+    if (r !== "user" && r !== "assistant") continue;
+    if (typeof c !== "string" || !c.trim()) continue;
+    out.push({ role: r, content: c.trim() });
+  }
+  return out.slice(-HISTORY_WINDOW);
+}
 
 // ── Spirit OS · Persona System Prompts ────────────────────────────────────────
 //
@@ -288,9 +317,22 @@ export async function POST(req: Request) {
 
   const system = buildSystemPrompt(sarcasm, userContext, customDirective);
 
-  // Do not block the client fetch until Ollama opens indefinitely — the browser
-  // would show [processing] with no headers. Abort upstream after a bounded wait.
-  const OLLAMA_CONNECT_MS = 25_000;
+  const historyRaw =
+    "history" in body ? (body as { history: unknown }).history : undefined;
+  const historyMessages = normalizeHistory(historyRaw).map((m) => ({
+    role: m.role,
+    content: m.content,
+  }));
+
+  const ollamaMessages: { role: "system" | "user" | "assistant"; content: string }[] = [
+    { role: "system", content: system },
+    ...historyMessages,
+    { role: "user", content: prompt },
+  ];
+
+  // Bounded wait for Ollama response *headers* (TTFT). 25s was too aggressive for
+  // RX 580 + large system prompts; 120s aligns with `maxDuration` on this route.
+  const OLLAMA_CONNECT_MS = 120_000;
   const upstreamCtrl = new AbortController();
   const upstreamTimer = setTimeout(() => upstreamCtrl.abort(), OLLAMA_CONNECT_MS);
 
@@ -303,10 +345,8 @@ export async function POST(req: Request) {
       body: JSON.stringify({
         model: MODEL,
         stream: true,
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: prompt },
-        ],
+        options: { num_ctx: OLLAMA_NUM_CTX },
+        messages: ollamaMessages,
       }),
     });
   } catch (e) {
