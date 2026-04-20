@@ -6,16 +6,8 @@
 
 import DashboardContent   from "@/components/DashboardContent";
 import ProjectWidgetServer from "@/components/ProjectWidgetServer";
-import { logDebugSession } from "@/lib/debugSessionLog";
 
 export default function Page() {
-  // #region agent log
-  logDebugSession({
-    hypothesisId: "C",
-    location: "app/page.tsx:Page",
-    message: "Home Page render (server)",
-  });
-  // #endregion
   return (
     <DashboardContent
       projectWidget={<ProjectWidgetServer />}

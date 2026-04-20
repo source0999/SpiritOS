@@ -593,6 +593,17 @@ WebKit on Safari iOS is not a browser. It is a trap with rounded corners. Every 
 
 ---
 
+### Hotfix — Debug Contamination Cleanup
+
+- [x] Removed `WhiteScreenDebugProbe` from `AppShell.tsx` — eliminated SSR/client hydration mismatch risk from mount-time DOM probes
+- [x] Removed all `logDebugSession` usage from `app/layout.tsx`, `app/page.tsx`, `ProjectWidgetServer.tsx`
+- [x] Confirmed `useStream.ts` has no `#region agent log` / `localhost:7920` fetch calls (avoids TCP hang when debug ingest is down)
+- [x] Removed debug `useEffect` fetch from `DashboardContent.tsx`
+- [x] Deleted `lib/debugSessionLog.ts`, `components/WhiteScreenDebugProbe.tsx`, `app/api/debug-ingest/route.ts`
+- [x] **Ollama slot breathing room**: `useThread.autoTitle()` waits **3 seconds** after enqueue before calling `/api/spirit` for the title so single-GPU setups can finish the main stream before the cosmetic title request
+
+---
+
 ## 🚀 Dev
 
 ```bash

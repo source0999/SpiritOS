@@ -102,6 +102,10 @@ export function useThread(activeThreadId: string): UseThreadReturn {
     // Fire and forget — runs in the background while the stream is active.
     void (async () => {
       try {
+        // Let the GPU / Ollama slot cool down after the main reply stream so titling
+        // does not contend with the next user message on single-slot setups (e.g. RX 580).
+        await new Promise((resolve) => setTimeout(resolve, 3_000));
+
         const res = await fetch("/api/spirit", {
           method:  "POST",
           headers: { "Content-Type": "application/json" },

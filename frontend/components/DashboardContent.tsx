@@ -8,7 +8,7 @@ import Link from "next/link";
 import {
   Zap, Clock, AlertTriangle, Flame, Terminal,
   Cpu, HardDrive,
-  ExternalLink, Send, X, Command,
+  Send, X, Command,
   Thermometer, ShieldCheck, ShieldAlert,
   Music2, ArrowRight, Play, Pause,
 } from "lucide-react";
@@ -817,26 +817,6 @@ export default function DashboardContent({
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
-  }, []);
-
-  useEffect(() => {
-    // #region agent log
-    fetch("http://localhost:7920/ingest/da155463-47fd-4bed-94cb-233903115f13", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
-      body: JSON.stringify({
-        sessionId: "7d6688",
-        hypothesisId: "B",
-        location: "DashboardContent.tsx:mount",
-        message: "DashboardContent mounted",
-        data: {
-          hasNextRoot: !!document.getElementById("__next"),
-          bodyChildren: document.body.childElementCount,
-        },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
   }, []);
 
   return (

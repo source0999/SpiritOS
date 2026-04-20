@@ -3,7 +3,6 @@
 import type { ReactNode } from "react";
 import { MobileNav, DesktopSidebar } from "@/components/Navigation";
 import { OverlayLockProvider, useOverlayLock } from "@/components/OverlayLockContext";
-import { WhiteScreenDebugProbe } from "@/components/WhiteScreenDebugProbe";
 
 function MainChrome({ children }: { children: ReactNode }) {
   const { mainLocked } = useOverlayLock();
@@ -29,7 +28,6 @@ export function AppShell({ children }: { children: ReactNode }) {
          Tailwind text colors can still apply while body background stays browser-white (white-on-white). */
       style={{ backgroundColor: "#09090b", color: "#fafafa" }}
     >
-      <WhiteScreenDebugProbe />
       <OverlayLockProvider>
         {/*
           MobileNav is rendered HERE — before the flex layout container — so its
