@@ -6,7 +6,24 @@ import { useThread } from "@/hooks/useThread";
 import { useThreadCRUD } from "@/hooks/useThreadCRUD";
 import { Paperclip, Send, Zap, Plus, Search, PanelLeft, X, ChevronRight } from "lucide-react";
 import { MessageBubble } from "@/components/chat/MessageBubble";
-import { ThreadItem } from "@/components/sidebar/ThreadItem";
+import { SortableThreadItem } from "@/components/sidebar/SortableThreadItem";
+import { ThreadDragOverlay } from "@/components/sidebar/ThreadDragOverlay";
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  closestCenter,
+  type DragStartEvent,
+  type DragEndEvent,
+  type DragOverEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
 
 import {
   db,
@@ -53,27 +70,27 @@ function ConversationSidebar({
   onClose,
   onRename,
   onDelete,
+  // DnD props — wired from the page-level DndContext
+  activelyDraggingId,
+  overFolderId,
+  expandedFolders,
+  onToggleFolder,
 }: {
-  folders:    Folder[];
-  threads:    Thread[];
-  activeId:   string;
-  onSelect:   (id: string) => void;
-  onNewChat:  () => void;
-  onClose?:   () => void;
-  onRename:   (id: string, newTitle: string) => Promise<void>;
-  onDelete:   (id: string) => Promise<void>;
+  folders:            Folder[];
+  threads:            Thread[];
+  activeId:           string;
+  onSelect:           (id: string) => void;
+  onNewChat:          () => void;
+  onClose?:           () => void;
+  onRename:           (id: string, newTitle: string) => Promise<void>;
+  onDelete:           (id: string) => Promise<void>;
+  activelyDraggingId: string | null;
+  overFolderId:       string | null;
+  expandedFolders:    Set<string>;
+  onToggleFolder:     (id: string) => void;
 }) {
-  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
-    () => new Set(["f1"]),
-  );
-
   function toggleFolder(id: string) {
-    setExpandedFolders((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+    onToggleFolder(id);
   }
 
   function selectThread(id: string) {
@@ -156,21 +173,27 @@ function ConversationSidebar({
             const isOpen         = expandedFolders.has(folder.id);
             const folderThreads  = threads.filter((t) => t.folderId === folder.id);
             const hasActiveChild = folderThreads.some((t) => t.id === activeId);
+            // Visual drop target: highlight when a thread is being dragged over this folder
+            const isDropTarget   = overFolderId === folder.id && activelyDraggingId !== null;
 
             return (
               <div key={folder.id}>
+                {/* Folder header — acts as drop target via data-folder-id */}
                 <button
                   type="button"
                   onClick={() => toggleFolder(folder.id)}
+                  data-folder-id={folder.id}
                   className={cn(
                     "flex w-full cursor-pointer touch-manipulation items-center gap-2 rounded-xl px-3 py-2 transition-colors hover:bg-white/[0.04] active:bg-white/[0.06]",
                     hasActiveChild && !isOpen && "bg-white/[0.04]",
+                    isDropTarget && "border border-violet-500/40 bg-violet-500/[0.08]",
                   )}
                 >
                   <span className={cn("h-2 w-2 flex-shrink-0 rounded-sm", folder.accent)} />
                   <span className={cn(
                     "flex-1 truncate text-[12px] font-medium transition-colors",
                     hasActiveChild ? "text-zinc-200" : "text-zinc-500",
+                    isDropTarget && "text-violet-300",
                   )}>
                     {folder.name}
                   </span>
@@ -189,16 +212,21 @@ function ConversationSidebar({
 
                 {isOpen && (
                   <div className="mb-1 ml-[22px] border-l border-white/[0.06]">
-                    {folderThreads.map((thread) => (
-                      <ThreadItem
-                        key={thread.id}
-                        thread={thread}
-                        active={activeId === thread.id}
-                        onSelect={selectThread}
-                        onRename={onRename}
-                        onDelete={onDelete}
-                      />
-                    ))}
+                    <SortableContext
+                      items={folderThreads.map((t) => t.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      {folderThreads.map((thread) => (
+                        <SortableThreadItem
+                          key={thread.id}
+                          thread={thread}
+                          active={activeId === thread.id}
+                          onSelect={selectThread}
+                          onRename={onRename}
+                          onDelete={onDelete}
+                        />
+                      ))}
+                    </SortableContext>
                   </div>
                 )}
               </div>
@@ -212,16 +240,21 @@ function ConversationSidebar({
             <p className="mb-1 px-2 text-[9px] font-semibold uppercase tracking-widest text-zinc-700">
               Threads
             </p>
-            {uncategorized.map((thread) => (
-              <ThreadItem
-                key={thread.id}
-                thread={thread}
-                active={activeId === thread.id}
-                onSelect={selectThread}
-                onRename={onRename}
-                onDelete={onDelete}
-              />
-            ))}
+            <SortableContext
+              items={uncategorized.map((t) => t.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              {uncategorized.map((thread) => (
+                <SortableThreadItem
+                  key={thread.id}
+                  thread={thread}
+                  active={activeId === thread.id}
+                  onSelect={selectThread}
+                  onRename={onRename}
+                  onDelete={onDelete}
+                />
+              ))}
+            </SortableContext>
           </div>
         )}
       </div>
@@ -306,6 +339,21 @@ export default function SovereignChatPage() {
   // null = no message is being edited.
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
 
+  // Folder expand state lifted here so the DnD hover-expand timer can open
+  // folders programmatically during a drag operation.
+  const [expandedFolders, setExpandedFoldersGlobal] = useState<Set<string>>(
+    () => new Set(["f1"]),
+  );
+
+  const handleToggleFolder = useCallback((id: string) => {
+    setExpandedFoldersGlobal((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
   // ── Delete handler (switches active thread if needed) ─────────────────────
   const handleDeleteThread = useCallback(async (id: string) => {
     const nextId = await deleteThread(id, threads ?? []);
@@ -313,11 +361,140 @@ export default function SovereignChatPage() {
       if (nextId) {
         setActiveThreadId(nextId);
       } else {
-        // No threads left — open a fresh new chat.
         setActiveThreadId(`new-${Date.now()}`);
       }
     }
   }, [deleteThread, threads, activeThreadId]);
+
+  // ── Drag-and-Drop state ────────────────────────────────────────────────────
+  // activelyDraggingId — the thread.id being dragged right now (null = idle)
+  // overFolderId       — the folder.id the ghost is hovering over (null = none)
+  const [activelyDraggingId, setActivelyDraggingId] = useState<string | null>(null);
+  const [overFolderId, setOverFolderId] = useState<string | null>(null);
+
+  // Ref to the hover-expand timer so we can cancel it on drag leave.
+  const folderExpandTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // The Thread object for the item being dragged — fed to DragOverlay.
+  const draggingThread = activelyDraggingId
+    ? (threads ?? []).find((t) => t.id === activelyDraggingId) ?? null
+    : null;
+
+  // Configure sensors: PointerSensor with a 5px activation distance so
+  // normal clicks on ThreadItem don't accidentally start a drag.
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 5 },
+    }),
+  );
+
+  // ── onDragStart ──────────────────────────────────────────────────────────
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    setActivelyDraggingId(event.active.id as string);
+  }, []);
+
+  // ── onDragOver ───────────────────────────────────────────────────────────
+  // Detects when the drag ghost moves over a folder header (via data-folder-id).
+  // Uses a 300ms hover-expand timer — the folder opens if the ghost lingers,
+  // letting the user drop the thread inside a collapsed folder.
+  const handleDragOver = useCallback((event: DragOverEvent) => {
+    // Walk up the DOM from the pointer target to find a [data-folder-id] element.
+    const target = event.activatorEvent?.target as HTMLElement | null;
+    let el: HTMLElement | null = target;
+    let foundFolderId: string | null = null;
+
+    while (el) {
+      const fid = el.getAttribute?.("data-folder-id");
+      if (fid) { foundFolderId = fid; break; }
+      el = el.parentElement;
+    }
+
+    if (foundFolderId !== overFolderId) {
+      // Clear any pending expand timer from a previous folder.
+      if (folderExpandTimerRef.current) {
+        clearTimeout(folderExpandTimerRef.current);
+        folderExpandTimerRef.current = null;
+      }
+      setOverFolderId(foundFolderId);
+
+      // Schedule folder auto-expand after 300ms of hovering.
+      if (foundFolderId) {
+        folderExpandTimerRef.current = setTimeout(() => {
+          setExpandedFoldersGlobal((prev) => {
+            const next = new Set(prev);
+            next.add(foundFolderId!);
+            return next;
+          });
+        }, 300);
+      }
+    }
+  }, [overFolderId]);
+
+  // ── onDragEnd ────────────────────────────────────────────────────────────
+  const handleDragEnd = useCallback(async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    // Clear all drag state.
+    if (folderExpandTimerRef.current) {
+      clearTimeout(folderExpandTimerRef.current);
+      folderExpandTimerRef.current = null;
+    }
+    setActivelyDraggingId(null);
+    setOverFolderId(null);
+
+    if (!active || !over) return;
+
+    const draggedId = active.id as string;
+    const overId    = over.id as string;
+    if (draggedId === overId) return;
+
+    const allThreads = threads ?? [];
+    const draggedThread = allThreads.find((t) => t.id === draggedId);
+    if (!draggedThread) return;
+
+    // Case 1: dropped onto a folder header (overId is a folder id).
+    const isFolder = (folders ?? []).some((f) => f.id === overId);
+    if (isFolder) {
+      // Move thread into this folder and set order to end of folder.
+      const folderThreads = allThreads.filter((t) => t.folderId === overId);
+      const newOrder = folderThreads.length;
+      await db.threads.update(draggedId, { folderId: overId, order: newOrder });
+      return;
+    }
+
+    // Case 2: dropped onto another thread — reorder within the same list.
+    const overThread = allThreads.find((t) => t.id === overId);
+    if (!overThread) return;
+
+    // Only reorder within the same folderId scope.
+    if (draggedThread.folderId !== overThread.folderId) {
+      // Cross-scope drop: move to the over thread's folder at its position.
+      await db.threads.update(draggedId, {
+        folderId: overThread.folderId,
+        order: overThread.order ?? 0,
+      });
+      return;
+    }
+
+    // Same-scope reorder: use arrayMove to compute the new order array
+    // then batch-update all affected thread order values.
+    const scopeThreads = allThreads
+      .filter((t) => t.folderId === draggedThread.folderId)
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+    const oldIndex = scopeThreads.findIndex((t) => t.id === draggedId);
+    const newIndex = scopeThreads.findIndex((t) => t.id === overId);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const reordered = arrayMove(scopeThreads, oldIndex, newIndex);
+
+    // Batch write: update order for each thread that moved.
+    await Promise.all(
+      reordered.map((t, i) =>
+        t.order !== i ? db.threads.update(t.id, { order: i }) : Promise.resolve(),
+      ),
+    );
+  }, [threads, folders]);
 
   // ── Auto-scroll ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -404,6 +581,13 @@ export default function SovereignChatPage() {
   }
 
   return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
+      onDragEnd={(e) => { void handleDragEnd(e); }}
+    >
     <div className="relative flex h-[calc(100dvh-60px)] flex-row bg-zinc-950 md:h-[100dvh]">
 
       {/* ── Desktop Sidebar ────────────────────────────────────────────────── */}
@@ -419,6 +603,10 @@ export default function SovereignChatPage() {
           onNewChat={handleNewChat}
           onRename={renameThread}
           onDelete={handleDeleteThread}
+          activelyDraggingId={activelyDraggingId}
+          overFolderId={overFolderId}
+          expandedFolders={expandedFolders}
+          onToggleFolder={handleToggleFolder}
         />
       </aside>
 
@@ -587,10 +775,22 @@ export default function SovereignChatPage() {
               onClose={() => setMobileOpen(false)}
               onRename={renameThread}
               onDelete={handleDeleteThread}
+              activelyDraggingId={activelyDraggingId}
+              overFolderId={overFolderId}
+              expandedFolders={expandedFolders}
+              onToggleFolder={handleToggleFolder}
             />
           </aside>
         </>
       )}
     </div>
+
+      {/* ── DragOverlay: ghost card that floats under the cursor ── */}
+      <DragOverlay dropAnimation={{ duration: 150, easing: "ease" }}>
+        {draggingThread ? (
+          <ThreadDragOverlay thread={draggingThread} />
+        ) : null}
+      </DragOverlay>
+    </DndContext>
   );
 }

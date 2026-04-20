@@ -329,7 +329,16 @@ WebKit on Safari iOS is not a browser. It is a trap with rounded corners. Every 
   - `MessageBubble` extended with `isEditing`, `onStartEdit`, `onSaveEdit`, `onCancelEdit` props
   - Delete auto-selects next thread; last thread deletion opens a fresh new chat
   - `editingMessageId` state in page — only one message editable at a time
-- [ ] **Step 5** — `@dnd-kit/sortable` sidebar with folder drag-and-drop
+- [x] **Step 5** — `@dnd-kit/sortable` drag-and-drop sidebar
+  - `SortableThreadItem` wraps `ThreadItem` with dnd-kit mechanics — CRUD state machine never remounts during drag
+  - `ThreadDragOverlay` — lightweight violet ghost card, 150ms drop animation
+  - `DndContext` wraps full page layout with `PointerSensor` (5px activation distance — no accidental drags on clicks)
+  - `closestCenter` collision detection + `verticalListSortingStrategy`
+  - Uncategorized threads sortable independently; folder threads sortable within their folder
+  - Cross-scope drop: dragging thread onto a folder header moves it into that folder
+  - 300ms hover-expand: hovering over a collapsed folder during drag auto-opens it
+  - `expandedFolders` lifted to page level so DnD timer can open folders programmatically
+  - `onDragEnd` batch-writes new `order` values to Dexie; order persists across sessions
 
 ### Module 4: XTTS v2 Voice Pipeline
 - [ ] **Step 6** — TTS parser + audio queue + `useTTS` hook + `/api/tts` route

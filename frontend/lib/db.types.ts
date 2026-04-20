@@ -31,6 +31,7 @@ export interface Thread {
   folderId:  string | null;
   title:     string;
   preview:   string;   // last message truncated to ~60 chars; updated on send
+  order?:    number;   // persisted sidebar order (Step 5 dnd-kit)
   updatedAt: number;   // Unix ms; sidebar sorts threads by this descending
   createdAt: number;
 }
