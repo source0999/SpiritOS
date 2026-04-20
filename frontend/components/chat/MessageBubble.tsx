@@ -59,19 +59,15 @@ const MD_COMPONENTS: React.ComponentProps<typeof ReactMarkdown>["components"] = 
   p: ({ children }) => (
     <p className="mb-3 last:mb-0 leading-relaxed">{children}</p>
   ),
-  code: ({ children, className }) => {
-    const isBlock = className?.startsWith("language-");
-    if (isBlock) {
-      return <code className={className}>{children}</code>;
-    }
+  code: ({ children }) => {
     return (
-      <code className="rounded-md border border-violet-500/20 bg-violet-500/10 px-1.5 py-0.5 font-mono text-[0.8em] text-violet-300">
+      <code className="font-mono text-sm text-zinc-300">
         {children}
       </code>
     );
   },
   pre: ({ children }) => (
-    <pre className="my-3 overflow-x-auto rounded-xl border border-white/[0.07] bg-zinc-900 p-4 font-mono text-xs leading-relaxed text-zinc-200">
+    <pre className="my-1 whitespace-pre-wrap break-words font-mono text-sm leading-relaxed text-zinc-300">
       {children}
     </pre>
   ),

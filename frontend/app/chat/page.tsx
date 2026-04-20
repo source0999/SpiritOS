@@ -662,25 +662,6 @@ export default function SovereignChatPage() {
     // Prior turns for Ollama — snapshot before persisting this user message so
     // the current prompt is not duplicated inside `history`.
     const historyPayload = buildSpiritHistoryFromMessages(messages);
-    // #region agent log
-    fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
-      body: JSON.stringify({
-        sessionId: "7d6688",
-        runId: "post-fix",
-        hypothesisId: "H2",
-        location: "page.tsx:send",
-        message: "Built history before addMessage",
-        data: {
-          historyLen: historyPayload.length,
-          threadIdPrefix: threadId.slice(0, 8),
-          msgCount: messages?.length ?? 0,
-        },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
 
     // Create the DB thread record on first send (never persist empty threads).
     const existingThread = await db.threads.get(threadId);

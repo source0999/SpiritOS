@@ -3,6 +3,18 @@
 **Source**: Intuitive Wrld &nbsp;·&nbsp; **Spirit**: Llama-3-Abliterated &nbsp;·&nbsp; **Stack**: Next.js 15 · TypeScript · Tailwind CSS v4 · Framer Motion  
 **Environment**: `http://192.168.x.x:3000` — `npm run dev` (binds `0.0.0.0`, **webpack** dev server — avoids Turbopack hangs on slow/Remote-SSH filesystems; use `npm run dev:turbo` on a fast local disk if you prefer Turbopack)
 
+## API Backend Routing (Current)
+
+- `POST /api/spirit` is now **Groq-first** with automatic **Ollama fallback**.
+- Response header `X-Spirit-Backend` returns `groq` or `ollama`.
+- Startup env:
+  - `GROQ_API_KEY` (required for Groq)
+  - `GROQ_MODEL` (optional override)
+  - `OLLAMA_BASE_URL` (fallback host)
+- Expected server log format:
+  - `>>> [Spirit API] Engine: GROQ | mode: peer | history: 2 turns | system: N chars`
+  - If Groq fails: warning + `>>> [Spirit API] Using Ollama at ...`
+
 > 📱 **MOBILE-FIRST. iOS-FIRST. ANDROID-SECOND.**  
 > Every layout starts at `375px` and scales **up**. Never the reverse.  
 > Open on a physical iPhone over LAN **before** opening desktop Chrome.

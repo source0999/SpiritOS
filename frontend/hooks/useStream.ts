@@ -180,21 +180,6 @@ export function useStream(options: StreamOptions = {}): StreamState {
             ...(customDirective?.trim() ? { customDirective } : {}),
             ...(history?.length ? { history } : {}),
           };
-          // #region agent log
-          fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
-            body: JSON.stringify({
-              sessionId: "7d6688",
-              runId: "post-fix",
-              hypothesisId: "H1",
-              location: "useStream.ts:fetch-body",
-              message: "POST /api/spirit payload shape",
-              data: { historyLen: history?.length ?? 0, hasPrompt: !!prompt.trim() },
-              timestamp: Date.now(),
-            }),
-          }).catch(() => {});
-          // #endregion
 
           const res = await fetch("/api/spirit", {
             method:  "POST",
