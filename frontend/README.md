@@ -355,6 +355,11 @@ WebKit on Safari iOS is not a browser. It is a trap with rounded corners. Every 
 ### Module 4: XTTS v2 Voice Pipeline
 - [ ] **Step 6** — TTS parser + audio queue + `useTTS` hook + `/api/tts` route
 
+### Phase 3.6 · Sovereign Routing
+- [x] **Sovereign local routing mode** — 4th UI mode that hard-routes to Ollama (skips Groq unconditionally)
+- [x] **Cross-backend unified context pipeline** — confirmed: system + history + prompt compiled before backend selection
+- [x] **Sovereign system prompt** — distinct local persona for Dell inference path
+
 ### Phase 2 · Persona Overhaul & Learning Foundation
 - [x] **Step A** — Data Reset: Dexie v3 wipe migration
   - `version(3).upgrade()` atomically clears `folders`, `threads`, `messages` — no mock data remains

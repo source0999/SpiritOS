@@ -8,7 +8,7 @@
 // database class (lib/db.ts) and UI components without pulling in Dexie.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type SarcasmLevel = "chill" | "peer" | "unhinged";
+export type SarcasmLevel = "chill" | "peer" | "unhinged" | "sovereign";
 export type MessageRole  = "user" | "spirit";
 
 // ── Folder ────────────────────────────────────────────────────────────────────

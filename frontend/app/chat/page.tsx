@@ -2,10 +2,11 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useStream } from "@/hooks/useStream";
+import { useTTS } from "@/hooks/useTTS";
 import { useThread } from "@/hooks/useThread";
 import { useThreadCRUD } from "@/hooks/useThreadCRUD";
 import { usePersonality } from "@/hooks/usePersonality";
-import { Paperclip, Send, Zap, Plus, Search, PanelLeft, X, ChevronRight } from "lucide-react";
+import { Paperclip, Send, Zap, Plus, Search, PanelLeft, X, ChevronRight, Volume2, VolumeX } from "lucide-react";
 import { MessageBubble } from "@/components/chat/MessageBubble";
 import { SortableThreadItem } from "@/components/sidebar/SortableThreadItem";
 import { ThreadDragOverlay } from "@/components/sidebar/ThreadDragOverlay";
@@ -61,12 +62,14 @@ const SARCASM_LEVELS: { id: SarcasmLevel; label: string }[] = [
   { id: "chill",    label: "Focus"  },
   { id: "peer",     label: "Mirror" },
   { id: "unhinged", label: "Chaos"  },
+  { id: "sovereign", label: "Sovereign" },
 ];
 
 const SARCASM_ACTIVE: Record<SarcasmLevel, string> = {
   chill:    "border-zinc-600      bg-zinc-700/60    text-zinc-200",
   peer:     "border-violet-500/40 bg-violet-500/20  text-violet-300",
   unhinged: "border-red-500/40    bg-red-500/15     text-red-300",
+  sovereign: "border-amber-500/40 bg-amber-500/15 text-amber-300",
 };
 
 // Mode-aware copy — changes the empty state and input placeholder to
@@ -75,12 +78,14 @@ const MODE_EMPTY_STATE: Record<SarcasmLevel, string> = {
   chill:    "Ready to work. What are we solving?",
   peer:     "What's on your mind?",
   unhinged: "Go ahead. Make my day.",
+  sovereign: "Local brain, no cloud. What do you need?",
 };
 
 const MODE_PLACEHOLDER: Record<SarcasmLevel, string> = {
   chill:    "What do you need to build, debug, or understand?",
   peer:     "Talk to me...",
   unhinged: "Say something I can work with...",
+  sovereign: "Running local on the Dell. No limits...",
 };
 
 // ─── Conversation Sidebar ─────────────────────────────────────────────────────
@@ -306,6 +311,7 @@ export default function SovereignChatPage() {
   // Holds the Dexie message id of the assistant bubble currently streaming.
   // null when idle. Used to swap the streaming placeholder for persisted text.
   const [streamingMsgId,    setStreamingMsgId]  = useState<string | null>(null);
+  const [playingMessageId,  setPlayingMessageId] = useState<string | null>(null);
 
   // Capture activeThreadId in a ref so the onComplete closure always sees the
   // current value even though it's created inside useStream (stale closure trap).
@@ -337,6 +343,7 @@ export default function SovereignChatPage() {
     messagesLoading,
     autoTitle,
   } = useThread(activeThreadId);
+  const { speak, stop, isPlaying, isTTSEnabled, toggleTTS } = useTTS();
 
   // ── useStream ─────────────────────────────────────────────────────────────
   const { streamingText, isStreaming, error: streamError, startStream } = useStream({
@@ -356,11 +363,18 @@ export default function SovereignChatPage() {
         const saved = await addMessage(threadId, "spirit", fullText);
         await touchThread(threadId, fullText);
         setStreamingMsgId(null);
+        if (isTTSEnabled && !isPlaying) {
+          setPlayingMessageId(saved.id);
+          void speak(fullText)
+            .catch((e) => {
+              console.error("[Spirit OS] Auto TTS failed:", e);
+            })
+            .finally(() => setPlayingMessageId(null));
+        }
         // Scroll after the persisted bubble replaces the streaming one.
         requestAnimationFrame(() => {
           bottomRef.current?.scrollIntoView({ behavior: "smooth" });
         });
-        void saved; // suppress unused-var lint
       } catch (e) {
         console.error("[Spirit OS] Failed to persist assistant message:", e);
         setStreamingMsgId(null);
@@ -375,7 +389,7 @@ export default function SovereignChatPage() {
         autoTitlePendingRef.current = null;
         autoTitle(pending.threadId, pending.text);
       }
-    }, [autoTitle]),
+    }, [autoTitle, isTTSEnabled, speak]),
   });
 
   // Derived: are we in any kind of "busy" state?
@@ -393,6 +407,10 @@ export default function SovereignChatPage() {
   useEffect(() => {
     getSetting<SarcasmLevel>("sarcasm", "peer").then(setSarcasm).catch(console.error);
   }, []);
+
+  useEffect(() => {
+    if (!isPlaying) setPlayingMessageId(null);
+  }, [isPlaying]);
 
   // ── CRUD operations ───────────────────────────────────────────────────────
   const { renameThread, deleteThread, editMessage } = useThreadCRUD();
@@ -779,8 +797,21 @@ export default function SovereignChatPage() {
             </div>
           </div>
 
-          {/* Mode toggle */}
+          {/* Mode toggle + TTS toggle */}
           <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={toggleTTS}
+              aria-label={isTTSEnabled ? "Disable TTS" : "Enable TTS"}
+              className={cn(
+                "mr-1 flex h-8 w-8 items-center justify-center rounded-lg border transition-colors",
+                isTTSEnabled
+                  ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-300"
+                  : "border-white/[0.07] bg-transparent text-zinc-500 hover:text-zinc-300",
+              )}
+            >
+              {isTTSEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
+            </button>
             <span className="mr-1 hidden text-[10px] font-semibold uppercase tracking-widest text-zinc-600 sm:block">
               Mode
             </span>
@@ -830,6 +861,43 @@ export default function SovereignChatPage() {
                   captureCorrectionEvent();
                 }}
                 onCancelEdit={() => setEditingMessageId(null)}
+                isTTSEnabled={isTTSEnabled}
+                isPlayingThis={playingMessageId === msg.id && isPlaying}
+                onSpeak={msg.role === "spirit"
+                  ? () => {
+                      // #region agent log
+                      fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
+                        body: JSON.stringify({
+                          sessionId: "7d6688",
+                          runId: "tts-debug-1",
+                          hypothesisId: "H4",
+                          location: "page.tsx:onSpeak",
+                          message: "Speaker button pressed",
+                          data: {
+                            messageId: msg.id,
+                            isPlaying,
+                            isTTSEnabled,
+                            textLen: msg.text.length,
+                          },
+                          timestamp: Date.now(),
+                        }),
+                      }).catch(() => {});
+                      // #endregion
+                      if (isPlaying) {
+                        stop();
+                        setPlayingMessageId(null);
+                        return;
+                      }
+                      setPlayingMessageId(msg.id);
+                      void speak(msg.text)
+                        .catch((e) => {
+                          console.error("[Spirit OS] TTS speak failed:", e);
+                        })
+                        .finally(() => setPlayingMessageId(null));
+                    }
+                  : undefined}
               />
             ))}
 
@@ -897,6 +965,8 @@ export default function SovereignChatPage() {
                   ? "text-zinc-400"
                   : sarcasm === "peer"
                   ? "text-violet-500"
+                  : sarcasm === "sovereign"
+                  ? "text-amber-400"
                   : "text-red-500"
               }>
                 {SARCASM_LEVELS.find((l) => l.id === sarcasm)?.label ?? sarcasm}

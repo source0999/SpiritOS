@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 
 import { SPIRIT_HISTORY_MESSAGE_CAP } from "@/lib/spiritConstants";
 
-type Sarcasm = "chill" | "peer" | "unhinged";
+type Sarcasm = "chill" | "peer" | "unhinged" | "sovereign";
 type ChatTurn = { role: "user" | "assistant"; content: string };
 
 const OLLAMA_CHAT_URL = "http://100.111.32.31:11434/api/chat";
@@ -19,6 +19,7 @@ const SYSTEM_PROMPTS: Record<Sarcasm, string> = {
   chill: "Spirit Focus mode. Senior engineer tone: concise, direct, technical. Avoid filler, flattery, and restating the question. Answer first, then details only if needed. Do not roleplay tests, scripts, or pseudo shell output unless explicitly asked. For Spirit OS edits, provide exact path/find/replace steps.",
   peer: "Spirit Peer mode. Sound like a trusted late-night engineering peer. Match user energy without corporate tone. Be natural, sharp, and practical. Prefer concise prose; use structure only when useful. Do not roleplay test harnesses or output fake command snippets unless explicitly requested.",
   unhinged: "Spirit Chaos mode. High-energy, dark-humor edge, but facts stay accurate. Roast weak ideas with specifics, then give the correct fix. No fabricated logs/commands. Do not emit pseudo test scripts unless the user asks for command output.",
+  sovereign: "Spirit Sovereign mode. Local-only inference on the Dell. No cloud framing, no corporate tone, no filler. Be direct, practical, and raw-but-precise. Keep facts grounded, show your reasoning concisely, and provide decisive technical guidance.",
 };
 
 function normalizeHistory(raw: unknown): ChatTurn[] {
@@ -43,7 +44,9 @@ function buildSystemPrompt(
   ragContext?: string,
 ): string {
   const mode: Sarcasm =
-    sarcasm === "chill" || sarcasm === "peer" || sarcasm === "unhinged" ? sarcasm : "peer";
+    sarcasm === "chill" || sarcasm === "peer" || sarcasm === "unhinged" || sarcasm === "sovereign"
+      ? sarcasm
+      : "peer";
   let prompt = SYSTEM_PROMPTS[mode];
   if (customDirective?.trim()) prompt += `\n\n## Active Directive\n${customDirective.trim()}`;
   if (userContext?.trim() && mode !== "chill") prompt += `\n\n## Source Profile\n${userContext.trim()}`;
@@ -154,7 +157,9 @@ export async function POST(req: Request) {
 
   const system = buildSystemPrompt(sarcasm, userContext, customDirective, ragContext);
   const mode: Sarcasm =
-    sarcasm === "chill" || sarcasm === "peer" || sarcasm === "unhinged" ? sarcasm : "peer";
+    sarcasm === "chill" || sarcasm === "peer" || sarcasm === "unhinged" || sarcasm === "sovereign"
+      ? sarcasm
+      : "peer";
   const historyMessages = normalizeHistory(
     "history" in body ? (body as { history: unknown }).history : undefined,
   );
@@ -172,7 +177,32 @@ export async function POST(req: Request) {
   let upstreamRes: Response | null = null;
   let backend: "groq" | "ollama" = "ollama";
 
-  if (groqKey) {
+  if (mode === "sovereign") {
+    console.log(`>>> [Spirit API] Sovereign mode forcing Ollama at ${OLLAMA_CHAT_URL}`);
+    try {
+      upstreamRes = await fetch(OLLAMA_CHAT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: OLLAMA_MODEL,
+          stream: true,
+          options: { num_ctx: OLLAMA_NUM_CTX },
+          messages,
+        }),
+      });
+      backend = "ollama";
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      return NextResponse.json(
+        {
+          error: "Sovereign mode requires Ollama, but the Dell endpoint is unreachable",
+          detail,
+          host: OLLAMA_CHAT_URL,
+        },
+        { status: 503 },
+      );
+    }
+  } else if (groqKey) {
     try {
       upstreamRes = await fetch(GROQ_CHAT_URL, {
         method: "POST",
@@ -199,7 +229,7 @@ export async function POST(req: Request) {
     }
   }
 
-  if (!upstreamRes) {
+  if (!upstreamRes && mode !== "sovereign") {
     console.log(`>>> [Spirit API] Using Ollama at ${OLLAMA_CHAT_URL}`);
     upstreamRes = await fetch(OLLAMA_CHAT_URL, {
       method: "POST",
@@ -218,6 +248,13 @@ export async function POST(req: Request) {
     `>>> [Spirit API] Engine: ${backend.toUpperCase()} | mode: ${mode} | history: ${historyMessages.length} turns | system: ${system.length} chars`,
   );
 
+  if (!upstreamRes) {
+    return NextResponse.json(
+      { error: "No backend response available" },
+      { status: 503 },
+    );
+  }
+
   if (!upstreamRes.ok) {
     const detail = await upstreamRes.text().catch(() => "");
     return NextResponse.json(
@@ -229,13 +266,14 @@ export async function POST(req: Request) {
   if (!upstreamRes.body) {
     return NextResponse.json({ error: `${backend.toUpperCase()} returned an empty body` }, { status: 502 });
   }
+  const streamBody = upstreamRes.body;
 
   void (async () => {
     try {
       if (backend === "groq") {
-        await pumpGroqSseToWriter(upstreamRes.body!, writer, encoder);
+        await pumpGroqSseToWriter(streamBody, writer, encoder);
       } else {
-        await pumpOllamaNdjsonToWriter(upstreamRes.body!, writer, encoder);
+        await pumpOllamaNdjsonToWriter(streamBody, writer, encoder);
       }
       await writer.close();
     } catch (err) {

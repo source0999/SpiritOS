@@ -94,13 +94,20 @@ services:
   #     POST /tts  →  body: { text, language, speaker_wav? }
   #                →  returns: audio/wav binary
   xtts-api:
-    image: ghcr.io/coqui-ai/xtts-streaming-server:latest
+    image: ghcr.io/coqui-ai/xtts-streaming-server:latest-cpu
     container_name: spirit-xtts
     restart: unless-stopped
     ports:
       - "8020:80"
     environment:
       - COQUI_TOS_AGREED=1
+      # Force CPU path on AMD/non-NVIDIA hosts.
+      - USE_CPU=1
+      - CUDA_VISIBLE_DEVICES=
+    devices:
+      - /dev/dri/renderD128:/dev/dri/renderD128
+    group_add:
+      - "993"
     volumes:
       - xtts_speakers:/app/speakers
     networks:

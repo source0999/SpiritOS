@@ -27,6 +27,7 @@
 "use client";
 
 import ReactMarkdown from "react-markdown";
+import { Square, Volume2 } from "lucide-react";
 import type { Message } from "@/lib/db.types";
 import { StreamingCursor } from "./StreamingCursor";
 import { MessageActions } from "./MessageActions";
@@ -127,6 +128,9 @@ interface CompleteBubbleProps {
   onStartEdit?: () => void;
   onSaveEdit?: (newText: string) => void;
   onCancelEdit?: () => void;
+  onSpeak?: () => void;
+  isPlayingThis?: boolean;
+  isTTSEnabled?: boolean;
 }
 
 interface StreamingBubbleProps {
@@ -161,7 +165,16 @@ export function MessageBubble(props: MessageBubbleProps) {
     );
   }
 
-  const { message: msg, isEditing, onStartEdit, onSaveEdit, onCancelEdit } = props;
+  const {
+    message: msg,
+    isEditing,
+    onStartEdit,
+    onSaveEdit,
+    onCancelEdit,
+    onSpeak,
+    isPlayingThis,
+    isTTSEnabled,
+  } = props;
   const isUser = msg.role === "user";
 
   return (
@@ -196,7 +209,22 @@ export function MessageBubble(props: MessageBubbleProps) {
             )}
           </div>
           {!isEditing && onStartEdit && (
-            <div className="flex-shrink-0 pt-1">
+            <div className="flex flex-shrink-0 items-start gap-1 pt-1">
+              {!isUser && isTTSEnabled && onSpeak && (
+                <button
+                  type="button"
+                  onClick={onSpeak}
+                  aria-label={isPlayingThis ? "Stop speech" : "Speak message"}
+                  className={cn(
+                    "flex h-7 w-7 items-center justify-center rounded-md border transition-colors",
+                    isPlayingThis
+                      ? "border-rose-500/40 bg-rose-500/15 text-rose-300"
+                      : "border-white/[0.07] bg-white/5 text-zinc-500 hover:text-zinc-300",
+                  )}
+                >
+                  {isPlayingThis ? <Square size={12} /> : <Volume2 size={12} />}
+                </button>
+              )}
               <MessageActions
                 messageId={msg.id}
                 messageText={msg.text}
