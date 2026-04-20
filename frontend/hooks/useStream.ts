@@ -40,6 +40,11 @@ export interface StreamOptions {
   /** Called immediately if the fetch or stream pump throws. */
   onError?: (err: Error) => void;
   /**
+   * Called when the stream ends with zero tokens (timeout, error, abort, or empty body).
+   * Use this to clear UI placeholders (e.g. [processing]) — `onError` is skipped on clean user abort.
+   */
+  onStreamEmpty?: () => void;
+  /**
    * Called after onComplete with the threadId and first user message.
    * Used to trigger autoTitle AFTER the main stream finishes — not before —
    * so both calls don't compete for the same Ollama inference slot.
@@ -64,7 +69,7 @@ export interface StreamState {
 // ── Hook ──────────────────────────────────────────────────────────────────────
 
 export function useStream(options: StreamOptions = {}): StreamState {
-  const { onComplete, onError } = options;
+  const { onComplete, onError, onStreamEmpty } = options;
   // onAutoTitle is consumed by page.tsx to fire autoTitle after stream completes.
   // It lives on StreamOptions for type safety but is not used inside useStream itself.
   void options.onAutoTitle;
@@ -116,9 +121,8 @@ export function useStream(options: StreamOptions = {}): StreamState {
   // optional autoTitleArgs tuple. autoTitle is fired AFTER onComplete — never
   // before — so it doesn't compete with the main inference for the Ollama slot.
   //
-  // Timeout: a 45-second AbortController timer fires if Ollama hasn't returned
-  // the first token. This prevents the infinite [processing] state on model
-  // cold-start or network failure.
+  // Timeout: abort if no terminal stream state within this window (align below
+  // `maxDuration` on `/api/spirit` so slow TTFT can complete server-side).
   //
   const startStream = useCallback(
     (
@@ -142,17 +146,15 @@ export function useStream(options: StreamOptions = {}): StreamState {
       const ctrl = new AbortController();
       abortCtrlRef.current = ctrl;
 
-      // ── 45-second safety timeout ────────────────────────────────────────
-      // If Ollama is cold-starting or unreachable, abort after 45 seconds
-      // so the UI gets an error instead of hanging forever.
+      // ── Client-side safety timeout (slightly under route `maxDuration`) ──
       const timeoutId = setTimeout(() => {
         if (!ctrl.signal.aborted) {
           ctrl.abort(new DOMException(
-            "Spirit timed out after 45 seconds. Is Ollama running?",
+            "Spirit timed out after 110 seconds waiting for the reply stream. Is Ollama running?",
             "TimeoutError",
           ));
         }
-      }, 45_000);
+      }, 110_000);
 
       // Kick off the rAF flush loop before the first await so the UI
       // updates as soon as the first token arrives.
@@ -238,13 +240,15 @@ export function useStream(options: StreamOptions = {}): StreamState {
           // Skips on clean abort (empty accRef) and on error (no content).
           if (fullText) {
             onComplete?.(fullText);
+          } else {
+            onStreamEmpty?.();
           }
 
           abortCtrlRef.current = null;
         }
       })();
     },
-    [onComplete, onError, startRafLoop, stopRafLoop],
+    [onComplete, onError, onStreamEmpty, startRafLoop, stopRafLoop],
   );
 
   return { streamingText, isStreaming, error, startStream, abort };

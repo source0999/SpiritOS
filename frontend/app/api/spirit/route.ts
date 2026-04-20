@@ -4,6 +4,8 @@
 // primary cause of the [processing] hang seen in the browser.
 // Ref: https://github.com/vercel/next.js/issues/48273
 export const dynamic = "force-dynamic";
+/** Allow long TTFT + large system prompts before Next/Vercel kills the route (default is often 30s). */
+export const maxDuration = 120;
 
 import { NextResponse } from "next/server";
 
@@ -20,9 +22,14 @@ import { NextResponse } from "next/server";
 
 const MODEL = "dolphin3" as const;
 
-const OLLAMA_CHAT_URL = `${(
-  process.env.OLLAMA_BASE_URL ?? "http://localhost:11434"
-).replace(/\/$/, "")}/api/chat`;
+/** Prefer 127.0.0.1 over localhost to skip IPv6 / resolver delay to Ollama. */
+const OLLAMA_BASE = (
+  process.env.OLLAMA_BASE_URL ?? "http://127.0.0.1:11434"
+)
+  .replace(/\/$/, "")
+  .replace(/localhost/g, "127.0.0.1");
+
+const OLLAMA_CHAT_URL = `${OLLAMA_BASE}/api/chat`;
 
 type Sarcasm = "chill" | "peer" | "unhinged";
 
@@ -314,7 +321,7 @@ export async function POST(req: Request) {
           : "Ollama unreachable",
         detail: msg,
         hint:
-          "From the Next.js server, OLLAMA_BASE_URL must reach Ollama (try host.docker.internal:11434 in Docker, or the LAN IP — not localhost if Ollama is on another host).",
+          "From the Next.js server, OLLAMA_BASE_URL must reach Ollama (try host.docker.internal:11434 in Docker, or the LAN IP if Ollama is on another machine). Local installs use 127.0.0.1:11434 to avoid localhost IPv6 delays.",
       },
       { status: aborted ? 504 : 503 },
     );

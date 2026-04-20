@@ -345,6 +345,10 @@ export default function SovereignChatPage() {
       setStreamingMsgId(null);
       autoTitlePendingRef.current = null;
     }, []),
+    onStreamEmpty: useCallback(() => {
+      setStreamingMsgId(null);
+      autoTitlePendingRef.current = null;
+    }, []),
     onComplete: useCallback(async (fullText: string) => {
       const threadId = activeThreadIdRef.current;
       try {
@@ -358,6 +362,8 @@ export default function SovereignChatPage() {
         void saved; // suppress unused-var lint
       } catch (e) {
         console.error("[Spirit OS] Failed to persist assistant message:", e);
+        setStreamingMsgId(null);
+        autoTitlePendingRef.current = null;
       }
 
       // ── Fire autoTitle AFTER the main stream completes ─────────────────

@@ -104,7 +104,7 @@ export function useThread(activeThreadId: string): UseThreadReturn {
       try {
         // Let the GPU / Ollama slot cool down after the main reply stream so titling
         // does not contend with the next user message on single-slot setups (e.g. RX 580).
-        await new Promise((resolve) => setTimeout(resolve, 3_000));
+        await new Promise((resolve) => setTimeout(resolve, 10_000));
 
         const res = await fetch("/api/spirit", {
           method:  "POST",
