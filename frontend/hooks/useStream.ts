@@ -138,6 +138,22 @@ export function useStream(options: StreamOptions = {}): StreamState {
       setError(null);
       setIsStreaming(true);
 
+      // #region agent log
+      fetch("http://localhost:7920/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "b62a08" },
+        body: JSON.stringify({
+          sessionId: "b62a08",
+          runId: "pre-fix",
+          hypothesisId: "H1",
+          location: "useStream.ts:startStream",
+          message: "startStream invoked",
+          data: { promptLen: prompt.length, hasUserCtx: !!userContext?.trim(), hasDirective: !!customDirective?.trim() },
+          timestamp: Date.now(),
+        }),
+      }).catch(() => {});
+      // #endregion
+
       // Primary AbortController — used for user-initiated abort and timeout.
       const ctrl = new AbortController();
       abortCtrlRef.current = ctrl;
@@ -173,6 +189,22 @@ export function useStream(options: StreamOptions = {}): StreamState {
             signal: ctrl.signal,
           });
 
+          // #region agent log
+          fetch("http://localhost:7920/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "b62a08" },
+            body: JSON.stringify({
+              sessionId: "b62a08",
+              runId: "post-fix",
+              hypothesisId: "H2",
+              location: "useStream.ts:fetchSettled",
+              message: "fetch returned Response",
+              data: { ok: res.ok, status: res.status, hasBody: !!res.body },
+              timestamp: Date.now(),
+            }),
+          }).catch(() => {});
+          // #endregion
+
           if (!res.ok) {
             // Non-streaming error (4xx/5xx JSON body from the proxy).
             const errData = await res.json().catch(() => ({})) as { error?: string };
@@ -188,6 +220,7 @@ export function useStream(options: StreamOptions = {}): StreamState {
           // The /api/spirit route already strips the Ollama NDJSON envelope.
           const reader  = res.body.getReader();
           const decoder = new TextDecoder();
+          let firstChunkLogged = false;
 
           for (;;) {
             const { done, value } = await reader.read();
@@ -195,6 +228,24 @@ export function useStream(options: StreamOptions = {}): StreamState {
             const chunk = decoder.decode(value, { stream: true });
             accRef.current  += chunk;
             dirtyRef.current = true;
+            if (!firstChunkLogged && chunk.length > 0) {
+              firstChunkLogged = true;
+              // #region agent log
+              fetch("http://localhost:7920/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "b62a08" },
+                body: JSON.stringify({
+                  sessionId: "b62a08",
+                  runId: "pre-fix",
+                  hypothesisId: "H3",
+                  location: "useStream.ts:firstChunk",
+                  message: "first token chunk",
+                  data: { chunkLen: chunk.length, accLen: accRef.current.length },
+                  timestamp: Date.now(),
+                }),
+              }).catch(() => {});
+              // #endregion
+            }
           }
 
           reader.releaseLock();
@@ -203,6 +254,29 @@ export function useStream(options: StreamOptions = {}): StreamState {
           setStreamingText(accRef.current);
 
         } catch (err) {
+          // #region agent log
+          {
+            const reason = ctrl.signal.reason;
+            fetch("http://localhost:7920/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "b62a08" },
+              body: JSON.stringify({
+                sessionId: "b62a08",
+                runId: "pre-fix",
+                hypothesisId: "H4",
+                location: "useStream.ts:catch",
+                message: "stream pump error",
+                data: {
+                  errName: err instanceof Error ? err.name : String(err),
+                  errMsg: err instanceof Error ? err.message.slice(0, 300) : "",
+                  reasonName: reason instanceof DOMException ? reason.name : typeof reason,
+                  accLen: accRef.current.length,
+                },
+                timestamp: Date.now(),
+              }),
+            }).catch(() => {});
+          }
+          // #endregion
           // User abort: AbortError on `err`. Timeout: same AbortError, but
           // `ctrl.signal.reason` is our DOMException with name "TimeoutError".
           const reason = ctrl.signal.reason;
@@ -233,6 +307,22 @@ export function useStream(options: StreamOptions = {}): StreamState {
           setIsStreaming(false);
 
           const fullText = accRef.current;
+
+          // #region agent log
+          fetch("http://localhost:7920/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "b62a08" },
+            body: JSON.stringify({
+              sessionId: "b62a08",
+              runId: "pre-fix",
+              hypothesisId: "H5",
+              location: "useStream.ts:finally",
+              message: "stream finished",
+              data: { fullTextLen: fullText.length, willOnComplete: !!fullText },
+              timestamp: Date.now(),
+            }),
+          }).catch(() => {});
+          // #endregion
 
           // Fire onComplete only when we actually received content.
           // Skips on clean abort (empty accRef) and on error (no content).

@@ -329,7 +329,13 @@ export default function SovereignChatPage() {
   } = useThread(activeThreadId);
 
   // ── useStream ─────────────────────────────────────────────────────────────
-  const { streamingText, isStreaming, startStream } = useStream({
+  const { streamingText, isStreaming, error: streamError, startStream } = useStream({
+    onError: useCallback(() => {
+      // Stream failed before any assistant text was persisted — clear the
+      // "streaming" placeholder id so `thinking` unlocks and the user can retry.
+      setStreamingMsgId(null);
+      autoTitlePendingRef.current = null;
+    }, []),
     onComplete: useCallback(async (fullText: string) => {
       const threadId = activeThreadIdRef.current;
       try {
@@ -799,6 +805,15 @@ export default function SovereignChatPage() {
             {/* ── Streaming bubble (live tokens) ── */}
             {isStreaming && (
               <MessageBubble mode="streaming" text={streamingText} />
+            )}
+
+            {streamError && !isStreaming && (
+              <div
+                role="alert"
+                className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 font-mono text-sm leading-relaxed text-red-300"
+              >
+                {streamError.message}
+              </div>
             )}
 
             <div ref={bottomRef} />

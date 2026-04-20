@@ -281,11 +281,18 @@ export async function POST(req: Request) {
 
   const system = buildSystemPrompt(sarcasm, userContext, customDirective);
 
+  // Do not block the client fetch until Ollama opens indefinitely — the browser
+  // would show [processing] with no headers. Abort upstream after a bounded wait.
+  const OLLAMA_CONNECT_MS = 25_000;
+  const upstreamCtrl = new AbortController();
+  const upstreamTimer = setTimeout(() => upstreamCtrl.abort(), OLLAMA_CONNECT_MS);
+
   let upstreamRes: Response;
   try {
     upstreamRes = await fetch(OLLAMA_CHAT_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      signal: upstreamCtrl.signal,
       body: JSON.stringify({
         model: MODEL,
         stream: true,
@@ -296,15 +303,23 @@ export async function POST(req: Request) {
       }),
     });
   } catch (e) {
+    const aborted =
+      (e instanceof DOMException && e.name === "AbortError") ||
+      (e instanceof Error && e.name === "AbortError");
     const msg = e instanceof Error ? e.message : String(e);
     return NextResponse.json(
       {
-        error: "Ollama unreachable",
+        error: aborted
+          ? "Ollama connection timed out (no response headers in time)"
+          : "Ollama unreachable",
         detail: msg,
-        hint: "Ensure Ollama is running (e.g. docker compose up) and OLLAMA_BASE_URL is correct for this host.",
+        hint:
+          "From the Next.js server, OLLAMA_BASE_URL must reach Ollama (try host.docker.internal:11434 in Docker, or the LAN IP — not localhost if Ollama is on another host).",
       },
-      { status: 503 },
+      { status: aborted ? 504 : 503 },
     );
+  } finally {
+    clearTimeout(upstreamTimer);
   }
 
   if (!upstreamRes.ok) {
