@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useStream } from "@/hooks/useStream";
 import { useThread } from "@/hooks/useThread";
 import { useThreadCRUD } from "@/hooks/useThreadCRUD";
+import { usePersonality } from "@/hooks/usePersonality";
 import { Paperclip, Send, Zap, Plus, Search, PanelLeft, X, ChevronRight } from "lucide-react";
 import { MessageBubble } from "@/components/chat/MessageBubble";
 import { SortableThreadItem } from "@/components/sidebar/SortableThreadItem";
@@ -35,6 +36,7 @@ import {
   setSetting,
   getCustomDirective,
   clearCustomDirective,
+  logMissionOverride,
 } from "@/lib/db";
 import type { Folder, Thread, Message, SarcasmLevel } from "@/lib/db.types";
 
@@ -318,6 +320,13 @@ export default function SovereignChatPage() {
   // an async Dexie read on the hot path; it's refreshed on each send.
   const customDirectiveRef = useRef<string | null>(null);
 
+  // ── Step C: Personality learning tracker ──────────────────────────────────
+  const { captureMessageEvents, captureCorrectionEvent, buildUserContext } = usePersonality();
+
+  // Synthesised Source profile string — built async before each startStream,
+  // injected into Mirror/Chaos prompts. Empty string = insufficient data yet.
+  const userContextRef = useRef<string>("");
+
   // ── Thread + message data (useThread hook) ────────────────────────────────
   // Placed before useStream so autoTitle is available to onComplete.
   const {
@@ -590,9 +599,10 @@ export default function SovereignChatPage() {
     if (metaMatch) {
       const newDirective = metaMatch[3].trim();
 
-      // Persist to Dexie settings.
+      // Persist to Dexie settings (live directive) and audit log (history).
       await setSetting("customDirective", newDirective);
       customDirectiveRef.current = newDirective;
+      void logMissionOverride(newDirective);
 
       // Ensure a thread exists so the confirmation message has somewhere to live.
       let threadId = activeThreadId;
@@ -656,17 +666,25 @@ export default function SovereignChatPage() {
     await touchThread(threadId, text);
 
     // Refresh the custom directive from Dexie on every send.
-    // Cheap read — settings table is tiny. Ensures the directive is always
-    // current even if it was changed in another tab or session.
     customDirectiveRef.current = await getCustomDirective();
+
+    // ── Step C: Capture personality signals (fire-and-forget) ────────────
+    captureMessageEvents(text, sarcasm);
+
+    // ── Step C: Build userContext for Mirror/Chaos prompt injection ───────
+    userContextRef.current = await buildUserContext();
 
     // Queue autoTitle to fire AFTER the stream completes (via onComplete).
     autoTitlePendingRef.current = { threadId, text };
 
-    // Kick off the stream. userContext will be added in Step C.
     setStreamingMsgId("streaming");
-    startStream(text, sarcasm, undefined, customDirectiveRef.current ?? undefined);
-  }, [input, thinking, activeThreadId, sarcasm, startStream]);
+    startStream(
+      text,
+      sarcasm,
+      userContextRef.current || undefined,
+      customDirectiveRef.current ?? undefined,
+    );
+  }, [input, thinking, activeThreadId, sarcasm, startStream, captureMessageEvents, buildUserContext]);
 
   // ── New Chat ──────────────────────────────────────────────────────────────
   // Creates a placeholder threadId. The actual DB record is created on first send
@@ -797,6 +815,7 @@ export default function SovereignChatPage() {
                 onSaveEdit={async (newText) => {
                   await editMessage(msg.id, newText);
                   setEditingMessageId(null);
+                  captureCorrectionEvent();
                 }}
                 onCancelEdit={() => setEditingMessageId(null)}
               />

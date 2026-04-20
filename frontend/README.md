@@ -355,11 +355,11 @@ WebKit on Safari iOS is not a browser. It is a trap with rounded corners. Every 
   - **Mirror** (was Peer): peer presence — matches Source's energy, banned "What is my objective", conversational-first
   - **Chaos** (was Unhinged): co-conspirator — specific roasts, conspiracy angles, correct answers in unhinged delivery
   - Mode-aware empty state: changes per active mode ("What's on your mind?" / "Ready to work." / "Go ahead. Make my day.")
-  - Mode-aware textarea placeholder: changes per active mode
+  - Mode-aware textarea placeholder: changes per active mode (`MODE_PLACEHOLDER[sarcasm]` — stale `.next` can show old copy until cache bust)
   - Header label: `SARCASM` → `MODE`, toggle labels: `Chill/Peer/Unhinged` → `Focus/Mirror/Chaos`
   - Status bar: `Sarcasm: peer` → `Mode: Mirror` (uses display label, not internal id)
   - Sidebar footer: `Spirit · Workspace v1` → `Spirit OS · v0.2`
-  - `/api/spirit/route.ts` extended to accept optional `userContext` string — ready for Step C injection
+  - `/api/spirit/route.ts` accepts optional `userContext` + `customDirective`; `OLLAMA_BASE_URL` via `frontend/.env.local`
 - [x] **Step 1 (Bug Fix)** — Stream hang: `force-dynamic` + autoTitle sequencing + 45s timeout
   - Root cause 1: Missing `export const dynamic = "force-dynamic"` in `/api/spirit/route.ts` — Next.js 16 was buffering the entire stream before forwarding to client
   - Root cause 2: `autoTitle()` fired simultaneously with `startStream()`, saturating the single Ollama inference slot
@@ -375,7 +375,15 @@ WebKit on Safari iOS is not a browser. It is a trap with rounded corners. Every 
   - `startStream()` extended to accept and forward `customDirective` in POST body
   - `customDirectiveRef` in `page.tsx` — refreshed from Dexie on every send, zero stale-closure risk
   - Self-awareness clause added to all three personas: Spirit explains it cannot modify its own codebase autonomously and will provide exact file/line/replacement instructions instead
-- [ ] **Step C** — Learning Tracker: `usePersonality` hook + event capture + context injection
+- [x] **Step C** — Learning Tracker: `usePersonality` hook + `mission_overrides` audit table
+  - `usePersonality`: `captureMessageEvents`, `captureCorrectionEvent`, `buildUserContext`
+  - Captures `sarcasm_selected`, `time_of_day`, `message_length`, `keyword_frequency` per send
+  - `captureCorrectionEvent` wired to `onSaveEdit` — logs Source disagreements
+  - `buildUserContext()` requires ≥5 events before synthesising — no noise on fresh install
+  - `userContextRef` built async before each `startStream`, injected into Mirror/Chaos only (route strips for Focus)
+  - Dexie schema bumped to `version(4)`: `mission_overrides` table with `active` + `createdAt` indexes
+  - `logMissionOverride()` on every directive change — full history; `settings["customDirective"]` remains the live value
+  - Focus mode intentionally receives no personality context in the system prompt (technical precision only)
 
 ### Phase 2 · Interaction Models (The Workspace)
 

@@ -8,6 +8,7 @@
 //   v1 — initial schema: folders, threads, messages, settings
 //   v2 — compound index [threadId+createdAt], order index on threads
 //   v3 — DATA RESET: wipes all mock seed data, adds personality_events table
+//   v4 — mission_overrides audit log for directive history
 //
 // Usage:
 //   import { db } from "@/lib/db";
@@ -22,6 +23,7 @@ import type {
   Message,
   Setting,
   PersonalityEvent,
+  MissionOverride,
 } from "./db.types";
 
 // ── UUID helper ───────────────────────────────────────────────────────────────
@@ -48,6 +50,7 @@ class SpiritDB extends Dexie {
   messages!:           Table<Message,          string>;
   settings!:           Table<Setting,          string>;
   personality_events!: Table<PersonalityEvent, string>;
+  mission_overrides!:  Table<MissionOverride,  string>;
 
   constructor() {
     super("spirit-os");
@@ -107,6 +110,21 @@ class SpiritDB extends Dexie {
 
         // personality_events is a new table — no data to migrate.
       });
+
+    // ── v4: mission_overrides audit log ────────────────────────────────────
+    // Adds an append-only history table for every directive Source sets via
+    // "Spirit, change your mission to X". The active directive is still
+    // stored in settings["customDirective"] for fast reads on every send;
+    // this table provides the full history for future Mem0 integration.
+    // No data migration needed — new table, existing rows unaffected.
+    this.version(4).stores({
+      folders:            "id, order, createdAt",
+      threads:            "id, folderId, order, updatedAt, createdAt",
+      messages:           "id, threadId, [threadId+createdAt], createdAt",
+      settings:           "key",
+      personality_events: "id, type, createdAt",
+      mission_overrides:  "id, active, createdAt",
+    });
   }
 }
 
@@ -246,4 +264,27 @@ export async function getCustomDirective(): Promise<string | null> {
 // Clears the custom directive.
 export async function clearCustomDirective(): Promise<void> {
   await db.settings.delete("customDirective");
+}
+
+// ── Mission override audit log ────────────────────────────────────────────────
+// Called whenever Source sets a new directive. Marks all previous overrides
+// as inactive, then inserts the new one as active.
+// Fire-and-forget safe — errors are swallowed so they never block send().
+export async function logMissionOverride(directive: string): Promise<void> {
+  try {
+    await db.transaction("rw", db.mission_overrides, async () => {
+      const previous = await db.mission_overrides.filter((o) => o.active).toArray();
+      for (const prev of previous) {
+        await db.mission_overrides.update(prev.id, { active: false });
+      }
+      await db.mission_overrides.add({
+        id:        uid(),
+        directive: directive.trim(),
+        active:    true,
+        createdAt: Date.now(),
+      });
+    });
+  } catch {
+    // Swallow — audit log failure must never block the directive being set.
+  }
 }

@@ -74,3 +74,15 @@ export interface PersonalityEvent {
   /** Optional structured payload (topics, tone hints, etc.) */
   payload?:  Record<string, unknown>;
 }
+
+// ── Mission Override ──────────────────────────────────────────────────────────
+// Append-only audit log for every directive change Source makes via
+// "Spirit, change your mission to X". Complements the live settings key
+// (which stores only the current active directive) with a full history.
+// This lets Spirit reference past mission states in future Mem0 integration.
+export interface MissionOverride {
+  id:        string;
+  directive: string;   // the raw directive text as written by Source
+  active:    boolean;  // true = currently injected into system prompt
+  createdAt: number;   // Unix ms
+}
