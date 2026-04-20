@@ -300,6 +300,23 @@ WebKit on Safari iOS is not a browser. It is a trap with rounded corners. Every 
 
 ---
 
+## Phase 2: Spirit AI Core
+
+### Module 3: Streaming Chat UI
+- [x] **Step 1** — `/api/spirit` stream consumption fixed (rAF flush pattern, `useStream` hook)
+  - Replaced `res.json()` blocking call with `ReadableStream` + `TextDecoder` pump
+  - `useRef` accumulator decouples token speed from React render cycle
+  - Single Dexie write on `onComplete` (zero mid-stream IndexedDB contention)
+  - `AbortController` wired for clean stream cancellation
+  - `streamingText` live state drives UI; `thinking` derived from `isStreaming`
+- [ ] **Step 2** — `MessageBubble` + `StreamingCursor` components
+- [ ] **Step 3** — Dexie compound index upgrade + `useThread` load hook
+- [ ] **Step 4** — Full CRUD: rename thread, delete thread, edit messages
+- [ ] **Step 5** — `@dnd-kit/sortable` sidebar with folder drag-and-drop
+
+### Module 4: XTTS v2 Voice Pipeline
+- [ ] **Step 6** — TTS parser + audio queue + `useTTS` hook + `/api/tts` route
+
 ### Phase 2 · Interaction Models (The Workspace)
 
 #### 💬 Sovereign Chat UI `/chat`

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { useStream } from "@/hooks/useStream";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Paperclip, Send, Zap, Plus, Search, PanelLeft, X, ChevronRight } from "lucide-react";
 
@@ -288,12 +289,41 @@ function ConversationSidebar({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SovereignChatPage() {
-  const [activeThreadId,   setActiveThreadId]   = useState<string>("t13");
-  const [input,            setInput]            = useState("");
-  const [sarcasm,          setSarcasm]          = useState<SarcasmLevel>("peer");
-  const [thinking,         setThinking]         = useState(false);
+  const [activeThreadId,    setActiveThreadId]  = useState<string>("t13");
+  const [input,             setInput]           = useState("");
+  const [sarcasm,           setSarcasm]         = useState<SarcasmLevel>("peer");
   const [mobileSidebarOpen, setMobileOpen]      = useState(false);
-  const [seeded,           setSeeded]           = useState(false);
+  const [seeded,            setSeeded]          = useState(false);
+  // Holds the Dexie message id of the assistant bubble currently streaming.
+  // null when idle. Used to swap the streaming placeholder for persisted text.
+  const [streamingMsgId,    setStreamingMsgId]  = useState<string | null>(null);
+
+  // Capture activeThreadId in a ref so the onComplete closure always sees the
+  // current value even though it's created inside useStream (stale closure trap).
+  const activeThreadIdRef = useRef(activeThreadId);
+  useEffect(() => { activeThreadIdRef.current = activeThreadId; }, [activeThreadId]);
+
+  // ── useStream ─────────────────────────────────────────────────────────────
+  const { streamingText, isStreaming, startStream } = useStream({
+    onComplete: useCallback(async (fullText: string) => {
+      const threadId = activeThreadIdRef.current;
+      try {
+        const saved = await addMessage(threadId, "spirit", fullText);
+        await touchThread(threadId, fullText);
+        setStreamingMsgId(null);
+        // Scroll after the persisted bubble replaces the streaming one.
+        requestAnimationFrame(() => {
+          bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+        });
+        void saved; // suppress unused-var lint
+      } catch (e) {
+        console.error("[Spirit OS] Failed to persist assistant message:", e);
+      }
+    }, []), // stable — reads threadId via ref, not closure
+  });
+
+  // Derived: are we in any kind of "busy" state?
+  const thinking = useMemo(() => isStreaming || streamingMsgId !== null, [isStreaming, streamingMsgId]);
 
   const bottomRef   = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -352,49 +382,34 @@ export default function SovereignChatPage() {
   }, []);
 
   // ── Send ──────────────────────────────────────────────────────────────────
+  // ── Send ──────────────────────────────────────────────────────────────────
   const send = useCallback(async () => {
     const text = input.trim();
     if (!text || thinking) return;
 
     setInput("");
     if (textareaRef.current) textareaRef.current.style.height = "auto";
-    setThinking(true);
 
     let threadId = activeThreadId;
 
-    // If the active thread is brand-new (has no messages yet and its id
-    // doesn't exist in the DB), create it now with this first message as title.
+    // Create the DB thread record on first send (never persist empty threads).
     const existingThread = await db.threads.get(threadId);
     if (!existingThread) {
       const newThread = await createThread(null, text);
       threadId = newThread.id;
       setActiveThreadId(threadId);
+      activeThreadIdRef.current = threadId;
     }
 
-    // Persist user message immediately so it appears in the live query.
+    // Persist the user message immediately so it appears in the live query.
     await addMessage(threadId, "user", text);
     await touchThread(threadId, text);
 
-    try {
-      const res  = await fetch("/api/spirit", {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ prompt: text, sarcasm, threadId }),
-      });
-      const data  = await res.json().catch(() => ({}));
-      const reply = (data as { reply?: string }).reply ?? "";
-
-      const spiritText = reply || "[silence] Nothing came back. Suspicious.";
-      await addMessage(threadId, "spirit", spiritText);
-      await touchThread(threadId, spiritText);
-    } catch {
-      const errText = "[sighs] Network error. The irony of a homelab failing its own AI.";
-      await addMessage(threadId, "spirit", errText);
-      await touchThread(threadId, errText);
-    } finally {
-      setThinking(false);
-    }
-  }, [input, thinking, activeThreadId, sarcasm]);
+    // Kick off the stream. useStream's onComplete callback handles the
+    // Dexie write for the assistant message when the stream finishes.
+    setStreamingMsgId("streaming");
+    startStream(text, sarcasm);
+  }, [input, thinking, activeThreadId, sarcasm, startStream]);
 
   // ── New Chat ──────────────────────────────────────────────────────────────
   // Creates a placeholder threadId. The actual DB record is created on first send
@@ -523,14 +538,31 @@ export default function SovereignChatPage() {
               </div>
             ))}
 
-            {thinking && (
+            {/* ── Streaming bubble (live tokens) ── */}
+            {isStreaming && (
               <div className="flex flex-col items-start">
-                <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-zinc-600">Spirit</p>
-                <p className="font-mono text-sm text-zinc-500">
-                  <span className="italic text-violet-500/60">[processing]</span>
-                  {" "}
-                  <span className="animate-pulse text-violet-400">▌</span>
+                <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-zinc-600">
+                  Spirit
                 </p>
+                <div className="max-w-[90%] break-words font-mono text-sm leading-relaxed text-zinc-300 sm:max-w-2xl">
+                  {streamingText
+                    ? (
+                      <>
+                        {parseAcousticMarkers(streamingText)}
+                        <span className="ml-0.5 inline-block w-[2px] animate-pulse bg-violet-400 align-middle"
+                              style={{ height: "1em" }}
+                              aria-hidden />
+                      </>
+                    ) : (
+                      // Pre-first-token: show the processing indicator
+                      <p className="text-zinc-500">
+                        <span className="italic text-violet-500/60">[processing]</span>
+                        {" "}
+                        <span className="animate-pulse text-violet-400">▌</span>
+                      </p>
+                    )
+                  }
+                </div>
               </div>
             )}
 

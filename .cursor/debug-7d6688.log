@@ -148,3 +148,82 @@
 {"sessionId":"7d6688","hypothesisId":"B","location":"DashboardContent.tsx:mount","message":"DashboardContent mounted","data":{"hasNextRoot":false,"bodyChildren":10},"timestamp":1776654790610}
 {"sessionId":"7d6688","timestamp":1776654790607,"hypothesisId":"E","location":"WhiteScreenDebugProbe.tsx:main","message":"main metrics","data":{"mainH":1984,"mainW":1648,"childCount":1}}
 {"sessionId":"7d6688","timestamp":1776654790607,"hypothesisId":"E","location":"WhiteScreenDebugProbe.tsx:main","message":"main metrics","data":{"mainH":1984,"mainW":1648,"childCount":1},"serverReceivedAt":1776654790259}
+{"sessionId":"7d6688","timestamp":1776655616803,"hypothesisId":"D","location":"app/layout.tsx:RootLayout","message":"RootLayout render (server)","data":{"childType":"object"}}
+{"sessionId":"7d6688","timestamp":1776655616823,"hypothesisId":"D","location":"app/layout.tsx:RootLayout","message":"RootLayout render (server)","data":{"childType":"object"}}
+{"sessionId":"7d6688","timestamp":1776655616824,"hypothesisId":"C","location":"app/page.tsx:Page","message":"Home Page render (server)"}
+{"sessionId":"7d6688","timestamp":1776655616825,"hypothesisId":"C","location":"ProjectWidgetServer.tsx:entry","message":"ProjectWidgetServer started","data":{"projectCount":5}}
+{"sessionId":"7d6688","timestamp":1776655616825,"hypothesisId":"C","location":"ProjectWidgetServer.tsx:exit","message":"ProjectWidgetServer completed","data":{"overrideKeys":["spirit-os-dashboard"]}}
+{"sessionId":"7d6688","timestamp":1776655616847,"hypothesisId":"D","location":"app/layout.tsx:RootLayout","message":"RootLayout render (server)","data":{"childType":"object"}}
+{"sessionId":"7d6688","timestamp":1776655620879,"hypothesisId":"D","location":"app/layout.tsx:RootLayout","message":"RootLayout render (server)","data":{"childType":"object"}}
+{"sessionId":"7d6688","timestamp":1776655620912,"hypothesisId":"D","location":"app/layout.tsx:RootLayout","message":"RootLayout render (server)","data":{"childType":"object"}}
+{"sessionId":"7d6688","timestamp":1776655620914,"hypothesisId":"C","location":"app/page.tsx:Page","message":"Home Page render (server)"}
+{"sessionId":"7d6688","timestamp":1776655620914,"hypothesisId":"C","location":"ProjectWidgetServer.tsx:entry","message":"ProjectWidgetServer started","data":{"projectCount":5}}
+{"sessionId":"7d6688","timestamp":1776655620914,"hypothesisId":"C","location":"ProjectWidgetServer.tsx:exit","message":"ProjectWidgetServer completed","data":{"overrideKeys":["spirit-os-dashboard"]}}
+{"sessionId":"7d6688","timestamp":1776655620966,"hypothesisId":"D","location":"app/layout.tsx:RootLayout","message":"RootLayout render (server)","data":{"childType":"object"}}
+{"sessionId":"7d6688","timestamp":1776655622243,"hypothesisId":"B","location":"WhiteScreenDebugProbe.tsx:mount","message":"client mounted","data":{"path":"/chat"},"serverReceivedAt":1776655621801}
+{"sessionId":"7d6688","timestamp":1776655622243,"hypothesisId":"B","location":"WhiteScreenDebugProbe.tsx:mount","message":"client mounted","data":{"path":"/chat"}}
+{"sessionId":"7d6688","timestamp":1776655622244,"hypothesisId":"A","location":"WhiteScreenDebugProbe.tsx:computed","message":"body computed styles","data":{"bodyBg":"rgb(9, 9, 11)","bodyColor":"rgb(250, 250, 250)","bodyClass":"bg-zinc-950 text-zinc-100 antialiased","inlineStyle":"background-color:#09090b;color:#fafafa"}}
+{"sessionId":"7d6688","timestamp":1776655622245,"hypothesisId":"D","location":"WhiteScreenDebugProbe.tsx:html","message":"html attributes","data":{"htmlClass":"dark","hasDark":true}}
+{"sessionId":"7d6688","timestamp":1776655622246,"hypothesisId":"E","location":"WhiteScreenDebugProbe.tsx:main","message":"main metrics","data":{"mainH":680,"mainW":1274,"childCount":1}}
+{"sessionId":"7d6688","timestamp":1776655622244,"hypothesisId":"A","location":"WhiteScreenDebugProbe.tsx:computed","message":"body computed styles","data":{"bodyBg":"rgb(9, 9, 11)","bodyColor":"rgb(250, 250, 250)","bodyClass":"bg-zinc-950 text-zinc-100 antialiased","inlineStyle":"background-color:#09090b;color:#fafafa"},"serverReceivedAt":1776655621810}
+{"sessionId":"7d6688","timestamp":1776655622245,"hypothesisId":"D","location":"WhiteScreenDebugProbe.tsx:html","message":"html attributes","data":{"htmlClass":"dark","hasDark":true},"serverReceivedAt":1776655621814}
+{"sessionId":"7d6688","timestamp":1776655622246,"hypothesisId":"E","location":"WhiteScreenDebugProbe.tsx:main","message":"main metrics","data":{"mainH":680,"mainW":1274,"childCount":1},"serverReceivedAt":1776655621818}
+{"sessionId":"7d6688","timestamp":1776655622274,"hypothesisId":"B","location":"WhiteScreenDebugProbe.tsx:mount","message":"client mounted","data":{"path":"/"},"serverReceivedAt":1776655621852}
+{"sessionId":"7d6688","timestamp":1776655622277,"hypothesisId":"A","location":"WhiteScreenDebugProbe.tsx:computed","message":"body computed styles","data":{"bodyBg":"rgb(9, 9, 11)","bodyColor":"rgb(250, 250, 250)","bodyClass":"bg-zinc-950 text-zinc-100 antialiased","inlineStyle":"background-color:#09090b;color:#fafafa"},"serverReceivedAt":1776655621859}
+{"sessionId":"7d6688","timestamp":1776655622277,"hypothesisId":"D","location":"WhiteScreenDebugProbe.tsx:html","message":"html attributes","data":{"htmlClass":"dark","hasDark":true},"serverReceivedAt":1776655621865}
+{"sessionId":"7d6688","timestamp":1776655622278,"hypothesisId":"E","location":"WhiteScreenDebugProbe.tsx:main","message":"main metrics","data":{"mainH":1984,"mainW":1648,"childCount":1},"serverReceivedAt":1776655621870}
+{"sessionId":"7d6688","timestamp":1776655622274,"hypothesisId":"B","location":"WhiteScreenDebugProbe.tsx:mount","message":"client mounted","data":{"path":"/"}}
+{"sessionId":"7d6688","timestamp":1776655622277,"hypothesisId":"A","location":"WhiteScreenDebugProbe.tsx:computed","message":"body computed styles","data":{"bodyBg":"rgb(9, 9, 11)","bodyColor":"rgb(250, 250, 250)","bodyClass":"bg-zinc-950 text-zinc-100 antialiased","inlineStyle":"background-color:#09090b;color:#fafafa"}}
+{"sessionId":"7d6688","timestamp":1776655622277,"hypothesisId":"D","location":"WhiteScreenDebugProbe.tsx:html","message":"html attributes","data":{"htmlClass":"dark","hasDark":true}}
+{"sessionId":"7d6688","timestamp":1776655622278,"hypothesisId":"E","location":"WhiteScreenDebugProbe.tsx:main","message":"main metrics","data":{"mainH":1984,"mainW":1648,"childCount":1}}
+{"sessionId":"7d6688","hypothesisId":"B","location":"DashboardContent.tsx:mount","message":"DashboardContent mounted","data":{"hasNextRoot":false,"bodyChildren":10},"timestamp":1776655622283}
+{"sessionId":"7d6688","timestamp":1776655621892,"hypothesisId":"B","location":"WhiteScreenDebugProbe.tsx:mount","message":"client mounted","data":{"path":"/chat"},"serverReceivedAt":1776655621980}
+{"sessionId":"7d6688","timestamp":1776655621892,"hypothesisId":"A","location":"WhiteScreenDebugProbe.tsx:computed","message":"body computed styles","data":{"bodyBg":"rgb(9, 9, 11)","bodyColor":"rgb(250, 250, 250)","bodyClass":"bg-zinc-950 text-zinc-100 antialiased","inlineStyle":"background-color:#09090b;color:#fafafa"},"serverReceivedAt":1776655621985}
+{"sessionId":"7d6688","timestamp":1776655621892,"hypothesisId":"D","location":"WhiteScreenDebugProbe.tsx:html","message":"html attributes","data":{"htmlClass":"dark","hasDark":true},"serverReceivedAt":1776655621989}
+{"sessionId":"7d6688","timestamp":1776655621892,"hypothesisId":"E","location":"WhiteScreenDebugProbe.tsx:main","message":"main metrics","data":{"mainH":684,"mainW":402,"childCount":1},"serverReceivedAt":1776655621994}
+{"sessionId":"7d6688","timestamp":1776655623310,"hypothesisId":"C","location":"app/page.tsx:Page","message":"Home Page render (server)"}
+{"sessionId":"7d6688","timestamp":1776655623311,"hypothesisId":"C","location":"ProjectWidgetServer.tsx:entry","message":"ProjectWidgetServer started","data":{"projectCount":5}}
+{"sessionId":"7d6688","timestamp":1776655623311,"hypothesisId":"C","location":"ProjectWidgetServer.tsx:exit","message":"ProjectWidgetServer completed","data":{"overrideKeys":["spirit-os-dashboard"]}}
+{"sessionId":"7d6688","timestamp":1776655736506,"hypothesisId":"D","location":"app/layout.tsx:RootLayout","message":"RootLayout render (server)","data":{"childType":"object"}}
+{"sessionId":"7d6688","timestamp":1776655736549,"hypothesisId":"D","location":"app/layout.tsx:RootLayout","message":"RootLayout render (server)","data":{"childType":"object"}}
+{"sessionId":"7d6688","timestamp":1776655736551,"hypothesisId":"C","location":"app/page.tsx:Page","message":"Home Page render (server)"}
+{"sessionId":"7d6688","timestamp":1776655736551,"hypothesisId":"C","location":"ProjectWidgetServer.tsx:entry","message":"ProjectWidgetServer started","data":{"projectCount":5}}
+{"sessionId":"7d6688","timestamp":1776655736552,"hypothesisId":"C","location":"ProjectWidgetServer.tsx:exit","message":"ProjectWidgetServer completed","data":{"overrideKeys":["spirit-os-dashboard"]}}
+{"sessionId":"7d6688","timestamp":1776655745157,"hypothesisId":"D","location":"app/layout.tsx:RootLayout","message":"RootLayout render (server)","data":{"childType":"object"}}
+{"sessionId":"7d6688","timestamp":1776655745176,"hypothesisId":"D","location":"app/layout.tsx:RootLayout","message":"RootLayout render (server)","data":{"childType":"object"}}
+{"sessionId":"7d6688","timestamp":1776655745177,"hypothesisId":"C","location":"app/page.tsx:Page","message":"Home Page render (server)"}
+{"sessionId":"7d6688","timestamp":1776655745178,"hypothesisId":"C","location":"ProjectWidgetServer.tsx:entry","message":"ProjectWidgetServer started","data":{"projectCount":5}}
+{"sessionId":"7d6688","timestamp":1776655745178,"hypothesisId":"C","location":"ProjectWidgetServer.tsx:exit","message":"ProjectWidgetServer completed","data":{"overrideKeys":["spirit-os-dashboard"]}}
+{"sessionId":"7d6688","timestamp":1776655768544,"hypothesisId":"D","location":"app/layout.tsx:RootLayout","message":"RootLayout render (server)","data":{"childType":"object"}}
+{"sessionId":"7d6688","timestamp":1776655768572,"hypothesisId":"D","location":"app/layout.tsx:RootLayout","message":"RootLayout render (server)","data":{"childType":"object"}}
+{"sessionId":"7d6688","timestamp":1776655768592,"hypothesisId":"D","location":"app/layout.tsx:RootLayout","message":"RootLayout render (server)","data":{"childType":"object"}}
+{"sessionId":"7d6688","timestamp":1776655768658,"hypothesisId":"D","location":"app/layout.tsx:RootLayout","message":"RootLayout render (server)","data":{"childType":"object"}}
+{"sessionId":"7d6688","timestamp":1776655768668,"hypothesisId":"D","location":"app/layout.tsx:RootLayout","message":"RootLayout render (server)","data":{"childType":"object"}}
+{"sessionId":"7d6688","timestamp":1776655768677,"hypothesisId":"D","location":"app/layout.tsx:RootLayout","message":"RootLayout render (server)","data":{"childType":"object"}}
+{"sessionId":"7d6688","timestamp":1776655768677,"hypothesisId":"C","location":"app/page.tsx:Page","message":"Home Page render (server)"}
+{"sessionId":"7d6688","timestamp":1776655768678,"hypothesisId":"C","location":"ProjectWidgetServer.tsx:entry","message":"ProjectWidgetServer started","data":{"projectCount":5}}
+{"sessionId":"7d6688","timestamp":1776655768679,"hypothesisId":"C","location":"ProjectWidgetServer.tsx:exit","message":"ProjectWidgetServer completed","data":{"overrideKeys":["spirit-os-dashboard"]}}
+{"sessionId":"7d6688","timestamp":1776655768705,"hypothesisId":"D","location":"app/layout.tsx:RootLayout","message":"RootLayout render (server)","data":{"childType":"object"}}
+{"sessionId":"7d6688","timestamp":1776655785324,"hypothesisId":"D","location":"app/layout.tsx:RootLayout","message":"RootLayout render (server)","data":{"childType":"object"}}
+{"sessionId":"7d6688","timestamp":1776655785472,"hypothesisId":"D","location":"app/layout.tsx:RootLayout","message":"RootLayout render (server)","data":{"childType":"object"}}
+{"sessionId":"7d6688","timestamp":1776655785508,"hypothesisId":"D","location":"app/layout.tsx:RootLayout","message":"RootLayout render (server)","data":{"childType":"object"}}
+{"sessionId":"7d6688","timestamp":1776655785509,"hypothesisId":"C","location":"app/page.tsx:Page","message":"Home Page render (server)"}
+{"sessionId":"7d6688","timestamp":1776655785510,"hypothesisId":"C","location":"ProjectWidgetServer.tsx:entry","message":"ProjectWidgetServer started","data":{"projectCount":5}}
+{"sessionId":"7d6688","timestamp":1776655785510,"hypothesisId":"C","location":"ProjectWidgetServer.tsx:exit","message":"ProjectWidgetServer completed","data":{"overrideKeys":["spirit-os-dashboard"]}}
+{"sessionId":"7d6688","timestamp":1776655786859,"hypothesisId":"B","location":"WhiteScreenDebugProbe.tsx:mount","message":"client mounted","data":{"path":"/chat"}}
+{"sessionId":"7d6688","timestamp":1776655786861,"hypothesisId":"A","location":"WhiteScreenDebugProbe.tsx:computed","message":"body computed styles","data":{"bodyBg":"rgb(9, 9, 11)","bodyColor":"rgb(250, 250, 250)","bodyClass":"bg-zinc-950 text-zinc-100 antialiased","inlineStyle":"background-color:#09090b;color:#fafafa"}}
+{"sessionId":"7d6688","timestamp":1776655786862,"hypothesisId":"D","location":"WhiteScreenDebugProbe.tsx:html","message":"html attributes","data":{"htmlClass":"dark","hasDark":true}}
+{"sessionId":"7d6688","timestamp":1776655786863,"hypothesisId":"E","location":"WhiteScreenDebugProbe.tsx:main","message":"main metrics","data":{"mainH":680,"mainW":1274,"childCount":1}}
+{"sessionId":"7d6688","timestamp":1776655786882,"hypothesisId":"B","location":"WhiteScreenDebugProbe.tsx:mount","message":"client mounted","data":{"path":"/"}}
+{"sessionId":"7d6688","timestamp":1776655786883,"hypothesisId":"A","location":"WhiteScreenDebugProbe.tsx:computed","message":"body computed styles","data":{"bodyBg":"rgb(9, 9, 11)","bodyColor":"rgb(250, 250, 250)","bodyClass":"bg-zinc-950 text-zinc-100 antialiased","inlineStyle":"background-color:#09090b;color:#fafafa"}}
+{"sessionId":"7d6688","timestamp":1776655786884,"hypothesisId":"D","location":"WhiteScreenDebugProbe.tsx:html","message":"html attributes","data":{"htmlClass":"dark","hasDark":true}}
+{"sessionId":"7d6688","timestamp":1776655786884,"hypothesisId":"E","location":"WhiteScreenDebugProbe.tsx:main","message":"main metrics","data":{"mainH":1984,"mainW":1648,"childCount":1}}
+{"sessionId":"7d6688","hypothesisId":"B","location":"DashboardContent.tsx:mount","message":"DashboardContent mounted","data":{"hasNextRoot":false,"bodyChildren":10},"timestamp":1776655786888}
+{"sessionId":"7d6688","timestamp":1776655786861,"hypothesisId":"A","location":"WhiteScreenDebugProbe.tsx:computed","message":"body computed styles","data":{"bodyBg":"rgb(9, 9, 11)","bodyColor":"rgb(250, 250, 250)","bodyClass":"bg-zinc-950 text-zinc-100 antialiased","inlineStyle":"background-color:#09090b;color:#fafafa"},"serverReceivedAt":1776655787072}
+{"sessionId":"7d6688","timestamp":1776655786862,"hypothesisId":"D","location":"WhiteScreenDebugProbe.tsx:html","message":"html attributes","data":{"htmlClass":"dark","hasDark":true},"serverReceivedAt":1776655787073}
+{"sessionId":"7d6688","timestamp":1776655786863,"hypothesisId":"E","location":"WhiteScreenDebugProbe.tsx:main","message":"main metrics","data":{"mainH":680,"mainW":1274,"childCount":1},"serverReceivedAt":1776655787073}
+{"sessionId":"7d6688","timestamp":1776655786882,"hypothesisId":"B","location":"WhiteScreenDebugProbe.tsx:mount","message":"client mounted","data":{"path":"/"},"serverReceivedAt":1776655787073}
+{"sessionId":"7d6688","timestamp":1776655786883,"hypothesisId":"A","location":"WhiteScreenDebugProbe.tsx:computed","message":"body computed styles","data":{"bodyBg":"rgb(9, 9, 11)","bodyColor":"rgb(250, 250, 250)","bodyClass":"bg-zinc-950 text-zinc-100 antialiased","inlineStyle":"background-color:#09090b;color:#fafafa"},"serverReceivedAt":1776655787073}
+{"sessionId":"7d6688","timestamp":1776655786884,"hypothesisId":"D","location":"WhiteScreenDebugProbe.tsx:html","message":"html attributes","data":{"htmlClass":"dark","hasDark":true},"serverReceivedAt":1776655787073}
+{"sessionId":"7d6688","timestamp":1776655786884,"hypothesisId":"E","location":"WhiteScreenDebugProbe.tsx:main","message":"main metrics","data":{"mainH":1984,"mainW":1648,"childCount":1},"serverReceivedAt":1776655787073}
+{"sessionId":"7d6688","timestamp":1776655786859,"hypothesisId":"B","location":"WhiteScreenDebugProbe.tsx:mount","message":"client mounted","data":{"path":"/chat"},"serverReceivedAt":1776655787073}
