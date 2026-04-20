@@ -326,7 +326,7 @@ export default function OraclePage() {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex h-[100dvh] flex-col bg-zinc-950 text-zinc-100 overflow-hidden">
+    <div className="flex h-[calc(100dvh-60px)] flex-col overflow-hidden bg-zinc-950 text-zinc-100 md:h-[100dvh]">
 
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <header className="flex-shrink-0 flex items-center justify-between border-b border-white/[0.05] px-5 py-3">

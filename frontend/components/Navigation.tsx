@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Music2,
@@ -49,6 +50,7 @@ function LogoMark() {
 export function MobileNav() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
   const { setNavDrawerOpen } = useOverlayLock();
 
   useEffect(() => {
@@ -66,7 +68,17 @@ export function MobileNav() {
 
   return (
     <>
-      <header className="fixed left-0 right-0 top-0 z-[99999] flex h-[60px] items-center justify-between border-b border-white/10 bg-zinc-950 px-4 md:hidden">
+      {/*
+        When open, drawer + backdrop must stack ABOVE this header (z-[99999]).
+        Previously backdrop/nav were z-[99997]/[99998], so they painted *below*
+        the header and the drawer looked missing or broken on mobile.
+      */}
+      <header
+        className={cn(
+          "fixed left-0 right-0 top-0 flex h-[60px] items-center justify-between border-b border-white/10 bg-zinc-950 px-4 md:hidden",
+          open ? "z-[99990]" : "z-[99999]",
+        )}
+      >
         <div className="pointer-events-none flex items-center gap-2.5">
           <LogoMark />
           <span className="text-sm font-semibold tracking-tight text-zinc-100">Spirit OS</span>
@@ -74,7 +86,10 @@ export function MobileNav() {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          onTouchEnd={(e) => { e.preventDefault(); setOpen(true); }}
+          onTouchEnd={(e) => {
+            e.preventDefault(); // iOS WebKit: bypass delayed / dropped synthetic click
+            setOpen(!isOpen);
+          }}
           aria-label="Open navigation"
           className="relative z-[99999] flex h-11 w-11 cursor-pointer touch-manipulation items-center justify-center rounded-xl border border-white/10 bg-white/5 text-zinc-400 active:bg-white/10"
         >
@@ -93,19 +108,22 @@ export function MobileNav() {
             tabIndex={0}
             aria-label="Close navigation"
             onClick={() => setOpen(false)}
-            onTouchEnd={(e) => { e.preventDefault(); setOpen(false); }}
+            onTouchEnd={(e) => {
+              e.preventDefault(); // iOS WebKit
+              setOpen(false);
+            }}
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
                 setOpen(false);
               }
             }}
-            className="fixed inset-0 z-[99997] cursor-pointer bg-black/80 md:hidden"
+            className="fixed inset-0 z-[99999] cursor-pointer bg-black/80 md:hidden"
           />
 
           <nav
             aria-label="Mobile navigation"
-            className="fixed left-0 top-0 z-[99998] flex h-[100dvh] w-72 transform-gpu flex-col border-r border-white/10 bg-zinc-950 md:hidden"
+            className="fixed left-0 top-0 z-[100000] flex h-[100dvh] w-72 transform-gpu flex-col border-r border-white/10 bg-zinc-950 md:hidden"
           >
             <div className="flex h-[60px] flex-shrink-0 items-center justify-between border-b border-white/10 px-4">
               <div className="flex items-center gap-2.5">
@@ -115,7 +133,10 @@ export function MobileNav() {
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                onTouchEnd={(e) => { e.preventDefault(); setOpen(false); }}
+                onTouchEnd={(e) => {
+                  e.preventDefault(); // iOS WebKit
+                  setOpen(false);
+                }}
                 aria-label="Close navigation"
                 className="relative flex h-11 w-11 cursor-pointer touch-manipulation items-center justify-center rounded-xl border border-white/10 bg-white/5 text-zinc-400 active:bg-white/10"
               >
@@ -128,10 +149,15 @@ export function MobileNav() {
                 const Icon = item.icon;
                 const active = isActive(item.href, pathname);
                 return (
-                  <a
+                  <Link
                     key={item.href}
                     href={item.href}
                     onClick={() => setOpen(false)}
+                    onTouchEnd={(e) => {
+                      e.preventDefault(); // iOS WebKit: navigate from touch path; avoids ghost-click issues
+                      setOpen(false);
+                      router.push(item.href);
+                    }}
                     className={cn(
                       "flex cursor-pointer touch-manipulation items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
                       active
@@ -147,7 +173,7 @@ export function MobileNav() {
                     {active && (
                       <span className="ml-auto h-1.5 w-1.5 rounded-full bg-violet-400" />
                     )}
-                  </a>
+                  </Link>
                 );
               })}
             </div>

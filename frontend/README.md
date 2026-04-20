@@ -91,6 +91,10 @@ WebKit on Safari iOS is not a browser. It is a trap with rounded corners. Every 
 
 *Goal: Every physical node in the 5-node network has a visual representation somewhere in the UI — showing its specs, status, and usage bars as static mock data.*
 
+> **Backend GPU layer** — tracked here because it underpins all live data wiring in later phases.
+>
+> - [x] **AMD RX 580 ROCm activation**: `HSA_OVERRIDE_GFX_VERSION=8.0.3` · `OLLAMA_LLM_LIBRARY=rocm` · `HIP_VISIBLE_DEVICES=0` + `ROCR_VISIBLE_DEVICES=0` (RX 580 is the only ROCm-visible GPU; Intel i915 iGPU is invisible to ROCm) · GID 993 render group · `privileged: true` · YAML indentation bug fixed · `backend/gpu-setup.sh` installs `amdgpu-dkms` + `rocminfo` on host
+
 - [x] **Node 1 — spiritdesktop display**: Ryzen AM5 · XFX GPU · 16GB DDR5 — spec labels + CPU/RAM/GPU usage bars in System Stats widget
 - [x] **Node 2 — spirit (Dell) display**: i7-6700 · 16GB DDR4 — spec labels + CPU/RAM bars in System Stats widget
 - [x] **Node 3 — Ghost Node display**: Pi 3 · ARM · 1GB LPDDR2 — spec labels + CPU/RAM bars + amber thermal alert banner

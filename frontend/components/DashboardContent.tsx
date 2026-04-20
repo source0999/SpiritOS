@@ -48,10 +48,6 @@ function Label({ children }: { children: React.ReactNode }) {
 // ─────────────────────────────────────────────────────────────────────────────
 function OracleOrb() {
   const router = useRouter();
-
-  function goToOracle() {
-    router.push("/oracle");
-  }
   return (
     <BentoCard className="md:col-span-4 md:self-start items-center justify-center gap-4 py-8">
       <Label>Spirit · AI Core</Label>
@@ -65,11 +61,13 @@ function OracleOrb() {
         <span className="navi-p4 pointer-events-none absolute inset-0 m-auto h-[3px] w-[3px] rounded-full bg-violet-500 opacity-[0.18]" />
         <span className="navi-p5 pointer-events-none absolute inset-0 m-auto h-[2px] w-[2px] rounded-full bg-violet-500 opacity-10" />
 
-        <button
-          type="button"
+        <Link
+          href="/oracle"
           aria-label="Open Oracle"
-          onClick={goToOracle}
-          onTouchEnd={(e) => { e.preventDefault(); goToOracle(); }}
+          onTouchEnd={(e) => {
+            e.preventDefault(); // iOS WebKit: Link + click alone is unreliable on mobile Safari
+            router.push("/oracle");
+          }}
           className="navi-float pointer-events-auto absolute inset-0 m-auto z-10 flex h-12 w-12 cursor-pointer touch-manipulation items-center justify-center rounded-full"
         >
           <span className="navi-wing-l pointer-events-none absolute h-10 w-[9px] rounded-full bg-gradient-to-b from-violet-300/60 to-violet-700/10" />
@@ -80,7 +78,7 @@ function OracleOrb() {
             style={{ background: "radial-gradient(circle, rgba(139,92,246,0.65) 0%, rgba(139,92,246,0) 70%)" }}
           />
           <span className="navi-core pointer-events-none absolute h-6 w-6 rounded-full bg-white" />
-        </button>
+        </Link>
       </div>
 
       <div className="text-center">
@@ -102,14 +100,16 @@ function OracleOrb() {
         ))}
       </div>
 
-      <button
-        type="button"
-        onClick={goToOracle}
-        onTouchEnd={(e) => { e.preventDefault(); goToOracle(); }}
+      <Link
+        href="/oracle"
+        onTouchEnd={(e) => {
+          e.preventDefault(); // iOS WebKit
+          router.push("/oracle");
+        }}
         className="mt-1 flex w-full cursor-pointer touch-manipulation items-center justify-center gap-2 rounded-xl border border-violet-500/25 bg-violet-500/10 py-2.5 text-xs font-semibold text-violet-300 transition-transform active:scale-[0.98]"
       >
         <Command size={12} className="pointer-events-none shrink-0" aria-hidden /> Open Oracle
-      </button>
+      </Link>
     </BentoCard>
   );
 }
@@ -686,7 +686,10 @@ function CommandBar({ onClose }: { onClose: () => void }) {
         aria-label="Close command bar"
         className="fixed inset-0 z-[99998] cursor-pointer touch-manipulation bg-black/80"
         onClick={onClose}
-        onTouchEnd={(e) => { e.preventDefault(); onClose(); }}
+        onTouchEnd={(e) => {
+          e.preventDefault(); // iOS WebKit
+          onClose();
+        }}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClose(); }
         }}
@@ -716,7 +719,10 @@ function CommandBar({ onClose }: { onClose: () => void }) {
             <button
               type="button"
               onClick={onClose}
-              onTouchEnd={(e) => { e.preventDefault(); onClose(); }}
+              onTouchEnd={(e) => {
+                e.preventDefault(); // iOS WebKit
+                onClose();
+              }}
               aria-label="Close command bar"
               className="flex min-h-[44px] min-w-[44px] cursor-pointer touch-manipulation items-center justify-center rounded-lg p-2 text-zinc-500 transition-colors hover:bg-white/5 hover:text-zinc-300"
             >
@@ -775,6 +781,11 @@ function CommandBar({ onClose }: { onClose: () => void }) {
             <button
               type="button"
               onClick={() => void send()}
+              onTouchEnd={(e) => {
+                if (!draft.trim() || thinking) return;
+                e.preventDefault(); // iOS WebKit
+                void send();
+              }}
               disabled={!draft.trim() || thinking}
               aria-label="Send"
               className="flex h-11 w-11 flex-shrink-0 cursor-pointer touch-manipulation items-center justify-center rounded-xl border border-violet-500/30 bg-violet-500/20 text-violet-300 transition-all hover:bg-violet-500/30 disabled:opacity-30 active:scale-95"
@@ -820,7 +831,10 @@ export default function DashboardContent({
         <button
           type="button"
           onClick={() => setChatOpen(true)}
-          onTouchEnd={(e) => { e.preventDefault(); setChatOpen(true); }}
+          onTouchEnd={(e) => {
+            e.preventDefault(); // iOS WebKit
+            setChatOpen(true);
+          }}
           aria-label="Open Command Bar"
           className="pointer-events-auto relative z-[99999] flex min-h-[44px] shrink-0 touch-manipulation cursor-pointer items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-zinc-400 transition-transform active:scale-95"
         >
