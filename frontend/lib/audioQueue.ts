@@ -7,9 +7,8 @@ type QueueOptions = {
 export class AudioQueue {
   private ctx: AudioContext | null = null;
   private runId = 0;
-  private source: AudioBufferSourceNode | null = null;
-  private activeSources = new Set<AudioBufferSourceNode>();
-  private activeAbort: AbortController | null = null;
+  private activeSource: AudioBufferSourceNode | null = null;
+  private activeAborts = new Set<AbortController>();
   private onPlayingChange?: (playing: boolean) => void;
 
   constructor(options?: QueueOptions) {
@@ -23,23 +22,21 @@ export class AudioQueue {
 
   stop(): void {
     this.runId += 1;
-    this.activeAbort?.abort();
-    this.activeAbort = null;
-    for (const src of this.activeSources) {
+    for (const ctrl of this.activeAborts) {
       try {
-        src.stop();
+        ctrl.abort();
       } catch {
-        // ignore stale stop errors
+        // ignore abort errors
       }
     }
-    this.activeSources.clear();
-    if (this.source) {
+    this.activeAborts.clear();
+    if (this.activeSource) {
       try {
-        this.source.stop();
+        this.activeSource.stop();
       } catch {
         // ignore stale stop errors
       }
-      this.source = null;
+      this.activeSource = null;
     }
     this.onPlayingChange?.(false);
   }
@@ -70,7 +67,7 @@ export class AudioQueue {
         if (!seg || seg.type !== "speech") {
           throw new Error(`Expected speech segment at index ${index}`);
         }
-        return this.synthesizeSpeechSegment(seg.text, language, currentRun, ctx);
+        return this.fetchAndDecodeSpeechSegment(seg.text, language, currentRun, ctx);
       };
 
       const firstSpeechIndex = getNextSpeechIndex(0);
@@ -123,194 +120,96 @@ export class AudioQueue {
     }
   }
 
-  private async synthesizeSpeechSegment(
+  private async fetchAndDecodeSpeechSegment(
     text: string,
     language: string,
     runId: number,
     ctx: AudioContext,
   ): Promise<AudioBuffer> {
-    const abortCtrl = new AbortController();
-    this.activeAbort = abortCtrl;
-    const res = await fetch("/api/tts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, language }),
-      signal: abortCtrl.signal,
-    });
-    if (!res.ok) throw new Error(`TTS API ${res.status}`);
-    if (!res.body) throw new Error("TTS stream missing body");
-
-    const reader = res.body.getReader();
-    const chunks: Uint8Array[] = [];
-    let total = 0;
-    let firstChunkAt = 0;
-    let firstChunkBytes = 0;
-
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      if (!value || !value.length) continue;
-      if (!firstChunkAt) {
-        firstChunkAt = Date.now();
-        firstChunkBytes = value.length;
-        console.info("[Spirit TTS] TTS stream first chunk received", { bytes: value.length, t: firstChunkAt });
-        // #region agent log
-        fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
-          body: JSON.stringify({
-            sessionId: "7d6688",
-            runId: "tts-stream-2",
-            hypothesisId: "S4",
-            location: "audioQueue.ts:synthesizeSpeechSegment",
-            message: "TTS stream first chunk received",
-            data: { bytes: value.length, textLen: text.length },
-            timestamp: firstChunkAt,
-          }),
-        }).catch(() => {});
-        // #endregion
-      }
-      chunks.push(value);
-      total += value.length;
-    }
-
-    if (runId !== this.runId) {
-      throw new Error("TTS synthesis aborted by newer run");
-    }
-
-    const all = new Uint8Array(total);
-    let offset = 0;
-    for (const c of chunks) {
-      all.set(c, offset);
-      offset += c.length;
-    }
-    const audioBuffer = await ctx.decodeAudioData(all.buffer.slice(0));
+    const fetchStartedAt = Date.now();
     // #region agent log
     fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
       body: JSON.stringify({
         sessionId: "7d6688",
-        runId: "tts-stream-2",
-        hypothesisId: "S5",
-        location: "audioQueue.ts:synthesizeSpeechSegment",
-        message: "Speech segment decoded",
-        data: {
-          textLen: text.length,
-          totalBytes: total,
-          firstChunkBytes,
-          duration: audioBuffer.duration,
-        },
+        runId: "pivot-debug-1",
+        hypothesisId: "H1",
+        location: "audioQueue.ts:fetchSpeechSegment",
+        message: "Sentence fetch started",
+        data: { textLen: text.length, runId },
+        timestamp: fetchStartedAt,
+      }),
+    }).catch(() => {});
+    // #endregion
+    const abortCtrl = new AbortController();
+    this.activeAborts.add(abortCtrl);
+    const res = await fetch("/api/tts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, language }),
+      signal: abortCtrl.signal,
+    });
+    this.activeAborts.delete(abortCtrl);
+    // #region agent log
+    fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
+      body: JSON.stringify({
+        sessionId: "7d6688",
+        runId: "pivot-debug-1",
+        hypothesisId: "H1",
+        location: "audioQueue.ts:fetchSpeechSegment",
+        message: "Sentence fetch response received",
+        data: { status: res.status, elapsedMs: Date.now() - fetchStartedAt, runId },
         timestamp: Date.now(),
       }),
     }).catch(() => {});
     // #endregion
-    return audioBuffer;
+    if (!res.ok) throw new Error(`TTS API ${res.status}`);
+    const bytes = await res.arrayBuffer();
+    const decoded = await ctx.decodeAudioData(bytes.slice(0));
+    // #region agent log
+    fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
+      body: JSON.stringify({
+        sessionId: "7d6688",
+        runId: "pivot-debug-1",
+        hypothesisId: "H1",
+        location: "audioQueue.ts:fetchAndDecodeSpeechSegment",
+        message: "Sentence decoded via decodeAudioData",
+        data: { decodedDuration: decoded.duration, bytes: bytes.byteLength, runId },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
+    if (runId !== this.runId) {
+      throw new Error("TTS fetch aborted by newer run");
+    }
+    return decoded;
   }
 
   private playBuffer(buffer: AudioBuffer, runId: number): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       if (runId !== this.runId) {
-        // #region agent log
-        fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
-          body: JSON.stringify({
-            sessionId: "7d6688",
-            runId: "tts-debug-3",
-            hypothesisId: "H11",
-            location: "audioQueue.ts:playBuffer",
-            message: "Playback skipped due runId mismatch (interrupted by newer speak)",
-            data: { incomingRunId: runId, currentRunId: this.runId },
-            timestamp: Date.now(),
-          }),
-        }).catch(() => {});
-        // #endregion
         resolve();
         return;
       }
-
       const ctx = this.ensureContext();
       const source = ctx.createBufferSource();
       source.buffer = buffer;
       source.connect(ctx.destination);
-      this.source = source;
-      // #region agent log
-      fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
-        body: JSON.stringify({
-          sessionId: "7d6688",
-          runId: "tts-debug-2",
-          hypothesisId: "H8",
-          location: "audioQueue.ts:playBuffer",
-          message: "Audio source created",
-          data: {
-            ctxState: ctx.state,
-            duration: buffer.duration,
-          },
-          timestamp: Date.now(),
-        }),
-      }).catch(() => {});
-      // #endregion
-
+      this.activeSource = source;
       source.onended = () => {
-        if (this.source === source) this.source = null;
-        // #region agent log
-        fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
-          body: JSON.stringify({
-            sessionId: "7d6688",
-            runId: "tts-debug-2",
-            hypothesisId: "H8",
-            location: "audioQueue.ts:playBuffer",
-            message: "Audio source ended",
-            data: {
-              runId,
-            },
-            timestamp: Date.now(),
-          }),
-        }).catch(() => {});
-        // #endregion
+        if (this.activeSource === source) this.activeSource = null;
         resolve();
       };
-
       try {
         source.start(0);
-        // #region agent log
-        fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
-          body: JSON.stringify({
-            sessionId: "7d6688",
-            runId: "tts-debug-2",
-            hypothesisId: "H8",
-            location: "audioQueue.ts:playBuffer",
-            message: "Audio source started",
-            data: { runId },
-            timestamp: Date.now(),
-          }),
-        }).catch(() => {});
-        // #endregion
       } catch (e) {
-        if (this.source === source) this.source = null;
-        // #region agent log
-        fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
-          body: JSON.stringify({
-            sessionId: "7d6688",
-            runId: "tts-debug-2",
-            hypothesisId: "H8",
-            location: "audioQueue.ts:playBuffer",
-            message: "Audio source start failed",
-            data: { error: e instanceof Error ? e.message : String(e) },
-            timestamp: Date.now(),
-          }),
-        }).catch(() => {});
-        // #endregion
-        reject(e);
+        if (this.activeSource === source) this.activeSource = null;
+        reject(e instanceof Error ? e : new Error(String(e)));
       }
     });
   }

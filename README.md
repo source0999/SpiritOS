@@ -9,8 +9,10 @@ Monorepo for **Spirit OS**: local-first chat against Ollama, Next.js frontend, a
 - [x] **Unfiltered 3B engine swap** — `nchapman/dolphin3.0-llama3:3b` via Tailscale Ollama host; short persona prompts for fast prefill on 8GB-class GPUs.
 - [x] **History fix** — prior turns are built from Dexie thread messages and sent as `history` in `POST /api/spirit` (no more `historyTurns: 0` amnesia).
 - [ ] **Module 4: XTTS v2 voice pipeline** — TTS playback and `audioUrl` on messages (see `frontend/lib/db.types.ts`).
-- [x] **Micro-Segmented Audio** — burst-split TTS segments (5-8 words / punctuation) with look-ahead fetch.
-- [x] **Studio Speaker Activation** — XTTS uses studio speaker conditioning (default: `Claribel Dervla`).
+- [x] **OpenAI TTS Cloud Pivot** — `/api/tts` now streams OpenAI `tts-1` audio (`voice: nova`, MP3) directly to the client.
+- [x] **Local XTTS Decommissioned** — XTTS service removed from backend compose; voice synthesis is cloud-only.
+- [x] **MSE Decode Audio Fix** — removed browser MSE path; `/api/tts` responses are decoded via `decodeAudioData` with look-ahead prefetch.
+- [x] **Dolphin Model Binding** — all local Ollama inference defaults bind to `nchapman/dolphin3.0-llama3:3b`.
 
 ### Backend
 

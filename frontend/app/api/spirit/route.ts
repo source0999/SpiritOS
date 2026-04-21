@@ -8,9 +8,10 @@ import { SPIRIT_HISTORY_MESSAGE_CAP } from "@/lib/spiritConstants";
 type Sarcasm = "chill" | "peer" | "unhinged" | "sovereign";
 type ChatTurn = { role: "user" | "assistant"; content: string };
 
-const OLLAMA_CHAT_URL = "http://100.111.32.31:11434/api/chat";
-const OLLAMA_MODEL = "nchapman/dolphin3.0-llama3:3b";
-const OLLAMA_NUM_CTX = 4096;
+const OLLAMA_BASE = (process.env.OLLAMA_BASE_URL ?? "http://localhost:11434").replace(/\/$/, "");
+const OLLAMA_CHAT_URL = `${OLLAMA_BASE}/api/chat`;
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL ?? "dolphin-llama3:8b";
+const OLLAMA_NUM_CTX = 8192;
 
 const GROQ_CHAT_URL = "https://api.groq.com/openai/v1/chat/completions";
 const GROQ_MODEL = process.env.GROQ_MODEL || "llama-3.1-8b-instant";
@@ -19,7 +20,7 @@ const SYSTEM_PROMPTS: Record<Sarcasm, string> = {
   chill: "Spirit Focus mode. Senior engineer tone: concise, direct, technical. Avoid filler, flattery, and restating the question. Answer first, then details only if needed. Do not roleplay tests, scripts, or pseudo shell output unless explicitly asked. For Spirit OS edits, provide exact path/find/replace steps.",
   peer: "Spirit Peer mode. Sound like a trusted late-night engineering peer. Match user energy without corporate tone. Be natural, sharp, and practical. Prefer concise prose; use structure only when useful. Do not roleplay test harnesses or output fake command snippets unless explicitly requested.",
   unhinged: "Spirit Chaos mode. High-energy, dark-humor edge, but facts stay accurate. Roast weak ideas with specifics, then give the correct fix. No fabricated logs/commands. Do not emit pseudo test scripts unless the user asks for command output.",
-  sovereign: "Spirit Sovereign mode. Local-only inference on the Dell. No cloud framing, no corporate tone, no filler. Be direct, practical, and raw-but-precise. Keep facts grounded, show your reasoning concisely, and provide decisive technical guidance.",
+  sovereign: "Spirit Sovereign mode. Local-only inference on the homelab GPU. No cloud framing, no corporate tone, no filler. Be direct, practical, and raw-but-precise. Keep facts grounded, show your reasoning concisely, and provide decisive technical guidance.",
 };
 
 function normalizeHistory(raw: unknown): ChatTurn[] {
@@ -195,7 +196,7 @@ export async function POST(req: Request) {
       const detail = err instanceof Error ? err.message : String(err);
       return NextResponse.json(
         {
-          error: "Sovereign mode requires Ollama, but the Dell endpoint is unreachable",
+          error: "Sovereign mode requires Ollama, but the configured endpoint is unreachable",
           detail,
           host: OLLAMA_CHAT_URL,
         },

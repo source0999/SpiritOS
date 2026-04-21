@@ -12,16 +12,23 @@
  * Pipeline:
  *   1. Faster-Whisper STT  →  transcript
  *   2. Ollama /api/generate  →  reply text
- *   3. XTTS v2 /tts          →  WAV audio buffer
+ *   3. OpenAI /audio/speech  →  MP3 audio buffer
  */
 
 import { NextResponse } from "next/server";
 
 // ── Service URLs ─────────────────────────────────────────────────────────────
 const OLLAMA_URL  = (process.env.OLLAMA_URL  ?? "http://localhost:11434").replace(/\/$/, "");
-const XTTS_URL    = (process.env.XTTS_URL    ?? "http://localhost:8020").replace(/\/$/, "");
 const WHISPER_URL = (process.env.WHISPER_URL ?? "http://localhost:8000").replace(/\/$/, "");
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL ?? "llama3";
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL ?? "dolphin-llama3:8b";
+const OLLAMA_NUM_CTX = (() => {
+  const raw = process.env.OLLAMA_NUM_CTX?.trim();
+  const n = raw ? Number(raw) : 8192;
+  return Number.isFinite(n) && n > 0 ? n : 8192;
+})();
+const OPENAI_TTS_URL = "https://api.openai.com/v1/audio/speech";
+const OPENAI_TTS_MODEL = "tts-1";
+const OPENAI_TTS_VOICE = process.env.OPENAI_TTS_VOICE?.trim() || "nova";
 
 // ── Sarcasm → system prompt ──────────────────────────────────────────────────
 const SYSTEM_PROMPTS: Record<string, string> = {
@@ -39,6 +46,21 @@ Keep it to 2-3 sentences. Make it feel earned.`,
 
 // ── Route handler ────────────────────────────────────────────────────────────
 export async function POST(req: Request): Promise<Response> {
+  // #region agent log
+  fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
+    body: JSON.stringify({
+      sessionId: "7d6688",
+      runId: "pivot-debug-2",
+      hypothesisId: "H3",
+      location: "app/api/oracle/route.ts:POST",
+      message: "Oracle request received",
+      data: { model: OLLAMA_MODEL },
+      timestamp: Date.now(),
+    }),
+  }).catch(() => {});
+  // #endregion
   // 1. Parse multipart form ──────────────────────────────────────────────────
   let audioBlob: Blob;
   let sarcasmLevel: string;
@@ -100,6 +122,7 @@ export async function POST(req: Request): Promise<Response> {
         prompt: transcript,
         stream: false,
         options: {
+          num_ctx: OLLAMA_NUM_CTX,
           num_predict: 180,   // keep responses short; ~3 spoken sentences
           temperature: 0.75,
         },
@@ -109,6 +132,21 @@ export async function POST(req: Request): Promise<Response> {
 
     if (!ollamaRes.ok) {
       const detail = await ollamaRes.text().catch(() => "");
+      // #region agent log
+      fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
+        body: JSON.stringify({
+          sessionId: "7d6688",
+          runId: "pivot-debug-2",
+          hypothesisId: "H3",
+          location: "app/api/oracle/route.ts:POST",
+          message: "Oracle Ollama call failed",
+          data: { status: ollamaRes.status, model: OLLAMA_MODEL, detail: detail.slice(0, 140) },
+          timestamp: Date.now(),
+        }),
+      }).catch(() => {});
+      // #endregion
       throw new Error(`Ollama HTTP ${ollamaRes.status}: ${detail}`);
     }
 
@@ -123,38 +161,60 @@ export async function POST(req: Request): Promise<Response> {
     return NextResponse.json({ error: "Empty LLM response" }, { status: 502 });
   }
 
-  // 4. Text-to-Speech via XTTS v2 ───────────────────────────────────────────
+  // 4. Text-to-Speech via OpenAI ────────────────────────────────────────────
   let audioBuffer: ArrayBuffer;
   try {
-    const xttsRes = await fetch(`${XTTS_URL}/tts`, {
+    const openAiKey = process.env.OPENAI_API_KEY?.trim();
+    if (!openAiKey) {
+      throw new Error("Missing OPENAI_API_KEY");
+    }
+    const ttsRes = await fetch(OPENAI_TTS_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${openAiKey}`,
+      },
       body: JSON.stringify({
-        text: replyText,
-        language: "en",
-        // Omit speaker_wav to use the server's default voice.
-        // To use a custom voice, mount a .wav at /app/speakers/voice.wav in the
-        // container and set: speaker_wav: "/app/speakers/voice.wav"
+        model: OPENAI_TTS_MODEL,
+        voice: OPENAI_TTS_VOICE,
+        input: replyText,
+        response_format: "mp3",
       }),
       signal: AbortSignal.timeout(60_000),
     });
 
-    if (!xttsRes.ok) {
-      const detail = await xttsRes.text().catch(() => "");
-      throw new Error(`XTTS HTTP ${xttsRes.status}: ${detail}`);
+    // #region agent log
+    fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
+      body: JSON.stringify({
+        sessionId: "7d6688",
+        runId: "pivot-debug-2",
+        hypothesisId: "H6",
+        location: "app/api/oracle/route.ts:POST",
+        message: "Oracle OpenAI TTS response received",
+        data: { status: ttsRes.status, voice: OPENAI_TTS_VOICE, model: OPENAI_TTS_MODEL },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
+
+    if (!ttsRes.ok) {
+      const detail = await ttsRes.text().catch(() => "");
+      throw new Error(`OpenAI TTS HTTP ${ttsRes.status}: ${detail}`);
     }
 
-    audioBuffer = await xttsRes.arrayBuffer();
+    audioBuffer = await ttsRes.arrayBuffer();
   } catch (err) {
     console.error("[oracle] TTS error:", err);
     return NextResponse.json({ error: `Speech synthesis failed: ${String(err)}` }, { status: 502 });
   }
 
-  // 5. Return WAV + metadata headers ────────────────────────────────────────
+  // 5. Return MP3 + metadata headers ────────────────────────────────────────
   return new Response(audioBuffer, {
     status: 200,
     headers: {
-      "Content-Type": "audio/wav",
+      "Content-Type": "audio/mpeg",
       // URL-encode so non-ASCII text survives HTTP header transport
       "X-Transcript": encodeURIComponent(transcript),
       "X-Reply":      encodeURIComponent(replyText),

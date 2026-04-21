@@ -3,41 +3,18 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
 
-const XTTS_BASE_URL = process.env.XTTS_BASE_URL?.replace(/\/$/, "") || "http://127.0.0.1:8020";
-const XTTS_TTS_URL = `${XTTS_BASE_URL}/tts`;
-const XTTS_TTS_STREAM_URL = `${XTTS_BASE_URL}/tts_stream`;
-const XTTS_STUDIO_SPEAKERS_URL = `${XTTS_BASE_URL}/studio_speakers`;
-const XTTS_DEFAULT_SPEAKER = process.env.XTTS_DEFAULT_SPEAKER?.trim() || "Claribel Dervla";
+const OPENAI_TTS_URL = "https://api.openai.com/v1/audio/speech";
+const OPENAI_TTS_MODEL = "tts-1";
+const OPENAI_TTS_VOICE = process.env.OPENAI_TTS_VOICE?.trim() || "nova";
+const OPENAI_TTS_FORMAT = "mp3";
 const MAX_CHARS = 500;
 
-type XttsSpeaker = {
-  speaker_embedding: number[];
-  gpt_cond_latent: number[][];
-};
-
-let cachedSpeaker: XttsSpeaker | null = null;
-
-async function getSpeakerConditioning(): Promise<XttsSpeaker> {
-  if (cachedSpeaker) return cachedSpeaker;
-  const res = await fetch(XTTS_STUDIO_SPEAKERS_URL, { cache: "no-store" });
-  if (!res.ok) {
-    throw new Error(`studio_speakers failed with ${res.status}`);
-  }
-  const payload = await res.json() as Record<string, XttsSpeaker>;
-  const entries = Object.entries(payload);
-  if (!entries.length) throw new Error("studio_speakers returned no voices");
-  const preferred =
-    XTTS_DEFAULT_SPEAKER && payload[XTTS_DEFAULT_SPEAKER]
-      ? payload[XTTS_DEFAULT_SPEAKER]
-      : entries[0][1];
-  if (!preferred?.speaker_embedding?.length || !preferred?.gpt_cond_latent?.length) {
-    throw new Error("speaker payload missing conditioning vectors");
-  }
-  cachedSpeaker = preferred;
-  return preferred;
-}
-
 export async function POST(req: Request) {
+  const apiKey = process.env.OPENAI_API_KEY?.trim();
+  if (!apiKey) {
+    return NextResponse.json({ error: "Missing OPENAI_API_KEY" }, { status: 503 });
+  }
+
   let body: unknown;
   try {
     body = await req.json();
@@ -67,51 +44,22 @@ export async function POST(req: Request) {
   }
 
   let upstream: Response;
-  let speaker: XttsSpeaker;
   try {
-    speaker = await getSpeakerConditioning();
-  } catch (e) {
-    // #region agent log
-    fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+    upstream = await fetch(OPENAI_TTS_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
       body: JSON.stringify({
-        sessionId: "7d6688",
-        runId: "tts-debug-2",
-        hypothesisId: "H5",
-        location: "app/api/tts/route.ts:getSpeakerConditioning",
-        message: "Failed loading XTTS speaker conditioning",
-        data: {
-          endpoint: XTTS_STUDIO_SPEAKERS_URL,
-          error: e instanceof Error ? e.message : String(e),
-        },
-        timestamp: Date.now(),
+        model: OPENAI_TTS_MODEL,
+        voice: OPENAI_TTS_VOICE,
+        input: text,
+        response_format: OPENAI_TTS_FORMAT,
+        // Keep language in request path for compatibility if upstream adds support later.
+        language,
       }),
-    }).catch(() => {});
-    // #endregion
-    return NextResponse.json(
-      { error: "XTTS speaker conditioning unavailable", detail: e instanceof Error ? e.message : String(e) },
-      { status: 503 },
-    );
-  }
-
-  const payload = JSON.stringify({
-    text,
-    language,
-    speaker_embedding: speaker.speaker_embedding,
-    gpt_cond_latent: speaker.gpt_cond_latent,
-    add_wav_header: true,
-    stream_chunk_size: "20",
-  });
-  const callXtts = async () =>
-    fetch(XTTS_TTS_STREAM_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: payload,
     });
-
-  try {
-    upstream = await callXtts();
   } catch (e) {
     // #region agent log
     fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
@@ -119,13 +67,12 @@ export async function POST(req: Request) {
       headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
       body: JSON.stringify({
         sessionId: "7d6688",
-        runId: "tts-debug-1",
-        hypothesisId: "H1",
+        runId: "openai-tts-1",
+        hypothesisId: "C1",
         location: "app/api/tts/route.ts:POST",
-        message: "XTTS fetch threw",
+        message: "OpenAI TTS fetch threw",
         data: {
-          endpoint: XTTS_TTS_URL,
-          streamEndpoint: XTTS_TTS_STREAM_URL,
+          endpoint: OPENAI_TTS_URL,
           error: e instanceof Error ? e.message : String(e),
           textLen: text.length,
         },
@@ -135,35 +82,12 @@ export async function POST(req: Request) {
     // #endregion
     return NextResponse.json(
       {
-        error: "XTTS unreachable",
+        error: "OpenAI TTS unreachable",
         detail: e instanceof Error ? e.message : String(e),
-        endpoint: XTTS_TTS_STREAM_URL,
+        endpoint: OPENAI_TTS_URL,
       },
       { status: 503 },
     );
-  }
-
-  if (!upstream.ok) {
-    // #region agent log
-    fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
-      body: JSON.stringify({
-        sessionId: "7d6688",
-        runId: "tts-debug-3",
-        hypothesisId: "H10",
-        location: "app/api/tts/route.ts:POST",
-        message: "XTTS first response non-OK; retrying once",
-        data: { status: upstream.status, endpoint: XTTS_TTS_STREAM_URL },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
-    try {
-      upstream = await callXtts();
-    } catch {
-      // Keep first failure handling path below.
-    }
   }
 
   if (!upstream.ok) {
@@ -174,13 +98,12 @@ export async function POST(req: Request) {
       headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
       body: JSON.stringify({
         sessionId: "7d6688",
-        runId: "tts-debug-1",
-        hypothesisId: "H1",
+        runId: "openai-tts-1",
+        hypothesisId: "C1",
         location: "app/api/tts/route.ts:POST",
-        message: "XTTS non-OK response",
+        message: "OpenAI TTS non-OK response",
         data: {
-          endpoint: XTTS_TTS_URL,
-          streamEndpoint: XTTS_TTS_STREAM_URL,
+          endpoint: OPENAI_TTS_URL,
           status: upstream.status,
           detail: detail.slice(0, 120),
           textLen: text.length,
@@ -190,13 +113,13 @@ export async function POST(req: Request) {
     }).catch(() => {});
     // #endregion
     return NextResponse.json(
-      { error: "XTTS returned an error", status: upstream.status, detail: detail.slice(0, 2000) },
-      { status: 502 },
+      { error: "OpenAI TTS returned an error", status: upstream.status, detail: detail.slice(0, 2000) },
+      { status: upstream.status >= 500 ? 502 : upstream.status },
     );
   }
 
   if (!upstream.body) {
-    return NextResponse.json({ error: "XTTS returned empty audio body" }, { status: 502 });
+    return NextResponse.json({ error: "OpenAI TTS returned empty audio body" }, { status: 502 });
   }
 
   // #region agent log
@@ -205,12 +128,14 @@ export async function POST(req: Request) {
     headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
     body: JSON.stringify({
       sessionId: "7d6688",
-      runId: "tts-stream-1",
-      hypothesisId: "S1",
+      runId: "openai-tts-1",
+      hypothesisId: "C2",
       location: "app/api/tts/route.ts:POST",
-      message: "XTTS stream connected",
+      message: "OpenAI stream connected",
       data: {
-        endpoint: XTTS_TTS_STREAM_URL,
+        endpoint: OPENAI_TTS_URL,
+        model: OPENAI_TTS_MODEL,
+        voice: OPENAI_TTS_VOICE,
         upstreamContentType: upstream.headers.get("content-type") ?? "",
       },
       timestamp: Date.now(),
@@ -222,7 +147,7 @@ export async function POST(req: Request) {
   return new Response(upstream.body, {
     status: 200,
     headers: {
-      "Content-Type": upstreamContentType || "audio/wav",
+      "Content-Type": upstreamContentType || "audio/mpeg",
       "Cache-Control": "no-store",
     },
   });

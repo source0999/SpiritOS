@@ -1,125 +1,49 @@
 # ─── Spirit OS · Backend Services ─────────────────────────────────────────────
 #
-# AMD GPU (ROCm) stack for the Oracle voice pipeline:
+# NVIDIA CUDA stack for local AI (Oracle voice pipeline + Spirit chat fallback):
 #   ollama      → LLM inference          → host:11434
-#   xtts-api    → XTTS v2 TTS synthesis  → host:8020
 #   whisper-stt → Faster-Whisper STT     → host:8000
 #
-# ── RX 580 (Polaris 10 / Ellesmere / gfx803) GPU Activation ──────────────────
+# Host pre-requisites:
+#   - Proprietary NVIDIA driver + nvidia-container-toolkit (nvidia-docker)
+#   - `nvidia` container runtime registered with Docker (default after toolkit setup)
 #
-#   Host pre-requisites (run gpu-setup.sh before first docker compose up):
-#     sudo bash backend/gpu-setup.sh
+# First model pull (example):
+#   docker compose exec ollama pull dolphin-llama3:8b
 #
-#   ROCm 6.x officially dropped gfx8xx support, but the HSA runtime will still
-#   execute pre-compiled gfx803 kernels when HSA_OVERRIDE_GFX_VERSION=8.0.3 is
-#   set.  The ollama/ollama:rocm image ships these kernels for exactly this case.
-#
-#   Device index note:
-#     On a Ryzen 7600 system with iGPU + RX 580 dGPU the typical enumeration is:
-#       0 → Radeon 760M (iGPU, gfx1103)   ← do NOT use this for inference
-#       1 → XFX RX 580  (dGPU, gfx803)   ← this is our target
-#     Both HIP_VISIBLE_DEVICES and ROCR_VISIBLE_DEVICES must agree on index 0.
-#     If rocminfo inside the container lists them in the opposite order, swap to 0.
-#
-#   Validation commands (run after compose up):
-#     sudo docker exec spirit-ollama rocm-smi
-#     sudo docker exec spirit-ollama rocminfo | grep -A3 "Ellesmere\|gfx803"
-#     sudo docker logs spirit-ollama 2>&1 | grep -i "library\|rocm\|cpu"
+# Validation:
+#   docker compose logs -f ollama
+#   curl -s http://localhost:11434/api/tags
 # ─────────────────────────────────────────────────────────────────────────────
 
 services:
 
-  # ── 1. Ollama (AMD ROCm) ────────────────────────────────────────────────────
+  # ── 1. Ollama (NVIDIA CUDA) ─────────────────────────────────────────────────
   ollama:
-    # CONFIRMED WORKING (April 2026):
-    # Official ollama/ollama:rocm images (0.3.14, 0.4.7, latest/0.21.0) all contain a
-    # hardcoded minimum GFX floor in amd_linux.go:306 that rejects gfx803 ("amdgpu too
-    # old gfx803"). The check reads gfx_target_version=80003 from sysfs directly —
-    # HSA_OVERRIDE_GFX_VERSION never reaches it because it only overrides the HSA runtime,
-    # not the sysfs layer Ollama reads.
-    #
-    # mnccouk/ollama-gpu-rx580 is a community fork (ROCm 5.7, Ollama ~0.3.x base) that
-    # skips the gfx compatibility check when HSA_OVERRIDE_GFX_VERSION is set, allowing
-    # the RX 580 (gfx803) to be used. Confirmed log:
-    #   "skipping rocm gfx compatibility check" HSA_OVERRIDE_GFX_VERSION=8.0.3
-    #   "inference compute" library=rocm compute=gfx803 name=1002:67df total="8.0 GiB"
-    image: mnccouk/ollama-gpu-rx580
+    image: ollama/ollama:latest
     container_name: spirit-ollama
-    privileged: true                   # required: grants full /dev/kfd + /dev/dri access
     restart: unless-stopped
+    runtime: nvidia
     ports:
       - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
-    devices:
-      - /dev/kfd:/dev/kfd              # ROCm kernel fusion driver (HSA agent gate)
-      - /dev/dri:/dev/dri              # DRM render nodes (card0 + renderD128/129)
-    group_add:
-      - video                          # required for /dev/dri/card* access
-      - "993"                          # render GID on this host — grants /dev/dri/renderD* access
     environment:
-      # ── Polaris 10 / gfx803 override ────────────────────────────────────────
-      # ROCm 6.x does not natively list gfx803 as supported; this env var forces
-      # the HSA runtime to treat the RX 580 as a fully supported gfx803 target.
-      - HSA_OVERRIDE_GFX_VERSION=8.0.3
-
-      # ── Force Ollama to use the ROCm runtime (not CPU fallback) ─────────────
-      - OLLAMA_LLM_LIBRARY=rocm
-
-      # ── Device selection ─────────────────────────────────────────────────────
-      # CONFIRMED via logs: Intel HD 530 (i915) is INVISIBLE to ROCm/HSA.
-      # The RX 580 is the only HSA agent and is enumerated as device 0.
-      # DO NOT set ROCR_VISIBLE_DEVICES=1 — that points to a non-existent device.
-
-      # ── Polaris SDMA stability fix ───────────────────────────────────────────
-      # Polaris (gfx803) cards hang on SDMA memory copies in containerised ROCm.
-      # Disabling SDMA forces the CPU-path DMA engine instead — slower first-load
-      # but eliminates the "wedged driver / blank rocm-smi" hang entirely.
-      - HSA_ENABLE_SDMA=0
-
-      # ── Operational ─────────────────────────────────────────────────────────
-      - OLLAMA_HOST=0.0.0.0
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - OLLAMA_HOST=0.0.0.0:11434
       - OLLAMA_KEEP_ALIVE=24h
     networks:
       - spirit-net
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      # Official image is Ubuntu + `ollama` only (no curl); CLI talks to the local daemon.
+      test: ["CMD-SHELL", "ollama list >/dev/null 2>&1 || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 40s               # GPU init takes longer than CPU — allow extra time
 
-  # ── 2. XTTS v2 Streaming Server ─────────────────────────────────────────────
-  #   API surface used by this project:
-  #     POST /tts  →  body: { text, language, speaker_wav? }
-  #                →  returns: audio/wav binary
-  xtts-api:
-    image: ghcr.io/coqui-ai/xtts-streaming-server:latest-cpu
-    container_name: spirit-xtts
-    restart: unless-stopped
-    ports:
-      - "8020:80"
-    environment:
-      - COQUI_TOS_AGREED=1
-      # Force CPU path on AMD/non-NVIDIA hosts.
-      - USE_CPU=1
-      - CUDA_VISIBLE_DEVICES=
-    devices:
-      - /dev/dri/renderD128:/dev/dri/renderD128
-    group_add:
-      - "993"
-    volumes:
-      - xtts_speakers:/app/speakers
-    networks:
-      - spirit-net
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80/languages"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 40s
-
-  # ── 3. Faster-Whisper STT API ───────────────────────────────────────────────
+  # ── 2. Faster-Whisper STT API ───────────────────────────────────────────────
   #   OpenAI-compatible transcription endpoint:
   #     POST /v1/audio/transcriptions
   #          form-data: file=<audio blob>, model=<model name>
@@ -128,18 +52,18 @@ services:
   #   Model is downloaded on first start (~150 MB for base.en).
   #   For a beefier model set WHISPER__MODEL=large-v3 (slower, more accurate).
   whisper-stt:
-    image: fedirz/faster-whisper-server:latest-cpu
+    image: fedirz/faster-whisper-server:0.6.0-rc.3-cuda
     container_name: spirit-whisper
     restart: unless-stopped
+    runtime: nvidia
     ports:
       - "8000:8000"
     environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
       - WHISPER__MODEL=Systran/faster-whisper-base.en
       - WHISPER__LANGUAGE=en
-      # ROCm Whisper GPU support requires a separate HIP-enabled image build.
-      # CPU mode is correct and stable for now; swap image + uncomment if a
-      # ROCm-native faster-whisper image becomes available:
-      # - WHISPER__DEVICE=rocm
+      - WHISPER__DEVICE=cuda
     volumes:
       - whisper_cache:/root/.cache/huggingface
     networks:
@@ -153,7 +77,6 @@ services:
 
 volumes:
   ollama_data:
-  xtts_speakers:
   whisper_cache:
 
 networks:

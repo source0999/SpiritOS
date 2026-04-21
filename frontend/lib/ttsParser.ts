@@ -16,31 +16,14 @@ const STAGE_PAUSE_MS: Record<string, number> = {
   exhale: 700,
 };
 
-function splitIntoBurstChunks(text: string): string[] {
+function splitIntoSentenceChunks(text: string): string[] {
   const cleaned = text.replace(/\s+/g, " ").trim();
   if (!cleaned) return [];
 
-  // Split at punctuation boundaries first so natural pauses stay intact.
-  const clauses =
-    cleaned.match(/[^,.;:!?-]+[,.;:!?-]?|[^,.;:!?-]+$/g)?.map((s) => s.trim()).filter(Boolean) ?? [];
-
-  const out: string[] = [];
-  for (const clause of clauses) {
-    const words = clause.split(/\s+/).filter(Boolean);
-    if (words.length <= 8) {
-      out.push(clause);
-      continue;
-    }
-    // Burst splitter: 5-8 word chunks (prefer 6 words).
-    let i = 0;
-    while (i < words.length) {
-      const remaining = words.length - i;
-      const take = remaining <= 8 ? remaining : 6;
-      out.push(words.slice(i, i + take).join(" "));
-      i += take;
-    }
-  }
-  return out;
+  return cleaned
+    .match(/[^.!?]+[.!?]+|[^.!?]+$/g)
+    ?.map((s) => s.trim())
+    .filter(Boolean) ?? [];
 }
 
 export function parseTtsSegments(text: string): TtsSegment[] {
@@ -59,7 +42,7 @@ export function parseTtsSegments(text: string): TtsSegment[] {
       continue;
     }
 
-    const chunks = splitIntoBurstChunks(part);
+    const chunks = splitIntoSentenceChunks(part);
     for (const chunk of chunks) {
       out.push({ type: "speech", text: chunk });
     }

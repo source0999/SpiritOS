@@ -349,11 +349,30 @@ export default function SovereignChatPage() {
 
   // ── useStream ─────────────────────────────────────────────────────────────
   const { streamingText, isStreaming, error: streamError, startStream } = useStream({
-    onError: useCallback(() => {
+    onError: useCallback((err: Error) => {
       // Stream failed before any assistant text was persisted — clear the
       // "streaming" placeholder id so `thinking` unlocks and the user can retry.
       setStreamingMsgId(null);
       autoTitlePendingRef.current = null;
+      if (naviPipelineRef.current.active) {
+        // #region agent log
+        fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
+          body: JSON.stringify({
+            sessionId: "7d6688",
+            runId: naviPipelineRef.current.runId,
+            hypothesisId: "H4",
+            location: "page.tsx:useStream.onError",
+            message: "Navi pipeline failed at LLM stream stage",
+            data: { error: err.message },
+            timestamp: Date.now(),
+          }),
+        }).catch(() => {});
+        // #endregion
+        console.error("[Spirit OS] Navi pipeline failed at LLM API (/api/spirit):", err);
+        naviPipelineRef.current = { active: false, runId: "" };
+      }
     }, []),
     onStreamEmpty: useCallback(() => {
       setStreamingMsgId(null);
@@ -369,9 +388,19 @@ export default function SovereignChatPage() {
           setPlayingMessageId(saved.id);
           void speak(fullText)
             .catch((e) => {
+              if (naviPipelineRef.current.active) {
+                console.error("[Spirit OS] Navi pipeline failed at TTS playback stage:", e);
+              }
               console.error("[Spirit OS] Auto TTS failed:", e);
             })
-            .finally(() => setPlayingMessageId(null));
+            .finally(() => {
+              if (naviPipelineRef.current.active) {
+                naviPipelineRef.current = { active: false, runId: "" };
+              }
+              setPlayingMessageId(null);
+            });
+        } else if (naviPipelineRef.current.active) {
+          naviPipelineRef.current = { active: false, runId: "" };
         }
         // Scroll after the persisted bubble replaces the streaming one.
         requestAnimationFrame(() => {
@@ -402,6 +431,7 @@ export default function SovereignChatPage() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const voiceChunksRef = useRef<Blob[]>([]);
+  const naviPipelineRef = useRef<{ active: boolean; runId: string }>({ active: false, runId: "" });
 
   // ── Seed on first mount ────────────────────────────────────────────────────
   useEffect(() => {
@@ -770,18 +800,81 @@ export default function SovereignChatPage() {
     if (!blob.size) return;
 
     setIsTranscribing(true);
+    const runId = `navi-${Date.now()}`;
+    // #region agent log
+    fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
+      body: JSON.stringify({
+        sessionId: "7d6688",
+        runId,
+        hypothesisId: "H4",
+        location: "page.tsx:stopRecordingAndTranscribe",
+        message: "Navi pipeline start",
+        data: { blobBytes: blob.size },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
     try {
       const fd = new FormData();
       fd.append("file", blob, `voice-${Date.now()}.webm`);
       const res = await fetch("/api/stt", { method: "POST", body: fd });
       if (!res.ok) throw new Error(`STT API ${res.status}`);
+      // #region agent log
+      fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
+        body: JSON.stringify({
+          sessionId: "7d6688",
+          runId,
+          hypothesisId: "H4",
+          location: "page.tsx:stopRecordingAndTranscribe",
+          message: "STT request completed",
+          data: { status: res.status },
+          timestamp: Date.now(),
+        }),
+      }).catch(() => {});
+      // #endregion
       const data = await res.json().catch(() => ({})) as { text?: string };
       const transcript = data.text?.trim() || "";
       if (transcript) {
+        naviPipelineRef.current = { active: true, runId };
+        // #region agent log
+        fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
+          body: JSON.stringify({
+            sessionId: "7d6688",
+            runId,
+            hypothesisId: "H4",
+            location: "page.tsx:stopRecordingAndTranscribe",
+            message: "Transcript ready, dispatching send",
+            data: { transcriptLen: transcript.length },
+            timestamp: Date.now(),
+          }),
+        }).catch(() => {});
+        // #endregion
         await send(transcript);
       }
     } catch (e) {
-      console.error("[Spirit OS] STT failed:", e);
+      // #region agent log
+      fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
+        body: JSON.stringify({
+          sessionId: "7d6688",
+          runId,
+          hypothesisId: "H4",
+          location: "page.tsx:stopRecordingAndTranscribe",
+          message: "Navi pipeline failed in catch",
+          data: { error: e instanceof Error ? e.message : String(e) },
+          timestamp: Date.now(),
+        }),
+      }).catch(() => {});
+      // #endregion
+      console.error("[Spirit OS] Navi pipeline failed at STT API stage:", e);
+      naviPipelineRef.current = { active: false, runId: "" };
     } finally {
       setIsTranscribing(false);
     }

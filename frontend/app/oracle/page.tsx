@@ -343,7 +343,7 @@ export default function OraclePage() {
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-50" />
             <span className="relative h-2 w-2 rounded-full bg-emerald-400" />
           </span>
-          <span className="font-mono text-xs text-zinc-400">XTTS v2 · Online</span>
+          <span className="font-mono text-xs text-zinc-400">OpenAI TTS · Online</span>
         </div>
 
         <span className="font-mono text-xs text-zinc-600">Architecture 7</span>
