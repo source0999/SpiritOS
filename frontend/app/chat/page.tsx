@@ -329,6 +329,12 @@ export default function SovereignChatPage() {
   // an async Dexie read on the hot path; it's refreshed on each send.
   const customDirectiveRef = useRef<string | null>(null);
 
+  // Serializes sentence-level `speak()` calls — AudioQueue.play() stops any prior
+  // run, so overlapping void speak() would cancel earlier sentences.
+  const ttsQueueRef = useRef(Promise.resolve());
+  /** True from first mid-stream sentence until the TTS queue is drained in onComplete. */
+  const ttsDrainRef = useRef(false);
+
   // ── Step C: Personality learning tracker ──────────────────────────────────
   const { captureMessageEvents, captureCorrectionEvent, buildUserContext } = usePersonality();
 
@@ -349,11 +355,25 @@ export default function SovereignChatPage() {
 
   // ── useStream ─────────────────────────────────────────────────────────────
   const { streamingText, isStreaming, error: streamError, startStream } = useStream({
+    onSentenceReady: useCallback(
+      (sentence: string) => {
+        if (!isTTSEnabled) return;
+        ttsDrainRef.current = true;
+        ttsQueueRef.current = ttsQueueRef.current.then(() =>
+          speak(sentence).catch((e) => {
+            console.error("[Spirit OS] Sentence TTS failed:", e);
+          }),
+        );
+      },
+      [speak, isTTSEnabled],
+    ),
     onError: useCallback((err: Error) => {
       // Stream failed before any assistant text was persisted — clear the
       // "streaming" placeholder id so `thinking` unlocks and the user can retry.
       setStreamingMsgId(null);
       autoTitlePendingRef.current = null;
+      ttsQueueRef.current = Promise.resolve();
+      ttsDrainRef.current = false;
       if (naviPipelineRef.current.active) {
         // #region agent log
         fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
@@ -377,6 +397,8 @@ export default function SovereignChatPage() {
     onStreamEmpty: useCallback(() => {
       setStreamingMsgId(null);
       autoTitlePendingRef.current = null;
+      ttsQueueRef.current = Promise.resolve();
+      ttsDrainRef.current = false;
     }, []),
     onComplete: useCallback(async (fullText: string) => {
       const threadId = activeThreadIdRef.current;
@@ -384,21 +406,19 @@ export default function SovereignChatPage() {
         const saved = await addMessage(threadId, "spirit", fullText);
         await touchThread(threadId, fullText);
         setStreamingMsgId(null);
-        if (isTTSEnabled && !isPlaying) {
+        if (isTTSEnabled) {
           setPlayingMessageId(saved.id);
-          void speak(fullText)
-            .catch((e) => {
-              if (naviPipelineRef.current.active) {
-                console.error("[Spirit OS] Navi pipeline failed at TTS playback stage:", e);
-              }
-              console.error("[Spirit OS] Auto TTS failed:", e);
-            })
-            .finally(() => {
-              if (naviPipelineRef.current.active) {
-                naviPipelineRef.current = { active: false, runId: "" };
-              }
-              setPlayingMessageId(null);
-            });
+          try {
+            await ttsQueueRef.current;
+          } catch (e) {
+            console.error("[Spirit OS] Auto TTS queue failed:", e);
+          } finally {
+            ttsDrainRef.current = false;
+            setPlayingMessageId(null);
+            if (naviPipelineRef.current.active) {
+              naviPipelineRef.current = { active: false, runId: "" };
+            }
+          }
         } else if (naviPipelineRef.current.active) {
           naviPipelineRef.current = { active: false, runId: "" };
         }
@@ -420,7 +440,7 @@ export default function SovereignChatPage() {
         autoTitlePendingRef.current = null;
         autoTitle(pending.threadId, pending.text);
       }
-    }, [autoTitle, isTTSEnabled, speak]),
+    }, [autoTitle, isTTSEnabled]),
   });
 
   // Derived: are we in any kind of "busy" state?
@@ -444,8 +464,10 @@ export default function SovereignChatPage() {
   }, []);
 
   useEffect(() => {
-    if (!isPlaying) setPlayingMessageId(null);
-  }, [isPlaying]);
+    if (!isPlaying && !isStreaming && !ttsDrainRef.current) {
+      setPlayingMessageId(null);
+    }
+  }, [isPlaying, isStreaming]);
 
   useEffect(() => {
     return () => {
@@ -752,6 +774,8 @@ export default function SovereignChatPage() {
     autoTitlePendingRef.current = { threadId, text };
 
     setStreamingMsgId("streaming");
+    ttsQueueRef.current = Promise.resolve();
+    ttsDrainRef.current = false;
     startStream(
       text,
       sarcasm,

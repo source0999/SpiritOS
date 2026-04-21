@@ -44,6 +44,52 @@ You are still helpful but barely contain your disdain. Use [sigh], [scoffs], [gr
 Keep it to 2-3 sentences. Make it feel earned.`,
 };
 
+// ── Ollama NDJSON stream → assembled string ──────────────────────────────────
+// Consumes an Ollama /api/generate streaming body (stream: true) and
+// assembles all token deltas into a single resolved string.
+// Equivalent to stream: false but without holding the full context in memory
+// on the Ollama side, which eliminates the long first-byte wait on 8192 ctx.
+async function drainOllamaStream(body: ReadableStream<Uint8Array>): Promise<string> {
+  const reader  = body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let result = "";
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+        let obj: { response?: string; error?: string; done?: boolean };
+        try {
+          obj = JSON.parse(trimmed) as typeof obj;
+        } catch {
+          continue;
+        }
+        if (obj.error) throw new Error(`Ollama stream error: ${obj.error}`);
+        if (obj.response) result += obj.response;
+      }
+    }
+    const tail = buffer.trim();
+    if (tail) {
+      try {
+        const obj = JSON.parse(tail) as { response?: string; error?: string };
+        if (obj.error) throw new Error(`Ollama stream error: ${obj.error}`);
+        if (obj.response) result += obj.response;
+      } catch {
+        // ignore trailing non-JSON fragment
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  return result.trim();
+}
+
 // ── Route handler ────────────────────────────────────────────────────────────
 export async function POST(req: Request): Promise<Response> {
   // #region agent log
@@ -120,38 +166,27 @@ export async function POST(req: Request): Promise<Response> {
         model: OLLAMA_MODEL,
         system: systemPrompt,
         prompt: transcript,
-        stream: false,
+        stream: true,  // streaming avoids long all-or-nothing waits with large num_ctx
         options: {
           num_ctx: OLLAMA_NUM_CTX,
           num_predict: 180,   // keep responses short; ~3 spoken sentences
           temperature: 0.75,
         },
       }),
-      signal: AbortSignal.timeout(60_000),
+      // Streaming first-byte is fast; still allow time to drain up to num_predict tokens.
+      signal: AbortSignal.timeout(45_000),
     });
 
     if (!ollamaRes.ok) {
       const detail = await ollamaRes.text().catch(() => "");
-      // #region agent log
-      fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
-        body: JSON.stringify({
-          sessionId: "7d6688",
-          runId: "pivot-debug-2",
-          hypothesisId: "H3",
-          location: "app/api/oracle/route.ts:POST",
-          message: "Oracle Ollama call failed",
-          data: { status: ollamaRes.status, model: OLLAMA_MODEL, detail: detail.slice(0, 140) },
-          timestamp: Date.now(),
-        }),
-      }).catch(() => {});
-      // #endregion
       throw new Error(`Ollama HTTP ${ollamaRes.status}: ${detail}`);
     }
 
-    const ollamaData = (await ollamaRes.json()) as { response?: string };
-    replyText = (ollamaData.response ?? "").trim();
+    if (!ollamaRes.body) {
+      throw new Error("Ollama returned an empty body on streaming request");
+    }
+
+    replyText = await drainOllamaStream(ollamaRes.body);
   } catch (err) {
     console.error("[oracle] LLM error:", err);
     return NextResponse.json({ error: `LLM inference failed: ${String(err)}` }, { status: 502 });

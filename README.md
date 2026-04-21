@@ -8,7 +8,7 @@ Monorepo for **Spirit OS**: local-first chat against Ollama, Next.js frontend, a
 
 - [x] **Unfiltered 3B engine swap** — `nchapman/dolphin3.0-llama3:3b` via Tailscale Ollama host; short persona prompts for fast prefill on 8GB-class GPUs.
 - [x] **History fix** — prior turns are built from Dexie thread messages and sent as `history` in `POST /api/spirit` (no more `historyTurns: 0` amnesia).
-- [ ] **Module 4: XTTS v2 voice pipeline** — TTS playback and `audioUrl` on messages (see `frontend/lib/db.types.ts`).
+- [x] **Sentence-level streaming TTS** — LLM tokens are split on sentence boundaries mid-stream and piped to `/api/tts` via `onSentenceReady`; voice begins before generation completes.
 - [x] **OpenAI TTS Cloud Pivot** — `/api/tts` now streams OpenAI `tts-1` audio (`voice: nova`, MP3) directly to the client.
 - [x] **Local XTTS Decommissioned** — XTTS service removed from backend compose; voice synthesis is cloud-only.
 - [x] **MSE Decode Audio Fix** — removed browser MSE path; `/api/tts` responses are decoded via `decodeAudioData` with look-ahead prefetch.
@@ -16,7 +16,7 @@ Monorepo for **Spirit OS**: local-first chat against Ollama, Next.js frontend, a
 
 ### Backend
 
-- [ ] **Voice / auxiliary services** — align `backend/docker-compose.yml` and deployment with Module 4 when ready.
+- [x] **Oracle stream fix** — `/api/oracle` Ollama call switched from `stream: false` to `stream: true` with `drainOllamaStream()`; 8192 num_ctx no longer deadlocks the response pipeline.
 
 ## Quick start (frontend)
 

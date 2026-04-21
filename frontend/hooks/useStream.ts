@@ -19,7 +19,8 @@
 //  2. SINGLE DEXIE WRITE ON COMPLETION
 //     The `onComplete` callback is invoked exactly once — after the reader
 //     signals `done: true`. This avoids IndexedDB transaction lock contention
-//     that occurs when writes happen mid-stream.
+//     that occurs when writes happen mid-stream. Optional `onSentenceReady`
+//     fires mid-stream for TTS without waiting for completion.
 //
 //  3. ABORT CONTROLLER
 //     Every stream is tied to an AbortController. Calling `abort()` (or
@@ -35,11 +36,23 @@ import { useState, useRef, useCallback } from "react";
 /** Prior turns for Ollama (maps Dexie `spirit` → assistant). */
 export type SpiritChatTurn = { role: "user" | "assistant"; content: string };
 
+// Sentence boundary regex: matches text ending with . ! or ? followed by
+// whitespace or end of string. Greedy — captures entire sentence including
+// the punctuation mark. Does NOT split on ellipsis (...) or Mr./Dr. etc.
+// Good enough for TTS chunking; not a full NLP parser.
+const SENTENCE_BOUNDARY_RE = /[^.!?]*[.!?]+(?:\s|$)/g;
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface StreamOptions {
   /** Called with the fully accumulated text once the stream closes. */
   onComplete?: (fullText: string) => void;
+  /**
+   * Called with each complete sentence as it arrives mid-stream.
+   * Fires BEFORE onComplete. Use this to pipe sentences to TTS
+   * without waiting for the full response.
+   */
+  onSentenceReady?: (sentence: string) => void;
   /** Called immediately if the fetch or stream pump throws. */
   onError?: (err: Error) => void;
   /**
@@ -78,7 +91,7 @@ export interface StreamState {
 // ── Hook ──────────────────────────────────────────────────────────────────────
 
 export function useStream(options: StreamOptions = {}): StreamState {
-  const { onComplete, onError, onStreamEmpty } = options;
+  const { onComplete, onSentenceReady, onError, onStreamEmpty } = options;
   // onAutoTitle is consumed by page.tsx to fire autoTitle after stream completes.
   // It lives on StreamOptions for type safety but is not used inside useStream itself.
   void options.onAutoTitle;
@@ -203,13 +216,40 @@ export function useStream(options: StreamOptions = {}): StreamState {
           // The /api/spirit route already strips the Ollama NDJSON envelope.
           const reader  = res.body.getReader();
           const decoder = new TextDecoder();
+          // Rolling buffer: holds partial sentence text between chunks.
+          // Reset per-stream so prior responses don't bleed into the next.
+          let sentenceBuffer = "";
 
           for (;;) {
             const { done, value } = await reader.read();
-            if (done) break;
+            if (done) {
+              // Drain any remaining text in the buffer that never hit punctuation.
+              const remainder = sentenceBuffer.trim();
+              if (remainder && onSentenceReady) {
+                onSentenceReady(remainder);
+              }
+              sentenceBuffer = "";
+              break;
+            }
             const chunk = decoder.decode(value, { stream: true });
             accRef.current  += chunk;
             dirtyRef.current = true;
+
+            // ── Sentence detection (mid-stream TTS handoff) ──────────────
+            if (onSentenceReady) {
+              sentenceBuffer += chunk;
+              // Reset regex lastIndex before each exec loop (stateful regex).
+              SENTENCE_BOUNDARY_RE.lastIndex = 0;
+              let match: RegExpExecArray | null;
+              let lastMatchEnd = 0;
+              while ((match = SENTENCE_BOUNDARY_RE.exec(sentenceBuffer)) !== null) {
+                const sentence = match[0].trim();
+                if (sentence) onSentenceReady(sentence);
+                lastMatchEnd = SENTENCE_BOUNDARY_RE.lastIndex;
+              }
+              // Keep only the unmatched tail for the next chunk.
+              sentenceBuffer = sentenceBuffer.slice(lastMatchEnd);
+            }
           }
 
           reader.releaseLock();
@@ -261,7 +301,7 @@ export function useStream(options: StreamOptions = {}): StreamState {
         }
       })();
     },
-    [onComplete, onError, onStreamEmpty, startRafLoop, stopRafLoop],
+    [onComplete, onSentenceReady, onError, onStreamEmpty, startRafLoop, stopRafLoop],
   );
 
   return { streamingText, isStreaming, error, startStream, abort };
