@@ -5,30 +5,33 @@
  *   audio        Blob   — raw microphone recording (webm/opus or mp4/aac)
  *   sarcasmLevel string — "chill" | "peer" | "unhinged"
  *
- * Response  audio/wav binary
+ * Response  audio/wav binary (Piper)
  *   X-Transcript  URL-encoded transcription of the user's speech
  *   X-Reply       URL-encoded LLM text that was spoken back
  *
  * Pipeline:
  *   1. Faster-Whisper STT  →  transcript
  *   2. Ollama /api/generate  →  reply text
- *   3. OpenAI /audio/speech  →  MP3 audio buffer
+ *   3. Piper (openedai-speech) /v1/audio/speech  →  WAV audio buffer
  */
 
 import { NextResponse } from "next/server";
 
 // ── Service URLs ─────────────────────────────────────────────────────────────
-const OLLAMA_URL  = (process.env.OLLAMA_URL  ?? "http://localhost:11434").replace(/\/$/, "");
+const OLLAMA_URL = (
+  process.env.OLLAMA_BASE_URL ?? process.env.OLLAMA_URL ?? "http://localhost:11434"
+).replace(/\/$/, "");
 const WHISPER_URL = (process.env.WHISPER_URL ?? "http://localhost:8000").replace(/\/$/, "");
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL ?? "dolphin-llama3:8b";
+/** Voice pipeline uses a modest ctx window; chat uses a larger default elsewhere. */
 const OLLAMA_NUM_CTX = (() => {
   const raw = process.env.OLLAMA_NUM_CTX?.trim();
-  const n = raw ? Number(raw) : 8192;
-  return Number.isFinite(n) && n > 0 ? n : 8192;
+  const n = raw ? Number(raw) : 2048;
+  return Number.isFinite(n) && n > 0 ? n : 2048;
 })();
-const OPENAI_TTS_URL = "https://api.openai.com/v1/audio/speech";
-const OPENAI_TTS_MODEL = "tts-1";
-const OPENAI_TTS_VOICE = process.env.OPENAI_TTS_VOICE?.trim() || "nova";
+const PIPER_TTS_URL = (process.env.PIPER_TTS_URL ?? "http://localhost:5200").replace(/\/$/, "");
+const PIPER_TTS_VOICE = process.env.PIPER_TTS_VOICE?.trim() || "fable";
+const PIPER_TTS_MODEL = "tts-1";
 
 // ── Sarcasm → system prompt ──────────────────────────────────────────────────
 const SYSTEM_PROMPTS: Record<string, string> = {
@@ -45,10 +48,6 @@ Keep it to 2-3 sentences. Make it feel earned.`,
 };
 
 // ── Ollama NDJSON stream → assembled string ──────────────────────────────────
-// Consumes an Ollama /api/generate streaming body (stream: true) and
-// assembles all token deltas into a single resolved string.
-// Equivalent to stream: false but without holding the full context in memory
-// on the Ollama side, which eliminates the long first-byte wait on 8192 ctx.
 async function drainOllamaStream(body: ReadableStream<Uint8Array>): Promise<string> {
   const reader  = body.getReader();
   const decoder = new TextDecoder();
@@ -64,7 +63,7 @@ async function drainOllamaStream(body: ReadableStream<Uint8Array>): Promise<stri
       for (const line of lines) {
         const trimmed = line.trim();
         if (!trimmed) continue;
-        let obj: { response?: string; error?: string; done?: boolean };
+        let obj: { response?: string; error?: string };
         try {
           obj = JSON.parse(trimmed) as typeof obj;
         } catch {
@@ -92,21 +91,6 @@ async function drainOllamaStream(body: ReadableStream<Uint8Array>): Promise<stri
 
 // ── Route handler ────────────────────────────────────────────────────────────
 export async function POST(req: Request): Promise<Response> {
-  // #region agent log
-  fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
-    body: JSON.stringify({
-      sessionId: "7d6688",
-      runId: "pivot-debug-2",
-      hypothesisId: "H3",
-      location: "app/api/oracle/route.ts:POST",
-      message: "Oracle request received",
-      data: { model: OLLAMA_MODEL },
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {});
-  // #endregion
   // 1. Parse multipart form ──────────────────────────────────────────────────
   let audioBlob: Blob;
   let sarcasmLevel: string;
@@ -166,14 +150,13 @@ export async function POST(req: Request): Promise<Response> {
         model: OLLAMA_MODEL,
         system: systemPrompt,
         prompt: transcript,
-        stream: true,  // streaming avoids long all-or-nothing waits with large num_ctx
+        stream: true,
         options: {
           num_ctx: OLLAMA_NUM_CTX,
-          num_predict: 180,   // keep responses short; ~3 spoken sentences
+          num_predict: 180,
           temperature: 0.75,
         },
       }),
-      // Streaming first-byte is fast; still allow time to drain up to num_predict tokens.
       signal: AbortSignal.timeout(45_000),
     });
 
@@ -196,47 +179,24 @@ export async function POST(req: Request): Promise<Response> {
     return NextResponse.json({ error: "Empty LLM response" }, { status: 502 });
   }
 
-  // 4. Text-to-Speech via OpenAI ────────────────────────────────────────────
+  // 4. Text-to-Speech via Piper (openedai-speech) ───────────────────────────
   let audioBuffer: ArrayBuffer;
   try {
-    const openAiKey = process.env.OPENAI_API_KEY?.trim();
-    if (!openAiKey) {
-      throw new Error("Missing OPENAI_API_KEY");
-    }
-    const ttsRes = await fetch(OPENAI_TTS_URL, {
+    const ttsRes = await fetch(`${PIPER_TTS_URL}/v1/audio/speech`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${openAiKey}`,
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: OPENAI_TTS_MODEL,
-        voice: OPENAI_TTS_VOICE,
+        model: PIPER_TTS_MODEL,
+        voice: PIPER_TTS_VOICE,
         input: replyText,
-        response_format: "mp3",
+        response_format: "wav",
       }),
       signal: AbortSignal.timeout(60_000),
     });
 
-    // #region agent log
-    fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
-      body: JSON.stringify({
-        sessionId: "7d6688",
-        runId: "pivot-debug-2",
-        hypothesisId: "H6",
-        location: "app/api/oracle/route.ts:POST",
-        message: "Oracle OpenAI TTS response received",
-        data: { status: ttsRes.status, voice: OPENAI_TTS_VOICE, model: OPENAI_TTS_MODEL },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
-
     if (!ttsRes.ok) {
       const detail = await ttsRes.text().catch(() => "");
-      throw new Error(`OpenAI TTS HTTP ${ttsRes.status}: ${detail}`);
+      throw new Error(`Piper TTS HTTP ${ttsRes.status}: ${detail}`);
     }
 
     audioBuffer = await ttsRes.arrayBuffer();
@@ -245,15 +205,13 @@ export async function POST(req: Request): Promise<Response> {
     return NextResponse.json({ error: `Speech synthesis failed: ${String(err)}` }, { status: 502 });
   }
 
-  // 5. Return MP3 + metadata headers ────────────────────────────────────────
+  // 5. Return WAV + metadata headers ────────────────────────────────────────
   return new Response(audioBuffer, {
     status: 200,
     headers: {
-      "Content-Type": "audio/mpeg",
-      // URL-encode so non-ASCII text survives HTTP header transport
+      "Content-Type": "audio/wav",
       "X-Transcript": encodeURIComponent(transcript),
       "X-Reply":      encodeURIComponent(replyText),
-      // Expose custom headers to browser fetch (CORS preflight)
       "Access-Control-Expose-Headers": "X-Transcript, X-Reply",
     },
   });

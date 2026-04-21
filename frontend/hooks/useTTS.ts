@@ -40,82 +40,37 @@ export function useTTS() {
     queueRef.current?.stop();
   }, []);
 
-  const speak = useCallback(async (text: string) => {
-    // #region agent log
-    fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
-      body: JSON.stringify({
-        sessionId: "7d6688",
-        runId: "tts-debug-1",
-        hypothesisId: "H2",
-        location: "useTTS.ts:speak",
-        message: "speak called",
-        data: { isTTSEnabled, textLen: text.trim().length },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
+  /** Mid-stream chat: one sentence per call, queued without cancelling prior audio. */
+  const enqueue = useCallback((text: string) => {
     if (!text.trim() || !isTTSEnabled) return;
-    const segments = parseTtsSegments(text);
-    // #region agent log
-    fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
-      body: JSON.stringify({
-        sessionId: "7d6688",
-        runId: "tts-debug-1",
-        hypothesisId: "H2",
-        location: "useTTS.ts:speak",
-        message: "segments parsed",
-        data: {
-          segmentCount: segments.length,
-          speechCount: segments.filter((s) => s.type === "speech").length,
-        },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
-    if (!segments.length) return;
-    try {
-      await queueRef.current?.play(segments, "en");
-      // #region agent log
-      fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
-        body: JSON.stringify({
-          sessionId: "7d6688",
-          runId: "tts-debug-2",
-          hypothesisId: "H9",
-          location: "useTTS.ts:speak",
-          message: "queue.play resolved",
-          data: {},
-          timestamp: Date.now(),
-        }),
-      }).catch(() => {});
-      // #endregion
-    } catch (e) {
-      // #region agent log
-      fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
-        body: JSON.stringify({
-          sessionId: "7d6688",
-          runId: "tts-debug-2",
-          hypothesisId: "H9",
-          location: "useTTS.ts:speak",
-          message: "queue.play rejected",
-          data: { error: e instanceof Error ? e.message : String(e) },
-          timestamp: Date.now(),
-        }),
-      }).catch(() => {});
-      // #endregion
-      throw e;
-    }
+    queueRef.current?.enqueue(text);
   }, [isTTSEnabled]);
+
+  const drain = useCallback(() => queueRef.current?.drain() ?? Promise.resolve(), []);
+
+  /** Manual replay on a message bubble — same path as live streaming: stop once, then enqueue per speech segment. */
+  const speak = useCallback(
+    async (text: string) => {
+      if (!text.trim() || !isTTSEnabled) return;
+      const segments = parseTtsSegments(text);
+      if (!segments.length) return;
+      queueRef.current?.stop();
+      for (const seg of segments) {
+        if (seg.type === "speech") {
+          queueRef.current?.enqueue(seg.text);
+        } else {
+          await new Promise<void>((r) => setTimeout(r, seg.ms));
+        }
+      }
+      await drain();
+    },
+    [isTTSEnabled, drain],
+  );
 
   return {
     speak,
+    enqueue,
+    drain,
     stop,
     isPlaying,
     isTTSEnabled,

@@ -329,10 +329,7 @@ export default function SovereignChatPage() {
   // an async Dexie read on the hot path; it's refreshed on each send.
   const customDirectiveRef = useRef<string | null>(null);
 
-  // Serializes sentence-level `speak()` calls — AudioQueue.play() stops any prior
-  // run, so overlapping void speak() would cancel earlier sentences.
-  const ttsQueueRef = useRef(Promise.resolve());
-  /** True from first mid-stream sentence until the TTS queue is drained in onComplete. */
+  /** True from first mid-stream sentence until `drain()` completes in onComplete. */
   const ttsDrainRef = useRef(false);
 
   // ── Step C: Personality learning tracker ──────────────────────────────────
@@ -351,7 +348,7 @@ export default function SovereignChatPage() {
     messagesLoading,
     autoTitle,
   } = useThread(activeThreadId);
-  const { speak, stop, isPlaying, isTTSEnabled, toggleTTS } = useTTS();
+  const { speak, enqueue, drain, stop, isPlaying, isTTSEnabled, toggleTTS } = useTTS();
 
   // ── useStream ─────────────────────────────────────────────────────────────
   const { streamingText, isStreaming, error: streamError, startStream } = useStream({
@@ -359,20 +356,16 @@ export default function SovereignChatPage() {
       (sentence: string) => {
         if (!isTTSEnabled) return;
         ttsDrainRef.current = true;
-        ttsQueueRef.current = ttsQueueRef.current.then(() =>
-          speak(sentence).catch((e) => {
-            console.error("[Spirit OS] Sentence TTS failed:", e);
-          }),
-        );
+        enqueue(sentence);
       },
-      [speak, isTTSEnabled],
+      [enqueue, isTTSEnabled],
     ),
     onError: useCallback((err: Error) => {
       // Stream failed before any assistant text was persisted — clear the
       // "streaming" placeholder id so `thinking` unlocks and the user can retry.
       setStreamingMsgId(null);
       autoTitlePendingRef.current = null;
-      ttsQueueRef.current = Promise.resolve();
+      stop();
       ttsDrainRef.current = false;
       if (naviPipelineRef.current.active) {
         // #region agent log
@@ -393,13 +386,13 @@ export default function SovereignChatPage() {
         console.error("[Spirit OS] Navi pipeline failed at LLM API (/api/spirit):", err);
         naviPipelineRef.current = { active: false, runId: "" };
       }
-    }, []),
+    }, [stop]),
     onStreamEmpty: useCallback(() => {
       setStreamingMsgId(null);
       autoTitlePendingRef.current = null;
-      ttsQueueRef.current = Promise.resolve();
+      stop();
       ttsDrainRef.current = false;
-    }, []),
+    }, [stop]),
     onComplete: useCallback(async (fullText: string) => {
       const threadId = activeThreadIdRef.current;
       try {
@@ -409,7 +402,8 @@ export default function SovereignChatPage() {
         if (isTTSEnabled) {
           setPlayingMessageId(saved.id);
           try {
-            await ttsQueueRef.current;
+            // AudioQueue holds the real sentence chain; this only waits for the tail.
+            await drain();
           } catch (e) {
             console.error("[Spirit OS] Auto TTS queue failed:", e);
           } finally {
@@ -440,7 +434,7 @@ export default function SovereignChatPage() {
         autoTitlePendingRef.current = null;
         autoTitle(pending.threadId, pending.text);
       }
-    }, [autoTitle, isTTSEnabled]),
+    }, [autoTitle, drain, isTTSEnabled]),
   });
 
   // Derived: are we in any kind of "busy" state?
@@ -774,7 +768,7 @@ export default function SovereignChatPage() {
     autoTitlePendingRef.current = { threadId, text };
 
     setStreamingMsgId("streaming");
-    ttsQueueRef.current = Promise.resolve();
+    stop();
     ttsDrainRef.current = false;
     startStream(
       text,
@@ -783,7 +777,7 @@ export default function SovereignChatPage() {
       customDirectiveRef.current ?? undefined,
       historyPayload.length ? historyPayload : undefined,
     );
-  }, [input, thinking, activeThreadId, sarcasm, messages, startStream, captureMessageEvents, buildUserContext]);
+  }, [input, thinking, activeThreadId, sarcasm, messages, startStream, captureMessageEvents, buildUserContext, stop]);
 
   const startRecording = useCallback(async () => {
     if (isRecording || isTranscribing || thinking) return;

@@ -3,18 +3,14 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
 
-const OPENAI_TTS_URL = "https://api.openai.com/v1/audio/speech";
-const OPENAI_TTS_MODEL = "tts-1";
-const OPENAI_TTS_VOICE = process.env.OPENAI_TTS_VOICE?.trim() || "nova";
-const OPENAI_TTS_FORMAT = "mp3";
+const PIPER_TTS_URL = (process.env.PIPER_TTS_URL ?? "http://localhost:5200").replace(/\/$/, "");
+const PIPER_TTS_VOICE = process.env.PIPER_TTS_VOICE?.trim() || "fable";
+const TTS_MODEL = "tts-1";
+/** Piper via openedai-speech: wav decodes reliably in the browser AudioContext. */
+const RESPONSE_FORMAT = "wav";
 const MAX_CHARS = 500;
 
 export async function POST(req: Request) {
-  const apiKey = process.env.OPENAI_API_KEY?.trim();
-  if (!apiKey) {
-    return NextResponse.json({ error: "Missing OPENAI_API_KEY" }, { status: 503 });
-  }
-
   let body: unknown;
   try {
     body = await req.json();
@@ -45,46 +41,23 @@ export async function POST(req: Request) {
 
   let upstream: Response;
   try {
-    upstream = await fetch(OPENAI_TTS_URL, {
+    upstream = await fetch(`${PIPER_TTS_URL}/v1/audio/speech`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: OPENAI_TTS_MODEL,
-        voice: OPENAI_TTS_VOICE,
+        model: TTS_MODEL,
+        voice: PIPER_TTS_VOICE,
         input: text,
-        response_format: OPENAI_TTS_FORMAT,
-        // Keep language in request path for compatibility if upstream adds support later.
+        response_format: RESPONSE_FORMAT,
         language,
       }),
     });
   } catch (e) {
-    // #region agent log
-    fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
-      body: JSON.stringify({
-        sessionId: "7d6688",
-        runId: "openai-tts-1",
-        hypothesisId: "C1",
-        location: "app/api/tts/route.ts:POST",
-        message: "OpenAI TTS fetch threw",
-        data: {
-          endpoint: OPENAI_TTS_URL,
-          error: e instanceof Error ? e.message : String(e),
-          textLen: text.length,
-        },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
     return NextResponse.json(
       {
-        error: "OpenAI TTS unreachable",
+        error: "Piper TTS unreachable",
         detail: e instanceof Error ? e.message : String(e),
-        endpoint: OPENAI_TTS_URL,
+        endpoint: `${PIPER_TTS_URL}/v1/audio/speech`,
       },
       { status: 503 },
     );
@@ -92,62 +65,21 @@ export async function POST(req: Request) {
 
   if (!upstream.ok) {
     const detail = await upstream.text().catch(() => "");
-    // #region agent log
-    fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
-      body: JSON.stringify({
-        sessionId: "7d6688",
-        runId: "openai-tts-1",
-        hypothesisId: "C1",
-        location: "app/api/tts/route.ts:POST",
-        message: "OpenAI TTS non-OK response",
-        data: {
-          endpoint: OPENAI_TTS_URL,
-          status: upstream.status,
-          detail: detail.slice(0, 120),
-          textLen: text.length,
-        },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
     return NextResponse.json(
-      { error: "OpenAI TTS returned an error", status: upstream.status, detail: detail.slice(0, 2000) },
+      { error: "Piper TTS returned an error", status: upstream.status, detail: detail.slice(0, 2000) },
       { status: upstream.status >= 500 ? 502 : upstream.status },
     );
   }
 
   if (!upstream.body) {
-    return NextResponse.json({ error: "OpenAI TTS returned empty audio body" }, { status: 502 });
+    return NextResponse.json({ error: "Piper TTS returned empty audio body" }, { status: 502 });
   }
-
-  // #region agent log
-  fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
-    body: JSON.stringify({
-      sessionId: "7d6688",
-      runId: "openai-tts-1",
-      hypothesisId: "C2",
-      location: "app/api/tts/route.ts:POST",
-      message: "OpenAI stream connected",
-      data: {
-        endpoint: OPENAI_TTS_URL,
-        model: OPENAI_TTS_MODEL,
-        voice: OPENAI_TTS_VOICE,
-        upstreamContentType: upstream.headers.get("content-type") ?? "",
-      },
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {});
-  // #endregion
 
   const upstreamContentType = upstream.headers.get("content-type") || "";
   return new Response(upstream.body, {
     status: 200,
     headers: {
-      "Content-Type": upstreamContentType || "audio/mpeg",
+      "Content-Type": upstreamContentType || "audio/wav",
       "Cache-Control": "no-store",
     },
   });

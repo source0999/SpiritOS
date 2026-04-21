@@ -11,6 +11,9 @@ export class AudioQueue {
   private activeAborts = new Set<AbortController>();
   private onPlayingChange?: (playing: boolean) => void;
 
+  /** Serialized tail of `enqueue()` work — appended without `stop()`, unlike `play()`. */
+  private enqueueChain: Promise<void> = Promise.resolve();
+
   constructor(options?: QueueOptions) {
     this.onPlayingChange = options?.onPlayingChange;
   }
@@ -22,6 +25,7 @@ export class AudioQueue {
 
   stop(): void {
     this.runId += 1;
+    this.enqueueChain = Promise.resolve();
     for (const ctrl of this.activeAborts) {
       try {
         ctrl.abort();
@@ -39,6 +43,38 @@ export class AudioQueue {
       this.activeSource = null;
     }
     this.onPlayingChange?.(false);
+  }
+
+  /**
+   * Queue a single utterance after any prior `enqueue()` work, without calling
+   * `stop()` — so streaming sentences play back-to-back.
+   */
+  enqueue(text: string, language = "en"): void {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    this.enqueueChain = this.enqueueChain
+      .catch(() => {})
+      .then(() => this.runEnqueueUnit(trimmed, language));
+  }
+
+  /** Await until all `enqueue()` units scheduled so far have finished. */
+  drain(): Promise<void> {
+    return this.enqueueChain.catch(() => {}).then(() => undefined);
+  }
+
+  private async runEnqueueUnit(text: string, language: string): Promise<void> {
+    const currentRun = this.runId;
+    this.onPlayingChange?.(true);
+    try {
+      const ctx = this.ensureContext();
+      if (ctx.state === "suspended") await ctx.resume();
+      const buffer = await this.fetchAndDecodeSpeechSegment(text, language, currentRun, ctx);
+      await this.playBuffer(buffer, currentRun);
+    } finally {
+      if (currentRun === this.runId) {
+        this.onPlayingChange?.(false);
+      }
+    }
   }
 
   async play(segments: TtsSegment[], language = "en"): Promise<void> {
@@ -94,21 +130,6 @@ export class AudioQueue {
         const nextSpeechIndex = getNextSpeechIndex(i + 1);
         if (nextSpeechIndex !== -1) {
           lookAheadPromise = preloadSpeech(nextSpeechIndex);
-          // #region agent log
-          fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
-            body: JSON.stringify({
-              sessionId: "7d6688",
-              runId: "tts-debug-4",
-              hypothesisId: "H13",
-              location: "audioQueue.ts:play",
-              message: "Look-ahead fetch started",
-              data: { nextSpeechIndex },
-              timestamp: Date.now(),
-            }),
-          }).catch(() => {});
-          // #endregion
         }
 
         await this.playBuffer(audioBuffer, currentRun);
@@ -126,22 +147,6 @@ export class AudioQueue {
     runId: number,
     ctx: AudioContext,
   ): Promise<AudioBuffer> {
-    const fetchStartedAt = Date.now();
-    // #region agent log
-    fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
-      body: JSON.stringify({
-        sessionId: "7d6688",
-        runId: "pivot-debug-1",
-        hypothesisId: "H1",
-        location: "audioQueue.ts:fetchSpeechSegment",
-        message: "Sentence fetch started",
-        data: { textLen: text.length, runId },
-        timestamp: fetchStartedAt,
-      }),
-    }).catch(() => {});
-    // #endregion
     const abortCtrl = new AbortController();
     this.activeAborts.add(abortCtrl);
     const res = await fetch("/api/tts", {
@@ -151,39 +156,9 @@ export class AudioQueue {
       signal: abortCtrl.signal,
     });
     this.activeAborts.delete(abortCtrl);
-    // #region agent log
-    fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
-      body: JSON.stringify({
-        sessionId: "7d6688",
-        runId: "pivot-debug-1",
-        hypothesisId: "H1",
-        location: "audioQueue.ts:fetchSpeechSegment",
-        message: "Sentence fetch response received",
-        data: { status: res.status, elapsedMs: Date.now() - fetchStartedAt, runId },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
     if (!res.ok) throw new Error(`TTS API ${res.status}`);
     const bytes = await res.arrayBuffer();
     const decoded = await ctx.decodeAudioData(bytes.slice(0));
-    // #region agent log
-    fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
-      body: JSON.stringify({
-        sessionId: "7d6688",
-        runId: "pivot-debug-1",
-        hypothesisId: "H1",
-        location: "audioQueue.ts:fetchAndDecodeSpeechSegment",
-        message: "Sentence decoded via decodeAudioData",
-        data: { decodedDuration: decoded.duration, bytes: bytes.byteLength, runId },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
     if (runId !== this.runId) {
       throw new Error("TTS fetch aborted by newer run");
     }

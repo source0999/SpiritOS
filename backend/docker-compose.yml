@@ -75,9 +75,42 @@ services:
       retries: 5
       start_period: 30s
 
+  # ── 3. Piper TTS (openedai-speech, CPU) — OpenAI-compatible /v1/audio/speech ─
+  #   Maps OpenAI voice names → Piper ONNX models (see openedai-config/voice_to_speaker.yaml).
+  #   Host port 5200 → container 8000. First start downloads voice models (~minutes on slow links).
+  openedai-speech:
+    image: ghcr.io/matatonic/openedai-speech-min:latest
+    container_name: spirit-openedai-speech
+    restart: unless-stopped
+    ports:
+      - "5200:8000"
+    environment:
+      - TTS_HOME=/app/voices
+      - HF_HOME=/app/voices
+    volumes:
+      - openedai_voices:/app/voices
+      - ./openedai-config/voice_to_speaker.yaml:/app/config/voice_to_speaker.yaml:ro
+    command:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        cd /app
+        piper --data-dir voices --download-dir voices --model en_GB-alba-medium < /dev/null || true
+        exec bash startup.min.sh
+    networks:
+      - spirit-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
 volumes:
   ollama_data:
   whisper_cache:
+  openedai_voices:
 
 networks:
   spirit-net:
