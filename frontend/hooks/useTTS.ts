@@ -48,24 +48,50 @@ export function useTTS() {
 
   const drain = useCallback(() => queueRef.current?.drain() ?? Promise.resolve(), []);
 
-  /** Manual replay on a message bubble — same path as live streaming: stop once, then enqueue per speech segment. */
-  const speak = useCallback(
-    async (text: string) => {
-      if (!text.trim() || !isTTSEnabled) return;
-      const segments = parseTtsSegments(text);
-      if (!segments.length) return;
-      queueRef.current?.stop();
-      for (const seg of segments) {
-        if (seg.type === "speech") {
-          queueRef.current?.enqueue(seg.text);
-        } else {
-          await new Promise<void>((r) => setTimeout(r, seg.ms));
-        }
-      }
-      await drain();
-    },
-    [isTTSEnabled, drain],
-  );
+  /** Manual replay: stop once, enqueue speech segments only (pause markers dropped). */
+  const speak = useCallback((text: string) => {
+    if (!text.trim() || !isTTSEnabled) return;
+    const segments = parseTtsSegments(text);
+    if (!segments.length) return;
+    // #region agent log
+    fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "c26fba" },
+      body: JSON.stringify({
+        sessionId: "c26fba",
+        runId: "pre-fix",
+        hypothesisId: "H2",
+        location: "useTTS.ts:speak",
+        message: "manual speak invoked",
+        data: {
+          textLen: text.length,
+          segmentCount: segments.length,
+          speechCount: segments.filter((s) => s.type === "speech").length,
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
+    queueRef.current?.stop();
+    for (const seg of segments) {
+      if (seg.type === "speech") queueRef.current?.enqueue(seg.text);
+    }
+    // #region agent log
+    fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "c26fba" },
+      body: JSON.stringify({
+        sessionId: "c26fba",
+        runId: "pre-fix",
+        hypothesisId: "H2",
+        location: "useTTS.ts:speak",
+        message: "manual speak enqueue loop done",
+        data: {},
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
+  }, [isTTSEnabled]);
 
   return {
     speak,

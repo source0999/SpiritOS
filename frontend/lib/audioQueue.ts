@@ -4,6 +4,23 @@ type QueueOptions = {
   onPlayingChange?: (playing: boolean) => void;
 };
 
+function debugLog(location: string, message: string, data: Record<string, unknown>) {
+  // #region agent log
+  fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "c26fba" },
+    body: JSON.stringify({
+      sessionId: "c26fba",
+      runId: "pre-fix",
+      location,
+      message,
+      data,
+      timestamp: Date.now(),
+    }),
+  }).catch(() => {});
+  // #endregion
+}
+
 export class AudioQueue {
   private ctx: AudioContext | null = null;
   private runId = 0;
@@ -24,6 +41,12 @@ export class AudioQueue {
   }
 
   stop(): void {
+    debugLog("audioQueue.ts:stop", "queue stop called", {
+      hypothesisId: "H4",
+      prevRunId: this.runId,
+      activeAborts: this.activeAborts.size,
+      hasActiveSource: this.activeSource !== null,
+    });
     this.runId += 1;
     this.enqueueChain = Promise.resolve();
     for (const ctrl of this.activeAborts) {
@@ -52,6 +75,11 @@ export class AudioQueue {
   enqueue(text: string, language = "en"): void {
     const trimmed = text.trim();
     if (!trimmed) return;
+    debugLog("audioQueue.ts:enqueue", "enqueue received sentence", {
+      hypothesisId: "H1",
+      runId: this.runId,
+      textLen: trimmed.length,
+    });
     this.enqueueChain = this.enqueueChain
       .catch(() => {})
       .then(() => this.runEnqueueUnit(trimmed, language));
@@ -64,11 +92,21 @@ export class AudioQueue {
 
   private async runEnqueueUnit(text: string, language: string): Promise<void> {
     const currentRun = this.runId;
+    debugLog("audioQueue.ts:runEnqueueUnit", "enqueue unit start", {
+      hypothesisId: "H1",
+      runId: currentRun,
+      textLen: text.length,
+    });
     this.onPlayingChange?.(true);
     try {
       const ctx = this.ensureContext();
       if (ctx.state === "suspended") await ctx.resume();
       const buffer = await this.fetchAndDecodeSpeechSegment(text, language, currentRun, ctx);
+      debugLog("audioQueue.ts:runEnqueueUnit", "fetch+decode complete", {
+        hypothesisId: "H1",
+        runId: currentRun,
+        durationSec: buffer.duration,
+      });
       await this.playBuffer(buffer, currentRun);
     } finally {
       if (currentRun === this.runId) {
@@ -147,6 +185,11 @@ export class AudioQueue {
     runId: number,
     ctx: AudioContext,
   ): Promise<AudioBuffer> {
+    debugLog("audioQueue.ts:fetchAndDecodeSpeechSegment", "tts fetch start", {
+      hypothesisId: "H3",
+      runId,
+      textLen: text.length,
+    });
     const abortCtrl = new AbortController();
     this.activeAborts.add(abortCtrl);
     const res = await fetch("/api/tts", {
@@ -159,6 +202,13 @@ export class AudioQueue {
     if (!res.ok) throw new Error(`TTS API ${res.status}`);
     const bytes = await res.arrayBuffer();
     const decoded = await ctx.decodeAudioData(bytes.slice(0));
+    debugLog("audioQueue.ts:fetchAndDecodeSpeechSegment", "tts fetch+decode complete", {
+      hypothesisId: "H3",
+      runId,
+      status: res.status,
+      audioBytes: bytes.byteLength,
+      durationSec: decoded.duration,
+    });
     if (runId !== this.runId) {
       throw new Error("TTS fetch aborted by newer run");
     }

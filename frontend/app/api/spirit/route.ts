@@ -10,11 +10,8 @@ type ChatTurn = { role: "user" | "assistant"; content: string };
 
 const OLLAMA_BASE = (process.env.OLLAMA_BASE_URL ?? "http://localhost:11434").replace(/\/$/, "");
 const OLLAMA_CHAT_URL = `${OLLAMA_BASE}/api/chat`;
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL ?? "dolphin-llama3:8b";
+const OLLAMA_MODEL = "dolphin-llama3:8b";
 const OLLAMA_NUM_CTX = 8192;
-
-const GROQ_CHAT_URL = "https://api.groq.com/openai/v1/chat/completions";
-const GROQ_MODEL = process.env.GROQ_MODEL || "llama-3.1-8b-instant";
 
 const SYSTEM_PROMPTS: Record<Sarcasm, string> = {
   chill: "Spirit Focus mode. Senior engineer tone: concise, direct, technical. Avoid filler, flattery, and restating the question. Answer first, then details only if needed. Do not roleplay tests, scripts, or pseudo shell output unless explicitly asked. For Spirit OS edits, provide exact path/find/replace steps.",
@@ -89,40 +86,6 @@ async function pumpOllamaNdjsonToWriter(
   }
 }
 
-async function pumpGroqSseToWriter(
-  upstream: ReadableStream<Uint8Array>,
-  writer: WritableStreamDefaultWriter<Uint8Array>,
-  encoder: TextEncoder,
-): Promise<void> {
-  const reader = upstream.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-  try {
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split("\n");
-      buffer = lines.pop() ?? "";
-      for (const raw of lines) {
-        const line = raw.trim();
-        if (!line.startsWith("data:")) continue;
-        const payload = line.slice(5).trim();
-        if (!payload || payload === "[DONE]") continue;
-        let obj: { choices?: Array<{ delta?: { content?: string } }> };
-        try {
-          obj = JSON.parse(payload) as typeof obj;
-        } catch {
-          continue;
-        }
-        const piece = obj.choices?.[0]?.delta?.content;
-        if (piece) await writer.write(encoder.encode(piece));
-      }
-    }
-  } finally {
-    reader.releaseLock();
-  }
-}
 
 export async function POST(req: Request) {
   let body: unknown;
@@ -174,87 +137,27 @@ export async function POST(req: Request) {
   const { readable, writable } = new TransformStream<Uint8Array, Uint8Array>();
   const writer = writable.getWriter();
 
-  const groqKey = process.env.GROQ_API_KEY?.trim();
-  let upstreamRes: Response | null = null;
-  let backend: "groq" | "ollama" = "ollama";
-
-  if (mode === "sovereign") {
-    console.log(`>>> [Spirit API] Sovereign mode forcing Ollama at ${OLLAMA_CHAT_URL}`);
-    try {
-      upstreamRes = await fetch(OLLAMA_CHAT_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: OLLAMA_MODEL,
-          stream: true,
-          options: { num_ctx: OLLAMA_NUM_CTX },
-          messages,
-        }),
-      });
-      backend = "ollama";
-    } catch (err) {
-      const detail = err instanceof Error ? err.message : String(err);
-      return NextResponse.json(
-        {
-          error: "Sovereign mode requires Ollama, but the configured endpoint is unreachable",
-          detail,
-          host: OLLAMA_CHAT_URL,
-        },
-        { status: 503 },
-      );
-    }
-  } else if (groqKey) {
-    try {
-      upstreamRes = await fetch(GROQ_CHAT_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${groqKey}`,
-        },
-        body: JSON.stringify({
-          model: GROQ_MODEL,
-          stream: true,
-          messages,
-          temperature: 0.7,
-        }),
-      });
-      if (upstreamRes.ok) {
-        backend = "groq";
-      } else {
-        console.warn(">>> [Spirit API] Groq unavailable; falling back to Ollama", upstreamRes.status);
-        upstreamRes = null;
-      }
-    } catch (err) {
-      console.warn(">>> [Spirit API] Groq fetch failed; falling back to Ollama", err);
-      upstreamRes = null;
-    }
-  }
-
-  if (!upstreamRes && mode !== "sovereign") {
-    console.log(`>>> [Spirit API] Using Ollama at ${OLLAMA_CHAT_URL}`);
-    upstreamRes = await fetch(OLLAMA_CHAT_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: OLLAMA_MODEL,
-        stream: true,
-        options: { num_ctx: OLLAMA_NUM_CTX },
-        messages,
-      }),
-    });
-    backend = "ollama";
-  }
+  const backend: "ollama" = "ollama";
+  console.log(`>>> [Spirit API] Using Ollama at ${OLLAMA_CHAT_URL}`);
+  const upstreamRes = await fetch(OLLAMA_CHAT_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: OLLAMA_MODEL,
+      stream: true,
+      options: {
+        num_ctx: OLLAMA_NUM_CTX,
+        temperature: 0.9,
+        top_p: 0.9,
+        repeat_penalty: 1.1,
+      },
+      messages,
+    }),
+  });
 
   console.log(
     `>>> [Spirit API] Engine: ${backend.toUpperCase()} | mode: ${mode} | history: ${historyMessages.length} turns | system: ${system.length} chars`,
   );
-
-  if (!upstreamRes) {
-    return NextResponse.json(
-      { error: "No backend response available" },
-      { status: 503 },
-    );
-  }
 
   if (!upstreamRes.ok) {
     const detail = await upstreamRes.text().catch(() => "");
@@ -271,11 +174,7 @@ export async function POST(req: Request) {
 
   void (async () => {
     try {
-      if (backend === "groq") {
-        await pumpGroqSseToWriter(streamBody, writer, encoder);
-      } else {
-        await pumpOllamaNdjsonToWriter(streamBody, writer, encoder);
-      }
+      await pumpOllamaNdjsonToWriter(streamBody, writer, encoder);
       await writer.close();
     } catch (err) {
       try {

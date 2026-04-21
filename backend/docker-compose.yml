@@ -33,6 +33,13 @@ services:
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
       - OLLAMA_HOST=0.0.0.0:11434
       - OLLAMA_KEEP_ALIVE=24h
+    deploy:
+      resources:
+        reservations:
+          devices:
+           - driver: nvidia
+             count: all
+             capabilities: [gpu]
     networks:
       - spirit-net
     healthcheck:

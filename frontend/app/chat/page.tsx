@@ -39,7 +39,7 @@ import {
   clearCustomDirective,
   logMissionOverride,
 } from "@/lib/db";
-import type { Folder, Thread, Message, SarcasmLevel } from "@/lib/db.types";
+import type { Folder, Thread, Message } from "@/lib/db.types";
 import { buildSpiritHistoryFromMessages } from "@/lib/chatHistory";
 
 // ─── Utility ──────────────────────────────────────────────────────────────────
@@ -55,38 +55,6 @@ function cn(...classes: (string | undefined | false | null)[]) {
 // Case-insensitive. Captures the new directive text after "to" or ":".
 const META_PROMPT_RE =
   /^spirit[,.]?\s+(change|update|set|rewrite)\s+your\s+(mission|directive|system\s*prompt|instructions?|persona)\s*(?:to|:)\s*([\s\S]+)/i;
-
-// ─── Sarcasm config ───────────────────────────────────────────────────────────
-
-const SARCASM_LEVELS: { id: SarcasmLevel; label: string }[] = [
-  { id: "chill",    label: "Focus"  },
-  { id: "peer",     label: "Mirror" },
-  { id: "unhinged", label: "Chaos"  },
-  { id: "sovereign", label: "Sovereign" },
-];
-
-const SARCASM_ACTIVE: Record<SarcasmLevel, string> = {
-  chill:    "border-zinc-600      bg-zinc-700/60    text-zinc-200",
-  peer:     "border-violet-500/40 bg-violet-500/20  text-violet-300",
-  unhinged: "border-red-500/40    bg-red-500/15     text-red-300",
-  sovereign: "border-amber-500/40 bg-amber-500/15 text-amber-300",
-};
-
-// Mode-aware copy — changes the empty state and input placeholder to
-// match the active persona. Makes the mode switch feel meaningful.
-const MODE_EMPTY_STATE: Record<SarcasmLevel, string> = {
-  chill:    "Ready to work. What are we solving?",
-  peer:     "What's on your mind?",
-  unhinged: "Go ahead. Make my day.",
-  sovereign: "Local brain, no cloud. What do you need?",
-};
-
-const MODE_PLACEHOLDER: Record<SarcasmLevel, string> = {
-  chill:    "What do you need to build, debug, or understand?",
-  peer:     "Talk to me...",
-  unhinged: "Say something I can work with...",
-  sovereign: "Running local on the Dell. No limits...",
-};
 
 // ─── Conversation Sidebar ─────────────────────────────────────────────────────
 //
@@ -305,7 +273,6 @@ function ConversationSidebar({
 export default function SovereignChatPage() {
   const [activeThreadId,    setActiveThreadId]  = useState<string>(() => `new-${Date.now()}`);
   const [input,             setInput]           = useState("");
-  const [sarcasm,           setSarcasm]         = useState<SarcasmLevel>("peer");
   const [mobileSidebarOpen, setMobileOpen]      = useState(false);
   const [seeded,            setSeeded]          = useState(false);
   // Holds the Dexie message id of the assistant bubble currently streaming.
@@ -355,6 +322,21 @@ export default function SovereignChatPage() {
     onSentenceReady: useCallback(
       (sentence: string) => {
         if (!isTTSEnabled) return;
+        // #region agent log
+        fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "c26fba" },
+          body: JSON.stringify({
+            sessionId: "c26fba",
+            runId: "pre-fix",
+            hypothesisId: "H1",
+            location: "page.tsx:onSentenceReady",
+            message: "sentence handed to TTS enqueue",
+            data: { textLen: sentence.length },
+            timestamp: Date.now(),
+          }),
+        }).catch(() => {});
+        // #endregion
         ttsDrainRef.current = true;
         enqueue(sentence);
       },
@@ -402,6 +384,21 @@ export default function SovereignChatPage() {
         if (isTTSEnabled) {
           setPlayingMessageId(saved.id);
           try {
+            // #region agent log
+            fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "c26fba" },
+              body: JSON.stringify({
+                sessionId: "c26fba",
+                runId: "pre-fix",
+                hypothesisId: "H2",
+                location: "page.tsx:onComplete",
+                message: "onComplete calling drain",
+                data: { fullTextLen: fullText.length },
+                timestamp: Date.now(),
+              }),
+            }).catch(() => {});
+            // #endregion
             // AudioQueue holds the real sentence chain; this only waits for the tail.
             await drain();
           } catch (e) {
@@ -450,11 +447,6 @@ export default function SovereignChatPage() {
   // ── Seed on first mount ────────────────────────────────────────────────────
   useEffect(() => {
     seedDatabase().then(() => setSeeded(true)).catch(console.error);
-  }, []);
-
-  // ── Load persisted sarcasm setting ────────────────────────────────────────
-  useEffect(() => {
-    getSetting<SarcasmLevel>("sarcasm", "peer").then(setSarcasm).catch(console.error);
   }, []);
 
   useEffect(() => {
@@ -663,12 +655,6 @@ export default function SovereignChatPage() {
     ta.style.height = `${Math.min(ta.scrollHeight, 160)}px`;
   };
 
-  // ── Sarcasm toggle (persists to Dexie) ────────────────────────────────────
-  const handleSarcasmChange = useCallback((level: SarcasmLevel) => {
-    setSarcasm(level);
-    setSetting("sarcasm", level).catch(console.error);
-  }, []);
-
   // ── Send ──────────────────────────────────────────────────────────────────
   const send = useCallback(async (overrideText?: string) => {
     const text = (overrideText ?? input).trim();
@@ -759,7 +745,7 @@ export default function SovereignChatPage() {
     customDirectiveRef.current = await getCustomDirective();
 
     // ── Step C: Capture personality signals (fire-and-forget) ────────────
-    captureMessageEvents(text, sarcasm);
+    captureMessageEvents(text, "sovereign");
 
     // ── Step C: Build userContext for Mirror/Chaos prompt injection ───────
     userContextRef.current = await buildUserContext();
@@ -772,12 +758,12 @@ export default function SovereignChatPage() {
     ttsDrainRef.current = false;
     startStream(
       text,
-      sarcasm,
+      "sovereign",
       userContextRef.current || undefined,
       customDirectiveRef.current ?? undefined,
       historyPayload.length ? historyPayload : undefined,
     );
-  }, [input, thinking, activeThreadId, sarcasm, messages, startStream, captureMessageEvents, buildUserContext, stop]);
+  }, [input, thinking, activeThreadId, messages, startStream, captureMessageEvents, buildUserContext, stop]);
 
   const startRecording = useCallback(async () => {
     if (isRecording || isTranscribing || thinking) return;
@@ -979,7 +965,7 @@ export default function SovereignChatPage() {
             </div>
           </div>
 
-          {/* Mode toggle + TTS toggle */}
+          {/* TTS toggle */}
           <div className="flex items-center gap-1.5">
             <button
               type="button"
@@ -994,24 +980,6 @@ export default function SovereignChatPage() {
             >
               {isTTSEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
             </button>
-            <span className="mr-1 hidden text-[10px] font-semibold uppercase tracking-widest text-zinc-600 sm:block">
-              Mode
-            </span>
-            {SARCASM_LEVELS.map(({ id, label }) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => handleSarcasmChange(id)}
-                className={cn(
-                  "rounded-lg border px-2.5 py-1 text-[11px] font-semibold touch-manipulation transition-colors",
-                  sarcasm === id
-                    ? SARCASM_ACTIVE[id]
-                    : "border-white/[0.07] bg-transparent text-zinc-600 hover:text-zinc-400",
-                )}
-              >
-                {label}
-              </button>
-            ))}
           </div>
         </header>
 
@@ -1024,7 +992,7 @@ export default function SovereignChatPage() {
                 <div className="flex h-10 w-10 items-center justify-center rounded-full border border-violet-500/20 bg-violet-500/10">
                   <Zap size={16} className="text-violet-400" />
                 </div>
-                <p className="text-sm font-medium text-zinc-500">{MODE_EMPTY_STATE[sarcasm]}</p>
+                <p className="text-sm font-medium text-zinc-500">Local brain, no cloud. What do you need?</p>
               </div>
             )}
 
@@ -1073,9 +1041,10 @@ export default function SovereignChatPage() {
                         return;
                       }
                       setPlayingMessageId(msg.id);
-                      void speak(msg.text)
+                      speak(msg.text);
+                      void drain()
                         .catch((e) => {
-                          console.error("[Spirit OS] TTS speak failed:", e);
+                          console.error("[Spirit OS] TTS drain failed:", e);
                         })
                         .finally(() => setPlayingMessageId(null));
                     }
@@ -1123,7 +1092,7 @@ export default function SovereignChatPage() {
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(); }
                 }}
-                placeholder={MODE_PLACEHOLDER[sarcasm]}
+                placeholder="Running local. What do you need?"
                 rows={1}
                 className="min-h-[36px] flex-1 resize-none bg-transparent py-1 font-mono text-sm text-zinc-100 outline-none placeholder:text-zinc-700"
                 style={{ maxHeight: "160px" }}
@@ -1162,18 +1131,7 @@ export default function SovereignChatPage() {
             </div>
 
             <p className="mt-2 text-center font-mono text-[10px] text-zinc-700">
-              Spirit OS · dolphin3 · XTTS v2 · Mode:{" "}
-              <span className={
-                sarcasm === "chill"
-                  ? "text-zinc-400"
-                  : sarcasm === "peer"
-                  ? "text-violet-500"
-                  : sarcasm === "sovereign"
-                  ? "text-amber-400"
-                  : "text-red-500"
-              }>
-                {SARCASM_LEVELS.find((l) => l.id === sarcasm)?.label ?? sarcasm}
-              </span>
+              Spirit OS · dolphin-llama3:8b · Piper TTS · Sovereign
             </p>
           </div>
         </div>
