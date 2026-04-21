@@ -27,3 +27,5 @@
 {"sessionId":"7d6688","runId":"pivot-debug-1","hypothesisId":"H1","location":"audioQueue.ts:fetchSpeechSegment","message":"Sentence fetch response received","data":{"status":200,"elapsedMs":2232,"runId":2},"timestamp":1776732694652}
 {"sessionId":"7d6688","runId":"pivot-debug-1","hypothesisId":"H1","location":"audioQueue.ts:fetchAndDecodeSpeechSegment","message":"Sentence decoded via decodeAudioData","data":{"decodedDuration":1.728,"bytes":34560,"runId":2},"timestamp":1776732695110}
 {"sessionId":"7d6688","runId":"tts-debug-2","hypothesisId":"H9","location":"useTTS.ts:speak","message":"queue.play resolved","data":{},"timestamp":1776732696837}
+{"sessionId":"7d6688","runId":"pivot-debug-2","hypothesisId":"H3","location":"app/api/oracle/route.ts:POST","message":"Oracle request received","data":{"model":"dolphin-llama3:8b"},"timestamp":1776732852753}
+{"sessionId":"7d6688","runId":"pivot-debug-2","hypothesisId":"H6","location":"app/api/oracle/route.ts:POST","message":"Oracle OpenAI TTS response received","data":{"status":200,"voice":"nova","model":"tts-1"},"timestamp":1776732898354}
