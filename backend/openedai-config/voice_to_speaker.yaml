@@ -1,5 +1,5 @@
 # Piper voice map for openedai-speech (tts-1). Mount at /app/config/voice_to_speaker.yaml
-# Default upstream maps `fable` to a male northern-English voice; we override to British female (Alba).
+# `fable` maps to Australian female (Kemie high) for Oracle/chat TTS.
 tts-1:
   alloy:
     model: voices/en_US-libritts_r-medium.onnx
@@ -11,7 +11,7 @@ tts-1:
     model: voices/en_US-ryan-high.onnx
     speaker:
   fable:
-    model: voices/en_GB-alba-medium.onnx
+    model: voices/en_AU-kemie-high.onnx
     speaker:
   onyx:
     model: voices/en_US-libritts_r-medium.onnx

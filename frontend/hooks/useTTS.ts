@@ -53,44 +53,10 @@ export function useTTS() {
     if (!text.trim() || !isTTSEnabled) return;
     const segments = parseTtsSegments(text);
     if (!segments.length) return;
-    // #region agent log
-    fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "c26fba" },
-      body: JSON.stringify({
-        sessionId: "c26fba",
-        runId: "pre-fix",
-        hypothesisId: "H2",
-        location: "useTTS.ts:speak",
-        message: "manual speak invoked",
-        data: {
-          textLen: text.length,
-          segmentCount: segments.length,
-          speechCount: segments.filter((s) => s.type === "speech").length,
-        },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
     queueRef.current?.stop();
     for (const seg of segments) {
       if (seg.type === "speech") queueRef.current?.enqueue(seg.text);
     }
-    // #region agent log
-    fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "c26fba" },
-      body: JSON.stringify({
-        sessionId: "c26fba",
-        runId: "pre-fix",
-        hypothesisId: "H2",
-        location: "useTTS.ts:speak",
-        message: "manual speak enqueue loop done",
-        data: {},
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
   }, [isTTSEnabled]);
 
   return {

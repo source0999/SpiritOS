@@ -8,33 +8,33 @@ import { useTTS } from "@/hooks/useTTS";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type SarcasmId = "chill" | "peer" | "unhinged";
+type ModeId = "peer" | "educational" | "chaos";
 type OracleStatus = "idle" | "recording" | "processing" | "playing" | "error";
 
 // ── Static config ─────────────────────────────────────────────────────────────
 
-const SARCASM_LEVELS: {
-  id: SarcasmId;
+const MODES: {
+  id: ModeId;
   label: string;
   desc: string;
   active: string;
 }[] = [
   {
-    id:     "chill",
-    label:  "Chill",
-    desc:   "Measured. Cooperative.",
-    active: "border-emerald-500/40 bg-emerald-500/15 text-emerald-300",
-  },
-  {
     id:     "peer",
     label:  "Peer",
-    desc:   "Direct. Unfiltered.",
+    desc:   "Mirror. Brutal honesty. Sass.",
     active: "border-violet-500/40 bg-violet-500/15 text-violet-300",
   },
   {
-    id:     "unhinged",
-    label:  "Unhinged",
-    desc:   "Maximum exasperation.",
+    id:     "educational",
+    label:  "Educational",
+    desc:   "Deep research. Explain clearly.",
+    active: "border-blue-500/40 bg-blue-500/15 text-blue-300",
+  },
+  {
+    id:     "chaos",
+    label:  "Chaos",
+    desc:   "Unhinged. Snort-inducing.",
     active: "border-rose-500/40 bg-rose-500/15 text-rose-300",
   },
 ];
@@ -93,7 +93,7 @@ const STATUS_BADGE: Record<OracleStatus, { text: string; className: string }> = 
 export default function OraclePage() {
   const { enqueue, drain, isTTSEnabled } = useTTS();
 
-  const [sarcasm,      setSarcasm]      = useState<SarcasmId>("peer");
+  const [mode,         setMode]         = useState<ModeId>("peer");
   const [activeMarker, setActiveMarker] = useState<string | null>(null);
   const [status,       setStatus]       = useState<OracleStatus>("idle");
   const [transcript,   setTranscript]   = useState<string>("");
@@ -101,7 +101,7 @@ export default function OraclePage() {
   const [errorMsg,     setErrorMsg]     = useState<string>("");
 
   // Refs — all long-lived audio objects live outside React's render cycle
-  const sarcasmRef       = useRef<SarcasmId>(sarcasm);
+  const modeRef          = useRef<ModeId>(mode);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef   = useRef<Blob[]>([]);
   const audioCtxRef      = useRef<AudioContext | null>(null);
@@ -112,8 +112,8 @@ export default function OraclePage() {
   // One ref slot per bar — lets us update heights directly without re-renders
   const barRefs          = useRef<(HTMLSpanElement | null)[]>([]);
 
-  // Keep sarcasm ref in sync so the MediaRecorder.onstop closure sees latest value
-  useEffect(() => { sarcasmRef.current = sarcasm; }, [sarcasm]);
+  // Keep mode ref in sync so the MediaRecorder.onstop closure sees latest value
+  useEffect(() => { modeRef.current = mode; }, [mode]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -192,7 +192,7 @@ export default function OraclePage() {
   // ── Pipeline: blob → STT → LLM (SSE) → sentence TTS (/api/tts queue) ─────
 
   const processAudio = useCallback(
-    async (blob: Blob, level: SarcasmId) => {
+    async (blob: Blob, level: ModeId) => {
       setStatus("processing");
       setErrorMsg("");
       setReply("");
@@ -200,7 +200,7 @@ export default function OraclePage() {
       try {
         const form = new FormData();
         form.append("audio", blob, "recording.webm");
-        form.append("sarcasmLevel", level);
+        form.append("mode", level);
 
         const res = await fetch("/api/oracle", { method: "POST", body: form });
 
@@ -332,7 +332,7 @@ export default function OraclePage() {
       const blob = new Blob(audioChunksRef.current, {
         type: mimeType || "audio/webm",
       });
-      void processAudio(blob, sarcasmRef.current);
+      void processAudio(blob, modeRef.current);
     };
 
     recorder.start();
@@ -363,7 +363,7 @@ export default function OraclePage() {
 
   // ── Derived UI values ─────────────────────────────────────────────────────
 
-  const currentLevel = SARCASM_LEVELS.find((l) => l.id === sarcasm)!;
+  const currentLevel = MODES.find((l) => l.id === mode)!;
   const badge        = STATUS_BADGE[status];
 
   const micButtonLabel =
@@ -382,10 +382,10 @@ export default function OraclePage() {
       return `${base} border-white/10 bg-white/[0.03] text-zinc-500 cursor-not-allowed`;
     if (status === "error")
       return `${base} border-rose-500/40 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20`;
-    // idle — tinted by sarcasm level
-    return sarcasm === "chill"
-      ? `${base} border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20`
-      : sarcasm === "unhinged"
+    // idle — tinted by mode
+    return mode === "educational"
+      ? `${base} border-blue-500/30 bg-blue-500/10 text-blue-300 hover:bg-blue-500/20`
+      : mode === "chaos"
       ? `${base} border-rose-500/25 bg-rose-500/[0.08] text-rose-300 hover:bg-rose-500/15`
       : `${base} border-violet-500/30 bg-violet-500/10 text-violet-300 hover:bg-violet-500/20`;
   })();
@@ -561,7 +561,7 @@ export default function OraclePage() {
         </div>
       </main>
 
-      {/* ── Sarcasm Level ────────────────────────────────────────────────── */}
+      {/* ── Mode ───────────────────────────────────────────────────────────── */}
       <footer
         className="flex-shrink-0 border-t border-white/[0.05] bg-zinc-950 px-4 pt-4"
         style={{ paddingBottom: "max(20px, env(safe-area-inset-bottom))" }}
@@ -570,7 +570,7 @@ export default function OraclePage() {
 
           <div className="flex items-center justify-between">
             <span className="font-mono text-[11px] uppercase tracking-widest text-zinc-500">
-              Sarcasm Level
+              Mode
             </span>
             <span className="font-mono text-[11px] text-zinc-600 transition-all">
               {currentLevel.desc}
@@ -578,14 +578,14 @@ export default function OraclePage() {
           </div>
 
           <div className="grid grid-cols-3 gap-1 rounded-xl border border-white/[0.07] bg-white/[0.02] p-1">
-            {SARCASM_LEVELS.map((level) => (
+            {MODES.map((level) => (
               <button
                 key={level.id}
                 type="button"
-                onClick={() => setSarcasm(level.id)}
-                onTouchEnd={(e) => { e.preventDefault(); setSarcasm(level.id); }}
+                onClick={() => setMode(level.id)}
+                onTouchEnd={(e) => { e.preventDefault(); setMode(level.id); }}
                 className={`rounded-lg border py-2.5 text-xs font-semibold transition-colors ${
-                  sarcasm === level.id
+                  mode === level.id
                     ? level.active
                     : "border-transparent text-zinc-500 hover:text-zinc-300"
                 }`}
@@ -596,14 +596,14 @@ export default function OraclePage() {
           </div>
 
           <div className="flex gap-1">
-            {SARCASM_LEVELS.map((level) => (
+            {MODES.map((level) => (
               <div
                 key={level.id}
                 className={`h-0.5 flex-1 rounded-full transition-all duration-300 ${
-                  sarcasm === level.id
-                    ? level.id === "chill"    ? "bg-emerald-400"
-                      : level.id === "peer"   ? "bg-violet-400"
-                      :                         "bg-rose-400"
+                  mode === level.id
+                    ? level.id === "educational" ? "bg-blue-400"
+                      : level.id === "peer"       ? "bg-violet-400"
+                      :                              "bg-rose-400"
                     : "bg-white/10"
                 }`}
               />

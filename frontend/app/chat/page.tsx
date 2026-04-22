@@ -48,6 +48,13 @@ function cn(...classes: (string | undefined | false | null)[]) {
   return classes.filter(Boolean).join(" ");
 }
 
+type ChatMode = "peer" | "educational" | "chaos";
+const CHAT_MODES: { id: ChatMode; label: string; color: string }[] = [
+  { id: "peer",        label: "Peer",        color: "text-violet-400 border-violet-500/30 bg-violet-500/10 hover:bg-violet-500/20" },
+  { id: "educational", label: "Educational", color: "text-blue-400   border-blue-500/30   bg-blue-500/10   hover:bg-blue-500/20"  },
+  { id: "chaos",       label: "Chaos",       color: "text-rose-400   border-rose-500/30   bg-rose-500/10   hover:bg-rose-500/20"  },
+];
+
 // ── Meta-prompt detection regex ───────────────────────────────────────────────
 // Matches: "Spirit, change your mission to X"
 //          "Spirit, update your directive: X"
@@ -281,6 +288,7 @@ export default function SovereignChatPage() {
   const [playingMessageId,  setPlayingMessageId] = useState<string | null>(null);
   const [isRecording,       setIsRecording]     = useState(false);
   const [isTranscribing,    setIsTranscribing]  = useState(false);
+  const [chatMode,          setChatMode]        = useState<ChatMode>("peer");
 
   // Capture activeThreadId in a ref so the onComplete closure always sees the
   // current value even though it's created inside useStream (stale closure trap).
@@ -745,7 +753,7 @@ export default function SovereignChatPage() {
     customDirectiveRef.current = await getCustomDirective();
 
     // ── Step C: Capture personality signals (fire-and-forget) ────────────
-    captureMessageEvents(text, "sovereign");
+    captureMessageEvents(text, chatMode);
 
     // ── Step C: Build userContext for Mirror/Chaos prompt injection ───────
     userContextRef.current = await buildUserContext();
@@ -758,12 +766,12 @@ export default function SovereignChatPage() {
     ttsDrainRef.current = false;
     startStream(
       text,
-      "sovereign",
+      chatMode,
       userContextRef.current || undefined,
       customDirectiveRef.current ?? undefined,
       historyPayload.length ? historyPayload : undefined,
     );
-  }, [input, thinking, activeThreadId, messages, startStream, captureMessageEvents, buildUserContext, stop]);
+  }, [input, thinking, activeThreadId, messages, chatMode, startStream, captureMessageEvents, buildUserContext, stop]);
 
   const startRecording = useCallback(async () => {
     if (isRecording || isTranscribing || thinking) return;
@@ -1130,8 +1138,25 @@ export default function SovereignChatPage() {
               </button>
             </div>
 
+            <div className="mt-2 flex items-center justify-center gap-1">
+              {CHAT_MODES.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => setChatMode(m.id)}
+                  className={`rounded-lg border px-2.5 py-1 font-mono text-[10px] font-semibold transition-colors ${
+                    chatMode === m.id
+                      ? m.color
+                      : "border-transparent text-zinc-600 hover:text-zinc-400"
+                  }`}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+
             <p className="mt-2 text-center font-mono text-[10px] text-zinc-700">
-              Spirit OS · dolphin-llama3:8b · Piper TTS · Sovereign
+              Spirit OS · spirit-os · Piper TTS · Peer / Educational / Chaos
             </p>
           </div>
         </div>

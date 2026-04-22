@@ -103,7 +103,7 @@ services:
       - |
         set -e
         cd /app
-        piper --data-dir voices --download-dir voices --model en_GB-alba-medium < /dev/null || true
+        piper --data-dir voices --download-dir voices --model en_AU-kemie-high < /dev/null || true
         exec bash startup.min.sh
     networks:
       - spirit-net

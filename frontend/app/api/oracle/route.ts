@@ -2,8 +2,8 @@
  * Oracle Voice Pipeline · /api/oracle
  *
  * POST  multipart/form-data
- *   audio        Blob   — raw microphone recording (webm/opus or mp4/aac)
- *   sarcasmLevel string — "chill" | "peer" | "unhinged"
+ *   audio   Blob   — raw microphone recording (webm/opus or mp4/aac)
+ *   mode    string — "peer" | "educational" | "chaos"
  *
  * Response  text/event-stream (SSE)
  *   data: {"transcript":"..."}  — user speech (first event)
@@ -23,37 +23,26 @@ const OLLAMA_URL = (
   process.env.OLLAMA_BASE_URL ?? process.env.OLLAMA_URL ?? "http://localhost:11434"
 ).replace(/\/$/, "");
 const WHISPER_URL = (process.env.WHISPER_URL ?? "http://localhost:8000").replace(/\/$/, "");
-/** Voice pipeline uses a modest ctx window; chat uses a larger default elsewhere. */
-const OLLAMA_NUM_CTX = (() => {
-  const raw = process.env.OLLAMA_NUM_CTX?.trim();
-  const n = raw ? Number(raw) : 2048;
-  return Number.isFinite(n) && n > 0 ? n : 2048;
-})();
+/** Voice pipeline: hard-capped for minimum TTFT. Do not read from env. */
+const OLLAMA_NUM_CTX = 2048;
 
-// ── Sarcasm → system prompt (injected as Ollama `system` alongside transcript) ─
-const SYSTEM_PROMPTS: Record<string, string> = {
-  chill: `You are Spirit, a calm and cooperative AI homelab assistant. 
-Be concise, measured, and helpful. Responses should be 1-3 sentences.`,
-
-  peer: `You are Spirit, a direct and unfiltered AI homelab assistant. 
-Skip the pleasantries. Be honest, sharp, and succinct. 1-3 sentences maximum.`,
-
-  unhinged: `You are Spirit, an AI homelab assistant operating at maximum exasperation. 
-You are still helpful but barely contain your disdain. Use [sigh], [scoffs], [groan], 
-[exhale], or [laughs] markers exactly once per response for emotional inflection. 
-Keep it to 2-3 sentences. Make it feel earned.`,
+// ── Mode directives (persona lives in Modelfile; this steers register only) ─
+const MODE_DIRECTIVES: Record<string, string> = {
+  peer: `[MODE: PEER] Mirror the user's energy. Be brutally honest, direct, and sassy.  No softening. No hedging. Peer to peer. 1-3 sentences.`,
+  educational: `[MODE: EDUCATIONAL] Deep-research and teaching mode. Be articulate,  thorough, and philosophical. Use analogies. Break down complexity with precision.  Treat the user as an intelligent adult who wants to genuinely understand something.`,
+  chaos: `[MODE: CHAOS] Unhinged mode. Be unexpected, absurdist, and genuinely funny.  Subvert expectations. Say the thing no one else would say. Snort-inducing responses  are the goal. Stay coherent but completely wild. Use [laughs] or [scoffs] once if it  fits naturally.`,
 };
 
 // ── Route handler ────────────────────────────────────────────────────────────
 export async function POST(req: Request): Promise<Response> {
   // 1. Parse multipart form ──────────────────────────────────────────────────
   let audioBlob: Blob;
-  let sarcasmLevel: string;
+  let mode: string;
 
   try {
     const form = await req.formData();
     const audio = form.get("audio");
-    sarcasmLevel = String(form.get("sarcasmLevel") ?? "peer");
+    mode = String(form.get("mode") ?? "peer");
 
     if (!(audio instanceof Blob) || audio.size === 0) {
       return new Response(JSON.stringify({ error: "Missing or empty audio blob" }), {
@@ -106,7 +95,8 @@ export async function POST(req: Request): Promise<Response> {
   }
 
   // 3. LLM inference via Ollama (stream → SSE) ───────────────────────────────
-  const systemPrompt = SYSTEM_PROMPTS[sarcasmLevel] ?? SYSTEM_PROMPTS.peer;
+  const modeDirective = MODE_DIRECTIVES[mode] ?? MODE_DIRECTIVES.peer;
+  const llmPrompt = `${modeDirective}\n\nUser: ${transcript}`;
 
   let ollamaResponse: Response;
   try {
@@ -115,8 +105,7 @@ export async function POST(req: Request): Promise<Response> {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         model: "spirit-os",
-        system: systemPrompt,
-        prompt: transcript,
+        prompt: llmPrompt,
         stream: true,
         options: {
           num_ctx: OLLAMA_NUM_CTX,

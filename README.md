@@ -11,7 +11,7 @@ Monorepo for **Spirit OS**: local-first chat against Ollama, Next.js frontend, a
 - [x] **Sentence-level streaming TTS** — LLM tokens are split on sentence boundaries mid-stream and piped to `/api/tts` via `onSentenceReady`; voice begins before generation completes.
 - [x] **Synchronous replay path** — `useTTS.speak()` now stops once, enqueues speech segments synchronously, and drops pause markers for fastest first-audio.
 - [x] **Ollama-only Spirit routing** — `/api/spirit` streams from local Ollama with custom model `spirit-os` at `num_ctx: 8192`.
-- [x] **Sovereign-locked chat UI** — chat mode toggles removed; `captureMessageEvents()` and `startStream()` always run in `"sovereign"` mode.
+- [x] **Chat mode selector** — Peer / Educational / Chaos pills drive `sarcasm` sent to `/api/spirit` and personality capture (`frontend/app/chat/page.tsx`).
 - [x] **OpenAI TTS Cloud Pivot** — `/api/tts` now streams OpenAI `tts-1` audio (`voice: nova`, MP3) directly to the client.
 - [x] **Local XTTS Decommissioned** — XTTS service removed from backend compose; voice synthesis is cloud-only.
 - [x] **MSE Decode Audio Fix** — removed browser MSE path; `/api/tts` responses are decoded via `decodeAudioData` with look-ahead prefetch.
@@ -23,6 +23,10 @@ Monorepo for **Spirit OS**: local-first chat against Ollama, Next.js frontend, a
 - [x] **Spirit Modelfile Persona** — `backend/Modelfile` defines `spirit-os` from `dolphin-llama3:8b`; `backend/gpu-setup.sh` runs `ollama create spirit-os`; chat and Oracle use model `spirit-os`.
 - [x] **Oracle VAD Auto-Stop** — Oracle mic capture stops after ~1.5s of silence via RMS on time-domain analyser samples (`frontend/app/oracle/page.tsx`).
 - [x] **Oracle Streaming TTS Pipeline** — `/api/oracle` returns SSE token chunks after Whisper STT; the Oracle client enqueues sentences to `/api/tts` (Piper) via `useTTS` while the model is still generating.
+- [x] **Persona Unified** — `backend/Modelfile` holds the Spirit persona; Oracle uses `MODE_DIRECTIVES` in the prompt only (no duplicate `system:`); chat uses `MODE_DIRECTIVES` in the API system message. Re-run `ollama create spirit-os -f backend/Modelfile` after Modelfile edits.
+- [x] **Dynamic Modes Implemented** — Oracle footer and chat input use Peer / Educational / Chaos; form field `mode` for Oracle; `sarcasm` JSON field for chat (`frontend/app/oracle/page.tsx`, `frontend/app/chat/page.tsx`).
+- [x] **Oracle Latency Fixed** — `/api/oracle` uses `OLLAMA_NUM_CTX = 2048` (hard-coded, ignores env) for lower TTFT; `/api/spirit` stays at `8192`.
+- [x] **HQ Voice Upgraded** — Piper prefetch and `fable` map target `en_AU-kemie-high` (`backend/docker-compose.yml`, `backend/openedai-config/voice_to_speaker.yaml`). Restart `openedai-speech` after pull.
 
 ## Quick start (frontend)
 

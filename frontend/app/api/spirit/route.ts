@@ -5,19 +5,25 @@ import { NextResponse } from "next/server";
 
 import { SPIRIT_HISTORY_MESSAGE_CAP } from "@/lib/spiritConstants";
 
-type Sarcasm = "chill" | "peer" | "unhinged" | "sovereign";
 type ChatTurn = { role: "user" | "assistant"; content: string };
 
 const OLLAMA_BASE = (process.env.OLLAMA_BASE_URL ?? "http://localhost:11434").replace(/\/$/, "");
 const OLLAMA_CHAT_URL = `${OLLAMA_BASE}/api/chat`;
 const OLLAMA_NUM_CTX = 8192;
 
-const SYSTEM_PROMPTS: Record<Sarcasm, string> = {
-  chill: "Spirit Focus mode. Senior engineer tone: concise, direct, technical. Avoid filler, flattery, and restating the question. Answer first, then details only if needed. Do not roleplay tests, scripts, or pseudo shell output unless explicitly asked. For Spirit OS edits, provide exact path/find/replace steps.",
-  peer: "Spirit Peer mode. Sound like a trusted late-night engineering peer. Match user energy without corporate tone. Be natural, sharp, and practical. Prefer concise prose; use structure only when useful. Do not roleplay test harnesses or output fake command snippets unless explicitly requested.",
-  unhinged: "Spirit Chaos mode. High-energy, dark-humor edge, but facts stay accurate. Roast weak ideas with specifics, then give the correct fix. No fabricated logs/commands. Do not emit pseudo test scripts unless the user asks for command output.",
-  sovereign: "Spirit Sovereign mode. Local-only inference on the homelab GPU. No cloud framing, no corporate tone, no filler. Be direct, practical, and raw-but-precise. Keep facts grounded, show your reasoning concisely, and provide decisive technical guidance.",
+const KNOWN_SPIRIT_MODES = ["peer", "educational", "chaos", "sovereign"] as const;
+
+const MODE_DIRECTIVES: Record<string, string> = {
+  peer: `[MODE: PEER] Mirror the user's energy. Brutally honest, direct, sassy.  No corporate tone, no filler. Peer to peer. Concise prose, structure only when useful.`,
+  educational: `[MODE: EDUCATIONAL] Deep-research and teaching mode. Be articulate,  thorough, and philosophical. Break down complexity. Use analogies. Structured when  it genuinely helps. Treat the user as an intelligent adult.`,
+  chaos: `[MODE: CHAOS] High-energy, unhinged, dark-humour edge. Facts stay accurate  but delivery is wild and unexpected. Roast weak ideas with specifics then give the  correct fix. Say the thing no one else would say.`,
+  sovereign: `[MODE: SOVEREIGN] Local-only homelab inference. Direct, raw, precise.  No cloud framing, no corporate tone. Show reasoning concisely. Decisive technical guidance.`,
 };
+
+function resolveSpiritMode(sarcasm: unknown): string {
+  const known = KNOWN_SPIRIT_MODES as readonly string[];
+  return typeof sarcasm === "string" && known.includes(sarcasm) ? sarcasm : "peer";
+}
 
 function normalizeHistory(raw: unknown): ChatTurn[] {
   if (!Array.isArray(raw)) return [];
@@ -40,13 +46,10 @@ function buildSystemPrompt(
   customDirective?: string,
   ragContext?: string,
 ): string {
-  const mode: Sarcasm =
-    sarcasm === "chill" || sarcasm === "peer" || sarcasm === "unhinged" || sarcasm === "sovereign"
-      ? sarcasm
-      : "peer";
-  let prompt = SYSTEM_PROMPTS[mode];
+  const mode = resolveSpiritMode(sarcasm);
+  let prompt = MODE_DIRECTIVES[mode] ?? MODE_DIRECTIVES.peer;
   if (customDirective?.trim()) prompt += `\n\n## Active Directive\n${customDirective.trim()}`;
-  if (userContext?.trim() && mode !== "chill") prompt += `\n\n## Source Profile\n${userContext.trim()}`;
+  if (userContext?.trim()) prompt += `\n\n## Source Profile\n${userContext.trim()}`;
   if (ragContext?.trim()) prompt += `\n\n## Retrieved Context\n${ragContext.trim()}`;
   return prompt;
 }
@@ -119,10 +122,7 @@ export async function POST(req: Request) {
       : undefined;
 
   const system = buildSystemPrompt(sarcasm, userContext, customDirective, ragContext);
-  const mode: Sarcasm =
-    sarcasm === "chill" || sarcasm === "peer" || sarcasm === "unhinged" || sarcasm === "sovereign"
-      ? sarcasm
-      : "peer";
+  const mode = resolveSpiritMode(sarcasm);
   const historyMessages = normalizeHistory(
     "history" in body ? (body as { history: unknown }).history : undefined,
   );

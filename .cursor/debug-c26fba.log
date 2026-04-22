@@ -49,3 +49,7 @@
 {"sessionId":"c26fba","runId":"pre-fix","location":"audioQueue.ts:fetchAndDecodeSpeechSegment","message":"tts fetch start","data":{"hypothesisId":"H3","runId":0,"textLen":84},"timestamp":1776816521418}
 {"sessionId":"c26fba","runId":"pre-fix","location":"audioQueue.ts:fetchAndDecodeSpeechSegment","message":"tts fetch+decode complete","data":{"hypothesisId":"H3","runId":0,"status":200,"audioBytes":220750,"durationSec":5.003895833333333},"timestamp":1776816523209}
 {"sessionId":"c26fba","runId":"pre-fix","location":"audioQueue.ts:runEnqueueUnit","message":"fetch+decode complete","data":{"hypothesisId":"H1","runId":0,"durationSec":5.003895833333333},"timestamp":1776816523210}
+{"sessionId":"c26fba","runId":"pre-fix","location":"audioQueue.ts:stop","message":"queue stop called","data":{"hypothesisId":"H4","prevRunId":0,"activeAborts":0,"hasActiveSource":false},"timestamp":1776817127869}
+{"sessionId":"c26fba","runId":"pre-fix","location":"audioQueue.ts:stop","message":"queue stop called","data":{"hypothesisId":"H4","prevRunId":0,"activeAborts":0,"hasActiveSource":false},"timestamp":1776817127889}
+{"sessionId":"c26fba","runId":"pre-fix","location":"audioQueue.ts:stop","message":"queue stop called","data":{"hypothesisId":"H4","prevRunId":0,"activeAborts":0,"hasActiveSource":false},"timestamp":1776817321734}
+{"sessionId":"c26fba","runId":"pre-fix","location":"audioQueue.ts:stop","message":"queue stop called","data":{"hypothesisId":"H4","prevRunId":1,"activeAborts":0,"hasActiveSource":false},"timestamp":1776817339349}
