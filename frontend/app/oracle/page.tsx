@@ -4,6 +4,8 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { ArrowLeft, Mic, MicOff, Loader2 } from "lucide-react";
 import Link from "next/link";
 
+import { useTTS } from "@/hooks/useTTS";
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type SarcasmId = "chill" | "peer" | "unhinged";
@@ -89,6 +91,8 @@ const STATUS_BADGE: Record<OracleStatus, { text: string; className: string }> = 
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function OraclePage() {
+  const { enqueue, drain, isTTSEnabled } = useTTS();
+
   const [sarcasm,      setSarcasm]      = useState<SarcasmId>("peer");
   const [activeMarker, setActiveMarker] = useState<string | null>(null);
   const [status,       setStatus]       = useState<OracleStatus>("idle");
@@ -102,6 +106,9 @@ export default function OraclePage() {
   const audioChunksRef   = useRef<Blob[]>([]);
   const audioCtxRef      = useRef<AudioContext | null>(null);
   const rafRef           = useRef<number>(0);
+  /** VAD + stop handler for silence auto-stop (refs avoid stale closures in rAF). */
+  const silenceFramesRef = useRef(0);
+  const stopRecordingRef = useRef<(() => void) | null>(null);
   // One ref slot per bar — lets us update heights directly without re-renders
   const barRefs          = useRef<(HTMLSpanElement | null)[]>([]);
 
@@ -121,18 +128,42 @@ export default function OraclePage() {
 
   // Direct DOM mutations at 60 fps — bypassing React reconciler intentionally
   const startVisualizer = useCallback((analyser: AnalyserNode) => {
-    const data   = new Uint8Array(analyser.frequencyBinCount);
+    const data = new Uint8Array(analyser.frequencyBinCount);
+    const timeData = new Uint8Array(analyser.fftSize);
     // Focus on the voice frequency range (roughly the lower 65 % of bins)
     const maxBin = Math.floor(analyser.frequencyBinCount * 0.65);
 
+    const SILENCE_THRESHOLD = 0.015;
+    const SILENCE_FRAMES_LIMIT = 90; // ~1.5s at 60fps
+
     function draw() {
       analyser.getByteFrequencyData(data);
+      analyser.getByteTimeDomainData(timeData);
+
+      let sumSq = 0;
+      for (let i = 0; i < timeData.length; i++) {
+        const normalized = (timeData[i]! - 128) / 128;
+        sumSq += normalized * normalized;
+      }
+      const rms = Math.sqrt(sumSq / timeData.length);
+
+      if (mediaRecorderRef.current?.state === "recording") {
+        if (rms < SILENCE_THRESHOLD) {
+          silenceFramesRef.current++;
+          if (silenceFramesRef.current >= SILENCE_FRAMES_LIMIT) {
+            stopRecordingRef.current?.();
+            return;
+          }
+        } else {
+          silenceFramesRef.current = 0;
+        }
+      }
 
       for (let i = 0; i < BARS.length; i++) {
         const el = barRefs.current[i];
         if (!el) continue;
         const binIdx    = Math.floor((i / BARS.length) * maxBin);
-        const amplitude = data[binIdx] / 255;                    // 0 – 1
+        const amplitude = data[binIdx]! / 255;                    // 0 – 1
         const height    = 4 + amplitude * (BARS[i].maxH - 4);   // min 4 px
         el.style.height    = `${height}px`;
         el.style.animation = "none";                             // pause CSS anim
@@ -141,6 +172,7 @@ export default function OraclePage() {
       rafRef.current = requestAnimationFrame(draw);
     }
 
+    silenceFramesRef.current = 0;
     cancelAnimationFrame(rafRef.current);
     rafRef.current = requestAnimationFrame(draw);
   }, []);
@@ -157,82 +189,113 @@ export default function OraclePage() {
     }
   }, []);
 
-  // ── Audio playback ────────────────────────────────────────────────────────
+  // ── Pipeline: blob → STT → LLM (SSE) → sentence TTS (/api/tts queue) ─────
 
-  const playAudio = useCallback(async (buffer: ArrayBuffer) => {
-    setStatus("playing");
+  const processAudio = useCallback(
+    async (blob: Blob, level: SarcasmId) => {
+      setStatus("processing");
+      setErrorMsg("");
+      setReply("");
 
-    const ctx      = new AudioContext();
-    audioCtxRef.current = ctx;
+      try {
+        const form = new FormData();
+        form.append("audio", blob, "recording.webm");
+        form.append("sarcasmLevel", level);
 
-    const analyser = ctx.createAnalyser();
-    analyser.fftSize = 256;
+        const res = await fetch("/api/oracle", { method: "POST", body: form });
 
-    let decoded: AudioBuffer;
-    try {
-      decoded = await ctx.decodeAudioData(buffer.slice(0)); // slice prevents detachment
-    } catch {
-      await ctx.close();
-      setErrorMsg("Could not decode audio from TTS service.");
-      setStatus("error");
-      stopVisualizer();
-      return;
-    }
+        if (!res.ok) {
+          let msg = `HTTP ${res.status}`;
+          try {
+            const json = (await res.json()) as { error?: string };
+            if (json.error) msg = json.error;
+          } catch {
+            /* ignore */
+          }
+          throw new Error(msg);
+        }
 
-    const source = ctx.createBufferSource();
-    source.buffer = decoded;
-    source.connect(analyser);
-    analyser.connect(ctx.destination);
+        if (!res.body) {
+          throw new Error("Empty response body");
+        }
 
-    startVisualizer(analyser);
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let textBuffer = "";
+        let lineCarry = "";
+        const SENTENCE_END = /[.!?]+[\s]/;
+        let bumpedToPlaying = false;
 
-    source.onended = () => {
-      stopVisualizer();
-      ctx.close().catch(() => {});
-      setStatus("idle");
-    };
+        const enqueueTTS = (sentence: string) => {
+          const s = sentence.trim();
+          if (!s || !isTTSEnabled) return;
+          if (!bumpedToPlaying) {
+            bumpedToPlaying = true;
+            setStatus("playing");
+          }
+          enqueue(s);
+        };
 
-    source.start();
-  }, [startVisualizer, stopVisualizer]);
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          lineCarry += decoder.decode(value, { stream: true });
+          const rawLines = lineCarry.split("\n");
+          lineCarry = rawLines.pop() ?? "";
 
-  // ── Pipeline: blob → STT → LLM → TTS → play ──────────────────────────────
+          for (const raw of rawLines) {
+            const line = raw.replace(/\r$/, "");
+            if (!line.startsWith("data: ")) continue;
+            const payload = line.slice(6).trim();
+            if (payload === "[DONE]") {
+              if (textBuffer.trim()) enqueueTTS(textBuffer.trim());
+              textBuffer = "";
+              continue;
+            }
+            let parsed: { text?: string; transcript?: string; error?: string };
+            try {
+              parsed = JSON.parse(payload) as typeof parsed;
+            } catch {
+              continue;
+            }
+            if (parsed.error) {
+              throw new Error(parsed.error);
+            }
+            if ("transcript" in parsed) {
+              setTranscript(parsed.transcript ?? "");
+              continue;
+            }
+            const piece = parsed.text ?? "";
+            textBuffer += piece;
+            if (piece) {
+              setReply((prev) => prev + piece);
+            }
+            for (;;) {
+              const match = SENTENCE_END.exec(textBuffer);
+              if (!match) break;
+              const sentence = textBuffer.slice(0, match.index + match[0].length).trim();
+              textBuffer = textBuffer.slice(match.index + match[0].length);
+              if (sentence) enqueueTTS(sentence);
+            }
+          }
+        }
 
-  const processAudio = useCallback(async (blob: Blob, level: SarcasmId) => {
-    setStatus("processing");
-
-    try {
-      const form = new FormData();
-      form.append("audio", blob, "recording.webm");
-      form.append("sarcasmLevel", level);
-
-      const res = await fetch("/api/oracle", { method: "POST", body: form });
-
-      if (!res.ok) {
-        let msg = `HTTP ${res.status}`;
-        try {
-          const json = (await res.json()) as { error?: string };
-          if (json.error) msg = json.error;
-        } catch { /* ignore */ }
-        throw new Error(msg);
+        if (textBuffer.trim()) enqueueTTS(textBuffer.trim());
+        await drain();
+        setStatus("idle");
+      } catch (err) {
+        setErrorMsg(String(err));
+        setStatus("error");
+        stopVisualizer();
       }
-
-      const xTranscript = res.headers.get("X-Transcript");
-      const xReply      = res.headers.get("X-Reply");
-      if (xTranscript) setTranscript(decodeURIComponent(xTranscript));
-      if (xReply)      setReply(decodeURIComponent(xReply));
-
-      const audioBuffer = await res.arrayBuffer();
-      await playAudio(audioBuffer);
-    } catch (err) {
-      setErrorMsg(String(err));
-      setStatus("error");
-      stopVisualizer();
-    }
-  }, [playAudio, stopVisualizer]);
+    },
+    [enqueue, drain, isTTSEnabled, stopVisualizer],
+  );
 
   // ── Mic recording ─────────────────────────────────────────────────────────
 
   const startRecording = useCallback(async () => {
+    silenceFramesRef.current = 0;
     setErrorMsg("");
 
     let stream: MediaStream;
@@ -282,6 +345,10 @@ export default function OraclePage() {
     mediaRecorderRef.current = null;
     // status transitions to "processing" inside recorder.onstop → processAudio
   }, []);
+
+  useEffect(() => {
+    stopRecordingRef.current = stopRecording;
+  }, [stopRecording]);
 
   // ── Mic button handler ────────────────────────────────────────────────────
 
@@ -343,7 +410,7 @@ export default function OraclePage() {
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-50" />
             <span className="relative h-2 w-2 rounded-full bg-emerald-400" />
           </span>
-          <span className="font-mono text-xs text-zinc-400">OpenAI TTS · Online</span>
+          <span className="font-mono text-xs text-zinc-400">Piper TTS · Local</span>
         </div>
 
         <span className="font-mono text-xs text-zinc-600">Architecture 7</span>

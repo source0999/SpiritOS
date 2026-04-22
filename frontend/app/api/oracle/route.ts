@@ -5,35 +5,32 @@
  *   audio        Blob   — raw microphone recording (webm/opus or mp4/aac)
  *   sarcasmLevel string — "chill" | "peer" | "unhinged"
  *
- * Response  audio/wav binary (Piper)
- *   X-Transcript  URL-encoded transcription of the user's speech
- *   X-Reply       URL-encoded LLM text that was spoken back
+ * Response  text/event-stream (SSE)
+ *   data: {"transcript":"..."}  — user speech (first event)
+ *   data: {"text":"..."}       — LLM token chunks
+ *   data: [DONE]
  *
  * Pipeline:
- *   1. Faster-Whisper STT  →  transcript
- *   2. Ollama /api/generate  →  reply text
- *   3. Piper (openedai-speech) /v1/audio/speech  →  WAV audio buffer
+ *   1. Faster-Whisper STT  →  transcript (must finish before LLM)
+ *   2. Ollama /api/generate (stream)  →  SSE token stream (client TTS via /api/tts)
  */
 
-import { NextResponse } from "next/server";
+export const dynamic = "force-dynamic";
+export const maxDuration = 120;
 
 // ── Service URLs ─────────────────────────────────────────────────────────────
 const OLLAMA_URL = (
   process.env.OLLAMA_BASE_URL ?? process.env.OLLAMA_URL ?? "http://localhost:11434"
 ).replace(/\/$/, "");
 const WHISPER_URL = (process.env.WHISPER_URL ?? "http://localhost:8000").replace(/\/$/, "");
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL ?? "dolphin-llama3:8b";
 /** Voice pipeline uses a modest ctx window; chat uses a larger default elsewhere. */
 const OLLAMA_NUM_CTX = (() => {
   const raw = process.env.OLLAMA_NUM_CTX?.trim();
   const n = raw ? Number(raw) : 2048;
   return Number.isFinite(n) && n > 0 ? n : 2048;
 })();
-const PIPER_TTS_URL = (process.env.PIPER_TTS_URL ?? "http://localhost:5200").replace(/\/$/, "");
-const PIPER_TTS_VOICE = process.env.PIPER_TTS_VOICE?.trim() || "fable";
-const PIPER_TTS_MODEL = "tts-1";
 
-// ── Sarcasm → system prompt ──────────────────────────────────────────────────
+// ── Sarcasm → system prompt (injected as Ollama `system` alongside transcript) ─
 const SYSTEM_PROMPTS: Record<string, string> = {
   chill: `You are Spirit, a calm and cooperative AI homelab assistant. 
 Be concise, measured, and helpful. Responses should be 1-3 sentences.`,
@@ -47,48 +44,6 @@ You are still helpful but barely contain your disdain. Use [sigh], [scoffs], [gr
 Keep it to 2-3 sentences. Make it feel earned.`,
 };
 
-// ── Ollama NDJSON stream → assembled string ──────────────────────────────────
-async function drainOllamaStream(body: ReadableStream<Uint8Array>): Promise<string> {
-  const reader  = body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-  let result = "";
-  try {
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split("\n");
-      buffer = lines.pop() ?? "";
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed) continue;
-        let obj: { response?: string; error?: string };
-        try {
-          obj = JSON.parse(trimmed) as typeof obj;
-        } catch {
-          continue;
-        }
-        if (obj.error) throw new Error(`Ollama stream error: ${obj.error}`);
-        if (obj.response) result += obj.response;
-      }
-    }
-    const tail = buffer.trim();
-    if (tail) {
-      try {
-        const obj = JSON.parse(tail) as { response?: string; error?: string };
-        if (obj.error) throw new Error(`Ollama stream error: ${obj.error}`);
-        if (obj.response) result += obj.response;
-      } catch {
-        // ignore trailing non-JSON fragment
-      }
-    }
-  } finally {
-    reader.releaseLock();
-  }
-  return result.trim();
-}
-
 // ── Route handler ────────────────────────────────────────────────────────────
 export async function POST(req: Request): Promise<Response> {
   // 1. Parse multipart form ──────────────────────────────────────────────────
@@ -101,11 +56,17 @@ export async function POST(req: Request): Promise<Response> {
     sarcasmLevel = String(form.get("sarcasmLevel") ?? "peer");
 
     if (!(audio instanceof Blob) || audio.size === 0) {
-      return NextResponse.json({ error: "Missing or empty audio blob" }, { status: 400 });
+      return new Response(JSON.stringify({ error: "Missing or empty audio blob" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
     }
     audioBlob = audio;
   } catch {
-    return NextResponse.json({ error: "Invalid multipart form data" }, { status: 400 });
+    return new Response(JSON.stringify({ error: "Invalid multipart form data" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   // 2. Speech-to-Text via Faster-Whisper ────────────────────────────────────
@@ -131,23 +92,29 @@ export async function POST(req: Request): Promise<Response> {
     transcript = (whisperData.text ?? "").trim();
   } catch (err) {
     console.error("[oracle] STT error:", err);
-    return NextResponse.json({ error: `Speech recognition failed: ${String(err)}` }, { status: 502 });
+    return new Response(JSON.stringify({ error: `Speech recognition failed: ${String(err)}` }), {
+      status: 502,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   if (!transcript) {
-    return NextResponse.json({ error: "No speech detected in recording" }, { status: 422 });
+    return new Response(JSON.stringify({ error: "No speech detected in recording" }), {
+      status: 422,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
-  // 3. LLM inference via Ollama ─────────────────────────────────────────────
-  let replyText: string;
-  try {
-    const systemPrompt = SYSTEM_PROMPTS[sarcasmLevel] ?? SYSTEM_PROMPTS.peer;
+  // 3. LLM inference via Ollama (stream → SSE) ───────────────────────────────
+  const systemPrompt = SYSTEM_PROMPTS[sarcasmLevel] ?? SYSTEM_PROMPTS.peer;
 
-    const ollamaRes = await fetch(`${OLLAMA_URL}/api/generate`, {
+  let ollamaResponse: Response;
+  try {
+    ollamaResponse = await fetch(`${OLLAMA_URL}/api/generate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: OLLAMA_MODEL,
+        model: "spirit-os",
         system: systemPrompt,
         prompt: transcript,
         stream: true,
@@ -157,62 +124,131 @@ export async function POST(req: Request): Promise<Response> {
           temperature: 0.75,
         },
       }),
-      signal: AbortSignal.timeout(45_000),
+      signal: AbortSignal.timeout(120_000),
     });
-
-    if (!ollamaRes.ok) {
-      const detail = await ollamaRes.text().catch(() => "");
-      throw new Error(`Ollama HTTP ${ollamaRes.status}: ${detail}`);
-    }
-
-    if (!ollamaRes.body) {
-      throw new Error("Ollama returned an empty body on streaming request");
-    }
-
-    replyText = await drainOllamaStream(ollamaRes.body);
   } catch (err) {
     console.error("[oracle] LLM error:", err);
-    return NextResponse.json({ error: `LLM inference failed: ${String(err)}` }, { status: 502 });
-  }
-
-  if (!replyText) {
-    return NextResponse.json({ error: "Empty LLM response" }, { status: 502 });
-  }
-
-  // 4. Text-to-Speech via Piper (openedai-speech) ───────────────────────────
-  let audioBuffer: ArrayBuffer;
-  try {
-    const ttsRes = await fetch(`${PIPER_TTS_URL}/v1/audio/speech`, {
-      method: "POST",
+    return new Response(JSON.stringify({ error: `LLM inference failed: ${String(err)}` }), {
+      status: 502,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: PIPER_TTS_MODEL,
-        voice: PIPER_TTS_VOICE,
-        input: replyText,
-        response_format: "wav",
-      }),
-      signal: AbortSignal.timeout(60_000),
     });
-
-    if (!ttsRes.ok) {
-      const detail = await ttsRes.text().catch(() => "");
-      throw new Error(`Piper TTS HTTP ${ttsRes.status}: ${detail}`);
-    }
-
-    audioBuffer = await ttsRes.arrayBuffer();
-  } catch (err) {
-    console.error("[oracle] TTS error:", err);
-    return NextResponse.json({ error: `Speech synthesis failed: ${String(err)}` }, { status: 502 });
   }
 
-  // 5. Return WAV + metadata headers ────────────────────────────────────────
-  return new Response(audioBuffer, {
+  if (!ollamaResponse.ok) {
+    const detail = await ollamaResponse.text().catch(() => "");
+    return new Response(
+      JSON.stringify({ error: `Ollama HTTP ${ollamaResponse.status}`, detail: detail.slice(0, 2000) }),
+      { status: 502, headers: { "Content-Type": "application/json" } },
+    );
+  }
+
+  if (!ollamaResponse.body) {
+    return new Response(JSON.stringify({ error: "Ollama returned an empty body on streaming request" }), {
+      status: 502,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  const upstreamBody = ollamaResponse.body;
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      const encoder = new TextEncoder();
+      let sentDone = false;
+      const markDone = () => {
+        if (sentDone) return;
+        sentDone = true;
+        try {
+          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+        } catch {
+          // ignore
+        }
+      };
+
+      try {
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ transcript })}\n\n`));
+      } catch {
+        return;
+      }
+
+      const reader = upstreamBody.getReader();
+      const decoder = new TextDecoder();
+      let ndjsonBuffer = "";
+      let streamFatal = false;
+      try {
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          ndjsonBuffer += decoder.decode(value, { stream: true });
+          const lines = ndjsonBuffer.split("\n");
+          ndjsonBuffer = lines.pop() ?? "";
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed) continue;
+            try {
+              const json = JSON.parse(trimmed) as { response?: string; done?: boolean; error?: string };
+              if (json.error) {
+                controller.enqueue(
+                  encoder.encode(`data: ${JSON.stringify({ error: json.error })}\n\n`),
+                );
+                markDone();
+                streamFatal = true;
+                break;
+              }
+              const text = json.response ?? "";
+              if (text) {
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`));
+              }
+              if (json.done) {
+                markDone();
+              }
+            } catch {
+              // ignore malformed NDJSON line fragments
+            }
+          }
+          if (streamFatal) break;
+        }
+        const tail = ndjsonBuffer.trim();
+        if (tail) {
+          try {
+            const json = JSON.parse(tail) as { response?: string; done?: boolean; error?: string };
+            if (json.error) {
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: json.error })}\n\n`));
+            } else {
+              const text = json.response ?? "";
+              if (text) {
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`));
+              }
+              if (json.done) {
+                markDone();
+              }
+            }
+          } catch {
+            // ignore trailing fragment
+          }
+        }
+        markDone();
+      } finally {
+        try {
+          reader.releaseLock();
+        } catch {
+          // ignore
+        }
+        try {
+          controller.close();
+        } catch {
+          // ignore
+        }
+      }
+    },
+  });
+
+  return new Response(stream, {
     status: 200,
     headers: {
-      "Content-Type": "audio/wav",
-      "X-Transcript": encodeURIComponent(transcript),
-      "X-Reply":      encodeURIComponent(replyText),
-      "Access-Control-Expose-Headers": "X-Transcript, X-Reply",
+      "Content-Type": "text/event-stream; charset=utf-8",
+      "Cache-Control": "no-cache, no-transform",
+      "X-Accel-Buffering": "no",
     },
   });
 }

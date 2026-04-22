@@ -10,7 +10,6 @@ type ChatTurn = { role: "user" | "assistant"; content: string };
 
 const OLLAMA_BASE = (process.env.OLLAMA_BASE_URL ?? "http://localhost:11434").replace(/\/$/, "");
 const OLLAMA_CHAT_URL = `${OLLAMA_BASE}/api/chat`;
-const OLLAMA_MODEL = "dolphin-llama3:8b";
 const OLLAMA_NUM_CTX = 8192;
 
 const SYSTEM_PROMPTS: Record<Sarcasm, string> = {
@@ -143,7 +142,7 @@ export async function POST(req: Request) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: OLLAMA_MODEL,
+      model: "spirit-os",
       stream: true,
       options: {
         num_ctx: OLLAMA_NUM_CTX,

@@ -149,3 +149,9 @@ else
   info "       msg=\"inference compute\" library=cpu     ← still on CPU (bad)"
 fi
 echo "─────────────────────────────────────────────────────────────────────────"
+
+echo "--- Building spirit-os persona model ---"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ollama create spirit-os -f "${SCRIPT_DIR}/Modelfile"
+echo "--- Verifying spirit-os model ---"
+ollama list | grep spirit-os || echo "ERROR: spirit-os model not found"
