@@ -55,6 +55,14 @@ const CHAT_MODES: { id: ChatMode; label: string; color: string }[] = [
   { id: "chaos",       label: "Chaos",       color: "text-rose-400   border-rose-500/30   bg-rose-500/10   hover:bg-rose-500/20"  },
 ];
 
+type DepthId = "short" | "normal" | "deep" | "deepdive";
+const DEPTH_OPTIONS: { id: DepthId; label: string }[] = [
+  { id: "short",    label: "Short" },
+  { id: "normal",   label: "Normal" },
+  { id: "deep",     label: "Deep" },
+  { id: "deepdive", label: "Deep Dive" },
+];
+
 // ── Meta-prompt detection regex ───────────────────────────────────────────────
 // Matches: "Spirit, change your mission to X"
 //          "Spirit, update your directive: X"
@@ -130,7 +138,7 @@ function ConversationSidebar({
         )}
       </div>
 
-      {/* ── New Sovereign Chat CTA ── */}
+      {/* ── New Oracle Chat CTA ── */}
       <div className="flex-shrink-0 px-3 pb-3">
         <button
           type="button"
@@ -141,7 +149,7 @@ function ConversationSidebar({
             <Plus size={12} className="pointer-events-none text-violet-400" aria-hidden />
           </div>
           <span className="text-[12px] font-semibold text-zinc-400 transition-colors group-hover:text-zinc-100">
-            New Sovereign Chat
+            New Oracle Chat
           </span>
         </button>
       </div>
@@ -277,7 +285,7 @@ function ConversationSidebar({
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function SovereignChatPage() {
+export default function OracleChatPage() {
   const [activeThreadId,    setActiveThreadId]  = useState<string>(() => `new-${Date.now()}`);
   const [input,             setInput]           = useState("");
   const [mobileSidebarOpen, setMobileOpen]      = useState(false);
@@ -289,6 +297,7 @@ export default function SovereignChatPage() {
   const [isRecording,       setIsRecording]     = useState(false);
   const [isTranscribing,    setIsTranscribing]  = useState(false);
   const [chatMode,          setChatMode]        = useState<ChatMode>("peer");
+  const [chatDepth,         setChatDepth]       = useState<DepthId>("normal");
 
   // Capture activeThreadId in a ref so the onComplete closure always sees the
   // current value even though it's created inside useStream (stale closure trap).
@@ -329,22 +338,9 @@ export default function SovereignChatPage() {
   const { streamingText, isStreaming, error: streamError, startStream } = useStream({
     onSentenceReady: useCallback(
       (sentence: string) => {
-        if (!isTTSEnabled) return;
-        // #region agent log
-        fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "c26fba" },
-          body: JSON.stringify({
-            sessionId: "c26fba",
-            runId: "pre-fix",
-            hypothesisId: "H1",
-            location: "page.tsx:onSentenceReady",
-            message: "sentence handed to TTS enqueue",
-            data: { textLen: sentence.length },
-            timestamp: Date.now(),
-          }),
-        }).catch(() => {});
-        // #endregion
+        if (!isTTSEnabled) {
+          return;
+        }
         ttsDrainRef.current = true;
         enqueue(sentence);
       },
@@ -358,21 +354,6 @@ export default function SovereignChatPage() {
       stop();
       ttsDrainRef.current = false;
       if (naviPipelineRef.current.active) {
-        // #region agent log
-        fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
-          body: JSON.stringify({
-            sessionId: "7d6688",
-            runId: naviPipelineRef.current.runId,
-            hypothesisId: "H4",
-            location: "page.tsx:useStream.onError",
-            message: "Navi pipeline failed at LLM stream stage",
-            data: { error: err.message },
-            timestamp: Date.now(),
-          }),
-        }).catch(() => {});
-        // #endregion
         console.error("[Spirit OS] Navi pipeline failed at LLM API (/api/spirit):", err);
         naviPipelineRef.current = { active: false, runId: "" };
       }
@@ -392,21 +373,6 @@ export default function SovereignChatPage() {
         if (isTTSEnabled) {
           setPlayingMessageId(saved.id);
           try {
-            // #region agent log
-            fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
-              method: "POST",
-              headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "c26fba" },
-              body: JSON.stringify({
-                sessionId: "c26fba",
-                runId: "pre-fix",
-                hypothesisId: "H2",
-                location: "page.tsx:onComplete",
-                message: "onComplete calling drain",
-                data: { fullTextLen: fullText.length },
-                timestamp: Date.now(),
-              }),
-            }).catch(() => {});
-            // #endregion
             // AudioQueue holds the real sentence chain; this only waits for the tail.
             await drain();
           } catch (e) {
@@ -767,11 +733,12 @@ export default function SovereignChatPage() {
     startStream(
       text,
       chatMode,
+      chatDepth,
       userContextRef.current || undefined,
       customDirectiveRef.current ?? undefined,
       historyPayload.length ? historyPayload : undefined,
     );
-  }, [input, thinking, activeThreadId, messages, chatMode, startStream, captureMessageEvents, buildUserContext, stop]);
+  }, [input, thinking, activeThreadId, messages, chatMode, chatDepth, startStream, captureMessageEvents, buildUserContext, stop]);
 
   const startRecording = useCallback(async () => {
     if (isRecording || isTranscribing || thinking) return;
@@ -813,78 +780,18 @@ export default function SovereignChatPage() {
 
     setIsTranscribing(true);
     const runId = `navi-${Date.now()}`;
-    // #region agent log
-    fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
-      body: JSON.stringify({
-        sessionId: "7d6688",
-        runId,
-        hypothesisId: "H4",
-        location: "page.tsx:stopRecordingAndTranscribe",
-        message: "Navi pipeline start",
-        data: { blobBytes: blob.size },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
     try {
       const fd = new FormData();
       fd.append("file", blob, `voice-${Date.now()}.webm`);
       const res = await fetch("/api/stt", { method: "POST", body: fd });
       if (!res.ok) throw new Error(`STT API ${res.status}`);
-      // #region agent log
-      fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
-        body: JSON.stringify({
-          sessionId: "7d6688",
-          runId,
-          hypothesisId: "H4",
-          location: "page.tsx:stopRecordingAndTranscribe",
-          message: "STT request completed",
-          data: { status: res.status },
-          timestamp: Date.now(),
-        }),
-      }).catch(() => {});
-      // #endregion
       const data = await res.json().catch(() => ({})) as { text?: string };
       const transcript = data.text?.trim() || "";
       if (transcript) {
         naviPipelineRef.current = { active: true, runId };
-        // #region agent log
-        fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
-          body: JSON.stringify({
-            sessionId: "7d6688",
-            runId,
-            hypothesisId: "H4",
-            location: "page.tsx:stopRecordingAndTranscribe",
-            message: "Transcript ready, dispatching send",
-            data: { transcriptLen: transcript.length },
-            timestamp: Date.now(),
-          }),
-        }).catch(() => {});
-        // #endregion
         await send(transcript);
       }
     } catch (e) {
-      // #region agent log
-      fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
-        body: JSON.stringify({
-          sessionId: "7d6688",
-          runId,
-          hypothesisId: "H4",
-          location: "page.tsx:stopRecordingAndTranscribe",
-          message: "Navi pipeline failed in catch",
-          data: { error: e instanceof Error ? e.message : String(e) },
-          timestamp: Date.now(),
-        }),
-      }).catch(() => {});
-      // #endregion
       console.error("[Spirit OS] Navi pipeline failed at STT API stage:", e);
       naviPipelineRef.current = { active: false, runId: "" };
     } finally {
@@ -1023,26 +930,6 @@ export default function SovereignChatPage() {
                 isPlayingThis={playingMessageId === msg.id && isPlaying}
                 onSpeak={msg.role === "spirit"
                   ? () => {
-                      // #region agent log
-                      fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
-                        body: JSON.stringify({
-                          sessionId: "7d6688",
-                          runId: "tts-debug-1",
-                          hypothesisId: "H4",
-                          location: "page.tsx:onSpeak",
-                          message: "Speaker button pressed",
-                          data: {
-                            messageId: msg.id,
-                            isPlaying,
-                            isTTSEnabled,
-                            textLen: msg.text.length,
-                          },
-                          timestamp: Date.now(),
-                        }),
-                      }).catch(() => {});
-                      // #endregion
                       if (isPlaying) {
                         stop();
                         setPlayingMessageId(null);
@@ -1155,8 +1042,25 @@ export default function SovereignChatPage() {
               ))}
             </div>
 
+            <div className="mt-1 flex items-center justify-center gap-1">
+              {DEPTH_OPTIONS.map((d) => (
+                <button
+                  key={d.id}
+                  type="button"
+                  onClick={() => setChatDepth(d.id)}
+                  className={`rounded-lg border px-2.5 py-1 font-mono text-[10px] font-semibold transition-colors ${
+                    chatDepth === d.id
+                      ? "border-amber-500/30 bg-amber-500/10 text-amber-400"
+                      : "border-transparent text-zinc-600 hover:text-zinc-400"
+                  }`}
+                >
+                  {d.label}
+                </button>
+              ))}
+            </div>
+
             <p className="mt-2 text-center font-mono text-[10px] text-zinc-700">
-              Spirit OS · spirit-os · Piper TTS · Peer / Educational / Chaos
+              Oracle Chat · spirit-os · Piper TTS · Peer / Educational / Chaos
             </p>
           </div>
         </div>

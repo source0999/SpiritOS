@@ -8,21 +8,6 @@ const GROQ_STT_MODEL = "whisper-large-v3";
 
 export async function POST(req: Request) {
   const apiKey = process.env.GROQ_API_KEY?.trim();
-  // #region agent log
-  fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
-    body: JSON.stringify({
-      sessionId: "7d6688",
-      runId: "pivot-debug-3",
-      hypothesisId: "H5",
-      location: "app/api/stt/route.ts:POST",
-      message: "STT request received",
-      data: { hasGroqKey: Boolean(apiKey) },
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {});
-  // #endregion
   if (!apiKey) {
     return NextResponse.json({ error: "Missing GROQ_API_KEY" }, { status: 503 });
   }
@@ -61,21 +46,6 @@ export async function POST(req: Request) {
 
   if (!upstream.ok) {
     const detail = await upstream.text().catch(() => "");
-    // #region agent log
-    fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7d6688" },
-      body: JSON.stringify({
-        sessionId: "7d6688",
-        runId: "pivot-debug-3",
-        hypothesisId: "H5",
-        location: "app/api/stt/route.ts:POST",
-        message: "Groq STT upstream non-OK",
-        data: { status: upstream.status, detail: detail.slice(0, 140) },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
     return NextResponse.json(
       { error: "Groq STT returned an error", status: upstream.status, detail: detail.slice(0, 2000) },
       { status: 502 },

@@ -80,6 +80,7 @@ export interface StreamState {
   startStream: (
     prompt: string,
     sarcasm: string,
+    depth?: string,
     userContext?: string,
     customDirective?: string,
     history?: SpiritChatTurn[],
@@ -150,6 +151,7 @@ export function useStream(options: StreamOptions = {}): StreamState {
     (
       prompt:            string,
       sarcasm:           string,
+      depth?:            string,
       userContext?:      string,
       customDirective?:  string,
       history?:          SpiritChatTurn[],
@@ -189,6 +191,7 @@ export function useStream(options: StreamOptions = {}): StreamState {
           const payload: Record<string, unknown> = {
             prompt,
             sarcasm,
+            ...(depth?.trim() ? { depth } : {}),
             ...(userContext?.trim()     ? { userContext }     : {}),
             ...(customDirective?.trim() ? { customDirective } : {}),
             ...(history?.length ? { history } : {}),

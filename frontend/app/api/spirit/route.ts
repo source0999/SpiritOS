@@ -20,6 +20,13 @@ const MODE_DIRECTIVES: Record<string, string> = {
   sovereign: `[MODE: SOVEREIGN] Local-only homelab inference. Direct, raw, precise.  No cloud framing, no corporate tone. Show reasoning concisely. Decisive technical guidance.`,
 };
 
+const DEPTH_DIRECTIVES: Record<string, string> = {
+  short: `[DEPTH: SHORT] Be maximally terse. One to three sentences absolute maximum. Cut every non-essential word.`,
+  normal: `[DEPTH: NORMAL] Standard response length. Cover what's needed, nothing more.`,
+  deep: `[DEPTH: DEEP] Be detailed and analytical. Show your reasoning. Explore nuance. Use structure if it genuinely helps.`,
+  deepdive: `[DEPTH: DEEP DIVE] Give an exhaustive response. Cite your reasoning step by step. Cover edge cases, alternatives, and implications. Be comprehensive. Use headers and structured sections.`,
+};
+
 function resolveSpiritMode(sarcasm: unknown): string {
   const known = KNOWN_SPIRIT_MODES as readonly string[];
   return typeof sarcasm === "string" && known.includes(sarcasm) ? sarcasm : "peer";
@@ -42,12 +49,16 @@ function normalizeHistory(raw: unknown): ChatTurn[] {
 
 function buildSystemPrompt(
   sarcasm: unknown,
+  depth?: string,
   userContext?: string,
   customDirective?: string,
   ragContext?: string,
 ): string {
   const mode = resolveSpiritMode(sarcasm);
   let prompt = MODE_DIRECTIVES[mode] ?? MODE_DIRECTIVES.peer;
+  const resolvedDepth =
+    typeof depth === "string" && depth in DEPTH_DIRECTIVES ? depth : "normal";
+  prompt += `\n${DEPTH_DIRECTIVES[resolvedDepth]}`;
   if (customDirective?.trim()) prompt += `\n\n## Active Directive\n${customDirective.trim()}`;
   if (userContext?.trim()) prompt += `\n\n## Source Profile\n${userContext.trim()}`;
   if (ragContext?.trim()) prompt += `\n\n## Retrieved Context\n${ragContext.trim()}`;
@@ -121,7 +132,11 @@ export async function POST(req: Request) {
       ? (body as { ragContext: string }).ragContext
       : undefined;
 
-  const system = buildSystemPrompt(sarcasm, userContext, customDirective, ragContext);
+  const depth =
+    "depth" in body && typeof (body as { depth: unknown }).depth === "string"
+      ? (body as { depth: string }).depth
+      : "normal";
+  const system = buildSystemPrompt(sarcasm, depth, userContext, customDirective, ragContext);
   const mode = resolveSpiritMode(sarcasm);
   const historyMessages = normalizeHistory(
     "history" in body ? (body as { history: unknown }).history : undefined,

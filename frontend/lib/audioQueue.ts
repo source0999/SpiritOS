@@ -2,24 +2,9 @@ import type { TtsSegment } from "@/lib/ttsParser";
 
 type QueueOptions = {
   onPlayingChange?: (playing: boolean) => void;
+  onQueuedDepthChange?: (depth: number) => void;
+  onContextStateChange?: (state: AudioContextState) => void;
 };
-
-function debugLog(location: string, message: string, data: Record<string, unknown>) {
-  // #region agent log
-  fetch("http://localhost:7454/ingest/da155463-47fd-4bed-94cb-233903115f13", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "c26fba" },
-    body: JSON.stringify({
-      sessionId: "c26fba",
-      runId: "pre-fix",
-      location,
-      message,
-      data,
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {});
-  // #endregion
-}
 
 export class AudioQueue {
   private ctx: AudioContext | null = null;
@@ -27,26 +12,61 @@ export class AudioQueue {
   private activeSource: AudioBufferSourceNode | null = null;
   private activeAborts = new Set<AbortController>();
   private onPlayingChange?: (playing: boolean) => void;
+  private onQueuedDepthChange?: (depth: number) => void;
+  private onContextStateChange?: (state: AudioContextState) => void;
+  private contextEventsBound = false;
+  /** Number of `enqueue()` units not yet finished (scheduled or in-flight). */
+  private queuedDepth = 0;
 
   /** Serialized tail of `enqueue()` work — appended without `stop()`, unlike `play()`. */
   private enqueueChain: Promise<void> = Promise.resolve();
 
   constructor(options?: QueueOptions) {
     this.onPlayingChange = options?.onPlayingChange;
+    this.onQueuedDepthChange = options?.onQueuedDepthChange;
+    this.onContextStateChange = options?.onContextStateChange;
   }
 
   private ensureContext(): AudioContext {
-    if (!this.ctx) this.ctx = new AudioContext();
+    if (!this.ctx) {
+      this.ctx = new AudioContext();
+      this.bindContextEvents(this.ctx);
+      this.onContextStateChange?.(this.ctx.state);
+    }
     return this.ctx;
   }
 
-  stop(): void {
-    debugLog("audioQueue.ts:stop", "queue stop called", {
-      hypothesisId: "H4",
-      prevRunId: this.runId,
-      activeAborts: this.activeAborts.size,
-      hasActiveSource: this.activeSource !== null,
+  private bindContextEvents(ctx: AudioContext): void {
+    if (this.contextEventsBound) return;
+    this.contextEventsBound = true;
+    ctx.addEventListener("statechange", () => {
+      this.onContextStateChange?.(ctx.state);
     });
+  }
+
+  /** Read current context state without creating an AudioContext. */
+  peekContextState(): AudioContextState {
+    return this.ctx?.state ?? "suspended";
+  }
+
+  private bumpQueuedDepth(delta: number): void {
+    this.queuedDepth = Math.max(0, this.queuedDepth + delta);
+    this.onQueuedDepthChange?.(this.queuedDepth);
+  }
+
+  /**
+   * Unlock playback from a user gesture (call from mic click / before async TTS).
+   * Browsers may start AudioContext in "suspended" until resume() after interaction.
+   */
+  public prime(): void {
+    const ctx = this.ensureContext();
+    console.log("[SpiritOS] AudioContext State:", ctx.state);
+    if (ctx.state !== "running") {
+      ctx.resume().catch(() => {});
+    }
+  }
+
+  stop(): void {
     this.runId += 1;
     this.enqueueChain = Promise.resolve();
     for (const ctrl of this.activeAborts) {
@@ -75,14 +95,16 @@ export class AudioQueue {
   enqueue(text: string, language = "en"): void {
     const trimmed = text.trim();
     if (!trimmed) return;
-    debugLog("audioQueue.ts:enqueue", "enqueue received sentence", {
-      hypothesisId: "H1",
-      runId: this.runId,
-      textLen: trimmed.length,
-    });
+    this.bumpQueuedDepth(1);
     this.enqueueChain = this.enqueueChain
       .catch(() => {})
-      .then(() => this.runEnqueueUnit(trimmed, language));
+      .then(() => this.runEnqueueUnit(trimmed, language))
+      .finally(() => {
+        this.bumpQueuedDepth(-1);
+      })
+      .catch((err: unknown) => {
+        console.error("[SpiritOS] AudioQueue enqueue failed:", err);
+      });
   }
 
   /** Await until all `enqueue()` units scheduled so far have finished. */
@@ -92,26 +114,14 @@ export class AudioQueue {
 
   private async runEnqueueUnit(text: string, language: string): Promise<void> {
     const currentRun = this.runId;
-    debugLog("audioQueue.ts:runEnqueueUnit", "enqueue unit start", {
-      hypothesisId: "H1",
-      runId: currentRun,
-      textLen: text.length,
-    });
     this.onPlayingChange?.(true);
     try {
       const ctx = this.ensureContext();
-      if (ctx.state === "suspended") await ctx.resume();
+      if (ctx.state !== "running") await ctx.resume().catch(() => {});
       const buffer = await this.fetchAndDecodeSpeechSegment(text, language, currentRun, ctx);
-      debugLog("audioQueue.ts:runEnqueueUnit", "fetch+decode complete", {
-        hypothesisId: "H1",
-        runId: currentRun,
-        durationSec: buffer.duration,
-      });
       await this.playBuffer(buffer, currentRun);
     } finally {
-      if (currentRun === this.runId) {
-        this.onPlayingChange?.(false);
-      }
+      // no-op: keep playing state stable across queued sentence boundaries
     }
   }
 
@@ -125,7 +135,7 @@ export class AudioQueue {
 
     try {
       const ctx = this.ensureContext();
-      if (ctx.state === "suspended") await ctx.resume();
+      if (ctx.state !== "running") await ctx.resume().catch(() => {});
 
       let lookAheadPromise: Promise<AudioBuffer> | null = null;
 
@@ -185,11 +195,6 @@ export class AudioQueue {
     runId: number,
     ctx: AudioContext,
   ): Promise<AudioBuffer> {
-    debugLog("audioQueue.ts:fetchAndDecodeSpeechSegment", "tts fetch start", {
-      hypothesisId: "H3",
-      runId,
-      textLen: text.length,
-    });
     const abortCtrl = new AbortController();
     this.activeAborts.add(abortCtrl);
     const res = await fetch("/api/tts", {
@@ -199,29 +204,37 @@ export class AudioQueue {
       signal: abortCtrl.signal,
     });
     this.activeAborts.delete(abortCtrl);
-    if (!res.ok) throw new Error(`TTS API ${res.status}`);
+    if (!res.ok) {
+      throw new Error(`TTS API ${res.status}`);
+    }
     const bytes = await res.arrayBuffer();
-    const decoded = await ctx.decodeAudioData(bytes.slice(0));
-    debugLog("audioQueue.ts:fetchAndDecodeSpeechSegment", "tts fetch+decode complete", {
-      hypothesisId: "H3",
-      runId,
-      status: res.status,
-      audioBytes: bytes.byteLength,
-      durationSec: decoded.duration,
-    });
+    if (bytes.byteLength === 0) {
+      console.error("[SpiritOS] CRITICAL: Audio Buffer is Corrupt or Empty");
+      throw new Error("TTS returned empty audio body");
+    }
+    let decoded: AudioBuffer;
+    try {
+      decoded = await ctx.decodeAudioData(bytes.slice(0));
+    } catch (e) {
+      console.error("[SpiritOS] CRITICAL: Audio Buffer is Corrupt or Empty");
+      throw e instanceof Error ? e : new Error(String(e));
+    }
     if (runId !== this.runId) {
       throw new Error("TTS fetch aborted by newer run");
     }
     return decoded;
   }
 
-  private playBuffer(buffer: AudioBuffer, runId: number): Promise<void> {
+  private async playBuffer(buffer: AudioBuffer, runId: number): Promise<void> {
+    const ctx = this.ensureContext();
+    if (ctx.state !== "running") {
+      await ctx.resume().catch(() => {});
+    }
     return new Promise<void>((resolve, reject) => {
       if (runId !== this.runId) {
         resolve();
         return;
       }
-      const ctx = this.ensureContext();
       const source = ctx.createBufferSource();
       source.buffer = buffer;
       source.connect(ctx.destination);

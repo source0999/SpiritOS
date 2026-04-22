@@ -9,6 +9,7 @@ import { useTTS } from "@/hooks/useTTS";
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type ModeId = "peer" | "educational" | "chaos";
+type DepthId = "short" | "normal" | "deep" | "deepdive";
 type OracleStatus = "idle" | "recording" | "processing" | "playing" | "error";
 
 // ── Static config ─────────────────────────────────────────────────────────────
@@ -37,6 +38,17 @@ const MODES: {
     desc:   "Unhinged. Snort-inducing.",
     active: "border-rose-500/40 bg-rose-500/15 text-rose-300",
   },
+];
+
+const DEPTHS: {
+  id: DepthId;
+  label: string;
+  desc: string;
+}[] = [
+  { id: "short",    label: "Short",     desc: "Terse. Direct." },
+  { id: "normal",   label: "Normal",    desc: "Balanced." },
+  { id: "deep",     label: "Deep",      desc: "Detailed. Analytical." },
+  { id: "deepdive", label: "Deep Dive", desc: "Exhaustive. Step-by-step." },
 ];
 
 // XTTS v2 acoustic stage-direction markers
@@ -91,17 +103,32 @@ const STATUS_BADGE: Record<OracleStatus, { text: string; className: string }> = 
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function OraclePage() {
-  const { enqueue, drain, isTTSEnabled } = useTTS();
+  const tts = useTTS({ alwaysOn: true });
+  const { enqueue, drain, state: ttsState, queueLength } = tts;
 
   const [mode,         setMode]         = useState<ModeId>("peer");
+  const [depth,        setDepth]        = useState<DepthId>("normal");
+  const [continuousMode, setContinuousMode] = useState(false);
   const [activeMarker, setActiveMarker] = useState<string | null>(null);
   const [status,       setStatus]       = useState<OracleStatus>("idle");
+  const [lastSentence, setLastSentence] = useState<string>("—");
+  const [backendStatus, setBackendStatus] = useState<string>("—");
   const [transcript,   setTranscript]   = useState<string>("");
   const [reply,        setReply]        = useState<string>("");
   const [errorMsg,     setErrorMsg]     = useState<string>("");
+  const [conversationHistory, setConversationHistory] = useState<
+    { role: "user" | "assistant"; content: string }[]
+  >([]);
+  const conversationHistoryRef = useRef(conversationHistory);
+  useEffect(() => {
+    conversationHistoryRef.current = conversationHistory;
+  }, [conversationHistory]);
 
   // Refs — all long-lived audio objects live outside React's render cycle
   const modeRef          = useRef<ModeId>(mode);
+  const depthRef         = useRef<DepthId>(depth);
+  const continuousModeRef = useRef(false);
+  const startRecordingRef = useRef<(() => Promise<void>) | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef   = useRef<Blob[]>([]);
   const audioCtxRef      = useRef<AudioContext | null>(null);
@@ -114,6 +141,8 @@ export default function OraclePage() {
 
   // Keep mode ref in sync so the MediaRecorder.onstop closure sees latest value
   useEffect(() => { modeRef.current = mode; }, [mode]);
+  useEffect(() => { depthRef.current = depth; }, [depth]);
+  useEffect(() => { continuousModeRef.current = continuousMode; }, [continuousMode]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -192,15 +221,18 @@ export default function OraclePage() {
   // ── Pipeline: blob → STT → LLM (SSE) → sentence TTS (/api/tts queue) ─────
 
   const processAudio = useCallback(
-    async (blob: Blob, level: ModeId) => {
+    async (blob: Blob, level: ModeId, depthLevel: DepthId) => {
       setStatus("processing");
       setErrorMsg("");
       setReply("");
+      setBackendStatus("POST /api/oracle …");
 
       try {
         const form = new FormData();
         form.append("audio", blob, "recording.webm");
         form.append("mode", level);
+        form.append("depth", depthLevel);
+        form.append("history", JSON.stringify(conversationHistoryRef.current));
 
         const res = await fetch("/api/oracle", { method: "POST", body: form });
 
@@ -212,89 +244,124 @@ export default function OraclePage() {
           } catch {
             /* ignore */
           }
+          setBackendStatus(`${res.status} ${msg}`);
           throw new Error(msg);
         }
 
         if (!res.body) {
+          setBackendStatus("502 Empty response body");
           throw new Error("Empty response body");
         }
+        setBackendStatus("200 SSE stream open");
 
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         let textBuffer = "";
-        let lineCarry = "";
+        /** Incomplete SSE line; full JSON or `data: [DONE]` may span two network chunks. */
+        let sseLineBuffer = "";
+        let localTranscript = "";
+        let fullReply = "";
         const SENTENCE_END = /[.!?]+[\s]/;
         let bumpedToPlaying = false;
 
         const enqueueTTS = (sentence: string) => {
           const s = sentence.trim();
-          if (!s || !isTTSEnabled) return;
+          if (!s) {
+            return;
+          }
           if (!bumpedToPlaying) {
             bumpedToPlaying = true;
             setStatus("playing");
           }
+          setLastSentence(s.length > 120 ? `${s.slice(0, 117)}…` : s);
           enqueue(s);
+        };
+
+        const handleSseLine = (rawLine: string) => {
+          const line = rawLine.replace(/\r$/, "").trim();
+          if (!line) return;
+          if (!line.startsWith("data: ")) return;
+          const payload = line.slice(6).trim();
+          if (payload.length === 0) return;
+          if (payload === "[DONE]") {
+            if (textBuffer.trim()) enqueueTTS(textBuffer.trim());
+            textBuffer = "";
+            return;
+          }
+          let parsed: { text?: string; message?: { content?: string }; transcript?: string; error?: string };
+          try {
+            parsed = JSON.parse(payload) as typeof parsed;
+          } catch {
+            return;
+          }
+          if (parsed.error) {
+            throw new Error(parsed.error);
+          }
+          if ("transcript" in parsed) {
+            const t = parsed.transcript ?? "";
+            setTranscript(t);
+            localTranscript = t;
+            return;
+          }
+          const piece = parsed.text ?? parsed.message?.content ?? "";
+          textBuffer += piece;
+          fullReply += piece;
+          if (piece) {
+            setReply((prev) => prev + piece);
+          }
+          for (;;) {
+            const match = SENTENCE_END.exec(textBuffer);
+            if (!match) break;
+            const sentence = textBuffer.slice(0, match.index + match[0].length).trim();
+            textBuffer = textBuffer.slice(match.index + match[0].length);
+            if (sentence) enqueueTTS(sentence);
+          }
         };
 
         for (;;) {
           const { done, value } = await reader.read();
           if (done) break;
-          lineCarry += decoder.decode(value, { stream: true });
-          const rawLines = lineCarry.split("\n");
-          lineCarry = rawLines.pop() ?? "";
+          sseLineBuffer += decoder.decode(value, { stream: true });
+          const lines = sseLineBuffer.split("\n");
+          sseLineBuffer = lines.pop() ?? "";
 
-          for (const raw of rawLines) {
-            const line = raw.replace(/\r$/, "");
-            if (!line.startsWith("data: ")) continue;
-            const payload = line.slice(6).trim();
-            if (payload === "[DONE]") {
-              if (textBuffer.trim()) enqueueTTS(textBuffer.trim());
-              textBuffer = "";
-              continue;
-            }
-            let parsed: { text?: string; transcript?: string; error?: string };
-            try {
-              parsed = JSON.parse(payload) as typeof parsed;
-            } catch {
-              continue;
-            }
-            if (parsed.error) {
-              throw new Error(parsed.error);
-            }
-            if ("transcript" in parsed) {
-              setTranscript(parsed.transcript ?? "");
-              continue;
-            }
-            const piece = parsed.text ?? "";
-            textBuffer += piece;
-            if (piece) {
-              setReply((prev) => prev + piece);
-            }
-            for (;;) {
-              const match = SENTENCE_END.exec(textBuffer);
-              if (!match) break;
-              const sentence = textBuffer.slice(0, match.index + match[0].length).trim();
-              textBuffer = textBuffer.slice(match.index + match[0].length);
-              if (sentence) enqueueTTS(sentence);
-            }
+          for (const raw of lines) {
+            handleSseLine(raw);
           }
+        }
+        if (sseLineBuffer.trim()) {
+          handleSseLine(sseLineBuffer);
         }
 
         if (textBuffer.trim()) enqueueTTS(textBuffer.trim());
+        if (localTranscript.trim() || fullReply.trim()) {
+          setConversationHistory((prev) => [
+            ...prev,
+            { role: "user" as const, content: localTranscript.trim() },
+            { role: "assistant" as const, content: fullReply.trim() },
+          ]);
+        }
         await drain();
         setStatus("idle");
+        setBackendStatus("200 SSE complete");
+        if (continuousModeRef.current) {
+          tts.prime();
+          void startRecordingRef.current?.();
+        }
       } catch (err) {
         setErrorMsg(String(err));
         setStatus("error");
+        setBackendStatus((prev) => (prev.startsWith("POST") ? prev : `Error: ${String(err)}`));
         stopVisualizer();
       }
     },
-    [enqueue, drain, isTTSEnabled, stopVisualizer],
+    [enqueue, drain, stopVisualizer, tts],
   );
 
   // ── Mic recording ─────────────────────────────────────────────────────────
 
   const startRecording = useCallback(async () => {
+    tts.prime();
     silenceFramesRef.current = 0;
     setErrorMsg("");
 
@@ -310,6 +377,7 @@ export default function OraclePage() {
     // Tap the mic stream into an AnalyserNode for live input visualisation
     const ctx = new AudioContext();
     audioCtxRef.current = ctx;
+    if (ctx.state === "suspended") void ctx.resume();
     const micSource = ctx.createMediaStreamSource(stream);
     const analyser  = ctx.createAnalyser();
     analyser.fftSize = 256;
@@ -332,13 +400,13 @@ export default function OraclePage() {
       const blob = new Blob(audioChunksRef.current, {
         type: mimeType || "audio/webm",
       });
-      void processAudio(blob, modeRef.current);
+      void processAudio(blob, modeRef.current, depthRef.current);
     };
 
     recorder.start();
     mediaRecorderRef.current = recorder;
     setStatus("recording");
-  }, [startVisualizer, stopVisualizer, processAudio]);
+  }, [tts, startVisualizer, stopVisualizer, processAudio]);
 
   const stopRecording = useCallback(() => {
     mediaRecorderRef.current?.stop();
@@ -350,10 +418,15 @@ export default function OraclePage() {
     stopRecordingRef.current = stopRecording;
   }, [stopRecording]);
 
+  useEffect(() => {
+    startRecordingRef.current = startRecording;
+  }, [startRecording]);
+
   // ── Mic button handler ────────────────────────────────────────────────────
 
   function handleMicButton() {
     if (status === "idle" || status === "error") {
+      tts.prime();
       void startRecording();
     } else if (status === "recording") {
       stopRecording();
@@ -364,6 +437,7 @@ export default function OraclePage() {
   // ── Derived UI values ─────────────────────────────────────────────────────
 
   const currentLevel = MODES.find((l) => l.id === mode)!;
+  const currentDepth = DEPTHS.find((d) => d.id === depth)!;
   const badge        = STATUS_BADGE[status];
 
   const micButtonLabel =
@@ -395,6 +469,15 @@ export default function OraclePage() {
   return (
     <div className="flex h-[calc(100dvh-60px)] flex-col overflow-hidden bg-zinc-950 text-zinc-100 md:h-[100dvh]">
 
+      <div className="fixed right-3 top-[72px] z-50 max-w-[min(100vw-24px,320px)] rounded-lg border border-white/15 bg-zinc-950/95 px-3 py-2 font-mono text-[10px] leading-relaxed text-zinc-300 shadow-lg backdrop-blur-sm md:right-5 md:top-20">
+        <div>AudioContext State: {ttsState}</div>
+        <div className="truncate" title={lastSentence}>
+          Last Sent Sentence: {lastSentence}
+        </div>
+        <div>Buffer Queue Length: {queueLength}</div>
+        <div className="break-all">Backend Status: {backendStatus}</div>
+      </div>
+
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <header className="flex-shrink-0 flex items-center justify-between border-b border-white/[0.05] px-5 py-3">
         <Link
@@ -410,10 +493,21 @@ export default function OraclePage() {
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-50" />
             <span className="relative h-2 w-2 rounded-full bg-emerald-400" />
           </span>
-          <span className="font-mono text-xs text-zinc-400">Piper TTS · Local</span>
+          <span className="font-mono text-xs text-zinc-400">Piper TTS · Voice</span>
         </div>
 
-        <span className="font-mono text-xs text-zinc-600">Architecture 7</span>
+        <div className="flex items-center gap-3">
+          {conversationHistory.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setConversationHistory([])}
+              className="font-mono text-[10px] text-zinc-600 transition-colors hover:text-zinc-400"
+            >
+              Clear ({Math.floor(conversationHistory.length / 2)} turns)
+            </button>
+          )}
+          <span className="font-mono text-xs text-zinc-600">Oracle Voice</span>
+        </div>
       </header>
 
       {/* ── Main ────────────────────────────────────────────────────────── */}
@@ -608,6 +702,71 @@ export default function OraclePage() {
                 }`}
               />
             ))}
+          </div>
+
+          <div className="flex items-center justify-between rounded-xl border border-white/[0.07] bg-white/[0.02] px-3 py-2.5">
+            <div className="flex flex-col gap-0.5">
+              <span className="font-mono text-[11px] font-semibold text-zinc-300">
+                Hands-Free
+              </span>
+              <span className="font-mono text-[10px] text-zinc-600">
+                Auto-restarts after each response
+              </span>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={continuousMode}
+              onClick={() => setContinuousMode((v) => !v)}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                setContinuousMode((v) => !v);
+              }}
+              className={`relative h-6 w-11 rounded-full border transition-colors ${
+                continuousMode
+                  ? "border-emerald-500/50 bg-emerald-500/20"
+                  : "border-white/10 bg-white/[0.04]"
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 h-5 w-5 rounded-full border transition-transform ${
+                  continuousMode
+                    ? "translate-x-[22px] border-emerald-400/60 bg-emerald-400"
+                    : "translate-x-0.5 border-white/20 bg-zinc-600"
+                }`}
+              />
+            </button>
+          </div>
+
+          <div className="mt-3 flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-[11px] uppercase tracking-widest text-zinc-500">
+                Depth
+              </span>
+              <span className="font-mono text-[11px] text-zinc-600">
+                {currentDepth.desc}
+              </span>
+            </div>
+            <div className="grid grid-cols-4 gap-1 rounded-xl border border-white/[0.07] bg-white/[0.02] p-1">
+              {DEPTHS.map((d) => (
+                <button
+                  key={d.id}
+                  type="button"
+                  onClick={() => setDepth(d.id)}
+                  onTouchEnd={(e) => {
+                    e.preventDefault();
+                    setDepth(d.id);
+                  }}
+                  className={`rounded-lg border py-2 text-[11px] font-semibold transition-colors ${
+                    depth === d.id
+                      ? "border-amber-500/40 bg-amber-500/15 text-amber-300"
+                      : "border-transparent text-zinc-500 hover:text-zinc-300"
+                  }`}
+                >
+                  {d.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </footer>

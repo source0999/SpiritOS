@@ -4,7 +4,8 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 120;
 
 const PIPER_TTS_URL = (process.env.PIPER_TTS_URL ?? "http://localhost:5200").replace(/\/$/, "");
-const PIPER_TTS_VOICE = process.env.PIPER_TTS_VOICE?.trim() || "fable";
+/** Hardcoded for stable local Piper mapping (see openedai-config/voice_to_speaker.yaml). */
+const PIPER_TTS_VOICE = "fable";
 const TTS_MODEL = "tts-1";
 /** Piper via openedai-speech: wav decodes reliably in the browser AudioContext. */
 const RESPONSE_FORMAT = "wav";

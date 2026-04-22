@@ -2,8 +2,10 @@
  * Oracle Voice Pipeline · /api/oracle
  *
  * POST  multipart/form-data
- *   audio   Blob   — raw microphone recording (webm/opus or mp4/aac)
- *   mode    string — "peer" | "educational" | "chaos"
+ *   audio    Blob   — raw microphone recording (webm/opus or mp4/aac)
+ *   mode     string — "peer" | "educational" | "chaos"
+ *   depth    string — "short" | "normal" | "deep" | "deepdive"
+ *   history  string — JSON-encoded array of {role, content} turns
  *
  * Response  text/event-stream (SSE)
  *   data: {"transcript":"..."}  — user speech (first event)
@@ -12,7 +14,7 @@
  *
  * Pipeline:
  *   1. Faster-Whisper STT  →  transcript (must finish before LLM)
- *   2. Ollama /api/generate (stream)  →  SSE token stream (client TTS via /api/tts)
+ *   2. Ollama /api/chat (stream)  →  SSE token stream (client TTS via /api/tts)
  */
 
 export const dynamic = "force-dynamic";
@@ -22,6 +24,11 @@ export const maxDuration = 120;
 const OLLAMA_URL = (
   process.env.OLLAMA_BASE_URL ?? process.env.OLLAMA_URL ?? "http://localhost:11434"
 ).replace(/\/$/, "");
+const OLLAMA_SOURCE = process.env.OLLAMA_BASE_URL
+  ? "OLLAMA_BASE_URL"
+  : process.env.OLLAMA_URL
+    ? "OLLAMA_URL"
+    : "default";
 const WHISPER_URL = (process.env.WHISPER_URL ?? "http://localhost:8000").replace(/\/$/, "");
 /** Voice pipeline: hard-capped for minimum TTFT. Do not read from env. */
 const OLLAMA_NUM_CTX = 2048;
@@ -33,16 +40,47 @@ const MODE_DIRECTIVES: Record<string, string> = {
   chaos: `[MODE: CHAOS] Unhinged mode. Be unexpected, absurdist, and genuinely funny.  Subvert expectations. Say the thing no one else would say. Snort-inducing responses  are the goal. Stay coherent but completely wild. Use [laughs] or [scoffs] once if it  fits naturally.`,
 };
 
+const DEPTH_DIRECTIVES: Record<string, string> = {
+  short: `[DEPTH: SHORT] Be maximally terse. One to three sentences absolute maximum. Cut every non-essential word.`,
+  normal: `[DEPTH: NORMAL] Standard response length. Cover what's needed, nothing more.`,
+  deep: `[DEPTH: DEEP] Be detailed and analytical. Show your reasoning. Explore nuance. Use structure if it genuinely helps.`,
+  deepdive: `[DEPTH: DEEP DIVE] Give an exhaustive response. Cite your reasoning step by step. Cover edge cases, alternatives, and implications. Be comprehensive. Use headers and structured sections.`,
+};
+
+function normalizeOracleHistory(raw: string): { role: "user" | "assistant"; content: string }[] {
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    const out: { role: "user" | "assistant"; content: string }[] = [];
+    for (const item of parsed) {
+      if (typeof item !== "object" || item === null) continue;
+      const role = (item as { role?: unknown }).role;
+      const content = (item as { content?: unknown }).content;
+      if ((role !== "user" && role !== "assistant") || typeof content !== "string") continue;
+      const trimmed = content.trim();
+      if (!trimmed) continue;
+      out.push({ role, content: trimmed });
+    }
+    return out.slice(-10);
+  } catch {
+    return [];
+  }
+}
+
 // ── Route handler ────────────────────────────────────────────────────────────
 export async function POST(req: Request): Promise<Response> {
   // 1. Parse multipart form ──────────────────────────────────────────────────
   let audioBlob: Blob;
   let mode: string;
+  let depth: string;
+  let historyRaw: string;
 
   try {
     const form = await req.formData();
     const audio = form.get("audio");
     mode = String(form.get("mode") ?? "peer");
+    depth = String(form.get("depth") ?? "normal");
+    historyRaw = String(form.get("history") ?? "[]");
 
     if (!(audio instanceof Blob) || audio.size === 0) {
       return new Response(JSON.stringify({ error: "Missing or empty audio blob" }), {
@@ -94,18 +132,34 @@ export async function POST(req: Request): Promise<Response> {
     });
   }
 
-  // 3. LLM inference via Ollama (stream → SSE) ───────────────────────────────
+  // 3. LLM inference via Ollama (chat stream → SSE) ──────────────────────────
   const modeDirective = MODE_DIRECTIVES[mode] ?? MODE_DIRECTIVES.peer;
-  const llmPrompt = `${modeDirective}\n\nUser: ${transcript}`;
+  const depthDirective = DEPTH_DIRECTIVES[depth] ?? DEPTH_DIRECTIVES.normal;
+  const systemContent = `${modeDirective}\n${depthDirective}`;
+  const history = normalizeOracleHistory(historyRaw);
+  const messages: { role: "system" | "user" | "assistant"; content: string }[] = [
+    { role: "system", content: systemContent },
+    ...history,
+    { role: "user", content: transcript },
+  ];
+  const ollamaChatUrl = `${OLLAMA_URL}/api/chat`;
+  try {
+    new URL(ollamaChatUrl);
+  } catch {
+    return new Response(
+      JSON.stringify({ error: `Invalid OLLAMA URL: "${OLLAMA_URL}" from ${OLLAMA_SOURCE}` }),
+      { status: 500, headers: { "Content-Type": "application/json" } },
+    );
+  }
 
   let ollamaResponse: Response;
   try {
-    ollamaResponse = await fetch(`${OLLAMA_URL}/api/generate`, {
+    ollamaResponse = await fetch(ollamaChatUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         model: "spirit-os",
-        prompt: llmPrompt,
+        messages,
         stream: true,
         options: {
           num_ctx: OLLAMA_NUM_CTX,
@@ -175,7 +229,11 @@ export async function POST(req: Request): Promise<Response> {
             const trimmed = line.trim();
             if (!trimmed) continue;
             try {
-              const json = JSON.parse(trimmed) as { response?: string; done?: boolean; error?: string };
+              const json = JSON.parse(trimmed) as {
+                message?: { content?: string };
+                done?: boolean;
+                error?: string;
+              };
               if (json.error) {
                 controller.enqueue(
                   encoder.encode(`data: ${JSON.stringify({ error: json.error })}\n\n`),
@@ -184,7 +242,7 @@ export async function POST(req: Request): Promise<Response> {
                 streamFatal = true;
                 break;
               }
-              const text = json.response ?? "";
+              const text = json.message?.content ?? "";
               if (text) {
                 controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`));
               }
@@ -200,11 +258,15 @@ export async function POST(req: Request): Promise<Response> {
         const tail = ndjsonBuffer.trim();
         if (tail) {
           try {
-            const json = JSON.parse(tail) as { response?: string; done?: boolean; error?: string };
+            const json = JSON.parse(tail) as {
+              message?: { content?: string };
+              done?: boolean;
+              error?: string;
+            };
             if (json.error) {
               controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: json.error })}\n\n`));
             } else {
-              const text = json.response ?? "";
+              const text = json.message?.content ?? "";
               if (text) {
                 controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`));
               }

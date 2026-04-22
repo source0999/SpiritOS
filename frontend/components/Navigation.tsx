@@ -21,8 +21,8 @@ import { useOverlayLock } from "@/components/OverlayLockContext";
 
 const NAV_ITEMS = [
   { label: "Dashboard",        icon: LayoutDashboard, href: "/"          },
-  { label: "Sovereign Chat",   icon: Terminal,         href: "/chat"      },
-  { label: "Oracle",           icon: Sparkles,         href: "/oracle"    },
+  { label: "Oracle Chat",      icon: Terminal,         href: "/chat"      },
+  { label: "Oracle Voice",     icon: Sparkles,         href: "/oracle"    },
   { label: "Projects & IDE",    icon: TerminalSquare,   href: "/projects"  },
   { label: "YTM Hub",          icon: Music2,           href: "/ytm"       },
   { label: "Sovereign Cinema", icon: Film,             href: "/cinema"    },

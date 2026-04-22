@@ -184,7 +184,7 @@ export function usePersonality(): UsePersonalityReturn {
 
     const topMode = Object.entries(modeCounts).sort((a, b) => b[1] - a[1])[0];
     if (topMode) {
-      const label = topMode[0] === "chill" ? "Focus" : topMode[0] === "peer" ? "Mirror" : "Chaos";
+      const label = topMode[0] === "educational" ? "Educational" : topMode[0] === "peer" ? "Peer" : "Chaos";
       const pct   = Math.round((topMode[1] / events.length) * 100);
       lines.push(`Source primarily uses ${label} mode (~${pct}% of sessions).`);
     }
