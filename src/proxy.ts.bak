@@ -1,0 +1,14 @@
+/* ── Backed up for homelab diagnostics (no request edge) ───────────────────────
+ * This repo never shipped `src/middleware.ts`; Next 16 uses `proxy.ts` instead.
+ * Restore: rename this file to `src/proxy.ts` and delete this backup.
+ */
+
+import { NextResponse } from "next/server";
+
+export function proxy(_request: Request) {
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: ["/((?!_next/image|favicon.ico).*)"],
+};

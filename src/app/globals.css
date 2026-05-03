@@ -1,0 +1,120 @@
+/* ── Spirit OS globals — minimal @theme + Tailwind v4 import ─────────────────
+ * > Turbopack/PostCSS was eating glass on this tree; keep @theme flat, fewer @apply.
+ * > Accents + ThemeEngine: _blueprints/design_system.md
+ */
+
+@import "tailwindcss" source(none);
+@source "./";
+@source "../components";
+@source "../lib";
+@source "../theme";
+
+@theme {
+  --color-ink: #0a0a0a;
+  --color-void: #090a0f;
+  --color-glass: #1a1a1e;
+  --color-chalk: #f4f4f5;
+  --color-cyan: #22d3ee;
+  --color-violet: #a855f7;
+  --color-rose: #f43f5e;
+  --color-emerald: #10b981;
+  --color-amber: #f59e0b;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+  --text-display: clamp(2.5rem, 8vw, 6rem);
+  --text-h1: clamp(2rem, 5vw, 3.5rem);
+  --text-h2: clamp(1.5rem, 4vw, 2.5rem);
+  --text-body: clamp(1rem, 2.5vw, 1.125rem);
+  --leading-reader: 1.8;
+  --spacing-section-y: clamp(4rem, 12vw, 6rem);
+  --radius-card: 1.5rem;
+}
+
+:root,
+html[data-theme="spirit-slate"] {
+  --spirit-bg: #090a0f;
+  --spirit-accent: #22d3ee;
+  --spirit-accent-strong: #22d3ee;
+  --spirit-glow: rgba(34, 211, 238, 0.22);
+  --spirit-border: rgba(255, 255, 255, 0.06);
+  --spirit-secondary-mix: #a855f7;
+}
+
+html[data-theme="dark-node"] {
+  --spirit-bg: #050505;
+  --spirit-accent: #06b6d4;
+  --spirit-accent-strong: #22d3ee;
+  --spirit-glow: rgba(6, 182, 212, 0.28);
+  --spirit-border: rgba(255, 255, 255, 0.08);
+  --spirit-secondary-mix: #22d3ee;
+}
+
+html[data-theme="legacy-violet"] {
+  --spirit-bg: #090a0f;
+  --spirit-accent: #a855f7;
+  --spirit-accent-strong: #d946ef;
+  --spirit-secondary-mix: #f59e0b;
+  --spirit-glow: rgba(168, 85, 247, 0.22);
+  --spirit-border: rgba(251, 191, 72, 0.12);
+}
+
+@utility glass {
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+@utility scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@utility shadow-quarantine-inset {
+  box-shadow: inset 0 0 120px color-mix(in oklab, var(--color-rose) 14%, transparent);
+}
+
+@layer utilities {
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  html[data-theme="dark-node"] body {
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-feature-settings: "kern" 0, "liga" 0;
+  }
+  html[data-theme="dark-node"] :where(h1, h2, h3, h4) {
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-feature-settings: "kern" 0, "liga" 0;
+  }
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    background-color: var(--spirit-bg, #090a0f);
+  }
+  body {
+    background-color: var(--spirit-bg, #090a0f);
+    color: color-mix(in oklab, var(--color-chalk) 97%, transparent);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+  :where(h1, h2, h3, h4) {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    letter-spacing: normal;
+    color: var(--color-chalk);
+  }
+  ::selection {
+    background-color: color-mix(in oklab, var(--color-cyan) 25%, transparent);
+    color: var(--color-chalk);
+  }
+  :focus-visible {
+    outline: 2px solid color-mix(in oklab, var(--color-cyan) 80%, transparent);
+    outline-offset: 2px;
+  }
+}

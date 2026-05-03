@@ -1,0 +1,19 @@
+# ── Spirit OS — ignore build noise, secrets, and fat artifacts ─────────────────
+.DS_Store
+node_modules
+.next
+out
+*.tsbuildinfo
+.env.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+repomix-output*.xml
+oldSpiritOS.xml
+models/
+*.gguf
+backend/.env
+backend/**/*.log
+.cursor/
+*.log
