@@ -1,17 +1,15 @@
 import type { NextConfig } from "next";
 
-/* ── Homelab dev — hostname allowlist + webpack watch ignore (big artifacts) ───
+import { buildAllowedDevOrigins } from "./allowed-dev-origins";
+
+/* ── Homelab dev — HMR allowlist + webpack watch ignore (big artifacts) ────────────
  * Next parses `Origin` to hostname only — no `http://` entries.
+ * Tailscale / LAN: set `NEXT_ALLOWED_DEV_ORIGINS` (comma-separated hostnames), restart dev.
  */
 const nextConfig: NextConfig = {
   turbopack: {},
 
-  allowedDevOrigins: [
-    "10.0.0.186",
-    "localhost",
-    "127.0.0.1",
-    "*.ts.net",
-  ],
+  allowedDevOrigins: buildAllowedDevOrigins(),
 
   webpack: (config, { dev, isServer }) => {
     if (dev) {

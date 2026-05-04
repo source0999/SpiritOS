@@ -2,6 +2,8 @@ import "server-only";
 
 import { createOpenAI } from "@ai-sdk/openai";
 
+import { getSpiritChatModelId } from "@/lib/server/model-routing";
+
 // ── Ollama OpenAI-compat client — server-only; env-derived base URL ───────────
 
 export function getOllamaOpenAIBaseURL(): string {
@@ -15,8 +17,9 @@ export function getOllamaOpenAIBaseURL(): string {
   return `${raw.replace(/\/$/, "")}/v1`;
 }
 
+/** Primary `/chat` lane model tag (OLLAMA_MODEL). */
 export function getSpiritModelId(): string {
-  return process.env.OLLAMA_MODEL?.trim() || "hermes4";
+  return getSpiritChatModelId();
 }
 
 export const ollamaOpenAI = createOpenAI({

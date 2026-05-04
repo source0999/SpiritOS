@@ -3,7 +3,7 @@
 // ── SpiritDiagnosticsLive — single /api/spirit/health poll — one sheet, tight rows ─
 // > Chunky bordered rows were a UX war crime — strip + divides keeps the rail scannable.
 // > Do not spin a second poll; SpiritHealthIndicator is legacy/tests only.
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { DiagnosticRow } from "@/components/dashboard/DiagnosticRow";
 import { cn } from "@/lib/cn";
@@ -16,6 +16,10 @@ type HealthDiagnostics = {
   engine?: string;
   maxOutputTokens?: number;
   maxOutputTokensSource?: string;
+  oracleMaxOutputTokens?: number;
+  oracleMaxOutputTokensSource?: string;
+  chatModel?: string;
+  oracleLaneModel?: string;
   context?: { label?: string; source?: string };
   tts?: { provider?: string; voice?: string; source?: string };
 };
@@ -75,6 +79,14 @@ function healthDotClasses(
 export function SpiritDiagnosticsLive() {
   const [loadState, setLoadState] = useState<LoadState>("checking");
   const [data, setData] = useState<HealthPayload | null>(null);
+  const devOriginHost = useSyncExternalStore(
+    () => () => {},
+    () =>
+      process.env.NODE_ENV === "development" && typeof window !== "undefined"
+        ? window.location.host
+        : "",
+    () => "",
+  );
   const cancelledRef = useRef(false);
 
   useEffect(() => {
@@ -158,9 +170,37 @@ export function SpiritDiagnosticsLive() {
   ) : failed ? (
     "—"
   ) : (
-    (data?.model ?? "—")
+    (d?.chatModel ?? data?.model ?? "—")
   );
-  const modelHint = failed ? "—" : checking ? "…" : "OLLAMA_MODEL";
+  const modelHint = failed ? "—" : checking ? "…" : "OLLAMA_MODEL · /chat";
+
+  const oracleModelVal = checking ? (
+    <StatusText tone="pulse">Checking…</StatusText>
+  ) : failed ? (
+    "—"
+  ) : (
+    (d?.oracleLaneModel ?? "—")
+  );
+  const oracleModelHint = failed
+    ? "—"
+    : checking
+      ? "…"
+      : "ORACLE_OLLAMA_MODEL or chat model";
+
+  const oracleCapVal = checking ? (
+    <StatusText tone="pulse">Checking…</StatusText>
+  ) : failed ? (
+    "—"
+  ) : typeof d?.oracleMaxOutputTokens === "number" ? (
+    String(d.oracleMaxOutputTokens)
+  ) : (
+    "—"
+  );
+  const oracleCapHint = failed
+    ? "—"
+    : checking
+      ? "…"
+      : (d?.oracleMaxOutputTokensSource ?? "…");
 
   const ctxVal = checking ? (
     <StatusText tone="pulse">Checking…</StatusText>
@@ -230,9 +270,26 @@ export function SpiritDiagnosticsLive() {
       <dl className="divide-y divide-white/[0.05] px-3 py-2">
         <DiagnosticRow label="Engine" value={engineVal} hint={engineHint} />
         <DiagnosticRow label="Model" value={modelVal} hint={modelHint} />
+        <DiagnosticRow
+          label="Oracle lane"
+          value={oracleModelVal}
+          hint={oracleModelHint}
+        />
         <DiagnosticRow label="Context" value={ctxVal} hint={ctxHint} />
         <DiagnosticRow label="Out cap" value={capVal} hint={capHint} />
+        <DiagnosticRow
+          label="Oracle cap"
+          value={oracleCapVal}
+          hint={oracleCapHint}
+        />
         <DiagnosticRow label="Voice" value={voiceVal} hint={voiceHint} />
+        {process.env.NODE_ENV === "development" && devOriginHost ? (
+          <DiagnosticRow
+            label="Origin"
+            value={<span className="font-mono text-chalk/80">{devOriginHost}</span>}
+            hint="Local settings, Dexie threads, and voice prefs are per-origin (LAN vs Tailscale differ)."
+          />
+        ) : null}
       </dl>
     </div>
   );

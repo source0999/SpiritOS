@@ -117,4 +117,11 @@ html[data-theme="legacy-violet"] {
     outline: 2px solid color-mix(in oklab, var(--color-cyan) 80%, transparent);
     outline-offset: 2px;
   }
+  @media (max-width: 1023px) {
+    input,
+    textarea,
+    select {
+      font-size: 16px;
+    }
+  }
 }

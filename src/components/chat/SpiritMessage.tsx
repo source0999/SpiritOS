@@ -1,23 +1,78 @@
 "use client";
 
-// ── SpiritMessage — one bubble, two roles, Dark Node glass rules ─────────────
-// > Extracted from: _blueprints/design_system.md — chalk/cyan via @theme, no emerald cosplay
+// ── SpiritMessage — bubble-first layout; actions in-bubble (Prompt 9B) ───────────
 import type { UIMessage } from "ai";
 import { motion } from "framer-motion";
-import { memo } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 
+import { EditableUserMessage } from "@/components/chat/EditableUserMessage";
+import { MessageActions } from "@/components/chat/MessageActions";
+import { MessageMarkdown } from "@/components/chat/MessageMarkdown";
+import type { SpiritWebSourcesHeaderPayload } from "@/lib/spirit/spirit-web-sources";
 import { SectionLabel } from "@/components/ui/SectionLabel";
+import { StreamingCursor } from "@/components/chat/StreamingCursor";
 import { cn } from "@/lib/cn";
 import { textFromParts } from "@/lib/chat-utils";
+import { copyTextToClipboard } from "@/lib/clipboard";
+import { sanitizeAssistantVisibleText } from "@/lib/spirit/assistant-output-sanitizer";
+import { stripFakeCitationsWhenNoSources } from "@/lib/spirit/research-source-enforcement";
 
 export type SpiritMessageProps = {
   message: UIMessage;
+  isStreamingLatest?: boolean;
+  isBusy?: boolean;
+  canRegenerate?: boolean;
+  onDelete?: () => void;
+  onEditSave?: (text: string) => void;
+  onRegenerate?: () => void;
+  onSpeak?: () => void | Promise<void>;
+  /** Prompt 10B — read full assistant reply in TTS-safe chunks */
+  onSpeakFullChunks?: () => void | Promise<void>;
+  assistantLongVoice?: boolean;
+  speakDisabled?: boolean;
+  actionDisabled?: boolean;
+  /** Dexie workspace: message actions use a portal sheet below the `lg` breakpoint. */
+  useActionSheetBelowLg?: boolean;
+  onCopyFeedback?: (ok: boolean) => void;
+  /** Prompt 10C-C — strip fake [n] / Sources when Researcher had zero verified URLs */
+  stripFakeResearchCitations?: boolean;
+  /** When assistant had verified web sources, rewrite degenerate ## Sources from header JSON */
+  webSourcesSnapshot?: SpiritWebSourcesHeaderPayload | null;
 };
 
 export const SpiritMessage = memo(function SpiritMessage({
   message,
+  isStreamingLatest = false,
+  isBusy = false,
+  canRegenerate = false,
+  onDelete,
+  onEditSave,
+  onRegenerate,
+  onSpeak,
+  onSpeakFullChunks,
+  assistantLongVoice = false,
+  speakDisabled = false,
+  actionDisabled = false,
+  useActionSheetBelowLg = false,
+  onCopyFeedback,
+  stripFakeResearchCitations = false,
+  webSourcesSnapshot = null,
 }: SpiritMessageProps) {
   const isUser = message.role === "user";
+  const [editing, setEditing] = useState(false);
+  const rawBody = textFromParts(message);
+  const body = useMemo(() => {
+    if (isUser) return rawBody;
+    const cleaned = sanitizeAssistantVisibleText(rawBody);
+    return stripFakeResearchCitations ? stripFakeCitationsWhenNoSources(cleaned) : cleaned;
+  }, [isUser, rawBody, stripFakeResearchCitations]);
+
+  const handleCopy = useCallback(async () => {
+    const r = await copyTextToClipboard(body);
+    onCopyFeedback?.(r.ok);
+  }, [body, onCopyFeedback]);
+
+  const actionsDisabled = Boolean(actionDisabled || (isUser && editing));
 
   return (
     <motion.div
@@ -25,39 +80,97 @@ export const SpiritMessage = memo(function SpiritMessage({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-      className={cn("flex", isUser ? "justify-end" : "justify-start")}
+      className={cn(
+        "group/message flex w-full min-w-0",
+        isUser ? "justify-end" : "justify-start",
+      )}
       data-role={message.role}
     >
-      <div
-        className={cn(
-          !isUser && [
-            "w-full border-l-2 border-l-[color:var(--spirit-accent)]",
-            "bg-[linear-gradient(90deg,color-mix(in_oklab,var(--spirit-glow)_55%,transparent)_0%,transparent_55%)]",
-            "rounded-r-2xl py-3 pl-4 pr-3 lg:max-w-[min(100%,42rem)] lg:rounded-2xl",
-          ],
-          isUser && [
-            "max-w-[min(100%,42rem)] rounded-3xl border border-[color:var(--spirit-border)]",
-            "bg-white/[0.04] px-4 py-3 backdrop-blur-xl shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]",
-            "leading-relaxed",
-          ],
-        )}
-      >
-        {isUser ? (
-          <SectionLabel className="mb-1 block text-[11px] font-medium tracking-wider">
-            You
-          </SectionLabel>
-        ) : (
-          <SectionLabel className="mb-1 block font-mono text-[10px] tracking-[0.28em] text-[color:var(--spirit-accent-strong)] [text-shadow:0_0_12px_color-mix(in_oklab,var(--spirit-glow)_70%,transparent)]">
-            Spirit
-          </SectionLabel>
-        )}
-        <p
+      <div className="w-full max-w-[min(760px,calc(100%-0.5rem))] sm:max-w-[min(760px,calc(100%-2rem))]">
+        <div
           className={cn(
-            "whitespace-pre-wrap break-words font-sans text-[15px] text-chalk/90 leading-relaxed",
+            "relative flex min-w-0 flex-col",
+            !isUser && [
+              "border-l-2 border-l-[color:var(--spirit-accent)]",
+              "bg-[linear-gradient(90deg,color-mix(in_oklab,var(--spirit-glow)_55%,transparent)_0%,transparent_55%)]",
+              "max-lg:rounded-r-xl max-lg:py-1.5 max-lg:pl-2 max-lg:pr-1.5",
+              "rounded-r-2xl py-2.5 pl-3 pr-2 sm:py-3 sm:pl-4 sm:pr-2 lg:rounded-2xl",
+            ],
+            isUser && [
+              "max-lg:rounded-2xl max-lg:px-2 max-lg:py-1.5",
+              "rounded-2xl border border-[color:var(--spirit-border)]",
+              "bg-white/[0.04] px-3 py-2.5 backdrop-blur-xl shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)] sm:rounded-3xl sm:px-4 sm:py-3",
+            ],
           )}
         >
-          {textFromParts(message)}
-        </p>
+          <div
+            className={cn(
+              "min-w-0",
+            !isUser && "pr-1.5 sm:pr-2 lg:pr-24",
+            isUser &&
+              (useActionSheetBelowLg ? "pb-1.5 pr-1.5 sm:pr-2 lg:pb-10" : "sm:pb-10 sm:pr-2"),
+            )}
+          >
+            {isUser ? (
+              <SectionLabel className="mb-0.5 block text-[10px] font-medium tracking-wider max-lg:text-[10px] sm:mb-1 sm:text-[11px]">
+                You
+              </SectionLabel>
+            ) : (
+              <SectionLabel className="mb-0.5 block font-mono text-[9px] tracking-[0.22em] text-[color:var(--spirit-accent-strong)] [text-shadow:0_0_12px_color-mix(in_oklab,var(--spirit-glow)_70%,transparent)] max-lg:text-[9px] sm:mb-1 sm:text-[10px] sm:tracking-[0.28em]">
+                Spirit
+              </SectionLabel>
+            )}
+            {isUser && editing && onEditSave ? (
+              <EditableUserMessage
+                initialText={body}
+                disabled={isBusy}
+                onSave={(next) => {
+                  onEditSave(next);
+                  setEditing(false);
+                }}
+                onCancel={() => setEditing(false)}
+              />
+            ) : isUser ? (
+              <p className="whitespace-pre-wrap break-words font-sans text-[16px] leading-snug text-chalk/90 max-lg:text-[16px] sm:text-[15px] sm:leading-relaxed">
+                {body}
+              </p>
+            ) : (
+              <div className="min-w-0">
+                <MessageMarkdown text={body} webSourcesSnapshot={webSourcesSnapshot} />
+                {isStreamingLatest ? <StreamingCursor /> : null}
+              </div>
+            )}
+          </div>
+          {onDelete ? (
+            <MessageActions
+              role={isUser ? "user" : "assistant"}
+              placement={isUser ? "bubble-user" : "bubble-assistant"}
+              onCopy={() => void handleCopy()}
+              onDelete={onDelete}
+              onEdit={
+                isUser && onEditSave
+                  ? () => {
+                      if (isBusy) return;
+                      setEditing(true);
+                    }
+                  : undefined
+              }
+              onRegenerate={!isUser && onRegenerate ? onRegenerate : undefined}
+              onSpeak={onSpeak}
+              onSpeakFullChunks={!isUser ? onSpeakFullChunks : undefined}
+              assistantLongTts={!isUser && assistantLongVoice}
+              speakDisabled={speakDisabled}
+              regenerateDisabled={!isUser && !canRegenerate}
+              regenerateTitle={
+                !isUser && !canRegenerate
+                  ? "Regenerate is only available for the latest assistant reply"
+                  : undefined
+              }
+              actionDisabled={actionsDisabled}
+              useActionSheetBelowLg={useActionSheetBelowLg}
+            />
+          ) : null}
+        </div>
       </div>
     </motion.div>
   );

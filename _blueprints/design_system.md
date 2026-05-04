@@ -69,3 +69,21 @@ Static, tiny building blocks in `src/components/ui/` — not a full component li
 - **GlassPanel** + **`glassPanelSurfaceClasses`** — default glass card seam (`glass`, `rounded-2xl`, `spirit-border`, `bg-white/[0.02]`). Use the component for `div`/`section`/`aside`/`article`, or the exported class string on `motion.*` / custom wrappers.
 - **SectionLabel** + **`sectionLabelClasses`** — mono uppercase metadata (`text-[10px]`, `tracking-widest`, `text-chalk/45`). Supports `as` (`p` | `span` | `dt`); override with `className` for tracking/color/weight.
 - **SpiritButton** + **`spiritPrimaryCtaClasses`** — cyan pill CTA; same classes on `Link` where a button element is wrong.
+
+## Chat workspace — model profiles (Prompt 7 + Mode Runtime V2 / Prompt 10A)
+
+- **`ModelProfileSelector`** — compact `Mode` strip above the transcript in `/chat` (standalone + workspace). Mono label + bordered select; disabled while the model is streaming.
+- **`ChatActiveModeBadge`** — always-visible `Mode: …` + one-line hint (Peer / Researcher / …) next to the selector on desktop; compact row on mobile.
+- Persona presets live in `src/lib/spirit/model-profiles.ts`; runtime merge in `model-runtime.ts` (plus optional **`personalizationSummary`** from local Spirit Profile); Dexie thread field `modelProfileId` optional (defaults to id **`normal-peer`**, UI label **Peer**).
+
+## Chat workspace — Prompt 10A (search, pins, activity, profile)
+
+- **Local search** — sidebar field `Search chats…` filters threads by title + message text (Dexie, case-insensitive). No embeddings.
+- **Pinned threads** — Dexie `pinned` / `pinnedAt`; **Pinned** block above lists; pin/unpin from row actions and Thread settings.
+- **Activity panel** — high-level signals + capped event log (no chain-of-thought). **Spirit Profile** — editable `localStorage` prefs + “what Spirit knows” stats (source tags, wrong-perspective flag); optional compact summary sent as `personalizationSummary` on `/api/spirit` (max 1500 chars server-side).
+- **Prompt 10B / 10C-C:** workflow visualizer **above** the composer (messages scroll first); compact idle summary after dismiss on casual Peer/Sassy/Brutal; Researcher web proof headers (`x-spirit-web-search`, `x-spirit-source-count`, …); assistant text sanitized before bubble render + copy + TTS + Dexie; Research plan panel clears on thread/draft switch; Spirit Profile tabbed panel (Overview / Personality / Modes / Research / Memory / Server).
+- **Deferred:** full Deep Research editor, server chat sync, RAG, DeepSeek reasoning lane, full memory learning, STT/mic.
+
+## Chat workspace — message layer (Prompt 8)
+
+- **`SpiritMessage`** + **`MessageMarkdown`** (GFM) + **`MessageActions`** + **`StreamingCursor`** — assistant markdown, hover/focus actions, copy/delete/edit user, regenerate latest assistant via AI SDK `regenerate`.

@@ -1,5 +1,6 @@
-// ── Dashboard stage IDs + taskbar metadata (no hooks, import anywhere) ─────
-// > Blueprint: Dark Node hub — four rails, one brain, zero route pollution
+// ── Dashboard stage IDs + taskbar metadata (DEPRECATED for root UX) ───────────
+// > Root "/" no longer renders StageId; DashboardClient archived for reference.
+// > Blueprint fossils live on until oracle/quarantine extracts finish migrating.
 import type { LucideIcon } from "lucide-react";
 import {
   Brain,

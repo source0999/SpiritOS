@@ -1,12 +1,6 @@
-// ── /chat — thin route; SpiritChat owns all client state ──────────────────────
-import { SpiritChat } from "@/components/chat/SpiritChat";
+// ── /chat — full saved-thread workspace (SpiritWorkspaceShell) ──────────────────
+import SpiritWorkspaceShell from "@/components/dashboard/SpiritWorkspaceShell";
 
 export default function ChatPage() {
-  return (
-    <SpiritChat
-      variant="standalone"
-      title="Neural // Spirit"
-      subtitle="/api/spirit · Dark Node surface"
-    />
-  );
+  return <SpiritWorkspaceShell />;
 }
