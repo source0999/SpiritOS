@@ -16,6 +16,7 @@ import { readSpiritRequest } from "@/lib/server/spirit-request";
 import {
   buildSpiritSearchHeaders,
   logSpiritSearchEvent,
+  sanitizeForHttpByteStringHeader,
   trimSearchQueryForLog,
 } from "@/lib/server/spirit-search-telemetry";
 import {
@@ -274,7 +275,12 @@ export async function POST(req: Request) {
       researchWebContext,
       researchPlanSummary: researchPlanSummary ?? null,
       webVerifiedUrlCount,
+      runtimeSurface: surface,
     });
+
+    if (process.env.NODE_ENV === "development") {
+      console.log(`[spirit-api] surface=${surface} mode=${modelProfileId}`);
+    }
 
     const maxOutputTokens =
       surface === "oracle"
@@ -302,19 +308,22 @@ export async function POST(req: Request) {
       maxOutputTokens,
     });
 
-    const responseHeaders = buildSpiritSearchHeaders({
-      routeLane: routeDecision.lane,
-      routeConfidence: routeDecision.confidence,
-      webSearch: webSearchHeader,
-      searchStatus: webSearchHeader,
-      provider: spiritSearchProvider,
-      sourceCount: spiritSourceCount,
-      queryTrimmed: trimSearchQueryForLog(lastUser),
-      elapsedMs: searchElapsedMs,
-      searchKind,
-      skipReason,
-      webSourcesJson: webSourcesHeader,
-    });
+    const responseHeaders = {
+      ...buildSpiritSearchHeaders({
+        routeLane: routeDecision.lane,
+        routeConfidence: routeDecision.confidence,
+        webSearch: webSearchHeader,
+        searchStatus: webSearchHeader,
+        provider: spiritSearchProvider,
+        sourceCount: spiritSourceCount,
+        queryTrimmed: trimSearchQueryForLog(lastUser),
+        elapsedMs: searchElapsedMs,
+        searchKind,
+        skipReason,
+        webSourcesJson: webSourcesHeader,
+      }),
+      "x-spirit-runtime-surface": sanitizeForHttpByteStringHeader(surface),
+    };
 
     return result.toUIMessageStreamResponse({
       headers: responseHeaders,

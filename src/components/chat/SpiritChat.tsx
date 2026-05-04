@@ -1,10 +1,11 @@
 "use client";
 
 // ── SpiritChat — messages + transport + input (one implementation to rule them) ─
-// > Used by: `/chat` shell (SpiritWorkspaceShell), Neural corpse, `/oracle` — stop cloning useChat + JSX
+// > Used by: `/chat` shell (SpiritWorkspaceShell), Neural corpse, `/oracle` via OracleVoiceSurface — stop cloning useChat + JSX
 // > Design language: _blueprints/design_system.md — @theme chalk/cyan, glass seams
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowUp, PanelLeft, PanelLeftClose, Activity, UserRound, SlidersHorizontal } from "lucide-react";
 import { ChatThreadSidebar } from "@/components/chat/ChatThreadSidebar";
@@ -31,9 +32,11 @@ import { sanitizeAssistantVisibleText } from "@/lib/spirit/assistant-output-sani
 import { stripFakeCitationsWhenNoSources } from "@/lib/spirit/research-source-enforcement";
 import { cn } from "@/lib/cn";
 import { useMediaMinWidthLg } from "@/lib/hooks/useMediaMinWidthLg";
+import { OracleVoiceStatusCard } from "@/components/oracle/OracleVoiceStatusCard";
 import { formatTtsFriendlyStartSummary } from "@/lib/tts/format-tts-latency";
 import { TTS_SUMMARY_TRIGGER_CHARS } from "@/lib/tts/tts-text-budget";
-import { getSpiritChatRuntimeDisplayLabel } from "@/lib/spirit/spirit-client-runtime-hint";
+import { deriveOracleVoiceStatus } from "@/lib/oracle/oracle-voice-session";
+import { getSpiritRuntimeSurfaceDisplayLabel } from "@/lib/spirit/spirit-client-runtime-hint";
 import {
   appendSpiritActivityEvent,
   type SpiritActivityEvent,
@@ -60,6 +63,8 @@ export type SpiritChatProps = {
     open: boolean;
     onOpenChange: (next: boolean) => void;
   };
+  /** `/oracle` Voice MVP — extra chrome; keeps SpiritChat as single transport owner. */
+  oracleVoiceSurface?: boolean;
   footerHint?: ReactNode;
   emptyState?: ReactNode;
   shellClassName?: string;
@@ -79,6 +84,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
   shellClassName,
   title,
   subtitle,
+  oracleVoiceSurface = false,
 }: SpiritChatProps) {
   const [internalMobileThreadOpen, setInternalMobileThreadOpen] =
     useState(false);
@@ -288,7 +294,8 @@ const SpiritChatInner = memo(function SpiritChatInner({
 
   const prevModeRef = useRef<ModelProfileId | null>(null);
   useEffect(() => {
-    if (!savedChatShell) return;
+    const modeTrackingOn = savedChatShell || runtimeSurfaceProp === "oracle";
+    if (!modeTrackingOn) return;
     const cur = modeRt.activeModelProfileId;
     if (prevModeRef.current === null) {
       prevModeRef.current = cur;
@@ -304,20 +311,22 @@ const SpiritChatInner = memo(function SpiritChatInner({
       window.setTimeout(() => setModeToast(null), 3200);
       prevModeRef.current = cur;
     }
-  }, [savedChatShell, modeRt.activeModelProfileId, pushActivity]);
+  }, [savedChatShell, runtimeSurfaceProp, modeRt.activeModelProfileId, pushActivity]);
 
   const lastVoiceErrRef = useRef<string | undefined>(undefined);
   useEffect(() => {
-    if (!savedChatShell) return;
+    const voiceActivityOn = savedChatShell || runtimeSurfaceProp === "oracle";
+    if (!voiceActivityOn) return;
     const err = tts.state.lastError;
     if (!err || err === lastVoiceErrRef.current) return;
     lastVoiceErrRef.current = err;
     pushActivity({ kind: "voice_error", label: `Voice error: ${err}` });
-  }, [savedChatShell, tts.state.lastError, pushActivity]);
+  }, [savedChatShell, runtimeSurfaceProp, tts.state.lastError, pushActivity]);
 
   const lastLatSigRef = useRef<string>("");
   useEffect(() => {
-    if (!savedChatShell || !tts.state.lastLatency) return;
+    const voiceActivityOn = savedChatShell || runtimeSurfaceProp === "oracle";
+    if (!voiceActivityOn || !tts.state.lastLatency) return;
     const sig = JSON.stringify(tts.state.lastLatency);
     if (sig === lastLatSigRef.current) return;
     lastLatSigRef.current = sig;
@@ -326,7 +335,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
       kind: "voice_played",
       label: line.trim() || "Voice playback started",
     });
-  }, [savedChatShell, tts.state.lastLatency, pushActivity]);
+  }, [savedChatShell, runtimeSurfaceProp, tts.state.lastLatency, pushActivity]);
 
   const tc = transport;
 
@@ -364,6 +373,53 @@ const SpiritChatInner = memo(function SpiritChatInner({
   } = tc;
 
   const hasDraft = Boolean(tc.input.trim());
+
+  const spiritTransportBanner = useMemo(() => {
+    if (!error) return undefined;
+    return error instanceof Error ? error.message : String(error);
+  }, [error]);
+
+  const oracleVoiceStatus = useMemo(
+    () =>
+      deriveOracleVoiceStatus({
+        inputMode: "hands-free",
+        recordingSupported: true,
+        requestingMic: false,
+        micPermission: "granted",
+        isListening: false,
+        isTranscribing: false,
+        isBusy,
+        isPlaying: tts.state.isPlaying,
+        queueLength: tts.state.queueLength,
+        ttsLastError: tts.state.lastError,
+        speechLastError: null,
+        spiritTransportError: spiritTransportBanner,
+        lastUserStopAtMs: tts.state.lastUserStopAtMs ?? null,
+      }),
+    [
+      isBusy,
+      spiritTransportBanner,
+      tts.state.isPlaying,
+      tts.state.queueLength,
+      tts.state.lastError,
+      tts.state.lastUserStopAtMs,
+    ],
+  );
+
+  const oracleVoiceBackendLabel = useMemo(() => {
+    const p = tts.state.lastLatency?.provider;
+    if (p) return p;
+    if (tts.state.voicesSource) return tts.state.voicesSource;
+    return "/api/tts";
+  }, [tts.state.lastLatency?.provider, tts.state.voicesSource]);
+
+  const oracleSelectedVoiceLabel = useMemo(() => {
+    return (
+      tts.state.elevenLabsVoiceName?.trim() ||
+      tts.state.elevenLabsVoiceId?.trim() ||
+      "System default"
+    );
+  }, [tts.state.elevenLabsVoiceName, tts.state.elevenLabsVoiceId]);
 
   const predictedRoute = useMemo(
     () =>
@@ -767,7 +823,8 @@ const SpiritChatInner = memo(function SpiritChatInner({
   );
 
   const header =
-    variant === "standalone" && (title ?? subtitle ?? showPersistedThreads) ? (
+    variant === "standalone" &&
+    ((title ?? subtitle ?? showPersistedThreads) || oracleVoiceSurface) ? (
       <header className="shrink-0 border-b border-[color:var(--spirit-border)] px-3 py-2.5 backdrop-blur-xl sm:px-6 sm:py-3">
         <div className="flex items-start gap-2 sm:items-center">
           {showPersistedThreads ? (
@@ -787,6 +844,19 @@ const SpiritChatInner = memo(function SpiritChatInner({
             ) : null}
             {subtitle ? (
               <p className="mt-1 font-mono text-[10px] text-chalk/50">{subtitle}</p>
+            ) : null}
+            {oracleVoiceSurface ? (
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <span className="rounded-full border border-emerald-500/35 bg-emerald-500/[0.08] px-2 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-wider text-emerald-300/95">
+                  Graduated from Quarantine MVP
+                </span>
+                <Link
+                  href="/quarantine"
+                  className="min-h-[44px] min-w-[44px] font-mono text-[10px] leading-none text-[color:var(--spirit-accent-strong)] underline underline-offset-4 hover:brightness-110 sm:min-h-0 sm:min-w-0 sm:py-1"
+                >
+                  Feature lab
+                </Link>
+              </div>
             ) : null}
           </div>
         </div>
@@ -984,19 +1054,21 @@ const SpiritChatInner = memo(function SpiritChatInner({
         </form>
         {workspaceChrome ? (
           <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-2 px-2 pb-2 pt-0 font-mono text-[10px] text-chalk/55 sm:px-5 lg:px-6">
-            <button
-              type="button"
-              aria-pressed={deepThinkEnabled}
-              onClick={() => setDeepThinkEnabled((v) => !v)}
-              className={cn(
-                "touch-manipulation rounded-full border px-2.5 py-1 uppercase tracking-wide",
-                deepThinkEnabled
-                  ? "border-[color:color-mix(in_oklab,var(--spirit-accent)_45%,transparent)] text-[color:var(--spirit-accent-strong)]"
-                  : "border-[color:var(--spirit-border)] text-chalk/55",
-              )}
-            >
-              Deep think
-            </button>
+            {!oracleVoiceSurface ? (
+              <button
+                type="button"
+                aria-pressed={deepThinkEnabled}
+                onClick={() => setDeepThinkEnabled((v) => !v)}
+                className={cn(
+                  "touch-manipulation rounded-full border px-2.5 py-1 uppercase tracking-wide",
+                  deepThinkEnabled
+                    ? "border-[color:color-mix(in_oklab,var(--spirit-accent)_45%,transparent)] text-[color:var(--spirit-accent-strong)]"
+                    : "border-[color:var(--spirit-border)] text-chalk/55",
+                )}
+              >
+                Deep think
+              </button>
+            ) : null}
             {modeRt.activeModelProfileId === "researcher" ? (
               <button
                 type="button"
@@ -1236,18 +1308,20 @@ const SpiritChatInner = memo(function SpiritChatInner({
                   >
                     <UserRound className="h-4 w-4" aria-hidden />
                   </button>
-                  <button
-                    type="button"
-                    aria-label="Thread settings"
-                    onClick={() => {
-                      setThreadMenuOpen((o) => !o);
-                      setActivityOpen(false);
-                      setProfileOpen(false);
-                    }}
-                    className="inline-flex h-8 w-8 shrink-0 touch-manipulation items-center justify-center rounded-lg border border-[color:var(--spirit-border)]/80 bg-white/[0.04] text-chalk/70"
-                  >
-                    <SlidersHorizontal className="h-4 w-4" aria-hidden />
-                  </button>
+                  {!oracleVoiceSurface ? (
+                    <button
+                      type="button"
+                      aria-label="Thread settings"
+                      onClick={() => {
+                        setThreadMenuOpen((o) => !o);
+                        setActivityOpen(false);
+                        setProfileOpen(false);
+                      }}
+                      className="inline-flex h-8 w-8 shrink-0 touch-manipulation items-center justify-center rounded-lg border border-[color:var(--spirit-border)]/80 bg-white/[0.04] text-chalk/70"
+                    >
+                      <SlidersHorizontal className="h-4 w-4" aria-hidden />
+                    </button>
+                  ) : null}
                 </div>
                 {modeToast ? (
                   <div className="border-b border-white/[0.06] bg-white/[0.03] px-2 py-1 text-center font-mono text-[10px] text-chalk/65">
@@ -1303,18 +1377,20 @@ const SpiritChatInner = memo(function SpiritChatInner({
                     >
                       <UserRound className="h-4 w-4" aria-hidden />
                     </button>
-                    <button
-                      type="button"
-                      aria-label="Thread settings"
-                      onClick={() => {
-                        setThreadMenuOpen((o) => !o);
-                        setActivityOpen(false);
-                        setProfileOpen(false);
-                      }}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[color:var(--spirit-border)]/80 bg-white/[0.04] text-chalk/70 transition hover:bg-white/[0.07]"
-                    >
-                      <SlidersHorizontal className="h-4 w-4" aria-hidden />
-                    </button>
+                    {!oracleVoiceSurface ? (
+                      <button
+                        type="button"
+                        aria-label="Thread settings"
+                        onClick={() => {
+                          setThreadMenuOpen((o) => !o);
+                          setActivityOpen(false);
+                          setProfileOpen(false);
+                        }}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[color:var(--spirit-border)]/80 bg-white/[0.04] text-chalk/70 transition hover:bg-white/[0.07]"
+                      >
+                        <SlidersHorizontal className="h-4 w-4" aria-hidden />
+                      </button>
+                    ) : null}
                   </div>
                   <div className="min-w-0 flex-1 sm:min-w-[12rem] sm:max-w-xl">
                     <VoiceControl
@@ -1335,6 +1411,20 @@ const SpiritChatInner = memo(function SpiritChatInner({
                 </div>
               </div>
             ) : null}
+            {oracleVoiceSurface && workspaceChrome ? (
+              <div className="shrink-0 pt-1">
+                <OracleVoiceStatusCard
+                  status={oracleVoiceStatus}
+                  modeLabel={getModelProfile(modeRt.activeModelProfileId).shortLabel}
+                  runtimeLabel={getSpiritRuntimeSurfaceDisplayLabel(runtimeSurfaceProp)}
+                  voiceProviderLine={oracleVoiceBackendLabel}
+                  selectedVoiceLabel={oracleSelectedVoiceLabel}
+                  lastPlaybackWallMs={tts.state.lastPlaybackWallMs}
+                  lastError={tts.state.lastError}
+                  spiritTransportError={spiritTransportBanner}
+                />
+              </div>
+            ) : null}
             {scrollAndForm}
           </div>
         </div>
@@ -1343,7 +1433,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
           onClose={() => setActivityOpen(false)}
           variant={isLg ? "popover" : "sheet"}
           modeLabel={getModelProfile(modeRt.activeModelProfileId).shortLabel}
-          runtimeLabel={getSpiritChatRuntimeDisplayLabel()}
+          runtimeLabel={getSpiritRuntimeSurfaceDisplayLabel(runtimeSurfaceProp)}
           voiceLabel={activityVoiceLine}
           searchLabel={activitySearchLine}
           memoryLabel="Local profile only"
@@ -1357,32 +1447,34 @@ const SpiritChatInner = memo(function SpiritChatInner({
           variant={isLg ? "popover" : "sheet"}
           activeModelProfileId={modeRt.activeModelProfileId}
         />
-        <ChatThreadWorkspaceMenu
-          open={threadMenuOpen}
-          onClose={() => setThreadMenuOpen(false)}
-          variant={isLg ? "popover" : "sheet"}
-          modelProfileId={modeRt.activeModelProfileId}
-          threadTitle={activeThreadRow?.title ?? "Chat"}
-          threadId={persistent.draftLaneActive ? null : persistent.activeThreadId}
-          draftActive={persistent.draftLaneActive}
-          isPinned={Boolean(activeThreadRow?.pinned)}
-          folders={persistent.folders}
-          folderId={activeThreadRow?.folderId}
-          onRename={() => {
-            if (persistent.activeThreadId) onSidebarRename(persistent.activeThreadId);
-          }}
-          onDelete={() => {
-            if (persistent.activeThreadId) onSidebarDelete(persistent.activeThreadId);
-          }}
-          onTogglePin={() => {
-            if (persistent.activeThreadId) onSidebarTogglePin(persistent.activeThreadId);
-          }}
-          onMoveToFolder={(fid) => {
-            if (persistent.activeThreadId) {
-              void persistent.moveThreadToFolder(persistent.activeThreadId, fid);
-            }
-          }}
-        />
+        {!oracleVoiceSurface ? (
+          <ChatThreadWorkspaceMenu
+            open={threadMenuOpen}
+            onClose={() => setThreadMenuOpen(false)}
+            variant={isLg ? "popover" : "sheet"}
+            modelProfileId={modeRt.activeModelProfileId}
+            threadTitle={activeThreadRow?.title ?? "Chat"}
+            threadId={persistent.draftLaneActive ? null : persistent.activeThreadId}
+            draftActive={persistent.draftLaneActive}
+            isPinned={Boolean(activeThreadRow?.pinned)}
+            folders={persistent.folders}
+            folderId={activeThreadRow?.folderId}
+            onRename={() => {
+              if (persistent.activeThreadId) onSidebarRename(persistent.activeThreadId);
+            }}
+            onDelete={() => {
+              if (persistent.activeThreadId) onSidebarDelete(persistent.activeThreadId);
+            }}
+            onTogglePin={() => {
+              if (persistent.activeThreadId) onSidebarTogglePin(persistent.activeThreadId);
+            }}
+            onMoveToFolder={(fid) => {
+              if (persistent.activeThreadId) {
+                void persistent.moveThreadToFolder(persistent.activeThreadId, fid);
+              }
+            }}
+          />
+        ) : null}
       </div>
     );
   }
@@ -1547,18 +1639,20 @@ const SpiritChatInner = memo(function SpiritChatInner({
                 >
                   <UserRound className="h-4 w-4" aria-hidden />
                 </button>
-                <button
-                  type="button"
-                  aria-label="Thread settings"
-                  onClick={() => {
-                    setThreadMenuOpen((o) => !o);
-                    setActivityOpen(false);
-                    setProfileOpen(false);
-                  }}
-                  className="inline-flex h-8 w-8 shrink-0 touch-manipulation items-center justify-center rounded-lg border border-[color:var(--spirit-border)]/80 bg-white/[0.04] text-chalk/70"
-                >
-                  <SlidersHorizontal className="h-4 w-4" aria-hidden />
-                </button>
+                {!oracleVoiceSurface ? (
+                  <button
+                    type="button"
+                    aria-label="Thread settings"
+                    onClick={() => {
+                      setThreadMenuOpen((o) => !o);
+                      setActivityOpen(false);
+                      setProfileOpen(false);
+                    }}
+                    className="inline-flex h-8 w-8 shrink-0 touch-manipulation items-center justify-center rounded-lg border border-[color:var(--spirit-border)]/80 bg-white/[0.04] text-chalk/70"
+                  >
+                    <SlidersHorizontal className="h-4 w-4" aria-hidden />
+                  </button>
+                ) : null}
               </div>
               {modeToast ? (
                 <div className="border-b border-white/[0.06] bg-white/[0.03] px-2 py-1 text-center font-mono text-[10px] text-chalk/65">
@@ -1614,18 +1708,20 @@ const SpiritChatInner = memo(function SpiritChatInner({
                   >
                     <UserRound className="h-4 w-4" aria-hidden />
                   </button>
-                  <button
-                    type="button"
-                    aria-label="Thread settings"
-                    onClick={() => {
-                      setThreadMenuOpen((o) => !o);
-                      setActivityOpen(false);
-                      setProfileOpen(false);
-                    }}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[color:var(--spirit-border)]/80 bg-white/[0.04] text-chalk/70 transition hover:bg-white/[0.07]"
-                  >
-                    <SlidersHorizontal className="h-4 w-4" aria-hidden />
-                  </button>
+                  {!oracleVoiceSurface ? (
+                    <button
+                      type="button"
+                      aria-label="Thread settings"
+                      onClick={() => {
+                        setThreadMenuOpen((o) => !o);
+                        setActivityOpen(false);
+                        setProfileOpen(false);
+                      }}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[color:var(--spirit-border)]/80 bg-white/[0.04] text-chalk/70 transition hover:bg-white/[0.07]"
+                    >
+                      <SlidersHorizontal className="h-4 w-4" aria-hidden />
+                    </button>
+                  ) : null}
                 </div>
                 <div className="min-w-0 flex-1 sm:min-w-[12rem] sm:max-w-xl">
                   <VoiceControl
@@ -1646,6 +1742,20 @@ const SpiritChatInner = memo(function SpiritChatInner({
               </div>
             </div>
           ) : null}
+          {oracleVoiceSurface && workspaceChrome ? (
+            <div className="shrink-0 pt-1">
+              <OracleVoiceStatusCard
+                status={oracleVoiceStatus}
+                modeLabel={getModelProfile(modeRt.activeModelProfileId).shortLabel}
+                runtimeLabel={getSpiritRuntimeSurfaceDisplayLabel(runtimeSurfaceProp)}
+                voiceProviderLine={oracleVoiceBackendLabel}
+                selectedVoiceLabel={oracleSelectedVoiceLabel}
+                lastPlaybackWallMs={tts.state.lastPlaybackWallMs}
+                lastError={tts.state.lastError}
+                spiritTransportError={spiritTransportBanner}
+              />
+            </div>
+          ) : null}
           {scrollAndForm}
         </div>
       </div>
@@ -1656,7 +1766,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
             onClose={() => setActivityOpen(false)}
             variant={isLg ? "popover" : "sheet"}
             modeLabel={getModelProfile(modeRt.activeModelProfileId).shortLabel}
-            runtimeLabel={getSpiritChatRuntimeDisplayLabel()}
+            runtimeLabel={getSpiritRuntimeSurfaceDisplayLabel(runtimeSurfaceProp)}
             voiceLabel={activityVoiceLine}
             searchLabel={activitySearchLine}
             memoryLabel="Local profile only"
@@ -1670,32 +1780,34 @@ const SpiritChatInner = memo(function SpiritChatInner({
             variant={isLg ? "popover" : "sheet"}
             activeModelProfileId={modeRt.activeModelProfileId}
           />
-          <ChatThreadWorkspaceMenu
-            open={threadMenuOpen}
-            onClose={() => setThreadMenuOpen(false)}
-            variant={isLg ? "popover" : "sheet"}
-            modelProfileId={modeRt.activeModelProfileId}
-            threadTitle={activeThreadRow?.title ?? "Chat"}
-            threadId={persistent.draftLaneActive ? null : persistent.activeThreadId}
-            draftActive={persistent.draftLaneActive}
-            isPinned={Boolean(activeThreadRow?.pinned)}
-            folders={persistent.folders}
-            folderId={activeThreadRow?.folderId}
-            onRename={() => {
-              if (persistent.activeThreadId) onSidebarRename(persistent.activeThreadId);
-            }}
-            onDelete={() => {
-              if (persistent.activeThreadId) onSidebarDelete(persistent.activeThreadId);
-            }}
-            onTogglePin={() => {
-              if (persistent.activeThreadId) onSidebarTogglePin(persistent.activeThreadId);
-            }}
-            onMoveToFolder={(fid) => {
-              if (persistent.activeThreadId) {
-                void persistent.moveThreadToFolder(persistent.activeThreadId, fid);
-              }
-            }}
-          />
+          {!oracleVoiceSurface ? (
+            <ChatThreadWorkspaceMenu
+              open={threadMenuOpen}
+              onClose={() => setThreadMenuOpen(false)}
+              variant={isLg ? "popover" : "sheet"}
+              modelProfileId={modeRt.activeModelProfileId}
+              threadTitle={activeThreadRow?.title ?? "Chat"}
+              threadId={persistent.draftLaneActive ? null : persistent.activeThreadId}
+              draftActive={persistent.draftLaneActive}
+              isPinned={Boolean(activeThreadRow?.pinned)}
+              folders={persistent.folders}
+              folderId={activeThreadRow?.folderId}
+              onRename={() => {
+                if (persistent.activeThreadId) onSidebarRename(persistent.activeThreadId);
+              }}
+              onDelete={() => {
+                if (persistent.activeThreadId) onSidebarDelete(persistent.activeThreadId);
+              }}
+              onTogglePin={() => {
+                if (persistent.activeThreadId) onSidebarTogglePin(persistent.activeThreadId);
+              }}
+              onMoveToFolder={(fid) => {
+                if (persistent.activeThreadId) {
+                  void persistent.moveThreadToFolder(persistent.activeThreadId, fid);
+                }
+              }}
+            />
+          ) : null}
         </>
       ) : null}
     </div>

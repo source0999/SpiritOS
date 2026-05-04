@@ -1,0 +1,143 @@
+/* ── Spirit Demo · Animations ────────────────────────────────────────────────
+ * > Keyframes + motion utility classes + reduced-motion overrides.
+ * > All keyframe identifiers are prefixed `demo*` so they cannot collide with
+ *   any keyframes defined in the host app.
+ * > Respects `prefers-reduced-motion: reduce` — looping motion is disabled,
+ *   static gradients and layout remain.
+ * ────────────────────────────────────────────────────────────────────────── */
+
+/* ─────────── Keyframes ─────────── */
+@keyframes demoOrbBreathe {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow:
+      0 0 36px -2px color-mix(in oklab, var(--demo-cyan, #22d3ee) 50%, transparent),
+      0 0 68px -8px color-mix(in oklab, var(--demo-violet, #a855f7) 45%, transparent),
+      inset 0 0 28px -6px rgba(255, 255, 255, 0.32);
+  }
+  50% {
+    transform: scale(1.04);
+    box-shadow:
+      0 0 48px 0 color-mix(in oklab, var(--demo-cyan, #22d3ee) 60%, transparent),
+      0 0 88px -4px color-mix(in oklab, var(--demo-violet, #a855f7) 55%, transparent),
+      inset 0 0 32px -4px rgba(255, 255, 255, 0.4);
+  }
+}
+
+@keyframes demoOrbHalo {
+  0%, 100% { opacity: 0.7; transform: scale(1); }
+  50%      { opacity: 1;   transform: scale(1.06); }
+}
+
+@keyframes demoOrbPulse {
+  0%, 100% { transform: scale(1);    opacity: 0.4; }
+  50%      { transform: scale(1.08); opacity: 0.85; }
+}
+
+@keyframes demoWave {
+  0%, 100% { height: 18%; }
+  20%      { height: 65%; }
+  40%      { height: 30%; }
+  60%      { height: 90%; }
+  80%      { height: 45%; }
+}
+
+@keyframes demoPulseDot {
+  0%   { transform: scale(0.9);  opacity: 0.9; }
+  80%  { transform: scale(2.2);  opacity: 0; }
+  100% { transform: scale(2.4);  opacity: 0; }
+}
+
+@keyframes demoShimmer {
+  0%      { opacity: 0;    transform: translateX(-30%); }
+  10%     { opacity: 0.9; }
+  50%     { opacity: 0.9;  transform: translateX(0); }
+  90%     { opacity: 0.9; }
+  100%    { opacity: 0;    transform: translateX(30%); }
+}
+
+@keyframes demoGradientPan {
+  0%   { background-position:   0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+@keyframes demoFadeUp {
+  0%   { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes demoBlinkCaret {
+  0%, 60%   { opacity: 1; }
+  61%, 100% { opacity: 0; }
+}
+
+@keyframes demoScrollUp {
+  0%   { transform: translateY(0); }
+  100% { transform: translateY(-50%); }
+}
+
+/* ─────────── Motion utilities ─────────── */
+.spirit-demo-root .demo-motion-fade-up {
+  animation: demoFadeUp var(--demo-dur-mid) var(--demo-ease-out) both;
+}
+.spirit-demo-root .demo-motion-fade-up--delay-1 { animation-delay: 80ms; }
+.spirit-demo-root .demo-motion-fade-up--delay-2 { animation-delay: 160ms; }
+.spirit-demo-root .demo-motion-fade-up--delay-3 { animation-delay: 240ms; }
+.spirit-demo-root .demo-motion-fade-up--delay-4 { animation-delay: 320ms; }
+.spirit-demo-root .demo-motion-fade-up--delay-5 { animation-delay: 400ms; }
+
+.spirit-demo-root .demo-motion-caret {
+  animation: demoBlinkCaret 1.1s steps(1) infinite;
+}
+
+.spirit-demo-root .demo-motion-marquee {
+  display: flex;
+  flex-direction: column;
+  animation: demoScrollUp 28s linear infinite;
+}
+
+/* ─────────── Reduced motion overrides ─────────── */
+@media (prefers-reduced-motion: reduce) {
+  .spirit-demo-root *,
+  .spirit-demo-root *::before,
+  .spirit-demo-root *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  /* Keep the orb visually stable but not animated */
+  .spirit-demo-root .demo-orb__core {
+    transform: none !important;
+  }
+  .spirit-demo-root .demo-orb__halo,
+  .spirit-demo-root .demo-orb__ring {
+    opacity: 0.6 !important;
+    transform: none !important;
+  }
+  /* Keep waveform legible (static height) */
+  .spirit-demo-root .demo-wave__bar {
+    height: 38% !important;
+  }
+  /* Keep gradient text visible without panning */
+  .spirit-demo-root .demo-hero__title em {
+    background-position: 0% 50% !important;
+    animation: none !important;
+  }
+  /* Keep shimmer line invisible (no looping sweep) */
+  .spirit-demo-root .demo-shimmer {
+    opacity: 0 !important;
+    animation: none !important;
+  }
+  /* Pulse dot rings hidden — keep only the static dot */
+  .spirit-demo-root .demo-pulse-dot::after {
+    display: none !important;
+  }
+}
+
+/* Focus ring (accessibility) — always present, doesn’t care about motion */
+.spirit-demo-root :where(a, button, [role="button"]):focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--demo-cyan) 80%, transparent);
+  outline-offset: 2px;
+  border-radius: inherit;
+}

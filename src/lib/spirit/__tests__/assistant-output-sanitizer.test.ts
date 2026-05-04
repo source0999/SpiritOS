@@ -34,6 +34,17 @@ Do the thing.`;
     expect(sanitizeAssistantVisibleText(t)).toContain("Truth here");
   });
 
+  it("removes leaked coding-assistant customer-service line", () => {
+    const t = `Hey.
+
+I'm here to help with coding questions
+
+So anyway: drink water.`;
+    const out = sanitizeAssistantVisibleText(t);
+    expect(out).not.toContain("coding questions");
+    expect(out).toContain("drink water");
+  });
+
   it("keeps normal text that mentions thinking in prose", () => {
     const t = "I think we should refactor the module.";
     expect(sanitizeAssistantVisibleText(t)).toBe(t);

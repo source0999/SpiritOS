@@ -20,7 +20,7 @@ describe("response-budget", () => {
 
   it("Peer budget instructs not to default to coding", () => {
     const s = buildResponseBudgetInstruction(MODEL_PROFILES["normal-peer"], "yo", {});
-    expect(s).toContain("do NOT assume coding");
+    expect(s).toContain("do not slide into repo");
   });
 
   it("Researcher budget mentions citations and search honesty", () => {
@@ -110,5 +110,54 @@ describe("response-budget", () => {
         deepThinkEnabled: false,
       }),
     ).toBeLessThanOrEqual(320);
+  });
+
+  it("Oracle surface adds voice response budget block", () => {
+    const s = buildResponseBudgetInstruction(MODEL_PROFILES["normal-peer"], "yo", { runtimeSurface: "oracle" });
+    expect(s).toContain("Oracle voice response budget");
+    expect(s).toContain("90 words");
+  });
+
+  it("Chat surface does not add Oracle voice budget block", () => {
+    const s = buildResponseBudgetInstruction(MODEL_PROFILES["normal-peer"], "yo", { runtimeSurface: "chat" });
+    expect(s).not.toContain("Oracle voice response budget");
+  });
+
+  it("Oracle Peer caps casual tokens tighter than chat Peer", () => {
+    const chatCap = resolveSpiritMaxOutputTokens({
+      profileId: "normal-peer",
+      profileMax: 1536,
+      lastUserMessage: "hi",
+      deepThinkEnabled: false,
+      runtimeSurface: "chat",
+    });
+    const oracleCap = resolveSpiritMaxOutputTokens({
+      profileId: "normal-peer",
+      profileMax: 1536,
+      lastUserMessage: "hi",
+      deepThinkEnabled: false,
+      runtimeSurface: "oracle",
+    });
+    expect(chatCap).toBeGreaterThan(oracleCap);
+    expect(oracleCap).toBeLessThanOrEqual(280);
+  });
+
+  it("resolveSpiritMaxOutputTokens chat researcher unchanged vs oracle researcher without URLs", () => {
+    const chatCap = resolveSpiritMaxOutputTokens({
+      profileId: "researcher",
+      profileMax: 3072,
+      lastUserMessage: "compare papers on X thoroughly",
+      deepThinkEnabled: false,
+      runtimeSurface: "chat",
+    });
+    const oracleCap = resolveSpiritMaxOutputTokens({
+      profileId: "researcher",
+      profileMax: 3072,
+      lastUserMessage: "compare papers on X thoroughly",
+      deepThinkEnabled: false,
+      runtimeSurface: "oracle",
+      webVerifiedUrlCount: 0,
+    });
+    expect(chatCap).toBeGreaterThanOrEqual(oracleCap);
   });
 });

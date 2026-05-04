@@ -79,6 +79,10 @@ function isLikelyIos(): boolean {
   return /iP(hone|ad|od)/i.test(navigator.userAgent);
 }
 
+/** Tiny silent WAV (MDN-style data URL) — primes `HTMLAudioElement` on iOS inside user activation. */
+const IOS_SILENT_WAV_DATA_URL =
+  "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
+
 export type AudioQueueOptions = {
   onState?: (s: AudioQueueState) => void;
   onError?: (message: string) => void;
@@ -110,6 +114,12 @@ export class AudioQueue {
   private sessionSpokenSummaryLine?: string;
   private htmlAudioEl: HTMLAudioElement | null = null;
   private htmlAudioObjectUrl: string | null = null;
+  /**
+   * iOS Safari: `play()` on a fresh `Audio(blob)` after async `/api/tts` often throws
+   * NotAllowedError — the element was not created during the user gesture. We keep the
+   * silent `Audio()` primed in `syncPrimeFromUserGesture` and reuse it for real chunks.
+   */
+  private iosCarrierAudioEl: HTMLAudioElement | null = null;
 
   startDelayMs = 0;
   sentenceGapMs = 150;
@@ -176,10 +186,57 @@ export class AudioQueue {
   }
 
   /**
+   * Synchronous audio priming — MUST run before any `await` inside the same user gesture
+   * (iOS Safari revokes activation across microtasks). Invoked from `ensureAudioUnlocked`.
+   */
+  private syncPrimeFromUserGesture(): void {
+    if (typeof window === "undefined") return;
+    const c = this.ensureContext();
+    if (c) {
+      try {
+        void c.resume();
+      } catch {
+        /* ignore */
+      }
+    }
+    if (!isLikelyIos()) {
+      this.emit();
+      return;
+    }
+    try {
+      if (c) {
+        const osc = c.createOscillator();
+        const gain = c.createGain();
+        gain.gain.value = 0.0001;
+        osc.connect(gain);
+        gain.connect(c.destination);
+        const t0 = c.currentTime;
+        osc.start(t0);
+        osc.stop(t0 + 0.02);
+      }
+    } catch {
+      /* ignore */
+    }
+    try {
+      const a = new Audio(IOS_SILENT_WAV_DATA_URL);
+      a.setAttribute("playsinline", "");
+      (a as HTMLAudioElement & { playsInline?: boolean }).playsInline = true;
+      a.volume = 0.0001;
+      void a.play().catch(() => {});
+      // Reuse this element for blob TTS — new Audio(blobUrl) is not gesture-blessed.
+      if (isLikelyIos()) this.iosCarrierAudioEl ??= a;
+    } catch {
+      /* ignore */
+    }
+    this.emit();
+  }
+
+  /**
    * Resume AudioContext — call from a tap/handler before playback.
    * @returns false if context exists but could not enter `running` (mobile gesture / policy).
    */
   async ensureAudioUnlocked(): Promise<boolean> {
+    this.syncPrimeFromUserGesture();
     const c = this.ensureContext();
     if (!c) return true;
     try {
@@ -190,7 +247,11 @@ export class AudioQueue {
       return false;
     }
     this.emit();
-    return c.state === "running";
+    if (c.state === "running") return true;
+    // iOS WebKit sometimes lags `state` transitions after resume; blocking here caused silent TTS
+    // even when `play()` later succeeds. Trust syncPrime + resume attempt unless dead/closed.
+    if (isLikelyIos() && c.state !== "closed") return true;
+    return false;
   }
 
   /** @deprecated alias for ensureAudioUnlocked */
@@ -214,21 +275,34 @@ export class AudioQueue {
     const url = this.htmlAudioObjectUrl;
     this.htmlAudioEl = null;
     this.htmlAudioObjectUrl = null;
-    if (el) {
-      try {
-        el.pause();
-        el.removeAttribute("src");
-        el.load();
-      } catch {
-        /* ignore */
-      }
-    }
     if (url) {
       try {
         URL.revokeObjectURL(url);
       } catch {
         /* ignore */
       }
+    }
+    if (!el) return;
+    if (el === this.iosCarrierAudioEl) {
+      try {
+        el.pause();
+      } catch {
+        /* ignore */
+      }
+      try {
+        el.removeAttribute("src");
+        el.load();
+      } catch {
+        /* ignore */
+      }
+      return;
+    }
+    try {
+      el.pause();
+      el.removeAttribute("src");
+      el.load();
+    } catch {
+      /* ignore */
     }
   }
 
@@ -469,9 +543,20 @@ export class AudioQueue {
     const blob = new Blob([buf], { type: mime });
     const url = URL.createObjectURL(blob);
     this.htmlAudioObjectUrl = url;
-    const el = new Audio(url);
+
+    const carrier = isLikelyIos() ? this.iosCarrierAudioEl : null;
+    const el = carrier ?? new Audio();
+    el.src = url;
+    if (carrier) {
+      try {
+        el.load();
+      } catch {
+        /* ignore */
+      }
+    }
     el.setAttribute("playsinline", "");
     (el as HTMLAudioElement & { playsInline?: boolean }).playsInline = true;
+    if (carrier) el.volume = 1;
     this.htmlAudioEl = el;
 
     try {
@@ -715,12 +800,12 @@ export class AudioQueue {
 
         const preferHtmlFirst =
           this.sessionPreferHtmlAudioFirst ||
+          (isLikelyIos() && this.iosCarrierAudioEl != null) ||
           (typeof window !== "undefined" &&
-            (isLikelyIos() ||
-              !(
-                window.AudioContext ||
-                (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
-              )));
+            !(
+              window.AudioContext ||
+              (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+            ));
 
         let played = false;
         if (preferHtmlFirst) {

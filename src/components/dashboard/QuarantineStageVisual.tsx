@@ -95,13 +95,37 @@ export function QuarantineStageVisual({ variant = "embedded" }: Props) {
         </div>
 
         <div className="mt-auto border-t border-[color:var(--spirit-border)] pt-5">
+          <div className="mb-4 rounded-xl border border-cyan-500/20 bg-cyan-500/[0.06] px-4 py-3 text-sm leading-snug text-chalk/80">
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.24em] text-cyan-300/90">
+              Oracle Voice MVP
+            </p>
+            <p className="mt-1.5">
+              Tap-to-talk uses the browser{" "}
+              <span className="font-mono text-chalk/65">Web Speech API</span> when available;
+              text fallback always works. Still experimental — no persistent Oracle threads, wake
+              word, or local Whisper yet (
+              <a
+                href="/oracle"
+                className="text-[color:var(--spirit-accent-strong)] underline underline-offset-4 hover:brightness-110"
+              >
+                /oracle
+              </a>
+              ).
+            </p>
+          </div>
           <div className="rounded-xl border border-amber-500/25 bg-amber-500/[0.08] px-4 py-3.5">
             <p className="text-center font-mono text-[10px] font-semibold uppercase tracking-[0.32em] text-amber-300/95">
               Prototype · standby
             </p>
             <p className="mt-2 text-center text-sm leading-snug text-chalk/50">
-              No outbound voice sessions in this lane yet — ship STT/TTS before claiming
-              production containment.
+              This page stays a decorative visualizer lab — outbound voice sessions live on{" "}
+              <a
+                href="/oracle"
+                className="text-[color:var(--spirit-accent-strong)] underline underline-offset-4 hover:brightness-110"
+              >
+                /oracle
+              </a>
+              .
             </p>
           </div>
         </div>

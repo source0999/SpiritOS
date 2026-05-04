@@ -12,6 +12,22 @@ describe("model-profiles", () => {
     expect(MODEL_PROFILES.researcher.reportStyle).toBe(true);
   });
 
+  it("Peer profile does not brand itself as a coding assistant by default", () => {
+    const p = MODEL_PROFILES["normal-peer"].systemPrompt;
+    expect(p).not.toMatch(/\bcoding assistant\b/i);
+    expect(p).toContain("You are Spirit in Peer mode");
+  });
+
+  it("Peer profile describes concise conversational behavior", () => {
+    expect(MODEL_PROFILES["normal-peer"].systemPrompt).toMatch(/1 to 4 sentences|casual replies short/i);
+  });
+
+  it("Peer profile reserves technical help for when user asks", () => {
+    expect(MODEL_PROFILES["normal-peer"].systemPrompt).toMatch(
+      /technical, coding, or build help|asks for technical/i,
+    );
+  });
+
   it("mode prompts differ between Peer and Teacher", () => {
     expect(MODEL_PROFILES["normal-peer"].systemPrompt).toContain("Peer mode");
     expect(MODEL_PROFILES.teacher.systemPrompt).toContain("Teacher mode");

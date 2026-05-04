@@ -11,7 +11,9 @@ const TAG_PAIRS: Array<[RegExp, string]> = [
 
 /** Line starts that almost always mean leaked instructions (not user content). */
 const LEAK_LINE_STARTS = [
+  /^respond in ["']sassy mode["']\s*only\b/i,
   /^respond in ["']sassy mode["']/i,
+  /^I'm here to help with coding questions\b/i,
   /^respond in ["']brutal mode["']/i,
   /^keep sentences short\b/i,
   /^no hidden chain[- ]of[- ]thought\b/i,

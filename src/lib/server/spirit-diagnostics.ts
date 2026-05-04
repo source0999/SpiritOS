@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getOracleModelId, getSpiritChatModelId } from "@/lib/server/model-routing";
+import { getSttDiagnostics } from "@/lib/server/stt-provider";
 
 // ── Spirit diagnostics — env-derived labels for health JSON (no secrets) ────────
 // > Context/output/TTS copy matches runtime in route.ts + Piper / ElevenLabs wiring
@@ -100,6 +101,7 @@ export type SpiritDiagnosticsPayload = {
   oracleLaneModel: string;
   context: { label: string; source: string };
   tts: { provider: string; voice: string; source: string };
+  stt: { provider: string; url: string; source: string; transcribePath: string };
 };
 
 /** Single merge-friendly blob for /api/spirit/health JSON. */
@@ -108,6 +110,7 @@ export function getSpiritDiagnostics(): SpiritDiagnosticsPayload {
   const tts = getSpiritTtsDiagnostics();
   const cap = getMaxOutputTokensMeta();
   const oracleCap = getOracleMaxOutputTokensMeta();
+  const stt = getSttDiagnostics();
   return {
     engine: "Ollama",
     maxOutputTokens: cap.value,
@@ -121,6 +124,12 @@ export function getSpiritDiagnostics(): SpiritDiagnosticsPayload {
       provider: tts.provider,
       voice: tts.voice,
       source: tts.source,
+    },
+    stt: {
+      provider: stt.provider,
+      url: stt.url,
+      source: stt.source,
+      transcribePath: stt.transcribePath,
     },
   };
 }

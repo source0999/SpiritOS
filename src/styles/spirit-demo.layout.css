@@ -1,0 +1,387 @@
+/* ── Spirit Demo · Layout ────────────────────────────────────────────────────
+ * > Shell, section grid, mobile dock, side rail, safe-area handling.
+ * > Mobile-first. Targets iPhone 375px / Android 360px / tablet / desktop.
+ * > All selectors are nested under .spirit-demo-root — no leakage.
+ * ────────────────────────────────────────────────────────────────────────── */
+
+.spirit-demo-root {
+  position: relative;
+  min-height: 100dvh;
+  width: 100%;
+  background-color: var(--demo-bg);
+  color: var(--demo-text);
+  overflow-x: hidden;
+  /* Reserve space for mobile bottom dock (overridden on lg) */
+  padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+  font-feature-settings: "kern" 1, "liga" 1;
+}
+
+@media (min-width: 1024px) {
+  .spirit-demo-root {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    /* Reserve space for the desktop side rail */
+    padding-left: 4.5rem;
+  }
+}
+
+/* —— Atmospherics layer —— */
+.spirit-demo-root .demo-atmos {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: var(--demo-z-bg);
+}
+.spirit-demo-root .demo-atmos__aurora {
+  position: absolute;
+  inset: -10%;
+  z-index: var(--demo-z-aurora);
+  background:
+    radial-gradient(
+      ellipse 60% 45% at 18% 12%,
+      color-mix(in oklab, var(--demo-cyan) 18%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 50% 40% at 86% 30%,
+      color-mix(in oklab, var(--demo-violet) 16%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 70% 55% at 50% 110%,
+      color-mix(in oklab, var(--demo-cyan) 12%, transparent),
+      transparent 60%
+    );
+  filter: blur(20px) saturate(120%);
+  opacity: 0.85;
+}
+.spirit-demo-root .demo-atmos__grid {
+  position: absolute;
+  inset: 0;
+  z-index: var(--demo-z-grid);
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black 30%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black 30%, transparent 80%);
+  opacity: 0.6;
+}
+.spirit-demo-root .demo-atmos__noise {
+  position: absolute;
+  inset: 0;
+  z-index: var(--demo-z-noise);
+  opacity: 0.04;
+  mix-blend-mode: overlay;
+  background-image:
+    repeating-radial-gradient(
+      circle at 20% 30%,
+      rgba(255, 255, 255, 0.6) 0,
+      rgba(255, 255, 255, 0.6) 0.5px,
+      transparent 1px,
+      transparent 4px
+    );
+}
+.spirit-demo-root .demo-atmos__vignette {
+  position: absolute;
+  inset: 0;
+  z-index: var(--demo-z-grid);
+  background: radial-gradient(
+    ellipse 90% 70% at 50% 50%,
+    transparent 50%,
+    color-mix(in oklab, var(--demo-bg-deep) 92%, black) 100%
+  );
+}
+
+/* —— Shell —— */
+.spirit-demo-root .demo-shell {
+  position: relative;
+  z-index: var(--demo-z-content);
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: min(1280px, 100%);
+  margin: 0 auto;
+  padding-inline: clamp(1rem, 4vw, 2rem);
+  padding-top: calc(1rem + env(safe-area-inset-top, 0px));
+}
+
+/* —— Section bands —— */
+.spirit-demo-root .demo-section {
+  position: relative;
+  padding-block: clamp(2.5rem, 7vw, 4.5rem);
+  scroll-margin-top: 5rem;
+}
+.spirit-demo-root .demo-section + .demo-section {
+  border-top: 1px solid var(--demo-border);
+}
+
+/* —— Section header (eyebrow + title + lede) —— */
+.spirit-demo-root .demo-section__header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 56rem;
+  margin-bottom: clamp(1.5rem, 3vw, 2.25rem);
+}
+.spirit-demo-root .demo-section__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: var(--demo-text-eyebrow);
+  font-weight: 600;
+  letter-spacing: var(--demo-tracking-rail);
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--demo-accent-strong) 78%, white);
+}
+.spirit-demo-root .demo-section__eyebrow::before {
+  content: "";
+  width: 1.5rem;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--demo-accent) 70%, transparent),
+    transparent
+  );
+}
+.spirit-demo-root .demo-section__title {
+  font-size: var(--demo-text-h2);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  color: var(--demo-text);
+}
+.spirit-demo-root .demo-section__lede {
+  max-width: 42rem;
+  font-size: var(--demo-text-body);
+  line-height: 1.6;
+  color: var(--demo-text-muted);
+}
+
+/* —— Hero grid —— */
+.spirit-demo-root .demo-hero-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 640px) {
+  .spirit-demo-root .demo-hero-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+  }
+}
+@media (min-width: 1024px) {
+  .spirit-demo-root .demo-hero-grid {
+    grid-template-columns: 1.6fr 1fr 1fr;
+    gap: 1.25rem;
+  }
+}
+
+/* —— Generic 2-up / 3-up / 4-up grids —— */
+.spirit-demo-root .demo-grid-2 {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 640px) {
+  .spirit-demo-root .demo-grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+  }
+}
+
+.spirit-demo-root .demo-grid-3 {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 640px) {
+  .spirit-demo-root .demo-grid-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1024px) {
+  .spirit-demo-root .demo-grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+  }
+}
+
+.spirit-demo-root .demo-grid-4 {
+  display: grid;
+  gap: 0.875rem;
+  grid-template-columns: repeat(2, 1fr);
+}
+@media (min-width: 768px) {
+  .spirit-demo-root .demo-grid-4 {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+  }
+}
+
+/* —— Chat preview split (sidebar + transcript) —— */
+.spirit-demo-root .demo-chat-split {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+@media (min-width: 900px) {
+  .spirit-demo-root .demo-chat-split {
+    grid-template-columns: 18rem 1fr;
+    gap: 1.25rem;
+  }
+}
+
+/* —— Oracle preview split (orb + telemetry) —— */
+.spirit-demo-root .demo-oracle-split {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  align-items: stretch;
+}
+@media (min-width: 900px) {
+  .spirit-demo-root .demo-oracle-split {
+    grid-template-columns: 1.1fr 1fr;
+    gap: 1.5rem;
+  }
+}
+
+/* —— Mobile bottom dock —— */
+.spirit-demo-root .demo-dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--demo-z-dock);
+  padding: 0.5rem clamp(0.5rem, 3vw, 1rem)
+    calc(0.5rem + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(
+    180deg,
+    transparent,
+    color-mix(in oklab, var(--demo-bg-deep) 88%, black) 60%
+  );
+  pointer-events: none;
+}
+.spirit-demo-root .demo-dock__inner {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem;
+  padding: 0.4rem;
+  border-radius: var(--demo-radius-pill);
+  background: color-mix(in oklab, var(--demo-bg-deep) 82%, transparent);
+  border: 1px solid var(--demo-border);
+  box-shadow:
+    var(--demo-glow-soft),
+    var(--demo-inset-shine);
+  backdrop-filter: blur(var(--demo-blur-md));
+  -webkit-backdrop-filter: blur(var(--demo-blur-md));
+  max-width: 30rem;
+  margin: 0 auto;
+}
+@media (min-width: 1024px) {
+  .spirit-demo-root .demo-dock {
+    display: none;
+  }
+}
+
+/* —— Desktop side rail (lg+ only) —— */
+.spirit-demo-root .demo-rail {
+  display: none;
+}
+@media (min-width: 1024px) {
+  .spirit-demo-root .demo-rail {
+    display: flex;
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4.5rem;
+    z-index: var(--demo-z-rail);
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    padding-block: 1.25rem;
+    background: color-mix(in oklab, var(--demo-bg-deep) 65%, transparent);
+    border-right: 1px solid var(--demo-border);
+    backdrop-filter: blur(var(--demo-blur-md));
+    -webkit-backdrop-filter: blur(var(--demo-blur-md));
+  }
+}
+.spirit-demo-root .demo-rail__brand {
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: var(--demo-radius-md);
+  margin-bottom: 0.5rem;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(
+    140deg,
+    color-mix(in oklab, var(--demo-cyan) 22%, transparent),
+    color-mix(in oklab, var(--demo-violet) 22%, transparent)
+  );
+  border: 1px solid color-mix(in oklab, var(--demo-cyan) 32%, transparent);
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  color: var(--demo-cyan-strong);
+  box-shadow: var(--demo-glow-soft);
+}
+
+/* —— Top bar (mobile section selector + brand) —— */
+.spirit-demo-root .demo-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-block: 0.75rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid var(--demo-border);
+}
+.spirit-demo-root .demo-topbar__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+}
+.spirit-demo-root .demo-topbar__title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--demo-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.spirit-demo-root .demo-topbar__sub {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: var(--demo-text-eyebrow);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--demo-text-faint);
+}
+
+/* —— Demo banner (visual-only label) —— */
+.spirit-demo-root .demo-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.625rem 0.875rem;
+  margin-bottom: 1.5rem;
+  border-radius: var(--demo-radius-md);
+  border: 1px solid color-mix(in oklab, var(--demo-warn) 32%, transparent);
+  background: color-mix(in oklab, var(--demo-warn) 10%, transparent);
+  font-size: var(--demo-text-caption);
+  color: color-mix(in oklab, var(--demo-amber-strong) 90%, white);
+}
+.spirit-demo-root .demo-banner__label {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: var(--demo-text-eyebrow);
+  letter-spacing: var(--demo-tracking-rail);
+  text-transform: uppercase;
+  color: var(--demo-amber-strong);
+  flex-shrink: 0;
+}

@@ -1,0 +1,274 @@
+/* ── Spirit Demo · Effects ───────────────────────────────────────────────────
+ * > Glass surface treatments, accent glows, scanline overlays, orb rings,
+ *   shimmer lines. All scoped under .spirit-demo-root.
+ * ────────────────────────────────────────────────────────────────────────── */
+
+/* —— Glass surface base —— */
+.spirit-demo-root .demo-glass {
+  background: var(--demo-glass);
+  backdrop-filter: blur(var(--demo-blur-md)) saturate(115%);
+  -webkit-backdrop-filter: blur(var(--demo-blur-md)) saturate(115%);
+  border: 1px solid var(--demo-border);
+  box-shadow: var(--demo-inset-shine);
+}
+.spirit-demo-root .demo-glass--strong {
+  background: var(--demo-glass-strong);
+  border-color: var(--demo-border-strong);
+  box-shadow:
+    var(--demo-glow-soft),
+    var(--demo-inset-shine-strong);
+}
+.spirit-demo-root .demo-glass--soft {
+  background: var(--demo-glass-soft);
+  border-color: color-mix(in oklab, var(--demo-border) 60%, transparent);
+}
+
+/* —— Accent-tinted glass (per lane) —— */
+.spirit-demo-root .demo-glass--cyan {
+  background: linear-gradient(
+    160deg,
+    color-mix(in oklab, var(--demo-cyan) 7%, transparent),
+    color-mix(in oklab, var(--demo-cyan) 2%, transparent) 70%
+  );
+  border-color: color-mix(in oklab, var(--demo-cyan) 22%, transparent);
+  box-shadow: var(--demo-glow-cyan), var(--demo-inset-shine);
+}
+.spirit-demo-root .demo-glass--violet {
+  background: linear-gradient(
+    160deg,
+    color-mix(in oklab, var(--demo-violet) 8%, transparent),
+    color-mix(in oklab, var(--demo-violet) 2%, transparent) 70%
+  );
+  border-color: color-mix(in oklab, var(--demo-violet) 24%, transparent);
+  box-shadow: var(--demo-glow-violet), var(--demo-inset-shine);
+}
+.spirit-demo-root .demo-glass--rose {
+  background: linear-gradient(
+    160deg,
+    color-mix(in oklab, var(--demo-rose) 8%, transparent),
+    color-mix(in oklab, var(--demo-rose) 2%, transparent) 70%
+  );
+  border-color: color-mix(in oklab, var(--demo-rose) 26%, transparent);
+  box-shadow: var(--demo-glow-rose), var(--demo-inset-shine);
+}
+.spirit-demo-root .demo-glass--emerald {
+  background: linear-gradient(
+    160deg,
+    color-mix(in oklab, var(--demo-emerald) 7%, transparent),
+    color-mix(in oklab, var(--demo-emerald) 2%, transparent) 70%
+  );
+  border-color: color-mix(in oklab, var(--demo-emerald) 22%, transparent);
+  box-shadow: var(--demo-glow-emerald), var(--demo-inset-shine);
+}
+
+/* —— Scanline overlay (decorative; aria-hidden on host) —— */
+.spirit-demo-root .demo-scanlines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(255, 255, 255, 0.025) 0,
+    rgba(255, 255, 255, 0.025) 1px,
+    transparent 1px,
+    transparent 4px
+  );
+  opacity: 0.55;
+  mix-blend-mode: overlay;
+  border-radius: inherit;
+}
+
+/* —— Shimmer line (horizontal sweep across hero) —— */
+.spirit-demo-root .demo-shimmer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklab, var(--demo-cyan) 70%, transparent) 30%,
+    color-mix(in oklab, var(--demo-cyan-strong) 100%, transparent) 50%,
+    color-mix(in oklab, var(--demo-cyan) 70%, transparent) 70%,
+    transparent
+  );
+  opacity: 0;
+  animation: demoShimmer var(--demo-dur-shimmer) ease-in-out infinite;
+  border-radius: inherit;
+}
+
+/* —— Orb ring system (Oracle preview) —— */
+.spirit-demo-root .demo-orb {
+  position: relative;
+  width: clamp(11rem, 50vw, 16rem);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  margin-inline: auto;
+}
+.spirit-demo-root .demo-orb__halo {
+  position: absolute;
+  inset: -22%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 50%,
+    color-mix(in oklab, var(--demo-violet) 22%, transparent) 0%,
+    color-mix(in oklab, var(--demo-cyan) 14%, transparent) 35%,
+    transparent 70%
+  );
+  filter: blur(24px);
+  animation: demoOrbHalo 5s ease-in-out infinite;
+}
+.spirit-demo-root .demo-orb__ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid color-mix(in oklab, var(--demo-cyan) 35%, transparent);
+  background: color-mix(in oklab, var(--demo-cyan) 4%, transparent);
+}
+.spirit-demo-root .demo-orb__ring--1 {
+  inset: 14%;
+  animation: demoOrbPulse var(--demo-dur-breath) ease-in-out infinite;
+}
+.spirit-demo-root .demo-orb__ring--2 {
+  inset: 4%;
+  border-color: color-mix(in oklab, var(--demo-cyan) 22%, transparent);
+  animation: demoOrbPulse calc(var(--demo-dur-breath) + 600ms) ease-in-out
+    infinite reverse;
+  animation-delay: -1.2s;
+}
+.spirit-demo-root .demo-orb__ring--3 {
+  inset: -8%;
+  border-color: color-mix(in oklab, var(--demo-violet) 18%, transparent);
+  animation: demoOrbPulse calc(var(--demo-dur-breath) + 1.2s) ease-in-out
+    infinite;
+  animation-delay: -2.4s;
+}
+.spirit-demo-root .demo-orb__core {
+  position: relative;
+  width: 50%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      circle at 32% 28%,
+      rgba(255, 255, 255, 0.55),
+      rgba(255, 255, 255, 0.05) 35%,
+      transparent 70%
+    ),
+    linear-gradient(140deg, var(--demo-cyan), var(--demo-violet) 60%, #4f46e5);
+  box-shadow:
+    0 0 36px -2px color-mix(in oklab, var(--demo-cyan) 50%, transparent),
+    0 0 68px -8px color-mix(in oklab, var(--demo-violet) 45%, transparent),
+    inset 0 0 28px -6px rgba(255, 255, 255, 0.32);
+  animation: demoOrbBreathe var(--demo-dur-breath) ease-in-out infinite;
+}
+.spirit-demo-root .demo-orb__core::after {
+  content: "";
+  position: absolute;
+  inset: 6%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 70% 80%,
+    color-mix(in oklab, var(--demo-violet) 60%, transparent),
+    transparent 50%
+  );
+  mix-blend-mode: screen;
+  opacity: 0.7;
+}
+
+/* —— Audio waveform bars (Oracle preview) —— */
+.spirit-demo-root .demo-wave {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 3rem;
+  padding-inline: 0.5rem;
+}
+.spirit-demo-root .demo-wave__bar {
+  flex: 1 1 0;
+  min-width: 2px;
+  border-radius: 2px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--demo-cyan-strong) 100%, transparent),
+    color-mix(in oklab, var(--demo-cyan-deep) 80%, transparent)
+  );
+  animation: demoWave 1.4s ease-in-out infinite;
+}
+.spirit-demo-root .demo-wave__bar:nth-child(1)  { animation-delay: -0.05s; }
+.spirit-demo-root .demo-wave__bar:nth-child(2)  { animation-delay: -0.15s; }
+.spirit-demo-root .demo-wave__bar:nth-child(3)  { animation-delay: -0.25s; }
+.spirit-demo-root .demo-wave__bar:nth-child(4)  { animation-delay: -0.35s; }
+.spirit-demo-root .demo-wave__bar:nth-child(5)  { animation-delay: -0.45s; }
+.spirit-demo-root .demo-wave__bar:nth-child(6)  { animation-delay: -0.55s; }
+.spirit-demo-root .demo-wave__bar:nth-child(7)  { animation-delay: -0.65s; }
+.spirit-demo-root .demo-wave__bar:nth-child(8)  { animation-delay: -0.75s; }
+.spirit-demo-root .demo-wave__bar:nth-child(9)  { animation-delay: -0.85s; }
+.spirit-demo-root .demo-wave__bar:nth-child(10) { animation-delay: -0.95s; }
+.spirit-demo-root .demo-wave__bar:nth-child(11) { animation-delay: -1.05s; }
+.spirit-demo-root .demo-wave__bar:nth-child(12) { animation-delay: -1.15s; }
+.spirit-demo-root .demo-wave__bar:nth-child(13) { animation-delay: -1.25s; }
+.spirit-demo-root .demo-wave__bar:nth-child(14) { animation-delay: -1.35s; }
+.spirit-demo-root .demo-wave__bar:nth-child(15) { animation-delay: -1.45s; }
+.spirit-demo-root .demo-wave__bar:nth-child(16) { animation-delay: -1.55s; }
+
+/* —— Status pulse dot —— */
+.spirit-demo-root .demo-pulse-dot {
+  position: relative;
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--demo-online);
+  box-shadow: 0 0 6px color-mix(in oklab, var(--demo-online) 80%, transparent);
+}
+.spirit-demo-root .demo-pulse-dot::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 1px solid color-mix(in oklab, var(--demo-online) 60%, transparent);
+  animation: demoPulseDot 2s ease-out infinite;
+}
+.spirit-demo-root .demo-pulse-dot--warn {
+  background: var(--demo-warn);
+  box-shadow: 0 0 6px color-mix(in oklab, var(--demo-warn) 70%, transparent);
+}
+.spirit-demo-root .demo-pulse-dot--warn::after {
+  border-color: color-mix(in oklab, var(--demo-warn) 60%, transparent);
+}
+.spirit-demo-root .demo-pulse-dot--rose {
+  background: var(--demo-quarantine);
+  box-shadow: 0 0 6px color-mix(in oklab, var(--demo-quarantine) 70%, transparent);
+}
+.spirit-demo-root .demo-pulse-dot--rose::after {
+  border-color: color-mix(in oklab, var(--demo-quarantine) 60%, transparent);
+}
+
+/* —— Corner caret marks (cinematic instrument feel) —— */
+.spirit-demo-root .demo-corners {
+  position: absolute;
+  inset: 0.5rem;
+  pointer-events: none;
+}
+.spirit-demo-root .demo-corners::before,
+.spirit-demo-root .demo-corners::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-color: color-mix(in oklab, var(--demo-accent) 60%, transparent);
+  border-style: solid;
+}
+.spirit-demo-root .demo-corners::before {
+  top: 0;
+  left: 0;
+  border-width: 1px 0 0 1px;
+}
+.spirit-demo-root .demo-corners::after {
+  bottom: 0;
+  right: 0;
+  border-width: 0 1px 1px 0;
+}

@@ -1,0 +1,704 @@
+/* ── Spirit Demo · Components ────────────────────────────────────────────────
+ * > Cards, buttons, badges, panels, chat bubbles, status rows, profile chips.
+ * > Fully scoped under .spirit-demo-root.
+ * ────────────────────────────────────────────────────────────────────────── */
+
+/* ─────────── Cards ─────────── */
+.spirit-demo-root .demo-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  padding: clamp(1rem, 2.4vw, 1.4rem);
+  border-radius: var(--demo-radius-lg);
+  background: var(--demo-glass);
+  border: 1px solid var(--demo-border);
+  box-shadow: var(--demo-inset-shine);
+  backdrop-filter: blur(var(--demo-blur-md));
+  -webkit-backdrop-filter: blur(var(--demo-blur-md));
+  transition:
+    transform var(--demo-dur-mid) var(--demo-ease-out),
+    border-color var(--demo-dur-mid) var(--demo-ease-out),
+    box-shadow var(--demo-dur-mid) var(--demo-ease-out);
+}
+@media (min-width: 1024px) and (hover: hover) {
+  .spirit-demo-root .demo-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--demo-border-strong);
+    box-shadow:
+      var(--demo-glow-soft),
+      var(--demo-inset-shine-strong);
+  }
+}
+.spirit-demo-root .demo-card--feature {
+  background: linear-gradient(
+    150deg,
+    color-mix(in oklab, var(--demo-cyan) 7%, transparent),
+    color-mix(in oklab, var(--demo-violet) 4%, transparent) 60%,
+    transparent
+  );
+  border-color: color-mix(in oklab, var(--demo-cyan) 26%, transparent);
+  box-shadow: var(--demo-glow-soft), var(--demo-inset-shine-strong);
+}
+.spirit-demo-root .demo-card--quarantine {
+  border-color: color-mix(in oklab, var(--demo-rose) 32%, transparent);
+  background: linear-gradient(
+    160deg,
+    color-mix(in oklab, var(--demo-rose) 8%, transparent),
+    color-mix(in oklab, var(--demo-rose) 1.5%, transparent) 70%
+  );
+  box-shadow: var(--demo-glow-rose), var(--demo-inset-shine);
+}
+.spirit-demo-root .demo-card--oracle {
+  border-color: color-mix(in oklab, var(--demo-violet) 30%, transparent);
+  background: linear-gradient(
+    160deg,
+    color-mix(in oklab, var(--demo-violet) 8%, transparent),
+    color-mix(in oklab, var(--demo-violet) 1.5%, transparent) 70%
+  );
+  box-shadow: var(--demo-glow-violet), var(--demo-inset-shine);
+}
+
+.spirit-demo-root .demo-card__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: var(--demo-text-eyebrow);
+  font-weight: 600;
+  letter-spacing: var(--demo-tracking-rail);
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--demo-accent-strong) 80%, white);
+}
+.spirit-demo-root .demo-card--quarantine .demo-card__eyebrow {
+  color: color-mix(in oklab, var(--demo-rose-strong) 90%, white);
+}
+.spirit-demo-root .demo-card--oracle .demo-card__eyebrow {
+  color: color-mix(in oklab, var(--demo-violet-strong) 90%, white);
+}
+.spirit-demo-root .demo-card__title {
+  font-size: var(--demo-text-lead);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--demo-text);
+}
+.spirit-demo-root .demo-card__body {
+  font-size: var(--demo-text-caption);
+  line-height: 1.55;
+  color: var(--demo-text-muted);
+}
+.spirit-demo-root .demo-card__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: auto;
+  padding-top: 0.5rem;
+}
+
+/* ─────────── Buttons ─────────── */
+.spirit-demo-root .demo-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0.55rem 1.05rem;
+  border-radius: var(--demo-radius-pill);
+  border: 1px solid var(--demo-border);
+  background: var(--demo-glass-strong);
+  color: var(--demo-text);
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: var(--demo-text-caption);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    transform var(--demo-dur-fast) var(--demo-ease-out),
+    background var(--demo-dur-fast) var(--demo-ease-out),
+    border-color var(--demo-dur-fast) var(--demo-ease-out);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.spirit-demo-root .demo-btn:hover {
+  border-color: var(--demo-border-strong);
+  background: color-mix(in oklab, var(--demo-glass-strong) 100%, white 4%);
+}
+.spirit-demo-root .demo-btn:active { transform: scale(0.98); }
+.spirit-demo-root .demo-btn--primary {
+  background: color-mix(in oklab, var(--demo-cyan) 14%, transparent);
+  border-color: color-mix(in oklab, var(--demo-cyan) 42%, transparent);
+  color: var(--demo-cyan-strong);
+  box-shadow: var(--demo-glow-soft);
+}
+.spirit-demo-root .demo-btn--primary:hover {
+  background: color-mix(in oklab, var(--demo-cyan) 22%, transparent);
+  border-color: color-mix(in oklab, var(--demo-cyan) 60%, transparent);
+}
+.spirit-demo-root .demo-btn--violet {
+  background: color-mix(in oklab, var(--demo-violet) 14%, transparent);
+  border-color: color-mix(in oklab, var(--demo-violet) 42%, transparent);
+  color: var(--demo-violet-strong);
+}
+.spirit-demo-root .demo-btn--violet:hover {
+  background: color-mix(in oklab, var(--demo-violet) 22%, transparent);
+}
+.spirit-demo-root .demo-btn--rose {
+  background: color-mix(in oklab, var(--demo-rose) 12%, transparent);
+  border-color: color-mix(in oklab, var(--demo-rose) 38%, transparent);
+  color: var(--demo-rose-strong);
+}
+.spirit-demo-root .demo-btn--rose:hover {
+  background: color-mix(in oklab, var(--demo-rose) 20%, transparent);
+}
+.spirit-demo-root .demo-btn--ghost {
+  background: transparent;
+  border-color: var(--demo-border);
+  color: var(--demo-text-muted);
+}
+.spirit-demo-root .demo-btn--ghost:hover {
+  color: var(--demo-text);
+  border-color: var(--demo-border-strong);
+}
+.spirit-demo-root .demo-btn--sm {
+  min-height: 36px;
+  padding: 0.35rem 0.75rem;
+  font-size: var(--demo-text-eyebrow);
+  letter-spacing: var(--demo-tracking-rail);
+  text-transform: uppercase;
+}
+.spirit-demo-root .demo-btn[aria-disabled="true"],
+.spirit-demo-root .demo-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ─────────── Badges & chips ─────────── */
+.spirit-demo-root .demo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--demo-radius-pill);
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: var(--demo-text-eyebrow);
+  font-weight: 600;
+  letter-spacing: var(--demo-tracking-rail);
+  text-transform: uppercase;
+  border: 1px solid var(--demo-border);
+  color: var(--demo-text-muted);
+  background: var(--demo-glass-soft);
+  white-space: nowrap;
+}
+.spirit-demo-root .demo-badge--cyan {
+  border-color: color-mix(in oklab, var(--demo-cyan) 36%, transparent);
+  background: color-mix(in oklab, var(--demo-cyan) 10%, transparent);
+  color: var(--demo-cyan-strong);
+}
+.spirit-demo-root .demo-badge--violet {
+  border-color: color-mix(in oklab, var(--demo-violet) 36%, transparent);
+  background: color-mix(in oklab, var(--demo-violet) 10%, transparent);
+  color: var(--demo-violet-strong);
+}
+.spirit-demo-root .demo-badge--rose {
+  border-color: color-mix(in oklab, var(--demo-rose) 36%, transparent);
+  background: color-mix(in oklab, var(--demo-rose) 10%, transparent);
+  color: var(--demo-rose-strong);
+}
+.spirit-demo-root .demo-badge--emerald {
+  border-color: color-mix(in oklab, var(--demo-emerald) 36%, transparent);
+  background: color-mix(in oklab, var(--demo-emerald) 10%, transparent);
+  color: var(--demo-emerald-strong);
+}
+.spirit-demo-root .demo-badge--warn {
+  border-color: color-mix(in oklab, var(--demo-warn) 36%, transparent);
+  background: color-mix(in oklab, var(--demo-warn) 10%, transparent);
+  color: var(--demo-amber-strong);
+}
+
+/* ─────────── Section nav (top tabs / dock buttons) ─────────── */
+.spirit-demo-root .demo-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 auto;
+  min-height: 44px;
+  padding: 0.4rem 0.65rem;
+  border: 0;
+  background: transparent;
+  color: var(--demo-text-faint);
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: var(--demo-text-eyebrow);
+  font-weight: 600;
+  letter-spacing: var(--demo-tracking-rail);
+  text-transform: uppercase;
+  text-decoration: none;
+  border-radius: var(--demo-radius-pill);
+  cursor: pointer;
+  transition:
+    color var(--demo-dur-fast) var(--demo-ease-out),
+    background var(--demo-dur-fast) var(--demo-ease-out);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.spirit-demo-root .demo-tab:hover { color: var(--demo-text); }
+.spirit-demo-root .demo-tab[aria-current="true"],
+.spirit-demo-root .demo-tab--active {
+  color: var(--demo-cyan-strong);
+  background: color-mix(in oklab, var(--demo-cyan) 14%, transparent);
+  box-shadow: var(--demo-glow-soft);
+}
+.spirit-demo-root .demo-tab__icon {
+  display: inline-grid;
+  place-items: center;
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+.spirit-demo-root .demo-tab__label {
+  display: none;
+}
+@media (min-width: 480px) {
+  .spirit-demo-root .demo-tab__label {
+    display: inline;
+  }
+}
+
+/* ─────────── Side rail buttons ─────────── */
+.spirit-demo-root .demo-rail-btn {
+  display: grid;
+  place-items: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--demo-text-faint);
+  border-radius: var(--demo-radius-md);
+  cursor: pointer;
+  transition:
+    color var(--demo-dur-fast) var(--demo-ease-out),
+    background var(--demo-dur-fast) var(--demo-ease-out),
+    border-color var(--demo-dur-fast) var(--demo-ease-out);
+}
+.spirit-demo-root .demo-rail-btn:hover {
+  color: var(--demo-text);
+  background: var(--demo-glass);
+  border-color: var(--demo-border);
+}
+.spirit-demo-root .demo-rail-btn[aria-current="true"] {
+  color: var(--demo-cyan-strong);
+  background: color-mix(in oklab, var(--demo-cyan) 12%, transparent);
+  border-color: color-mix(in oklab, var(--demo-cyan) 32%, transparent);
+  box-shadow: var(--demo-glow-soft);
+}
+
+/* ─────────── Hero panel ─────────── */
+.spirit-demo-root .demo-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--demo-radius-xl);
+  padding: clamp(1.25rem, 4vw, 2rem);
+  min-height: 18rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1.25rem;
+  background:
+    radial-gradient(
+      ellipse 70% 90% at 100% 0%,
+      color-mix(in oklab, var(--demo-violet) 14%, transparent),
+      transparent 65%
+    ),
+    radial-gradient(
+      ellipse 80% 100% at 0% 100%,
+      color-mix(in oklab, var(--demo-cyan) 12%, transparent),
+      transparent 60%
+    ),
+    var(--demo-glass-strong);
+  border: 1px solid color-mix(in oklab, var(--demo-cyan) 22%, transparent);
+  box-shadow:
+    var(--demo-glow-cyan),
+    var(--demo-inset-shine-strong);
+  backdrop-filter: blur(var(--demo-blur-md));
+  -webkit-backdrop-filter: blur(var(--demo-blur-md));
+}
+.spirit-demo-root .demo-hero__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.spirit-demo-root .demo-hero__title {
+  font-size: var(--demo-text-h1);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: var(--demo-text);
+  margin-block: 0.25rem 0.75rem;
+}
+.spirit-demo-root .demo-hero__title em {
+  font-style: normal;
+  background: linear-gradient(
+    100deg,
+    var(--demo-cyan-strong),
+    var(--demo-violet-strong) 60%,
+    var(--demo-cyan-strong)
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+          background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: demoGradientPan 12s linear infinite;
+}
+.spirit-demo-root .demo-hero__sub {
+  max-width: 38rem;
+  font-size: var(--demo-text-body);
+  line-height: 1.55;
+  color: var(--demo-text-muted);
+}
+.spirit-demo-root .demo-hero__ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* ─────────── Status row (telemetry stripe) ─────────── */
+.spirit-demo-root .demo-status-row {
+  display: grid;
+  grid-template-columns: minmax(0, 5rem) minmax(0, 1fr) minmax(0, auto);
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: var(--demo-radius-md);
+  background: var(--demo-glass-soft);
+  border: 1px solid var(--demo-border);
+}
+.spirit-demo-root .demo-status-row + .demo-status-row { margin-top: 0.4rem; }
+.spirit-demo-root .demo-status-row__label {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: var(--demo-text-eyebrow);
+  font-weight: 600;
+  letter-spacing: var(--demo-tracking-rail);
+  text-transform: uppercase;
+  color: var(--demo-text-faint);
+}
+.spirit-demo-root .demo-status-row__value {
+  min-width: 0;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: var(--demo-text-caption);
+  color: var(--demo-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.spirit-demo-root .demo-status-row__hint {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: var(--demo-text-eyebrow);
+  letter-spacing: 0.05em;
+  color: var(--demo-text-faint);
+  white-space: nowrap;
+}
+
+/* ─────────── Diagnostics card ─────────── */
+.spirit-demo-root .demo-diag {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  border-radius: var(--demo-radius-md);
+  border: 1px solid var(--demo-border);
+  background: var(--demo-glass-soft);
+}
+.spirit-demo-root .demo-diag__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.spirit-demo-root .demo-diag__name {
+  font-size: var(--demo-text-caption);
+  font-weight: 600;
+  color: var(--demo-text);
+}
+.spirit-demo-root .demo-diag__detail {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: var(--demo-text-eyebrow);
+  letter-spacing: 0.04em;
+  color: var(--demo-text-faint);
+  word-break: break-word;
+}
+
+/* ─────────── Chat preview bubbles ─────────── */
+.spirit-demo-root .demo-chat-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-height: 0;
+}
+.spirit-demo-root .demo-chat-rail__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--demo-border);
+}
+.spirit-demo-root .demo-chat-rail__group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.spirit-demo-root .demo-chat-rail__folder {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: var(--demo-text-eyebrow);
+  letter-spacing: var(--demo-tracking-rail);
+  text-transform: uppercase;
+  color: var(--demo-text-faint);
+  padding: 0.4rem 0.55rem 0.2rem;
+}
+.spirit-demo-root .demo-chat-rail__thread {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 0.6rem;
+  border-radius: var(--demo-radius-sm);
+  font-size: var(--demo-text-caption);
+  color: var(--demo-text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: default;
+  min-height: 44px;
+}
+.spirit-demo-root .demo-chat-rail__thread--active {
+  background: color-mix(in oklab, var(--demo-cyan) 10%, transparent);
+  border-color: color-mix(in oklab, var(--demo-cyan) 28%, transparent);
+  color: var(--demo-text);
+}
+.spirit-demo-root .demo-chat-rail__thread-pin {
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: color-mix(in oklab, var(--demo-amber) 80%, transparent);
+}
+.spirit-demo-root .demo-chat-rail__thread-title {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.spirit-demo-root .demo-chat-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  min-height: 24rem;
+}
+.spirit-demo-root .demo-chat-modebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--demo-border);
+}
+.spirit-demo-root .demo-chat-stream {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+.spirit-demo-root .demo-bubble {
+  max-width: 85%;
+  padding: 0.75rem 1rem;
+  border-radius: var(--demo-radius-md);
+  font-size: var(--demo-text-body);
+  line-height: 1.55;
+  background: var(--demo-glass);
+  border: 1px solid var(--demo-border);
+  color: var(--demo-text);
+}
+.spirit-demo-root .demo-bubble--user {
+  align-self: flex-end;
+  background: color-mix(in oklab, var(--demo-cyan) 12%, transparent);
+  border-color: color-mix(in oklab, var(--demo-cyan) 28%, transparent);
+}
+.spirit-demo-root .demo-bubble--spirit {
+  align-self: flex-start;
+  background: var(--demo-glass-strong);
+}
+.spirit-demo-root .demo-bubble__role {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: var(--demo-text-eyebrow);
+  letter-spacing: var(--demo-tracking-rail);
+  text-transform: uppercase;
+  color: var(--demo-text-faint);
+  margin-bottom: 0.35rem;
+}
+.spirit-demo-root .demo-bubble--spirit .demo-bubble__role {
+  color: var(--demo-cyan-strong);
+}
+.spirit-demo-root .demo-chat-composer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-radius: var(--demo-radius-pill);
+  border: 1px solid var(--demo-border);
+  background: var(--demo-glass-soft);
+}
+.spirit-demo-root .demo-chat-composer__field {
+  flex: 1;
+  min-width: 0;
+  padding: 0.35rem 0.75rem;
+  font-family: inherit;
+  font-size: 16px; /* mobile: prevents iOS zoom */
+  color: var(--demo-text-muted);
+}
+
+/* ─────────── Profile preview ─────────── */
+.spirit-demo-root .demo-profile {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.spirit-demo-root .demo-profile__head {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+}
+.spirit-demo-root .demo-profile__avatar {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(
+    140deg,
+    color-mix(in oklab, var(--demo-cyan) 30%, transparent),
+    color-mix(in oklab, var(--demo-violet) 30%, transparent)
+  );
+  border: 1px solid color-mix(in oklab, var(--demo-cyan) 30%, transparent);
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--demo-cyan-strong);
+}
+.spirit-demo-root .demo-profile__meta-name {
+  font-size: var(--demo-text-lead);
+  font-weight: 600;
+  color: var(--demo-text);
+}
+.spirit-demo-root .demo-profile__meta-id {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: var(--demo-text-eyebrow);
+  letter-spacing: var(--demo-tracking-rail);
+  text-transform: uppercase;
+  color: var(--demo-text-faint);
+}
+
+/* —— Personality stats bars —— */
+.spirit-demo-root .demo-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.spirit-demo-root .demo-stat__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: var(--demo-text-eyebrow);
+  letter-spacing: var(--demo-tracking-rail);
+  text-transform: uppercase;
+  color: var(--demo-text-muted);
+}
+.spirit-demo-root .demo-stat__value {
+  color: var(--demo-cyan-strong);
+}
+.spirit-demo-root .demo-stat__track {
+  position: relative;
+  height: 4px;
+  border-radius: var(--demo-radius-pill);
+  background: color-mix(in oklab, var(--demo-bg-deep) 60%, transparent);
+  overflow: hidden;
+  border: 1px solid var(--demo-border);
+}
+.spirit-demo-root .demo-stat__fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    var(--demo-cyan),
+    var(--demo-violet)
+  );
+  box-shadow: 0 0 8px color-mix(in oklab, var(--demo-cyan) 50%, transparent);
+}
+
+/* —— Disabled / mock surface tag —— */
+.spirit-demo-root .demo-mock-tag {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: var(--demo-text-eyebrow);
+  letter-spacing: var(--demo-tracking-rail);
+  text-transform: uppercase;
+  color: var(--demo-text-ghost);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.spirit-demo-root .demo-mock-tag::before {
+  content: "";
+  width: 8px;
+  height: 1px;
+  background: currentColor;
+}
+
+/* —— Compact stat tile —— */
+.spirit-demo-root .demo-stat-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.85rem;
+  border-radius: var(--demo-radius-md);
+  border: 1px solid var(--demo-border);
+  background: var(--demo-glass-soft);
+}
+.spirit-demo-root .demo-stat-tile__label {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: var(--demo-text-eyebrow);
+  letter-spacing: var(--demo-tracking-rail);
+  text-transform: uppercase;
+  color: var(--demo-text-faint);
+}
+.spirit-demo-root .demo-stat-tile__value {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: var(--demo-text-h3);
+  font-weight: 600;
+  color: var(--demo-text);
+  font-feature-settings: "tnum" 1;
+}
+.spirit-demo-root .demo-stat-tile__hint {
+  font-size: var(--demo-text-eyebrow);
+  letter-spacing: 0.04em;
+  color: var(--demo-text-faint);
+}
+
+/* —— Visual divider —— */
+.spirit-demo-root .demo-divider {
+  height: 1px;
+  width: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--demo-border-strong),
+    transparent
+  );
+  border: 0;
+  margin-block: 0.5rem;
+}

@@ -6,6 +6,11 @@ import {
   resolveSpiritMaxOutputTokens,
 } from "@/lib/spirit/response-budget";
 import { buildFinalAnswerContract } from "@/lib/spirit/spirit-answer-contract";
+import {
+  buildRuntimeSurfaceInstruction,
+  DEFAULT_SPIRIT_RUNTIME_SURFACE,
+  type SpiritRuntimeSurface,
+} from "@/lib/spirit/spirit-runtime-surface";
 
 export type ModelRuntime = {
   profile: ModelProfile;
@@ -27,6 +32,8 @@ export type BuildModelRuntimeOptions = {
   researchPlanSummary?: string | null;
   /** OpenAI web prefetch: verified http(s) URL count (Researcher + Teacher — aligns digest + link-first budget). */
   webVerifiedUrlCount?: number;
+  /** `/oracle` voice surface — adds voice-first context + tighter spoken budget. */
+  runtimeSurface?: SpiritRuntimeSurface;
 };
 
 export function buildModelRuntime(
@@ -44,9 +51,13 @@ export function buildModelRuntime(
       ? opts.webVerifiedUrlCount > 0
       : Boolean(research && /Verified URL sources \(\d+\):/m.test(research));
 
+  const runtimeSurface = opts?.runtimeSurface ?? DEFAULT_SPIRIT_RUNTIME_SURFACE;
+  const surfaceInstruction = buildRuntimeSurfaceInstruction(runtimeSurface);
+
   const budget = buildResponseBudgetInstruction(profile, lastUser || " ", {
     deepThinkEnabled: deep,
     digestHasVerifiedUrls,
+    runtimeSurface,
   });
 
   const contract = buildFinalAnswerContract(profile.id, deep);
@@ -86,9 +97,11 @@ User style preferences (local, editable by the user; respect when safe, do not o
 ${extra}`
     : "";
 
+  const surfacePrefix = surfaceInstruction ? `${surfaceInstruction}\n\n` : "";
+
   const systemPrompt = `${profile.systemPrompt}
 
-${budget}${deepBlock}${researchBlock}${planBlock}${prefsBlock}
+${surfacePrefix}${budget}${deepBlock}${researchBlock}${planBlock}${prefsBlock}
 
 ${contract}`.trim();
 
@@ -101,6 +114,9 @@ ${contract}`.trim();
     profileMax,
     lastUserMessage: lastUser || " ",
     deepThinkEnabled: deep,
+    runtimeSurface,
+    webVerifiedUrlCount:
+      typeof opts?.webVerifiedUrlCount === "number" ? opts.webVerifiedUrlCount : undefined,
   });
 
   return {

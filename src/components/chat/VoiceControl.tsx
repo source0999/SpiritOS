@@ -31,6 +31,8 @@ export type VoiceControlProps = {
   onElevenLabsVoiceChange?: (voiceId: string) => void;
   disabled?: boolean;
   variant?: VoiceControlVariant;
+  /** Oracle strip — hide Voice on/off toggle; parent owns enable policy */
+  hideVoiceEnableToggle?: boolean;
 };
 
 export const VoiceControl = memo(function VoiceControl({
@@ -47,6 +49,7 @@ export const VoiceControl = memo(function VoiceControl({
   onElevenLabsVoiceChange,
   disabled = false,
   variant = "desktop",
+  hideVoiceEnableToggle = false,
 }: VoiceControlProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
@@ -59,6 +62,8 @@ export const VoiceControl = memo(function VoiceControl({
       void onRequestVoiceCatalog();
     }
   }, [mobileSheetOpen, settingsOpen, onRequestVoiceCatalog]);
+
+  const speakBlocked = disabled || (!hideVoiceEnableToggle && !state.isEnabled);
 
   const closeSettings = useCallback(() => {
     setSettingsOpen(false);
@@ -98,24 +103,26 @@ export const VoiceControl = memo(function VoiceControl({
         >
           <div className="flex flex-col gap-2.5 px-0.5">
             <div className="flex flex-wrap items-center gap-2">
+              {!hideVoiceEnableToggle ? (
+                <button
+                  type="button"
+                  onClick={onToggleEnabled}
+                  aria-pressed={state.isEnabled}
+                  className={cn(
+                    "touch-manipulation inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-2 font-mono text-[10px] font-semibold uppercase tracking-wider",
+                    state.isEnabled
+                      ? "border-[color:color-mix(in_oklab,var(--spirit-accent)_48%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-accent)_14%,transparent)] text-[color:var(--spirit-accent-strong)]"
+                      : "border-[color:var(--spirit-border)] bg-white/[0.04] text-chalk/60",
+                  )}
+                >
+                  <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", statusDot)} aria-hidden />
+                  {mounted ? (state.isEnabled ? "Voice on" : "Voice off") : "Voice"}
+                </button>
+              ) : null}
               <button
                 type="button"
-                onClick={onToggleEnabled}
-                aria-pressed={state.isEnabled}
-                className={cn(
-                  "touch-manipulation inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-2 font-mono text-[10px] font-semibold uppercase tracking-wider",
-                  state.isEnabled
-                    ? "border-[color:color-mix(in_oklab,var(--spirit-accent)_48%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-accent)_14%,transparent)] text-[color:var(--spirit-accent-strong)]"
-                    : "border-[color:var(--spirit-border)] bg-white/[0.04] text-chalk/60",
-                )}
-              >
-                <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", statusDot)} aria-hidden />
-                {mounted ? (state.isEnabled ? "Voice on" : "Voice off") : "Voice"}
-              </button>
-              <button
-                type="button"
-                disabled={!state.isEnabled}
-                aria-disabled={!state.isEnabled}
+                disabled={speakBlocked}
+                aria-disabled={speakBlocked}
                 onClick={() => void onSpeakLatestAssistant()}
                 className="touch-manipulation inline-flex shrink-0 items-center rounded-full border border-[color:color-mix(in_oklab,var(--spirit-accent)_38%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-accent)_10%,transparent)] px-3 py-2 font-mono text-[10px] font-semibold uppercase tracking-wider text-[color:var(--spirit-accent-strong)] disabled:opacity-35"
               >
@@ -157,24 +164,26 @@ export const VoiceControl = memo(function VoiceControl({
       onPointerDown={(e) => e.stopPropagation()}
     >
       <div className="flex min-h-[40px] min-w-0 items-center gap-1.5 sm:min-h-[36px]">
+        {!hideVoiceEnableToggle ? (
+          <button
+            type="button"
+            onClick={onToggleEnabled}
+            aria-pressed={state.isEnabled}
+            className={cn(
+              "touch-manipulation inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1.5 font-mono text-[9px] font-semibold uppercase tracking-wider sm:text-[10px]",
+              state.isEnabled
+                ? "border-[color:color-mix(in_oklab,var(--spirit-accent)_48%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-accent)_14%,transparent)] text-[color:var(--spirit-accent-strong)]"
+                : "border-[color:var(--spirit-border)] bg-white/[0.04] text-chalk/60",
+            )}
+          >
+            <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", statusDot)} aria-hidden />
+            {mounted ? (state.isEnabled ? "Voice on" : "Voice off") : "Voice"}
+          </button>
+        ) : null}
         <button
           type="button"
-          onClick={onToggleEnabled}
-          aria-pressed={state.isEnabled}
-          className={cn(
-            "touch-manipulation inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1.5 font-mono text-[9px] font-semibold uppercase tracking-wider sm:text-[10px]",
-            state.isEnabled
-              ? "border-[color:color-mix(in_oklab,var(--spirit-accent)_48%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-accent)_14%,transparent)] text-[color:var(--spirit-accent-strong)]"
-              : "border-[color:var(--spirit-border)] bg-white/[0.04] text-chalk/60",
-          )}
-        >
-          <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", statusDot)} aria-hidden />
-          {mounted ? (state.isEnabled ? "Voice on" : "Voice off") : "Voice"}
-        </button>
-        <button
-          type="button"
-          disabled={!state.isEnabled}
-          aria-disabled={!state.isEnabled}
+          disabled={speakBlocked}
+          aria-disabled={speakBlocked}
           onClick={() => void onSpeakLatestAssistant()}
           className="touch-manipulation inline-flex shrink-0 items-center rounded-full border border-[color:color-mix(in_oklab,var(--spirit-accent)_38%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-accent)_10%,transparent)] px-2.5 py-1.5 font-mono text-[9px] font-semibold uppercase tracking-wider text-[color:var(--spirit-accent-strong)] disabled:opacity-35 sm:text-[10px]"
         >

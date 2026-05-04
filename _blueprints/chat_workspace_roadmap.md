@@ -66,6 +66,8 @@ _Reference (old repo): draft-first composer, rail auto-collapse hints — recrea
 ### Phase 6 — Voice / TTS / STT
 
 - **Prompt 9C (shipped):** server-side TTS abstraction (`TTS_PROVIDER=piper|elevenlabs`), Piper fallback, `/api/tts` response headers for latency diagnostics, mobile-first `/chat` (thread drawer, diagnostics hidden below `lg`), Oracle lane `ORACLE_OLLAMA_MODEL` via `runtimeSurface` on `/api/spirit` (TTS stays `/api/tts` — never through the LLM).
+- **Prompt 10D-D (shipped baseline):** `/oracle` is voice-first — **`OracleVoiceSurface`** + **`useOracleSpeechInput`** (MediaRecorder → **`/api/stt/transcribe`** → Whisper; browser Web Speech not primary), session loop + ephemeral (`persistence={false}`), same `/api/spirit` + `/api/tts` stack as `/chat`; see **`_blueprints/oracle_voice_mvp.md`**.
+- **Prompt 10D-E (shipped):** Oracle is now a true **hands-free session** — amplitude VAD in `useOracleSpeechInput` auto-stops after silence (default `1.2s` past `0.035` threshold, `700ms` min recording, `60s` hard cap), submits the Whisper transcript, speaks the reply, and re-arms recording 500ms after TTS finishes. **Finish now** stays as a backup button; `Stop session` is the explicit kill. `getOracleBrowserCapabilityReport(mounted)` gates the loop on a secure context — plain `http://` to a LAN/Tailscale IP renders an unmissable warning + same-host HTTPS upgrade link. Status machine adds `hearing-speech`, `silence-detected`, `restarting`, `blocked`. Loop default is `hands-free`; push-to-talk + text fallback remain knobs.
 - Oracle/quarantine pipelines feed here only after desktop chat parity.
 
 ### Phase 7 — Homelab widgets & tools

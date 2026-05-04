@@ -1,0 +1,111 @@
+/* ── Spirit Demo · Tokens ─────────────────────────────────────────────────────
+ * > Visual-only design demo (see _blueprints/design_demo.md).
+ * > All variables live under `.spirit-demo-root` so they cannot bleed into the
+ *   main production app. Reuse existing app tokens where safe; add demo-only
+ *   aliases for color-mix combinations + motion + radii.
+ *
+ * Token strategy:
+ *   - Inherit `--spirit-bg`, `--spirit-accent`, etc. from the host theme.
+ *   - Define demo-local color aliases for cyan / violet / rose / emerald /
+ *     amber so we can switch the demo's accent without touching the app.
+ *   - Provide z-index scale, radius scale, and glow strengths for layering.
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+.spirit-demo-root {
+  /* —— Surface palette (all derived; no opaque hex outside resolved tokens) —— */
+  --demo-bg: var(--spirit-bg, #090a0f);
+  --demo-bg-deep: #050609;
+  --demo-glass: rgba(255, 255, 255, 0.025);
+  --demo-glass-strong: rgba(255, 255, 255, 0.045);
+  --demo-glass-soft: rgba(255, 255, 255, 0.012);
+  --demo-border: rgba(255, 255, 255, 0.07);
+  --demo-border-strong: rgba(255, 255, 255, 0.12);
+  --demo-text: #f4f4f5;
+  --demo-text-muted: rgba(244, 244, 245, 0.62);
+  --demo-text-faint: rgba(244, 244, 245, 0.38);
+  --demo-text-ghost: rgba(244, 244, 245, 0.22);
+
+  /* —— Accent system (host-aware with sane fallbacks) —— */
+  --demo-cyan: #22d3ee;
+  --demo-cyan-strong: #67e8f9;
+  --demo-cyan-deep: #0e7490;
+  --demo-violet: #a855f7;
+  --demo-violet-strong: #c084fc;
+  --demo-violet-deep: #6b21a8;
+  --demo-rose: #f43f5e;
+  --demo-rose-strong: #fb7185;
+  --demo-emerald: #10b981;
+  --demo-emerald-strong: #34d399;
+  --demo-amber: #f59e0b;
+  --demo-amber-strong: #fbbf24;
+
+  /* —— Semantic accents (use these in components) —— */
+  --demo-accent: var(--spirit-accent, var(--demo-cyan));
+  --demo-accent-strong: var(--spirit-accent-strong, var(--demo-cyan-strong));
+  --demo-oracle: var(--demo-violet);
+  --demo-quarantine: var(--demo-rose);
+  --demo-online: var(--demo-emerald);
+  --demo-warn: var(--demo-amber);
+
+  /* —— Glow strengths —— */
+  --demo-glow-cyan: 0 0 64px -8px color-mix(in oklab, var(--demo-cyan) 38%, transparent);
+  --demo-glow-violet: 0 0 64px -8px color-mix(in oklab, var(--demo-violet) 36%, transparent);
+  --demo-glow-rose: 0 0 64px -8px color-mix(in oklab, var(--demo-rose) 32%, transparent);
+  --demo-glow-emerald: 0 0 48px -10px color-mix(in oklab, var(--demo-emerald) 40%, transparent);
+  --demo-glow-soft: 0 0 28px -10px color-mix(in oklab, var(--demo-cyan) 22%, transparent);
+  --demo-inset-shine: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --demo-inset-shine-strong: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+
+  /* —— Radii (consistent with editorial luxury rhythm) —— */
+  --demo-radius-xs: 0.5rem;
+  --demo-radius-sm: 0.75rem;
+  --demo-radius-md: 1rem;
+  --demo-radius-lg: 1.5rem;
+  --demo-radius-xl: 2rem;
+  --demo-radius-pill: 999px;
+
+  /* —— Blur depths —— */
+  --demo-blur-sm: 8px;
+  --demo-blur-md: 16px;
+  --demo-blur-lg: 28px;
+
+  /* —— Spacing rhythm (mobile-first, fluid) —— */
+  --demo-space-xs: 0.5rem;
+  --demo-space-sm: 0.75rem;
+  --demo-space-md: 1rem;
+  --demo-space-lg: 1.5rem;
+  --demo-space-xl: 2.25rem;
+  --demo-space-2xl: 3.5rem;
+
+  /* —— Typography rhythm (matches host text-* fluid scales) —— */
+  --demo-text-eyebrow: 0.625rem; /* 10px, mono-uppercase rails */
+  --demo-text-micro: 0.6875rem;
+  --demo-text-caption: 0.75rem;
+  --demo-text-body: 0.9375rem;
+  --demo-text-lead: clamp(1.05rem, 1.6vw, 1.25rem);
+  --demo-text-h3: clamp(1.25rem, 2.4vw, 1.6rem);
+  --demo-text-h2: clamp(1.6rem, 3.6vw, 2.4rem);
+  --demo-text-h1: clamp(2.1rem, 6.5vw, 3.4rem);
+  --demo-tracking-rail: 0.18em;
+  --demo-tracking-mono: 0.04em;
+
+  /* —— Z-index scale (explicit, no surprise stacking) —— */
+  --demo-z-bg: 0;
+  --demo-z-aurora: 1;
+  --demo-z-grid: 2;
+  --demo-z-noise: 3;
+  --demo-z-content: 10;
+  --demo-z-rail: 20;
+  --demo-z-dock: 40;
+  --demo-z-overlay: 60;
+
+  /* —— Motion durations (overridden for reduced-motion in animations.css) —— */
+  --demo-dur-fast: 200ms;
+  --demo-dur-mid: 400ms;
+  --demo-dur-slow: 800ms;
+  --demo-dur-breath: 4.2s;
+  --demo-dur-aurora: 22s;
+  --demo-dur-shimmer: 9s;
+  --demo-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --demo-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+}

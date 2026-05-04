@@ -44,6 +44,14 @@ describe("parseSpiritChatRequestBody", () => {
     expect(out.modelProfileId).toBe(DEFAULT_MODEL_PROFILE_ID);
   });
 
+  it("invalid runtimeSurface strings fall back to chat", () => {
+    const out = parseSpiritChatRequestBody({
+      messages: [minimalUserMessage],
+      runtimeSurface: "nope",
+    });
+    expect(out.runtimeSurface).toBe("chat");
+  });
+
   it("accepts runtimeSurface oracle", () => {
     const out = parseSpiritChatRequestBody({
       messages: [minimalUserMessage],

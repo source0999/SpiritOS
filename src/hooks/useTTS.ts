@@ -97,6 +97,10 @@ export type UseTtsState = AudioQueueState & {
   lastError?: string;
   lastLatency?: TtsLatency;
   lastVoiceNote?: "interrupted";
+  /** Wall-clock ms when /api/tts playback latency was logged (Oracle status card). */
+  lastPlaybackWallMs?: number;
+  /** Wall-clock ms when user invoked Stop (Oracle "stopped" hint). */
+  lastUserStopAtMs?: number | null;
   /** From GET /api/tts/voices (Prompt 9L). */
   voicesSource?: string;
   voicesAllowlistMode?: string;
@@ -131,6 +135,10 @@ export function useTTS() {
   const [lastVoiceNote, setLastVoiceNote] = useState<"interrupted" | undefined>(
     undefined,
   );
+  const [lastPlaybackWallMs, setLastPlaybackWallMs] = useState<number | undefined>(
+    undefined,
+  );
+  const [lastUserStopAtMs, setLastUserStopAtMs] = useState<number | null>(null);
 
   const queueRef = useRef<AudioQueue | null>(null);
 
@@ -146,6 +154,8 @@ export function useTTS() {
         onLatency: (m) => {
           setLastVoiceNote(undefined);
           setLastLatency(m);
+          setLastPlaybackWallMs(Date.now());
+          setLastUserStopAtMs(null);
         },
         onPlaybackEvent,
       });
@@ -329,6 +339,7 @@ export function useTTS() {
   const prime = ensureAudioUnlocked;
 
   const stop = useCallback(() => {
+    setLastUserStopAtMs(Date.now());
     getQueue().stop();
   }, [getQueue]);
 
@@ -343,6 +354,7 @@ export function useTTS() {
     ) => {
       if (!isEnabledRef.current) return;
       setLastError(undefined);
+      setLastUserStopAtMs(null);
       getQueue().speak(text, {
         interrupt: options?.interrupt ?? true,
         preferHtmlAudioFirst: options?.preferHtmlAudioFirst,
@@ -363,6 +375,7 @@ export function useTTS() {
     ) => {
       if (!isEnabledRef.current) return;
       setLastError(undefined);
+      setLastUserStopAtMs(null);
       getQueue().speakMany(texts, {
         interrupt: options?.interrupt ?? true,
         preferHtmlAudioFirst: options?.preferHtmlAudioFirst,
@@ -376,6 +389,7 @@ export function useTTS() {
     (text: string) => {
       if (!isEnabledRef.current) return;
       setLastError(undefined);
+      setLastUserStopAtMs(null);
       getQueue().enqueue(text);
     },
     [getQueue],
@@ -404,6 +418,8 @@ export function useTTS() {
       lastError,
       lastLatency,
       lastVoiceNote,
+      lastPlaybackWallMs,
+      lastUserStopAtMs,
     }),
     [
       queueUi,
@@ -423,6 +439,8 @@ export function useTTS() {
       lastError,
       lastLatency,
       lastVoiceNote,
+      lastPlaybackWallMs,
+      lastUserStopAtMs,
     ],
   );
 

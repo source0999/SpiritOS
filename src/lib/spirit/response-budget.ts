@@ -1,6 +1,7 @@
 // ── response-budget — match verbosity to prompt + mode (Prompt 10B + 10C) ─────────
 
 import type { ModelProfile, ModelProfileId } from "@/lib/spirit/model-profile.types";
+import type { SpiritRuntimeSurface } from "@/lib/spirit/spirit-runtime-surface";
 
 const CASUAL_MAX_CHARS = 140;
 const RESEARCH_HINT =
@@ -43,12 +44,17 @@ export function mentionsCodeOrBuild(text: string): boolean {
 export function buildResponseBudgetInstruction(
   profile: ModelProfile,
   userMessage: string,
-  opts?: { deepThinkEnabled?: boolean; digestHasVerifiedUrls?: boolean },
+  opts?: {
+    deepThinkEnabled?: boolean;
+    digestHasVerifiedUrls?: boolean;
+    runtimeSurface?: SpiritRuntimeSurface;
+  },
 ): string {
   const casual = isLikelyCasualShortMessage(userMessage);
   const deep = Boolean(opts?.deepThinkEnabled);
   const budget = profile.responseBudget ?? "medium";
   const maxS = profile.casualMaxSentences ?? 4;
+  const surface = opts?.runtimeSurface ?? "chat";
 
   const lines: string[] = [
     "## Response budget (mandatory)",
@@ -59,11 +65,11 @@ export function buildResponseBudgetInstruction(
 
   if (profile.id === "normal-peer") {
     lines.push(
-      `- Peer: do NOT assume coding work unless the user mentions code, repo, Cursor, terminal, bug, dev, app, feature, or project work.`,
-      `- For casual small talk: ${maxS} short sentences max (roughly 1–3). No customer-service phrasing, no unsolicited life coaching.`,
+      `- Peer: do not slide into repo/dev/productivity framing unless the user clearly asks technical or coding questions.`,
+      `- For casual small talk: ${maxS} short sentences max (roughly 1–4). No customer-service phrasing, no unsolicited life coaching.`,
     );
     if (casual && !mentionsCodeOrBuild(userMessage)) {
-      lines.push(`- This user message reads casual/non-technical: keep it human, short, and off the IDE unless they steer technical.`);
+      lines.push(`- This user message reads casual/non-technical: stay conversational — no IDE/repo defaults unless they steer there.`);
     }
   }
 
@@ -134,6 +140,17 @@ export function buildResponseBudgetInstruction(
     }
   }
 
+  if (surface === "oracle") {
+    lines.push(
+      "## Oracle voice response budget (mandatory on this surface)",
+      `- Voice-first: default to **1–5 sentences** unless the user explicitly asks for depth or detail.`,
+      `- Prefer short spoken answers (~**90 words** or fewer for Peer/Sassy casual turns).`,
+      `- Brutal (Oracle): stay sharp and direct — not a long teardown unless asked.`,
+      `- Teacher (Oracle): explain clearly; do **not** dump a whole lesson unless the user asks for depth.`,
+      `- Researcher (Oracle): if verified web sources are **not** attached for this turn, say honestly what would need checking — **never invent citations or URLs**.`,
+    );
+  }
+
   return lines.join("\n");
 }
 
@@ -146,6 +163,10 @@ export function resolveSpiritMaxOutputTokens(opts: {
   profileMax: number;
   lastUserMessage: string;
   deepThinkEnabled: boolean;
+  /** Voice-only `/oracle` lane — tighter spoken ceilings; `/chat` omits or passes `"chat"`. */
+  runtimeSurface?: SpiritRuntimeSurface;
+  /** Researcher: digest URL count from OpenAI web prefetch (server). */
+  webVerifiedUrlCount?: number;
 }): number {
   const raw = Number.isFinite(opts.profileMax) && opts.profileMax > 0 ? opts.profileMax : 1536;
   const last = opts.lastUserMessage.trim();
@@ -161,6 +182,11 @@ export function resolveSpiritMaxOutputTokens(opts: {
     codey ||
     last.length > CASUAL_MAX_CHARS ||
     (opts.profileId === "researcher" && !casual);
+
+  const hasVerifiedResearchUrls =
+    opts.profileId === "researcher" &&
+    typeof opts.webVerifiedUrlCount === "number" &&
+    opts.webVerifiedUrlCount > 0;
 
   const capSassy = () => {
     if (allowLong) return Math.min(raw, 1024);
@@ -184,21 +210,49 @@ export function resolveSpiritMaxOutputTokens(opts: {
   };
   const capResearcher = () => Math.min(raw, 3072);
 
+  let base: number;
   switch (opts.profileId) {
     case "sassy-chaotic":
-      return capSassy();
+      base = capSassy();
+      break;
     case "brutal":
-      return capBrutal();
+      base = capBrutal();
+      break;
     case "normal-peer":
-      return capPeer();
+      base = capPeer();
+      break;
     case "teacher":
-      return capTeacher();
+      base = capTeacher();
+      break;
     case "researcher": {
       let cap = capResearcher();
       if (deep) cap = Math.min(cap + 256, 4096);
-      return cap;
+      base = cap;
+      break;
     }
     default:
-      return capPeer();
+      base = capPeer();
+  }
+
+  if (opts.runtimeSurface !== "oracle") return base;
+
+  /** Spoken voice lane — never shrink `/chat`; only applies when `runtimeSurface === "oracle"`. */
+  switch (opts.profileId) {
+    case "normal-peer":
+      return allowLong ? Math.min(base, 1536) : Math.min(base, 260);
+    case "sassy-chaotic":
+      return allowLong ? Math.min(base, 1024) : Math.min(base, 220);
+    case "brutal":
+      return allowLong ? Math.min(base, 1200) : Math.min(base, 320);
+    case "teacher":
+      return teachWants || last.length > CASUAL_MAX_CHARS
+        ? Math.min(base, 2400)
+        : Math.min(base, 560);
+    case "researcher": {
+      if (hasVerifiedResearchUrls) return Math.min(base, 3072);
+      return Math.min(base, deep ? 2200 : 1600);
+    }
+    default:
+      return Math.min(base, 260);
   }
 }

@@ -4,6 +4,91 @@ import { buildModelRuntime } from "@/lib/spirit/model-runtime";
 import { MODEL_PROFILES } from "@/lib/spirit/model-profiles";
 
 describe("buildModelRuntime", () => {
+  it("Chat Peer does not include Oracle Voice surface instruction", () => {
+    const r = buildModelRuntime("normal-peer", { lastUserMessage: "yo" });
+    expect(r.systemPrompt).not.toContain("## Oracle Voice surface");
+  });
+
+  it("Oracle Peer includes live voice / spoken conversation surface instruction", () => {
+    const r = buildModelRuntime("normal-peer", {
+      lastUserMessage: "yo",
+      runtimeSurface: "oracle",
+    });
+    expect(r.systemPrompt).toContain("## Oracle Voice surface");
+    expect(r.systemPrompt).toMatch(/live spoken conversation|spoken conversation surface/i);
+  });
+
+  it("Oracle Peer forbids defaulting to coding unless user brings it up", () => {
+    const r = buildModelRuntime("normal-peer", {
+      lastUserMessage: "yo",
+      runtimeSurface: "oracle",
+    });
+    expect(r.systemPrompt).toMatch(/Do not default to coding|coding workspace/i);
+  });
+
+  it("Oracle Peer includes short spoken response guidance", () => {
+    const r = buildModelRuntime("normal-peer", {
+      lastUserMessage: "yo",
+      runtimeSurface: "oracle",
+    });
+    expect(r.systemPrompt).toMatch(/short enough to speak|Voice-first|90 words/i);
+  });
+
+  it("Oracle surface instruction appears after profile prompt and before personalization", () => {
+    const r = buildModelRuntime("normal-peer", {
+      lastUserMessage: "x",
+      runtimeSurface: "oracle",
+      personalizationSummary: "Tone: dry humor",
+    });
+    const idxPeer = r.systemPrompt.indexOf(MODEL_PROFILES["normal-peer"].systemPrompt);
+    const idxOracle = r.systemPrompt.indexOf("## Oracle Voice surface");
+    const idxPrefs = r.systemPrompt.indexOf("User style preferences");
+    expect(idxPeer).toBeGreaterThanOrEqual(0);
+    expect(idxOracle).toBeGreaterThan(idxPeer);
+    expect(idxPrefs).toBeGreaterThan(idxOracle);
+  });
+
+  it("Oracle surface instruction does not remove personalization summary", () => {
+    const r = buildModelRuntime("normal-peer", {
+      lastUserMessage: "x",
+      runtimeSurface: "oracle",
+      personalizationSummary: "Prefer concise replies",
+    });
+    expect(r.systemPrompt).toContain("Prefer concise replies");
+  });
+
+  it("Teacher + oracle surface still builds valid runtime", () => {
+    const r = buildModelRuntime("teacher", {
+      lastUserMessage: "what is gravity",
+      runtimeSurface: "oracle",
+    });
+    expect(r.profile.id).toBe("teacher");
+    expect(r.systemPrompt).toContain("## Oracle Voice surface");
+    expect(r.systemPrompt).toContain("Teacher mode");
+  });
+
+  it("Researcher + oracle surface still builds valid runtime", () => {
+    const r = buildModelRuntime("researcher", {
+      lastUserMessage: "sources please",
+      runtimeSurface: "oracle",
+    });
+    expect(r.profile.id).toBe("researcher");
+    expect(r.systemPrompt).toContain("## Oracle Voice surface");
+    expect(r.systemPrompt).toContain("Researcher mode");
+  });
+
+  it("Oracle surface instruction precedes web research digest", () => {
+    const digest = "## Web research digest (stub)\nVerified URL sources (1):";
+    const r = buildModelRuntime("researcher", {
+      lastUserMessage: "x",
+      runtimeSurface: "oracle",
+      researchWebContext: digest,
+    });
+    expect(r.systemPrompt.indexOf("## Oracle Voice surface")).toBeLessThan(
+      r.systemPrompt.indexOf("## Web research digest"),
+    );
+  });
+
   it("returns profile systemPrompt and temperature", () => {
     const r = buildModelRuntime("brutal");
     expect(r.profile.id).toBe("brutal");
