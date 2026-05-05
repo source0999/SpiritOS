@@ -1,0 +1,617 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>SpiritOS · Finished Quarantine Demo</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Oxanium:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+    :root {
+      --hue: 300;
+      --bg-0: oklch(0.115 0.015 280);
+      --bg-1: oklch(0.155 0.018 280);
+      --bg-2: oklch(0.19 0.02 280);
+      --glass-1: rgb(255 255 255 / 0.035);
+      --glass-2: rgb(255 255 255 / 0.06);
+      --glass-3: rgb(255 255 255 / 0.09);
+      --stroke-1: rgb(255 255 255 / 0.07);
+      --stroke-2: rgb(255 255 255 / 0.12);
+      --stroke-3: rgb(255 255 255 / 0.18);
+      --text-1: oklch(0.975 0.005 280);
+      --text-2: oklch(0.86 0.008 280);
+      --text-3: oklch(0.66 0.012 280);
+      --text-4: oklch(0.48 0.014 280);
+      --text-5: oklch(0.36 0.012 280);
+      --spirit-200: oklch(0.86 0.10 var(--hue));
+      --spirit-300: oklch(0.78 0.14 var(--hue));
+      --spirit-400: oklch(0.70 0.18 var(--hue));
+      --spirit-500: oklch(0.60 0.22 var(--hue));
+      --spirit-600: oklch(0.50 0.20 var(--hue));
+      --spirit-700: oklch(0.40 0.16 var(--hue));
+      --good: oklch(0.74 0.16 160);
+      --warn: oklch(0.80 0.16 80);
+      --bad: oklch(0.66 0.20 25);
+      --info: oklch(0.72 0.14 230);
+      --shadow-1: 0 1px 2px rgb(0 0 0 / 0.45), 0 18px 42px -22px rgb(0 0 0 / 0.85);
+      --shadow-2: 0 2px 6px rgb(0 0 0 / 0.45), 0 32px 70px -28px rgb(0 0 0 / 0.85);
+      --inner: inset 0 1px 0 rgb(255 255 255 / 0.10), inset 0 0 0 1px rgb(255 255 255 / 0.035);
+      --radius-card: 24px;
+      --gap: 16px;
+      --font-body: "Space Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      --font-tech: "Oxanium", "Space Grotesk", system-ui, sans-serif;
+      --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+      color-scheme: dark;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      font-family: var(--font-body);
+      background: var(--bg-0);
+      color: var(--text-1);
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+      overflow-x: hidden;
+    }
+    body[data-density="compact"] { --gap: 10px; --radius-card: 18px; }
+    body[data-density="spacious"] { --gap: 22px; --radius-card: 28px; }
+    body[data-quarantine="off"] .quarantine-card { display: none; }
+    body[data-grain="off"] .ambient::after { display: none; }
+
+    button, input, select { font: inherit; color: inherit; }
+    button { cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+    a { color: inherit; text-decoration: none; }
+    .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+    .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+    .serif { font-family: var(--font-tech); letter-spacing: -0.02em; font-weight: 700; text-transform: uppercase; }
+
+    .ambient {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background: var(--bg-0);
+      overflow: hidden;
+    }
+    .ambient::before {
+      content: "";
+      position: absolute;
+      inset: -24%;
+      background:
+        radial-gradient(45% 38% at 16% 18%, oklch(0.50 0.22 var(--hue) / 0.32), transparent 70%),
+        radial-gradient(38% 35% at 86% 24%, oklch(0.44 0.16 245 / 0.24), transparent 68%),
+        radial-gradient(48% 40% at 50% 100%, oklch(0.46 0.20 calc(var(--hue) + 25) / 0.26), transparent 74%),
+        radial-gradient(35% 28% at 84% 82%, oklch(0.60 0.22 var(--hue) / 0.18), transparent 70%);
+      filter: blur(24px) saturate(125%);
+      animation: drift 36s ease-in-out infinite alternate;
+    }
+    .ambient::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgb(255 255 255 / 0.022) 1px, transparent 1px),
+        linear-gradient(90deg, rgb(255 255 255 / 0.018) 1px, transparent 1px);
+      background-size: 42px 42px;
+      mask-image: radial-gradient(circle at 50% 20%, black, transparent 80%);
+      opacity: 0.38;
+      mix-blend-mode: overlay;
+    }
+    @keyframes drift { from { transform: translate3d(-1.2%, 0, 0) scale(1); } to { transform: translate3d(1.8%, -1.4%, 0) scale(1.045); } }
+
+    .app-shell { position: relative; z-index: 1; display: grid; grid-template-columns: 248px minmax(0, 1fr); min-height: 100vh; }
+    .desktop-sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--stroke-1);
+      background: color-mix(in oklch, var(--bg-0) 84%, transparent);
+      backdrop-filter: blur(22px) saturate(145%);
+      -webkit-backdrop-filter: blur(22px) saturate(145%);
+      z-index: 10;
+    }
+    .brand { height: 72px; display: flex; align-items: center; gap: 12px; padding: 0 18px; border-bottom: 1px solid var(--stroke-1); }
+    .logo {
+      width: 34px; height: 34px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--spirit-300), var(--spirit-700) 72%, oklch(0.20 0.08 280));
+      display: grid; place-items: center;
+      box-shadow: var(--inner), 0 10px 25px -12px var(--spirit-500);
+      position: relative;
+      flex: 0 0 auto;
+    }
+    .logo::after { content: "✦"; color: white; font-size: 15px; filter: drop-shadow(0 0 6px rgb(255 255 255 / .35)); }
+    .brand-title { line-height: 1.1; min-width: 0; }
+    .brand-title strong { display: block; font-size: 14px; letter-spacing: -0.015em; }
+    .brand-title span { display: block; margin-top: 4px; font-size: 9px; color: var(--text-4); letter-spacing: .18em; text-transform: uppercase; }
+
+    .nav { flex: 1; padding: 18px 12px; display: flex; flex-direction: column; gap: 4px; }
+    .nav-label, .eyebrow { display: inline-flex; align-items: center; gap: 7px; font-size: 10px; color: var(--text-4); letter-spacing: .18em; text-transform: uppercase; font-family: var(--font-mono); font-weight: 600; }
+    .dot { width: 5px; height: 5px; border-radius: 999px; background: var(--spirit-400); box-shadow: 0 0 10px var(--spirit-500); }
+    .nav-label { padding: 0 10px 10px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 11px;
+      min-height: 42px;
+      padding: 0 12px;
+      border-radius: 14px;
+      border: 1px solid transparent;
+      color: var(--text-3);
+      font-size: 13px;
+      font-weight: 600;
+      transition: 160ms ease;
+    }
+    .nav-item:hover, .nav-item.active {
+      color: var(--text-1);
+      background: linear-gradient(180deg, color-mix(in oklch, var(--spirit-500) 17%, transparent), rgb(255 255 255 / 0.025));
+      border-color: color-mix(in oklch, var(--spirit-500) 34%, transparent);
+      box-shadow: var(--inner);
+    }
+    .nav-icon { width: 20px; height: 20px; display: grid; place-items: center; font-size: 14px; opacity: .95; }
+    .nav-code { margin-left: auto; font-size: 9px; color: var(--spirit-300); border: 1px solid color-mix(in oklch, var(--spirit-500) 22%, transparent); background: color-mix(in oklch, var(--spirit-500) 12%, transparent); border-radius: 999px; padding: 2px 6px; }
+    .profile { margin: 12px; padding: 12px; border-radius: 18px; border: 1px solid var(--stroke-1); background: rgb(255 255 255 / .025); display: flex; align-items: center; gap: 10px; }
+    .avatar { width: 34px; height: 34px; border-radius: 50%; background: conic-gradient(from 90deg, var(--spirit-300), oklch(.65 .16 220), var(--spirit-300)); padding: 1.5px; }
+    .avatar > span { display: grid; place-items: center; width: 100%; height: 100%; border-radius: inherit; background: var(--bg-2); font-weight: 800; font-size: 11px; }
+
+    .mobile-bar { display: none; position: fixed; inset: 0 0 auto; height: 60px; z-index: 60; align-items: center; justify-content: space-between; padding: 0 14px; background: color-mix(in oklch, var(--bg-0) 91%, transparent); border-bottom: 1px solid var(--stroke-1); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
+    .mobile-drawer, .mobile-scrim { display: none; }
+
+    main { min-width: 0; padding: clamp(16px, 3vw, 34px); }
+    .hero { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: var(--gap); flex-wrap: wrap; }
+    h1 { margin: 8px 0 0; font-size: clamp(30px, 8vw, 52px); line-height: .98; font-family: var(--font-tech); text-transform: uppercase; letter-spacing: -0.03em; }
+    .subline { margin: 10px 0 0; color: var(--text-3); font-size: 13px; display: flex; gap: 9px; align-items: center; flex-wrap: wrap; }
+    .online { color: var(--good); font-weight: 700; }
+    .hero-actions { display: flex; align-items: center; gap: 8px; }
+
+    .btn {
+      border: 1px solid var(--stroke-2);
+      background: linear-gradient(180deg, rgb(255 255 255 / .07), rgb(255 255 255 / .025));
+      color: var(--text-2);
+      box-shadow: var(--inner);
+      border-radius: 13px;
+      min-height: 38px;
+      padding: 0 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 12px;
+      transition: transform 120ms ease, border-color 160ms ease, background 160ms ease;
+    }
+    .btn:hover { border-color: var(--stroke-3); background: linear-gradient(180deg, rgb(255 255 255 / .10), rgb(255 255 255 / .035)); color: var(--text-1); }
+    .btn:active { transform: scale(.98); }
+    .btn.primary { background: linear-gradient(180deg, var(--spirit-500), var(--spirit-700)); border-color: color-mix(in oklch, var(--spirit-300) 50%, transparent); color: white; box-shadow: var(--inner), 0 16px 32px -20px var(--spirit-400); }
+    .btn.ghost { background: transparent; border-color: transparent; }
+    .btn.danger { background: linear-gradient(180deg, oklch(.55 .20 25 / .18), oklch(.40 .18 25 / .09)); border-color: oklch(.66 .20 25 / .32); color: oklch(.84 .10 25); }
+    .btn.icon { width: 38px; padding: 0; }
+    kbd { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; padding: 3px 6px; border-radius: 6px; color: var(--text-3); background: rgb(0 0 0 / .28); border: 1px solid var(--stroke-2); }
+
+    .glass {
+      position: relative;
+      background: linear-gradient(180deg, rgb(255 255 255 / .052), rgb(255 255 255 / .018) 45%, rgb(255 255 255 / .012)), color-mix(in oklch, var(--bg-1) 93%, transparent);
+      border: 1px solid var(--stroke-2);
+      border-radius: var(--radius-card);
+      box-shadow: var(--inner), var(--shadow-1);
+      backdrop-filter: blur(22px) saturate(145%);
+      -webkit-backdrop-filter: blur(22px) saturate(145%);
+      overflow: hidden;
+    }
+    .glass.accent { border-color: color-mix(in oklch, var(--spirit-500) 38%, transparent); box-shadow: var(--inner), 0 1px 0 rgb(255 255 255 / .06), 0 30px 80px -42px var(--spirit-500); }
+    .glass.terminal { background: linear-gradient(180deg, rgb(0 0 0 / .48), rgb(0 0 0 / .28)), color-mix(in oklch, var(--bg-0) 94%, transparent); border-color: oklch(.66 .20 25 / .24); }
+    .card { padding: clamp(18px, 2vw, 24px); }
+    .tile { border: 1px solid var(--stroke-1); background: rgb(255 255 255 / .028); border-radius: 16px; padding: 12px 14px; transition: 160ms ease; }
+    .tile:hover { border-color: var(--stroke-2); background: rgb(255 255 255 / .045); }
+
+    .badge { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 9px; border-radius: 999px; font-size: 9px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; border: 1px solid; white-space: nowrap; }
+    .badge::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+    .badge.live { color: var(--good); background: oklch(.74 .16 160 / .10); border-color: oklch(.74 .16 160 / .32); }
+    .badge.live::before { animation: pulse 1.6s ease-out infinite; }
+    .badge.mock { color: var(--text-3); background: rgb(255 255 255 / .045); border-color: var(--stroke-2); }
+    .badge.pending { color: var(--warn); background: oklch(.80 .16 80 / .10); border-color: oklch(.80 .16 80 / .30); }
+    .badge.info { color: var(--info); background: oklch(.72 .14 230 / .10); border-color: oklch(.72 .14 230 / .28); }
+    .badge.offline { color: var(--bad); background: oklch(.66 .20 25 / .10); border-color: oklch(.66 .20 25 / .30); }
+    @keyframes pulse { to { box-shadow: 0 0 0 8px color-mix(in oklch, currentColor 0%, transparent); } }
+
+    .cluster-shell { padding: 16px; margin-bottom: var(--gap); }
+    .cluster-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+    .cluster-meta { display: flex; gap: 8px; flex-wrap: wrap; }
+    .cluster-chip { min-height: 30px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--stroke-1); background: rgb(255 255 255 / .04); display: inline-flex; align-items: center; gap: 8px; font-size: 10px; color: var(--text-3); }
+    .cluster-grid { display: grid; grid-template-columns: repeat(1, minmax(0, 1fr)); gap: 10px; }
+    .cluster-node { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 18px; border: 1px solid var(--stroke-1); background: linear-gradient(180deg, rgb(255 255 255 / .05), rgb(255 255 255 / .02)); box-shadow: inset 0 1px 0 rgb(255 255 255 / .06); }
+    .cluster-node-copy { min-width: 0; }
+    .cluster-node-copy strong { display:block; font-size: 12px; color: var(--text-1); font-family: var(--font-tech); letter-spacing: .02em; text-transform: uppercase; }
+    .cluster-node-copy span { display:block; font-size: 10px; color: var(--text-4); margin-top: 3px; }
+    .cluster-node-stat { text-align: right; }
+    .cluster-node-stat strong { display:block; font-family: var(--font-mono); font-size: 11px; color: var(--text-2); }
+    .cluster-node-stat span { display:block; font-size: 9px; color: var(--text-5); letter-spacing: .12em; text-transform: uppercase; }
+    .state-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--good); box-shadow: 0 0 10px var(--good), 0 0 0 4px oklch(.74 .16 160 / .14); animation: statusGlow 2s ease-in-out infinite; }
+    .state-dot.pending { background: var(--warn); box-shadow: 0 0 10px var(--warn), 0 0 0 4px oklch(.80 .16 80 / .14); }
+    @keyframes statusGlow { 50% { transform: scale(1.08); filter: brightness(1.18); box-shadow: 0 0 16px currentColor, 0 0 0 5px color-mix(in oklch, currentColor 18%, transparent);} }
+
+    .dashboard-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--gap); align-items: start; }
+    .span-4 { grid-column: span 4; }
+    .span-5 { grid-column: span 5; }
+    .span-7 { grid-column: span 7; }
+    .span-8 { grid-column: span 8; }
+    .span-12 { grid-column: span 12; }
+
+    .card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
+    .card-title { margin: 6px 0 2px; font-size: 18px; line-height: 1.08; letter-spacing: -.015em; font-family: var(--font-tech); text-transform: uppercase; }
+    .muted { color: var(--text-3); }
+    .tiny { font-size: 11px; }
+
+    .orb-wrap { height: 214px; display: grid; place-items: center; position: relative; margin: 4px -4px 0; }
+    .orb-glow { position: absolute; width: 210px; height: 210px; border-radius: 50%; background: var(--spirit-500); opacity: .24; filter: blur(28px); animation: breathe 3.5s ease-in-out infinite; }
+    .ring { position: absolute; border-radius: 50%; border: 1px solid color-mix(in oklch, var(--spirit-300) 26%, transparent); }
+    .ring.one { width: 172px; height: 172px; }
+    .ring.two { width: 132px; height: 132px; border-style: dashed; opacity: .65; animation: spin 18s linear infinite; }
+    .orb { width: 112px; height: 112px; border: 0; border-radius: 50%; position: relative; display: grid; place-items: center; font-size: 34px; background: radial-gradient(circle at 35% 27%, oklch(.94 .06 var(--hue)) 0, var(--spirit-400) 34%, var(--spirit-700) 73%, oklch(.18 .08 var(--hue)) 100%); box-shadow: inset 0 0 32px rgb(255 255 255 / .16), inset 0 -10px 18px rgb(0 0 0 / .45), 0 20px 48px -18px var(--spirit-500), 0 0 0 1px color-mix(in oklch, var(--spirit-200) 42%, transparent); }
+    .orb::before { content: ""; position: absolute; left: 24px; top: 16px; width: 30px; height: 18px; border-radius: 50%; background: radial-gradient(ellipse, rgb(255 255 255 / .58), transparent 70%); filter: blur(2px); }
+    .wave { display: flex; gap: 3px; align-items: end; justify-content: center; height: 28px; }
+    .bar { width: 3px; height: 5px; border-radius: 999px; background: linear-gradient(to top, var(--spirit-700), var(--spirit-300)); animation: wave 1s ease-in-out infinite; animation-delay: calc(var(--i) * 42ms); }
+    @keyframes breathe { 50% { transform: scale(1.12); opacity: .36; } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes wave { 50% { height: calc(7px + var(--h) * 1px); } }
+
+    .briefing-list { display: flex; flex-direction: column; gap: 8px; }
+    .briefing-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: start; }
+    .tag { position: relative; overflow: hidden; font-size: 9px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; color: var(--spirit-300); padding: 4px 8px; border-radius: 999px; border: 1px solid color-mix(in oklch, var(--spirit-500) 24%, transparent); background: color-mix(in oklch, var(--spirit-500) 12%, transparent); white-space: nowrap; box-shadow: 0 0 14px color-mix(in oklch, var(--spirit-500) 18%, transparent), inset 0 0 0 1px rgb(255 255 255 / .03); animation: tagGlow 2.8s ease-in-out infinite; }
+    .tag::after { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 10%, rgb(255 255 255 / .22) 50%, transparent 90%); transform: translateX(-130%); animation: sheen 3.5s linear infinite; }
+    @keyframes tagGlow { 50% { box-shadow: 0 0 18px color-mix(in oklch, var(--spirit-500) 32%, transparent), inset 0 0 0 1px rgb(255 255 255 / .06); filter: brightness(1.06); } }
+    @keyframes sheen { to { transform: translateX(130%); } }
+    .progress { height: 7px; border-radius: 999px; background: rgb(0 0 0 / .36); box-shadow: inset 0 1px 1px rgb(0 0 0 / .6), inset 0 -1px 0 rgb(255 255 255 / .045); overflow: hidden; }
+    .fill { position: relative; overflow: hidden; height: 100%; border-radius: inherit; width: var(--pct); background: linear-gradient(90deg, var(--spirit-600), var(--spirit-300)); box-shadow: inset 0 1px 0 rgb(255 255 255 / .24), 0 0 9px color-mix(in oklch, var(--spirit-500) 55%, transparent); animation: barGlow 2.6s ease-in-out infinite; }
+    .fill::after { content: ""; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 15%, rgb(255 255 255 / .35) 50%, transparent 85%); transform: translateX(-120%); animation: sheen 2.9s linear infinite; }
+    @keyframes barGlow { 50% { filter: brightness(1.15) saturate(1.12); box-shadow: inset 0 1px 0 rgb(255 255 255 / .24), 0 0 14px color-mix(in oklch, var(--spirit-500) 70%, transparent); } }
+    .fill.good { background: linear-gradient(90deg, oklch(.42 .16 160), oklch(.78 .16 160)); }
+    .fill.warn { background: linear-gradient(90deg, oklch(.50 .16 80), oklch(.84 .16 80)); }
+    .fill.bad { background: linear-gradient(90deg, oklch(.43 .20 25), oklch(.72 .20 25)); }
+
+    .project-list, .stack { display: flex; flex-direction: column; gap: 9px; }
+    .project-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: center; }
+    .drive-head { display: flex; justify-content: space-between; align-items: center; margin: 4px 0 8px; }
+    .drive-row { margin-bottom: 9px; }
+    .grid-auto { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+    .stat-row { display: grid; gap: 6px; margin-top: 8px; }
+    .energy-costs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .notice { display: flex; gap: 9px; align-items: flex-start; border-radius: 14px; border: 1px solid oklch(.80 .16 80 / .22); background: oklch(.80 .16 80 / .10); color: oklch(.88 .10 80); padding: 10px 12px; font-size: 11px; line-height: 1.45; }
+    .terminal-lines { font-size: 11.5px; line-height: 1.72; display: flex; flex-direction: column; gap: 2px; }
+    .term-line { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 8px; }
+    .cursor { animation: blink 1s steps(1) infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    .command-scrim { position: fixed; inset: 0; z-index: 70; background: rgb(4 4 8 / .60); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); display: none; }
+    .command-panel { position: fixed; z-index: 80; top: 10vh; left: 50%; width: min(760px, calc(100vw - 28px)); padding: 8px; transform: translate(-50%, -10px) scale(.985); opacity: 0; pointer-events: none; transition: 180ms ease; }
+    .command-open .command-scrim { display: block; }
+    .command-open .command-panel { opacity: 1; pointer-events: auto; transform: translate(-50%, 0) scale(1); }
+    .command-inner { max-height: 72vh; display: flex; flex-direction: column; border-radius: 30px; overflow: hidden; border: 1px solid color-mix(in oklch, var(--spirit-500) 22%, var(--stroke-1)); box-shadow: var(--shadow-2), 0 0 70px color-mix(in oklch, var(--spirit-500) 30%, transparent); }
+    .command-input { display: flex; align-items: center; gap: 12px; padding: 15px 18px; border-bottom: 1px solid var(--stroke-1); }
+    .command-input input { flex: 1; min-width: 0; height: 32px; border: 0; outline: 0; background: transparent; color: var(--text-1); font-size: 15px; }
+    .suggestions { overflow: auto; padding: 10px; }
+    .suggestion { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 12px; align-items: center; width: 100%; border: 0; border-radius: 14px; padding: 10px 12px; background: transparent; text-align: left; transition: 120ms ease; }
+    .suggestion:hover, .suggestion.active { background: linear-gradient(180deg, color-mix(in oklch, var(--spirit-500) 16%, transparent), rgb(255 255 255 / .025)); box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--spirit-500) 28%, transparent); }
+    .suggestion .box { width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--stroke-2); background: var(--glass-2); display: grid; place-items: center; color: var(--spirit-300); }
+    .command-footer { border-top: 1px solid var(--stroke-1); padding: 10px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px; background: rgb(0 0 0 / .22); flex-wrap: wrap; }
+    .hidden { display: none !important; }
+
+    .tweaks-toggle { position: fixed; right: 16px; bottom: 16px; z-index: 55; }
+    .tweaks { position: fixed; right: 16px; bottom: 66px; z-index: 56; width: min(320px, calc(100vw - 24px)); display: none; padding: 16px; border-radius: 26px; border: 1px solid color-mix(in oklch, var(--spirit-500) 16%, var(--stroke-1)); box-shadow: var(--shadow-2), 0 0 50px color-mix(in oklch, var(--spirit-500) 18%, transparent); }
+    @media (max-width: 880px) { .tweaks { left: 12px; right: 12px; bottom: 12px; width: auto; } .tweaks-toggle { bottom: 12px; right: 12px; } }
+    .tweaks.open { display: block; }
+    .tweak-row { display: grid; gap: 6px; margin-top: 12px; }
+    .tweak-row:first-of-type { margin-top: 0; }
+    .tweak-row label { font-size: 10px; color: var(--text-4); letter-spacing: .14em; text-transform: uppercase; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    input[type="range"] { width: 100%; accent-color: var(--spirit-500); }
+    select { width: 100%; background: rgb(255 255 255 / .06); border: 1px solid var(--stroke-2); color: var(--text-1); border-radius: 10px; padding: 8px 10px; }
+    .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px; }
+    .switch { width: 42px; height: 24px; border-radius: 999px; border: 1px solid var(--stroke-2); background: rgb(255 255 255 / .08); padding: 2px; }
+    .switch::before { content: ""; display: block; width: 18px; height: 18px; border-radius: 50%; background: var(--text-2); transition: 160ms ease; }
+    .switch[aria-checked="true"] { background: color-mix(in oklch, var(--spirit-500) 28%, transparent); }
+    .switch[aria-checked="true"]::before { transform: translateX(18px); background: white; }
+
+        /* Mobile-first responsive override */
+    .app-shell { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr; min-height: 100vh; padding-top: 60px; }
+    .desktop-sidebar { display: none; }
+    .mobile-bar { display: flex; }
+    main { min-width: 0; padding: 16px; }
+    .hero { align-items: stretch; }
+    .hero-actions { width: 100%; display: grid; grid-template-columns: 44px 44px minmax(0, 1fr); }
+    .dashboard-grid { display: grid; grid-template-columns: 1fr; gap: var(--gap); }
+    .span-4, .span-5, .span-7, .span-8, .span-12 { grid-column: 1 / -1; }
+    .cluster-grid { grid-template-columns: 1fr; }
+    @media (min-width: 700px) {
+      .cluster-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (min-width: 881px) {
+      .app-shell { grid-template-columns: 248px minmax(0, 1fr); min-height: 100vh; padding-top: 0; }
+      .desktop-sidebar { display: flex; }
+      .mobile-bar { display: none; }
+      main { padding: clamp(16px, 3vw, 34px); }
+      .hero-actions { width: auto; display: flex; }
+      .dashboard-grid { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+      .cluster-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (min-width: 1160px) {
+      .cluster-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    }
+
+@media (max-width: 1160px) {
+      .span-4, .span-5, .span-7, .span-8 { grid-column: span 6; }
+      .span-8:first-child { grid-column: span 12; }
+    }
+    @media (max-width: 880px) {
+      .app-shell { grid-template-columns: 1fr; padding-top: 60px; }
+      .desktop-sidebar { display: none; }
+      .mobile-bar { display: flex; }
+      .mobile-scrim { position: fixed; inset: 0; z-index: 70; background: rgb(0 0 0 / .62); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+      .mobile-drawer { position: fixed; display: flex; flex-direction: column; z-index: 80; inset: 0 auto 0 0; width: min(340px, 88vw); background: color-mix(in oklch, var(--bg-0) 92%, transparent); border-right: 1px solid var(--stroke-2); border-top-right-radius: 24px; border-bottom-right-radius: 24px; transform: translateX(-104%); transition: transform 220ms cubic-bezier(.2,.8,.2,1); box-shadow: 20px 0 70px rgb(0 0 0 / .5); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
+      body.drawer-open .mobile-drawer { transform: translateX(0); }
+      body.drawer-open .mobile-scrim { display: block; }
+      body:not(.drawer-open) .mobile-scrim { display: none; }
+      main { padding: 16px; }
+      .hero { align-items: stretch; }
+      .hero-actions { width: 100%; }
+      .hero-actions .btn:last-child { flex: 1; }
+      .dashboard-grid { grid-template-columns: 1fr; }
+      .span-4, .span-5, .span-7, .span-8, .span-12 { grid-column: 1 / -1; }
+      .briefing-row { grid-template-columns: 1fr auto; }
+      .briefing-row .tag { grid-column: 1 / -1; width: fit-content; }
+      .project-row { grid-template-columns: auto minmax(0, 1fr); }
+      .project-row > div:last-child { grid-column: 2; align-items: flex-start !important; margin-top: 4px; }
+      .energy-costs { grid-template-columns: 1fr; }
+      .command-panel { top: auto; left: 0; right: 0; bottom: 0; width: 100%; padding: 10px 10px 0; transform: translateY(100%); }
+      .command-open .command-panel { transform: translateY(0); }
+      .command-inner { max-height: 84vh; border-radius: 28px 28px 0 0; }
+      .command-footer { align-items: flex-start; }
+    }
+    @media (max-width: 520px) {
+      .card-head { flex-direction: column; }
+      .cluster-shell { margin-left: -2px; margin-right: -2px; }
+      .grid-auto { grid-template-columns: 1fr; }
+      .hero-actions { flex-wrap: wrap; }
+      .orb-wrap { height: 190px; }
+    }
+  </style>
+</head>
+<body data-density="comfortable" data-quarantine="on" data-grain="on">
+  <div class="ambient" aria-hidden="true"></div>
+
+  <header class="mobile-bar">
+    <div class="brand" style="height:auto;border:0;padding:0"><div class="logo"></div><div class="brand-title"><strong>Spirit OS</strong><span>Trinity Node</span></div></div>
+    <button class="btn icon" id="openDrawer" aria-label="Open navigation">☰</button>
+  </header>
+  <div class="mobile-scrim" id="drawerScrim"></div>
+  <aside class="mobile-drawer" id="mobileDrawer">
+    <div class="brand"><div class="logo"></div><div class="brand-title"><strong>Spirit OS</strong><span>Mobile Shell</span></div><button class="btn icon" id="closeDrawer" style="margin-left:auto">×</button></div>
+    <nav class="nav" id="mobileNav"></nav>
+    <div class="profile"><div class="avatar"><span>S</span></div><div><strong style="font-size:12px">Source</strong><div class="mono" style="font-size:9px;color:var(--text-4);letter-spacing:.14em;text-transform:uppercase">Sovereign · Tier 0</div></div></div>
+  </aside>
+
+  <div class="app-shell">
+    <aside class="desktop-sidebar">
+      <div class="brand"><div class="logo"></div><div class="brand-title"><strong>Spirit OS</strong><span>Trinity Node</span></div></div>
+      <nav class="nav" id="desktopNav"></nav>
+      <div class="profile"><div class="avatar"><span>S</span></div><div><strong style="font-size:12px">Source</strong><div class="mono" style="font-size:9px;color:var(--text-4);letter-spacing:.14em;text-transform:uppercase">Sovereign · Tier 0</div></div></div>
+    </aside>
+
+    <main>
+      <section class="hero">
+        <div>
+          <span class="eyebrow"><span class="dot"></span>Trinity Dashboard · Sovereign</span>
+          <h1 class="serif">Good Morning <span style="color:var(--spirit-300)">Source</span></h1>
+          <div class="subline"><span class="online">● All nodes nominal</span><span>·</span><span>Local time <span class="mono" id="clock">--:--</span></span><span>·</span><span>Cluster uptime <span class="mono">14d 06h</span></span></div>
+        </div>
+        <div class="hero-actions">
+          <button class="btn ghost icon" aria-label="Notifications">◌</button>
+          <button class="btn ghost icon" aria-label="Settings">⚙</button>
+          <button class="btn primary" id="openCommand">✦ Command <kbd>⌘K</kbd></button>
+        </div>
+      </section>
+
+      <section class="glass cluster-shell" aria-label="Cluster status">
+        <div class="cluster-head">
+          <span class="eyebrow"><span class="dot"></span>Cluster Mesh</span>
+          <div class="cluster-meta">
+            <span class="cluster-chip mono">4 nodes</span>
+            <span class="cluster-chip mono">3 live</span>
+            <span class="cluster-chip mono">1 pending</span>
+          </div>
+        </div>
+        <div class="cluster-grid" id="nodes"></div>
+      </section>
+
+      <section class="dashboard-grid">
+        <article class="glass accent card span-4" id="oracle">
+          <div class="card-head"><div><span class="eyebrow"><span class="dot"></span>Spirit · AI Core</span><h2 class="card-title serif" style="font-size:28px">Oracle</h2><p class="tiny muted">Local Llama 3.3 · Q4_K_M · 24GB VRAM</p></div><span class="badge info">Idle</span></div>
+          <div class="orb-wrap"><span class="orb-glow"></span><span class="ring one"></span><span class="ring two"></span><button class="orb" id="orbButton" aria-label="Open Oracle command">✦</button></div>
+          <div class="wave" id="wave"></div>
+          <div style="display:flex;gap:8px;margin-top:16px"><button class="btn primary" style="flex:1" id="openCommand2">Open Command <kbd>⌘K</kbd></button><button class="btn icon">🎙</button></div>
+        </article>
+
+        <article class="glass card span-8" id="briefing">
+          <div class="card-head"><div><span class="eyebrow"><span class="dot"></span>Intelligence Briefing · 06:00</span><h2 class="card-title">Daily Briefing</h2><p class="tiny muted">SearXNG + GPT-Researcher · demo data clearly labeled</p></div><div style="display:flex;gap:8px;align-items:center"><span class="badge mock">Demo</span><span class="badge live">Synced</span></div></div>
+          <div class="briefing-list" id="briefings"></div>
+          <div style="display:flex;align-items:center;gap:12px;margin-top:14px"><div style="height:1px;background:var(--stroke-1);flex:1"></div><span class="mono" style="font-size:10px;color:var(--text-4);letter-spacing:.16em;text-transform:uppercase">4 of 12</span><button class="btn ghost">All briefings →</button></div>
+        </article>
+
+        <article class="glass card span-7" id="projects">
+          <div class="card-head"><div><span class="eyebrow"><span class="dot"></span>Project Hub · Architecture 6</span><h2 class="card-title">Active Repositories</h2><p class="tiny muted">Spirit scans TODOs vs README · mock completion for demo</p></div><span class="badge mock">Demo</span></div>
+          <div class="project-list" id="projectsList"></div>
+        </article>
+
+        <article class="glass card span-5" id="storage">
+          <div class="card-head"><div><span class="eyebrow"><span class="dot"></span>Local Drive Health</span><h2 class="card-title">Storage</h2><p class="tiny muted">SMART telemetry across cluster</p></div><span class="badge mock">Mock</span></div>
+          <div class="stack" id="drivesList"></div>
+          <div class="notice" style="margin-top:14px"><span>⚠</span><span>Wire <span class="mono" style="color:var(--text-2)">smartctl</span> on Node 2 for live readings. Values remain labeled as mock until connected.</span></div>
+        </article>
+
+        <article class="glass card span-8" id="stats">
+          <div class="card-head"><div><span class="eyebrow"><span class="dot"></span>Node Vitals</span><h2 class="card-title">System Stats</h2><p class="tiny muted">Polled every 5s · demo layer only</p></div><span class="badge mock">Demo</span></div>
+          <div class="grid-auto" id="statsList"></div>
+        </article>
+
+        <article class="glass card span-4" id="energy">
+          <div class="card-head"><div><span class="eyebrow"><span class="dot"></span>Energy Matrix · Node 5</span><div style="display:flex;align-items:baseline;gap:7px;margin-top:6px"><span class="serif" id="watts" style="font-size:42px;line-height:.9">0</span><span class="mono muted" style="font-size:12px;letter-spacing:.08em">WATTS</span></div></div><div style="text-align:right"><div class="num" style="font-size:15px;color:var(--good);font-weight:800">$0.11<span class="muted" style="font-size:11px;font-weight:400">/kWh</span></div><div class="mono" style="font-size:9px;color:var(--good);letter-spacing:.12em;text-transform:uppercase">Super Off-Peak</div></div></div>
+          <div class="energy-costs"><div class="tile"><div class="eyebrow" style="font-size:9px">Hourly</div><div class="num" id="costHr" style="font-size:17px;margin-top:4px">$0.000</div></div><div class="tile"><div class="eyebrow" style="font-size:9px">Daily Est.</div><div class="num" id="costDay" style="font-size:17px;margin-top:4px">$0.00</div></div></div>
+          <div class="stack" id="energyList" style="margin-top:14px"></div>
+          <div class="notice" style="margin-top:14px"><span>⏱</span><span>Peak window in <span class="mono" style="color:var(--text-1)">6h 14m</span>. Queue heavy compute now.</span></div>
+        </article>
+
+        <article class="glass terminal card span-12 quarantine-card" id="quarantine">
+          <div class="card-head"><div><span class="eyebrow"><span class="dot"></span>Quarantine · Experimental Modules</span><h2 class="card-title">Toxic Grader</h2><p class="tiny muted">Roast wall kept as brand concept, clearly marked experimental.</p></div><div style="display:flex;gap:8px;align-items:center"><span class="badge info">Quarantine</span><span class="badge mock">Mock</span></div></div>
+          <div class="terminal-lines" id="terminalLines"></div>
+          <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap"><button class="btn danger">🔥 GRADE ME — IF YOU DARE</button><button class="btn ghost">Tune module</button></div>
+        </article>
+      </section>
+
+      <footer style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-top:32px;padding:16px 0;border-top:1px solid var(--stroke-1)">
+        <span class="mono" style="font-size:10px;color:var(--text-5);letter-spacing:.16em;text-transform:uppercase">Spirit OS · finished quarantine demo</span>
+        <span class="mono" style="font-size:10px;color:var(--text-5)">Standalone HTML · no CDN dependencies · ready to port</span>
+      </footer>
+    </main>
+  </div>
+
+  <div class="command-scrim" id="commandScrim"></div>
+  <section class="command-panel" role="dialog" aria-modal="true" aria-label="Spirit command bar">
+    <div class="glass command-inner">
+      <div class="command-input"><div class="logo" style="width:32px;height:32px;border-radius:10px"></div><input id="commandInput" placeholder="Issue a command to Spirit..." autocomplete="off" /><kbd>ESC</kbd><button class="btn icon ghost" id="closeCommand">×</button></div>
+      <div class="suggestions"><div class="eyebrow" style="padding:8px 12px 7px"><span class="dot"></span><span id="suggestionLabel">Quick Actions</span></div><div id="suggestionList"></div></div>
+      <div class="command-footer"><div style="display:flex;gap:14px;flex-wrap:wrap"><span class="mono tiny muted"><kbd>↑↓</kbd> navigate</span><span class="mono tiny muted"><kbd>↵</kbd> run</span><span class="mono tiny muted"><kbd>⌘K</kbd> toggle</span></div><span class="badge live">Online</span></div>
+    </div>
+  </section>
+
+  <button class="btn tweaks-toggle" id="tweaksToggle">⚙ Tune demo</button>
+  <aside class="glass tweaks" id="tweaksPanel" aria-label="Demo tweaks">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><span class="eyebrow"><span class="dot"></span>Tweaks</span><button class="btn icon ghost" id="closeTweaks">×</button></div>
+    <div class="tweak-row"><label for="hueRange">Accent Hue <span id="hueValue" class="num">300</span></label><input id="hueRange" type="range" min="0" max="360" step="5" value="300" /></div>
+    <div class="tweak-row"><label for="densitySelect">Density</label><select id="densitySelect"><option value="compact">Compact</option><option value="comfortable" selected>Comfortable</option><option value="spacious">Spacious</option></select></div>
+    <div class="switch-row"><label class="eyebrow" style="font-size:10px">Show Quarantine</label><button class="switch" id="quarantineSwitch" role="switch" aria-checked="true"></button></div>
+    <div class="switch-row"><label class="eyebrow" style="font-size:10px">Grain Overlay</label><button class="switch" id="grainSwitch" role="switch" aria-checked="true"></button></div>
+  </aside>
+
+  <script>
+    const $ = (sel, root = document) => root.querySelector(sel);
+    const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+
+    const navItems = [
+      ["⌘", "Command", "#", "01"], ["✦", "Oracle", "#oracle", "02"], ["▣", "Projects", "#projects", "03"],
+      ["◫", "Storage", "#storage", "04"], ["⚡", "Energy", "#energy", "05"], ["⚗", "Quarantine", "#quarantine", "06"],
+    ];
+    function renderNav(target) {
+      target.innerHTML = '<span class="nav-label"><span class="dot"></span>Modules</span>' + navItems.map((n, i) => `
+        <a class="nav-item ${i === 0 ? 'active' : ''}" href="${n[2]}" data-nav>
+          <span class="nav-icon">${n[0]}</span><span>${n[1]}</span><span class="nav-code mono">${n[3]}</span>
+        </a>`).join('');
+    }
+    renderNav($('#desktopNav')); renderNav($('#mobileNav'));
+    $$('[data-nav]').forEach(link => link.addEventListener('click', e => {
+      $$('[data-nav]').forEach(x => x.classList.remove('active'));
+      e.currentTarget.classList.add('active');
+      document.body.classList.remove('drawer-open');
+      document.body.style.position = '';
+      const href = e.currentTarget.getAttribute('href');
+      if (href && href !== '#') setTimeout(() => $(href)?.scrollIntoView({behavior:'smooth', block:'start'}), 0);
+      e.preventDefault();
+    }));
+
+    const nodes = [
+      ["spiritdesktop", "Ryzen AM5 · 12% CPU", "live"], ["spirit (Dell)", "i7-6700 · 34% CPU", "live"],
+      ["Ghost Node", "Pi 3 · 22% CPU", "live"], ["Tesla P40", "Awaiting PSU upgrade", "pending"]
+    ];
+    $('#nodes').innerHTML = nodes.map(n => { const pending = n[2] === 'pending'; const stat = pending ? 'Standby' : 'Nominal'; return `<div class="cluster-node"><span class="state-dot ${pending ? 'pending' : ''}"></span><div class="cluster-node-copy"><strong>${n[0]}</strong><span>${n[1]}</span></div><div class="cluster-node-stat"><strong>${stat}</strong><span>${pending ? 'queued' : 'live'}</span></div></div>`; }).join('');
+
+    $('#wave').innerHTML = Array.from({length: 30}, (_, i) => `<span class="bar" style="--i:${i};--h:${5 + ((i * 47 + 9) % 18)}"></span>`).join('');
+
+    const briefings = [
+      ["Local LLM", "Llama 3.3 Q4_K_M quant benchmarks on consumer DDR5 — context window throughput.", "06:02", "arxiv"],
+      ["Homelab", "PCIe x1 riser bottleneck: TTFT degradation on 24GB VRAM models vs x16 ribbon.", "06:04", "level1tech"],
+      ["Privacy", "CCPA Q3 enforcement: brokers ignoring opt-outs face record seven-figure penalties.", "06:06", "eff"],
+      ["Energy", "SoCal ToU shift: super off-peak window narrows to 11 PM–5 AM next billing cycle.", "06:08", "sce"]
+    ];
+    $('#briefings').innerHTML = briefings.map((b, i) => `<div class="tile briefing-row"><span class="tag">${b[0]}</span><div><p style="margin:0;font-size:13px;color:var(--text-2);line-height:1.45">${b[1]}</p><div style="display:flex;gap:10px;margin-top:6px;align-items:center"><span class="mono" style="font-size:9.5px;color:var(--text-5)">${b[2]}</span><span style="width:2px;height:2px;border-radius:99px;background:var(--text-5)"></span><span class="mono" style="font-size:9.5px;color:var(--text-5)">src · ${b[3]}</span></div></div><span class="num" style="font-size:10px;color:var(--text-5)">0${i+1}</span></div>`).join('');
+
+    const projects = [
+      ["spirit-os-dashboard", "main", 38, 14, "2h", "active"], ["toxic-grader-agent", "feat/langfuse", 61, 6, "5h", "active"],
+      ["cinema-engine-config", "main", 82, 2, "1d", "idle"], ["ghost-node-setup", "dns-pihole", 20, 9, "3d", "idle"]
+    ];
+    $('#projectsList').innerHTML = projects.map(p => {
+      const tone = p[2] >= 70 ? 'good' : p[2] < 40 ? 'warn' : '';
+      return `<div class="tile project-row"><span class="state-dot ${p[5] !== 'active' ? 'pending' : ''}" style="width:8px;height:8px"></span><div style="min-width:0"><div style="display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;margin-bottom:7px"><span class="mono" style="font-size:12px;color:var(--text-1)">${p[0]}</span><span class="mono" style="font-size:9.5px;color:var(--text-4)">⑂ ${p[1]}</span></div><div style="display:flex;align-items:center;gap:10px"><div class="progress" style="flex:1"><div class="fill ${tone}" style="--pct:${p[2]}%"></div></div><span class="num" style="font-size:10.5px;color:var(--text-3);width:34px;text-align:right">${p[2]}%</span></div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px"><span class="mono" style="font-size:9.5px;color:var(--text-4)">${p[3]} TODO</span><span class="mono" style="font-size:9.5px;color:var(--text-5)">${p[4]} ago</span></div></div>`;
+    }).join('');
+
+    const driveGroups = [
+      ["spiritdesktop · Node 1", "mock", [["OS · Samsung 980", "SSD", 250, 147, 38, "Healthy"], ["Media Vault", "HDD", 1000, 412, 34, "Healthy"], ["Archive", "HDD", 2000, 880, 36, "Healthy"]]],
+      ["spirit (Dell) · Node 2", "pending", [["Dell SSD 512GB", "SSD", 512, 198, 41, "Unknown"]]]
+    ];
+    const fmt = n => n >= 1000 ? `${(n/1000).toFixed(1)} TB` : `${n} GB`;
+    $('#drivesList').innerHTML = driveGroups.map(g => `<div><div class="drive-head"><span class="mono" style="font-size:10.5px;color:var(--spirit-300)">${g[0]}</span><span class="badge ${g[1]}">${g[1]}</span></div>${g[2].map(d => { const pct = Math.round(d[3]/d[2]*100); const tone = pct >= 85 ? 'bad' : pct >= 65 ? 'warn' : ''; return `<div class="tile drive-row"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px"><div style="display:flex;gap:8px;align-items:center;min-width:0"><span class="tag" style="color:${d[1] === 'SSD' ? 'var(--info)' : 'var(--text-3)'};background:${d[1] === 'SSD' ? 'oklch(.72 .14 230 / .10)' : 'rgb(255 255 255 / .04)'};border-color:${d[1] === 'SSD' ? 'oklch(.72 .14 230 / .30)' : 'var(--stroke-1)'}">${d[1]}</span><span style="font-size:12.5px;color:var(--text-2)">${d[0]}</span></div><span class="num" style="font-size:10.5px;color:var(--text-3)"><span style="color:var(--text-1)">${fmt(d[3])}</span> / ${fmt(d[2])}</span></div><div class="progress"><div class="fill ${tone}" style="--pct:${pct}%"></div></div><div style="display:flex;justify-content:space-between;margin-top:8px"><span class="mono" style="font-size:9.5px;color:${d[5] === 'Healthy' ? 'var(--good)' : 'var(--text-4)'}">● ${d[5]}</span><span class="mono" style="font-size:9.5px;color:var(--text-4)">${d[4]}°C</span></div></div>`; }).join('')}</div>`).join('');
+
+    const stats = [
+      ["spiritdesktop", "Ryzen AM5 · XFX · DDR5", "mock", [["CPU",12,100,"12%"],["RAM",7.2,16,"7.2 GB"],["GPU",8,100,"8%"]], "RAM bottleneck on 3-monitor Cursor flow. Target: 32GB DDR5."],
+      ["spirit (Dell)", "i7-6700 · 16GB DDR4", "mock", [["CPU",34,100,"34%"],["RAM",11.2,16,"11.2 GB"]], null],
+      ["Ghost Node", "Pi 3 · 1GB LPDDR2", "mock", [["CPU",22,100,"22%"],["RAM",0.54,1,"0.54 GB"]], "FLIRC case pending. Watch for throttle under DNS load."]
+    ];
+    $('#statsList').innerHTML = stats.map(s => `<div class="tile"><div style="display:flex;justify-content:space-between;gap:8px"><div><div class="mono" style="font-size:11px;color:var(--text-1)">${s[0]}</div><div class="mono" style="font-size:9.5px;color:var(--text-4)">${s[1]}</div></div><span class="badge ${s[2]}">${s[2]}</span></div><div class="stat-row">${s[3].map(r => `<div><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span class="mono" style="font-size:10px;color:var(--text-3)">${r[0]}</span><span class="num" style="font-size:10.5px;color:var(--text-1)">${r[3]}</span></div><div class="progress"><div class="fill" style="--pct:${Math.min(100, r[1]/r[2]*100)}%"></div></div></div>`).join('')}</div>${s[4] ? `<div class="notice" style="margin-top:10px;background:oklch(.72 .14 230 / .10);border-color:oklch(.72 .14 230 / .24);color:oklch(.86 .08 230)">${s[4]}</div>` : ''}</div>`).join('');
+
+    const energy = [["spiritdesktop", "Ryzen + XFX", 148, "active"], ["spirit", "Dell i7-6700", 198, "active"], ["Ghost Node", "Pi 3 · DNS", 4, "active"], ["Tesla P40", "Awaiting PSU", 0, "pending"]];
+    const total = energy.reduce((sum, n) => sum + n[2], 0), rate = .11;
+    $('#watts').textContent = total; $('#costHr').textContent = '$' + ((total / 1000) * rate).toFixed(3); $('#costDay').textContent = '$' + ((total * 24 / 1000) * rate).toFixed(2);
+    $('#energyList').innerHTML = energy.map(n => { const pending = n[3] === 'pending'; const pct = total ? n[2] / total * 100 : 0; return `<div><div style="display:flex;gap:8px;align-items:center;margin-bottom:5px"><span class="state-dot ${pending ? 'pending' : ''}" style="width:6px;height:6px"></span><span class="mono" style="font-size:11px;color:var(--text-2);flex:1">${n[0]}</span><span class="mono" style="font-size:10px;color:var(--text-5)">${n[1]}</span><span class="num" style="font-size:11px;color:${pending ? 'var(--warn)' : 'var(--text-1)'};margin-left:8px">${pending ? 'PEND' : n[2] + 'W'}</span></div><div class="progress"><div class="fill ${pending ? 'warn' : ''}" style="--pct:${pending ? 0 : pct}%"></div></div></div>`; }).join('');
+
+    const terminal = [
+      ["GRADER", "Querying Langfuse DB... pulling your last 24h of sessions.", "var(--spirit-300)"],
+      ["GRADER", "You fixed the same null reference error four consecutive times. Spectacular.", "var(--warn)"],
+      ["GRADER", "Prompt efficiency: 34%. You are an expensive rubber duck with a standing desk.", "var(--bad)"],
+      ["GRADER", "47 minutes on one flexbox issue. Three lines of CSS. I have nothing to add.", "var(--bad)"],
+      ["GRADE", "D+ — Functional. Barely. Like a 2004 Civic with a cracked manifold.", "oklch(.78 .16 50)"],
+      ["SYSTEM", "Ready. Click [GRADE ME] when your ego has recovered.", "var(--text-4)"]
+    ];
+    $('#terminalLines').innerHTML = terminal.map(t => `<div class="term-line"><span style="color:var(--text-5);user-select:none">${t[0]} ▸</span><span style="color:${t[2]}">${t[1]}</span></div>`).join('') + '<div class="term-line"><span style="color:var(--text-5)">GRADER ▸</span><span class="cursor muted">█</span></div>';
+
+    function updateClock() { const d = new Date(); $('#clock').textContent = String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); }
+    updateClock(); setInterval(updateClock, 30000);
+
+    const suggestions = [
+      ["✦", "Open Oracle session", "Spawn local llama-3.3 chat", "action"], ["⌕", "Search briefings", "Past 7 days · SearXNG", "action"],
+      ["◌", "Run system status sweep", "All 3 nodes · 5s timeout", "action"], ["⚗", "Toggle Quarantine", "Show/hide experimental modules", "action"],
+      ["▣", "Go to Project Hub", "→ #projects", "nav"], ["⚡", "Go to Energy Matrix", "→ #energy", "nav"]
+    ];
+    let activeSuggestion = 0;
+    function renderSuggestions(filter = '') {
+      const f = suggestions.filter(s => !filter || s[1].toLowerCase().includes(filter.toLowerCase()));
+      $('#suggestionLabel').textContent = filter ? 'Matches' : 'Quick Actions';
+      $('#suggestionList').innerHTML = f.length ? f.map((s, i) => `<button class="suggestion ${i === activeSuggestion ? 'active' : ''}" data-suggestion="${i}"><span class="box">${s[0]}</span><span><strong style="display:block;font-size:13px">${s[1]}</strong><span class="mono" style="display:block;font-size:10.5px;color:var(--text-4);margin-top:2px">${s[2]}</span></span><span class="tag">${s[3]}</span></button>`).join('') : '<div class="muted" style="padding:24px;text-align:center;font-size:13px">No matches. Try a different query.</div>';
+      $$('[data-suggestion]').forEach(btn => btn.addEventListener('mouseenter', () => { activeSuggestion = Number(btn.dataset.suggestion); renderSuggestions($('#commandInput').value); }));
+      $$('[data-suggestion]').forEach(btn => btn.addEventListener('click', closeCommand));
+    }
+    renderSuggestions();
+    function openCommand() { document.body.classList.add('command-open'); $('#commandInput').focus(); renderSuggestions($('#commandInput').value); }
+    function closeCommand() { document.body.classList.remove('command-open'); }
+    $('#openCommand').addEventListener('click', openCommand); $('#openCommand2').addEventListener('click', openCommand); $('#orbButton').addEventListener('click', openCommand);
+    $('#closeCommand').addEventListener('click', closeCommand); $('#commandScrim').addEventListener('click', closeCommand);
+    $('#commandInput').addEventListener('input', e => { activeSuggestion = 0; renderSuggestions(e.target.value); });
+    window.addEventListener('keydown', e => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); document.body.classList.contains('command-open') ? closeCommand() : openCommand(); }
+      if (e.key === 'Escape') { closeCommand(); $('#tweaksPanel').classList.remove('open'); document.body.classList.remove('drawer-open'); document.body.style.position = ''; }
+      if (document.body.classList.contains('command-open') && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+        e.preventDefault(); const count = $$('#suggestionList .suggestion').length; if (!count) return;
+        activeSuggestion = e.key === 'ArrowDown' ? Math.min(count - 1, activeSuggestion + 1) : Math.max(0, activeSuggestion - 1); renderSuggestions($('#commandInput').value);
+      }
+      if (document.body.classList.contains('command-open') && e.key === 'Enter') closeCommand();
+    });
+
+    $('#openDrawer').addEventListener('click', () => { document.body.classList.add('drawer-open'); document.body.style.position = 'fixed'; document.body.style.width = '100%'; });
+    function closeDrawer() { document.body.classList.remove('drawer-open'); document.body.style.position = ''; document.body.style.width = ''; }
+    $('#closeDrawer').addEventListener('click', closeDrawer); $('#drawerScrim').addEventListener('click', closeDrawer);
+
+    $('#tweaksToggle').addEventListener('click', () => $('#tweaksPanel').classList.toggle('open'));
+    $('#closeTweaks').addEventListener('click', () => $('#tweaksPanel').classList.remove('open'));
+    $('#hueRange').addEventListener('input', e => { document.documentElement.style.setProperty('--hue', e.target.value); $('#hueValue').textContent = e.target.value; });
+    $('#densitySelect').addEventListener('change', e => document.body.dataset.density = e.target.value);
+    function bindSwitch(id, attr) { const el = $(id); el.addEventListener('click', () => { const next = el.getAttribute('aria-checked') !== 'true'; el.setAttribute('aria-checked', String(next)); document.body.dataset[attr] = next ? 'on' : 'off'; }); }
+    bindSwitch('#quarantineSwitch', 'quarantine'); bindSwitch('#grainSwitch', 'grain');
+  </script>
+</body>
+</html>
