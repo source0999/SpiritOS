@@ -1,0 +1,594 @@
+/* ── Oracle orb + visualizer — token-aware, no CDN assets ────────────────────────
+ * > Imported from client surfaces only. Animations scoped; kill them in a11y lane.
+ * > Safe-area + touch: iOS notch / home indicator, Android gesture bars — Spirit
+ * > refuses to let your thumb miss the mic CTA because someone loved 8px padding.
+ */
+
+/* Horizontal padding that respects notch + curved edges (viewport-fit=cover). */
+.oracle-chrome-px {
+  padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
+  padding-right: max(0.75rem, env(safe-area-inset-right, 0px));
+}
+
+@media (min-width: 640px) {
+  .oracle-chrome-px {
+    padding-left: max(1.25rem, env(safe-area-inset-left, 0px));
+    padding-right: max(1.25rem, env(safe-area-inset-right, 0px));
+  }
+}
+
+@media (min-width: 1024px) {
+  .oracle-chrome-px {
+    padding-left: max(1.75rem, env(safe-area-inset-left, 0px));
+    padding-right: max(1.75rem, env(safe-area-inset-right, 0px));
+  }
+}
+
+/* <summary> rows: iOS/Android minimum tap height (HIG ~44pt). */
+.oracle-details-summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@keyframes oracle-orb-orbit-a {
+  from {
+    transform: rotate(0deg) skewX(-16deg);
+  }
+  to {
+    transform: rotate(360deg) skewX(-16deg);
+  }
+}
+@keyframes oracle-orb-orbit-b {
+  from {
+    transform: rotate(0deg) skewY(24deg);
+  }
+  to {
+    transform: rotate(360deg) skewY(24deg);
+  }
+}
+@keyframes oracle-orb-orbit-c {
+  from {
+    transform: rotate(0deg) scale(0.95);
+  }
+  to {
+    transform: rotate(-360deg) scale(0.95);
+  }
+}
+@keyframes oracle-orb-wing-l {
+  0%,
+  100% {
+    transform: rotate(-2deg) scale(0.98);
+    opacity: 0.74;
+  }
+  50% {
+    transform: rotate(-8deg) scale(1.04);
+    opacity: 0.98;
+  }
+}
+@keyframes oracle-orb-wing-r {
+  0%,
+  100% {
+    transform: rotate(2deg) scale(0.98);
+    opacity: 0.74;
+  }
+  50% {
+    transform: rotate(8deg) scale(1.04);
+    opacity: 0.98;
+  }
+}
+@keyframes oracle-orb-hover {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+@keyframes oracle-orb-pulse {
+  0%,
+  100% {
+    transform: scale(0.96);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+@keyframes oracle-orb-hot {
+  0%,
+  100% {
+    transform: scale(0.82);
+    opacity: 0.78;
+  }
+  50% {
+    transform: scale(1.22);
+    opacity: 1;
+  }
+}
+@keyframes oracle-orb-mote {
+  0%,
+  100% {
+    opacity: 0.26;
+    transform: translateY(0) scale(0.75);
+  }
+  50% {
+    opacity: 0.82;
+    transform: translateY(-8px) scale(1.06);
+  }
+}
+@keyframes oracle-viz-idle {
+  0%,
+  100% {
+    transform: scaleY(0.38);
+    opacity: 0.32;
+  }
+  50% {
+    transform: scaleY(0.62);
+    opacity: 0.55;
+  }
+}
+@keyframes oracle-viz-permission {
+  0%,
+  100% {
+    transform: scaleY(0.28);
+    opacity: 0.22;
+  }
+  50% {
+    transform: scaleY(0.42);
+    opacity: 0.38;
+  }
+}
+@keyframes oracle-viz-listen {
+  0%,
+  100% {
+    transform: scaleY(0.42);
+    opacity: 0.48;
+  }
+  45% {
+    transform: scaleY(1.02);
+    opacity: 0.82;
+  }
+}
+@keyframes oracle-viz-process {
+  0%,
+  100% {
+    transform: scaleY(0.48);
+    opacity: 0.42;
+  }
+  50% {
+    transform: scaleY(0.88);
+    opacity: 0.76;
+  }
+}
+@keyframes oracle-viz-speak {
+  0%,
+  100% {
+    transform: scaleY(0.36);
+    opacity: 0.58;
+  }
+  35% {
+    transform: scaleY(1.38);
+    opacity: 1;
+  }
+  65% {
+    transform: scaleY(0.82);
+    opacity: 0.88;
+  }
+}
+@keyframes oracle-viz-error {
+  0%,
+  100% {
+    transform: scaleY(0.32);
+    opacity: 0.42;
+  }
+  50% {
+    transform: scaleY(1.08);
+    opacity: 0.9;
+  }
+}
+
+.oracle-orb-wrap {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  filter: drop-shadow(0 0 22px color-mix(in oklab, var(--spirit-accent) 28%, transparent));
+}
+
+.oracle-orb-wrap--widget {
+  width: min(100%, 200px);
+  max-width: 220px;
+  aspect-ratio: 1;
+}
+
+.oracle-orb-wrap--chamber {
+  width: min(100%, 420px);
+  max-width: 420px;
+  aspect-ratio: 1;
+}
+
+@media (max-width: 768px) {
+  .oracle-orb-wrap--chamber {
+    max-width: min(100%, 300px);
+  }
+}
+
+@media (max-width: 480px) {
+  .oracle-orb-wrap--chamber {
+    max-width: min(100%, 260px);
+  }
+}
+
+.oracle-orb-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.oracle-orb-orbit {
+  fill: none;
+  stroke: color-mix(in oklab, var(--spirit-accent-strong) 16%, transparent);
+  stroke-width: 1;
+  transform-origin: 160px 158px;
+}
+
+.oracle-orb-orbit-a {
+  animation: oracle-orb-orbit-a 10s linear infinite;
+}
+.oracle-orb-orbit-b {
+  animation: oracle-orb-orbit-b 13s linear infinite reverse;
+  stroke: color-mix(in oklab, var(--spirit-accent) 18%, transparent);
+}
+.oracle-orb-orbit-c {
+  animation: oracle-orb-orbit-c 16s linear infinite;
+  stroke-dasharray: 7 12;
+  opacity: 0.72;
+}
+
+.oracle-orb-wing-l {
+  transform-origin: 160px 174px;
+  animation: oracle-orb-wing-l 4.2s ease-in-out infinite;
+}
+.oracle-orb-wing-r {
+  transform-origin: 160px 174px;
+  animation: oracle-orb-wing-r 4.2s ease-in-out infinite;
+}
+
+.oracle-orb-energy {
+  stroke: color-mix(in oklab, var(--spirit-accent-strong) 22%, transparent);
+  stroke-width: 1;
+}
+
+.oracle-orb-vein {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.22);
+  stroke-width: 1.15;
+  stroke-linecap: round;
+  opacity: 0.52;
+}
+.oracle-orb-vein--thin {
+  stroke-width: 0.8;
+  opacity: 0.34;
+}
+
+.oracle-orb-group {
+  transform-origin: 160px 158px;
+  animation: oracle-orb-hover 3.8s ease-in-out infinite;
+}
+
+.oracle-orb-outer {
+  opacity: 0.95;
+  animation: oracle-orb-pulse 2.8s ease-in-out infinite;
+}
+
+.oracle-orb-hot {
+  fill: white;
+  filter: drop-shadow(0 0 10px white) drop-shadow(0 0 24px var(--spirit-accent));
+  animation: oracle-orb-hot 1.8s ease-in-out infinite;
+}
+
+.oracle-orb-mote {
+  fill: color-mix(in oklab, var(--spirit-accent-strong) 62%, transparent);
+  filter: drop-shadow(0 0 6px var(--spirit-glow));
+  animation: oracle-orb-mote 4.6s ease-in-out infinite;
+}
+
+.oracle-orb--listening .oracle-orb-mote {
+  animation-duration: 3.2s;
+}
+.oracle-orb--processing .oracle-orb-orbit-a {
+  animation-duration: 3.6s;
+}
+.oracle-orb--speaking .oracle-orb-wing-l,
+.oracle-orb--speaking .oracle-orb-wing-r {
+  animation-duration: 2.2s;
+}
+.oracle-orb--error .oracle-orb-orbit {
+  stroke: color-mix(in oklab, var(--color-amber) 35%, transparent);
+}
+
+.oracle-viz {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 44px;
+  padding: 8px 14px;
+  border-radius: 16px;
+  touch-action: manipulation;
+  border: 1px solid color-mix(in oklab, var(--spirit-accent) 22%, transparent);
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--spirit-accent) 8%, transparent),
+    color-mix(in oklab, var(--spirit-panel) 40%, transparent)
+  );
+  box-shadow:
+    inset 0 0 18px color-mix(in oklab, var(--spirit-accent) 6%, transparent),
+    0 0 18px color-mix(in oklab, var(--spirit-glow) 12%, transparent);
+}
+
+.oracle-viz--compact {
+  min-height: 34px;
+  gap: 4px;
+  padding: 6px 10px;
+  border-radius: 14px;
+}
+
+.oracle-viz__bar {
+  width: 4px;
+  min-height: 4px;
+  border-radius: 999px;
+  transform-origin: center bottom;
+  background: linear-gradient(
+    180deg,
+    var(--spirit-accent-strong),
+    var(--spirit-accent) 55%,
+    color-mix(in oklab, var(--spirit-accent) 65%, #1a1030)
+  );
+  box-shadow: 0 0 8px color-mix(in oklab, var(--spirit-glow) 55%, transparent);
+  opacity: 0.58;
+  animation: oracle-viz-idle 2.2s ease-in-out infinite;
+}
+
+.oracle-viz--compact .oracle-viz__bar {
+  width: 3px;
+}
+
+.oracle-viz--permission .oracle-viz__bar {
+  animation-name: oracle-viz-permission;
+  animation-duration: 3.2s;
+  opacity: 0.35;
+}
+.oracle-viz--listening .oracle-viz__bar {
+  animation-name: oracle-viz-listen;
+  animation-duration: 1.05s;
+}
+.oracle-viz--processing .oracle-viz__bar {
+  animation-name: oracle-viz-process;
+  animation-duration: 1.35s;
+}
+.oracle-viz--speaking .oracle-viz__bar {
+  animation-name: oracle-viz-speak;
+  animation-duration: 0.62s;
+  opacity: 0.92;
+}
+.oracle-viz--error .oracle-viz__bar {
+  animation-name: oracle-viz-error;
+  animation-duration: 0.85s;
+  background: linear-gradient(180deg, #ffe8b8, #f59e0b 55%, #7c3aed);
+}
+
+/* ── Oracle session transcript (live UIMessage rows) ─────────────────────────── */
+
+.oracle-session {
+  display: flex;
+  flex-direction: column;
+  border-radius: 20px;
+  border: 1px solid color-mix(in oklab, var(--spirit-border) 85%, transparent);
+  background: color-mix(in oklab, var(--spirit-panel) 55%, #000000);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, white 4%, transparent);
+  overflow: hidden;
+  min-height: 12rem;
+  /* dvh/svh: mobile browser chrome won’t clip the transcript mid-gesture. */
+  max-height: min(52dvh, 28rem);
+}
+
+@media (max-height: 520px) {
+  .oracle-session {
+    max-height: min(42dvh, 22rem);
+  }
+}
+
+.oracle-session__head {
+  flex-shrink: 0;
+  padding: 10px max(12px, env(safe-area-inset-left, 0px)) 10px max(12px, env(safe-area-inset-right, 0px));
+  border-bottom: 1px solid color-mix(in oklab, white 6%, transparent);
+  font-family: var(--font-mono);
+  font-size: clamp(10px, 2.8vw, 11px);
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--spirit-accent-strong) 88%, transparent);
+}
+
+.oracle-session__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 4px 0 8px;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* Narrow: icon + label row, body full width. Wide: one row icon | meta | body. */
+.oracle-session__row {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  grid-template-areas:
+    "icon meta"
+    "body body";
+  gap: 8px 12px;
+  align-items: center;
+  padding: 12px max(12px, env(safe-area-inset-left, 0px)) 12px max(12px, env(safe-area-inset-right, 0px));
+  border-bottom: 1px solid color-mix(in oklab, white 5%, transparent);
+  font-family: var(--font-mono);
+}
+
+@media (min-width: 640px) {
+  .oracle-session__row {
+    grid-template-columns: 32px minmax(0, 7.5rem) 1fr;
+    grid-template-areas: "icon meta body";
+    align-items: start;
+    padding-top: 14px;
+    padding-bottom: 14px;
+  }
+}
+
+.oracle-session__meta {
+  grid-area: meta;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.oracle-session__icon {
+  grid-area: icon;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in oklab, #a855f7 38%, transparent);
+  color: #c4b5fd;
+  flex-shrink: 0;
+  align-self: start;
+  margin-top: 2px;
+}
+
+.oracle-session__row--user .oracle-session__icon {
+  border-color: color-mix(in oklab, var(--spirit-accent) 42%, transparent);
+  color: color-mix(in oklab, var(--spirit-accent-strong) 90%, transparent);
+}
+
+.oracle-session__role {
+  font-size: clamp(11px, 3vw, 12px);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #c4b5fd;
+  min-width: 0;
+}
+
+.oracle-session__row--user .oracle-session__role {
+  color: color-mix(in oklab, var(--spirit-accent-strong) 88%, transparent);
+}
+
+.oracle-session__body {
+  grid-area: body;
+  margin: 0;
+  font-size: clamp(12px, 3.4vw, 14px);
+  line-height: 1.55;
+  color: color-mix(in oklab, var(--color-chalk) 78%, transparent);
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.oracle-session__time {
+  font-size: clamp(11px, 3vw, 12px);
+  color: color-mix(in oklab, var(--color-chalk) 38%, transparent);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.oracle-session__empty {
+  padding: 20px max(16px, env(safe-area-inset-left, 0px)) 20px max(16px, env(safe-area-inset-right, 0px));
+  font-family: var(--font-mono);
+  font-size: clamp(12px, 3.5vw, 14px);
+  color: color-mix(in oklab, var(--color-chalk) 42%, transparent);
+  line-height: 1.5;
+}
+
+.oracle-session__foot {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 10px;
+  padding-left: max(12px, env(safe-area-inset-left, 0px));
+  padding-right: max(12px, env(safe-area-inset-right, 0px));
+  padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid color-mix(in oklab, white 6%, transparent);
+  background: color-mix(in oklab, #000 35%, transparent);
+  font-family: var(--font-mono);
+  font-size: clamp(11px, 3.1vw, 12px);
+  color: color-mix(in oklab, var(--color-chalk) 52%, transparent);
+}
+
+.oracle-session__foot-meter {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 16px;
+}
+.oracle-session__foot-meter span {
+  width: 3px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--spirit-accent) 55%, transparent);
+  opacity: 0.55;
+  animation: oracle-viz-listen 1.4s ease-in-out infinite;
+}
+.oracle-session__foot-meter span:nth-child(2) {
+  height: 10px;
+  animation-delay: 0.12s;
+}
+.oracle-session__foot-meter span:nth-child(3) {
+  height: 14px;
+  animation-delay: 0.24s;
+}
+.oracle-session__foot-meter span:nth-child(1) {
+  height: 6px;
+}
+.oracle-session__foot-meter span:nth-child(4) {
+  height: 8px;
+  animation-delay: 0.08s;
+}
+
+.oracle-session__foot-info {
+  margin-left: auto;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, white 12%, transparent);
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: color-mix(in oklab, var(--color-chalk) 45%, transparent);
+  touch-action: manipulation;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .oracle-orb-orbit-a,
+  .oracle-orb-orbit-b,
+  .oracle-orb-orbit-c,
+  .oracle-orb-wing-l,
+  .oracle-orb-wing-r,
+  .oracle-orb-group,
+  .oracle-orb-outer,
+  .oracle-orb-hot,
+  .oracle-orb-mote,
+  .oracle-viz__bar,
+  .oracle-session__foot-meter span {
+    animation: none !important;
+  }
+}

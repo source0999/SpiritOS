@@ -53,7 +53,7 @@ Manual checks before you ship another “mobile glow-up”. Dexie is **local-onl
 
 - [ ] `/` dashboard hub.
 - [ ] `/oracle` loads and chats.
-- [ ] `/quarantine` loads.
+- [ ] `/design-demo` loads (optional); **`/quarantine` is not a current App Router page** — skip until reintroduced.
 - [ ] **Prompt 10C-C:** Sassy/Brutal stay short; assistant never shows `<think>` or mode-contract leaks; Researcher web defaults ON; turning web OFF yields **no** fake Sources/`[1]` citations; Teacher educational + web on returns real links or **Study aids to search**; research plan panel closes on thread/new chat/mode away; workflow rail compact above composer after dismiss on casual chats.
 
 ## Limitations (current)

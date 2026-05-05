@@ -83,3 +83,33 @@ _Reference (old repo): draft-first composer, rail auto-collapse hints — recrea
 - **Prompt 10B (shipped):** OpenAI Responses `web_search` behind `WEB_SEARCH_ENABLED` + `OPENAI_API_KEY`; `/api/research/web-search` for proof calls; `/api/spirit` uses AI SDK `system` option (no system-in-messages warning); Researcher gets `x-spirit-web-search` response header; **Deep think** + **Web search** toggles per thread; TTS long replies default to **local summary** with optional **chunked full read**; high-level workflow strip (not CoT); Spirit Profile “what Spirit knows” rows with source + wrong-perspective flag.
 - **Later** — RAG, DeepSeek reasoning lane, STT/mic, full automatic memory, Gemini-style Deep Research plan editor (10C).
 
+---
+
+## Current state / next up (checkpoint)
+
+**In the tree now**
+
+- **Homelab / dashboard telemetry** — live cluster polling via **`GET /api/telemetry/cluster`** when node URLs and tokens are set; **Windows desktop agent** (`scripts/spiritdesktop-windows/agent.js`) serves **`GET /api/telemetry/self`** on the LAN for CPU/RAM/storage.
+- **Capability registry** — **`GET /api/telemetry/capabilities`**; **`/api/spirit`** can short-circuit **deterministic** answers for hardware, storage, model/runtime, and boundary questions when the registry has data (`capability-intent`, `spirit-deterministic-ui-response`, server registry helpers).
+- **Chat** — saved threads, mode runtime, research/sanitizer stack unchanged in spirit; capability questions are an **add-on** path, not a replacement for normal chat.
+- **Oracle** — hands-free voice MVP + **in-progress** visual layer (orb / visualizer / transcript). **Full `/oracle` product design** and **phone layout** still open.
+- **Quarantine / experimental app route** — **not** present in the current App Router tree; treat **`/quarantine` as removed/deferred** until a dedicated bring-up. **`/design-demo`** remains the non-destructive visual sandbox.
+
+**Next up (product engineering order)**
+
+1. Stabilize and test (typecheck, unit tests, lint).  
+2. **`/oracle`** full design + **mobile-first** pass across dashboard, chat, Oracle.  
+3. **Personality / profile** cleanup and **memory hygiene** (test sessions vs real personalization).  
+4. **Progress / project tracker** — start with **`_blueprints/progress_tracker_roadmap.md`** Phase 0 / 1 (**read-only** discovery before any writes).
+
+**Explicitly not done**
+
+- In-app **folder browser** from chat, **app-level SSH execution**, and **write/edit** tools — out of scope until approval + scoping work lands in the main README **Next Work Order**.
+
+### Personality / profile cleanup (planned)
+
+- Clear **settings** for how profile + memory apply in **chat** vs **Oracle**.
+- **Test mode** or “ephemeral profile” so **test chats** do not train long-lived personalization.
+- User **review** of what Spirit stores; **reset** / **per-field delete** where safe.
+- **Oracle vs chat** tone boundaries — warm, practical, social when appropriate; not therapy cosplay; policy still wins.
+

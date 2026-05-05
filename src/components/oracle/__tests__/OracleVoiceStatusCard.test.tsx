@@ -127,7 +127,7 @@ describe("OracleVoiceStatusCard", () => {
     expect(within(card).getByText(/^Unsupported$/)).toBeInTheDocument();
   });
 
-  it("surfaces quarantine link", () => {
+  it("surfaces oracle session link (no quarantine)", () => {
     render(
       <OracleVoiceStatusCard
         status="idle"
@@ -138,7 +138,8 @@ describe("OracleVoiceStatusCard", () => {
         selectedVoiceLabel="Default"
       />,
     );
-    const link = screen.getByRole("link", { name: /quarantine feature lab/i });
-    expect(link.getAttribute("href")).toBe("/quarantine");
+    const link = screen.getByRole("link", { name: /oracle voice session/i });
+    expect(link.getAttribute("href")).toBe("/oracle");
+    expect(screen.queryByRole("link", { name: /quarantine/i })).toBeNull();
   });
 });

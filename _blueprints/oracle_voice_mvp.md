@@ -22,6 +22,23 @@
 | Loop | **Hands-free** by default (silence VAD auto-sends), Push-to-talk and Text-only available as knobs |
 | RAG / DeepSeek / server sync | **Out of scope** |
 
+### Working state vs gaps (checkpoint)
+
+**Working**
+
+- Hands-free / push-to-talk / text fallback loop; **`OracleVoiceSurface`** + **`useOracleSpeechInput`** + **`useSpiritChatTransport`** with **`runtimeSurface: "oracle"`** and **`persistence={false}`**.
+- Secure-context gate for mic; ElevenLabs/Piper TTS via **`/api/tts`**; Whisper via **`/api/stt/transcribe`**.
+- **Chamber UI** — **`OracleSessionTranscript`**, **`OracleOrbSprite`**, **`OracleVoiceVisualizer`**, **`oracle-visual-state`** + **`oracle-visuals.css`** (motion-safe).
+
+**Still needed**
+
+- **Full `/oracle` page design** — density, hierarchy, and alignment with **`_blueprints/design_system.md`** / **`design_demo`** (production is still rougher than the demo).
+- **Voice-friendly answers** — shorter, speakable phrasing for Oracle (iterate on prompts + caps; avoid walls of text when listening).
+- **Mobile-first layout** — Oracle must behave on **360px / 375px** widths; test over **HTTPS on LAN** from a real phone.
+- **Visual states** — polish **listening / thinking / speaking / idle** so the orb + transcript + status card stay in sync and readable (including **`prefers-reduced-motion`**).
+- **Personality balance** — practical, social, warm; **not** over-clinical; **dating/social advice** can stay in scope with **consent + safety** boundaries (same policy stack as chat).
+- **On-device validation** — mic + TTS path on **phone over HTTPS** to a LAN dev host (`npm run dev:https:lan` + firewall + cert SAN).
+
 ## Hands-free loop (default)
 
 1. User taps **Start session** → mic permission if needed → **MediaRecorder** + audio meter armed.
@@ -60,6 +77,8 @@
 ## UI session model
 
 `src/lib/oracle/oracle-voice-session.ts` — statuses include `listening`, `hearing-speech`, `silence-detected`, `transcribing`, `thinking`, `speaking`, `restarting`, `stopped`, `blocked`, `requesting-mic`, `permission-needed`, etc. **`OracleVoiceLoopMode`** is `hands-free | push-to-talk | manual-text` (default = `hands-free`). Helpers: **`deriveOracleVoiceStatus`**, **`shouldOracleAutoRestartListening`**, **`oracleSessionStatusLabel`**, **`oracleSessionStatusHint`**. Capped activity events. Not persisted.
+
+**Chamber UI:** Live **`UIMessage`** rows render in **`OracleSessionTranscript`** (fed from `useSpiritChatTransport` / `displayMessages`). Whisper raw finals stay in the collapsible STT debug lane. Shared **`OracleOrbSprite`** + **`OracleVoiceVisualizer`** use **`oracle-visual-state`** + **`oracle-visuals.css`** (token-aware, `prefers-reduced-motion` safe).
 
 ## Capability + secure-context module
 

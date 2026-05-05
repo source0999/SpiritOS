@@ -5,7 +5,7 @@ import { WorkspacePrimarySidebar } from "../WorkspacePrimarySidebar";
 
 vi.mock("@/theme/useSpiritTheme", () => ({
   useSpiritTheme: vi.fn(() => ({
-    theme: "dark-node",
+    theme: "alice-seagrass",
     setTheme: vi.fn(),
   })),
 }));
@@ -50,16 +50,17 @@ describe("WorkspacePrimarySidebar", () => {
     ).toHaveAttribute("href", "/chat");
   });
 
-  it("keeps quarantine and oracle routes on the rail", () => {
+  it("keeps oracle route on the rail", () => {
     render(<WorkspacePrimarySidebar />);
-
-    expect(screen.getAllByRole("link", { name: /^quarantine$/i })[0]).toHaveAttribute(
-      "href",
-      "/quarantine",
-    );
     expect(screen.getAllByRole("link", { name: /^oracle$/i })[0]).toHaveAttribute(
       "href",
       "/oracle",
     );
+  });
+
+  it("does not link to /quarantine", () => {
+    render(<WorkspacePrimarySidebar />);
+    const quarantineLinks = screen.queryAllByRole("link", { name: /quarantine/i });
+    expect(quarantineLinks.length).toBe(0);
   });
 });

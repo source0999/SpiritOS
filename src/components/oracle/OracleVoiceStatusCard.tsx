@@ -235,10 +235,10 @@ export function OracleVoiceStatusCard({
       </dl>
       <div className="mt-2 border-t border-white/[0.06] pt-2 text-[10px] text-chalk/45">
         <Link
-          href="/quarantine"
+          href="/oracle"
           className="text-[color:var(--spirit-accent-strong)] underline underline-offset-4 hover:brightness-110"
         >
-          Quarantine feature lab
+          Oracle voice session
         </Link>
         <span className="text-chalk/35"> · ephemeral · no saved threads</span>
       </div>

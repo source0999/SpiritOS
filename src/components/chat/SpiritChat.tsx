@@ -848,13 +848,13 @@ const SpiritChatInner = memo(function SpiritChatInner({
             {oracleVoiceSurface ? (
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <span className="rounded-full border border-emerald-500/35 bg-emerald-500/[0.08] px-2 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-wider text-emerald-300/95">
-                  Graduated from Quarantine MVP
+                  Oracle Voice
                 </span>
                 <Link
-                  href="/quarantine"
+                  href="/oracle"
                   className="min-h-[44px] min-w-[44px] font-mono text-[10px] leading-none text-[color:var(--spirit-accent-strong)] underline underline-offset-4 hover:brightness-110 sm:min-h-0 sm:min-w-0 sm:py-1"
                 >
-                  Feature lab
+                  Open Oracle
                 </Link>
               </div>
             ) : null}

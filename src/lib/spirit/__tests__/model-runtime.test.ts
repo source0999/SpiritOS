@@ -4,6 +4,12 @@ import { buildModelRuntime } from "@/lib/spirit/model-runtime";
 import { MODEL_PROFILES } from "@/lib/spirit/model-profiles";
 
 describe("buildModelRuntime", () => {
+  it("includes capability registry hint (no full JSON dump)", () => {
+    const r = buildModelRuntime("normal-peer", { lastUserMessage: "yo" });
+    expect(r.systemPrompt).toContain("## SpiritOS live capability registry");
+    expect(r.systemPrompt).toMatch(/\/api\/spirit/);
+  });
+
   it("Chat Peer does not include Oracle Voice surface instruction", () => {
     const r = buildModelRuntime("normal-peer", { lastUserMessage: "yo" });
     expect(r.systemPrompt).not.toContain("## Oracle Voice surface");
@@ -32,6 +38,37 @@ describe("buildModelRuntime", () => {
       runtimeSurface: "oracle",
     });
     expect(r.systemPrompt).toMatch(/short enough to speak|Voice-first|90 words/i);
+  });
+
+  it("Oracle Peer puts dating/social advice explicitly in scope", () => {
+    const r = buildModelRuntime("normal-peer", {
+      lastUserMessage: "what should I text her",
+      runtimeSurface: "oracle",
+    });
+    expect(r.systemPrompt).toMatch(/dating|texting|flirting/i);
+    expect(r.systemPrompt).toMatch(/in scope|Normal human social advice/i);
+  });
+
+  it("Oracle Peer includes consent/boundary/safety rails for social advice", () => {
+    const r = buildModelRuntime("normal-peer", {
+      lastUserMessage: "yo",
+      runtimeSurface: "oracle",
+    });
+    expect(r.systemPrompt).toMatch(/Consent|boundaries|harassment|rejection/i);
+    expect(r.systemPrompt).toMatch(/manipulation|coerc/i);
+  });
+
+  it("Oracle Peer instructs not to over-professionalize or dodge normal dating/social questions", () => {
+    const r = buildModelRuntime("normal-peer", {
+      lastUserMessage: "yo",
+      runtimeSurface: "oracle",
+    });
+    expect(r.systemPrompt).toMatch(/over-professionalize|generic AI disclaimers/i);
+  });
+
+  it("Chat Peer does not include Oracle dating/social scope block", () => {
+    const r = buildModelRuntime("normal-peer", { lastUserMessage: "yo" });
+    expect(r.systemPrompt).not.toMatch(/Normal human social advice is in scope/i);
   });
 
   it("Oracle surface instruction appears after profile prompt and before personalization", () => {

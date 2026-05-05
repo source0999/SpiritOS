@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev -H 0.0.0.0 --webpack",
     "dev:https": "next dev -H 0.0.0.0 --webpack --experimental-https -p 3000",
-    "dev:https:lan": "next dev -H 0.0.0.0 --webpack -p 3000 --experimental-https-key ./certificates/spirit-dev-key.pem --experimental-https-cert ./certificates/spirit-dev.pem",
+    "dev:https:lan": "next dev -H 0.0.0.0 --webpack -p 3000 --experimental-https --experimental-https-key ./certificates/spirit-dev-key.pem --experimental-https-cert ./certificates/spirit-dev.pem",
     "dev:turbo": "next dev -H 0.0.0.0",
     "dev:backend": "cd backend && docker compose up -d",
     "dev:all": "npm run dev:backend && npm run dev",

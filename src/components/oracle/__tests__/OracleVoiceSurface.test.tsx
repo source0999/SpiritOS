@@ -22,7 +22,7 @@ describe("OracleVoiceSurface", () => {
     expect(screen.queryByText(/Voice on/i)).toBeNull();
     expect(screen.queryByText(/Voice off/i)).toBeNull();
 
-    expect(screen.getByRole("heading", { name: /^Oracle$/i })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: /oracle session/i })).toBeInTheDocument();
     expect(screen.getByTestId("oracle-voice-status-card")).toBeInTheDocument();
   });
 

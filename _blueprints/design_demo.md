@@ -26,9 +26,10 @@ or APIs.
 
 1. `npm run dev`
 2. Open `/design-demo` on a mobile-sized viewport (or use device tools).
-3. Production routes (`/`, `/chat`, `/oracle`, `/quarantine`) keep working
-   unchanged. The demo even links to them where the real lane is the
-   correct destination.
+3. Production routes (`/`, `/chat`, `/oracle`) keep working
+   unchanged. The demo links to them where the real lane is the
+   correct destination. **`/quarantine` is not a live route in the
+   current tree** — the demo’s quarantine *preview* section is visual-only.
 
 ---
 
@@ -106,7 +107,8 @@ This demo is purely additive. The following were intentionally left alone:
 
 - All API routes under `src/app/api/**`.
 - Production page routes: `src/app/page.tsx`, `src/app/chat/**`,
-  `src/app/oracle/**`, `src/app/quarantine/**`.
+  `src/app/oracle/**` (the **`(quarantine)`** group is **not** in the
+  current tree — treat as deferred).
 - Chat transport, Oracle voice loop, TTS / STT runtime, Dexie
   persistence, middleware, theme engine.
 - Existing UI primitives (`GlassPanel`, `SpiritButton`, `SectionLabel`),
@@ -211,6 +213,27 @@ Suggested layering when reading the CSS:
 - Desktop side rail (`.demo-rail`) only appears at `lg` (≥1024px).
   Below that, it is hidden and the mobile dock is the only nav.
 - Top bar is sticky and respects `env(safe-area-inset-top)`.
+
+---
+
+## Future: sitewide production responsive pass (not the demo alone)
+
+The checklist above applies to **`.spirit-demo-root`** today. The **same targets** are the bar for **production** routes (`/`, `/chat`, `/oracle`) when we schedule a dedicated pass:
+
+| Target | Notes |
+|--------|--------|
+| **360px** | Android small phone |
+| **375px** | iPhone class width |
+| **768px** | Tablet |
+| **1024px** | Desktop / side rail territory |
+
+- **No horizontal scroll** at any primary breakpoint.
+- **Touch targets ≥ 44px** on primary actions and nav.
+- **Inputs at 16px font-size** on iOS to reduce unwanted zoom.
+- **`env(safe-area-inset-*)`** on top/bottom for notched devices.
+- **Sticky mobile nav / dock** behavior — one coherent pattern for dashboard, chat, and Oracle (not three one-off hacks).
+
+**QA:** exercise **dashboard**, **chat**, and **Oracle** on a real phone over **HTTPS** to the dev host.
 
 ---
 

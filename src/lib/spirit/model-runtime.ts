@@ -6,6 +6,7 @@ import {
   resolveSpiritMaxOutputTokens,
 } from "@/lib/spirit/response-budget";
 import { buildFinalAnswerContract } from "@/lib/spirit/spirit-answer-contract";
+import { SPIRIT_CAPABILITY_CONTEXT_HINT } from "@/lib/spirit/spirit-capability-context";
 import {
   buildRuntimeSurfaceInstruction,
   DEFAULT_SPIRIT_RUNTIME_SURFACE,
@@ -102,6 +103,8 @@ ${extra}`
   const systemPrompt = `${profile.systemPrompt}
 
 ${surfacePrefix}${budget}${deepBlock}${researchBlock}${planBlock}${prefsBlock}
+
+${SPIRIT_CAPABILITY_CONTEXT_HINT}
 
 ${contract}`.trim();
 

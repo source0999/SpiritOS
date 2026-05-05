@@ -1,87 +1,85 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import {
+  DEFAULT_THEME_ID,
+  THEME_IDS,
+  applySpiritPaletteDom,
+  getPaletteById,
+  normalizeStoredThemeId,
+  type ThemeId,
+} from "@/theme/spiritPalettes";
 
-// ── ThemeEngine — palettes on --spirit-* vars; bad storage/CSS never blanks UI ─
-
-export type ThemeId = "spirit-slate" | "dark-node" | "legacy-violet";
+// ── ThemeEngine — registry drives data-theme, typography, and --spirit-* paint ─
 
 const STORAGE_KEY = "spirit-os-theme-engine";
 
-/** Spirit Cyan lane — canonical fallback when storage/DOM coercion fails */
-const SPIRIT_CYAN_THEME: ThemeId = "spirit-slate";
-
-const THEMES = new Set<ThemeId>([
-  "spirit-slate",
-  "dark-node",
-  "legacy-violet",
-]);
+export type { ThemeId };
 
 export function safeTheme(raw: unknown): ThemeId | null {
   try {
     if (typeof raw !== "string") return null;
-    if (THEMES.has(raw as ThemeId)) return raw as ThemeId;
-    return null;
+    return normalizeStoredThemeId(raw);
   } catch {
     return null;
   }
 }
 
-function resolveTheme(theme: unknown): ThemeId {
+function resolveThemeState(theme: unknown): ThemeId {
   try {
-    if (typeof theme === "string" && THEMES.has(theme as ThemeId)) {
+    if (typeof theme === "string" && THEME_IDS.has(theme)) {
       return theme as ThemeId;
     }
   } catch {
-    /* malformed — fall through */
+    /* malformed */
   }
-  return SPIRIT_CYAN_THEME;
-}
-
-function applyDataTheme(theme: ThemeId): void {
-  try {
-    if (typeof document === "undefined") return;
-    document.documentElement.setAttribute("data-theme", theme);
-  } catch {
-    /* SSR / stripped DOM — caller may recover via fallback */
-  }
+  return DEFAULT_THEME_ID;
 }
 
 export function useSpiritTheme() {
-  const [theme, setThemeState] = useState<ThemeId>(SPIRIT_CYAN_THEME);
+  const [theme, setThemeState] = useState<ThemeId>(DEFAULT_THEME_ID);
 
   useEffect(() => {
     try {
       if (typeof window === "undefined") return;
       const raw = window.localStorage.getItem(STORAGE_KEY);
-      const t = safeTheme(raw);
-      if (t) queueMicrotask(() => setThemeState(t));
+      if (raw != null) {
+        queueMicrotask(() => setThemeState(normalizeStoredThemeId(raw)));
+      }
     } catch {
-      queueMicrotask(() => setThemeState(SPIRIT_CYAN_THEME));
+      queueMicrotask(() => setThemeState(DEFAULT_THEME_ID));
     }
   }, []);
 
   useEffect(() => {
     try {
-      const resolved = resolveTheme(theme);
+      const resolved = resolveThemeState(theme);
       if (resolved !== theme) {
         queueMicrotask(() => setThemeState(resolved));
         return;
       }
 
-      applyDataTheme(resolved);
+      try {
+        if (typeof document !== "undefined") {
+          applySpiritPaletteDom(document.documentElement, getPaletteById(resolved));
+        }
+      } catch {
+        /* SSR / no DOM */
+      }
 
       try {
         if (typeof window !== "undefined") {
           window.localStorage.setItem(STORAGE_KEY, resolved);
         }
       } catch {
-        /* storage quotas / private windows */
+        /* private mode / quota */
       }
     } catch {
       try {
-        queueMicrotask(() => setThemeState(SPIRIT_CYAN_THEME));
-        applyDataTheme(SPIRIT_CYAN_THEME);
+        queueMicrotask(() => setThemeState(DEFAULT_THEME_ID));
+        if (typeof document !== "undefined") {
+          applySpiritPaletteDom(document.documentElement, getPaletteById(DEFAULT_THEME_ID));
+        }
         if (typeof window !== "undefined") {
           try {
             window.localStorage.removeItem(STORAGE_KEY);
@@ -90,18 +88,19 @@ export function useSpiritTheme() {
           }
         }
       } catch {
-        applyDataTheme(SPIRIT_CYAN_THEME);
-        queueMicrotask(() => setThemeState(SPIRIT_CYAN_THEME));
+        if (typeof document !== "undefined") {
+          applySpiritPaletteDom(document.documentElement, getPaletteById(DEFAULT_THEME_ID));
+        }
+        queueMicrotask(() => setThemeState(DEFAULT_THEME_ID));
       }
     }
   }, [theme]);
 
   const setTheme = useCallback((next: ThemeId) => {
     try {
-      const resolved = safeTheme(next) ?? SPIRIT_CYAN_THEME;
-      setThemeState(resolved);
+      setThemeState(resolveThemeState(next));
     } catch {
-      setThemeState(SPIRIT_CYAN_THEME);
+      setThemeState(DEFAULT_THEME_ID);
     }
   }, []);
 

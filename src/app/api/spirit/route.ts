@@ -1,12 +1,16 @@
 import { convertToModelMessages, streamText, type ModelMessage } from "ai";
 
+import { getCapabilityRegistry } from "@/lib/server/capabilities/get-capabilities";
+import { formatCapabilityAnswer } from "@/lib/server/capabilities/format-capability-answer";
+import { createDeterministicAssistantUIMessageResponse } from "@/lib/server/spirit-deterministic-ui-response";
 import { lastUserTextFromMessages } from "@/lib/chat-utils";
 import { ApiError, errorToResponse } from "@/lib/server/api-errors";
 import {
   getOracleMaxOutputTokens,
+  getSpiritDiagnostics,
   getSpiritMaxOutputTokens,
 } from "@/lib/server/spirit-diagnostics";
-import { ollamaOpenAI } from "@/lib/server/ollama";
+import { ollamaOpenAI, probeOllamaOpenAICompat } from "@/lib/server/ollama";
 import {
   resolveOllamaModelId,
   type SpiritRuntimeSurface,
@@ -27,6 +31,7 @@ import {
 } from "@/lib/server/spirit-web-research-guard";
 import { buildModelRuntime } from "@/lib/spirit/model-runtime";
 import type { ModelProfileId } from "@/lib/spirit/model-profile.types";
+import { detectCapabilityIntent } from "@/lib/spirit/capability-intent";
 import { decideSpiritRoute } from "@/lib/spirit/spirit-route-decision";
 import {
   buildResearchSourcePolicy,
@@ -91,6 +96,52 @@ export async function POST(req: Request) {
       runtimeSurface === "oracle" ? "oracle" : "chat";
     const ollamaModelId = resolveOllamaModelId(surface);
     const webGlob = isWebSearchGloballyEnabled();
+
+    const capabilityKind = detectCapabilityIntent(lastUser);
+    if (capabilityKind !== null) {
+      let ollamaReachable: boolean | undefined;
+      if (capabilityKind === "ai_runtime") {
+        const probe = await probeOllamaOpenAICompat();
+        ollamaReachable = probe.ok;
+      }
+
+      const registry = await getCapabilityRegistry();
+      const diagnostics = getSpiritDiagnostics();
+      const text = formatCapabilityAnswer({
+        registry,
+        diagnostics,
+        webSearchEnabled: webGlob,
+        runtimeSurface: surface,
+        activeResolvedModelId: ollamaModelId,
+        intentKind: capabilityKind,
+        userMessage: lastUser,
+        ollamaReachable,
+      });
+
+      const responseHeaders = {
+        ...buildSpiritSearchHeaders({
+          routeLane: "local-chat",
+          routeConfidence: "high",
+          webSearch: "none",
+          searchStatus: "none",
+          provider: null,
+          sourceCount: 0,
+          queryTrimmed: trimSearchQueryForLog(lastUser),
+          elapsedMs: null,
+          searchKind: "none",
+          skipReason: null,
+          webSourcesJson: null,
+        }),
+        "x-spirit-runtime-surface": sanitizeForHttpByteStringHeader(surface),
+      };
+
+      return createDeterministicAssistantUIMessageResponse({
+        text,
+        originalMessages: uiMessages,
+        headers: responseHeaders,
+      });
+    }
+
     const routeDecision = decideSpiritRoute({
       modelProfileId,
       lastUserText: lastUser,

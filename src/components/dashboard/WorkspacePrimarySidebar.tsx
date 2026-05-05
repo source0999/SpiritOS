@@ -7,7 +7,6 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   MessageCircle,
-  ShieldAlert,
   Sparkles,
   Zap,
 } from "lucide-react";
@@ -24,7 +23,6 @@ export function WorkspacePrimarySidebar() {
   const pathname = usePathname() ?? "";
   const homeActive = pathname === "/";
   const chatActive = pathname === "/chat" || pathname.startsWith("/chat/");
-  const quarantineActive = pathname.startsWith("/quarantine");
   const oracleActive = pathname.startsWith("/oracle");
 
   const railNav = (
@@ -49,15 +47,6 @@ export function WorkspacePrimarySidebar() {
         title="Saved chat (/chat)"
       >
         <MessageCircle className="h-5 w-5" aria-hidden strokeWidth={2} />
-      </Link>
-      <Link
-        href="/quarantine"
-        className={cn(railBtn, quarantineActive && activeRail)}
-        aria-current={quarantineActive ? "page" : undefined}
-        aria-label="Quarantine"
-        title="Quarantine · voice lane"
-      >
-        <ShieldAlert className="h-5 w-5" aria-hidden strokeWidth={2} />
       </Link>
       <Link
         href="/oracle"
@@ -131,14 +120,6 @@ export function WorkspacePrimarySidebar() {
           title="Chat"
         >
           <MessageCircle className="h-6 w-6" aria-hidden />
-        </Link>
-        <Link
-          href="/quarantine"
-          className={cn(railBtn, "rounded-2xl", quarantineActive && activeRail)}
-          aria-label="Quarantine"
-          title="Quarantine"
-        >
-          <ShieldAlert className="h-6 w-6" aria-hidden />
         </Link>
         <Link
           href="/oracle"

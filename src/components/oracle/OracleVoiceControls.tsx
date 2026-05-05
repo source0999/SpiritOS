@@ -9,6 +9,7 @@ import { Mic, MicOff, RefreshCw, Square } from "lucide-react";
 import { memo } from "react";
 
 import { VoiceControl } from "@/components/chat/VoiceControl";
+import "@/components/oracle/oracle-visuals.css";
 import type { UseTtsState } from "@/hooks/useTTS";
 import type { UseOracleSpeechInputReturn } from "@/hooks/useOracleSpeechInput";
 import { useMounted } from "@/lib/hooks/useMounted";
@@ -203,7 +204,7 @@ export const OracleVoiceControls = memo(function OracleVoiceControls({
     <section
       data-testid="oracle-voice-controls"
       aria-label="Oracle voice controls"
-      className="flex w-full min-w-0 flex-col gap-3 px-3 pb-2 pt-1 sm:px-6 lg:px-8"
+      className="oracle-chrome-px flex w-full min-w-0 flex-col gap-3 pb-2 pt-1"
     >
       {/* ── Secure-context warning — impossible to miss when blocked ───────────────── */}
       {readyForHints && insecureContext ? (
@@ -300,7 +301,7 @@ export const OracleVoiceControls = memo(function OracleVoiceControls({
               type="button"
               disabled={speech.permissionState !== "granted"}
               onClick={() => void speech.refreshDevices()}
-              className="inline-flex min-h-[44px] min-w-[44px] touch-manipulation items-center justify-center rounded-lg border border-[color:var(--spirit-border)] bg-white/[0.04] text-chalk/80 disabled:opacity-35"
+              className="inline-flex h-11 min-h-[44px] min-w-[44px] shrink-0 touch-manipulation items-center justify-center rounded-lg border border-[color:var(--spirit-border)] bg-white/[0.04] text-chalk/80 [-webkit-tap-highlight-color:transparent] disabled:opacity-35"
               aria-label="Refresh microphone list"
             >
               <RefreshCw className="h-4 w-4" aria-hidden />
@@ -359,7 +360,7 @@ export const OracleVoiceControls = memo(function OracleVoiceControls({
               disabled={primaryDisabled}
               onClick={() => void onStartSession()}
               className={cn(
-                "flex min-h-[56px] flex-1 touch-manipulation items-center justify-center gap-2 rounded-2xl border px-4 py-4 font-mono text-sm font-semibold uppercase tracking-wide transition sm:min-h-[64px]",
+                "flex min-h-[52px] flex-1 touch-manipulation items-center justify-center gap-2 rounded-2xl border px-4 py-3 font-mono text-[13px] font-semibold uppercase tracking-wide transition sm:min-h-[54px]",
                 blocked
                   ? "border-rose-500/45 bg-rose-500/15 text-rose-100"
                   : sessionActive
@@ -381,7 +382,7 @@ export const OracleVoiceControls = memo(function OracleVoiceControls({
                 type="button"
                 data-testid="oracle-stop-session"
                 onClick={onStopSession}
-                className="inline-flex min-h-[56px] shrink-0 touch-manipulation items-center justify-center rounded-2xl border border-amber-400/35 bg-amber-500/15 px-4 font-mono text-xs font-semibold uppercase tracking-wide text-amber-50 sm:min-h-[64px]"
+                className="inline-flex min-h-[52px] shrink-0 touch-manipulation items-center justify-center rounded-2xl border border-amber-400/35 bg-amber-500/15 px-4 font-mono text-[12px] font-semibold uppercase tracking-wide text-amber-50 sm:min-h-[54px]"
               >
                 Stop session
               </button>
@@ -440,10 +441,10 @@ export const OracleVoiceControls = memo(function OracleVoiceControls({
 
       {/* ── Advanced settings (silence + sensitivity + text fallback toggle) ──────── */}
       <details
-        className="rounded-xl border border-white/[0.06] bg-black/15 px-3 py-2"
+        className="rounded-xl border border-white/[0.06] bg-black/15 px-3 py-1"
         data-testid="oracle-vad-settings"
       >
-        <summary className="cursor-pointer font-mono text-[10px] uppercase tracking-wider text-chalk/55">
+        <summary className="oracle-details-summary cursor-pointer list-none font-mono text-[11px] uppercase tracking-wider text-chalk/55 [&::-webkit-details-marker]:hidden">
           Advanced · silence + sensitivity
         </summary>
         <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:flex-wrap">

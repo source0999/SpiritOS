@@ -16,7 +16,6 @@ import {
   useState,
 } from "react";
 
-import Link from "next/link";
 import { Activity, UserRound } from "lucide-react";
 
 import { ChatActiveModeBadge } from "@/components/chat/ChatActiveModeBadge";
@@ -37,9 +36,15 @@ import { dedupeUIMessagesById } from "@/lib/chat-utils";
 import {
   DEFAULT_ORACLE_LOOP_MODE,
   deriveOracleVoiceStatus,
+  oracleSessionStatusLabel,
   shouldOracleAutoRestartListening,
   type OracleVoiceLoopMode,
 } from "@/lib/oracle/oracle-voice-session";
+import { getOracleVisualStateFromSessionStatus } from "@/lib/oracle/oracle-visual-state";
+import "@/components/oracle/oracle-visuals.css";
+import { OracleOrbSprite } from "@/components/oracle/OracleOrbSprite";
+import { OracleSessionTranscript } from "@/components/oracle/OracleSessionTranscript";
+import { OracleVoiceVisualizer } from "@/components/oracle/OracleVoiceVisualizer";
 import { getModelProfile } from "@/lib/spirit/model-profiles";
 import { getSpiritRuntimeSurfaceDisplayLabel } from "@/lib/spirit/spirit-client-runtime-hint";
 import {
@@ -112,7 +117,9 @@ export function OracleVoiceSurface() {
   const ttsSpeakGateRef = useTtsSpeakGateRef(tts);
 
   // SSR + first paint must match server ([]) — hydrate from LS after mount only.
-  const [workspaceActivity, setWorkspaceActivity] = useState<SpiritActivityEvent[]>([]);
+  const [workspaceActivity, setWorkspaceActivity] = useState<SpiritActivityEvent[]>(() =>
+    loadOracleActivitySeed(),
+  );
   const [activityOpen, setActivityOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [modeToast, setModeToast] = useState<string | null>(null);
@@ -147,10 +154,6 @@ export function OracleVoiceSurface() {
 
   const pushActivity = useCallback((e: Omit<SpiritActivityEvent, "id" | "at">) => {
     setWorkspaceActivity((prev) => appendSpiritActivityEvent(prev, e));
-  }, []);
-
-  useEffect(() => {
-    setWorkspaceActivity(loadOracleActivitySeed());
   }, []);
 
   useEffect(() => {
@@ -340,6 +343,23 @@ export function OracleVoiceSurface() {
       spiritTransportBanner,
     ],
   );
+
+  const oracleVisualState = useMemo(
+    () => getOracleVisualStateFromSessionStatus(oracleVoiceStatus),
+    [oracleVoiceStatus],
+  );
+
+  const sessionActivityLine = useMemo(
+    () => oracleSessionStatusLabel(oracleVoiceStatus),
+    [oracleVoiceStatus],
+  );
+
+  const showVisualizerMeter =
+    mounted &&
+    loopMode !== "manual-text" &&
+    (oracleVisualState === "listening" ||
+      oracleVisualState === "processing" ||
+      oracleVisualState === "speaking");
 
   const clearAutoRestartTimer = useCallback(() => {
     if (autoRestartTimerRef.current != null) {
@@ -595,38 +615,48 @@ export function OracleVoiceSurface() {
   );
 
   return (
-    <div className="relative flex min-h-dvh min-h-[100dvh] flex-col overflow-x-hidden bg-[color:var(--spirit-bg)] text-chalk/95">
-      <header className="shrink-0 border-b border-[color:var(--spirit-border)] px-3 py-3 backdrop-blur-xl sm:px-8">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h1 className="font-mono text-xs font-semibold uppercase tracking-[0.2em] text-cyan">
-              Oracle
-            </h1>
-            <p className="mt-1 font-mono text-[10px] text-chalk/50">
-              Whisper STT · ephemeral · hands-free session
+    <div className="relative flex min-h-dvh min-h-[100dvh] flex-col overflow-x-hidden bg-[color:var(--spirit-bg)] text-chalk/95 pb-[max(0px,env(safe-area-inset-bottom,0px))]">
+      <header className="oracle-chrome-px shrink-0 border-b border-[color:var(--spirit-border)] bg-[color:color-mix(in_oklab,var(--spirit-panel)_42%,transparent)] py-2.5 backdrop-blur-xl">
+        <div className="mx-auto flex w-full max-w-4xl min-w-0 flex-wrap items-center justify-between gap-x-2 gap-y-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <p className="font-mono text-[11px] uppercase leading-tight tracking-[0.14em] text-chalk/50 sm:text-[10px] sm:tracking-[0.2em]">
+              <span className="text-[color:var(--spirit-accent-strong)]">Spirit</span>
+              <span className="text-chalk/35"> · </span>
+              <span>Oracle Voice</span>
             </p>
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              <span className="rounded-full border border-emerald-500/35 bg-emerald-500/[0.08] px-2 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-wider text-emerald-300/95">
-                Hands-free MVP
-              </span>
-              <Link
-                href="/quarantine"
-                className="font-mono text-[10px] text-[color:var(--spirit-accent-strong)] underline underline-offset-4"
-              >
-                Quarantine lab
-              </Link>
-            </div>
+            <span className="max-w-[min(100%,11rem)] truncate rounded-full border border-[color:color-mix(in_oklab,var(--spirit-accent)_35%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-accent)_10%,transparent)] px-2.5 py-1 font-mono text-[10px] font-semibold uppercase tracking-wider text-[color:var(--spirit-accent-strong)] sm:max-w-none sm:py-0.5 sm:text-[9px]">
+              {sessionActivityLine}
+            </span>
+          </div>
+          <div className="flex min-w-0 max-w-full flex-wrap items-center justify-end gap-1.5">
+            <span className="shrink-0 rounded-full border border-white/[0.08] bg-black/25 px-2 py-1 font-mono text-[10px] text-chalk/65 sm:py-0.5 sm:text-[9px]">
+              Whisper STT
+            </span>
+            <span className="max-w-[10rem] truncate rounded-full border border-white/[0.08] bg-black/25 px-2 py-1 font-mono text-[10px] text-chalk/65 sm:max-w-none sm:py-0.5 sm:text-[9px]">
+              {loopMode === "hands-free"
+                ? "Hands-free"
+                : loopMode === "push-to-talk"
+                  ? "Push-to-talk"
+                  : "Text only"}
+            </span>
+            <span className="shrink-0 rounded-full border border-white/[0.08] bg-black/25 px-2 py-1 font-mono text-[10px] text-chalk/65 sm:py-0.5 sm:text-[9px]">
+              {mounted && speech.capability.isSecureContext === true
+                ? "Secure context"
+                : mounted && speech.capability.isSecureContext === false
+                  ? "Insecure"
+                  : "Secure…"}
+            </span>
           </div>
         </div>
       </header>
 
-      <div className="shrink-0 border-b border-[color:var(--spirit-border)] bg-[color:color-mix(in_oklab,var(--spirit-bg)_90%,transparent)] px-2 py-2 backdrop-blur-md sm:px-6 lg:px-8">
+      <div className="oracle-chrome-px shrink-0 border-b border-[color:var(--spirit-border)] bg-[color:color-mix(in_oklab,var(--spirit-bg)_90%,transparent)] py-2 backdrop-blur-md">
         {modeToast ? (
           <div className="mb-2 border-b border-white/[0.06] bg-white/[0.03] px-2 py-1 text-center font-mono text-[10px] text-chalk/65">
             {modeToast}
           </div>
         ) : null}
-        <div className="flex min-w-0 flex-col gap-2 lg:flex-row lg:flex-wrap lg:items-center">
+        <div className="mx-auto flex w-full max-w-4xl min-w-0 flex-col gap-2 lg:flex-row lg:flex-wrap lg:items-center">
           <ChatActiveModeBadge
             className="w-full max-w-[14rem] lg:w-auto"
             profileId={modeRt.activeModelProfileId}
@@ -648,7 +678,7 @@ export function OracleVoiceSurface() {
                 setActivityOpen((o) => !o);
                 setProfileOpen(false);
               }}
-              className="inline-flex h-10 w-10 touch-manipulation items-center justify-center rounded-lg border border-[color:var(--spirit-border)]/80 bg-white/[0.04] text-chalk/70"
+              className="inline-flex h-11 min-h-[44px] w-11 min-w-[44px] touch-manipulation items-center justify-center rounded-lg border border-[color:var(--spirit-border)]/80 bg-white/[0.04] text-chalk/70 [-webkit-tap-highlight-color:transparent]"
             >
               <Activity className="h-4 w-4" aria-hidden />
             </button>
@@ -659,11 +689,22 @@ export function OracleVoiceSurface() {
                 setProfileOpen((o) => !o);
                 setActivityOpen(false);
               }}
-              className="inline-flex h-10 w-10 touch-manipulation items-center justify-center rounded-lg border border-[color:var(--spirit-border)]/80 bg-white/[0.04] text-chalk/70"
+              className="inline-flex h-11 min-h-[44px] w-11 min-w-[44px] touch-manipulation items-center justify-center rounded-lg border border-[color:var(--spirit-border)]/80 bg-white/[0.04] text-chalk/70 [-webkit-tap-highlight-color:transparent]"
             >
               <UserRound className="h-4 w-4" aria-hidden />
             </button>
           </div>
+        </div>
+      </div>
+
+      <div className="oracle-chrome-px shrink-0 border-b border-[color:var(--spirit-border)]/80 bg-[color:color-mix(in_oklab,var(--spirit-bg)_88%,transparent)] py-4">
+        <div className="mx-auto flex w-full max-w-4xl min-w-0 flex-col items-center gap-3">
+          <OracleOrbSprite visualState={oracleVisualState} variant="chamber" />
+          <OracleVoiceVisualizer
+            state={oracleVisualState}
+            audioLevel={showVisualizerMeter ? speech.audioLevel : undefined}
+            className="w-full max-w-md"
+          />
         </div>
       </div>
 
@@ -691,47 +732,53 @@ export function OracleVoiceSurface() {
         transportBusy={transport.isBusy}
       />
 
-      <div className="shrink-0 pt-1">
-        <OracleVoiceStatusCard
-          status={oracleVoiceStatus}
-          modeLabel={getModelProfile(modeRt.activeModelProfileId).shortLabel}
-          runtimeLabel={getSpiritRuntimeSurfaceDisplayLabel("oracle")}
-          loopModeLabel={
-            loopMode === "hands-free"
-              ? "Hands-free"
-              : loopMode === "push-to-talk"
-                ? "Push-to-talk"
-                : "Text only"
-          }
-          speechInputLabel={speechLabel}
-          micPermissionLabel={
-            speech.permissionState === "granted"
-              ? "Granted"
-              : speech.permissionState === "denied"
-                ? "Denied"
-                : speech.permissionState === "unsupported"
-                  ? "Unavailable"
-                  : "Needed"
-          }
-          micLabel={selectedMicLabel}
-          secureContextOk={mounted ? speech.capability.isSecureContext ?? false : null}
-          audioLevel={speech.audioLevel}
-          silenceMs={speech.silenceMs}
-          silenceThresholdMs={speech.silenceDurationMs}
-          lastTranscript={speech.lastTranscript}
-          recordingStartedAt={speech.recordingStartedAt}
-          voiceProviderLine={oracleVoiceBackendLabel}
-          selectedVoiceLabel={oracleSelectedVoiceLabel}
-          lastPlaybackWallMs={tts.state.lastPlaybackWallMs}
-          lastError={tts.state.lastError}
-          spiritTransportError={spiritTransportBanner}
-          speechError={speech.lastError}
-        />
-      </div>
+      <details className="oracle-chrome-px shrink-0 border-b border-[color:var(--spirit-border)] bg-black/15 py-1">
+        <summary className="oracle-details-summary cursor-pointer list-none font-mono text-[11px] uppercase tracking-wider text-chalk/50 [&::-webkit-details-marker]:hidden">
+          Session telemetry
+        </summary>
+        <div className="pb-2 pt-1">
+          <OracleVoiceStatusCard
+            status={oracleVoiceStatus}
+            modeLabel={getModelProfile(modeRt.activeModelProfileId).shortLabel}
+            runtimeLabel={getSpiritRuntimeSurfaceDisplayLabel("oracle")}
+            loopModeLabel={
+              loopMode === "hands-free"
+                ? "Hands-free"
+                : loopMode === "push-to-talk"
+                  ? "Push-to-talk"
+                  : "Text only"
+            }
+            speechInputLabel={speechLabel}
+            micPermissionLabel={
+              speech.permissionState === "granted"
+                ? "Granted"
+                : speech.permissionState === "denied"
+                  ? "Denied"
+                  : speech.permissionState === "unsupported"
+                    ? "Unavailable"
+                    : "Needed"
+            }
+            micLabel={selectedMicLabel}
+            secureContextOk={mounted ? speech.capability.isSecureContext ?? false : null}
+            audioLevel={speech.audioLevel}
+            silenceMs={speech.silenceMs}
+            silenceThresholdMs={speech.silenceDurationMs}
+            lastTranscript={speech.lastTranscript}
+            recordingStartedAt={speech.recordingStartedAt}
+            voiceProviderLine={oracleVoiceBackendLabel}
+            selectedVoiceLabel={oracleSelectedVoiceLabel}
+            lastPlaybackWallMs={tts.state.lastPlaybackWallMs}
+            lastError={tts.state.lastError}
+            spiritTransportError={spiritTransportBanner}
+            speechError={speech.lastError}
+            className="mx-0 sm:mx-0 lg:mx-0"
+          />
+        </div>
+      </details>
 
       <div
         data-testid="oracle-mic-pickup"
-        className="scrollbar-hide flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overflow-x-hidden px-3 py-3 sm:px-6 lg:px-8"
+        className="oracle-chrome-px scrollbar-hide flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overflow-x-hidden py-3"
       >
         {transport.error ? (
           <div
@@ -741,52 +788,54 @@ export function OracleVoiceSurface() {
             {spiritTransportBanner}
           </div>
         ) : null}
-        <div className="mx-auto w-full max-w-3xl rounded-2xl border border-[color:var(--spirit-border)] bg-white/[0.04] px-4 py-4 backdrop-blur-xl sm:rounded-3xl sm:px-5 sm:py-5">
-          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan/90">
-            Mic pickup (Whisper final)
-          </p>
+        <OracleSessionTranscript
+          className="mx-auto w-full max-w-3xl"
+          messages={displayMessages}
+          activityLine={sessionActivityLine}
+        />
+        <details className="mx-auto w-full max-w-3xl rounded-xl border border-[color:var(--spirit-border)] bg-white/[0.03] px-3 py-2 sm:px-4">
+          <summary className="oracle-details-summary cursor-pointer list-none font-mono text-[11px] uppercase tracking-wider text-chalk/50 [&::-webkit-details-marker]:hidden">
+            Whisper STT raw pickup
+          </summary>
           <p className="mt-2 font-mono text-[11px] leading-relaxed text-chalk/55">
-            Each row is what STT returned after an utterance — sanity-check hallucinations here. Chat
-            transcripts are hidden on this page for now.
+            Each Whisper final after an utterance — sanity-check hallucinations here.
           </p>
-          <div className="mt-4 min-h-[4.5rem] rounded-xl border border-white/[0.06] bg-black/35 px-3 py-3">
+          <div className="mt-3 min-h-[3.5rem] rounded-lg border border-white/[0.06] bg-black/35 px-3 py-2">
             {latestMicPickup ? (
               <p className="font-mono text-sm leading-snug text-chalk/95">{latestMicPickup}</p>
             ) : (
-              <p className="font-mono text-xs text-chalk/40">
-                Nothing yet — start a session and speak; the latest utterance text lands here.
-              </p>
+              <p className="font-mono text-xs text-chalk/40">Nothing captured yet.</p>
             )}
           </div>
-        </div>
-        {micPickupLines.length > 1 ? (
-          <div className="mx-auto w-full max-w-3xl space-y-2">
-            <p className="font-mono text-[10px] uppercase tracking-wider text-chalk/45">
-              Earlier in this session
-            </p>
-            <ul className="space-y-2">
-              {micPickupLines
-                .slice(0, -1)
-                .slice(-12)
-                .map((row) => (
-                  <li
-                    key={row.id}
-                    className="rounded-lg border border-white/[0.05] bg-black/25 px-3 py-2 font-mono text-xs leading-snug text-chalk/75"
-                  >
-                    {row.text}
-                  </li>
-                ))}
-            </ul>
-          </div>
-        ) : null}
+          {micPickupLines.length > 1 ? (
+            <div className="mt-3 space-y-2">
+              <p className="font-mono text-[10px] uppercase tracking-wider text-chalk/45">
+                Earlier in this session
+              </p>
+              <ul className="space-y-2">
+                {micPickupLines
+                  .slice(0, -1)
+                  .slice(-12)
+                  .map((row) => (
+                    <li
+                      key={row.id}
+                      className="rounded-lg border border-white/[0.05] bg-black/25 px-3 py-2 font-mono text-xs leading-snug text-chalk/75"
+                    >
+                      {row.text}
+                    </li>
+                  ))}
+              </ul>
+            </div>
+          ) : null}
+        </details>
       </div>
 
       <details
-        className="shrink-0 border-t border-[color:var(--spirit-border)] bg-black/20 px-3 py-2 sm:px-6"
+        className="oracle-chrome-px shrink-0 border-t border-[color:var(--spirit-border)] bg-black/20 py-2"
         open={fallbackOpen}
         onToggle={(e) => setFallbackOpen((e.target as HTMLDetailsElement).open)}
       >
-        <summary className="cursor-pointer font-mono text-[11px] uppercase tracking-wider text-chalk/55">
+        <summary className="oracle-details-summary cursor-pointer list-none font-mono text-[12px] uppercase tracking-wider text-chalk/55 sm:text-[11px] [&::-webkit-details-marker]:hidden">
           Text fallback / debug
         </summary>
         <form onSubmit={onFallbackSubmit} className="mt-2 flex flex-col gap-2 pb-[env(safe-area-inset-bottom)]">

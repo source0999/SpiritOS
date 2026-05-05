@@ -54,7 +54,7 @@ Layout Orchestrator Rules
 
 Default: CinematicLayout (full-bleed dark)
 Intelligence Reader: EditorialLayout (max-w-4xl, centered, massive padding)
-Quarantine zone ((quarantine) route group): higher contrast, aggressive rose accents.
+Quarantine zone (experimental route — **deferred / not in current App Router**): higher contrast, aggressive rose accents (when it ships again).
 
 Future-Proofing
 
@@ -87,3 +87,16 @@ Static, tiny building blocks in `src/components/ui/` — not a full component li
 ## Chat workspace — message layer (Prompt 8)
 
 - **`SpiritMessage`** + **`MessageMarkdown`** (GFM) + **`MessageActions`** + **`StreamingCursor`** — assistant markdown, hover/focus actions, copy/delete/edit user, regenerate latest assistant via AI SDK `regenerate`.
+
+## Production responsive targets (future sitewide pass)
+
+Same targets as **`_blueprints/design_demo.md`** (demo implements the pattern; production still needs a unified pass):
+
+- Breakpoints: **360px** (Android), **375px** (iPhone), **768px** (tablet), **1024px** (desktop).
+- **No horizontal scroll** on primary shells.
+- **44px** minimum touch targets on critical controls.
+- **16px** minimum font size on inputs (iOS zoom discipline).
+- **`env(safe-area-inset-*)`** for notched devices.
+- **Sticky mobile navigation** — one coherent pattern for dashboard, chat, and Oracle.
+
+QA on a **real phone** over **HTTPS** to the LAN dev host is mandatory before calling this “done.”

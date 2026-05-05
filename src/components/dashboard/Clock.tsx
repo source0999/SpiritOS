@@ -5,7 +5,15 @@
 
 import { useEffect, useState } from "react";
 
-export function Clock() {
+import { cn } from "@/lib/cn";
+
+export type ClockProps = {
+  /** Set when the tick sits inside copy (nominal · time · uptime); default span hides below `sm` for sparse header chrome. */
+  inline?: boolean;
+  className?: string;
+};
+
+export function Clock({ inline = false, className }: ClockProps) {
   const [localTime, setLocalTime] = useState("12:00 PM");
 
   useEffect(() => {
@@ -29,7 +37,13 @@ export function Clock() {
   }, []);
 
   return (
-    <span className="hidden font-mono text-[10px] tabular-nums text-chalk/45 sm:inline">
+    <span
+      className={cn(
+        "font-mono text-[10px] tabular-nums text-chalk/45",
+        inline ? "inline" : "hidden sm:inline",
+        className,
+      )}
+    >
       {localTime}
     </span>
   );
