@@ -24,7 +24,7 @@ export const MobileChatTopBar = memo(function MobileChatTopBar({
   return (
     <header
       className={cn(
-        "flex h-11 max-h-11 shrink-0 items-center gap-1 overflow-hidden border-b border-[color:color-mix(in_oklab,var(--spirit-border)_70%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-bg)_92%,transparent)] px-1.5 backdrop-blur-md",
+        "flex min-h-[44px] shrink-0 items-center gap-1 overflow-hidden border-b border-[color:color-mix(in_oklab,var(--spirit-border)_55%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-bg)_94%,transparent)] px-2 py-1 backdrop-blur-md",
         className,
       )}
     >

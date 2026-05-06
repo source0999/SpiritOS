@@ -814,19 +814,22 @@ const SpiritChatInner = memo(function SpiritChatInner({
     return persistent.visibleThreads.find((t) => t.id === persistent.activeThreadId);
   }, [persistent.activeThreadId, persistent.visibleThreads]);
 
+  // ── Empty state: calm GPT-style center — no terminal cosplay, no fake affordances ──
   const defaultEmpty = (
     <motion.div
-      initial={{ opacity: 0, y: 6 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-      className="mx-auto max-w-lg rounded-xl border border-[color:color-mix(in_oklab,var(--spirit-accent)_22%,transparent)] bg-black/[0.18] px-6 py-5 text-center shadow-[0_0_60px_-30px_var(--spirit-glow)] backdrop-blur-sm"
+      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+      className="w-full max-w-md px-2 text-center sm:max-w-lg"
     >
-      <p className="font-mono text-[11px] uppercase tracking-[0.32em] text-[color:color-mix(in_oklab,var(--spirit-accent-strong)_80%,transparent)]">
-        spirit / ready
+      <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-chalk/40">
+        New chat
       </p>
-      <p className="mt-4 font-mono text-sm text-chalk/60">
-        <span className="text-[color:var(--spirit-accent-strong)]/85">&gt;</span> awaiting prompt
-        … <span className="animate-pulse text-[color:var(--spirit-accent-strong)]">█</span>
+      <h2 className="mt-3 font-sans text-xl font-medium tracking-tight text-chalk/95 sm:mt-4 sm:text-2xl">
+        What would you like to explore?
+      </h2>
+      <p className="mt-2 text-[15px] leading-relaxed text-chalk/48 sm:text-base sm:leading-relaxed">
+        Messages stay in this thread. Use the composer below when you are ready.
       </p>
     </motion.div>
   );
@@ -912,7 +915,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
       <div
         ref={scrollContainerRef}
         className={cn(
-          "scrollbar-hide relative z-0 min-h-0 flex-1 space-y-2.5 overflow-y-auto overflow-x-hidden px-2 py-2 sm:space-y-4 sm:px-5 sm:py-4",
+          "scrollbar-hide relative z-0 flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden px-2 py-2 sm:px-5 sm:py-4",
           variant === "workspace"
             ? "overscroll-y-contain pb-4 sm:pb-5 lg:pb-8"
             : "overscroll-y-contain pb-[calc(5rem+env(safe-area-inset-bottom,0px))] sm:pb-20 lg:pb-8",
@@ -930,8 +933,14 @@ const SpiritChatInner = memo(function SpiritChatInner({
             Loading thread…
           </p>
         ) : null}
-        {displayMessages.length === 0 && !(savedChatShell && persistent.messagesLoading) ? (emptyState ?? defaultEmpty) : null}
-        {list}
+        {displayMessages.length === 0 && !(savedChatShell && persistent.messagesLoading) ? (
+          <div className="flex min-h-[min(36dvh,260px)] flex-1 flex-col items-center justify-center px-3 py-8 sm:min-h-[min(42dvh,340px)] sm:py-12">
+            {emptyState ?? defaultEmpty}
+          </div>
+        ) : null}
+        {displayMessages.length > 0 ? (
+          <div className="mx-auto flex w-full max-w-[52rem] flex-col gap-3 sm:gap-5">{list}</div>
+        ) : null}
         {error ? (
           <div
             className="mx-1 flex gap-2 border-l-2 border-l-[color:var(--color-rose)]/70 py-2 pl-3 sm:mx-2"
@@ -987,24 +996,24 @@ const SpiritChatInner = memo(function SpiritChatInner({
           workspaceMobileChrome.setComposerFocused(false);
         }}
         className={cn(
-          "shrink-0 border-t border-[color:var(--spirit-border)]",
-          "bg-[color:color-mix(in_oklab,var(--spirit-bg)_88%,transparent)] backdrop-blur-2xl",
-          "lg:bg-[color:color-mix(in_oklab,var(--spirit-bg)_72%,transparent)]",
+          "shrink-0 border-t border-[color:color-mix(in_oklab,var(--spirit-border)_65%,transparent)]",
+          "bg-[color:color-mix(in_oklab,var(--spirit-bg)_92%,transparent)] backdrop-blur-2xl",
+          "lg:bg-[color:color-mix(in_oklab,var(--spirit-bg)_76%,transparent)]",
         )}
       >
         <form
           onSubmit={onSubmit}
           className={cn(
-            "px-2 py-1.5 sm:px-5 sm:py-3",
-            variant !== "workspace" && "pb-[calc(0.25rem+env(safe-area-inset-bottom,0px))]",
-            "lg:px-6 lg:pb-3 lg:pt-4",
+            "px-3 py-2 sm:px-5 sm:py-3.5",
+            variant !== "workspace" && "pb-[calc(0.35rem+env(safe-area-inset-bottom,0px))]",
+            "lg:px-6 lg:pb-4 lg:pt-4",
           )}
         >
           <div
             className={cn(
-              "mx-auto flex max-w-3xl gap-2",
-              "lg:rounded-full lg:border lg:border-[color:var(--spirit-border)] lg:bg-white/[0.04] lg:px-3 lg:py-2 lg:backdrop-blur-2xl",
-              "lg:shadow-[0_18px_56px_-24px_var(--spirit-glow),inset_0_0_0_1px_rgba(255,255,255,0.04)]",
+              "mx-auto flex max-w-3xl items-end gap-2",
+              "lg:rounded-[1.35rem] lg:border lg:border-[color:color-mix(in_oklab,var(--spirit-border)_80%,transparent)] lg:bg-white/[0.035] lg:px-3 lg:py-2.5 lg:backdrop-blur-2xl",
+              "lg:shadow-[0_12px_48px_-28px_rgba(0,0,0,0.45),inset_0_0_0_1px_rgba(255,255,255,0.04)]",
             )}
           >
             <textarea
@@ -1039,11 +1048,11 @@ const SpiritChatInner = memo(function SpiritChatInner({
               }
               className={cn(
                 "scrollbar-hide flex-1 resize-none overflow-y-auto text-chalk transition-[height] duration-150 ease-out",
-                "max-lg:min-h-[44px] max-lg:max-h-[120px] max-lg:px-2.5 max-lg:py-2 max-lg:text-base max-lg:leading-snug",
+                "max-lg:min-h-[44px] max-lg:max-h-[120px] max-lg:px-3.5 max-lg:py-2.5 max-lg:text-base max-lg:leading-snug",
                 "min-h-[52px] max-h-[10rem] px-5 py-[0.875rem] text-[15px]",
-                "placeholder:text-chalk/40 disabled:opacity-50",
-                "rounded-full border border-[color:var(--spirit-border)] bg-black/40",
-                "focus:border-[color:color-mix(in_oklab,var(--spirit-accent-strong)_42%,transparent)] focus:outline-none focus:ring-2 focus:ring-[color:color-mix(in_oklab,var(--spirit-accent)_22%,transparent)]",
+                "placeholder:text-chalk/38 disabled:opacity-50",
+                "max-lg:rounded-2xl max-lg:border max-lg:border-[color:color-mix(in_oklab,var(--spirit-border)_75%,transparent)] max-lg:bg-black/35",
+                "max-lg:focus:border-[color:color-mix(in_oklab,var(--spirit-accent-strong)_38%,transparent)] max-lg:focus:outline-none max-lg:focus:ring-1 max-lg:focus:ring-[color:color-mix(in_oklab,var(--spirit-accent)_20%,transparent)]",
                 "lg:min-h-[44px] lg:max-h-[10rem] lg:rounded-2xl lg:border-transparent lg:bg-transparent lg:px-4 lg:py-3 lg:text-[15px]",
                 "lg:focus:border-transparent lg:focus:bg-transparent lg:focus:shadow-none lg:focus:ring-0 lg:focus-visible:outline-none",
               )}
@@ -1064,13 +1073,13 @@ const SpiritChatInner = memo(function SpiritChatInner({
               disabled={isBusy || !input.trim()}
               aria-label="Send"
               className={cn(
-                "inline-flex h-10 w-10 shrink-0 touch-manipulation items-center justify-center rounded-full max-lg:h-11 max-lg:w-11",
-                "border border-[color:color-mix(in_oklab,var(--spirit-accent)_45%,transparent)]",
-                "bg-[color:color-mix(in_oklab,var(--spirit-accent)_18%,transparent)]",
-                "text-[color:var(--spirit-accent-strong)] transition disabled:cursor-not-allowed disabled:opacity-35",
+                "mb-0.5 inline-flex h-10 w-10 shrink-0 touch-manipulation items-center justify-center rounded-full max-lg:h-11 max-lg:w-11",
+                "border border-[color:color-mix(in_oklab,var(--spirit-accent)_50%,transparent)]",
+                "bg-[color:color-mix(in_oklab,var(--spirit-accent)_22%,transparent)]",
+                "text-[color:var(--spirit-accent-strong)] shadow-[0_2px_12px_-4px_var(--spirit-glow)] transition active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-35 disabled:active:scale-100",
                 hasDraft &&
                   !isBusy &&
-                  "shadow-[0_0_28px_-6px_var(--spirit-glow)] animate-[pulse_2.6s_ease-in-out_infinite]",
+                  "shadow-[0_0_24px_-4px_var(--spirit-glow)] animate-[pulse_2.8s_ease-in-out_infinite]",
               )}
             >
               <ArrowUp className="h-5 w-5" strokeWidth={2.25} aria-hidden />
@@ -1078,17 +1087,17 @@ const SpiritChatInner = memo(function SpiritChatInner({
           </div>
         </form>
         {workspaceChrome ? (
-          <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-2 px-2 pb-2 pt-0 font-mono text-[10px] text-chalk/55 sm:px-5 lg:px-6">
+          <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-1.5 px-3 pb-2.5 pt-0 font-mono text-[9px] font-medium uppercase tracking-wide text-chalk/45 sm:gap-2 sm:px-5 sm:text-[10px] lg:px-6">
             {!oracleVoiceSurface ? (
               <button
                 type="button"
                 aria-pressed={deepThinkEnabled}
                 onClick={() => setDeepThinkEnabled((v) => !v)}
                 className={cn(
-                  "touch-manipulation rounded-full border px-2.5 py-1 uppercase tracking-wide",
+                  "touch-manipulation rounded-full border px-2.5 py-1.5 sm:py-1",
                   deepThinkEnabled
                     ? "border-[color:color-mix(in_oklab,var(--spirit-accent)_45%,transparent)] text-[color:var(--spirit-accent-strong)]"
-                    : "border-[color:var(--spirit-border)] text-chalk/55",
+                    : "border-[color:color-mix(in_oklab,var(--spirit-border)_70%,transparent)] text-chalk/50",
                 )}
               >
                 Deep think
@@ -1102,10 +1111,10 @@ const SpiritChatInner = memo(function SpiritChatInner({
                   setWebSearchPreference((p) => (p === "disabled" ? "enabled" : "disabled"))
                 }
                 className={cn(
-                  "touch-manipulation rounded-full border px-2.5 py-1 uppercase tracking-wide",
+                  "touch-manipulation rounded-full border px-2.5 py-1.5 sm:py-1",
                   !webSearchOptOut
                     ? "border-[color:color-mix(in_oklab,var(--spirit-accent)_45%,transparent)] text-[color:var(--spirit-accent-strong)]"
-                    : "border-[color:var(--spirit-border)] text-chalk/55",
+                    : "border-[color:color-mix(in_oklab,var(--spirit-border)_70%,transparent)] text-chalk/50",
                 )}
               >
                 Web search {webSearchOptOut ? "off" : "on"}
@@ -1117,10 +1126,10 @@ const SpiritChatInner = memo(function SpiritChatInner({
                 aria-pressed={teacherWebSearchEnabled}
                 onClick={() => setTeacherWebSearchEnabled((v) => !v)}
                 className={cn(
-                  "touch-manipulation rounded-full border px-2.5 py-1 uppercase tracking-wide",
+                  "touch-manipulation rounded-full border px-2.5 py-1.5 sm:py-1",
                   teacherWebSearchEnabled
                     ? "border-[color:color-mix(in_oklab,var(--spirit-accent)_45%,transparent)] text-[color:var(--spirit-accent-strong)]"
-                    : "border-[color:var(--spirit-border)] text-chalk/55",
+                    : "border-[color:color-mix(in_oklab,var(--spirit-border)_70%,transparent)] text-chalk/50",
                 )}
               >
                 Web aids {teacherWebSearchEnabled ? "on" : "off"}
@@ -1139,7 +1148,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
                   setResearchPlan(draftResearchPlanFromPrompt(topic));
                   setResearchPlanOpen(true);
                 }}
-                className="touch-manipulation rounded-full border border-[color:var(--spirit-border)] px-2.5 py-1 uppercase tracking-wide text-chalk/65"
+                className="touch-manipulation rounded-full border border-[color:color-mix(in_oklab,var(--spirit-border)_70%,transparent)] px-2.5 py-1.5 text-chalk/55 sm:py-1"
               >
                 Research plan
               </button>
@@ -1214,33 +1223,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
             mobileThreadDrawer.open ? "Close saved threads" : "Open saved threads"
           }
           aria-expanded={mobileThreadDrawer.open}
-          onClick={() => {
-            // #region agent log
-            fetch(
-              "http://localhost:7530/ingest/da155463-47fd-4bed-94cb-233903115f13",
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  "X-Debug-Session-Id": "26a808",
-                },
-                body: JSON.stringify({
-                  sessionId: "26a808",
-                  location: "SpiritChat.tsx:workspace-threads-btn",
-                  message: "threads_toggle_click",
-                  data: {
-                    prevOpen: mobileThreadDrawer.open,
-                    nextOpen: !mobileThreadDrawer.open,
-                    surface: "workspace",
-                  },
-                  timestamp: Date.now(),
-                  hypothesisId: "H3",
-                }),
-              },
-            ).catch(() => {});
-            // #endregion
-            mobileThreadDrawer.onOpenChange(!mobileThreadDrawer.open);
-          }}
+          onClick={() => mobileThreadDrawer.onOpenChange(!mobileThreadDrawer.open)}
           className={cn(
             "inline-flex h-9 shrink-0 touch-manipulation items-center justify-center gap-1 rounded-lg border border-[color:var(--spirit-border)]/80 bg-white/[0.04] px-2 font-mono text-[9px] font-semibold uppercase tracking-wider text-chalk transition hover:bg-white/[0.07]",
             mobileThreadDrawer.open &&
@@ -1329,7 +1312,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
                     />
                   }
                 />
-                <div className="flex min-w-0 items-center gap-1 border-b border-[color:color-mix(in_oklab,var(--spirit-border)_70%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-bg)_92%,transparent)] px-1.5 py-0.5 backdrop-blur-md">
+                <div className="flex min-w-0 items-center gap-1 border-b border-[color:color-mix(in_oklab,var(--spirit-border)_55%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-bg)_94%,transparent)] px-1.5 py-1 backdrop-blur-md">
                   <ChatActiveModeBadge
                     compact
                     className="min-w-0 flex-1"
@@ -1343,7 +1326,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
                       setProfileOpen(false);
                       setThreadMenuOpen(false);
                     }}
-                    className="inline-flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-lg border border-[color:var(--spirit-border)]/80 bg-white/[0.04] text-chalk/70"
+                    className="inline-flex h-10 min-h-[44px] min-w-[44px] shrink-0 touch-manipulation items-center justify-center rounded-xl border border-[color:color-mix(in_oklab,var(--spirit-border)_65%,transparent)] bg-white/[0.035] text-chalk/65 transition hover:bg-white/[0.06]"
                   >
                     <Activity className="h-4 w-4" aria-hidden />
                   </button>
@@ -1355,7 +1338,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
                       setActivityOpen(false);
                       setThreadMenuOpen(false);
                     }}
-                    className="inline-flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-lg border border-[color:var(--spirit-border)]/80 bg-white/[0.04] text-chalk/70"
+                    className="inline-flex h-10 min-h-[44px] min-w-[44px] shrink-0 touch-manipulation items-center justify-center rounded-xl border border-[color:color-mix(in_oklab,var(--spirit-border)_65%,transparent)] bg-white/[0.035] text-chalk/65 transition hover:bg-white/[0.06]"
                   >
                     <UserRound className="h-4 w-4" aria-hidden />
                   </button>
@@ -1368,7 +1351,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
                         setActivityOpen(false);
                         setProfileOpen(false);
                       }}
-                      className="inline-flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-lg border border-[color:var(--spirit-border)]/80 bg-white/[0.04] text-chalk/70"
+                      className="inline-flex h-10 min-h-[44px] min-w-[44px] shrink-0 touch-manipulation items-center justify-center rounded-xl border border-[color:color-mix(in_oklab,var(--spirit-border)_65%,transparent)] bg-white/[0.035] text-chalk/65 transition hover:bg-white/[0.06]"
                     >
                       <SlidersHorizontal className="h-4 w-4" aria-hidden />
                     </button>

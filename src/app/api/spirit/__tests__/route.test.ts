@@ -1,5 +1,9 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 
+import { EventEmitter } from "events";
+import { Readable } from "stream";
+import type { ChildProcess } from "child_process";
+
 import { streamText } from "ai";
 
 import { detectCapabilityIntent } from "@/lib/spirit/capability-intent";
@@ -41,6 +45,12 @@ vi.mock("@/lib/server/spirit-diagnostics", () => ({
   })),
   getSpiritMaxOutputTokens: () => 1024,
   getOracleMaxOutputTokens: () => 768,
+}));
+
+const mockSpawnNoShell = vi.hoisted(() => vi.fn());
+
+vi.mock("@/lib/spirit/tools/child-process-spawn", () => ({
+  spawnNoShell: mockSpawnNoShell,
 }));
 
 vi.mock("ai", async (importOriginal) => {
@@ -369,6 +379,18 @@ describe("POST /api/spirit capability bridge", () => {
 describe("POST /api/spirit streamText tools wiring", () => {
   beforeEach(async () => {
     vi.stubEnv("WEB_SEARCH_ENABLED", "false");
+    vi.stubEnv("SPIRIT_ENABLE_DEV_COMMAND_TOOLS", "false");
+    mockSpawnNoShell.mockImplementation(() => {
+      const child = new EventEmitter() as ChildProcess;
+      child.stdout = new Readable({ read() {} });
+      child.stderr = new Readable({ read() {} });
+      (child as { kill?: (s: string) => boolean }).kill = () => {
+        queueMicrotask(() => child.emit("close", 0));
+        return true;
+      };
+      queueMicrotask(() => child.emit("close", 0));
+      return child;
+    });
     const { getCapabilityRegistry } = await import("@/lib/server/capabilities/get-capabilities");
     vi.mocked(getCapabilityRegistry).mockResolvedValue(
       capabilityRegistry("SPIRIT_ROUTE_TEST_NODE"),
@@ -382,6 +404,7 @@ describe("POST /api/spirit streamText tools wiring", () => {
   afterEach(() => {
     vi.unstubAllEnvs();
     vi.clearAllMocks();
+    mockSpawnNoShell.mockReset();
     clearReadOnlyToolProbeCache();
   });
 
@@ -510,6 +533,26 @@ describe("POST /api/spirit streamText tools wiring", () => {
     };
     expect(opts?.tools).toBeDefined();
     expect(Object.keys(opts!.tools!)).toHaveLength(4);
+    expect(opts?.tools).not.toHaveProperty("run_dev_command");
+  });
+
+  it("attaches run_dev_command when SPIRIT_ENABLE_DEV_COMMAND_TOOLS is true", async () => {
+    vi.stubEnv("SPIRIT_ENABLE_LOCAL_TOOLS", "true");
+    vi.stubEnv("SPIRIT_OLLAMA_SUPPORTS_TOOLS", "true");
+    vi.stubEnv("SPIRIT_ENABLE_DEV_COMMAND_TOOLS", "true");
+    const req = new Request("http://localhost/api/spirit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(chatBody()),
+    });
+    await POST(req);
+    const opts = vi.mocked(streamText).mock.calls[0]?.[0] as {
+      tools?: Record<string, unknown>;
+      stopWhen?: unknown;
+    };
+    expect(opts?.tools).toBeDefined();
+    expect(opts?.tools).toHaveProperty("run_dev_command");
+    expect(Object.keys(opts!.tools!)).toHaveLength(5);
   });
 
   it("concrete workspace list with local tools off uses deterministic shortcut (no streamText)", async () => {
@@ -645,16 +688,14 @@ describe("POST /api/spirit streamText tools wiring", () => {
     expect(opts?.tools).toBeDefined();
   });
 
-  it("Run npm test is not classified as file_access (no workspace-read shortcut)", () => {
-    expect(detectCapabilityIntent("Run npm test")).not.toBe("file_access");
+  it("Run npm test maps to dev_commands", () => {
+    expect(detectCapabilityIntent("Run npm test")).toBe("dev_commands");
   });
 
-  it("run npm test does not use direct workspace execution (concrete gate off)", async () => {
-    const { probeOllamaChatCompletionsAcceptsToolSchema } = await import("@/lib/server/ollama");
-    vi.mocked(probeOllamaChatCompletionsAcceptsToolSchema).mockResolvedValue(false);
-    clearReadOnlyToolProbeCache();
+  it("run npm test with dev env off returns deterministic reply (no streamText)", async () => {
     vi.stubEnv("SPIRIT_ENABLE_LOCAL_TOOLS", "true");
     vi.stubEnv("SPIRIT_OLLAMA_SUPPORTS_TOOLS", "true");
+    vi.stubEnv("SPIRIT_ENABLE_DEV_COMMAND_TOOLS", "false");
     vi.mocked(streamText).mockClear();
     const req = new Request("http://localhost/api/spirit", {
       method: "POST",
@@ -664,7 +705,152 @@ describe("POST /api/spirit streamText tools wiring", () => {
           messages: [
             {
               role: "user",
-              id: "u-npm",
+              id: "u-npm-off",
+              parts: [{ type: "text", text: "Run npm test" }],
+            },
+          ],
+        }),
+      ),
+    });
+    const res = await POST(req);
+    expect(vi.mocked(streamText)).not.toHaveBeenCalled();
+    const raw = await res.text();
+    expect(raw).toMatch(/disabled|not true/i);
+  });
+
+  it("run npm test with dev env on but probe false runs direct fallback (confirmation)", async () => {
+    const { probeOllamaChatCompletionsAcceptsToolSchema } = await import("@/lib/server/ollama");
+    vi.mocked(probeOllamaChatCompletionsAcceptsToolSchema).mockResolvedValue(false);
+    clearReadOnlyToolProbeCache();
+    vi.stubEnv("SPIRIT_ENABLE_LOCAL_TOOLS", "true");
+    vi.stubEnv("SPIRIT_OLLAMA_SUPPORTS_TOOLS", "true");
+    vi.stubEnv("SPIRIT_ENABLE_DEV_COMMAND_TOOLS", "true");
+    vi.mocked(streamText).mockClear();
+    const req = new Request("http://localhost/api/spirit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(
+        jsonBody({
+          messages: [
+            {
+              role: "user",
+              id: "u-npm-probe",
+              parts: [{ type: "text", text: "Run npm test" }],
+            },
+          ],
+        }),
+      ),
+    });
+    const res = await POST(req);
+    expect(vi.mocked(streamText)).not.toHaveBeenCalled();
+    const raw = await res.text();
+    expect(raw).toMatch(/Confirmation required/i);
+    expect(raw).not.toMatch(/not attached for this model or session/i);
+  });
+
+  it("probe fail + dev commands on + Check git status returns direct dev output (not not-attached)", async () => {
+    const { probeOllamaChatCompletionsAcceptsToolSchema } = await import("@/lib/server/ollama");
+    vi.mocked(probeOllamaChatCompletionsAcceptsToolSchema).mockResolvedValue(false);
+    clearReadOnlyToolProbeCache();
+    vi.stubEnv("SPIRIT_ENABLE_LOCAL_TOOLS", "true");
+    vi.stubEnv("SPIRIT_OLLAMA_SUPPORTS_TOOLS", "true");
+    vi.stubEnv("SPIRIT_ENABLE_DEV_COMMAND_TOOLS", "true");
+    vi.mocked(streamText).mockClear();
+    const req = new Request("http://localhost/api/spirit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(
+        jsonBody({
+          messages: [
+            {
+              role: "user",
+              id: "u-git-direct",
+              parts: [{ type: "text", text: "Check git status" }],
+            },
+          ],
+        }),
+      ),
+    });
+    const res = await POST(req);
+    expect(vi.mocked(streamText)).not.toHaveBeenCalled();
+    const raw = await res.text();
+    expect(raw).toMatch(/Dev command: git status/i);
+    expect(raw).not.toMatch(/not attached for this model or session/i);
+  });
+
+  it("probe fail + Run npm test confirm true uses direct fallback", async () => {
+    const { probeOllamaChatCompletionsAcceptsToolSchema } = await import("@/lib/server/ollama");
+    vi.mocked(probeOllamaChatCompletionsAcceptsToolSchema).mockResolvedValue(false);
+    clearReadOnlyToolProbeCache();
+    vi.stubEnv("SPIRIT_ENABLE_LOCAL_TOOLS", "true");
+    vi.stubEnv("SPIRIT_OLLAMA_SUPPORTS_TOOLS", "true");
+    vi.stubEnv("SPIRIT_ENABLE_DEV_COMMAND_TOOLS", "true");
+    vi.mocked(streamText).mockClear();
+    const req = new Request("http://localhost/api/spirit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(
+        jsonBody({
+          messages: [
+            {
+              role: "user",
+              id: "u-npm-confirm",
+              parts: [{ type: "text", text: "Run npm test confirm true" }],
+            },
+          ],
+        }),
+      ),
+    });
+    const res = await POST(req);
+    expect(vi.mocked(streamText)).not.toHaveBeenCalled();
+    const raw = await res.text();
+    expect(raw).toMatch(/Dev command:|Dev command failed/i);
+    expect(raw).not.toMatch(/Confirmation required before running npm_test/i);
+  });
+
+  it("SPIRIT_ENABLE_DEV_COMMAND_TOOLS=false + Check git status does not execute dev command output", async () => {
+    const { probeOllamaChatCompletionsAcceptsToolSchema } = await import("@/lib/server/ollama");
+    vi.mocked(probeOllamaChatCompletionsAcceptsToolSchema).mockResolvedValue(false);
+    clearReadOnlyToolProbeCache();
+    vi.stubEnv("SPIRIT_ENABLE_LOCAL_TOOLS", "true");
+    vi.stubEnv("SPIRIT_OLLAMA_SUPPORTS_TOOLS", "true");
+    vi.stubEnv("SPIRIT_ENABLE_DEV_COMMAND_TOOLS", "false");
+    vi.mocked(streamText).mockClear();
+    const req = new Request("http://localhost/api/spirit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(
+        jsonBody({
+          messages: [
+            {
+              role: "user",
+              id: "u-git-off",
+              parts: [{ type: "text", text: "Check git status" }],
+            },
+          ],
+        }),
+      ),
+    });
+    const res = await POST(req);
+    const raw = await res.text();
+    expect(raw).not.toMatch(/^Dev command: git status/m);
+    expect(raw).toMatch(/disabled|not true/i);
+  });
+
+  it("dev_commands with run_dev_command attached reaches streamText instead of capability shortcut", async () => {
+    vi.stubEnv("SPIRIT_ENABLE_LOCAL_TOOLS", "true");
+    vi.stubEnv("SPIRIT_OLLAMA_SUPPORTS_TOOLS", "true");
+    vi.stubEnv("SPIRIT_ENABLE_DEV_COMMAND_TOOLS", "true");
+    vi.mocked(streamText).mockClear();
+    const req = new Request("http://localhost/api/spirit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(
+        jsonBody({
+          messages: [
+            {
+              role: "user",
+              id: "u-dev-bypass",
               parts: [{ type: "text", text: "Run npm test" }],
             },
           ],
@@ -673,5 +859,9 @@ describe("POST /api/spirit streamText tools wiring", () => {
     });
     await POST(req);
     expect(vi.mocked(streamText)).toHaveBeenCalled();
+    const opts = vi.mocked(streamText).mock.calls[0]?.[0] as {
+      tools?: Record<string, unknown>;
+    };
+    expect(opts?.tools?.run_dev_command).toBeDefined();
   });
 });

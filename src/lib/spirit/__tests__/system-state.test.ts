@@ -155,11 +155,26 @@ describe("resolveSpiritSystemState", () => {
     expect(state.availableCapabilities).not.toContain("file_editing");
   });
 
-  it("file_editing moves to available when SPIRIT_ENABLE_FILE_EDIT_TOOLS=true", () => {
+  it("file_editing available only when env on and fileEditToolsAttached is true", () => {
     vi.stubEnv("SPIRIT_ENABLE_FILE_EDIT_TOOLS", "true");
-    const state = resolveSpiritSystemState({ runtimeSurface: "chat" });
+    const state = resolveSpiritSystemState({
+      runtimeSurface: "chat",
+      fileEditToolsAttached: true,
+    });
     expect(state.availableCapabilities).toContain("file_editing");
     expect(state.unavailableCapabilities).not.toContain("file_editing");
+    expect(state.fileEditingAttachmentNote).toBeNull();
+  });
+
+  it("file_editing unavailable when env is on but fileEditToolsAttached is false", () => {
+    vi.stubEnv("SPIRIT_ENABLE_FILE_EDIT_TOOLS", "true");
+    const state = resolveSpiritSystemState({
+      runtimeSurface: "chat",
+      fileEditToolsAttached: false,
+    });
+    expect(state.unavailableCapabilities).toContain("file_editing");
+    expect(state.availableCapabilities).not.toContain("file_editing");
+    expect(state.fileEditingAttachmentNote).toContain("confirmation");
   });
 
   it("terminal_execution unavailable when SPIRIT_ENABLE_DEV_COMMAND_TOOLS not set", () => {
@@ -168,11 +183,25 @@ describe("resolveSpiritSystemState", () => {
     expect(state.unavailableCapabilities).toContain("terminal_execution");
   });
 
-  it("terminal_execution moves to available when SPIRIT_ENABLE_DEV_COMMAND_TOOLS=true", () => {
+  it("terminal_execution unavailable when SPIRIT_ENABLE_DEV_COMMAND_TOOLS=true but devCommandToolsAttached false", () => {
     vi.stubEnv("SPIRIT_ENABLE_DEV_COMMAND_TOOLS", "true");
-    const state = resolveSpiritSystemState({ runtimeSurface: "chat" });
+    const state = resolveSpiritSystemState({
+      runtimeSurface: "chat",
+      devCommandToolsAttached: false,
+    });
+    expect(state.unavailableCapabilities).toContain("terminal_execution");
+    expect(state.availableCapabilities).not.toContain("terminal_execution");
+    expect(state.devCommandAttachmentNote).toContain("not attached");
+  });
+
+  it("terminal_execution available only when devCommandToolsAttached is true", () => {
+    vi.stubEnv("SPIRIT_ENABLE_DEV_COMMAND_TOOLS", "true");
+    const state = resolveSpiritSystemState({
+      runtimeSurface: "chat",
+      devCommandToolsAttached: true,
+    });
     expect(state.availableCapabilities).toContain("terminal_execution");
-    expect(state.unavailableCapabilities).not.toContain("terminal_execution");
+    expect(state.devCommandAttachmentNote).toBeNull();
   });
 
   it("email_access unavailable by default", () => {

@@ -15,6 +15,13 @@ describe("normalizeForCapabilityIntent", () => {
 });
 
 describe("detectCapabilityIntent", () => {
+  it("classifies dev_commands", () => {
+    expect(detectCapabilityIntent("Run npm test")).toBe("dev_commands");
+    expect(detectCapabilityIntent("check git status")).toBe("dev_commands");
+    expect(detectCapabilityIntent("npm run typecheck")).toBe("dev_commands");
+    expect(detectCapabilityIntent("check types")).toBe("dev_commands");
+  });
+
   it("classifies capability overview questions (including typos)", () => {
     expect(detectCapabilityIntent("what are your capabilities?")).toBe("general_capabilities");
     expect(detectCapabilityIntent("what are your capabilites?")).toBe("general_capabilities");

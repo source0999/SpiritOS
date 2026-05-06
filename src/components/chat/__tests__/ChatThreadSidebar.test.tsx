@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -17,6 +19,13 @@ function threadStub(overrides: Partial<ChatThread> = {}): ChatThread {
 const noop = () => {};
 
 describe("ChatThreadSidebar", () => {
+  it("uses hydration-safe useMediaMinWidthLg for desktop breakpoint (not lying sync store)", () => {
+    const p = resolve(process.cwd(), "src/components/chat/ChatThreadSidebar.tsx");
+    const src = readFileSync(p, "utf8");
+    expect(src).toContain("useMediaMinWidthLg");
+    expect(src).not.toContain("useSyncExternalStore");
+  });
+
   it("shows the draft headline when draft lane is focused", () => {
     render(
       <ChatThreadSidebar

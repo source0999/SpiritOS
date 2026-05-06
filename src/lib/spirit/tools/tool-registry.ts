@@ -8,11 +8,31 @@ import { z } from "zod";
 import { toolErrorFromUnknown } from "@/lib/spirit/tools/tool-safety";
 import { probeOllamaChatCompletionsAcceptsToolSchema } from "@/lib/server/ollama";
 import {
+  proposeFileEdit,
+  applyConfirmedFileEdit,
+  isFileEditToolsEnvEnabled,
+} from "@/lib/spirit/tools/file-edit-tools";
+import {
+  getAllowedDevCommandIds,
+  isDevCommandToolsEnvEnabled,
+  runDevCommand,
+  type DevCommandId,
+} from "@/lib/spirit/tools/dev-command-tools";
+import {
   getSystemStatus,
   listWorkspaceFiles,
   readLogTail,
   readWorkspaceFile,
 } from "@/lib/spirit/tools/workspace-tools";
+
+export { isFileEditToolsEnvEnabled, isDevCommandToolsEnvEnabled };
+
+/** True when streamText received run_dev_command from resolveSpiritToolsForOllamaModel. */
+export function spiritToolsetIncludesRunDevCommand(
+  tools: Record<string, unknown> | undefined | null,
+): boolean {
+  return Boolean(tools && typeof tools === "object" && "run_dev_command" in tools);
+}
 
 export function isLocalToolsEnabled(): boolean {
   return process.env.SPIRIT_ENABLE_LOCAL_TOOLS === "true";
@@ -96,8 +116,81 @@ export function getSpiritReadOnlyTools() {
   };
 }
 
+export function getSpiritDevCommandTools() {
+  if (!isLocalToolsEnabled()) return {};
+  if (!isOllamaToolTransportReady()) return {};
+  if (!isDevCommandToolsEnvEnabled()) return {};
+
+  const allowed = getAllowedDevCommandIds();
+  if (allowed.length === 0) return {};
+
+  const idsTuple = allowed as [DevCommandId, ...DevCommandId[]];
+
+  return {
+    run_dev_command: tool({
+      description:
+        "Runs only fixed allowlisted development commands by commandId. Does not accept shell strings. Does not install packages. Does not mutate workspace source files except typical build or test caches. npm_test and npm_build require confirm: true before execution.",
+      inputSchema: z.object({
+        commandId: z.enum(idsTuple),
+        confirm: z
+          .boolean()
+          .optional()
+          .describe("Must be true when the command requires explicit user confirmation."),
+      }),
+      execute: async (input) => {
+        try {
+          return await runDevCommand(input);
+        } catch (e) {
+          return toolErrorFromUnknown(e);
+        }
+      },
+    }),
+  };
+}
+
+function getSpiritFileEditTools() {
+  if (!isFileEditToolsEnvEnabled()) return {};
+  return {
+    propose_file_edit: tool({
+      description:
+        "Stage a workspace file edit for review only. Computes a diff against the current file and stores a proposal. Never writes to disk. The user must approve; apply only via apply_confirmed_file_edit with confirm true.",
+      inputSchema: z.object({
+        filePath: z.string().describe("Workspace-relative path to the file."),
+        nextContent: z.string().describe("Full replacement UTF-8 text for the file."),
+        reason: z.string().optional().describe("Short note on why this edit is suggested."),
+      }),
+      execute: async (input) => {
+        try {
+          return await proposeFileEdit(input);
+        } catch (e) {
+          return toolErrorFromUnknown(e);
+        }
+      },
+    }),
+    apply_confirmed_file_edit: tool({
+      description:
+        "Apply a previously stored proposal only when confirm is true and the user explicitly approved this proposal id. Creates a backup before overwriting. Rejects if the file changed since proposal.",
+      inputSchema: z.object({
+        proposalId: z.string().describe("Id returned by propose_file_edit."),
+        confirm: z
+          .boolean()
+          .describe("Must be true to apply; false is rejected."),
+      }),
+      execute: async (input) => {
+        try {
+          return await applyConfirmedFileEdit(input);
+        } catch (e) {
+          return toolErrorFromUnknown(e);
+        }
+      },
+    }),
+  };
+}
+
 export function getSpiritToolsForRuntime() {
-  return getSpiritReadOnlyTools();
+  const readOnly = getSpiritReadOnlyTools();
+  if (!readOnly) return undefined;
+  return { ...readOnly, ...getSpiritFileEditTools(), ...getSpiritDevCommandTools() };
 }
 
 const modelToolSchemaSupported = new Map<string, boolean>();
@@ -113,7 +206,7 @@ export function clearReadOnlyToolProbeCache(): void {
  */
 export async function resolveSpiritToolsForOllamaModel(
   modelId: string,
-): Promise<ReturnType<typeof getSpiritReadOnlyTools>> {
+): Promise<ReturnType<typeof getSpiritToolsForRuntime>> {
   const tools = getSpiritToolsForRuntime();
   if (!tools) return undefined;
 

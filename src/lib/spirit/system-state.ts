@@ -28,8 +28,12 @@ export type SpiritSystemStateInput = {
   projectPathConfigured: boolean;
   availableCapabilities: SpiritSystemCapability[];
   unavailableCapabilities: SpiritSystemCapability[];
-  /** When env enables tools but they are not on the wire for this model */
+  /** When env enables read-only tools but they are not on the wire for this model */
   localToolsAttachmentNote?: string | null;
+  /** When env enables file edit but tools are not attached */
+  fileEditingAttachmentNote?: string | null;
+  /** When env enables dev commands but run_dev_command is not on the wire for this model */
+  devCommandAttachmentNote?: string | null;
 };
 
 export type SpiritSystemStateResolveInput = {
@@ -40,6 +44,10 @@ export type SpiritSystemStateResolveInput = {
   modelProfileLabel?: string | null;
   /** Reflects whether read-only tools were actually passed to streamText for this request */
   localToolsAttached?: boolean;
+  /** True only when propose_file_edit / apply_confirmed_file_edit are on the wire */
+  fileEditToolsAttached?: boolean;
+  /** True only when run_dev_command was passed to streamText for this request */
+  devCommandToolsAttached?: boolean;
 };
 
 const BASELINE_AVAILABLE: SpiritSystemCapability[] = [
@@ -79,10 +87,36 @@ export function resolveSpiritSystemState(
     !localToolsEffective
       ? "Read-only tools are configured in the environment but are not attached for this model (tool-call probe failed or transport rejected)."
       : null;
-  const fileEdit = process.env.SPIRIT_ENABLE_FILE_EDIT_TOOLS === "true";
-  const devCommand = process.env.SPIRIT_ENABLE_DEV_COMMAND_TOOLS === "true";
+  const fileEditEnv = process.env.SPIRIT_ENABLE_FILE_EDIT_TOOLS === "true";
+  const devCommandEnv = process.env.SPIRIT_ENABLE_DEV_COMMAND_TOOLS === "true";
   const emailTools = process.env.SPIRIT_ENABLE_EMAIL_TOOLS === "true";
   const calendarTools = process.env.SPIRIT_ENABLE_CALENDAR_TOOLS === "true";
+
+  let fileEditingEffective = false;
+  if (fileEditEnv) {
+    if (input.fileEditToolsAttached === true) {
+      fileEditingEffective = true;
+    } else if (input.fileEditToolsAttached === false) {
+      fileEditingEffective = false;
+    } else {
+      fileEditingEffective = false;
+    }
+  }
+
+  const fileEditingAttachmentNote =
+    fileEditEnv && !fileEditingEffective
+      ? "File editing is configured in the environment but edit tools are not attached for this model. Guarded edits require propose_file_edit then apply_confirmed_file_edit after explicit user confirmation."
+      : null;
+
+  let terminalExecutionEffective = false;
+  if (devCommandEnv) {
+    terminalExecutionEffective = input.devCommandToolsAttached === true;
+  }
+
+  const devCommandAttachmentNote =
+    devCommandEnv && !terminalExecutionEffective
+      ? "Dev command tools are configured but not attached for this model/session."
+      : null;
 
   if (localToolsEffective) {
     available.push(...LOCAL_TOOL_CAPS);
@@ -90,13 +124,13 @@ export function resolveSpiritSystemState(
     unavailable.push(...LOCAL_TOOL_CAPS);
   }
 
-  if (fileEdit) {
+  if (fileEditingEffective) {
     available.push("file_editing");
   } else {
     unavailable.push("file_editing");
   }
 
-  if (devCommand) {
+  if (terminalExecutionEffective) {
     available.push("terminal_execution");
   } else {
     unavailable.push("terminal_execution");
@@ -125,6 +159,8 @@ export function resolveSpiritSystemState(
     availableCapabilities: available,
     unavailableCapabilities: unavailable,
     localToolsAttachmentNote,
+    fileEditingAttachmentNote,
+    devCommandAttachmentNote,
   };
 }
 
@@ -151,6 +187,12 @@ export function buildSystemStateBlock(input: SpiritSystemStateInput): string {
   lines.push(`Unavailable capabilities: ${input.unavailableCapabilities.join(", ")}`);
   if (input.localToolsAttachmentNote) {
     lines.push(input.localToolsAttachmentNote);
+  }
+  if (input.fileEditingAttachmentNote) {
+    lines.push(input.fileEditingAttachmentNote);
+  }
+  if (input.devCommandAttachmentNote) {
+    lines.push(input.devCommandAttachmentNote);
   }
   lines.push("");
   lines.push(

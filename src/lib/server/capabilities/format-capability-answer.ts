@@ -23,7 +23,44 @@ export type FormatCapabilityAnswerInput = {
   userMessage?: string;
   /** From probeOllamaOpenAICompat when intent is ai_runtime */
   ollamaReachable?: boolean | null;
+  workspaceEditing?: {
+    fileEditEnvEnabled: boolean;
+    editToolsAttached: boolean;
+  };
+  devCommands?: {
+    devCommandEnvEnabled: boolean;
+    devCommandToolsAttached: boolean;
+  };
 };
+
+export function formatWorkspaceFileEditingUnavailableReason(opts: {
+  fileEditEnvEnabled: boolean;
+  editToolsAttached: boolean;
+}): string | null {
+  if (!opts.fileEditEnvEnabled) {
+    return "Guarded workspace file editing is disabled (`SPIRIT_ENABLE_FILE_EDIT_TOOLS` is not true). No proposals or writes run through this API.";
+  }
+  if (!opts.editToolsAttached) {
+    return "Guarded file editing uses propose_file_edit then apply_confirmed_file_edit after explicit confirmation. Those tools are not attached for this model or session, so I cannot stage or apply edits here.";
+  }
+  return null;
+}
+
+function formatDevCommandsAnswer(input: FormatCapabilityAnswerInput): string {
+  const dc = input.devCommands;
+  if (!dc?.devCommandEnvEnabled) {
+    return "Allowlisted dev command tools are disabled (`SPIRIT_ENABLE_DEV_COMMAND_TOOLS` is not true). I cannot run git, typecheck, tests, lint, or build through this API.";
+  }
+  if (!dc.devCommandToolsAttached) {
+    return "Dev command tools are configured in the environment but are not attached for this model or session. Use a tool-capable model with SPIRIT_ENABLE_LOCAL_TOOLS and SPIRIT_OLLAMA_SUPPORTS_TOOLS passing the tool-call probe so run_dev_command can execute fixed allowlisted commands only.";
+  }
+  return "Allowlisted dev commands are available via run_dev_command with fixed command ids only (no shell strings). npm_test and npm_build require confirm: true before execution.";
+}
+
+function messageSuggestsFileEditing(text: string): boolean {
+  const t = text.trim();
+  return /\bedit\s+\S+\.\w+/i.test(t) || /\b(change|modify|patch)\s+.+\bfile\b/i.test(t);
+}
 
 function fmtBytes(n: number | null | undefined): string {
   if (n == null || !Number.isFinite(n)) return "unknown";
@@ -75,6 +112,9 @@ export function formatCapabilityAnswer(input: FormatCapabilityAnswerInput): stri
         ollamaReachable: ollamaReachable ?? null,
       });
       break;
+    case "dev_commands":
+      body = formatDevCommandsAnswer(input);
+      break;
     case "tool_inventory":
     case "general_capabilities":
       body = formatSpiritOsOverview({
@@ -123,6 +163,18 @@ function formatFileAccess(input: FormatCapabilityAnswerInput): string {
   lines.push(
     "Telemetry rows are aggregate storage, not walking `C:\\Users\\...` or enumerating folders from chat unless the LLM path with tools is active.",
   );
+
+  const um = input.userMessage ?? "";
+  const editNote =
+    messageSuggestsFileEditing(um) && input.workspaceEditing
+      ? formatWorkspaceFileEditingUnavailableReason({
+          fileEditEnvEnabled: input.workspaceEditing.fileEditEnvEnabled,
+          editToolsAttached: input.workspaceEditing.editToolsAttached,
+        })
+      : null;
+  if (editNote) {
+    lines.push(editNote);
+  }
 
   const withStorage = registry.nodes.filter(
     (n) =>

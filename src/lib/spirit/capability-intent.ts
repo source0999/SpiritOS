@@ -5,6 +5,7 @@ export type CapabilityIntentKind =
   | "hardware_summary"
   | "node_status"
   | "storage_status"
+  | "dev_commands"
   | "file_access"
   | "desktop_control"
   | "ai_runtime"
@@ -58,6 +59,7 @@ const GENERAL_STRONG: RegExp[] = [
 
 /** Filesystem / path ops - not drive-level “see” visibility */
 function matchesFileAccessIntent(t: string): boolean {
+  if (/\bedit\s+\S+\.\w+/i.test(t)) return true;
   if (
     /\b(can\s+you\s+)?(browse|list|open)\b.*\b(files?|folders?|directories?)\b/i.test(t)
   ) {
@@ -97,9 +99,31 @@ export function matchesStorageVisibilityIntent(t: string): boolean {
   );
 }
 
+/** Git / npm / vitest asks: deterministic dev-command availability (not arbitrary shell). */
+export function matchesDevCommandIntent(t: string): boolean {
+  return (
+    /\b(run\s+npm\s+test|npm\s+test)\b/i.test(t) ||
+    /\b(run\s+tests?|run\s+the\s+tests?)\b/i.test(t) ||
+    /\b(npx\s+vitest|vitest\s+run)\b/i.test(t) ||
+    /\b(git\s+status|check\s+git\s+status|show\s+git\s+status)\b/i.test(t) ||
+    /\b(git\s+diff|show\s+git\s+diff|show\s+the\s+diff)\b/i.test(t) ||
+    /\bwhat\s+changed\s+in\s+git\b/i.test(t) ||
+    /\b(run\s+typecheck|npm\s+run\s+typecheck|run\s+npm\s+typecheck)\b/i.test(t) ||
+    /\bcheck\s+types\b/i.test(t) ||
+    /\b(run\s+lint|npm\s+run\s+lint)\b/i.test(t) ||
+    /\b(run\s+build|npm\s+run\s+build)\b/i.test(t) ||
+    /\bcan\s+you\s+run\s+(npm\s+test|tests?|git|vitest)\b/i.test(t)
+  );
+}
+
 export function detectCapabilityIntent(raw: string): CapabilityIntentKind | null {
   const t = normalizeForCapabilityIntent(raw);
   if (t.length < 6) return null;
+
+  // ── 0. Allowlisted dev commands (fixed ids only, before generic file_access) ─
+  if (matchesDevCommandIntent(t)) {
+    return "dev_commands";
+  }
 
   // ── 1. File / folder / explicit path file ops (before “see my C:” storage) ─
   if (matchesFileAccessIntent(t)) {

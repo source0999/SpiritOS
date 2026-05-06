@@ -1,6 +1,7 @@
 "use client";
 
 // ── SpiritMessage - bubble-first layout; actions in-bubble (Prompt 9B) ───────────
+// > GPT-adjacent polish: calm assistant surface (no lateral glow smear), compact user rail.
 import type { UIMessage } from "ai";
 import { motion } from "framer-motion";
 import { memo, useCallback, useMemo, useState } from "react";
@@ -85,40 +86,40 @@ export const SpiritMessage = memo(function SpiritMessage({
       )}
       data-role={message.role}
     >
-      <div className="w-full max-w-[min(760px,calc(100%-0.5rem))] sm:max-w-[min(760px,calc(100%-2rem))]">
+      <div className="w-full max-w-[min(720px,calc(100%-0.25rem))] sm:max-w-[min(760px,calc(100%-1.5rem))]">
         <div
           className={cn(
             "relative flex min-w-0 flex-col",
             !isUser && [
               "w-full max-w-full",
-              "border-l-2 border-l-[color:var(--spirit-accent)]",
-              "bg-[linear-gradient(90deg,color-mix(in_oklab,var(--spirit-glow)_30%,transparent)_0%,transparent_38%)]",
-              "max-lg:rounded-r-xl max-lg:py-1.5 max-lg:pl-2 max-lg:pr-1.5",
-              "rounded-r-2xl py-2.5 pl-3 pr-2 sm:py-3 sm:pl-4 sm:pr-2 lg:rounded-2xl",
+              "border border-[color:color-mix(in_oklab,var(--spirit-border)_45%,transparent)] border-l-[3px] border-l-[color:var(--spirit-accent)]",
+              "bg-white/[0.035]",
+              "max-lg:rounded-xl max-lg:py-2 max-lg:pl-2.5 max-lg:pr-2",
+              "rounded-2xl py-2.5 pl-3.5 pr-2.5 sm:py-3 sm:pl-4 sm:pr-3 lg:rounded-2xl",
             ],
             isUser && [
-              "max-lg:rounded-2xl max-lg:px-2 max-lg:py-1.5",
-              "rounded-2xl border border-[color:var(--spirit-border)]",
-              "bg-white/[0.04] px-3 py-2.5 backdrop-blur-xl shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)] sm:rounded-3xl sm:px-4 sm:py-3",
+              "max-lg:rounded-2xl max-lg:px-3 max-lg:py-2",
+              "rounded-2xl border border-[color:color-mix(in_oklab,var(--spirit-border)_70%,transparent)]",
+              "bg-white/[0.045] px-3 py-2.5 backdrop-blur-xl shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)] sm:rounded-2xl sm:px-4 sm:py-2.5",
             ],
           )}
         >
           <div
             className={cn(
               "min-w-0",
-            !isUser && "pr-1.5 sm:pr-2 lg:pr-24",
+            !isUser && "pr-1 sm:pr-2 lg:pr-[5.5rem]",
             isUser &&
               (useActionSheetBelowLg
-                ? "pb-1.5 pr-1.5 max-lg:pr-10 sm:pr-2 lg:pb-10"
-                : "sm:pb-10 sm:pr-2"),
+                ? "pb-1 pr-1 max-lg:pr-10 sm:pr-2 sm:pb-1.5 lg:pb-8"
+                : "sm:pb-8 sm:pr-2"),
             )}
           >
             {isUser ? (
-              <SectionLabel className="mb-0.5 block text-[10px] font-medium tracking-wider max-lg:text-[10px] sm:mb-1 sm:text-[11px]">
+              <SectionLabel className="mb-0.5 block text-[10px] font-medium tracking-wider text-chalk/42 max-lg:text-[10px] sm:mb-1 sm:text-[11px]">
                 You
               </SectionLabel>
             ) : (
-              <SectionLabel className="mb-0.5 block font-mono text-[9px] tracking-[0.22em] text-[color:var(--spirit-accent-strong)] [text-shadow:0_0_12px_color-mix(in_oklab,var(--spirit-glow)_70%,transparent)] max-lg:text-[9px] sm:mb-1 sm:text-[10px] sm:tracking-[0.28em]">
+              <SectionLabel className="mb-0.5 block font-mono text-[9px] tracking-[0.18em] text-[color:color-mix(in_oklab,var(--spirit-accent-strong)_88%,transparent)] max-lg:text-[9px] sm:mb-1 sm:text-[10px] sm:tracking-[0.22em]">
                 Spirit
               </SectionLabel>
             )}

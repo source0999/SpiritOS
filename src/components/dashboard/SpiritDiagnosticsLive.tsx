@@ -3,7 +3,7 @@
 // ── SpiritDiagnosticsLive - single /api/spirit/health poll - one sheet, tight rows ─
 // > Chunky bordered rows were a UX war crime - strip + divides keeps the rail scannable.
 // > Do not spin a second poll; SpiritHealthIndicator is legacy/tests only.
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { DiagnosticRow } from "@/components/dashboard/DiagnosticRow";
 import { cn } from "@/lib/cn";
@@ -79,15 +79,15 @@ function healthDotClasses(
 export function SpiritDiagnosticsLive() {
   const [loadState, setLoadState] = useState<LoadState>("checking");
   const [data, setData] = useState<HealthPayload | null>(null);
-  const devOriginHost = useSyncExternalStore(
-    () => () => {},
-    () =>
-      process.env.NODE_ENV === "development" && typeof window !== "undefined"
-        ? window.location.host
-        : "",
-    () => "",
-  );
+  const [devOriginHost, setDevOriginHost] = useState("");
   const cancelledRef = useRef(false);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "development") return;
+    setDevOriginHost(
+      typeof window !== "undefined" ? window.location.host : "",
+    );
+  }, []);
 
   useEffect(() => {
     cancelledRef.current = false;

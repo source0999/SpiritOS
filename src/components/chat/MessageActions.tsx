@@ -373,7 +373,7 @@ export const MessageActions = memo(function MessageActions({
             onClick={() => setSheetOpen(true)}
             aria-expanded={sheetOpen}
             aria-label="Message actions"
-            className="touch-manipulation inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full border border-white/[0.08] bg-black/25 text-chalk/50 shadow-sm backdrop-blur-sm transition hover:border-white/12 hover:bg-black/35 hover:text-chalk/70 active:scale-[0.96]"
+            className="touch-manipulation inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-[color:color-mix(in_oklab,var(--spirit-border)_55%,transparent)] bg-white/[0.05] text-chalk/45 shadow-sm backdrop-blur-sm transition hover:border-[color:color-mix(in_oklab,var(--spirit-border)_75%,transparent)] hover:bg-white/[0.08] hover:text-chalk/70 active:scale-[0.97]"
           >
             <MoreHorizontal className="h-4 w-4" aria-hidden strokeWidth={2} />
           </button>

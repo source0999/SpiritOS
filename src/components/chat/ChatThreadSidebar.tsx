@@ -12,7 +12,6 @@ import {
   useMemo,
   useRef,
   useState,
-  useSyncExternalStore,
 } from "react";
 
 import { ChatFolderSection } from "@/components/chat/ChatFolderSection";
@@ -32,6 +31,7 @@ import {
 import type { ChatFolder, ChatThread } from "@/lib/chat-db.types";
 import { formatThreadUpdatedLabel } from "@/lib/chat-thread-format";
 import { cn } from "@/lib/cn";
+import { useMediaMinWidthLg } from "@/lib/hooks/useMediaMinWidthLg";
 
 export { formatThreadUpdatedLabel } from "@/lib/chat-thread-format";
 
@@ -112,23 +112,7 @@ export const ChatThreadSidebar = memo(function ChatThreadSidebar({
   // Handle-only keeps drag on the grip and lets thread switch work on first tap - drawer already did this.
   const threadDragLayout = "handle";
 
-  const lgDesktop = useSyncExternalStore(
-    (onStoreChange) => {
-      if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
-        return () => {};
-      }
-      const mq = window.matchMedia("(min-width: 1024px)");
-      mq.addEventListener("change", onStoreChange);
-      return () => mq.removeEventListener("change", onStoreChange);
-    },
-    () => {
-      if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
-        return true;
-      }
-      return window.matchMedia("(min-width: 1024px)").matches;
-    },
-    () => true,
-  );
+  const lgDesktop = useMediaMinWidthLg();
 
   const useDnd = shouldEnableChatThreadSidebarDnd({
     hasCommitHandler: Boolean(onCommitThreadDrag),
@@ -458,11 +442,11 @@ export const ChatThreadSidebar = memo(function ChatThreadSidebar({
         "flex flex-col",
         layoutVariant === "drawer"
           ? "h-full min-h-0 max-h-none w-full flex-1 border-0 bg-transparent shadow-none backdrop-blur-none"
-          : "max-h-[40dvh] shrink-0 border-b border-[color:var(--spirit-border)] bg-white/[0.02] backdrop-blur-xl lg:max-h-none lg:h-full lg:w-[280px] lg:border-b-0 lg:border-r",
+          : "max-h-[40dvh] shrink-0 border-b border-[color:color-mix(in_oklab,var(--spirit-border)_80%,transparent)] bg-white/[0.025] backdrop-blur-xl lg:max-h-none lg:h-full lg:w-[280px] lg:border-b-0 lg:border-r lg:border-[color:color-mix(in_oklab,var(--spirit-border)_65%,transparent)]",
         className,
       )}
     >
-      <div className="flex shrink-0 flex-col gap-2 border-b border-[color:var(--spirit-border)] px-3 py-3">
+      <div className="flex shrink-0 flex-col gap-2 border-b border-[color:color-mix(in_oklab,var(--spirit-border)_70%,transparent)] px-3 py-2.5">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
             <p className="truncate font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-chalk/55">

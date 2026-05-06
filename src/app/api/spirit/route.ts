@@ -3,6 +3,7 @@ import {
   streamText,
   stepCountIs,
   type ModelMessage,
+  type ToolSet,
 } from "ai";
 
 import { getCapabilityRegistry } from "@/lib/server/capabilities/get-capabilities";
@@ -40,6 +41,7 @@ import { getModelProfile } from "@/lib/spirit/model-profiles";
 import { resolveSpiritSystemState } from "@/lib/spirit/system-state";
 import { resolveSpiritToolsForOllamaModel } from "@/lib/spirit/tools/tool-registry";
 import { handleDirectWorkspaceRequest } from "@/lib/spirit/tools/direct-workspace-request";
+import { handleDirectDevCommandRequest } from "@/lib/spirit/tools/direct-dev-command-request";
 import { detectCapabilityIntent } from "@/lib/spirit/capability-intent";
 import { isConcreteWorkspaceReadRequest } from "@/lib/spirit/concrete-workspace-read-request";
 import { decideSpiritRoute } from "@/lib/spirit/spirit-route-decision";
@@ -115,6 +117,26 @@ export async function POST(req: Request) {
     const ollamaToolsAllowed = process.env.SPIRIT_OLLAMA_SUPPORTS_TOOLS === "true";
     const concreteWorkspaceRead = isConcreteWorkspaceReadRequest(lastUser);
     const readOnlyToolsAttached = Boolean(spiritTools);
+    const fileEditToolsAttached =
+      Boolean(
+        spiritTools &&
+          typeof spiritTools === "object" &&
+          "propose_file_edit" in spiritTools,
+      );
+    const workspaceEditing = {
+      fileEditEnvEnabled: process.env.SPIRIT_ENABLE_FILE_EDIT_TOOLS === "true",
+      editToolsAttached: fileEditToolsAttached,
+    };
+    const devCommandToolsAttached =
+      Boolean(
+        spiritTools &&
+          typeof spiritTools === "object" &&
+          "run_dev_command" in spiritTools,
+      );
+    const devCommands = {
+      devCommandEnvEnabled: process.env.SPIRIT_ENABLE_DEV_COMMAND_TOOLS === "true",
+      devCommandToolsAttached,
+    };
     const shouldLetWorkspaceToolsHandle =
       concreteWorkspaceRead && readOnlyToolsAttached;
 
@@ -161,6 +183,8 @@ export async function POST(req: Request) {
           activeResolvedModelId: ollamaModelId,
           intentKind: "file_access",
           userMessage: lastUser,
+          workspaceEditing,
+          devCommands,
         });
 
         return createDeterministicAssistantUIMessageResponse({
@@ -195,7 +219,43 @@ export async function POST(req: Request) {
     }
 
     // ── 4. Capability Intent Bridge (Pre-LLM) ──
-    if (capabilityKind !== null && !shouldLetWorkspaceToolsHandle) {
+    const bypassDevCommandsCapability =
+      capabilityKind === "dev_commands" && devCommandToolsAttached;
+
+    if (capabilityKind !== null && !shouldLetWorkspaceToolsHandle && !bypassDevCommandsCapability) {
+      const responseHeaders = {
+        ...buildSpiritSearchHeaders({
+          routeLane: "local-chat",
+          routeConfidence: "high",
+          webSearch: "none",
+          searchStatus: "none",
+          provider: null,
+          sourceCount: 0,
+          queryTrimmed: trimSearchQueryForLog(lastUser),
+          elapsedMs: null,
+          searchKind: "none",
+          skipReason: null,
+          webSourcesJson: null,
+        }),
+        "x-spirit-runtime-surface": sanitizeForHttpByteStringHeader(surface),
+      };
+
+      if (
+        capabilityKind === "dev_commands" &&
+        localToolsEnvEnabled &&
+        process.env.SPIRIT_ENABLE_DEV_COMMAND_TOOLS === "true" &&
+        !devCommandToolsAttached
+      ) {
+        const directDevAnswer = await handleDirectDevCommandRequest(lastUser);
+        if (directDevAnswer) {
+          return createDeterministicAssistantUIMessageResponse({
+            text: directDevAnswer,
+            originalMessages: uiMessages,
+            headers: responseHeaders,
+          });
+        }
+      }
+
       let ollamaReachable: boolean | undefined;
       if (capabilityKind === "ai_runtime") {
         const probe = await probeOllamaOpenAICompat();
@@ -214,24 +274,9 @@ export async function POST(req: Request) {
         intentKind: capabilityKind,
         userMessage: lastUser,
         ollamaReachable,
+        workspaceEditing,
+        devCommands,
       });
-
-      const responseHeaders = {
-        ...buildSpiritSearchHeaders({
-          routeLane: "local-chat",
-          routeConfidence: "high",
-          webSearch: "none",
-          searchStatus: "none",
-          provider: null,
-          sourceCount: 0,
-          queryTrimmed: trimSearchQueryForLog(lastUser),
-          elapsedMs: null,
-          searchKind: "none",
-          skipReason: null,
-          webSourcesJson: null,
-        }),
-        "x-spirit-runtime-surface": sanitizeForHttpByteStringHeader(surface),
-      };
 
       return createDeterministicAssistantUIMessageResponse({
         text,
@@ -423,6 +468,8 @@ export async function POST(req: Request) {
       modelProfileId: modelProfileId ?? null,
       modelProfileLabel: getModelProfile(modelProfileId).label,
       localToolsAttached: readOnlyToolsAttached,
+      fileEditToolsAttached,
+      devCommandToolsAttached,
     });
 
     const runtime = buildModelRuntime(modelProfileId, {
@@ -461,7 +508,9 @@ export async function POST(req: Request) {
       messages: converted,
       temperature: runtime.temperature,
       maxOutputTokens,
-      ...(spiritTools ? { tools: spiritTools, stopWhen: stepCountIs(8) } : {}),
+      ...(spiritTools
+        ? { tools: spiritTools as ToolSet, stopWhen: stepCountIs(12) }
+        : {}),
     });
 
     const responseHeaders = {
