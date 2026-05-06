@@ -12,5 +12,10 @@ describe("SpiritWorkspaceShell visual viewport (mobile /chat)", () => {
     expect(src).toContain("useSpiritVisualViewportVars");
     expect(src).toContain("--spirit-visual-viewport-height");
     expect(src).toContain("workspaceRootRef");
+    expect(src).toContain("keyboardInsetPx");
+    expect(src).toContain("SpiritWorkspaceMobileChromeProvider");
+    expect(src).toContain("max-lg:fixed");
+    expect(src).toContain("--spirit-visual-offset-top");
+    expect(src).toContain('html.style.overflow = "hidden"');
   });
 });

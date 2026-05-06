@@ -31,6 +31,7 @@ import { dedupeUIMessagesById, textFromParts } from "@/lib/chat-utils";
 import { sanitizeAssistantVisibleText } from "@/lib/spirit/assistant-output-sanitizer";
 import { stripFakeCitationsWhenNoSources } from "@/lib/spirit/research-source-enforcement";
 import { cn } from "@/lib/cn";
+import { useSpiritWorkspaceMobileChrome } from "@/components/dashboard/SpiritWorkspaceMobileChromeContext";
 import { useMediaMinWidthLg } from "@/lib/hooks/useMediaMinWidthLg";
 import { OracleVoiceStatusCard } from "@/components/oracle/OracleVoiceStatusCard";
 import { formatTtsFriendlyStartSummary } from "@/lib/tts/format-tts-latency";
@@ -148,6 +149,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
   ]);
 
   const isLg = useMediaMinWidthLg();
+  const workspaceMobileChrome = useSpiritWorkspaceMobileChrome();
 
   const ACTIVITY_LS_KEY = "spirit:workspaceActivity:v1";
 
@@ -579,8 +581,14 @@ const SpiritChatInner = memo(function SpiritChatInner({
       const end = messagesEndRef.current;
       if (!el || !end) return;
       if (!forceScrollOnNextMessageRef.current && !shouldStickToBottomRef.current) return;
-      const behavior = forceScrollOnNextMessageRef.current ? "smooth" : "auto";
-      end.scrollIntoView({ behavior, block: "end" });
+      // ── iOS Safari: scrollIntoView on the sentinel walks ancestors and scrolls the *page*,
+      // yanking the workspace when the keyboard opens. Only mutate the message list scroller.
+      const useSmooth = forceScrollOnNextMessageRef.current;
+      if (useSmooth) {
+        el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+      } else {
+        el.scrollTop = el.scrollHeight;
+      }
       if (forceScrollOnNextMessageRef.current) {
         forceScrollOnNextMessageRef.current = false;
       }
@@ -968,6 +976,16 @@ const SpiritChatInner = memo(function SpiritChatInner({
         onStartResearch={handleResearchPlanStart}
       />
       <div
+        data-testid="spirit-composer-dock"
+        onFocusCapture={() => {
+          if (workspaceChrome) workspaceMobileChrome?.setComposerFocused(true);
+        }}
+        onBlurCapture={(e) => {
+          if (!workspaceChrome || !workspaceMobileChrome) return;
+          const rt = e.relatedTarget;
+          if (rt && e.currentTarget.contains(rt as Node)) return;
+          workspaceMobileChrome.setComposerFocused(false);
+        }}
         className={cn(
           "shrink-0 border-t border-[color:var(--spirit-border)]",
           "bg-[color:color-mix(in_oklab,var(--spirit-bg)_88%,transparent)] backdrop-blur-2xl",
@@ -996,6 +1014,12 @@ const SpiritChatInner = memo(function SpiritChatInner({
               onKeyDown={onKeyDown}
               onFocus={() => {
                 requestAnimationFrame(() => {
+                  if (workspaceChrome) {
+                    window.scrollTo(0, 0);
+                    document.documentElement.scrollTop = 0;
+                    document.body.scrollTop = 0;
+                    return;
+                  }
                   composerTextareaRef.current?.scrollIntoView({
                     block: "nearest",
                     inline: "nearest",
@@ -1190,7 +1214,33 @@ const SpiritChatInner = memo(function SpiritChatInner({
             mobileThreadDrawer.open ? "Close saved threads" : "Open saved threads"
           }
           aria-expanded={mobileThreadDrawer.open}
-          onClick={() => mobileThreadDrawer.onOpenChange(!mobileThreadDrawer.open)}
+          onClick={() => {
+            // #region agent log
+            fetch(
+              "http://localhost:7530/ingest/da155463-47fd-4bed-94cb-233903115f13",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "X-Debug-Session-Id": "26a808",
+                },
+                body: JSON.stringify({
+                  sessionId: "26a808",
+                  location: "SpiritChat.tsx:workspace-threads-btn",
+                  message: "threads_toggle_click",
+                  data: {
+                    prevOpen: mobileThreadDrawer.open,
+                    nextOpen: !mobileThreadDrawer.open,
+                    surface: "workspace",
+                  },
+                  timestamp: Date.now(),
+                  hypothesisId: "H3",
+                }),
+              },
+            ).catch(() => {});
+            // #endregion
+            mobileThreadDrawer.onOpenChange(!mobileThreadDrawer.open);
+          }}
           className={cn(
             "inline-flex h-9 shrink-0 touch-manipulation items-center justify-center gap-1 rounded-lg border border-[color:var(--spirit-border)]/80 bg-white/[0.04] px-2 font-mono text-[9px] font-semibold uppercase tracking-wider text-chalk transition hover:bg-white/[0.07]",
             mobileThreadDrawer.open &&

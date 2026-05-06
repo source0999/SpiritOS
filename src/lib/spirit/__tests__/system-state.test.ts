@@ -104,12 +104,48 @@ describe("resolveSpiritSystemState", () => {
 
   it("workspace tools move to available when SPIRIT_ENABLE_LOCAL_TOOLS=true", () => {
     vi.stubEnv("SPIRIT_ENABLE_LOCAL_TOOLS", "true");
+    vi.stubEnv("SPIRIT_OLLAMA_SUPPORTS_TOOLS", "true");
     const state = resolveSpiritSystemState({ runtimeSurface: "chat" });
     expect(state.availableCapabilities).toContain("workspace_file_read");
     expect(state.availableCapabilities).toContain("workspace_file_list");
     expect(state.availableCapabilities).toContain("log_tail_read");
     expect(state.availableCapabilities).toContain("system_status");
     expect(state.unavailableCapabilities).not.toContain("workspace_file_read");
+  });
+
+  it("workspace tools stay unavailable when Ollama tool transport flag is off", () => {
+    vi.stubEnv("SPIRIT_ENABLE_LOCAL_TOOLS", "true");
+    vi.stubEnv("SPIRIT_OLLAMA_SUPPORTS_TOOLS", "false");
+    const state = resolveSpiritSystemState({ runtimeSurface: "chat" });
+    expect(state.unavailableCapabilities).toContain("workspace_file_read");
+    expect(state.availableCapabilities).not.toContain("workspace_file_read");
+  });
+
+  it("workspace tools stay unavailable when env is on but localToolsAttached is false (probe/runtime)", () => {
+    vi.stubEnv("SPIRIT_ENABLE_LOCAL_TOOLS", "true");
+    vi.stubEnv("SPIRIT_OLLAMA_SUPPORTS_TOOLS", "true");
+    const state = resolveSpiritSystemState({
+      runtimeSurface: "chat",
+      localToolsAttached: false,
+    });
+    expect(state.unavailableCapabilities).toContain("workspace_file_read");
+    expect(state.unavailableCapabilities).toContain("workspace_file_list");
+    expect(state.unavailableCapabilities).toContain("log_tail_read");
+    expect(state.unavailableCapabilities).toContain("system_status");
+    expect(state.availableCapabilities).not.toContain("workspace_file_list");
+    expect(state.localToolsAttachmentNote).toContain("not attached");
+  });
+
+  it("workspace tools available when localToolsAttached true even if caller forces runtime attachment claim", () => {
+    vi.stubEnv("SPIRIT_ENABLE_LOCAL_TOOLS", "true");
+    vi.stubEnv("SPIRIT_OLLAMA_SUPPORTS_TOOLS", "true");
+    const state = resolveSpiritSystemState({
+      runtimeSurface: "chat",
+      localToolsAttached: true,
+    });
+    expect(state.availableCapabilities).toContain("workspace_file_list");
+    expect(state.unavailableCapabilities).not.toContain("workspace_file_list");
+    expect(state.localToolsAttachmentNote).toBeNull();
   });
 
   it("file_editing unavailable when SPIRIT_ENABLE_FILE_EDIT_TOOLS not set", () => {
@@ -262,6 +298,17 @@ describe("buildSystemStateBlock", () => {
     const block = buildSystemStateBlock(state);
     expect(block).toMatch(/read a file|edited a file|ran a command/i);
     expect(block).toMatch(/checked email|accessed calendar/i);
+  });
+
+  it("includes attachment note when env enables tools but localToolsAttached is false", () => {
+    vi.stubEnv("SPIRIT_ENABLE_LOCAL_TOOLS", "true");
+    vi.stubEnv("SPIRIT_OLLAMA_SUPPORTS_TOOLS", "true");
+    const state = resolveSpiritSystemState({
+      runtimeSurface: "chat",
+      localToolsAttached: false,
+    });
+    const block = buildSystemStateBlock(state);
+    expect(block).toMatch(/not attached.*probe/i);
   });
 
   it("includes instruction to say unavailable if asked for missing capability", () => {

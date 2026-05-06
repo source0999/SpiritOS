@@ -4,6 +4,8 @@
 // > Theme palette lives in workspace headers (ThemeStrip) - keep this rail nav-only.
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+
+import { useSpiritWorkspaceMobileChrome } from "@/components/dashboard/SpiritWorkspaceMobileChromeContext";
 import {
   LayoutDashboard,
   MessageCircle,
@@ -21,6 +23,8 @@ const activeRail =
 
 export function WorkspacePrimarySidebar() {
   const pathname = usePathname() ?? "";
+  const workspaceMobileChrome = useSpiritWorkspaceMobileChrome();
+  const hideMobileDockForComposer = workspaceMobileChrome?.composerFocused ?? false;
   const homeActive = pathname === "/";
   const chatActive = pathname === "/chat" || pathname.startsWith("/chat/");
   const oracleActive = pathname.startsWith("/oracle");
@@ -98,6 +102,7 @@ export function WorkspacePrimarySidebar() {
         className={cn(
           "fixed inset-x-0 z-40 lg:hidden",
           "bottom-[var(--spirit-keyboard-inset,0px)]",
+          hideMobileDockForComposer && "max-lg:hidden",
           "flex items-center justify-around gap-0.5 border-t border-[color:var(--spirit-border)]",
           "bg-[color:color-mix(in_oklab,var(--spirit-bg)_82%,transparent)] px-1 pb-[env(safe-area-inset-bottom,0px)] pt-2 backdrop-blur-2xl",
           "shadow-[0_-14px_40px_-26px_var(--spirit-glow)]",

@@ -2,8 +2,11 @@ import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 
 import { streamText } from "ai";
 
+import { detectCapabilityIntent } from "@/lib/spirit/capability-intent";
+
 import { POST } from "../route";
 import type { CapabilityRegistryResponse } from "@/lib/server/capabilities/types";
+import { clearReadOnlyToolProbeCache } from "@/lib/spirit/tools/tool-registry";
 
 vi.mock("@/lib/server/capabilities/get-capabilities", () => ({
   getCapabilityRegistry: vi.fn(),
@@ -14,6 +17,7 @@ vi.mock("@/lib/server/ollama", async (importOriginal) => {
   return {
     ...actual,
     probeOllamaOpenAICompat: vi.fn().mockResolvedValue({ ok: true, status: "online" }),
+    probeOllamaChatCompletionsAcceptsToolSchema: vi.fn().mockResolvedValue(true),
   };
 });
 
@@ -370,11 +374,15 @@ describe("POST /api/spirit streamText tools wiring", () => {
       capabilityRegistry("SPIRIT_ROUTE_TEST_NODE"),
     );
     vi.mocked(streamText).mockClear();
+    const { probeOllamaChatCompletionsAcceptsToolSchema } = await import("@/lib/server/ollama");
+    vi.mocked(probeOllamaChatCompletionsAcceptsToolSchema).mockResolvedValue(true);
+    clearReadOnlyToolProbeCache();
   });
 
   afterEach(() => {
     vi.unstubAllEnvs();
     vi.clearAllMocks();
+    clearReadOnlyToolProbeCache();
   });
 
   function chatBody() {
@@ -391,6 +399,7 @@ describe("POST /api/spirit streamText tools wiring", () => {
 
   it("does not attach tools when SPIRIT_ENABLE_LOCAL_TOOLS is false", async () => {
     vi.stubEnv("SPIRIT_ENABLE_LOCAL_TOOLS", "false");
+    vi.stubEnv("SPIRIT_OLLAMA_SUPPORTS_TOOLS", "false");
     const req = new Request("http://localhost/api/spirit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -405,8 +414,9 @@ describe("POST /api/spirit streamText tools wiring", () => {
     expect(opts?.stopWhen).toBeUndefined();
   });
 
-  it("attaches tools and stopWhen when SPIRIT_ENABLE_LOCAL_TOOLS is true", async () => {
+  it("attaches tools and stopWhen when local + Ollama tool transport flags are true", async () => {
     vi.stubEnv("SPIRIT_ENABLE_LOCAL_TOOLS", "true");
+    vi.stubEnv("SPIRIT_OLLAMA_SUPPORTS_TOOLS", "true");
     const req = new Request("http://localhost/api/spirit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -420,5 +430,248 @@ describe("POST /api/spirit streamText tools wiring", () => {
     expect(opts?.tools).toBeDefined();
     expect(Object.keys(opts!.tools!)).toHaveLength(4);
     expect(opts?.stopWhen).toBeDefined();
+  });
+
+  it("does not attach tools when local tools on but Ollama tools transport off", async () => {
+    vi.stubEnv("SPIRIT_ENABLE_LOCAL_TOOLS", "true");
+    vi.stubEnv("SPIRIT_OLLAMA_SUPPORTS_TOOLS", "false");
+    const req = new Request("http://localhost/api/spirit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(chatBody()),
+    });
+    await POST(req);
+    const opts = vi.mocked(streamText).mock.calls[0]?.[0] as {
+      tools?: unknown;
+      stopWhen?: unknown;
+    };
+    expect(opts?.tools).toBeUndefined();
+    expect(opts?.stopWhen).toBeUndefined();
+  });
+
+  it("concrete workspace list when tool probe rejects returns direct listing (no streamText)", async () => {
+    const { probeOllamaChatCompletionsAcceptsToolSchema } = await import("@/lib/server/ollama");
+    vi.mocked(probeOllamaChatCompletionsAcceptsToolSchema).mockResolvedValue(false);
+    clearReadOnlyToolProbeCache();
+    vi.stubEnv("SPIRIT_ENABLE_LOCAL_TOOLS", "true");
+    vi.stubEnv("SPIRIT_OLLAMA_SUPPORTS_TOOLS", "true");
+    vi.mocked(streamText).mockClear();
+    const req = new Request("http://localhost/api/spirit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(
+        jsonBody({
+          messages: [
+            {
+              role: "user",
+              id: "u-probe-fail",
+              parts: [{ type: "text", text: "List the files in src/lib/spirit" }],
+            },
+          ],
+        }),
+      ),
+    });
+    const res = await POST(req);
+    expect(vi.mocked(streamText)).not.toHaveBeenCalled();
+    const raw = await res.text();
+    expect(raw).toMatch(/Files in src\/lib\/spirit/i);
+    expect(raw).toContain("- ");
+    expect(raw).not.toMatch(/tool-call support probe/i);
+  });
+
+  it("skips deterministic file_access bridge when local tools enabled (falls through to LLM)", async () => {
+    vi.stubEnv("SPIRIT_ENABLE_LOCAL_TOOLS", "true");
+    vi.stubEnv("SPIRIT_OLLAMA_SUPPORTS_TOOLS", "true");
+    vi.mocked(streamText).mockClear();
+    const req = new Request("http://localhost/api/spirit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(
+        jsonBody({
+          messages: [
+            {
+              role: "user",
+              id: "u-file-local",
+              parts: [
+                {
+                  type: "text",
+                  text: "List the files in src/lib/spirit",
+                },
+              ],
+            },
+          ],
+        }),
+      ),
+    });
+    await POST(req);
+    expect(vi.mocked(streamText)).toHaveBeenCalled();
+    const opts = vi.mocked(streamText).mock.calls[0]?.[0] as {
+      tools?: Record<string, unknown>;
+    };
+    expect(opts?.tools).toBeDefined();
+    expect(Object.keys(opts!.tools!)).toHaveLength(4);
+  });
+
+  it("concrete workspace list with local tools off uses deterministic shortcut (no streamText)", async () => {
+    vi.stubEnv("SPIRIT_ENABLE_LOCAL_TOOLS", "false");
+    vi.stubEnv("SPIRIT_OLLAMA_SUPPORTS_TOOLS", "false");
+    vi.mocked(streamText).mockClear();
+    const req = new Request("http://localhost/api/spirit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(
+        jsonBody({
+          messages: [
+            {
+              role: "user",
+              id: "u-list-off",
+              parts: [{ type: "text", text: "List the files in src/lib/spirit" }],
+            },
+          ],
+        }),
+      ),
+    });
+    const res = await POST(req);
+    expect(vi.mocked(streamText)).not.toHaveBeenCalled();
+    const raw = await res.text();
+    expect(raw).toMatch(/not wired|drive-level|telemetry/i);
+  });
+
+  it("concrete workspace list with local on but Ollama tools transport off uses direct listing (no streamText)", async () => {
+    vi.stubEnv("SPIRIT_ENABLE_LOCAL_TOOLS", "true");
+    vi.stubEnv("SPIRIT_OLLAMA_SUPPORTS_TOOLS", "false");
+    vi.mocked(streamText).mockClear();
+    const req = new Request("http://localhost/api/spirit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(
+        jsonBody({
+          messages: [
+            {
+              role: "user",
+              id: "u-list-ollama-off",
+              parts: [{ type: "text", text: "List the files in src/lib/spirit" }],
+            },
+          ],
+        }),
+      ),
+    });
+    const res = await POST(req);
+    expect(vi.mocked(streamText)).not.toHaveBeenCalled();
+    const raw = await res.text();
+    expect(raw).toMatch(/Files in src\/lib\/spirit/i);
+    expect(raw).not.toContain("SPIRIT_OLLAMA_SUPPORTS_TOOLS");
+  });
+
+  it("vague browse question with both flags on still uses deterministic shortcut", async () => {
+    vi.stubEnv("SPIRIT_ENABLE_LOCAL_TOOLS", "true");
+    vi.stubEnv("SPIRIT_OLLAMA_SUPPORTS_TOOLS", "true");
+    vi.mocked(streamText).mockClear();
+    const req = new Request("http://localhost/api/spirit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(
+        jsonBody({
+          messages: [
+            {
+              role: "user",
+              id: "u-browse-vague",
+              parts: [{ type: "text", text: "Can you browse files?" }],
+            },
+          ],
+        }),
+      ),
+    });
+    const res = await POST(req);
+    expect(vi.mocked(streamText)).not.toHaveBeenCalled();
+    const raw = await res.text();
+    expect(raw).toMatch(/not wired|deterministic/i);
+    expect(raw).not.toContain("will not attach OpenAI-style tool calls");
+  });
+
+  it("concrete read .env.local when probe rejects returns safe blocked-path error (no streamText)", async () => {
+    const { probeOllamaChatCompletionsAcceptsToolSchema } = await import("@/lib/server/ollama");
+    vi.mocked(probeOllamaChatCompletionsAcceptsToolSchema).mockResolvedValue(false);
+    clearReadOnlyToolProbeCache();
+    vi.stubEnv("SPIRIT_ENABLE_LOCAL_TOOLS", "true");
+    vi.stubEnv("SPIRIT_OLLAMA_SUPPORTS_TOOLS", "true");
+    vi.mocked(streamText).mockClear();
+    const req = new Request("http://localhost/api/spirit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(
+        jsonBody({
+          messages: [
+            {
+              role: "user",
+              id: "u-env-blocked",
+              parts: [{ type: "text", text: "Read .env.local" }],
+            },
+          ],
+        }),
+      ),
+    });
+    const res = await POST(req);
+    expect(vi.mocked(streamText)).not.toHaveBeenCalled();
+    const raw = await res.text();
+    expect(raw).toMatch(/I could not read that path/i);
+    expect(raw).toMatch(/blocked|pattern/i);
+  });
+
+  it("concrete read .env.local with both flags on reaches streamText with tools", async () => {
+    vi.stubEnv("SPIRIT_ENABLE_LOCAL_TOOLS", "true");
+    vi.stubEnv("SPIRIT_OLLAMA_SUPPORTS_TOOLS", "true");
+    vi.mocked(streamText).mockClear();
+    const req = new Request("http://localhost/api/spirit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(
+        jsonBody({
+          messages: [
+            {
+              role: "user",
+              id: "u-read-env",
+              parts: [{ type: "text", text: "Read .env.local" }],
+            },
+          ],
+        }),
+      ),
+    });
+    await POST(req);
+    expect(vi.mocked(streamText)).toHaveBeenCalled();
+    const opts = vi.mocked(streamText).mock.calls[0]?.[0] as {
+      tools?: Record<string, unknown>;
+    };
+    expect(opts?.tools).toBeDefined();
+  });
+
+  it("Run npm test is not classified as file_access (no workspace-read shortcut)", () => {
+    expect(detectCapabilityIntent("Run npm test")).not.toBe("file_access");
+  });
+
+  it("run npm test does not use direct workspace execution (concrete gate off)", async () => {
+    const { probeOllamaChatCompletionsAcceptsToolSchema } = await import("@/lib/server/ollama");
+    vi.mocked(probeOllamaChatCompletionsAcceptsToolSchema).mockResolvedValue(false);
+    clearReadOnlyToolProbeCache();
+    vi.stubEnv("SPIRIT_ENABLE_LOCAL_TOOLS", "true");
+    vi.stubEnv("SPIRIT_OLLAMA_SUPPORTS_TOOLS", "true");
+    vi.mocked(streamText).mockClear();
+    const req = new Request("http://localhost/api/spirit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(
+        jsonBody({
+          messages: [
+            {
+              role: "user",
+              id: "u-npm",
+              parts: [{ type: "text", text: "Run npm test" }],
+            },
+          ],
+        }),
+      ),
+    });
+    await POST(req);
+    expect(vi.mocked(streamText)).toHaveBeenCalled();
   });
 });

@@ -277,6 +277,8 @@ export async function getSystemStatus(): Promise<{
   note: string;
 }> {
   const localToolsEnabled = isEnvTrue("SPIRIT_ENABLE_LOCAL_TOOLS");
+  const ollamaToolsTransport = isEnvTrue("SPIRIT_OLLAMA_SUPPORTS_TOOLS");
+  const readOnlyToolsAttached = localToolsEnabled && ollamaToolsTransport;
   const workspaceRootConfigured = Boolean(process.env.SPIRIT_PROJECT_PATH?.trim());
 
   const unavailableTools: string[] = [];
@@ -285,11 +287,11 @@ export async function getSystemStatus(): Promise<{
   if (!isEnvTrue("SPIRIT_ENABLE_EMAIL_TOOLS")) unavailableTools.push("email_access");
   if (!isEnvTrue("SPIRIT_ENABLE_CALENDAR_TOOLS")) unavailableTools.push("calendar_access");
 
-  if (!localToolsEnabled) {
+  if (!readOnlyToolsAttached) {
     unavailableTools.push(...READ_ONLY_TOOL_NAMES);
   }
 
-  const availableReadOnlyTools = localToolsEnabled ? [...READ_ONLY_TOOL_NAMES] : [];
+  const availableReadOnlyTools = readOnlyToolsAttached ? [...READ_ONLY_TOOL_NAMES] : [];
 
   return {
     ok: true,
@@ -299,6 +301,6 @@ export async function getSystemStatus(): Promise<{
     availableReadOnlyTools,
     unavailableTools: [...new Set(unavailableTools)].sort(),
     note:
-      "Paths shown are workspace-relative only. Raw absolute workspace roots are never returned. Read-only tools cannot edit files or run commands.",
+      "Read-only tools attach only when SPIRIT_ENABLE_LOCAL_TOOLS and SPIRIT_OLLAMA_SUPPORTS_TOOLS are true (Ollama must accept tools for your model). Paths are workspace-relative only.",
   };
 }

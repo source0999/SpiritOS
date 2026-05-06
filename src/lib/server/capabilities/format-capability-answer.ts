@@ -9,6 +9,10 @@ import type { SpiritDiagnosticsPayload } from "@/lib/server/spirit-diagnostics";
 import type { CapabilityRegistryResponse } from "@/lib/server/capabilities/types";
 import type { SpiritRuntimeSurface } from "@/lib/spirit/spirit-runtime-surface";
 
+/** Deterministic reply when env enables read-only tools but Ollama probe rejects tool payloads for this model */
+export const WORKSPACE_READ_TOOLS_PROBE_REJECTED_MESSAGE =
+  "Read-only workspace tools are configured, but they are not attached for the current Ollama model because it did not pass the tool-call support probe. I should not guess directory listings or file contents. Use a tool-capable model or provider, or wait until this stack accepts tools for your model.";
+
 export type FormatCapabilityAnswerInput = {
   registry: CapabilityRegistryResponse;
   diagnostics: SpiritDiagnosticsPayload;
@@ -106,18 +110,18 @@ export function formatCapabilityAnswer(input: FormatCapabilityAnswerInput): stri
 function formatFileAccess(input: FormatCapabilityAnswerInput): string {
   const { registry, runtimeSurface: surface } = input;
   if (surface === "oracle") {
-    return [
-      "No, not yet - folder browsing and file listing aren’t wired as app tools.",
-      "I can still see drive-level storage telemetry (used/total per volume) where agents report it.",
-    ].join(" ");
+    return "No, not wired from Oracle without `SPIRIT_ENABLE_LOCAL_TOOLS=true` on the API. Drive-level storage telemetry (used/total) can still show per volume.";
   }
 
   const lines: string[] = [];
   lines.push(
-    "No, not yet. I can see **drive-level** telemetry for volumes like **C:** (used/total from agents), but **folder browsing and file listing** are not wired as app tools yet.",
+    "No, not wired from this **deterministic** shortcut. I can still show **drive-level** storage telemetry for volumes like **C:** (used/total from agents).",
   );
   lines.push(
-    "That’s aggregate storage rows in telemetry - not walking `C:\\Users\\...` or enumerating directories from chat.",
+    "Hermes **workspace list/read** tools run on the normal LLM path when `SPIRIT_ENABLE_LOCAL_TOOLS=true`. If you are reading this block, that shortcut answered instead of the model.",
+  );
+  lines.push(
+    "Telemetry rows are aggregate storage, not walking `C:\\Users\\...` or enumerating folders from chat unless the LLM path with tools is active.",
   );
 
   const withStorage = registry.nodes.filter(

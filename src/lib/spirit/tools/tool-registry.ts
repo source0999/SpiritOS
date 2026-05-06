@@ -1,10 +1,12 @@
 // ── tool-registry - AI SDK read-only tools gated by SPIRIT_ENABLE_LOCAL_TOOLS ──
-// > Four tools only. No edits, no shell, no email/calendar hooks.
+// > Also requires SPIRIT_OLLAMA_SUPPORTS_TOOLS=true: Hermes4 and many registry pulls
+// > reject requests with tools ("does not support tools"); opt in after switching models.
 
 import { tool } from "ai";
 import { z } from "zod";
 
 import { toolErrorFromUnknown } from "@/lib/spirit/tools/tool-safety";
+import { probeOllamaChatCompletionsAcceptsToolSchema } from "@/lib/server/ollama";
 import {
   getSystemStatus,
   listWorkspaceFiles,
@@ -16,8 +18,14 @@ export function isLocalToolsEnabled(): boolean {
   return process.env.SPIRIT_ENABLE_LOCAL_TOOLS === "true";
 }
 
+/** Ollama OpenAI-compat must accept tools on /v1/chat/completions (many models do not). */
+export function isOllamaToolTransportReady(): boolean {
+  return process.env.SPIRIT_OLLAMA_SUPPORTS_TOOLS === "true";
+}
+
 export function getSpiritReadOnlyTools() {
   if (!isLocalToolsEnabled()) return undefined;
+  if (!isOllamaToolTransportReady()) return undefined;
 
   return {
     list_workspace_files: tool({
@@ -90,4 +98,35 @@ export function getSpiritReadOnlyTools() {
 
 export function getSpiritToolsForRuntime() {
   return getSpiritReadOnlyTools();
+}
+
+const modelToolSchemaSupported = new Map<string, boolean>();
+
+/** Clears per-model probe cache (tests only). */
+export function clearReadOnlyToolProbeCache(): void {
+  modelToolSchemaSupported.clear();
+}
+
+/**
+ * Returns read-only tools only when env flags allow and Ollama accepts a tools payload for this model.
+ * Result is cached per model id for the lifetime of the Node process.
+ */
+export async function resolveSpiritToolsForOllamaModel(
+  modelId: string,
+): Promise<ReturnType<typeof getSpiritReadOnlyTools>> {
+  const tools = getSpiritToolsForRuntime();
+  if (!tools) return undefined;
+
+  const cached = modelToolSchemaSupported.get(modelId);
+  if (cached === false) return undefined;
+  if (cached === true) return tools;
+
+  let supported = true;
+  try {
+    supported = await probeOllamaChatCompletionsAcceptsToolSchema(modelId);
+  } catch {
+    supported = true;
+  }
+  modelToolSchemaSupported.set(modelId, supported);
+  return supported ? tools : undefined;
 }

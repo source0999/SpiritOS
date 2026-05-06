@@ -28,6 +28,8 @@ export type SpiritSystemStateInput = {
   projectPathConfigured: boolean;
   availableCapabilities: SpiritSystemCapability[];
   unavailableCapabilities: SpiritSystemCapability[];
+  /** When env enables tools but they are not on the wire for this model */
+  localToolsAttachmentNote?: string | null;
 };
 
 export type SpiritSystemStateResolveInput = {
@@ -36,6 +38,8 @@ export type SpiritSystemStateResolveInput = {
   modelHint?: string | null;
   modelProfileId?: string | null;
   modelProfileLabel?: string | null;
+  /** Reflects whether read-only tools were actually passed to streamText for this request */
+  localToolsAttached?: boolean;
 };
 
 const BASELINE_AVAILABLE: SpiritSystemCapability[] = [
@@ -58,13 +62,29 @@ export function resolveSpiritSystemState(
   const available: SpiritSystemCapability[] = [...BASELINE_AVAILABLE];
   const unavailable: SpiritSystemCapability[] = [];
 
-  const localTools = process.env.SPIRIT_ENABLE_LOCAL_TOOLS === "true";
+  const localToolsCfg = process.env.SPIRIT_ENABLE_LOCAL_TOOLS === "true";
+  const ollamaToolsTransport = process.env.SPIRIT_OLLAMA_SUPPORTS_TOOLS === "true";
+  const envSaysReadOnlyTools = localToolsCfg && ollamaToolsTransport;
+
+  let localToolsEffective = envSaysReadOnlyTools;
+  if (input.localToolsAttached === false) {
+    localToolsEffective = false;
+  } else if (input.localToolsAttached === true) {
+    localToolsEffective = true;
+  }
+
+  const localToolsAttachmentNote =
+    localToolsCfg &&
+    ollamaToolsTransport &&
+    !localToolsEffective
+      ? "Read-only tools are configured in the environment but are not attached for this model (tool-call probe failed or transport rejected)."
+      : null;
   const fileEdit = process.env.SPIRIT_ENABLE_FILE_EDIT_TOOLS === "true";
   const devCommand = process.env.SPIRIT_ENABLE_DEV_COMMAND_TOOLS === "true";
   const emailTools = process.env.SPIRIT_ENABLE_EMAIL_TOOLS === "true";
   const calendarTools = process.env.SPIRIT_ENABLE_CALENDAR_TOOLS === "true";
 
-  if (localTools) {
+  if (localToolsEffective) {
     available.push(...LOCAL_TOOL_CAPS);
   } else {
     unavailable.push(...LOCAL_TOOL_CAPS);
@@ -104,6 +124,7 @@ export function resolveSpiritSystemState(
     projectPathConfigured: Boolean(process.env.SPIRIT_PROJECT_PATH),
     availableCapabilities: available,
     unavailableCapabilities: unavailable,
+    localToolsAttachmentNote,
   };
 }
 
@@ -128,6 +149,9 @@ export function buildSystemStateBlock(input: SpiritSystemStateInput): string {
   lines.push(`Project path configured: ${input.projectPathConfigured ? "yes" : "no"}`);
   lines.push(`Available capabilities: ${input.availableCapabilities.join(", ")}`);
   lines.push(`Unavailable capabilities: ${input.unavailableCapabilities.join(", ")}`);
+  if (input.localToolsAttachmentNote) {
+    lines.push(input.localToolsAttachmentNote);
+  }
   lines.push("");
   lines.push(
     "Do not claim you used a tool, read a file, edited a file, ran a command, checked email, or accessed calendar unless that capability is listed as available and an actual tool result was returned in this conversation.",

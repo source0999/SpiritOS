@@ -57,6 +57,48 @@ export const MobileSheet = memo(function MobileSheet({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [open, onKeyDown]);
 
+  // #region agent log
+  useEffect(() => {
+    if (!open || !mounted) return;
+    let cancelled = false;
+    const raf = requestAnimationFrame(() => {
+      if (cancelled) return;
+      const shell = document.querySelector('[data-layout="spirit-workspace"]');
+      const portalRoot = document.querySelector("[data-agent-mobile-sheet-root]");
+      const shellZ = shell ? getComputedStyle(shell).zIndex : null;
+      const portalZ = portalRoot ? getComputedStyle(portalRoot).zIndex : null;
+      const nz = (z: string | null) =>
+        z === "auto" || z == null ? 0 : Number.parseInt(z, 10) || 0;
+      fetch("http://localhost:7530/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Debug-Session-Id": "26a808",
+        },
+        body: JSON.stringify({
+          sessionId: "26a808",
+          location: "MobileSheet.tsx:stacking",
+          message: "mobile_sheet_open_stacking_probe",
+          data: {
+            shellZIndex: shellZ,
+            portalZIndex: portalZ,
+            portalNumericallyBelowOrEqualShell:
+              nz(portalZ) <= nz(shellZ) && nz(shellZ) > 0,
+            shellFound: Boolean(shell),
+            portalFound: Boolean(portalRoot),
+          },
+          timestamp: Date.now(),
+          hypothesisId: "H1",
+        }),
+      }).catch(() => {});
+    });
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf);
+    };
+  }, [open, mounted]);
+  // #endregion
+
   if (!mounted || !open) return null;
 
   const panel =
@@ -210,6 +252,7 @@ export const MobileSheet = memo(function MobileSheet({
 
   return createPortal(
     <div
+      data-agent-mobile-sheet-root
       className="fixed inset-0 z-[80] isolate"
       role="presentation"
     >

@@ -96,6 +96,7 @@ describe("workspace-tools", () => {
     expect(s.unavailableTools.join(",")).toContain("list_workspace_files");
 
     vi.stubEnv("SPIRIT_ENABLE_LOCAL_TOOLS", "true");
+    vi.stubEnv("SPIRIT_OLLAMA_SUPPORTS_TOOLS", "true");
     s = await getSystemStatus();
     expect(s.availableReadOnlyTools.sort()).toEqual(
       ["get_system_status", "list_workspace_files", "read_log_tail", "read_workspace_file"].sort(),

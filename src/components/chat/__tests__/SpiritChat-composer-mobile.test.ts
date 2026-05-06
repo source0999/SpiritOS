@@ -39,4 +39,9 @@ describe("SpiritChat mobile composer (Prompt 9F)", () => {
     expect(src).toContain('block: "nearest"');
     expect(src).not.toMatch(/setTimeout\([^)]*280/);
   });
+
+  it("workspace composer dock exposes data-testid for empty-thread regression checks", () => {
+    const src = readFileSync(p, "utf8");
+    expect(src).toContain('data-testid="spirit-composer-dock"');
+  });
 });

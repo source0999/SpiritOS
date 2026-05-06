@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   getSpiritReadOnlyTools,
@@ -20,6 +20,7 @@ describe("tool-registry", () => {
 
   it("SPIRIT_ENABLE_LOCAL_TOOLS=true returns exactly four tools", () => {
     vi.stubEnv("SPIRIT_ENABLE_LOCAL_TOOLS", "true");
+    vi.stubEnv("SPIRIT_OLLAMA_SUPPORTS_TOOLS", "true");
     const tools = getSpiritToolsForRuntime();
     expect(tools).toBeDefined();
     if (!tools) throw new Error("tools");
@@ -35,6 +36,7 @@ describe("tool-registry", () => {
 
   it("includes expected tool keys and excludes forbidden keys", () => {
     vi.stubEnv("SPIRIT_ENABLE_LOCAL_TOOLS", "true");
+    vi.stubEnv("SPIRIT_OLLAMA_SUPPORTS_TOOLS", "true");
     const tools = getSpiritReadOnlyTools();
     expect(tools).toBeDefined();
     if (!tools) throw new Error("tools");
@@ -46,5 +48,11 @@ describe("tool-registry", () => {
     expect(tools).not.toHaveProperty("terminal_execution");
     expect(tools).not.toHaveProperty("email_access");
     expect(tools).not.toHaveProperty("calendar_access");
+  });
+
+  it("returns undefined when Ollama tool transport is not opted in", () => {
+    vi.stubEnv("SPIRIT_ENABLE_LOCAL_TOOLS", "true");
+    vi.stubEnv("SPIRIT_OLLAMA_SUPPORTS_TOOLS", "false");
+    expect(getSpiritToolsForRuntime()).toBeUndefined();
   });
 });

@@ -2,7 +2,7 @@
 
 // ── SpiritWorkspaceShell - `/chat` GPT workspace (+ diagnostics rail, locked viewport) ─
 // DEPRECATED CONTEXT: DashboardClient StageId rails are archival only; Neural has no throne.
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { PanelLeftClose, PanelLeft } from "lucide-react";
 
 import { SpiritChat } from "@/components/chat/SpiritChat";
@@ -10,6 +10,10 @@ import { Clock } from "@/components/dashboard/Clock";
 import { ThemeStrip } from "@/components/dashboard/ThemeStrip";
 import { ClientFailSafe } from "@/components/system/ClientFailSafe";
 import { WorkspaceDiagnosticsRail } from "@/components/dashboard/WorkspaceDiagnosticsRail";
+import {
+  SpiritWorkspaceMobileChromeProvider,
+  useSpiritWorkspaceMobileChrome,
+} from "@/components/dashboard/SpiritWorkspaceMobileChromeContext";
 import { WorkspacePrimarySidebar } from "@/components/dashboard/WorkspacePrimarySidebar";
 import { cn } from "@/lib/cn";
 import { useSpiritVisualViewportVars } from "@/lib/hooks/useSpiritVisualViewportVars";
@@ -19,13 +23,48 @@ export type SpiritWorkspaceShellProps = {
   chatSubtitle?: string;
 };
 
+/** Main column padding: full dock gap by default; tight when keyboard or composer claims bottom. */
+function SpiritWorkspaceMainColumn({ children }: { children: ReactNode }) {
+  const mobileChrome = useSpiritWorkspaceMobileChrome();
+  const relaxBottom =
+    (mobileChrome?.keyboardInsetPx ?? 0) > 0 || (mobileChrome?.composerFocused ?? false);
+
+  return (
+    <div
+      className={cn(
+        "relative z-10 flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden",
+        relaxBottom
+          ? "max-lg:pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] lg:pb-0"
+          : "max-lg:pb-[calc(4.25rem+env(safe-area-inset-bottom,0px))] lg:pb-0",
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
 function SpiritWorkspaceShellInner({
   chatTitle = "Neural // Spirit",
   chatSubtitle = "/api/spirit · Dark Node surface",
 }: SpiritWorkspaceShellProps) {
   const [threadsRailOpen, setThreadsRailOpen] = useState(false);
   const workspaceRootRef = useRef<HTMLDivElement>(null);
-  useSpiritVisualViewportVars(workspaceRootRef);
+  const { keyboardInsetPx } = useSpiritVisualViewportVars(workspaceRootRef);
+
+  // ── iOS Safari: kill document scroll while /chat is mounted so focus/keyboard doesn’t
+  // pan the layout viewport and shove the composer off-screen (fixed shell below).
+  useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    const prevHtmlOverflow = html.style.overflow;
+    const prevBodyOverflow = body.style.overflow;
+    html.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+    return () => {
+      html.style.overflow = prevHtmlOverflow;
+      body.style.overflow = prevBodyOverflow;
+    };
+  }, []);
 
   return (
     <div
@@ -33,7 +72,9 @@ function SpiritWorkspaceShellInner({
       data-layout="spirit-workspace"
       className={cn(
         "relative flex w-full overflow-hidden bg-[color:var(--spirit-bg)] text-chalk",
+        "max-lg:fixed max-lg:inset-x-0 max-lg:z-[100] max-lg:top-[var(--spirit-visual-offset-top,0px)]",
         "max-lg:h-[var(--spirit-visual-viewport-height,100dvh)] max-lg:max-h-[var(--spirit-visual-viewport-height,100dvh)] max-lg:min-h-0",
+        "lg:relative lg:top-auto lg:z-auto lg:min-h-0 lg:max-h-none",
         "lg:h-[100dvh]",
       )}
       style={{ transition: "background-color 320ms ease" }}
@@ -55,15 +96,11 @@ function SpiritWorkspaceShellInner({
         aria-hidden
       />
 
-      <WorkspacePrimarySidebar />
+      <SpiritWorkspaceMobileChromeProvider keyboardInsetPx={keyboardInsetPx}>
+        <WorkspacePrimarySidebar />
 
-      <div
-        className={cn(
-          "relative z-10 flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden",
-          "pb-[calc(4.25rem+env(safe-area-inset-bottom,0px))] lg:pb-0",
-        )}
-      >
-        <header className="hidden shrink-0 border-b border-[color:var(--spirit-border)] bg-white/[0.03] backdrop-blur-xl lg:flex">
+        <SpiritWorkspaceMainColumn>
+          <header className="hidden shrink-0 border-b border-[color:var(--spirit-border)] bg-white/[0.03] backdrop-blur-xl lg:flex">
           <div className="flex items-center gap-3 px-4 py-2 sm:px-5">
             <button
               type="button"
@@ -122,7 +159,8 @@ function SpiritWorkspaceShellInner({
 
           <WorkspaceDiagnosticsRail />
         </div>
-      </div>
+        </SpiritWorkspaceMainColumn>
+      </SpiritWorkspaceMobileChromeProvider>
     </div>
   );
 }

@@ -6,7 +6,7 @@ import {
 } from "ai";
 
 import { getCapabilityRegistry } from "@/lib/server/capabilities/get-capabilities";
-import { formatCapabilityAnswer } from "@/lib/server/capabilities/format-capability-answer";
+import { formatCapabilityAnswer, WORKSPACE_READ_TOOLS_PROBE_REJECTED_MESSAGE } from "@/lib/server/capabilities/format-capability-answer";
 import { createDeterministicAssistantUIMessageResponse } from "@/lib/server/spirit-deterministic-ui-response";
 import { lastUserTextFromMessages } from "@/lib/chat-utils";
 import { ApiError, errorToResponse } from "@/lib/server/api-errors";
@@ -38,8 +38,10 @@ import { buildModelRuntime } from "@/lib/spirit/model-runtime";
 import type { ModelProfileId } from "@/lib/spirit/model-profile.types";
 import { getModelProfile } from "@/lib/spirit/model-profiles";
 import { resolveSpiritSystemState } from "@/lib/spirit/system-state";
-import { getSpiritToolsForRuntime } from "@/lib/spirit/tools/tool-registry";
+import { resolveSpiritToolsForOllamaModel } from "@/lib/spirit/tools/tool-registry";
+import { handleDirectWorkspaceRequest } from "@/lib/spirit/tools/direct-workspace-request";
 import { detectCapabilityIntent } from "@/lib/spirit/capability-intent";
+import { isConcreteWorkspaceReadRequest } from "@/lib/spirit/concrete-workspace-read-request";
 import { decideSpiritRoute } from "@/lib/spirit/spirit-route-decision";
 import {
   buildResearchSourcePolicy,
@@ -104,10 +106,96 @@ export async function POST(req: Request) {
     const surface: SpiritRuntimeSurface =
       runtimeSurface === "oracle" ? "oracle" : "chat";
     const ollamaModelId = resolveOllamaModelId(surface);
+    const spiritTools = await resolveSpiritToolsForOllamaModel(ollamaModelId);
     const webGlob = isWebSearchGloballyEnabled();
 
     const capabilityKind = detectCapabilityIntent(lastUser);
-    if (capabilityKind !== null) {
+
+    const localToolsEnvEnabled = process.env.SPIRIT_ENABLE_LOCAL_TOOLS === "true";
+    const ollamaToolsAllowed = process.env.SPIRIT_OLLAMA_SUPPORTS_TOOLS === "true";
+    const concreteWorkspaceRead = isConcreteWorkspaceReadRequest(lastUser);
+    const readOnlyToolsAttached = Boolean(spiritTools);
+    const shouldLetWorkspaceToolsHandle =
+      concreteWorkspaceRead && readOnlyToolsAttached;
+
+    if (process.env.NODE_ENV === "development") {
+      const reason = readOnlyToolsAttached
+        ? "tools_attached"
+        : !localToolsEnvEnabled
+          ? "local_tools_env_off"
+          : !ollamaToolsAllowed
+            ? "ollama_tools_transport_off"
+            : "model_probe_unsupported";
+      console.log(
+        `[spirit-api] surface=${surface} profile=${modelProfileId ?? "unset"} workspace-tools modelId=${ollamaModelId} SPIRIT_ENABLE_LOCAL_TOOLS=${localToolsEnvEnabled} SPIRIT_OLLAMA_SUPPORTS_TOOLS=${ollamaToolsAllowed} toolsAttached=${readOnlyToolsAttached} reason=${reason}`,
+      );
+    }
+
+    // ── 3. Concrete workspace read/list/tail: never let the model invent listings without tools ─
+    if (concreteWorkspaceRead && !readOnlyToolsAttached) {
+      const responseHeaders = {
+        ...buildSpiritSearchHeaders({
+          routeLane: "local-chat",
+          routeConfidence: "high",
+          webSearch: "none",
+          searchStatus: "none",
+          provider: null,
+          sourceCount: 0,
+          queryTrimmed: trimSearchQueryForLog(lastUser),
+          elapsedMs: null,
+          searchKind: "none",
+          skipReason: null,
+          webSourcesJson: null,
+        }),
+        "x-spirit-runtime-surface": sanitizeForHttpByteStringHeader(surface),
+      };
+
+      if (!localToolsEnvEnabled) {
+        const registry = await getCapabilityRegistry();
+        const diagnostics = getSpiritDiagnostics();
+        const text = formatCapabilityAnswer({
+          registry,
+          diagnostics,
+          webSearchEnabled: webGlob,
+          runtimeSurface: surface,
+          activeResolvedModelId: ollamaModelId,
+          intentKind: "file_access",
+          userMessage: lastUser,
+        });
+
+        return createDeterministicAssistantUIMessageResponse({
+          text,
+          originalMessages: uiMessages,
+          headers: responseHeaders,
+        });
+      }
+
+      const directAnswer = await handleDirectWorkspaceRequest(lastUser);
+      if (directAnswer) {
+        return createDeterministicAssistantUIMessageResponse({
+          text: directAnswer,
+          originalMessages: uiMessages,
+          headers: responseHeaders,
+        });
+      }
+
+      const text = !ollamaToolsAllowed
+        ? [
+            "SPIRIT_ENABLE_LOCAL_TOOLS is on, but SPIRIT_OLLAMA_SUPPORTS_TOOLS is not set to \"true\", so this API will not attach OpenAI-style tool calls to Ollama.",
+            "Without tool-call support from your model, Hermes cannot run list_workspace_files, read_workspace_file, read_log_tail, or get_system_status on the wire.",
+            "Set SPIRIT_OLLAMA_SUPPORTS_TOOLS=true only after you use an Ollama model that accepts tools; leaving it false avoids HTTP 400 errors from models that reject tool payloads.",
+          ].join("\n\n")
+        : WORKSPACE_READ_TOOLS_PROBE_REJECTED_MESSAGE;
+
+      return createDeterministicAssistantUIMessageResponse({
+        text,
+        originalMessages: uiMessages,
+        headers: responseHeaders,
+      });
+    }
+
+    // ── 4. Capability Intent Bridge (Pre-LLM) ──
+    if (capabilityKind !== null && !shouldLetWorkspaceToolsHandle) {
       let ollamaReachable: boolean | undefined;
       if (capabilityKind === "ai_runtime") {
         const probe = await probeOllamaOpenAICompat();
@@ -116,6 +204,7 @@ export async function POST(req: Request) {
 
       const registry = await getCapabilityRegistry();
       const diagnostics = getSpiritDiagnostics();
+
       const text = formatCapabilityAnswer({
         registry,
         diagnostics,
@@ -333,6 +422,7 @@ export async function POST(req: Request) {
       modelHint: ollamaModelId,
       modelProfileId: modelProfileId ?? null,
       modelProfileLabel: getModelProfile(modelProfileId).label,
+      localToolsAttached: readOnlyToolsAttached,
     });
 
     const runtime = buildModelRuntime(modelProfileId, {
@@ -346,10 +436,6 @@ export async function POST(req: Request) {
       systemState,
       oracleMemoryContext: oracleMemoryContext ?? null,
     });
-
-    if (process.env.NODE_ENV === "development") {
-      console.log(`[spirit-api] surface=${surface} mode=${modelProfileId}`);
-    }
 
     const maxOutputTokens =
       surface === "oracle"
@@ -369,15 +455,13 @@ export async function POST(req: Request) {
       throw new ApiError(400, "Invalid message format");
     }
 
-    const tools = getSpiritToolsForRuntime();
-
     const result = await streamText({
       model: ollamaOpenAI.chat(ollamaModelId),
       system: runtime.systemPrompt,
       messages: converted,
       temperature: runtime.temperature,
       maxOutputTokens,
-      ...(tools ? { tools, stopWhen: stepCountIs(8) } : {}),
+      ...(spiritTools ? { tools: spiritTools, stopWhen: stepCountIs(8) } : {}),
     });
 
     const responseHeaders = {
