@@ -12,6 +12,7 @@ import {
   DEFAULT_SPIRIT_RUNTIME_SURFACE,
   type SpiritRuntimeSurface,
 } from "@/lib/spirit/spirit-runtime-surface";
+import { buildSystemStateBlock, type SpiritSystemStateInput } from "@/lib/spirit/system-state";
 
 export type ModelRuntime = {
   profile: ModelProfile;
@@ -35,6 +36,8 @@ export type BuildModelRuntimeOptions = {
   webVerifiedUrlCount?: number;
   /** `/oracle` voice surface — adds voice-first context + tighter spoken budget. */
   runtimeSurface?: SpiritRuntimeSurface;
+  /** Dynamic [SYSTEM STATE] block — injected after response budget, before deep think. */
+  systemState?: SpiritSystemStateInput | null;
 };
 
 export function buildModelRuntime(
@@ -54,6 +57,10 @@ export function buildModelRuntime(
 
   const runtimeSurface = opts?.runtimeSurface ?? DEFAULT_SPIRIT_RUNTIME_SURFACE;
   const surfaceInstruction = buildRuntimeSurfaceInstruction(runtimeSurface);
+
+  const systemStateBlock = opts?.systemState
+    ? `\n\n${buildSystemStateBlock(opts.systemState)}`
+    : "";
 
   const budget = buildResponseBudgetInstruction(profile, lastUser || " ", {
     deepThinkEnabled: deep,
@@ -102,7 +109,7 @@ ${extra}`
 
   const systemPrompt = `${profile.systemPrompt}
 
-${surfacePrefix}${budget}${deepBlock}${researchBlock}${planBlock}${prefsBlock}
+${surfacePrefix}${budget}${systemStateBlock}${deepBlock}${researchBlock}${planBlock}${prefsBlock}
 
 ${SPIRIT_CAPABILITY_CONTEXT_HINT}
 

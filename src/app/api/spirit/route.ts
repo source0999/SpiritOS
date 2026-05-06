@@ -31,6 +31,8 @@ import {
 } from "@/lib/server/spirit-web-research-guard";
 import { buildModelRuntime } from "@/lib/spirit/model-runtime";
 import type { ModelProfileId } from "@/lib/spirit/model-profile.types";
+import { getModelProfile } from "@/lib/spirit/model-profiles";
+import { resolveSpiritSystemState } from "@/lib/spirit/system-state";
 import { detectCapabilityIntent } from "@/lib/spirit/capability-intent";
 import { decideSpiritRoute } from "@/lib/spirit/spirit-route-decision";
 import {
@@ -319,6 +321,13 @@ export async function POST(req: Request) {
       }
     }
 
+    const systemState = resolveSpiritSystemState({
+      runtimeSurface: surface,
+      modelHint: ollamaModelId,
+      modelProfileId: modelProfileId ?? null,
+      modelProfileLabel: getModelProfile(modelProfileId).label,
+    });
+
     const runtime = buildModelRuntime(modelProfileId, {
       personalizationSummary,
       lastUserMessage: lastUser,
@@ -327,6 +336,7 @@ export async function POST(req: Request) {
       researchPlanSummary: researchPlanSummary ?? null,
       webVerifiedUrlCount,
       runtimeSurface: surface,
+      systemState,
     });
 
     if (process.env.NODE_ENV === "development") {

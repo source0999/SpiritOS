@@ -2,6 +2,28 @@ import { describe, expect, it } from "vitest";
 
 import { buildModelRuntime } from "@/lib/spirit/model-runtime";
 import { MODEL_PROFILES } from "@/lib/spirit/model-profiles";
+import type { SpiritSystemStateInput } from "@/lib/spirit/system-state";
+
+const TEST_SYSTEM_STATE: SpiritSystemStateInput = {
+  currentTimeIso: "2026-05-06T00:00:00.000Z",
+  runtimeSurface: "chat",
+  modelHint: "hermes-test-model",
+  modelProfileId: "normal-peer",
+  modelProfileLabel: "Peer",
+  hardwareProfile: "unknown",
+  projectPathConfigured: false,
+  availableCapabilities: ["chat", "tts", "stt", "web_search_when_enabled"],
+  unavailableCapabilities: [
+    "workspace_file_read",
+    "workspace_file_list",
+    "log_tail_read",
+    "system_status",
+    "file_editing",
+    "terminal_execution",
+    "email_access",
+    "calendar_access",
+  ],
+};
 
 describe("buildModelRuntime", () => {
   it("includes capability registry hint (no full JSON dump)", () => {
@@ -228,5 +250,58 @@ Verified URL sources (2):
     });
     expect(deep.maxOutputTokens).toBeGreaterThan(shallow.maxOutputTokens!);
     expect(deep.maxOutputTokens).toBeLessThanOrEqual(4096);
+  });
+
+  // ── Phase 1: [SYSTEM STATE] block ─────────────────────────────────────────────
+
+  it("includes [SYSTEM STATE] block when systemState is provided", () => {
+    const r = buildModelRuntime("normal-peer", {
+      lastUserMessage: "yo",
+      systemState: TEST_SYSTEM_STATE,
+    });
+    expect(r.systemPrompt).toContain("[SYSTEM STATE]");
+  });
+
+  it("does not include [SYSTEM STATE] when systemState is not provided", () => {
+    const r = buildModelRuntime("normal-peer", { lastUserMessage: "yo" });
+    expect(r.systemPrompt).not.toContain("[SYSTEM STATE]");
+  });
+
+  it("[SYSTEM STATE] appears after response budget and before deep think", () => {
+    const r = buildModelRuntime("normal-peer", {
+      lastUserMessage: "yo",
+      deepThinkEnabled: true,
+      systemState: TEST_SYSTEM_STATE,
+    });
+    const idxBudget = r.systemPrompt.indexOf("## Response budget");
+    const idxState = r.systemPrompt.indexOf("[SYSTEM STATE]");
+    const idxDeep = r.systemPrompt.indexOf("## Deep Think Lite");
+    expect(idxBudget).toBeGreaterThanOrEqual(0);
+    expect(idxState).toBeGreaterThan(idxBudget);
+    expect(idxDeep).toBeGreaterThan(idxState);
+  });
+
+  it("[SYSTEM STATE] includes the anti-hallucination rule", () => {
+    const r = buildModelRuntime("normal-peer", {
+      lastUserMessage: "yo",
+      systemState: TEST_SYSTEM_STATE,
+    });
+    expect(r.systemPrompt).toMatch(/Do not claim you used a tool/i);
+  });
+
+  it("Oracle surface instruction still precedes [SYSTEM STATE] when both present", () => {
+    const oracleState: SpiritSystemStateInput = {
+      ...TEST_SYSTEM_STATE,
+      runtimeSurface: "oracle",
+    };
+    const r = buildModelRuntime("normal-peer", {
+      lastUserMessage: "yo",
+      runtimeSurface: "oracle",
+      systemState: oracleState,
+    });
+    const idxOracle = r.systemPrompt.indexOf("## Oracle Voice surface");
+    const idxState = r.systemPrompt.indexOf("[SYSTEM STATE]");
+    expect(idxOracle).toBeGreaterThanOrEqual(0);
+    expect(idxState).toBeGreaterThan(idxOracle);
   });
 });
