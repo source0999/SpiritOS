@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildModelRuntime } from "@/lib/spirit/model-runtime";
+import { buildModelRuntime, buildSemanticRoutingInstruction } from "@/lib/spirit/model-runtime";
 import { MODEL_PROFILES } from "@/lib/spirit/model-profiles";
 import type { SpiritSystemStateInput } from "@/lib/spirit/system-state";
 
@@ -172,7 +172,7 @@ describe("buildModelRuntime", () => {
 
   it("appends Peer final-answer contract with coding-default + banned phrases", () => {
     const r = buildModelRuntime("normal-peer", { lastUserMessage: "yo" });
-    expect(r.systemPrompt).toContain("Final answer contract — Peer mode");
+    expect(r.systemPrompt).toMatch(/## Final answer contract.{1,5}Peer mode\n- Not coding mode/);
     expect(r.systemPrompt).toContain("Not coding mode");
     expect(r.systemPrompt).toContain("How may I assist you?");
   });
@@ -252,6 +252,91 @@ Verified URL sources (2):
     expect(deep.maxOutputTokens).toBeLessThanOrEqual(4096);
   });
 
+  // ── Phase 2: [SEMANTIC ROUTING] block ────────────────────────────────────────
+
+  it("includes [SEMANTIC ROUTING] in every profile", () => {
+    const profiles = ["normal-peer", "researcher", "teacher", "brutal", "sassy-chaotic"] as const;
+    for (const id of profiles) {
+      const r = buildModelRuntime(id, { lastUserMessage: "yo" });
+      expect(r.systemPrompt, `profile: ${id}`).toContain("[SEMANTIC ROUTING]");
+    }
+  });
+
+  it("[SEMANTIC ROUTING] describes the profile as a style bias, not a hard limit", () => {
+    const r = buildModelRuntime("normal-peer", { lastUserMessage: "yo" });
+    expect(r.systemPrompt).toMatch(/style bias|not a hard capability limit/i);
+  });
+
+  it("[SEMANTIC ROUTING] allows technical depth for code, repo, and architecture questions", () => {
+    const r = buildModelRuntime("normal-peer", { lastUserMessage: "yo" });
+    expect(r.systemPrompt).toMatch(/technical precision.*enough structure|enough structure.*genuinely useful/i);
+  });
+
+  it("[SEMANTIC ROUTING] instructs not to claim unavailable capabilities when system state is present", () => {
+    const r = buildModelRuntime("normal-peer", { lastUserMessage: "yo" });
+    expect(r.systemPrompt).toMatch(
+      /When the \[SYSTEM STATE\] block is present.*lists as unavailable|lists as unavailable/i,
+    );
+    expect(r.systemPrompt).toMatch(
+      /Obey \[SYSTEM STATE\] capability boundaries when the \[SYSTEM STATE\] block is present/i,
+    );
+  });
+
+  it("[SEMANTIC ROUTING] appears after [SYSTEM STATE] block when systemState is present", () => {
+    const r = buildModelRuntime("normal-peer", {
+      lastUserMessage: "yo",
+      systemState: TEST_SYSTEM_STATE,
+    });
+    const idxState = r.systemPrompt.search(/\[SYSTEM STATE\]\nTime:/);
+    const idxRouting = r.systemPrompt.indexOf("[SEMANTIC ROUTING]");
+    expect(idxState).toBeGreaterThanOrEqual(0);
+    expect(idxRouting).toBeGreaterThan(idxState);
+  });
+
+  it("[SEMANTIC ROUTING] appears before deep think block", () => {
+    const r = buildModelRuntime("normal-peer", {
+      lastUserMessage: "yo",
+      deepThinkEnabled: true,
+    });
+    const idxRouting = r.systemPrompt.indexOf("[SEMANTIC ROUTING]");
+    const idxDeep = r.systemPrompt.indexOf("## Deep Think Lite");
+    expect(idxRouting).toBeGreaterThanOrEqual(0);
+    expect(idxDeep).toBeGreaterThan(idxRouting);
+  });
+
+  it("[SEMANTIC ROUTING] appears before research context", () => {
+    const r = buildModelRuntime("researcher", {
+      lastUserMessage: "sources",
+      researchWebContext: "## Web research digest (stub)\nVerified URL sources (0):",
+    });
+    const idxRouting = r.systemPrompt.indexOf("[SEMANTIC ROUTING]");
+    const idxResearch = r.systemPrompt.indexOf("## Web research digest");
+    expect(idxRouting).toBeGreaterThanOrEqual(0);
+    expect(idxResearch).toBeGreaterThan(idxRouting);
+  });
+
+  it("buildSemanticRoutingInstruction embeds profile id", () => {
+    const profile = MODEL_PROFILES.researcher;
+    const block = buildSemanticRoutingInstruction(profile);
+    expect(block).toContain("researcher");
+  });
+
+  it("existing [SYSTEM STATE] order test still holds with routing block inserted", () => {
+    const r = buildModelRuntime("normal-peer", {
+      lastUserMessage: "yo",
+      deepThinkEnabled: true,
+      systemState: TEST_SYSTEM_STATE,
+    });
+    const idxBudget = r.systemPrompt.indexOf("## Response budget");
+    const idxState = r.systemPrompt.search(/\[SYSTEM STATE\]\nTime:/);
+    const idxRouting = r.systemPrompt.indexOf("[SEMANTIC ROUTING]");
+    const idxDeep = r.systemPrompt.indexOf("## Deep Think Lite");
+    expect(idxBudget).toBeGreaterThanOrEqual(0);
+    expect(idxState).toBeGreaterThan(idxBudget);
+    expect(idxRouting).toBeGreaterThan(idxState);
+    expect(idxDeep).toBeGreaterThan(idxRouting);
+  });
+
   // ── Phase 1: [SYSTEM STATE] block ─────────────────────────────────────────────
 
   it("includes [SYSTEM STATE] block when systemState is provided", () => {
@@ -259,22 +344,25 @@ Verified URL sources (2):
       lastUserMessage: "yo",
       systemState: TEST_SYSTEM_STATE,
     });
-    expect(r.systemPrompt).toContain("[SYSTEM STATE]");
+    // Block header always starts "[SYSTEM STATE]\nTime:"; cross-references in routing don't match
+    expect(r.systemPrompt).toMatch(/\[SYSTEM STATE\]\nTime:/);
   });
 
-  it("does not include [SYSTEM STATE] when systemState is not provided", () => {
+  it("does not include [SYSTEM STATE] block when systemState is not provided", () => {
     const r = buildModelRuntime("normal-peer", { lastUserMessage: "yo" });
-    expect(r.systemPrompt).not.toContain("[SYSTEM STATE]");
+    // Semantic routing may reference "[SYSTEM STATE]" by name; the block header includes "\nTime:"
+    expect(r.systemPrompt).not.toMatch(/\[SYSTEM STATE\]\nTime:/);
   });
 
-  it("[SYSTEM STATE] appears after response budget and before deep think", () => {
+  it("[SYSTEM STATE] block appears after response budget and before deep think", () => {
     const r = buildModelRuntime("normal-peer", {
       lastUserMessage: "yo",
       deepThinkEnabled: true,
       systemState: TEST_SYSTEM_STATE,
     });
     const idxBudget = r.systemPrompt.indexOf("## Response budget");
-    const idxState = r.systemPrompt.indexOf("[SYSTEM STATE]");
+    // Use block header (includes "\nTime:") to distinguish from routing cross-references
+    const idxState = r.systemPrompt.search(/\[SYSTEM STATE\]\nTime:/);
     const idxDeep = r.systemPrompt.indexOf("## Deep Think Lite");
     expect(idxBudget).toBeGreaterThanOrEqual(0);
     expect(idxState).toBeGreaterThan(idxBudget);
@@ -289,7 +377,7 @@ Verified URL sources (2):
     expect(r.systemPrompt).toMatch(/Do not claim you used a tool/i);
   });
 
-  it("Oracle surface instruction still precedes [SYSTEM STATE] when both present", () => {
+  it("Oracle surface instruction still precedes [SYSTEM STATE] block when both present", () => {
     const oracleState: SpiritSystemStateInput = {
       ...TEST_SYSTEM_STATE,
       runtimeSurface: "oracle",
@@ -300,7 +388,7 @@ Verified URL sources (2):
       systemState: oracleState,
     });
     const idxOracle = r.systemPrompt.indexOf("## Oracle Voice surface");
-    const idxState = r.systemPrompt.indexOf("[SYSTEM STATE]");
+    const idxState = r.systemPrompt.search(/\[SYSTEM STATE\]\nTime:/);
     expect(idxOracle).toBeGreaterThanOrEqual(0);
     expect(idxState).toBeGreaterThan(idxOracle);
   });

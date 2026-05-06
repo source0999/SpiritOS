@@ -64,4 +64,14 @@ describe("model-profiles", () => {
   it("researcher system prompt forbids invented citations", () => {
     expect(MODEL_PROFILES.researcher.systemPrompt).toMatch(/Never invent citations/i);
   });
+
+  it("normal-peer explicitly allows technical depth for code, repo, and homelab questions", () => {
+    const p = MODEL_PROFILES["normal-peer"].systemPrompt;
+    expect(p).toMatch(/enough structure and detail|technical.*enough structure/i);
+  });
+
+  it("normal-peer does not hard-block technical framing, only casual defaults", () => {
+    const p = MODEL_PROFILES["normal-peer"].systemPrompt;
+    expect(p).toMatch(/When the user actually asks for coding|asks for coding, repo/i);
+  });
 });

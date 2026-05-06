@@ -1,4 +1,4 @@
-// ── buildModelRuntime — profile → prompt + sampling (client + server safe) ─────
+// ── buildModelRuntime: profile to prompt + sampling (client + server safe) ─────
 import { getModelProfile } from "@/lib/spirit/model-profiles";
 import type { ModelProfile } from "@/lib/spirit/model-profile.types";
 import {
@@ -25,20 +25,34 @@ export type ModelRuntime = {
 export type BuildModelRuntimeOptions = {
   /** Trimmed, server-validated slice appended after mode system prompt */
   personalizationSummary?: string | null;
-  /** Last user text (server) — drives response budget helper */
+  /** Last user text (server); drives response budget helper */
   lastUserMessage?: string | null;
   deepThinkEnabled?: boolean;
   /** OpenAI web digest or failure banner */
   researchWebContext?: string | null;
   /** Optional user-approved research plan (Stage 5 stub) */
   researchPlanSummary?: string | null;
-  /** OpenAI web prefetch: verified http(s) URL count (Researcher + Teacher — aligns digest + link-first budget). */
+  /** OpenAI web prefetch: verified http(s) URL count (Researcher + Teacher; aligns digest + link-first budget). */
   webVerifiedUrlCount?: number;
-  /** `/oracle` voice surface — adds voice-first context + tighter spoken budget. */
+  /** `/oracle` voice surface: adds voice-first context + tighter spoken budget. */
   runtimeSurface?: SpiritRuntimeSurface;
-  /** Dynamic [SYSTEM STATE] block — injected after response budget, before deep think. */
+  /** Dynamic [SYSTEM STATE] block, injected after response budget, before deep think. */
   systemState?: SpiritSystemStateInput | null;
 };
+
+export function buildSemanticRoutingInstruction(profile: ModelProfile): string {
+  return [
+    "[SEMANTIC ROUTING]",
+    `The selected profile (${profile.id}) shapes your default tone and length: it is a style bias, not a hard capability limit.`,
+    "Adapt depth and tone to the user's actual request:",
+    "- Code, repo, debugging, architecture, implementation, homelab, local models, system design, planning, or build questions → respond with technical precision and enough structure to be genuinely useful. Do not force a short casual answer when the task clearly needs depth.",
+    "- Casual, emotional, reflective, or personal questions → stay in the profile's tone. Be appropriately brief unless the user asks for more.",
+    "- Research, verification, or factual questions → be careful, evidence-aware, and honest about what you cannot confirm.",
+    'Do not use boilerplate assistant phrases ("How may I assist you?", "As an AI...", "I\'m here to help with...").',
+    "When the [SYSTEM STATE] block is present, do not claim capabilities it lists as unavailable.",
+    "Obey [SYSTEM STATE] capability boundaries when the [SYSTEM STATE] block is present.",
+  ].join("\n");
+}
 
 export function buildModelRuntime(
   profileId?: string | null,
@@ -62,6 +76,8 @@ export function buildModelRuntime(
     ? `\n\n${buildSystemStateBlock(opts.systemState)}`
     : "";
 
+  const semanticRoutingBlock = `\n\n${buildSemanticRoutingInstruction(profile)}`;
+
   const budget = buildResponseBudgetInstruction(profile, lastUser || " ", {
     deepThinkEnabled: deep,
     digestHasVerifiedUrls,
@@ -75,7 +91,7 @@ export function buildModelRuntime(
 
 ## Deep Think Lite (user enabled)
 - Take a breath: check assumptions, edge cases, and whether you are answering what was actually asked.
-- Prefer correctness and judgment over length — especially in Peer/Sassy/Brutal modes (no essay mode).
+- Prefer correctness and judgment over length, especially in Peer/Sassy/Brutal modes (no essay mode).
 - Researcher: verify claims against provided web context when present; Teacher: optional one-line comprehension check.
 `
     : "";
@@ -109,7 +125,7 @@ ${extra}`
 
   const systemPrompt = `${profile.systemPrompt}
 
-${surfacePrefix}${budget}${systemStateBlock}${deepBlock}${researchBlock}${planBlock}${prefsBlock}
+${surfacePrefix}${budget}${systemStateBlock}${semanticRoutingBlock}${deepBlock}${researchBlock}${planBlock}${prefsBlock}
 
 ${SPIRIT_CAPABILITY_CONTEXT_HINT}
 
