@@ -90,8 +90,9 @@ export const SpiritMessage = memo(function SpiritMessage({
           className={cn(
             "relative flex min-w-0 flex-col",
             !isUser && [
+              "w-full max-w-full",
               "border-l-2 border-l-[color:var(--spirit-accent)]",
-              "bg-[linear-gradient(90deg,color-mix(in_oklab,var(--spirit-glow)_55%,transparent)_0%,transparent_55%)]",
+              "bg-[linear-gradient(90deg,color-mix(in_oklab,var(--spirit-glow)_30%,transparent)_0%,transparent_38%)]",
               "max-lg:rounded-r-xl max-lg:py-1.5 max-lg:pl-2 max-lg:pr-1.5",
               "rounded-r-2xl py-2.5 pl-3 pr-2 sm:py-3 sm:pl-4 sm:pr-2 lg:rounded-2xl",
             ],
@@ -107,7 +108,9 @@ export const SpiritMessage = memo(function SpiritMessage({
               "min-w-0",
             !isUser && "pr-1.5 sm:pr-2 lg:pr-24",
             isUser &&
-              (useActionSheetBelowLg ? "pb-1.5 pr-1.5 sm:pr-2 lg:pb-10" : "sm:pb-10 sm:pr-2"),
+              (useActionSheetBelowLg
+                ? "pb-1.5 pr-1.5 max-lg:pr-10 sm:pr-2 lg:pb-10"
+                : "sm:pb-10 sm:pr-2"),
             )}
           >
             {isUser ? (
@@ -130,11 +133,11 @@ export const SpiritMessage = memo(function SpiritMessage({
                 onCancel={() => setEditing(false)}
               />
             ) : isUser ? (
-              <p className="whitespace-pre-wrap break-words font-sans text-[16px] leading-snug text-chalk/90 max-lg:text-[16px] sm:text-[15px] sm:leading-relaxed">
+              <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] font-sans text-[16px] leading-snug text-chalk/90 max-lg:text-[16px] sm:text-[15px] sm:leading-relaxed">
                 {body}
               </p>
             ) : (
-              <div className="min-w-0">
+              <div className="min-w-0 max-w-full [overflow-wrap:anywhere]">
                 <MessageMarkdown text={body} webSourcesSnapshot={webSourcesSnapshot} />
                 {isStreamingLatest ? <StreamingCursor /> : null}
               </div>

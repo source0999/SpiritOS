@@ -96,7 +96,8 @@ export function WorkspacePrimarySidebar() {
 
       <nav
         className={cn(
-          "fixed inset-x-0 bottom-0 z-40 lg:hidden",
+          "fixed inset-x-0 z-40 lg:hidden",
+          "bottom-[var(--spirit-keyboard-inset,0px)]",
           "flex items-center justify-around gap-0.5 border-t border-[color:var(--spirit-border)]",
           "bg-[color:color-mix(in_oklab,var(--spirit-bg)_82%,transparent)] px-1 pb-[env(safe-area-inset-bottom,0px)] pt-2 backdrop-blur-2xl",
           "shadow-[0_-14px_40px_-26px_var(--spirit-glow)]",

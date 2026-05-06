@@ -17,6 +17,9 @@ describe("SpiritMessage", () => {
 
     expect(screen.getByText("You")).toBeInTheDocument();
     expect(screen.getByText("Hello Spirit")).toBeInTheDocument();
+    expect(screen.getByText("Hello Spirit").className).toContain(
+      "[overflow-wrap:anywhere]",
+    );
   });
 
   it("renders Spirit message on the left with markdown", () => {

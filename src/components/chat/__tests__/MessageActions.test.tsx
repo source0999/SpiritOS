@@ -160,5 +160,19 @@ describe("MessageActions", () => {
       expect(screen.queryByRole("button", { name: /^Edit$/i })).not.toBeInTheDocument();
       expect(screen.getByRole("button", { name: /^Regenerate$/i })).toBeInTheDocument();
     });
+
+    it("user bubble-user sheet trigger is absolutely positioned (corner chip)", () => {
+      render(
+        <MessageActions
+          useActionSheetBelowLg
+          placement="bubble-user"
+          role="user"
+          onCopy={vi.fn()}
+          onDelete={vi.fn()}
+        />,
+      );
+      const btn = screen.getByRole("button", { name: /Message actions/i });
+      expect(btn.parentElement?.className).toMatch(/absolute/);
+    });
   });
 });

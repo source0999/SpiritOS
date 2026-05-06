@@ -63,4 +63,10 @@ describe("WorkspacePrimarySidebar", () => {
     const quarantineLinks = screen.queryAllByRole("link", { name: /quarantine/i });
     expect(quarantineLinks.length).toBe(0);
   });
+
+  it("mobile dock respects keyboard inset CSS variable for iOS composer lift", () => {
+    render(<WorkspacePrimarySidebar />);
+    const nav = screen.getByRole("navigation", { name: /^workspace navigation$/i });
+    expect(nav.className).toContain("--spirit-keyboard-inset");
+  });
 });

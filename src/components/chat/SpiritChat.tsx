@@ -115,6 +115,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
   const ttsSpeakGateRef = useTtsSpeakGateRef(tts);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const composerTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const shouldStickToBottomRef = useRef(true);
   const forceScrollOnNextMessageRef = useRef(false);
 
@@ -989,17 +990,17 @@ const SpiritChatInner = memo(function SpiritChatInner({
             )}
           >
             <textarea
+              ref={composerTextareaRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={onKeyDown}
               onFocus={() => {
-                window.setTimeout(() => {
-                  forceScrollOnNextMessageRef.current = true;
-                  messagesEndRef.current?.scrollIntoView({
-                    behavior: "smooth",
-                    block: "end",
+                requestAnimationFrame(() => {
+                  composerTextareaRef.current?.scrollIntoView({
+                    block: "nearest",
+                    inline: "nearest",
                   });
-                }, 280);
+                });
               }}
               placeholder={
                 researchPlanOpen && modeRt.activeModelProfileId === "researcher"

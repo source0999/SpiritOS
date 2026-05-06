@@ -32,4 +32,11 @@ describe("SpiritChat mobile composer (Prompt 9F)", () => {
     const src = readFileSync(p, "utf8");
     expect(src).toContain("overflow-y-auto");
   });
+
+  it("composer focus scrolls textarea into view with block nearest (no delayed messagesEnd jump)", () => {
+    const src = readFileSync(p, "utf8");
+    expect(src).toContain("composerTextareaRef");
+    expect(src).toContain('block: "nearest"');
+    expect(src).not.toMatch(/setTimeout\([^)]*280/);
+  });
 });

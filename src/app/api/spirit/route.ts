@@ -1,4 +1,9 @@
-import { convertToModelMessages, streamText, type ModelMessage } from "ai";
+import {
+  convertToModelMessages,
+  streamText,
+  stepCountIs,
+  type ModelMessage,
+} from "ai";
 
 import { getCapabilityRegistry } from "@/lib/server/capabilities/get-capabilities";
 import { formatCapabilityAnswer } from "@/lib/server/capabilities/format-capability-answer";
@@ -33,6 +38,7 @@ import { buildModelRuntime } from "@/lib/spirit/model-runtime";
 import type { ModelProfileId } from "@/lib/spirit/model-profile.types";
 import { getModelProfile } from "@/lib/spirit/model-profiles";
 import { resolveSpiritSystemState } from "@/lib/spirit/system-state";
+import { getSpiritToolsForRuntime } from "@/lib/spirit/tools/tool-registry";
 import { detectCapabilityIntent } from "@/lib/spirit/capability-intent";
 import { decideSpiritRoute } from "@/lib/spirit/spirit-route-decision";
 import {
@@ -363,12 +369,15 @@ export async function POST(req: Request) {
       throw new ApiError(400, "Invalid message format");
     }
 
+    const tools = getSpiritToolsForRuntime();
+
     const result = await streamText({
       model: ollamaOpenAI.chat(ollamaModelId),
       system: runtime.systemPrompt,
       messages: converted,
       temperature: runtime.temperature,
       maxOutputTokens,
+      ...(tools ? { tools, stopWhen: stepCountIs(8) } : {}),
     });
 
     const responseHeaders = {

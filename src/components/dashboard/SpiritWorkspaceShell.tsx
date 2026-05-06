@@ -2,7 +2,7 @@
 
 // ── SpiritWorkspaceShell - `/chat` GPT workspace (+ diagnostics rail, locked viewport) ─
 // DEPRECATED CONTEXT: DashboardClient StageId rails are archival only; Neural has no throne.
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { PanelLeftClose, PanelLeft } from "lucide-react";
 
 import { SpiritChat } from "@/components/chat/SpiritChat";
@@ -12,6 +12,7 @@ import { ClientFailSafe } from "@/components/system/ClientFailSafe";
 import { WorkspaceDiagnosticsRail } from "@/components/dashboard/WorkspaceDiagnosticsRail";
 import { WorkspacePrimarySidebar } from "@/components/dashboard/WorkspacePrimarySidebar";
 import { cn } from "@/lib/cn";
+import { useSpiritVisualViewportVars } from "@/lib/hooks/useSpiritVisualViewportVars";
 
 export type SpiritWorkspaceShellProps = {
   chatTitle?: string;
@@ -23,11 +24,18 @@ function SpiritWorkspaceShellInner({
   chatSubtitle = "/api/spirit · Dark Node surface",
 }: SpiritWorkspaceShellProps) {
   const [threadsRailOpen, setThreadsRailOpen] = useState(false);
+  const workspaceRootRef = useRef<HTMLDivElement>(null);
+  useSpiritVisualViewportVars(workspaceRootRef);
 
   return (
     <div
+      ref={workspaceRootRef}
       data-layout="spirit-workspace"
-      className="relative flex h-[100dvh] w-full overflow-hidden bg-[color:var(--spirit-bg)] text-chalk"
+      className={cn(
+        "relative flex w-full overflow-hidden bg-[color:var(--spirit-bg)] text-chalk",
+        "max-lg:h-[var(--spirit-visual-viewport-height,100dvh)] max-lg:max-h-[var(--spirit-visual-viewport-height,100dvh)] max-lg:min-h-0",
+        "lg:h-[100dvh]",
+      )}
       style={{ transition: "background-color 320ms ease" }}
     >
       <div

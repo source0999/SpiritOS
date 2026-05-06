@@ -1,5 +1,7 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 
+import { streamText } from "ai";
+
 import { POST } from "../route";
 import type { CapabilityRegistryResponse } from "@/lib/server/capabilities/types";
 
@@ -36,6 +38,16 @@ vi.mock("@/lib/server/spirit-diagnostics", () => ({
   getSpiritMaxOutputTokens: () => 1024,
   getOracleMaxOutputTokens: () => 768,
 }));
+
+vi.mock("ai", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("ai")>();
+  return {
+    ...actual,
+    streamText: vi.fn(() => ({
+      toUIMessageStreamResponse: vi.fn(() => new Response("mock-stream", { status: 200 })),
+    })),
+  };
+});
 
 function capabilityRegistry(label: string): CapabilityRegistryResponse {
   return {
@@ -347,5 +359,66 @@ describe("POST /api/spirit capability bridge", () => {
     const raw = await res.text();
     expect(raw).toMatch(/live/i);
     expect(raw).toContain("list_nodes");
+  });
+});
+
+describe("POST /api/spirit streamText tools wiring", () => {
+  beforeEach(async () => {
+    vi.stubEnv("WEB_SEARCH_ENABLED", "false");
+    const { getCapabilityRegistry } = await import("@/lib/server/capabilities/get-capabilities");
+    vi.mocked(getCapabilityRegistry).mockResolvedValue(
+      capabilityRegistry("SPIRIT_ROUTE_TEST_NODE"),
+    );
+    vi.mocked(streamText).mockClear();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.clearAllMocks();
+  });
+
+  function chatBody() {
+    return jsonBody({
+      messages: [
+        {
+          role: "user",
+          id: "u-tools",
+          parts: [{ type: "text", text: "Hello friend, please respond briefly." }],
+        },
+      ],
+    });
+  }
+
+  it("does not attach tools when SPIRIT_ENABLE_LOCAL_TOOLS is false", async () => {
+    vi.stubEnv("SPIRIT_ENABLE_LOCAL_TOOLS", "false");
+    const req = new Request("http://localhost/api/spirit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(chatBody()),
+    });
+    await POST(req);
+    const opts = vi.mocked(streamText).mock.calls[0]?.[0] as {
+      tools?: unknown;
+      stopWhen?: unknown;
+    };
+    expect(opts?.tools).toBeUndefined();
+    expect(opts?.stopWhen).toBeUndefined();
+  });
+
+  it("attaches tools and stopWhen when SPIRIT_ENABLE_LOCAL_TOOLS is true", async () => {
+    vi.stubEnv("SPIRIT_ENABLE_LOCAL_TOOLS", "true");
+    const req = new Request("http://localhost/api/spirit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(chatBody()),
+    });
+    await POST(req);
+    const opts = vi.mocked(streamText).mock.calls[0]?.[0] as {
+      tools?: Record<string, unknown>;
+      stopWhen?: unknown;
+    };
+    expect(opts?.tools).toBeDefined();
+    expect(Object.keys(opts!.tools!)).toHaveLength(4);
+    expect(opts?.stopWhen).toBeDefined();
   });
 });

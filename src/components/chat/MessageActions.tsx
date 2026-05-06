@@ -360,15 +360,20 @@ export const MessageActions = memo(function MessageActions({
   }, [actionDisabled, onDelete, closeSheet]);
 
   if (useActionSheetMode && !isLg) {
+    const sheetTriggerWrap =
+      role === "user"
+        ? "absolute right-1 top-1 z-20 sm:right-1.5 sm:top-1.5"
+        : cn("block", bubble);
+
     return (
       <>
-        <div className={cn("block", bubble)}>
+        <div className={sheetTriggerWrap}>
           <button
             type="button"
             onClick={() => setSheetOpen(true)}
             aria-expanded={sheetOpen}
             aria-label="Message actions"
-            className="touch-manipulation inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/[0.08] bg-black/25 text-chalk/50 shadow-sm backdrop-blur-sm transition hover:border-white/12 hover:bg-black/35 hover:text-chalk/70 active:scale-[0.96]"
+            className="touch-manipulation inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full border border-white/[0.08] bg-black/25 text-chalk/50 shadow-sm backdrop-blur-sm transition hover:border-white/12 hover:bg-black/35 hover:text-chalk/70 active:scale-[0.96]"
           >
             <MoreHorizontal className="h-4 w-4" aria-hidden strokeWidth={2} />
           </button>
