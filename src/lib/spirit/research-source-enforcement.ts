@@ -1,4 +1,4 @@
-// ── research-source-enforcement — no fake citations when search lied or failed ─────
+// ── research-source-enforcement - no fake citations when search lied or failed ─────
 // > Hermes will still try; this module is policy text + a dumb safety net stripper.
 
 import type { ModelProfileId } from "@/lib/spirit/model-profile.types";
@@ -50,7 +50,7 @@ export function buildResearchSourcePolicy(input: ResearchSourcePolicyInput): str
         "- Search used: yes",
         "- Verified URLs are in the web digest above.",
         '- **Study aids** must include a markdown bullet list: one line per verified URL, each exactly `- [Short label](https://...)` using only URLs from the digest (no invented links).',
-        "- Optional: you may repeat the same links under **## Sources** — but Study aids must not be only generic search phrases when URLs exist.",
+        "- Optional: you may repeat the same links under **## Sources** - but Study aids must not be only generic search phrases when URLs exist.",
         `- Verified URL count: ${urlCount}`,
       ].join("\n");
     }
@@ -77,7 +77,7 @@ export function buildResearchSourcePolicy(input: ResearchSourcePolicyInput): str
       "- The user asked for time-bounded external proof: say you **cannot verify** that without attached URLs.",
     );
   } else {
-    lines.push('- If you continue from training knowledge, label it **"Unverified background"** — not "Findings".');
+    lines.push('- If you continue from training knowledge, label it **"Unverified background"** - not "Findings".');
   }
   return lines.join("\n");
 }
@@ -101,7 +101,7 @@ function stripMarkdownSectionAfterHeading(text: string, headingLine: RegExp): st
 }
 
 /**
- * Last-resort sanitizer when the model ignored policy — only safe when caller knows URLs were absent.
+ * Last-resort sanitizer when the model ignored policy - only safe when caller knows URLs were absent.
  */
 export function stripFakeCitationsWhenNoSources(text: string): string {
   if (!text.trim()) return text;

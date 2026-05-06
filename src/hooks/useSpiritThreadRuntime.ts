@@ -9,7 +9,7 @@ import type { FolderSidebarSection } from "@/lib/chat-folder-utils";
 import type { ChatFolder, ChatMessage, ChatThread } from "@/lib/chat-db.types";
 import { searchThreadsAndMessages } from "@/lib/chat-persistence";
 
-/** Search sidebar empty state — Dexie returned zero thread ids for query */
+/** Search sidebar empty state - Dexie returned zero thread ids for query */
 export function spiritThreadSearchEmpty(args: {
   sidebarFeaturesEnabled: boolean;
   debouncedSearchTrimmed: string;
@@ -26,7 +26,7 @@ export function spiritThreadSearchEmpty(args: {
 }
 
 export type UseSpiritThreadRuntimeInput = {
-  /** Mirrors `persistence` prop — Dexie on/off */
+  /** Mirrors `persistence` prop - Dexie on/off */
   enabled: boolean;
   /** Saved-thread sidebar features (search, debounced hits); off for ephemeral surfaces */
   sidebarFeaturesEnabled: boolean;

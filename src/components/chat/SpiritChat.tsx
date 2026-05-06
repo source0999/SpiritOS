@@ -1,8 +1,8 @@
 "use client";
 
-// ── SpiritChat — messages + transport + input (one implementation to rule them) ─
-// > Used by: `/chat` shell (SpiritWorkspaceShell), Neural corpse, `/oracle` via OracleVoiceSurface — stop cloning useChat + JSX
-// > Design language: _blueprints/design_system.md — @theme chalk/cyan, glass seams
+// ── SpiritChat - messages + transport + input (one implementation to rule them) ─
+// > Used by: `/chat` shell (SpiritWorkspaceShell), Neural corpse, `/oracle` via OracleVoiceSurface - stop cloning useChat + JSX
+// > Design language: _blueprints/design_system.md - @theme chalk/cyan, glass seams
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import Link from "next/link";
@@ -63,7 +63,7 @@ export type SpiritChatProps = {
     open: boolean;
     onOpenChange: (next: boolean) => void;
   };
-  /** `/oracle` Voice MVP — extra chrome; keeps SpiritChat as single transport owner. */
+  /** `/oracle` Voice MVP - extra chrome; keeps SpiritChat as single transport owner. */
   oracleVoiceSurface?: boolean;
   footerHint?: ReactNode;
   emptyState?: ReactNode;
@@ -253,7 +253,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
       transport.lastSearchElapsedMs != null ? `elapsed: ${transport.lastSearchElapsedMs}ms` : null,
       transport.lastSearchQuery ? `query: ${transport.lastSearchQuery.slice(0, 120)}` : null,
     ].filter(Boolean);
-    return `${base}. Last run — ${bits.join(" · ")}`;
+    return `${base}. Last run - ${bits.join(" · ")}`;
   }, [
     modeRt.activeModelProfileId,
     transport.webSearchOptOut,
@@ -270,11 +270,11 @@ const SpiritChatInner = memo(function SpiritChatInner({
     const lines: string[] = [
       `Web search (Researcher): ${transport.webSearchOptOut ? "disabled" : "enabled"}`,
       `Teacher web aids: ${transport.teacherWebSearchEnabled ? "enabled" : "disabled"}`,
-      `Provider (last): ${transport.lastSearchProvider ?? "—"}`,
+      `Provider (last): ${transport.lastSearchProvider ?? "-"}`,
       `Last status: ${transport.lastSearchStatus}`,
-      `Last sources: ${transport.lastHeaderSourceCount ?? "—"}`,
-      `Last elapsed: ${transport.lastSearchElapsedMs != null ? `${transport.lastSearchElapsedMs}ms` : "—"}`,
-      `Last query: ${transport.lastSearchQuery ? transport.lastSearchQuery.slice(0, 160) : "—"}`,
+      `Last sources: ${transport.lastHeaderSourceCount ?? "-"}`,
+      `Last elapsed: ${transport.lastSearchElapsedMs != null ? `${transport.lastSearchElapsedMs}ms` : "-"}`,
+      `Last query: ${transport.lastSearchQuery ? transport.lastSearchQuery.slice(0, 160) : "-"}`,
     ];
     if (transport.lastSearchStatus === "failed" && transport.lastSearchSkipReason === "missing_openai_key") {
       lines.push("Hint: OpenAI key missing or web search disabled in env.");
@@ -878,7 +878,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
         lastWebSourcesPayload?.sources?.filter((s) =>
           /^https?:\/\//i.test(s.url?.trim() ?? ""),
         ).length ?? lastHeaderSourceCount ?? 0;
-      return `Search complete — ${n} source${n === 1 ? "" : "s"}`;
+      return `Search complete - ${n} source${n === 1 ? "" : "s"}`;
     }
     if (lastSearchStatus === "skipped" || lastSearchStatus === "disabled") {
       return `Search skipped${lastSearchSkipReason ? `: ${lastSearchSkipReason}` : ""}`;
@@ -887,7 +887,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
       return `Search failed${lastSearchSkipReason ? `: ${lastSearchSkipReason}` : ""}`;
     }
     if (hasVerifiedSources) {
-      return `Sources ready — ${lastWebSourcesPayload?.count ?? lastHeaderSourceCount ?? 0} links`;
+      return `Sources ready - ${lastWebSourcesPayload?.count ?? lastHeaderSourceCount ?? 0} links`;
     }
     return "Local answer complete";
   }, [
@@ -906,7 +906,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
           "scrollbar-hide relative z-0 min-h-0 flex-1 space-y-2.5 overflow-y-auto overflow-x-hidden px-2 py-2 sm:space-y-4 sm:px-5 sm:py-4",
           variant === "workspace"
             ? "overscroll-y-contain pb-4 sm:pb-5 lg:pb-8"
-            : "pb-[calc(5rem+env(safe-area-inset-bottom,0px))] sm:pb-20 lg:pb-8",
+            : "overscroll-y-contain pb-[calc(5rem+env(safe-area-inset-bottom,0px))] sm:pb-20 lg:pb-8",
         )}
       >
         {savedChatShell &&
@@ -968,7 +968,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
       />
       <div
         className={cn(
-          "sticky bottom-0 z-30 shrink-0 border-t border-[color:var(--spirit-border)]",
+          "shrink-0 border-t border-[color:var(--spirit-border)]",
           "bg-[color:color-mix(in_oklab,var(--spirit-bg)_88%,transparent)] backdrop-blur-2xl",
           "lg:bg-[color:color-mix(in_oklab,var(--spirit-bg)_72%,transparent)]",
         )}
@@ -977,7 +977,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
           onSubmit={onSubmit}
           className={cn(
             "px-2 py-1.5 sm:px-5 sm:py-3",
-            "pb-[calc(0.25rem+env(safe-area-inset-bottom,0px))]",
+            variant !== "workspace" && "pb-[calc(0.25rem+env(safe-area-inset-bottom,0px))]",
             "lg:px-6 lg:pb-3 lg:pt-4",
           )}
         >
@@ -1003,7 +1003,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
               }}
               placeholder={
                 researchPlanOpen && modeRt.activeModelProfileId === "researcher"
-                  ? "Research plan open — use Start research below…"
+                  ? "Research plan open - use Start research below…"
                   : "Ask Spirit anything…"
               }
               rows={1}
@@ -1013,7 +1013,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
                 (researchPlanOpen && modeRt.activeModelProfileId === "researcher")
               }
               className={cn(
-                "scrollbar-hide flex-1 resize-none text-chalk transition-[height] duration-150 ease-out",
+                "scrollbar-hide flex-1 resize-none overflow-y-auto text-chalk transition-[height] duration-150 ease-out",
                 "max-lg:min-h-[44px] max-lg:max-h-[120px] max-lg:px-2.5 max-lg:py-2 max-lg:text-base max-lg:leading-snug",
                 "min-h-[52px] max-h-[10rem] px-5 py-[0.875rem] text-[15px]",
                 "placeholder:text-chalk/40 disabled:opacity-50",
@@ -1292,7 +1292,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
                       setProfileOpen(false);
                       setThreadMenuOpen(false);
                     }}
-                    className="inline-flex h-8 w-8 shrink-0 touch-manipulation items-center justify-center rounded-lg border border-[color:var(--spirit-border)]/80 bg-white/[0.04] text-chalk/70"
+                    className="inline-flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-lg border border-[color:var(--spirit-border)]/80 bg-white/[0.04] text-chalk/70"
                   >
                     <Activity className="h-4 w-4" aria-hidden />
                   </button>
@@ -1304,7 +1304,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
                       setActivityOpen(false);
                       setThreadMenuOpen(false);
                     }}
-                    className="inline-flex h-8 w-8 shrink-0 touch-manipulation items-center justify-center rounded-lg border border-[color:var(--spirit-border)]/80 bg-white/[0.04] text-chalk/70"
+                    className="inline-flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-lg border border-[color:var(--spirit-border)]/80 bg-white/[0.04] text-chalk/70"
                   >
                     <UserRound className="h-4 w-4" aria-hidden />
                   </button>
@@ -1317,7 +1317,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
                         setActivityOpen(false);
                         setProfileOpen(false);
                       }}
-                      className="inline-flex h-8 w-8 shrink-0 touch-manipulation items-center justify-center rounded-lg border border-[color:var(--spirit-border)]/80 bg-white/[0.04] text-chalk/70"
+                      className="inline-flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-lg border border-[color:var(--spirit-border)]/80 bg-white/[0.04] text-chalk/70"
                     >
                       <SlidersHorizontal className="h-4 w-4" aria-hidden />
                     </button>
@@ -1537,7 +1537,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
   return (
     <div
       className={cn(
-        "relative flex min-h-dvh min-h-[100dvh] flex-col overflow-x-hidden bg-[color:var(--spirit-bg)] text-chalk/95",
+        "relative flex h-dvh h-[100dvh] flex-col overflow-hidden bg-[color:var(--spirit-bg)] text-chalk/95",
         shellClassName,
       )}
     >
@@ -1623,7 +1623,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
                     setProfileOpen(false);
                     setThreadMenuOpen(false);
                   }}
-                  className="inline-flex h-8 w-8 shrink-0 touch-manipulation items-center justify-center rounded-lg border border-[color:var(--spirit-border)]/80 bg-white/[0.04] text-chalk/70"
+                  className="inline-flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-lg border border-[color:var(--spirit-border)]/80 bg-white/[0.04] text-chalk/70"
                 >
                   <Activity className="h-4 w-4" aria-hidden />
                 </button>
@@ -1635,7 +1635,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
                     setActivityOpen(false);
                     setThreadMenuOpen(false);
                   }}
-                  className="inline-flex h-8 w-8 shrink-0 touch-manipulation items-center justify-center rounded-lg border border-[color:var(--spirit-border)]/80 bg-white/[0.04] text-chalk/70"
+                  className="inline-flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-lg border border-[color:var(--spirit-border)]/80 bg-white/[0.04] text-chalk/70"
                 >
                   <UserRound className="h-4 w-4" aria-hidden />
                 </button>
@@ -1648,7 +1648,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
                       setActivityOpen(false);
                       setProfileOpen(false);
                     }}
-                    className="inline-flex h-8 w-8 shrink-0 touch-manipulation items-center justify-center rounded-lg border border-[color:var(--spirit-border)]/80 bg-white/[0.04] text-chalk/70"
+                    className="inline-flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-lg border border-[color:var(--spirit-border)]/80 bg-white/[0.04] text-chalk/70"
                   >
                     <SlidersHorizontal className="h-4 w-4" aria-hidden />
                   </button>

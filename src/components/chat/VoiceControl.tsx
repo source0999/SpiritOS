@@ -1,6 +1,6 @@
 "use client";
 
-// ── VoiceControl — desktop strip + portal panel (Prompt 9J: no overflow clipping) ─
+// ── VoiceControl - desktop strip + portal panel (Prompt 9J: no overflow clipping) ─
 // > No “Prime” theatre. Delay/gap live under Debug voice timing only.
 import { Settings2, Volume2, X } from "lucide-react";
 import { memo, useCallback, useEffect, useId, useState } from "react";
@@ -17,7 +17,7 @@ export type VoiceControlVariant = "desktop" | "mobile-bar";
 export type VoiceControlProps = {
   state: UseTtsState;
   onToggleEnabled: () => void;
-  /** Resume AudioContext — call from Speak tap path too (iOS gesture budget). */
+  /** Resume AudioContext - call from Speak tap path too (iOS gesture budget). */
   onEnableAudio: () => void | Promise<void | boolean>;
   onStop: () => void;
   /** Should await unlock internally via parent / Speak handler before queueing. */
@@ -31,7 +31,7 @@ export type VoiceControlProps = {
   onElevenLabsVoiceChange?: (voiceId: string) => void;
   disabled?: boolean;
   variant?: VoiceControlVariant;
-  /** Oracle strip — hide Voice on/off toggle; parent owns enable policy */
+  /** Oracle strip - hide Voice on/off toggle; parent owns enable policy */
   hideVoiceEnableToggle?: boolean;
 };
 

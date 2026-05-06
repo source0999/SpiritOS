@@ -1,4 +1,4 @@
-// ── clipboard — SpiritMessage copy without assuming secure context (10B) ─────────
+// ── clipboard - SpiritMessage copy without assuming secure context (10B) ─────────
 
 export type CopyTextResult = { ok: true } | { ok: false; reason: "unavailable" | "denied" };
 

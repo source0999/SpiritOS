@@ -1,6 +1,6 @@
 "use client";
 
-// ── QuarantineStage — lazy boundary: heavy visual only when tab is open ───────
+// ── QuarantineStage - lazy boundary: heavy visual only when tab is open ───────
 import { QuarantineStageVisual } from "@/components/dashboard/QuarantineStageVisual";
 
 export default function QuarantineStage() {

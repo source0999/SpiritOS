@@ -95,7 +95,7 @@ describe("OracleVoiceStatusCard", () => {
       />,
     );
     const card = screen.getByTestId("oracle-voice-status-card");
-    // Status row + secure-context row both render "Blocked" — match both, ensure presence.
+    // Status row + secure-context row both render "Blocked" - match both, ensure presence.
     expect(within(card).getAllByText(/^Blocked$/).length).toBeGreaterThanOrEqual(1);
   });
 

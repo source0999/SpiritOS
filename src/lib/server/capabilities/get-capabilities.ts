@@ -11,7 +11,7 @@ import type {
   CapabilityToolEntry,
 } from "./types";
 
-// ── Capability registry — thin layer on cluster telemetry; no parallel universe ─
+// ── Capability registry - thin layer on cluster telemetry; no parallel universe ─
 
 /** Registry metadata for Phase 1 read-only tools; native AI SDK wiring is Phase 1.5 (see model runtime hint). */
 const PHASE1_TOOLS: CapabilityToolEntry[] = [
@@ -20,7 +20,7 @@ const PHASE1_TOOLS: CapabilityToolEntry[] = [
   { name: "get_node_status", enabled: true, readOnly: true, requiresApproval: false },
 ];
 
-/** SPIRIT_PROJECT_PATH: comma-separated abs paths — configured iff any segment non-empty after trim. No fs access. */
+/** SPIRIT_PROJECT_PATH: comma-separated abs paths - configured iff any segment non-empty after trim. No fs access. */
 export function isSpiritProjectPathConfigured(raw: string | undefined): boolean {
   if (raw === undefined) return false;
   const parts = raw.split(",").map((s) => s.trim()).filter(Boolean);
@@ -51,7 +51,7 @@ function resolveHost(configs: ReturnType<typeof getClusterConfig>): CapabilityRe
   if (local) {
     return { id: local.id, label: local.label, source: "local" };
   }
-  // Should not happen with current getClusterConfig — fall back without inventing hardware names
+  // Should not happen with current getClusterConfig - fall back without inventing hardware names
   return { id: "unknown", label: "unknown", source: "local" };
 }
 

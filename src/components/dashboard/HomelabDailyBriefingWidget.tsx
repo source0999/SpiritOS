@@ -9,12 +9,12 @@ interface BriefingItem {
 const ITEMS: BriefingItem[] = [
   {
     category: "Local AI",
-    headline: "Whisper STT routing stable — no restarts in 48h.",
+    headline: "Whisper STT routing stable - no restarts in 48h.",
     time: "demo",
   },
   {
     category: "Homelab",
-    headline: "Tesla P40 standby — PSU upgrade queued, ETA TBD.",
+    headline: "Tesla P40 standby - PSU upgrade queued, ETA TBD.",
     time: "demo",
   },
   {
@@ -87,7 +87,7 @@ export function HomelabDailyBriefingWidget({ className }: Props) {
       </ul>
 
       <p className="mt-3 font-mono text-[9.5px] text-chalk/28 leading-relaxed">
-        Demo briefing queue — research pipeline pending.
+        Demo briefing queue - research pipeline pending.
       </p>
     </section>
   );

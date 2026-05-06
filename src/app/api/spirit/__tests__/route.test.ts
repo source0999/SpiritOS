@@ -158,7 +158,7 @@ describe("POST /api/spirit capability bridge", () => {
     const res = await POST(req);
     const raw = await res.text();
     expect(raw.toLowerCase()).toMatch(/yes|can see|storage telemetry|drive-level/i);
-    expect(raw).not.toMatch(/^No — not yet/i);
+    expect(raw).not.toMatch(/^No - not yet/i);
     expect(raw).not.toContain("Mock CPU");
   });
 

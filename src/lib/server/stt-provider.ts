@@ -1,6 +1,6 @@
 import "server-only";
 
-// ── STT provider — proxy browser audio → Faster-Whisper (OpenAI-style API) ───────
+// ── STT provider - proxy browser audio → Faster-Whisper (OpenAI-style API) ───────
 // > Docker: `whisper-stt` → :8000, POST /v1/audio/transcriptions (see backend/docker-compose.yml)
 
 export class SttProviderError extends Error {
@@ -29,7 +29,7 @@ export function getWhisperSttModel(): string {
   return raw || "whisper-1";
 }
 
-/** Safe label for JSON — hostname + port only, no auth path segments. */
+/** Safe label for JSON - hostname + port only, no auth path segments. */
 export function getSttDiagnostics(): {
   provider: string;
   url: string;

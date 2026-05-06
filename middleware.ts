@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 
 export function middleware(_request: NextRequest) {
   void _request;
-  // Passthrough for now — auth, rate limiting, homelab headers go here later
+  // Passthrough for now - auth, rate limiting, homelab headers go here later
   return NextResponse.next();
 }
 

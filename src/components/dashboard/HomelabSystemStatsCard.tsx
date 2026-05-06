@@ -7,18 +7,18 @@ import { cn } from "@/lib/cn";
 import type { ClusterNodeTelemetry } from "@/lib/server/telemetry/types";
 
 function pct(val: number | null): string {
-  return val !== null ? `${Math.round(val)}%` : "—";
+  return val !== null ? `${Math.round(val)}%` : " - ";
 }
 
 function fmtMemory(used: number | null, total: number | null): string {
-  if (used === null || total === null) return "—";
+  if (used === null || total === null) return " - ";
   const usedGB = (used / 1e9).toFixed(1);
   const totalGB = Math.round(total / 1e9);
   return `${usedGB} GB / ${totalGB} GB`;
 }
 
 function formatUptime(sec: number | null): string {
-  if (sec === null) return "—";
+  if (sec === null) return " - ";
   const d = Math.floor(sec / 86400);
   const h = Math.floor((sec % 86400) / 3600);
   const m = Math.floor((sec % 3600) / 60);
@@ -45,7 +45,7 @@ function ramVariant(v: number | null): "default" | "warn" | "bad" {
 function NodeCard({ node }: { node: ClusterNodeTelemetry }) {
   const isOffline = node.status === "offline" || node.status === "unknown";
   const spec =
-    [node.hostname, node.platform, node.arch].filter(Boolean).join(" · ") || "—";
+    [node.hostname, node.platform, node.arch].filter(Boolean).join(" · ") || " - ";
 
   const badgeVariant =
     node.status === "online"

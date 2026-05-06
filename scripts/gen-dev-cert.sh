@@ -27,5 +27,5 @@ if ! command -v mkcert >/dev/null 2>&1; then
 fi
 
 mkcert -key-file certificates/spirit-dev-key.pem -cert-file certificates/spirit-dev.pem "${HOSTS[@]}"
-echo "OK: certificates/spirit-dev.pem — SANs: ${HOSTS[*]}"
+echo "OK: certificates/spirit-dev.pem - SANs: ${HOSTS[*]}"
 echo "Next: npm run dev:https:lan   (or export SPIRIT_TLS_EXTRA_HOSTS and re-run to add hosts)"

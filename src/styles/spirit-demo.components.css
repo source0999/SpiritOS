@@ -602,7 +602,7 @@
   color: var(--demo-text-faint);
 }
 
-/* —— Personality stats bars —— */
+/* - -  Personality stats bars - -  */
 .spirit-demo-root .demo-stat {
   display: flex;
   flex-direction: column;
@@ -641,7 +641,7 @@
   box-shadow: 0 0 8px color-mix(in oklab, var(--demo-cyan) 50%, transparent);
 }
 
-/* —— Disabled / mock surface tag —— */
+/* - -  Disabled / mock surface tag - -  */
 .spirit-demo-root .demo-mock-tag {
   font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
   font-size: var(--demo-text-eyebrow);
@@ -659,7 +659,7 @@
   background: currentColor;
 }
 
-/* —— Compact stat tile —— */
+/* - -  Compact stat tile - -  */
 .spirit-demo-root .demo-stat-tile {
   display: flex;
   flex-direction: column;
@@ -689,7 +689,7 @@
   color: var(--demo-text-faint);
 }
 
-/* —— Visual divider —— */
+/* - -  Visual divider - -  */
 .spirit-demo-root .demo-divider {
   height: 1px;
   width: 100%;

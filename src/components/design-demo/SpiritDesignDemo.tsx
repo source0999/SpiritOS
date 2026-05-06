@@ -1,10 +1,10 @@
 "use client";
 
-// ── SpiritDesignDemo — orchestrating shell for the design demo ───────────────
+// ── SpiritDesignDemo - orchestrating shell for the design demo ───────────────
 // > Visual-only. Lives at /design-demo. Does NOT replace /, /chat, /oracle, or
 // > /quarantine. All previews are scoped under .spirit-demo-root.
 // > Mobile-first; bottom dock for ≤lg; side rail for lg+.
-// > Reduced-motion is handled in CSS — see spirit-demo.animations.css.
+// > Reduced-motion is handled in CSS - see spirit-demo.animations.css.
 import Link from "next/link";
 
 import { DemoCommandCenter } from "./DemoCommandCenter";
@@ -49,7 +49,7 @@ export function SpiritDesignDemo() {
       data-testid="spirit-demo-root"
       data-demo="design-demo"
     >
-      {/* —— Atmospheric layer (decorative, not in tab order) —— */}
+      {/* - -  Atmospheric layer (decorative, not in tab order) - -  */}
       <div className="demo-atmos" aria-hidden="true">
         <span className="demo-atmos__aurora" />
         <span className="demo-atmos__grid" />
@@ -57,10 +57,10 @@ export function SpiritDesignDemo() {
         <span className="demo-atmos__vignette" />
       </div>
 
-      {/* —— Desktop-only rail (lg+) —— */}
+      {/* - -  Desktop-only rail (lg+) - -  */}
       <DesktopRail />
 
-      {/* —— Main shell —— */}
+      {/* - -  Main shell - -  */}
       <div className="demo-shell">
         <header className="demo-topbar">
           <div className="demo-topbar__brand">
@@ -84,7 +84,7 @@ export function SpiritDesignDemo() {
           </span>
         </header>
 
-        {/* —— Top banner (visual-only label) —— */}
+        {/* - -  Top banner (visual-only label) - -  */}
         <div className="demo-banner" role="note" aria-label="Design demo banner">
           <span className="demo-banner__label">Visual-only</span>
           <span>
@@ -126,7 +126,7 @@ export function SpiritDesignDemo() {
         </footer>
       </div>
 
-      {/* —— Mobile dock (≤lg) —— */}
+      {/* - -  Mobile dock (≤lg) - -  */}
       <DemoMobileDock />
     </div>
   );

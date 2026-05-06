@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /* eslint-disable @typescript-eslint/no-require-imports -- shipped as plain Node CJS for Windows */
-// ── Spirit Desktop — LAN telemetry stub ─────────────────────────────────────
+// ── Spirit Desktop - LAN telemetry stub ─────────────────────────────────────
 // Drop-in for Windows: exposes GET /api/telemetry/self matching ClusterNodeTelemetry.
-// Dell Next calls this server-side — use the desktop LAN IP in SPIRITDESKTOP_TELEMETRY_URL,
+// Dell Next calls this server-side - use the desktop LAN IP in SPIRITDESKTOP_TELEMETRY_URL,
 // not localhost on the Dell. Plain HTTP + bearer token is intentional for trusted LAN.
 //
 // ── DEPLOYMENT (read this before opening another “storage missing” ticket) ──
@@ -55,10 +55,10 @@ async function measureCpuUsage() {
   }
 }
 
-// ── Storage (Windows — Win32_LogicalDisk) ─────────────────────────────────────
+// ── Storage (Windows - Win32_LogicalDisk) ─────────────────────────────────────
 // CIM properties are UInt64; ConvertTo-Json often emits Size/FreeSpace as **strings**.
 // If we only accept typeof === "number", every drive is dropped and the UI shows empty
-// storage with no JSON error — brutal to debug. Coerce with num().
+// storage with no JSON error - brutal to debug. Coerce with num().
 
 function num(v) {
   if (typeof v === "number" && Number.isFinite(v)) return v;

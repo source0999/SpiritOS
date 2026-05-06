@@ -1,7 +1,7 @@
 "use client";
 
-// ── WorkspacePrimarySidebar — 72px rail: dashboard home (/), chat (/chat), labs ───
-// > Theme palette lives in workspace headers (ThemeStrip) — keep this rail nav-only.
+// ── WorkspacePrimarySidebar - 72px rail: dashboard home (/), chat (/chat), labs ───
+// > Theme palette lives in workspace headers (ThemeStrip) - keep this rail nav-only.
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {

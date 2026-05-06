@@ -1,4 +1,4 @@
-// ── hydrate-sources-markdown — fix cosplay Sources when header has real URLs ─────
+// ── hydrate-sources-markdown - fix cosplay Sources when header has real URLs ─────
 // > Colocated with MessageMarkdown so the client bundle always resolves this module
 //   (avoids “hydrateDegenerateSourcesMarkdown is not defined” from path/bundler drift).
 

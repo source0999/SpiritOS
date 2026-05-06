@@ -1,4 +1,4 @@
-// ── GET /api/spirit/health — Ollama OpenAI-compat reachability (no secrets in body) ─
+// ── GET /api/spirit/health - Ollama OpenAI-compat reachability (no secrets in body) ─
 import {
   getOllamaOpenAIBaseURL,
   getSpiritModelId,

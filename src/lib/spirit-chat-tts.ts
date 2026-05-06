@@ -1,4 +1,4 @@
-// ── spirit-chat-tts — pure guards for outbound assistant finish (Prompt 9H) ───
+// ── spirit-chat-tts - pure guards for outbound assistant finish (Prompt 9H) ───
 
 export type AssistantOutboundFinishPlan =
   | { kind: "commit" }

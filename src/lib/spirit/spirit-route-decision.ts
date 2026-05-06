@@ -1,4 +1,4 @@
-// ── spirit-route-decision — hybrid lane picker (Prompt 10C) ─────────────────────
+// ── spirit-route-decision - hybrid lane picker (Prompt 10C) ─────────────────────
 // > Client-safe: no server-only imports. Callers pass env-derived flags from route.ts.
 // > `lane` describes the dominant *orchestration* path this turn, not who owns every token.
 // > Today Hermes always streams the user-visible reply; OpenAI is optional prefetch only.
@@ -50,7 +50,7 @@ export type SpiritRouteDecisionInput = {
   deepThinkEnabled: boolean;
   /**
    * When true, Researcher skips the OpenAI web prefetch (explicit user opt-out).
-   * Default OFF at the protocol level — Researcher web is on unless opted out.
+   * Default OFF at the protocol level - Researcher web is on unless opted out.
    */
   webSearchOptOut: boolean;
   /** Teacher-only: web study aids. Default ON (omit or undefined); set false to opt out per thread. */
@@ -79,7 +79,7 @@ function uniqReasons(r: SpiritRouteDecisionReason[]): SpiritRouteDecisionReason[
 }
 
 /**
- * Deterministic routing for /api/spirit — extensible when DeepSeek / plan-first land.
+ * Deterministic routing for /api/spirit - extensible when DeepSeek / plan-first land.
  */
 export function decideSpiritRoute(input: SpiritRouteDecisionInput): SpiritRouteDecision {
   const last = input.lastUserText.trim();

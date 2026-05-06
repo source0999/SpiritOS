@@ -1,5 +1,5 @@
-// ── spirit-user-profile — local-only editable prefs (Prompt 10A, no server memory) ─
-// > Full learning/RAG/sync are later prompts — this is transparent localStorage.
+// ── spirit-user-profile - local-only editable prefs (Prompt 10A, no server memory) ─
+// > Full learning/RAG/sync are later prompts - this is transparent localStorage.
 
 import type { ModelProfileId } from "@/lib/spirit/model-profile.types";
 
@@ -124,7 +124,7 @@ export const DEFAULT_SPIRIT_USER_PREFERENCES: SpiritUserPreferenceRow[] = [
   {
     id: "confidence",
     label: "Confidence level (self-reported)",
-    value: "Medium — prefers receipts and sources for factual claims.",
+    value: "Medium - prefers receipts and sources for factual claims.",
     source: "default",
   },
 ];

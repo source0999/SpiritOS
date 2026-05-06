@@ -1,4 +1,4 @@
-// ── Dashboard route group —──────────────────────────────────────────────
+// ── Dashboard route group  - ──────────────────────────────────────────────
 // URL: / (groups do not pollute the path).
 
 export default function DashboardGroupLayout({

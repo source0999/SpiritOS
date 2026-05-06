@@ -462,7 +462,7 @@
         <article class="glass terminal card span-12 quarantine-card" id="quarantine">
           <div class="card-head"><div><span class="eyebrow"><span class="dot"></span>Quarantine · Experimental Modules</span><h2 class="card-title">Toxic Grader</h2><p class="tiny muted">Roast wall kept as brand concept, clearly marked experimental.</p></div><div style="display:flex;gap:8px;align-items:center"><span class="badge info">Quarantine</span><span class="badge mock">Mock</span></div></div>
           <div class="terminal-lines" id="terminalLines"></div>
-          <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap"><button class="btn danger">🔥 GRADE ME — IF YOU DARE</button><button class="btn ghost">Tune module</button></div>
+          <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap"><button class="btn danger">🔥 GRADE ME - IF YOU DARE</button><button class="btn ghost">Tune module</button></div>
         </article>
       </section>
 
@@ -525,7 +525,7 @@
     $('#wave').innerHTML = Array.from({length: 30}, (_, i) => `<span class="bar" style="--i:${i};--h:${5 + ((i * 47 + 9) % 18)}"></span>`).join('');
 
     const briefings = [
-      ["Local LLM", "Llama 3.3 Q4_K_M quant benchmarks on consumer DDR5 — context window throughput.", "06:02", "arxiv"],
+      ["Local LLM", "Llama 3.3 Q4_K_M quant benchmarks on consumer DDR5 - context window throughput.", "06:02", "arxiv"],
       ["Homelab", "PCIe x1 riser bottleneck: TTFT degradation on 24GB VRAM models vs x16 ribbon.", "06:04", "level1tech"],
       ["Privacy", "CCPA Q3 enforcement: brokers ignoring opt-outs face record seven-figure penalties.", "06:06", "eff"],
       ["Energy", "SoCal ToU shift: super off-peak window narrows to 11 PM–5 AM next billing cycle.", "06:08", "sce"]
@@ -565,7 +565,7 @@
       ["GRADER", "You fixed the same null reference error four consecutive times. Spectacular.", "var(--warn)"],
       ["GRADER", "Prompt efficiency: 34%. You are an expensive rubber duck with a standing desk.", "var(--bad)"],
       ["GRADER", "47 minutes on one flexbox issue. Three lines of CSS. I have nothing to add.", "var(--bad)"],
-      ["GRADE", "D+ — Functional. Barely. Like a 2004 Civic with a cracked manifold.", "oklch(.78 .16 50)"],
+      ["GRADE", "D+ - Functional. Barely. Like a 2004 Civic with a cracked manifold.", "oklch(.78 .16 50)"],
       ["SYSTEM", "Ready. Click [GRADE ME] when your ego has recovered.", "var(--text-4)"]
     ];
     $('#terminalLines').innerHTML = terminal.map(t => `<div class="term-line"><span style="color:var(--text-5);user-select:none">${t[0]} ▸</span><span style="color:${t[2]}">${t[1]}</span></div>`).join('') + '<div class="term-line"><span style="color:var(--text-5)">GRADER ▸</span><span class="cursor muted">█</span></div>';

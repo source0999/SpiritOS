@@ -1,6 +1,6 @@
 "use client";
 
-// ── ChatThreadListItem — handle drag for rail + drawer (row drag stole first tap vs select) (9F) ──
+// ── ChatThreadListItem - handle drag for rail + drawer (row drag stole first tap vs select) (9F) ──
 import type { DraggableAttributes, DraggableSyntheticListeners } from "@dnd-kit/core";
 import { ArrowRightLeft, PenLine, Pin, PinOff, Trash2 } from "lucide-react";
 import { memo, useCallback, useState } from "react";
@@ -27,7 +27,7 @@ export type ChatThreadListItemProps = {
   onTogglePin?: () => void;
   /** Whole-row drag surface (desktop rail). */
   dragActivatorProps?: ChatThreadDragActivatorProps;
-  /** Drawer: drag listeners live only on the grip — keeps scroll usable. */
+  /** Drawer: drag listeners live only on the grip - keeps scroll usable. */
   dragHandleProps?: ChatThreadDragActivatorProps;
   /** dnd-kit: accent the handle while dragging (drawer handle mode). */
   dndDragging?: boolean;

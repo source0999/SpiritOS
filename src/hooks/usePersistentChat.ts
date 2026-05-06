@@ -1,6 +1,6 @@
 "use client";
 
-// ── usePersistentChat — Dexie shell: draft lane + optimistic deletes (no phantom rows) ─
+// ── usePersistentChat - Dexie shell: draft lane + optimistic deletes (no phantom rows) ─
 import { useLiveQuery } from "dexie-react-hooks";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -85,7 +85,7 @@ export function usePersistentChat(enabled: boolean) {
   );
 
   const draftLaneActive = Boolean(draftLaneId && activeThreadId === null);
-  /** While Dexie threads are loading, block only `activeThreadId` paths — first send can mint a thread. */
+  /** While Dexie threads are loading, block only `activeThreadId` paths - first send can mint a thread. */
   const canSendOutbound =
     draftLaneActive || Boolean(activeThreadId) || threadsLoading;
 
@@ -164,7 +164,7 @@ export function usePersistentChat(enabled: boolean) {
     enterDraftLane();
   }, [enterDraftLane]);
 
-  /** Legacy/tests: persist shell thread immediately — UI should prefer draft lane instead. */
+  /** Legacy/tests: persist shell thread immediately - UI should prefer draft lane instead. */
   const createPersistedShellThread = useCallback(async () => {
     const id = await createNewThread();
     if (id) {

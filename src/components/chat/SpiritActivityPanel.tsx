@@ -1,6 +1,6 @@
 "use client";
 
-// ── SpiritActivityPanel — high-level signals only (no chain-of-thought) ─────────
+// ── SpiritActivityPanel - high-level signals only (no chain-of-thought) ─────────
 import { Activity, X } from "lucide-react";
 import { memo } from "react";
 

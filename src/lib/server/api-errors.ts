@@ -1,6 +1,6 @@
 import "server-only";
 
-// ── API errors — JSON bodies only; never leak stacks to browsers ────────────────
+// ── API errors - JSON bodies only; never leak stacks to browsers ────────────────
 
 export class ApiError extends Error {
   constructor(

@@ -74,7 +74,7 @@ describe("SpiritWorkflowVisualizer", () => {
     const link = screen.getByRole("link", { name: /Example/i });
     expect(link).toHaveAttribute("href", "https://example.com/a");
     expect(link).toHaveAttribute("target", "_blank");
-    expect(screen.getByText(/No URL — not clickable/i)).toBeInTheDocument();
+    expect(screen.getByText(/No URL - not clickable/i)).toBeInTheDocument();
   });
 
   it("compact mode shows summary line", () => {
@@ -84,7 +84,7 @@ describe("SpiritWorkflowVisualizer", () => {
         visible
         compact
         busy={false}
-        completedSummary="Search complete — 4 sources"
+        completedSummary="Search complete - 4 sources"
         onExpand={onExpand}
         lane="openai-web-search"
         steps={idleSteps}
@@ -92,7 +92,7 @@ describe("SpiritWorkflowVisualizer", () => {
     );
     expect(screen.getByTestId("spirit-workflow-visualizer-compact")).toBeInTheDocument();
     expect(screen.getByTestId("spirit-workflow-compact-summary")).toHaveTextContent(
-      "Search complete — 4 sources",
+      "Search complete - 4 sources",
     );
     fireEvent.click(screen.getByTestId("spirit-workflow-expand"));
     expect(onExpand).toHaveBeenCalled();

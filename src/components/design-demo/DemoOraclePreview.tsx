@@ -1,6 +1,6 @@
-// ── DemoOraclePreview — orb + listening cycle visual (no real mic) ───────────
+// ── DemoOraclePreview - orb + listening cycle visual (no real mic) ───────────
 // > Visual-only. The real Oracle voice loop lives in /oracle and is untouched.
-// > MediaRecorder, Whisper, TTS, AnalyserNode — none are touched here.
+// > MediaRecorder, Whisper, TTS, AnalyserNode - none are touched here.
 import Link from "next/link";
 
 import { DemoMotionOrb } from "./DemoMotionOrb";
@@ -32,11 +32,11 @@ export function DemoOraclePreview() {
           Oracle voice · preview
         </span>
         <h2 id="demo-oracle-title" className="demo-section__title">
-          Listening, thinking, speaking — as one breath.
+          Listening, thinking, speaking - as one breath.
         </h2>
         <p className="demo-section__lede">
-          Hands-free voice loop visual rehearsal. The real loop —
-          MediaRecorder, amplitude VAD, Whisper, ElevenLabs — runs at{" "}
+          Hands-free voice loop visual rehearsal. The real loop  - 
+          MediaRecorder, amplitude VAD, Whisper, ElevenLabs - runs at{" "}
           <Link
             href="/oracle"
             className="demo-btn demo-btn--ghost demo-btn--sm"
@@ -49,7 +49,7 @@ export function DemoOraclePreview() {
       </header>
 
       <div className="demo-oracle-split">
-        {/* —— Orb stage —— */}
+        {/* - -  Orb stage - -  */}
         <article
           className="demo-card demo-card--oracle"
           aria-label="Oracle orb stage · visual"
@@ -107,7 +107,7 @@ export function DemoOraclePreview() {
             </p>
           </div>
 
-          {/* Mock waveform — the visual proxy for the live audio meter */}
+          {/* Mock waveform - the visual proxy for the live audio meter */}
           <div className="demo-wave" aria-hidden="true">
             {Array.from({ length: 16 }).map((_, i) => (
               <span key={i} className="demo-wave__bar" />
@@ -135,7 +135,7 @@ export function DemoOraclePreview() {
           <span className="demo-corners" aria-hidden="true" />
         </article>
 
-        {/* —— Telemetry / device card —— */}
+        {/* - -  Telemetry / device card - -  */}
         <article
           className="demo-card"
           aria-label="Oracle telemetry · mock"

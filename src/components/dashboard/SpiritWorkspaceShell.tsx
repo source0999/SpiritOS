@@ -1,6 +1,6 @@
 "use client";
 
-// ── SpiritWorkspaceShell — `/chat` GPT workspace (+ diagnostics rail, locked viewport) ─
+// ── SpiritWorkspaceShell - `/chat` GPT workspace (+ diagnostics rail, locked viewport) ─
 // DEPRECATED CONTEXT: DashboardClient StageId rails are archival only; Neural has no throne.
 import { useState } from "react";
 import { PanelLeftClose, PanelLeft } from "lucide-react";

@@ -1,4 +1,4 @@
-// ── DemoDiagnosticsPreview — runtime telemetry cards (mock data) ─────────────
+// ── DemoDiagnosticsPreview - runtime telemetry cards (mock data) ─────────────
 // > Visual-only. Does NOT call /api/spirit/health or any other real endpoint.
 // > The real diagnostics surface lives in the dashboard rail and is untouched.
 import { ActivityIcon, MicIcon, OrbIcon, SparkleIcon } from "./DemoIcons";
@@ -98,7 +98,7 @@ export function DemoDiagnosticsPreview() {
           Telemetry without the seance.
         </h2>
         <p className="demo-section__lede">
-          One tile per surface. Mock values — no real polling — so reviewers
+          One tile per surface. Mock values - no real polling - so reviewers
           can read the layout without thinking about probe traffic.
         </p>
       </header>
@@ -145,7 +145,7 @@ export function DemoDiagnosticsPreview() {
         ))}
       </div>
 
-      {/* —— Voice + STT detail row —— */}
+      {/* - -  Voice + STT detail row - -  */}
       <div className="demo-grid-2" style={{ marginTop: "1.25rem" }}>
         <article
           className="demo-card"

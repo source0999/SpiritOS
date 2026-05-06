@@ -3,7 +3,7 @@ import "server-only";
 import { getOracleModelId, getSpiritChatModelId } from "@/lib/server/model-routing";
 import { getSttDiagnostics } from "@/lib/server/stt-provider";
 
-// ── Spirit diagnostics — env-derived labels for health JSON (no secrets) ────────
+// ── Spirit diagnostics - env-derived labels for health JSON (no secrets) ────────
 // > Context/output/TTS copy matches runtime in route.ts + Piper / ElevenLabs wiring
 
 /** Route `streamText` cap; override with SPIRIT_MAX_OUTPUT_TOKENS. */

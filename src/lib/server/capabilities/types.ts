@@ -1,6 +1,6 @@
 import type { ClusterNodeStatus, ClusterNodeTelemetry } from "@/lib/server/telemetry/types";
 
-/** Hardware snapshot for formatting — same fields as cluster telemetry */
+/** Hardware snapshot for formatting - same fields as cluster telemetry */
 export type CapabilityTelemetrySnapshot = Pick<
   ClusterNodeTelemetry,
   "cpu" | "memory" | "uptimeSec"
@@ -9,7 +9,7 @@ export type CapabilityTelemetrySnapshot = Pick<
   error?: string;
 };
 
-/** Phase 1 — execution wiring for SSH / WinRM / remote shell not verified in-app */
+/** Phase 1 - execution wiring for SSH / WinRM / remote shell not verified in-app */
 export type RemoteCapabilityVerificationStatus = "unverified" | "disabled";
 
 export type CapabilityToolEntry = {

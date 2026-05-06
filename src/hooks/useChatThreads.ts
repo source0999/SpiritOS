@@ -1,6 +1,6 @@
 "use client";
 
-// ── useChatThreads — Dexie.live thread list primitives (Prompt 3 sidebar eats this) ─
+// ── useChatThreads - Dexie.live thread list primitives (Prompt 3 sidebar eats this) ─
 import { useLiveQuery } from "dexie-react-hooks";
 import { useCallback } from "react";
 

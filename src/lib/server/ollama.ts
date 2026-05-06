@@ -4,7 +4,7 @@ import { createOpenAI } from "@ai-sdk/openai";
 
 import { getSpiritChatModelId } from "@/lib/server/model-routing";
 
-// ── Ollama OpenAI-compat client — server-only; env-derived base URL ───────────
+// ── Ollama OpenAI-compat client - server-only; env-derived base URL ───────────
 
 export function getOllamaOpenAIBaseURL(): string {
   const explicit = process.env.OLLAMA_OPENAI_BASE_URL?.trim();
@@ -29,7 +29,7 @@ export const ollamaOpenAI = createOpenAI({
 
 const HEALTH_PROBE_TIMEOUT_MS = 2500;
 
-/** GET /v1/models — same auth shape as createOpenAI; no prompts logged. */
+/** GET /v1/models - same auth shape as createOpenAI; no prompts logged. */
 export type OllamaProbeResult =
   | { ok: true; status: "online" }
   | { ok: false; status: "offline"; error: string };

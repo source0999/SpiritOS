@@ -7,7 +7,7 @@ import { cn } from "@/lib/cn";
 import type { ClusterNodeTelemetry, NodeDrive, SmartStatus } from "@/lib/server/telemetry/types";
 
 function fmtBytes(bytes: number | null): string {
-  if (bytes === null || bytes <= 0) return "—";
+  if (bytes === null || bytes <= 0) return " - ";
   const tb = bytes / 1e12;
   if (tb >= 1) return `${tb.toFixed(2)} TB`;
   const gb = bytes / 1e9;

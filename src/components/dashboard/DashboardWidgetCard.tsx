@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 import { cn } from "@/lib/cn";
 
-/** Glass panel for dashboard grid — shallow depth, not a padded cell block. */
+/** Glass panel for dashboard grid - shallow depth, not a padded cell block. */
 export function DashboardWidgetCard({
   title,
   subtitle,

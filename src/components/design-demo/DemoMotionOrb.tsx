@@ -1,7 +1,7 @@
-// ── DemoMotionOrb — Oracle orb visual (CSS-driven, reduced-motion aware) ──────
+// ── DemoMotionOrb - Oracle orb visual (CSS-driven, reduced-motion aware) ──────
 // > Visual-only. The real Oracle voice loop lives in /oracle and is untouched.
 // > All animation is CSS in spirit-demo.effects.css + spirit-demo.animations.css.
-// > Decorative — marked aria-hidden; surrounding components carry the labels.
+// > Decorative - marked aria-hidden; surrounding components carry the labels.
 import type { CSSProperties } from "react";
 
 export type DemoMotionOrbProps = {

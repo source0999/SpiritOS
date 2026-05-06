@@ -1,6 +1,6 @@
 "use client";
 
-// ── ChatActiveModeBadge — always know which mode is eating your tokens ─────────
+// ── ChatActiveModeBadge - always know which mode is eating your tokens ─────────
 import { memo } from "react";
 
 import { getModelProfile } from "@/lib/spirit/model-profiles";
@@ -37,7 +37,7 @@ export const ChatActiveModeBadge = memo(function ChatActiveModeBadge({
         compact && "max-w-full py-0.5",
         className,
       )}
-      title={`${p.label} — ${p.responseStyleSummary}`}
+      title={`${p.label} - ${p.responseStyleSummary}`}
     >
       <p className="truncate font-mono text-[9px] font-semibold uppercase tracking-[0.16em] text-chalk/50">
         Mode: {p.shortLabel}

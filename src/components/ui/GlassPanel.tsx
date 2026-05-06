@@ -1,6 +1,6 @@
-// ── GlassPanel — default glass/card seam (static Tailwind, zero cleverness) ────
+// ── GlassPanel - default glass/card seam (static Tailwind, zero cleverness) ────
 // > Extracted from: Hub + Oracle repeated glass/border/bg triplets
-// > Design language: _blueprints/design_system.md — spirit-border, chalk void
+// > Design language: _blueprints/design_system.md - spirit-border, chalk void
 import type { HTMLAttributes, ReactNode } from "react";
 
 import { cn } from "@/lib/cn";

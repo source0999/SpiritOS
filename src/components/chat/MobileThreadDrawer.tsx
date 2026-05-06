@@ -1,6 +1,6 @@
 "use client";
 
-// ── MobileThreadDrawer — left MobileSheet + thread chrome (Prompt 9E-A) ──────────
+// ── MobileThreadDrawer - left MobileSheet + thread chrome (Prompt 9E-A) ──────────
 import { memo, type ReactNode } from "react";
 
 import { MobileSheet } from "@/components/chat/MobileSheet";

@@ -29,7 +29,7 @@ or APIs.
 3. Production routes (`/`, `/chat`, `/oracle`) keep working
    unchanged. The demo links to them where the real lane is the
    correct destination. **`/quarantine` is not a live route in the
-   current tree** — the demo’s quarantine *preview* section is visual-only.
+   current tree** - the demo’s quarantine *preview* section is visual-only.
 
 ---
 
@@ -37,67 +37,67 @@ or APIs.
 
 ### Route
 
-- `src/app/design-demo/page.tsx` — server component that imports the demo
+- `src/app/design-demo/page.tsx` - server component that imports the demo
   CSS layers and mounts the client shell. Sets `<title>` metadata.
 
 ### Components (`src/components/design-demo/`)
 
-- `SpiritDesignDemo.tsx` — top-level shell. Renders `.spirit-demo-root`,
+- `SpiritDesignDemo.tsx` - top-level shell. Renders `.spirit-demo-root`,
   the atmospheric layer, the desktop side rail, the top bar, the demo
   banner, the six preview sections, the footer, and the mobile dock.
-- `DemoCommandCenter.tsx` — hero panel, telemetry strip, quick-launch
+- `DemoCommandCenter.tsx` - hero panel, telemetry strip, quick-launch
   grid. Real CTAs link out to `/chat`, `/oracle`, `/quarantine`; demo-only
   cards are tagged "Demo · not wired".
-- `DemoChatPreview.tsx` — visual ChatGPT-style workspace shell with
+- `DemoChatPreview.tsx` - visual ChatGPT-style workspace shell with
   folder/thread rail, mode bar, mock bubbles, fake composer, and a
   workflow visualizer strip. Links to the real `/chat`.
-- `DemoOraclePreview.tsx` — Oracle voice stage with the animated orb,
+- `DemoOraclePreview.tsx` - Oracle voice stage with the animated orb,
   fake waveform, listening / transcribing / thinking / speaking telemetry
   rows, and a device card. Links to the real `/oracle`.
-- `DemoQuarantinePreview.tsx` — six experimental lab cards (Deep
+- `DemoQuarantinePreview.tsx` - six experimental lab cards (Deep
   Research, RAG · local, Model Lab, Local Agent, Terminal Mode, Sigil
   Editor). All visibly marked as not wired. Links to the real
   `/quarantine`.
-- `DemoDiagnosticsPreview.tsx` — eight diagnostic tiles with online /
+- `DemoDiagnosticsPreview.tsx` - eight diagnostic tiles with online /
   warn / offline pulse dots, plus a voice + STT detail row. **All values
   are mocked.** No real probes run from this preview.
-- `DemoProfilePreview.tsx` — Spirit profile preview, personality stats,
+- `DemoProfilePreview.tsx` - Spirit profile preview, personality stats,
   modes, and a "What Spirit knows" list. Editable-looking but read-only.
-- `DemoMotionOrb.tsx` — pure-presentational Oracle orb (halo + three
+- `DemoMotionOrb.tsx` - pure-presentational Oracle orb (halo + three
   rings + gradient core). All animation lives in CSS.
-- `DemoMobileDock.tsx` — sticky bottom dock for mobile. Tracks the
+- `DemoMobileDock.tsx` - sticky bottom dock for mobile. Tracks the
   active section via `IntersectionObserver` and respects
   `prefers-reduced-motion` when scrolling.
-- `DemoIcons.tsx` — small inline SVG icon set so we don't couple the
+- `DemoIcons.tsx` - small inline SVG icon set so we don't couple the
   demo to a specific `lucide-react` version.
 
 ### Styles (`src/styles/`)
 
-- `spirit-demo.tokens.css` — color aliases, glow strengths, radii,
+- `spirit-demo.tokens.css` - color aliases, glow strengths, radii,
   blur, spacing rhythm, typography rhythm, z-index scale, motion
   durations. **All variables defined under `.spirit-demo-root`** to avoid
   bleeding into production tokens.
-- `spirit-demo.layout.css` — shell, atmospheric layer, section bands,
+- `spirit-demo.layout.css` - shell, atmospheric layer, section bands,
   hero grid, 2/3/4-up grids, chat split, oracle split, mobile dock,
   desktop rail, top bar.
-- `spirit-demo.effects.css` — glass surfaces, scanlines, shimmer line,
+- `spirit-demo.effects.css` - glass surfaces, scanlines, shimmer line,
   orb ring system, audio waveform, pulse dots, corner caret marks.
-- `spirit-demo.components.css` — cards, buttons, badges, tabs, chat
+- `spirit-demo.components.css` - cards, buttons, badges, tabs, chat
   bubbles, profile bars, status rows, stat tiles, dividers, mock-tags.
-- `spirit-demo.animations.css` — keyframes (`demo*` prefix), motion
+- `spirit-demo.animations.css` - keyframes (`demo*` prefix), motion
   utility classes, focus-visible rings, and the
   `prefers-reduced-motion` override that zeroes loop animations.
 
 ### Tests
 
-- `src/components/design-demo/__tests__/SpiritDesignDemo.test.tsx` —
+- `src/components/design-demo/__tests__/SpiritDesignDemo.test.tsx`  - 
   renders the demo, asserts the six section ids exist, asserts the demo
   links point at the real production routes, and asserts the
   reduced-motion media query exists in the animations stylesheet.
 
 ### Docs
 
-- `_blueprints/design_demo.md` — this file.
+- `_blueprints/design_demo.md` - this file.
 
 ---
 
@@ -108,7 +108,7 @@ This demo is purely additive. The following were intentionally left alone:
 - All API routes under `src/app/api/**`.
 - Production page routes: `src/app/page.tsx`, `src/app/chat/**`,
   `src/app/oracle/**` (the **`(quarantine)`** group is **not** in the
-  current tree — treat as deferred).
+  current tree - treat as deferred).
 - Chat transport, Oracle voice loop, TTS / STT runtime, Dexie
   persistence, middleware, theme engine.
 - Existing UI primitives (`GlassPanel`, `SpiritButton`, `SectionLabel`),
@@ -116,7 +116,7 @@ This demo is purely additive. The following were intentionally left alone:
 - `globals.css`, environment variables, build/test config.
 
 The optional "link from `/quarantine` to `/design-demo`" mentioned in the
-brief was deferred — touching the live `/quarantine` page risks the "do
+brief was deferred - touching the live `/quarantine` page risks the "do
 not modify production" constraint. Add it later in a tiny follow-up PR
 once we're happy with the demo.
 
@@ -127,11 +127,11 @@ once we're happy with the demo.
 Everything inside `.spirit-demo-root` is presentational. Specifically:
 
 - Telemetry numbers, status badges, model names, latency figures,
-  diagnostic states — all hard-coded mocks.
-- Chat threads and bubbles — static strings, no Dexie reads, no LLM
+  diagnostic states - all hard-coded mocks.
+- Chat threads and bubbles - static strings, no Dexie reads, no LLM
   calls.
-- Oracle waveform — sixteen `<span>` bars animated by CSS.
-- Personality stats — fixed percentages.
+- Oracle waveform - sixteen `<span>` bars animated by CSS.
+- Personality stats - fixed percentages.
 - The mobile dock and desktop rail only scroll the page; they don't
   navigate.
 
@@ -145,17 +145,17 @@ a "Demo · not wired" tag (`mock-tag`) so reviewers can't be misled.
 These elements were designed with the real app in mind and are good
 candidates for incremental porting:
 
-- The **glass layer system** (`.demo-glass`, `.demo-glass--*`) — could
+- The **glass layer system** (`.demo-glass`, `.demo-glass--*`) - could
   replace ad-hoc panel styling in the dashboard.
-- The **Oracle orb** (`DemoMotionOrb` + `.demo-orb`) — drop-in for the
+- The **Oracle orb** (`DemoMotionOrb` + `.demo-orb`) - drop-in for the
   real Oracle stage with a thin prop layer for state.
-- The **mobile dock** pattern — apply once the production shell is
+- The **mobile dock** pattern - apply once the production shell is
   ready for a bottom-nav-first mobile experience.
-- The **section-band rhythm** — consistent vertical pacing for
+- The **section-band rhythm** - consistent vertical pacing for
   dashboard pages.
-- The **status row stripe** — usable for live diagnostics once the data
+- The **status row stripe** - usable for live diagnostics once the data
   source is wired.
-- The **shimmer line** and **scanline** — atmospheric primitives that
+- The **shimmer line** and **scanline** - atmospheric primitives that
   should live in tokens before they spread.
 
 Porting rule: extract into a real component under `src/components/ui/`
@@ -166,12 +166,12 @@ or `src/components/dashboard/`, add tests, then delete the demo copy.
 ## What must **not** be wired yet
 
 - Quarantine experimental cards (Deep Research, RAG · local, Model
-  Lab, Local Agent, Terminal Mode, Sigil Editor) — these are still
+  Lab, Local Agent, Terminal Mode, Sigil Editor) - these are still
   product decisions, not engineering tasks.
-- Diagnostics preview values — wiring this means going through the real
+- Diagnostics preview values - wiring this means going through the real
   diagnostics component, not duplicating its surface.
-- The "voice provider" / "STT provider" detail rows — same as above.
-- The personality stat bars — these need a real `useSpiritProfile`
+- The "voice provider" / "STT provider" detail rows - same as above.
+- The personality stat bars - these need a real `useSpiritProfile`
   source before going near production.
 
 ---
@@ -191,11 +191,11 @@ variables themselves. That means:
 
 Suggested layering when reading the CSS:
 
-1. `tokens` — design constants only.
-2. `layout` — page geometry.
-3. `effects` — glass, glow, shimmer.
-4. `components` — repeating UI blocks.
-5. `animations` — keyframes and reduced-motion overrides.
+1. `tokens` - design constants only.
+2. `layout` - page geometry.
+3. `effects` - glass, glow, shimmer.
+4. `components` - repeating UI blocks.
+5. `animations` - keyframes and reduced-motion overrides.
 
 ---
 
@@ -231,7 +231,7 @@ The checklist above applies to **`.spirit-demo-root`** today. The **same targets
 - **Touch targets ≥ 44px** on primary actions and nav.
 - **Inputs at 16px font-size** on iOS to reduce unwanted zoom.
 - **`env(safe-area-inset-*)`** on top/bottom for notched devices.
-- **Sticky mobile nav / dock** behavior — one coherent pattern for dashboard, chat, and Oracle (not three one-off hacks).
+- **Sticky mobile nav / dock** behavior - one coherent pattern for dashboard, chat, and Oracle (not three one-off hacks).
 
 **QA:** exercise **dashboard**, **chat**, and **Oracle** on a real phone over **HTTPS** to the dev host.
 
@@ -262,7 +262,7 @@ The checklist above applies to **`.spirit-demo-root`** today. The **same targets
 
 ## Old-repo inspirations used
 
-The visual cues borrowed from the previous Spirit OS — adapted, not
+The visual cues borrowed from the previous Spirit OS - adapted, not
 copied verbatim, with no logic carried over:
 
 - **Trinity Dashboard / Dashboard Shell.** The collapsible-feeling left
@@ -276,7 +276,7 @@ copied verbatim, with no logic carried over:
 - **EnergyMatrix bars.** The thin rounded fills with subtle gradient
   tracks, reused for the personality stats in `DemoProfilePreview`.
 - **Cinematic dark luxury palette.** Dark void background + cyan accent
-  + violet accent + rose for quarantine + emerald for online — anchored
+  + violet accent + rose for quarantine + emerald for online - anchored
   to the *current* Spirit OS theme tokens, not the old hex values.
 - **Scanline / shimmer atmospherics.** Light-touch only, sub-3% opacity,
   always under the content.

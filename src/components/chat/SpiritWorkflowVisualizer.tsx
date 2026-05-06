@@ -1,6 +1,6 @@
 "use client";
 
-// ── SpiritWorkflowVisualizer — route + web proof rail (no chain-of-thought cosplay) ─
+// ── SpiritWorkflowVisualizer - route + web proof rail (no chain-of-thought cosplay) ─
 // > Extracted so SpiritChat stops being a 2k-line monolith. Still one product surface.
 
 import { X } from "lucide-react";
@@ -138,7 +138,7 @@ export const SpiritWorkflowVisualizer = memo(function SpiritWorkflowVisualizer({
           : skipReason
             ? skipReason.replace(/_/g, " ")
             : "provider error";
-      return `Search: failed — ${human}${prov}${q}${t}`;
+      return `Search: failed - ${human}${prov}${q}${t}`;
     }
     if (searchUsed) return `Search: used${prov}${n}${q}${t}`;
     return null;
@@ -236,7 +236,7 @@ export const SpiritWorkflowVisualizer = memo(function SpiritWorkflowVisualizer({
                   ) : (
                     <div className="rounded-lg border border-white/[0.06] bg-black/20 px-2 py-1.5 font-mono text-[9px] text-chalk/50">
                       {title}
-                      <span className="mt-1 block text-chalk/40">No URL — not clickable</span>
+                      <span className="mt-1 block text-chalk/40">No URL - not clickable</span>
                     </div>
                   )}
                 </li>

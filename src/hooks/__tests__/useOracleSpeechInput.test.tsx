@@ -51,7 +51,7 @@ function installBrowserGlobals() {
       onerror: ((e: Event) => void) | null = null;
       start = vi.fn(() => {
         this.state = "recording";
-        // Simulate data slicing — ensures the chunks array is non-empty by stop time.
+        // Simulate data slicing - ensures the chunks array is non-empty by stop time.
         const fakeData = new Blob(["a".repeat(64)], { type: "audio/webm" });
         const ev = { data: fakeData } as unknown as BlobEvent;
         queueMicrotask(() => this.ondataavailable?.(ev));

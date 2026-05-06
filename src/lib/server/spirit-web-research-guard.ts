@@ -11,7 +11,7 @@ export function isWebSearchGloballyEnabled(): boolean {
   return v === "1" || v === "true" || v === "yes";
 }
 
-/** Hermes researcher lane — thin wrapper for diagnostics/tests. */
+/** Hermes researcher lane - thin wrapper for diagnostics/tests. */
 export function shouldRunResearcherWebSearch(opts: {
   modelProfileId: ModelProfileId;
   lastUserText: string;
@@ -35,7 +35,7 @@ Do not claim you ran a web search. Do **not** add [1], [2], numbered citations, 
 export function formatResearchContextForHermes(query: string, search: OpenAiWebSearchResult): string {
   if (!search.ok || !search.searched) {
     return `## Web research status
-Search used: no (${"error" in search ? search.error : "unknown"}${"detail" in search && search.detail ? ` — ${search.detail}` : ""})
+Search used: no (${"error" in search ? search.error : "unknown"}${"detail" in search && search.detail ? ` - ${search.detail}` : ""})
 Answer from general knowledge only; label uncertain claims as unverified.`;
   }
 
@@ -59,7 +59,7 @@ User query: ${query.slice(0, 800)}`;
   }
 
   const lines = withUrls.map((row, i) => {
-    const sn = row.snippet ? ` — snippet: ${row.snippet.slice(0, 320)}` : "";
+    const sn = row.snippet ? ` - snippet: ${row.snippet.slice(0, 320)}` : "";
     return `${i + 1}. **${row.title}** | url: ${row.url}${sn}`;
   });
 
@@ -78,7 +78,7 @@ ${preview}
 Instructions: Only claim facts supported by the digest above. Use [n](url) inline only for URLs listed. Your final answer must include **## Sources** with those same URLs. If the user asked for recent studies and this digest is empty of usable links, say you cannot verify that request.`;
 }
 
-/** Compact JSON for `x-spirit-web-sources` — keep under typical proxy header limits. */
+/** Compact JSON for `x-spirit-web-sources` - keep under typical proxy header limits. */
 export function buildWebSearchSourcesHeader(search: OpenAiWebSearchResult): string | null {
   if (!search.ok || !search.searched) return null;
   const items: { title: string; url: string; snippet: string }[] = [];

@@ -1,4 +1,4 @@
-// ── DemoCommandCenter — hero command surface (visual-only) ───────────────────
+// ── DemoCommandCenter - hero command surface (visual-only) ───────────────────
 // > Quick-launch CTAs link to existing real routes (/chat, /oracle, /quarantine)
 // > because those routes are already shipped. Other CTAs are clearly labeled
 // > demo and do not navigate; nothing here wires unfinished features.
@@ -27,7 +27,7 @@ type QuickLaunch = {
 const launches: QuickLaunch[] = [
   {
     label: "Open Chat",
-    description: "Saved threads, folders, modes — the canonical workspace.",
+    description: "Saved threads, folders, modes - the canonical workspace.",
     href: "/chat",
     tone: "cyan",
     Icon: ChatIcon,
@@ -54,7 +54,7 @@ const launches: QuickLaunch[] = [
   },
   {
     label: "Diagnostics",
-    description: "Ollama, Hermes, Whisper, TTS — runtime telemetry.",
+    description: "Ollama, Hermes, Whisper, TTS - runtime telemetry.",
     tone: "neutral",
     Icon: ActivityIcon,
   },
@@ -120,7 +120,7 @@ function LaunchCard({ item }: { item: QuickLaunch }) {
       <Link
         href={href}
         className={`demo-card ${toneClass}`}
-        aria-label={`${label} — open route`}
+        aria-label={`${label} - open route`}
       >
         {inner}
       </Link>
@@ -129,7 +129,7 @@ function LaunchCard({ item }: { item: QuickLaunch }) {
   return (
     <article
       className={`demo-card ${toneClass}`}
-      aria-label={`${label} — visual only`}
+      aria-label={`${label} - visual only`}
     >
       {inner}
     </article>
@@ -155,13 +155,13 @@ export function DemoCommandCenter() {
           A console that listens, not a dashboard.
         </h2>
         <p className="demo-section__lede">
-          Everything below is a visual rehearsal — a place to feel the OS
+          Everything below is a visual rehearsal - a place to feel the OS
           before we wire any of it. The three quick-launch cards link into
           existing routes; the rest are demo-only surfaces awaiting review.
         </p>
       </header>
 
-      {/* —— Hero panel with title + status + actions —— */}
+      {/* - -  Hero panel with title + status + actions - -  */}
       <article
         className="demo-hero demo-motion-fade-up"
         aria-label="Spirit OS hero status"
@@ -185,7 +185,7 @@ export function DemoCommandCenter() {
             Sovereign · local-first
           </p>
           <h1 className="demo-hero__title">
-            Spirit OS — <em>cybernetic</em> command center.
+            Spirit OS - <em>cybernetic</em> command center.
           </h1>
           <p className="demo-hero__sub">
             Hermes locally on Ollama. Whisper for ears, ElevenLabs / Piper for
@@ -225,7 +225,7 @@ export function DemoCommandCenter() {
         <span className="demo-corners" aria-hidden="true" />
       </article>
 
-      {/* —— Telemetry strip (mock data) —— */}
+      {/* - -  Telemetry strip (mock data) - -  */}
       <div
         className="demo-grid-4"
         style={{ marginTop: "1.5rem" }}
@@ -253,7 +253,7 @@ export function DemoCommandCenter() {
         </article>
       </div>
 
-      {/* —— Quick launch grid —— */}
+      {/* - -  Quick launch grid - -  */}
       <h3
         className="demo-section__title"
         style={{

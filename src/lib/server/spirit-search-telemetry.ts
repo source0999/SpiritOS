@@ -1,7 +1,7 @@
 import "server-only";
 
-// ── spirit-search-telemetry — [spirit-search] logs + response headers (Prompt 10C-D) ─
-// > No secrets, no full prompts — trimmed query only.
+// ── spirit-search-telemetry - [spirit-search] logs + response headers (Prompt 10C-D) ─
+// > No secrets, no full prompts - trimmed query only.
 
 export type SpiritSearchLogRoute =
   | "openai-web-search"

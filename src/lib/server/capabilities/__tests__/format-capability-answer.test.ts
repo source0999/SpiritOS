@@ -127,7 +127,7 @@ describe("formatCapabilityAnswer", () => {
     expect(text).toMatch(/^Yes/i);
     expect(text.toLowerCase()).toMatch(/storage telemetry|telemetry/);
     expect(text).toMatch(/browse|list files|folders/i);
-    expect(text).not.toMatch(/^No — not yet/i);
+    expect(text).not.toMatch(/^No - not yet/i);
     expect(text).not.toContain("AMD X");
     expect(text).not.toMatch(/uptime|RAM:/i);
   });

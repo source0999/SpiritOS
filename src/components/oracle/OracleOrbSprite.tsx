@@ -1,8 +1,8 @@
 "use client";
 
-// ── OracleOrbSprite — abstract energy orb (no CDN, no <img>) ────────────────────
+// ── OracleOrbSprite - abstract energy orb (no CDN, no <img>) ────────────────────
 // > Extracted from the coded demo; SVG ids scoped with useId() so two mounts don’t
-// > fight over defs. No crosshair reticle, no tail — just orb + rings + wings.
+// > fight over defs. No crosshair reticle, no tail - just orb + rings + wings.
 
 import { useId, useMemo } from "react";
 

@@ -1,4 +1,4 @@
-// ── Oracle browser capability probe — SSR-safe mic/secure-context diagnostics ─────
+// ── Oracle browser capability probe - SSR-safe mic/secure-context diagnostics ─────
 // > Plain http:// to a LAN/Tailscale IP hides navigator.mediaDevices by design.
 // > This module gives the UI one stable shape so we never hydrate one string and
 // > then rip it out for a totally different one on the client tick. Source, if you
@@ -15,7 +15,7 @@ export type OracleBrowserCapabilityBlockedReason =
   | null;
 
 export type OracleBrowserCapabilityReport = {
-  /** Mirrors the `mounted` arg — false on SSR + first paint. */
+  /** Mirrors the `mounted` arg - false on SSR + first paint. */
   mounted: boolean;
   /** `window.isSecureContext` after mount. `null` until mounted (hydration-safe). */
   isSecureContext: boolean | null;
@@ -31,7 +31,7 @@ export type OracleBrowserCapabilityReport = {
   userMessage: string;
 };
 
-/** Stable pre-mount value — must match SSR every time. */
+/** Stable pre-mount value - must match SSR every time. */
 const SSR_REPORT: OracleBrowserCapabilityReport = {
   mounted: false,
   isSecureContext: null,
@@ -46,7 +46,7 @@ const SSR_REPORT: OracleBrowserCapabilityReport = {
 };
 
 /**
- * Build the capability report. `mounted` is the page-level mounted flag —
+ * Build the capability report. `mounted` is the page-level mounted flag  - 
  * we refuse to inspect `window`/`navigator` until React tells us we're
  * past hydration. That keeps SSR and first paint identical.
  *
@@ -90,7 +90,7 @@ export function getOracleBrowserCapabilityReport(
     userMessage =
       "Mic access is blocked on this HTTP address. Use localhost, 127.0.0.1, or HTTPS.";
   } else if (!hasMediaDevices) {
-    // Secure context but no mediaDevices — almost always an old browser.
+    // Secure context but no mediaDevices - almost always an old browser.
     blockedReason = "missing-media-devices";
     userMessage = "Microphone API unavailable in this browser.";
   } else if (!hasGetUserMedia) {

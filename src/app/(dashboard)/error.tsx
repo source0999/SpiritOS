@@ -1,6 +1,6 @@
 "use client";
 
-// ── Dashboard segment error — same void paint as loading, then real failure data ─
+// ── Dashboard segment error - same void paint as loading, then real failure data ─
 import { bootSplashOuterStyle } from "@/lib/boot-splash";
 
 export default function DashboardError({
@@ -34,7 +34,7 @@ export default function DashboardError({
             marginRight: "auto",
           }}
         >
-          Route error — the void is honest about it.
+          Route error - the void is honest about it.
         </p>
       </div>
       <pre

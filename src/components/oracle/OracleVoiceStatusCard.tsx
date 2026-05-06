@@ -1,6 +1,6 @@
 "use client";
 
-// ── OracleVoiceStatusCard — compact session telemetry (hands-free aware) ──────────
+// ── OracleVoiceStatusCard - compact session telemetry (hands-free aware) ──────────
 import Link from "next/link";
 
 import {
@@ -32,7 +32,7 @@ export type OracleVoiceStatusCardProps = {
   recordingStartedAt?: number | null;
   lastPlaybackWallMs?: number;
   lastError?: string | null;
-  /** `/api/spirit` banner — orthogonal to TTS fetch failures. */
+  /** `/api/spirit` banner - orthogonal to TTS fetch failures. */
   spiritTransportError?: string | null;
   speechError?: string | null;
   className?: string;
@@ -46,7 +46,7 @@ function formatWallTime(wallMs: number): string {
       second: "2-digit",
     });
   } catch {
-    return "—";
+    return " - ";
   }
 }
 
@@ -57,8 +57,8 @@ export function OracleVoiceStatusCard({
   voiceProviderLine,
   selectedVoiceLabel,
   loopModeLabel,
-  speechInputLabel = "—",
-  micLabel = "—",
+  speechInputLabel = " - ",
+  micLabel = " - ",
   micPermissionLabel,
   secureContextOk,
   audioLevel,
@@ -157,7 +157,7 @@ export function OracleVoiceStatusCard({
         </div>
         <div className="flex flex-wrap gap-x-2">
           <dt className="text-chalk/45">Mic permission</dt>
-          <dd className="min-w-0 truncate">{micPermissionLabel ?? "—"}</dd>
+          <dd className="min-w-0 truncate">{micPermissionLabel ?? "-"}</dd>
         </div>
         <div className="flex flex-wrap gap-x-2">
           <dt className="text-chalk/45">Mic</dt>

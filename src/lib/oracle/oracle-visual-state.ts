@@ -1,11 +1,11 @@
-// ── Oracle UI visual lane — maps live session/capability to orb + visualizer ───────
+// ── Oracle UI visual lane - maps live session/capability to orb + visualizer ───────
 // > No new voice state machine: this is a thin paint adapter over
 // > `OracleVoiceSessionStatus` + homelab capability rows.
 
 import type { OracleBrowserCapabilityReport } from "@/lib/oracle/oracle-browser-capabilities";
 import type { OracleVoiceSessionStatus } from "@/lib/oracle/oracle-voice-session";
 
-/** Bars + orb intensity — six buckets for CSS. */
+/** Bars + orb intensity - six buckets for CSS. */
 export type OracleVisualState =
   | "idle"
   | "permission"
@@ -46,7 +46,7 @@ export function getOracleVisualStateFromSessionStatus(
 }
 
 /**
- * Homelab card has no live mic stream — only capability + badge paint.
+ * Homelab card has no live mic stream - only capability + badge paint.
  * Insecure / hard API gaps read as error; soft “degraded” reads as permission lane.
  */
 export function getOracleVisualStateForHomelab(input: {

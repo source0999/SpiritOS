@@ -16,7 +16,7 @@ describe("isDegenerateSourcesBlock", () => {
   });
 
   it("rejects real titled links", () => {
-    expect(isDegenerateSourcesBlock("1. [PubMed — ASD](https://pubmed.ncbi.nlm.nih.gov/x)")).toBe(false);
+    expect(isDegenerateSourcesBlock("1. [PubMed - ASD](https://pubmed.ncbi.nlm.nih.gov/x)")).toBe(false);
   });
 });
 

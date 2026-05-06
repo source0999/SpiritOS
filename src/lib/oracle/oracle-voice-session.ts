@@ -1,5 +1,5 @@
-// ── Oracle Voice session — UI state machine (no Dexie, no server sync) ────────────
-// > Prompt 10D-E: hands-free loop is the default — push-to-talk demoted to a knob,
+// ── Oracle Voice session - UI state machine (no Dexie, no server sync) ────────────
+// > Prompt 10D-E: hands-free loop is the default - push-to-talk demoted to a knob,
 // > silence VAD picks the moment we hand mic audio to Whisper, and TTS owns
 // > "speaking" exclusively. If a status feels wrong in the UI, it's almost always
 // > because someone forgot one of the priority rules in deriveOracleVoiceStatus.
@@ -24,7 +24,7 @@ export type OracleVoiceSessionStatus =
 /** Hands-free is the default loop mode for /oracle. Push-to-talk + manual stay as knobs. */
 export type OracleVoiceLoopMode = "hands-free" | "push-to-talk" | "manual-text";
 
-/** @deprecated keep until callers migrate — same shape as `hands-free` historically. */
+/** @deprecated keep until callers migrate - same shape as `hands-free` historically. */
 export type OracleVoiceInputMode = OracleVoiceLoopMode;
 
 /** Default loop mode for new sessions. */
@@ -183,25 +183,25 @@ export function oracleSessionStatusHint(status: OracleVoiceSessionStatus): strin
     case "idle":
       return "Tap Start session to begin.";
     case "blocked":
-      return "Mic blocked — see secure-context warning.";
+      return "Mic blocked - see secure-context warning.";
     case "requesting-mic":
       return "Asking the browser for microphone access…";
     case "permission-needed":
       return "Grant the browser mic permission to continue.";
     case "ready":
-      return "Mic ready — start a session whenever you are.";
+      return "Mic ready - start a session whenever you are.";
     case "listening":
       return "Waiting for speech…";
     case "hearing-speech":
-      return "Speak naturally — Oracle stops when you do.";
+      return "Speak naturally - Oracle stops when you do.";
     case "silence-detected":
-      return "Heard the gap — sending to Whisper.";
+      return "Heard the gap - sending to Whisper.";
     case "transcribing":
       return "Transcribing with Whisper…";
     case "thinking":
       return "Oracle is thinking…";
     case "speaking":
-      return "Oracle is speaking — listening resumes after.";
+      return "Oracle is speaking - listening resumes after.";
     case "restarting":
       return "Returning to listening…";
     case "stopped":
@@ -209,7 +209,7 @@ export function oracleSessionStatusHint(status: OracleVoiceSessionStatus): strin
     case "unsupported":
       return "Voice capture isn't available in this browser.";
     case "error":
-      return "Something failed — see the status card for details.";
+      return "Something failed - see the status card for details.";
     default:
       return "";
   }
@@ -256,7 +256,7 @@ export function deriveOracleVoiceStatus(input: DeriveOracleVoiceStatusInput): Or
     return input.hearingSpeech ? "hearing-speech" : "listening";
   }
 
-  // Latched stopped after the user clicked Stop session — until a new session starts.
+  // Latched stopped after the user clicked Stop session - until a new session starts.
   if (input.sessionStopped && !input.sessionActive) return "stopped";
 
   const stoppedAt = input.lastUserStopAtMs;

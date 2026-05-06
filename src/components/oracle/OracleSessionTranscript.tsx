@@ -1,7 +1,7 @@
 "use client";
 
-// ── OracleSessionTranscript — live chat rows (UIMessage) for /oracle chamber ─────
-// > Uses the same `transport.messages` the runtime already owns — zero fake copy.
+// ── OracleSessionTranscript - live chat rows (UIMessage) for /oracle chamber ─────
+// > Uses the same `transport.messages` the runtime already owns - zero fake copy.
 
 import type { UIMessage } from "ai";
 import { useMemo } from "react";
@@ -36,7 +36,7 @@ export function OracleSessionTranscript({
       <div className="oracle-session__scroll scrollbar-hide">
         {rows.length === 0 ? (
           <p className="oracle-session__empty">
-            No messages yet — start a session and speak, or send text. Conversation from this
+            No messages yet - start a session and speak, or send text. Conversation from this
             Oracle lane appears here live.
           </p>
         ) : (

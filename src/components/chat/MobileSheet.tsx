@@ -1,6 +1,6 @@
 "use client";
 
-// ── MobileSheet — portal overlay; escapes overflow/transform hell (Prompt 9E-A) ─
+// ── MobileSheet - portal overlay; escapes overflow/transform hell (Prompt 9E-A) ─
 import { X } from "lucide-react";
 import {
   memo,

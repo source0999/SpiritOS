@@ -5,7 +5,7 @@ export type ClusterNodeConfig = {
   telemetryUrl?: string;
 };
 
-/** Strips accidental `< >` from copy-pasted placeholders — `http://<10.0.0.1>:3000` breaks DNS otherwise. */
+/** Strips accidental `< >` from copy-pasted placeholders - `http://<10.0.0.1>:3000` breaks DNS otherwise. */
 export function normalizeTelemetryEnvUrl(raw: string | undefined): string | undefined {
   if (!raw) return undefined;
   const t = raw.trim().replaceAll(/[<>]/g, "");

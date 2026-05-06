@@ -74,7 +74,7 @@ async function collectLocalStorage(): Promise<NodeStorage> {
       const mount = parts[5]!;
 
       if (!device.startsWith("/dev/")) continue;
-      // Snap/loop mounts masquerade as block devices — not useful homelab “drives”.
+      // Snap/loop mounts masquerade as block devices - not useful homelab “drives”.
       if (device.startsWith("/dev/loop")) continue;
       if (seen.has(device)) continue;
       seen.add(device);

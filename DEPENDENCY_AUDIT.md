@@ -18,12 +18,12 @@ Uninstalled (zero `src/` imports; no blueprint / Cursor-rule mandate):
 npm uninstall @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities dexie dexie-react-hooks simple-git
 ```
 
-**Not removed** (stack intent — reinstall when implementing features):
+**Not removed** (stack intent - reinstall when implementing features):
 
-- `swr` — `.cursor/rules/global.mdc` telemetry guidance (NUT, Langfuse).
-- `react-markdown` — `_blueprints/design_system.md` Intelligence Reader / Markdown reader.
+- `swr` - `.cursor/rules/global.mdc` telemetry guidance (NUT, Langfuse).
+- `react-markdown` - `_blueprints/design_system.md` Intelligence Reader / Markdown reader.
 
-Post-removal: `npm run lint`, `npm run typecheck`, `npm run build` — all passed.
+Post-removal: `npm run lint`, `npm run typecheck`, `npm run build` - all passed.
 
 ---
 
@@ -31,12 +31,12 @@ Post-removal: `npm run lint`, `npm run typecheck`, `npm run build` — all passe
 
 | Package | Evidence (import or config) | Decision |
 |--------|-----------------------------|----------|
-| `next` | `src/app/layout.tsx` (`Metadata`); `next/dynamic`, `next/navigation`, `next/link`, `next/font/google` in `src/`; `NextResponse` in `src/proxy.ts` | **keep** — App Router core |
+| `next` | `src/app/layout.tsx` (`Metadata`); `next/dynamic`, `next/navigation`, `next/link`, `next/font/google` in `src/`; `NextResponse` in `src/proxy.ts` | **keep** - App Router core |
 | `react` | Hooks and types across `src/**/*.tsx` | **keep** |
 | `react-dom` | Required by Next for client surfaces | **keep** |
-| `ai` | `streamText`, `convertToModelMessages` — `route.ts`; `DefaultChatTransport` — `SpiritChat`; `UIMessage` — `SpiritMessage`, `chat-utils`, `spirit-request` | **keep** |
-| `@ai-sdk/react` | `useChat` — `SpiritChat.tsx` | **keep** |
-| `@ai-sdk/openai` | `createOpenAI` — `src/lib/server/ollama.ts` | **keep** |
+| `ai` | `streamText`, `convertToModelMessages` - `route.ts`; `DefaultChatTransport` - `SpiritChat`; `UIMessage` - `SpiritMessage`, `chat-utils`, `spirit-request` | **keep** |
+| `@ai-sdk/react` | `useChat` - `SpiritChat.tsx` | **keep** |
+| `@ai-sdk/openai` | `createOpenAI` - `src/lib/server/ollama.ts` | **keep** |
 | `framer-motion` | `DashboardClient.tsx`, `HubStageCards.tsx` | **keep** |
 | `lucide-react` | `stageTypes.ts`, `DashboardClient.tsx`, `QuarantineStageVisual.tsx` | **keep** |
 | `clsx` | `LayoutOrchestrator.tsx`; `src/lib/cn.ts` | **keep** |
@@ -55,10 +55,10 @@ Post-removal: `npm run lint`, `npm run typecheck`, `npm run build` — all passe
 
 | Package | Planning evidence | Decision |
 |--------|-------------------|----------|
-| `swr` | `.cursor/rules/global.mdc` — SWR for live telemetry | **keep** — add imports when NUT/Langfuse wiring lands |
-| `react-markdown` | `_blueprints/design_system.md` — Markdown / Intelligence Reader | **keep** — add when that surface ships |
+| `swr` | `.cursor/rules/global.mdc` - SWR for live telemetry | **keep** - add imports when NUT/Langfuse wiring lands |
+| `react-markdown` | `_blueprints/design_system.md` - Markdown / Intelligence Reader | **keep** - add when that surface ships |
 
-## Previously unused — removed (2026-05-02)
+## Previously unused - removed (2026-05-02)
 
 | Package | Notes |
 |--------|--------|
@@ -84,7 +84,7 @@ Post-removal: `npm run lint`, `npm run typecheck`, `npm run build` — all passe
 - **`clsx`, `tailwind-merge`**
 - **`server-only`**
 - **`typescript`, `@types/*`, `eslint`, `eslint-config-next`, `tailwindcss`, `@tailwindcss/postcss`**
-- **`swr`, `react-markdown`** — reserved for documented upcoming features (not dead weight by project rules)
+- **`swr`, `react-markdown`** - reserved for documented upcoming features (not dead weight by project rules)
 
 ## Future optional cleanup
 

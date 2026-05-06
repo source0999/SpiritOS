@@ -1,6 +1,6 @@
 "use client";
 
-// ── DashboardClient — DEPRECATED: staged hub/neural/oracle UX (reference only) ──
+// ── DashboardClient - DEPRECATED: staged hub/neural/oracle UX (reference only) ──
 // > "/" now mounts SpiritWorkspaceShell; keep this corpse for salvage / doc diffs.
 // ── Previously: stage machine + layout chrome (thin orchestrator) ─────────────
 // > Phase 2: heavy stage bodies code-split (Neural/Quarantine); hub/oracle eager

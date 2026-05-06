@@ -3,7 +3,7 @@ import "server-only";
 import { createUIMessageStream, createUIMessageStreamResponse } from "ai";
 import type { UIMessage } from "ai";
 
-/** Same UI stream framing as LLM path — useChat / Oracle stay happy */
+/** Same UI stream framing as LLM path - useChat / Oracle stay happy */
 export function createDeterministicAssistantUIMessageResponse(opts: {
   text: string;
   originalMessages: UIMessage[];

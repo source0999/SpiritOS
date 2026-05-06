@@ -80,7 +80,7 @@ export function HomelabBackendHealthCard({ className = "" }: Props) {
       <dl className="grid gap-y-1 font-mono text-[11px]">
         {state === "offline" && (
           <div className="rounded-lg border border-rose-500/30 bg-rose-500/[0.06] px-2 py-1.5 text-[10px] text-rose-300/90">
-            Backend unreachable — /api/spirit/health returned no response
+            Backend unreachable - /api/spirit/health returned no response
           </div>
         )}
         {data.url && (

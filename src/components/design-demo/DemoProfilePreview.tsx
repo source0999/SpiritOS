@@ -1,4 +1,4 @@
-// ── DemoProfilePreview — Spirit profile / personality / memory (visual) ──────
+// ── DemoProfilePreview - Spirit profile / personality / memory (visual) ──────
 // > Visual-only mock. Real Spirit Profile lives in /chat panel + localStorage.
 // > Nothing here writes to localStorage or modifies real personalisation.
 import { ChatIcon, ShieldIcon, SparkleIcon, UserIcon } from "./DemoIcons";
@@ -42,7 +42,7 @@ export function DemoProfilePreview() {
         </h2>
         <p className="demo-section__lede">
           Personalisation summary, mode tuning, and what Spirit knows. Stored
-          locally, edited locally — visualised here as a paper prototype.
+          locally, edited locally - visualised here as a paper prototype.
         </p>
       </header>
 

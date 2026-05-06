@@ -12,7 +12,7 @@ import {
   WARN_NAME_ONLY_CATALOG_FAILED,
 } from "@/lib/server/elevenlabs-voices";
 
-// ── GET /api/tts/voices — allowlist-only + name resolution (Prompt 9L) ────────────
+// ── GET /api/tts/voices - allowlist-only + name resolution (Prompt 9L) ────────────
 export const dynamic = "force-dynamic";
 
 function httpStatusForVoicesError(e: ElevenLabsVoicesFetchError): number {
@@ -191,7 +191,7 @@ export async function GET() {
     );
   }
 
-  /* No allowlist — full catalog */
+  /* No allowlist - full catalog */
   try {
     const voices = await fetchElevenLabsVoicesNormalized();
     const picked = pickDefaultElevenLabsVoice(voices);

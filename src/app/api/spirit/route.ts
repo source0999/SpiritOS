@@ -73,8 +73,8 @@ function appendSourcePolicyBlock(
   return `${base.trim()}\n\n${pol}`.trim();
 }
 
-// ── Spirit → Ollama — Prompt 10B: system via AI SDK + optional OpenAI web proof ─
-// > System is NOT duplicated into messages[] — kills the AI SDK security warning.
+// ── Spirit → Ollama - Prompt 10B: system via AI SDK + optional OpenAI web proof ─
+// > System is NOT duplicated into messages[] - kills the AI SDK security warning.
 
 export async function POST(req: Request) {
   try {
@@ -89,6 +89,7 @@ export async function POST(req: Request) {
       webSearchOptOut,
       teacherWebSearchEnabled,
       researchPlanSummary,
+      oracleMemoryContext,
     } = await readSpiritRequest(req);
 
     const lastUser = lastUserTextFromMessages(uiMessages);
@@ -337,6 +338,7 @@ export async function POST(req: Request) {
       webVerifiedUrlCount,
       runtimeSurface: surface,
       systemState,
+      oracleMemoryContext: oracleMemoryContext ?? null,
     });
 
     if (process.env.NODE_ENV === "development") {

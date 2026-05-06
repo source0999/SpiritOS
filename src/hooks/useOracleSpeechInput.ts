@@ -1,10 +1,10 @@
 "use client";
 
-// ── useOracleSpeechInput — Whisper via MediaRecorder + /api/stt/transcribe ─────────
-// > Oracle STT path is server-proxied Whisper — not browser Web Speech.
+// ── useOracleSpeechInput - Whisper via MediaRecorder + /api/stt/transcribe ─────────
+// > Oracle STT path is server-proxied Whisper - not browser Web Speech.
 // > Silence-aware: amplitude meter doubles as a VAD so the user never has to click
 // > "Finish thought" in normal hands-free use. Spirit refuses to call this an
-// > advanced VAD — it's the simplest amplitude trick that survives hostile rooms.
+// > advanced VAD - it's the simplest amplitude trick that survives hostile rooms.
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
@@ -23,14 +23,14 @@ import {
 
 export const ORACLE_MIC_LS_KEY = "spirit:oracle:selectedMicId";
 
-/** Hard cap per utterance — the user might forget about us. */
+/** Hard cap per utterance - the user might forget about us. */
 export const ORACLE_MAX_RECORDING_MS = 60_000;
 
-/** Default silence detection knobs — tuned for "casual conversation" not dictation. */
+/** Default silence detection knobs - tuned for "casual conversation" not dictation. */
 export const ORACLE_DEFAULT_SILENCE_THRESHOLD = 0.035;
 export const ORACLE_DEFAULT_SILENCE_DURATION_MS = 1200;
 export const ORACLE_DEFAULT_MIN_RECORDING_MS = 700;
-/** Grace before any auto-stop happens — gives the user time to start talking. */
+/** Grace before any auto-stop happens - gives the user time to start talking. */
 export const ORACLE_DEFAULT_START_GRACE_MS = 600;
 /** Amplitude meter polling cadence (ms). 60Hz audio reads are wasteful for VAD. */
 export const ORACLE_AUDIO_LEVEL_INTERVAL_MS = 60;
@@ -78,7 +78,7 @@ export type UseOracleSpeechInputReturn = {
   captureBlockedHint: string | null;
   /** When page is plain http:// on a non-localhost host, same URL with https://. */
   httpsSamePageUrl: string | null;
-  /** Capability report — components can show secure-context copy directly from this. */
+  /** Capability report - components can show secure-context copy directly from this. */
   capability: OracleBrowserCapabilityReport;
   canUseMic: boolean;
   blockedReason: OracleBrowserCapabilityBlockedReason;
@@ -210,9 +210,9 @@ export function useOracleSpeechInput(
   const eventsRef = useRef<OracleVoiceSessionEvent[]>([]);
   const recordingStartTsRef = useRef<number | null>(null);
   const lastSpeechTsRef = useRef<number | null>(null);
-  /** Last reason for stop — drives onAutoStop callback after the recorder finishes. */
+  /** Last reason for stop - drives onAutoStop callback after the recorder finishes. */
   const stopReasonRef = useRef<"silence" | "max-duration" | "user" | null>(null);
-  /** Idempotency latch — silence + Finish-now clicked on top of each other shouldn't double submit. */
+  /** Idempotency latch - silence + Finish-now clicked on top of each other shouldn't double submit. */
   const stopInFlightRef = useRef(false);
 
   const emit = useCallback((row: Omit<OracleVoiceSessionEvent, "id" | "createdAt">) => {
@@ -358,7 +358,7 @@ export function useOracleSpeechInput(
       } catch (e) {
         const name = e instanceof DOMException ? e.name : "";
         if (name === "NotFoundError" || name === "OverconstrainedError") {
-          setLastError("Selected microphone unavailable — using default.");
+          setLastError("Selected microphone unavailable - using default.");
           stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         } else {
           throw e;
@@ -429,8 +429,8 @@ export function useOracleSpeechInput(
             return;
           }
 
-          // Below threshold — accrue silence.
-          // Don't accrue during the start grace window — gives the user time to begin speaking.
+          // Below threshold - accrue silence.
+          // Don't accrue during the start grace window - gives the user time to begin speaking.
           if (sinceStart < ORACLE_DEFAULT_START_GRACE_MS) return;
           // Hold off auto-stop until we've heard at least one frame of speech this turn,
           // so a totally silent room doesn't get auto-finished after 1.2s of dead air.
@@ -441,7 +441,7 @@ export function useOracleSpeechInput(
           if (sinceStart < minRecordingMs) return;
           if (!everSpoke) return;
 
-          // Refs are the live source — `silenceMs` state lags by a tick.
+          // Refs are the live source - `silenceMs` state lags by a tick.
           const lastSpeechAt = lastSpeechTsRef.current ?? startedAt;
           const silenceSpan = now - lastSpeechAt;
           if (silenceSpan >= silenceDurRef.current) {
@@ -488,7 +488,7 @@ export function useOracleSpeechInput(
   }, []);
 
   const stopRecordingAndTranscribe = useCallback(async (): Promise<string> => {
-    // Idempotent: silence VAD and the user's "Finish now" click can race — only one wins.
+    // Idempotent: silence VAD and the user's "Finish now" click can race - only one wins.
     if (stopInFlightRef.current) return "";
     stopInFlightRef.current = true;
 
@@ -630,7 +630,7 @@ export function useOracleSpeechInput(
     } catch (e) {
       const name = e instanceof DOMException ? e.name : "";
       if (name === "NotFoundError" || name === "OverconstrainedError") {
-        setLastError("Selected mic failed — using default capture.");
+        setLastError("Selected mic failed - using default capture.");
         stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       } else {
         const msg = e instanceof Error ? e.message : String(e);

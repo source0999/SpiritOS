@@ -1,5 +1,5 @@
 // ── Shared AI SDK message helpers ───────────────────────────────────────────
-// > Design language: _blueprints/design_system.md — one source, zero dupes
+// > Design language: _blueprints/design_system.md - one source, zero dupes
 import type { UIMessage } from "ai";
 
 import type { ChatMessage } from "@/lib/chat-db.types";

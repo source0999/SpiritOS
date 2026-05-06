@@ -1,6 +1,6 @@
 "use client";
 
-// ── OracleVoiceSurface — true hands-free Oracle session (Prompt 10D-E) ───────────
+// ── OracleVoiceSurface - true hands-free Oracle session (Prompt 10D-E) ───────────
 // > Start Session → listen → silence VAD auto-stops → Whisper → Oracle → TTS → relisten.
 // > Source, "Finish now" is BACKUP only. If you put it back as the primary CTA the
 // > Toxic Grader will eat the regression and Spirit will eat your morning.
@@ -32,7 +32,8 @@ import { useSpiritVoiceRuntime, useTtsSpeakGateRef } from "@/hooks/useSpiritVoic
 import { useTTS } from "@/hooks/useTTS";
 import { useMediaMinWidthLg } from "@/lib/hooks/useMediaMinWidthLg";
 import { useMounted } from "@/lib/hooks/useMounted";
-import { dedupeUIMessagesById } from "@/lib/chat-utils";
+import { dedupeUIMessagesById, textFromParts } from "@/lib/chat-utils";
+import { appendOracleMemoryEvent, isOracleMemoryEnabled } from "@/lib/oracle/oracle-memory";
 import {
   DEFAULT_ORACLE_LOOP_MODE,
   deriveOracleVoiceStatus,
@@ -52,7 +53,7 @@ import {
   type SpiritActivityEvent,
 } from "@/lib/spirit/spirit-activity-events";
 const ACTIVITY_LS_KEY = "spirit:workspaceActivity:v1";
-/** Small delay before relistening after TTS finishes — gives audio device time to settle. */
+/** Small delay before relistening after TTS finishes - gives audio device time to settle. */
 const ORACLE_RELISTEN_DELAY_MS = 500;
 
 function loadOracleActivitySeed(): SpiritActivityEvent[] {
@@ -116,7 +117,7 @@ export function OracleVoiceSurface() {
   }, [tts]);
   const ttsSpeakGateRef = useTtsSpeakGateRef(tts);
 
-  // SSR + first paint must match server ([]) — hydrate from LS after mount only.
+  // SSR + first paint must match server ([]) - hydrate from LS after mount only.
   const [workspaceActivity, setWorkspaceActivity] = useState<SpiritActivityEvent[]>(() =>
     loadOracleActivitySeed(),
   );
@@ -130,14 +131,14 @@ export function OracleVoiceSurface() {
   const [restarting, setRestarting] = useState(false);
   const [fallbackOpen, setFallbackOpen] = useState(false);
   const [fallbackText, setFallbackText] = useState("");
-  /** Non-chat STT lines for hallucination debugging — one row per Whisper final. */
+  /** Non-chat STT lines for hallucination debugging - one row per Whisper final. */
   const [micPickupLines, setMicPickupLines] = useState<{ id: string; at: number; text: string }[]>(
     [],
   );
 
   const sessionActiveRef = useRef(false);
   const loopModeRef = useRef<OracleVoiceLoopMode>(DEFAULT_ORACLE_LOOP_MODE);
-  /** Latch — true between assistant finish and TTS-end relisten. */
+  /** Latch - true between assistant finish and TTS-end relisten. */
   const isProcessingTurnRef = useRef(false);
   /** Pending relisten timer cleared by Stop session / errors. */
   const autoRestartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -369,7 +370,7 @@ export function OracleVoiceSurface() {
     setRestarting(false);
   }, []);
 
-  // Guards read from refs so this callback stays stable — unstable identity was nuking the
+  // Guards read from refs so this callback stays stable - unstable identity was nuking the
   // relisten setTimeout via effect cleanups every time isBusy / TTS blinked (hands-free death spiral).
   const beginListening = useCallback(async () => {
     const s = speechRef.current;
@@ -393,7 +394,7 @@ export function OracleVoiceSurface() {
     setRequestingMic(true);
     try {
       tts.setEnabled(true);
-      // iOS / WebKit: AudioContext.resume + first decode must chain from the Start session tap —
+      // iOS / WebKit: AudioContext.resume + first decode must chain from the Start session tap  - 
       // do NOT await mic permission first or the activation is gone by the time TTS runs.
       await tts.ensureAudioUnlocked();
       if (s.permissionState !== "granted") {
@@ -423,10 +424,10 @@ export function OracleVoiceSurface() {
   const finishThought = useCallback(async () => {
     if (loopMode === "manual-text") return;
     const s = speechRef.current;
-    // Idempotent guard at hook-level too — this is just for the manual button.
+    // Idempotent guard at hook-level too - this is just for the manual button.
     const text = await s.stopRecordingAndTranscribe();
     if (!text.trim()) {
-      // Empty transcript — go back to listening if session is still active, no submit.
+      // Empty transcript - go back to listening if session is still active, no submit.
       if (sessionActiveRef.current && loopMode === "hands-free") {
         await beginListening();
       }
@@ -438,7 +439,7 @@ export function OracleVoiceSurface() {
   // ── Hands-free silence auto-submit: when stopRecordingAndTranscribe resolves
   // ── via the silence VAD, we need to send the resulting transcript.
   // We defer to a microtask so the effect's render cycle finishes before the
-  // transport setState chain begins — keeps React's "no setState in effects"
+  // transport setState chain begins - keeps React's "no setState in effects"
   // lint happy and avoids cascading renders.
   const lastTranscriptRef = useRef<string>("");
   useEffect(() => {
@@ -518,13 +519,29 @@ export function OracleVoiceSurface() {
     if (!last || last.role !== "assistant") return;
     if (spokenAssistantIdsRef.current.has(last.id)) return;
     spokenAssistantIdsRef.current.add(last.id);
+    if (isOracleMemoryEnabled()) {
+      const prev = displayMessages[displayMessages.length - 2];
+      const userText = prev?.role === "user" ? textFromParts(prev).trim() : undefined;
+      const assistantText = textFromParts(last).trim();
+      const summary = (userText ?? assistantText).slice(0, 120);
+      if (summary) {
+        void appendOracleMemoryEvent({
+          summary,
+          userText: userText?.slice(0, 500),
+          assistantText: assistantText.slice(0, 500) || undefined,
+          modelProfileId: modeRt.activeModelProfileId,
+          source: "oracle-voice-surface",
+          runtimeSurface: "oracle",
+        });
+      }
+    }
     tts.setEnabled(true);
     const speakText = voiceRt.assistantSpeakableText(last);
     const trimmed = speakText.trim();
     if (trimmed) {
       void voiceRt.speakAssistantMessage(speakText);
     } else {
-      // No spoken output — turn is over, clear processing latch so relisten effect can fire.
+      // No spoken output - turn is over, clear processing latch so relisten effect can fire.
       isProcessingTurnRef.current = false;
     }
     pushActivity({ kind: "assistant_finished", label: "Assistant replied (Oracle)" });
@@ -559,7 +576,7 @@ export function OracleVoiceSurface() {
       autoRestartTimerRef.current = null;
       setRestarting(false);
       if (!sessionActiveRef.current) return;
-      // Latch clears here — not before scheduling. Premature clear + effect cleanup was
+      // Latch clears here - not before scheduling. Premature clear + effect cleanup was
       // canceling the timer and leaving hands-free permanently deaf.
       isProcessingTurnRef.current = false;
       void beginListening();
@@ -798,7 +815,7 @@ export function OracleVoiceSurface() {
             Whisper STT raw pickup
           </summary>
           <p className="mt-2 font-mono text-[11px] leading-relaxed text-chalk/55">
-            Each Whisper final after an utterance — sanity-check hallucinations here.
+            Each Whisper final after an utterance - sanity-check hallucinations here.
           </p>
           <div className="mt-3 min-h-[3.5rem] rounded-lg border border-white/[0.06] bg-black/35 px-3 py-2">
             {latestMicPickup ? (

@@ -1,8 +1,8 @@
 // ── Shared inline paint for loading / error / client fail-safe ────────────────
-// > No Tailwind here — if PostCSS detonates, this still paints.
+// > No Tailwind here - if PostCSS detonates, this still paints.
 import type { CSSProperties } from "react";
 
-/** Dark Node void + chalk-muted label — matches blueprint `#090a0f` */
+/** Dark Node void + chalk-muted label - matches blueprint `#090a0f` */
 export const bootSplashOuterStyle: CSSProperties = {
   minHeight: "100dvh",
   backgroundColor: "#090a0f",

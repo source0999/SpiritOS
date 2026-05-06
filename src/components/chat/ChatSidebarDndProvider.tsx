@@ -1,6 +1,6 @@
 "use client";
 
-// ── ChatSidebarDndProvider — @dnd-kit shell; drawer uses longer touch delay (9F) ─
+// ── ChatSidebarDndProvider - @dnd-kit shell; drawer uses longer touch delay (9F) ─
 import {
   DndContext,
   DragOverlay,
@@ -30,7 +30,7 @@ export type ChatSidebarDndProviderProps = {
   onDragOver?: (event: DragOverEvent) => void;
   onDragEnd: (event: DragEndEvent) => void;
   children: React.ReactNode;
-  /** Drawer vs desktop rail — tune iOS long-press vs scroll. */
+  /** Drawer vs desktop rail - tune iOS long-press vs scroll. */
   touchActivation?: TouchActivationOptions;
 };
 

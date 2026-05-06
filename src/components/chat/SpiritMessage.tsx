@@ -1,6 +1,6 @@
 "use client";
 
-// ── SpiritMessage — bubble-first layout; actions in-bubble (Prompt 9B) ───────────
+// ── SpiritMessage - bubble-first layout; actions in-bubble (Prompt 9B) ───────────
 import type { UIMessage } from "ai";
 import { motion } from "framer-motion";
 import { memo, useCallback, useMemo, useState } from "react";
@@ -26,7 +26,7 @@ export type SpiritMessageProps = {
   onEditSave?: (text: string) => void;
   onRegenerate?: () => void;
   onSpeak?: () => void | Promise<void>;
-  /** Prompt 10B — read full assistant reply in TTS-safe chunks */
+  /** Prompt 10B - read full assistant reply in TTS-safe chunks */
   onSpeakFullChunks?: () => void | Promise<void>;
   assistantLongVoice?: boolean;
   speakDisabled?: boolean;
@@ -34,7 +34,7 @@ export type SpiritMessageProps = {
   /** Dexie workspace: message actions use a portal sheet below the `lg` breakpoint. */
   useActionSheetBelowLg?: boolean;
   onCopyFeedback?: (ok: boolean) => void;
-  /** Prompt 10C-C — strip fake [n] / Sources when Researcher had zero verified URLs */
+  /** Prompt 10C-C - strip fake [n] / Sources when Researcher had zero verified URLs */
   stripFakeResearchCitations?: boolean;
   /** When assistant had verified web sources, rewrite degenerate ## Sources from header JSON */
   webSourcesSnapshot?: SpiritWebSourcesHeaderPayload | null;
@@ -76,7 +76,6 @@ export const SpiritMessage = memo(function SpiritMessage({
 
   return (
     <motion.div
-      layout
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}

@@ -1,6 +1,6 @@
 "use client";
 
-// ── useChatFolders — Dexie.live folder rail (Prompt 5; no drag ghosts yet) ──────
+// ── useChatFolders - Dexie.live folder rail (Prompt 5; no drag ghosts yet) ──────
 import { useLiveQuery } from "dexie-react-hooks";
 import { useCallback, useMemo } from "react";
 

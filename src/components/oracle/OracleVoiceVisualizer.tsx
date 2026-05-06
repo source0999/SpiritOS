@@ -1,6 +1,6 @@
 "use client";
 
-// ── OracleVoiceVisualizer — state-driven bars (+ optional mic level) ─────────────
+// ── OracleVoiceVisualizer - state-driven bars (+ optional mic level) ─────────────
 // > Decorative lane: parent supplies `OracleVisualState` from live session logic.
 
 import type { CSSProperties } from "react";

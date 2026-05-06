@@ -1,6 +1,6 @@
 "use client";
 
-// ── ResearchPlanPanel — plan gate before /api/spirit research (Prompt 10C-D) ─────
+// ── ResearchPlanPanel - plan gate before /api/spirit research (Prompt 10C-D) ─────
 // > Sits above the composer, not under sticky chrome. Internal scroll + sticky actions.
 
 import { Plus, Play, Trash2, X } from "lucide-react";
@@ -75,13 +75,13 @@ export const ResearchPlanPanel = memo(function ResearchPlanPanel({
             </p>
             <p className="mt-0.5 font-mono text-[11px] text-chalk/75">
               Edit the checklist, then <span className="text-[color:var(--spirit-accent-strong)]">Start research</span>{" "}
-              — nothing hits /api/spirit until you do.
+              - nothing hits /api/spirit until you do.
             </p>
             <p
               data-testid="research-plan-no-cot"
               className="mt-1 font-mono text-[9px] text-chalk/40"
             >
-              No private chain-of-thought — editable checklist only.
+              No private chain-of-thought - editable checklist only.
             </p>
           </div>
           <button

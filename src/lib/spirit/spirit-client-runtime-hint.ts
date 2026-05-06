@@ -8,7 +8,7 @@ export function getSpiritChatRuntimeDisplayLabel(): string {
   return "Hermes-class (local Ollama)";
 }
 
-/** Activity panel + Oracle chrome — chat shows local model hint; Oracle is explicit. */
+/** Activity panel + Oracle chrome - chat shows local model hint; Oracle is explicit. */
 export function getSpiritRuntimeSurfaceDisplayLabel(surface: SpiritRuntimeSurface): string {
   if (surface === "oracle") return "Oracle";
   return getSpiritChatRuntimeDisplayLabel();

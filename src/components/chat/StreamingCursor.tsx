@@ -1,6 +1,6 @@
 "use client";
 
-// ── StreamingCursor — cyan blink on the tail of the in-flight assistant bubble ──
+// ── StreamingCursor - cyan blink on the tail of the in-flight assistant bubble ──
 import { memo } from "react";
 
 import { cn } from "@/lib/cn";

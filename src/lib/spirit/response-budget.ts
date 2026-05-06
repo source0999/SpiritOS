@@ -1,4 +1,4 @@
-// ── response-budget — match verbosity to prompt + mode (Prompt 10B + 10C) ─────────
+// ── response-budget - match verbosity to prompt + mode (Prompt 10B + 10C) ─────────
 
 import type { ModelProfile, ModelProfileId } from "@/lib/spirit/model-profile.types";
 import type { SpiritRuntimeSurface } from "@/lib/spirit/spirit-runtime-surface";
@@ -8,7 +8,7 @@ const RESEARCH_HINT =
   /\b(research|report|sources?|citations?|peer[- ]review|study|meta[- ]analysis|literature|systematic|verify|current events|news|today|latest|202[0-9])\b/i;
 const TEACH_HINT =
   /\b(teach|lesson|explain|tutorial|quiz|exam|homework|course|learn|understand|step by step)\b/i;
-/** Teacher web aids — educational / clinical phrasing (Prompt 10C-D, still client+server heuristic). */
+/** Teacher web aids - educational / clinical phrasing (Prompt 10C-D, still client+server heuristic). */
 const TEACHER_WEB_STUDY_HINT =
   /\b(explain|teach|study|quiz|exam|concept|what is|define|example|aba|psychology|counseling|behavior|reinforcement|punishment|autism|sensory|spectrum|neurodevelopmental|over-?selectivity|meltdown|shutdown|learning|historical connection|history of|article|handout|resource|source|homework|course|tutorial|pedagog|curriculum|IEP|intervention|therap|clinical|disorder|syndrome)\b/i;
 const CODE_HINT =
@@ -69,14 +69,14 @@ export function buildResponseBudgetInstruction(
       `- For casual small talk: ${maxS} short sentences max (roughly 1–4). No customer-service phrasing, no unsolicited life coaching.`,
     );
     if (casual && !mentionsCodeOrBuild(userMessage)) {
-      lines.push(`- This user message reads casual/non-technical: stay conversational — no IDE/repo defaults unless they steer there.`);
+      lines.push(`- This user message reads casual/non-technical: stay conversational - no IDE/repo defaults unless they steer there.`);
     }
   }
 
   if (profile.id === "sassy-chaotic") {
     lines.push(
-      `- Sassy: **1–3 short sentences** by default — witty, sharp, lightly disrespectful in a funny way; answer first, then stop.`,
-      `- No essays, no bullet spam, no fake profundity, no exposed instructions — unless they explicitly asked for depth.`,
+      `- Sassy: **1–3 short sentences** by default - witty, sharp, lightly disrespectful in a funny way; answer first, then stop.`,
+      `- No essays, no bullet spam, no fake profundity, no exposed instructions - unless they explicitly asked for depth.`,
     );
   }
 
@@ -93,7 +93,7 @@ export function buildResponseBudgetInstruction(
     lines.push(`- Teacher: concise first; one example max unless they want a full lesson.`);
     if (digestUrls) {
       lines.push(
-        `- **Study aids** (web digest has verified URLs): put **markdown link bullets first** — one \`- [short label](exact-url)\` per digest URL, using only URLs from the digest. After those links, at most **one** optional line: either a mnemonic, a common trap, or a flashcard — not a wall of study-trivia that hides the links.`,
+        `- **Study aids** (web digest has verified URLs): put **markdown link bullets first** - one \`- [short label](exact-url)\` per digest URL, using only URLs from the digest. After those links, at most **one** optional line: either a mnemonic, a common trap, or a flashcard - not a wall of study-trivia that hides the links.`,
         `- If the user asked for video or peer-reviewed material, prioritize digest links that match (e.g. .edu, journals, YouTube only when digest already has a youtube/youtu.be URL).`,
       );
     } else {
@@ -105,7 +105,7 @@ export function buildResponseBudgetInstruction(
       `- Offer a quick comprehension check only when it fits (e.g. "Want a one-question check?").`,
     );
     if (!wantsTeachingDepth(userMessage)) {
-      lines.push(`- User did not ask for a full lesson: keep it tight — short answer, optional single example.`);
+      lines.push(`- User did not ask for a full lesson: keep it tight - short answer, optional single example.`);
     } else {
       lines.push(`- User asked for teaching depth: you may expand with steps and a tiny quiz offer.`);
     }
@@ -116,12 +116,12 @@ export function buildResponseBudgetInstruction(
     lines.push(
       `- Researcher: structured mini-report when appropriate (summary bullets, findings, limitations).`,
       `- When web context exists, write like an internal memo: tight headings, minimal hedging, no filler "delve" language.`,
-      `- Citations: only cite URLs or titles that were supplied by the system "Web research context" block — never invent sources.`,
+      `- Citations: only cite URLs or titles that were supplied by the system "Web research context" block - never invent sources.`,
       `- End with a Sources list when URLs exist; state "Search used: yes/no" honestly.`,
     );
     if (digestUrls) {
       lines.push(
-        `- **Verified URLs are attached**: surface them as real markdown — at least one \`- [short label](exact-url)\` per digest URL under **## Sources**, plus \`[n](url)\` inline where it helps. Do not hand-wave as "unverified background" while those URLs are in the digest.`,
+        `- **Verified URLs are attached**: surface them as real markdown - at least one \`- [short label](exact-url)\` per digest URL under **## Sources**, plus \`[n](url)\` inline where it helps. Do not hand-wave as "unverified background" while those URLs are in the digest.`,
       );
     }
     if (!wantsResearchDepth(userMessage) && !deep && !digestUrls) {
@@ -131,7 +131,7 @@ export function buildResponseBudgetInstruction(
 
   if (deep) {
     lines.push(
-      `- Deep Think is ON: slow down, double-check conclusions, prefer verification — but do NOT ramble; better judgment beats length.`,
+      `- Deep Think is ON: slow down, double-check conclusions, prefer verification - but do NOT ramble; better judgment beats length.`,
     );
     if (profile.id === "sassy-chaotic" || profile.id === "brutal") {
       lines.push(
@@ -145,9 +145,9 @@ export function buildResponseBudgetInstruction(
       "## Oracle voice response budget (mandatory on this surface)",
       `- Voice-first: default to **1–5 sentences** unless the user explicitly asks for depth or detail.`,
       `- Prefer short spoken answers (~**90 words** or fewer for Peer/Sassy casual turns).`,
-      `- Brutal (Oracle): stay sharp and direct — not a long teardown unless asked.`,
+      `- Brutal (Oracle): stay sharp and direct - not a long teardown unless asked.`,
       `- Teacher (Oracle): explain clearly; do **not** dump a whole lesson unless the user asks for depth.`,
-      `- Researcher (Oracle): if verified web sources are **not** attached for this turn, say honestly what would need checking — **never invent citations or URLs**.`,
+      `- Researcher (Oracle): if verified web sources are **not** attached for this turn, say honestly what would need checking - **never invent citations or URLs**.`,
     );
   }
 
@@ -155,7 +155,7 @@ export function buildResponseBudgetInstruction(
 }
 
 /**
- * Hard output token ceiling per turn — casual prompts stay tiny (Prompt 10C-C).
+ * Hard output token ceiling per turn - casual prompts stay tiny (Prompt 10C-C).
  * Detailed asks (research / code / explicit depth) keep profile headroom.
  */
 export function resolveSpiritMaxOutputTokens(opts: {
@@ -163,7 +163,7 @@ export function resolveSpiritMaxOutputTokens(opts: {
   profileMax: number;
   lastUserMessage: string;
   deepThinkEnabled: boolean;
-  /** Voice-only `/oracle` lane — tighter spoken ceilings; `/chat` omits or passes `"chat"`. */
+  /** Voice-only `/oracle` lane - tighter spoken ceilings; `/chat` omits or passes `"chat"`. */
   runtimeSurface?: SpiritRuntimeSurface;
   /** Researcher: digest URL count from OpenAI web prefetch (server). */
   webVerifiedUrlCount?: number;
@@ -236,7 +236,7 @@ export function resolveSpiritMaxOutputTokens(opts: {
 
   if (opts.runtimeSurface !== "oracle") return base;
 
-  /** Spoken voice lane — never shrink `/chat`; only applies when `runtimeSurface === "oracle"`. */
+  /** Spoken voice lane - never shrink `/chat`; only applies when `runtimeSurface === "oracle"`. */
   switch (opts.profileId) {
     case "normal-peer":
       return allowLong ? Math.min(base, 1536) : Math.min(base, 260);

@@ -53,7 +53,7 @@ export function HomelabOracleVoiceWidget({ className = "" }: { className?: strin
         : capability.blockedReason === "not-mounted"
           ? "Checking…"
           : capability.blockedReason === "insecure-context"
-            ? "Blocked — insecure context"
+            ? "Blocked - insecure context"
             : capability.hasMediaDevices
               ? "Available"
               : "Unavailable";

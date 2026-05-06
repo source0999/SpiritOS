@@ -1,6 +1,6 @@
 "use client";
 
-// ── Class error boundary — catches render-phase explosions from hooks/kids ────
+// ── Class error boundary - catches render-phase explosions from hooks/kids ────
 // > Hooks can't try/catch; this is the sanctioned escape hatch. Logs loudly.
 import {
   Component,
@@ -38,7 +38,7 @@ export class ClientFailSafe extends Component<Props, State> {
           <div style={{ textAlign: "center", maxWidth: 480, padding: 16 }}>
             <div style={{ color: "#94a3b8" }}>Booting Spirit OS…</div>
             <p style={{ marginTop: 12, color: "#f87171", fontSize: 11, lineHeight: 1.5 }}>
-              Client fault — {e.message}
+              Client fault - {e.message}
             </p>
           </div>
         </div>

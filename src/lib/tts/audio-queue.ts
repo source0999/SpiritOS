@@ -1,11 +1,11 @@
-// ── AudioQueue — /api/tts + WebAudio + HTMLAudio fallback (Prompt 9G hard interrupt) ─
-// > Chaining speak() behind `this.chain.then` was leaving B waiting on A’s fetch — UX rot.
+// ── AudioQueue - /api/tts + WebAudio + HTMLAudio fallback (Prompt 9G hard interrupt) ─
+// > Chaining speak() behind `this.chain.then` was leaving B waiting on A’s fetch - UX rot.
 // > Interrupt resets the promise tail; stale runSession finally must not nuke the new session’s op.
 // > Generation gate: every interrupt/stop bumps playGeneration; async tails bail before play.
 import { parseTtsSegments, type TtsSegment } from "@/lib/tts/tts-parser";
 import { decodeTtsVoiceNameFromHeader } from "@/lib/tts/safe-tts-headers";
 
-/** User-facing copy — VoiceSettingsPanel + toast-adjacent; keep in sync with VoiceSettingsPanel filters. */
+/** User-facing copy - VoiceSettingsPanel + toast-adjacent; keep in sync with VoiceSettingsPanel filters. */
 export const TTS_AUDIO_BLOCKED_MESSAGE =
   "Audio blocked. Tap Enable audio, then try Speak again.";
 
@@ -27,7 +27,7 @@ export type TtsLatency = {
   voiceId?: string;
   /** Friendly label (client-selected name at request time). */
   voiceName?: string;
-  /** Prompt 10B — e.g. "Spoken: summary (message was long)" */
+  /** Prompt 10B - e.g. "Spoken: summary (message was long)" */
   spokenSummaryLine?: string;
 };
 
@@ -79,7 +79,7 @@ function isLikelyIos(): boolean {
   return /iP(hone|ad|od)/i.test(navigator.userAgent);
 }
 
-/** Tiny silent WAV (MDN-style data URL) — primes `HTMLAudioElement` on iOS inside user activation. */
+/** Tiny silent WAV (MDN-style data URL) - primes `HTMLAudioElement` on iOS inside user activation. */
 const IOS_SILENT_WAV_DATA_URL =
   "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
 
@@ -116,7 +116,7 @@ export class AudioQueue {
   private htmlAudioObjectUrl: string | null = null;
   /**
    * iOS Safari: `play()` on a fresh `Audio(blob)` after async `/api/tts` often throws
-   * NotAllowedError — the element was not created during the user gesture. We keep the
+   * NotAllowedError - the element was not created during the user gesture. We keep the
    * silent `Audio()` primed in `syncPrimeFromUserGesture` and reuse it for real chunks.
    */
   private iosCarrierAudioEl: HTMLAudioElement | null = null;
@@ -186,7 +186,7 @@ export class AudioQueue {
   }
 
   /**
-   * Synchronous audio priming — MUST run before any `await` inside the same user gesture
+   * Synchronous audio priming - MUST run before any `await` inside the same user gesture
    * (iOS Safari revokes activation across microtasks). Invoked from `ensureAudioUnlocked`.
    */
   private syncPrimeFromUserGesture(): void {
@@ -223,7 +223,7 @@ export class AudioQueue {
       (a as HTMLAudioElement & { playsInline?: boolean }).playsInline = true;
       a.volume = 0.0001;
       void a.play().catch(() => {});
-      // Reuse this element for blob TTS — new Audio(blobUrl) is not gesture-blessed.
+      // Reuse this element for blob TTS - new Audio(blobUrl) is not gesture-blessed.
       if (isLikelyIos()) this.iosCarrierAudioEl ??= a;
     } catch {
       /* ignore */
@@ -232,7 +232,7 @@ export class AudioQueue {
   }
 
   /**
-   * Resume AudioContext — call from a tap/handler before playback.
+   * Resume AudioContext - call from a tap/handler before playback.
    * @returns false if context exists but could not enter `running` (mobile gesture / policy).
    */
   async ensureAudioUnlocked(): Promise<boolean> {
@@ -368,7 +368,7 @@ export class AudioQueue {
     if (process.env.NODE_ENV === "development") {
       console.info("[tts] interrupt current playback");
     }
-    // ── Do NOT chain behind the old tail — B must not wait for A’s fetch/decode/play.
+    // ── Do NOT chain behind the old tail - B must not wait for A’s fetch/decode/play.
     this.chain = Promise.resolve()
       .catch(() => {})
       .then(async () => {
@@ -883,7 +883,7 @@ export class AudioQueue {
     } finally {
       this.sessionPreferHtmlAudioFirst = false;
       this.sessionSpokenSummaryLine = undefined;
-      // ── Stale tail must NOT call hardStopPlayback — it would murder the new session’s op/sources.
+      // ── Stale tail must NOT call hardStopPlayback - it would murder the new session’s op/sources.
       if (!this.stale(expectedGeneration)) {
         this.hardStopPlayback();
       }

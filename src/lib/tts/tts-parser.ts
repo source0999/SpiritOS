@@ -1,4 +1,4 @@
-// ── tts-parser — pause markers + light markdown strip for speech (Prompt 9) ────
+// ── tts-parser - pause markers + light markdown strip for speech (Prompt 9) ────
 
 export type TtsSegment =
   | { type: "speech"; text: string }

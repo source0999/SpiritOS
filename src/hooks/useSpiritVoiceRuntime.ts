@@ -1,6 +1,6 @@
 "use client";
 
-// ── useSpiritVoiceRuntime — TTS + speak helpers (shared by /chat and /oracle) ─────
+// ── useSpiritVoiceRuntime - TTS + speak helpers (shared by /chat and /oracle) ─────
 import type { UIMessage } from "ai";
 import { useCallback, useLayoutEffect, useMemo, useRef } from "react";
 
@@ -30,7 +30,7 @@ export type UseSpiritVoiceRuntimeInput = {
   /** Saved-chat logging + activity spam; Oracle can silence extras */
   activityLoggingShell: boolean;
   messages: UIMessage[];
-  /** Proof row from last assistant finish — researcher citation hygiene */
+  /** Proof row from last assistant finish - researcher citation hygiene */
   assistantSourceProof: AssistantSourceProofState;
   /** Called when voice timing / errors should touch SpiritActivityPanel */
   pushActivity?: (e: Omit<SpiritActivityEvent, "id" | "at">) => void;
@@ -147,7 +147,7 @@ export function useSpiritVoiceRuntime(
   );
 }
 
-/** Ref snapshot for transport `onFinish` — avoids stale hook closures during streaming */
+/** Ref snapshot for transport `onFinish` - avoids stale hook closures during streaming */
 export function useTtsSpeakGateRef(tts: SpiritTTS) {
   const ttsSpeakGateRef = useRef({ isEnabled: false, autoSpeakAssistant: false });
   useLayoutEffect(() => {

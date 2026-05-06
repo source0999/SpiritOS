@@ -14,8 +14,8 @@ import {
   parseOptionalTtsVoiceNameField,
 } from "@/lib/tts/tts-http";
 
-// ── /api/tts — same-origin TTS (Piper / ElevenLabs); no browser → secrets (Prompt 9C) ─
-// > Prompt 9K: voice name headers are percent-encoded — raw Unicode en-dash nuked ByteString on Tailscale.
+// ── /api/tts - same-origin TTS (Piper / ElevenLabs); no browser → secrets (Prompt 9C) ─
+// > Prompt 9K: voice name headers are percent-encoded - raw Unicode en-dash nuked ByteString on Tailscale.
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
 

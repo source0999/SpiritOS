@@ -1,6 +1,6 @@
 "use client";
 
-// ── ChatThreadDragOverlay — ghost card under cursor (oldSpiritOS ThreadDragOverlay) ─
+// ── ChatThreadDragOverlay - ghost card under cursor (oldSpiritOS ThreadDragOverlay) ─
 import { memo } from "react";
 
 import type { ChatThread } from "@/lib/chat-db.types";

@@ -1,4 +1,4 @@
-// ── capability-intent — categorized detector for deterministic /api/spirit replies ─
+// ── capability-intent - categorized detector for deterministic /api/spirit replies ─
 // > Order matters: narrow intents before broad; false negatives beat hijacking normal chat.
 
 export type CapabilityIntentKind =
@@ -11,7 +11,7 @@ export type CapabilityIntentKind =
   | "tool_inventory"
   | "general_capabilities";
 
-/** Exported for tests — normalizes typos like "capabilites" before pattern matching */
+/** Exported for tests - normalizes typos like "capabilites" before pattern matching */
 export function normalizeForCapabilityIntent(raw: string): string {
   let s = raw.trim().toLowerCase();
   s = s.replace(/\s+/g, " ");
@@ -29,7 +29,7 @@ export function normalizeForCapabilityIntent(raw: string): string {
   return s.trim();
 }
 
-/** Avoid matching “what can you see wrong with this” — only pure capability asks */
+/** Avoid matching “what can you see wrong with this” - only pure capability asks */
 function isStandaloneWhatCanYouSeeOrControl(t: string): boolean {
   return (
     /^(what\s+can\s+you\s+see)(\s*[?.!])*$/i.test(t) ||
@@ -56,7 +56,7 @@ const GENERAL_STRONG: RegExp[] = [
   /\bspirit(os)?\s+capabilities\b/i,
 ];
 
-/** Filesystem / path ops — not drive-level “see” visibility */
+/** Filesystem / path ops - not drive-level “see” visibility */
 function matchesFileAccessIntent(t: string): boolean {
   if (
     /\b(can\s+you\s+)?(browse|list|open)\b.*\b(files?|folders?|directories?)\b/i.test(t)
@@ -66,7 +66,7 @@ function matchesFileAccessIntent(t: string): boolean {
   if (/\b(list|browse)\b.*\b(my\s+)?files?\b/i.test(t)) return true;
   if (/\b(show\s+folders|list\s+files)\b/i.test(t)) return true;
   if (/\b(can\s+you\s+)?(read|write|edit|delete|move)\b.*\bfiles?\b/i.test(t)) return true;
-  // Path + browse/list/open (no “see” — that’s storage visibility)
+  // Path + browse/list/open (no “see” - that’s storage visibility)
   if (
     (/\bc:[\\\/]/i.test(t) || /\bc\s*drive\b/i.test(t) || /\bd\s*drive\b/i.test(t)) &&
     /\b(browse|list|open)\b/i.test(t)
@@ -80,7 +80,7 @@ function matchesFileAccessIntent(t: string): boolean {
   return false;
 }
 
-/** See drives / storage volumes — not browse/list files (exported for storage formatter) */
+/** See drives / storage volumes - not browse/list files (exported for storage formatter) */
 export function matchesStorageVisibilityIntent(t: string): boolean {
   if (matchesFileAccessIntent(t)) return false;
 

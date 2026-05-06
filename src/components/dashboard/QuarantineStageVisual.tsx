@@ -33,7 +33,7 @@ type Props = {
   variant?: "embedded" | "page";
 };
 
-// ── Quarantine visual — orb + spectrum (prototype / standby copy only) ─────────
+// ── Quarantine visual - orb + spectrum (prototype / standby copy only) ─────────
 // > No live mic or reactive audio claims until the stack is actually wired.
 
 export function QuarantineStageVisual({ variant = "embedded" }: Props) {
@@ -58,7 +58,7 @@ export function QuarantineStageVisual({ variant = "embedded" }: Props) {
           Visualizer standby
         </h2>
         <p className="mt-2 max-w-md text-sm leading-relaxed text-chalk/50">
-          Prototype containment visuals only — no live uplink, no mic capture, and no
+          Prototype containment visuals only - no live uplink, no mic capture, and no
           streaming audio path in this build.
         </p>
 
@@ -102,7 +102,7 @@ export function QuarantineStageVisual({ variant = "embedded" }: Props) {
             <p className="mt-1.5">
               Tap-to-talk uses the browser{" "}
               <span className="font-mono text-chalk/65">Web Speech API</span> when available;
-              text fallback always works. Still experimental — no persistent Oracle threads, wake
+              text fallback always works. Still experimental - no persistent Oracle threads, wake
               word, or local Whisper yet (
               <a
                 href="/oracle"
@@ -118,7 +118,7 @@ export function QuarantineStageVisual({ variant = "embedded" }: Props) {
               Prototype · standby
             </p>
             <p className="mt-2 text-center text-sm leading-snug text-chalk/50">
-              This page stays a decorative visualizer lab — outbound voice sessions live on{" "}
+              This page stays a decorative visualizer lab - outbound voice sessions live on{" "}
               <a
                 href="/oracle"
                 className="text-[color:var(--spirit-accent-strong)] underline underline-offset-4 hover:brightness-110"

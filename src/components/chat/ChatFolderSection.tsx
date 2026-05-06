@@ -1,6 +1,6 @@
 "use client";
 
-// ── ChatFolderSection — folder droppable + per-folder SortableContext (oldSpiritOS) ─
+// ── ChatFolderSection - folder droppable + per-folder SortableContext (oldSpiritOS) ─
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { ChevronRight, FolderOpen, PenLine, Trash2 } from "lucide-react";
@@ -21,7 +21,7 @@ export type ChatFolderHeaderRowProps = {
   locked: boolean;
   onToggle: () => void;
   onRename: () => void;
-  /** Called only after inline confirm — never deletes threads. */
+  /** Called only after inline confirm - never deletes threads. */
   onDeleteConfirmed: () => void;
 };
 
@@ -298,7 +298,7 @@ export const ChatFolderSection = memo(function ChatFolderSection({
       ) : (
         <div className="ml-1 min-h-[24px] border-l border-[color:color-mix(in_oklab,var(--spirit-border)_40%,transparent)] pl-1.5">
           <p className="py-0.5 pl-0.5 font-mono text-[8px] text-chalk/35">
-            Collapsed — drop to file
+            Collapsed - drop to file
           </p>
         </div>
       )}

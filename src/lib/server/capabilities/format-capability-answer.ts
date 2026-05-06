@@ -29,7 +29,7 @@ function fmtBytes(n: number | null | undefined): string {
   return `${Math.round(n)} B`;
 }
 
-/** Voice-friendly cap — Oracle should not read a telemetry novel */
+/** Voice-friendly cap - Oracle should not read a telemetry novel */
 function oracleClamp(surface: SpiritRuntimeSurface, text: string): string {
   if (surface !== "oracle") return text;
   const parts = text
@@ -107,7 +107,7 @@ function formatFileAccess(input: FormatCapabilityAnswerInput): string {
   const { registry, runtimeSurface: surface } = input;
   if (surface === "oracle") {
     return [
-      "No, not yet — folder browsing and file listing aren’t wired as app tools.",
+      "No, not yet - folder browsing and file listing aren’t wired as app tools.",
       "I can still see drive-level storage telemetry (used/total per volume) where agents report it.",
     ].join(" ");
   }
@@ -117,7 +117,7 @@ function formatFileAccess(input: FormatCapabilityAnswerInput): string {
     "No, not yet. I can see **drive-level** telemetry for volumes like **C:** (used/total from agents), but **folder browsing and file listing** are not wired as app tools yet.",
   );
   lines.push(
-    "That’s aggregate storage rows in telemetry — not walking `C:\\Users\\...` or enumerating directories from chat.",
+    "That’s aggregate storage rows in telemetry - not walking `C:\\Users\\...` or enumerating directories from chat.",
   );
 
   const withStorage = registry.nodes.filter(
@@ -139,20 +139,20 @@ function formatDesktopControl(input: FormatCapabilityAnswerInput): string {
 
   if (surface === "oracle") {
     return [
-      "Not from the app yet — chat and Oracle don’t have an SSH command tool wired.",
+      "Not from the app yet - chat and Oracle don’t have an SSH command tool wired.",
       "You can still SSH manually on the machine side (e.g. your Dell) outside SpiritOS.",
     ].join(" ");
   }
 
   const lines: string[] = [];
   lines.push(
-    "Not from the SpiritOS app yet — there’s no remote-desktop or app-level SSH command tool in this chat path.",
+    "Not from the SpiritOS app yet - there’s no remote-desktop or app-level SSH command tool in this chat path.",
   );
   lines.push(
     `I **do** see nodes in telemetry (${labels || "none listed"}). You can still use **manual SSH** on the machine side if that’s how you work today.`,
   );
   lines.push(
-    "In-app SSH / WinRM would be a future, approval-gated tool — it’s **not** hooked up here yet.",
+    "In-app SSH / WinRM would be a future, approval-gated tool - it’s **not** hooked up here yet.",
   );
   return lines.join("\n\n");
 }
@@ -203,14 +203,14 @@ function formatAiRuntime(opts: {
     modelMentionsHermes(oracle) ||
     modelMentionsHermes(activeResolvedModelId);
   if (hermesNote) {
-    lines.push("Yes — that tag reads as a Hermes-class model from routing config.");
+    lines.push("Yes - that tag reads as a Hermes-class model from routing config.");
   }
 
   if (ollamaReachable === true) {
     lines.push("Ollama OpenAI-compat endpoint responded **reachable** on the last probe.");
   } else if (ollamaReachable === false) {
     lines.push(
-      "Ollama did **not** answer the quick compat probe — the tag is still what’s configured, but the host may be down.",
+      "Ollama did **not** answer the quick compat probe - the tag is still what’s configured, but the host may be down.",
     );
   }
 
@@ -218,7 +218,7 @@ function formatAiRuntime(opts: {
   return lines.join("\n\n");
 }
 
-/** Live overview for “what can you do / capabilities / tools” — no CPU/RAM dump */
+/** Live overview for “what can you do / capabilities / tools” - no CPU/RAM dump */
 function formatSpiritOsOverview(opts: {
   registry: CapabilityRegistryResponse;
   diagnostics: SpiritDiagnosticsPayload;
@@ -232,9 +232,9 @@ function formatSpiritOsOverview(opts: {
 
   if (runtimeSurface === "oracle") {
     return [
-      `I have live read-only cluster awareness right now — nodes: ${nodeNames || "none registered"}.`,
+      `I have live read-only cluster awareness right now - nodes: ${nodeNames || "none registered"}.`,
       `Chat model \`${diagnostics.chatModel}\`, this voice lane resolves to \`${activeResolvedModelId}\`. Registry tools: ${toolNames}.`,
-      "App-level folder browsing, file tools, SSH shell from chat, and desktop control are **not wired yet** — only telemetry plus normal repo chat.",
+      "App-level folder browsing, file tools, SSH shell from chat, and desktop control are **not wired yet** - only telemetry plus normal repo chat.",
     ].join(" ");
   }
 
@@ -248,7 +248,7 @@ function formatSpiritOsOverview(opts: {
     `- See cluster nodes through telemetry: ${nodeNames || "none in this poll"}.`,
   );
   lines.push(
-    "- Report CPU, RAM, uptime, and aggregate storage telemetry when agents expose it — I won’t paste full hardware numbers here unless you ask for a hardware summary.",
+    "- Report CPU, RAM, uptime, and aggregate storage telemetry when agents expose it - I won’t paste full hardware numbers here unless you ask for a hardware summary.",
   );
   lines.push(
     `- Report AI runtime and routing: chat \`${diagnostics.chatModel}\`, Oracle lane \`${diagnostics.oracleLaneModel}\`, this request \`${activeResolvedModelId}\` on **${runtimeSurface}**.`,
@@ -263,7 +263,7 @@ function formatSpiritOsOverview(opts: {
   lines.push("");
   lines.push("**What I cannot do from the app yet:**");
   lines.push(
-    "- Browse or list arbitrary folders (like `C:\\`) or read/write/move/delete files through dedicated tools — those aren’t wired yet.",
+    "- Browse or list arbitrary folders (like `C:\\`) or read/write/move/delete files through dedicated tools - those aren’t wired yet.",
   );
   lines.push(
     "- Run SSH/WinRM commands, open arbitrary desktop apps, or drive the GUI from chat.",
@@ -354,7 +354,7 @@ function formatSeeDriveTelemetry(
     const tailChat =
       "I don’t see that volume in the current storage telemetry. I can only report drives exposed by the active agents.";
     return surface === "oracle"
-      ? `I don’t see **${letterList.map((l) => `${l.toUpperCase()}:`).join("/")}** in this poll’s storage telemetry — only drives active agents expose.`
+      ? `I don’t see **${letterList.map((l) => `${l.toUpperCase()}:`).join("/")}** in this poll’s storage telemetry - only drives active agents expose.`
       : `${tailChat}\n\nIf the host is online but the drive is missing, the collector may not have shipped storage rows yet for that node.`;
   }
 
@@ -387,7 +387,7 @@ function formatSeeDriveTelemetry(
             .map((c) => `**${c.letter}:**`)
             .join(", ")}.`
         : "";
-    return `Yes — **${first.letter}:** shows on **${first.node}** in storage telemetry (${first.used}).${also} I can’t browse folders or list files inside those volumes from the app yet.`;
+    return `Yes - **${first.letter}:** shows on **${first.node}** in storage telemetry (${first.used}).${also} I can’t browse folders or list files inside those volumes from the app yet.`;
   }
 
   const primary = chunks[0]!;
@@ -402,7 +402,7 @@ function formatSeeDriveTelemetry(
   return [
     `Yes. I can see **${primary.letter}:** through storage telemetry on **${primary.node}**, including total size and used space (${primary.used}).${alsoLine}`,
     "",
-    "I **cannot** browse folders or list files inside those paths from the app yet — telemetry is drive-level totals only.",
+    "I **cannot** browse folders or list files inside those paths from the app yet - telemetry is drive-level totals only.",
   ].join("\n");
 }
 
@@ -439,14 +439,14 @@ function formatStorageTelemetryInventory(
       summaryBits.length > 0
         ? summaryBits.join(" · ")
         : "No drive rows in this telemetry poll.";
-    return `Storage snapshot: ${body} — tiny OEM partitions omitted unless you ask for all/system volumes. I can’t browse folders from chat yet.`;
+    return `Storage snapshot: ${body} - tiny OEM partitions omitted unless you ask for all/system volumes. I can’t browse folders from chat yet.`;
   }
 
   for (const n of registry.nodes) {
     const snap = n.telemetrySnapshot;
     const live = n.capabilities.telemetry.enabled;
     if (!live) {
-      rows.push(`**${n.label}** — offline; no live storage snapshot.`);
+      rows.push(`**${n.label}** - offline; no live storage snapshot.`);
       continue;
     }
     const drives = snap.storage?.drives ?? [];
@@ -454,12 +454,12 @@ function formatStorageTelemetryInventory(
     const skipped = drives.length - filtered.length;
     if (filtered.length === 0) {
       rows.push(
-        `**${n.label}** — ${drives.length ? `${skipped} volume(s) hidden as small/system (ask for “all” or “debug” to include).` : "no drives listed in this poll."}`,
+        `**${n.label}** - ${drives.length ? `${skipped} volume(s) hidden as small/system (ask for “all” or “debug” to include).` : "no drives listed in this poll."}`,
       );
       continue;
     }
     if (skipped > 0) {
-      rows.push(`**${n.label}** — (${skipped} tiny/system volume(s) hidden)`);
+      rows.push(`**${n.label}** - (${skipped} tiny/system volume(s) hidden)`);
     }
     for (const d of filtered) {
       const used =
@@ -469,7 +469,7 @@ function formatStorageTelemetryInventory(
             ? `${d.usedPct.toFixed(0)}% used`
             : "usage n/a";
       rows.push(
-        `**${n.label}** — ${d.name} (${d.mount ?? "unmounted"}): ~${used}, type ${d.type}.`,
+        `**${n.label}** - ${d.name} (${d.mount ?? "unmounted"}): ~${used}, type ${d.type}.`,
       );
     }
   }
@@ -514,7 +514,7 @@ function formatHardwareSummary(registry: CapabilityRegistryResponse): string {
   for (const n of registry.nodes) {
     const snap = n.telemetrySnapshot;
     const live = n.capabilities.telemetry.enabled;
-    lines.push(`**${n.label}** (\`${n.id}\`) — ${n.status}, ${n.source}${n.platform ? `, ${n.platform}` : ""}`);
+    lines.push(`**${n.label}** (\`${n.id}\`) - ${n.status}, ${n.source}${n.platform ? `, ${n.platform}` : ""}`);
     if (!live) {
       lines.push(`  - Live CPU/RAM not available${snap.error ? ` (${snap.error})` : ""}.`);
       continue;

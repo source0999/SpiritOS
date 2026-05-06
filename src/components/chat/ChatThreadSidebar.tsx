@@ -1,6 +1,6 @@
 "use client";
 
-// ── ChatThreadSidebar — GPT rail: oldSpiritOS-style DnD + inline folder mint ────
+// ── ChatThreadSidebar - GPT rail: oldSpiritOS-style DnD + inline folder mint ────
 import { useDroppable } from "@dnd-kit/core";
 import type { DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
@@ -45,7 +45,7 @@ export type ChatThreadSidebarProps = {
   interactionDisabled?: boolean;
   muteNewChatButton?: boolean;
   onNewChat: () => void;
-  /** Committed folder name only — Dexie row is minted here, never on raw Folder click. */
+  /** Committed folder name only - Dexie row is minted here, never on raw Folder click. */
   onCreateFolder: (trimmedName: string) => boolean | void | Promise<boolean | void>;
   onSelectThread: (id: string) => void;
   onRenameThread: (id: string) => void;
@@ -64,7 +64,7 @@ export type ChatThreadSidebarProps = {
   /** Drawer-only: enable @dnd-kit so iOS can reorder/move threads from the handle. */
   mobileDndEnabled?: boolean;
   className?: string;
-  /** Prompt 10A — pinned quick-access block (may duplicate rows below). */
+  /** Prompt 10A - pinned quick-access block (may duplicate rows below). */
   pinnedThreads?: ChatThread[];
   onTogglePinThread?: (threadId: string) => void;
   threadSnippets?: Record<string, string>;
@@ -109,7 +109,7 @@ export const ChatThreadSidebar = memo(function ChatThreadSidebar({
   const newFolderMuted = railLocked;
 
   // Row-wide drag steals the first pointer interaction from the title <button> (dnd-kit vs click).
-  // Handle-only keeps drag on the grip and lets thread switch work on first tap — drawer already did this.
+  // Handle-only keeps drag on the grip and lets thread switch work on first tap - drawer already did this.
   const threadDragLayout = "handle";
 
   const lgDesktop = useSyncExternalStore(
@@ -398,7 +398,7 @@ export const ChatThreadSidebar = memo(function ChatThreadSidebar({
 
       {showColdStartHint ? (
         <p className="px-3 py-6 text-center font-mono text-xs leading-relaxed text-chalk/45">
-          No saved threads yet — send a line here to freeze this lane in Dexie.
+          No saved threads yet - send a line here to freeze this lane in Dexie.
         </p>
       ) : null}
 

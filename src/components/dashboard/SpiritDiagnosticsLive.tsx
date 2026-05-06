@@ -1,7 +1,7 @@
 "use client";
 
-// ── SpiritDiagnosticsLive — single /api/spirit/health poll — one sheet, tight rows ─
-// > Chunky bordered rows were a UX war crime — strip + divides keeps the rail scannable.
+// ── SpiritDiagnosticsLive - single /api/spirit/health poll - one sheet, tight rows ─
+// > Chunky bordered rows were a UX war crime - strip + divides keeps the rail scannable.
 // > Do not spin a second poll; SpiritHealthIndicator is legacy/tests only.
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
@@ -159,30 +159,30 @@ export function SpiritDiagnosticsLive() {
   const engineVal = checking ? (
     <StatusText tone="pulse">Checking…</StatusText>
   ) : failed ? (
-    "—"
+    "-"
   ) : (
-    (d?.engine ?? "—")
+    (d?.engine ?? "-")
   );
-  const engineHint = failed ? "—" : checking ? "…" : "OpenAI-compat · local";
+  const engineHint = failed ? "-" : checking ? "…" : "OpenAI-compat · local";
 
   const modelVal = checking ? (
     <StatusText tone="pulse">Checking…</StatusText>
   ) : failed ? (
-    "—"
+    "-"
   ) : (
-    (d?.chatModel ?? data?.model ?? "—")
+    (d?.chatModel ?? data?.model ?? "-")
   );
-  const modelHint = failed ? "—" : checking ? "…" : "OLLAMA_MODEL · /chat";
+  const modelHint = failed ? "-" : checking ? "…" : "OLLAMA_MODEL · /chat";
 
   const oracleModelVal = checking ? (
     <StatusText tone="pulse">Checking…</StatusText>
   ) : failed ? (
-    "—"
+    "-"
   ) : (
-    (d?.oracleLaneModel ?? "—")
+    (d?.oracleLaneModel ?? "-")
   );
   const oracleModelHint = failed
-    ? "—"
+    ? "-"
     : checking
       ? "…"
       : "ORACLE_OLLAMA_MODEL or chat model";
@@ -190,14 +190,14 @@ export function SpiritDiagnosticsLive() {
   const oracleCapVal = checking ? (
     <StatusText tone="pulse">Checking…</StatusText>
   ) : failed ? (
-    "—"
+    "-"
   ) : typeof d?.oracleMaxOutputTokens === "number" ? (
     String(d.oracleMaxOutputTokens)
   ) : (
-    "—"
+    "-"
   );
   const oracleCapHint = failed
-    ? "—"
+    ? "-"
     : checking
       ? "…"
       : (d?.oracleMaxOutputTokensSource ?? "…");
@@ -205,23 +205,23 @@ export function SpiritDiagnosticsLive() {
   const ctxVal = checking ? (
     <StatusText tone="pulse">Checking…</StatusText>
   ) : failed ? (
-    "—"
+    "-"
   ) : (
-    (d?.context?.label ?? "—")
+    (d?.context?.label ?? "-")
   );
-  const ctxHint = failed ? "—" : checking ? "…" : (d?.context?.source ?? "…");
+  const ctxHint = failed ? "-" : checking ? "…" : (d?.context?.source ?? "…");
 
   const capVal = checking ? (
     <StatusText tone="pulse">Checking…</StatusText>
   ) : failed ? (
-    "—"
+    "-"
   ) : typeof d?.maxOutputTokens === "number" ? (
     String(d.maxOutputTokens)
   ) : (
-    "—"
+    "-"
   );
   const capHint = failed
-    ? "—"
+    ? "-"
     : checking
       ? "…"
       : (d?.maxOutputTokensSource ?? "…");
@@ -229,13 +229,13 @@ export function SpiritDiagnosticsLive() {
   const voiceVal = checking ? (
     <StatusText tone="pulse">Checking…</StatusText>
   ) : failed ? (
-    "—"
+    "-"
   ) : d?.tts ? (
     `${d.tts.provider} · ${d.tts.voice}`
   ) : (
-    "—"
+    "-"
   );
-  const voiceHint = failed ? "—" : checking ? "…" : (d?.tts?.source ?? "…");
+  const voiceHint = failed ? "-" : checking ? "…" : (d?.tts?.source ?? "…");
 
   return (
     <div className="overflow-hidden rounded-xl border border-[color:color-mix(in_oklab,var(--spirit-border)_85%,transparent)] bg-black/[0.22] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">

@@ -1,4 +1,4 @@
-// ── Spirit palette registry — add one object here, ThemeStrip follows ─────────
+// ── Spirit palette registry - add one object here, ThemeStrip follows ─────────
 // > Hook applies cssVars to documentElement; :root mirrors default for SSR paint.
 
 export const DEFAULT_THEME_ID = "frozen-water" as const;
@@ -32,7 +32,7 @@ export type SpiritPalette = {
   shortLabel: string;
   colors: readonly { name: string; hex: string }[];
   cssVars: SpiritPaletteCssVars;
-  /** dark-node lived here — alice-seagrass keeps mono rails */
+  /** dark-node lived here - alice-seagrass keeps mono rails */
   typography?: "sans" | "mono";
 };
 
@@ -81,7 +81,7 @@ export const SPIRIT_PALETTES: readonly SpiritPalette[] = [
     ],
     typography: "sans",
     cssVars: {
-      /** Dark taupe canvas — icy accents read on chalk text without rewiring every component */
+      /** Dark taupe canvas - icy accents read on chalk text without rewiring every component */
       "--spirit-bg": "#161413",
       "--spirit-bg-soft": "#1e1c1a",
       "--spirit-panel": "#242120",

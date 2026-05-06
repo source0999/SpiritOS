@@ -1,6 +1,6 @@
 "use client";
 
-// ── DemoMobileDock — sticky bottom nav for demo sections (mobile-first) ──────
+// ── DemoMobileDock - sticky bottom nav for demo sections (mobile-first) ──────
 // > Hidden on lg+ (the desktop side rail takes over).
 // > Smooth-scrolls to in-page section anchors. Active section reflected via
 // > IntersectionObserver. Reduced-motion compliant (no smooth scroll override).

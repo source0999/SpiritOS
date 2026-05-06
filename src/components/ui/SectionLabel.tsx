@@ -1,5 +1,5 @@
-// ── SectionLabel — mono uppercase rail labels (panels, cards, dl rows) ────────
-// > Extracted from: Diagnostics, Hub cards, Oracle panel — stop paste-widest hell
+// ── SectionLabel - mono uppercase rail labels (panels, cards, dl rows) ────────
+// > Extracted from: Diagnostics, Hub cards, Oracle panel - stop paste-widest hell
 import type { ReactNode } from "react";
 
 import { cn } from "@/lib/cn";

@@ -1,6 +1,6 @@
 "use client";
 
-// ── useSpiritModeRuntime — profile + personalization fields for /api/spirit (Prompt 10D) ─
+// ── useSpiritModeRuntime - profile + personalization fields for /api/spirit (Prompt 10D) ─
 import {
   useCallback,
   useEffect,
@@ -38,7 +38,7 @@ export type SpiritModeRuntime = {
   activeModelProfileId: ModelProfileId;
   activeModelProfile: ModelProfile;
   setActiveModelProfile: (id: ModelProfileId) => void | Promise<void>;
-  /** Same id as state — transport reads mid-flight without rerunning effects too late */
+  /** Same id as state - transport reads mid-flight without rerunning effects too late */
   modelProfileIdRef: MutableRefObject<ModelProfileId>;
 
   personalizationSummary: string;

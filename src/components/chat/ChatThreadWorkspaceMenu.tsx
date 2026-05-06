@@ -1,6 +1,6 @@
 "use client";
 
-// ── ChatThreadWorkspaceMenu — current thread actions without sidebar spelunking ─
+// ── ChatThreadWorkspaceMenu - current thread actions without sidebar spelunking ─
 import { FolderInput, Pencil, Pin, PinOff, Trash2, X } from "lucide-react";
 import { memo, useEffect, useRef } from "react";
 

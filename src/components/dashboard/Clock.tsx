@@ -1,6 +1,6 @@
 "use client";
 
-// ── Clock — isolated tick so DashboardClient doesn’t repaint every second ───────
+// ── Clock - isolated tick so DashboardClient doesn’t repaint every second ───────
 // > Extracted Phase 1: same markup/classes as the old header span, zero theme coupling
 
 import { useEffect, useState } from "react";

@@ -1,4 +1,4 @@
-// ── tts-http — /api/tts JSON helpers (Prompt 9H) ─────────────────────────────────
+// ── tts-http - /api/tts JSON helpers (Prompt 9H) ─────────────────────────────────
 
 export type ParsedTtsSpeed =
   | { ok: true; value: number | undefined }
@@ -54,7 +54,7 @@ export type ParsedTtsVoiceName =
 const MAX_VOICE_NAME_LEN = 120;
 
 /**
- * Optional `voiceName` — UI label only; never selects the ElevenLabs endpoint (use `voiceId`).
+ * Optional `voiceName` - UI label only; never selects the ElevenLabs endpoint (use `voiceId`).
  */
 export function parseOptionalTtsVoiceNameField(body: Record<string, unknown>): ParsedTtsVoiceName {
   if (!Object.prototype.hasOwnProperty.call(body, "voiceName")) {

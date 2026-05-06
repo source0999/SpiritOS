@@ -1,4 +1,4 @@
-// ── Model profile ids — Prompt 7 runtime layer (no model id hardcoding) ─────────
+// ── Model profile ids - Prompt 7 runtime layer (no model id hardcoding) ─────────
 
 export type ModelProfileId =
   | "normal-peer"
@@ -17,21 +17,21 @@ export type ModelProfile = {
   label: string;
   /** Dropdown + compact UI */
   shortLabel: string;
-  /** Badge line: Mode: X — one-liner hint */
+  /** Badge line: Mode: X - one-liner hint */
   responseStyleSummary: string;
   description: string;
   systemPrompt: string;
   temperature: number;
   maxOutputTokens?: number;
-  /** Prompt 10B — guides Hermes verbosity + budget helper */
+  /** Prompt 10B - guides Hermes verbosity + budget helper */
   responseBudget?: ResponseBudget;
   casualMaxSentences?: number;
   ttsDefaultStrategy?: "summary" | "full-chunks";
   thinkingDefault?: boolean;
-  /** Hint for Ollama / local providers — wire in Prompt 8+ when options API is stable. */
+  /** Hint for Ollama / local providers - wire in Prompt 8+ when options API is stable. */
   numCtx?: number;
   searchEnabled?: boolean;
-  /** Prompt 10B — Researcher wants search when it lands */
+  /** Prompt 10B - Researcher wants search when it lands */
   searchPreferred?: boolean;
   requiresCitationStyle?: boolean;
   reportStyle?: boolean;

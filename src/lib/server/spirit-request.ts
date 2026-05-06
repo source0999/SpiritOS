@@ -20,6 +20,7 @@ export type SpiritRequestBody = {
   webSearchOptOut: boolean;
   teacherWebSearchEnabled: boolean;
   researchPlanSummary?: string;
+  oracleMemoryContext?: string;
 };
 
 export async function readSpiritRequest(req: Request): Promise<SpiritRequestBody> {

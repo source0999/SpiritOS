@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-// ── Fonts: Inter is boring on purpose — it’s legible, neutral, survives PM2 glare. ─
+// ── Fonts: Inter is boring on purpose - it’s legible, neutral, survives PM2 glare. ─
 // > Serif/display cosplay belonged in Pinterest, not in your terminal OS shell.
 const inter = Inter({
   subsets: ["latin"],

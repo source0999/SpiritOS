@@ -1,4 +1,4 @@
-// ── chat-folder-utils — pure sidebar grouping + order-aware sorts (Prompt 6) ───
+// ── chat-folder-utils - pure sidebar grouping + order-aware sorts (Prompt 6) ───
 import type { ChatFolder, ChatThread } from "@/lib/chat-db.types";
 
 export type FolderSidebarSection = {
@@ -117,7 +117,7 @@ export function isDuplicateFolderName(
   );
 }
 
-/** @deprecated Prefer buildMoveSelectModel — kept for tests referencing old API */
+/** @deprecated Prefer buildMoveSelectModel - kept for tests referencing old API */
 export function buildMoveTargetsForThread(
   thread: ChatThread,
   allFolders: ChatFolder[],

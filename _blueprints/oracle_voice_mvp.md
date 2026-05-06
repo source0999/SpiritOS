@@ -1,12 +1,12 @@
-# Oracle Voice MVP (Prompt 10D-E — hands-free session)
+# Oracle Voice MVP (Prompt 10D-E - hands-free session)
 
-> **Extracted from:** Hands-free `/oracle` loop — **MediaRecorder** + amplitude VAD → **`/api/stt/transcribe`** (Whisper) → **`/api/spirit`** (`runtimeSurface="oracle"`) → **`/api/tts`** → auto-relisten in **hands-free** mode.
+> **Extracted from:** Hands-free `/oracle` loop - **MediaRecorder** + amplitude VAD → **`/api/stt/transcribe`** (Whisper) → **`/api/spirit`** (`runtimeSurface="oracle"`) → **`/api/tts`** → auto-relisten in **hands-free** mode.
 > **Design language:** Same runtime + TTS stack as `/chat`; Dexie stays off for Oracle until product decides otherwise. Spirit owns one Oracle layout; do not fork it for "wake word" experiments.
 
 ## Persona vs surface (Prompt 10D-F)
 
 - **Mode = personality** (`MODEL_PROFILES` / Peer, Teacher, Researcher, Brutal, Sassy). Peer is **surface-neutral**: conversational first; coding/tech only when the user steers there.
-- **Surface = context**: `buildRuntimeSurfaceInstruction("oracle")` in `spirit-runtime-surface.ts` appends after the mode prompt (before response budget + web digest). It flags live **Oracle Voice** — not the coding workspace — without replacing mode tone.
+- **Surface = context**: `buildRuntimeSurfaceInstruction("oracle")` in `spirit-runtime-surface.ts` appends after the mode prompt (before response budget + web digest). It flags live **Oracle Voice** - not the coding workspace - without replacing mode tone.
 - **`buildModelRuntime`** merges: profile → Oracle surface block (if `runtimeSurface: "oracle"`) → response budget (includes Oracle-specific spoken-length hints when on oracle) → Deep Think → web digest → personalization → answer contract.
 - **`resolveSpiritMaxOutputTokens`** applies tighter **spoken** ceilings only when `runtimeSurface === "oracle"`; `/chat` budgets unchanged.
 
@@ -14,10 +14,10 @@
 
 | Aspect | State |
 |--------|-------|
-| Surface | **`OracleVoiceSurface`** — standalone page (does not mount **`SpiritChat`**) |
-| Persistence | **`false`** — ephemeral browser session only |
+| Surface | **`OracleVoiceSurface`** - standalone page (does not mount **`SpiritChat`**) |
+| Persistence | **`false`** - ephemeral browser session only |
 | Threads | **No** saved-thread sidebar; no Dexie lane for Oracle |
-| STT | **Whisper backend** (primary) via **`/api/stt/transcribe`**; browser Web Speech only as legacy/optional fallback — not the main path |
+| STT | **Whisper backend** (primary) via **`/api/stt/transcribe`**; browser Web Speech only as legacy/optional fallback - not the main path |
 | Mic selection | **`spirit:oracle:selectedMicId`** in `localStorage`; **`getUserMedia`** with `deviceId` when possible, fallback to default with error hint |
 | Loop | **Hands-free** by default (silence VAD auto-sends), Push-to-talk and Text-only available as knobs |
 | RAG / DeepSeek / server sync | **Out of scope** |
@@ -28,35 +28,35 @@
 
 - Hands-free / push-to-talk / text fallback loop; **`OracleVoiceSurface`** + **`useOracleSpeechInput`** + **`useSpiritChatTransport`** with **`runtimeSurface: "oracle"`** and **`persistence={false}`**.
 - Secure-context gate for mic; ElevenLabs/Piper TTS via **`/api/tts`**; Whisper via **`/api/stt/transcribe`**.
-- **Chamber UI** — **`OracleSessionTranscript`**, **`OracleOrbSprite`**, **`OracleVoiceVisualizer`**, **`oracle-visual-state`** + **`oracle-visuals.css`** (motion-safe).
+- **Chamber UI** - **`OracleSessionTranscript`**, **`OracleOrbSprite`**, **`OracleVoiceVisualizer`**, **`oracle-visual-state`** + **`oracle-visuals.css`** (motion-safe).
 
 **Still needed**
 
-- **Full `/oracle` page design** — density, hierarchy, and alignment with **`_blueprints/design_system.md`** / **`design_demo`** (production is still rougher than the demo).
-- **Voice-friendly answers** — shorter, speakable phrasing for Oracle (iterate on prompts + caps; avoid walls of text when listening).
-- **Mobile-first layout** — Oracle must behave on **360px / 375px** widths; test over **HTTPS on LAN** from a real phone.
-- **Visual states** — polish **listening / thinking / speaking / idle** so the orb + transcript + status card stay in sync and readable (including **`prefers-reduced-motion`**).
-- **Personality balance** — practical, social, warm; **not** over-clinical; **dating/social advice** can stay in scope with **consent + safety** boundaries (same policy stack as chat).
-- **On-device validation** — mic + TTS path on **phone over HTTPS** to a LAN dev host (`npm run dev:https:lan` + firewall + cert SAN).
+- **Full `/oracle` page design** - density, hierarchy, and alignment with **`_blueprints/design_system.md`** / **`design_demo`** (production is still rougher than the demo).
+- **Voice-friendly answers** - shorter, speakable phrasing for Oracle (iterate on prompts + caps; avoid walls of text when listening).
+- **Mobile-first layout** - Oracle must behave on **360px / 375px** widths; test over **HTTPS on LAN** from a real phone.
+- **Visual states** - polish **listening / thinking / speaking / idle** so the orb + transcript + status card stay in sync and readable (including **`prefers-reduced-motion`**).
+- **Personality balance** - practical, social, warm; **not** over-clinical; **dating/social advice** can stay in scope with **consent + safety** boundaries (same policy stack as chat).
+- **On-device validation** - mic + TTS path on **phone over HTTPS** to a LAN dev host (`npm run dev:https:lan` + firewall + cert SAN).
 
 ## Hands-free loop (default)
 
 1. User taps **Start session** → mic permission if needed → **MediaRecorder** + audio meter armed.
 2. While recording, an `AnalyserNode` polls amplitude every ~60ms. Above `silenceThreshold` (default `0.035`) is "hearing speech"; below is silence.
-3. After at least `minRecordingMs` (default `700ms`) AND continuous silence for `silenceDurationMs` (default `1200ms`) — **and** at least one frame of speech was heard — recording auto-stops.
+3. After at least `minRecordingMs` (default `700ms`) AND continuous silence for `silenceDurationMs` (default `1200ms`) - **and** at least one frame of speech was heard - recording auto-stops.
 4. Audio **POST** `multipart/form-data` `audio` → **`/api/stt/transcribe`** → Whisper transcript.
 5. Transcript flows into the same **`useSpiritChatTransport`** path as chat with **`runtimeSurface: "oracle"`** + **`persistence={false}`**.
 6. Assistant reply → **`useSpiritVoiceRuntime`**/**`useTTS`** → `/api/tts` (ElevenLabs/Piper).
 7. When TTS goes idle AND the session is still active AND no errors are pending → schedule a **500ms** delay, then re-arm `startRecording()`.
 8. **Stop session** sets `sessionActiveRef=false`, cancels recording, stops TTS, clears the relisten timer, latches `stopped`.
-9. **Finish now** stays as a backup button visible only while listening/hearing-speech — same code path as silence VAD; idempotent stop guard means a click + auto-stop does NOT double-submit.
+9. **Finish now** stays as a backup button visible only while listening/hearing-speech - same code path as silence VAD; idempotent stop guard means a click + auto-stop does NOT double-submit.
 10. Empty transcripts (Whisper heard nothing) do not submit; if session active, the loop returns to listening.
 
-`maxRecordingMs` (default `60000ms`) is a hard cap per utterance — Spirit refuses to record forever.
+`maxRecordingMs` (default `60000ms`) is a hard cap per utterance - Spirit refuses to record forever.
 
 **Docker:** `npm run dev:all` / compose should have **`spirit-whisper`** reachable (default Next env **`WHISPER_STT_URL=http://localhost:8000`**). See **`.env.local.example`**.
 
-## Secure context — mandatory for mic
+## Secure context - mandatory for mic
 
 **Browser mic APIs require a [secure context](https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts).** Plain `http://` to a LAN/Tailscale IP hides `navigator.mediaDevices` by design. Use one of:
 
@@ -69,20 +69,20 @@
 
 ## Shared systems (reuse, don’t fork)
 
-- **Modes:** `useSpiritModeRuntime` — Peer, Teacher, Researcher, Brutal, Sassy.
+- **Modes:** `useSpiritModeRuntime` - Peer, Teacher, Researcher, Brutal, Sassy.
 - **Spirit Profile:** same personalization gate as `/chat` (`spirit-user-profile`).
-- **Transport:** `useSpiritChatTransport` — oracle attaches body fields the same way as chat.
+- **Transport:** `useSpiritChatTransport` - oracle attaches body fields the same way as chat.
 - **Voice:** `useSpiritVoiceRuntime` + `useTTS` → `/api/tts`; **`sanitizeAssistantVisibleText`** before speak.
 
 ## UI session model
 
-`src/lib/oracle/oracle-voice-session.ts` — statuses include `listening`, `hearing-speech`, `silence-detected`, `transcribing`, `thinking`, `speaking`, `restarting`, `stopped`, `blocked`, `requesting-mic`, `permission-needed`, etc. **`OracleVoiceLoopMode`** is `hands-free | push-to-talk | manual-text` (default = `hands-free`). Helpers: **`deriveOracleVoiceStatus`**, **`shouldOracleAutoRestartListening`**, **`oracleSessionStatusLabel`**, **`oracleSessionStatusHint`**. Capped activity events. Not persisted.
+`src/lib/oracle/oracle-voice-session.ts` - statuses include `listening`, `hearing-speech`, `silence-detected`, `transcribing`, `thinking`, `speaking`, `restarting`, `stopped`, `blocked`, `requesting-mic`, `permission-needed`, etc. **`OracleVoiceLoopMode`** is `hands-free | push-to-talk | manual-text` (default = `hands-free`). Helpers: **`deriveOracleVoiceStatus`**, **`shouldOracleAutoRestartListening`**, **`oracleSessionStatusLabel`**, **`oracleSessionStatusHint`**. Capped activity events. Not persisted.
 
 **Chamber UI:** Live **`UIMessage`** rows render in **`OracleSessionTranscript`** (fed from `useSpiritChatTransport` / `displayMessages`). Whisper raw finals stay in the collapsible STT debug lane. Shared **`OracleOrbSprite`** + **`OracleVoiceVisualizer`** use **`oracle-visual-state`** + **`oracle-visuals.css`** (token-aware, `prefers-reduced-motion` safe).
 
 ## Capability + secure-context module
 
-`src/lib/oracle/oracle-browser-capabilities.ts` — `getOracleBrowserCapabilityReport(mounted)` returns the SSR-stable shape used by **`useOracleSpeechInput`**, **`OracleVoiceControls`**, and **`OracleVoiceStatusCard`** to decide between `Mic ready.`, `Mic access is blocked on this HTTP address...`, `MediaRecorder unsupported`, and the rest. Avoid reading `navigator`/`window` outside this module.
+`src/lib/oracle/oracle-browser-capabilities.ts` - `getOracleBrowserCapabilityReport(mounted)` returns the SSR-stable shape used by **`useOracleSpeechInput`**, **`OracleVoiceControls`**, and **`OracleVoiceStatusCard`** to decide between `Mic ready.`, `Mic access is blocked on this HTTP address...`, `MediaRecorder unsupported`, and the rest. Avoid reading `navigator`/`window` outside this module.
 
 ## Deferred / not built
 

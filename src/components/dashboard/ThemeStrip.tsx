@@ -1,6 +1,6 @@
 "use client";
 
-// ── ThemeStrip — palette toggles from registry (client leaf) ────────────────────
+// ── ThemeStrip - palette toggles from registry (client leaf) ────────────────────
 // > Header uses md+ compact sizing; mobile / narrow keeps 44px touch floor.
 import { useSpiritTheme } from "@/theme/useSpiritTheme";
 import { SPIRIT_PALETTES } from "@/theme/spiritPalettes";

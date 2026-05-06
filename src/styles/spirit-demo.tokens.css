@@ -12,7 +12,7 @@
  * ─────────────────────────────────────────────────────────────────────────── */
 
 .spirit-demo-root {
-  /* —— Surface palette (all derived; no opaque hex outside resolved tokens) —— */
+  /* - -  Surface palette (all derived; no opaque hex outside resolved tokens) - -  */
   --demo-bg: var(--spirit-bg, #090a0f);
   --demo-bg-deep: #050609;
   --demo-glass: rgba(255, 255, 255, 0.025);
@@ -25,7 +25,7 @@
   --demo-text-faint: rgba(244, 244, 245, 0.38);
   --demo-text-ghost: rgba(244, 244, 245, 0.22);
 
-  /* —— Accent system (host-aware with sane fallbacks) —— */
+  /* - -  Accent system (host-aware with sane fallbacks) - -  */
   --demo-cyan: #22d3ee;
   --demo-cyan-strong: #67e8f9;
   --demo-cyan-deep: #0e7490;
@@ -39,7 +39,7 @@
   --demo-amber: #f59e0b;
   --demo-amber-strong: #fbbf24;
 
-  /* —— Semantic accents (use these in components) —— */
+  /* - -  Semantic accents (use these in components) - -  */
   --demo-accent: var(--spirit-accent, var(--demo-cyan));
   --demo-accent-strong: var(--spirit-accent-strong, var(--demo-cyan-strong));
   --demo-oracle: var(--demo-violet);
@@ -47,7 +47,7 @@
   --demo-online: var(--demo-emerald);
   --demo-warn: var(--demo-amber);
 
-  /* —— Glow strengths —— */
+  /* - -  Glow strengths - -  */
   --demo-glow-cyan: 0 0 64px -8px color-mix(in oklab, var(--demo-cyan) 38%, transparent);
   --demo-glow-violet: 0 0 64px -8px color-mix(in oklab, var(--demo-violet) 36%, transparent);
   --demo-glow-rose: 0 0 64px -8px color-mix(in oklab, var(--demo-rose) 32%, transparent);
@@ -56,7 +56,7 @@
   --demo-inset-shine: inset 0 1px 0 rgba(255, 255, 255, 0.06);
   --demo-inset-shine-strong: inset 0 1px 0 rgba(255, 255, 255, 0.1);
 
-  /* —— Radii (consistent with editorial luxury rhythm) —— */
+  /* - -  Radii (consistent with editorial luxury rhythm) - -  */
   --demo-radius-xs: 0.5rem;
   --demo-radius-sm: 0.75rem;
   --demo-radius-md: 1rem;
@@ -64,12 +64,12 @@
   --demo-radius-xl: 2rem;
   --demo-radius-pill: 999px;
 
-  /* —— Blur depths —— */
+  /* - -  Blur depths - -  */
   --demo-blur-sm: 8px;
   --demo-blur-md: 16px;
   --demo-blur-lg: 28px;
 
-  /* —— Spacing rhythm (mobile-first, fluid) —— */
+  /* - -  Spacing rhythm (mobile-first, fluid) - -  */
   --demo-space-xs: 0.5rem;
   --demo-space-sm: 0.75rem;
   --demo-space-md: 1rem;
@@ -77,7 +77,7 @@
   --demo-space-xl: 2.25rem;
   --demo-space-2xl: 3.5rem;
 
-  /* —— Typography rhythm (matches host text-* fluid scales) —— */
+  /* - -  Typography rhythm (matches host text-* fluid scales) - -  */
   --demo-text-eyebrow: 0.625rem; /* 10px, mono-uppercase rails */
   --demo-text-micro: 0.6875rem;
   --demo-text-caption: 0.75rem;
@@ -89,7 +89,7 @@
   --demo-tracking-rail: 0.18em;
   --demo-tracking-mono: 0.04em;
 
-  /* —— Z-index scale (explicit, no surprise stacking) —— */
+  /* - -  Z-index scale (explicit, no surprise stacking) - -  */
   --demo-z-bg: 0;
   --demo-z-aurora: 1;
   --demo-z-grid: 2;
@@ -99,7 +99,7 @@
   --demo-z-dock: 40;
   --demo-z-overlay: 60;
 
-  /* —— Motion durations (overridden for reduced-motion in animations.css) —— */
+  /* - -  Motion durations (overridden for reduced-motion in animations.css) - -  */
   --demo-dur-fast: 200ms;
   --demo-dur-mid: 400ms;
   --demo-dur-slow: 800ms;

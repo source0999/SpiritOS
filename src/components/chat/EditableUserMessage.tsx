@@ -1,6 +1,6 @@
 "use client";
 
-// ── EditableUserMessage — inline textarea: ⌃/⌘+Enter save, Esc cancel ───────────
+// ── EditableUserMessage - inline textarea: ⌃/⌘+Enter save, Esc cancel ───────────
 import {
   memo,
   useCallback,

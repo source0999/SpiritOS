@@ -1,7 +1,8 @@
-// ── chat-db.types — Dexie chat workspace (threads + folders, Prompt 5) ───────────
-// > folderId / order are optional on older rows — v2 migration is additive only.
+// ── chat-db.types - Dexie chat workspace (threads + folders, Prompt 5) ───────────
+// > folderId / order are optional on older rows - v2 migration is additive only.
 
 import type { ModelProfileId } from "@/lib/spirit/model-profile.types";
+import type { SpiritRuntimeSurface } from "@/lib/spirit/spirit-runtime-surface";
 
 /** Reserved for threaded system prompts if we ever hydrate them locally. */
 export type ChatRole = "user" | "assistant" | "system";
@@ -25,7 +26,7 @@ export type ChatThread = {
   folderId?: string | null;
   /** Optional sort key within a folder; falls back to updatedAt in UI */
   order?: number;
-  /** Prompt 7 — persona preset; missing ⇒ normal-peer id at runtime (UI label: Peer) */
+  /** Prompt 7 - persona preset; missing ⇒ normal-peer id at runtime (UI label: Peer) */
   modelProfileId?: ModelProfileId;
   pinned?: boolean;
   pinnedAt?: number;
@@ -54,4 +55,22 @@ export type NewChatMessageInput = {
   threadId: string;
   role: ChatRole;
   text: string;
+};
+
+/** Oracle voice session memory event - persisted only when NEXT_PUBLIC_SPIRIT_ENABLE_ORACLE_MEMORY=true. */
+export type OracleMemoryEvent = {
+  id: string;
+  createdAt: number;
+  /** Short summary of the exchange (≤120 chars) - used in the prompt context block. */
+  summary: string;
+  /** Trimmed user text that triggered this exchange (≤500 chars). */
+  userText?: string;
+  /** Trimmed first-pass assistant reply (≤500 chars). */
+  assistantText?: string;
+  /** Profile active during this exchange. */
+  modelProfileId?: string;
+  /** Where this row was captured (Dexie is local; this disambiguates future writers). */
+  source?: string;
+  /** Runtime surface active when the exchange was logged (matches /api/spirit body). */
+  runtimeSurface?: SpiritRuntimeSurface;
 };

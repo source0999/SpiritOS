@@ -57,6 +57,11 @@ import {
 import { decideSpiritRoute, type SpiritRouteLane } from "@/lib/spirit/spirit-route-decision";
 import type { SpiritActivityEvent } from "@/lib/spirit/spirit-activity-events";
 import { TTS_TEXT_LIMIT } from "@/lib/tts/tts-text-budget";
+import {
+  getRecentOracleMemoryEvents,
+  isOracleMemoryEnabled,
+  summarizeOracleMemoryForPrompt,
+} from "@/lib/oracle/oracle-memory";
 
 type WebSearchPreference = "unset" | "enabled" | "disabled";
 
@@ -74,7 +79,7 @@ export type UseSpiritChatTransportInput = {
   ttsRef: RefObject<SpiritTTS | null>;
   ttsSpeakGateRef: RefObject<{ isEnabled: boolean; autoSpeakAssistant: boolean }>;
   pushActivity: (e: Omit<SpiritActivityEvent, "id" | "at">) => void;
-  /** Scroll container coordination — optional for embedded/minimal shells */
+  /** Scroll container coordination - optional for embedded/minimal shells */
   outboundScrollRefs?: {
     forceScrollOnNextMessageRef: MutableRefObject<boolean>;
     shouldStickToBottomRef: MutableRefObject<boolean>;
@@ -564,6 +569,12 @@ export function useSpiritChatTransport(
         const x = outboundExtrasRef.current;
         const rPlan = pendingResearchPlanSummaryRef.current?.trim();
         pendingResearchPlanSummaryRef.current = null;
+        let oracleMemoryContext: string | undefined;
+        if (isOracleMemoryEnabled()) {
+          const events = await getRecentOracleMemoryEvents();
+          const ctx = summarizeOracleMemoryForPrompt(events);
+          if (ctx) oracleMemoryContext = ctx;
+        }
         return {
           body: {
             ...body,
@@ -575,6 +586,7 @@ export function useSpiritChatTransport(
             teacherWebSearchEnabled: x.teacherWebSearchEnabled,
             ...(rPlan ? { researchPlanSummary: rPlan } : {}),
             ...(summary ? { personalizationSummary: summary } : {}),
+            ...(oracleMemoryContext ? { oracleMemoryContext } : {}),
           },
         };
       },
@@ -713,7 +725,7 @@ export function useSpiritChatTransport(
         lastSearchHdrRef.current = null;
         lastSourcesPayloadRef.current = null;
         if (outboundScrollRefs) {
-          /* Parent-owned scroll refs — same mutation as pre-refactor SpiritChat */
+          /* Parent-owned scroll refs - same mutation as pre-refactor SpiritChat */
           outboundScrollRefs.forceScrollOnNextMessageRef.current = true;
           outboundScrollRefs.shouldStickToBottomRef.current = true;
         }
@@ -925,7 +937,7 @@ export function useSpiritChatTransport(
       void runSpiritOutbound(lastSentForPlanRef.current.trim());
       pushActivity({
         kind: "workflow_step",
-        label: "Research plan approved — running /api/spirit",
+        label: "Research plan approved - running /api/spirit",
       });
     },
     [pushActivity, runSpiritOutbound],

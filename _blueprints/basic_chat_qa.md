@@ -1,6 +1,6 @@
 # Basic Chat + Voice QA (Prompt 9L)
 
-Manual checks before you ship another “mobile glow-up”. Dexie is **local-only** — no cross-device sync yet; each browser has its own threads.
+Manual checks before you ship another “mobile glow-up”. Dexie is **local-only** - no cross-device sync yet; each browser has its own threads.
 
 ## Per-origin storage (LAN vs Tailscale)
 
@@ -8,9 +8,9 @@ Manual checks before you ship another “mobile glow-up”. Dexie is **local-onl
 
 ## Environment
 
-- **Tailscale / LAN dev:** set `NEXT_ALLOWED_DEV_ORIGINS` in `.env.local` (comma-separated **hostnames** only, no `http://`). Restart `npm run dev` after any change — `next.config.ts` reads this at process start.
+- **Tailscale / LAN dev:** set `NEXT_ALLOWED_DEV_ORIGINS` in `.env.local` (comma-separated **hostnames** only, no `http://`). Restart `npm run dev` after any change - `next.config.ts` reads this at process start.
 - **ElevenLabs:** `ELEVENLABS_API_KEY`, **`ELEVENLABS_DEFAULT_VOICE_ID`** + **`ELEVENLABS_DEFAULT_VOICE_NAME`** (recommended defaults), `TTS_PROVIDER=elevenlabs`.
-- **Voice allowlist:** **`Clarice:voice_id,Charlotte:voice_id`** (explicit — works without catalog). **Name-only** `Charlotte,Clarice,…` needs catalog + `voices_read`; if catalog fails, use explicit `Name:voice_id` or JSON allowlist. **`ELEVENLABS_VOICE_ALLOWLIST_JSON`** wins if both comma and JSON are set.
+- **Voice allowlist:** **`Clarice:voice_id,Charlotte:voice_id`** (explicit - works without catalog). **Name-only** `Charlotte,Clarice,…` needs catalog + `voices_read`; if catalog fails, use explicit `Name:voice_id` or JSON allowlist. **`ELEVENLABS_VOICE_ALLOWLIST_JSON`** wins if both comma and JSON are set.
 
 ## Checklist
 
@@ -33,8 +33,8 @@ Manual checks before you ship another “mobile glow-up”. Dexie is **local-onl
 - [ ] Open via Tailscale hostname (e.g. `*.ts.net` or IP in allowlist).
 - [ ] No stuck overlay; composer focus works.
 - [ ] New Chat + send + persistence.
-- [ ] **TTS (Prompt 9K):** open `/chat` (e.g. `http://100.111.32.31:3000/chat`), open Voice settings, pick a voice, **Speak** — no Internal Server Error on `/api/tts`; DevTools → Network shows chosen `voice_id` in the ElevenLabs request path when provider is ElevenLabs.
-- [ ] With **Auto-speak** on, send a new prompt while audio plays — old audio stops and the latest assistant reply speaks.
+- [ ] **TTS (Prompt 9K):** open `/chat` (e.g. `http://100.111.32.31:3000/chat`), open Voice settings, pick a voice, **Speak** - no Internal Server Error on `/api/tts`; DevTools → Network shows chosen `voice_id` in the ElevenLabs request path when provider is ElevenLabs.
+- [ ] With **Auto-speak** on, send a new prompt while audio plays - old audio stops and the latest assistant reply speaks.
 
 ### iPhone Safari `/chat`
 
@@ -53,14 +53,14 @@ Manual checks before you ship another “mobile glow-up”. Dexie is **local-onl
 
 - [ ] `/` dashboard hub.
 - [ ] `/oracle` loads and chats.
-- [ ] `/design-demo` loads (optional); **`/quarantine` is not a current App Router page** — skip until reintroduced.
+- [ ] `/design-demo` loads (optional); **`/quarantine` is not a current App Router page** - skip until reintroduced.
 - [ ] **Prompt 10C-C:** Sassy/Brutal stay short; assistant never shows `<think>` or mode-contract leaks; Researcher web defaults ON; turning web OFF yields **no** fake Sources/`[1]` citations; Teacher educational + web on returns real links or **Study aids to search**; research plan panel closes on thread/new chat/mode away; workflow rail compact above composer after dismiss on casual chats.
 
 ## Limitations (current)
 
 - **Dexie:** local-only persistence; no server-backed cross-device sync.
 - **STT / mic:** not in scope for this checklist.
-- **Hydration warnings:** browser extensions that inject attributes (`bis_register`, `__processed`, etc.) are noise — if you see hydration mismatch spam, retry in a clean profile or private window before chasing app bugs.
+- **Hydration warnings:** browser extensions that inject attributes (`bis_register`, `__processed`, etc.) are noise - if you see hydration mismatch spam, retry in a clean profile or private window before chasing app bugs.
 
 ## After env changes
 

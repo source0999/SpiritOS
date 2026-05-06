@@ -2,8 +2,8 @@ import type { NextConfig } from "next";
 
 import { buildAllowedDevOrigins } from "./allowed-dev-origins";
 
-/* ── Homelab dev — HMR allowlist + webpack watch ignore (big artifacts) ────────────
- * Next parses `Origin` to hostname only — no `http://` entries.
+/* ── Homelab dev - HMR allowlist + webpack watch ignore (big artifacts) ────────────
+ * Next parses `Origin` to hostname only - no `http://` entries.
  * Tailscale / LAN: set `NEXT_ALLOWED_DEV_ORIGINS` (comma-separated hostnames), restart dev.
  */
 const nextConfig: NextConfig = {

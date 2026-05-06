@@ -76,7 +76,7 @@ export async function fetchRemoteNodeTelemetry(
     }
 
     const node = data as ClusterNodeTelemetry;
-    // Preserve optional fields (e.g. storage) — do not hand-rebuild the node without them.
+    // Preserve optional fields (e.g. storage) - do not hand-rebuild the node without them.
     return {
       ...node,
       id: node.id || id,

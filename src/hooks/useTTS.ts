@@ -1,7 +1,7 @@
 "use client";
 
-// ── useTTS — localStorage-backed Piper/ElevenLabs via /api/tts (Prompt 9H + 9I) ───
-// > Initial render must NOT read localStorage — Next will hydration-murder you.
+// ── useTTS - localStorage-backed Piper/ElevenLabs via /api/tts (Prompt 9H + 9I) ───
+// > Initial render must NOT read localStorage - Next will hydration-murder you.
 // > isEnabledRef: onFinish auto-speak must not lose to a stale `speak` closure on desktop.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -236,7 +236,7 @@ export function useTTS() {
       if (!res.ok || !json.ok) {
         const parts = [json.error || `voices_${res.status}`];
         if (json.detail) parts.push(json.detail);
-        throw new Error(parts.join(" — "));
+        throw new Error(parts.join(" - "));
       }
       const list = Array.isArray(json.voices) ? json.voices : [];
       setVoices(list);

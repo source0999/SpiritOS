@@ -1,4 +1,4 @@
-// ── verified-http-url — shared digest / policy / header URL gate ─────────────────
+// ── verified-http-url - shared digest / policy / header URL gate ─────────────────
 // > Client-safe: `research-source-enforcement` is imported by SpiritChat; do not
 //   depend on `server-only` OpenAI modules here.
 
@@ -8,7 +8,7 @@
  */
 export function normalizeToHttpUrl(raw: string | undefined): string | undefined {
   let t = (raw ?? "").trim();
-  // OpenAI / markdown sometimes wraps links — strip before host detection.
+  // OpenAI / markdown sometimes wraps links - strip before host detection.
   t = t.replace(/^<+/, "").replace(/>+$/, "").trim();
   if (!t) return undefined;
   if (/^(javascript|data|mailto|vbscript):/i.test(t)) return undefined;
@@ -32,7 +32,7 @@ export function resolveVerifiedHttpUrl(raw: string | undefined): string | undefi
   return /^https?:\/\//i.test(n) ? n : undefined;
 }
 
-/** `normalizeToHttpUrl` then strict `^https?:` — post-normalize bare hosts count as verified. */
+/** `normalizeToHttpUrl` then strict `^https?:` - post-normalize bare hosts count as verified. */
 export function isVerifiedHttpUrl(url: string | undefined): boolean {
   return Boolean(resolveVerifiedHttpUrl(url));
 }

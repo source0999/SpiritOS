@@ -1,6 +1,6 @@
 "use client";
 
-// ── SortableChatThreadItem — dnd-kit; drawer can use handle-only activator (9F) ──
+// ── SortableChatThreadItem - dnd-kit; drawer can use handle-only activator (9F) ──
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { DraggableAttributes, DraggableSyntheticListeners } from "@dnd-kit/core";

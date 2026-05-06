@@ -1,4 +1,4 @@
-// ── assistant-output-sanitizer — kill leaked CoT / mode contracts in user-visible text ─
+// ── assistant-output-sanitizer - kill leaked CoT / mode contracts in user-visible text ─
 // > Models sometimes echo training junk. Strip it before render, copy, TTS, or Dexie.
 
 const TAG_PAIRS: Array<[RegExp, string]> = [

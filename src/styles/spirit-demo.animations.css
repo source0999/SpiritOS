@@ -2,7 +2,7 @@
  * > Keyframes + motion utility classes + reduced-motion overrides.
  * > All keyframe identifiers are prefixed `demo*` so they cannot collide with
  *   any keyframes defined in the host app.
- * > Respects `prefers-reduced-motion: reduce` — looping motion is disabled,
+ * > Respects `prefers-reduced-motion: reduce` - looping motion is disabled,
  *   static gradients and layout remain.
  * ────────────────────────────────────────────────────────────────────────── */
 
@@ -129,13 +129,13 @@
     opacity: 0 !important;
     animation: none !important;
   }
-  /* Pulse dot rings hidden — keep only the static dot */
+  /* Pulse dot rings hidden - keep only the static dot */
   .spirit-demo-root .demo-pulse-dot::after {
     display: none !important;
   }
 }
 
-/* Focus ring (accessibility) — always present, doesn’t care about motion */
+/* Focus ring (accessibility) - always present, doesn’t care about motion */
 .spirit-demo-root :where(a, button, [role="button"]):focus-visible {
   outline: 2px solid color-mix(in oklab, var(--demo-cyan) 80%, transparent);
   outline-offset: 2px;

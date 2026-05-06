@@ -48,20 +48,20 @@ export function HomelabChatCoreWidget({ className = "" }: { className?: string }
         <div className="flex gap-x-2">
           <dt className="text-chalk/45">Threads</dt>
           <dd className="tabular-nums text-chalk/85">
-            {!mounted || loading ? "—" : threadCount === 0 ? "No saved threads" : String(threadCount)}
+            {!mounted || loading ? " - " : threadCount === 0 ? "No saved threads" : String(threadCount)}
           </dd>
         </div>
         <div className="flex gap-x-2">
           <dt className="text-chalk/45">Folders</dt>
           <dd className="tabular-nums text-chalk/85">
-            {!mounted || loading ? "—" : folderCount === 0 ? "None" : String(folderCount)}
+            {!mounted || loading ? " - " : folderCount === 0 ? "None" : String(folderCount)}
           </dd>
         </div>
         <div className="flex gap-x-2">
           <dt className="text-chalk/45">Latest</dt>
           <dd className="min-w-0 flex-1 truncate text-chalk/75">
             {!mounted || loading
-              ? "—"
+              ? " - "
               : latestThread
                 ? latestThread.title || "Untitled thread"
                 : "No threads yet"}
@@ -75,7 +75,7 @@ export function HomelabChatCoreWidget({ className = "" }: { className?: string }
 
       {mounted && !loading && threadCount === 0 && (
         <p className="mb-4 rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 py-2 font-mono text-[10px] text-chalk/45">
-          No saved threads — start a chat to create your first session.
+          No saved threads - start a chat to create your first session.
         </p>
       )}
 

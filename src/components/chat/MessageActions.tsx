@@ -1,6 +1,6 @@
 "use client";
 
-// ── MessageActions — desktop hover rail; persisted mobile = bottom sheet (9E-A) ──
+// ── MessageActions - desktop hover rail; persisted mobile = bottom sheet (9E-A) ──
 import { Check, Copy, MoreHorizontal, Pencil, RotateCcw, Trash2, Volume2, X } from "lucide-react";
 import { memo, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
@@ -240,7 +240,7 @@ function TrayActionTile({
   onClick: () => void | Promise<void>;
   disabled?: boolean;
   variant?: "default" | "danger";
-  /** Horizontal compact tray — shorter tiles, still ≥44px touch. */
+  /** Horizontal compact tray - shorter tiles, still ≥44px touch. */
   compact?: boolean;
 }) {
   return (

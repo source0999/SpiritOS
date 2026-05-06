@@ -10,7 +10,7 @@ import {
   type ThemeId,
 } from "@/theme/spiritPalettes";
 
-// ── ThemeEngine — registry drives data-theme, typography, and --spirit-* paint ─
+// ── ThemeEngine - registry drives data-theme, typography, and --spirit-* paint ─
 
 const STORAGE_KEY = "spirit-os-theme-engine";
 

@@ -1,7 +1,7 @@
 "use client";
 
-// ── HubStageCards — command surface: Neural hero + lanes (Oracle / Quarantine) ─
-// > Neural hub card burned — hero + taskbar already own that jump; duplicates PM2 karma.
+// ── HubStageCards - command surface: Neural hero + lanes (Oracle / Quarantine) ─
+// > Neural hub card burned - hero + taskbar already own that jump; duplicates PM2 karma.
 // > Oracle lane sets stage shell; `/oracle` only from OracleStagePanel when you bail out.
 import { motion } from "framer-motion";
 
@@ -35,7 +35,7 @@ export function HubStageCards({ setStage }: HubStageCardsProps) {
           Ask Spirit from anywhere
         </p>
         <p className="relative mt-1 max-w-xl text-sm text-chalk/50">
-          Same wire as <span className="font-mono text-chalk/65">/chat</span> — opens the neural stage.
+          Same wire as <span className="font-mono text-chalk/65">/chat</span> - opens the neural stage.
         </p>
         <div className="relative mt-5 flex items-center gap-3 rounded-full border border-[color:var(--spirit-border)] bg-black/40 px-4 py-3 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]">
           <span className="flex-1 truncate font-mono text-sm text-chalk/40">
@@ -85,7 +85,7 @@ export function HubStageCards({ setStage }: HubStageCardsProps) {
             Voice lab · containment
           </h2>
           <p className="mt-2 flex-1 text-sm leading-snug text-chalk/55">
-            Voice lab and containment zone — visualizer prototype, not chat transport.
+            Voice lab and containment zone - visualizer prototype, not chat transport.
           </p>
           <span className="mt-5 inline-flex font-mono text-xs text-amber-200/90">
             Enter stage →

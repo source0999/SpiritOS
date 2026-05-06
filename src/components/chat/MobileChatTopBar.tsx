@@ -1,6 +1,6 @@
 "use client";
 
-// ── MobileChatTopBar — 48px strip; conversation stays visible (Prompt 9E-A) ───────
+// ── MobileChatTopBar - 48px strip; conversation stays visible (Prompt 9E-A) ───────
 import { memo, type ReactNode } from "react";
 
 import { cn } from "@/lib/cn";

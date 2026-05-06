@@ -1,5 +1,5 @@
-// ── safe-tts-headers — ASCII-only TTS response headers (Prompt 9K ByteString crash) ─
-// > Next/Headers reject Unicode in ByteString fields — en dash in voice names nuked Tailscale.
+// ── safe-tts-headers - ASCII-only TTS response headers (Prompt 9K ByteString crash) ─
+// > Next/Headers reject Unicode in ByteString fields - en dash in voice names nuked Tailscale.
 
 export const HEADER_TTS_VOICE_NAME_ENCODED = "X-Spirit-TTS-Voice-Name-Encoded";
 

@@ -5,8 +5,8 @@ import { resolveVerifiedHttpUrl } from "@/lib/verified-http-url";
 // Re-export for tests / importers that expect URL helpers from this module.
 export { normalizeToHttpUrl, resolveVerifiedHttpUrl, isVerifiedHttpUrl } from "@/lib/verified-http-url";
 
-// ── OpenAI Responses API — web_search tool (isolated from Hermes chat, Prompt 10B) ─
-// > If OpenAI changes payload shapes, adjust normalize only — do not leak keys to client.
+// ── OpenAI Responses API - web_search tool (isolated from Hermes chat, Prompt 10B) ─
+// > If OpenAI changes payload shapes, adjust normalize only - do not leak keys to client.
 
 export type WebSearchSource = {
   title?: string;
@@ -93,7 +93,7 @@ function walkForSources(obj: unknown, out: WebSearchSource[], cap: number): void
   for (const k of Object.keys(r)) walkForSources(r[k], out, cap);
 }
 
-/** Exported for unit tests — parses Responses `output[]` into deduped sources. */
+/** Exported for unit tests - parses Responses `output[]` into deduped sources. */
 export function extractWebSearchSourcesFromOpenAiResponseJson(
   json: Record<string, unknown>,
   maxResults: number,
@@ -165,7 +165,7 @@ export function extractWebSearchSourcesFromOpenAiResponseJson(
 
 /**
  * OpenAI sometimes omits structured URLs but embeds https links in grounded preview text.
- * Same resolveVerifiedHttpUrl gate as walk/citations — keeps digest + headers aligned.
+ * Same resolveVerifiedHttpUrl gate as walk/citations - keeps digest + headers aligned.
  */
 export function appendVerifiedUrlsFromAnswerPreview(
   sources: WebSearchSource[],
@@ -224,7 +224,7 @@ export async function runOpenAiWebSearch(opts: {
       provider: "openai",
       searched: false,
       error: "disabled",
-      detail: "WEB_SEARCH_ENABLED is not true — web search is off.",
+      detail: "WEB_SEARCH_ENABLED is not true - web search is off.",
     };
   }
 
@@ -266,7 +266,7 @@ export async function runOpenAiWebSearch(opts: {
         input: query,
         tools: [{ type: toolType }],
         tool_choice: "auto",
-        // action.sources + results: OpenAI intermittently omits one shape — ask for both.
+        // action.sources + results: OpenAI intermittently omits one shape - ask for both.
         include: ["web_search_call.action.sources", "web_search_call.results"],
       }),
       signal: controller.signal,

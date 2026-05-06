@@ -48,7 +48,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 40s               # GPU init takes longer than CPU — allow extra time
+      start_period: 40s               # GPU init takes longer than CPU - allow extra time
 
   # ── 2. Faster-Whisper STT API ───────────────────────────────────────────────
   #   OpenAI-compatible transcription endpoint:
@@ -82,7 +82,7 @@ services:
       retries: 5
       start_period: 30s
 
-  # ── 3. Piper TTS (openedai-speech, CPU) — OpenAI-compatible /v1/audio/speech ─
+  # ── 3. Piper TTS (openedai-speech, CPU) - OpenAI-compatible /v1/audio/speech ─
   #   Maps OpenAI voice names → Piper ONNX models (see openedai-config/voice_to_speaker.yaml).
   #   Host port 5200 → container 8000. First start downloads voice models (~minutes on slow links).
   openedai-speech:

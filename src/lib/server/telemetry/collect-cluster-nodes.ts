@@ -3,7 +3,7 @@ import { fetchRemoteNodeTelemetry } from "./fetch-remote-node";
 import type { ClusterNodeConfig } from "./cluster-config";
 import type { ClusterNodeTelemetry } from "./types";
 
-/** Same merge semantics as GET /api/telemetry/cluster — single source of truth for node lists. */
+/** Same merge semantics as GET /api/telemetry/cluster - single source of truth for node lists. */
 export async function collectClusterNodes(configs: ClusterNodeConfig[]): Promise<ClusterNodeTelemetry[]> {
   const results = await Promise.allSettled(
     configs.map((cfg) => {

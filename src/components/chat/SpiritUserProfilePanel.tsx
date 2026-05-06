@@ -1,6 +1,6 @@
 "use client";
 
-// ── SpiritUserProfilePanel — Stage 4 tabs (local-only, no fake memory theater) ────
+// ── SpiritUserProfilePanel - Stage 4 tabs (local-only, no fake memory theater) ────
 import { Trash2, X } from "lucide-react";
 import { memo, useCallback, useEffect, useState } from "react";
 
@@ -172,7 +172,7 @@ export const SpiritUserProfilePanel = memo(function SpiritUserProfilePanel({
               Spirit profile
             </h2>
             <p className="mt-0.5 font-mono text-[9px] leading-snug text-amber-200/80">
-              Local only — full automatic learning ships later.
+              Local only - full automatic learning ships later.
             </p>
           </div>
           <button
@@ -294,7 +294,7 @@ export const SpiritUserProfilePanel = memo(function SpiritUserProfilePanel({
                   >
                     <p className="font-semibold text-chalk">{m.shortLabel}</p>
                     <p className="mt-1 text-[9px] text-chalk/55">{m.description}</p>
-                    <p className="mt-1 text-[9px]">budget: {m.responseBudget ?? "—"}</p>
+                    <p className="mt-1 text-[9px]">budget: {m.responseBudget ?? "-"}</p>
                   </div>
                 );
               })}
@@ -333,7 +333,7 @@ export const SpiritUserProfilePanel = memo(function SpiritUserProfilePanel({
                 />
               </label>
               <p className="text-[9px] text-chalk/45">
-                Require citations / full source list / warn on failure — wired in prefs object (defaults ON).
+                Require citations / full source list / warn on failure - wired in prefs object (defaults ON).
               </p>
             </div>
           ) : null}
@@ -373,11 +373,11 @@ export const SpiritUserProfilePanel = memo(function SpiritUserProfilePanel({
                 {modeAwareSummary.length} characters
               </p>
               <pre className="max-h-[42vh] overflow-y-auto whitespace-pre-wrap rounded-lg border border-white/[0.06] bg-black/40 p-2 font-mono text-[10px] leading-snug text-chalk/80">
-                {modeAwareSummary || "(empty — toggle send or fill prefs)"}
+                {modeAwareSummary || "(empty - toggle send or fill prefs)"}
               </pre>
               <p className="font-mono text-[9px] text-chalk/40">Base prefs-only preview (no mode block):</p>
               <pre className="max-h-24 overflow-y-auto whitespace-pre-wrap font-mono text-[9px] text-chalk/50">
-                {legacySummary || "—"}
+                {legacySummary || " - "}
               </pre>
             </div>
           ) : null}

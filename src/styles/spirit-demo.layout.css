@@ -1,7 +1,7 @@
 /* ── Spirit Demo · Layout ────────────────────────────────────────────────────
  * > Shell, section grid, mobile dock, side rail, safe-area handling.
  * > Mobile-first. Targets iPhone 375px / Android 360px / tablet / desktop.
- * > All selectors are nested under .spirit-demo-root — no leakage.
+ * > All selectors are nested under .spirit-demo-root - no leakage.
  * ────────────────────────────────────────────────────────────────────────── */
 
 .spirit-demo-root {
@@ -24,7 +24,7 @@
   }
 }
 
-/* —— Atmospherics layer —— */
+/* - -  Atmospherics layer - -  */
 .spirit-demo-root .demo-atmos {
   position: fixed;
   inset: 0;
@@ -92,7 +92,7 @@
   );
 }
 
-/* —— Shell —— */
+/* - -  Shell - -  */
 .spirit-demo-root .demo-shell {
   position: relative;
   z-index: var(--demo-z-content);
@@ -105,7 +105,7 @@
   padding-top: calc(1rem + env(safe-area-inset-top, 0px));
 }
 
-/* —— Section bands —— */
+/* - -  Section bands - -  */
 .spirit-demo-root .demo-section {
   position: relative;
   padding-block: clamp(2.5rem, 7vw, 4.5rem);
@@ -115,7 +115,7 @@
   border-top: 1px solid var(--demo-border);
 }
 
-/* —— Section header (eyebrow + title + lede) —— */
+/* - -  Section header (eyebrow + title + lede) - -  */
 .spirit-demo-root .demo-section__header {
   display: flex;
   flex-direction: column;
@@ -158,7 +158,7 @@
   color: var(--demo-text-muted);
 }
 
-/* —— Hero grid —— */
+/* - -  Hero grid - -  */
 .spirit-demo-root .demo-hero-grid {
   display: grid;
   gap: 1rem;
@@ -177,7 +177,7 @@
   }
 }
 
-/* —— Generic 2-up / 3-up / 4-up grids —— */
+/* - -  Generic 2-up / 3-up / 4-up grids - -  */
 .spirit-demo-root .demo-grid-2 {
   display: grid;
   gap: 1rem;
@@ -219,7 +219,7 @@
   }
 }
 
-/* —— Chat preview split (sidebar + transcript) —— */
+/* - -  Chat preview split (sidebar + transcript) - -  */
 .spirit-demo-root .demo-chat-split {
   display: grid;
   grid-template-columns: 1fr;
@@ -232,7 +232,7 @@
   }
 }
 
-/* —— Oracle preview split (orb + telemetry) —— */
+/* - -  Oracle preview split (orb + telemetry) - -  */
 .spirit-demo-root .demo-oracle-split {
   display: grid;
   grid-template-columns: 1fr;
@@ -246,7 +246,7 @@
   }
 }
 
-/* —— Mobile bottom dock —— */
+/* - -  Mobile bottom dock - -  */
 .spirit-demo-root .demo-dock {
   position: fixed;
   left: 0;
@@ -286,7 +286,7 @@
   }
 }
 
-/* —— Desktop side rail (lg+ only) —— */
+/* - -  Desktop side rail (lg+ only) - -  */
 .spirit-demo-root .demo-rail {
   display: none;
 }
@@ -330,7 +330,7 @@
   box-shadow: var(--demo-glow-soft);
 }
 
-/* —— Top bar (mobile section selector + brand) —— */
+/* - -  Top bar (mobile section selector + brand) - -  */
 .spirit-demo-root .demo-topbar {
   display: flex;
   align-items: center;
@@ -363,7 +363,7 @@
   color: var(--demo-text-faint);
 }
 
-/* —— Demo banner (visual-only label) —— */
+/* - -  Demo banner (visual-only label) - -  */
 .spirit-demo-root .demo-banner {
   display: flex;
   align-items: center;

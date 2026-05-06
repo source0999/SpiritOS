@@ -1,6 +1,6 @@
 "use client";
 
-// ── VoiceSettingsPanel — Voice picker + timing (Prompt 9I mobile-first polish) ───
+// ── VoiceSettingsPanel - Voice picker + timing (Prompt 9I mobile-first polish) ───
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { memo, useState } from "react";
 
@@ -13,7 +13,7 @@ function voiceCatalogSourceLine(
   source: string | undefined,
   allowlistMode: string | undefined,
 ): string {
-  if (!source && !allowlistMode) return "Source: —";
+  if (!source && !allowlistMode) return "Source: -";
   if (source === "elevenlabs-api") return "Source: ElevenLabs catalog";
   if (source === "env-name-allowlist") {
     return "Source: allowlist (names resolved by catalog)";
@@ -21,7 +21,7 @@ function voiceCatalogSourceLine(
   if (source === "env-allowlist") return "Source: allowlist (voice IDs from env)";
   if (source === "mixed") return "Source: allowlist + catalog metadata";
   if (source) return `Source: ${source}`;
-  return `Source: — · mode: ${allowlistMode ?? "—"}`;
+  return `Source: - · mode: ${allowlistMode ?? "-"}`;
 }
 
 const START_OPTS = [0, 250, 500, 1000] as const;
@@ -78,7 +78,7 @@ export const VoiceSettingsPanel = memo(function VoiceSettingsPanel({
         </p>
         <div className="font-mono text-[10px] text-chalk/50">
           Audio engine:{" "}
-          <span className="text-chalk/75">{ctx === "unknown" ? "—" : ctx}</span>
+          <span className="text-chalk/75">{ctx === "unknown" ? " - " : ctx}</span>
         </div>
 
         {showEnableAudioInSettings ? (
@@ -137,7 +137,7 @@ export const VoiceSettingsPanel = memo(function VoiceSettingsPanel({
             {state.voicesStatus === "error" ? (
               <div className="flex flex-col gap-2">
                 <p className="font-mono text-[10px] text-rose-200/80">
-                  Could not load voices{state.voicesError ? ` — ${state.voicesError}` : ""}
+                  Could not load voices{state.voicesError ? ` - ${state.voicesError}` : ""}
                 </p>
               </div>
             ) : null}
@@ -260,7 +260,7 @@ export const VoiceSettingsPanel = memo(function VoiceSettingsPanel({
         {debugTimingOpen ? (
           <div className="mt-2 flex flex-col gap-3">
             <p className="font-mono text-[9px] leading-snug text-chalk/40">
-              Only for testing timing — leave at zero in production unless you enjoy suffering.
+              Only for testing timing - leave at zero in production unless you enjoy suffering.
             </p>
             <div className="grid min-w-0 gap-2 sm:grid-cols-2">
               <label className="flex min-w-0 flex-col gap-0.5">

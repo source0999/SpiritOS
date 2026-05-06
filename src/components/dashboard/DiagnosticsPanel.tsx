@@ -1,6 +1,6 @@
-// ── DiagnosticsPanel — live server-derived rail (RSC + client leaf for polling) ─
-// > SpiritDiagnosticsLive owns the only /api/spirit/health poll — never stack SpiritHealthIndicator here.
-// > Design language: _blueprints/design_system.md — mono metadata, cyan values
+// ── DiagnosticsPanel - live server-derived rail (RSC + client leaf for polling) ─
+// > SpiritDiagnosticsLive owns the only /api/spirit/health poll - never stack SpiritHealthIndicator here.
+// > Design language: _blueprints/design_system.md - mono metadata, cyan values
 import type { ReactNode } from "react";
 
 import { SpiritDiagnosticsLive } from "@/components/dashboard/SpiritDiagnosticsLive";
@@ -9,9 +9,9 @@ import { cn } from "@/lib/cn";
 
 export type DiagnosticsPanelProps = {
   className?: string;
-  /** Mounted inside WorkspaceDiagnosticsRail — flush column, skip glass card stacking. */
+  /** Mounted inside WorkspaceDiagnosticsRail - flush column, skip glass card stacking. */
   docked?: boolean;
-  /** Rail collapse control — absolutely positioned top-right so it reads as panel chrome, not a stray tab. */
+  /** Rail collapse control - absolutely positioned top-right so it reads as panel chrome, not a stray tab. */
   headerActions?: ReactNode;
 };
 

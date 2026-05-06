@@ -2,7 +2,7 @@ import "server-only";
 
 import type { SpiritRuntimeSurface } from "@/lib/spirit/spirit-runtime-surface";
 
-// ── model-routing — /chat vs /oracle Ollama ids (Prompt 9C) ──────────────────────
+// ── model-routing - /chat vs /oracle Ollama ids (Prompt 9C) ──────────────────────
 // > Hermes-class chat stays on OLLAMA_MODEL; Oracle lane can opt into a smaller model.
 
 export type { SpiritRuntimeSurface } from "@/lib/spirit/spirit-runtime-surface";

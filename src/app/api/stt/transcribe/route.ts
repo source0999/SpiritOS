@@ -2,11 +2,11 @@ import { NextResponse } from "next/server";
 
 import { SttProviderError, transcribeSpeech } from "@/lib/server/stt-provider";
 
-// ── /api/stt/transcribe — browser audio → Whisper (same-origin; no key exposure) ─
+// ── /api/stt/transcribe - browser audio → Whisper (same-origin; no key exposure) ─
 // > Spirit owns the response shape: { ok, provider, text, durationMs? }.
 // > Headers: x-spirit-stt-provider: whisper, x-spirit-stt-duration-ms when known.
-// > Dev console traces audio size + upstream status — we never log raw transcripts
-// > unless SPIRIT_DEV_STT_DUMP=1 (off by default — Source has been roasted for less).
+// > Dev console traces audio size + upstream status - we never log raw transcripts
+// > unless SPIRIT_DEV_STT_DUMP=1 (off by default - Source has been roasted for less).
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
 
@@ -65,7 +65,7 @@ export async function POST(req: Request) {
     );
   }
 
-  // size guard before we hand to upstream — Whisper hates 0-byte uploads.
+  // size guard before we hand to upstream - Whisper hates 0-byte uploads.
   const sizeForLog =
     typeof (audioBlob as Blob).size === "number" ? (audioBlob as Blob).size : -1;
   const typeForLog =

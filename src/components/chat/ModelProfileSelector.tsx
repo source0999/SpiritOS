@@ -1,6 +1,6 @@
 "use client";
 
-// ── ModelProfileSelector — Prompt 7 persona strip (Spirit chalk / cyan) ───────
+// ── ModelProfileSelector - Prompt 7 persona strip (Spirit chalk / cyan) ───────
 import { memo } from "react";
 
 import { MODEL_PROFILE_ORDER, MODEL_PROFILES } from "@/lib/spirit/model-profiles";

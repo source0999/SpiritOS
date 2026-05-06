@@ -1,4 +1,4 @@
-# ── Spirit OS — ignore build noise, secrets, and fat artifacts ─────────────────
+# ── Spirit OS - ignore build noise, secrets, and fat artifacts ─────────────────
 .DS_Store
 node_modules
 .next

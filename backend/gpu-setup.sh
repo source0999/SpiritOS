@@ -51,7 +51,7 @@ if [[ ! -f /etc/apt/sources.list.d/amdgpu.list ]]; then
 
   ok "ROCm APT repository added."
 else
-  ok "ROCm APT repository already configured — skipping."
+  ok "ROCm APT repository already configured - skipping."
 fi
 
 # ── Step 2: Update package index ─────────────────────────────────────────────
@@ -61,7 +61,7 @@ ok "Package index updated."
 
 # ── Step 3: Install amdgpu-dkms (kernel driver) ──────────────────────────────
 info "Step 3/6 · Installing amdgpu-dkms (kernel-level GPU driver)..."
-info "  This may take several minutes — DKMS compiles the kernel module."
+info "  This may take several minutes - DKMS compiles the kernel module."
 apt-get install -y amdgpu-dkms
 ok "amdgpu-dkms installed."
 
@@ -79,7 +79,7 @@ EOF
 
 apt-get update -qq
 
-# Install only the diagnostic tools — rocm-hip-runtime is not needed on the
+# Install only the diagnostic tools - rocm-hip-runtime is not needed on the
 # host because the Docker container ships its own complete ROCm runtime.
 apt-get install -y rocminfo rocm-smi-lib
 ok "ROCm tools installed."
@@ -94,14 +94,14 @@ if [[ -n "$REAL_USER" && "$REAL_USER" != "root" ]]; then
   usermod -aG render,video "$REAL_USER"
   ok "Added $REAL_USER to render and video groups."
 else
-  warn "Could not determine non-root user — add yourself manually:"
+  warn "Could not determine non-root user - add yourself manually:"
   warn "  sudo usermod -aG render,video \$USER && newgrp render"
 fi
 
 # Print the actual GIDs so you can verify docker-compose.yml group_add values
 RENDER_GID=$(getent group render | cut -d: -f3 || echo "NOT FOUND")
 VIDEO_GID=$(getent group video  | cut -d: -f3 || echo "NOT FOUND")
-info "  render GID = ${RENDER_GID}   (docker-compose.yml has \"993\" — $([ "$RENDER_GID" = "993" ] && echo 'MATCH ✓' || echo "MISMATCH — update group_add to \"${RENDER_GID}\""))"
+info "  render GID = ${RENDER_GID}   (docker-compose.yml has \"993\" - $([ "$RENDER_GID" = "993" ] && echo 'MATCH ✓' || echo "MISMATCH - update group_add to \"${RENDER_GID}\""))"
 info "  video  GID = ${VIDEO_GID}"
 
 # ── Step 6: Validate /dev nodes exist ────────────────────────────────────────
@@ -112,7 +112,7 @@ for node in /dev/kfd /dev/dri; do
   if [[ -e "$node" ]]; then
     ok "  $node present"
   else
-    warn "  $node NOT FOUND — amdgpu module may not be loaded yet"
+    warn "  $node NOT FOUND - amdgpu module may not be loaded yet"
     MISSING=1
   fi
 done

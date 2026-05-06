@@ -1,4 +1,4 @@
-// ── Demo icons — small inline SVGs to avoid coupling to lucide-react's API ────
+// ── Demo icons - small inline SVGs to avoid coupling to lucide-react's API ────
 // > The current repo pins lucide-react@^1.8.0 (unusual). Inlining these keeps
 // > the demo independent of icon-library versioning quirks. Visual-only file.
 // > stroke-width is set with currentColor so colors come from CSS variables.

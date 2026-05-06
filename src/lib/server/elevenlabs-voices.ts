@@ -1,6 +1,6 @@
 import "server-only";
 
-// ── ElevenLabs voice list — GET /v1/voices for UI + defaults (Prompt 9L allowlist) ─
+// ── ElevenLabs voice list - GET /v1/voices for UI + defaults (Prompt 9L allowlist) ─
 // > Name-only allowlist needs catalog; explicit Name:voice_id does not need voices_read.
 
 export type ElevenLabsVoiceRow = {
@@ -160,7 +160,7 @@ export function pickDefaultElevenLabsVoice(
   return { defaultVoiceId: null, defaultVoiceName: null };
 }
 
-// ── Env allowlist — explicit ids OR name-only (Prompt 9L) ─────────────────────────
+// ── Env allowlist - explicit ids OR name-only (Prompt 9L) ─────────────────────────
 
 export type ElevenLabsAllowlistMode = "explicit-id" | "name-only" | "mixed" | "json" | "none";
 
@@ -196,13 +196,13 @@ function parseCommaToken(token: string): AllowlistOrderedSegment | "invalid" | n
   if (VOICE_ID_LIKE.test(voice_id)) {
     return { kind: "explicit", row: { voice_id, name } };
   }
-  /* Colon present but RHS is not a plausible voice_id — treat whole token as a display name (catalog match). */
+  /* Colon present but RHS is not a plausible voice_id - treat whole token as a display name (catalog match). */
   return { kind: "name", name: t };
 }
 
 /**
  * `ELEVENLABS_VOICE_ALLOWLIST_JSON` wins over comma env when both are set.
- * JSON: `[{"name":"Clarice","voice_id":"abc"},…]` — always explicit-id mode.
+ * JSON: `[{"name":"Clarice","voice_id":"abc"},…]` - always explicit-id mode.
  * Comma: `Name:voice_id` (id must match VOICE_ID_LIKE) OR `Charlotte,Clarice` name-only.
  */
 export function parseElevenLabsVoiceAllowlistFromEnv(): ParsedElevenLabsAllowlist {

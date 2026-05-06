@@ -1,5 +1,5 @@
-// ── SpiritButton — cyan accent CTAs (hub Oracle link shares spiritPrimaryCtaClasses)
-// > No Radix. Static classes only — Tailwind must see full strings.
+// ── SpiritButton - cyan accent CTAs (hub Oracle link shares spiritPrimaryCtaClasses)
+// > No Radix. Static classes only - Tailwind must see full strings.
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
 import { cn } from "@/lib/cn";

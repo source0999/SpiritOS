@@ -1,6 +1,6 @@
 "use client";
 
-// ── OracleVoiceControls — hands-free Oracle session controls (Prompt 10D-E) ─────
+// ── OracleVoiceControls - hands-free Oracle session controls (Prompt 10D-E) ─────
 // > Big "Start session" CTA, big "Stop session" while running, tiny "Finish now"
 // > backup that only shows mid-utterance. Mic + Whisper + secure-context info live
 // > inline so the user never has to spelunk an advanced menu.
@@ -71,7 +71,7 @@ function primaryLabel(
     case "speaking":
       return "Speaking…";
     case "ready":
-      return sessionActive ? "Mic idle — waiting…" : "Start session";
+      return sessionActive ? "Mic idle - waiting…" : "Start session";
     case "restarting":
       return "Restarting…";
     case "stopped":
@@ -143,26 +143,26 @@ export const OracleVoiceControls = memo(function OracleVoiceControls({
 
   const hint = (() => {
     if (!readyForHints) return "Checking voice input…";
-    if (loopMode === "manual-text") return "Text fallback — type below.";
+    if (loopMode === "manual-text") return "Text fallback - type below.";
     if (insecureContext) return speech.capabilityMessage;
     if (blocked) return speech.captureBlockedHint ?? speech.capabilityMessage;
     if (speech.permissionState === "denied")
-      return "Mic permission denied — use text fallback or adjust browser site settings.";
+      return "Mic permission denied - use text fallback or adjust browser site settings.";
     if (speech.devicesEnumerateError) return `Mic list: ${speech.devicesEnumerateError}`;
     if (status === "thinking") return "Thinking…";
     if (status === "speaking") {
       const name = ttsState.elevenLabsVoiceName ?? ttsState.elevenLabsVoiceId ?? "voice";
       return `Speaking with ${name}`;
     }
-    if (status === "silence-detected") return "Heard the gap — sending to Whisper.";
+    if (status === "silence-detected") return "Heard the gap - sending to Whisper.";
     if (status === "restarting") return "Returning to listening…";
     if (status === "hearing-speech")
       return `Auto-send after ${(speech.silenceDurationMs / 1000).toFixed(1)}s of silence.`;
     if (status === "listening") return "Waiting for speech…";
     if (speech.permissionState === "granted")
       return sessionActive
-        ? "Session active — speak naturally, Oracle hears the gap."
-        : "Mic ready — tap Start session to begin.";
+        ? "Session active - speak naturally, Oracle hears the gap."
+        : "Mic ready - tap Start session to begin.";
     return oracleSessionStatusLabel(status);
   })();
 
@@ -190,7 +190,7 @@ export const OracleVoiceControls = memo(function OracleVoiceControls({
   const meterPct = Math.round((speech.audioLevel ?? 0) * 100);
   const silenceLabel = (() => {
     if (!speech.isRecording) return "Idle";
-    if (status === "silence-detected") return "Silence detected — sending…";
+    if (status === "silence-detected") return "Silence detected - sending…";
     if (status === "hearing-speech") return "Hearing speech";
     return `Waiting for speech (${Math.min(
       Math.round((speech.silenceMs / Math.max(1, speech.silenceDurationMs)) * 100),
@@ -206,7 +206,7 @@ export const OracleVoiceControls = memo(function OracleVoiceControls({
       aria-label="Oracle voice controls"
       className="oracle-chrome-px flex w-full min-w-0 flex-col gap-3 pb-2 pt-1"
     >
-      {/* ── Secure-context warning — impossible to miss when blocked ───────────────── */}
+      {/* ── Secure-context warning - impossible to miss when blocked ───────────────── */}
       {readyForHints && insecureContext ? (
         <div
           role="alert"
@@ -214,7 +214,7 @@ export const OracleVoiceControls = memo(function OracleVoiceControls({
           className="rounded-xl border border-rose-500/40 bg-rose-950/30 px-3 py-3 text-rose-50 sm:px-4"
         >
           <p className="font-mono text-[11px] font-semibold uppercase tracking-wider text-rose-200">
-            Mic blocked — insecure context
+            Mic blocked - insecure context
           </p>
           <p className="mt-1 font-mono text-[11px] leading-snug text-rose-100/95">
             This page is open over plain HTTP from a LAN/Tailscale IP. Browsers refuse
@@ -394,7 +394,7 @@ export const OracleVoiceControls = memo(function OracleVoiceControls({
                 data-testid="oracle-finish-now"
                 onClick={() => void onFinishThought()}
                 className="inline-flex min-h-[44px] shrink-0 touch-manipulation items-center justify-center rounded-xl border border-white/10 bg-white/[0.05] px-3 font-mono text-[10px] font-semibold uppercase tracking-wider text-chalk/80 hover:bg-white/[0.08]"
-                title="Backup — Oracle will normally auto-send when you stop talking."
+                title="Backup - Oracle will normally auto-send when you stop talking."
               >
                 Finish now
               </button>
@@ -402,7 +402,7 @@ export const OracleVoiceControls = memo(function OracleVoiceControls({
           </div>
         ) : (
           <p className="flex flex-1 items-center rounded-xl border border-dashed border-[color:var(--spirit-border)] px-3 py-3 font-mono text-xs text-chalk/55">
-            Text-only mode — open the composer below.
+            Text-only mode - open the composer below.
           </p>
         )}
 
@@ -501,7 +501,7 @@ export const OracleVoiceControls = memo(function OracleVoiceControls({
       speech.devices.length === 0 &&
       !speech.devicesEnumerateError ? (
         <p className="font-mono text-[10px] text-chalk/45">
-          No labeled mics yet — default capture still works.
+          No labeled mics yet - default capture still works.
         </p>
       ) : null}
     </section>

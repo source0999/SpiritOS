@@ -1,7 +1,7 @@
-// ── SpiritChatDB — local IndexedDB facade (Spirit OS chat overhaul) ────────────
+// ── SpiritChatDB - local IndexedDB facade (Spirit OS chat overhaul) ────────────
 import Dexie, { type Table } from "dexie";
 
-import type { ChatFolder, ChatMessage, ChatThread } from "@/lib/chat-db.types";
+import type { ChatFolder, ChatMessage, ChatThread, OracleMemoryEvent } from "@/lib/chat-db.types";
 
 export function isBrowserChatDbAvailable(): boolean {
   return typeof window !== "undefined";
@@ -11,6 +11,7 @@ export class SpiritChatDB extends Dexie {
   folders!: Table<ChatFolder, string>;
   threads!: Table<ChatThread, string>;
   messages!: Table<ChatMessage, string>;
+  oracleMemoryEvents!: Table<OracleMemoryEvent, string>;
 
   constructor() {
     super("SpiritChatDB");
@@ -38,7 +39,7 @@ export class SpiritChatDB extends Dexie {
         "id, folderId, order, modelProfileId, updatedAt, createdAt, archived",
       messages: "id, threadId, createdAt",
     });
-    // ── v4: pinned threads (Prompt 10A) — additive fields, default unpinned ───────
+    // ── v4: pinned threads (Prompt 10A) - additive fields, default unpinned ───────
     this.version(4)
       .stores({
         folders: "id, order, updatedAt, createdAt",
@@ -52,6 +53,14 @@ export class SpiritChatDB extends Dexie {
           if (row.pinned == null) row.pinned = false;
         });
       });
+    // ── v5: oracle memory events (additive; table absent → no Oracle memory writes) ─
+    this.version(5).stores({
+      folders: "id, order, updatedAt, createdAt",
+      threads:
+        "id, folderId, order, modelProfileId, pinned, pinnedAt, updatedAt, createdAt, archived",
+      messages: "id, threadId, createdAt",
+      oracleMemoryEvents: "id, createdAt",
+    });
   }
 }
 

@@ -57,7 +57,7 @@ function SpiritDashboardHomeInner() {
                 Trinity Cluster · Sovereign
               </p>
             </div>
-            {/* Theme + micro-status — stacked so the strip owns the corner, copy doesn’t elbow the title */}
+            {/* Theme + micro-status - stacked so the strip owns the corner, copy doesn’t elbow the title */}
             <div className="flex shrink-0 flex-col items-end gap-0.5 sm:gap-1">
               <ThemeStrip />
               <p className="flex flex-wrap items-center justify-end gap-x-1 gap-y-0.5 text-right font-mono text-[9px] leading-tight text-chalk/40 sm:text-[9.5px]">
@@ -76,13 +76,13 @@ function SpiritDashboardHomeInner() {
         </header>
 
         <main className="scrollbar-hide min-h-0 flex-1 overflow-y-auto px-3 pb-10 pt-5 sm:px-5">
-          {/* Dashboard grid — 1 col mobile, 2 col sm, 12 col xl */}
+          {/* Dashboard grid - 1 col mobile, 2 col sm, 12 col xl */}
           <div className="mx-auto grid max-w-[1400px] grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-12">
 
-            {/* Oracle Voice — left of main row */}
+            {/* Oracle Voice - left of main row */}
             <HomelabOracleVoiceWidget className="col-span-1 sm:col-span-1 xl:col-span-5" />
 
-            {/* Daily Briefing — right of main row */}
+            {/* Daily Briefing - right of main row */}
             <HomelabDailyBriefingWidget className="col-span-1 sm:col-span-1 xl:col-span-7" />
 
             {/* System Stats */}

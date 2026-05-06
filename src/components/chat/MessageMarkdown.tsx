@@ -1,6 +1,6 @@
 "use client";
 
-// ── MessageMarkdown — assistant-only markdown (react-markdown + GFM, no raw HTML) ─
+// ── MessageMarkdown - assistant-only markdown (react-markdown + GFM, no raw HTML) ─
 import type { Components } from "react-markdown";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";

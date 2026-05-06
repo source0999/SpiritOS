@@ -1,8 +1,8 @@
 "use client";
 
-// ── WorkspaceDiagnosticsRail — route-scoped collapse memory (no /chat ⇄ / leakage) ─
+// ── WorkspaceDiagnosticsRail - route-scoped collapse memory (no /chat ⇄ / leakage) ─
 // > /chat persists under its own LS key; "/" never reads /chat; other lanes use :default.
-// > Single chevron lives in the diagnostics header chrome — not a random strip tab.
+// > Single chevron lives in the diagnostics header chrome - not a random strip tab.
 import { usePathname } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";

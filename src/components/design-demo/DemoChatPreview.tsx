@@ -1,4 +1,4 @@
-// ── DemoChatPreview — visual preview of /chat workspace ──────────────────────
+// ── DemoChatPreview - visual preview of /chat workspace ──────────────────────
 // > Visual-only. Real chat lives in /chat (untouched). All bubbles, modes,
 // > pinned threads, and folders are static mock content.
 import Link from "next/link";
@@ -46,7 +46,7 @@ export function DemoChatPreview() {
           A transcript with a memory.
         </h2>
         <p className="demo-section__lede">
-          Saved threads, folders, modes — the real version lives at{" "}
+          Saved threads, folders, modes - the real version lives at{" "}
           <Link
             href="/chat"
             className="demo-btn demo-btn--ghost demo-btn--sm"
@@ -59,7 +59,7 @@ export function DemoChatPreview() {
       </header>
 
       <div className="demo-chat-split">
-        {/* —— Sidebar rail (mock thread list) —— */}
+        {/* - -  Sidebar rail (mock thread list) - -  */}
         <aside
           className="demo-card demo-card--feature"
           aria-label="Saved threads · mock"
@@ -121,7 +121,7 @@ export function DemoChatPreview() {
           </div>
         </aside>
 
-        {/* —— Chat pane (mock conversation) —— */}
+        {/* - -  Chat pane (mock conversation) - -  */}
         <div
           className="demo-card"
           aria-label="Conversation · mock"
@@ -163,7 +163,7 @@ export function DemoChatPreview() {
               <div className="demo-bubble demo-bubble--spirit">
                 <p className="demo-bubble__role">Spirit</p>
                 <p>
-                  Cap your decoding window first — anything over 8 seconds
+                  Cap your decoding window first - anything over 8 seconds
                   hurts perceived latency more than accuracy buys you. Then
                   trade the smallest model that still recovers proper nouns.
                   Most rooms answer that with <code>medium.en</code> on the
@@ -222,7 +222,7 @@ export function DemoChatPreview() {
         </div>
       </div>
 
-      {/* —— Workflow strip (visualizer mock) —— */}
+      {/* - -  Workflow strip (visualizer mock) - -  */}
       <div
         className="demo-glass demo-card demo-motion-fade-up"
         style={{ marginTop: "1.25rem" }}

@@ -38,6 +38,8 @@ export type BuildModelRuntimeOptions = {
   runtimeSurface?: SpiritRuntimeSurface;
   /** Dynamic [SYSTEM STATE] block, injected after response budget, before deep think. */
   systemState?: SpiritSystemStateInput | null;
+  /** Optional [ORACLE MEMORY CONTEXT] block from recent Oracle voice sessions. */
+  oracleMemoryContext?: string | null;
 };
 
 export function buildSemanticRoutingInstruction(profile: ModelProfile): string {
@@ -64,6 +66,7 @@ export function buildModelRuntime(
   const deep = Boolean(opts?.deepThinkEnabled);
   const research = opts?.researchWebContext?.trim();
   const plan = opts?.researchPlanSummary?.trim();
+  const oracleMemory = opts?.oracleMemoryContext?.trim();
   const digestHasVerifiedUrls =
     typeof opts?.webVerifiedUrlCount === "number"
       ? opts.webVerifiedUrlCount > 0
@@ -112,6 +115,13 @@ ${plan}
 `
       : "";
 
+  const oracleMemoryBlock =
+    oracleMemory && oracleMemory.length > 0
+      ? `
+
+${oracleMemory}`
+      : "";
+
   const prefsBlock =
     extra && extra.length > 0
       ? `
@@ -125,7 +135,7 @@ ${extra}`
 
   const systemPrompt = `${profile.systemPrompt}
 
-${surfacePrefix}${budget}${systemStateBlock}${semanticRoutingBlock}${deepBlock}${researchBlock}${planBlock}${prefsBlock}
+${surfacePrefix}${budget}${systemStateBlock}${semanticRoutingBlock}${deepBlock}${researchBlock}${planBlock}${oracleMemoryBlock}${prefsBlock}
 
 ${SPIRIT_CAPABILITY_CONTEXT_HINT}
 

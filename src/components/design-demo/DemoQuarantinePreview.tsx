@@ -1,6 +1,6 @@
-// ── DemoQuarantinePreview — experimental cards lab (visual-only) ─────────────
+// ── DemoQuarantinePreview - experimental cards lab (visual-only) ─────────────
 // > All cards are mock; nothing here mounts real experimental code.
-// > The host route /quarantine is untouched — see optional safe link below.
+// > The host route /quarantine is untouched - see optional safe link below.
 import type { ReactElement } from "react";
 import Link from "next/link";
 
@@ -101,7 +101,7 @@ export function DemoQuarantinePreview() {
         </h2>
         <p className="demo-section__lede">
           Containment for in-flight experiments. Nothing here is wired into
-          production routes. The real lab page —{" "}
+          production routes. The real lab page  - {" "}
           <Link
             href="/quarantine"
             className="demo-btn demo-btn--ghost demo-btn--sm"
@@ -109,7 +109,7 @@ export function DemoQuarantinePreview() {
           >
             /quarantine <ArrowRightIcon size={11} />
           </Link>{" "}
-          — keeps its own layout.
+          - keeps its own layout.
         </p>
       </header>
 

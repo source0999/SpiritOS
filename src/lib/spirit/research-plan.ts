@@ -1,5 +1,5 @@
-// ── research-plan — plan-first stub (Prompt 10C Stage 5) ─────────────────────────
-// > Editable steps only — no background job queue until a later prompt eats PM2 alive.
+// ── research-plan - plan-first stub (Prompt 10C Stage 5) ─────────────────────────
+// > Editable steps only - no background job queue until a later prompt eats PM2 alive.
 
 export type ResearchPlanStepStatus = "pending" | "active" | "done" | "error";
 
@@ -84,6 +84,6 @@ export function removeResearchPlanStep(plan: ResearchPlan, stepId: string): Rese
 }
 
 export function researchPlanToSummary(plan: ResearchPlan): string {
-  const lines = plan.steps.map((s, i) => `${i + 1}. ${s.label}${s.detail ? ` — ${s.detail}` : ""}`);
+  const lines = plan.steps.map((s, i) => `${i + 1}. ${s.label}${s.detail ? ` - ${s.detail}` : ""}`);
   return `## User-approved research plan\nTitle: ${plan.title}\nQuestion: ${plan.originalQuestion}\nSteps:\n${lines.join("\n")}`;
 }

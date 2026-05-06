@@ -1,6 +1,6 @@
 "use client";
 
-// ── OracleStagePanel — hub “Oracle” tab CTA (not the full /oracle workspace) ─
+// ── OracleStagePanel - hub “Oracle” tab CTA (not the full /oracle workspace) ─
 import Link from "next/link";
 
 import { GlassPanel } from "@/components/ui/GlassPanel";

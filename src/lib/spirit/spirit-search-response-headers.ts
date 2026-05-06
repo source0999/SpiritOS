@@ -1,4 +1,4 @@
-// ── spirit-search-response-headers — parse /api/spirit proof headers (client-safe) ─
+// ── spirit-search-response-headers - parse /api/spirit proof headers (client-safe) ─
 // > Server telemetry lives in spirit-search-telemetry (server-only); keep this import-free of that.
 
 export type SpiritSearchStatusNormalized = "used" | "skipped" | "failed" | "disabled" | "none";

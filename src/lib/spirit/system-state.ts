@@ -1,6 +1,6 @@
-// ── system-state — dynamic [SYSTEM STATE] block for the SpiritOS system prompt ─
+// ── system-state - dynamic [SYSTEM STATE] block for the SpiritOS system prompt ─
 // > resolveSpiritSystemState reads process.env and is server-only in practice.
-// > buildSystemStateBlock is a pure string builder — client + server safe.
+// > buildSystemStateBlock is a pure string builder - client + server safe.
 
 import type { SpiritRuntimeSurface } from "@/lib/spirit/spirit-runtime-surface";
 

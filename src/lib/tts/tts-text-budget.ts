@@ -1,4 +1,4 @@
-// ── tts-text-budget — keep /api/tts under 800 chars (Prompt 10B) ───────────────────
+// ── tts-text-budget - keep /api/tts under 800 chars (Prompt 10B) ───────────────────
 
 export const TTS_TEXT_LIMIT = 800;
 export const TTS_SUMMARY_TRIGGER_CHARS = 700;

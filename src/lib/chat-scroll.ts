@@ -1,4 +1,4 @@
-// ── chat-scroll — near-bottom detection for SpiritChat stickiness (Prompt 9H) ───
+// ── chat-scroll - near-bottom detection for SpiritChat stickiness (Prompt 9H) ───
 
 export const DEFAULT_SCROLL_NEAR_BOTTOM_PX = 160;
 

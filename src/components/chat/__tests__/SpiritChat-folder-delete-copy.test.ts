@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-/** Inline folder delete confirm — keep in sync with ChatFolderHeaderRow. */
+/** Inline folder delete confirm - keep in sync with ChatFolderHeaderRow. */
 export const FOLDER_DELETE_INLINE_COPY =
   "Delete folder? Chats move to Chats.";
 

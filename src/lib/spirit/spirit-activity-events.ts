@@ -1,4 +1,4 @@
-// ── spirit-activity-events — high-level workspace signals (no chain-of-thought) ─
+// ── spirit-activity-events - high-level workspace signals (no chain-of-thought) ─
 // > Prompt 10A: capped ring buffer for UI; nothing sensitive belongs here.
 
 export const SPIRIT_ACTIVITY_EVENT_CAP = 20;

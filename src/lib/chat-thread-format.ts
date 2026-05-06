@@ -1,4 +1,4 @@
-// ── chat-thread-format — sidebar timestamp labels (shared by folder + list rows) ─
+// ── chat-thread-format - sidebar timestamp labels (shared by folder + list rows) ─
 
 export function formatThreadUpdatedLabel(updatedAt: number): string {
   const diffMs = Math.max(0, Date.now() - updatedAt);

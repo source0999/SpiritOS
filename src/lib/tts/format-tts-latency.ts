@@ -1,20 +1,20 @@
-// ── formatTtsLatency — “last voice” copy + start-first summary (Prompt 9L) ────────
+// ── formatTtsLatency - “last voice” copy + start-first summary (Prompt 9L) ────────
 import type { TtsLatency } from "@/lib/tts/audio-queue";
 
 function formatMs(ms: number | undefined): string {
-  if (ms == null || !Number.isFinite(ms)) return "—";
+  if (ms == null || !Number.isFinite(ms)) return " - ";
   if (ms >= 1000) return `${(ms / 1000).toFixed(1)}s`;
   return `${Math.round(ms)}ms`;
 }
 
 /** User-facing seconds (710ms → 0.7s; 5700ms → 5.7s). */
 export function formatSecondsOneDecimal(ms: number | undefined): string {
-  if (ms == null || !Number.isFinite(ms)) return "—";
+  if (ms == null || !Number.isFinite(ms)) return " - ";
   return `${(ms / 1000).toFixed(1)}s`;
 }
 
 function providerLabel(p?: string): string {
-  if (!p || p === "—") return "—";
+  if (!p || p === " - ") return " - ";
   if (p === "elevenlabs") return "ElevenLabs";
   if (p === "piper") return "Piper";
   return p;
@@ -23,7 +23,7 @@ function providerLabel(p?: string): string {
 function playbackLabel(m?: TtsLatency["playbackMode"]): string {
   if (m === "html-audio") return "HTMLAudioElement";
   if (m === "audio-context") return "AudioContext";
-  return "—";
+  return " - ";
 }
 
 /** User-facing playback line (Voice card friendly block). */
@@ -107,7 +107,7 @@ export function formatTtsLastVoiceLine(lat: TtsLatency | undefined): string {
     typeof lat.startDelayMs === "number" && lat.startDelayMs > 0
       ? `start delay ${lat.startDelayMs}ms`
       : null,
-    pb !== "—" ? pb : null,
+    pb !== " - " ? pb : null,
     spoken,
   ].filter(Boolean);
   return parts.join(" · ");
@@ -153,7 +153,7 @@ export function formatTtsFriendlySummaryLines(i: VoiceActivityLineInput): string
       ? lat.voiceName.trim()
       : typeof lat.voiceId === "string" && lat.voiceId.trim()
         ? shortVoiceId(lat.voiceId.trim())
-        : "—";
+        : " - ";
 
   const primary = formatTtsFriendlyStartSummary(lat);
 
@@ -168,7 +168,7 @@ export function formatTtsFriendlySummaryLines(i: VoiceActivityLineInput): string
   const responseLine =
     responseMs != null
       ? `${prov} responded in ${formatSecondsOneDecimal(responseMs)}`
-      : `${prov} responded in —`;
+      : `${prov} responded in  - `;
 
   return [
     primary,

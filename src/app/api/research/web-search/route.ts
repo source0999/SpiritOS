@@ -4,7 +4,7 @@ import { runOpenAiWebSearch } from "@/lib/server/openai-web-search";
 import type { ModelProfileId } from "@/lib/spirit/model-profile.types";
 import { isModelProfileId } from "@/lib/spirit/model-profiles";
 
-// ── /api/research/web-search — OpenAI proof-of-search (Prompt 10B) ───────────────
+// ── /api/research/web-search - OpenAI proof-of-search (Prompt 10B) ───────────────
 // > Isolated from Hermes; UI can call to preview sources without streaming chat.
 
 export const dynamic = "force-dynamic";

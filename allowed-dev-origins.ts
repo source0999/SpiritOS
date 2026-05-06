@@ -1,6 +1,6 @@
-// ── buildAllowedDevOrigins — Tailscale/LAN HMR allowlist (Prompt 9J) ───────────────
+// ── buildAllowedDevOrigins - Tailscale/LAN HMR allowlist (Prompt 9J) ───────────────
 // > Lives next to next.config.ts so Next can import without @ path drama.
-// > Hostnames only — no protocol, no port. Wildcard: `*.ts.net` per Next docs.
+// > Hostnames only - no protocol, no port. Wildcard: `*.ts.net` per Next docs.
 
 const DEFAULT_DEV_HOSTS = [
   "localhost",

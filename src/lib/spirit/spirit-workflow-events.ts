@@ -1,5 +1,5 @@
-// ── spirit-workflow-events — plan / research steps for UI (Prompt 10C) ───────────
-// > High-level labels only — no chain-of-thought, no tool dumps.
+// ── spirit-workflow-events - plan / research steps for UI (Prompt 10C) ───────────
+// > High-level labels only - no chain-of-thought, no tool dumps.
 
 import type { ModelProfileId } from "@/lib/spirit/model-profile.types";
 import type { SpiritRouteDecision, SpiritRouteLane } from "@/lib/spirit/spirit-route-decision";
@@ -12,7 +12,7 @@ export type SpiritWorkflowStep = {
   status: SpiritWorkflowStepStatus;
 };
 
-/** UI visualizer uses a subset (no "skipped" in props contract — map to pending/done). */
+/** UI visualizer uses a subset (no "skipped" in props contract - map to pending/done). */
 export type SpiritVisualizerStepStatus = "pending" | "active" | "done" | "error";
 
 export type SpiritVisualizerStep = {

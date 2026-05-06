@@ -1,8 +1,8 @@
 "use client";
 
-// ── TaskbarRail — stage switcher (desktop + mobile) ──────────────────────────
+// ── TaskbarRail - stage switcher (desktop + mobile) ──────────────────────────
 // > Client leaf: only onClick + aria. TASKBAR config lives in stageTypes.ts
-// > Buttons floor at min 44×44 — mobile tab bar stacking uses parent linkWrap sizing
+// > Buttons floor at min 44×44 - mobile tab bar stacking uses parent linkWrap sizing
 import { cn } from "@/lib/cn";
 import { TASKBAR, type StageId } from "@/components/dashboard/stageTypes";
 

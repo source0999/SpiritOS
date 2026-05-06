@@ -1,5 +1,5 @@
-// ── chat-persistence — browser-guarded CRUD helpers (no UI, no transports) ────
-// > Failure mode: console.error + soft return — never chuck the orchestrator shell.
+// ── chat-persistence - browser-guarded CRUD helpers (no UI, no transports) ────
+// > Failure mode: console.error + soft return - never chuck the orchestrator shell.
 import { db, isBrowserChatDbAvailable } from "@/lib/chat-db";
 import { isDuplicateFolderName, sortThreadsWithOrderFallback } from "@/lib/chat-folder-utils";
 import type {
@@ -282,7 +282,7 @@ export async function deleteMessages(messageIds: string[]): Promise<void> {
   }
 }
 
-// ── Folders (Prompt 5) — CRUD only; delete never nukes threads ─────────────────
+// ── Folders (Prompt 5) - CRUD only; delete never nukes threads ─────────────────
 
 export async function createFolder(
   name?: string,

@@ -3,7 +3,7 @@
  *   shimmer lines. All scoped under .spirit-demo-root.
  * ────────────────────────────────────────────────────────────────────────── */
 
-/* —— Glass surface base —— */
+/* - -  Glass surface base - -  */
 .spirit-demo-root .demo-glass {
   background: var(--demo-glass);
   backdrop-filter: blur(var(--demo-blur-md)) saturate(115%);
@@ -23,7 +23,7 @@
   border-color: color-mix(in oklab, var(--demo-border) 60%, transparent);
 }
 
-/* —— Accent-tinted glass (per lane) —— */
+/* - -  Accent-tinted glass (per lane) - -  */
 .spirit-demo-root .demo-glass--cyan {
   background: linear-gradient(
     160deg,
@@ -61,7 +61,7 @@
   box-shadow: var(--demo-glow-emerald), var(--demo-inset-shine);
 }
 
-/* —— Scanline overlay (decorative; aria-hidden on host) —— */
+/* - -  Scanline overlay (decorative; aria-hidden on host) - -  */
 .spirit-demo-root .demo-scanlines {
   position: absolute;
   inset: 0;
@@ -78,7 +78,7 @@
   border-radius: inherit;
 }
 
-/* —— Shimmer line (horizontal sweep across hero) —— */
+/* - -  Shimmer line (horizontal sweep across hero) - -  */
 .spirit-demo-root .demo-shimmer {
   position: absolute;
   left: 0;
@@ -99,7 +99,7 @@
   border-radius: inherit;
 }
 
-/* —— Orb ring system (Oracle preview) —— */
+/* - -  Orb ring system (Oracle preview) - -  */
 .spirit-demo-root .demo-orb {
   position: relative;
   width: clamp(11rem, 50vw, 16rem);
@@ -178,7 +178,7 @@
   opacity: 0.7;
 }
 
-/* —— Audio waveform bars (Oracle preview) —— */
+/* - -  Audio waveform bars (Oracle preview) - -  */
 .spirit-demo-root .demo-wave {
   display: flex;
   align-items: flex-end;
@@ -214,7 +214,7 @@
 .spirit-demo-root .demo-wave__bar:nth-child(15) { animation-delay: -1.45s; }
 .spirit-demo-root .demo-wave__bar:nth-child(16) { animation-delay: -1.55s; }
 
-/* —— Status pulse dot —— */
+/* - -  Status pulse dot - -  */
 .spirit-demo-root .demo-pulse-dot {
   position: relative;
   display: inline-block;
@@ -247,7 +247,7 @@
   border-color: color-mix(in oklab, var(--demo-quarantine) 60%, transparent);
 }
 
-/* —— Corner caret marks (cinematic instrument feel) —— */
+/* - -  Corner caret marks (cinematic instrument feel) - -  */
 .spirit-demo-root .demo-corners {
   position: absolute;
   inset: 0.5rem;

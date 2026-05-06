@@ -10,7 +10,7 @@ import {
   sortElevenLabsVoicesForUi,
 } from "@/lib/server/elevenlabs-voices";
 
-// ── tts-provider — Piper + ElevenLabs server-side (Prompt 9C; no keys to client) ───
+// ── tts-provider - Piper + ElevenLabs server-side (Prompt 9C; no keys to client) ───
 
 export type TtsProvider = "piper" | "elevenlabs";
 
@@ -20,7 +20,7 @@ export type TtsRequestInput = {
   voice?: string;
   /** ElevenLabs `voice_id` from client Voice picker; Piper ignores. */
   voiceId?: string;
-  /** Client label for response headers / latency line — not used to pick ElevenLabs URL. */
+  /** Client label for response headers / latency line - not used to pick ElevenLabs URL. */
   voiceName?: string;
   language?: string;
   responseFormat?: "wav" | "mp3";

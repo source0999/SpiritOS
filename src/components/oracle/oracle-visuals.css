@@ -1,6 +1,6 @@
-/* ── Oracle orb + visualizer — token-aware, no CDN assets ────────────────────────
+/* ── Oracle orb + visualizer - token-aware, no CDN assets ────────────────────────
  * > Imported from client surfaces only. Animations scoped; kill them in a11y lane.
- * > Safe-area + touch: iOS notch / home indicator, Android gesture bars — Spirit
+ * > Safe-area + touch: iOS notch / home indicator, Android gesture bars - Spirit
  * > refuses to let your thumb miss the mic CTA because someone loved 8px padding.
  */
 

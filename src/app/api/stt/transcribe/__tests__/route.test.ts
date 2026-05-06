@@ -93,7 +93,7 @@ describe("POST /api/stt/transcribe", () => {
     });
     const res = await POST(req);
     // Note: Object.assign-built errors aren't `instanceof SttProviderError` from the real
-    // module — our mock class is used inside the route via the vi.mock import. So this
+    // module - our mock class is used inside the route via the vi.mock import. So this
     // will fall through to the generic 502 path. Either way, an error JSON comes back.
     expect([502, 503]).toContain(res.status);
     expect(res.headers.get("x-spirit-stt-provider")).toBe("whisper");

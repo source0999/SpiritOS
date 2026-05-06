@@ -1,5 +1,5 @@
-// ── chat-sidebar-dnd — pure drop math (oldSpiritOS rules, Dexie-agnostic) ───────
-// > parseDragId + getThreadLocation + computeThreadDropPlan — no DOM geometry.
+// ── chat-sidebar-dnd - pure drop math (oldSpiritOS rules, Dexie-agnostic) ───────
+// > parseDragId + getThreadLocation + computeThreadDropPlan - no DOM geometry.
 import { closestCenter, pointerWithin, type Collision, type CollisionDetection } from "@dnd-kit/core";
 import type { UniqueIdentifier } from "@dnd-kit/core";
 
@@ -13,7 +13,7 @@ export const CHAT_SIDEBAR_ROOT_DROP_ID = `${FOLDER_DROP_PREFIX}root` as const;
 
 /**
  * Prefer pointer hit targets so `folder:root` wins over ghost `closestCenter` folder grabs
- * when dragging a thread back to Chats — still picks nearest thread when hovering a row.
+ * when dragging a thread back to Chats - still picks nearest thread when hovering a row.
  */
 export const chatSidebarThreadCollisionDetection: CollisionDetection = (args) => {
   const activeId = String(args.active.id);

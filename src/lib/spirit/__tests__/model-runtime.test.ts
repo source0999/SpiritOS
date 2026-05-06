@@ -392,4 +392,68 @@ Verified URL sources (2):
     expect(idxOracle).toBeGreaterThanOrEqual(0);
     expect(idxState).toBeGreaterThan(idxOracle);
   });
+
+  // ── Phase 3: [ORACLE MEMORY CONTEXT] block ───────────────────────────────────────
+
+  it("does not include [ORACLE MEMORY CONTEXT] when oracleMemoryContext is not provided", () => {
+    const r = buildModelRuntime("normal-peer", { lastUserMessage: "yo" });
+    expect(r.systemPrompt).not.toContain("[ORACLE MEMORY CONTEXT]");
+  });
+
+  it("includes [ORACLE MEMORY CONTEXT] when oracleMemoryContext is provided", () => {
+    const ctx = "[ORACLE MEMORY CONTEXT]\nRecent topics:\n1. Asked about recursion";
+    const r = buildModelRuntime("normal-peer", {
+      lastUserMessage: "yo",
+      oracleMemoryContext: ctx,
+    });
+    expect(r.systemPrompt).toContain("[ORACLE MEMORY CONTEXT]");
+    expect(r.systemPrompt).toContain("Asked about recursion");
+  });
+
+  it("[ORACLE MEMORY CONTEXT] appears after plan block and before personalization", () => {
+    const ctx = "[ORACLE MEMORY CONTEXT]\nRecent topics:\n1. Test memory";
+    const r = buildModelRuntime("normal-peer", {
+      lastUserMessage: "yo",
+      oracleMemoryContext: ctx,
+      personalizationSummary: "Tone: terse",
+      researchPlanSummary: "Plan: investigate X",
+    });
+    const idxOracle = r.systemPrompt.indexOf("[ORACLE MEMORY CONTEXT]");
+    const idxPrefs = r.systemPrompt.indexOf("User style preferences");
+    expect(idxOracle).toBeGreaterThanOrEqual(0);
+    expect(idxPrefs).toBeGreaterThan(idxOracle);
+  });
+
+  it("[ORACLE MEMORY CONTEXT] appears after research context and before personalization", () => {
+    const digest = "## Web research digest (stub)\nVerified URL sources (0):";
+    const ctx = "[ORACLE MEMORY CONTEXT]\nRecent topics:\n1. Voice session memory";
+    const r = buildModelRuntime("researcher", {
+      lastUserMessage: "sources",
+      researchWebContext: digest,
+      oracleMemoryContext: ctx,
+      personalizationSummary: "- Tone: dry",
+    });
+    const idxResearch = r.systemPrompt.indexOf("## Web research digest");
+    const idxOracle = r.systemPrompt.indexOf("[ORACLE MEMORY CONTEXT]");
+    const idxPrefs = r.systemPrompt.indexOf("User style preferences");
+    expect(idxResearch).toBeGreaterThanOrEqual(0);
+    expect(idxOracle).toBeGreaterThan(idxResearch);
+    expect(idxPrefs).toBeGreaterThan(idxOracle);
+  });
+
+  it("does not include [ORACLE MEMORY CONTEXT] when value is empty string", () => {
+    const r = buildModelRuntime("normal-peer", {
+      lastUserMessage: "yo",
+      oracleMemoryContext: "",
+    });
+    expect(r.systemPrompt).not.toContain("[ORACLE MEMORY CONTEXT]");
+  });
+
+  it("does not include [ORACLE MEMORY CONTEXT] when value is null", () => {
+    const r = buildModelRuntime("normal-peer", {
+      lastUserMessage: "yo",
+      oracleMemoryContext: null,
+    });
+    expect(r.systemPrompt).not.toContain("[ORACLE MEMORY CONTEXT]");
+  });
 });

@@ -1,4 +1,4 @@
-// ── spirit-web-sources — parse `x-spirit-web-sources` from /api/spirit (client-safe) ─
+// ── spirit-web-sources - parse `x-spirit-web-sources` from /api/spirit (client-safe) ─
 // > No fake citations: only render what the server actually returned.
 
 import { isVerifiedHttpUrl } from "@/lib/verified-http-url";

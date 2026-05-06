@@ -4,7 +4,7 @@ import clsx from "clsx";
 // ── LayoutOrchestrator ────────────────────────────────────────────────────
 // > Extracted from: _blueprints/design_system.md (Layout Orchestrator Rules)
 // > Design language: Cinematic (full-bleed), Editorial (reader), Quarantine (rose)
-// RSC — no client hook trapdoors. Modes only shuffle shells; leaves stay dumb.
+// RSC - no client hook trapdoors. Modes only shuffle shells; leaves stay dumb.
 
 export type LayoutOrchestratorMode = "cinematic" | "editorial" | "quarantine";
 

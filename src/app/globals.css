@@ -1,4 +1,4 @@
-/* ── Spirit OS globals — minimal @theme + Tailwind v4 import ─────────────────
+/* ── Spirit OS globals - minimal @theme + Tailwind v4 import ─────────────────
  * > Turbopack/PostCSS was eating glass on this tree; keep @theme flat, fewer @apply.
  * > Accents + ThemeEngine: _blueprints/design_system.md
  */
@@ -72,7 +72,7 @@
   }
 }
 
-/* ── Homelab Design System — keyframes ──────────────────────────────────── */
+/* ── Homelab Design System - keyframes ──────────────────────────────────── */
 
 @keyframes hl-track-pulse {
   0%, 100% { opacity: 0.55; }
@@ -101,7 +101,7 @@
 }
 
 @layer utilities {
-  /* Glass panel — layered depth */
+  /* Glass panel - layered depth */
   .homelab-panel {
     position: relative;
     background:
@@ -116,7 +116,7 @@
     backdrop-filter: blur(22px) saturate(140%);
     overflow: hidden;
   }
-  /** Slimmer glass slab — nodes strip only (still reads Homelab, less podium) */
+  /** Slimmer glass slab - nodes strip only (still reads Homelab, less podium) */
   .homelab-panel--dense {
     border-radius: 14px;
     box-shadow:
