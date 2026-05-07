@@ -39,12 +39,8 @@ export default function RootLayout({
       suppressHydrationWarning
       data-scroll-behavior="smooth"
       className={`${inter.variable} ${jetbrainsMono.variable}`}
-      style={{ backgroundColor: "#090a0f" }}
     >
-      <body
-        className="min-h-[100dvh] min-h-dvh antialiased"
-        style={{ backgroundColor: "#090a0f" }}
-      >
+      <body className="min-h-[100dvh] min-h-dvh antialiased">
         {children}
       </body>
     </html>

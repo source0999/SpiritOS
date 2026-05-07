@@ -1,6 +1,6 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import type { ReactNode } from "react";
+import type { ReactElement, ReactNode } from "react";
 import SpiritDashboardHome from "../SpiritDashboardHome";
 import type { ClusterTelemetryResponse } from "@/lib/server/telemetry/types";
 import { SPIRIT_PALETTES } from "@/theme/spiritPalettes";
@@ -62,6 +62,18 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+/** Mirrors `(dashboard)/layout.tsx` — scoped vars / atmos need this ancestor in tests */
+function renderDashboard(ui: ReactElement) {
+  return render(
+    <div
+      data-layout="spirit-dashboard-home"
+      className="relative min-h-[100dvh] w-full max-w-[100vw] overflow-x-hidden text-chalk"
+    >
+      {ui}
+    </div>,
+  );
+}
+
 describe("SpiritDashboardHome", () => {
   beforeEach(() => {
     navMock.path = "/";
@@ -77,7 +89,7 @@ describe("SpiritDashboardHome", () => {
   // ── Layout order ──────────────────────────────────────────────────────────
 
   it("Oracle Voice appears before Daily Briefing in DOM order", () => {
-    render(<SpiritDashboardHome />);
+    renderDashboard(<SpiritDashboardHome />);
     const oracle = screen.getByRole("region", { name: /oracle voice/i });
     const briefing = screen.getByRole("region", { name: /daily briefing/i });
     expect(
@@ -86,25 +98,25 @@ describe("SpiritDashboardHome", () => {
   });
 
   it("Backend Health is not a separate large card region", () => {
-    render(<SpiritDashboardHome />);
+    renderDashboard(<SpiritDashboardHome />);
     expect(screen.queryByRole("region", { name: /^backend health$/i })).toBeNull();
   });
 
   // ── Oracle Voice ──────────────────────────────────────────────────────────
 
   it("renders Oracle Voice card", () => {
-    render(<SpiritDashboardHome />);
+    renderDashboard(<SpiritDashboardHome />);
     expect(screen.getByRole("region", { name: /oracle voice/i })).toBeInTheDocument();
   });
 
   it("renders oracle orb and voice visualizer on the homelab card", () => {
-    render(<SpiritDashboardHome />);
+    renderDashboard(<SpiritDashboardHome />);
     expect(document.querySelector('[data-testid="oracle-orb-sprite"]')).not.toBeNull();
     expect(document.querySelector('[data-testid="oracle-voice-visualizer"]')).not.toBeNull();
   });
 
   it("oracle orb sprite has inline svg, no raster assets", () => {
-    render(<SpiritDashboardHome />);
+    renderDashboard(<SpiritDashboardHome />);
     const orb = document.querySelector('[data-testid="oracle-orb-sprite"]');
     expect(orb).not.toBeNull();
     expect(orb?.querySelector("svg")).not.toBeNull();
@@ -112,20 +124,20 @@ describe("SpiritDashboardHome", () => {
   });
 
   it("Oracle widget shows STT Whisper backend", () => {
-    render(<SpiritDashboardHome />);
+    renderDashboard(<SpiritDashboardHome />);
     const oracleWidget = screen.getByRole("region", { name: /oracle voice/i });
     expect(oracleWidget.textContent).toMatch(/whisper backend/i);
   });
 
   it("Oracle widget shows secure context and mic capability rows", () => {
-    render(<SpiritDashboardHome />);
+    renderDashboard(<SpiritDashboardHome />);
     const oracleWidget = screen.getByRole("region", { name: /oracle voice/i });
     expect(oracleWidget.textContent).toMatch(/secure context/i);
     expect(oracleWidget.textContent).toMatch(/mic capability/i);
   });
 
   it("Oracle widget links to /oracle", () => {
-    render(<SpiritDashboardHome />);
+    renderDashboard(<SpiritDashboardHome />);
     const oracleLinks = screen.getAllByRole("link", { name: /open oracle/i });
     expect(oracleLinks.length).toBeGreaterThan(0);
     expect(oracleLinks[0]).toHaveAttribute("href", "/oracle");
@@ -134,12 +146,12 @@ describe("SpiritDashboardHome", () => {
   // ── Daily Briefing ────────────────────────────────────────────────────────
 
   it("renders Daily Briefing widget", () => {
-    render(<SpiritDashboardHome />);
+    renderDashboard(<SpiritDashboardHome />);
     expect(screen.getByRole("region", { name: /daily briefing/i })).toBeInTheDocument();
   });
 
   it("renders static workspace shortcuts panel with real /chat and /oracle links", () => {
-    render(<SpiritDashboardHome />);
+    renderDashboard(<SpiritDashboardHome />);
     const shortcuts = screen.getByRole("complementary", { name: /workspace shortcuts/i });
     expect(within(shortcuts).getByRole("link", { name: /^open chat$/i })).toHaveAttribute("href", "/chat");
     expect(within(shortcuts).getByRole("link", { name: /^open oracle$/i })).toHaveAttribute(
@@ -149,7 +161,7 @@ describe("SpiritDashboardHome", () => {
   });
 
   it("Daily Briefing contains at least one briefing item", () => {
-    render(<SpiritDashboardHome />);
+    renderDashboard(<SpiritDashboardHome />);
     const briefing = screen.getByRole("region", { name: /daily briefing/i });
     expect(briefing.textContent).toMatch(/demo/i);
   });
@@ -157,17 +169,17 @@ describe("SpiritDashboardHome", () => {
   // ── System Stats & Storage ────────────────────────────────────────────────
 
   it("renders System Stats card", () => {
-    render(<SpiritDashboardHome />);
+    renderDashboard(<SpiritDashboardHome />);
     expect(screen.getByRole("region", { name: /system stats/i })).toBeInTheDocument();
   });
 
   it("renders Storage card", () => {
-    render(<SpiritDashboardHome />);
+    renderDashboard(<SpiritDashboardHome />);
     expect(screen.getByRole("region", { name: /storage/i })).toBeInTheDocument();
   });
 
   it("does not label System Stats or Storage with a standalone Mock badge", async () => {
-    render(<SpiritDashboardHome />);
+    renderDashboard(<SpiritDashboardHome />);
     const stats = screen.getByRole("region", { name: /system stats/i });
     const storage = screen.getByRole("region", { name: /^storage$/i });
     await waitFor(() => expect(stats.textContent).toMatch(/Spirit Dell|Node Vitals/i));
@@ -178,18 +190,18 @@ describe("SpiritDashboardHome", () => {
   // ── Absent elements ───────────────────────────────────────────────────────
 
   it("does not render a Chat Core card on home", () => {
-    render(<SpiritDashboardHome />);
+    renderDashboard(<SpiritDashboardHome />);
     expect(screen.queryByRole("region", { name: /chat core/i })).toBeNull();
     expect(screen.queryByRole("link", { name: /open chat workspace/i })).toBeNull();
   });
 
   it("does not show thread/folder state on home dashboard", () => {
-    render(<SpiritDashboardHome />);
+    renderDashboard(<SpiritDashboardHome />);
     expect(screen.queryByText(/no saved threads/i)).toBeNull();
   });
 
   it("does not link to /quarantine", () => {
-    render(<SpiritDashboardHome />);
+    renderDashboard(<SpiritDashboardHome />);
     const links = screen.queryAllByRole("link", { name: /quarantine/i });
     expect(links.length).toBe(0);
   });
@@ -197,7 +209,7 @@ describe("SpiritDashboardHome", () => {
   // ── Sidebar / nav access ──────────────────────────────────────────────────
 
   it("Chat is accessible via sidebar /chat link", () => {
-    render(<SpiritDashboardHome />);
+    renderDashboard(<SpiritDashboardHome />);
     const chatLinks = screen.getAllByRole("link", { name: /chat/i });
     const chatHrefs = chatLinks.map((l) => l.getAttribute("href"));
     expect(chatHrefs).toContain("/chat");
@@ -206,7 +218,7 @@ describe("SpiritDashboardHome", () => {
   // ── Theme strip ───────────────────────────────────────────────────────────
 
   it("exposes ThemeStrip palette controls from the registry in the header", () => {
-    render(<SpiritDashboardHome />);
+    renderDashboard(<SpiritDashboardHome />);
     for (const p of SPIRIT_PALETTES) {
       expect(
         screen.getByRole("button", { name: new RegExp(`${p.label} palette`, "i") }),

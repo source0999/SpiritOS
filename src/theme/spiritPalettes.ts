@@ -21,7 +21,7 @@ export const SPIRIT_DOM_CSS_KEYS = [
   "--spirit-glow",
   "--spirit-border",
   "--spirit-secondary-mix",
-  // ── Dashboard atmosphere + glass (palette-driven; consumed under .spirit-dashboard-v2-root)
+  // ── Dashboard atmosphere + glass (palette-driven; consumed under [data-layout="spirit-dashboard-home"]) ──
   "--spirit-atmosphere-base",
   "--spirit-atmosphere-a",
   "--spirit-atmosphere-b",

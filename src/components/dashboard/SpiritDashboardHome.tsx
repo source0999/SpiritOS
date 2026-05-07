@@ -1,156 +1,190 @@
 "use client";
 
-import { useMemo } from "react";
-import { Zap } from "lucide-react";
+import { useLayoutEffect, useMemo } from "react";
+import Link from "next/link";
+import { LayoutDashboard, MessageCircle, Sparkles } from "lucide-react";
 
-import { Clock } from "@/components/dashboard/Clock";
-import { ThemeStrip } from "@/components/dashboard/ThemeStrip";
 import { HomelabSystemStatsCardView } from "@/components/dashboard/HomelabSystemStatsCard";
 import { HomelabStorageCardView } from "@/components/dashboard/HomelabStorageCard";
 import { HomelabOracleVoiceWidget } from "@/components/dashboard/HomelabOracleVoiceWidget";
 import { HomelabDailyBriefingWidget } from "@/components/dashboard/HomelabDailyBriefingWidget";
 import { SpiritDashboardWorkspaceRail } from "@/components/dashboard/SpiritDashboardWorkspaceRail";
-import { WorkspacePrimarySidebar } from "@/components/dashboard/WorkspacePrimarySidebar";
+import { ThemeStrip } from "@/components/dashboard/ThemeStrip";
+import { Clock } from "@/components/dashboard/Clock";
 import { ClientFailSafe } from "@/components/system/ClientFailSafe";
 import { useClusterTelemetry } from "@/hooks/useClusterTelemetry";
 import type { ClusterTelemetryResponse } from "@/lib/server/telemetry/types";
 import { cn } from "@/lib/cn";
 
-function formatDashboardTelemetryLine(
+type LiveStatus = {
+  label: string;
+  subtitle: string;
+  variant: "live" | "pending" | "warn" | "offline" | "idle";
+};
+
+function deriveLiveStatus(
   state: "checking" | "loaded" | "error",
   data: ClusterTelemetryResponse | null,
-  error: string | null,
-): string {
-  if (state === "checking") return "Telemetry syncing…";
+): LiveStatus {
+  if (state === "checking") {
+    return { label: "Syncing", subtitle: "Syncing…", variant: "pending" };
+  }
   if (state === "error") {
-    const msg = error?.trim();
-    return msg ? msg : "Telemetry unreachable";
+    return { label: "Degraded", subtitle: "Unreachable", variant: "offline" };
   }
   const nodes = data?.nodes ?? [];
   if (nodes.length === 0) {
-    return "No nodes reported · configure cluster telemetry";
+    return { label: "Idle", subtitle: "No telemetry", variant: "idle" };
   }
-  const s = data?.summary;
-  if (s) {
-    const bits = [`${s.online}/${s.total} nodes online`];
-    if (s.degraded > 0) bits.push(`${s.degraded} degraded`);
-    if (s.offline > 0) bits.push(`${s.offline} offline`);
-    return bits.join(" · ");
+  const hasOffline = nodes.some(
+    (n) => n.status === "offline" || n.status === "unknown",
+  );
+  const hasDegraded = nodes.some((n) => n.status === "degraded");
+  if (hasOffline) {
+    return { label: "Partial", subtitle: "Node offline", variant: "warn" };
   }
-  const online = nodes.filter((n) => n.status === "online").length;
-  return `${online}/${nodes.length} nodes online`;
-}
-
-function telemetryHeaderDotClass(
-  state: "checking" | "loaded" | "error",
-  data: ClusterTelemetryResponse | null,
-): string {
-  if (state === "checking") return "homelab-status-dot homelab-status-dot--pending";
-  if (state === "error") return "homelab-status-dot homelab-status-dot--offline";
-  const nodes = data?.nodes ?? [];
-  if (nodes.length === 0) return "homelab-status-dot homelab-status-dot--pending";
-  const bad = nodes.some((n) => n.status === "offline" || n.status === "unknown");
-  if (bad) return "homelab-status-dot homelab-status-dot--offline";
-  const degraded = nodes.some((n) => n.status === "degraded");
-  if (degraded) return "homelab-status-dot homelab-status-dot--pending";
-  return "homelab-status-dot";
+  if (hasDegraded) {
+    return { label: "Degraded", subtitle: "Node degraded", variant: "warn" };
+  }
+  return { label: "Mesh Live", subtitle: "Node nominal", variant: "live" };
 }
 
 function SpiritDashboardHomeInner() {
   const { data, state, error } = useClusterTelemetry();
 
-  const telemetryLine = useMemo(
-    () => formatDashboardTelemetryLine(state, data, error),
-    [state, data, error],
+  const liveStatus = useMemo(
+    () => deriveLiveStatus(state, data),
+    [state, data],
   );
 
-  const dotClass = useMemo(() => telemetryHeaderDotClass(state, data), [state, data]);
+  // Phase 2.10: pearl route — before paint; strips legacy inline void fill from root layout
+  useLayoutEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    html.classList.add("spirit-dashboard-route");
+    body.classList.add("spirit-dashboard-route");
+    html.style.removeProperty("background-color");
+    body.style.removeProperty("background-color");
+    return () => {
+      html.classList.remove("spirit-dashboard-route");
+      body.classList.remove("spirit-dashboard-route");
+    };
+  }, []);
 
   return (
-    <div
-      data-layout="spirit-dashboard-home"
-      className="spirit-dashboard-v2-root relative flex min-h-[100dvh] w-full max-w-[100vw] flex-row overflow-x-hidden bg-[color:var(--spirit-bg)] text-chalk"
-    >
-      <div className="spirit-dashboard-v2-atmos" aria-hidden>
+    <>
+      {/* Atmosphere layers — fixed behind the glass frame; owns dashboard palette scope */}
+      <div data-layout="spirit-dashboard-home" className="spirit-dashboard-v2-atmos" aria-hidden>
         <div className="spirit-dashboard-v2-atmos__canvas" />
         <div className="spirit-dashboard-v2-atmos__wash" />
-        <div
-          className="spirit-dashboard-v2-atmos__blob spirit-dashboard-v2-atmos__blob--a"
-          aria-hidden
-        />
-        <div
-          className="spirit-dashboard-v2-atmos__blob spirit-dashboard-v2-atmos__blob--b"
-          aria-hidden
-        />
+        <div className="spirit-dashboard-v2-atmos__blob spirit-dashboard-v2-atmos__blob--a" aria-hidden />
+        <div className="spirit-dashboard-v2-atmos__blob spirit-dashboard-v2-atmos__blob--b" aria-hidden />
         <div className="spirit-dashboard-v2-atmos__accent" aria-hidden />
         <div className="spirit-dashboard-v2-atmos__grid" aria-hidden />
         <div className="spirit-dashboard-v2-atmos__grain" aria-hidden />
         <div className="spirit-dashboard-v2-atmos__vignette" aria-hidden />
       </div>
 
-      <WorkspacePrimarySidebar />
-
+      {/* Single glass shell — gutter used to live on a pointless wrapper div */}
       <div
+        data-layout="spirit-dashboard-home"
         className={cn(
-          "relative z-10 flex min-h-[100dvh] min-w-0 flex-1 flex-col overflow-x-hidden",
-          "pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))] lg:pb-0",
+          "dashboard-v2-glass-frame relative z-10 mx-auto box-border flex min-w-0 flex-col",
+          /* overflow-x on this node clips backdrop-filter into useless mud — main owns horizontal clip */
+          "my-3 min-h-[calc(100dvh-1.5rem)] w-[calc(100%-1.5rem)] max-w-[min(1760px,100vw)]",
+          "sm:my-4 sm:min-h-[calc(100dvh-2rem)] sm:w-[calc(100%-2rem)]",
+          "lg:my-5 lg:min-h-[calc(100dvh-2.5rem)] lg:w-[calc(100%-2.5rem)]",
         )}
       >
-        <header className="spirit-dashboard-v2-header-glass sticky top-0 z-20 shrink-0 backdrop-blur-xl">
-          <div className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-5 sm:py-4">
-            <div className="flex min-w-0 items-start gap-3 sm:gap-4">
-              <div
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[color:color-mix(in_oklab,var(--spirit-glass-border)_90%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-bg-soft)_72%,transparent)] shadow-[0_10px_36px_-22px_rgba(0,0,0,0.55)] sm:h-12 sm:w-12 sm:rounded-3xl"
-                aria-hidden
-              >
-                <Zap
-                  className="h-6 w-6 text-[color:var(--spirit-accent-strong)] sm:h-6 sm:w-6"
-                  strokeWidth={2}
-                />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h1 className="truncate font-mono text-lg font-semibold uppercase tracking-tight text-chalk sm:text-xl">
-                  SpiritOS <span className="font-light text-chalk/55">Homelab</span>
-                </h1>
-                <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.28em] text-chalk/38">
-                  Dashboard · telemetry · oracle voice
-                </p>
-                <p className="mt-2 font-mono text-[11px] leading-snug text-chalk/55">{telemetryLine}</p>
-              </div>
-            </div>
-
-            <div className="flex min-w-0 shrink-0 flex-col items-stretch gap-1.5 sm:items-end">
-              <ThemeStrip />
-              <p className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1 font-mono text-[9px] leading-tight text-chalk/42 sm:text-[9.5px]">
-                <span className={dotClass} aria-hidden />
-                <span className="text-chalk/55">Cluster pulse</span>
-                <span className="text-chalk/18">·</span>
-                <Clock inline className="text-[9px] text-chalk/42 sm:text-[9.5px]" />
+        <div className="flex shrink-0 items-start justify-end px-4 pt-3 sm:px-5 sm:pt-4 lg:px-6 lg:pt-5">
+          <div className="flex items-center gap-3">
+            {/* Clock + subtitle — desktop only */}
+            <div className="hidden flex-col items-end gap-0.5 sm:flex">
+              <Clock
+                inline
+                className="text-[1.0rem] font-bold tabular-nums tracking-tight text-[color:var(--dash-utility-fg)]"
+              />
+              <p className="font-mono text-[7.5px] uppercase tracking-[0.18em] text-[color:var(--dash-utility-muted)]">
+                Local time · {liveStatus.subtitle}
               </p>
             </div>
+            {/* Live status pill */}
+            <div className={cn("dash-live-pill", `dash-live-pill--${liveStatus.variant}`)}>
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-current opacity-80" aria-hidden />
+              {liveStatus.label}
+            </div>
           </div>
-        </header>
+        </div>
 
-        <main className="flex-1 overflow-x-hidden px-4 pb-[max(3rem,calc(5rem+env(safe-area-inset-bottom,0px)))] pt-5 sm:px-5 sm:pb-12 sm:pt-7 lg:pb-14 lg:pt-8">
-          <div className="mx-auto grid min-w-0 max-w-[1440px] grid-cols-1 gap-5 xl:grid-cols-12 xl:gap-7 2xl:max-w-[1480px]">
-            <div className="flex min-w-0 flex-col gap-5 xl:col-span-8 xl:gap-6">
+        <main className="flex-1 overflow-x-hidden px-4 pb-[max(5.5rem,calc(4.5rem+env(safe-area-inset-bottom,0px)))] pt-3 sm:px-5 sm:pt-4 lg:px-6 lg:pt-4">
+          <div className="mx-auto grid min-w-0 max-w-[1440px] grid-cols-1 items-start gap-5 xl:grid-cols-12 xl:gap-7 2xl:max-w-[1480px]">
+            <div className="flex min-w-0 flex-col gap-5 xl:col-span-8 xl:self-start xl:gap-6">
               <HomelabOracleVoiceWidget className="w-full min-w-0" />
 
-              {/* items-start: equal-height stretch was clipping glass overflow; xl stacks full-width rows */}
               <div className="grid min-w-0 grid-cols-1 items-start gap-5 md:grid-cols-2 md:gap-5 xl:grid-cols-1 xl:gap-6">
                 <HomelabSystemStatsCardView className="min-w-0" data={data} state={state} error={error} />
                 <HomelabStorageCardView className="min-w-0" data={data} state={state} error={error} />
               </div>
             </div>
 
-            <div className="flex min-w-0 flex-col gap-5 xl:sticky xl:top-28 xl:z-[11] xl:col-span-4 xl:self-start">
+            <div className="flex min-w-0 flex-col gap-5 xl:col-span-4 xl:self-start">
               <HomelabDailyBriefingWidget className="w-full" />
               <SpiritDashboardWorkspaceRail />
             </div>
           </div>
         </main>
+
       </div>
-    </div>
+
+      {/* Fixed bottom nav bubble: Dashboard · Chat · Oracle | theme swatches */}
+      <nav
+        data-layout="spirit-dashboard-home"
+        aria-label="Dashboard navigation"
+        className={cn(
+          "pointer-events-none fixed inset-x-0 z-50",
+          "bottom-[var(--spirit-keyboard-inset,0px)]",
+          "flex items-end justify-center",
+          "pb-[max(1.25rem,env(safe-area-inset-bottom,0px))]",
+        )}
+      >
+        <div
+          className={cn(
+            "pointer-events-auto flex items-center gap-1 rounded-full px-2.5 py-2.5",
+            "dash-floating-nav-shell",
+          )}
+        >
+          <Link
+            href="/"
+            aria-current="page"
+            aria-label="Dashboard home"
+            className="dash-nav-bubble-item dash-nav-bubble-item--active"
+          >
+            <LayoutDashboard className="h-[1.1rem] w-[1.1rem] shrink-0" aria-hidden strokeWidth={2} />
+            <span className="hidden sm:inline">Dashboard</span>
+          </Link>
+          <Link
+            href="/chat"
+            aria-label="Chat"
+            className="dash-nav-bubble-item"
+          >
+            <MessageCircle className="h-[1.1rem] w-[1.1rem] shrink-0" aria-hidden strokeWidth={2} />
+            <span className="hidden sm:inline">Chat</span>
+          </Link>
+          <Link
+            href="/oracle"
+            aria-label="Oracle"
+            className="dash-nav-bubble-item"
+          >
+            <Sparkles className="h-[1.1rem] w-[1.1rem] shrink-0" aria-hidden strokeWidth={2} />
+            <span className="hidden sm:inline">Oracle</span>
+          </Link>
+
+          <div className="dash-nav-bubble-divider" aria-hidden />
+
+          <ThemeStrip variant="bubble" />
+        </div>
+      </nav>
+    </>
   );
 }
 

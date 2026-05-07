@@ -31,7 +31,7 @@ function SpiritWorkspaceMainColumn({ children }: { children: ReactNode }) {
   const mobileChrome = useSpiritWorkspaceMobileChrome();
   const pathname = usePathname() ?? "";
   const isChatRoute = pathname === "/chat" || pathname.startsWith("/chat/");
-  // `/chat` mobile: bottom rail is hidden — do not reserve 4.25rem for a dock that is not there.
+  // `/chat` mobile: floating dock is hidden — do not reserve space for a dock that is not there.
   const relaxBottom =
     (mobileChrome?.keyboardInsetPx ?? 0) > 0 ||
     (mobileChrome?.composerFocused ?? false) ||
@@ -43,7 +43,7 @@ function SpiritWorkspaceMainColumn({ children }: { children: ReactNode }) {
         "relative z-10 flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden",
         relaxBottom
           ? "max-lg:pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] lg:pb-0"
-          : "max-lg:pb-[calc(4.25rem+env(safe-area-inset-bottom,0px))] lg:pb-0",
+          : "max-lg:pb-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:pb-0",
       )}
     >
       {children}

@@ -1,14 +1,55 @@
 "use client";
 
 // ── ThemeStrip - palette toggles from registry (client leaf) ────────────────────
-// > Dashboard v2: pill dock borrows dashboardDemo chrome; still owns ThemeEngine paint.
+// > variant="strip" (default): labeled chips with active stripe — used in standalone contexts.
+// > variant="bubble": compact swatch dots for the floating nav bubble.
 import { useSpiritTheme } from "@/theme/useSpiritTheme";
 import { SPIRIT_PALETTES } from "@/theme/spiritPalettes";
 import { cn } from "@/lib/cn";
 
-export function ThemeStrip() {
+interface ThemeStripProps {
+  variant?: "strip" | "bubble";
+}
+
+export function ThemeStrip({ variant = "strip" }: ThemeStripProps) {
   const { theme, setTheme } = useSpiritTheme();
 
+  if (variant === "bubble") {
+    return (
+      <div
+        aria-label="Theme palette"
+        className="flex items-center gap-0.5 px-1"
+      >
+        {SPIRIT_PALETTES.map((palette) => {
+          const active = theme === palette.id;
+          const gradient = palette.colors.map((c) => c.hex).join(", ");
+
+          return (
+            <button
+              key={palette.id}
+              type="button"
+              title={palette.label}
+              onClick={() => setTheme(palette.id)}
+              aria-pressed={active}
+              aria-label={`${palette.label} palette`}
+              className={cn(
+                "dash-theme-bubble-swatch",
+                active && "dash-theme-bubble-swatch--active",
+              )}
+            >
+              <span
+                aria-hidden
+                className="h-4 w-4 rounded-full"
+                style={{ background: `linear-gradient(135deg, ${gradient})` }}
+              />
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
+  // Default "strip" variant — unchanged behavior
   return (
     <div
       aria-label="Theme palette"
