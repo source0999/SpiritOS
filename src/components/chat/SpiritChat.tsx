@@ -7,10 +7,20 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowUp, PanelLeft, PanelLeftClose, Activity, UserRound, SlidersHorizontal } from "lucide-react";
+import {
+  ArrowUp,
+  PanelLeft,
+  PanelLeftClose,
+  Activity,
+  UserRound,
+  SlidersHorizontal,
+  MoreHorizontal,
+  Plus,
+} from "lucide-react";
 import { ChatThreadSidebar } from "@/components/chat/ChatThreadSidebar";
 import { MobileChatTopBar } from "@/components/chat/MobileChatTopBar";
 import { MobileThreadDrawer } from "@/components/chat/MobileThreadDrawer";
+import { MobileSheet } from "@/components/chat/MobileSheet";
 import { ModelProfileSelector } from "@/components/chat/ModelProfileSelector";
 import { ChatActiveModeBadge } from "@/components/chat/ChatActiveModeBadge";
 import { SpiritActivityPanel } from "@/components/chat/SpiritActivityPanel";
@@ -156,6 +166,8 @@ const SpiritChatInner = memo(function SpiritChatInner({
   const [workspaceActivity, setWorkspaceActivity] = useState<SpiritActivityEvent[]>([]);
   const [activityOpen, setActivityOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  /** Mobile `/chat`: tuck model/voice/activity/thread chrome into one sheet — no dashboard deck. */
+  const [workspaceMoreOpen, setWorkspaceMoreOpen] = useState(false);
   const [threadMenuOpen, setThreadMenuOpen] = useState(false);
   const [modeToast, setModeToast] = useState<string | null>(null);
 
@@ -376,6 +388,16 @@ const SpiritChatInner = memo(function SpiritChatInner({
   } = tc;
 
   const hasDraft = Boolean(tc.input.trim());
+
+  const applySuggestionText = useCallback(
+    (text: string) => {
+      setInput(text);
+      requestAnimationFrame(() => {
+        composerTextareaRef.current?.focus();
+      });
+    },
+    [setInput],
+  );
 
   const spiritTransportBanner = useMemo(() => {
     if (!error) return undefined;
@@ -814,25 +836,69 @@ const SpiritChatInner = memo(function SpiritChatInner({
     return persistent.visibleThreads.find((t) => t.id === persistent.activeThreadId);
   }, [persistent.activeThreadId, persistent.visibleThreads]);
 
-  // ── Empty state: calm GPT-style center — no terminal cosplay, no fake affordances ──
-  const defaultEmpty = (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-      className="w-full max-w-md px-2 text-center sm:max-w-lg"
-    >
-      <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-chalk/40">
-        New chat
-      </p>
-      <h2 className="mt-3 font-sans text-xl font-medium tracking-tight text-chalk/95 sm:mt-4 sm:text-2xl">
-        What would you like to explore?
-      </h2>
-      <p className="mt-2 text-[15px] leading-relaxed text-chalk/48 sm:text-base sm:leading-relaxed">
-        Messages stay in this thread. Use the composer below when you are ready.
-      </p>
-    </motion.div>
-  );
+  const chatGreetingName = useMemo(() => {
+    const raw = title?.split("//")[0]?.trim() || title?.trim();
+    return raw && raw.length > 0 ? raw : "there";
+  }, [title]);
+
+  // ── Empty state: Gemini-ish home — static chips only (no fake tools) ────────────
+  const defaultEmpty = useMemo(() => {
+    const suggestions = [
+      "Summarize how this workspace behaves",
+      "What can Spirit help with here?",
+      "Draft a short research plan",
+      "Explain the saved-thread model",
+    ];
+    return (
+      <motion.div
+        initial={false}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        className="w-full max-w-lg px-3 text-center sm:max-w-xl"
+      >
+        <p className="text-[15px] font-medium tracking-tight text-chalk/55 sm:text-base">
+          Hi, {chatGreetingName}
+        </p>
+        <h2 className="mt-3 font-sans text-2xl font-medium leading-tight tracking-tight text-chalk/[0.94] sm:mt-4 sm:text-3xl sm:leading-tight">
+          What should we explore today?
+        </h2>
+        <p className="mx-auto mt-2 max-w-md text-[14px] leading-relaxed text-chalk/42 sm:text-[15px]">
+          Type below or tap a starter — messages stay in this thread.
+        </p>
+        <div
+          className="mx-auto mt-7 flex max-w-xl flex-wrap justify-center gap-2 px-1 sm:mt-9"
+          data-testid="chat-empty-suggestions"
+        >
+          {suggestions.map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => applySuggestionText(s)}
+              className="touch-manipulation rounded-full border border-[color:color-mix(in_oklab,var(--spirit-border)_55%,transparent)] bg-white/[0.04] px-3.5 py-2 text-left text-[13px] font-medium leading-snug text-chalk/78 transition hover:border-[color:color-mix(in_oklab,var(--spirit-accent)_38%,transparent)] hover:bg-white/[0.06] active:scale-[0.98] sm:px-4 sm:text-sm"
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      </motion.div>
+    );
+  }, [chatGreetingName, applySuggestionText]);
+
+  const mobileBarTitle = useMemo(() => {
+    if (persistent.draftLaneActive && displayMessages.length === 0) {
+      return "New chat";
+    }
+    const t = activeThreadRow?.title?.trim();
+    if (t) return t;
+    const head = title?.split("//")[0]?.trim();
+    if (head) return head;
+    return title?.trim() || "Spirit";
+  }, [
+    persistent.draftLaneActive,
+    displayMessages.length,
+    activeThreadRow?.title,
+    title,
+  ]);
 
   const header =
     variant === "standalone" &&
@@ -917,7 +983,8 @@ const SpiritChatInner = memo(function SpiritChatInner({
         className={cn(
           "scrollbar-hide relative z-0 flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden px-2 py-2 sm:px-5 sm:py-4",
           variant === "workspace"
-            ? "overscroll-y-contain pb-4 sm:pb-5 lg:pb-8"
+            ? // max-lg: default overscroll so iOS can chain to viewport PTR; lg: contain → less body scroll chaining on wide layouts
+              "max-lg:overscroll-y-auto lg:overscroll-y-contain pb-4 sm:pb-5 lg:pb-8"
             : "overscroll-y-contain pb-[calc(5rem+env(safe-area-inset-bottom,0px))] sm:pb-20 lg:pb-8",
         )}
       >
@@ -934,7 +1001,12 @@ const SpiritChatInner = memo(function SpiritChatInner({
           </p>
         ) : null}
         {displayMessages.length === 0 && !(savedChatShell && persistent.messagesLoading) ? (
-          <div className="flex min-h-[min(36dvh,260px)] flex-1 flex-col items-center justify-center px-3 py-8 sm:min-h-[min(42dvh,340px)] sm:py-12">
+          <div
+            className={cn(
+              "flex min-h-[min(28dvh,200px)] flex-1 flex-col items-center justify-center px-3 pb-16 pt-8 sm:min-h-[min(36dvh,280px)] sm:pb-20 sm:pt-10",
+              variant === "workspace" && "pb-[max(5rem,env(safe-area-inset-bottom,0px))] sm:pb-24",
+            )}
+          >
             {emptyState ?? defaultEmpty}
           </div>
         ) : null}
@@ -996,8 +1068,8 @@ const SpiritChatInner = memo(function SpiritChatInner({
           workspaceMobileChrome.setComposerFocused(false);
         }}
         className={cn(
-          "shrink-0 border-t border-[color:color-mix(in_oklab,var(--spirit-border)_65%,transparent)]",
-          "bg-[color:color-mix(in_oklab,var(--spirit-bg)_92%,transparent)] backdrop-blur-2xl",
+          "shrink-0 border-t border-[color:color-mix(in_oklab,var(--spirit-border)_55%,transparent)]",
+          "bg-[color:color-mix(in_oklab,var(--spirit-bg)_94%,transparent)] backdrop-blur-2xl",
           "lg:bg-[color:color-mix(in_oklab,var(--spirit-bg)_76%,transparent)]",
         )}
       >
@@ -1011,7 +1083,9 @@ const SpiritChatInner = memo(function SpiritChatInner({
         >
           <div
             className={cn(
-              "mx-auto flex max-w-3xl items-end gap-2",
+              "mx-auto flex w-full max-w-3xl items-end gap-2",
+              variant === "workspace" &&
+                "max-lg:rounded-[1.35rem] max-lg:border max-lg:border-[color:color-mix(in_oklab,var(--spirit-border)_42%,transparent)] max-lg:bg-[color:color-mix(in_oklab,var(--spirit-bg)_88%,transparent)] max-lg:p-2 max-lg:shadow-[0_20px_48px_-32px_rgba(0,0,0,0.72),inset_0_0_0_1px_rgba(255,255,255,0.05)] max-lg:backdrop-blur-xl",
               "lg:rounded-[1.35rem] lg:border lg:border-[color:color-mix(in_oklab,var(--spirit-border)_80%,transparent)] lg:bg-white/[0.035] lg:px-3 lg:py-2.5 lg:backdrop-blur-2xl",
               "lg:shadow-[0_12px_48px_-28px_rgba(0,0,0,0.45),inset_0_0_0_1px_rgba(255,255,255,0.04)]",
             )}
@@ -1051,8 +1125,9 @@ const SpiritChatInner = memo(function SpiritChatInner({
                 "max-lg:min-h-[44px] max-lg:max-h-[120px] max-lg:px-3.5 max-lg:py-2.5 max-lg:text-base max-lg:leading-snug",
                 "min-h-[52px] max-h-[10rem] px-5 py-[0.875rem] text-[15px]",
                 "placeholder:text-chalk/38 disabled:opacity-50",
-                "max-lg:rounded-2xl max-lg:border max-lg:border-[color:color-mix(in_oklab,var(--spirit-border)_75%,transparent)] max-lg:bg-black/35",
-                "max-lg:focus:border-[color:color-mix(in_oklab,var(--spirit-accent-strong)_38%,transparent)] max-lg:focus:outline-none max-lg:focus:ring-1 max-lg:focus:ring-[color:color-mix(in_oklab,var(--spirit-accent)_20%,transparent)]",
+                variant === "workspace"
+                  ? "max-lg:rounded-xl max-lg:border-0 max-lg:bg-transparent max-lg:shadow-none max-lg:ring-0 max-lg:focus:border-transparent max-lg:focus:outline-none max-lg:focus:ring-0"
+                  : "max-lg:rounded-2xl max-lg:border max-lg:border-[color:color-mix(in_oklab,var(--spirit-border)_75%,transparent)] max-lg:bg-black/35 max-lg:focus:border-[color:color-mix(in_oklab,var(--spirit-accent-strong)_38%,transparent)] max-lg:focus:outline-none max-lg:focus:ring-1 max-lg:focus:ring-[color:color-mix(in_oklab,var(--spirit-accent)_20%,transparent)]",
                 "lg:min-h-[44px] lg:max-h-[10rem] lg:rounded-2xl lg:border-transparent lg:bg-transparent lg:px-4 lg:py-3 lg:text-[15px]",
                 "lg:focus:border-transparent lg:focus:bg-transparent lg:focus:shadow-none lg:focus:ring-0 lg:focus-visible:outline-none",
               )}
@@ -1087,7 +1162,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
           </div>
         </form>
         {workspaceChrome ? (
-          <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-1.5 px-3 pb-2.5 pt-0 font-mono text-[9px] font-medium uppercase tracking-wide text-chalk/45 sm:gap-2 sm:px-5 sm:text-[10px] lg:px-6">
+          <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-1.5 px-3 pb-2 pt-0.5 font-mono text-[9px] font-medium uppercase tracking-wide text-chalk/38 sm:gap-2 sm:px-5 sm:pb-2.5 sm:text-[10px] lg:px-6">
             {!oracleVoiceSurface ? (
               <button
                 type="button"
@@ -1096,8 +1171,8 @@ const SpiritChatInner = memo(function SpiritChatInner({
                 className={cn(
                   "touch-manipulation rounded-full border px-2.5 py-1.5 sm:py-1",
                   deepThinkEnabled
-                    ? "border-[color:color-mix(in_oklab,var(--spirit-accent)_45%,transparent)] text-[color:var(--spirit-accent-strong)]"
-                    : "border-[color:color-mix(in_oklab,var(--spirit-border)_70%,transparent)] text-chalk/50",
+                    ? "border-[color:color-mix(in_oklab,var(--spirit-accent)_38%,transparent)] text-[color:color-mix(in_oklab,var(--spirit-accent-strong)_92%,transparent)]"
+                    : "border-[color:color-mix(in_oklab,var(--spirit-border)_55%,transparent)] text-chalk/42",
                 )}
               >
                 Deep think
@@ -1113,8 +1188,8 @@ const SpiritChatInner = memo(function SpiritChatInner({
                 className={cn(
                   "touch-manipulation rounded-full border px-2.5 py-1.5 sm:py-1",
                   !webSearchOptOut
-                    ? "border-[color:color-mix(in_oklab,var(--spirit-accent)_45%,transparent)] text-[color:var(--spirit-accent-strong)]"
-                    : "border-[color:color-mix(in_oklab,var(--spirit-border)_70%,transparent)] text-chalk/50",
+                    ? "border-[color:color-mix(in_oklab,var(--spirit-accent)_38%,transparent)] text-[color:color-mix(in_oklab,var(--spirit-accent-strong)_92%,transparent)]"
+                    : "border-[color:color-mix(in_oklab,var(--spirit-border)_55%,transparent)] text-chalk/42",
                 )}
               >
                 Web search {webSearchOptOut ? "off" : "on"}
@@ -1128,8 +1203,8 @@ const SpiritChatInner = memo(function SpiritChatInner({
                 className={cn(
                   "touch-manipulation rounded-full border px-2.5 py-1.5 sm:py-1",
                   teacherWebSearchEnabled
-                    ? "border-[color:color-mix(in_oklab,var(--spirit-accent)_45%,transparent)] text-[color:var(--spirit-accent-strong)]"
-                    : "border-[color:color-mix(in_oklab,var(--spirit-border)_70%,transparent)] text-chalk/50",
+                    ? "border-[color:color-mix(in_oklab,var(--spirit-accent)_38%,transparent)] text-[color:color-mix(in_oklab,var(--spirit-accent-strong)_92%,transparent)]"
+                    : "border-[color:color-mix(in_oklab,var(--spirit-border)_55%,transparent)] text-chalk/42",
                 )}
               >
                 Web aids {teacherWebSearchEnabled ? "on" : "off"}
@@ -1148,7 +1223,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
                   setResearchPlan(draftResearchPlanFromPrompt(topic));
                   setResearchPlanOpen(true);
                 }}
-                className="touch-manipulation rounded-full border border-[color:color-mix(in_oklab,var(--spirit-border)_70%,transparent)] px-2.5 py-1.5 text-chalk/55 sm:py-1"
+                className="touch-manipulation rounded-full border border-[color:color-mix(in_oklab,var(--spirit-border)_55%,transparent)] px-2.5 py-1.5 text-chalk/45 sm:py-1"
               >
                 Research plan
               </button>
@@ -1225,9 +1300,9 @@ const SpiritChatInner = memo(function SpiritChatInner({
           aria-expanded={mobileThreadDrawer.open}
           onClick={() => mobileThreadDrawer.onOpenChange(!mobileThreadDrawer.open)}
           className={cn(
-            "inline-flex h-9 shrink-0 touch-manipulation items-center justify-center gap-1 rounded-lg border border-[color:var(--spirit-border)]/80 bg-white/[0.04] px-2 font-mono text-[9px] font-semibold uppercase tracking-wider text-chalk transition hover:bg-white/[0.07]",
+            "inline-flex h-9 shrink-0 touch-manipulation items-center justify-center gap-1 rounded-lg border border-[color:color-mix(in_oklab,var(--spirit-border)_50%,transparent)] bg-white/[0.02] px-2 font-mono text-[9px] font-semibold uppercase tracking-wider text-chalk/55 transition hover:bg-white/[0.05] hover:text-chalk/75",
             mobileThreadDrawer.open &&
-              "border-[color:color-mix(in_oklab,var(--spirit-accent)_42%,transparent)] text-[color:var(--spirit-accent-strong)]",
+              "border-[color:color-mix(in_oklab,var(--spirit-accent)_35%,transparent)] text-[color:color-mix(in_oklab,var(--spirit-accent-strong)_90%,transparent)]",
           )}
         >
           {mobileThreadDrawer.open ? (
@@ -1283,80 +1358,123 @@ const SpiritChatInner = memo(function SpiritChatInner({
               <>
                 <MobileChatTopBar
                   threadsSlot={threadsButton}
-                  modeSlot={
-                    <ModelProfileSelector
-                      variant="topBar"
-                      value={modeRt.activeModelProfileId}
-                      onChange={(id) => {
-                        void modeRt.setActiveModelProfile(id);
-                      }}
-                      disabled={sidebarLocked}
-                      compact
-                    />
+                  titleSlot={
+                    <div className="flex min-w-0 justify-center px-1">
+                      <h1 className="max-w-[min(100%,240px)] truncate text-center font-sans text-[15px] font-semibold tracking-tight text-chalk/92">
+                        {oracleVoiceSurface ? "Oracle" : mobileBarTitle}
+                      </h1>
+                    </div>
                   }
-                  voiceSlot={
-                    <VoiceControl
-                      variant="mobile-bar"
-                      state={tts.state}
-                      onToggleEnabled={tts.toggleEnabled}
-                      onEnableAudio={tts.ensureAudioUnlocked}
-                      onStop={tts.stop}
-                      onSpeakLatestAssistant={voiceRt.speakLatestAssistant}
-                      onStartDelayChange={tts.setStartDelayMs}
-                      onSentenceGapChange={tts.setSentenceGapMs}
-                      onVoiceSpeedChange={tts.setVoiceSpeed}
-                      onToggleAutoSpeak={tts.toggleAutoSpeakAssistant}
-                      onRequestVoiceCatalog={tts.refreshElevenLabsVoices}
-                      onElevenLabsVoiceChange={tts.setElevenLabsVoiceFromPicker}
-                      disabled={sidebarLocked}
-                    />
+                  endSlot={
+                    oracleVoiceSurface ? (
+                      <VoiceControl
+                        variant="mobile-bar"
+                        state={tts.state}
+                        onToggleEnabled={tts.toggleEnabled}
+                        onEnableAudio={tts.ensureAudioUnlocked}
+                        onStop={tts.stop}
+                        onSpeakLatestAssistant={voiceRt.speakLatestAssistant}
+                        onStartDelayChange={tts.setStartDelayMs}
+                        onSentenceGapChange={tts.setSentenceGapMs}
+                        onVoiceSpeedChange={tts.setVoiceSpeed}
+                        onToggleAutoSpeak={tts.toggleAutoSpeakAssistant}
+                        onRequestVoiceCatalog={tts.refreshElevenLabsVoices}
+                        onElevenLabsVoiceChange={tts.setElevenLabsVoiceFromPicker}
+                        disabled={sidebarLocked}
+                      />
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          aria-label="New chat"
+                          disabled={muteNewChatButton || sidebarLocked}
+                          onClick={() => onSidebarNewChat()}
+                          className={cn(
+                            "inline-flex h-10 w-10 shrink-0 touch-manipulation items-center justify-center rounded-full border border-[color:color-mix(in_oklab,var(--spirit-border)_48%,transparent)] bg-white/[0.04] text-chalk/80 transition hover:bg-white/[0.08] active:scale-[0.96]",
+                            (muteNewChatButton || sidebarLocked) &&
+                              "pointer-events-none opacity-35",
+                          )}
+                        >
+                          <Plus className="h-5 w-5" aria-hidden strokeWidth={2} />
+                        </button>
+                        <button
+                          type="button"
+                          aria-label="More chat options"
+                          onClick={() => setWorkspaceMoreOpen(true)}
+                          className="inline-flex h-10 w-10 shrink-0 touch-manipulation items-center justify-center rounded-full border border-transparent text-chalk/45 transition hover:bg-white/[0.06] hover:text-chalk/80"
+                        >
+                          <MoreHorizontal className="h-5 w-5" aria-hidden strokeWidth={2} />
+                        </button>
+                      </>
+                    )
                   }
                 />
-                <div className="flex min-w-0 items-center gap-1 border-b border-[color:color-mix(in_oklab,var(--spirit-border)_55%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-bg)_94%,transparent)] px-1.5 py-1 backdrop-blur-md">
-                  <ChatActiveModeBadge
-                    compact
-                    className="min-w-0 flex-1"
-                    profileId={modeRt.activeModelProfileId}
-                  />
-                  <button
-                    type="button"
-                    aria-label="Activity"
-                    onClick={() => {
-                      setActivityOpen((o) => !o);
-                      setProfileOpen(false);
-                      setThreadMenuOpen(false);
-                    }}
-                    className="inline-flex h-10 min-h-[44px] min-w-[44px] shrink-0 touch-manipulation items-center justify-center rounded-xl border border-[color:color-mix(in_oklab,var(--spirit-border)_65%,transparent)] bg-white/[0.035] text-chalk/65 transition hover:bg-white/[0.06]"
+                {!oracleVoiceSurface ? (
+                  <MobileSheet
+                    open={workspaceMoreOpen}
+                    title="Chat options"
+                    side="bottom"
+                    onClose={() => setWorkspaceMoreOpen(false)}
                   >
-                    <Activity className="h-4 w-4" aria-hidden />
-                  </button>
-                  <button
-                    type="button"
-                    aria-label="Spirit profile"
-                    onClick={() => {
-                      setProfileOpen((o) => !o);
-                      setActivityOpen(false);
-                      setThreadMenuOpen(false);
-                    }}
-                    className="inline-flex h-10 min-h-[44px] min-w-[44px] shrink-0 touch-manipulation items-center justify-center rounded-xl border border-[color:color-mix(in_oklab,var(--spirit-border)_65%,transparent)] bg-white/[0.035] text-chalk/65 transition hover:bg-white/[0.06]"
-                  >
-                    <UserRound className="h-4 w-4" aria-hidden />
-                  </button>
-                  {!oracleVoiceSurface ? (
-                    <button
-                      type="button"
-                      aria-label="Thread settings"
-                      onClick={() => {
-                        setThreadMenuOpen((o) => !o);
-                        setActivityOpen(false);
-                        setProfileOpen(false);
-                      }}
-                      className="inline-flex h-10 min-h-[44px] min-w-[44px] shrink-0 touch-manipulation items-center justify-center rounded-xl border border-[color:color-mix(in_oklab,var(--spirit-border)_65%,transparent)] bg-white/[0.035] text-chalk/65 transition hover:bg-white/[0.06]"
-                    >
-                      <SlidersHorizontal className="h-4 w-4" aria-hidden />
-                    </button>
-                  ) : null}
-                </div>
+                    <div className="flex flex-col gap-4 px-0 pb-1 pt-1">
+                      <ChatActiveModeBadge
+                        compact
+                        className="opacity-90"
+                        profileId={modeRt.activeModelProfileId}
+                      />
+                      <ModelProfileSelector
+                        variant="topBar"
+                        value={modeRt.activeModelProfileId}
+                        onChange={(id) => {
+                          void modeRt.setActiveModelProfile(id);
+                        }}
+                        disabled={sidebarLocked}
+                        compact
+                      />
+                      <VoiceControl
+                        variant="mobile-bar"
+                        state={tts.state}
+                        onToggleEnabled={tts.toggleEnabled}
+                        onEnableAudio={tts.ensureAudioUnlocked}
+                        onStop={tts.stop}
+                        onSpeakLatestAssistant={voiceRt.speakLatestAssistant}
+                        onStartDelayChange={tts.setStartDelayMs}
+                        onSentenceGapChange={tts.setSentenceGapMs}
+                        onVoiceSpeedChange={tts.setVoiceSpeed}
+                        onToggleAutoSpeak={tts.toggleAutoSpeakAssistant}
+                        onRequestVoiceCatalog={tts.refreshElevenLabsVoices}
+                        onElevenLabsVoiceChange={tts.setElevenLabsVoiceFromPicker}
+                        disabled={sidebarLocked}
+                      />
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          className="inline-flex min-h-[44px] min-w-0 flex-1 touch-manipulation items-center justify-center gap-2 rounded-xl border border-[color:color-mix(in_oklab,var(--spirit-border)_45%,transparent)] bg-white/[0.04] px-3 font-mono text-[10px] font-semibold uppercase tracking-wider text-chalk/65"
+                          onClick={() => {
+                            setWorkspaceMoreOpen(false);
+                            setActivityOpen((o) => !o);
+                            setThreadMenuOpen(false);
+                          }}
+                        >
+                          <Activity className="h-4 w-4 shrink-0" aria-hidden />
+                          Activity
+                        </button>
+                        <button
+                          type="button"
+                          className="inline-flex min-h-[44px] min-w-0 flex-1 touch-manipulation items-center justify-center gap-2 rounded-xl border border-[color:color-mix(in_oklab,var(--spirit-border)_45%,transparent)] bg-white/[0.04] px-3 font-mono text-[10px] font-semibold uppercase tracking-wider text-chalk/65"
+                          onClick={() => {
+                            setWorkspaceMoreOpen(false);
+                            setThreadMenuOpen((o) => !o);
+                            setActivityOpen(false);
+                          }}
+                        >
+                          <SlidersHorizontal className="h-4 w-4 shrink-0" aria-hidden />
+                          Thread
+                        </button>
+                      </div>
+                    </div>
+                  </MobileSheet>
+                ) : null}
                 {modeToast ? (
                   <div className="border-b border-white/[0.06] bg-white/[0.03] px-2 py-1 text-center font-mono text-[10px] text-chalk/65">
                     {modeToast}
@@ -1476,7 +1594,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
           events={workspaceActivity}
         />
         <SpiritUserProfilePanel
-          open={profileOpen}
+          open={profileOpen && isLg}
           onClose={() => setProfileOpen(false)}
           variant={isLg ? "popover" : "sheet"}
           activeModelProfileId={modeRt.activeModelProfileId}
@@ -1554,9 +1672,9 @@ const SpiritChatInner = memo(function SpiritChatInner({
         aria-expanded={mobileThreadDrawer.open}
         onClick={() => mobileThreadDrawer.onOpenChange(!mobileThreadDrawer.open)}
         className={cn(
-          "inline-flex h-9 shrink-0 touch-manipulation items-center justify-center gap-1 rounded-lg border border-[color:var(--spirit-border)]/80 bg-white/[0.04] px-2 font-mono text-[9px] font-semibold uppercase tracking-wider text-chalk transition hover:bg-white/[0.07]",
+          "inline-flex h-9 shrink-0 touch-manipulation items-center justify-center gap-1 rounded-lg border border-[color:color-mix(in_oklab,var(--spirit-border)_50%,transparent)] bg-white/[0.02] px-2 font-mono text-[9px] font-semibold uppercase tracking-wider text-chalk/55 transition hover:bg-white/[0.05] hover:text-chalk/75",
           mobileThreadDrawer.open &&
-            "border-[color:color-mix(in_oklab,var(--spirit-accent)_42%,transparent)] text-[color:var(--spirit-accent-strong)]",
+            "border-[color:color-mix(in_oklab,var(--spirit-accent)_35%,transparent)] text-[color:color-mix(in_oklab,var(--spirit-accent-strong)_90%,transparent)]",
         )}
       >
         {mobileThreadDrawer.open ? (
@@ -1614,80 +1732,123 @@ const SpiritChatInner = memo(function SpiritChatInner({
             <>
               <MobileChatTopBar
                 threadsSlot={standaloneThreadsButton}
-                modeSlot={
-                  <ModelProfileSelector
-                    variant="topBar"
-                    value={modeRt.activeModelProfileId}
-                    onChange={(id) => {
-                      void modeRt.setActiveModelProfile(id);
-                    }}
-                    disabled={sidebarLocked}
-                    compact
-                  />
+                titleSlot={
+                  <div className="flex min-w-0 justify-center px-1">
+                    <h1 className="max-w-[min(100%,240px)] truncate text-center font-sans text-[15px] font-semibold tracking-tight text-chalk/92">
+                      {oracleVoiceSurface ? "Oracle" : mobileBarTitle}
+                    </h1>
+                  </div>
                 }
-                voiceSlot={
-                  <VoiceControl
-                    variant="mobile-bar"
-                    state={tts.state}
-                    onToggleEnabled={tts.toggleEnabled}
-                    onEnableAudio={tts.ensureAudioUnlocked}
-                    onStop={tts.stop}
-                    onSpeakLatestAssistant={voiceRt.speakLatestAssistant}
-                    onStartDelayChange={tts.setStartDelayMs}
-                    onSentenceGapChange={tts.setSentenceGapMs}
-                    onVoiceSpeedChange={tts.setVoiceSpeed}
-                    onToggleAutoSpeak={tts.toggleAutoSpeakAssistant}
-                    onRequestVoiceCatalog={tts.refreshElevenLabsVoices}
-                    onElevenLabsVoiceChange={tts.setElevenLabsVoiceFromPicker}
-                    disabled={sidebarLocked}
-                  />
+                endSlot={
+                  oracleVoiceSurface ? (
+                    <VoiceControl
+                      variant="mobile-bar"
+                      state={tts.state}
+                      onToggleEnabled={tts.toggleEnabled}
+                      onEnableAudio={tts.ensureAudioUnlocked}
+                      onStop={tts.stop}
+                      onSpeakLatestAssistant={voiceRt.speakLatestAssistant}
+                      onStartDelayChange={tts.setStartDelayMs}
+                      onSentenceGapChange={tts.setSentenceGapMs}
+                      onVoiceSpeedChange={tts.setVoiceSpeed}
+                      onToggleAutoSpeak={tts.toggleAutoSpeakAssistant}
+                      onRequestVoiceCatalog={tts.refreshElevenLabsVoices}
+                      onElevenLabsVoiceChange={tts.setElevenLabsVoiceFromPicker}
+                      disabled={sidebarLocked}
+                    />
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        aria-label="New chat"
+                        disabled={muteNewChatButton || sidebarLocked}
+                        onClick={() => onSidebarNewChat()}
+                        className={cn(
+                          "inline-flex h-10 w-10 shrink-0 touch-manipulation items-center justify-center rounded-full border border-[color:color-mix(in_oklab,var(--spirit-border)_48%,transparent)] bg-white/[0.04] text-chalk/80 transition hover:bg-white/[0.08] active:scale-[0.96]",
+                          (muteNewChatButton || sidebarLocked) &&
+                            "pointer-events-none opacity-35",
+                        )}
+                      >
+                        <Plus className="h-5 w-5" aria-hidden strokeWidth={2} />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="More chat options"
+                        onClick={() => setWorkspaceMoreOpen(true)}
+                        className="inline-flex h-10 w-10 shrink-0 touch-manipulation items-center justify-center rounded-full border border-transparent text-chalk/45 transition hover:bg-white/[0.06] hover:text-chalk/80"
+                      >
+                        <MoreHorizontal className="h-5 w-5" aria-hidden strokeWidth={2} />
+                      </button>
+                    </>
+                  )
                 }
               />
-              <div className="flex min-w-0 items-center gap-1 border-b border-[color:color-mix(in_oklab,var(--spirit-border)_70%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-bg)_92%,transparent)] px-1.5 py-0.5 backdrop-blur-md">
-                <ChatActiveModeBadge
-                  compact
-                  className="min-w-0 flex-1"
-                  profileId={modeRt.activeModelProfileId}
-                />
-                <button
-                  type="button"
-                  aria-label="Activity"
-                  onClick={() => {
-                    setActivityOpen((o) => !o);
-                    setProfileOpen(false);
-                    setThreadMenuOpen(false);
-                  }}
-                  className="inline-flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-lg border border-[color:var(--spirit-border)]/80 bg-white/[0.04] text-chalk/70"
+              {!oracleVoiceSurface ? (
+                <MobileSheet
+                  open={workspaceMoreOpen}
+                  title="Chat options"
+                  side="bottom"
+                  onClose={() => setWorkspaceMoreOpen(false)}
                 >
-                  <Activity className="h-4 w-4" aria-hidden />
-                </button>
-                <button
-                  type="button"
-                  aria-label="Spirit profile"
-                  onClick={() => {
-                    setProfileOpen((o) => !o);
-                    setActivityOpen(false);
-                    setThreadMenuOpen(false);
-                  }}
-                  className="inline-flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-lg border border-[color:var(--spirit-border)]/80 bg-white/[0.04] text-chalk/70"
-                >
-                  <UserRound className="h-4 w-4" aria-hidden />
-                </button>
-                {!oracleVoiceSurface ? (
-                  <button
-                    type="button"
-                    aria-label="Thread settings"
-                    onClick={() => {
-                      setThreadMenuOpen((o) => !o);
-                      setActivityOpen(false);
-                      setProfileOpen(false);
-                    }}
-                    className="inline-flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-lg border border-[color:var(--spirit-border)]/80 bg-white/[0.04] text-chalk/70"
-                  >
-                    <SlidersHorizontal className="h-4 w-4" aria-hidden />
-                  </button>
-                ) : null}
-              </div>
+                  <div className="flex flex-col gap-4 px-0 pb-1 pt-1">
+                    <ChatActiveModeBadge
+                      compact
+                      className="opacity-90"
+                      profileId={modeRt.activeModelProfileId}
+                    />
+                    <ModelProfileSelector
+                      variant="topBar"
+                      value={modeRt.activeModelProfileId}
+                      onChange={(id) => {
+                        void modeRt.setActiveModelProfile(id);
+                      }}
+                      disabled={sidebarLocked}
+                      compact
+                    />
+                    <VoiceControl
+                      variant="mobile-bar"
+                      state={tts.state}
+                      onToggleEnabled={tts.toggleEnabled}
+                      onEnableAudio={tts.ensureAudioUnlocked}
+                      onStop={tts.stop}
+                      onSpeakLatestAssistant={voiceRt.speakLatestAssistant}
+                      onStartDelayChange={tts.setStartDelayMs}
+                      onSentenceGapChange={tts.setSentenceGapMs}
+                      onVoiceSpeedChange={tts.setVoiceSpeed}
+                      onToggleAutoSpeak={tts.toggleAutoSpeakAssistant}
+                      onRequestVoiceCatalog={tts.refreshElevenLabsVoices}
+                      onElevenLabsVoiceChange={tts.setElevenLabsVoiceFromPicker}
+                      disabled={sidebarLocked}
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        className="inline-flex min-h-[44px] min-w-0 flex-1 touch-manipulation items-center justify-center gap-2 rounded-xl border border-[color:color-mix(in_oklab,var(--spirit-border)_45%,transparent)] bg-white/[0.04] px-3 font-mono text-[10px] font-semibold uppercase tracking-wider text-chalk/65"
+                        onClick={() => {
+                          setWorkspaceMoreOpen(false);
+                          setActivityOpen((o) => !o);
+                          setThreadMenuOpen(false);
+                        }}
+                      >
+                        <Activity className="h-4 w-4 shrink-0" aria-hidden />
+                        Activity
+                      </button>
+                      <button
+                        type="button"
+                        className="inline-flex min-h-[44px] min-w-0 flex-1 touch-manipulation items-center justify-center gap-2 rounded-xl border border-[color:color-mix(in_oklab,var(--spirit-border)_45%,transparent)] bg-white/[0.04] px-3 font-mono text-[10px] font-semibold uppercase tracking-wider text-chalk/65"
+                        onClick={() => {
+                          setWorkspaceMoreOpen(false);
+                          setThreadMenuOpen((o) => !o);
+                          setActivityOpen(false);
+                        }}
+                      >
+                        <SlidersHorizontal className="h-4 w-4 shrink-0" aria-hidden />
+                        Thread
+                      </button>
+                    </div>
+                  </div>
+                </MobileSheet>
+              ) : null}
               {modeToast ? (
                 <div className="border-b border-white/[0.06] bg-white/[0.03] px-2 py-1 text-center font-mono text-[10px] text-chalk/65">
                   {modeToast}
@@ -1809,7 +1970,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
             events={workspaceActivity}
           />
           <SpiritUserProfilePanel
-            open={profileOpen}
+            open={profileOpen && isLg}
             onClose={() => setProfileOpen(false)}
             variant={isLg ? "popover" : "sheet"}
             activeModelProfileId={modeRt.activeModelProfileId}

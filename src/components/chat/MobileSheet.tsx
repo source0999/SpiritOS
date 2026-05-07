@@ -57,6 +57,22 @@ export const MobileSheet = memo(function MobileSheet({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [open, onKeyDown]);
 
+  // ── While a sheet covers the screen, lock document scroll (replacing the old /chat-wide lock).
+  // SpiritChat uses default overscroll on mobile so PTR works; overlays must not scroll the page behind.
+  useEffect(() => {
+    if (!mounted || !open) return;
+    const html = document.documentElement;
+    const body = document.body;
+    const prevHtml = html.style.overflow;
+    const prevBody = body.style.overflow;
+    html.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+    return () => {
+      html.style.overflow = prevHtml;
+      body.style.overflow = prevBody;
+    };
+  }, [mounted, open]);
+
   if (!mounted || !open) return null;
 
   const panel =

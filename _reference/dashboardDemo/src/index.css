@@ -1,0 +1,102 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* SpiritOS Color System - Refined for v1 Transparent Board */
+  --color-spirit-bg: #f1f5f9;
+  --color-spirit-card-light: rgba(255, 255, 255, 0.15);
+  --color-spirit-card-dark: rgba(15, 23, 42, 0.40);
+  --color-spirit-border: rgba(255, 255, 255, 0.3);
+  --color-spirit-accent: #0f172a;
+}
+
+@layer base {
+  body {
+    @apply bg-[#f1f5f9] text-slate-900 overflow-x-hidden antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+@layer utilities {
+  .glass-pearl {
+    backdrop-filter: blur(50px) saturate(140%);
+    -webkit-backdrop-filter: blur(50px) saturate(140%);
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.15) 0%,
+      rgba(255, 255, 255, 0.05) 100%
+    );
+    border: 1px solid rgba(255, 255, 255, 0.75);
+    box-shadow: 
+      0 40px 100px -20px rgba(15, 23, 42, 0.04), 
+      inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  }
+  
+  .glass-smoke {
+    backdrop-filter: blur(60px) saturate(160%);
+    -webkit-backdrop-filter: blur(60px) saturate(160%);
+    background: linear-gradient(
+      135deg,
+      rgba(15, 23, 42, 0.40) 0%,
+      rgba(15, 23, 42, 0.30) 100%
+    );
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    box-shadow: 
+      0 60px 120px -20px rgba(0, 0, 0, 0.4), 
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+
+  .glass-nav-light {
+    backdrop-filter: blur(40px) saturate(130%);
+    -webkit-backdrop-filter: blur(40px) saturate(130%);
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.80);
+    box-shadow: 0 12px 64px -12px rgba(0, 0, 0, 0.08);
+  }
+
+  .glass-nav-dark {
+    backdrop-filter: blur(50px) saturate(150%);
+    -webkit-backdrop-filter: blur(50px) saturate(150%);
+    background: rgba(0, 0, 0, 0.40);
+    border: 1px solid rgba(255, 255, 255, 0.30);
+    box-shadow: 0 24px 80px -10px rgba(0, 0, 0, 0.5);
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* iOS Safe Areas */
+main {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.bottom-nav-safe {
+  padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-15px) rotate(1deg); }
+}
+
+@keyframes pulse-fairy {
+  0%, 100% { transform: scale(1); opacity: 0.8; filter: blur(0px); }
+  50% { transform: scale(1.1); opacity: 1; filter: blur(2px); }
+}
+
+@keyframes drift {
+  0% { transform: translate(0, 0); }
+  33% { transform: translate(30px, -20px); }
+  66% { transform: translate(-20px, 40px); }
+  100% { transform: translate(0, 0); }
+}

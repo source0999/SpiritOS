@@ -5,6 +5,10 @@ import "server-only";
 
 import { pathFragmentLooksConcrete } from "@/lib/spirit/concrete-workspace-read-request";
 import {
+  createSpiritToolActivityCard,
+  type SpiritToolActivityCard,
+} from "@/lib/spirit/spirit-activity-events";
+import {
   listWorkspaceFiles,
   readLogTail,
   readWorkspaceFile,
@@ -19,6 +23,11 @@ export type DirectWorkspaceRequest =
   | { kind: "list"; directory: string }
   | { kind: "read"; filePath: string }
   | { kind: "tail"; filePath: string; lineCount?: number };
+
+export type DirectWorkspaceHandleResult = {
+  markdown: string;
+  toolActivity: SpiritToolActivityCard[];
+};
 
 function fenceLang(filePath: string): string {
   const lower = filePath.toLowerCase();
@@ -162,7 +171,9 @@ function formatToolError(message: string): string {
  * Execute a parsed concrete read-only workspace operation and return assistant markdown,
  * or null when this text does not map to a direct request or local tools are disabled.
  */
-export async function handleDirectWorkspaceRequest(text: string): Promise<string | null> {
+export async function handleDirectWorkspaceRequest(
+  text: string,
+): Promise<DirectWorkspaceHandleResult | null> {
   if (!isLocalToolsEnabled()) return null;
 
   const parsed = parseDirectWorkspaceRequest(text);
@@ -170,21 +181,93 @@ export async function handleDirectWorkspaceRequest(text: string): Promise<string
 
   if (parsed.kind === "list") {
     const r = await listWorkspaceFiles({ directory: parsed.directory });
-    if (!r.ok) return formatToolError(r.message);
-    return formatListSuccess(parsed.directory, r);
+    if (!r.ok) {
+      return {
+        markdown: formatToolError(r.message),
+        toolActivity: [
+          createSpiritToolActivityCard({
+            kind: "tool_blocked",
+            label: "List workspace files",
+            status: "blocked",
+            target: parsed.directory,
+            safeMessage: r.message,
+          }),
+        ],
+      };
+    }
+    return {
+      markdown: formatListSuccess(parsed.directory, r),
+      toolActivity: [
+        createSpiritToolActivityCard({
+          kind: "workspace_list",
+          label: "List workspace files",
+          status: "completed",
+          target: parsed.directory,
+          summary: `${r.entries.length} entr${r.entries.length === 1 ? "y" : "ies"}${r.truncated ? ", truncated" : ""}`,
+        }),
+      ],
+    };
   }
 
   if (parsed.kind === "read") {
     const r = await readWorkspaceFile({ filePath: parsed.filePath });
-    if (!r.ok) return formatToolError(r.message);
+    if (!r.ok) {
+      return {
+        markdown: formatToolError(r.message),
+        toolActivity: [
+          createSpiritToolActivityCard({
+            kind: "tool_blocked",
+            label: "Read workspace file",
+            status: "blocked",
+            target: parsed.filePath,
+            safeMessage: r.message,
+          }),
+        ],
+      };
+    }
     const label = r.filePath;
-    return formatReadSuccess(label, r.content, r.truncated);
+    return {
+      markdown: formatReadSuccess(label, r.content, r.truncated),
+      toolActivity: [
+        createSpiritToolActivityCard({
+          kind: "workspace_read",
+          label: "Read workspace file",
+          status: "completed",
+          target: label,
+          summary: r.truncated ? "Content truncated in output" : "Read OK",
+        }),
+      ],
+    };
   }
 
   const r = await readLogTail({
     filePath: parsed.filePath,
     lineCount: parsed.lineCount,
   });
-  if (!r.ok) return formatToolError(r.message);
-  return formatTailSuccess(r.filePath, r.lines, parsed.lineCount, r.truncated);
+  if (!r.ok) {
+    return {
+      markdown: formatToolError(r.message),
+      toolActivity: [
+        createSpiritToolActivityCard({
+          kind: "tool_blocked",
+          label: "Tail log file",
+          status: "blocked",
+          target: parsed.filePath,
+          safeMessage: r.message,
+        }),
+      ],
+    };
+  }
+  return {
+    markdown: formatTailSuccess(r.filePath, r.lines, parsed.lineCount, r.truncated),
+    toolActivity: [
+      createSpiritToolActivityCard({
+        kind: "workspace_tail",
+        label: "Tail log file",
+        status: "completed",
+        target: r.filePath,
+        summary: `${r.lines.length} lines${r.truncated ? ", truncated" : ""}`,
+      }),
+    ],
+  };
 }

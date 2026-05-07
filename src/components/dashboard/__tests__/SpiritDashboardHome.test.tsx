@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import type { ReactNode } from "react";
 import SpiritDashboardHome from "../SpiritDashboardHome";
@@ -28,10 +28,6 @@ const dashboardTelemetryFixture: ClusterTelemetryResponse = {
   ],
   summary: { total: 1, online: 1, offline: 0, degraded: 0, unknown: 0 },
 };
-
-vi.mock("@/components/dashboard/SpiritDiagnosticsLive", () => ({
-  SpiritDiagnosticsLive: () => <div data-testid="diag-stub" />,
-}));
 
 vi.mock("@/theme/useSpiritTheme", () => ({
   useSpiritTheme: vi.fn(() => ({
@@ -142,6 +138,16 @@ describe("SpiritDashboardHome", () => {
     expect(screen.getByRole("region", { name: /daily briefing/i })).toBeInTheDocument();
   });
 
+  it("renders static workspace shortcuts panel with real /chat and /oracle links", () => {
+    render(<SpiritDashboardHome />);
+    const shortcuts = screen.getByRole("complementary", { name: /workspace shortcuts/i });
+    expect(within(shortcuts).getByRole("link", { name: /^open chat$/i })).toHaveAttribute("href", "/chat");
+    expect(within(shortcuts).getByRole("link", { name: /^open oracle$/i })).toHaveAttribute(
+      "href",
+      "/oracle",
+    );
+  });
+
   it("Daily Briefing contains at least one briefing item", () => {
     render(<SpiritDashboardHome />);
     const briefing = screen.getByRole("region", { name: /daily briefing/i });
@@ -170,11 +176,6 @@ describe("SpiritDashboardHome", () => {
   });
 
   // ── Absent elements ───────────────────────────────────────────────────────
-
-  it("does not mount WorkspaceDiagnosticsRail on the home dashboard", () => {
-    render(<SpiritDashboardHome />);
-    expect(document.querySelector('[data-testid="workspace-diagnostics-rail"]')).toBeNull();
-  });
 
   it("does not render a Chat Core card on home", () => {
     render(<SpiritDashboardHome />);

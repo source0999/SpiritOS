@@ -1,10 +1,12 @@
 "use client";
 
-import { useClusterTelemetry } from "@/hooks/useClusterTelemetry";
+import { Activity } from "lucide-react";
+
+import { useClusterTelemetry, type ClusterFetchState } from "@/hooks/useClusterTelemetry";
 import { HomelabProgressBar } from "@/components/dashboard/HomelabProgressBar";
 import { HomelabStatusBadge } from "@/components/dashboard/HomelabStatusBadge";
 import { cn } from "@/lib/cn";
-import type { ClusterNodeTelemetry } from "@/lib/server/telemetry/types";
+import type { ClusterNodeTelemetry, ClusterTelemetryResponse } from "@/lib/server/telemetry/types";
 
 function pct(val: number | null): string {
   return val !== null ? `${Math.round(val)}%` : " - ";
@@ -64,7 +66,7 @@ function NodeCard({ node }: { node: ClusterNodeTelemetry }) {
           : "Unknown";
 
   return (
-    <div className="rounded-[14px] border border-white/[0.06] bg-white/[0.025] p-3">
+    <div className="spirit-dashboard-v2-inner-card p-3 sm:p-3.5">
       <div className="mb-2 flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="truncate font-mono text-[11px] text-chalk">{node.label}</p>
@@ -78,10 +80,10 @@ function NodeCard({ node }: { node: ClusterNodeTelemetry }) {
           Offline{node.error ? ` · ${node.error}` : ""}
         </p>
       ) : (
-        <div className="mt-3 flex flex-col gap-2.5">
+        <div className="mt-2.5 flex flex-col gap-2 sm:gap-2.5">
           <div>
-            <div className="mb-1.5 flex items-center justify-between">
-              <span className="font-mono text-[10px] text-chalk/48">CPU</span>
+            <div className="mb-1 flex items-center justify-between sm:mb-1.5">
+              <span className="font-mono text-[10px] text-chalk/52">CPU</span>
               <span className="font-mono text-[10.5px] text-chalk/80">
                 {node.cpu.usagePct !== null ? pct(node.cpu.usagePct) : "Unavailable"}
               </span>
@@ -96,8 +98,8 @@ function NodeCard({ node }: { node: ClusterNodeTelemetry }) {
           </div>
 
           <div>
-            <div className="mb-1.5 flex items-center justify-between">
-              <span className="font-mono text-[10px] text-chalk/48">RAM</span>
+            <div className="mb-1 flex items-center justify-between sm:mb-1.5">
+              <span className="font-mono text-[10px] text-chalk/52">RAM</span>
               <span className="font-mono text-[10.5px] text-chalk/80">
                 {node.memory.usedPct !== null
                   ? fmtMemory(node.memory.usedBytes, node.memory.totalBytes)
@@ -114,7 +116,7 @@ function NodeCard({ node }: { node: ClusterNodeTelemetry }) {
           </div>
 
           <div className="flex items-center justify-between">
-            <span className="font-mono text-[10px] text-chalk/48">Uptime</span>
+            <span className="font-mono text-[10px] text-chalk/52">Uptime</span>
             <span className="font-mono text-[10px] text-chalk/65">
               {formatUptime(node.uptimeSec)}
             </span>
@@ -125,12 +127,19 @@ function NodeCard({ node }: { node: ClusterNodeTelemetry }) {
   );
 }
 
-interface Props {
+export interface HomelabSystemStatsCardViewProps {
   className?: string;
+  data: ClusterTelemetryResponse | null;
+  state: ClusterFetchState;
+  error: string | null;
 }
 
-export function HomelabSystemStatsCard({ className }: Props) {
-  const { data, state, error } = useClusterTelemetry();
+export function HomelabSystemStatsCardView({
+  className,
+  data,
+  state,
+  error,
+}: HomelabSystemStatsCardViewProps) {
   const nodes = data?.nodes ?? [];
   const syncTime = data?.collectedAt
     ? new Date(data.collectedAt).toLocaleTimeString([], {
@@ -151,9 +160,20 @@ export function HomelabSystemStatsCard({ className }: Props) {
   const headerBadgeLabel = state === "error" ? "Error" : state === "checking" ? "Checking" : "Live";
 
   return (
-    <section aria-label="System Stats" className={cn("homelab-panel p-5", className)}>
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div>
+    <section
+      aria-label="System Stats"
+      className={cn("spirit-dashboard-v2-glass p-5 sm:p-7", className)}
+    >
+      <span className="spirit-dashboard-v2-glass__shine-t" aria-hidden />
+      <div className="mb-5 flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-start gap-3">
+          <div
+            className="hidden shrink-0 rounded-2xl border border-[color:color-mix(in_oklab,var(--spirit-glass-border)_65%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-bg-soft)_42%,transparent)] p-2.5 sm:block"
+            aria-hidden
+          >
+            <Activity className="h-5 w-5 text-chalk/50" strokeWidth={2} />
+          </div>
+          <div className="min-w-0">
           <p className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-chalk/48">
             <span className={headerDotClass} aria-hidden />
             Node Vitals
@@ -170,16 +190,17 @@ export function HomelabSystemStatsCard({ className }: Props) {
                   ? `Synced ${syncTime}`
                   : "Live telemetry"}
           </p>
+          </div>
         </div>
         <HomelabStatusBadge variant={headerBadgeVariant}>{headerBadgeLabel}</HomelabStatusBadge>
       </div>
 
       {state === "checking" && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {[0, 1].map((i) => (
             <div
               key={i}
-              className="h-[130px] animate-pulse rounded-[14px] border border-white/[0.06] bg-white/[0.025]"
+              className="spirit-dashboard-v2-inner-card h-[130px] animate-pulse border border-[color:color-mix(in_oklab,var(--spirit-glass-border)_45%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-bg-soft)_55%,transparent)]"
             />
           ))}
         </div>
@@ -192,7 +213,7 @@ export function HomelabSystemStatsCard({ className }: Props) {
       )}
 
       {nodes.length > 0 && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {nodes.map((node) => (
             <NodeCard key={node.id} node={node} />
           ))}
@@ -200,4 +221,9 @@ export function HomelabSystemStatsCard({ className }: Props) {
       )}
     </section>
   );
+}
+
+export function HomelabSystemStatsCard({ className }: { className?: string }) {
+  const { data, state, error } = useClusterTelemetry();
+  return <HomelabSystemStatsCardView className={className} data={data} state={state} error={error} />;
 }

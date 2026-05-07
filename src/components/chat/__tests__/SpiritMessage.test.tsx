@@ -107,4 +107,75 @@ describe("SpiritMessage", () => {
     expect(bubble).toBeTruthy();
     expect(bubble!.contains(screen.getByRole("button", { name: /^Copy$/i }))).toBe(true);
   });
+
+  it("renders tool activity cards from assistant metadata without altering markdown body", () => {
+    const card = {
+      id: "ta_1",
+      timestamp: Date.now(),
+      kind: "workspace_list" as const,
+      label: "List workspace files",
+      status: "completed" as const,
+      target: "src/lib/spirit",
+      summary: "4 entries",
+    };
+    const spiritMessage = {
+      id: "42",
+      role: "assistant" as const,
+      metadata: { spiritToolActivity: [card] },
+      parts: [{ type: "text" as const, text: "Files listed." }],
+    };
+    render(<SpiritMessage message={spiritMessage} onDelete={noopDelete} />);
+    expect(screen.getByTestId("spirit-tool-activity-cards")).toBeInTheDocument();
+    expect(screen.getByText(/list workspace files/i)).toBeInTheDocument();
+    expect(screen.getByText(/src\/lib\/spirit/)).toBeInTheDocument();
+    expect(screen.getByText("Files listed.")).toBeInTheDocument();
+  });
+
+  it("renders blocked workspace card from metadata", () => {
+    const spiritMessage = {
+      id: "43",
+      role: "assistant" as const,
+      metadata: {
+        spiritToolActivity: [
+          {
+            id: "b1",
+            timestamp: Date.now(),
+            kind: "tool_blocked" as const,
+            label: "Read workspace file",
+            status: "blocked" as const,
+            target: ".env.local",
+            safeMessage: "blocked file pattern",
+          },
+        ],
+      },
+      parts: [{ type: "text" as const, text: "Nope." }],
+    };
+    render(<SpiritMessage message={spiritMessage} onDelete={noopDelete} />);
+    expect(screen.getByTestId("spirit-tool-activity-card-tool_blocked")).toBeInTheDocument();
+    expect(screen.getByText(/blocked file pattern/i)).toBeInTheDocument();
+  });
+
+  it("renders confirmation-required dev command card from metadata", () => {
+    const spiritMessage = {
+      id: "44",
+      role: "assistant" as const,
+      metadata: {
+        spiritToolActivity: [
+          {
+            id: "d1",
+            timestamp: Date.now(),
+            kind: "dev_command_started" as const,
+            label: "Dev command",
+            status: "confirmation_required" as const,
+            target: "npm_test",
+            summary: "npx vitest run",
+          },
+        ],
+      },
+      parts: [{ type: "text" as const, text: "Say confirm." }],
+    };
+    render(<SpiritMessage message={spiritMessage} onDelete={noopDelete} />);
+    expect(screen.getByText(/confirmation required/i)).toBeInTheDocument();
+    expect(screen.getByText(/npm_test/)).toBeInTheDocument();
+  });
 });

@@ -41,6 +41,24 @@ function kindLabel(k: SpiritActivityEvent["kind"]): string {
       return "flow";
     case "copy_feedback":
       return "cpy";
+    case "workspace_list":
+      return "list";
+    case "workspace_read":
+      return "read";
+    case "workspace_tail":
+      return "tail";
+    case "file_edit_proposed":
+      return "edit";
+    case "file_edit_applied":
+      return "apply";
+    case "dev_command_started":
+    case "dev_command_completed":
+    case "dev_command_failed":
+      return "cmd";
+    case "tool_blocked":
+      return "block";
+    case "tool_unavailable":
+      return "off";
     default:
       return "evt";
   }

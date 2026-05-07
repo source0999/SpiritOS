@@ -92,8 +92,11 @@ describe("handleDirectDevCommandRequest", () => {
       message: "need confirm",
     });
     const out = await handleDirectDevCommandRequest("run npm test");
-    expect(out).toMatch(/Confirmation required/);
-    expect(out).toMatch(/Run npm test confirm true/);
+    expect(out).not.toBeNull();
+    expect(out!.markdown).toMatch(/Confirmation required/);
+    expect(out!.markdown).toMatch(/Run npm test confirm true/);
+    expect(out!.toolActivity[0]?.status).toBe("confirmation_required");
+    expect(out!.toolActivity[0]?.target).toBe("npm_test");
   });
 
   it("git_status calls runDevCommand and formats output", async () => {
@@ -107,9 +110,11 @@ describe("handleDirectDevCommandRequest", () => {
       output: " M file.ts",
     });
     const out = await handleDirectDevCommandRequest("git status");
+    expect(out).not.toBeNull();
     expect(runDevCommand).toHaveBeenCalledWith({ commandId: "git_status", confirm: undefined });
-    expect(out).toMatch(/^Dev command: git status/);
-    expect(out).toContain("```text");
-    expect(out).toContain("M file.ts");
+    expect(out!.markdown).toMatch(/^Dev command: git status/);
+    expect(out!.markdown).toContain("```text");
+    expect(out!.markdown).toContain("M file.ts");
+    expect(out!.toolActivity[0]?.kind).toBe("dev_command_completed");
   });
 });

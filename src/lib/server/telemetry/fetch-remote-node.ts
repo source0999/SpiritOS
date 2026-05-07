@@ -1,6 +1,7 @@
 import type { ClusterNodeTelemetry } from "./types";
 
-const REMOTE_TIMEOUT_MS = 2500;
+/** Remote Windows agent runs synchronous PowerShell (multi-drive); sub-3s fetch timeouts falsely mark nodes offline. */
+const REMOTE_TIMEOUT_MS = 12_000;
 
 function offlineNode(
   id: string,

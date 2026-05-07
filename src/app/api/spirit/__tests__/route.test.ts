@@ -864,4 +864,31 @@ describe("POST /api/spirit streamText tools wiring", () => {
     };
     expect(opts?.tools?.run_dev_command).toBeDefined();
   });
+
+  it("file edit request uses capability bridge when edit tools are not available (no streamText success claim)", async () => {
+    vi.stubEnv("SPIRIT_ENABLE_LOCAL_TOOLS", "true");
+    vi.stubEnv("SPIRIT_OLLAMA_SUPPORTS_TOOLS", "true");
+    vi.stubEnv("SPIRIT_ENABLE_FILE_EDIT_TOOLS", "false");
+    vi.mocked(streamText).mockClear();
+    const req = new Request("http://localhost/api/spirit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(
+        jsonBody({
+          messages: [
+            {
+              role: "user",
+              id: "u-edit-page",
+              parts: [{ type: "text", text: "Edit src/app/page.tsx to add a comment" }],
+            },
+          ],
+        }),
+      ),
+    });
+    const res = await POST(req);
+    expect(vi.mocked(streamText)).not.toHaveBeenCalled();
+    const raw = await res.text();
+    expect(raw).toMatch(/Guarded workspace file editing is disabled|SPIRIT_ENABLE_FILE_EDIT_TOOLS/);
+    expect(raw).not.toMatch(/I (have )?edited|successfully (patched|updated) your file/i);
+  });
 });

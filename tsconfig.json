@@ -38,6 +38,7 @@
     "backend",
     ".cursor",
     "repomix-output*.xml",
-    "oldSpiritOS.xml"
+    "oldSpiritOS.xml",
+    "_reference"
   ]
 }

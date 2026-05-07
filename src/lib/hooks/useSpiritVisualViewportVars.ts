@@ -14,9 +14,16 @@ export type SpiritVisualViewportMetrics = {
 
 /**
  * Paints CSS custom properties on `ref.current` for mobile keyboard-safe layouts.
- * - `--spirit-visual-viewport-height` — visible height (px)
- * - `--spirit-keyboard-inset` — max(0, layout height − visible height − vv.offsetTop) (px)
- * - `--spirit-visual-offset-top` — visualViewport.offsetTop (px)
+ * - `--spirit-visual-viewport-height` — `visualViewport.height` when keyboard is open; when the
+ *   keyboard lane is idle, **pinned to `window.innerHeight`** (same as vv on stable loads, but
+ *   we stop listening to VV resize/scroll so iOS PTR rubber-band cannot spam `apply()`).
+ * - `--spirit-keyboard-inset` — max(0, layout height − visible height − vv.offsetTop)
+ * - `--spirit-visual-offset-top` — raw offset **clamped to 0** when keyboard lane is idle
+ *
+ * **PTR / rubber-band:** (1) `visualViewport` `resize`/`scroll` listeners stay detached while the
+ * keyboard lane is idle. (2) Inset must stay ≥ 14px for **50ms** before we treat the lane as
+ * active (ignores one-frame PTR spikes). (3) Identical CSS triple + lane state skips redundant
+ * `setProperty` when `window.resize` fires in a tight loop.
  */
 export function useSpiritVisualViewportVars(
   ref: SpiritVisualViewportVarTarget,
@@ -30,27 +37,18 @@ export function useSpiritVisualViewportVars(
     const el = ref.current;
     if (!el) return;
 
+    const vv = window.visualViewport ?? null;
     let raf = 0;
+    let vvListenersAttached = false;
+    /** Sustained inset before we treat the keyboard lane as active (avoids PTR spikes). */
+    let keyboardLaneActive = false;
+    let armKbTimer: number | null = null;
+    let lastStyleTriple = "";
 
-    const apply = () => {
-      const innerH = window.innerHeight;
-      const vv = window.visualViewport;
-      let vh = innerH;
-      let offsetTop = 0;
-      let keyboardInset = 0;
-      if (vv) {
-        vh = vv.height;
-        offsetTop = vv.offsetTop;
-        keyboardInset = Math.max(0, innerH - vh - offsetTop);
-      }
-      el.style.setProperty("--spirit-visual-viewport-height", `${vh}px`);
-      el.style.setProperty("--spirit-keyboard-inset", `${keyboardInset}px`);
-      el.style.setProperty("--spirit-visual-offset-top", `${offsetTop}px`);
-
-      const rounded = Math.round(keyboardInset);
-      if (rounded !== lastInsetRef.current) {
-        lastInsetRef.current = rounded;
-        setKeyboardInsetPx(rounded);
+    const clearKbArmTimer = () => {
+      if (armKbTimer != null) {
+        window.clearTimeout(armKbTimer);
+        armKbTimer = null;
       }
     };
 
@@ -59,24 +57,102 @@ export function useSpiritVisualViewportVars(
       raf = requestAnimationFrame(apply);
     };
 
+    const onWinResize = () => schedule();
+    const onOrientation = () => schedule();
+    const onFocusIn = () => schedule();
+    const onFocusOut = () => schedule();
+    const onVvResize = () => schedule();
+    const onVvScroll = () => schedule();
+
+    const setVvListeners = (laneIdle: boolean) => {
+      if (!vv) return;
+      if (laneIdle && vvListenersAttached) {
+        vv.removeEventListener("resize", onVvResize);
+        vv.removeEventListener("scroll", onVvScroll);
+        vvListenersAttached = false;
+      } else if (!laneIdle && !vvListenersAttached) {
+        vv.addEventListener("resize", onVvResize);
+        vv.addEventListener("scroll", onVvScroll);
+        vvListenersAttached = true;
+      }
+    };
+
+    function apply() {
+      const node = ref.current;
+      if (!node) return;
+      const innerH = window.innerHeight;
+      let vh = innerH;
+      let offsetTop = 0;
+      let keyboardInset = 0;
+      let rawOffsetTop = 0;
+      if (vv) {
+        vh = vv.height;
+        rawOffsetTop = vv.offsetTop;
+        keyboardInset = Math.max(0, innerH - vh - rawOffsetTop);
+        offsetTop = keyboardInset < 14 ? 0 : rawOffsetTop;
+      }
+
+      // ── Keyboard lane hysteresis: PTR can briefly inflate inset without a real keyboard.
+      // Require inset ≥ 14 for 50ms before attaching VV / switching to vv.height paint path.
+      if (keyboardInset < 14) {
+        clearKbArmTimer();
+        if (keyboardLaneActive) {
+          keyboardLaneActive = false;
+        }
+      } else if (!keyboardLaneActive && armKbTimer == null) {
+        armKbTimer = window.setTimeout(() => {
+          armKbTimer = null;
+          if (!vv) return;
+          const ih = window.innerHeight;
+          const insNow = Math.max(0, ih - vv.height - vv.offsetTop);
+          if (insNow >= 14) {
+            keyboardLaneActive = true;
+            schedule();
+          }
+        }, 50);
+      }
+
+      const keyboardLaneIdle = !keyboardLaneActive;
+      const paintVh = keyboardLaneIdle ? innerH : vh;
+
+      const styleTriple = `${paintVh}|${keyboardInset}|${offsetTop}|${keyboardLaneActive ? 1 : 0}`;
+      if (styleTriple === lastStyleTriple) {
+        return;
+      }
+      lastStyleTriple = styleTriple;
+
+      node.style.setProperty("--spirit-visual-viewport-height", `${paintVh}px`);
+      node.style.setProperty("--spirit-keyboard-inset", `${keyboardInset}px`);
+      node.style.setProperty("--spirit-visual-offset-top", `${offsetTop}px`);
+
+      setVvListeners(keyboardLaneIdle);
+
+      const rounded = Math.round(keyboardInset);
+      if (rounded !== lastInsetRef.current) {
+        lastInsetRef.current = rounded;
+        setKeyboardInsetPx(rounded);
+      }
+    }
+
+    window.addEventListener("resize", onWinResize);
+    window.addEventListener("orientationchange", onOrientation);
+    document.addEventListener("focusin", onFocusIn);
+    document.addEventListener("focusout", onFocusOut);
+
     schedule();
 
-    const vv = window.visualViewport;
-    vv?.addEventListener("resize", schedule);
-    vv?.addEventListener("scroll", schedule);
-    window.addEventListener("resize", schedule);
-    window.addEventListener("orientationchange", schedule);
-    document.addEventListener("focusin", schedule);
-    document.addEventListener("focusout", schedule);
-
     return () => {
+      clearKbArmTimer();
       cancelAnimationFrame(raf);
-      vv?.removeEventListener("resize", schedule);
-      vv?.removeEventListener("scroll", schedule);
-      window.removeEventListener("resize", schedule);
-      window.removeEventListener("orientationchange", schedule);
-      document.removeEventListener("focusin", schedule);
-      document.removeEventListener("focusout", schedule);
+      if (vv && vvListenersAttached) {
+        vv.removeEventListener("resize", onVvResize);
+        vv.removeEventListener("scroll", onVvScroll);
+        vvListenersAttached = false;
+      }
+      window.removeEventListener("resize", onWinResize);
+      window.removeEventListener("orientationchange", onOrientation);
+      document.removeEventListener("focusin", onFocusIn);
+      document.removeEventListener("focusout", onFocusOut);
     };
   }, [ref, enabled]);
 

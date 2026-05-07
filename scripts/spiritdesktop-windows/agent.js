@@ -7,7 +7,8 @@
 //
 // ── DEPLOYMENT (read this before opening another “storage missing” ticket) ──
 // Editing scripts/spiritdesktop-windows/agent.js in the SpiritOS repo does NOTHING to a
-// machine that is already running an old copy. You must copy this file onto spiritdesktop
+// machine that is already running an old copy. You must copy agent.js **and**
+// windows-drive-type.js (same folder—agent requires it) onto spiritdesktop
 // (or whatever path you launch from) and **restart** the Node process (`node agent.js`).
 // Sanity check from the Dell: curl -H "Authorization: Bearer <token>"
 //   http://<spiritdesktop-lan-ip>:3000/api/telemetry/self
@@ -16,7 +17,9 @@
 
 const http = require("node:http");
 const os = require("node:os");
+const path = require("node:path");
 const { execSync } = require("node:child_process");
+const { normalizeWindowsPhysicalDiskType } = require(path.join(__dirname, "windows-drive-type.js"));
 
 const PORT = Number.parseInt(process.env.PORT || "3000", 10);
 const TOKEN = (process.env.SPIRIT_TELEMETRY_TOKEN || "3399").trim();
@@ -55,10 +58,10 @@ async function measureCpuUsage() {
   }
 }
 
-// ── Storage (Windows - Win32_LogicalDisk) ─────────────────────────────────────
-// CIM properties are UInt64; ConvertTo-Json often emits Size/FreeSpace as **strings**.
-// If we only accept typeof === "number", every drive is dropped and the UI shows empty
-// storage with no JSON error - brutal to debug. Coerce with num().
+// ── Storage (Windows) ─────────────────────────────────────────────────────────
+// Win32_LogicalDisk for sizes + mount; Get-PhysicalDisk per drive letter for Bus/Media.
+// WMI fallback: LogicalDisk→DiskPartition→DiskDrive PNPDeviceID for NVMe when cmdlets lie.
+// CIM UInt64 → JSON strings sometimes — coerce with num().
 
 function num(v) {
   if (typeof v === "number" && Number.isFinite(v)) return v;
@@ -70,13 +73,65 @@ function num(v) {
   return null;
 }
 
+/** Multi-line PS: logical disks + PhysicalDisk enrichment + WMI NVMe hint. */
+const WINDOWS_STORAGE_PS = `
+$ErrorActionPreference = 'SilentlyContinue'
+$out = New-Object System.Collections.ArrayList
+Get-CimInstance -ClassName Win32_LogicalDisk -Filter "DriveType=3" | ForEach-Object {
+  $row = $_
+  $devId = $row.DeviceID
+  $letter = if ($devId -match '^([A-Za-z]):') { $Matches[1] } else { $null }
+  $bus = $null
+  $media = $null
+  $spindleSpeed = $null
+  if ($letter) {
+    try {
+      $part = Get-Partition -DriveLetter $letter -ErrorAction Stop | Select-Object -First 1
+      if ($part -and $null -ne $part.DiskNumber) {
+        $pd = Get-PhysicalDisk -Number $part.DiskNumber -ErrorAction Stop
+        if ($pd) {
+          $bus = $pd.BusType.ToString()
+          $media = $pd.MediaType.ToString()
+          try { $spindleSpeed = [uint64]$pd.SpindleSpeed } catch {}
+        }
+      }
+    } catch {}
+  }
+  if (-not $bus) {
+    try {
+      $parts = Get-CimAssociatedInstance -InputObject $row -ResultClassName Win32_DiskPartition
+      foreach ($p in $parts) {
+        $dds = Get-CimAssociatedInstance -InputObject $p -ResultClassName Win32_DiskDrive
+        foreach ($dd in $dds) {
+          if ($dd.PNPDeviceID -match '(?i)NVMe') { $bus = 'NVMe'; break }
+          if ($dd.InterfaceType -match '(?i)NVMe') { $bus = 'NVMe'; break }
+        }
+        if ($bus) { break }
+      }
+    } catch {}
+  }
+  [void]$out.Add([PSCustomObject]@{
+    DeviceID = $devId
+    VolumeName = $row.VolumeName
+    Size = $row.Size
+    FreeSpace = $row.FreeSpace
+    FileSystem = $row.FileSystem
+    PhysicalBusType = $bus
+    PhysicalMediaType = $media
+    PhysicalSpindleSpeed = $spindleSpeed
+  })
+}
+ConvertTo-Json -Depth 6 -Compress -InputObject @($out.ToArray())
+`.trim();
+
 function collectWindowsStorage() {
   const now = new Date().toISOString();
   try {
-    const output = execSync(
-      "powershell -NoProfile -NonInteractive -Command \"Get-CimInstance Win32_LogicalDisk -Filter 'DriveType=3' | Select-Object DeviceID,VolumeName,Size,FreeSpace,FileSystem | ConvertTo-Json -Depth 2\"",
-      { timeout: 3000, encoding: "utf8" },
-    );
+    const output = execSync(`powershell -NoProfile -NonInteractive -Command ${JSON.stringify(WINDOWS_STORAGE_PS)}`, {
+      timeout: 8000,
+      encoding: "utf8",
+      maxBuffer: 4 * 1024 * 1024,
+    });
     const trimmed = output.replace(/^\uFEFF/, "").trim();
     const raw = JSON.parse(trimmed);
     // PowerShell returns an object (not array) for a single drive
@@ -88,12 +143,13 @@ function collectWindowsStorage() {
         const freeBytes = Math.max(0, num(d.FreeSpace) ?? 0);
         const usedBytes = Math.max(0, totalBytes - freeBytes);
         const usedPct = Math.round((usedBytes / totalBytes) * 100 * 10) / 10;
+        const type = normalizeWindowsPhysicalDiskType(d.PhysicalBusType, d.PhysicalMediaType, d.PhysicalSpindleSpeed);
         return {
           id: d.DeviceID,
           name: d.VolumeName ? `${d.DeviceID} (${d.VolumeName})` : d.DeviceID,
           mount: d.DeviceID,
           fsType: d.FileSystem || null,
-          type: "UNKNOWN",
+          type,
           totalBytes,
           usedBytes,
           freeBytes,

@@ -11,10 +11,17 @@ describe("SpiritChat mobile composer (Prompt 9F)", () => {
     expect(src).toContain("max-lg:max-h-[120px]");
   });
 
-  it("scroll container has overscroll-y-contain on both variant branches", () => {
+  it("workspace variant allows mobile overscroll chaining for iOS PTR (max-lg overscroll-y-auto)", () => {
     const src = readFileSync(p, "utf8");
-    const matches = src.match(/overscroll-y-contain/g) ?? [];
-    expect(matches.length).toBeGreaterThanOrEqual(2);
+    expect(src).toContain("max-lg:overscroll-y-auto");
+    expect(src).toContain("lg:overscroll-y-contain");
+  });
+
+  it("standalone branch keeps overscroll-y-contain on the message scroller", () => {
+    const src = readFileSync(p, "utf8");
+    expect(src).toContain(
+      "overscroll-y-contain pb-[calc(5rem+env(safe-area-inset-bottom,0px))]",
+    );
   });
 
   it("composer wrapper does not use sticky positioning", () => {

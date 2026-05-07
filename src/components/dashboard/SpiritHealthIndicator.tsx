@@ -1,7 +1,7 @@
 "use client";
 
 // ── SpiritHealthIndicator - legacy isolated poll (unit tests only) ─────────────
-// > Diagnostics rail uses SpiritDiagnosticsLive - do not mount both; you'd double-fetch.
+// > Isolated poll for unit tests; do not stack with other /api/spirit/health clients.
 import { useEffect, useRef, useState } from "react";
 
 type HealthState = "checking" | "online" | "offline";

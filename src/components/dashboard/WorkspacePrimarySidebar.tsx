@@ -102,10 +102,13 @@ export function WorkspacePrimarySidebar() {
         className={cn(
           "fixed inset-x-0 z-40 lg:hidden",
           "bottom-[var(--spirit-keyboard-inset,0px)]",
-          hideMobileDockForComposer && "max-lg:hidden",
-          "flex items-center justify-around gap-0.5 border-t border-[color:var(--spirit-border)]",
-          "bg-[color:color-mix(in_oklab,var(--spirit-bg)_82%,transparent)] px-1 pb-[env(safe-area-inset-bottom,0px)] pt-2 backdrop-blur-2xl",
-          "shadow-[0_-14px_40px_-26px_var(--spirit-glow)]",
+          // `/chat`: composer is the bottom affordance — dock stays off (Gemini pattern).
+          chatActive && "max-lg:hidden",
+          !chatActive && hideMobileDockForComposer && "max-lg:hidden",
+          "flex items-center justify-around gap-0.5 px-1 pb-[env(safe-area-inset-bottom,0px)]",
+          chatActive
+            ? "border-t border-[color:color-mix(in_oklab,var(--spirit-border)_48%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-bg)_93%,transparent)] pt-1.5 shadow-[0_-4px_24px_-12px_rgba(0,0,0,0.45)] backdrop-blur-xl"
+            : "border-t border-[color:var(--spirit-border)] bg-[color:color-mix(in_oklab,var(--spirit-bg)_82%,transparent)] pt-2 backdrop-blur-2xl shadow-[0_-14px_40px_-26px_var(--spirit-glow)]",
         )}
         aria-label="Workspace navigation"
       >

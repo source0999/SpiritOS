@@ -69,4 +69,11 @@ describe("WorkspacePrimarySidebar", () => {
     const nav = screen.getByRole("navigation", { name: /^workspace navigation$/i });
     expect(nav.className).toContain("--spirit-keyboard-inset");
   });
+
+  it("hides the mobile dock on /chat so the composer is not fighting bottom nav", () => {
+    navMock.path = "/chat";
+    render(<WorkspacePrimarySidebar />);
+    const nav = screen.getByRole("navigation", { name: /^workspace navigation$/i });
+    expect(nav.className).toContain("max-lg:hidden");
+  });
 });

@@ -55,7 +55,11 @@ import {
   loadSpiritUserProfile,
 } from "@/lib/spirit/spirit-user-profile";
 import { decideSpiritRoute, type SpiritRouteLane } from "@/lib/spirit/spirit-route-decision";
-import type { SpiritActivityEvent } from "@/lib/spirit/spirit-activity-events";
+import {
+  spiritToolCardToActivityEvent,
+  type SpiritActivityEvent,
+} from "@/lib/spirit/spirit-activity-events";
+import { mergeSpiritToolActivityCardsForMessage } from "@/lib/spirit/spirit-assistant-tool-activity";
 import { TTS_TEXT_LIMIT } from "@/lib/tts/tts-text-budget";
 import {
   getRecentOracleMemoryEvents,
@@ -464,6 +468,13 @@ export function useSpiritChatTransport(
           console.info(`[tts] auto-speak skipped: stale thread`);
         }
         return;
+      }
+
+      const toolCards = mergeSpiritToolActivityCardsForMessage(event.message);
+      for (const c of toolCards) {
+        const ev = spiritToolCardToActivityEvent(c);
+        const { id: _tid, at: _tat, ...rest } = ev;
+        pushActivity(rest as Omit<SpiritActivityEvent, "id" | "at">);
       }
 
       if (plan.kind === "skip" && plan.reason === "empty-assistant-text") {

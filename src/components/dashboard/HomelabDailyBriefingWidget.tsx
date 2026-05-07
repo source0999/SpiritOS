@@ -1,3 +1,5 @@
+import { ShieldCheck } from "lucide-react";
+
 import { cn } from "@/lib/cn";
 
 interface BriefingItem {
@@ -31,10 +33,10 @@ const ITEMS: BriefingItem[] = [
 
 const CATEGORY_STYLE: Record<string, string> = {
   "Local AI":
-    "text-[color:var(--spirit-accent-strong)] border-[color:color-mix(in_oklab,var(--spirit-accent)_40%,transparent)]",
-  Homelab: "text-blue-300/80 border-blue-500/30",
-  Storage: "text-amber-300/75 border-amber-500/30",
-  Energy: "text-emerald-300/75 border-emerald-500/30",
+    "text-[color:var(--spirit-accent-strong)] border-[color:color-mix(in_oklab,var(--spirit-accent)_42%,transparent)]",
+  Homelab: "text-blue-300/80 border-blue-500/35",
+  Storage: "text-amber-300/75 border-amber-500/35",
+  Energy: "text-emerald-300/75 border-emerald-500/35",
 };
 
 interface Props {
@@ -45,49 +47,63 @@ export function HomelabDailyBriefingWidget({ className }: Props) {
   return (
     <section
       aria-label="Daily Briefing"
-      className={cn("homelab-panel p-4 sm:p-5", className)}
+      className={cn(
+        "spirit-dashboard-v2-glass flex flex-col p-5 sm:p-7",
+        className,
+      )}
     >
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-chalk/48">
-            Spirit · Daily Briefing
-          </p>
-          <h2 className="mt-0.5 font-mono text-[15px] font-semibold uppercase tracking-tight text-chalk">
-            Daily Briefing
-          </h2>
+      <span className="spirit-dashboard-v2-glass__shine-t" aria-hidden />
+
+      <div className="mb-6 flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-start gap-3">
+          <div
+            className="mt-0.5 shrink-0 rounded-2xl border border-[color:color-mix(in_oklab,var(--spirit-glass-border)_65%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-bg-soft)_42%,transparent)] p-2"
+            aria-hidden
+          >
+            <ShieldCheck className="h-5 w-5 text-chalk/48" strokeWidth={2} />
+          </div>
+          <div className="min-w-0">
+            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-chalk/48">
+              Spirit · Daily Briefing
+            </p>
+            <h2 className="mt-1 font-mono text-[15px] font-semibold uppercase tracking-tight text-chalk">
+              Daily Briefing
+            </h2>
+          </div>
         </div>
-        <span className="shrink-0 rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-chalk/45">
+        <span className="shrink-0 rounded-full border border-[color:color-mix(in_oklab,var(--spirit-glass-border)_55%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-bg-soft)_38%,transparent)] px-3 py-1 font-mono text-[9px] uppercase tracking-wider text-chalk/48">
           Demo
         </span>
       </div>
 
-      <ul className="flex flex-col gap-2">
+      <ul className="flex flex-col gap-2.5">
         {ITEMS.map((item) => (
           <li
             key={item.headline}
-            className="flex items-start gap-2.5 rounded-[10px] border border-white/[0.05] bg-white/[0.02] px-3 py-2"
+            className={cn(
+              "spirit-dashboard-v2-inner-card group border border-[color:color-mix(in_oklab,var(--spirit-glass-border)_55%,transparent)] p-3.5 transition-colors",
+              "hover:border-[color:color-mix(in_oklab,var(--spirit-accent)_28%,transparent)]",
+            )}
           >
-            <span
-              className={cn(
-                "mt-0.5 shrink-0 rounded border px-1.5 py-0.5 font-mono text-[8.5px] uppercase tracking-widest",
-                CATEGORY_STYLE[item.category] ??
-                  "text-chalk/45 border-white/[0.1]",
-              )}
-            >
-              {item.category}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="font-mono text-[10.5px] leading-snug text-chalk/80">
-                {item.headline}
-              </p>
-              <p className="mt-0.5 font-mono text-[9px] text-chalk/30">{item.time}</p>
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <span
+                className={cn(
+                  "rounded-full border px-2 py-0.5 font-mono text-[8.5px] font-semibold uppercase tracking-widest",
+                  CATEGORY_STYLE[item.category] ??
+                    "text-chalk/45 border-[color:color-mix(in_oklab,var(--spirit-glass-border)_70%,transparent)]",
+                )}
+              >
+                {item.category}
+              </span>
             </div>
+            <p className="font-mono text-[10.5px] leading-relaxed text-chalk/80">{item.headline}</p>
+            <p className="mt-1.5 font-mono text-[9px] text-chalk/38">{item.time}</p>
           </li>
         ))}
       </ul>
 
-      <p className="mt-3 font-mono text-[9.5px] text-chalk/28 leading-relaxed">
-        Demo briefing queue - research pipeline pending.
+      <p className="mt-5 font-mono text-[9.5px] leading-relaxed text-chalk/38">
+        Static demo briefing — not connected to live telemetry.
       </p>
     </section>
   );

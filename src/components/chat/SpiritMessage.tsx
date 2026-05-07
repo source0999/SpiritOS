@@ -9,6 +9,7 @@ import { memo, useCallback, useMemo, useState } from "react";
 import { EditableUserMessage } from "@/components/chat/EditableUserMessage";
 import { MessageActions } from "@/components/chat/MessageActions";
 import { MessageMarkdown } from "@/components/chat/MessageMarkdown";
+import { SpiritToolActivityCards } from "@/components/chat/SpiritToolActivityCards";
 import type { SpiritWebSourcesHeaderPayload } from "@/lib/spirit/spirit-web-sources";
 import { SectionLabel } from "@/components/ui/SectionLabel";
 import { StreamingCursor } from "@/components/chat/StreamingCursor";
@@ -17,6 +18,7 @@ import { textFromParts } from "@/lib/chat-utils";
 import { copyTextToClipboard } from "@/lib/clipboard";
 import { sanitizeAssistantVisibleText } from "@/lib/spirit/assistant-output-sanitizer";
 import { stripFakeCitationsWhenNoSources } from "@/lib/spirit/research-source-enforcement";
+import { mergeSpiritToolActivityCardsForMessage } from "@/lib/spirit/spirit-assistant-tool-activity";
 
 export type SpiritMessageProps = {
   message: UIMessage;
@@ -68,6 +70,11 @@ export const SpiritMessage = memo(function SpiritMessage({
     return stripFakeResearchCitations ? stripFakeCitationsWhenNoSources(cleaned) : cleaned;
   }, [isUser, rawBody, stripFakeResearchCitations]);
 
+  const toolActivityCards = useMemo(() => {
+    if (isUser) return [];
+    return mergeSpiritToolActivityCardsForMessage(message);
+  }, [isUser, message]);
+
   const handleCopy = useCallback(async () => {
     const r = await copyTextToClipboard(body);
     onCopyFeedback?.(r.ok);
@@ -77,9 +84,9 @@ export const SpiritMessage = memo(function SpiritMessage({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
+      initial={false}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
       className={cn(
         "group/message flex w-full min-w-0",
         isUser ? "justify-end" : "justify-start",
@@ -92,34 +99,35 @@ export const SpiritMessage = memo(function SpiritMessage({
             "relative flex min-w-0 flex-col",
             !isUser && [
               "w-full max-w-full",
-              "border border-[color:color-mix(in_oklab,var(--spirit-border)_45%,transparent)] border-l-[3px] border-l-[color:var(--spirit-accent)]",
-              "bg-white/[0.035]",
-              "max-lg:rounded-xl max-lg:py-2 max-lg:pl-2.5 max-lg:pr-2",
+              "border border-[color:color-mix(in_oklab,var(--spirit-border)_38%,transparent)] border-l-[2px] border-l-[color:color-mix(in_oklab,var(--spirit-accent)_55%,transparent)]",
+              "bg-white/[0.028]",
+              "max-lg:rounded-2xl max-lg:py-2 max-lg:pl-3 max-lg:pr-2",
               "rounded-2xl py-2.5 pl-3.5 pr-2.5 sm:py-3 sm:pl-4 sm:pr-3 lg:rounded-2xl",
             ],
             isUser && [
-              "max-lg:rounded-2xl max-lg:px-3 max-lg:py-2",
-              "rounded-2xl border border-[color:color-mix(in_oklab,var(--spirit-border)_70%,transparent)]",
-              "bg-white/[0.045] px-3 py-2.5 backdrop-blur-xl shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)] sm:rounded-2xl sm:px-4 sm:py-2.5",
+              "max-lg:rounded-2xl max-lg:px-3 max-lg:py-1.5",
+              "rounded-2xl border border-[color:color-mix(in_oklab,var(--spirit-border)_55%,transparent)]",
+              "bg-white/[0.038] px-3 py-2 sm:rounded-2xl sm:px-4 sm:py-2",
             ],
           )}
         >
           <div
             className={cn(
               "min-w-0",
-            !isUser && "pr-1 sm:pr-2 lg:pr-[5.5rem]",
+            !isUser &&
+              "max-lg:pr-11 pr-1 sm:pr-2 lg:pr-[5.5rem]",
             isUser &&
               (useActionSheetBelowLg
-                ? "pb-1 pr-1 max-lg:pr-10 sm:pr-2 sm:pb-1.5 lg:pb-8"
+                ? "pb-1 pr-1 max-lg:pr-11 sm:pr-2 sm:pb-1.5 lg:pb-8"
                 : "sm:pb-8 sm:pr-2"),
             )}
           >
             {isUser ? (
-              <SectionLabel className="mb-0.5 block text-[10px] font-medium tracking-wider text-chalk/42 max-lg:text-[10px] sm:mb-1 sm:text-[11px]">
+              <SectionLabel className="mb-0.5 block text-[10px] font-medium tracking-wider text-chalk/38 max-lg:text-[10px] sm:mb-1 sm:text-[11px]">
                 You
               </SectionLabel>
             ) : (
-              <SectionLabel className="mb-0.5 block font-mono text-[9px] tracking-[0.18em] text-[color:color-mix(in_oklab,var(--spirit-accent-strong)_88%,transparent)] max-lg:text-[9px] sm:mb-1 sm:text-[10px] sm:tracking-[0.22em]">
+              <SectionLabel className="mb-0.5 block max-w-[calc(100%-2.5rem)] font-mono text-[9px] tracking-[0.14em] text-chalk/48 max-lg:text-[9px] sm:mb-1 sm:max-w-none sm:text-[10px] sm:tracking-[0.18em]">
                 Spirit
               </SectionLabel>
             )}
@@ -140,6 +148,9 @@ export const SpiritMessage = memo(function SpiritMessage({
             ) : (
               <div className="min-w-0 max-w-full [overflow-wrap:anywhere]">
                 <MessageMarkdown text={body} webSourcesSnapshot={webSourcesSnapshot} />
+                {toolActivityCards.length > 0 ? (
+                  <SpiritToolActivityCards cards={toolActivityCards} />
+                ) : null}
                 {isStreamingLatest ? <StreamingCursor /> : null}
               </div>
             )}

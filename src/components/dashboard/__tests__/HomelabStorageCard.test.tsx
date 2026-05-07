@@ -109,6 +109,35 @@ describe("HomelabStorageCard", () => {
     await waitFor(() => expect(screen.getByText("df exploded")).toBeInTheDocument());
   });
 
+  it("uses neutral UNKNOWN tag styling (not HDD) when drive type is UNKNOWN", async () => {
+    const unknownDrive = {
+      ...driveFromApi,
+      id: "D:",
+      name: "D:",
+      mount: "D:",
+      type: "UNKNOWN" as const,
+    };
+    const payload: ClusterTelemetryResponse = {
+      ...withStorage,
+      nodes: [
+        {
+          ...withStorage.nodes[0]!,
+          storage: {
+            drives: [unknownDrive],
+            collectedAt: new Date().toISOString(),
+          },
+        },
+      ],
+    };
+    globalThis.fetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify(payload), { status: 200 }),
+    );
+    render(<HomelabStorageCard />);
+    await waitFor(() => expect(screen.getByLabelText("UNKNOWN")).toBeInTheDocument());
+    expect(screen.getByLabelText("UNKNOWN")).toHaveClass("homelab-tag--unknown");
+    expect(screen.getByLabelText("UNKNOWN")).not.toHaveClass("homelab-tag--hdd");
+  });
+
   it("shows offline state for offline node (no fake drives)", async () => {
     const offline: ClusterTelemetryResponse = {
       ok: true,

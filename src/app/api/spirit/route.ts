@@ -197,9 +197,10 @@ export async function POST(req: Request) {
       const directAnswer = await handleDirectWorkspaceRequest(lastUser);
       if (directAnswer) {
         return createDeterministicAssistantUIMessageResponse({
-          text: directAnswer,
+          text: directAnswer.markdown,
           originalMessages: uiMessages,
           headers: responseHeaders,
+          toolActivity: directAnswer.toolActivity,
         });
       }
 
@@ -249,9 +250,10 @@ export async function POST(req: Request) {
         const directDevAnswer = await handleDirectDevCommandRequest(lastUser);
         if (directDevAnswer) {
           return createDeterministicAssistantUIMessageResponse({
-            text: directDevAnswer,
+            text: directDevAnswer.markdown,
             originalMessages: uiMessages,
             headers: responseHeaders,
+            toolActivity: directDevAnswer.toolActivity,
           });
         }
       }

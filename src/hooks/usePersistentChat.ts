@@ -144,11 +144,8 @@ export function usePersistentChat(enabled: boolean) {
       return;
     }
 
-    if (visibleThreads.length > 0) {
-      setActiveThreadId(visibleThreads[0]!.id);
-      return;
-    }
-
+    // ── GPT-style landing: plain /chat opens draft lane, not the latest saved thread ─
+    // User picks a thread from the sidebar/drawer; we only auto-pick when reconciling a stale id above.
     enterDraftLane();
   }, [
     enabled,

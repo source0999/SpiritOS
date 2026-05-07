@@ -1,15 +1,18 @@
 "use client";
 
-// ── SpiritWorkspaceShell - `/chat` GPT workspace (+ diagnostics rail, locked viewport) ─
+// ── SpiritWorkspaceShell - `/chat` GPT workspace (VV-sized shell, scroll inside SpiritChat) ─
 // DEPRECATED CONTEXT: DashboardClient StageId rails are archival only; Neural has no throne.
-import { useEffect, useRef, useState, type ReactNode } from "react";
+// **Do not** set html/body overflow:hidden for the whole route lifetime — iOS Safari needs the
+// document overscroll path for native pull-to-refresh (see MDN `overscroll-behavior: contain`).
+// Keyboard safety stays in `useSpiritVisualViewportVars` + composer focus scroll resets.
+import { useRef, useState, type ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import { PanelLeftClose, PanelLeft } from "lucide-react";
 
 import { SpiritChat } from "@/components/chat/SpiritChat";
 import { Clock } from "@/components/dashboard/Clock";
 import { ThemeStrip } from "@/components/dashboard/ThemeStrip";
 import { ClientFailSafe } from "@/components/system/ClientFailSafe";
-import { WorkspaceDiagnosticsRail } from "@/components/dashboard/WorkspaceDiagnosticsRail";
 import {
   SpiritWorkspaceMobileChromeProvider,
   useSpiritWorkspaceMobileChrome,
@@ -26,8 +29,13 @@ export type SpiritWorkspaceShellProps = {
 /** Main column padding: full dock gap by default; tight when keyboard or composer claims bottom. */
 function SpiritWorkspaceMainColumn({ children }: { children: ReactNode }) {
   const mobileChrome = useSpiritWorkspaceMobileChrome();
+  const pathname = usePathname() ?? "";
+  const isChatRoute = pathname === "/chat" || pathname.startsWith("/chat/");
+  // `/chat` mobile: bottom rail is hidden — do not reserve 4.25rem for a dock that is not there.
   const relaxBottom =
-    (mobileChrome?.keyboardInsetPx ?? 0) > 0 || (mobileChrome?.composerFocused ?? false);
+    (mobileChrome?.keyboardInsetPx ?? 0) > 0 ||
+    (mobileChrome?.composerFocused ?? false) ||
+    isChatRoute;
 
   return (
     <div
@@ -50,21 +58,6 @@ function SpiritWorkspaceShellInner({
   const [threadsRailOpen, setThreadsRailOpen] = useState(false);
   const workspaceRootRef = useRef<HTMLDivElement>(null);
   const { keyboardInsetPx } = useSpiritVisualViewportVars(workspaceRootRef);
-
-  // ── iOS Safari: kill document scroll while /chat is mounted so focus/keyboard doesn’t
-  // pan the layout viewport and shove the composer off-screen (fixed shell below).
-  useEffect(() => {
-    const html = document.documentElement;
-    const body = document.body;
-    const prevHtmlOverflow = html.style.overflow;
-    const prevBodyOverflow = body.style.overflow;
-    html.style.overflow = "hidden";
-    body.style.overflow = "hidden";
-    return () => {
-      html.style.overflow = prevHtmlOverflow;
-      body.style.overflow = prevBodyOverflow;
-    };
-  }, []);
 
   return (
     <div
@@ -156,8 +149,6 @@ function SpiritWorkspaceShellInner({
               }}
             />
           </div>
-
-          <WorkspaceDiagnosticsRail />
         </div>
         </SpiritWorkspaceMainColumn>
       </SpiritWorkspaceMobileChromeProvider>

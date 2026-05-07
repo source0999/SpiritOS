@@ -446,131 +446,249 @@ export const ChatThreadSidebar = memo(function ChatThreadSidebar({
         className,
       )}
     >
-      <div className="flex shrink-0 flex-col gap-2 border-b border-[color:color-mix(in_oklab,var(--spirit-border)_70%,transparent)] px-3 py-2.5">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0 flex-1">
-            <p className="truncate font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-chalk/55">
+      <div
+        className={cn(
+          "flex shrink-0 flex-col gap-2 border-b border-[color:color-mix(in_oklab,var(--spirit-border)_70%,transparent)]",
+          layoutVariant === "drawer" ? "px-3 pb-3 pt-2" : "px-3 py-2.5",
+        )}
+      >
+        {layoutVariant === "drawer" ? (
+          <>
+            {onSearchQueryChange ? (
+              <div>
+                <label htmlFor="chat-thread-search" className="sr-only">
+                  Search chats
+                </label>
+                <input
+                  id="chat-thread-search"
+                  type="search"
+                  enterKeyHint="search"
+                  value={searchQuery}
+                  onChange={(e) => onSearchQueryChange(e.target.value)}
+                  placeholder="Search…"
+                  className="w-full rounded-2xl border border-[color:color-mix(in_oklab,var(--spirit-border)_40%,transparent)] bg-black/40 px-3 py-2.5 text-[15px] text-chalk outline-none placeholder:text-chalk/35 focus:border-[color:color-mix(in_oklab,var(--spirit-accent)_35%,transparent)] focus:ring-1 focus:ring-[color:color-mix(in_oklab,var(--spirit-accent)_18%,transparent)]"
+                />
+              </div>
+            ) : null}
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (newChatMuted) return;
+                  onNewChat();
+                }}
+                disabled={newChatMuted}
+                aria-disabled={newChatMuted}
+                className={cn(
+                  "touch-manipulation inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-2xl border border-[color:color-mix(in_oklab,var(--spirit-accent)_45%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-accent)_14%,transparent)] px-3 font-sans text-[14px] font-semibold text-[color:var(--spirit-accent-strong)] transition hover:brightness-110 active:scale-[0.98]",
+                  newChatMuted && "opacity-35",
+                )}
+              >
+                <MessageSquarePlus className="h-4 w-4 shrink-0" aria-hidden />
+                New chat
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (newFolderMuted) return;
+                  if (creatingFolder) {
+                    folderInputRef.current?.focus();
+                    folderInputRef.current?.select();
+                    return;
+                  }
+                  setCreatingFolder(true);
+                  setDraftFolderName("");
+                  setFolderCreateError(null);
+                  queueMicrotask(() => folderInputRef.current?.focus());
+                }}
+                disabled={newFolderMuted}
+                aria-disabled={newFolderMuted}
+                aria-label="New folder"
+                title="New folder"
+                className={cn(
+                  "touch-manipulation inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[color:color-mix(in_oklab,var(--spirit-border)_48%,transparent)] bg-white/[0.04] text-chalk/65 transition hover:border-[color:color-mix(in_oklab,var(--spirit-accent)_30%,transparent)] hover:text-chalk/85 active:scale-[0.98]",
+                  newFolderMuted && "opacity-35",
+                )}
+              >
+                <FolderPlus className="h-4 w-4" aria-hidden />
+              </button>
+            </div>
+            {creatingFolder ? (
+              <div className="flex flex-col gap-1">
+                <input
+                  ref={folderInputRef}
+                  value={draftFolderName}
+                  onChange={(e) => {
+                    setDraftFolderName(e.target.value);
+                    setFolderCreateError(null);
+                  }}
+                  placeholder="New folder"
+                  aria-label="New folder name"
+                  className={cn(
+                    "w-full rounded-xl border border-[color:color-mix(in_oklab,var(--spirit-border)_50%,transparent)] bg-black/30 px-2.5 py-2 font-mono text-[11px] text-chalk outline-none",
+                    "placeholder:text-chalk/35 focus:border-[color:color-mix(in_oklab,var(--spirit-accent)_45%,transparent)]",
+                  )}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") {
+                      e.preventDefault();
+                      cancelCreateFolder();
+                      return;
+                    }
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      skipFolderBlurRef.current = true;
+                      void commitCreateFolder();
+                      queueMicrotask(() => {
+                        skipFolderBlurRef.current = false;
+                      });
+                    }
+                  }}
+                  onBlur={() => {
+                    if (skipFolderBlurRef.current) return;
+                    const trimmed = (folderInputRef.current?.value ?? "").trim();
+                    if (!trimmed) cancelCreateFolder();
+                    else void commitCreateFolder();
+                  }}
+                />
+                {folderCreateError ? (
+                  <p className="font-mono text-[9px] text-rose-200/90" role="alert">
+                    {folderCreateError}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+            <p className="px-0.5 pt-1 font-sans text-[11px] font-medium uppercase tracking-[0.12em] text-chalk/38">
               Spirit threads
             </p>
-            <p className="mt-px font-mono text-[10px] text-chalk/35">
-              {savedThreadCount} saved
-            </p>
-          </div>
-          {onDrawerClose ? (
-            <button
-              type="button"
-              onClick={onDrawerClose}
-              aria-label="Close threads"
-              className="inline-flex h-9 w-9 shrink-0 touch-manipulation items-center justify-center rounded-lg border border-[color:var(--spirit-border)] bg-white/[0.04] text-chalk/70 transition hover:bg-white/[0.08] lg:hidden"
-            >
-              <X className="h-4 w-4" aria-hidden strokeWidth={2} />
-            </button>
-          ) : null}
-        </div>
-        <div className="flex flex-wrap items-stretch justify-end gap-1.5">
-          <button
-            type="button"
-            onClick={() => {
-              if (newChatMuted) return;
-              onNewChat();
-            }}
-            disabled={newChatMuted}
-            aria-disabled={newChatMuted}
-            className={cn(
-              "touch-manipulation inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[color:color-mix(in_oklab,var(--spirit-accent)_42%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-accent)_12%,transparent)] px-3 py-2 font-mono text-[10px] font-semibold uppercase tracking-wider text-[color:var(--spirit-accent-strong)] transition hover:brightness-110 active:scale-[0.98]",
-              newChatMuted && "opacity-35",
-            )}
-          >
-            <MessageSquarePlus className="h-3.5 w-3.5" aria-hidden />
-            New chat
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              if (newFolderMuted) return;
-              if (creatingFolder) {
-                folderInputRef.current?.focus();
-                folderInputRef.current?.select();
-                return;
-              }
-              setCreatingFolder(true);
-              setDraftFolderName("");
-              setFolderCreateError(null);
-              queueMicrotask(() => folderInputRef.current?.focus());
-            }}
-            disabled={newFolderMuted}
-            aria-disabled={newFolderMuted}
-            aria-label="New folder"
-            title="New folder"
-            className={cn(
-              "touch-manipulation inline-flex shrink-0 items-center gap-1 rounded-full border border-[color:color-mix(in_oklab,var(--spirit-border)_55%,transparent)] bg-white/[0.03] px-2.5 py-2 font-mono text-[10px] font-semibold uppercase tracking-wider text-chalk/60 transition hover:border-[color:color-mix(in_oklab,var(--spirit-accent)_35%,transparent)] hover:text-chalk/85 active:scale-[0.98]",
-              newFolderMuted && "opacity-35",
-            )}
-          >
-            <FolderPlus className="h-3.5 w-3.5" aria-hidden />
-            Folder
-          </button>
-        </div>
-        {creatingFolder ? (
-          <div className="flex flex-col gap-1">
-            <input
-              ref={folderInputRef}
-              value={draftFolderName}
-              onChange={(e) => {
-                setDraftFolderName(e.target.value);
-                setFolderCreateError(null);
-              }}
-              placeholder="New folder"
-              aria-label="New folder name"
-              className={cn(
-                "w-full rounded-lg border border-[color:color-mix(in_oklab,var(--spirit-border)_50%,transparent)] bg-black/30 px-2.5 py-2 font-mono text-[11px] text-chalk outline-none",
-                "placeholder:text-chalk/35 focus:border-[color:color-mix(in_oklab,var(--spirit-accent)_45%,transparent)]",
-              )}
-              onKeyDown={(e) => {
-                if (e.key === "Escape") {
-                  e.preventDefault();
-                  cancelCreateFolder();
-                  return;
-                }
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  skipFolderBlurRef.current = true;
-                  void commitCreateFolder();
-                  queueMicrotask(() => {
-                    skipFolderBlurRef.current = false;
-                  });
-                }
-              }}
-              onBlur={() => {
-                if (skipFolderBlurRef.current) return;
-                const trimmed = (folderInputRef.current?.value ?? "").trim();
-                if (!trimmed) cancelCreateFolder();
-                else void commitCreateFolder();
-              }}
-            />
-            {folderCreateError ? (
-              <p className="font-mono text-[9px] text-rose-200/90" role="alert">
-                {folderCreateError}
-              </p>
+          </>
+        ) : (
+          <>
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-chalk/55">
+                  Spirit threads
+                </p>
+                <p className="mt-px font-mono text-[10px] text-chalk/35">
+                  {savedThreadCount} saved
+                </p>
+              </div>
+              {onDrawerClose ? (
+                <button
+                  type="button"
+                  onClick={onDrawerClose}
+                  aria-label="Close threads"
+                  className="inline-flex h-9 w-9 shrink-0 touch-manipulation items-center justify-center rounded-lg border border-[color:var(--spirit-border)] bg-white/[0.04] text-chalk/70 transition hover:bg-white/[0.08] lg:hidden"
+                >
+                  <X className="h-4 w-4" aria-hidden strokeWidth={2} />
+                </button>
+              ) : null}
+            </div>
+            <div className="flex flex-wrap items-stretch justify-end gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  if (newChatMuted) return;
+                  onNewChat();
+                }}
+                disabled={newChatMuted}
+                aria-disabled={newChatMuted}
+                className={cn(
+                  "touch-manipulation inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[color:color-mix(in_oklab,var(--spirit-accent)_42%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-accent)_12%,transparent)] px-3 py-2 font-mono text-[10px] font-semibold uppercase tracking-wider text-[color:var(--spirit-accent-strong)] transition hover:brightness-110 active:scale-[0.98]",
+                  newChatMuted && "opacity-35",
+                )}
+              >
+                <MessageSquarePlus className="h-3.5 w-3.5" aria-hidden />
+                New chat
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (newFolderMuted) return;
+                  if (creatingFolder) {
+                    folderInputRef.current?.focus();
+                    folderInputRef.current?.select();
+                    return;
+                  }
+                  setCreatingFolder(true);
+                  setDraftFolderName("");
+                  setFolderCreateError(null);
+                  queueMicrotask(() => folderInputRef.current?.focus());
+                }}
+                disabled={newFolderMuted}
+                aria-disabled={newFolderMuted}
+                aria-label="New folder"
+                title="New folder"
+                className={cn(
+                  "touch-manipulation inline-flex shrink-0 items-center gap-1 rounded-full border border-[color:color-mix(in_oklab,var(--spirit-border)_55%,transparent)] bg-white/[0.03] px-2.5 py-2 font-mono text-[10px] font-semibold uppercase tracking-wider text-chalk/60 transition hover:border-[color:color-mix(in_oklab,var(--spirit-accent)_35%,transparent)] hover:text-chalk/85 active:scale-[0.98]",
+                  newFolderMuted && "opacity-35",
+                )}
+              >
+                <FolderPlus className="h-3.5 w-3.5" aria-hidden />
+                Folder
+              </button>
+            </div>
+            {creatingFolder ? (
+              <div className="flex flex-col gap-1">
+                <input
+                  ref={folderInputRef}
+                  value={draftFolderName}
+                  onChange={(e) => {
+                    setDraftFolderName(e.target.value);
+                    setFolderCreateError(null);
+                  }}
+                  placeholder="New folder"
+                  aria-label="New folder name"
+                  className={cn(
+                    "w-full rounded-lg border border-[color:color-mix(in_oklab,var(--spirit-border)_50%,transparent)] bg-black/30 px-2.5 py-2 font-mono text-[11px] text-chalk outline-none",
+                    "placeholder:text-chalk/35 focus:border-[color:color-mix(in_oklab,var(--spirit-accent)_45%,transparent)]",
+                  )}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") {
+                      e.preventDefault();
+                      cancelCreateFolder();
+                      return;
+                    }
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      skipFolderBlurRef.current = true;
+                      void commitCreateFolder();
+                      queueMicrotask(() => {
+                        skipFolderBlurRef.current = false;
+                      });
+                    }
+                  }}
+                  onBlur={() => {
+                    if (skipFolderBlurRef.current) return;
+                    const trimmed = (folderInputRef.current?.value ?? "").trim();
+                    if (!trimmed) cancelCreateFolder();
+                    else void commitCreateFolder();
+                  }}
+                />
+                {folderCreateError ? (
+                  <p className="font-mono text-[9px] text-rose-200/90" role="alert">
+                    {folderCreateError}
+                  </p>
+                ) : null}
+              </div>
             ) : null}
-          </div>
-        ) : null}
-        {onSearchQueryChange ? (
-          <div className="px-0.5 pt-1">
-            <label htmlFor="chat-thread-search" className="sr-only">
-              Search chats
-            </label>
-            <input
-              id="chat-thread-search"
-              type="search"
-              enterKeyHint="search"
-              value={searchQuery}
-              onChange={(e) => onSearchQueryChange(e.target.value)}
-              placeholder="Search chats..."
-              className="w-full rounded-lg border border-[color:color-mix(in_oklab,var(--spirit-border)_50%,transparent)] bg-black/35 px-2.5 py-2 font-mono text-base text-chalk outline-none placeholder:text-chalk/35 focus:border-[color:color-mix(in_oklab,var(--spirit-accent)_42%,transparent)] lg:text-[11px]"
-            />
-          </div>
-        ) : null}
+            {onSearchQueryChange ? (
+              <div className="px-0.5 pt-1">
+                <label htmlFor="chat-thread-search" className="sr-only">
+                  Search chats
+                </label>
+                <input
+                  id="chat-thread-search"
+                  type="search"
+                  enterKeyHint="search"
+                  value={searchQuery}
+                  onChange={(e) => onSearchQueryChange(e.target.value)}
+                  placeholder="Search chats..."
+                  className="w-full rounded-lg border border-[color:color-mix(in_oklab,var(--spirit-border)_50%,transparent)] bg-black/35 px-2.5 py-2 font-mono text-base text-chalk outline-none placeholder:text-chalk/35 focus:border-[color:color-mix(in_oklab,var(--spirit-accent)_42%,transparent)] lg:text-[11px]"
+                />
+              </div>
+            ) : null}
+          </>
+        )}
       </div>
 
       {useDnd ? (

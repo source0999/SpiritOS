@@ -1,5 +1,6 @@
 // ── Spirit palette registry - add one object here, ThemeStrip follows ─────────
 // > Hook applies cssVars to documentElement; :root mirrors default for SSR paint.
+// > Extended vars drive dashboard v2 atmosphere + glass (_reference/dashboardDemo port).
 
 export const DEFAULT_THEME_ID = "frozen-water" as const;
 
@@ -20,6 +21,18 @@ export const SPIRIT_DOM_CSS_KEYS = [
   "--spirit-glow",
   "--spirit-border",
   "--spirit-secondary-mix",
+  // ── Dashboard atmosphere + glass (palette-driven; consumed under .spirit-dashboard-v2-root)
+  "--spirit-atmosphere-base",
+  "--spirit-atmosphere-a",
+  "--spirit-atmosphere-b",
+  "--spirit-glass-surface",
+  "--spirit-glass-border",
+  "--spirit-panel-glow",
+  "--spirit-nav-glow",
+  "--spirit-fairy-halo",
+  "--spirit-progress-track",
+  "--spirit-theme-chip-active-bg",
+  "--spirit-theme-chip-active-glow",
 ] as const;
 
 export type SpiritDomCssKey = (typeof SPIRIT_DOM_CSS_KEYS)[number];
@@ -81,7 +94,6 @@ export const SPIRIT_PALETTES: readonly SpiritPalette[] = [
     ],
     typography: "sans",
     cssVars: {
-      /** Dark taupe canvas - icy accents read on chalk text without rewiring every component */
       "--spirit-bg": "#161413",
       "--spirit-bg-soft": "#1e1c1a",
       "--spirit-panel": "#242120",
@@ -91,6 +103,21 @@ export const SPIRIT_PALETTES: readonly SpiritPalette[] = [
       "--spirit-glow": "rgba(143, 184, 222, 0.28)",
       "--spirit-border": "rgba(205, 247, 246, 0.11)",
       "--spirit-secondary-mix": LG,
+      /** Icy pearl haze on charcoal — dash “silver-air” without blowing contrast */
+      "--spirit-atmosphere-base":
+        "linear-gradient(165deg, rgba(255,255,255,0.07) 0%, transparent 42%, rgba(0,0,0,0.18) 100%)",
+      "--spirit-atmosphere-a": BB,
+      "--spirit-atmosphere-b": LG,
+      "--spirit-glass-surface":
+        "linear-gradient(135deg, rgba(255,255,255,0.11) 0%, rgba(255,255,255,0.03) 55%, rgba(36,33,32,0.55) 100%)",
+      "--spirit-glass-border": "rgba(255,255,255,0.22)",
+      "--spirit-panel-glow":
+        "0 48px 120px -32px rgba(0,0,0,0.72), inset 0 1px 0 rgba(255,255,255,0.14)",
+      "--spirit-nav-glow": "0 0 40px -10px rgba(143, 184, 222, 0.42)",
+      "--spirit-fairy-halo": "rgba(143, 184, 222, 0.44)",
+      "--spirit-progress-track": "rgba(0,0,0,0.48)",
+      "--spirit-theme-chip-active-bg": "rgba(143, 184, 222, 0.24)",
+      "--spirit-theme-chip-active-glow": "0 0 28px -6px rgba(143, 184, 222, 0.38)",
     },
   },
   {
@@ -115,6 +142,21 @@ export const SPIRIT_PALETTES: readonly SpiritPalette[] = [
       "--spirit-glow": "rgba(67, 154, 134, 0.28)",
       "--spirit-border": "rgba(67, 154, 134, 0.14)",
       "--spirit-secondary-mix": BO,
+      /** Dark Node heir — premium smoke, not mud */
+      "--spirit-atmosphere-base":
+        "linear-gradient(155deg, rgba(129,140,248,0.06) 0%, transparent 45%, rgba(0,0,0,0.35) 100%)",
+      "--spirit-atmosphere-a": SG,
+      "--spirit-atmosphere-b": BO,
+      "--spirit-glass-surface":
+        "linear-gradient(135deg, rgba(255,255,255,0.07) 0%, rgba(15,23,42,0.42) 55%, rgba(15,16,24,0.88) 100%)",
+      "--spirit-glass-border": "rgba(255,255,255,0.2)",
+      "--spirit-panel-glow":
+        "0 56px 130px -36px rgba(0,0,0,0.78), inset 0 1px 0 rgba(255,255,255,0.1)",
+      "--spirit-nav-glow": "0 0 42px -10px rgba(67, 154, 134, 0.45)",
+      "--spirit-fairy-halo": "rgba(67, 154, 134, 0.4)",
+      "--spirit-progress-track": "rgba(0,0,0,0.52)",
+      "--spirit-theme-chip-active-bg": "rgba(67, 154, 134, 0.26)",
+      "--spirit-theme-chip-active-glow": "0 0 28px -6px rgba(67, 154, 134, 0.4)",
     },
   },
   {
@@ -139,6 +181,20 @@ export const SPIRIT_PALETTES: readonly SpiritPalette[] = [
       "--spirit-glow": "rgba(177, 74, 237, 0.26)",
       "--spirit-border": "rgba(200, 116, 217, 0.14)",
       "--spirit-secondary-mix": VT,
+      "--spirit-atmosphere-base":
+        "linear-gradient(160deg, rgba(200,116,217,0.07) 0%, transparent 48%, rgba(0,0,0,0.38) 100%)",
+      "--spirit-atmosphere-a": HM,
+      "--spirit-atmosphere-b": VT,
+      "--spirit-glass-surface":
+        "linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(69,74,222,0.12) 45%, rgba(12,13,20,0.92) 100%)",
+      "--spirit-glass-border": "rgba(200, 116, 217, 0.26)",
+      "--spirit-panel-glow":
+        "0 52px 125px -34px rgba(0,0,0,0.82), inset 0 1px 0 rgba(255,255,255,0.09)",
+      "--spirit-nav-glow": "0 0 44px -10px rgba(177, 74, 237, 0.42)",
+      "--spirit-fairy-halo": "rgba(200, 116, 217, 0.42)",
+      "--spirit-progress-track": "rgba(0,0,0,0.54)",
+      "--spirit-theme-chip-active-bg": "rgba(177, 74, 237, 0.26)",
+      "--spirit-theme-chip-active-glow": "0 0 30px -6px rgba(177, 74, 237, 0.38)",
     },
   },
   {
@@ -163,6 +219,20 @@ export const SPIRIT_PALETTES: readonly SpiritPalette[] = [
       "--spirit-glow": "rgba(46, 192, 249, 0.28)",
       "--spirit-border": "rgba(103, 170, 249, 0.14)",
       "--spirit-secondary-mix": FP,
+      "--spirit-atmosphere-base":
+        "linear-gradient(150deg, rgba(103,170,249,0.08) 0%, transparent 46%, rgba(0,0,0,0.36) 100%)",
+      "--spirit-atmosphere-a": DSB,
+      "--spirit-atmosphere-b": CH,
+      "--spirit-glass-surface":
+        "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(46,192,249,0.08) 42%, rgba(10,16,24,0.9) 100%)",
+      "--spirit-glass-border": "rgba(155, 189, 249, 0.22)",
+      "--spirit-panel-glow":
+        "0 50px 118px -32px rgba(0,0,0,0.76), inset 0 1px 0 rgba(255,255,255,0.11)",
+      "--spirit-nav-glow": "0 0 40px -10px rgba(46, 192, 249, 0.45)",
+      "--spirit-fairy-halo": "rgba(103, 170, 249, 0.44)",
+      "--spirit-progress-track": "rgba(0,0,0,0.50)",
+      "--spirit-theme-chip-active-bg": "rgba(46, 192, 249, 0.24)",
+      "--spirit-theme-chip-active-glow": "0 0 28px -6px rgba(46, 192, 249, 0.42)",
     },
   },
 ];

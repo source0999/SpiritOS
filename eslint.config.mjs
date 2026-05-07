@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Extracted Vite design reference — not part of Next build / lint surface.
+    "_reference/**",
   ]),
 ]);
 

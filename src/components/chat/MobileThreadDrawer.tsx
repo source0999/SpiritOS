@@ -17,7 +17,13 @@ export const MobileThreadDrawer = memo(function MobileThreadDrawer({
   children,
 }: MobileThreadDrawerProps) {
   return (
-    <MobileSheet open={open} title="Threads" side="left" onClose={onClose}>
+    <MobileSheet
+      open={open}
+      title="Chats"
+      side="left"
+      onClose={onClose}
+      className="border-r border-[color:color-mix(in_oklab,var(--spirit-border)_32%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-bg)_99%,#050508)] shadow-[6px_0_36px_-14px_rgba(0,0,0,0.72)]"
+    >
       {children}
     </MobileSheet>
   );

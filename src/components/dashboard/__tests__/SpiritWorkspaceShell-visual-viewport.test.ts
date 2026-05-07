@@ -16,6 +16,26 @@ describe("SpiritWorkspaceShell visual viewport (mobile /chat)", () => {
     expect(src).toContain("SpiritWorkspaceMobileChromeProvider");
     expect(src).toContain("max-lg:fixed");
     expect(src).toContain("--spirit-visual-offset-top");
-    expect(src).toContain('html.style.overflow = "hidden"');
+    expect(src).not.toContain('html.style.overflow = "hidden"');
+    expect(src).toContain("usePathname");
+    expect(src).toContain("isChatRoute");
+    expect(
+      readFileSync(
+        resolve(process.cwd(), "src/lib/hooks/useSpiritVisualViewportVars.ts"),
+        "utf8",
+      ),
+    ).toMatch(/keyboardInset < 1\d/);
+    expect(
+      readFileSync(
+        resolve(process.cwd(), "src/lib/hooks/useSpiritVisualViewportVars.ts"),
+        "utf8",
+      ),
+    ).toContain("paintVh");
+    expect(
+      readFileSync(
+        resolve(process.cwd(), "src/lib/hooks/useSpiritVisualViewportVars.ts"),
+        "utf8",
+      ),
+    ).toContain("vvListenersAttached");
   });
 });

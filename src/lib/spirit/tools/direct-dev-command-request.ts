@@ -3,11 +3,12 @@
 
 import "server-only";
 
+import type { DevCommandResult } from "@/lib/spirit/tools/dev-command-tools";
+import { isDevCommandToolsEnvEnabled, runDevCommand } from "@/lib/spirit/tools/dev-command-tools";
 import {
-  runDevCommand,
-  type DevCommandResult,
-  isDevCommandToolsEnvEnabled,
-} from "@/lib/spirit/tools/dev-command-tools";
+  createSpiritToolActivityCard,
+  type SpiritToolActivityCard,
+} from "@/lib/spirit/spirit-activity-events";
 import { isLocalToolsEnabled } from "@/lib/spirit/tools/tool-registry";
 
 export type DirectDevCommandRequest =
@@ -17,6 +18,11 @@ export type DirectDevCommandRequest =
   | { commandId: "npm_test"; confirm?: boolean }
   | { commandId: "npm_lint"; confirm?: boolean }
   | { commandId: "npm_build"; confirm?: boolean };
+
+export type DirectDevCommandHandleResult = {
+  markdown: string;
+  toolActivity: SpiritToolActivityCard[];
+};
 
 function normalizeDirectPhrase(raw: string): string {
   return raw
@@ -132,7 +138,65 @@ function formatDirectDevReply(result: DevCommandResult): string {
   return [`Dev command: ${label}`, "", "```text", body || "(no output)", "```"].join("\n");
 }
 
-export async function handleDirectDevCommandRequest(text: string): Promise<string | null> {
+function devCommandResultToCards(result: DevCommandResult): SpiritToolActivityCard[] {
+  if (result.requiresConfirmation) {
+    return [
+      createSpiritToolActivityCard({
+        kind: "dev_command_started",
+        label: "Dev command",
+        status: "confirmation_required",
+        target: result.commandId,
+        summary: result.label,
+      }),
+    ];
+  }
+
+  if (result.error) {
+    const kind =
+      result.error.code === "DEV_COMMAND_TOOLS_DISABLED" ||
+      result.error.code === "SCRIPT_NOT_FOUND" ||
+      result.error.code === "UNKNOWN_COMMAND"
+        ? ("tool_unavailable" as const)
+        : ("dev_command_failed" as const);
+    const status: SpiritToolActivityCard["status"] =
+      kind === "tool_unavailable" ? "failed" : "failed";
+    return [
+      createSpiritToolActivityCard({
+        kind,
+        label: "Dev command",
+        status,
+        target: result.commandId,
+        safeMessage: result.error.message,
+      }),
+    ];
+  }
+
+  if (result.timedOut || result.ok === false) {
+    return [
+      createSpiritToolActivityCard({
+        kind: "dev_command_failed",
+        label: "Dev command",
+        status: "failed",
+        target: result.commandId,
+        summary: result.timedOut ? "Timed out" : `Exit ${result.exitCode ?? "?"}`,
+      }),
+    ];
+  }
+
+  return [
+    createSpiritToolActivityCard({
+      kind: "dev_command_completed",
+      label: "Dev command",
+      status: "completed",
+      target: result.commandId,
+      summary: result.label,
+    }),
+  ];
+}
+
+export async function handleDirectDevCommandRequest(
+  text: string,
+): Promise<DirectDevCommandHandleResult | null> {
   if (!isDevCommandToolsEnvEnabled()) return null;
   if (!isLocalToolsEnabled()) return null;
 
@@ -144,5 +208,8 @@ export async function handleDirectDevCommandRequest(text: string): Promise<strin
     ...(parsed.confirm === true ? { confirm: true } : {}),
   });
 
-  return formatDirectDevReply(result);
+  return {
+    markdown: formatDirectDevReply(result),
+    toolActivity: devCommandResultToCards(result),
+  };
 }

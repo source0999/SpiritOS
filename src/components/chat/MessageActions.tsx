@@ -57,7 +57,7 @@ const ActionBtn = memo(function ActionBtn({
         onClick={() => void onClick()}
         className={cn(
           "group/btn touch-manipulation flex flex-col items-center justify-center gap-0.5 rounded-md px-1.5 py-1 transition",
-          "min-h-[36px] min-w-[36px] sm:min-h-[34px] sm:min-w-[34px]",
+        "min-h-[32px] min-w-[32px] sm:min-h-[34px] sm:min-w-[34px]",
           variant === "danger"
             ? "text-chalk/55 hover:bg-rose-500/15 hover:text-rose-200 disabled:opacity-30"
             : "text-chalk/55 hover:bg-white/[0.1] hover:text-chalk disabled:opacity-30",
@@ -123,7 +123,7 @@ function ActionRow({
 }) {
   return (
     <div
-      className="flex flex-wrap items-center justify-end gap-0.5 rounded-md border border-white/[0.08] bg-black/25 px-1 py-1 shadow-sm backdrop-blur-sm"
+      className="flex flex-wrap items-center justify-end gap-0.5 rounded-lg border border-white/[0.06] bg-black/20 px-0.5 py-0.5 shadow-sm backdrop-blur-sm"
       onPointerDown={(e) => e.stopPropagation()}
     >
       <ActionBtn
@@ -360,10 +360,11 @@ export const MessageActions = memo(function MessageActions({
   }, [actionDisabled, onDelete, closeSheet]);
 
   if (useActionSheetMode && !isLg) {
-    const sheetTriggerWrap =
-      role === "user"
-        ? "absolute right-1 top-1 z-20 sm:right-1.5 sm:top-1.5"
-        : cn("block", bubble);
+    // Corner chip only — never `block`+margin below body (reads like extra message / loading).
+    const sheetTriggerWrap = cn(
+      "absolute z-20 sm:right-1.5",
+      role === "assistant" ? "right-1.5 top-2 sm:top-2" : "right-1.5 top-1 sm:top-1.5",
+    );
 
     return (
       <>
@@ -373,9 +374,20 @@ export const MessageActions = memo(function MessageActions({
             onClick={() => setSheetOpen(true)}
             aria-expanded={sheetOpen}
             aria-label="Message actions"
-            className="touch-manipulation inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-[color:color-mix(in_oklab,var(--spirit-border)_55%,transparent)] bg-white/[0.05] text-chalk/45 shadow-sm backdrop-blur-sm transition hover:border-[color:color-mix(in_oklab,var(--spirit-border)_75%,transparent)] hover:bg-white/[0.08] hover:text-chalk/70 active:scale-[0.97]"
+            className={cn(
+              "touch-manipulation flex min-h-[40px] min-w-[40px] items-center justify-center rounded-lg bg-transparent p-1 text-chalk/40",
+              "opacity-25 transition-[opacity,transform] duration-150",
+              "active:scale-95 active:opacity-100",
+              "focus-visible:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:color-mix(in_oklab,var(--spirit-accent)_38%,transparent)]",
+              "group-hover/message:opacity-55",
+            )}
           >
-            <MoreHorizontal className="h-4 w-4" aria-hidden strokeWidth={2} />
+            <span
+              className="flex h-6 w-6 items-center justify-center rounded-md bg-white/[0.04] ring-1 ring-white/[0.04]"
+              aria-hidden
+            >
+              <MoreHorizontal className="h-3 w-3 opacity-75" strokeWidth={2} />
+            </span>
           </button>
         </div>
 
@@ -500,10 +512,9 @@ export const MessageActions = memo(function MessageActions({
             onClick={() => setMobileOpen(true)}
             aria-expanded={false}
             aria-label="Message actions"
-            className="touch-manipulation inline-flex items-center gap-1 rounded-md border border-white/[0.12] bg-black/30 px-2 py-1 font-mono text-[9px] font-semibold uppercase tracking-wide text-chalk/65"
+            className="touch-manipulation inline-flex min-h-[36px] min-w-[36px] items-center justify-center rounded-full border border-white/[0.08] bg-black/25 p-1.5 text-chalk/45 opacity-80"
           >
             <MoreHorizontal className="h-3.5 w-3.5" aria-hidden />
-            Actions
           </button>
         ) : (
           <div className="flex flex-col gap-1.5 rounded-lg border border-white/[0.1] bg-black/40 p-2">
@@ -539,7 +550,7 @@ export const MessageActions = memo(function MessageActions({
 
       <div
         className={cn(
-          "hidden sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:gap-0.5 sm:rounded-md sm:border sm:border-white/[0.08] sm:bg-black/25 sm:px-0.5 sm:py-0.5 sm:shadow-sm sm:backdrop-blur-sm",
+          "hidden sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:gap-0.5 sm:rounded-lg sm:border sm:border-white/[0.06] sm:bg-black/20 sm:px-0.5 sm:py-0.5 sm:shadow-sm sm:backdrop-blur-sm",
           "sm:pointer-events-auto sm:opacity-0 sm:transition-opacity sm:duration-150",
           "sm:group-hover/message:opacity-100 sm:group-focus-within/message:opacity-100",
           bubble,

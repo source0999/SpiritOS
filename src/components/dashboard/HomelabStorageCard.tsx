@@ -1,10 +1,12 @@
 "use client";
 
-import { useClusterTelemetry } from "@/hooks/useClusterTelemetry";
+import { HardDrive } from "lucide-react";
+
+import { useClusterTelemetry, type ClusterFetchState } from "@/hooks/useClusterTelemetry";
 import { HomelabProgressBar } from "@/components/dashboard/HomelabProgressBar";
 import { HomelabStatusBadge } from "@/components/dashboard/HomelabStatusBadge";
 import { cn } from "@/lib/cn";
-import type { ClusterNodeTelemetry, NodeDrive, SmartStatus } from "@/lib/server/telemetry/types";
+import type { ClusterNodeTelemetry, ClusterTelemetryResponse, NodeDrive, SmartStatus } from "@/lib/server/telemetry/types";
 
 function fmtBytes(bytes: number | null): string {
   if (bytes === null || bytes <= 0) return " - ";
@@ -25,7 +27,8 @@ function fillVariant(pct: number | null): "default" | "warn" | "bad" {
 function driveTagClass(type: NodeDrive["type"]): string {
   if (type === "HDD") return "homelab-tag homelab-tag--hdd";
   if (type === "SSD" || type === "NVME") return "homelab-tag homelab-tag--ssd";
-  return "homelab-tag homelab-tag--hdd";
+  if (type === "UNKNOWN") return "homelab-tag homelab-tag--unknown";
+  return "homelab-tag homelab-tag--unknown";
 }
 
 function smartTone(s: SmartStatus): string {
@@ -49,12 +52,19 @@ function nodeStorageBadgeLabel(node: ClusterNodeTelemetry): string {
   return "Pending";
 }
 
-interface HomelabStorageCardProps {
+export interface HomelabStorageCardViewProps {
   className?: string;
+  data: ClusterTelemetryResponse | null;
+  state: ClusterFetchState;
+  error: string | null;
 }
 
-export function HomelabStorageCard({ className }: HomelabStorageCardProps) {
-  const { data, state, error } = useClusterTelemetry();
+export function HomelabStorageCardView({
+  className,
+  data,
+  state,
+  error,
+}: HomelabStorageCardViewProps) {
   const nodes = data?.nodes ?? [];
 
   const syncTime = data?.collectedAt
@@ -76,9 +86,20 @@ export function HomelabStorageCard({ className }: HomelabStorageCardProps) {
   const headerBadgeLabel = state === "error" ? "Error" : state === "checking" ? "Checking" : "Live";
 
   return (
-    <section aria-label="Storage" className={cn("homelab-panel p-5", className)}>
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div>
+    <section
+      aria-label="Storage"
+      className={cn("spirit-dashboard-v2-glass p-5 sm:p-7", className)}
+    >
+      <span className="spirit-dashboard-v2-glass__shine-t" aria-hidden />
+      <div className="mb-5 flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-start gap-3">
+          <div
+            className="hidden shrink-0 rounded-2xl border border-[color:color-mix(in_oklab,var(--spirit-glass-border)_65%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-bg-soft)_42%,transparent)] p-2.5 sm:block"
+            aria-hidden
+          >
+            <HardDrive className="h-5 w-5 text-chalk/50" strokeWidth={2} />
+          </div>
+          <div className="min-w-0">
           <p className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-chalk/48">
             <span className={headerDotClass} aria-hidden />
             Local Drive Health
@@ -94,6 +115,7 @@ export function HomelabStorageCard({ className }: HomelabStorageCardProps) {
           ) : state !== "checking" && syncTime ? (
             <p className="mt-1 font-mono text-[9.5px] text-chalk/30">Synced {syncTime}</p>
           ) : null}
+          </div>
         </div>
         <HomelabStatusBadge variant={headerBadgeVariant}>{headerBadgeLabel}</HomelabStatusBadge>
       </div>
@@ -103,7 +125,7 @@ export function HomelabStorageCard({ className }: HomelabStorageCardProps) {
           {[0, 1].map((i) => (
             <div
               key={i}
-              className="h-[100px] animate-pulse rounded-[12px] border border-white/[0.06] bg-white/[0.025]"
+              className="spirit-dashboard-v2-inner-card h-[100px] animate-pulse border border-[color:color-mix(in_oklab,var(--spirit-glass-border)_45%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-bg-soft)_55%,transparent)]"
             />
           ))}
         </div>
@@ -116,7 +138,7 @@ export function HomelabStorageCard({ className }: HomelabStorageCardProps) {
       )}
 
       {nodes.length > 0 && state !== "checking" && (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3.5">
           {nodes.map((node) => {
             const offline = node.status === "offline" || node.status === "unknown";
             const drives = node.storage?.drives ?? [];
@@ -134,11 +156,11 @@ export function HomelabStorageCard({ className }: HomelabStorageCardProps) {
                 </div>
 
                 {offline ? (
-                  <p className="rounded-[12px] border border-white/[0.06] bg-white/[0.025] px-3 py-2 font-mono text-[9.5px] text-rose-400/70">
+                  <p className="spirit-dashboard-v2-inner-card border border-[color:color-mix(in_oklab,var(--spirit-glass-border)_50%,transparent)] px-3 py-2 font-mono text-[9.5px] text-rose-400/70">
                     Offline{node.error ? ` · ${node.error}` : ""}
                   </p>
                 ) : !hasDrives ? (
-                  <div className="rounded-[12px] border border-white/[0.06] bg-white/[0.025] px-3 py-2.5">
+                  <div className="spirit-dashboard-v2-inner-card border border-[color:color-mix(in_oklab,var(--spirit-glass-border)_50%,transparent)] px-3 py-2.5">
                     <p className="font-mono text-[10px] text-chalk/45">Storage telemetry unavailable</p>
                     {node.storage?.error ? (
                       <p className="mt-1 font-mono text-[9.5px] text-amber-400/75">{node.storage.error}</p>
@@ -149,7 +171,7 @@ export function HomelabStorageCard({ className }: HomelabStorageCardProps) {
                     {drives.map((drive) => (
                       <div
                         key={drive.id}
-                        className="rounded-[12px] border border-white/[0.06] bg-white/[0.025] p-3"
+                        className="spirit-dashboard-v2-inner-card border border-[color:color-mix(in_oklab,var(--spirit-glass-border)_48%,transparent)] p-3"
                       >
                         <div className="mb-2 flex items-center justify-between gap-2">
                           <div className="flex min-w-0 items-center gap-2">
@@ -204,4 +226,9 @@ export function HomelabStorageCard({ className }: HomelabStorageCardProps) {
       )}
     </section>
   );
+}
+
+export function HomelabStorageCard({ className }: { className?: string }) {
+  const { data, state, error } = useClusterTelemetry();
+  return <HomelabStorageCardView className={className} data={data} state={state} error={error} />;
 }

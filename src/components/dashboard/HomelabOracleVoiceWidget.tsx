@@ -12,9 +12,10 @@ import {
   getOracleVisualStateForHomelab,
   type HomelabOracleBadgeVariant,
 } from "@/lib/oracle/oracle-visual-state";
+import { cn } from "@/lib/cn";
 
 const ctaLink =
-  "inline-flex min-h-[48px] max-w-full touch-manipulation items-center justify-center gap-2 rounded-xl border border-[color:color-mix(in_oklab,var(--spirit-accent)_46%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-accent)_14%,transparent)] px-4 font-mono text-[12px] font-semibold uppercase tracking-wider text-[color:var(--spirit-accent-strong)] shadow-[0_0_22px_color-mix(in_oklab,var(--spirit-glow)_22%,transparent)] transition hover:brightness-110 active:scale-[0.98] [-webkit-tap-highlight-color:transparent]";
+  "spirit-dashboard-v2-cta-primary inline-flex min-h-[48px] max-w-full touch-manipulation items-center justify-center gap-2 rounded-full border border-[color:color-mix(in_oklab,var(--spirit-accent)_48%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-accent)_16%,transparent)] px-8 font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-[color:var(--spirit-accent-strong)] transition hover:brightness-110 active:scale-[0.98] [-webkit-tap-highlight-color:transparent]";
 
 const noop = () => () => {};
 
@@ -80,93 +81,97 @@ export function HomelabOracleVoiceWidget({ className = "" }: { className?: strin
   return (
     <section
       aria-label="Oracle Voice"
-      className={`homelab-panel homelab-panel-accent relative touch-manipulation overflow-hidden ${className}`}
+      className={cn(
+        "spirit-dashboard-v2-glass spirit-dashboard-v2-glass--oracle relative touch-manipulation",
+        className,
+      )}
     >
-      <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_15%_50%,color-mix(in_oklab,var(--spirit-accent)_9%,transparent),transparent_70%)]"
-        aria-hidden
-      />
+      <span className="spirit-dashboard-v2-glass__shine-t" aria-hidden />
+      <span className="spirit-dashboard-v2-glass__shine-l hidden lg:block" aria-hidden />
 
-      <div className="relative grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-[minmax(0,11rem)_1fr] lg:grid-cols-[minmax(0,13rem)_1fr]">
-        <div className="flex min-w-0 flex-col items-center justify-center gap-2 px-3 pb-2 pt-4 sm:px-4 sm:py-4">
-          <OracleOrbSprite visualState={visualState} variant="widget" />
-          <OracleVoiceVisualizer state={visualState} compact className="w-full max-w-[220px]" />
+      <div className="relative grid min-w-0 grid-cols-1 gap-6 p-5 sm:p-7 lg:grid-cols-[minmax(0,11.25rem)_1fr] lg:gap-9 lg:p-9 xl:grid-cols-[minmax(0,12rem)_1fr]">
+        <div className="relative flex min-h-[156px] min-w-0 flex-col items-center justify-center gap-3 sm:min-h-[172px]">
+          <div className="spirit-dashboard-v2-fairy-halo pointer-events-none" aria-hidden />
+          <div className="relative z-[1] flex w-full flex-col items-center gap-2.5">
+            <OracleOrbSprite visualState={visualState} variant="widget" />
+            <OracleVoiceVisualizer state={visualState} compact className="w-full max-w-[210px]" />
+          </div>
         </div>
 
-        <div className="flex min-w-0 flex-1 flex-col justify-between p-4 pl-1 sm:pl-2">
+        <div className="relative z-[1] flex min-w-0 flex-1 flex-col justify-between gap-5">
           <div>
-            <div className="mb-3 flex min-w-0 flex-wrap items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-chalk/48">
+            <div className="mb-4 flex min-w-0 flex-wrap items-center justify-between gap-3">
+              <div className="min-w-0 pr-2">
+                <p className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-chalk/48">
                   <span className="homelab-status-dot" aria-hidden />
                   Spirit · Oracle Voice
                 </p>
-                <h2 className="mt-1 font-mono text-[17px] font-semibold uppercase tracking-tight text-chalk">
+                <h2 className="mt-1.5 font-mono text-[clamp(1.15rem,3.2vw,1.55rem)] font-semibold uppercase tracking-tight text-chalk">
                   Oracle Voice
                 </h2>
-                <p className="mt-0.5 font-mono text-[9.5px] text-chalk/40">
+                <p className="mt-1 max-w-lg font-mono text-[10px] leading-relaxed text-chalk/42">
                   Hands-free · Whisper STT · TTS · text fallback
                 </p>
               </div>
               <HomelabStatusBadge variant={badgeVariant}>{badgeLabel}</HomelabStatusBadge>
             </div>
 
-            <dl className="grid min-w-0 gap-y-1 font-mono text-[10.5px]">
-              <div className="flex min-w-0 gap-x-2">
-                <dt className="w-[92px] shrink-0 text-chalk/45">Secure context</dt>
+            <dl className="grid min-w-0 gap-y-1.5 font-mono text-[10.5px]">
+              <div className="flex min-w-0 gap-x-3">
+                <dt className="w-[100px] shrink-0 text-chalk/42">Secure context</dt>
                 <dd
                   className={
                     mounted && capability.isSecureContext === false
                       ? "text-rose-300/90"
-                      : "min-w-0 text-chalk/80"
+                      : "min-w-0 text-chalk/82"
                   }
                 >
                   {secureLabel}
                 </dd>
               </div>
-              <div className="flex min-w-0 gap-x-2">
-                <dt className="w-[92px] shrink-0 text-chalk/45">Mic capability</dt>
+              <div className="flex min-w-0 gap-x-3">
+                <dt className="w-[100px] shrink-0 text-chalk/42">Mic capability</dt>
                 <dd
                   className={
                     mounted &&
                     !capability.canUseMic &&
                     capability.blockedReason !== "not-mounted"
                       ? "min-w-0 text-amber-300/80"
-                      : "min-w-0 text-chalk/80"
+                      : "min-w-0 text-chalk/82"
                   }
                 >
                   {micLabel}
                 </dd>
               </div>
-              <div className="flex gap-x-2">
-                <dt className="w-[92px] shrink-0 text-chalk/45">STT</dt>
-                <dd className="text-chalk/75">Whisper backend</dd>
+              <div className="flex gap-x-3">
+                <dt className="w-[100px] shrink-0 text-chalk/42">STT</dt>
+                <dd className="text-chalk/78">Whisper backend</dd>
               </div>
-              <div className="flex gap-x-2">
-                <dt className="w-[92px] shrink-0 text-chalk/45">TTS</dt>
-                <dd className="text-chalk/75">/api/tts</dd>
+              <div className="flex gap-x-3">
+                <dt className="w-[100px] shrink-0 text-chalk/42">TTS</dt>
+                <dd className="text-chalk/78">/api/tts</dd>
               </div>
-              <div className="flex gap-x-2">
-                <dt className="w-[92px] shrink-0 text-chalk/45">Runtime</dt>
+              <div className="flex gap-x-3">
+                <dt className="w-[100px] shrink-0 text-chalk/42">Runtime</dt>
                 <dd className="text-[color:var(--spirit-accent-strong)]">Oracle</dd>
               </div>
               {oracleModel && (
-                <div className="flex min-w-0 gap-x-2">
-                  <dt className="w-[92px] shrink-0 text-chalk/45">Model</dt>
+                <div className="flex min-w-0 gap-x-3">
+                  <dt className="w-[100px] shrink-0 text-chalk/42">Model</dt>
                   <dd className="min-w-0 truncate text-chalk/80">{oracleModel}</dd>
                 </div>
               )}
             </dl>
 
             {showInsecureWarning && (
-              <p className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/[0.06] px-3 py-1.5 font-mono text-[9.5px] leading-relaxed text-amber-300/85">
+              <p className="mt-4 rounded-2xl border border-amber-500/30 bg-amber-500/[0.06] px-4 py-2 font-mono text-[9.5px] leading-relaxed text-amber-300/85">
                 Voice requires HTTPS, localhost, or 127.0.0.1. Text fallback available.
               </p>
             )}
           </div>
 
-          <div className="mt-3 min-w-0">
-            <Link href="/oracle" className={ctaLink}>
+          <div className="min-w-0 pt-1">
+            <Link href="/oracle" className={cn(ctaLink, "w-full sm:w-auto")}>
               ◌ Open Oracle
             </Link>
           </div>

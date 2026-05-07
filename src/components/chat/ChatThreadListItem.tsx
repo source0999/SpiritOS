@@ -65,8 +65,8 @@ export const ChatThreadListItem = memo(function ChatThreadListItem({
       className={cn(
         "group flex min-w-0 gap-1 rounded-lg border px-1.5 py-1.5 transition",
         active
-          ? "border-[color:color-mix(in_oklab,var(--spirit-accent)_38%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-accent)_10%,transparent)] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]"
-          : "border-transparent bg-transparent hover:border-[color:var(--spirit-border)] hover:bg-white/[0.03]",
+          ? "border-[color:color-mix(in_oklab,var(--spirit-accent)_32%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-accent)_8%,transparent)] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]"
+          : "border-transparent bg-transparent hover:border-[color:color-mix(in_oklab,var(--spirit-border)_45%,transparent)] hover:bg-white/[0.025]",
       )}
     >
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -136,7 +136,9 @@ export const ChatThreadListItem = memo(function ChatThreadListItem({
           </div>
           <div
             className={cn(
-              "flex shrink-0 flex-row gap-0.5 opacity-95 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100",
+              "flex shrink-0 flex-row gap-0.5 transition-opacity",
+              "max-sm:opacity-40 max-sm:group-hover:opacity-90 max-sm:group-focus-within:opacity-90",
+              "sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100",
               interactionDisabled && "pointer-events-none opacity-25",
             )}
             onPointerDown={(e) => e.stopPropagation()}
@@ -151,7 +153,7 @@ export const ChatThreadListItem = memo(function ChatThreadListItem({
                   onTogglePin();
                 }}
                 aria-label={pinned ? `Unpin ${thread.title}` : `Pin ${thread.title}`}
-                className="touch-manipulation rounded-md p-1.5 text-chalk/50 transition hover:bg-white/[0.06] hover:text-amber-100/90 disabled:opacity-30 active:scale-[0.98]"
+                className="touch-manipulation rounded-md p-1.5 text-chalk/40 transition hover:bg-white/[0.05] hover:text-amber-100/85 disabled:opacity-30 active:scale-[0.98]"
               >
                 {pinned ? (
                   <PinOff className="h-3 w-3" aria-hidden />
@@ -169,7 +171,7 @@ export const ChatThreadListItem = memo(function ChatThreadListItem({
                 onRename();
               }}
               aria-label={`Rename thread ${thread.title}`}
-              className="touch-manipulation rounded-md p-1.5 text-chalk/50 transition hover:bg-white/[0.06] hover:text-chalk disabled:opacity-30 active:scale-[0.98]"
+              className="touch-manipulation rounded-md p-1.5 text-chalk/40 transition hover:bg-white/[0.05] hover:text-chalk/80 disabled:opacity-30 active:scale-[0.98]"
             >
               <PenLine className="h-3 w-3" aria-hidden />
             </button>
@@ -185,8 +187,8 @@ export const ChatThreadListItem = memo(function ChatThreadListItem({
                 aria-expanded={moveOpen}
                 aria-label={`Move thread ${thread.title}`}
                 className={cn(
-                  "touch-manipulation rounded-md p-1.5 text-chalk/50 transition hover:bg-white/[0.06] hover:text-chalk disabled:opacity-30 active:scale-[0.98]",
-                  moveOpen && "bg-white/[0.06] text-chalk/80",
+                  "touch-manipulation rounded-md p-1.5 text-chalk/40 transition hover:bg-white/[0.05] hover:text-chalk/80 disabled:opacity-30 active:scale-[0.98]",
+                  moveOpen && "bg-white/[0.05] text-chalk/70",
                 )}
               >
                 <ArrowRightLeft className="h-3 w-3" aria-hidden />
@@ -201,7 +203,7 @@ export const ChatThreadListItem = memo(function ChatThreadListItem({
                 onDelete();
               }}
               aria-label={`Delete thread ${thread.title}`}
-              className="touch-manipulation rounded-md p-1.5 text-chalk/50 transition hover:bg-rose-500/15 hover:text-rose-200 disabled:opacity-30 active:scale-[0.98]"
+              className="touch-manipulation rounded-md p-1.5 text-chalk/40 transition hover:bg-rose-500/12 hover:text-rose-200/90 disabled:opacity-30 active:scale-[0.98]"
             >
               <Trash2 className="h-3 w-3" aria-hidden />
             </button>
