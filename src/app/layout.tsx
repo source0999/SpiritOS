@@ -40,7 +40,10 @@ export default function RootLayout({
       data-scroll-behavior="smooth"
       className={`${inter.variable} ${jetbrainsMono.variable}`}
     >
-      <body className="min-h-[100dvh] min-h-dvh antialiased">
+      <body
+        className="min-h-[100dvh] min-h-dvh antialiased"
+        suppressHydrationWarning
+      >
         {children}
       </body>
     </html>

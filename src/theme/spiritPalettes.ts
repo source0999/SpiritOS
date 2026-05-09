@@ -1,16 +1,27 @@
-// ── Spirit palette registry - add one object here, ThemeStrip follows ─────────
-// > Hook applies cssVars to documentElement; :root mirrors default for SSR paint.
-// > Extended vars drive dashboard v2 atmosphere + glass (_reference/dashboardDemo port).
+// Spirit palette registry. Theme UI reads this file; the hook applies cssVars
+// to documentElement and preserves the html[data-theme] contract.
 
 export const DEFAULT_THEME_ID = "frozen-water" as const;
 
 export type ThemeId =
   | "frozen-water"
+  | "frost-linen"
+  | "ivory-mist"
+  | "lunar-chalk"
+  | "soft-ash"
   | "alice-seagrass"
+  | "ember-circuit"
   | "violet-twilight"
-  | "deep-sky";
+  | "obsidian-plum"
+  | "night-signal"
+  | "deep-sky"
+  | "solar-ember"
+  | "orchid-smoke"
+  | "aurora-slate";
 
-/** Keys we inject / clear so switching palettes cannot leave stale custom props */
+export type SpiritPaletteFamily = "light" | "dark" | "hybrid";
+export type SpiritPreviewPattern = "none" | "mesh" | "ember" | "violet" | "cyan";
+
 export const SPIRIT_DOM_CSS_KEYS = [
   "--spirit-bg",
   "--spirit-bg-soft",
@@ -21,7 +32,6 @@ export const SPIRIT_DOM_CSS_KEYS = [
   "--spirit-glow",
   "--spirit-border",
   "--spirit-secondary-mix",
-  // ── Dashboard atmosphere + glass (palette-driven; consumed under [data-layout="spirit-dashboard-home"]) ──
   "--spirit-atmosphere-base",
   "--spirit-atmosphere-a",
   "--spirit-atmosphere-b",
@@ -36,205 +46,412 @@ export const SPIRIT_DOM_CSS_KEYS = [
 ] as const;
 
 export type SpiritDomCssKey = (typeof SPIRIT_DOM_CSS_KEYS)[number];
-
 export type SpiritPaletteCssVars = Record<SpiritDomCssKey, string>;
 
 export type SpiritPalette = {
   id: ThemeId;
   label: string;
   shortLabel: string;
+  family: SpiritPaletteFamily;
+  toneLabel: string;
+  description: string;
+  previewSurface: string;
+  previewAccent: string;
+  previewPattern?: SpiritPreviewPattern;
   colors: readonly { name: string; hex: string }[];
   cssVars: SpiritPaletteCssVars;
-  /** dark-node lived here - alice-seagrass keeps mono rails */
   typography?: "sans" | "mono";
 };
 
-/** Old ThemeEngine ids → registry ids (localStorage migration) */
 export const LEGACY_THEME_IDS: Readonly<Record<string, ThemeId>> = {
   "spirit-slate": "frozen-water",
   "dark-node": "alice-seagrass",
   "legacy-violet": "violet-twilight",
+  "frozen-water": "frozen-water",
+  "alice-seagrass": "alice-seagrass",
+  "deep-sky": "deep-sky",
 };
 
-const FW = "#CDF7F6";
-const BB = "#8FB8DE";
-const LG = "#9A94BC";
-const GS = "#9B5094";
-const TG = "#6A605C";
+type PaletteInput = Omit<SpiritPalette, "cssVars"> & {
+  bg: string;
+  bgSoft: string;
+  panel: string;
+  panelStrong: string;
+  accent: string;
+  accentStrong: string;
+  secondary: string;
+  glow: string;
+  border: string;
+  atmosphereBase: string;
+  atmosphereA: string;
+  atmosphereB: string;
+  glassSurface: string;
+  glassBorder: string;
+  panelGlow: string;
+  navGlow: string;
+  progressTrack: string;
+  chipBg: string;
+  chipGlow: string;
+};
 
-const AB = "#E8F1F2";
-const SG = "#439A86";
-const SI = "#25283D";
-const BO = "#228CDB";
-const BL = "#AA7DCE";
+function palette(input: PaletteInput): SpiritPalette {
+  const {
+    bg,
+    bgSoft,
+    panel,
+    panelStrong,
+    accent,
+    accentStrong,
+    secondary,
+    glow,
+    border,
+    atmosphereBase,
+    atmosphereA,
+    atmosphereB,
+    glassSurface,
+    glassBorder,
+    panelGlow,
+    navGlow,
+    progressTrack,
+    chipBg,
+    chipGlow,
+    ...meta
+  } = input;
 
-const VT = "#454ADE";
-const SI2 = "#1B1F3B";
-const HM = "#B14AED";
-const OM = "#C874D9";
-const PP = "#E1BBC9";
+  return {
+    ...meta,
+    cssVars: {
+      "--spirit-bg": bg,
+      "--spirit-bg-soft": bgSoft,
+      "--spirit-panel": panel,
+      "--spirit-panel-strong": panelStrong,
+      "--spirit-accent": accent,
+      "--spirit-accent-strong": accentStrong,
+      "--spirit-glow": glow,
+      "--spirit-border": border,
+      "--spirit-secondary-mix": secondary,
+      "--spirit-atmosphere-base": atmosphereBase,
+      "--spirit-atmosphere-a": atmosphereA,
+      "--spirit-atmosphere-b": atmosphereB,
+      "--spirit-glass-surface": glassSurface,
+      "--spirit-glass-border": glassBorder,
+      "--spirit-panel-glow": panelGlow,
+      "--spirit-nav-glow": navGlow,
+      "--spirit-fairy-halo": glow,
+      "--spirit-progress-track": progressTrack,
+      "--spirit-theme-chip-active-bg": chipBg,
+      "--spirit-theme-chip-active-glow": chipGlow,
+    },
+  };
+}
 
-const DSB = "#2EC0F9";
-const CH = "#67AAF9";
-const BBI = "#9BBDF9";
-const PS = "#C4E0F9";
-const FP = "#B95F89";
+function lightVars(surfaceA: string, surfaceB: string, accent: string, accentStrong: string, secondary: string) {
+  return {
+    bg: surfaceA,
+    bgSoft: surfaceB,
+    panel: "rgba(255,255,255,0.58)",
+    panelStrong: "rgba(255,255,255,0.78)",
+    accent,
+    accentStrong,
+    secondary,
+    glow: `${accent}55`,
+    border: "rgba(15,23,42,0.10)",
+    atmosphereBase:
+      "linear-gradient(145deg, rgba(255,255,255,0.56), rgba(186,210,238,0.24) 52%, rgba(255,255,255,0.42))",
+    atmosphereA: accent,
+    atmosphereB: secondary,
+    glassSurface:
+      "linear-gradient(135deg, rgba(255,255,255,0.46) 0%, rgba(255,255,255,0.18) 58%, rgba(210,226,242,0.14) 100%)",
+    glassBorder: "rgba(255,255,255,0.66)",
+    panelGlow:
+      "0 30px 80px -34px rgba(15,23,42,0.22), 0 10px 26px -24px rgba(15,23,42,0.20), inset 0 1px 0 rgba(255,255,255,0.72)",
+    navGlow: `0 0 42px -12px ${accent}66`,
+    progressTrack: "rgba(15,23,42,0.10)",
+    chipBg: `${accent}29`,
+    chipGlow: `0 0 28px -6px ${accent}66`,
+  };
+}
+
+function darkVars(bg: string, bgSoft: string, panel: string, panelStrong: string, accent: string, accentStrong: string, secondary: string) {
+  return {
+    bg,
+    bgSoft,
+    panel,
+    panelStrong,
+    accent,
+    accentStrong,
+    secondary,
+    glow: `${accent}52`,
+    border: `${accent}24`,
+    atmosphereBase:
+      "linear-gradient(155deg, rgba(255,255,255,0.06) 0%, transparent 46%, rgba(0,0,0,0.42) 100%)",
+    atmosphereA: accent,
+    atmosphereB: secondary,
+    glassSurface:
+      "linear-gradient(135deg, rgba(255,255,255,0.075) 0%, rgba(15,23,42,0.34) 52%, rgba(8,10,18,0.72) 100%)",
+    glassBorder: "rgba(255,255,255,0.22)",
+    panelGlow:
+      "0 56px 130px -36px rgba(0,0,0,0.78), 0 18px 46px -34px rgba(255,255,255,0.12), inset 0 1px 0 rgba(255,255,255,0.12)",
+    navGlow: `0 0 44px -10px ${accent}66`,
+    progressTrack: "rgba(0,0,0,0.52)",
+    chipBg: `${accent}33`,
+    chipGlow: `0 0 30px -6px ${accent}66`,
+  };
+}
 
 export const SPIRIT_PALETTES: readonly SpiritPalette[] = [
-  {
+  palette({
     id: "frozen-water",
-    label: "Frozen Water",
-    shortLabel: "Ice",
+    label: "Smoked Pearl",
+    shortLabel: "Pearl",
+    family: "light",
+    toneLabel: "PEARL / AIRY",
+    description: "Frosted pearl glass with cool blue lift.",
+    previewSurface: "linear-gradient(135deg,#f8fbff,#dbeaf7 55%,#eef7fb)",
+    previewAccent: "#8FB8DE",
+    previewPattern: "mesh",
     colors: [
-      { name: "Frozen Water", hex: FW },
-      { name: "Baby Blue Ice", hex: BB },
-      { name: "Lavender Grey", hex: LG },
-      { name: "Grape Soda", hex: GS },
-      { name: "Taupe Grey", hex: TG },
+      { name: "Pearl", hex: "#F8FBFF" },
+      { name: "Baby Blue", hex: "#8FB8DE" },
+      { name: "Lavender Grey", hex: "#9A94BC" },
     ],
     typography: "sans",
-    cssVars: {
-      "--spirit-bg": "#161413",
-      "--spirit-bg-soft": "#1e1c1a",
-      "--spirit-panel": "#242120",
-      "--spirit-panel-strong": "#2e2b29",
-      "--spirit-accent": BB,
-      "--spirit-accent-strong": FW,
-      "--spirit-glow": "rgba(143, 184, 222, 0.28)",
-      "--spirit-border": "rgba(205, 247, 246, 0.11)",
-      "--spirit-secondary-mix": LG,
-      /** Icy pearl haze on charcoal — dash “silver-air” without blowing contrast */
-      "--spirit-atmosphere-base":
-        "linear-gradient(165deg, rgba(255,255,255,0.07) 0%, transparent 42%, rgba(0,0,0,0.18) 100%)",
-      "--spirit-atmosphere-a": BB,
-      "--spirit-atmosphere-b": LG,
-      "--spirit-glass-surface":
-        "linear-gradient(135deg, rgba(255,255,255,0.11) 0%, rgba(255,255,255,0.03) 55%, rgba(36,33,32,0.55) 100%)",
-      "--spirit-glass-border": "rgba(255,255,255,0.22)",
-      "--spirit-panel-glow":
-        "0 48px 120px -32px rgba(0,0,0,0.72), inset 0 1px 0 rgba(255,255,255,0.14)",
-      "--spirit-nav-glow": "0 0 40px -10px rgba(143, 184, 222, 0.42)",
-      "--spirit-fairy-halo": "rgba(143, 184, 222, 0.44)",
-      "--spirit-progress-track": "rgba(0,0,0,0.48)",
-      "--spirit-theme-chip-active-bg": "rgba(143, 184, 222, 0.24)",
-      "--spirit-theme-chip-active-glow": "0 0 28px -6px rgba(143, 184, 222, 0.38)",
-    },
-  },
-  {
-    id: "alice-seagrass",
-    label: "Alice Seagrass",
-    shortLabel: "Sea",
+    ...lightVars("#eef6fb", "#dceaf4", "#8FB8DE", "#CDF7F6", "#9A94BC"),
+  }),
+  palette({
+    id: "frost-linen",
+    label: "Frost Linen",
+    shortLabel: "Linen",
+    family: "light",
+    toneLabel: "LINEN / SOFT",
+    description: "Warm white material with a quiet linen cast.",
+    previewSurface: "linear-gradient(135deg,#fbfaf5,#ece7dc 58%,#f7f1e8)",
+    previewAccent: "#B9A37D",
+    previewPattern: "none",
     colors: [
-      { name: "Alice Blue", hex: AB },
-      { name: "Seagrass", hex: SG },
-      { name: "Space Indigo", hex: SI },
-      { name: "Bright Ocean", hex: BO },
-      { name: "Bright Lavender", hex: BL },
+      { name: "Frost", hex: "#FBFAF5" },
+      { name: "Linen", hex: "#ECE7DC" },
+      { name: "Wheat", hex: "#B9A37D" },
+    ],
+    typography: "sans",
+    ...lightVars("#f4f0e8", "#e8e2d6", "#B9A37D", "#7D6B4F", "#A8B5B2"),
+  }),
+  palette({
+    id: "ivory-mist",
+    label: "Ivory Mist",
+    shortLabel: "Ivory",
+    family: "light",
+    toneLabel: "IVORY / FOG",
+    description: "Ivory haze with low-contrast cyan edges.",
+    previewSurface: "linear-gradient(135deg,#fffdf7,#eef5f2 55%,#dbeef0)",
+    previewAccent: "#79BFC8",
+    previewPattern: "cyan",
+    colors: [
+      { name: "Ivory", hex: "#FFFDF7" },
+      { name: "Mist", hex: "#DBEEF0" },
+      { name: "Cyan", hex: "#79BFC8" },
+    ],
+    typography: "sans",
+    ...lightVars("#f6f4ed", "#e4efef", "#79BFC8", "#327F8E", "#D7B98C"),
+  }),
+  palette({
+    id: "lunar-chalk",
+    label: "Lunar Chalk",
+    shortLabel: "Chalk",
+    family: "light",
+    toneLabel: "CHALK / CLEAR",
+    description: "Clean lunar white with violet-grey depth.",
+    previewSurface: "linear-gradient(135deg,#fbfcff,#e9edf5 58%,#d8dce9)",
+    previewAccent: "#9A94BC",
+    previewPattern: "violet",
+    colors: [
+      { name: "Chalk", hex: "#FBFCFF" },
+      { name: "Moon", hex: "#D8DCE9" },
+      { name: "Violet Grey", hex: "#9A94BC" },
+    ],
+    typography: "sans",
+    ...lightVars("#f1f4fa", "#e1e5ee", "#9A94BC", "#6F67A4", "#8FB8DE"),
+  }),
+  palette({
+    id: "soft-ash",
+    label: "Soft Ash",
+    shortLabel: "Ash",
+    family: "light",
+    toneLabel: "ASH / MUTED",
+    description: "Soft ash glass with graphite-readable contrast.",
+    previewSurface: "linear-gradient(135deg,#f5f6f4,#dfe4e2 52%,#cbd3d2)",
+    previewAccent: "#7D9298",
+    previewPattern: "mesh",
+    colors: [
+      { name: "Ash", hex: "#DFE4E2" },
+      { name: "Graphite", hex: "#516168" },
+      { name: "Blue Grey", hex: "#7D9298" },
+    ],
+    typography: "sans",
+    ...lightVars("#edf1ef", "#dfe5e3", "#7D9298", "#516168", "#A99D8E"),
+  }),
+  palette({
+    id: "alice-seagrass",
+    label: "Dark Node",
+    shortLabel: "Node",
+    family: "dark",
+    toneLabel: "SMOKY / DEEP",
+    description: "Premium node smoke with restrained seagrass signal.",
+    previewSurface: "linear-gradient(135deg,#0f1018,#1c1e2e 58%,#25283D)",
+    previewAccent: "#439A86",
+    previewPattern: "mesh",
+    colors: [
+      { name: "Space", hex: "#0F1018" },
+      { name: "Seagrass", hex: "#439A86" },
+      { name: "Ocean", hex: "#228CDB" },
     ],
     typography: "mono",
-    cssVars: {
-      "--spirit-bg": "#0f1018",
-      "--spirit-bg-soft": "#161828",
-      "--spirit-panel": "#1c1e2e",
-      "--spirit-panel-strong": SI,
-      "--spirit-accent": SG,
-      "--spirit-accent-strong": AB,
-      "--spirit-glow": "rgba(67, 154, 134, 0.28)",
-      "--spirit-border": "rgba(67, 154, 134, 0.14)",
-      "--spirit-secondary-mix": BO,
-      /** Dark Node heir — premium smoke, not mud */
-      "--spirit-atmosphere-base":
-        "linear-gradient(155deg, rgba(129,140,248,0.06) 0%, transparent 45%, rgba(0,0,0,0.35) 100%)",
-      "--spirit-atmosphere-a": SG,
-      "--spirit-atmosphere-b": BO,
-      "--spirit-glass-surface":
-        "linear-gradient(135deg, rgba(255,255,255,0.07) 0%, rgba(15,23,42,0.42) 55%, rgba(15,16,24,0.88) 100%)",
-      "--spirit-glass-border": "rgba(255,255,255,0.2)",
-      "--spirit-panel-glow":
-        "0 56px 130px -36px rgba(0,0,0,0.78), inset 0 1px 0 rgba(255,255,255,0.1)",
-      "--spirit-nav-glow": "0 0 42px -10px rgba(67, 154, 134, 0.45)",
-      "--spirit-fairy-halo": "rgba(67, 154, 134, 0.4)",
-      "--spirit-progress-track": "rgba(0,0,0,0.52)",
-      "--spirit-theme-chip-active-bg": "rgba(67, 154, 134, 0.26)",
-      "--spirit-theme-chip-active-glow": "0 0 28px -6px rgba(67, 154, 134, 0.4)",
-    },
-  },
-  {
+    ...darkVars("#0f1018", "#161828", "#1c1e2e", "#25283D", "#439A86", "#E8F1F2", "#228CDB"),
+  }),
+  palette({
+    id: "ember-circuit",
+    label: "Ember Circuit",
+    shortLabel: "Ember",
+    family: "dark",
+    toneLabel: "EMBER / SMOKE",
+    description: "Graphite UI with a subtle orange circuit warmth.",
+    previewSurface: "linear-gradient(135deg,#11100f,#211a16 55%,#362318)",
+    previewAccent: "#F59E5B",
+    previewPattern: "ember",
+    colors: [
+      { name: "Graphite", hex: "#11100F" },
+      { name: "Circuit", hex: "#362318" },
+      { name: "Ember", hex: "#F59E5B" },
+    ],
+    typography: "mono",
+    ...darkVars("#11100f", "#171412", "#211a16", "#362318", "#F59E5B", "#FFD1A8", "#8C6AFA"),
+  }),
+  palette({
     id: "violet-twilight",
-    label: "Violet Twilight",
-    shortLabel: "Vio",
+    label: "Violet Graphite",
+    shortLabel: "Violet",
+    family: "dark",
+    toneLabel: "VIOLET / DEEP",
+    description: "Violet graphite with a quiet orchid glow.",
+    previewSurface: "linear-gradient(135deg,#0c0d14,#17172a 52%,#272044)",
+    previewAccent: "#B14AED",
+    previewPattern: "violet",
     colors: [
-      { name: "Violet Twilight", hex: VT },
-      { name: "Space Indigo", hex: SI2 },
-      { name: "Hyper Magenta", hex: HM },
-      { name: "Orchid Mist", hex: OM },
-      { name: "Pastel Petal", hex: PP },
+      { name: "Graphite", hex: "#0C0D14" },
+      { name: "Violet", hex: "#454ADE" },
+      { name: "Orchid", hex: "#B14AED" },
     ],
     typography: "sans",
-    cssVars: {
-      "--spirit-bg": "#0c0d14",
-      "--spirit-bg-soft": SI2,
-      "--spirit-panel": "#141628",
-      "--spirit-panel-strong": "#1a1e36",
-      "--spirit-accent": HM,
-      "--spirit-accent-strong": OM,
-      "--spirit-glow": "rgba(177, 74, 237, 0.26)",
-      "--spirit-border": "rgba(200, 116, 217, 0.14)",
-      "--spirit-secondary-mix": VT,
-      "--spirit-atmosphere-base":
-        "linear-gradient(160deg, rgba(200,116,217,0.07) 0%, transparent 48%, rgba(0,0,0,0.38) 100%)",
-      "--spirit-atmosphere-a": HM,
-      "--spirit-atmosphere-b": VT,
-      "--spirit-glass-surface":
-        "linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(69,74,222,0.12) 45%, rgba(12,13,20,0.92) 100%)",
-      "--spirit-glass-border": "rgba(200, 116, 217, 0.26)",
-      "--spirit-panel-glow":
-        "0 52px 125px -34px rgba(0,0,0,0.82), inset 0 1px 0 rgba(255,255,255,0.09)",
-      "--spirit-nav-glow": "0 0 44px -10px rgba(177, 74, 237, 0.42)",
-      "--spirit-fairy-halo": "rgba(200, 116, 217, 0.42)",
-      "--spirit-progress-track": "rgba(0,0,0,0.54)",
-      "--spirit-theme-chip-active-bg": "rgba(177, 74, 237, 0.26)",
-      "--spirit-theme-chip-active-glow": "0 0 30px -6px rgba(177, 74, 237, 0.38)",
-    },
-  },
-  {
+    ...darkVars("#0c0d14", "#1B1F3B", "#141628", "#1a1e36", "#B14AED", "#C874D9", "#454ADE"),
+  }),
+  palette({
+    id: "obsidian-plum",
+    label: "Obsidian Plum",
+    shortLabel: "Plum",
+    family: "dark",
+    toneLabel: "PLUM / OBSIDIAN",
+    description: "Black glass with subdued plum undertones.",
+    previewSurface: "linear-gradient(135deg,#09090d,#17111d 58%,#2d1b35)",
+    previewAccent: "#A56ACB",
+    previewPattern: "violet",
+    colors: [
+      { name: "Obsidian", hex: "#09090D" },
+      { name: "Plum", hex: "#2D1B35" },
+      { name: "Orchid", hex: "#A56ACB" },
+    ],
+    typography: "sans",
+    ...darkVars("#09090d", "#121018", "#17111d", "#2d1b35", "#A56ACB", "#D8B4FE", "#6E5BC5"),
+  }),
+  palette({
+    id: "night-signal",
+    label: "Night Signal",
+    shortLabel: "Signal",
+    family: "dark",
+    toneLabel: "NIGHT / CYAN",
+    description: "Near-black dashboard glass with cyan signal lines.",
+    previewSurface: "linear-gradient(135deg,#071018,#101a24 55%,#173145)",
+    previewAccent: "#2EC0F9",
+    previewPattern: "cyan",
+    colors: [
+      { name: "Night", hex: "#071018" },
+      { name: "Signal", hex: "#2EC0F9" },
+      { name: "Blue", hex: "#67AAF9" },
+    ],
+    typography: "mono",
+    ...darkVars("#071018", "#0d1722", "#101a24", "#173145", "#2EC0F9", "#67AAF9", "#7B61FF"),
+  }),
+  palette({
     id: "deep-sky",
-    label: "Deep Sky",
-    shortLabel: "Sky",
+    label: "Neural Cyan",
+    shortLabel: "Cyan",
+    family: "hybrid",
+    toneLabel: "CYAN / NEURAL",
+    description: "Cool cyan interface with dark neural depth.",
+    previewSurface: "linear-gradient(135deg,#0a1018,#123149 52%,#c4e0f9)",
+    previewAccent: "#2EC0F9",
+    previewPattern: "cyan",
     colors: [
-      { name: "Deep Sky Blue", hex: DSB },
-      { name: "Cool Horizon", hex: CH },
-      { name: "Baby Blue Ice", hex: BBI },
-      { name: "Pale Sky", hex: PS },
-      { name: "Fuchsia Plum", hex: FP },
+      { name: "Deep Sky", hex: "#2EC0F9" },
+      { name: "Cool Horizon", hex: "#67AAF9" },
+      { name: "Pale Sky", hex: "#C4E0F9" },
     ],
     typography: "sans",
-    cssVars: {
-      "--spirit-bg": "#0a1018",
-      "--spirit-bg-soft": "#0e1520",
-      "--spirit-panel": "#121c28",
-      "--spirit-panel-strong": "#152235",
-      "--spirit-accent": DSB,
-      "--spirit-accent-strong": CH,
-      "--spirit-glow": "rgba(46, 192, 249, 0.28)",
-      "--spirit-border": "rgba(103, 170, 249, 0.14)",
-      "--spirit-secondary-mix": FP,
-      "--spirit-atmosphere-base":
-        "linear-gradient(150deg, rgba(103,170,249,0.08) 0%, transparent 46%, rgba(0,0,0,0.36) 100%)",
-      "--spirit-atmosphere-a": DSB,
-      "--spirit-atmosphere-b": CH,
-      "--spirit-glass-surface":
-        "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(46,192,249,0.08) 42%, rgba(10,16,24,0.9) 100%)",
-      "--spirit-glass-border": "rgba(155, 189, 249, 0.22)",
-      "--spirit-panel-glow":
-        "0 50px 118px -32px rgba(0,0,0,0.76), inset 0 1px 0 rgba(255,255,255,0.11)",
-      "--spirit-nav-glow": "0 0 40px -10px rgba(46, 192, 249, 0.45)",
-      "--spirit-fairy-halo": "rgba(103, 170, 249, 0.44)",
-      "--spirit-progress-track": "rgba(0,0,0,0.50)",
-      "--spirit-theme-chip-active-bg": "rgba(46, 192, 249, 0.24)",
-      "--spirit-theme-chip-active-glow": "0 0 28px -6px rgba(46, 192, 249, 0.42)",
-    },
-  },
+    ...darkVars("#0a1018", "#0e1520", "#121c28", "#152235", "#2EC0F9", "#67AAF9", "#B95F89"),
+  }),
+  palette({
+    id: "solar-ember",
+    label: "Solar Ember",
+    shortLabel: "Solar",
+    family: "hybrid",
+    toneLabel: "SOLAR / WARM",
+    description: "Pearl surface with a precise amber control glow.",
+    previewSurface: "linear-gradient(135deg,#f8f2e6,#e7d6be 52%,#322118)",
+    previewAccent: "#EFA552",
+    previewPattern: "ember",
+    colors: [
+      { name: "Solar", hex: "#EFA552" },
+      { name: "Cream", hex: "#F8F2E6" },
+      { name: "Umber", hex: "#322118" },
+    ],
+    typography: "sans",
+    ...lightVars("#f1e8dc", "#e4d5c4", "#EFA552", "#845321", "#7D6BBA"),
+  }),
+  palette({
+    id: "orchid-smoke",
+    label: "Orchid Smoke",
+    shortLabel: "Orchid",
+    family: "hybrid",
+    toneLabel: "ORCHID / SMOKE",
+    description: "Smoked glass with a restrained orchid accent path.",
+    previewSurface: "linear-gradient(135deg,#17151f,#2a2436 58%,#c7b4d8)",
+    previewAccent: "#C084FC",
+    previewPattern: "violet",
+    colors: [
+      { name: "Smoke", hex: "#17151F" },
+      { name: "Orchid", hex: "#C084FC" },
+      { name: "Mist", hex: "#C7B4D8" },
+    ],
+    typography: "sans",
+    ...darkVars("#17151f", "#211c2a", "#2a2436", "#3a2d4c", "#C084FC", "#E9D5FF", "#8FB8DE"),
+  }),
+  palette({
+    id: "aurora-slate",
+    label: "Aurora Slate",
+    shortLabel: "Aurora",
+    family: "hybrid",
+    toneLabel: "SLATE / AURORA",
+    description: "Slate glass with cyan, violet, and pearl highlights.",
+    previewSurface: "linear-gradient(135deg,#111827,#334155 52%,#dbeafe)",
+    previewAccent: "#93C5FD",
+    previewPattern: "mesh",
+    colors: [
+      { name: "Slate", hex: "#111827" },
+      { name: "Aurora", hex: "#93C5FD" },
+      { name: "Violet", hex: "#A78BFA" },
+    ],
+    typography: "sans",
+    ...darkVars("#111827", "#172033", "#1f2937", "#334155", "#93C5FD", "#DBEAFE", "#A78BFA"),
+  }),
 ];
 
 export const THEME_IDS = new Set<string>(SPIRIT_PALETTES.map((p) => p.id));
@@ -245,7 +462,6 @@ export function getPaletteById(id: ThemeId): SpiritPalette {
   return p;
 }
 
-/** Normalize stored string: migrate legacy ids, fall back to Frozen Water */
 export function normalizeStoredThemeId(raw: string): ThemeId {
   const migrated = LEGACY_THEME_IDS[raw] ?? raw;
   if (THEME_IDS.has(migrated)) return migrated as ThemeId;

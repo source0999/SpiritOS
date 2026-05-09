@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+/// <reference types="vitest/globals" />
 
 import { buildModelRuntime, buildSemanticRoutingInstruction } from "@/lib/spirit/model-runtime";
 import { MODEL_PROFILES } from "@/lib/spirit/model-profiles";

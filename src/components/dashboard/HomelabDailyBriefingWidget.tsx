@@ -32,11 +32,10 @@ const ITEMS: BriefingItem[] = [
 ];
 
 const CATEGORY_STYLE: Record<string, string> = {
-  "Local AI":
-    "text-[color:var(--spirit-accent-strong)] border-[color:color-mix(in_oklab,var(--spirit-accent)_42%,transparent)]",
-  Homelab: "text-blue-300/80 border-blue-500/35",
-  Storage: "text-amber-300/75 border-amber-500/35",
-  Energy: "text-emerald-300/75 border-emerald-500/35",
+  "Local AI": "",
+  Homelab: "homelab-tag--ssd",
+  Storage: "homelab-tag--hdd",
+  Energy: "homelab-tag--unknown",
 };
 
 interface Props {
@@ -88,9 +87,8 @@ export function HomelabDailyBriefingWidget({ className }: Props) {
             <div className="mb-2 flex items-center justify-between gap-2">
               <span
                 className={cn(
-                  "rounded-full border px-2 py-0.5 font-mono text-[8.5px] font-semibold uppercase tracking-widest",
-                  CATEGORY_STYLE[item.category] ??
-                    "text-chalk/45 border-[color:color-mix(in_oklab,var(--spirit-glass-border)_70%,transparent)]",
+                  "homelab-tag",
+                  CATEGORY_STYLE[item.category],
                 )}
               >
                 {item.category}

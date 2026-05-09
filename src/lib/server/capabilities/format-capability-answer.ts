@@ -149,19 +149,30 @@ export function formatCapabilityAnswer(input: FormatCapabilityAnswerInput): stri
 
 function formatFileAccess(input: FormatCapabilityAnswerInput): string {
   const { registry, runtimeSurface: surface } = input;
+  const localToolsEnabled = process.env.SPIRIT_ENABLE_LOCAL_TOOLS === "true";
+  const projectPathConfigured = Boolean(process.env.SPIRIT_PROJECT_PATH?.trim());
+  const windowsFsEnabled = process.env.SPIRIT_WINDOWS_FS_ENABLED === "true";
+  const windowsAllowlist = process.env.SPIRIT_WINDOWS_FS_ALLOWLIST?.trim();
   if (surface === "oracle") {
-    return "No, not wired from Oracle without `SPIRIT_ENABLE_LOCAL_TOOLS=true` on the API. Drive-level storage telemetry (used/total) can still show per volume.";
+    return "I can inspect workspace files under SPIRIT_PROJECT_PATH only when local tools are enabled. Windows folders require the SpiritDesktop filesystem bridge plus an allowlisted path; I cannot browse arbitrary drives.";
   }
 
   const lines: string[] = [];
   lines.push(
-    "No, not wired from this **deterministic** shortcut. I can still show **drive-level** storage telemetry for volumes like **C:** (used/total from agents).",
+    localToolsEnabled
+      ? `I can inspect workspace files under \`SPIRIT_PROJECT_PATH\`${projectPathConfigured ? "" : " (or the server process cwd if it is unset)"} when the read-only workspace tools are attached or the deterministic direct path can safely answer.`
+      : "Workspace file inspection is disabled because `SPIRIT_ENABLE_LOCAL_TOOLS` is not true.",
   );
   lines.push(
-    "Hermes **workspace list/read** tools run on the normal LLM path when `SPIRIT_ENABLE_LOCAL_TOOLS=true`. If you are reading this block, that shortcut answered instead of the model.",
+    windowsFsEnabled
+      ? `Windows folder inspection is enabled only through the SpiritDesktop filesystem bridge and only for allowlisted roots${windowsAllowlist ? ` such as \`${windowsAllowlist}\`` : ""}.`
+      : "Windows folder access is disabled. Enable `SPIRIT_WINDOWS_FS_ENABLED` and configure `SPIRIT_WINDOWS_FS_BASE_URL`, `SPIRIT_WINDOWS_FS_TOKEN`, and `SPIRIT_WINDOWS_FS_ALLOWLIST`.",
   );
   lines.push(
-    "Telemetry rows are aggregate storage, not walking `C:\\Users\\...` or enumerating folders from chat unless the LLM path with tools is active.",
+    "I cannot browse arbitrary drives like `C:\\` or `C:\\Users`; concrete folder questions must pass either workspace safety or the Windows allowlist.",
+  );
+  lines.push(
+    "Drive telemetry can still show aggregate volume usage, but telemetry is not the same thing as enumerating folders.",
   );
 
   const um = input.userMessage ?? "";
@@ -290,7 +301,7 @@ function formatSpiritOsOverview(opts: {
     return [
       `I have live read-only cluster awareness right now - nodes: ${nodeNames || "none registered"}.`,
       `Chat model \`${diagnostics.chatModel}\`, this voice lane resolves to \`${activeResolvedModelId}\`. Registry tools: ${toolNames}.`,
-      "App-level folder browsing, file tools, SSH shell from chat, and desktop control are **not wired yet** - only telemetry plus normal repo chat.",
+      "Workspace file tools depend on local tool env; Windows folders require the filesystem bridge and an allowlisted path. SSH shell and desktop control are not wired here.",
     ].join(" ");
   }
 
@@ -319,7 +330,7 @@ function formatSpiritOsOverview(opts: {
   lines.push("");
   lines.push("**What I cannot do from the app yet:**");
   lines.push(
-    "- Browse or list arbitrary folders (like `C:\\`) or read/write/move/delete files through dedicated tools - those aren’t wired yet.",
+    "- Browse arbitrary folders like `C:\\` or `C:\\Users`; workspace file inspection is scoped to `SPIRIT_PROJECT_PATH`, and Windows folder inspection requires the SpiritDesktop filesystem bridge plus an allowlisted path.",
   );
   lines.push(
     "- Run SSH/WinRM commands, open arbitrary desktop apps, or drive the GUI from chat.",
@@ -594,4 +605,3 @@ function formatHardwareSummary(registry: CapabilityRegistryResponse): string {
 
   return lines.join("\n");
 }
-

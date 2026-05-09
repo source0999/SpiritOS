@@ -92,7 +92,7 @@ export function normalizeWorkspaceRelativePath(inputPath: string): string {
     throw new SpiritToolPathError("INVALID_PATH", "Path cannot be empty.");
   }
 
-  if (path.isAbsolute(trimmed)) {
+  if (path.isAbsolute(trimmed) || /^[a-z]:[\\/]/i.test(trimmed)) {
     throw new SpiritToolPathError("ABSOLUTE_PATH_NOT_ALLOWED", "Absolute paths are not allowed.");
   }
 

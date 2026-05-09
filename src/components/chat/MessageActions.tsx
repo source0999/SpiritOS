@@ -397,6 +397,7 @@ export const MessageActions = memo(function MessageActions({
           onClose={closeSheet}
           side="bottom"
           variant="trayCompact"
+          className="spirit-trinity-chat__sheet-panel"
         >
           <div
             className="flex flex-nowrap items-stretch justify-center gap-2 overflow-x-auto pb-0.5"

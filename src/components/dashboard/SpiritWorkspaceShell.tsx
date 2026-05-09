@@ -24,6 +24,7 @@ import { useSpiritVisualViewportVars } from "@/lib/hooks/useSpiritVisualViewport
 export type SpiritWorkspaceShellProps = {
   chatTitle?: string;
   chatSubtitle?: string;
+  className?: string;
 };
 
 /** Main column padding: full dock gap by default; tight when keyboard or composer claims bottom. */
@@ -54,6 +55,7 @@ function SpiritWorkspaceMainColumn({ children }: { children: ReactNode }) {
 function SpiritWorkspaceShellInner({
   chatTitle = "Neural // Spirit",
   chatSubtitle = "/api/spirit · Dark Node surface",
+  className,
 }: SpiritWorkspaceShellProps) {
   const [threadsRailOpen, setThreadsRailOpen] = useState(false);
   const workspaceRootRef = useRef<HTMLDivElement>(null);
@@ -69,23 +71,24 @@ function SpiritWorkspaceShellInner({
         "max-lg:h-[var(--spirit-visual-viewport-height,100dvh)] max-lg:max-h-[var(--spirit-visual-viewport-height,100dvh)] max-lg:min-h-0",
         "lg:relative lg:top-auto lg:z-auto lg:min-h-0 lg:max-h-none",
         "lg:h-[100dvh]",
+        className,
       )}
       style={{ transition: "background-color 320ms ease" }}
     >
       <div
-        className="pointer-events-none absolute inset-0 z-0 bg-[color:var(--spirit-bg)]"
+        className="spirit-trinity-chat__bg-base pointer-events-none absolute inset-0 z-0 bg-[color:var(--spirit-bg)]"
         aria-hidden
       />
       <div
-        className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(ellipse_110%_75%_at_50%_-8%,color-mix(in_oklab,var(--spirit-accent)_16%,transparent),transparent_55%)]"
+        className="spirit-trinity-chat__bg-wash pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(ellipse_110%_75%_at_50%_-8%,color-mix(in_oklab,var(--spirit-accent)_16%,transparent),transparent_55%)]"
         aria-hidden
       />
       <div
-        className="pointer-events-none absolute inset-0 z-0 opacity-[0.2] [background-image:linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.035)_1px,transparent_1px)] [background-size:52px_52px]"
+        className="spirit-trinity-chat__bg-grid pointer-events-none absolute inset-0 z-0 opacity-[0.2] [background-image:linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.035)_1px,transparent_1px)] [background-size:52px_52px]"
         aria-hidden
       />
       <div
-        className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_50%_115%,rgba(0,0,0,0.42),transparent_52%)]"
+        className="spirit-trinity-chat__bg-vignette pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_50%_115%,rgba(0,0,0,0.42),transparent_52%)]"
         aria-hidden
       />
 
@@ -93,7 +96,7 @@ function SpiritWorkspaceShellInner({
         <WorkspacePrimarySidebar />
 
         <SpiritWorkspaceMainColumn>
-          <header className="hidden shrink-0 border-b border-[color:var(--spirit-border)] bg-white/[0.03] backdrop-blur-xl lg:flex">
+          <header className="spirit-trinity-chat__desktop-header hidden shrink-0 border-b border-[color:var(--spirit-border)] bg-white/[0.03] backdrop-blur-xl lg:flex">
           <div className="flex items-center gap-3 px-4 py-2 sm:px-5">
             <button
               type="button"
@@ -135,7 +138,7 @@ function SpiritWorkspaceShellInner({
         </header>
 
         <div className="flex min-h-0 flex-1 flex-row overflow-hidden">
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden lg:pl-1 lg:pt-1 lg:pr-0">
+          <div className="spirit-trinity-chat__main flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden lg:pl-1 lg:pt-1 lg:pr-0">
             <SpiritChat
               persistence
               variant="workspace"

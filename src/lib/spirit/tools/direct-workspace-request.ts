@@ -1,4 +1,4 @@
-// ── direct-workspace-request - Phase 4B: read-only workspace without LLM tool calls ─
+// direct-workspace-request - read-only workspace without LLM tool calls
 // > Same path discipline as tools; never leaks workspace root; uses workspace-tools only.
 
 import "server-only";
@@ -13,14 +13,25 @@ import {
   readLogTail,
   readWorkspaceFile,
 } from "@/lib/spirit/tools/workspace-tools";
+import {
+  listWindowsFiles,
+  normalizeWindowsRequestPath,
+} from "@/lib/spirit/tools/windows-workspace-tools";
 import { isLocalToolsEnabled } from "@/lib/spirit/tools/tool-registry";
 
 function trimPathFragment(fragment: string): string {
-  return fragment.replace(/^[`"'“”]+/, "").replace(/[`"'“”.,;:!?]+$/, "").trim();
+  return fragment.replace(/^[`"']+/, "").replace(/[`"'.,;:!?]+$/, "").trim();
+}
+
+function normalizeListPathFragment(fragment: string): string {
+  let pathPart = trimPathFragment(fragment).replace(/\\/g, "/").trim();
+  pathPart = pathPart.replace(/^my\s+/i, "").trim();
+  pathPart = pathPart.replace(/\s+(folder|directory|dir)\s*$/i, "").trim();
+  return trimPathFragment(pathPart);
 }
 
 export type DirectWorkspaceRequest =
-  | { kind: "list"; directory: string }
+  | { kind: "list"; source: "workspace" | "windows"; directory: string }
   | { kind: "read"; filePath: string }
   | { kind: "tail"; filePath: string; lineCount?: number };
 
@@ -28,6 +39,16 @@ export type DirectWorkspaceHandleResult = {
   markdown: string;
   toolActivity: SpiritToolActivityCard[];
 };
+
+function parseListPathFragment(fragment: string): DirectWorkspaceRequest | null {
+  const pathPart = normalizeListPathFragment(fragment);
+  if (!pathFragmentLooksConcrete(pathPart)) return null;
+  const winPath = normalizeWindowsRequestPath(pathPart);
+  if (winPath) {
+    return { kind: "list", source: "windows", directory: winPath };
+  }
+  return { kind: "list", source: "workspace", directory: pathPart };
+}
 
 function fenceLang(filePath: string): string {
   const lower = filePath.toLowerCase();
@@ -58,7 +79,9 @@ export function parseDirectWorkspaceRequest(text: string): DirectWorkspaceReques
     return null;
   }
 
-  if (/\b(edit|delete|write|create|mkdir|rm\s|mv\s|cp\s)\s+/i.test(lower)) return null;
+  if (/\b(edit|delete|write|create|mkdir|rm\s|mv\s|cp\s|move|rename)\s+/i.test(lower)) {
+    return null;
+  }
 
   const lastLines = raw.match(
     /\bshow\s+(the\s+)?(last|past)\s+(\d+)\s+lines\s+of\s+([^\s?!,]+)/i,
@@ -79,25 +102,18 @@ export function parseDirectWorkspaceRequest(text: string): DirectWorkspaceReques
   }
 
   const listFilesIn = raw.match(/\blist\s+(the\s+)?files?\s+in\s+([^\s?!,]+)/i);
-  if (listFilesIn?.[2]) {
-    const pathPart = trimPathFragment(listFilesIn[2]);
-    if (!pathFragmentLooksConcrete(pathPart)) return null;
-    return { kind: "list", directory: pathPart };
-  }
+  if (listFilesIn?.[2]) return parseListPathFragment(listFilesIn[2]);
 
   const listDir = raw.match(/\blist\s+(the\s+)?(directory|dir)\s+([^\s?!,]+)/i);
-  if (listDir?.[3]) {
-    const pathPart = trimPathFragment(listDir[3]);
-    if (!pathFragmentLooksConcrete(pathPart)) return null;
-    return { kind: "list", directory: pathPart };
-  }
+  if (listDir?.[3]) return parseListPathFragment(listDir[3]);
 
   const showFilesIn = raw.match(/\bshow\s+(the\s+)?files?\s+in\s+([^\s?!,]+)/i);
-  if (showFilesIn?.[2]) {
-    const pathPart = trimPathFragment(showFilesIn[2]);
-    if (!pathFragmentLooksConcrete(pathPart)) return null;
-    return { kind: "list", directory: pathPart };
-  }
+  if (showFilesIn?.[2]) return parseListPathFragment(showFilesIn[2]);
+
+  const naturalList = raw.match(
+    /\b(?:show\s+me\s+)?(?:what(?:'s|s|\s+is)\s+(?:in|inside)|what\s+(?:files|folders)\s+are\s+in)\s+(.+)$/i,
+  );
+  if (naturalList?.[1]) return parseListPathFragment(naturalList[1]);
 
   const showContents = raw.match(/\bshow\s+(the\s+)?contents\s+of\s+([^\s?!,]+)/i);
   if (showContents?.[2]) {
@@ -136,6 +152,19 @@ function formatListSuccess(
   return [header, ...lines].join("\n") + trunc;
 }
 
+function formatWindowsListSuccess(
+  directory: string,
+  r: Extract<Awaited<ReturnType<typeof listWindowsFiles>>, { ok: true }>,
+): string {
+  const header = `Files in ${r.path || directory}`;
+  const lines = r.entries.map((e) => {
+    const label = e.type === "directory" ? "[dir]" : "[file]";
+    return `- ${label} ${e.name}`;
+  });
+  const trunc = r.truncated ? "\n\n(listing truncated to cap)" : "";
+  return [header, ...lines].join("\n") + trunc;
+}
+
 function formatReadSuccess(
   labelPath: string,
   content: string,
@@ -167,6 +196,10 @@ function formatToolError(message: string): string {
   return `I could not read that path: ${message}`;
 }
 
+function formatWindowsToolError(message: string): string {
+  return message;
+}
+
 /**
  * Execute a parsed concrete read-only workspace operation and return assistant markdown,
  * or null when this text does not map to a direct request or local tools are disabled.
@@ -174,10 +207,40 @@ function formatToolError(message: string): string {
 export async function handleDirectWorkspaceRequest(
   text: string,
 ): Promise<DirectWorkspaceHandleResult | null> {
-  if (!isLocalToolsEnabled()) return null;
-
   const parsed = parseDirectWorkspaceRequest(text);
   if (!parsed) return null;
+
+  if (parsed.kind === "list" && parsed.source === "windows") {
+    const r = await listWindowsFiles({ path: parsed.directory });
+    if (!r.ok) {
+      return {
+        markdown: formatWindowsToolError(r.message),
+        toolActivity: [
+          createSpiritToolActivityCard({
+            kind: "windows_workspace_list",
+            label: "List Windows files",
+            status: "blocked",
+            target: parsed.directory,
+            safeMessage: r.message,
+          }),
+        ],
+      };
+    }
+    return {
+      markdown: formatWindowsListSuccess(parsed.directory, r),
+      toolActivity: [
+        createSpiritToolActivityCard({
+          kind: "windows_workspace_list",
+          label: "List Windows files",
+          status: "completed",
+          target: r.path,
+          summary: `${r.entries.length} entr${r.entries.length === 1 ? "y" : "ies"}${r.truncated ? ", truncated" : ""}`,
+        }),
+      ],
+    };
+  }
+
+  if (!isLocalToolsEnabled()) return null;
 
   if (parsed.kind === "list") {
     const r = await listWorkspaceFiles({ directory: parsed.directory });

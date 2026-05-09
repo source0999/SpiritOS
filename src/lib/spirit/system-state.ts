@@ -11,6 +11,7 @@ export type SpiritSystemCapability =
   | "web_search_when_enabled"
   | "workspace_file_read"
   | "workspace_file_list"
+  | "windows_folder_list"
   | "log_tail_read"
   | "system_status"
   | "file_editing"
@@ -124,6 +125,12 @@ export function resolveSpiritSystemState(
     unavailable.push(...LOCAL_TOOL_CAPS);
   }
 
+  if (process.env.SPIRIT_WINDOWS_FS_ENABLED === "true") {
+    available.push("windows_folder_list");
+  } else {
+    unavailable.push("windows_folder_list");
+  }
+
   if (fileEditingEffective) {
     available.push("file_editing");
   } else {
@@ -200,6 +207,9 @@ export function buildSystemStateBlock(input: SpiritSystemStateInput): string {
   );
   lines.push(
     "If a capability is unavailable, say so clearly instead of pretending it happened.",
+  );
+  lines.push(
+    "Windows folder listing is never arbitrary full-disk browsing; it is available only through the SpiritDesktop filesystem bridge and configured allowlist.",
   );
   lines.push(
     "If the user asks you to use an unavailable capability, explain what is unavailable and offer a manual alternative or explain what would be needed to enable it.",

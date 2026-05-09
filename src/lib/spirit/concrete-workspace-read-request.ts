@@ -1,9 +1,21 @@
-// ── concrete-workspace-read-request - gate LLM path vs capability shortcut ──
+// concrete-workspace-read-request - gate LLM path vs capability shortcut
 // > True only for path-specific read/list/tail asks, not vague permission questions.
 
 /** Strip trailing punctuation / quotes from a captured path fragment. */
 function trimPathFragment(fragment: string): string {
-  return fragment.replace(/^[`"'“”]+/, "").replace(/[`"'“”.,;:!?]+$/, "").trim();
+  return fragment.replace(/^[`"']+/, "").replace(/[`"'.,;:!?]+$/, "").trim();
+}
+
+function stripNaturalFolderLabels(fragment: string): string {
+  let s = trimPathFragment(fragment).replace(/\\/g, "/").trim();
+  s = s.replace(/^my\s+/i, "").trim();
+  s = s.replace(/\s+(folder|directory|dir)\s*$/i, "").trim();
+  return trimPathFragment(s);
+}
+
+function looksLikeWindowsDrivePath(fragment: string): boolean {
+  const s = stripNaturalFolderLabels(fragment);
+  return /^[a-z]:\//i.test(s) || /^[a-z]\//i.test(s);
 }
 
 /**
@@ -11,12 +23,13 @@ function trimPathFragment(fragment: string): string {
  * not a vague noun phrase ("my files", "folders").
  */
 export function pathFragmentLooksConcrete(fragment: string): boolean {
-  const s = trimPathFragment(fragment);
+  const s = stripNaturalFolderLabels(fragment);
   if (s.length < 1) return false;
   if (/^(files?|folders?|directories?)$/i.test(s)) return false;
   if (/^(my|your|the|a|an|any|all|arbitrary|some)\s+files?$/i.test(s)) return false;
   if (/^my\s+/i.test(s) && !s.includes("/")) return false;
 
+  if (looksLikeWindowsDrivePath(s)) return true;
   if (s.includes("/")) return true;
   if (/^\.env/i.test(s)) return true;
   if (/\.(?:ts|tsx|js|jsx|json|md|mjs|cjs|css|html|txt|log|yaml|yml|toml|xml|svg|pem|key)(?:\.\w+)?$/i.test(s))
@@ -44,7 +57,9 @@ export function isConcreteWorkspaceReadRequest(text: string): boolean {
     return false;
   }
 
-  if (/\b(edit|delete|write|create|mkdir|rm\s|mv\s|cp\s)\s+/i.test(lower)) return false;
+  if (/\b(edit|delete|write|create|mkdir|rm\s|mv\s|cp\s|move|rename)\s+/i.test(lower)) {
+    return false;
+  }
 
   if (/\bshow\s+(the\s+)?(last|past)\s+\d+\s+lines\s+of\s+([^\s?!,]+)/i.test(raw)) {
     const m = raw.match(/\bshow\s+(the\s+)?(last|past)\s+\d+\s+lines\s+of\s+([^\s?!,]+)/i);
@@ -67,6 +82,11 @@ export function isConcreteWorkspaceReadRequest(text: string): boolean {
 
   const showContents = raw.match(/\bshow\s+(the\s+)?contents\s+of\s+([^\s?!,]+)/i);
   if (showContents?.[2] && pathFragmentLooksConcrete(showContents[2])) return true;
+
+  const naturalList = raw.match(
+    /\b(?:show\s+me\s+)?(?:what(?:'s|s|\s+is)\s+(?:in|inside)|what\s+(?:files|folders)\s+are\s+in)\s+(.+)$/i,
+  );
+  if (naturalList?.[1] && pathFragmentLooksConcrete(naturalList[1])) return true;
 
   const readFile = raw.match(/\bread\s+([^\s?!,]+)/i);
   if (readFile?.[1] && !/^(files?|folders?|directories?)$/i.test(readFile[1])) {

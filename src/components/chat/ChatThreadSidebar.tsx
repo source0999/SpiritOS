@@ -71,6 +71,7 @@ export type ChatThreadSidebarProps = {
   searchQuery?: string;
   onSearchQueryChange?: (q: string) => void;
   searchEmptyResults?: boolean;
+  chromeVariant?: "default" | "trinity";
 };
 
 export const ChatThreadSidebar = memo(function ChatThreadSidebar({
@@ -103,14 +104,17 @@ export const ChatThreadSidebar = memo(function ChatThreadSidebar({
   searchQuery = "",
   onSearchQueryChange,
   searchEmptyResults = false,
+  chromeVariant = "default",
 }: ChatThreadSidebarProps) {
   const railLocked = interactionDisabled;
   const newChatMuted = muteNewChatButton || railLocked;
   const newFolderMuted = railLocked;
+  const trinityChrome = chromeVariant === "trinity";
 
   // Row-wide drag steals the first pointer interaction from the title <button> (dnd-kit vs click).
   // Handle-only keeps drag on the grip and lets thread switch work on first tap - drawer already did this.
-  const threadDragLayout = "handle";
+  /* Trinity /chat: row drag only — no visible drag markers (grip removed from UI). */
+  const threadDragLayout = trinityChrome ? "row" : "handle";
 
   const lgDesktop = useMediaMinWidthLg();
 
@@ -331,7 +335,12 @@ export const ChatThreadSidebar = memo(function ChatThreadSidebar({
     <>
       {pinnedThreads.length > 0 ? (
         <div className="flex flex-col gap-0.5">
-          <p className="px-1 font-mono text-[9px] font-semibold uppercase tracking-[0.22em] text-chalk/38">
+          <p
+            className={cn(
+              "spirit-sidebar-section-label px-1 font-mono text-[9px] font-semibold uppercase tracking-[0.22em] text-chalk/38",
+              trinityChrome && "spirit-sidebar-section-label--trinity",
+            )}
+          >
             Pinned
           </p>
           {pinnedThreads.map((thread) => {
@@ -367,7 +376,7 @@ export const ChatThreadSidebar = memo(function ChatThreadSidebar({
       {draftActive ? (
         <div
           className={cn(
-            "rounded-lg border px-3 py-2.5",
+            "spirit-sidebar-draft-card rounded-lg border px-3 py-2.5",
             "border-[color:color-mix(in_oklab,var(--spirit-accent)_38%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-accent)_10%,transparent)]",
           )}
         >
@@ -382,7 +391,7 @@ export const ChatThreadSidebar = memo(function ChatThreadSidebar({
 
       {showColdStartHint ? (
         <p className="px-3 py-6 text-center font-mono text-xs leading-relaxed text-chalk/45">
-          No saved threads yet - send a line here to freeze this lane in Dexie.
+          No saved chats yet.
         </p>
       ) : null}
 
@@ -402,8 +411,13 @@ export const ChatThreadSidebar = memo(function ChatThreadSidebar({
               "border border-[color:color-mix(in_oklab,var(--spirit-accent-strong)_55%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-accent)_8%,transparent)] shadow-[0_0_24px_-10px_var(--spirit-glow)]",
           )}
         >
-          <p className="px-1 font-mono text-[9px] font-semibold uppercase tracking-[0.22em] text-chalk/38">
-            Chats
+          <p
+            className={cn(
+              "spirit-sidebar-section-label px-1 font-mono text-[9px] font-semibold uppercase tracking-[0.22em] text-chalk/38",
+              trinityChrome && "spirit-sidebar-section-label--trinity",
+            )}
+          >
+            {trinityChrome ? "Recent" : "Chats"}
           </p>
           {rootThreads.length === 0 && !draftActive ? (
             <p className="px-2 py-1 font-mono text-[9px] text-chalk/32">
@@ -419,8 +433,13 @@ export const ChatThreadSidebar = memo(function ChatThreadSidebar({
         </div>
       ) : (
         <div className="flex min-h-[44px] flex-col gap-0.5">
-          <p className="px-1 font-mono text-[9px] font-semibold uppercase tracking-[0.22em] text-chalk/38">
-            Chats
+          <p
+            className={cn(
+              "spirit-sidebar-section-label px-1 font-mono text-[9px] font-semibold uppercase tracking-[0.22em] text-chalk/38",
+              trinityChrome && "spirit-sidebar-section-label--trinity",
+            )}
+          >
+            {trinityChrome ? "Recent" : "Chats"}
           </p>
           {rootThreads.length === 0 && !draftActive ? (
             <p className="px-2 py-1 font-mono text-[9px] text-chalk/32">
@@ -443,6 +462,7 @@ export const ChatThreadSidebar = memo(function ChatThreadSidebar({
         layoutVariant === "drawer"
           ? "h-full min-h-0 max-h-none w-full flex-1 border-0 bg-transparent shadow-none backdrop-blur-none"
           : "max-h-[40dvh] shrink-0 border-b border-[color:color-mix(in_oklab,var(--spirit-border)_80%,transparent)] bg-white/[0.025] backdrop-blur-xl lg:max-h-none lg:h-full lg:w-[280px] lg:border-b-0 lg:border-r lg:border-[color:color-mix(in_oklab,var(--spirit-border)_65%,transparent)]",
+        trinityChrome && "spirit-trinity-sidebar--trinity",
         className,
       )}
     >
@@ -470,9 +490,10 @@ export const ChatThreadSidebar = memo(function ChatThreadSidebar({
                 />
               </div>
             ) : null}
-            <div className="flex gap-2">
+            <div className="spirit-sidebar-header-actions flex gap-2">
               <button
                 type="button"
+                data-sidebar-action="new-chat"
                 onClick={() => {
                   if (newChatMuted) return;
                   onNewChat();
@@ -489,6 +510,7 @@ export const ChatThreadSidebar = memo(function ChatThreadSidebar({
               </button>
               <button
                 type="button"
+                data-sidebar-action="new-folder"
                 onClick={() => {
                   if (newFolderMuted) return;
                   if (creatingFolder) {
@@ -558,17 +580,27 @@ export const ChatThreadSidebar = memo(function ChatThreadSidebar({
               </div>
             ) : null}
             <p className="px-0.5 pt-1 font-sans text-[11px] font-medium uppercase tracking-[0.12em] text-chalk/38">
-              Spirit threads
+              {trinityChrome ? "Chats" : "Spirit threads"}
             </p>
           </>
         ) : (
           <>
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
-                <p className="truncate font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-chalk/55">
-                  Spirit threads
+                <p
+                  className={cn(
+                    "truncate font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-chalk/55",
+                    trinityChrome && "spirit-sidebar-brand-title",
+                  )}
+                >
+                  {trinityChrome ? "Chats" : "Spirit threads"}
                 </p>
-                <p className="mt-px font-mono text-[10px] text-chalk/35">
+                <p
+                  className={cn(
+                    "mt-px font-mono text-[10px] text-chalk/35",
+                    trinityChrome && "spirit-sidebar-brand-meta",
+                  )}
+                >
                   {savedThreadCount} saved
                 </p>
               </div>
@@ -583,9 +615,10 @@ export const ChatThreadSidebar = memo(function ChatThreadSidebar({
                 </button>
               ) : null}
             </div>
-            <div className="flex flex-wrap items-stretch justify-end gap-1.5">
+            <div className="spirit-sidebar-header-actions flex flex-wrap items-stretch justify-end gap-2">
               <button
                 type="button"
+                data-sidebar-action="new-chat"
                 onClick={() => {
                   if (newChatMuted) return;
                   onNewChat();
@@ -602,6 +635,7 @@ export const ChatThreadSidebar = memo(function ChatThreadSidebar({
               </button>
               <button
                 type="button"
+                data-sidebar-action="new-folder"
                 onClick={() => {
                   if (newFolderMuted) return;
                   if (creatingFolder) {

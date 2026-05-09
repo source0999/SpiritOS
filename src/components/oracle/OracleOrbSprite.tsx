@@ -25,13 +25,13 @@ export function OracleOrbSprite({
   const gid = `o${uid}`;
 
   const motes = useMemo(() => {
-    const n = variant === "widget" ? 14 : 24;
+    const n = variant === "widget" ? 22 : 34;
     return Array.from({ length: n }, (_, i) => ({
       id: i,
-      cx: 160 + Math.sin(i * 1.31) * (variant === "widget" ? 86 : 112),
-      cy: 154 + Math.cos(i * 1.77) * (variant === "widget" ? 64 : 92),
-      r: 1.1 + (i % 4) * 0.65,
-      delay: `${(i % 10) * 0.16}s`,
+      cx: 160 + Math.sin(i * 1.31) * (variant === "widget" ? 74 : 98),
+      cy: 154 + Math.cos(i * 1.77) * (variant === "widget" ? 58 : 82),
+      r: 0.85 + (i % 5) * 0.42,
+      delay: `${(i % 12) * 0.13}s`,
     }));
   }, [variant]);
 
@@ -109,20 +109,20 @@ export function OracleOrbSprite({
           <path
             className="oracle-orb-energy"
             fill={`url(#${gid}-wl)`}
-            d="M154 182 C128 171 92 150 50 114 C32 98 20 80 14 66 C58 72 104 94 135 126 C150 144 154 162 154 182 Z"
+            d="M154 182 C132 173 104 154 72 124 C56 109 48 92 44 80 C80 86 112 102 136 128 C150 145 154 163 154 182 Z"
           />
-          <path className="oracle-orb-vein" d="M148 176 C124 148 92 113 34 70" />
-          <path className="oracle-orb-vein oracle-orb-vein--thin" d="M138 161 C113 138 87 114 62 90" />
+          <path className="oracle-orb-vein" d="M148 176 C126 150 98 120 52 82" />
+          <path className="oracle-orb-vein oracle-orb-vein--thin" d="M138 161 C116 140 92 118 68 96" />
         </g>
 
         <g className="oracle-orb-wing-r" filter={`url(#${gid}-glow)`}>
           <path
             className="oracle-orb-energy"
             fill={`url(#${gid}-wr)`}
-            d="M166 182 C192 171 228 150 270 114 C288 98 300 80 306 66 C262 72 216 94 185 126 C170 144 166 162 166 182 Z"
+            d="M166 182 C188 173 216 154 248 124 C264 109 272 92 276 80 C240 86 208 102 184 128 C170 145 166 163 166 182 Z"
           />
-          <path className="oracle-orb-vein" d="M172 176 C196 148 228 113 286 70" />
-          <path className="oracle-orb-vein oracle-orb-vein--thin" d="M182 161 C207 138 233 114 258 90" />
+          <path className="oracle-orb-vein" d="M172 176 C194 150 222 120 268 82" />
+          <path className="oracle-orb-vein oracle-orb-vein--thin" d="M182 161 C204 140 228 118 252 96" />
         </g>
 
         <g className="oracle-orb-group" filter={`url(#${gid}-glow)`}>

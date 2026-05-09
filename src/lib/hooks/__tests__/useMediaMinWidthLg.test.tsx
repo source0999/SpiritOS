@@ -28,9 +28,11 @@ describe("useMediaMinWidthLg", () => {
     vi.unstubAllGlobals();
   });
 
-  it("implementation keeps useState(false) for SSR / first paint (grep contract)", () => {
+  it("implementation reads matchMedia during first client render to avoid desktop chrome flash", () => {
     const p = resolve(process.cwd(), "src/lib/hooks/useMediaMinWidthLg.ts");
-    expect(readFileSync(p, "utf8")).toContain("useState(false)");
+    const src = readFileSync(p, "utf8");
+    expect(src).toContain("useState(() =>");
+    expect(src).toContain('window.matchMedia("(min-width: 1024px)").matches');
   });
 
   it("syncs to wide viewport after mount", async () => {

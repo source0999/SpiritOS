@@ -9,6 +9,13 @@ const TAG_PAIRS: Array<[RegExp, string]> = [
   [/<developer[^>]*>[\s\S]*?<\/developer>/gi, ""],
 ];
 
+const VISIBLE_CONTAINER_TAGS = [
+  "chat_message",
+  "assistant_message",
+  "assistant_response",
+  "response",
+] as const;
+
 /** Line starts that almost always mean leaked instructions (not user content). */
 const LEAK_LINE_STARTS = [
   /^respond in ["']sassy mode["']\s*only\b/i,
@@ -29,6 +36,15 @@ function stripTaggedBlocks(text: string): string {
   let t = text;
   for (const [re, rep] of TAG_PAIRS) {
     t = t.replace(re, rep);
+  }
+  return t;
+}
+
+function unwrapVisibleContainerTags(text: string): string {
+  let t = text;
+  for (const tag of VISIBLE_CONTAINER_TAGS) {
+    t = t.replace(new RegExp(`^\\s*<${tag}[^>]*>\\s*`, "i"), "");
+    t = t.replace(new RegExp(`\\s*</${tag}>\\s*$`, "i"), "");
   }
   return t;
 }
@@ -71,6 +87,7 @@ function stripLeakedInstructionLines(text: string): string {
 export function sanitizeAssistantVisibleText(text: string): string {
   if (!text) return "";
   let t = stripTaggedBlocks(text);
+  t = unwrapVisibleContainerTags(t);
   t = stripLeakedInstructionLines(t);
   t = t.replace(/\n{3,}/g, "\n\n").trim();
   return t;

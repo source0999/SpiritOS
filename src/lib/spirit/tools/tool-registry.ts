@@ -24,6 +24,7 @@ import {
   readLogTail,
   readWorkspaceFile,
 } from "@/lib/spirit/tools/workspace-tools";
+import { isWindowsFsEnabled, listWindowsFiles } from "@/lib/spirit/tools/windows-workspace-tools";
 
 export { isFileEditToolsEnvEnabled, isDevCommandToolsEnvEnabled };
 
@@ -113,6 +114,28 @@ export function getSpiritReadOnlyTools() {
         }
       },
     }),
+    ...(isWindowsFsEnabled()
+      ? {
+          list_windows_files: tool({
+            description:
+              "List files and folders in an allowlisted Windows absolute path via the SpiritDesktop filesystem bridge. Read-only, non-recursive, and never browses arbitrary drives.",
+            inputSchema: z.object({
+              path: z.string().describe("Windows absolute path such as C:\\Projects."),
+              maxEntries: z
+                .number()
+                .optional()
+                .describe("Maximum entries (default 200, hard cap 200)."),
+            }),
+            execute: async (input) => {
+              try {
+                return await listWindowsFiles(input);
+              } catch (e) {
+                return toolErrorFromUnknown(e);
+              }
+            },
+          }),
+        }
+      : {}),
   };
 }
 

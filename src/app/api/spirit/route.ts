@@ -40,7 +40,10 @@ import type { ModelProfileId } from "@/lib/spirit/model-profile.types";
 import { getModelProfile } from "@/lib/spirit/model-profiles";
 import { resolveSpiritSystemState } from "@/lib/spirit/system-state";
 import { resolveSpiritToolsForOllamaModel } from "@/lib/spirit/tools/tool-registry";
-import { handleDirectWorkspaceRequest } from "@/lib/spirit/tools/direct-workspace-request";
+import {
+  handleDirectWorkspaceRequest,
+  parseDirectWorkspaceRequest,
+} from "@/lib/spirit/tools/direct-workspace-request";
 import { handleDirectDevCommandRequest } from "@/lib/spirit/tools/direct-dev-command-request";
 import { detectCapabilityIntent } from "@/lib/spirit/capability-intent";
 import { isConcreteWorkspaceReadRequest } from "@/lib/spirit/concrete-workspace-read-request";
@@ -139,6 +142,9 @@ export async function POST(req: Request) {
     };
     const shouldLetWorkspaceToolsHandle =
       concreteWorkspaceRead && readOnlyToolsAttached;
+    const directWorkspaceParsed = parseDirectWorkspaceRequest(lastUser);
+    const concreteWindowsList =
+      directWorkspaceParsed?.kind === "list" && directWorkspaceParsed.source === "windows";
 
     if (process.env.NODE_ENV === "development") {
       const reason = readOnlyToolsAttached
@@ -153,7 +159,37 @@ export async function POST(req: Request) {
       );
     }
 
-    // ── 3. Concrete workspace read/list/tail: never let the model invent listings without tools ─
+    // ── 3. Concrete Windows folder list: deterministic bridge path, never model-guessed ─
+    if (concreteWindowsList) {
+      const responseHeaders = {
+        ...buildSpiritSearchHeaders({
+          routeLane: "local-chat",
+          routeConfidence: "high",
+          webSearch: "none",
+          searchStatus: "none",
+          provider: null,
+          sourceCount: 0,
+          queryTrimmed: trimSearchQueryForLog(lastUser),
+          elapsedMs: null,
+          searchKind: "none",
+          skipReason: null,
+          webSourcesJson: null,
+        }),
+        "x-spirit-runtime-surface": sanitizeForHttpByteStringHeader(surface),
+      };
+
+      const directAnswer = await handleDirectWorkspaceRequest(lastUser);
+      if (directAnswer) {
+        return createDeterministicAssistantUIMessageResponse({
+          text: directAnswer.markdown,
+          originalMessages: uiMessages,
+          headers: responseHeaders,
+          toolActivity: directAnswer.toolActivity,
+        });
+      }
+    }
+
+    // ── 4. Concrete workspace read/list/tail: never let the model invent listings without tools ─
     if (concreteWorkspaceRead && !readOnlyToolsAttached) {
       const responseHeaders = {
         ...buildSpiritSearchHeaders({

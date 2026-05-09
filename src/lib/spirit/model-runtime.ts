@@ -7,11 +7,15 @@ import {
 } from "@/lib/spirit/response-budget";
 import { buildFinalAnswerContract } from "@/lib/spirit/spirit-answer-contract";
 import { SPIRIT_CAPABILITY_CONTEXT_HINT } from "@/lib/spirit/spirit-capability-context";
+import { buildEvidenceLadderInstruction } from "@/lib/spirit/spirit-evidence-ladder";
+import { buildGeneralIntelligenceInstruction } from "@/lib/spirit/spirit-intelligence-contract";
 import {
   buildRuntimeSurfaceInstruction,
   DEFAULT_SPIRIT_RUNTIME_SURFACE,
   type SpiritRuntimeSurface,
 } from "@/lib/spirit/spirit-runtime-surface";
+import { buildReasoningPatternInstruction } from "@/lib/spirit/spirit-reasoning-patterns";
+import { buildActiveTaskPolicyInstruction } from "@/lib/spirit/spirit-task-policy";
 import { buildSystemStateBlock, type SpiritSystemStateInput } from "@/lib/spirit/system-state";
 
 export type ModelRuntime = {
@@ -80,6 +84,10 @@ export function buildModelRuntime(
     : "";
 
   const semanticRoutingBlock = `\n\n${buildSemanticRoutingInstruction(profile)}`;
+  const intelligenceBlock = `\n\n${buildGeneralIntelligenceInstruction()}`;
+  const taskPolicyBlock = `\n\n${buildActiveTaskPolicyInstruction(lastUser)}`;
+  const reasoningPatternBlock = `\n\n${buildReasoningPatternInstruction(lastUser)}`;
+  const evidenceLadderBlock = `\n\n${buildEvidenceLadderInstruction(lastUser)}`;
 
   const budget = buildResponseBudgetInstruction(profile, lastUser || " ", {
     deepThinkEnabled: deep,
@@ -135,7 +143,7 @@ ${extra}`
 
   const systemPrompt = `${profile.systemPrompt}
 
-${surfacePrefix}${budget}${systemStateBlock}${semanticRoutingBlock}${deepBlock}${researchBlock}${planBlock}${oracleMemoryBlock}${prefsBlock}
+${surfacePrefix}${budget}${systemStateBlock}${intelligenceBlock}${taskPolicyBlock}${reasoningPatternBlock}${evidenceLadderBlock}${semanticRoutingBlock}${deepBlock}${researchBlock}${planBlock}${oracleMemoryBlock}${prefsBlock}
 
 ${SPIRIT_CAPABILITY_CONTEXT_HINT}
 

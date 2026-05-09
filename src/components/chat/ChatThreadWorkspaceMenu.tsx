@@ -85,7 +85,7 @@ export const ChatThreadWorkspaceMenu = memo(function ChatThreadWorkspaceMenu({
           "fixed z-[150] flex w-[min(100vw-1.5rem,20rem)] flex-col overflow-hidden rounded-xl border border-[color:var(--spirit-border)] bg-[color:color-mix(in_oklab,var(--spirit-bg)_94%,black)] shadow-[0_24px_80px_-24px_rgba(0,0,0,0.75)]",
           sheet
             ? "inset-x-0 bottom-0 mx-auto max-h-[70dvh] w-full max-w-md rounded-b-none rounded-t-2xl border-b-0 pb-[env(safe-area-inset-bottom,0px)]"
-            : "right-3 top-[3.25rem] max-lg:right-2 max-lg:top-24",
+            : "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
         )}
         role="dialog"
         aria-modal="true"

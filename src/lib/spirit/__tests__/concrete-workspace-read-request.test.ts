@@ -9,6 +9,11 @@ describe("isConcreteWorkspaceReadRequest", () => {
   it("returns true for list/show/read/tail with concrete paths", () => {
     expect(isConcreteWorkspaceReadRequest("List the files in src/lib/spirit")).toBe(true);
     expect(isConcreteWorkspaceReadRequest("show files in src/app")).toBe(true);
+    expect(isConcreteWorkspaceReadRequest("whats in src/lib?")).toBe(true);
+    expect(isConcreteWorkspaceReadRequest("what's in src/lib/spirit folder?")).toBe(true);
+    expect(isConcreteWorkspaceReadRequest("what files are in src?")).toBe(true);
+    expect(isConcreteWorkspaceReadRequest("show me what is inside src/lib")).toBe(true);
+    expect(isConcreteWorkspaceReadRequest("whats in my c/projects folder?")).toBe(true);
     expect(isConcreteWorkspaceReadRequest("list directory src/lib")).toBe(true);
     expect(isConcreteWorkspaceReadRequest("read package.json")).toBe(true);
     expect(isConcreteWorkspaceReadRequest("open src/lib/spirit/model-runtime.ts")).toBe(true);

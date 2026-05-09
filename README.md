@@ -57,6 +57,8 @@ curl -k -sS https://localhost:3000/api/spirit/health
 
 **Not wired yet:** chat UI cannot browse arbitrary folders; **app-level SSH execution** is not integrated (manual SSH outside the app is fine). See **Next Work Order** below.
 
+**Optional Windows folder bridge:** `scripts/spiritdesktop-windows/agent.js` can expose read-only `POST /api/files/list` when `SPIRIT_DESKTOP_FS_ENABLED=true` on the Windows agent and the requested path is under `SPIRIT_DESKTOP_FS_ALLOWLIST` (default example: `C:\Projects`). The Next app calls it only when `SPIRIT_WINDOWS_FS_ENABLED=true` plus `SPIRIT_WINDOWS_FS_BASE_URL`, `SPIRIT_WINDOWS_FS_TOKEN`, and `SPIRIT_WINDOWS_FS_ALLOWLIST` are configured. This is not arbitrary drive browsing.
+
 ## Current Checkpoint
 
 - **Dashboard / homelab telemetry is live** - cluster polling via **`/api/telemetry/cluster`** with CPU/RAM/storage when collectors respond.
@@ -68,7 +70,7 @@ curl -k -sS https://localhost:3000/api/spirit/health
 - **Chat + Oracle tone** - normal dating/social advice stays in scope; **consent and safety boundaries** remain enforced (Hermes/Oracle behavior refined; not a license to ignore policy).
 - **Oracle visuals** - orb / fairy / visualizer direction has started; **`/oracle` still needs a full design-system pass** (polish backlog).
 - **Manual Dell → desktop SSH** exists **outside** the app; **in-app SSH tools / execution are not wired** yet.
-- **File/folder browsing from chat** is **not** wired yet.
+- **File/folder browsing from chat** is scoped: workspace reads stay under `SPIRIT_PROJECT_PATH`; Windows folder listing requires the optional SpiritDesktop filesystem bridge and allowlisted roots.
 - **Project / progress tracker** - **planned**, not implemented (see **`_blueprints/progress_tracker_roadmap.md`**).
 
 ## Where I Left Off

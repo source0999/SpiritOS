@@ -13,6 +13,7 @@ describe("parseDirectWorkspaceRequest", () => {
   it("parses list the files in src/lib/spirit", () => {
     expect(parseDirectWorkspaceRequest("List the files in src/lib/spirit")).toEqual({
       kind: "list",
+      source: "workspace",
       directory: "src/lib/spirit",
     });
   });
@@ -20,8 +21,38 @@ describe("parseDirectWorkspaceRequest", () => {
   it("parses show files in src/lib", () => {
     expect(parseDirectWorkspaceRequest("show files in src/lib")).toEqual({
       kind: "list",
+      source: "workspace",
       directory: "src/lib",
     });
+  });
+
+  it("parses natural workspace list requests", () => {
+    expect(parseDirectWorkspaceRequest("whats in src/lib?")).toEqual({
+      kind: "list",
+      source: "workspace",
+      directory: "src/lib",
+    });
+    expect(parseDirectWorkspaceRequest("what's in src/lib/spirit folder?")).toEqual({
+      kind: "list",
+      source: "workspace",
+      directory: "src/lib/spirit",
+    });
+  });
+
+  it("parses Windows absolute list requests separately", () => {
+    const win = parseDirectWorkspaceRequest("what files are in C:/Projects?");
+    expect(win).toMatchObject({
+      kind: "list",
+      source: "windows",
+    });
+    expect(win?.kind === "list" ? win.directory : "").toMatch(/^C:\\Projects/i);
+
+    const natural = parseDirectWorkspaceRequest("what's in my c/projects folder?");
+    expect(natural).toMatchObject({
+      kind: "list",
+      source: "windows",
+    });
+    expect(natural?.kind === "list" ? natural.directory : "").toMatch(/^C:\\projects/i);
   });
 
   it("parses read package.json", () => {

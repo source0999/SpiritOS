@@ -263,6 +263,8 @@ const READ_ONLY_TOOL_NAMES = [
   "get_system_status",
 ] as const;
 
+const WINDOWS_TOOL_NAMES = ["list_windows_files"] as const;
+
 function isEnvTrue(name: string): boolean {
   return process.env[name] === "true";
 }
@@ -290,8 +292,18 @@ export async function getSystemStatus(): Promise<{
   if (!readOnlyToolsAttached) {
     unavailableTools.push(...READ_ONLY_TOOL_NAMES);
   }
+  if (isEnvTrue("SPIRIT_WINDOWS_FS_ENABLED") && readOnlyToolsAttached) {
+    // Exposed through tool-registry only when the bridge env is explicitly enabled.
+  } else {
+    unavailableTools.push(...WINDOWS_TOOL_NAMES);
+  }
 
-  const availableReadOnlyTools = readOnlyToolsAttached ? [...READ_ONLY_TOOL_NAMES] : [];
+  const availableReadOnlyTools = readOnlyToolsAttached
+    ? [
+        ...READ_ONLY_TOOL_NAMES,
+        ...(isEnvTrue("SPIRIT_WINDOWS_FS_ENABLED") ? WINDOWS_TOOL_NAMES : []),
+      ]
+    : [];
 
   return {
     ok: true,
@@ -301,6 +313,6 @@ export async function getSystemStatus(): Promise<{
     availableReadOnlyTools,
     unavailableTools: [...new Set(unavailableTools)].sort(),
     note:
-      "Read-only tools attach only when SPIRIT_ENABLE_LOCAL_TOOLS and SPIRIT_OLLAMA_SUPPORTS_TOOLS are true (Ollama must accept tools for your model). Paths are workspace-relative only.",
+      "Read-only workspace tools attach only when SPIRIT_ENABLE_LOCAL_TOOLS and SPIRIT_OLLAMA_SUPPORTS_TOOLS are true (Ollama must accept tools for your model). Workspace paths are workspace-relative only; Windows folder listing requires SPIRIT_WINDOWS_FS_ENABLED and an allowlisted bridge path.",
   };
 }

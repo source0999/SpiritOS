@@ -4,6 +4,7 @@ export const SPIRIT_ACTIVITY_EVENT_CAP = 20;
 
 export type SpiritToolActivityKind =
   | "workspace_list"
+  | "windows_workspace_list"
   | "workspace_read"
   | "workspace_tail"
   | "file_edit_proposed"

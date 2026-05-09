@@ -149,6 +149,7 @@ describe("POST /api/spirit capability bridge", () => {
 
   afterEach(() => {
     vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
     vi.clearAllMocks();
   });
 
@@ -206,8 +207,8 @@ describe("POST /api/spirit capability bridge", () => {
     });
     const res = await POST(req);
     const raw = await res.text();
-    expect(raw).toMatch(/not (yet|wired)/i);
-    expect(raw.toLowerCase()).toMatch(/drive-level|telemetry|storage/);
+    expect(raw).toMatch(/SPIRIT_PROJECT_PATH|Windows folder access|allowlist/i);
+    expect(raw.toLowerCase()).toMatch(/telemetry|storage/);
     expect(raw).not.toContain("Mock CPU");
     expect(raw).not.toContain("uptime");
   });
@@ -232,6 +233,29 @@ describe("POST /api/spirit capability bridge", () => {
     const raw = await res.text();
     expect(raw).toContain("get_capabilities");
     expect(raw).toMatch(/filesystem|files/i);
+  });
+
+  it("can browse C:/Projects mentions Windows bridge and allowlist", async () => {
+    vi.stubEnv("SPIRIT_WINDOWS_FS_ENABLED", "false");
+    const req = new Request("http://localhost/api/spirit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(
+        jsonBody({
+          messages: [
+            {
+              role: "user",
+              id: "u-c-projects-cap",
+              parts: [{ type: "text", text: "can you browse C:/Projects?" }],
+            },
+          ],
+        }),
+      ),
+    });
+    const res = await POST(req);
+    const raw = await res.text();
+    expect(raw).toMatch(/SpiritDesktop filesystem bridge|SPIRIT_WINDOWS_FS_ENABLED/i);
+    expect(raw).toMatch(/allowlist|allowlisted/i);
   });
 
   it("Oracle see C drive is concise storage yes", async () => {
@@ -403,6 +427,7 @@ describe("POST /api/spirit streamText tools wiring", () => {
 
   afterEach(() => {
     vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
     vi.clearAllMocks();
     mockSpawnNoShell.mockReset();
     clearReadOnlyToolProbeCache();
@@ -606,6 +631,83 @@ describe("POST /api/spirit streamText tools wiring", () => {
     expect(raw).not.toContain("SPIRIT_OLLAMA_SUPPORTS_TOOLS");
   });
 
+  it("concrete Windows list uses direct bridge path when enabled (no streamText)", async () => {
+    vi.stubEnv("SPIRIT_ENABLE_LOCAL_TOOLS", "true");
+    vi.stubEnv("SPIRIT_OLLAMA_SUPPORTS_TOOLS", "true");
+    vi.stubEnv("SPIRIT_WINDOWS_FS_ENABLED", "true");
+    vi.stubEnv("SPIRIT_WINDOWS_FS_BASE_URL", "http://windows-host:3000");
+    vi.stubEnv("SPIRIT_WINDOWS_FS_TOKEN", "3399");
+    vi.stubEnv("SPIRIT_WINDOWS_FS_ALLOWLIST", "C:\\Projects");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        new Response(
+          JSON.stringify({
+            ok: true,
+            path: "C:\\Projects",
+            entries: [
+              { name: "SpiritOS", type: "directory", sizeBytes: null, modifiedAt: null },
+              { name: "notes.md", type: "file", sizeBytes: 10, modifiedAt: null },
+            ],
+            truncated: false,
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+      ),
+    );
+    vi.mocked(streamText).mockClear();
+    const req = new Request("http://localhost/api/spirit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(
+        jsonBody({
+          messages: [
+            {
+              role: "user",
+              id: "u-win-list",
+              parts: [{ type: "text", text: "what's in C:/Projects?" }],
+            },
+          ],
+        }),
+      ),
+    });
+    const res = await POST(req);
+    expect(vi.mocked(streamText)).not.toHaveBeenCalled();
+    const raw = await res.text();
+    expect(raw).toMatch(/Files in C:\\Projects/i);
+    expect(raw).toContain("[dir] SpiritOS");
+    vi.unstubAllGlobals();
+  });
+
+  it("concrete Windows list blocks paths outside allowlist", async () => {
+    vi.stubEnv("SPIRIT_ENABLE_LOCAL_TOOLS", "true");
+    vi.stubEnv("SPIRIT_OLLAMA_SUPPORTS_TOOLS", "true");
+    vi.stubEnv("SPIRIT_WINDOWS_FS_ENABLED", "true");
+    vi.stubEnv("SPIRIT_WINDOWS_FS_BASE_URL", "http://windows-host:3000");
+    vi.stubEnv("SPIRIT_WINDOWS_FS_TOKEN", "3399");
+    vi.stubEnv("SPIRIT_WINDOWS_FS_ALLOWLIST", "C:\\Projects");
+    vi.mocked(streamText).mockClear();
+    const req = new Request("http://localhost/api/spirit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(
+        jsonBody({
+          messages: [
+            {
+              role: "user",
+              id: "u-win-block",
+              parts: [{ type: "text", text: "what's in C:/Windows?" }],
+            },
+          ],
+        }),
+      ),
+    });
+    const res = await POST(req);
+    expect(vi.mocked(streamText)).not.toHaveBeenCalled();
+    const raw = await res.text();
+    expect(raw).toMatch(/outside the configured Windows filesystem allowlist/i);
+  });
+
   it("vague browse question with both flags on still uses deterministic shortcut", async () => {
     vi.stubEnv("SPIRIT_ENABLE_LOCAL_TOOLS", "true");
     vi.stubEnv("SPIRIT_OLLAMA_SUPPORTS_TOOLS", "true");
@@ -628,7 +730,7 @@ describe("POST /api/spirit streamText tools wiring", () => {
     const res = await POST(req);
     expect(vi.mocked(streamText)).not.toHaveBeenCalled();
     const raw = await res.text();
-    expect(raw).toMatch(/not wired|deterministic/i);
+    expect(raw).toMatch(/SPIRIT_PROJECT_PATH|Windows folder access|allowlist/i);
     expect(raw).not.toContain("will not attach OpenAI-style tool calls");
   });
 

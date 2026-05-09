@@ -28,6 +28,7 @@ describe("tool-safety", () => {
 
   it("rejects absolute paths", () => {
     expect(() => normalizeWorkspaceRelativePath("/etc/passwd")).toThrow(SpiritToolPathError);
+    expect(() => normalizeWorkspaceRelativePath("C:/Projects")).toThrow(SpiritToolPathError);
   });
 
   it("rejects ../ traversal", () => {

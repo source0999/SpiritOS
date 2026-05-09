@@ -106,6 +106,17 @@ describe("tool-registry", () => {
     expect(getSpiritDevCommandTools()).toEqual({});
   });
 
+  it("SPIRIT_WINDOWS_FS_ENABLED=true adds list_windows_files", () => {
+    vi.stubEnv("SPIRIT_ENABLE_LOCAL_TOOLS", "true");
+    vi.stubEnv("SPIRIT_OLLAMA_SUPPORTS_TOOLS", "true");
+    vi.stubEnv("SPIRIT_ENABLE_DEV_COMMAND_TOOLS", "false");
+    vi.stubEnv("SPIRIT_WINDOWS_FS_ENABLED", "true");
+    const tools = getSpiritToolsForRuntime();
+    expect(tools).toBeDefined();
+    if (!tools) throw new Error("tools");
+    expect(tools).toHaveProperty("list_windows_files");
+  });
+
   it("file edit tools still merge when dev commands also enabled", () => {
     vi.stubEnv("SPIRIT_ENABLE_LOCAL_TOOLS", "true");
     vi.stubEnv("SPIRIT_OLLAMA_SUPPORTS_TOOLS", "true");

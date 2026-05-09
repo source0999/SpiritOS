@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+/// <reference types="vitest/globals" />
 
 import { sanitizeAssistantVisibleText } from "@/lib/spirit/assistant-output-sanitizer";
 
@@ -8,6 +8,20 @@ describe("sanitizeAssistantVisibleText", () => {
     const close = "<" + "/" + "redacted_thinking" + ">";
     const t = ["Hello", open, 'Respond in "Sassy mode" only', "Keep sentences short", close, "World"].join("\n");
     expect(sanitizeAssistantVisibleText(t)).toBe("Hello\n\nWorld");
+  });
+
+  it("unwraps leaked visible chat_message container tags", () => {
+    const t = `<chat_message> It could be a lot of things.
+
+A hot engine stalling is never good. </chat_message>`;
+    expect(sanitizeAssistantVisibleText(t)).toBe(
+      "It could be a lot of things.\n\nA hot engine stalling is never good.",
+    );
+  });
+
+  it("unwraps assistant_response container tags without removing inner text", () => {
+    const t = `<assistant_response tone="peer">Check the actual error first.</assistant_response>`;
+    expect(sanitizeAssistantVisibleText(t)).toBe("Check the actual error first.");
   });
 
   it("removes leaked Sassy contract lines", () => {

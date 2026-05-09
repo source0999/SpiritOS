@@ -93,7 +93,13 @@ export const SpiritMessage = memo(function SpiritMessage({
       )}
       data-role={message.role}
     >
-      <div className="w-full max-w-[min(720px,calc(100%-0.25rem))] sm:max-w-[min(760px,calc(100%-1.5rem))]">
+      <div
+        className={cn(
+          isUser
+            ? "max-w-[min(34rem,calc(100%-0.25rem))] sm:max-w-[min(38rem,calc(100%-1.5rem))]"
+            : "w-full max-w-[min(720px,calc(100%-0.25rem))] sm:max-w-[min(760px,calc(100%-1.5rem))]",
+        )}
+      >
         <div
           className={cn(
             "relative flex min-w-0 flex-col",
@@ -105,6 +111,7 @@ export const SpiritMessage = memo(function SpiritMessage({
               "rounded-2xl py-2.5 pl-3.5 pr-2.5 sm:py-3 sm:pl-4 sm:pr-3 lg:rounded-2xl",
             ],
             isUser && [
+              "w-fit max-w-full",
               "max-lg:rounded-2xl max-lg:px-3 max-lg:py-1.5",
               "rounded-2xl border border-[color:color-mix(in_oklab,var(--spirit-border)_55%,transparent)]",
               "bg-white/[0.038] px-3 py-2 sm:rounded-2xl sm:px-4 sm:py-2",
