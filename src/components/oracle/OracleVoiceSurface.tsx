@@ -884,7 +884,7 @@ export function OracleVoiceSurface() {
         voiceLabel={activityVoiceLine}
         searchLabel={activitySearchLine}
         memoryLabel="Local profile only"
-        researchNote="OpenAI web prefetch via /api/spirit when Researcher web is on"
+        researchNote="Local-first web prefetch via /api/spirit when Researcher web is on"
         webSearchDiagnosticLines={webSearchDiagnosticLines}
         events={workspaceActivity}
       />

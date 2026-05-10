@@ -3,3 +3,6 @@
 --extra-index-url https://download.pytorch.org/whl/cu128
 torch>=2.11,<2.12
 torchvision>=0.26,<0.27
+open_clip_torch>=2.30,<3.0
+lancedb>=0.17,<1.0
+pillow>=10,<12

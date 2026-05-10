@@ -413,7 +413,13 @@ export function useSpiritChatTransport(
         lastSourcesPayloadRef.current = null;
       }
       const laneH = parsed.routeLane;
-      if (laneH && (laneH === "local-chat" || laneH === "openai-web-search" || laneH === "research-plan")) {
+      if (
+        laneH &&
+        (laneH === "local-chat" ||
+          laneH === "local-web-search" ||
+          laneH === "openai-web-search" ||
+          laneH === "research-plan")
+      ) {
         if (laneH !== "research-plan") {
           setLastRouteLane(laneH as SpiritRouteLane);
         }

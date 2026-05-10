@@ -32,11 +32,11 @@ export type BuildModelRuntimeOptions = {
   /** Last user text (server); drives response budget helper */
   lastUserMessage?: string | null;
   deepThinkEnabled?: boolean;
-  /** OpenAI web digest or failure banner */
+  /** Web-search digest or failure banner */
   researchWebContext?: string | null;
   /** Optional user-approved research plan (Stage 5 stub) */
   researchPlanSummary?: string | null;
-  /** OpenAI web prefetch: verified http(s) URL count (Researcher + Teacher; aligns digest + link-first budget). */
+  /** Web-search prefetch: verified http(s) URL count (Researcher + Teacher; aligns digest + link-first budget). */
   webVerifiedUrlCount?: number;
   /** `/oracle` voice surface: adds voice-first context + tighter spoken budget. */
   runtimeSurface?: SpiritRuntimeSurface;

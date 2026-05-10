@@ -165,7 +165,7 @@ export function resolveSpiritMaxOutputTokens(opts: {
   deepThinkEnabled: boolean;
   /** Voice-only `/oracle` lane - tighter spoken ceilings; `/chat` omits or passes `"chat"`. */
   runtimeSurface?: SpiritRuntimeSurface;
-  /** Researcher: digest URL count from OpenAI web prefetch (server). */
+  /** Researcher: digest URL count from web prefetch (server). */
   webVerifiedUrlCount?: number;
 }): number {
   const raw = Number.isFinite(opts.profileMax) && opts.profileMax > 0 ? opts.profileMax : 1536;

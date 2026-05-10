@@ -32,11 +32,11 @@ export type SpiritChatRequestBody = {
   /** Prompt 10B - extra deliberation + modest token bump */
   deepThinkEnabled: boolean;
   /**
-   * Researcher only: when true, skip OpenAI web prefetch. Default false (web ON).
+   * Researcher only: when true, skip provider-router web prefetch. Default false (web ON).
    * Legacy clients sent `webSearchRequested`; we map `webSearchRequested: false` → opt-out true.
    */
   webSearchOptOut: boolean;
-  /** Teacher-only: opt-in OpenAI web prefetch for current-data prompts. */
+  /** Teacher-only: opt-in provider-router web prefetch for current-data prompts. */
   teacherWebSearchEnabled: boolean;
   /** Optional approved research plan text (Stage 5 stub). */
   researchPlanSummary?: string;

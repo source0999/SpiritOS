@@ -507,6 +507,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
       tc.deepThinkEnabled ||
       (researcherWebActive &&
         (tc.isBusy || hasSources || tc.lastWebSearchHeader != null)) ||
+      tc.lastRouteLane === "local-web-search" ||
       tc.lastRouteLane === "openai-web-search" ||
       tc.lastRouteLane === "research-plan" ||
       tc.researchPlanOpen ||
@@ -1737,7 +1738,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
           voiceLabel={activityVoiceLine}
           searchLabel={activitySearchLine}
           memoryLabel="Local profile only"
-          researchNote="OpenAI web prefetch via /api/spirit when Researcher web is on"
+          researchNote="Local-first web prefetch via /api/spirit when Researcher web is on"
           webSearchDiagnosticLines={savedChatShell ? webSearchDiagnosticLines : undefined}
           events={workspaceActivity}
         />
@@ -2131,7 +2132,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
             voiceLabel={activityVoiceLine}
             searchLabel={activitySearchLine}
             memoryLabel="Local profile only"
-            researchNote="OpenAI web prefetch via /api/spirit when Researcher web is on"
+            researchNote="Local-first web prefetch via /api/spirit when Researcher web is on"
             webSearchDiagnosticLines={webSearchDiagnosticLines}
             events={workspaceActivity}
           />

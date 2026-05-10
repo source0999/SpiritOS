@@ -1,0 +1,70 @@
+# AppArmor profile template for Source Bubblewrap runner.
+#
+# Install example:
+#   sudo install -m 0644 config/source-bwrap.apparmor /etc/apparmor.d/source-bwrap
+#   sudo apparmor_parser -r /etc/apparmor.d/source-bwrap
+#
+# This profile is intentionally conservative and pairs with the Bubblewrap
+# runner's own namespace, capability-drop, and network policy controls.
+
+abi <abi/4.0>,
+
+include <tunables/global>
+
+profile source-bwrap /usr/bin/bwrap flags=(attach_disconnected,mediate_deleted) {
+  include <abstractions/base>
+
+  capability,
+  userns,
+  mount,
+  umount,
+  pivot_root,
+
+  network,
+
+  /usr/bin/bwrap rix,
+  /usr/bin/ls rix,
+  /usr/bin/curl rix,
+  /usr/bin/npm rix,
+  /usr/bin/node rix,
+  /usr/share/nodejs/npm/bin/npm-cli.js rix,
+  /usr/lib/node_modules/npm/bin/npm-cli.js rix,
+  /usr/share/nodejs/** r,
+  /usr/lib/node_modules/** r,
+  /bin/** rix,
+  /usr/bin/** rix,
+  /usr/lib/** r,
+  /lib/** r,
+  /lib64/** r,
+  /etc/ssl/** r,
+  /etc/alternatives/** r,
+  /etc/nsswitch.conf r,
+  /etc/resolv.conf r,
+  /etc/hosts r,
+  / rw,
+  /proc rw,
+  /proc/ rw,
+  owner /proc/*/fd/ r,
+  /proc/self/mountinfo r,
+  owner /proc/*/mountinfo r,
+  /proc/sys/kernel/overflowuid r,
+  /proc/sys/kernel/overflowgid r,
+  owner /proc/*/uid_map rw,
+  owner /proc/*/gid_map rw,
+  owner /proc/*/setgroups rw,
+  mount fstype=proc -> /proc/,
+  /newroot/ rw,
+  /newroot/proc rw,
+  /newroot/proc/ rw,
+  /newroot/** rwkl,
+
+  deny /home/** rwklx,
+  deny /root/** rwklx,
+  deny /etc/shadow r,
+  deny /etc/ssh/** r,
+
+  owner /tmp/ rw,
+  owner /tmp/** rwkl,
+  owner /run/ rw,
+  owner /run/** rwkl,
+}

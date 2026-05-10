@@ -13,6 +13,7 @@ import {
 
 export type SpiritRouteLane =
   | "local-chat"
+  | "local-web-search"
   | "openai-web-search"
   | "research-plan"
   | "deepseek-local"
@@ -36,7 +37,7 @@ export type SpiritRouteDecision = {
   confidence: "low" | "medium" | "high";
   reasons: SpiritRouteDecisionReason[];
   shouldSearchWeb: boolean;
-  /** Teacher lane OpenAI prefetch when aids allowed + prompt looks educational. */
+  /** Teacher lane web prefetch when aids allowed + prompt looks educational. */
   shouldSearchTeacherWeb: boolean;
   shouldDraftResearchPlan: boolean;
   shouldUseDeepThink: boolean;
@@ -49,7 +50,7 @@ export type SpiritRouteDecisionInput = {
   lastUserText: string;
   deepThinkEnabled: boolean;
   /**
-   * When true, Researcher skips the OpenAI web prefetch (explicit user opt-out).
+   * When true, Researcher skips the provider-router web prefetch (explicit user opt-out).
    * Default OFF at the protocol level - Researcher web is on unless opted out.
    */
   webSearchOptOut: boolean;
@@ -130,7 +131,7 @@ export function decideSpiritRoute(input: SpiritRouteDecisionInput): SpiritRouteD
 
   let lane: SpiritRouteLane = "local-chat";
   if (shouldSearchWeb || shouldSearchTeacherWeb) {
-    lane = "openai-web-search";
+    lane = "local-web-search";
   } else if (shouldDraftResearchPlan) {
     lane = "research-plan";
   } else {

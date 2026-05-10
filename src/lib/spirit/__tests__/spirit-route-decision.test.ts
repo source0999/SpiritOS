@@ -78,13 +78,13 @@ describe("decideSpiritRoute", () => {
     expect(d.shouldShowVisualizer).toBe(false);
   });
 
-  it("researcher + depth → openai-web-search lane when prefetch triggers", () => {
+  it("researcher + depth → local-web-search lane when prefetch triggers", () => {
     const d = decideSpiritRoute({
       ...base,
       modelProfileId: "researcher",
       lastUserText: "Summarize the latest systematic reviews on sleep and cognition",
     });
-    expect(d.lane).toBe("openai-web-search");
+    expect(d.lane).toBe("local-web-search");
     expect(d.shouldSearchWeb).toBe(true);
     expect(d.shouldDraftResearchPlan).toBe(true);
     expect(d.shouldShowVisualizer).toBe(true);
@@ -97,7 +97,7 @@ describe("decideSpiritRoute", () => {
       lastUserText: "yo",
     });
     expect(d.shouldSearchWeb).toBe(true);
-    expect(d.lane).toBe("openai-web-search");
+    expect(d.lane).toBe("local-web-search");
     expect(d.shouldShowVisualizer).toBe(false);
   });
 
@@ -133,7 +133,7 @@ describe("decideSpiritRoute", () => {
     expect(d.shouldShowVisualizer).toBe(true);
   });
 
-  it("teacher + teacher web + study-aids prompt → openai-web-search and shouldSearchTeacherWeb", () => {
+  it("teacher + teacher web + study-aids prompt → local-web-search and shouldSearchTeacherWeb", () => {
     const d = decideSpiritRoute({
       ...base,
       modelProfileId: "teacher",
@@ -141,7 +141,7 @@ describe("decideSpiritRoute", () => {
       lastUserText: "Explain the latest peer-reviewed studies on sleep and cognition for my exam",
     });
     expect(d.shouldSearchTeacherWeb).toBe(true);
-    expect(d.lane).toBe("openai-web-search");
+    expect(d.lane).toBe("local-web-search");
   });
 
   it("teacher + study prompt + omitted teacherWebSearchEnabled defaults to teacher web aids", () => {
@@ -151,17 +151,17 @@ describe("decideSpiritRoute", () => {
       lastUserText: "Define negative punishment with an ABA example for my exam",
     });
     expect(d.shouldSearchTeacherWeb).toBe(true);
-    expect(d.lane).toBe("openai-web-search");
+    expect(d.lane).toBe("local-web-search");
   });
 
-  it("teacher + sensory topic without explain/teach verbs → still OpenAI web aids lane", () => {
+  it("teacher + sensory topic without explain/teach verbs → still uses web aids lane", () => {
     const d = decideSpiritRoute({
       ...base,
       modelProfileId: "teacher",
       lastUserText: "How is sensory overload different from a tantrum in young kids?",
     });
     expect(d.shouldSearchTeacherWeb).toBe(true);
-    expect(d.lane).toBe("openai-web-search");
+    expect(d.lane).toBe("local-web-search");
   });
 
   it("teacher web toggle off → no teacher web search", () => {

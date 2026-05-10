@@ -45,7 +45,7 @@ describe("SpiritWorkflowVisualizer", () => {
         steps={idleSteps}
       />,
     );
-    expect(screen.getByTestId("spirit-workflow-route-line")).toHaveTextContent("OpenAI web search");
+    expect(screen.getByTestId("spirit-workflow-route-line")).toHaveTextContent("Web search");
     const proof = screen.getByTestId("spirit-workflow-search-proof");
     expect(proof).toHaveTextContent("Search: used");
     expect(proof).toHaveTextContent("Sources: 6");

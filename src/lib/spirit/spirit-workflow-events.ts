@@ -43,7 +43,7 @@ function clampStatuses(steps: SpiritVisualizerStep[], busy: boolean, tick: numbe
   });
 }
 
-/** Baseline chat path (no OpenAI web prefetch in this turn). */
+/** Baseline chat path (no provider-router web prefetch in this turn). */
 export function buildWorkflowStepsForLocalChat(opts: {
   modelProfileId: ModelProfileId;
   deepThink: boolean;
@@ -84,9 +84,9 @@ export function buildWorkflowStepsForWebSearch(opts: {
 }): SpiritVisualizerStep[] {
   const steps: SpiritVisualizerStep[] = [
     { id: "understand", label: "Understanding request", status: "pending" },
-    { id: "route", label: "Search route selected", detail: "OpenAI web prefetch", status: "pending" },
+    { id: "route", label: "Search route selected", detail: "Local-first web search", status: "pending" },
     { id: "searchAvail", label: "Checking search availability", status: "pending" },
-    { id: "search", label: "Searching OpenAI web", status: "pending" },
+    { id: "search", label: "Searching web providers", status: "pending" },
     { id: "found", label: "Collecting sources", detail: "Verified URLs only", status: "pending" },
     { id: "review", label: "Reviewing source snippets", status: "pending" },
   ];
@@ -132,7 +132,7 @@ export function buildWorkflowStepsForRouteDecision(
     tick: number;
   },
 ): SpiritVisualizerStep[] {
-  if (lane === "openai-web-search") {
+  if (lane === "openai-web-search" || lane === "local-web-search") {
     return buildWorkflowStepsForWebSearch(opts);
   }
   if (lane === "research-plan") {
@@ -153,7 +153,7 @@ export function buildSpiritWorkflowStepLabels(opts: {
 }): string[] {
   const lane: SpiritRouteLane =
     opts.modelProfileId === "researcher" && !opts.webSearchOptOut
-      ? "openai-web-search"
+      ? "local-web-search"
       : "local-chat";
   const steps = buildWorkflowStepsForRouteDecision(lane, {
     modelProfileId: opts.modelProfileId,

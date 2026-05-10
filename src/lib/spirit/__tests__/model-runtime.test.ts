@@ -193,8 +193,8 @@ describe("buildModelRuntime", () => {
   });
 
   it("Teacher + verified digest shifts budget to link-first Study aids", () => {
-    const digest = `## Web research digest (OpenAI Responses + web_search)
-Provider: OpenAI
+    const digest = `## Web research digest
+Provider: SearXNG
 Search used: yes
 User query: test
 Verified URL sources (2):

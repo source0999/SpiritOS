@@ -110,10 +110,12 @@ export const SpiritWorkflowVisualizer = memo(function SpiritWorkflowVisualizer({
   }
 
   const routeLine =
-    lane === "openai-web-search" && searchKind === "teacher"
-      ? "Teacher web aids (OpenAI)"
+    lane === "local-web-search" && searchKind === "teacher"
+      ? "Teacher web aids"
+      : lane === "local-web-search"
+        ? "Local-first web search"
       : lane === "openai-web-search"
-        ? "OpenAI web search"
+        ? "Web search"
         : lane === "research-plan"
           ? "Research plan"
           : lane === "local-chat"

@@ -56,22 +56,40 @@ def build_api_vs_manual_preview(input_data: ApiVsManualPreviewInput) -> dict[str
     )
     projected_api_cost = _project_api_cost(input_data)
     context_estimate = manual_model_recommendation.route_decision.context_estimate
+    privacy_flags = _privacy_flags(input_data)
+    api_model_option = {
+        "model_alias": input_data.api_model_alias,
+        "max_completion_tokens": input_data.max_completion_tokens,
+        "enabled": projected_api_cost.get("available", False),
+        "fail_closed": projected_api_cost.get("fail_closed", True),
+    }
+    default_choice = _default_choice(projected_api_cost, manual_model_recommendation.route_type)
 
     return {
+        "preview_version": "2.7B-2",
+        "execution_status": "paused_for_human_decision",
+        "would_execute": False,
         "projected_api_cost": projected_api_cost,
         "context_tokens": context_estimate.total_estimated_tokens,
+        "context_estimate": context_estimate.as_payload(),
         "manual_model_recommendation": manual_model_recommendation.as_payload(),
-        "api_model_option": {
-            "model_alias": input_data.api_model_alias,
-            "max_completion_tokens": input_data.max_completion_tokens,
-            "enabled": projected_api_cost.get("available", False),
-        },
-        "privacy_flags": _privacy_flags(input_data),
+        "api_model_option": api_model_option,
+        "privacy_flags": privacy_flags,
+        "decision_summary": _decision_summary(
+            projected_api_cost=projected_api_cost,
+            context_tokens=context_estimate.total_estimated_tokens,
+            manual_primary_model=manual_model_recommendation.primary_model,
+            api_model_alias=input_data.api_model_alias,
+            privacy_flags=privacy_flags,
+            default_choice=default_choice,
+        ),
         "manual_prompt_packet": prompt_packet.as_payload(),
         "required_human_decision": {
             "question": "Use paid API route, manual browser route, or local route?",
             "allowed_choices": ["api", "manual", "local", "cancel"],
-            "default_choice": _default_choice(projected_api_cost, manual_model_recommendation.route_type),
+            "default_choice": default_choice,
+            "api_choice_requires_approval": True,
+            "source_will_not_execute_until_choice_is_confirmed": True,
         },
     }
 
@@ -133,3 +151,74 @@ def _default_choice(projected_api_cost: dict[str, Any], manual_route_type: str) 
     if projected_api_cost.get("available"):
         return "api"
     return "manual"
+
+
+def _decision_summary(
+    *,
+    projected_api_cost: dict[str, Any],
+    context_tokens: int,
+    manual_primary_model: str,
+    api_model_alias: str,
+    privacy_flags: list[str],
+    default_choice: str,
+) -> dict[str, Any]:
+    return {
+        "recommended_default": default_choice,
+        "manual_route": {
+            "available": True,
+            "primary_model": manual_primary_model,
+            "requires_external_paste": True,
+            "source_spend_usd": "$0.00000000",
+        },
+        "api_route": {
+            "model_alias": api_model_alias,
+            "available": projected_api_cost.get("available", False),
+            "fail_closed": projected_api_cost.get("fail_closed", True),
+            "projected_cost_usd": projected_api_cost.get("projected_cost_usd"),
+            "requires_spend_approval": True,
+        },
+        "context": {
+            "tokens": context_tokens,
+            "size_class": _context_size_class(context_tokens),
+        },
+        "privacy": {
+            "flags": privacy_flags,
+            "has_flags": privacy_flags != ["no_privacy_flags_detected"],
+        },
+        "decision_copy": _decision_copy(
+            default_choice=default_choice,
+            projected_api_cost=projected_api_cost,
+            manual_primary_model=manual_primary_model,
+        ),
+    }
+
+
+def _context_size_class(context_tokens: int) -> str:
+    if context_tokens >= 120_000:
+        return "huge"
+    if context_tokens >= 32_000:
+        return "large"
+    if context_tokens >= 8_000:
+        return "medium"
+    return "small"
+
+
+def _decision_copy(
+    *,
+    default_choice: str,
+    projected_api_cost: dict[str, Any],
+    manual_primary_model: str,
+) -> str:
+    if default_choice == "manual":
+        return (
+            f"Manual browser route is recommended first using {manual_primary_model}; "
+            "Source will not send a paid API request unless you explicitly choose API."
+        )
+    if default_choice == "local":
+        return "Local route is recommended first; no paid API request will be sent."
+    if projected_api_cost.get("available"):
+        return (
+            "API route is available, but Source is paused until you approve the "
+            "spend-before-send preview."
+        )
+    return "API route is unavailable or fail-closed; manual route is the default."
