@@ -1000,6 +1000,11 @@ const SpiritChatInner = memo(function SpiritChatInner({
     lastSearchSkipReason,
   ]);
 
+  /** `/chat` trinity chrome: Tailwind borders + inset rings fight spirit-trinity-chat.css — drop them here. */
+  const trinityWorkspaceComposer =
+    chromeVariant === "trinity" && variant === "workspace";
+  const trinityLiquidChrome = chromeVariant === "trinity";
+
   const scrollAndForm = (
     <div className="spirit-trinity-chat__chat-column flex min-h-0 flex-1 flex-col overflow-hidden">
       <div
@@ -1080,6 +1085,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
         onClose={handleResearchPlanClose}
         onPlanChange={setResearchPlan}
         onStartResearch={handleResearchPlanStart}
+        trinityLiquid={trinityLiquidChrome}
       />
       <div
         data-testid="spirit-composer-dock"
@@ -1093,32 +1099,54 @@ const SpiritChatInner = memo(function SpiritChatInner({
           workspaceMobileChrome.setComposerFocused(false);
         }}
         className={cn(
-          "shrink-0 border-t border-[color:color-mix(in_oklab,var(--spirit-border)_55%,transparent)]",
-          "bg-[color:color-mix(in_oklab,var(--spirit-bg)_94%,transparent)] backdrop-blur-2xl",
-          "lg:bg-[color:color-mix(in_oklab,var(--spirit-bg)_76%,transparent)]",
+          !trinityWorkspaceComposer &&
+            "shrink-0 border-t border-[color:color-mix(in_oklab,var(--spirit-border)_55%,transparent)]",
+          !trinityWorkspaceComposer &&
+            "bg-[color:color-mix(in_oklab,var(--spirit-bg)_94%,transparent)] backdrop-blur-2xl",
+          !trinityWorkspaceComposer &&
+            "lg:bg-[color:color-mix(in_oklab,var(--spirit-bg)_76%,transparent)]",
+          trinityWorkspaceComposer &&
+            "flex w-full flex-col items-stretch px-2 pb-1 pt-0 sm:px-5",
+          trinityWorkspaceComposer &&
+            "shrink-0 border-0 border-transparent bg-transparent shadow-none backdrop-blur-none lg:bg-transparent",
+          trinityWorkspaceComposer && "spirit-trinity-liquid-dock",
           "spirit-trinity-chat__composer-dock",
         )}
       >
-        <form
-          onSubmit={onSubmit}
-          className={cn(
-            "px-3 py-2 sm:px-5 sm:py-3.5",
-            variant !== "workspace" && "pb-[calc(0.35rem+env(safe-area-inset-bottom,0px))]",
-            "lg:px-6 lg:pb-4 lg:pt-4",
-            "spirit-trinity-chat__composer-form",
-          )}
-        >
-          <div
-            className={cn(
-              "mx-auto flex w-full max-w-3xl items-end gap-2",
-              variant === "workspace" &&
-                "max-lg:rounded-[1.35rem] max-lg:border max-lg:border-[color:color-mix(in_oklab,var(--spirit-border)_42%,transparent)] max-lg:bg-[color:color-mix(in_oklab,var(--spirit-bg)_88%,transparent)] max-lg:p-2 max-lg:shadow-[0_20px_48px_-32px_rgba(0,0,0,0.72),inset_0_0_0_1px_rgba(255,255,255,0.05)] max-lg:backdrop-blur-xl",
-              "lg:rounded-[1.35rem] lg:border lg:border-[color:color-mix(in_oklab,var(--spirit-border)_80%,transparent)] lg:bg-white/[0.035] lg:px-3 lg:py-2.5 lg:backdrop-blur-2xl",
-              "lg:shadow-[0_12px_48px_-28px_rgba(0,0,0,0.45),inset_0_0_0_1px_rgba(255,255,255,0.04)]",
-              "spirit-trinity-chat__composer-surface",
-            )}
-          >
-            <textarea
+        {(() => {
+          const composerBody = (
+            <>
+              <form
+                onSubmit={onSubmit}
+                className={cn(
+                  trinityWorkspaceComposer
+                    ? "p-0"
+                    : "px-3 py-2 sm:px-5 sm:py-3.5 lg:px-6 lg:pb-4 lg:pt-4",
+                  variant !== "workspace" &&
+                    !trinityWorkspaceComposer &&
+                    "pb-[calc(0.35rem+env(safe-area-inset-bottom,0px))]",
+                  "spirit-trinity-chat__composer-form",
+                )}
+              >
+                <div
+                  className={cn(
+                    "flex w-full items-end gap-2",
+                    !trinityWorkspaceComposer && "mx-auto max-w-3xl",
+                    trinityWorkspaceComposer &&
+                      "spirit-trinity-command-input max-w-none border-0 bg-transparent p-0 shadow-none ring-0 outline-none backdrop-blur-none",
+                    variant === "workspace" &&
+                      !trinityWorkspaceComposer &&
+                      "max-lg:rounded-[1.35rem] max-lg:border max-lg:border-[color:color-mix(in_oklab,var(--spirit-border)_42%,transparent)] max-lg:bg-[color:color-mix(in_oklab,var(--spirit-bg)_88%,transparent)] max-lg:p-2 max-lg:shadow-[0_20px_48px_-32px_rgba(0,0,0,0.72),inset_0_0_0_1px_rgba(255,255,255,0.05)] max-lg:backdrop-blur-xl",
+                    !trinityWorkspaceComposer &&
+                      "lg:rounded-[1.35rem] lg:border lg:border-[color:color-mix(in_oklab,var(--spirit-border)_80%,transparent)] lg:bg-white/[0.035] lg:px-3 lg:py-2.5 lg:backdrop-blur-2xl",
+                    !trinityWorkspaceComposer &&
+                      "lg:shadow-[0_12px_48px_-28px_rgba(0,0,0,0.45),inset_0_0_0_1px_rgba(255,255,255,0.04)]",
+                    trinityWorkspaceComposer &&
+                      "max-lg:rounded-none lg:rounded-none lg:border-0 lg:bg-transparent lg:px-2 lg:py-1.5 lg:shadow-none",
+                    "spirit-trinity-chat__composer-surface",
+                  )}
+                >
+                  <textarea
               ref={composerTextareaRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -1190,7 +1218,14 @@ const SpiritChatInner = memo(function SpiritChatInner({
           </div>
         </form>
         {workspaceChrome ? (
-          <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-1.5 px-3 pb-2 pt-0.5 font-mono text-[9px] font-medium uppercase tracking-wide text-chalk/65 sm:gap-2 sm:px-5 sm:pb-2.5 sm:text-[10px] lg:px-6">
+          <div
+            className={cn(
+              "flex flex-wrap items-center font-mono text-[9px] font-medium uppercase tracking-wide text-chalk/65 sm:text-[10px]",
+              trinityWorkspaceComposer
+                ? "spirit-trinity-chat__modebar mx-auto w-full max-w-none gap-1 px-1 pb-1 pt-0 sm:gap-1.5 sm:px-1.5 sm:pb-1.5"
+                : "mx-auto max-w-3xl gap-1.5 px-3 pb-2 pt-0.5 sm:gap-2 sm:px-5 sm:pb-2.5 lg:px-6",
+            )}
+          >
             {!oracleVoiceSurface ? (
               <button
                 type="button"
@@ -1217,6 +1252,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
                     }}
                     disabled={isBusy}
                     compact
+                    trinityLiquid={trinityLiquidChrome}
                   />
                 </div>
                 {!oracleVoiceSurface ? (
@@ -1248,6 +1284,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
                       onRequestVoiceCatalog={tts.refreshElevenLabsVoices}
                       onElevenLabsVoiceChange={tts.setElevenLabsVoiceFromPicker}
                       disabled={sidebarLocked}
+                      trinityLiquid={trinityLiquidChrome}
                     />
                   </div>
                 ) : null}
@@ -1305,6 +1342,14 @@ const SpiritChatInner = memo(function SpiritChatInner({
             ) : null}
           </div>
         ) : null}
+            </>
+          );
+          return trinityWorkspaceComposer ? (
+            <div className="spirit-trinity-command-pod">{composerBody}</div>
+          ) : (
+            composerBody
+          );
+        })()}
         {footerHint ? (
           <div className="mx-auto max-w-3xl px-2 pb-2 text-center font-mono text-[10px] text-chalk/45 sm:px-5 lg:px-6">
             {footerHint}
@@ -1362,6 +1407,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
       onDeleteFolder: onSidebarDeleteFolder,
       onToggleFolderCollapsed: onSidebarToggleFolderCollapsed,
       onCommitThreadDrag: persistent.commitThreadSidebarOrder,
+      onCommitFolderDrag: persistent.commitFolderSidebarOrder,
       onExpandFolderDuringDrag: persistent.expandFolder,
     };
 
@@ -1462,6 +1508,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
                         onRequestVoiceCatalog={tts.refreshElevenLabsVoices}
                         onElevenLabsVoiceChange={tts.setElevenLabsVoiceFromPicker}
                         disabled={sidebarLocked}
+                        trinityLiquid={trinityLiquidChrome}
                       />
                     ) : (
                       <>
@@ -1497,6 +1544,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
                     side="bottom"
                     onClose={() => setWorkspaceMoreOpen(false)}
                     className="spirit-trinity-chat__sheet-panel"
+                    trinityLiquidChrome={trinityLiquidChrome}
                   >
                     <div className="flex flex-col gap-4 px-0 pb-1 pt-1">
                       <ChatActiveModeBadge
@@ -1512,6 +1560,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
                         }}
                         disabled={sidebarLocked}
                         compact
+                        trinityLiquid={trinityLiquidChrome}
                       />
                       <VoiceControl
                         variant="mobile-bar"
@@ -1527,11 +1576,17 @@ const SpiritChatInner = memo(function SpiritChatInner({
                         onRequestVoiceCatalog={tts.refreshElevenLabsVoices}
                         onElevenLabsVoiceChange={tts.setElevenLabsVoiceFromPicker}
                         disabled={sidebarLocked}
+                        trinityLiquid={trinityLiquidChrome}
                       />
                       <div className="flex flex-wrap gap-2">
                         <button
                           type="button"
-                          className="inline-flex min-h-[44px] min-w-0 flex-1 touch-manipulation items-center justify-center gap-2 rounded-xl border border-[color:color-mix(in_oklab,var(--spirit-border)_45%,transparent)] bg-white/[0.04] px-3 font-mono text-[10px] font-semibold uppercase tracking-wider text-chalk/65"
+                          className={cn(
+                            "inline-flex min-h-[44px] min-w-0 flex-1 touch-manipulation items-center justify-center gap-2 rounded-xl px-3 font-mono text-[10px] font-semibold uppercase tracking-wider text-chalk/72",
+                            trinityLiquidChrome
+                              ? "spirit-trinity-mobile-sheet-action border border-transparent"
+                              : "border border-[color:color-mix(in_oklab,var(--spirit-border)_45%,transparent)] bg-white/[0.04] text-chalk/65",
+                          )}
                           onClick={() => {
                             setWorkspaceMoreOpen(false);
                             setActivityOpen((o) => !o);
@@ -1543,7 +1598,12 @@ const SpiritChatInner = memo(function SpiritChatInner({
                         </button>
                         <button
                           type="button"
-                          className="inline-flex min-h-[44px] min-w-0 flex-1 touch-manipulation items-center justify-center gap-2 rounded-xl border border-[color:color-mix(in_oklab,var(--spirit-border)_45%,transparent)] bg-white/[0.04] px-3 font-mono text-[10px] font-semibold uppercase tracking-wider text-chalk/65"
+                          className={cn(
+                            "inline-flex min-h-[44px] min-w-0 flex-1 touch-manipulation items-center justify-center gap-2 rounded-xl px-3 font-mono text-[10px] font-semibold uppercase tracking-wider text-chalk/72",
+                            trinityLiquidChrome
+                              ? "spirit-trinity-mobile-sheet-action border border-transparent"
+                              : "border border-[color:color-mix(in_oklab,var(--spirit-border)_45%,transparent)] bg-white/[0.04] text-chalk/65",
+                          )}
                           onClick={() => {
                             setWorkspaceMoreOpen(false);
                             setThreadMenuOpen((o) => !o);
@@ -1587,6 +1647,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
                         }}
                         disabled={sidebarLocked}
                         compact
+                        trinityLiquid={trinityLiquidChrome}
                       />
                     </div>
                     <div className="flex shrink-0 items-center gap-1">
@@ -1643,6 +1704,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
                         onRequestVoiceCatalog={tts.refreshElevenLabsVoices}
                         onElevenLabsVoiceChange={tts.setElevenLabsVoiceFromPicker}
                         disabled={sidebarLocked}
+                        trinityLiquid={trinityLiquidChrome}
                       />
                     </div>
                   </div>
@@ -1711,6 +1773,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
                 void persistent.moveThreadToFolder(persistent.activeThreadId, fid);
               }
             }}
+            trinityLiquid={trinityLiquidChrome}
           />
         ) : null}
       </div>
@@ -1745,6 +1808,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
     onDeleteFolder: onSidebarDeleteFolder,
     onToggleFolderCollapsed: onSidebarToggleFolderCollapsed,
     onCommitThreadDrag: persistent.commitThreadSidebarOrder,
+    onCommitFolderDrag: persistent.commitFolderSidebarOrder,
     onExpandFolderDuringDrag: persistent.expandFolder,
   };
 
@@ -1790,7 +1854,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
           <ChatThreadSidebar
             {...standaloneThreadRailProps}
             onDrawerClose={undefined}
-            className="relative z-auto h-auto min-h-0 max-h-none w-[280px] shrink-0 translate-x-0 shadow-none"
+            className="relative z-auto h-auto min-h-0 max-h-none w-[var(--chat-thread-rail-width,13.25rem)] shrink-0 translate-x-0 shadow-none"
           />
         ) : null}
 
@@ -1841,6 +1905,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
                       onRequestVoiceCatalog={tts.refreshElevenLabsVoices}
                       onElevenLabsVoiceChange={tts.setElevenLabsVoiceFromPicker}
                       disabled={sidebarLocked}
+                      trinityLiquid={trinityLiquidChrome}
                     />
                   ) : (
                     <>
@@ -1875,6 +1940,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
                   title="Chat options"
                   side="bottom"
                   onClose={() => setWorkspaceMoreOpen(false)}
+                  trinityLiquidChrome={trinityLiquidChrome}
                 >
                   <div className="flex flex-col gap-4 px-0 pb-1 pt-1">
                     <ChatActiveModeBadge
@@ -1890,6 +1956,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
                       }}
                       disabled={sidebarLocked}
                       compact
+                      trinityLiquid={trinityLiquidChrome}
                     />
                     <VoiceControl
                       variant="mobile-bar"
@@ -1905,11 +1972,17 @@ const SpiritChatInner = memo(function SpiritChatInner({
                       onRequestVoiceCatalog={tts.refreshElevenLabsVoices}
                       onElevenLabsVoiceChange={tts.setElevenLabsVoiceFromPicker}
                       disabled={sidebarLocked}
+                      trinityLiquid={trinityLiquidChrome}
                     />
                     <div className="flex flex-wrap gap-2">
                       <button
                         type="button"
-                        className="inline-flex min-h-[44px] min-w-0 flex-1 touch-manipulation items-center justify-center gap-2 rounded-xl border border-[color:color-mix(in_oklab,var(--spirit-border)_45%,transparent)] bg-white/[0.04] px-3 font-mono text-[10px] font-semibold uppercase tracking-wider text-chalk/65"
+                        className={cn(
+                          "inline-flex min-h-[44px] min-w-0 flex-1 touch-manipulation items-center justify-center gap-2 rounded-xl px-3 font-mono text-[10px] font-semibold uppercase tracking-wider text-chalk/72",
+                          trinityLiquidChrome
+                            ? "spirit-trinity-mobile-sheet-action border border-transparent"
+                            : "border border-[color:color-mix(in_oklab,var(--spirit-border)_45%,transparent)] bg-white/[0.04] text-chalk/65",
+                        )}
                         onClick={() => {
                           setWorkspaceMoreOpen(false);
                           setActivityOpen((o) => !o);
@@ -1921,7 +1994,12 @@ const SpiritChatInner = memo(function SpiritChatInner({
                       </button>
                       <button
                         type="button"
-                        className="inline-flex min-h-[44px] min-w-0 flex-1 touch-manipulation items-center justify-center gap-2 rounded-xl border border-[color:color-mix(in_oklab,var(--spirit-border)_45%,transparent)] bg-white/[0.04] px-3 font-mono text-[10px] font-semibold uppercase tracking-wider text-chalk/65"
+                        className={cn(
+                          "inline-flex min-h-[44px] min-w-0 flex-1 touch-manipulation items-center justify-center gap-2 rounded-xl px-3 font-mono text-[10px] font-semibold uppercase tracking-wider text-chalk/72",
+                          trinityLiquidChrome
+                            ? "spirit-trinity-mobile-sheet-action border border-transparent"
+                            : "border border-[color:color-mix(in_oklab,var(--spirit-border)_45%,transparent)] bg-white/[0.04] text-chalk/65",
+                        )}
                         onClick={() => {
                           setWorkspaceMoreOpen(false);
                           setThreadMenuOpen((o) => !o);
@@ -1962,6 +2040,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
                     }}
                     disabled={sidebarLocked}
                     compact
+                    trinityLiquid={trinityLiquidChrome}
                   />
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
@@ -2018,6 +2097,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
                     onRequestVoiceCatalog={tts.refreshElevenLabsVoices}
                     onElevenLabsVoiceChange={tts.setElevenLabsVoiceFromPicker}
                     disabled={sidebarLocked}
+                    trinityLiquid={trinityLiquidChrome}
                   />
                 </div>
               </div>
@@ -2087,6 +2167,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
                   void persistent.moveThreadToFolder(persistent.activeThreadId, fid);
                 }
               }}
+              trinityLiquid={trinityLiquidChrome}
             />
           ) : null}
         </>

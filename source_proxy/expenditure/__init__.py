@@ -1,0 +1,1 @@
+"""Asynchronous expenditure logging."""

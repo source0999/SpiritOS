@@ -1,6 +1,10 @@
 # ── Spirit OS - ignore build noise, secrets, and fat artifacts ─────────────────
 .DS_Store
 node_modules
+.venv-source-proxy
+.venv-source-proxy-windows
+__pycache__/
+*.py[cod]
 .next
 out
 *.tsbuildinfo
@@ -15,6 +19,7 @@ models/
 *.gguf
 backend/.env
 backend/**/*.log
+data/source-proxy/*.json
 .cursor/
 *.log
 

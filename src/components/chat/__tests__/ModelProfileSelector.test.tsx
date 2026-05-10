@@ -47,4 +47,16 @@ describe("ModelProfileSelector", () => {
     const sel = screen.getByLabelText(/model profile/i);
     expect(sel.className).toMatch(/max-w-\[130px\]/);
   });
+
+  it("trinityLiquid adds spirit-trinity-glass-select without losing aria-label", () => {
+    render(
+      <ModelProfileSelector
+        value="normal-peer"
+        onChange={vi.fn()}
+        trinityLiquid
+      />,
+    );
+    const sel = screen.getByLabelText(/model profile/i);
+    expect(sel.className).toContain("spirit-trinity-glass-select");
+  });
 });

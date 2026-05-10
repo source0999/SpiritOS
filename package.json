@@ -11,6 +11,17 @@
     "dev:all": "npm run dev:backend && npm run dev",
     "dev:all:https": "npm run dev:backend && npm run dev:https",
     "dev:all:https:lan": "npm run dev:backend && npm run dev:https:lan",
+    "proxy:bootstrap": "node ./scripts/source-proxy-bootstrap.mjs",
+    "proxy:bootstrap:linux": "bash ./scripts/source-proxy-bootstrap.sh",
+    "proxy:bootstrap:windows": "powershell -ExecutionPolicy Bypass -File ./scripts/source-proxy-bootstrap.ps1",
+    "proxy:dev": "node ./scripts/source-proxy-dev.mjs",
+    "proxy:https": "node ./scripts/source-proxy-dev.mjs --https",
+    "proxy:https:lan": "node ./scripts/source-proxy-dev.mjs --https --lan",
+    "context:pack": "repomix --config repomix.config.json .",
+    "context:compress": "node ./scripts/source-context-compress.mjs",
+    "next:mcp:ws": "node ./scripts/next-mcp-ws-bridge.mjs",
+    "next:mcp:ws:probe": "node ./scripts/next-mcp-ws-probe.mjs",
+    "next:mcp:ws:smoke": "node ./scripts/next-mcp-ws-smoke.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
@@ -41,6 +52,7 @@
     "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {
+    "@modelcontextprotocol/sdk": "^1.24.3",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
@@ -52,8 +64,11 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
     "jsdom": "^24.1.3",
+    "next-devtools-mcp": "^0.3.10",
+    "repomix": "^1.14.0",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "^4.1.5"
+    "vitest": "^4.1.5",
+    "ws": "^8.20.0"
   }
 }

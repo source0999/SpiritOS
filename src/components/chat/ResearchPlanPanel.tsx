@@ -21,6 +21,8 @@ export type ResearchPlanPanelProps = {
   onPlanChange: (next: ResearchPlan) => void;
   onStartResearch: (plan: ResearchPlan) => void;
   variant?: "inline" | "sheet";
+  /** Trinity /chat liquid glass (Language C). */
+  trinityLiquid?: boolean;
 };
 
 export const ResearchPlanPanel = memo(function ResearchPlanPanel({
@@ -30,6 +32,7 @@ export const ResearchPlanPanel = memo(function ResearchPlanPanel({
   onPlanChange,
   onStartResearch,
   variant = "inline",
+  trinityLiquid = false,
 }: ResearchPlanPanelProps) {
   const [newLabel, setNewLabel] = useState("");
 
@@ -62,13 +65,27 @@ export const ResearchPlanPanel = memo(function ResearchPlanPanel({
   return (
     <div
       data-testid="research-plan-panel"
+      data-trinity-liquid={trinityLiquid ? "research-panel" : undefined}
       className={cn(
-        "relative z-[42] flex max-h-[min(280px,45dvh)] min-h-0 shrink-0 flex-col border-b border-[color:color-mix(in_oklab,var(--spirit-border)_55%,transparent)] bg-black/40 shadow-[inset_0_-1px_0_rgba(255,255,255,0.03)]",
-        sheet && "fixed inset-x-0 bottom-0 z-[120] max-h-[70dvh] rounded-t-xl border-x border-t",
+        "relative z-[42] flex max-h-[min(280px,45dvh)] min-h-0 shrink-0 flex-col",
+        !trinityLiquid &&
+          "border-b border-[color:color-mix(in_oklab,var(--spirit-border)_55%,transparent)] bg-black/40 shadow-[inset_0_-1px_0_rgba(255,255,255,0.03)]",
+        trinityLiquid &&
+          "spirit-trinity-panel-glass border-transparent bg-transparent shadow-none",
+        sheet &&
+          cn(
+            "fixed inset-x-0 bottom-0 z-[120] max-h-[70dvh] rounded-t-xl",
+            !trinityLiquid && "border-x border-t",
+            trinityLiquid && "border border-transparent",
+          ),
       )}
     >
       <div className="mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col px-2 py-2 sm:px-3">
-        <div className="flex shrink-0 items-start justify-between gap-2 border-b border-white/[0.06] pb-2">
+        <div
+          className={cn(
+            "spirit-trinity-research-head flex shrink-0 items-start justify-between gap-2 border-b border-white/[0.06] pb-2",
+          )}
+        >
           <div>
             <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-chalk/45">
               Research plan
@@ -88,7 +105,11 @@ export const ResearchPlanPanel = memo(function ResearchPlanPanel({
             type="button"
             aria-label="Close research plan"
             onClick={onClose}
-            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[color:var(--spirit-border)]/70 text-chalk/60 hover:bg-white/[0.06]"
+            className={cn(
+              "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-chalk/60 hover:bg-white/[0.06]",
+              !trinityLiquid && "border border-[color:var(--spirit-border)]/70",
+              trinityLiquid && "spirit-trinity-glass-button border-transparent bg-transparent",
+            )}
           >
             <X className="h-4 w-4" aria-hidden />
           </button>
@@ -100,7 +121,12 @@ export const ResearchPlanPanel = memo(function ResearchPlanPanel({
             {plan.steps.map((s) => (
               <li
                 key={s.id}
-                className="rounded-md border border-[color:color-mix(in_oklab,var(--spirit-border)_45%,transparent)] bg-white/[0.03] p-2"
+                className={cn(
+                  "spirit-trinity-research-step rounded-md p-2",
+                  !trinityLiquid &&
+                    "border border-[color:color-mix(in_oklab,var(--spirit-border)_45%,transparent)] bg-white/[0.03]",
+                  trinityLiquid && "border-transparent bg-transparent",
+                )}
               >
                 <input
                   value={s.label}
@@ -133,12 +159,20 @@ export const ResearchPlanPanel = memo(function ResearchPlanPanel({
               value={newLabel}
               onChange={(e) => setNewLabel(e.target.value)}
               placeholder="New step label"
-              className="min-w-[8rem] flex-1 rounded-md border border-[color:var(--spirit-border)] bg-black/30 px-2 py-1 font-mono text-[10px] text-chalk"
+              className={cn(
+                "spirit-trinity-glass-input min-w-[8rem] flex-1 rounded-md px-2 py-1 font-mono text-[10px] text-chalk",
+                !trinityLiquid && "border border-[color:var(--spirit-border)] bg-black/30",
+                trinityLiquid && "border-transparent bg-transparent",
+              )}
             />
             <button
               type="button"
               onClick={addStep}
-              className="inline-flex items-center gap-1 rounded-md border border-[color:var(--spirit-border)] px-2 py-1 font-mono text-[10px] text-chalk/80"
+              className={cn(
+                "spirit-trinity-glass-button inline-flex items-center gap-1 rounded-md px-2 py-1 font-mono text-[10px] text-chalk/80",
+                !trinityLiquid && "border border-[color:var(--spirit-border)]",
+                trinityLiquid && "border-transparent bg-transparent",
+              )}
             >
               <Plus className="h-3.5 w-3.5" aria-hidden />
               Add step
@@ -146,7 +180,12 @@ export const ResearchPlanPanel = memo(function ResearchPlanPanel({
           </div>
         </div>
 
-        <div className="flex shrink-0 flex-wrap gap-2 border-t border-white/[0.06] bg-[color:color-mix(in_oklab,var(--spirit-bg)_92%,black)] py-2 pt-2">
+        <div
+          className={cn(
+            "spirit-trinity-research-footer flex shrink-0 flex-wrap gap-2 border-t border-white/[0.06] py-2 pt-2",
+            !trinityLiquid && "bg-[color:color-mix(in_oklab,var(--spirit-bg)_92%,black)]",
+          )}
+        >
           <button
             type="button"
             data-testid="research-plan-start"
@@ -160,7 +199,12 @@ export const ResearchPlanPanel = memo(function ResearchPlanPanel({
             type="button"
             data-testid="research-plan-cancel"
             onClick={onClose}
-            className="rounded-full border border-[color:var(--spirit-border)] px-3 py-1.5 font-mono text-[10px] text-chalk/65"
+            className={cn(
+              "rounded-full px-3 py-1.5 font-mono text-[10px]",
+              trinityLiquid
+                ? "spirit-trinity-glass-button border border-transparent text-chalk/72"
+                : "border border-[color:var(--spirit-border)] text-chalk/65",
+            )}
           >
             Cancel
           </button>

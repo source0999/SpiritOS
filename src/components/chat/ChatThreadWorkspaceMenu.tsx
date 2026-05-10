@@ -24,6 +24,8 @@ export type ChatThreadWorkspaceMenuProps = {
   onDelete: () => void;
   onTogglePin: () => void;
   onMoveToFolder: (folderId: string | null) => void;
+  /** Trinity /chat portaled glass (Language C). */
+  trinityLiquid?: boolean;
 };
 
 export const ChatThreadWorkspaceMenu = memo(function ChatThreadWorkspaceMenu({
@@ -41,6 +43,7 @@ export const ChatThreadWorkspaceMenu = memo(function ChatThreadWorkspaceMenu({
   onDelete,
   onTogglePin,
   onMoveToFolder,
+  trinityLiquid = false,
 }: ChatThreadWorkspaceMenuProps) {
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -81,8 +84,12 @@ export const ChatThreadWorkspaceMenu = memo(function ChatThreadWorkspaceMenu({
       />
       <div
         ref={panelRef}
+        data-trinity-liquid={trinityLiquid ? "thread-menu" : undefined}
         className={cn(
-          "fixed z-[150] flex w-[min(100vw-1.5rem,20rem)] flex-col overflow-hidden rounded-xl border border-[color:var(--spirit-border)] bg-[color:color-mix(in_oklab,var(--spirit-bg)_94%,black)] shadow-[0_24px_80px_-24px_rgba(0,0,0,0.75)]",
+          "fixed z-[150] flex w-[min(100vw-1.5rem,20rem)] flex-col overflow-hidden rounded-xl shadow-[0_24px_80px_-24px_rgba(0,0,0,0.75)]",
+          trinityLiquid
+            ? "spirit-trinity-modal-glass border border-transparent bg-transparent"
+            : "border border-[color:var(--spirit-border)] bg-[color:color-mix(in_oklab,var(--spirit-bg)_94%,black)]",
           sheet
             ? "inset-x-0 bottom-0 mx-auto max-h-[70dvh] w-full max-w-md rounded-b-none rounded-t-2xl border-b-0 pb-[env(safe-area-inset-bottom,0px)]"
             : "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
@@ -91,7 +98,12 @@ export const ChatThreadWorkspaceMenu = memo(function ChatThreadWorkspaceMenu({
         aria-modal="true"
         aria-labelledby="thread-menu-heading"
       >
-        <div className="flex items-center justify-between gap-2 border-b border-[color:var(--spirit-border)] px-3 py-2">
+        <div
+          className={cn(
+            "spirit-trinity-thread-menu-header flex items-center justify-between gap-2 border-b px-3 py-2",
+            trinityLiquid ? "border-transparent" : "border-[color:var(--spirit-border)]",
+          )}
+        >
           <h2 id="thread-menu-heading" className="min-w-0 truncate font-mono text-[11px] font-semibold uppercase tracking-wider text-chalk">
             Thread settings
           </h2>
@@ -120,7 +132,12 @@ export const ChatThreadWorkspaceMenu = memo(function ChatThreadWorkspaceMenu({
                 onRename();
                 onClose();
               }}
-              className="flex items-center gap-2 rounded-lg border border-[color:color-mix(in_oklab,var(--spirit-border)_50%,transparent)] bg-white/[0.03] px-2 py-2 text-left transition hover:bg-white/[0.06] disabled:opacity-35"
+              className={cn(
+                "flex items-center gap-2 rounded-lg px-2 py-2 text-left transition hover:bg-white/[0.06] disabled:opacity-35",
+                trinityLiquid
+                  ? "spirit-trinity-glass-button border-transparent"
+                  : "border border-[color:color-mix(in_oklab,var(--spirit-border)_50%,transparent)] bg-white/[0.03] hover:bg-white/[0.06]",
+              )}
             >
               <Pencil className="h-3.5 w-3.5 shrink-0" aria-hidden />
               Rename chat
@@ -132,7 +149,12 @@ export const ChatThreadWorkspaceMenu = memo(function ChatThreadWorkspaceMenu({
                 onTogglePin();
                 onClose();
               }}
-              className="flex items-center gap-2 rounded-lg border border-[color:color-mix(in_oklab,var(--spirit-border)_50%,transparent)] bg-white/[0.03] px-2 py-2 text-left transition hover:bg-white/[0.06] disabled:opacity-35"
+              className={cn(
+                "flex items-center gap-2 rounded-lg px-2 py-2 text-left transition hover:bg-white/[0.06] disabled:opacity-35",
+                trinityLiquid
+                  ? "spirit-trinity-glass-button border-transparent"
+                  : "border border-[color:color-mix(in_oklab,var(--spirit-border)_50%,transparent)] bg-white/[0.03] hover:bg-white/[0.06]",
+              )}
             >
               {isPinned ? (
                 <PinOff className="h-3.5 w-3.5 shrink-0" aria-hidden />
@@ -148,7 +170,12 @@ export const ChatThreadWorkspaceMenu = memo(function ChatThreadWorkspaceMenu({
                 onDelete();
                 onClose();
               }}
-              className="flex items-center gap-2 rounded-lg border border-rose-500/25 bg-rose-500/10 px-2 py-2 text-left text-rose-100/95 transition hover:bg-rose-500/15 disabled:opacity-35"
+              className={cn(
+                "flex items-center gap-2 rounded-lg px-2 py-2 text-left transition disabled:opacity-35",
+                trinityLiquid
+                  ? "spirit-trinity-glass-button border border-rose-500/22 bg-rose-500/10 text-rose-100/95 hover:bg-rose-500/14"
+                  : "border border-rose-500/25 bg-rose-500/10 text-rose-100/95 hover:bg-rose-500/15",
+              )}
             >
               <Trash2 className="h-3.5 w-3.5 shrink-0" aria-hidden />
               Delete chat
@@ -167,7 +194,12 @@ export const ChatThreadWorkspaceMenu = memo(function ChatThreadWorkspaceMenu({
                   onMoveToFolder(v === "__root__" ? null : v);
                   onClose();
                 }}
-                className="w-full cursor-pointer rounded-lg border border-[color:color-mix(in_oklab,var(--spirit-border)_50%,transparent)] bg-black/30 px-2 py-2 text-[10px] text-chalk/80 outline-none"
+                className={cn(
+                  "w-full cursor-pointer rounded-lg px-2 py-2 text-[10px] text-chalk/80 outline-none",
+                  trinityLiquid
+                    ? "spirit-trinity-glass-select border-transparent bg-transparent"
+                    : "border border-[color:color-mix(in_oklab,var(--spirit-border)_50%,transparent)] bg-black/30",
+                )}
               >
                 <option value="__root__">Chats (root)</option>
                 {folders.map((f) => (

@@ -18,6 +18,26 @@
 
 services:
 
+  source-postgres:
+    image: postgres:16-alpine
+    container_name: source-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=source_proxy
+      - POSTGRES_USER=source_proxy
+      - POSTGRES_PASSWORD=source_proxy
+    volumes:
+      - source_postgres_data:/var/lib/postgresql/data
+    networks:
+      - spirit-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U source_proxy -d source_proxy"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # ── 1. Ollama (NVIDIA CUDA) ─────────────────────────────────────────────────
   ollama:
     image: ollama/ollama:latest
@@ -115,6 +135,7 @@ services:
       start_period: 90s
 
 volumes:
+  source_postgres_data:
   ollama_data:
   whisper_cache:
   openedai_voices:

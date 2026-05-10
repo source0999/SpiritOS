@@ -1,0 +1,6 @@
+# Source proxy Python runtime.
+#
+# Core dependencies are kept separate from CUDA-specific PyTorch wheels so a
+# basic bootstrap can complete cleanly on machines that do not expose NVIDIA
+# drivers to the shell. Install requirements.cuda.txt on the RTX 3060 host.
+-r requirements.core.txt

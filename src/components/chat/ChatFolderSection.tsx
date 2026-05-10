@@ -2,18 +2,63 @@
 
 // ── ChatFolderSection - folder droppable + per-folder SortableContext (oldSpiritOS) ─
 import { useDroppable } from "@dnd-kit/core";
-import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import {
+  defaultAnimateLayoutChanges,
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { ChevronRight, FolderOpen, PenLine, Trash2 } from "lucide-react";
-import { memo, useEffect, useState } from "react";
+import { memo, useEffect, useState, type CSSProperties } from "react";
 
-import { ChatThreadListItem } from "@/components/chat/ChatThreadListItem";
+import { StableChatThreadListItem } from "@/components/chat/ChatThreadListItem";
+import type { DragActivatorProps } from "@/components/chat/SortableChatThreadItem";
 import { SortableChatThreadItem } from "@/components/chat/SortableChatThreadItem";
 import { formatThreadUpdatedLabel } from "@/lib/chat-thread-format";
 import type { FolderSidebarSection } from "@/lib/chat-folder-utils";
 import { buildMoveSelectModel } from "@/lib/chat-folder-utils";
-import { FOLDER_DROP_PREFIX, THREAD_DND_PREFIX } from "@/lib/chat-sidebar-dnd";
+import { FOLDER_DROP_PREFIX, FOLDER_SORT_PREFIX, THREAD_DND_PREFIX } from "@/lib/chat-sidebar-dnd";
 import type { ChatFolder } from "@/lib/chat-db.types";
 import { cn } from "@/lib/cn";
+
+/** Folders: collision math ignores thread rows — safe to let siblings ease (threads keep animateLayoutChanges off). */
+const FOLDER_SORT_MS = 145;
+const FOLDER_SORT_EASING = "cubic-bezier(0.25, 0.1, 0.25, 1)";
+
+/** Same contract as thread edge — fat invisible strip; chevron/rename/delete sit above via z-index. */
+function FolderEdgeDragHandle({
+  folderName,
+  dragHandleProps,
+  setDragActivatorRef,
+  interactionDisabled,
+  dndDragging,
+}: {
+  folderName: string;
+  dragHandleProps: DragActivatorProps;
+  setDragActivatorRef?: (element: HTMLElement | null) => void;
+  interactionDisabled: boolean;
+  dndDragging: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      {...dragHandleProps}
+      ref={setDragActivatorRef}
+      disabled={interactionDisabled}
+      data-drag-handle="folder-edge"
+      aria-label={`Drag to reorder folder ${folderName}`}
+      className={cn(
+        "spirit-folder-row__drag-edge pointer-events-auto absolute left-0 top-0 z-[10] h-full min-h-[2.25rem] touch-none",
+        "w-[min(80%,calc(100%-5.5rem))]",
+        "cursor-grab border-0 bg-transparent p-0 opacity-0 outline-none active:cursor-grabbing",
+        "focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_oklab,var(--spirit-accent-strong)_35%,transparent)] focus-visible:ring-inset",
+        dndDragging && "opacity-100",
+      )}
+      style={{ touchAction: "none" }}
+    />
+  );
+}
 
 export type ChatFolderHeaderRowProps = {
   folder: ChatFolder;
@@ -23,6 +68,9 @@ export type ChatFolderHeaderRowProps = {
   onRename: () => void;
   /** Called only after inline confirm - never deletes threads. */
   onDeleteConfirmed: () => void;
+  folderDragHandleProps?: DragActivatorProps;
+  setFolderDragActivatorRef?: (element: HTMLElement | null) => void;
+  folderDndDragging?: boolean;
 };
 
 export const ChatFolderHeaderRow = memo(function ChatFolderHeaderRow({
@@ -32,6 +80,9 @@ export const ChatFolderHeaderRow = memo(function ChatFolderHeaderRow({
   onToggle,
   onRename,
   onDeleteConfirmed,
+  folderDragHandleProps,
+  setFolderDragActivatorRef,
+  folderDndDragging = false,
 }: ChatFolderHeaderRowProps) {
   const [deleteConfirming, setDeleteConfirming] = useState(false);
 
@@ -42,7 +93,7 @@ export const ChatFolderHeaderRow = memo(function ChatFolderHeaderRow({
   return (
     <div
       className={cn(
-        "flex min-w-0 flex-1 flex-wrap items-center gap-0.5 rounded-md border border-[color:color-mix(in_oklab,var(--spirit-border)_55%,transparent)] bg-white/[0.02] px-1 py-0.5",
+        "spirit-sidebar-folder-row relative isolate flex min-w-0 flex-1 flex-wrap items-center gap-0.5 rounded-md border border-[color:color-mix(in_oklab,var(--spirit-border)_55%,transparent)] bg-white/[0.02] px-1 py-0.5",
         locked && "opacity-40",
       )}
     >
@@ -54,7 +105,7 @@ export const ChatFolderHeaderRow = memo(function ChatFolderHeaderRow({
           onToggle();
         }}
         aria-expanded={!collapsed}
-        className="touch-manipulation rounded p-1 text-chalk/55 transition hover:bg-white/[0.05] hover:text-chalk"
+        className="relative z-[15] touch-manipulation rounded p-1 text-chalk/55 transition hover:bg-white/[0.05] hover:text-chalk"
         aria-label={collapsed ? `Expand folder ${folder.name}` : `Collapse folder ${folder.name}`}
       >
         <ChevronRight
@@ -67,11 +118,11 @@ export const ChatFolderHeaderRow = memo(function ChatFolderHeaderRow({
         />
       </button>
       <FolderOpen
-        className="h-3.5 w-3.5 shrink-0 text-[color:color-mix(in_oklab,var(--spirit-accent)_55%,transparent)]"
+        className="pointer-events-none relative z-0 h-3.5 w-3.5 shrink-0 text-[color:color-mix(in_oklab,var(--spirit-accent)_55%,transparent)]"
         aria-hidden
         strokeWidth={2}
       />
-      <span className="min-w-0 flex-1 truncate font-mono text-[10px] font-semibold uppercase tracking-wide text-chalk/70">
+      <span className="pointer-events-none relative z-0 min-w-0 flex-1 truncate font-mono text-[10px] font-semibold uppercase tracking-wide text-chalk/70">
         {folder.name}
       </span>
       <button
@@ -83,12 +134,12 @@ export const ChatFolderHeaderRow = memo(function ChatFolderHeaderRow({
           onRename();
         }}
         aria-label={`Rename folder ${folder.name}`}
-        className="touch-manipulation rounded p-1 text-chalk/45 transition hover:bg-white/[0.05] hover:text-chalk"
+        className="relative z-[15] touch-manipulation rounded p-1 text-chalk/45 transition hover:bg-white/[0.05] hover:text-chalk"
       >
         <PenLine className="h-3 w-3" aria-hidden strokeWidth={2} />
       </button>
       {deleteConfirming ? (
-        <div className="flex min-w-0 basis-full flex-col gap-0.5 border-t border-[color:color-mix(in_oklab,var(--spirit-border)_40%,transparent)] pt-0.5 sm:basis-auto sm:flex-row sm:items-center sm:border-t-0 sm:pt-0">
+        <div className="relative z-[15] flex min-w-0 basis-full flex-col gap-0.5 border-t border-[color:color-mix(in_oklab,var(--spirit-border)_40%,transparent)] pt-0.5 sm:basis-auto sm:flex-row sm:items-center sm:border-t-0 sm:pt-0">
           <span className="min-w-0 font-mono text-[8px] leading-snug text-chalk/65">
             Delete? Threads return to Chats.
           </span>
@@ -129,11 +180,20 @@ export const ChatFolderHeaderRow = memo(function ChatFolderHeaderRow({
             setDeleteConfirming(true);
           }}
           aria-label={`Delete folder ${folder.name}`}
-          className="touch-manipulation rounded p-1 text-chalk/45 transition hover:bg-rose-500/15 hover:text-rose-200"
+          className="relative z-[15] touch-manipulation rounded p-1 text-chalk/45 transition hover:bg-rose-500/15 hover:text-rose-200"
         >
           <Trash2 className="h-3 w-3" aria-hidden strokeWidth={2} />
         </button>
       )}
+      {folderDragHandleProps && setFolderDragActivatorRef ? (
+        <FolderEdgeDragHandle
+          folderName={folder.name}
+          dragHandleProps={folderDragHandleProps}
+          setDragActivatorRef={setFolderDragActivatorRef}
+          interactionDisabled={locked}
+          dndDragging={folderDndDragging}
+        />
+      ) : null}
     </div>
   );
 });
@@ -155,6 +215,8 @@ export type ChatFolderSectionProps = {
   onMoveThread: (threadId: string, folderId: string | null) => void;
   onTogglePinThread?: (threadId: string) => void;
   threadSnippets?: Record<string, string>;
+  /** Folder card reorder (Dexie `folders.order`) — parent wraps list in SortableContext. */
+  folderSortable?: boolean;
 };
 
 export const ChatFolderSection = memo(function ChatFolderSection({
@@ -174,14 +236,45 @@ export const ChatFolderSection = memo(function ChatFolderSection({
   onMoveThread,
   onTogglePinThread,
   threadSnippets,
+  folderSortable = false,
 }: ChatFolderSectionProps) {
   const { folder, threads } = section;
   const collapsed = Boolean(folder.collapsed);
   const locked = interactionDisabled;
 
+  const folderSortOn = Boolean(folderSortable && !locked);
+
   const { setNodeRef, isOver } = useDroppable({
     id: `${FOLDER_DROP_PREFIX}${folder.id}`,
   });
+
+  const {
+    setNodeRef: setFolderSortRef,
+    setActivatorNodeRef,
+    attributes,
+    listeners,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: `${FOLDER_SORT_PREFIX}${folder.id}`,
+    disabled: !folderSortOn,
+    animateLayoutChanges: defaultAnimateLayoutChanges,
+    transition: {
+      duration: FOLDER_SORT_MS,
+      easing: FOLDER_SORT_EASING,
+    },
+  });
+
+  const dragListenersOnly = listeners as unknown as DragActivatorProps;
+
+  const sortableStyle: CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition: transition ?? undefined,
+    opacity: isDragging ? 0.68 : 1,
+    pointerEvents: isDragging ? "none" : undefined,
+    willChange: transform ? "transform" : undefined,
+  };
 
   const threadIds = threads.map((t) => `${THREAD_DND_PREFIX}${t.id}`);
   const dropGlow = Boolean(draggingThread && isOver);
@@ -189,26 +282,19 @@ export const ChatFolderSection = memo(function ChatFolderSection({
   const renderThread = (thread: (typeof threads)[0]) => {
     const moveModel = buildMoveSelectModel(thread, allFolders);
     const snippet = threadSnippets?.[thread.id];
-    const pinProps =
-      onTogglePinThread != null
-        ? {
-            pinned: Boolean(thread.pinned),
-            onTogglePin: () => onTogglePinThread(thread.id),
-          }
-        : {};
     return (
-      <ChatThreadListItem
+      <StableChatThreadListItem
         thread={thread}
-        active={thread.id === activeThreadId}
+        activeThreadId={activeThreadId}
+        onSelectThread={onSelectThread}
+        onRenameThread={onRenameThread}
+        onDeleteThread={onDeleteThread}
+        onMoveThreadToFolder={onMoveThread}
+        onTogglePinThread={onTogglePinThread}
         updatedLabel={formatThreadUpdatedLabel(thread.updatedAt)}
         interactionDisabled={locked}
         moveSelect={moveModel.show ? moveModel : null}
-        onSelect={() => onSelectThread(thread.id)}
-        onRename={() => onRenameThread(thread.id)}
-        onDelete={() => onDeleteThread(thread.id)}
-        onMoveThread={(fid) => onMoveThread(thread.id, fid)}
         searchSnippet={snippet}
-        {...pinProps}
       />
     );
   };
@@ -216,13 +302,6 @@ export const ChatFolderSection = memo(function ChatFolderSection({
   const renderThreadSortable = (thread: (typeof threads)[0]) => {
     const moveModel = buildMoveSelectModel(thread, allFolders);
     const snippet = threadSnippets?.[thread.id];
-    const pinProps =
-      onTogglePinThread != null
-        ? {
-            pinned: Boolean(thread.pinned),
-            onTogglePin: () => onTogglePinThread(thread.id),
-          }
-        : {};
     const useHandle = dndEnabled && threadDragLayout === "handle";
     return (
       <SortableChatThreadItem
@@ -231,22 +310,28 @@ export const ChatFolderSection = memo(function ChatFolderSection({
         disabled={locked}
         useDragHandle={useHandle}
       >
-        {({ dragActivatorProps, dragHandleProps, isDragging }) => (
-          <ChatThreadListItem
+        {({
+          dragActivatorProps,
+          dragHandleProps,
+          setDragActivatorRef,
+          isDragging,
+        }) => (
+          <StableChatThreadListItem
             thread={thread}
-            active={thread.id === activeThreadId}
+            activeThreadId={activeThreadId}
+            onSelectThread={onSelectThread}
+            onRenameThread={onRenameThread}
+            onDeleteThread={onDeleteThread}
+            onMoveThreadToFolder={onMoveThread}
+            onTogglePinThread={onTogglePinThread}
             updatedLabel={formatThreadUpdatedLabel(thread.updatedAt)}
             interactionDisabled={locked}
             moveSelect={moveModel.show ? moveModel : null}
             dragActivatorProps={dragHandleProps ? undefined : dragActivatorProps}
             dragHandleProps={dragHandleProps}
-            dndDragging={Boolean(dragHandleProps && isDragging)}
-            onSelect={() => onSelectThread(thread.id)}
-            onRename={() => onRenameThread(thread.id)}
-            onDelete={() => onDeleteThread(thread.id)}
-            onMoveThread={(fid) => onMoveThread(thread.id, fid)}
+            dndDragging={isDragging}
+            setDragActivatorRef={setDragActivatorRef}
             searchSnippet={snippet}
-            {...pinProps}
           />
         )}
       </SortableChatThreadItem>
@@ -262,46 +347,44 @@ export const ChatFolderSection = memo(function ChatFolderSection({
     <div
       ref={setNodeRef}
       className={cn(
-        "flex flex-col gap-1 rounded-md transition-colors",
+        "spirit-sidebar-folder-section flex flex-col gap-0 rounded-md transition-colors",
         dropGlow &&
           "border border-[color:color-mix(in_oklab,var(--spirit-accent-strong)_55%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-accent)_10%,transparent)] shadow-[0_0_24px_-10px_var(--spirit-glow)]",
       )}
     >
-      <ChatFolderHeaderRow
-        folder={folder}
-        collapsed={collapsed}
-        locked={locked}
-        onToggle={() => onToggleCollapsed(folder.id)}
-        onRename={() => onRenameFolder(folder.id)}
-        onDeleteConfirmed={() => onDeleteFolder(folder.id)}
-      />
-      {!collapsed ? (
-        dndEnabled && !locked ? (
-          <SortableContext items={threadIds} strategy={verticalListSortingStrategy}>
-            <div className="ml-1 flex flex-col gap-0.5 border-l border-[color:color-mix(in_oklab,var(--spirit-border)_40%,transparent)] pl-1.5">
-              {threads.length === 0 ? (
-                <p className="py-0.5 pl-0.5 font-mono text-[8px] text-chalk/35">
-                  Drop chats here
-                </p>
-              ) : null}
+      <div
+        ref={setFolderSortRef}
+        style={sortableStyle}
+        className="flex min-w-0 flex-col gap-0"
+        {...attributes}
+        role="group"
+        tabIndex={-1}
+      >
+        <ChatFolderHeaderRow
+          folder={folder}
+          collapsed={collapsed}
+          locked={locked}
+          onToggle={() => onToggleCollapsed(folder.id)}
+          onRename={() => onRenameFolder(folder.id)}
+          onDeleteConfirmed={() => onDeleteFolder(folder.id)}
+          folderDragHandleProps={folderSortOn ? dragListenersOnly : undefined}
+          setFolderDragActivatorRef={folderSortOn ? setActivatorNodeRef : undefined}
+          folderDndDragging={isDragging}
+        />
+        {!collapsed && threads.length > 0 ? (
+          dndEnabled && !locked ? (
+            <SortableContext items={threadIds} strategy={verticalListSortingStrategy}>
+              <div className="spirit-sidebar-folder-thread-stack ml-1 flex flex-col gap-px border-l border-[color:color-mix(in_oklab,var(--spirit-border)_40%,transparent)] pl-1.5">
+                {threadList}
+              </div>
+            </SortableContext>
+          ) : (
+            <div className="spirit-sidebar-folder-thread-stack ml-1 flex flex-col gap-px border-l border-[color:color-mix(in_oklab,var(--spirit-border)_40%,transparent)] pl-1.5">
               {threadList}
             </div>
-          </SortableContext>
-        ) : (
-          <div className="ml-1 flex flex-col gap-0.5 border-l border-[color:color-mix(in_oklab,var(--spirit-border)_40%,transparent)] pl-1.5">
-            {threads.length === 0 ? (
-              <p className="py-0.5 pl-0.5 font-mono text-[8px] text-chalk/35">Drop chats here</p>
-            ) : null}
-            {threadList}
-          </div>
-        )
-      ) : (
-        <div className="ml-1 min-h-[24px] border-l border-[color:color-mix(in_oklab,var(--spirit-border)_40%,transparent)] pl-1.5">
-          <p className="py-0.5 pl-0.5 font-mono text-[8px] text-chalk/35">
-            Collapsed - drop to file
-          </p>
-        </div>
-      )}
+          )
+        ) : null}
+      </div>
     </div>
   );
 });

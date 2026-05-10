@@ -4,7 +4,10 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { usePersistentChat } from "@/hooks/usePersistentChat";
-import { filterFolderSidebarModel } from "@/lib/chat-folder-utils";
+import {
+  filterFolderSidebarModel,
+  sortThreadsWithOrderFallback,
+} from "@/lib/chat-folder-utils";
 import type { FolderSidebarSection } from "@/lib/chat-folder-utils";
 import type { ChatFolder, ChatMessage, ChatThread } from "@/lib/chat-db.types";
 import { searchThreadsAndMessages } from "@/lib/chat-persistence";
@@ -61,6 +64,9 @@ export type SpiritThreadRuntime = {
   commitThreadSidebarOrder: ReturnType<
     typeof usePersistentChat
   >["commitThreadSidebarOrder"];
+  commitFolderSidebarOrder: ReturnType<
+    typeof usePersistentChat
+  >["commitFolderSidebarOrder"];
 
   searchQuery: string;
   setSearchQuery: (query: string) => void;
@@ -131,8 +137,10 @@ export function useSpiritThreadRuntime(
   }, [persistent.rootThreads, persistent.folderSections, searchAllow]);
 
   const pinnedThreadsDisplay = useMemo(() => {
-    const list = persistent.visibleThreads.filter((t) => t.pinned);
-    list.sort((a, b) => (b.pinnedAt ?? 0) - (a.pinnedAt ?? 0));
+    const pinned = persistent.visibleThreads.filter((t) => t.pinned);
+    // DnD commits `order` via reorderThreadsInFolder — **not** pinnedAt. Sorting pins by pinnedAt
+    // made downward drags “stick” in Dexie then snap back in React (Spirit is not amused).
+    const list = sortThreadsWithOrderFallback(pinned);
     if (!searchAllow) return list;
     return list.filter((t) => searchAllow.has(t.id));
   }, [persistent.visibleThreads, searchAllow]);
@@ -188,6 +196,7 @@ export function useSpiritThreadRuntime(
       toggleFolderCollapsed: persistent.toggleFolderCollapsed,
       moveThreadToFolder: persistent.moveThreadToFolder,
       commitThreadSidebarOrder: persistent.commitThreadSidebarOrder,
+      commitFolderSidebarOrder: persistent.commitFolderSidebarOrder,
 
       searchQuery: searchInput,
       setSearchQuery: setSearchInput,

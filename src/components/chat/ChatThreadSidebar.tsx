@@ -2,9 +2,9 @@
 
 // ── ChatThreadSidebar - GPT rail: oldSpiritOS-style DnD + inline folder mint ────
 import { useDroppable } from "@dnd-kit/core";
-import type { DragEndEvent } from "@dnd-kit/core";
+import type { DragCancelEvent, DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { FolderPlus, MessageSquarePlus, X } from "lucide-react";
+import { ChevronRight, FolderPlus, MessageSquarePlus, Search, X } from "lucide-react";
 import {
   memo,
   useCallback,
@@ -16,14 +16,17 @@ import {
 
 import { ChatFolderSection } from "@/components/chat/ChatFolderSection";
 import { ChatSidebarDndProvider } from "@/components/chat/ChatSidebarDndProvider";
-import { ChatThreadListItem } from "@/components/chat/ChatThreadListItem";
+import { StableChatThreadListItem } from "@/components/chat/ChatThreadListItem";
 import { SortableChatThreadItem } from "@/components/chat/SortableChatThreadItem";
 import type { FolderSidebarSection } from "@/lib/chat-folder-utils";
 import { buildMoveSelectModel } from "@/lib/chat-folder-utils";
 import {
   CHAT_SIDEBAR_ROOT_DROP_ID,
+  computeFolderReorderPlan,
   computeThreadDropPlan,
+  FOLDER_SORT_PREFIX,
   parseDragId,
+  resetThreadCollisionSticky,
   shouldEnableChatThreadSidebarDnd,
   THREAD_DND_PREFIX,
   type ThreadReorderOp,
@@ -55,6 +58,7 @@ export type ChatThreadSidebarProps = {
   onDeleteFolder: (id: string) => void;
   onToggleFolderCollapsed: (id: string) => void;
   onCommitThreadDrag?: (ops: ThreadReorderOp[]) => void | Promise<void>;
+  onCommitFolderDrag?: (orderedFolderIds: string[]) => void | Promise<void>;
   /** Hover-expand collapsed folder targets while a thread drag is in flight (~300ms). */
   onExpandFolderDuringDrag?: (folderId: string) => void | Promise<void>;
   /** When drawer is used on small screens, show a close control in the header. */
@@ -64,7 +68,7 @@ export type ChatThreadSidebarProps = {
   /** Drawer-only: enable @dnd-kit so iOS can reorder/move threads from the handle. */
   mobileDndEnabled?: boolean;
   className?: string;
-  /** Prompt 10A - pinned quick-access block (may duplicate rows below). */
+  /** Prompt 10A - pinned quick-access block (same thread may still appear in `rootThreads` for DnD math). */
   pinnedThreads?: ChatThread[];
   onTogglePinThread?: (threadId: string) => void;
   threadSnippets?: Record<string, string>;
@@ -93,6 +97,7 @@ export const ChatThreadSidebar = memo(function ChatThreadSidebar({
   onDeleteFolder,
   onToggleFolderCollapsed,
   onCommitThreadDrag,
+  onCommitFolderDrag,
   onExpandFolderDuringDrag,
   onDrawerClose,
   layoutVariant = "default",
@@ -111,20 +116,26 @@ export const ChatThreadSidebar = memo(function ChatThreadSidebar({
   const newFolderMuted = railLocked;
   const trinityChrome = chromeVariant === "trinity";
 
-  // Row-wide drag steals the first pointer interaction from the title <button> (dnd-kit vs click).
-  // Handle-only keeps drag on the grip and lets thread switch work on first tap - drawer already did this.
-  /* Trinity /chat: row drag only — no visible drag markers (grip removed from UI). */
-  const threadDragLayout = trinityChrome ? "row" : "handle";
+  // Handle-only: title/open stays a real button; dnd-kit listeners live on the invisible left-edge activator.
+  const threadDragLayout = "handle";
+
+  /** PointerSensor travel before drag arms. Whole-row needed ~20px; a ~36px grip feels dead until ~5px. */
+  const railPointerActivationPx = 5;
 
   const lgDesktop = useMediaMinWidthLg();
 
   const useDnd = shouldEnableChatThreadSidebarDnd({
-    hasCommitHandler: Boolean(onCommitThreadDrag),
+    hasCommitHandler: Boolean(onCommitThreadDrag || onCommitFolderDrag),
     railLocked,
     lgDesktop,
     layoutVariant,
     mobileDndEnabled,
   });
+
+  const folderReorderEnabled =
+    useDnd &&
+    Boolean(onCommitFolderDrag) &&
+    !searchQuery.trim();
 
   const [dragActive, setDragActive] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
@@ -134,10 +145,36 @@ export const ChatThreadSidebar = memo(function ChatThreadSidebar({
   const [folderCreateError, setFolderCreateError] = useState<string | null>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
   const skipFolderBlurRef = useRef(false);
+  const threadScrollRef = useRef<HTMLDivElement>(null);
+
+  const [pinnedSectionExpanded, setPinnedSectionExpanded] = useState(true);
+  const [foldersSectionExpanded, setFoldersSectionExpanded] = useState(true);
+
+  /** Pinned root threads render only under PINNED; Recent stays unpinned-only. */
+  const recentRootThreads = useMemo(
+    () => rootThreads.filter((t) => !t.pinned),
+    [rootThreads],
+  );
+
+  /** Drop-plan bucket order must match on-screen stacking (pinned block → Recent), not raw `order` interleaving. */
+  const visualRootThreadsForPlan = useMemo(
+    () => [...pinnedThreads, ...recentRootThreads],
+    [pinnedThreads, recentRootThreads],
+  );
 
   const rootThreadIds = useMemo(
-    () => rootThreads.map((t) => `${THREAD_DND_PREFIX}${t.id}`),
-    [rootThreads],
+    () => recentRootThreads.map((t) => `${THREAD_DND_PREFIX}${t.id}`),
+    [recentRootThreads],
+  );
+
+  const pinnedThreadIds = useMemo(
+    () => pinnedThreads.map((t) => `${THREAD_DND_PREFIX}${t.id}`),
+    [pinnedThreads],
+  );
+
+  const folderSortIds = useMemo(
+    () => folderSections.map((s) => `${FOLDER_SORT_PREFIX}${s.folder.id}`),
+    [folderSections],
   );
 
   const draggingThreadActive = Boolean(
@@ -191,26 +228,57 @@ export const ChatThreadSidebar = memo(function ChatThreadSidebar({
     clearHoverExpand,
   ]);
 
+  const resetThreadDragChrome = useCallback(() => {
+    setDragActive(null);
+    setOverId(null);
+    clearHoverExpand();
+  }, [clearHoverExpand]);
+
+  const handleDragCancel = useCallback(
+    (_e: DragCancelEvent) => {
+      resetThreadDragChrome();
+    },
+    [resetThreadDragChrome],
+  );
+
   const handleDragEnd = useCallback(
     (e: DragEndEvent) => {
       const { active, over } = e;
-      setDragActive(null);
-      setOverId(null);
-      clearHoverExpand();
-      if (!over || !onCommitThreadDrag) return;
       const aid = String(active.id);
-      const oid = String(over.id);
+      const oid = over ? String(over.id) : null;
+      resetThreadDragChrome();
+
+      if (aid.startsWith(FOLDER_SORT_PREFIX)) {
+        if (!oid || !onCommitFolderDrag) return;
+        const activeFolderId = aid.slice(FOLDER_SORT_PREFIX.length);
+        const next = computeFolderReorderPlan({
+          activeFolderId,
+          overId: oid,
+          folderSections,
+        });
+        if (next?.length) void onCommitFolderDrag(next);
+        return;
+      }
+
+      if (!over || !onCommitThreadDrag) return;
       if (!aid.startsWith(THREAD_DND_PREFIX)) return;
+      const threadOverId = String(over.id);
       const threadId = aid.slice(THREAD_DND_PREFIX.length);
       const ops = computeThreadDropPlan({
         activeThreadId: threadId,
-        overId: oid,
-        rootThreads,
+        overId: threadOverId,
+        rootThreads: visualRootThreadsForPlan,
         folderSections,
       });
       if (ops?.length) void onCommitThreadDrag(ops);
     },
-    [folderSections, rootThreads, onCommitThreadDrag, clearHoverExpand],
+    [
+      folderSections,
+      onCommitFolderDrag,
+      onCommitThreadDrag,
+      resetThreadDragChrome,
+      visualRootThreadsForPlan,
+    ],
   );
 
   const cancelCreateFolder = useCallback(() => {
@@ -234,7 +302,7 @@ export const ChatThreadSidebar = memo(function ChatThreadSidebar({
   }, [draftFolderName, onCreateFolder, cancelCreateFolder]);
 
   const scrollClass = cn(
-    "scrollbar-hide flex min-h-0 flex-col gap-2 overflow-y-auto overflow-x-hidden p-2 pb-5 lg:flex-1",
+    "spirit-sidebar-thread-scroll scrollbar-hide flex min-h-0 flex-col gap-2 overflow-y-auto overflow-x-hidden p-2 pb-5 lg:flex-1",
     layoutVariant === "drawer" && "touch-pan-y",
   );
 
@@ -249,30 +317,73 @@ export const ChatThreadSidebar = memo(function ChatThreadSidebar({
     disabled: !useDnd,
   });
 
+  const renderSectionLabel = (
+    label: string,
+    toggle?: { expanded: boolean; onToggle: () => void },
+  ) => {
+    const key = label.toLowerCase();
+    if (toggle) {
+      return (
+        <button
+          type="button"
+          data-sidebar-section-label={key}
+          data-sidebar-section-toggle={key}
+          aria-expanded={toggle.expanded}
+          aria-controls={`sidebar-section-body-${key}`}
+          id={`sidebar-section-heading-${key}`}
+          onClick={toggle.onToggle}
+          disabled={railLocked}
+          className={cn(
+            "spirit-sidebar-section-label spirit-sidebar-section-toggle flex w-full min-w-0 items-center gap-1 rounded-md px-1 py-0.5 text-left font-mono text-[9px] font-semibold uppercase tracking-[0.22em] text-chalk/38 outline-none transition hover:bg-white/[0.05]",
+            trinityChrome && "spirit-sidebar-section-label--trinity",
+            railLocked && "pointer-events-none opacity-40",
+          )}
+        >
+          <ChevronRight
+            className={cn(
+              "size-3 shrink-0 text-chalk/45 transition-transform",
+              toggle.expanded && "rotate-90",
+            )}
+            aria-hidden
+            strokeWidth={2}
+          />
+          <span className="min-w-0 truncate">{label}</span>
+        </button>
+      );
+    }
+    return (
+      <p
+        data-sidebar-section-label={key}
+        id={`sidebar-section-heading-${key}`}
+        className={cn(
+          "spirit-sidebar-section-label px-1 font-mono text-[9px] font-semibold uppercase tracking-[0.22em] text-chalk/38",
+          trinityChrome && "spirit-sidebar-section-label--trinity",
+        )}
+      >
+        {label}
+      </p>
+    );
+  };
+
   const renderRootThreads = (dnd: boolean) =>
-    rootThreads.map((thread) => {
+    recentRootThreads.map((thread) => {
       const moveModel = buildMoveSelectModel(thread, allFolders);
       const snippet = threadSnippets?.[thread.id];
-      const pinProps =
-        onTogglePinThread != null
-          ? {
-              pinned: Boolean(thread.pinned),
-              onTogglePin: () => onTogglePinThread(thread.id),
-            }
-          : {};
       const item = (
-        <ChatThreadListItem
+        <StableChatThreadListItem
           thread={thread}
-          active={thread.id === activeThreadId}
+          activeThreadId={activeThreadId}
+          onSelectThread={onSelectThread}
+          onRenameThread={onRenameThread}
+          onDeleteThread={onDeleteThread}
+          onMoveThreadToFolder={onMoveThreadToFolder}
+          onTogglePinThread={onTogglePinThread}
           updatedLabel={formatThreadUpdatedLabel(thread.updatedAt)}
           interactionDisabled={railLocked}
           moveSelect={moveModel.show ? moveModel : null}
-          onSelect={() => onSelectThread(thread.id)}
-          onRename={() => onRenameThread(thread.id)}
-          onDelete={() => onDeleteThread(thread.id)}
-          onMoveThread={(fid) => onMoveThreadToFolder(thread.id, fid)}
           searchSnippet={snippet}
-          {...pinProps}
+          hideUpdatedLabel={trinityChrome}
+          actionLayout={trinityChrome ? "trinity-recent" : "inline"}
         />
       );
       if (dnd) {
@@ -281,24 +392,32 @@ export const ChatThreadSidebar = memo(function ChatThreadSidebar({
             key={thread.id}
             threadId={thread.id}
             disabled={railLocked}
-            useDragHandle={threadDragLayout === "handle"}
+            useDragHandle
           >
-            {({ dragActivatorProps, dragHandleProps, isDragging }) => (
-              <ChatThreadListItem
+            {({
+              dragActivatorProps,
+              dragHandleProps,
+              setDragActivatorRef,
+              isDragging,
+            }) => (
+              <StableChatThreadListItem
                 thread={thread}
-                active={thread.id === activeThreadId}
+                activeThreadId={activeThreadId}
+                onSelectThread={onSelectThread}
+                onRenameThread={onRenameThread}
+                onDeleteThread={onDeleteThread}
+                onMoveThreadToFolder={onMoveThreadToFolder}
+                onTogglePinThread={onTogglePinThread}
                 updatedLabel={formatThreadUpdatedLabel(thread.updatedAt)}
                 interactionDisabled={railLocked}
                 moveSelect={moveModel.show ? moveModel : null}
                 dragActivatorProps={dragHandleProps ? undefined : dragActivatorProps}
                 dragHandleProps={dragHandleProps}
-                dndDragging={Boolean(dragHandleProps && isDragging)}
-                onSelect={() => onSelectThread(thread.id)}
-                onRename={() => onRenameThread(thread.id)}
-                onDelete={() => onDeleteThread(thread.id)}
-                onMoveThread={(fid) => onMoveThreadToFolder(thread.id, fid)}
+                dndDragging={isDragging}
+                setDragActivatorRef={setDragActivatorRef}
                 searchSnippet={snippet}
-                {...pinProps}
+                hideUpdatedLabel={trinityChrome}
+                actionLayout={trinityChrome ? "trinity-recent" : "inline"}
               />
             )}
           </SortableChatThreadItem>
@@ -307,9 +426,15 @@ export const ChatThreadSidebar = memo(function ChatThreadSidebar({
       return <div key={thread.id}>{item}</div>;
     });
 
-  const renderFolderSections = (dnd: boolean) =>
+  const renderFolderSections = (dnd: boolean, folderSort: boolean) =>
     folderSections.map((section) => (
-      <div key={section.folder.id} className="flex flex-col gap-1">
+      <div
+        key={section.folder.id}
+        className={cn(
+          "spirit-sidebar-folder-item flex flex-col",
+          trinityChrome ? "gap-px" : "gap-1",
+        )}
+      >
         <ChatFolderSection
           section={section}
           allFolders={allFolders}
@@ -318,6 +443,7 @@ export const ChatThreadSidebar = memo(function ChatThreadSidebar({
           dndEnabled={dnd}
           threadDragLayout={threadDragLayout}
           draggingThread={dnd && draggingThreadActive}
+          folderSortable={folderSort}
           onToggleCollapsed={onToggleFolderCollapsed}
           onRenameFolder={onRenameFolder}
           onDeleteFolder={onDeleteFolder}
@@ -334,58 +460,97 @@ export const ChatThreadSidebar = memo(function ChatThreadSidebar({
   const innerScroll = (dnd: boolean) => (
     <>
       {pinnedThreads.length > 0 ? (
-        <div className="flex flex-col gap-0.5">
-          <p
-            className={cn(
-              "spirit-sidebar-section-label px-1 font-mono text-[9px] font-semibold uppercase tracking-[0.22em] text-chalk/38",
-              trinityChrome && "spirit-sidebar-section-label--trinity",
-            )}
-          >
-            Pinned
-          </p>
-          {pinnedThreads.map((thread) => {
-            const moveModel = buildMoveSelectModel(thread, allFolders);
-            const snippet = threadSnippets?.[thread.id];
-            const pinProps =
-              onTogglePinThread != null
-                ? {
-                    pinned: Boolean(thread.pinned),
-                    onTogglePin: () => onTogglePinThread(thread.id),
-                  }
-                : {};
-            return (
-              <ChatThreadListItem
-                key={`pinned-${thread.id}`}
-                thread={thread}
-                active={thread.id === activeThreadId}
-                updatedLabel={formatThreadUpdatedLabel(thread.updatedAt)}
-                interactionDisabled={railLocked}
-                moveSelect={moveModel.show ? moveModel : null}
-                onSelect={() => onSelectThread(thread.id)}
-                onRename={() => onRenameThread(thread.id)}
-                onDelete={() => onDeleteThread(thread.id)}
-                onMoveThread={(fid) => onMoveThreadToFolder(thread.id, fid)}
-                searchSnippet={snippet}
-                {...pinProps}
-              />
-            );
-          })}
-        </div>
-      ) : null}
-
-      {draftActive ? (
         <div
+          data-sidebar-section="pinned"
           className={cn(
-            "spirit-sidebar-draft-card rounded-lg border px-3 py-2.5",
-            "border-[color:color-mix(in_oklab,var(--spirit-accent)_38%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-accent)_10%,transparent)]",
+            "spirit-sidebar-section spirit-sidebar-section--pinned flex flex-col",
+            trinityChrome ? "gap-px" : "gap-0.5",
           )}
         >
-          <p className="font-medium text-[13px] text-[color:var(--spirit-accent-strong)]">
-            New chat
-          </p>
-          <p className="mt-1 font-mono text-[10px] uppercase tracking-wider text-chalk/40">
-            Draft · clears on first send
-          </p>
+          {renderSectionLabel("Pinned", {
+            expanded: pinnedSectionExpanded,
+            onToggle: () => setPinnedSectionExpanded((v) => !v),
+          })}
+          {pinnedSectionExpanded ? (
+            <div
+              id="sidebar-section-body-pinned"
+              className={cn(
+                "flex min-h-0 flex-col",
+                trinityChrome ? "gap-px" : "gap-0.5",
+              )}
+            >
+              {dnd ? (
+                <SortableContext
+                  items={pinnedThreadIds}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {pinnedThreads.map((thread) => {
+                    const moveModel = buildMoveSelectModel(thread, allFolders);
+                    const snippet = threadSnippets?.[thread.id];
+                    return (
+                      <SortableChatThreadItem
+                        key={thread.id}
+                        threadId={thread.id}
+                        disabled={railLocked}
+                        useDragHandle
+                      >
+                        {({
+                          dragActivatorProps,
+                          dragHandleProps,
+                          setDragActivatorRef,
+                          isDragging,
+                        }) => (
+                          <StableChatThreadListItem
+                            thread={thread}
+                            activeThreadId={activeThreadId}
+                            onSelectThread={onSelectThread}
+                            onRenameThread={onRenameThread}
+                            onDeleteThread={onDeleteThread}
+                            onMoveThreadToFolder={onMoveThreadToFolder}
+                            onTogglePinThread={onTogglePinThread}
+                            updatedLabel={formatThreadUpdatedLabel(thread.updatedAt)}
+                            interactionDisabled={railLocked}
+                            moveSelect={moveModel.show ? moveModel : null}
+                            searchSnippet={snippet}
+                            hideUpdatedLabel={trinityChrome}
+                            dragActivatorProps={
+                              dragHandleProps ? undefined : dragActivatorProps
+                            }
+                            dragHandleProps={dragHandleProps}
+                            dndDragging={isDragging}
+                            setDragActivatorRef={setDragActivatorRef}
+                            actionLayout={trinityChrome ? "trinity-recent" : "inline"}
+                          />
+                        )}
+                      </SortableChatThreadItem>
+                    );
+                  })}
+                </SortableContext>
+              ) : (
+                pinnedThreads.map((thread) => {
+                  const moveModel = buildMoveSelectModel(thread, allFolders);
+                  const snippet = threadSnippets?.[thread.id];
+                  return (
+                    <StableChatThreadListItem
+                      key={thread.id}
+                      thread={thread}
+                      activeThreadId={activeThreadId}
+                      onSelectThread={onSelectThread}
+                      onRenameThread={onRenameThread}
+                      onDeleteThread={onDeleteThread}
+                      onMoveThreadToFolder={onMoveThreadToFolder}
+                      onTogglePinThread={onTogglePinThread}
+                      updatedLabel={formatThreadUpdatedLabel(thread.updatedAt)}
+                      interactionDisabled={railLocked}
+                      moveSelect={moveModel.show ? moveModel : null}
+                      searchSnippet={snippet}
+                      hideUpdatedLabel={trinityChrome}
+                    />
+                  );
+                })
+              )}
+            </div>
+          ) : null}
         </div>
       ) : null}
 
@@ -401,25 +566,51 @@ export const ChatThreadSidebar = memo(function ChatThreadSidebar({
         </p>
       ) : null}
 
+      {folderSections.length > 0 ? (
+        <div
+          data-sidebar-section="folders"
+          className={cn(
+            "spirit-sidebar-section spirit-sidebar-section--folders flex flex-col",
+            trinityChrome ? "gap-px" : "gap-0.5",
+          )}
+        >
+          {renderSectionLabel("Folders", {
+            expanded: foldersSectionExpanded,
+            onToggle: () => setFoldersSectionExpanded((v) => !v),
+          })}
+          <div
+            id="sidebar-section-body-folders"
+            hidden={!foldersSectionExpanded}
+            className={cn(
+              "spirit-sidebar-folder-stack flex min-h-0 flex-col",
+              trinityChrome ? "gap-px" : "gap-1",
+            )}
+          >
+            {folderReorderEnabled ? (
+              <SortableContext items={folderSortIds} strategy={verticalListSortingStrategy}>
+                {renderFolderSections(dnd, true)}
+              </SortableContext>
+            ) : (
+              renderFolderSections(dnd, false)
+            )}
+          </div>
+        </div>
+      ) : null}
+
       {dnd ? (
         <div
           ref={setRootDropRef}
+          data-sidebar-section="recent"
           className={cn(
-            "flex min-h-[120px] flex-col gap-0.5 rounded-md px-0.5 py-1 transition-colors",
+            "spirit-sidebar-section spirit-sidebar-section--recent spirit-sidebar-root-drop flex min-h-[120px] flex-col rounded-md px-0.5 py-1 transition-colors",
+            trinityChrome ? "gap-px" : "gap-0.5",
             draggingThreadActive &&
               rootDropOver &&
               "border border-[color:color-mix(in_oklab,var(--spirit-accent-strong)_55%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-accent)_8%,transparent)] shadow-[0_0_24px_-10px_var(--spirit-glow)]",
           )}
         >
-          <p
-            className={cn(
-              "spirit-sidebar-section-label px-1 font-mono text-[9px] font-semibold uppercase tracking-[0.22em] text-chalk/38",
-              trinityChrome && "spirit-sidebar-section-label--trinity",
-            )}
-          >
-            {trinityChrome ? "Recent" : "Chats"}
-          </p>
-          {rootThreads.length === 0 && !draftActive ? (
+          {renderSectionLabel(trinityChrome ? "Recent" : "Chats")}
+          {recentRootThreads.length === 0 && !draftActive ? (
             <p className="px-2 py-1 font-mono text-[9px] text-chalk/32">
               No unfiled threads
             </p>
@@ -432,16 +623,15 @@ export const ChatThreadSidebar = memo(function ChatThreadSidebar({
           </SortableContext>
         </div>
       ) : (
-        <div className="flex min-h-[44px] flex-col gap-0.5">
-          <p
-            className={cn(
-              "spirit-sidebar-section-label px-1 font-mono text-[9px] font-semibold uppercase tracking-[0.22em] text-chalk/38",
-              trinityChrome && "spirit-sidebar-section-label--trinity",
-            )}
-          >
-            {trinityChrome ? "Recent" : "Chats"}
-          </p>
-          {rootThreads.length === 0 && !draftActive ? (
+        <div
+          data-sidebar-section="recent"
+          className={cn(
+            "spirit-sidebar-section spirit-sidebar-section--recent flex min-h-[44px] flex-col",
+            trinityChrome ? "gap-px" : "gap-0.5",
+          )}
+        >
+          {renderSectionLabel(trinityChrome ? "Recent" : "Chats")}
+          {recentRootThreads.length === 0 && !draftActive ? (
             <p className="px-2 py-1 font-mono text-[9px] text-chalk/32">
               No unfiled threads
             </p>
@@ -450,7 +640,6 @@ export const ChatThreadSidebar = memo(function ChatThreadSidebar({
         </div>
       )}
 
-      {renderFolderSections(dnd)}
     </>
   );
 
@@ -461,32 +650,67 @@ export const ChatThreadSidebar = memo(function ChatThreadSidebar({
         "flex flex-col",
         layoutVariant === "drawer"
           ? "h-full min-h-0 max-h-none w-full flex-1 border-0 bg-transparent shadow-none backdrop-blur-none"
-          : "max-h-[40dvh] shrink-0 border-b border-[color:color-mix(in_oklab,var(--spirit-border)_80%,transparent)] bg-white/[0.025] backdrop-blur-xl lg:max-h-none lg:h-full lg:w-[280px] lg:border-b-0 lg:border-r lg:border-[color:color-mix(in_oklab,var(--spirit-border)_65%,transparent)]",
+          : "max-h-[40dvh] shrink-0 border-b border-[color:color-mix(in_oklab,var(--spirit-border)_80%,transparent)] bg-white/[0.025] backdrop-blur-xl lg:max-h-none lg:h-full lg:w-[var(--chat-thread-rail-width)] lg:border-b-0 lg:border-r lg:border-[color:color-mix(in_oklab,var(--spirit-border)_65%,transparent)]",
         trinityChrome && "spirit-trinity-sidebar--trinity",
         className,
       )}
     >
       <div
         className={cn(
-          "flex shrink-0 flex-col gap-2 border-b border-[color:color-mix(in_oklab,var(--spirit-border)_70%,transparent)]",
+          "spirit-sidebar-header flex shrink-0 flex-col gap-2 border-b border-[color:color-mix(in_oklab,var(--spirit-border)_70%,transparent)]",
           layoutVariant === "drawer" ? "px-3 pb-3 pt-2" : "px-3 py-2.5",
         )}
       >
         {layoutVariant === "drawer" ? (
           <>
+            <div className="spirit-sidebar-brand-row flex items-start justify-between gap-2">
+              <div className="spirit-sidebar-brand-copy min-w-0 flex-1">
+                <p
+                  className={cn(
+                    "truncate font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-chalk/55",
+                    trinityChrome && "spirit-sidebar-brand-title",
+                  )}
+                >
+                  {trinityChrome ? "Chats" : "Spirit threads"}
+                </p>
+                <p
+                  className={cn(
+                    "mt-px font-mono text-[10px] text-chalk/35",
+                    trinityChrome && "spirit-sidebar-brand-meta",
+                  )}
+                >
+                  {savedThreadCount} saved
+                </p>
+              </div>
+              {onDrawerClose ? (
+                <button
+                  type="button"
+                  onClick={onDrawerClose}
+                  aria-label="Close threads"
+                  className="inline-flex h-9 w-9 shrink-0 touch-manipulation items-center justify-center rounded-lg border border-[color:var(--spirit-border)] bg-white/[0.04] text-chalk/70 transition hover:bg-white/[0.08] lg:hidden"
+                >
+                  <X className="h-4 w-4" aria-hidden strokeWidth={2} />
+                </button>
+              ) : null}
+            </div>
             {onSearchQueryChange ? (
-              <div>
+              <div className="spirit-sidebar-search-wrap relative px-0.5 pt-1">
                 <label htmlFor="chat-thread-search" className="sr-only">
                   Search chats
                 </label>
+                <Search
+                  className="spirit-sidebar-search-icon pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2"
+                  aria-hidden
+                  strokeWidth={1.8}
+                />
                 <input
                   id="chat-thread-search"
                   type="search"
                   enterKeyHint="search"
                   value={searchQuery}
                   onChange={(e) => onSearchQueryChange(e.target.value)}
-                  placeholder="Search…"
-                  className="w-full rounded-2xl border border-[color:color-mix(in_oklab,var(--spirit-border)_40%,transparent)] bg-black/40 px-3 py-2.5 text-[15px] text-chalk outline-none placeholder:text-chalk/35 focus:border-[color:color-mix(in_oklab,var(--spirit-accent)_35%,transparent)] focus:ring-1 focus:ring-[color:color-mix(in_oklab,var(--spirit-accent)_18%,transparent)]"
+                  placeholder="Search chats..."
+                  className="spirit-sidebar-search-input w-full rounded-2xl border border-[color:color-mix(in_oklab,var(--spirit-border)_40%,transparent)] bg-black/40 py-2.5 pl-9 pr-3 text-[15px] text-chalk outline-none placeholder:text-chalk/35 focus:border-[color:color-mix(in_oklab,var(--spirit-accent)_35%,transparent)] focus:ring-1 focus:ring-[color:color-mix(in_oklab,var(--spirit-accent)_18%,transparent)]"
                 />
               </div>
             ) : null}
@@ -501,11 +725,15 @@ export const ChatThreadSidebar = memo(function ChatThreadSidebar({
                 disabled={newChatMuted}
                 aria-disabled={newChatMuted}
                 className={cn(
-                  "touch-manipulation inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-2xl border border-[color:color-mix(in_oklab,var(--spirit-accent)_45%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-accent)_14%,transparent)] px-3 font-sans text-[14px] font-semibold text-[color:var(--spirit-accent-strong)] transition hover:brightness-110 active:scale-[0.98]",
+                  "touch-manipulation inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-2xl border border-[color:color-mix(in_oklab,var(--spirit-accent)_45%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-accent)_14%,transparent)] px-3 font-sans text-[14px] font-semibold text-[color:var(--spirit-accent-strong)] transition active:scale-[0.98]",
                   newChatMuted && "opacity-35",
                 )}
               >
-                <MessageSquarePlus className="h-4 w-4 shrink-0" aria-hidden />
+                <MessageSquarePlus
+                  className="spirit-sidebar-action-icon shrink-0"
+                  aria-hidden
+                  strokeWidth={1.75}
+                />
                 New chat
               </button>
               <button
@@ -528,11 +756,12 @@ export const ChatThreadSidebar = memo(function ChatThreadSidebar({
                 aria-label="New folder"
                 title="New folder"
                 className={cn(
-                  "touch-manipulation inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[color:color-mix(in_oklab,var(--spirit-border)_48%,transparent)] bg-white/[0.04] text-chalk/65 transition hover:border-[color:color-mix(in_oklab,var(--spirit-accent)_30%,transparent)] hover:text-chalk/85 active:scale-[0.98]",
+                  "touch-manipulation inline-flex min-h-[48px] shrink-0 items-center justify-center gap-2 rounded-2xl border border-[color:color-mix(in_oklab,var(--spirit-border)_48%,transparent)] bg-white/[0.04] px-3 font-sans text-[14px] font-semibold text-chalk/65 transition hover:border-[color:color-mix(in_oklab,var(--spirit-accent)_30%,transparent)] hover:text-chalk/85 active:scale-[0.98]",
                   newFolderMuted && "opacity-35",
                 )}
               >
-                <FolderPlus className="h-4 w-4" aria-hidden />
+                <FolderPlus className="spirit-sidebar-action-icon" aria-hidden strokeWidth={1.75} />
+                Folder
               </button>
             </div>
             {creatingFolder ? (
@@ -547,7 +776,7 @@ export const ChatThreadSidebar = memo(function ChatThreadSidebar({
                   placeholder="New folder"
                   aria-label="New folder name"
                   className={cn(
-                    "w-full rounded-xl border border-[color:color-mix(in_oklab,var(--spirit-border)_50%,transparent)] bg-black/30 px-2.5 py-2 font-mono text-[11px] text-chalk outline-none",
+                    "spirit-sidebar-folder-input w-full rounded-xl border border-[color:color-mix(in_oklab,var(--spirit-border)_50%,transparent)] bg-black/30 px-2.5 py-2 font-mono text-[11px] text-chalk outline-none",
                     "placeholder:text-chalk/35 focus:border-[color:color-mix(in_oklab,var(--spirit-accent)_45%,transparent)]",
                   )}
                   onKeyDown={(e) => {
@@ -579,14 +808,11 @@ export const ChatThreadSidebar = memo(function ChatThreadSidebar({
                 ) : null}
               </div>
             ) : null}
-            <p className="px-0.5 pt-1 font-sans text-[11px] font-medium uppercase tracking-[0.12em] text-chalk/38">
-              {trinityChrome ? "Chats" : "Spirit threads"}
-            </p>
           </>
         ) : (
           <>
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0 flex-1">
+            <div className="spirit-sidebar-brand-row flex items-start justify-between gap-2">
+              <div className="spirit-sidebar-brand-copy min-w-0 flex-1">
                 <p
                   className={cn(
                     "truncate font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-chalk/55",
@@ -626,11 +852,11 @@ export const ChatThreadSidebar = memo(function ChatThreadSidebar({
                 disabled={newChatMuted}
                 aria-disabled={newChatMuted}
                 className={cn(
-                  "touch-manipulation inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[color:color-mix(in_oklab,var(--spirit-accent)_42%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-accent)_12%,transparent)] px-3 py-2 font-mono text-[10px] font-semibold uppercase tracking-wider text-[color:var(--spirit-accent-strong)] transition hover:brightness-110 active:scale-[0.98]",
+                  "touch-manipulation inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[color:color-mix(in_oklab,var(--spirit-accent)_42%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-accent)_12%,transparent)] px-3 py-2 font-mono text-[10px] font-semibold uppercase tracking-wider text-[color:var(--spirit-accent-strong)] transition active:scale-[0.98]",
                   newChatMuted && "opacity-35",
                 )}
               >
-                <MessageSquarePlus className="h-3.5 w-3.5" aria-hidden />
+                <MessageSquarePlus className="spirit-sidebar-action-icon" aria-hidden strokeWidth={1.75} />
                 New chat
               </button>
               <button
@@ -657,7 +883,7 @@ export const ChatThreadSidebar = memo(function ChatThreadSidebar({
                   newFolderMuted && "opacity-35",
                 )}
               >
-                <FolderPlus className="h-3.5 w-3.5" aria-hidden />
+                <FolderPlus className="spirit-sidebar-action-icon" aria-hidden strokeWidth={1.75} />
                 Folder
               </button>
             </div>
@@ -673,7 +899,7 @@ export const ChatThreadSidebar = memo(function ChatThreadSidebar({
                   placeholder="New folder"
                   aria-label="New folder name"
                   className={cn(
-                    "w-full rounded-lg border border-[color:color-mix(in_oklab,var(--spirit-border)_50%,transparent)] bg-black/30 px-2.5 py-2 font-mono text-[11px] text-chalk outline-none",
+                    "spirit-sidebar-folder-input w-full rounded-lg border border-[color:color-mix(in_oklab,var(--spirit-border)_50%,transparent)] bg-black/30 px-2.5 py-2 font-mono text-[11px] text-chalk outline-none",
                     "placeholder:text-chalk/35 focus:border-[color:color-mix(in_oklab,var(--spirit-accent)_45%,transparent)]",
                   )}
                   onKeyDown={(e) => {
@@ -706,10 +932,15 @@ export const ChatThreadSidebar = memo(function ChatThreadSidebar({
               </div>
             ) : null}
             {onSearchQueryChange ? (
-              <div className="px-0.5 pt-1">
+              <div className="spirit-sidebar-search-wrap relative px-0.5 pt-1">
                 <label htmlFor="chat-thread-search" className="sr-only">
                   Search chats
                 </label>
+                <Search
+                  className="spirit-sidebar-search-icon pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2"
+                  aria-hidden
+                  strokeWidth={1.8}
+                />
                 <input
                   id="chat-thread-search"
                   type="search"
@@ -717,7 +948,7 @@ export const ChatThreadSidebar = memo(function ChatThreadSidebar({
                   value={searchQuery}
                   onChange={(e) => onSearchQueryChange(e.target.value)}
                   placeholder="Search chats..."
-                  className="w-full rounded-lg border border-[color:color-mix(in_oklab,var(--spirit-border)_50%,transparent)] bg-black/35 px-2.5 py-2 font-mono text-base text-chalk outline-none placeholder:text-chalk/35 focus:border-[color:color-mix(in_oklab,var(--spirit-accent)_42%,transparent)] lg:text-[11px]"
+                  className="spirit-sidebar-search-input w-full rounded-lg border border-[color:color-mix(in_oklab,var(--spirit-border)_50%,transparent)] bg-black/35 py-2 pl-9 pr-2.5 font-mono text-base text-chalk outline-none placeholder:text-chalk/35 focus:border-[color:color-mix(in_oklab,var(--spirit-accent)_42%,transparent)] lg:text-[11px]"
                 />
               </div>
             ) : null}
@@ -730,22 +961,33 @@ export const ChatThreadSidebar = memo(function ChatThreadSidebar({
           overlayThread={overlayThread}
           touchActivation={
             layoutVariant === "drawer"
-              ? { delay: 180, tolerance: 8 }
+              ? { delay: 200, tolerance: 12 }
               : { delay: 150, tolerance: 6 }
           }
+          pointerActivation={{
+            distance:
+              layoutVariant === "drawer" ? 12 : railPointerActivationPx,
+          }}
           onDragStart={(ev) => {
-            setDragActive(String(ev.active.id));
+            const activeId = String(ev.active.id);
+            resetThreadCollisionSticky();
+            setDragActive(activeId);
             setOverId(null);
           }}
           onDragOver={(ev) => {
             setOverId(ev.over ? String(ev.over.id) : null);
           }}
           onDragEnd={handleDragEnd}
+          onDragCancel={handleDragCancel}
         >
-          <div className={scrollClass}>{innerScroll(true)}</div>
+          <div ref={threadScrollRef} className={scrollClass}>
+            {innerScroll(true)}
+          </div>
         </ChatSidebarDndProvider>
       ) : (
-        <div className={scrollClass}>{innerScroll(false)}</div>
+        <div ref={threadScrollRef} className={scrollClass}>
+          {innerScroll(false)}
+        </div>
       )}
     </aside>
   );

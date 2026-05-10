@@ -1,0 +1,5 @@
+# CUDA PyTorch overlay for the Source proxy visual/vector workloads.
+# Use with: .\.venv-source-proxy\Scripts\python.exe -m pip install -r requirements.cuda.txt
+--extra-index-url https://download.pytorch.org/whl/cu128
+torch>=2.11,<2.12
+torchvision>=0.26,<0.27

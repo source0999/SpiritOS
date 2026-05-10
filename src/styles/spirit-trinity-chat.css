@@ -5,46 +5,49 @@
 .spirit-trinity-chat {
   --ddv4-app-rail-width: 12.5rem;
   --chat-app-rail-width: var(--ddv4-app-rail-width);
-  --chat-thread-rail-width: 14.75rem;
+  --chat-thread-rail-width: 13.25rem;
   --chat-shell-gap: 0px;
   --chat-nav-thread-gutter: clamp(12px, 1.15vw, 18px);
   --chat-composer-max-width: 45rem;
 
-  --ddv4-fg: #0f172a;
-  --ddv4-fg-muted: rgba(30, 41, 59, 0.68);
-  --ddv4-fg-faint: rgba(51, 65, 85, 0.46);
+  --ddv4-fg: rgba(244, 247, 250, 0.94);
+  --ddv4-fg-muted: rgba(218, 224, 230, 0.68);
+  --ddv4-fg-faint: rgba(202, 208, 216, 0.46);
+  /* Near-black depth + soft smoke — not pale gray sheet, not drained saturation */
   --ddv4-atmos-foundation:
-    radial-gradient(circle at 18% 18%, rgba(216, 232, 242, 0.78), transparent 34%),
-    radial-gradient(circle at 78% 22%, rgba(126, 144, 162, 0.42), transparent 38%),
-    radial-gradient(circle at 52% 88%, rgba(62, 74, 90, 0.36), transparent 46%),
-    radial-gradient(circle at 62% 38%, rgba(172, 188, 202, 0.22), transparent 52%),
-    linear-gradient(135deg, #d9e3ea 0%, #aebcca 46%, #8495a5 100%);
+    radial-gradient(ellipse 118% 86% at 50% 108%, rgba(3, 4, 7, 0.92), transparent 58%),
+    radial-gradient(ellipse 52% 42% at 10% 16%, rgba(168, 176, 188, 0.11), transparent 60%),
+    radial-gradient(ellipse 48% 40% at 90% 20%, rgba(120, 132, 148, 0.09), transparent 64%),
+    radial-gradient(ellipse 72% 52% at 46% 44%, rgba(18, 22, 30, 0.62), transparent 70%),
+    radial-gradient(ellipse 36% 28% at 72% 76%, rgba(8, 12, 20, 0.48), transparent 74%),
+    linear-gradient(152deg, #050608 0%, #090b10 34%, #0e1118 68%, #131820 100%);
   --ddv4-atmos-wash: linear-gradient(
-    165deg,
-    rgba(255, 255, 255, 0.14) 0%,
-    transparent 42%,
-    rgba(20, 24, 32, 0.08) 100%
+    132deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.042) 24%,
+    rgba(185, 194, 206, 0.035) 36%,
+    transparent 54%,
+    rgba(2, 3, 5, 0.42) 100%
   );
-  --ddv4-atmos-veil: radial-gradient(
-      ellipse 92% 72% at 50% 108%,
-      rgba(36, 46, 58, 0.38) 0%,
-      transparent 62%
-    ),
-    linear-gradient(to top, rgba(42, 54, 68, 0.22) 0%, transparent 55%);
+  --ddv4-atmos-veil:
+    radial-gradient(ellipse 88% 72% at 50% 118%, rgba(0, 0, 0, 0.55) 0%, transparent 62%),
+    radial-gradient(ellipse 140% 100% at 50% -8%, rgba(0, 0, 0, 0.22), transparent 45%),
+    linear-gradient(180deg, rgba(6, 8, 11, 0.38), rgba(4, 5, 8, 0.58));
   --ddv4-glass-bg: linear-gradient(
     132deg,
-    rgba(255, 255, 255, 0.24) 0%,
-    rgba(255, 255, 255, 0.13) 48%,
-    rgba(210, 220, 230, 0.12) 100%
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(12, 15, 20, 0.4) 44%,
+    rgba(4, 6, 9, 0.58) 100%
   );
-  --ddv4-glass-border: rgba(255, 255, 255, 0.34);
+  --ddv4-glass-border: rgba(255, 255, 255, 0.2);
   --ddv4-glass-shadow:
-    0 34px 84px -42px rgba(30, 41, 59, 0.28),
-    inset 0 1px 0 rgba(255, 255, 255, 0.36),
-    inset 0 0 18px rgba(255, 255, 255, 0.08);
-  --ddv4-glass-shadow-drop: 0 34px 84px -42px rgba(30, 41, 59, 0.28);
-  --ddv4-pill-bg: rgba(255, 255, 255, 0.12);
-  --ddv4-pill-border: rgba(255, 255, 255, 0.24);
+    0 30px 90px -42px rgba(0, 0, 0, 0.72),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.24),
+    inset -1px -1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 0 28px rgba(255, 255, 255, 0.05);
+  --ddv4-glass-shadow-drop: 0 30px 90px -42px rgba(0, 0, 0, 0.72);
+  --ddv4-pill-bg: rgba(12, 15, 19, 0.3);
+  --ddv4-pill-border: rgba(255, 255, 255, 0.18);
   --ddv4-surface-light-bg:
     linear-gradient(
       135deg,
@@ -59,40 +62,63 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.58),
     inset 0 -1px 0 rgba(255, 255, 255, 0.14);
 
-  --trinity-text: var(--ddv4-fg);
-  --trinity-text-soft: rgba(24, 32, 43, 0.86);
+  --trinity-text: rgba(244, 247, 250, 0.94);
+  --trinity-text-soft: rgba(226, 232, 238, 0.82);
   --trinity-text-muted: var(--ddv4-fg-muted);
   --trinity-line: color-mix(in oklab, var(--ddv4-glass-border) 82%, transparent);
   --trinity-line-strong: color-mix(in oklab, var(--ddv4-glass-border) 100%, transparent);
   --trinity-surface: color-mix(in oklab, var(--ddv4-pill-bg) 86%, transparent);
   --trinity-surface-soft: color-mix(in oklab, var(--ddv4-pill-bg) 64%, transparent);
   --trinity-surface-strong: color-mix(in oklab, var(--ddv4-surface-light-fill) 100%, transparent);
-  --spirit-bg: #aeb8c4;
-  --spirit-bg-soft: #d1d9e1;
+  --spirit-bg: #171b20;
+  --spirit-bg-soft: #252a31;
   --spirit-panel: var(--trinity-surface);
   --spirit-panel-strong: var(--trinity-surface-strong);
-  --spirit-accent: #4f5964;
-  --spirit-accent-strong: #202a35;
-  --spirit-glow: rgba(38, 49, 61, 0.24);
+  --spirit-accent: #aeb6bf;
+  --spirit-accent-strong: #f2f5f8;
+  --spirit-glow: rgba(205, 213, 222, 0.22);
   --spirit-border: var(--trinity-line);
   --spirit-glass-border: var(--ddv4-glass-border);
   --spirit-nav-glow: var(--ddv4-glass-shadow-drop);
   --color-chalk: var(--trinity-text);
-  --ddv4-nav-bg: rgba(255, 255, 255, 0.34);
-  --ddv4-nav-border: rgba(255, 255, 255, 0.72);
+  --ddv4-nav-bg: rgba(14, 17, 21, 0.38);
+  --ddv4-nav-border: rgba(255, 255, 255, 0.22);
   --ddv4-nav-shadow:
-    0 20px 70px -28px rgba(15, 23, 42, 0.30),
-    inset 0 1px 0 rgba(255, 255, 255, 0.82);
-  --ddv4-nav-shadow-drop: 0 20px 70px -28px rgba(15, 23, 42, 0.30);
-  --ddv4-nav-fg: #1e293b;
-  --ddv4-nav-active-bg: rgba(15, 23, 42, 0.88);
-  --ddv4-nav-active-fg: rgba(255, 255, 255, 0.96);
-  --ddv4-nav-divider: rgba(15, 23, 42, 0.14);
+    0 24px 72px -32px rgba(0, 0, 0, 0.72),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.22);
+  --ddv4-nav-shadow-drop: 0 24px 72px -32px rgba(0, 0, 0, 0.72);
+  --ddv4-nav-fg: rgba(238, 243, 247, 0.82);
+  --ddv4-nav-active-bg: rgba(244, 247, 250, 0.9);
+  --ddv4-nav-active-fg: rgba(10, 12, 15, 0.96);
+  --ddv4-nav-divider: rgba(255, 255, 255, 0.12);
+  --trinity-backdrop-base: var(--ddv4-atmos-foundation);
+  --trinity-backdrop-architecture:
+    linear-gradient(104deg, transparent 0 14%, rgba(255, 255, 255, 0.055) 14.4% 18.5%, transparent 19% 100%),
+    linear-gradient(90deg, transparent 0 62%, rgba(6, 8, 12, 0.52) 62.5% 65%, transparent 65.5% 100%),
+    radial-gradient(ellipse 58% 22% at 44% 26%, rgba(92, 104, 122, 0.14), transparent 72%),
+    radial-gradient(ellipse 42% 30% at 74% 70%, rgba(5, 7, 11, 0.58), transparent 74%),
+    radial-gradient(ellipse 50% 36% at 22% 62%, rgba(24, 30, 42, 0.22), transparent 68%);
+  --trinity-backdrop-diagonal-light:
+    linear-gradient(126deg, transparent 0 21%, rgba(255, 255, 255, 0.075) 34%, rgba(255, 255, 255, 0.018) 44%, transparent 64% 100%);
+  --trinity-charcoal-tint:
+    radial-gradient(ellipse 92% 70% at 50% 114%, rgba(0, 0, 0, 0.38), transparent 66%),
+    linear-gradient(180deg, rgba(5, 6, 9, 0.22), rgba(3, 4, 6, 0.42));
+  --trinity-glass-fill: rgba(12, 15, 19, 0.18);
+  --trinity-glass-fill-strong: rgba(9, 11, 14, 0.26);
+  --trinity-glass-border: rgba(255, 255, 255, 0.28);
+  --trinity-glass-rim: rgba(255, 255, 255, 0.46);
+  --trinity-glass-highlight: rgba(255, 255, 255, 0.38);
+  --trinity-glass-shadow:
+    0 30px 90px -42px rgba(0, 0, 0, 0.82),
+    0 12px 34px -28px rgba(0, 0, 0, 0.76),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.26),
+    inset -1px -1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 0 24px rgba(255, 255, 255, 0.05);
   background:
-    radial-gradient(circle at 18% 18%, rgba(216, 232, 242, 0.72), transparent 32%),
-    radial-gradient(circle at 78% 24%, rgba(126, 144, 162, 0.34), transparent 36%),
-    radial-gradient(circle at 58% 92%, rgba(70, 82, 98, 0.28), transparent 48%),
-    linear-gradient(135deg, #d9e3ea 0%, #aebcca 45%, #8495a5 100%) !important;
+    var(--trinity-charcoal-tint),
+    var(--trinity-backdrop-diagonal-light),
+    var(--trinity-backdrop-architecture),
+    var(--trinity-backdrop-base) !important;
   color: var(--color-chalk);
   --spirit-surface: var(--trinity-surface);
   --spirit-surface-strong: var(--trinity-surface-strong);
@@ -104,26 +130,46 @@
   /* Thread sidebar only: smoky warm gray glass (ref #2), not icy white utility frost */
   --trinity-sidebar-warm-glow: radial-gradient(
     circle at 50% 14%,
-    rgba(214, 166, 126, 0.2),
+    rgba(255, 255, 255, 0.08),
     transparent 38%
   );
   --trinity-sidebar-cool-sheen: radial-gradient(
     circle at 12% 0%,
-    rgba(235, 244, 248, 0.18),
+    rgba(235, 238, 242, 0.12),
     transparent 32%
   );
   --trinity-sidebar-glass: linear-gradient(
     145deg,
-    rgba(72, 79, 88, 0.36) 0%,
-    rgba(109, 119, 128, 0.26) 42%,
-    rgba(50, 58, 68, 0.32) 100%
+    rgba(18, 22, 27, 0.48) 0%,
+    rgba(37, 42, 49, 0.32) 42%,
+    rgba(8, 10, 13, 0.42) 100%
   );
-  --trinity-sidebar-border: rgba(34, 43, 54, 0.42);
-  --trinity-sidebar-highlight: rgba(255, 255, 255, 0.22);
-  --trinity-sidebar-inner-shadow: inset 0 -12px 32px rgba(16, 18, 24, 0.22);
+  --trinity-sidebar-border: rgba(255, 255, 255, 0.2);
+  --trinity-sidebar-highlight: rgba(255, 255, 255, 0.24);
+  --trinity-sidebar-inner-shadow: inset 0 -12px 32px rgba(0, 0, 0, 0.24);
   --trinity-sidebar-float-shadow:
     0 26px 56px -32px rgba(12, 16, 24, 0.52),
     0 10px 28px -18px rgba(24, 32, 44, 0.36);
+
+  /* ── Sidebar chrome: liquid glass v2 — transparent core, shine at edges ── */
+  --trinity-liquid-text: rgba(228, 233, 238, 0.86);
+  --trinity-liquid-text-strong: rgba(248, 250, 252, 0.96);
+  --trinity-liquid-muted: rgba(206, 214, 222, 0.62);
+  --trinity-liquid-clear-center: rgba(10, 13, 17, 0.28);
+  --trinity-liquid-clear-fill: rgba(22, 26, 32, 0.34);
+  --trinity-liquid-hover-fill: rgba(38, 44, 52, 0.44);
+  --trinity-liquid-top-sheen: rgba(255, 255, 255, 0.82);
+  --trinity-liquid-specular: rgba(255, 255, 255, 0.95);
+  --trinity-liquid-cyan-edge: rgba(255, 255, 255, 0.32);
+  --trinity-liquid-cyan-hotspot: rgba(255, 255, 255, 0.38);
+  --trinity-liquid-blue-shadow: rgba(0, 0, 0, 0.42);
+  /* Aliases — older selectors still reference these tokens */
+  --trinity-liquid-blue-base: var(--trinity-liquid-clear-fill);
+  --trinity-liquid-blue-fill: var(--trinity-liquid-hover-fill);
+  --trinity-liquid-blue-edge: var(--trinity-liquid-cyan-edge);
+  --trinity-liquid-white-edge: rgba(255, 255, 255, 0.78);
+  --trinity-liquid-hotspot: var(--trinity-liquid-cyan-hotspot);
+  --trinity-liquid-shadow: var(--trinity-liquid-blue-shadow);
 }
 
 .spirit-trinity-atmosphere {
@@ -138,20 +184,19 @@
   position: absolute;
   inset: 0;
   z-index: 0;
-  background: var(--ddv4-atmos-foundation);
-  filter: saturate(122%);
+  background: var(--trinity-backdrop-base);
+  filter: blur(0.35px) saturate(118%);
 }
 
 .spirit-trinity-atmosphere__grid {
   position: absolute;
   inset: 0;
   z-index: 1;
-  opacity: 0.4;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-  background-size: 58px 58px;
-  mask-image: radial-gradient(ellipse 80% 62% at 50% 32%, black 26%, transparent 82%);
+  opacity: 0.94;
+  background-image: var(--trinity-backdrop-architecture);
+  background-size: auto;
+  filter: blur(16px) saturate(124%) contrast(1.03);
+  transform: scale(1.04);
   pointer-events: none;
 }
 
@@ -161,9 +206,8 @@
   z-index: 2;
   background:
     var(--ddv4-atmos-wash),
-    radial-gradient(circle at 0% 0%, rgba(255, 255, 255, 0.12) 0%, transparent 44%),
-    radial-gradient(circle at 100% 100%, rgba(52, 64, 78, 0.18) 0%, transparent 44%);
-  opacity: 0.94;
+    var(--trinity-backdrop-diagonal-light);
+  opacity: 0.88;
   mix-blend-mode: normal;
 }
 
@@ -171,25 +215,28 @@
   position: absolute;
   inset: 0;
   z-index: 3;
-  background: var(--ddv4-atmos-veil);
+  background: var(--trinity-charcoal-tint);
+  opacity: 0.64;
   pointer-events: none;
 }
 
+/* Content stack above atmosphere (grid/wash are paint-only, pointer-events: none). */
 .spirit-trinity-live-chat {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   display: flex;
   min-height: 0;
   flex-direction: column;
+  isolation: isolate;
 }
 
 .spirit-trinity-chat .dashboard-demo-v4-desktop-rail-full-height {
-  --ddv4-nav-bg: rgba(255, 255, 255, 0.34);
-  --ddv4-nav-border: rgba(255, 255, 255, 0.72);
-  --ddv4-nav-fg: #1e293b;
-  --ddv4-nav-divider: rgba(15, 23, 42, 0.16);
-  --ddv4-nav-active-bg: rgba(24, 32, 43, 0.90);
-  --ddv4-nav-active-fg: rgba(255, 255, 255, 0.97);
+  --ddv4-nav-bg: rgba(10, 12, 16, 0.46);
+  --ddv4-nav-border: rgba(255, 255, 255, 0.14);
+  --ddv4-nav-fg: rgba(232, 236, 242, 0.9);
+  --ddv4-nav-divider: rgba(255, 255, 255, 0.1);
+  --ddv4-nav-active-bg: rgba(244, 247, 250, 0.92);
+  --ddv4-nav-active-fg: rgba(10, 12, 15, 0.96);
 }
 
 .spirit-trinity-chat .dashboard-demo-v4-desktop-rail-full-height .dashboard-demo-v4-desktop-brand {
@@ -208,13 +255,13 @@
 }
 
 .spirit-trinity-chat .dashboard-demo-v4-desktop-rail-full-height .dashboard-demo-v4-desktop-nav-item:not(.dashboard-demo-v4-desktop-nav-item-active) {
-  background: rgba(255, 255, 255, 0.075);
-  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .spirit-trinity-chat .dashboard-demo-v4-desktop-rail-full-height .dashboard-demo-v4-desktop-theme-picker {
   border-radius: 0.8rem;
-  color: rgba(15, 23, 42, 0.82);
+  color: rgba(226, 232, 240, 0.88);
 }
 
 .spirit-trinity-chat__desktop-header,
@@ -225,7 +272,10 @@
   background: var(--ddv4-glass-bg);
   backdrop-filter: blur(28px) saturate(142%);
   -webkit-backdrop-filter: blur(28px) saturate(142%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.22),
+    0 18px 48px -28px rgba(0, 0, 0, 0.45);
 }
 
 .spirit-trinity-chat__main {
@@ -255,13 +305,13 @@
 
 .spirit-trinity-chat__thread-rail input,
 .spirit-trinity-chat select {
-  border-color: var(--trinity-line);
-  background: rgba(255, 255, 255, 0.20);
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(8, 10, 14, 0.52);
 }
 
 .spirit-trinity-chat__thread-rail input::placeholder,
 .spirit-trinity-chat textarea::placeholder {
-  color: rgba(51, 65, 85, 0.58);
+  color: rgba(148, 163, 184, 0.55);
 }
 
 .spirit-trinity-chat__conversation {
@@ -270,15 +320,15 @@
 
 .spirit-trinity-chat [data-role="assistant"] > div > div {
   max-width: min(760px, calc(100vw - 2rem));
-  border: 1px solid rgba(255, 255, 255, 0.36);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-left: 0;
   border-radius: 22px 22px 22px 6px;
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.22), transparent 62%),
-    rgba(190, 199, 208, 0.36);
+    linear-gradient(135deg, rgba(255, 255, 255, 0.11), transparent 62%),
+    rgba(22, 26, 34, 0.52);
   box-shadow:
-    0 18px 46px -34px rgba(15, 23, 42, 0.28),
-    inset 0 1px 0 rgba(255, 255, 255, 0.38);
+    0 22px 52px -36px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
   backdrop-filter: blur(18px) saturate(130%);
   -webkit-backdrop-filter: blur(18px) saturate(130%);
 }
@@ -286,13 +336,13 @@
 .spirit-trinity-chat [data-role="user"] > div > div {
   max-width: min(760px, calc(100vw - 2rem));
   border-radius: 22px 22px 6px 22px;
-  border-color: rgba(166, 177, 196, 0.62);
+  border-color: rgba(120, 132, 152, 0.32);
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.30), rgba(255, 255, 255, 0.08) 58%),
-    rgba(155, 164, 176, 0.42);
+    linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.03) 58%),
+    rgba(28, 34, 44, 0.48);
   box-shadow:
-    0 20px 54px -34px rgba(15, 23, 42, 0.30),
-    inset 0 1px 0 rgba(255, 255, 255, 0.42);
+    0 22px 56px -36px rgba(0, 0, 0, 0.52),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
   backdrop-filter: blur(20px) saturate(132%);
   -webkit-backdrop-filter: blur(20px) saturate(132%);
 }
@@ -314,18 +364,18 @@
 
 .spirit-trinity-chat [data-role="assistant"] .font-mono,
 .spirit-trinity-chat [data-role="user"] .font-mono {
-  color: rgba(15, 23, 42, 0.78) !important;
+  color: rgba(186, 198, 214, 0.88) !important;
 }
 
 .spirit-trinity-chat__composer-dock {
   position: relative;
   border-color: transparent;
   background:
-    linear-gradient(to top, rgba(97, 111, 128, 0.34), rgba(157, 174, 188, 0.14), transparent);
-  border-top: 1px solid rgba(42, 54, 68, 0.22);
+    linear-gradient(to top, rgba(12, 16, 22, 0.78), rgba(18, 22, 30, 0.32), transparent);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow:
-    0 -24px 60px -44px rgba(15, 23, 42, 0.42),
-    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+    0 -28px 64px -48px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(18px) saturate(130%);
   -webkit-backdrop-filter: blur(18px) saturate(130%);
 }
@@ -333,13 +383,13 @@
 .spirit-trinity-chat__composer-surface {
   max-width: 690px !important;
   border-radius: 18px !important;
-  border-color: rgba(255, 255, 255, 0.46);
+  border-color: rgba(255, 255, 255, 0.22);
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.20), transparent 52%),
-    rgba(255, 255, 255, 0.13);
+    linear-gradient(135deg, rgba(255, 255, 255, 0.12), transparent 52%),
+    rgba(10, 13, 18, 0.48);
   box-shadow:
-    0 24px 70px -34px rgba(15, 23, 42, 0.30),
-    inset 0 1px 0 rgba(255, 255, 255, 0.46);
+    0 28px 76px -36px rgba(0, 0, 0, 0.58),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
   backdrop-filter: blur(24px) saturate(142%);
   -webkit-backdrop-filter: blur(24px) saturate(142%);
 }
@@ -347,9 +397,9 @@
 .spirit-trinity-chat__composer-surface:focus-within {
   border-color: rgba(30, 41, 59, 0.36);
   box-shadow:
-    0 28px 78px -34px rgba(15, 23, 42, 0.34),
+    0 30px 82px -36px rgba(0, 0, 0, 0.5),
     0 0 0 1px rgba(30, 41, 59, 0.18),
-    inset 0 1px 0 rgba(255, 255, 255, 0.52);
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
 }
 
 .spirit-trinity-chat__composer-surface button[type="submit"] {
@@ -367,8 +417,8 @@
 .spirit-trinity-mode-badge {
   max-width: none !important;
   border-color: var(--trinity-line-strong) !important;
-  background: rgba(255, 255, 255, 0.24) !important;
-  color: rgba(15, 23, 42, 0.82) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: rgba(236, 242, 248, 0.92) !important;
 }
 
 .spirit-trinity-empty {
@@ -388,27 +438,27 @@
 }
 
 .spirit-trinity-chat__composer-surface textarea::placeholder {
-  color: rgba(51, 65, 85, 0.62) !important;
+  color: rgba(148, 163, 184, 0.58) !important;
 }
 
 .spirit-trinity-chat__composer-form + div,
 .spirit-trinity-chat__composer-chip,
 .spirit-trinity-chat__composer-mode-select select {
-  color: rgba(15, 23, 42, 0.76) !important;
+  color: rgba(226, 232, 240, 0.86) !important;
 }
 
 .spirit-trinity-chat__composer-chip,
 .spirit-trinity-chat__composer-mode-select select {
-  border-color: rgba(255, 255, 255, 0.42) !important;
-  background: rgba(255, 255, 255, 0.16) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.38);
+  border-color: rgba(255, 255, 255, 0.16) !important;
+  background: rgba(8, 11, 16, 0.44) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 .spirit-trinity-chat__composer-chip:hover,
 .spirit-trinity-chat__composer-mode-select select:hover,
 .spirit-trinity-chat__composer-mode-select select:focus {
   border-color: rgba(30, 41, 59, 0.34) !important;
-  background: rgba(255, 255, 255, 0.34) !important;
+  background: rgba(255, 255, 255, 0.12) !important;
 }
 
 .spirit-trinity-chat [data-testid="chat-empty-suggestions"] button,
@@ -421,7 +471,8 @@
   color: var(--trinity-text-soft);
 }
 
-.spirit-trinity-chat .spirit-trinity-chat__thread-rail button:hover,
+/* Title open control is text-only — no hover/focus tile behind the name. */
+.spirit-trinity-chat .spirit-trinity-chat__thread-rail button:not(.spirit-thread-row__title-button):not(.spirit-thread-row__drag-edge):not(.spirit-folder-row__drag-edge):hover,
 .spirit-trinity-chat [data-testid="chat-empty-suggestions"] button:hover {
   background: rgba(255, 255, 255, 0.14);
   color: var(--trinity-text);
@@ -448,6 +499,20 @@
 .spirit-trinity-chat [class*="text-chalk/9"],
 .spirit-trinity-chat .text-chalk {
   color: var(--trinity-text) !important;
+}
+
+/* ── Trinity sidebar headings: chalk/* scan selectors steal contrast from "Chats" ── */
+.spirit-trinity-chat .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-trinity-chats-label,
+.spirit-trinity-chat .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-brand-title {
+  color: var(--trinity-liquid-text-strong) !important;
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.48),
+    0 0 14px rgba(186, 240, 255, 0.28) !important;
+}
+
+.spirit-trinity-chat .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-brand-meta {
+  color: color-mix(in oklab, var(--trinity-liquid-muted) 92%, rgba(13, 24, 38, 0.85)) !important;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.48) !important;
 }
 
 .spirit-trinity-chat [class*="border-white/"],
@@ -489,6 +554,204 @@
   z-index: 1;
 }
 
+/* ── Trinity sidebar actions: transparent bubble glass (refinement v2) ── */
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-chat"],
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-folder"] {
+  position: relative !important;
+  isolation: isolate !important;
+  overflow: hidden !important;
+  border-radius: 999px !important;
+  border-width: 1px !important;
+  border-style: solid !important;
+  border-color: color-mix(in oklab, var(--trinity-liquid-cyan-edge) 68%, rgba(255, 255, 255, 0.72) 32%) !important;
+  background-color: var(--trinity-liquid-clear-center) !important;
+  background-image:
+    linear-gradient(
+      180deg,
+      rgba(244, 252, 255, 0.82) 0%,
+      rgba(220, 245, 255, 0.26) 28%,
+      rgba(184, 228, 255, 0.18) 100%
+    ),
+    radial-gradient(
+      ellipse 120% 85% at 28% 0%,
+      rgba(255, 255, 255, 0.92) 0%,
+      rgba(140, 228, 255, 0.52) 26%,
+      transparent 58%
+    ),
+    radial-gradient(ellipse 90% 70% at 90% 78%, rgba(92, 210, 248, 0.52) 0%, transparent 58%),
+    radial-gradient(ellipse 80% 55% at 12% 100%, rgba(168, 228, 255, 0.32) 0%, transparent 60%) !important;
+  background-blend-mode: screen, screen, soft-light, normal !important;
+  color: var(--trinity-liquid-text-strong) !important;
+  font-weight: 650 !important;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45) !important;
+  -webkit-font-smoothing: antialiased;
+  box-shadow:
+    0 12px 30px -14px var(--trinity-liquid-blue-shadow),
+    0 4px 16px -8px rgba(88, 208, 246, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.78),
+    inset 0 -3px 16px -5px rgba(80, 200, 240, 0.38),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.34),
+    0 2px 8px -4px rgba(15, 23, 42, 0.07) !important;
+  backdrop-filter: blur(24px) saturate(185%) brightness(1.08);
+  -webkit-backdrop-filter: blur(24px) saturate(185%) brightness(1.08);
+  filter: none !important;
+  outline: none !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-chat"]::before,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-folder"]::before {
+  content: "";
+  position: absolute;
+  inset: 1px 8px auto 8px;
+  height: 40%;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.88) 0%,
+    rgba(255, 255, 255, 0.22) 55%,
+    transparent 100%
+  );
+  opacity: 0.9;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-chat"]::after,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-folder"]::after {
+  content: "";
+  position: absolute;
+  inset: auto 8px 6px auto;
+  width: 38%;
+  height: 38%;
+  min-width: 2rem;
+  min-height: 2rem;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(circle, rgba(100, 228, 255, 0.78) 0%, transparent 58%);
+  filter: blur(2px);
+  opacity: 0.7;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-chat"] > *,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-folder"] > * {
+  position: relative;
+  z-index: 1;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-chat"] svg,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-folder"] svg {
+  color: rgba(8, 18, 30, 0.92) !important;
+  stroke: currentColor !important;
+  fill: none !important;
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action] .spirit-sidebar-action-icon {
+  width: 0.875rem !important;
+  height: 0.875rem !important;
+  flex-shrink: 0 !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+  [data-sidebar-action="new-chat"]:hover:not(:disabled)::before,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+  [data-sidebar-action="new-folder"]:hover:not(:disabled)::before {
+  opacity: 0.96;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+  [data-sidebar-action="new-chat"]:hover:not(:disabled)::after,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+  [data-sidebar-action="new-folder"]:hover:not(:disabled)::after {
+  opacity: 0.85;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-chat"]:hover:not(:disabled),
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-folder"]:hover:not(:disabled) {
+  border-color: color-mix(in oklab, var(--trinity-liquid-cyan-edge) 78%, rgba(255, 255, 255, 0.88) 22%) !important;
+  background-color: var(--trinity-liquid-clear-fill) !important;
+  background-image:
+    linear-gradient(
+      180deg,
+      rgba(238, 250, 255, 0.84) 0%,
+      rgba(210, 242, 255, 0.24) 26%,
+      rgba(176, 224, 255, 0.2) 100%
+    ),
+    radial-gradient(
+      ellipse 118% 88% at 30% 0%,
+      rgba(255, 255, 255, 0.94) 0%,
+      rgba(130, 228, 255, 0.55) 24%,
+      transparent 56%
+    ),
+    radial-gradient(ellipse 92% 72% at 88% 76%, rgba(88, 206, 246, 0.58) 0%, transparent 56%),
+    radial-gradient(ellipse 82% 52% at 14% 100%, rgba(158, 226, 255, 0.34) 0%, transparent 58%) !important;
+  background-blend-mode: screen, screen, soft-light, normal !important;
+  box-shadow:
+    0 14px 36px -12px var(--trinity-liquid-blue-shadow),
+    0 0 32px -10px rgba(88, 215, 252, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.88),
+    inset 0 -3px 18px -4px rgba(72, 198, 238, 0.42),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.46),
+    0 4px 14px -6px rgba(15, 23, 42, 0.08) !important;
+  filter: none !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-chat"]:focus-visible,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-folder"]:focus-visible {
+  border-color: rgba(186, 245, 255, 0.98) !important;
+  box-shadow:
+    0 12px 28px -14px var(--trinity-liquid-blue-shadow),
+    0 0 0 2px rgba(255, 255, 255, 0.88),
+    0 0 0 4px rgba(96, 218, 252, 0.52),
+    inset 0 1px 0 rgba(255, 255, 255, 0.82),
+    inset 0 -3px 14px -5px rgba(72, 198, 238, 0.34) !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-chat"]:disabled,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-folder"]:disabled {
+  opacity: 1 !important;
+  cursor: not-allowed !important;
+  border-color: color-mix(in oklab, var(--trinity-liquid-cyan-edge) 62%, rgba(255, 255, 255, 0.48) 38%) !important;
+  background-color: color-mix(in oklab, var(--trinity-liquid-clear-center) 85%, transparent) !important;
+  background-image:
+    linear-gradient(
+      180deg,
+      rgba(242, 250, 255, 0.46) 0%,
+      rgba(228, 246, 255, 0.14) 38%,
+      rgba(176, 226, 255, 0.12) 100%
+    ),
+    radial-gradient(
+      ellipse 115% 80% at 28% 0%,
+      rgba(255, 255, 255, 0.52) 0%,
+      rgba(130, 226, 255, 0.3) 30%,
+      transparent 58%
+    ),
+    radial-gradient(ellipse 88% 65% at 90% 80%, rgba(84, 204, 242, 0.32) 0%, transparent 58%),
+    radial-gradient(ellipse 78% 50% at 12% 100%, rgba(158, 228, 255, 0.22) 0%, transparent 62%) !important;
+  background-blend-mode: screen, screen, soft-light, normal !important;
+  color: color-mix(in oklab, var(--trinity-liquid-text-strong) 72%, var(--trinity-liquid-muted)) !important;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35) !important;
+  filter: none !important;
+  backdrop-filter: blur(20px) saturate(135%) brightness(1.05);
+  -webkit-backdrop-filter: blur(20px) saturate(135%) brightness(1.05);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.52),
+    inset 0 -2px 10px -4px rgba(72, 198, 238, 0.24),
+    0 4px 14px -10px var(--trinity-liquid-blue-shadow) !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-chat"]:disabled::before,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-folder"]:disabled::before {
+  opacity: 0.48;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-chat"]:disabled::after,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-folder"]:disabled::after {
+  opacity: 0.38;
+}
+
 /* ── Desktop: nav gutter + smoky gray glass rail (foreground layer) ── */
 @media (min-width: 1024px) {
   .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity {
@@ -501,10 +764,10 @@
     flex-direction: column !important;
     width: var(--chat-thread-rail-width) !important;
     min-height: 0;
-    margin-block: 1rem;
+    margin-block: 1.125rem;
     margin-inline-start: var(--chat-nav-thread-gutter);
-    height: calc(100% - 2rem) !important;
-    max-height: calc(100dvh - 2rem);
+    height: calc(100% - 2.25rem) !important;
+    max-height: calc(100dvh - 2.25rem);
     overflow: hidden;
     border: 1px solid var(--trinity-sidebar-border) !important;
     border-radius: 1rem !important;
@@ -519,13 +782,15 @@
   }
 
   .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity > div:first-child {
-    gap: 0.5rem !important;
+    gap: 0.625rem !important;
     border-bottom: 1px solid rgba(52, 62, 76, 0.18) !important;
-    padding: 0.5rem 0.6rem 0.6rem !important;
+    padding: 0.7rem 0.7rem 0.75rem !important;
   }
 
   .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity > div:first-child > div:first-child {
     display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
   }
 
   .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-brand-title {
@@ -534,7 +799,6 @@
     font-weight: 600 !important;
     letter-spacing: 0.08em !important;
     text-transform: uppercase !important;
-    color: rgba(38, 46, 58, 0.82) !important;
   }
 
   .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-brand-meta {
@@ -542,100 +806,51 @@
     font-size: 0.625rem !important;
     font-weight: 500 !important;
     letter-spacing: 0.02em !important;
-    color: rgba(58, 68, 82, 0.74) !important;
   }
 
   .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-header-actions {
     justify-content: stretch !important;
-    gap: 0.4rem !important;
+    flex-wrap: nowrap !important;
+    gap: 0.5rem !important;
   }
 
+  /* Layout / type only — liquid glass material is global on [data-sidebar-action] above */
   .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-chat"] {
     flex: 1 1 auto !important;
-    min-height: 2.1rem !important;
-    border-radius: 0.5rem !important;
-    border: 1px solid rgba(38, 46, 56, 0.52) !important;
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, transparent 100%),
-      linear-gradient(145deg, rgba(92, 100, 110, 0.52) 0%, rgba(44, 52, 62, 0.46) 100%) !important;
-    color: rgba(18, 26, 34, 0.96) !important;
+    min-width: 0 !important;
+    min-height: 2.15rem !important;
     font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif !important;
-    font-size: 0.8125rem !important;
-    font-weight: 600 !important;
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
     letter-spacing: 0.01em !important;
     text-transform: none !important;
-    box-shadow:
-      0 10px 26px -18px rgba(12, 16, 24, 0.55),
-      inset 0 1px 0 rgba(255, 255, 255, 0.22) !important;
-  }
-
-  .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-chat"]:hover:not(:disabled) {
-    border-color: rgba(32, 40, 50, 0.62) !important;
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, transparent 100%),
-      linear-gradient(145deg, rgba(102, 112, 122, 0.58) 0%, rgba(54, 62, 72, 0.52) 100%) !important;
-  }
-
-  .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-chat"]:disabled {
-    opacity: 1 !important;
-    cursor: not-allowed !important;
-    border-color: rgba(48, 54, 62, 0.38) !important;
-    background: rgba(42, 48, 56, 0.35) !important;
-    color: rgba(36, 44, 54, 0.52) !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
   }
 
   .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-folder"] {
     flex: 0 0 auto !important;
-    min-height: 2.1rem !important;
-    padding-inline: 0.6rem !important;
-    border-radius: 0.5rem !important;
-    border: 1px solid rgba(52, 60, 70, 0.48) !important;
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%),
-      rgba(56, 64, 74, 0.38) !important;
-    color: rgba(22, 30, 40, 0.9) !important;
+    min-height: 2.15rem !important;
+    padding-inline: 0.7rem !important;
     font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif !important;
-    font-size: 0.75rem !important;
-    font-weight: 600 !important;
+    font-size: 0.6875rem !important;
+    font-weight: 700 !important;
     letter-spacing: 0.015em !important;
     text-transform: none !important;
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.18),
-      0 6px 18px -14px rgba(12, 16, 24, 0.42) !important;
-  }
-
-  .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-folder"]:hover:not(:disabled) {
-    border-color: rgba(42, 50, 60, 0.58) !important;
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, transparent 100%),
-      rgba(62, 70, 80, 0.46) !important;
-    color: rgba(15, 23, 34, 0.96) !important;
-  }
-
-  .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-folder"]:disabled {
-    opacity: 1 !important;
-    cursor: not-allowed !important;
-    border-color: rgba(48, 54, 62, 0.36) !important;
-    background: rgba(40, 46, 54, 0.28) !important;
-    color: rgba(38, 46, 56, 0.48) !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
   }
 
   .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-section-label--trinity {
     font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif !important;
-    font-size: 0.625rem !important;
+    font-size: 0.58rem !important;
     font-weight: 600 !important;
-    letter-spacing: 0.08em !important;
+    letter-spacing: 0.22em !important;
     text-transform: uppercase !important;
-    color: rgba(52, 60, 72, 0.78) !important;
+    color: rgba(31, 42, 56, 0.38) !important;
   }
 
   .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-thread-row__title {
-    font-size: 0.875rem !important;
-    font-weight: 600 !important;
-    line-height: 1.32 !important;
-    color: rgba(22, 30, 42, 0.94) !important;
+    font-size: 0.8125rem !important;
+    font-weight: 500 !important;
+    line-height: 1.25 !important;
+    color: rgba(23, 32, 45, 0.82) !important;
   }
 
   .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-thread-row__meta {
@@ -647,9 +862,10 @@
 
 @media (max-width: 1023px) {
   .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-thread-row__title {
-    font-size: 0.875rem !important;
-    line-height: 1.32 !important;
-    color: rgba(22, 30, 42, 0.92) !important;
+    font-size: 0.8125rem !important;
+    font-weight: 500 !important;
+    line-height: 1.25 !important;
+    color: rgba(23, 32, 45, 0.82) !important;
   }
 
   .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-thread-row__meta {
@@ -784,58 +1000,17 @@
     -webkit-backdrop-filter: blur(22px) saturate(118%);
   }
 
+  /* Narrow / drawer: type scale only — liquid chrome from global [data-sidebar-action] rules */
   .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-chat"] {
     min-height: 2.1rem !important;
-    border-radius: 0.5rem !important;
-    border: 1px solid rgba(38, 46, 56, 0.52) !important;
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, transparent 100%),
-      linear-gradient(145deg, rgba(92, 100, 110, 0.52) 0%, rgba(44, 52, 62, 0.46) 100%) !important;
-    color: rgba(18, 26, 34, 0.96) !important;
-    font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif !important;
     font-size: 0.8125rem !important;
     font-weight: 600 !important;
-    letter-spacing: 0.01em !important;
-    text-transform: none !important;
-    box-shadow:
-      0 10px 26px -18px rgba(12, 16, 24, 0.55),
-      inset 0 1px 0 rgba(255, 255, 255, 0.22) !important;
-  }
-
-  .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-chat"]:disabled {
-    opacity: 1 !important;
-    cursor: not-allowed !important;
-    border-color: rgba(48, 54, 62, 0.38) !important;
-    background: rgba(42, 48, 56, 0.35) !important;
-    color: rgba(36, 44, 54, 0.52) !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
   }
 
   .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-folder"] {
     min-height: 2.1rem !important;
-    border-radius: 0.5rem !important;
-    border: 1px solid rgba(52, 60, 70, 0.48) !important;
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%),
-      rgba(56, 64, 74, 0.38) !important;
-    color: rgba(22, 30, 40, 0.9) !important;
-    font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif !important;
     font-size: 0.75rem !important;
     font-weight: 600 !important;
-    letter-spacing: 0.015em !important;
-    text-transform: none !important;
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.18),
-      0 6px 18px -14px rgba(12, 16, 24, 0.42) !important;
-  }
-
-  .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-folder"]:disabled {
-    opacity: 1 !important;
-    cursor: not-allowed !important;
-    border-color: rgba(48, 54, 62, 0.36) !important;
-    background: rgba(40, 46, 54, 0.28) !important;
-    color: rgba(38, 46, 56, 0.48) !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
   }
 }
 
@@ -867,67 +1042,300 @@
   color: rgba(30, 41, 59, 0.66) !important;
 }
 
-.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity input[type="search"] {
-  border: 1px solid rgba(42, 52, 64, 0.42) !important;
-  background:
-    linear-gradient(145deg, rgba(92, 98, 106, 0.22), transparent 58%),
-    rgba(34, 40, 48, 0.38) !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.16),
-    inset 0 -1px 0 rgba(14, 18, 26, 0.14),
-    0 8px 22px -18px rgba(12, 18, 26, 0.38) !important;
+/* Drawer / narrow: glass tube search — transparent core */
+@media (max-width: 1023px) {
+  .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity input[type="search"] {
+    border: 1px solid color-mix(in oklab, var(--trinity-liquid-cyan-edge) 62%, rgba(255, 255, 255, 0.66) 38%) !important;
+    background-color: var(--trinity-liquid-clear-center) !important;
+    background-image:
+      linear-gradient(
+        180deg,
+        rgba(246, 252, 255, 0.72) 0%,
+        rgba(220, 246, 255, 0.18) 34%,
+        rgba(178, 228, 255, 0.12) 100%
+      ),
+      radial-gradient(
+        ellipse 118% 82% at 22% 0%,
+        rgba(255, 255, 255, 0.86) 0%,
+        rgba(132, 224, 255, 0.4) 28%,
+        transparent 56%
+      ),
+      radial-gradient(ellipse 88% 68% at 92% 94%, rgba(84, 206, 248, 0.46) 0%, transparent 54%),
+      radial-gradient(ellipse 72% 48% at 8% 100%, rgba(158, 228, 255, 0.22) 0%, transparent 58%) !important;
+    background-blend-mode: screen, screen, soft-light, normal !important;
+    color: var(--trinity-liquid-text-strong) !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.72),
+      inset 0 -3px 12px -4px rgba(72, 198, 238, 0.32),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.28),
+      0 8px 22px -14px var(--trinity-liquid-blue-shadow) !important;
+    backdrop-filter: blur(22px) saturate(182%) brightness(1.06);
+    -webkit-backdrop-filter: blur(22px) saturate(182%) brightness(1.06);
+  }
+
+  .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity input[type="search"]::placeholder {
+    color: color-mix(in oklab, var(--trinity-liquid-muted) 88%, rgba(13, 24, 38, 0.5)) !important;
+  }
+
+  .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity input[type="search"]:focus-visible {
+    border-color: rgba(255, 255, 255, 0.9) !important;
+    box-shadow:
+      0 0 0 2px rgba(255, 255, 255, 0.78),
+      0 0 0 4px rgba(96, 218, 252, 0.48),
+      inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+    outline: none !important;
+  }
 }
 
-.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity input[type="search"]:focus-visible {
-  border-color: rgba(52, 62, 74, 0.62) !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.2),
-    0 0 0 1px rgba(62, 74, 88, 0.35) !important;
-}
+@media (min-width: 1024px) {
+  .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity input[type="search"] {
+    min-height: 2rem;
+    border-radius: 999px !important;
+    padding: 0.45rem 0.65rem !important;
+    border: 1px solid color-mix(in oklab, var(--trinity-liquid-cyan-edge) 64%, rgba(255, 255, 255, 0.72) 36%) !important;
+    background-color: var(--trinity-liquid-clear-center) !important;
+    background-image:
+      linear-gradient(
+        180deg,
+        rgba(246, 252, 255, 0.74) 0%,
+        rgba(218, 244, 255, 0.16) 30%,
+        rgba(172, 226, 255, 0.12) 100%
+      ),
+      radial-gradient(ellipse 118% 84% at 18% 0%, rgba(255, 255, 255, 0.88) 0%, rgba(132, 226, 255, 0.42) 30%, transparent 54%),
+      radial-gradient(ellipse 82% 62% at 88% 92%, rgba(84, 206, 248, 0.46) 0%, transparent 52%),
+      radial-gradient(ellipse 68% 44% at 10% 100%, rgba(158, 228, 255, 0.22) 0%, transparent 56%) !important;
+    background-blend-mode: screen, screen, soft-light, normal !important;
+    color: var(--trinity-liquid-text-strong) !important;
+    box-shadow:
+      0 14px 34px -20px var(--trinity-liquid-blue-shadow),
+      0 6px 16px -12px rgba(72, 190, 232, 0.22),
+      inset 0 1px 0 rgba(255, 255, 255, 0.76),
+      inset 0 -3px 14px -5px rgba(72, 198, 238, 0.32),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.3),
+      inset 0 9px 22px -16px rgba(255, 255, 255, 0.14) !important;
+    backdrop-filter: blur(22px) saturate(182%) brightness(1.06);
+    -webkit-backdrop-filter: blur(22px) saturate(182%) brightness(1.06);
+  }
 
-.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-draft-card {
-  border-color: rgba(52, 62, 74, 0.52) !important;
-  background:
-    linear-gradient(145deg, rgba(72, 80, 90, 0.34), rgba(38, 46, 56, 0.28)) !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    0 10px 28px -22px rgba(12, 16, 24, 0.45) !important;
+  .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity input[type="search"]::placeholder {
+    color: color-mix(in oklab, var(--trinity-liquid-muted) 86%, rgba(13, 24, 38, 0.45)) !important;
+  }
+
+  .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity input[type="search"]:focus-visible {
+    border-color: rgba(255, 255, 255, 0.9) !important;
+    box-shadow:
+      0 0 0 2px rgba(255, 255, 255, 0.8),
+      0 0 0 4px rgba(96, 218, 252, 0.46),
+      inset 0 1px 0 rgba(255, 255, 255, 0.82),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.22) !important;
+    outline: none !important;
+  }
+
+  .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity > div:first-child > div:last-child {
+    padding-top: 0 !important;
+  }
 }
 
 .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-thread-row-shell {
-  border-color: rgba(44, 52, 62, 0.32) !important;
-  background: rgba(36, 42, 50, 0.14) !important;
+  margin-block: 0.03rem;
+  padding: 0.18rem 0.28rem !important;
+  border-color: transparent !important;
+  border-radius: 0.4rem !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
 .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-thread-row-shell:hover {
-  border-color: rgba(52, 60, 72, 0.48) !important;
-  background: rgba(48, 54, 64, 0.22) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  border-color: transparent !important;
+  background: rgba(255, 255, 255, 0.07) !important;
+  box-shadow: none !important;
 }
 
 .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-thread-row-shell:has(button[aria-current="true"]) {
-  border-color: rgba(62, 74, 88, 0.55) !important;
+  border-color: transparent !important;
+  background: rgba(255, 255, 255, 0.11) !important;
+  box-shadow: inset 2px 0 0 rgba(99, 216, 248, 0.38) !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-chat-thread-row {
+  gap: 0.25rem 0.4rem !important;
+}
+
+/* Thread rows are flex in React — no grid template hacks. */
+
+/* Trinity rail: one title line + ellipsis — pin/icon column fixed, text flexes */
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-thread-row__title > .spirit-thread-row__title-text {
+  display: block !important;
+  flex: 1 1 0% !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  word-break: normal !important;
+  -webkit-box-orient: unset !important;
+  -webkit-line-clamp: unset !important;
+  line-clamp: unset !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-folder-row {
+  flex-wrap: nowrap !important;
+  gap: 0.28rem !important;
+  width: 100%;
+  margin-block: 0.03rem;
+  padding: 0.16rem 0.28rem !important;
+  border-color: transparent !important;
+  border-radius: 0.55rem !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-folder-row:hover {
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.06), transparent 55%),
-    rgba(62, 72, 84, 0.34) !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    inset 0 -1px 0 rgba(18, 22, 28, 0.14);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 68%),
+    color-mix(in oklab, var(--trinity-liquid-clear-center) 44%, rgba(13, 24, 38, 0.04)) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14) !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-folder-row > span {
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif !important;
+  color: color-mix(in oklab, var(--trinity-liquid-text-strong) 72%, rgba(74, 86, 102, 0.74)) !important;
+  font-size: 0.8125rem !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-folder-row svg {
+  color: color-mix(in oklab, var(--trinity-liquid-muted) 78%, transparent) !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-folder-row > button {
+  background: transparent !important;
+  color: color-mix(in oklab, var(--trinity-liquid-muted) 58%, transparent) !important;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+    .spirit-sidebar-folder-row
+    > button:not(:first-child):not([data-drag-handle="folder-edge"]) {
+    opacity: 0;
+  }
+
+  .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+    .spirit-sidebar-folder-row:hover
+    > button:not(:first-child):not([data-drag-handle="folder-edge"]),
+  .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+    .spirit-sidebar-folder-row:focus-within
+    > button:not(:first-child):not([data-drag-handle="folder-edge"]) {
+    opacity: 0.52;
+  }
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-thread-row__title {
+  gap: 0.35rem !important;
+  color: color-mix(in oklab, var(--trinity-liquid-text-strong) 72%, rgba(74, 86, 102, 0.74)) !important;
+  font-size: 0.8125rem !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  line-height: 1.18 !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-thread-row__meta {
+  margin-top: 0.08rem !important;
+  color: color-mix(in oklab, var(--trinity-liquid-muted) 74%, transparent) !important;
+  font-size: 0.6875rem !important;
+  line-height: 1.12 !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-thread-row-shell:has(button[aria-current="true"]) .spirit-thread-row__title {
+  color: var(--trinity-liquid-text-strong) !important;
+  font-weight: 600 !important;
 }
 
 .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-thread-row__actions {
-  opacity: 0.88 !important;
-  transition: opacity 0.14s ease;
+  z-index: 2 !important;
+  opacity: 0.28 !important;
+  transition:
+    opacity 0.14s ease,
+    transform 0.14s ease;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-thread-row__actions button {
+  /* Debug 99f14d: actionsH 37.44 vs mainH 18.25 — p-1.5 was dictating row rhythm like it owned the place */
+  background: transparent !important;
+  color: color-mix(in oklab, var(--trinity-liquid-muted) 62%, transparent) !important;
+  padding: 0.125rem 0.2rem !important;
+  min-height: 0 !important;
+  line-height: 1 !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-thread-row__actions button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.16) !important;
+  color: var(--trinity-liquid-text-strong) !important;
+}
+
+/* Invisible edge drag activator — no grip icon, no card tile */
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-drag-handle="thread-edge"] {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: transparent !important;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+    .spirit-thread-row-shell:hover
+    [data-drag-handle="thread-edge"]:not(:focus-visible):not(:disabled) {
+    opacity: 0.22 !important;
+    background: linear-gradient(
+      to right,
+      color-mix(in oklab, var(--trinity-liquid-cyan-edge) 22%, transparent),
+      transparent 85%
+    ) !important;
+  }
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+  .spirit-thread-row-shell:focus-within
+  [data-drag-handle="thread-edge"]:focus-visible {
+  opacity: 1 !important;
+}
+
+/* Folder header edge — same stacking contract as thread rows (title z-0, handle last, z-10). */
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-drag-handle="folder-edge"] {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: transparent !important;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+    .spirit-sidebar-folder-row:hover
+    [data-drag-handle="folder-edge"]:not(:focus-visible):not(:disabled) {
+    opacity: 0.22 !important;
+    background: linear-gradient(
+      to right,
+      color-mix(in oklab, var(--trinity-liquid-cyan-edge) 22%, transparent),
+      transparent 85%
+    ) !important;
+  }
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+  .spirit-sidebar-folder-row:focus-within
+  [data-drag-handle="folder-edge"]:focus-visible {
+  opacity: 1 !important;
 }
 
 @media (hover: hover) and (pointer: fine) {
   .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-thread-row__actions:not(.pointer-events-none) {
-    opacity: 0.14 !important;
+    opacity: 0 !important;
   }
 
   .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-thread-row-shell:hover .spirit-thread-row__actions:not(.pointer-events-none),
   .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-thread-row-shell:focus-within .spirit-thread-row__actions:not(.pointer-events-none) {
-    opacity: 1 !important;
+    opacity: 0.52 !important;
   }
 }
 
@@ -935,9 +1343,8 @@
   opacity: 0.28 !important;
 }
 
-.spirit-trinity-chat__thread-rail [aria-current="true"],
-.spirit-trinity-chat__thread-rail [aria-current="page"],
-.spirit-trinity-chat__thread-rail button[data-active="true"] {
+.spirit-trinity-chat__thread-rail :where([aria-current="true"], [aria-current="page"]):not(.spirit-thread-row__title-button),
+.spirit-trinity-chat__thread-rail button[data-active="true"]:not(.spirit-thread-row__title-button) {
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.20), transparent 62%),
     rgba(255, 255, 255, 0.18) !important;
@@ -945,15 +1352,511 @@
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.34);
 }
 
-.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity button[aria-current="true"],
-.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity button[data-active="true"] {
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity button[aria-current="true"]:not(.spirit-thread-row__title-button),
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity button[data-active="true"]:not(.spirit-thread-row__title-button) {
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 58%),
-    rgba(56, 66, 78, 0.42) !important;
-  border-color: rgba(52, 62, 74, 0.42) !important;
+    linear-gradient(135deg, rgba(255, 255, 255, 0.12), transparent 58%),
+    rgba(255, 255, 255, 0.04) !important;
+  border-color: transparent !important;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    inset 0 -1px 0 rgba(18, 22, 28, 0.12) !important;
+    inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Thread title: open is instant, no “card” behind the label (active state = row shell only). */
+.spirit-trinity-chat__thread-rail .spirit-thread-row__title-button {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+.spirit-trinity-chat__thread-rail .spirit-thread-row__title-button:hover,
+.spirit-trinity-chat__thread-rail .spirit-thread-row__title-button:focus,
+.spirit-trinity-chat__thread-rail .spirit-thread-row__title-button:focus-visible,
+.spirit-trinity-chat__thread-rail .spirit-thread-row__title-button:active {
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* ── Chat navbar demo pass: Pinned → Folders → Recent, smoky card + folder structs ── */
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity {
+  color: var(--trinity-liquid-text-strong) !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-header {
+  gap: 0.35rem !important;
+  padding: 0.42rem 0.62rem 0.48rem !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity > div:first-child {
+  border-bottom-color: transparent !important;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.1), transparent 92%),
+    radial-gradient(circle at 34% 0%, rgba(190, 236, 255, 0.14), transparent 62%) !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-brand-title {
+  color: rgba(12, 23, 37, 0.78) !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-brand-meta {
+  margin-top: 0.08rem !important;
+  color: rgba(42, 52, 66, 0.5) !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-brand-row {
+  min-height: 1.35rem;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-header-actions {
+  align-items: stretch !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-search-wrap,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-folder-input {
+  color: var(--trinity-liquid-text-strong) !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-search-icon {
+  color: rgba(28, 42, 58, 0.42) !important;
+  stroke: currentColor !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-chat"],
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-folder"] {
+  min-height: 1.95rem !important;
+  letter-spacing: 0 !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity input[type="search"] {
+  min-height: 1.85rem !important;
+  padding-inline: 0.85rem !important;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif !important;
+  font-size: 0.75rem !important;
+  letter-spacing: 0.02em !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-thread-scroll {
+  gap: 0.12rem !important;
+  padding: 0.42rem 0.55rem 0.72rem !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-section {
+  min-width: 0;
+  gap: 0.12rem !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-section--pinned,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-section--folders {
+  gap: 0.08rem !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-section-label--trinity {
+  margin: 0.08rem 0 0.04rem !important;
+  padding-inline: 0.32rem !important;
+  color: rgba(31, 42, 56, 0.36) !important;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif !important;
+  font-size: 0.58rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.24em !important;
+  text-shadow: none !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-section-toggle {
+  cursor: pointer;
+  border: 0;
+  background: transparent;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-thread-scroll > .spirit-sidebar-section:first-child .spirit-sidebar-section-label--trinity {
+  margin-top: 0.02rem !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-section--pinned .spirit-thread-row-shell {
+  padding: 0.1rem 0.24rem 0.1rem 0.28rem !important;
+  border-radius: 0.3rem !important;
+  margin-block: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border-color: transparent !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-section--pinned .spirit-thread-row__title {
+  gap: 0.3rem !important;
+  font-weight: 400 !important;
+  font-size: 0.8125rem !important;
+  line-height: 1.18 !important;
+  letter-spacing: 0.01em !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-section--pinned .spirit-thread-row__pin-badge {
+  width: 0.8125rem !important;
+  height: 0.8125rem !important;
+  color: rgba(35, 48, 64, 0.42) !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-section--pinned .spirit-thread-row__title-text {
+  color: rgba(23, 32, 45, 0.78) !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-section--pinned .spirit-thread-row-shell:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+  box-shadow: none !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-section--pinned .spirit-thread-row-shell[data-active="true"] {
+  background: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: inset 2px 0 0 rgba(99, 216, 248, 0.35) !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-folder-stack {
+  gap: 0.08rem !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-folder-item {
+  gap: 0.125rem !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-folder-section {
+  border-color: transparent !important;
+  gap: 0.08rem !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-folder-row {
+  min-height: 0 !important;
+  flex-wrap: nowrap !important;
+  gap: 0.28rem !important;
+  padding: 0.16rem 0.28rem !important;
+  border-color: transparent !important;
+  border-radius: 0.6rem !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-folder-row:hover,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-folder-row:focus-within {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.14), transparent 72%),
+    rgba(195, 232, 246, 0.1) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16) !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-folder-row > span {
+  color: rgba(34, 45, 59, 0.76) !important;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif !important;
+  font-size: 0.8125rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-folder-row > button {
+  border-radius: 0.45rem !important;
+  background: transparent !important;
+  color: rgba(35, 48, 64, 0.46) !important;
+  padding: 0.05rem !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-folder-row svg {
+  color: rgba(35, 48, 64, 0.48) !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-folder-drop-hint {
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif !important;
+  font-size: 0.625rem !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.02em !important;
+  color: rgba(54, 66, 82, 0.5) !important;
+  padding-block: 0 !important;
+  padding-inline: 0.1rem !important;
+  margin: 0 !important;
+  line-height: 1.2 !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-folder-thread-stack {
+  margin-left: 0.78rem !important;
+  padding-left: 0.48rem !important;
+  border-left-color: rgba(37, 49, 64, 0.16) !important;
+  gap: 0.125rem !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-root-drop {
+  /* 99f14d: clientH pinned at 76 while scrollH 315 — min was empty runway for short lists */
+  min-height: 2rem !important;
+  padding-block: 0 !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-thread-row-shell {
+  margin-block: 0 !important;
+  padding: 0.1rem 0.2rem !important;
+  border-radius: 0.4rem !important;
+  gap: 0.125rem !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-thread-row-shell:hover {
+  background: rgba(255, 255, 255, 0.07) !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-thread-row-shell[data-active="true"] {
+  background: rgba(255, 255, 255, 0.11) !important;
+  box-shadow: inset 2px 0 0 rgba(99, 216, 248, 0.38) !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-thread-row-shell[data-active="true"] .spirit-thread-row__title {
+  color: rgba(8, 18, 30, 0.92) !important;
+  font-weight: 600 !important;
+}
+
+@media (max-width: 1023px) {
+  .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-thread-scroll {
+    padding: 0.48rem 0.65rem 0.85rem !important;
+  }
+
+  .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-drag-handle="thread-edge"] {
+    touch-action: none;
+  }
+}
+
+/* ── Recent (inline actions only): fat targets; trinity-recent rows use ⋮ popout instead ── */
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+  .spirit-sidebar-section--recent
+  .spirit-thread-row-shell:not([data-action-layout="trinity-recent"]) {
+  margin-block: 0.08rem !important;
+  padding: 0.34rem 0.42rem !important;
+  gap: 0.22rem !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+  .spirit-sidebar-section--recent
+  .spirit-thread-row-shell:not([data-action-layout="trinity-recent"])
+  .spirit-chat-thread-row {
+  row-gap: 0.12rem !important;
+  column-gap: 0.45rem !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+  .spirit-sidebar-section--recent
+  .spirit-thread-row-shell:not([data-action-layout="trinity-recent"])
+  .spirit-thread-row__main
+  > button {
+  padding-inline-end: 6rem !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+  .spirit-sidebar-section--recent
+  .spirit-thread-row-shell:not([data-action-layout="trinity-recent"])
+  .spirit-thread-row__actions {
+  gap: 0.12rem !important;
+  opacity: 0.52 !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+  .spirit-sidebar-section--recent
+  .spirit-thread-row-shell:not([data-action-layout="trinity-recent"])
+  .spirit-thread-row__actions
+  button {
+  padding: 0.2rem !important;
+  min-height: 1.625rem !important;
+  min-width: 1.625rem !important;
+  line-height: 1 !important;
+}
+
+@media (pointer: coarse) {
+  .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+    .spirit-sidebar-section--recent
+    .spirit-thread-row-shell:not([data-action-layout="trinity-recent"])
+    .spirit-thread-row__actions
+    button {
+    min-height: 2.25rem !important;
+    min-width: 2.25rem !important;
+    padding: 0.35rem !important;
+  }
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+  .spirit-sidebar-section--recent
+  .spirit-thread-row-shell:not([data-action-layout="trinity-recent"])
+  .spirit-thread-row__actions
+  button
+  svg {
+  width: 1rem !important;
+  height: 1rem !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+  .spirit-sidebar-section--recent
+  .spirit-thread-row-shell:not([data-action-layout="trinity-recent"])
+  select {
+  min-height: 2.25rem !important;
+  padding: 0.38rem 0.55rem !important;
+  font-size: 0.8125rem !important;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+    .spirit-sidebar-section--recent
+    .spirit-thread-row-shell:not([data-action-layout="trinity-recent"])
+    .spirit-thread-row__actions:not(.pointer-events-none) {
+    opacity: 0.58 !important;
+  }
+
+  .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+    .spirit-sidebar-section--recent
+    .spirit-thread-row-shell:not([data-action-layout="trinity-recent"]):hover
+    .spirit-thread-row__actions:not(.pointer-events-none),
+  .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+    .spirit-sidebar-section--recent
+    .spirit-thread-row-shell:not([data-action-layout="trinity-recent"]):focus-within
+    .spirit-thread-row__actions:not(.pointer-events-none) {
+    opacity: 1 !important;
+  }
+}
+
+/* ── Recent demo strip: bubble · title · ⋮ + frosted popout (portal) ───────── */
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+  .spirit-sidebar-section--recent
+  [data-action-layout="trinity-recent"] {
+  margin-block: 0.06rem !important;
+  padding: 0.22rem 0.32rem !important;
+  border-color: transparent !important;
+  border-radius: 0.45rem !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+  .spirit-sidebar-section--recent
+  [data-action-layout="trinity-recent"][data-active="true"] {
+  border-color: transparent !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: inset 2px 0 0 rgba(99, 216, 248, 0.42) !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+  .spirit-sidebar-section--recent
+  [data-action-layout="trinity-recent"]:not([data-active="true"]):hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+  .spirit-sidebar-section--recent
+  [data-action-layout="trinity-recent"]
+  .spirit-chat-thread-row--trinity-recent {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  grid-template-columns: unset !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+  .spirit-sidebar-section--recent
+  [data-action-layout="trinity-recent"]
+  .spirit-chat-thread-row--trinity-recent
+  > * {
+  grid-column: unset !important;
+  grid-row: unset !important;
+  justify-self: unset !important;
+  align-self: unset !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+  .spirit-sidebar-section--recent
+  [data-action-layout="trinity-recent"]
+  .spirit-thread-row__main {
+  flex: 1 1 0% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  grid-column: unset !important;
+  grid-row: unset !important;
+  padding-inline-end: 0 !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+  .spirit-sidebar-section--recent
+  [data-action-layout="trinity-recent"]
+  .spirit-thread-row__title-button {
+  flex: 1 1 0% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  padding-inline-end: 0.35rem !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+  .spirit-sidebar-section--recent
+  [data-action-layout="trinity-recent"]
+  .spirit-thread-row__actions--popout {
+  grid-column: unset !important;
+  grid-row: unset !important;
+  opacity: 1 !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+  .spirit-sidebar-section--recent
+  [data-action-layout="trinity-recent"]
+  .spirit-thread-row__leading-icon {
+  color: color-mix(in oklab, var(--trinity-liquid-muted) 72%, transparent) !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+  .spirit-sidebar-section--recent
+  [data-action-layout="trinity-recent"][data-active="true"]
+  .spirit-thread-row__title-text {
+  color: rgba(8, 18, 30, 0.92) !important;
+  font-weight: 600 !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+  .spirit-sidebar-section--recent
+  [data-action-layout="trinity-recent"]:not([data-active="true"])
+  .spirit-thread-row__title-text {
+  color: color-mix(in oklab, var(--trinity-liquid-text-strong) 58%, rgba(74, 86, 102, 0.55)) !important;
+  font-weight: 500 !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+  .spirit-sidebar-section--recent
+  [data-action-layout="trinity-recent"]
+  .spirit-thread-row__actions--popout
+  button {
+  padding: 0 !important;
+  min-height: 1.5rem !important;
+  min-width: 1.5rem !important;
+  background: transparent !important;
+  color: color-mix(in oklab, var(--trinity-liquid-muted) 55%, transparent) !important;
+}
+
+@media (pointer: coarse) {
+  .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+    .spirit-sidebar-section--recent
+    [data-action-layout="trinity-recent"]
+    .spirit-thread-row__actions--popout
+    button {
+    min-height: 2.5rem !important;
+    min-width: 2.5rem !important;
+  }
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+  .spirit-sidebar-section--recent
+  [data-action-layout="trinity-recent"]
+  .spirit-thread-row__actions--popout
+  button:hover:not(:disabled) {
+  color: var(--trinity-liquid-text-strong) !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+    .spirit-sidebar-section--recent
+    [data-action-layout="trinity-recent"]
+    .spirit-thread-row__actions--popout {
+    opacity: 1 !important;
+  }
 }
 
 .spirit-trinity-chat__conversation {
@@ -1326,6 +2229,1198 @@
   .spirit-trinity-chat__composer-surface button[type="submit"] {
     width: 2.5rem !important;
     height: 2.5rem !important;
+  }
+}
+
+/* Phase 1: explicit dark liquid-glass surfaces over the smoky depth field. */
+.spirit-trinity-liquid-glass,
+.spirit-trinity-chat__panel,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity,
+.spirit-trinity-chat .dashboard-demo-v4-desktop-rail-full-height,
+.spirit-trinity-chat__composer-surface,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-chat"],
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-folder"] {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-color: var(--trinity-glass-border) !important;
+  background:
+    linear-gradient(138deg, rgba(255, 255, 255, 0.09), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 58%),
+    var(--trinity-glass-fill) !important;
+  box-shadow: var(--trinity-glass-shadow) !important;
+  backdrop-filter: blur(26px) saturate(118%) brightness(1.04);
+  -webkit-backdrop-filter: blur(26px) saturate(118%) brightness(1.04);
+}
+
+.spirit-trinity-liquid-glass::before,
+.spirit-trinity-chat__panel::before,
+.spirit-trinity-chat__composer-surface::before,
+.spirit-trinity-chat .dashboard-demo-v4-desktop-rail-full-height::before,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity::before,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-chat"]::before,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-folder"]::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(135deg, var(--trinity-glass-highlight), transparent 23%),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.2), transparent 10%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent 18%);
+  opacity: 0.8;
+}
+
+.spirit-trinity-liquid-glass::after,
+.spirit-trinity-chat__panel::after,
+.spirit-trinity-chat__composer-surface::after,
+.spirit-trinity-chat .dashboard-demo-v4-desktop-rail-full-height::after,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity::after,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-chat"]::after,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-folder"]::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: -42% -18%;
+  z-index: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    112deg,
+    transparent 0 38%,
+    rgba(255, 255, 255, 0.16) 45%,
+    rgba(255, 255, 255, 0.045) 51%,
+    transparent 61% 100%
+  );
+  transform: translateX(-8%) rotate(0.001deg);
+  opacity: 0.7;
+}
+
+.spirit-trinity-chat__panel > *,
+.spirit-trinity-chat__composer-surface > *,
+.spirit-trinity-chat .dashboard-demo-v4-desktop-rail-full-height > *,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity > *,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-chat"] > *,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-folder"] > * {
+  position: relative;
+  z-index: 1;
+}
+
+.spirit-trinity-chat__panel {
+  background-color: rgba(10, 12, 15, 0.32) !important;
+}
+
+.spirit-trinity-chat__chat-column {
+  background: rgba(8, 10, 13, 0.06) !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity {
+  background-color: var(--trinity-glass-fill-strong) !important;
+}
+
+.spirit-trinity-chat .dashboard-demo-v4-desktop-rail-full-height {
+  position: fixed !important;
+  top: 0 !important;
+  right: auto !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  transform: none !important;
+  --ddv4-nav-bg: rgba(12, 15, 19, 0.42);
+  --ddv4-nav-border: var(--trinity-glass-border);
+  --ddv4-nav-fg: rgba(235, 240, 245, 0.78);
+  --ddv4-nav-divider: rgba(255, 255, 255, 0.12);
+  --ddv4-nav-active-bg: rgba(245, 247, 250, 0.88);
+  --ddv4-nav-active-fg: rgba(9, 11, 14, 0.96);
+}
+
+.spirit-trinity-chat .dashboard-demo-v4-desktop-rail-full-height .dashboard-demo-v4-desktop-nav-item:not(.dashboard-demo-v4-desktop-nav-item-active) {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  background: rgba(255, 255, 255, 0.045) !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-chat"],
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-folder"] {
+  min-height: 2.05rem !important;
+  color: rgba(248, 250, 252, 0.94) !important;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.28) !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-chat"]:hover:not(:disabled),
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-folder"]:hover:not(:disabled) {
+  background:
+    linear-gradient(138deg, rgba(255, 255, 255, 0.12), transparent 34%),
+    rgba(28, 33, 39, 0.48) !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-brand-title,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-brand-meta,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-section-label--trinity,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-thread-row__title,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-thread-row__title-text,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-folder-row > span {
+  color: rgba(236, 241, 246, 0.82) !important;
+  text-shadow: none !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity input[type="search"] {
+  min-height: 1.95rem !important;
+  border-color: var(--trinity-glass-border) !important;
+  background:
+    linear-gradient(112deg, transparent 0 34%, rgba(255, 255, 255, 0.13) 44%, transparent 58%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.07), transparent 46%),
+    rgba(8, 11, 14, 0.34) !important;
+  color: rgba(244, 247, 250, 0.94) !important;
+  box-shadow:
+    0 14px 30px -24px rgba(0, 0, 0, 0.74),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.22),
+    inset -1px -1px 0 rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(22px) saturate(116%) brightness(1.04);
+  -webkit-backdrop-filter: blur(22px) saturate(116%) brightness(1.04);
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity input[type="search"]::placeholder {
+  color: rgba(225, 231, 237, 0.48) !important;
+}
+
+.spirit-trinity-chat__composer-dock {
+  border-top-color: rgba(255, 255, 255, 0.08) !important;
+  background: linear-gradient(180deg, transparent, rgba(8, 10, 13, 0.24)) !important;
+  box-shadow: 0 -22px 64px -44px rgba(0, 0, 0, 0.78) !important;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.spirit-trinity-chat__composer-form {
+  padding-top: 0.35rem !important;
+  padding-bottom: max(0.35rem, env(safe-area-inset-bottom, 0px)) !important;
+}
+
+.spirit-trinity-chat__composer-surface {
+  max-width: 42rem !important;
+  align-items: center !important;
+  gap: 0.45rem !important;
+  border-radius: 0.95rem !important;
+  padding: 0.28rem 0.35rem 0.28rem 0.55rem !important;
+  background-color: rgba(9, 12, 15, 0.34) !important;
+}
+
+.spirit-trinity-chat__composer-surface:focus-within {
+  border-color: rgba(255, 255, 255, 0.34) !important;
+  box-shadow:
+    0 24px 72px -38px rgba(0, 0, 0, 0.88),
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 0 24px rgba(255, 255, 255, 0.06) !important;
+}
+
+.spirit-trinity-chat__composer-surface textarea {
+  min-height: 2rem !important;
+  padding-block: 0.32rem !important;
+  color: rgba(244, 247, 250, 0.94) !important;
+  line-height: 1.35 !important;
+}
+
+.spirit-trinity-chat__composer-surface textarea::placeholder {
+  color: rgba(226, 232, 238, 0.56) !important;
+}
+
+.spirit-trinity-chat__composer-surface button[type="submit"] {
+  width: 2rem !important;
+  height: 2rem !important;
+  border-color: rgba(255, 255, 255, 0.28) !important;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent 58%),
+    rgba(238, 242, 246, 0.88) !important;
+  color: rgba(8, 10, 13, 0.95) !important;
+  box-shadow:
+    0 14px 26px -18px rgba(0, 0, 0, 0.82),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+}
+
+.spirit-trinity-chat__composer-surface button[type="submit"]:disabled {
+  border-color: rgba(255, 255, 255, 0.14) !important;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 58%),
+    rgba(28, 33, 39, 0.5) !important;
+  color: rgba(235, 240, 245, 0.52) !important;
+}
+
+.spirit-trinity-chat__composer-form + div {
+  max-width: 42rem !important;
+  color: rgba(226, 232, 238, 0.68) !important;
+}
+
+.spirit-trinity-chat__composer-chip,
+.spirit-trinity-chat__composer-mode-select select,
+.spirit-trinity-chat__composer-form + div button,
+.spirit-trinity-chat__composer-voice-control button {
+  min-height: 1.7rem !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+  background: rgba(10, 13, 17, 0.3) !important;
+  color: rgba(232, 238, 244, 0.78) !important;
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Phase 1 refinement: clear glass should reveal the environment, not become gray acrylic. */
+@keyframes spirit-trinity-glass-sheen {
+  0% {
+    transform: translateX(-34%) rotate(0.001deg);
+    opacity: 0;
+  }
+
+  18% {
+    opacity: 0.72;
+  }
+
+  54% {
+    opacity: 0.48;
+  }
+
+  100% {
+    transform: translateX(34%) rotate(0.001deg);
+    opacity: 0;
+  }
+}
+
+.spirit-trinity-chat {
+  --trinity-charcoal-tint:
+    radial-gradient(ellipse 90% 68% at 50% 112%, rgba(0, 0, 0, 0.16), transparent 70%),
+    linear-gradient(180deg, rgba(9, 11, 14, 0.12), rgba(7, 9, 12, 0.2));
+  --trinity-glass-fill: rgba(12, 15, 19, 0.14);
+  --trinity-glass-fill-strong: rgba(9, 11, 14, 0.22);
+  --trinity-glass-border: rgba(255, 255, 255, 0.3);
+  --trinity-glass-rim: rgba(255, 255, 255, 0.52);
+  --trinity-glass-highlight: rgba(255, 255, 255, 0.42);
+}
+
+.spirit-trinity-chat__panel,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity,
+.spirit-trinity-chat .dashboard-demo-v4-desktop-rail-full-height,
+.spirit-trinity-chat__composer-surface,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-chat"],
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-folder"] {
+  border-color: var(--trinity-glass-rim) !important;
+  background:
+    linear-gradient(138deg, rgba(255, 255, 255, 0.11), transparent 30%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 64%),
+    var(--trinity-glass-fill) !important;
+  box-shadow:
+    0 28px 86px -46px rgba(0, 0, 0, 0.72),
+    0 10px 30px -26px rgba(0, 0, 0, 0.58),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.36),
+    inset -1px -1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 0 22px rgba(255, 255, 255, 0.045) !important;
+  backdrop-filter: blur(24px) saturate(112%) brightness(1.08);
+  -webkit-backdrop-filter: blur(24px) saturate(112%) brightness(1.08);
+}
+
+.spirit-trinity-chat__panel::before,
+.spirit-trinity-chat__composer-surface::before,
+.spirit-trinity-chat .dashboard-demo-v4-desktop-rail-full-height::before,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity::before,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-chat"]::before,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-folder"]::before {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.46), transparent 21%),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.25), transparent 9%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.2), transparent 16%);
+  opacity: 0.92;
+}
+
+.spirit-trinity-chat__panel::after,
+.spirit-trinity-chat__composer-surface::after,
+.spirit-trinity-chat .dashboard-demo-v4-desktop-rail-full-height::after,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity::after,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-chat"]::after,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-folder"]::after {
+  background: linear-gradient(
+    112deg,
+    transparent 0 34%,
+    rgba(255, 255, 255, 0.24) 43%,
+    rgba(255, 255, 255, 0.07) 50%,
+    transparent 62% 100%
+  );
+  animation: spirit-trinity-glass-sheen 9s ease-in-out infinite;
+}
+
+.spirit-trinity-chat__panel {
+  background-color: rgba(10, 12, 15, 0.1) !important;
+}
+
+.spirit-trinity-chat__chat-column {
+  background: transparent !important;
+}
+
+.spirit-trinity-chat__conversation {
+  background:
+    radial-gradient(ellipse 42% 28% at 50% 52%, rgba(9, 11, 14, 0.1), transparent 72%) !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity {
+  background-color: rgba(9, 12, 15, 0.18) !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-header {
+  background: rgba(8, 10, 13, 0.1) !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-section--pinned .spirit-thread-row-shell,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-folder-row,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-thread-row-shell,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+  .spirit-sidebar-section--recent
+  [data-action-layout="trinity-recent"] {
+  background: rgba(8, 10, 13, 0.16) !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.08),
+    0 8px 20px -18px rgba(0, 0, 0, 0.52) !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-thread-row-shell:hover,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-folder-row:hover,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-folder-row:focus-within,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+  .spirit-sidebar-section--recent
+  [data-action-layout="trinity-recent"]:not([data-active="true"]):hover {
+  background: rgba(8, 10, 13, 0.24) !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-thread-row-shell:has(button[aria-current="true"]),
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-thread-row-shell[data-active="true"],
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+  .spirit-sidebar-section--recent
+  [data-action-layout="trinity-recent"][data-active="true"] {
+  background: rgba(8, 10, 13, 0.3) !important;
+  box-shadow:
+    inset 2px 0 0 rgba(255, 255, 255, 0.46),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.1) !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-section--pinned,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-section--folders {
+  background: rgba(255, 255, 255, 0.035) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-chat"],
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-folder"],
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity input[type="search"] {
+  background:
+    linear-gradient(112deg, transparent 0 30%, rgba(255, 255, 255, 0.2) 42%, transparent 60%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.1), transparent 44%),
+    rgba(8, 10, 13, 0.24) !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity input[type="search"] {
+  border-color: rgba(255, 255, 255, 0.34) !important;
+  box-shadow:
+    0 12px 28px -22px rgba(0, 0, 0, 0.6),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.26),
+    inset -1px -1px 0 rgba(255, 255, 255, 0.06) !important;
+}
+
+.spirit-trinity-chat__composer-dock {
+  background: linear-gradient(180deg, transparent, rgba(8, 10, 13, 0.12)) !important;
+  box-shadow: 0 -20px 58px -48px rgba(0, 0, 0, 0.68) !important;
+}
+
+.spirit-trinity-chat__composer-surface {
+  border-color: rgba(255, 255, 255, 0.42) !important;
+  background:
+    linear-gradient(112deg, transparent 0 31%, rgba(255, 255, 255, 0.22) 43%, transparent 62%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.12), transparent 42%),
+    rgba(8, 10, 13, 0.18) !important;
+  box-shadow:
+    0 20px 66px -42px rgba(0, 0, 0, 0.78),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.42),
+    inset -1px -1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+
+.spirit-trinity-chat__composer-surface:focus-within {
+  border-color: rgba(255, 255, 255, 0.56) !important;
+  background:
+    linear-gradient(112deg, transparent 0 31%, rgba(255, 255, 255, 0.25) 43%, transparent 62%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.14), transparent 42%),
+    rgba(8, 10, 13, 0.22) !important;
+}
+
+.spirit-trinity-chat__composer-surface textarea {
+  color: rgba(248, 250, 252, 0.96) !important;
+}
+
+.spirit-trinity-chat__composer-surface button[type="submit"] {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.28), transparent 58%),
+    rgba(238, 242, 246, 0.92) !important;
+}
+
+.spirit-trinity-empty h2 {
+  color: rgba(244, 247, 250, 0.9) !important;
+}
+
+.spirit-trinity-empty p {
+  color: rgba(220, 226, 232, 0.68) !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-thread-row-shell:has(button[aria-current="true"]),
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-thread-row-shell[data-active="true"],
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+  .spirit-sidebar-section--recent
+  [data-action-layout="trinity-recent"][data-active="true"] {
+  background: rgba(255, 255, 255, 0.09) !important;
+  box-shadow: inset 2px 0 0 rgba(255, 255, 255, 0.34) !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-thread-row-shell[data-active="true"] .spirit-thread-row__title,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+  .spirit-sidebar-section--recent
+  [data-action-layout="trinity-recent"][data-active="true"]
+  .spirit-thread-row__title-text,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity
+  .spirit-sidebar-section--recent
+  [data-action-layout="trinity-recent"]:not([data-active="true"])
+  .spirit-thread-row__title-text {
+  color: rgba(236, 241, 246, 0.86) !important;
+}
+
+@media (max-width: 1023px) {
+  .spirit-trinity-chat__composer-form {
+    padding-top: 0.45rem !important;
+    padding-bottom: max(0.45rem, env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .spirit-trinity-chat__composer-surface {
+    border-radius: 1.05rem !important;
+    padding: 0.35rem 0.4rem 0.35rem 0.65rem !important;
+  }
+
+  .spirit-trinity-chat__composer-surface textarea {
+    min-height: 2.25rem !important;
+    padding-block: 0.42rem !important;
+  }
+
+  .spirit-trinity-chat__composer-surface button[type="submit"] {
+    width: 2.3rem !important;
+    height: 2.3rem !important;
+  }
+}
+
+/* ── Chat Glass Material Cleanup A — scoped polish only (/chat shell) ─────────
+ * Freeze decorative CSS motion, soften sidebar/main seam, readable chrome,
+ * dark glass actions, search alignment, composer capsule. Runtime untouched.
+ */
+.spirit-trinity-chat *,
+.spirit-trinity-chat *::before,
+.spirit-trinity-chat *::after {
+  animation: none !important;
+}
+
+@media (min-width: 1024px) {
+  /* Lose the twin hairlines: rail card edge + SpiritChat lg:border-l */
+  .spirit-trinity-chat__panel > div.flex.min-h-0.min-w-0.flex-1.flex-col {
+    border-left-width: 0 !important;
+    border-left-color: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity {
+    border-right-width: 0 !important;
+    border-right-color: transparent !important;
+    box-shadow:
+      var(--trinity-sidebar-float-shadow),
+      inset 0 1px 0 var(--trinity-sidebar-highlight),
+      var(--trinity-sidebar-inner-shadow),
+      inset -1px 0 0 rgba(255, 255, 255, 0.07),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.05),
+      18px 0 46px -30px rgba(0, 0, 0, 0.58) !important;
+  }
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-brand-title {
+  color: rgba(232, 238, 245, 0.88) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.48) !important;
+  opacity: 1 !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-brand-meta {
+  color: rgba(198, 208, 220, 0.76) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.38) !important;
+  opacity: 1 !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-search-icon {
+  left: 0.65rem !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  color: rgba(214, 222, 232, 0.58) !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity .spirit-sidebar-search-input {
+  padding-left: 2.35rem !important;
+}
+
+/* Sidebar CTAs: smoky liquid glass — retire the cyan arcade cabinet */
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-chat"],
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-folder"] {
+  border-color: rgba(255, 255, 255, 0.22) !important;
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, transparent 44%),
+    linear-gradient(rgba(8, 10, 13, 0.55), rgba(8, 10, 13, 0.55)) !important;
+  box-shadow:
+    0 12px 28px -16px rgba(0, 0, 0, 0.72),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.42) !important;
+  color: rgba(240, 244, 249, 0.94) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55) !important;
+  backdrop-filter: blur(20px) saturate(112%) brightness(1.02) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(112%) brightness(1.02) !important;
+  filter: none !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-chat"]::before,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-folder"]::before {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.38) 0%,
+    rgba(255, 255, 255, 0.06) 52%,
+    transparent 100%
+  ) !important;
+  opacity: 0.5 !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-chat"]::after,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-folder"]::after {
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.14) 0%, transparent 62%) !important;
+  opacity: 0.32 !important;
+  filter: blur(3px) !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-chat"] svg,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-folder"] svg {
+  color: rgba(236, 241, 246, 0.92) !important;
+  stroke: currentColor !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-chat"]:hover:not(:disabled),
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-folder"]:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.34) !important;
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, transparent 46%),
+    linear-gradient(rgba(14, 17, 22, 0.62), rgba(14, 17, 22, 0.62)) !important;
+  box-shadow:
+    0 14px 32px -14px rgba(0, 0, 0, 0.78),
+    inset 0 1px 0 rgba(255, 255, 255, 0.36),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.44) !important;
+}
+
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-chat"]:focus-visible,
+.spirit-trinity-chat__thread-rail.spirit-trinity-sidebar--trinity [data-sidebar-action="new-folder"]:focus-visible {
+  border-color: rgba(255, 255, 255, 0.46) !important;
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.32) !important;
+}
+
+/* ── Composer Border Cleanup B — final capsule wins over Tailwind + legacy phases ─
+ * SpiritChat still ships border-t / lg:border / inset rings; liquid-glass phase
+ * also paints --trinity-glass-rim + twin inset strokes. This block nukes the stack.
+ *
+ * B2 (screenshot corner regression): any 1px light border + rounded rect = harsh corner
+ * pixels; nested inset fills read as “textarea outline”. Rim = shadow only, no stroke.
+ */
+.spirit-trinity-chat .spirit-trinity-chat__composer-dock {
+  border: none !important;
+  border-top: none !important;
+  border-top-width: 0 !important;
+  border-top-color: transparent !important;
+  outline: none !important;
+  background: linear-gradient(180deg, transparent 0%, rgba(6, 8, 11, 0.38) 62%, rgba(4, 6, 9, 0.52) 100%) !important;
+  box-shadow: 0 -28px 56px -42px rgba(0, 0, 0, 0.72) !important;
+}
+
+.spirit-trinity-chat .spirit-trinity-chat__composer-surface {
+  max-width: min(52rem, calc(100vw - var(--chat-app-rail-width) - var(--chat-thread-rail-width) - 3.5rem)) !important;
+  border: none !important;
+  border-width: 0 !important;
+  border-style: none !important;
+  border-color: transparent !important;
+  border-radius: 1.25rem !important;
+  outline: none !important;
+  background:
+    linear-gradient(142deg, rgba(255, 255, 255, 0.06) 0%, transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.028), transparent 60%),
+    rgba(6, 8, 11, 0.26) !important;
+  /* No inset rings — they stacked with Tailwind inset_0_0_0_1px before trinity JSX strip */
+  box-shadow:
+    0 40px 88px -38px rgba(0, 0, 0, 0.78),
+    0 14px 44px -30px rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: blur(28px) saturate(116%) brightness(1.04) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(116%) brightness(1.04) !important;
+}
+
+.spirit-trinity-chat .spirit-trinity-chat__composer-surface::before {
+  display: none !important;
+}
+
+.spirit-trinity-chat .spirit-trinity-chat__composer-surface::after {
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+.spirit-trinity-chat .spirit-trinity-chat__composer-surface:focus-within {
+  border: none !important;
+  outline: none !important;
+  box-shadow:
+    0 46px 96px -40px rgba(0, 0, 0, 0.88),
+    0 18px 50px -28px rgba(0, 0, 0, 0.55),
+    0 0 64px -42px rgba(120, 140, 165, 0.07) !important;
+}
+
+.spirit-trinity-chat .spirit-trinity-chat__composer-surface textarea {
+  border: 0 !important;
+  border-width: 0 !important;
+  outline: none !important;
+  outline-offset: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  border-radius: 0.7rem !important;
+  --tw-ring-width: 0 !important;
+  --tw-ring-offset-width: 0 !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+}
+
+.spirit-trinity-chat .spirit-trinity-chat__composer-surface textarea::placeholder {
+  color: rgba(212, 220, 232, 0.62) !important;
+}
+
+.spirit-trinity-chat .spirit-trinity-chat__composer-surface:focus-within textarea::placeholder {
+  color: rgba(226, 232, 240, 0.72) !important;
+}
+
+.spirit-trinity-chat .spirit-trinity-chat__composer-surface button[type="submit"] {
+  border-width: 0 !important;
+  border-style: none !important;
+  border-color: transparent !important;
+  background:
+    linear-gradient(155deg, rgba(255, 255, 255, 0.14), transparent 54%),
+    rgba(14, 17, 22, 0.58) !important;
+  color: rgba(246, 248, 252, 0.96) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 12px 28px -22px rgba(0, 0, 0, 0.68) !important;
+}
+
+.spirit-trinity-chat .spirit-trinity-chat__composer-surface button[type="submit"]:disabled {
+  border: none !important;
+  background:
+    linear-gradient(155deg, rgba(255, 255, 255, 0.05), transparent 58%),
+    rgba(12, 14, 18, 0.38) !important;
+  color: rgba(210, 218, 228, 0.42) !important;
+  opacity: 1 !important;
+}
+
+.spirit-trinity-chat .spirit-trinity-chat__composer-form + div {
+  border: none !important;
+  border-top: none !important;
+  box-shadow: none !important;
+}
+
+/* ── Composer Border Cleanup C — panel frame was drawing the “horizontal rule” ─
+ * Liquid-glass bundles .spirit-trinity-chat__panel with --trinity-glass-rim (~0.52)
+ * plus inset ±1px strokes → full inner rectangle including BOTTOM edge above composer.
+ * Dock sat opaque vs thread rail — blur + lighter gradient so it melts into atmos.
+ */
+.spirit-trinity-chat .spirit-trinity-chat__panel {
+  border-color: rgba(255, 255, 255, 0.055) !important;
+  border-style: solid !important;
+  border-width: 1px !important;
+  box-shadow:
+    0 40px 100px -52px rgba(0, 0, 0, 0.74),
+    inset 0 1px 0 rgba(255, 255, 255, 0.065),
+    inset 1px 0 0 rgba(255, 255, 255, 0.035),
+    inset -1px 0 0 rgba(255, 255, 255, 0.035) !important;
+}
+
+.spirit-trinity-chat .spirit-trinity-chat__panel::before {
+  opacity: 0.32 !important;
+}
+
+.spirit-trinity-chat .spirit-trinity-chat__panel::after {
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+.spirit-trinity-chat .spirit-trinity-chat__composer-dock {
+  background:
+    linear-gradient(180deg, transparent 0%, rgba(8, 10, 14, 0.14) 48%, rgba(6, 8, 11, 0.26) 100%) !important;
+  backdrop-filter: blur(22px) saturate(118%) brightness(1.05) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(118%) brightness(1.05) !important;
+}
+
+/* ── Unified Liquid Input Language C ────────────────────────────────────────────
+ * One smoked-glass material for /chat controls: composer, modebar, selects, sheets,
+ * research gate, voice surfaces. Portaled nodes mount on document.body — never rely
+ * on .spirit-trinity-chat descendants; use [data-trinity-liquid="…"] + modal/panel hooks.
+ *
+ * > Extracted from: Phase “Unified Liquid Input Language C”
+ * > Design language: smoked glass, soft rim, blur, no white menu slabs
+ */
+.spirit-trinity-chat {
+  --trl-smoke: rgba(8, 10, 14, 0.42);
+  --trl-smoke-deep: rgba(4, 6, 9, 0.58);
+  --trl-rim: rgba(255, 255, 255, 0.078);
+  --trl-glint: rgba(255, 255, 255, 0.11);
+}
+
+.spirit-trinity-chat .spirit-trinity-chat__composer-dock.spirit-trinity-liquid-dock {
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(6, 8, 11, 0.2) 52%,
+    rgba(4, 6, 9, 0.38) 100%
+  ) !important;
+  backdrop-filter: blur(26px) saturate(120%) brightness(1.04) !important;
+  -webkit-backdrop-filter: blur(26px) saturate(120%) brightness(1.04) !important;
+}
+
+.spirit-trinity-chat .spirit-trinity-chat__composer-surface.spirit-trinity-input-glass {
+  background:
+    linear-gradient(142deg, rgba(255, 255, 255, 0.052) 0%, transparent 44%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.022), transparent 62%),
+    rgba(6, 8, 11, 0.22) !important;
+  box-shadow:
+    0 36px 82px -36px rgba(0, 0, 0, 0.82),
+    0 12px 36px -26px rgba(0, 0, 0, 0.48),
+    inset 0 1px 0 rgba(255, 255, 255, 0.052) !important;
+}
+
+.spirit-trinity-chat .spirit-trinity-control-glass {
+  border: 1px solid rgba(255, 255, 255, 0.065) !important;
+  background: rgba(8, 10, 13, 0.34) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.055),
+    0 14px 36px -28px rgba(0, 0, 0, 0.62) !important;
+  backdrop-filter: blur(18px) saturate(118%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(118%) !important;
+}
+
+.spirit-trinity-chat .spirit-trinity-chat__composer-chip,
+.spirit-trinity-chat .spirit-trinity-chat__composer-mode-select select,
+.spirit-trinity-chat .spirit-trinity-chat__composer-form + div button {
+  border: 1px solid rgba(255, 255, 255, 0.055) !important;
+  background: rgba(8, 10, 13, 0.32) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.052),
+    0 12px 30px -24px rgba(0, 0, 0, 0.58) !important;
+  color: rgba(226, 232, 240, 0.82) !important;
+  backdrop-filter: blur(16px) saturate(116%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(116%) !important;
+}
+
+.spirit-trinity-chat .spirit-trinity-chat__composer-voice-control button {
+  border-color: rgba(255, 255, 255, 0.055) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.048),
+    0 10px 26px -22px rgba(0, 0, 0, 0.52) !important;
+}
+
+.spirit-trinity-chat .spirit-trinity-chat__composer-chip:focus-visible,
+.spirit-trinity-chat .spirit-trinity-chat__composer-mode-select select:focus-visible,
+.spirit-trinity-chat .spirit-trinity-chat__composer-form + div button:focus-visible,
+.spirit-trinity-chat .spirit-trinity-chat__composer-voice-control button:focus-visible {
+  outline: none !important;
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+}
+
+select.spirit-trinity-glass-select,
+.spirit-trinity-chat select.spirit-trinity-glass-select {
+  border: 1px solid rgba(255, 255, 255, 0.07) !important;
+  background: rgba(8, 10, 13, 0.38) !important;
+  color: rgba(232, 238, 245, 0.88) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.048) !important;
+}
+
+select.spirit-trinity-glass-select:focus-visible {
+  outline: none !important;
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.13),
+    inset 0 1px 0 rgba(255, 255, 255, 0.055) !important;
+}
+
+[data-trinity-voice-strip="true"] button:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12) !important;
+}
+
+[data-trinity-voice-strip="true"] button {
+  border: 1px solid rgba(255, 255, 255, 0.055) !important;
+  background: rgba(8, 10, 13, 0.3) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.048),
+    0 10px 26px -22px rgba(0, 0, 0, 0.48) !important;
+  color: rgba(226, 232, 240, 0.82) !important;
+}
+
+[data-trinity-voice-strip="true"] button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+[data-trinity-liquid="voice-sheet-inner"] button {
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  background: rgba(8, 10, 13, 0.34) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.048) !important;
+  color: rgba(226, 232, 240, 0.84) !important;
+}
+
+.spirit-trinity-mobile-sheet-action {
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  background: rgba(8, 10, 13, 0.36) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.052),
+    0 14px 32px -26px rgba(0, 0, 0, 0.55) !important;
+  color: rgba(222, 230, 240, 0.78) !important;
+}
+
+/* Portaled shells — standalone selectors (document.body) */
+[data-trinity-liquid="popout"].spirit-trinity-modal-glass,
+[data-trinity-liquid="thread-menu"].spirit-trinity-modal-glass,
+[data-trinity-liquid="sheet-panel"].spirit-trinity-modal-glass,
+[data-trinity-liquid="voice-popover"].spirit-trinity-modal-glass {
+  border: 1px solid rgba(255, 255, 255, 0.072) !important;
+  background:
+    linear-gradient(165deg, rgba(255, 255, 255, 0.055) 0%, transparent 46%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.028), transparent 55%),
+    rgba(6, 8, 11, 0.52) !important;
+  box-shadow:
+    0 28px 72px -32px rgba(0, 0, 0, 0.82),
+    inset 0 1px 0 rgba(255, 255, 255, 0.075) !important;
+  backdrop-filter: blur(26px) saturate(118%) brightness(1.03) !important;
+  -webkit-backdrop-filter: blur(26px) saturate(118%) brightness(1.03) !important;
+  color: rgba(236, 241, 246, 0.9) !important;
+}
+
+[data-trinity-liquid="sheet-panel"].spirit-trinity-modal-glass {
+  border-bottom-color: transparent !important;
+}
+
+[data-trinity-liquid="sheet-panel"] header,
+[data-trinity-liquid="sheet-panel"] .border-b {
+  border-color: rgba(255, 255, 255, 0.055) !important;
+}
+
+[data-trinity-liquid="sheet-panel"] button[aria-label="Close"],
+[data-trinity-liquid="voice-popover"] button[aria-label="Close"] {
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  background: rgba(8, 10, 13, 0.35) !important;
+}
+
+[data-trinity-liquid="popout"] button[role="menuitem"] {
+  color: rgba(232, 238, 245, 0.9) !important;
+}
+
+[data-trinity-liquid="popout"] button[role="menuitem"]:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.055) !important;
+}
+
+[data-trinity-liquid="popout"] .spirit-trinity-popout-item--danger {
+  color: rgba(254, 205, 211, 0.92) !important;
+}
+
+[data-trinity-liquid="popout"] .spirit-trinity-popout-item--danger:hover:not(:disabled) {
+  background: rgba(244, 63, 94, 0.12) !important;
+}
+
+[data-trinity-liquid="popout"] .spirit-trinity-popout-move span {
+  color: rgba(198, 208, 220, 0.72) !important;
+}
+
+[data-trinity-liquid="popout"] .spirit-trinity-popout-move:hover {
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+[data-trinity-liquid="thread-menu"] .spirit-trinity-thread-menu-header {
+  border-color: rgba(255, 255, 255, 0.055) !important;
+}
+
+[data-trinity-liquid="thread-menu"] .spirit-trinity-glass-button {
+  border: 1px solid rgba(255, 255, 255, 0.055) !important;
+  background: rgba(8, 10, 13, 0.32) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+  color: rgba(226, 232, 240, 0.84) !important;
+}
+
+[data-trinity-liquid="thread-menu"] .spirit-trinity-glass-button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+[data-trinity-liquid="research-panel"].spirit-trinity-panel-glass {
+  border-color: rgba(255, 255, 255, 0.058) !important;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.032), transparent 42%),
+    rgba(5, 7, 10, 0.48) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.048),
+    0 -18px 48px -26px rgba(0, 0, 0, 0.62) !important;
+  backdrop-filter: blur(22px) saturate(116%) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(116%) !important;
+}
+
+[data-trinity-liquid="research-panel"] .spirit-trinity-research-head {
+  border-color: rgba(255, 255, 255, 0.055) !important;
+}
+
+[data-trinity-liquid="research-panel"] .spirit-trinity-research-step {
+  border: 1px solid rgba(255, 255, 255, 0.055) !important;
+  background: rgba(8, 10, 13, 0.3) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045) !important;
+}
+
+[data-trinity-liquid="research-panel"] .spirit-trinity-research-step textarea {
+  border: 1px solid rgba(255, 255, 255, 0.045) !important;
+  background: rgba(5, 7, 10, 0.38) !important;
+  border-radius: 0.375rem !important;
+}
+
+[data-trinity-liquid="research-panel"] .spirit-trinity-research-footer {
+  border-color: rgba(255, 255, 255, 0.052) !important;
+  background: transparent !important;
+}
+
+[data-trinity-liquid="research-panel"] .spirit-trinity-glass-input {
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  background: rgba(8, 10, 13, 0.34) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045) !important;
+}
+
+[data-trinity-liquid="research-panel"] .spirit-trinity-glass-button {
+  border: 1px solid rgba(255, 255, 255, 0.055) !important;
+  background: rgba(8, 10, 13, 0.32) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.048) !important;
+}
+
+.spirit-trinity-voice-settings-liquid section {
+  border: 1px solid rgba(255, 255, 255, 0.065) !important;
+  background: rgba(8, 10, 13, 0.32) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.048) !important;
+}
+
+/* ── Demo Composer Rebuild D ────────────────────────────────────────────────────
+ * Trinity /chat workspace only: one floating command pod (demo command-inner language).
+ * Dock = positioning lane only (no gray slab). Surface = textarea lane inside pod shell.
+ * > Extracted from: spiritos_dashboard_finished_demo_v2.html (.command-inner / .command-footer)
+ * > Neutralizes: Composer Border Cleanup B/C + Unified Liquid dock slab for .spirit-trinity-liquid-dock only.
+ */
+.spirit-trinity-chat .spirit-trinity-chat__composer-dock.spirit-trinity-liquid-dock {
+  position: relative !important;
+  isolation: isolate !important;
+  border: none !important;
+  border-top: none !important;
+  outline: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.spirit-trinity-chat .spirit-trinity-chat__composer-dock.spirit-trinity-liquid-dock::before {
+  content: "" !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 0 !important;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.1) 0%,
+    rgba(0, 0, 0, 0.03) 40%,
+    transparent 74%
+  ) !important;
+  opacity: 0.38 !important;
+}
+
+.spirit-trinity-chat .spirit-trinity-command-pod {
+  position: relative !important;
+  z-index: 1 !important;
+  /* Match conversation stack (.max-w-\\[52rem\\]) — never use 100vw here (pane ≠ viewport). */
+  width: min(100%, 52rem) !important;
+  max-width: 52rem !important;
+  margin-inline: auto !important;
+  padding: 0.42rem !important;
+  padding-bottom: max(0.42rem, env(safe-area-inset-bottom, 0px)) !important;
+  border-radius: 1.45rem !important;
+  border: 1px solid rgba(255, 255, 255, 0.085) !important;
+  background:
+    linear-gradient(155deg, rgba(255, 255, 255, 0.055) 0%, transparent 44%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.032), transparent 58%),
+    linear-gradient(180deg, rgba(4, 6, 9, 0.52), rgba(8, 11, 15, 0.34)) !important;
+  box-shadow:
+    0 36px 72px -36px rgba(0, 0, 0, 0.82),
+    0 14px 38px -26px rgba(0, 0, 0, 0.58),
+    inset 0 1px 0 rgba(255, 255, 255, 0.11),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.35) !important;
+  backdrop-filter: blur(22px) saturate(145%) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(145%) !important;
+  box-sizing: border-box !important;
+}
+
+.spirit-trinity-chat .spirit-trinity-command-pod::before {
+  content: "" !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  inset: 0 !important;
+  border-radius: inherit !important;
+  z-index: 0 !important;
+  background:
+    linear-gradient(105deg, rgba(255, 255, 255, 0.11) 0%, transparent 36%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), transparent 24%) !important;
+  opacity: 0.38 !important;
+}
+
+.spirit-trinity-chat .spirit-trinity-command-pod > * {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+.spirit-trinity-chat .spirit-trinity-command-pod .spirit-trinity-chat__composer-form {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.spirit-trinity-chat .spirit-trinity-command-pod .spirit-trinity-command-input,
+.spirit-trinity-chat .spirit-trinity-command-pod .spirit-trinity-chat__composer-surface {
+  max-width: none !important;
+  margin-inline: 0 !important;
+  border: none !important;
+  border-width: 0 !important;
+  border-style: none !important;
+  border-color: transparent !important;
+  border-radius: 0.85rem !important;
+  outline: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.spirit-trinity-chat .spirit-trinity-command-pod .spirit-trinity-chat__composer-surface::before,
+.spirit-trinity-chat .spirit-trinity-command-pod .spirit-trinity-chat__composer-surface::after {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+.spirit-trinity-chat .spirit-trinity-command-pod .spirit-trinity-chat__composer-surface:focus-within {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.spirit-trinity-chat .spirit-trinity-command-pod .spirit-trinity-chat__composer-surface textarea {
+  border: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+.spirit-trinity-chat .spirit-trinity-command-pod .spirit-trinity-chat__composer-surface textarea::placeholder {
+  color: rgba(212, 220, 232, 0.62) !important;
+}
+
+.spirit-trinity-chat .spirit-trinity-command-pod .spirit-trinity-chat__composer-surface button[type="submit"] {
+  width: 2.4rem !important;
+  height: 2.4rem !important;
+  margin-bottom: 0 !important;
+  border-radius: 0.68rem !important;
+  border: none !important;
+  border-color: transparent !important;
+  background:
+    linear-gradient(165deg, rgba(255, 255, 255, 0.11), transparent 55%),
+    rgba(14, 17, 22, 0.52) !important;
+  color: rgba(246, 248, 252, 0.94) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 12px 26px -20px rgba(0, 0, 0, 0.72) !important;
+}
+
+.spirit-trinity-chat .spirit-trinity-command-pod .spirit-trinity-chat__composer-surface button[type="submit"]:hover:not(:disabled) {
+  background:
+    linear-gradient(165deg, rgba(255, 255, 255, 0.14), transparent 52%),
+    rgba(18, 22, 28, 0.62) !important;
+}
+
+.spirit-trinity-chat .spirit-trinity-command-pod .spirit-trinity-chat__composer-surface button[type="submit"]:focus-visible {
+  outline: none !important;
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+}
+
+.spirit-trinity-chat .spirit-trinity-command-pod .spirit-trinity-chat__composer-surface button[type="submit"]:disabled {
+  border: none !important;
+  background:
+    linear-gradient(165deg, rgba(255, 255, 255, 0.04), transparent 58%),
+    rgba(10, 12, 16, 0.36) !important;
+  color: rgba(210, 218, 228, 0.38) !important;
+  opacity: 1 !important;
+  box-shadow: none !important;
+}
+
+.spirit-trinity-chat .spirit-trinity-command-pod .spirit-trinity-chat__modebar {
+  max-width: none !important;
+  margin-inline: 0 !important;
+  padding-inline: 0.12rem !important;
+  padding-bottom: 0.02rem !important;
+  padding-top: 0.22rem !important;
+  margin-top: 0.08rem !important;
+  border: none !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.042) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.spirit-trinity-chat .spirit-trinity-command-pod .spirit-trinity-chat__composer-chip,
+.spirit-trinity-chat .spirit-trinity-command-pod .spirit-trinity-chat__composer-mode-select select,
+.spirit-trinity-chat .spirit-trinity-command-pod .spirit-trinity-chat__composer-form + div button,
+.spirit-trinity-chat .spirit-trinity-command-pod .spirit-trinity-chat__composer-voice-control button {
+  min-height: 1.72rem !important;
+  border-radius: 0.62rem !important;
+  border: 1px solid rgba(255, 255, 255, 0.048) !important;
+  background:
+    linear-gradient(165deg, rgba(255, 255, 255, 0.06), transparent 52%),
+    rgba(6, 8, 11, 0.34) !important;
+  color: rgba(226, 232, 240, 0.84) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 8px 22px -18px rgba(0, 0, 0, 0.55) !important;
+  backdrop-filter: blur(14px) saturate(118%) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(118%) !important;
+}
+
+.spirit-trinity-chat .spirit-trinity-command-pod .spirit-trinity-chat__composer-chip:hover,
+.spirit-trinity-chat .spirit-trinity-command-pod .spirit-trinity-chat__composer-mode-select select:hover,
+.spirit-trinity-chat .spirit-trinity-command-pod .spirit-trinity-chat__composer-form + div button:hover:not(:disabled),
+.spirit-trinity-chat .spirit-trinity-command-pod .spirit-trinity-chat__composer-voice-control button:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.07) !important;
+  background:
+    linear-gradient(165deg, rgba(255, 255, 255, 0.09), transparent 50%),
+    rgba(255, 255, 255, 0.05) !important;
+}
+
+@media (max-width: 1023px) {
+  .spirit-trinity-chat .spirit-trinity-command-pod {
+    width: min(100%, 52rem) !important;
+    max-width: none !important;
+    border-radius: 1.35rem !important;
+    padding-inline: 0.38rem !important;
+  }
+
+  .spirit-trinity-chat .spirit-trinity-command-pod .spirit-trinity-chat__composer-surface button[type="submit"] {
+    width: 2.65rem !important;
+    height: 2.65rem !important;
   }
 }
 

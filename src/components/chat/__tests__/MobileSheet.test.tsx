@@ -41,4 +41,15 @@ describe("MobileSheet", () => {
     fireEvent.click(screen.getByRole("button", { name: /^Dismiss$/i }));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
+
+  it("trinityLiquidChrome marks portaled panel for global liquid CSS", async () => {
+    render(
+      <MobileSheet open title="Chat opts" onClose={vi.fn()} trinityLiquidChrome>
+        <p>inside</p>
+      </MobileSheet>,
+    );
+    await waitFor(() => {
+      expect(document.querySelector('[data-trinity-liquid="sheet-panel"]')).toBeTruthy();
+    });
+  });
 });

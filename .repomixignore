@@ -1,0 +1,27 @@
+# Generated Repomix bundles
+repomix-output*
+oldSpiritOS.xml
+config/*.env
+
+# Local runtime output and generated screenshots
+.codex-smoke/
+.codex-next-*.log
+.codex-next-*.err.log
+nohup.out
+
+# Large binary/media artifacts
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.mp4
+*.mov
+*.wav
+*.mp3
+*.zip
+
+# Reference sandboxes and local scratch areas
+_reference/
+chatDesign/
+data/
