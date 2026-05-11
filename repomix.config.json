@@ -7,11 +7,10 @@
     "filePath": "repomix-output.xml",
     "style": "xml",
     "parsableStyle": true,
+    "compress": true,
     "fileSummary": true,
     "directoryStructure": true,
     "files": true,
-    "removeComments": false,
-    "removeEmptyLines": false,
     "truncateBase64": true,
     "topFilesLength": 10,
     "git": {
@@ -21,14 +20,29 @@
       "includeLogs": false
     }
   },
-  "include": [
-    "**/*"
-  ],
+  "include": ["**/*"],
   "ignore": {
     "useGitignore": true,
     "useDotIgnore": true,
     "useDefaultPatterns": true,
-    "customPatterns": []
+    "customPatterns": [
+      "**/__tests__/**",
+      "**/*.test.*",
+      "**/*.spec.*",
+      "repomix-output*",
+      ".next",
+      "dist",
+      "node_modules",
+      ".git",
+      "backend/searxng_data/**",
+      "backend/volumes/**",
+      "src/components/dashboard/demo-v4/**",
+      "src/app/design-demo/**",
+      "**/*demo*.*",
+      "spirit_oracle_fairy_demo*",
+      "spiritos_dashboard_finished_demo*",
+      "_blueprints/**"
+    ]
   },
   "security": {
     "enableSecurityCheck": true

@@ -13,7 +13,6 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-repomix-output*.xml
 oldSpiritOS.xml
 models/
 *.gguf
@@ -21,11 +20,10 @@ backend/.env
 backend/**/*.log
 data/source-proxy/*.json
 .cursor/
-*.log
 
 certificates
 
-# ── Root debris from shell typos / AI sessions (never commit these again) ──────
+# ── SpiritOS AI / temp / generated junk (post-cleanup) ─────────────────────
 /attaches
 /can
 /concrete
@@ -43,10 +41,20 @@ certificates
 /tool
 /typo
 /vague
-/SPIRIT_ENABLE_DEV_COMMAND_TOOLS=false
-/spirit-os@*
-/spirit_oracle_fairy_demo.jsx
-/spiritos_dashboard_finished_demo_v2.html
+SPIRIT_ENABLE_DEV_COMMAND_TOOLS=false
+spirit_oracle_fairy_demo.*
+spiritos_dashboard_finished_demo*
+spirit-os@*
+
+# Repomix outputs (never commit)
+repomix-output*.xml
+repomix-output*.ast*
+
+# Common temp
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
 
 # Fat local runner logs (Codex / probes / source-proxy); keep out of git + repomix
 .codex-next-*.log

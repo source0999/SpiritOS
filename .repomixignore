@@ -26,29 +26,35 @@ _reference/
 chatDesign/
 data/
 
-# Same root debris as .gitignore — repomix reads this file, not always .gitignore
-/attaches
-/can
-/concrete
-/correct
-/dev_commands
-/does
-/file
-/hardware
-/next
-/Oracle
-/POST
-/probe
-/routes
-/see
-/tool
-/typo
-/vague
-/SPIRIT_ENABLE_DEV_COMMAND_TOOLS=false
-/spirit-os@*
-/spirit_oracle_fairy_demo.jsx
-/spiritos_dashboard_finished_demo_v2.html
-
 .probe-*.log
 .source-proxy-*.log
 .source-proxy-*.err.log
+
+# ── Make repomix tiny & focused (critical for Cursor/AI) ───────────────────
+# Tests & test data
+**/__tests__/**
+**/*.test.*
+**/*.spec.*
+
+# Demos & old UI experiments
+src/components/dashboard/demo-v4/**
+src/app/design-demo/**
+**/*demo*.*
+spirit_oracle_fairy_demo.*
+spiritos_dashboard_finished_demo*
+
+# Blueprints (optional — keep only if actively working on them)
+# _blueprints/**
+
+# Large generated / packed files
+repomix-output*
+*.xml
+
+# Backend runtime data
+backend/searxng_data/**
+backend/volumes/**
+
+# Node / build
+.next/
+dist/
+node_modules/
