@@ -24,3 +24,33 @@ data/source-proxy/*.json
 *.log
 
 certificates
+
+# ── Root debris from shell typos / AI sessions (never commit these again) ──────
+/attaches
+/can
+/concrete
+/correct
+/dev_commands
+/does
+/file
+/hardware
+/next
+/Oracle
+/POST
+/probe
+/routes
+/see
+/tool
+/typo
+/vague
+/SPIRIT_ENABLE_DEV_COMMAND_TOOLS=false
+/spirit-os@*
+/spirit_oracle_fairy_demo.jsx
+/spiritos_dashboard_finished_demo_v2.html
+
+# Fat local runner logs (Codex / probes / source-proxy); keep out of git + repomix
+.codex-next-*.log
+.codex-next-*.err.log
+.probe-*.log
+.source-proxy-*.log
+.source-proxy-*.err.log
