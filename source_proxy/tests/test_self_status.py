@@ -93,12 +93,40 @@ class SelfStatusManifestTests(unittest.TestCase):
             "terminal_execution",
             {tool["name"] for tool in manifest["disabled_tools"]},
         )
+        coding_surface = next(
+            tool
+            for tool in manifest["enabled_tools"]
+            if tool["name"] == "coding_proxy_test_surface"
+        )
+        self.assertEqual(coding_surface["endpoint"], "GET /coding")
+        self.assertEqual(coding_surface["feature_flag"], "SPIRIT_CODING_USE_PROXY")
+        self.assertIn(
+            "POST /v1/decisions/route",
+            coding_surface["proxy_endpoints_used"],
+        )
+        self.assertIn(
+            "research_preview",
+            {tool["name"] for tool in manifest["disabled_tools"]},
+        )
         api_route = next(
             route
             for route in manifest["available_routes"]
             if route["route_type"] == "api_route"
         )
         self.assertEqual(api_route["approval"], "spend_before_send_required")
+
+    def test_tools_manifest_lists_research_preview_when_enabled(self) -> None:
+        with patch.dict(os.environ, {"SPIRIT_ENABLE_PROXY_RESEARCH": "true"}, clear=False):
+            manifest = build_tools_manifest([])
+
+        research_tool = next(
+            tool
+            for tool in manifest["enabled_tools"]
+            if tool["name"] == "research_preview"
+        )
+        self.assertEqual(research_tool["provider"], "searxng")
+        self.assertEqual(research_tool["access"], "read_only_local_search_preview")
+        self.assertEqual(research_tool["output_contract"], "title_url_snippet_sources_only")
 
     def test_tools_manifest_endpoint_returns_manifest(self) -> None:
         client = TestClient(app)
@@ -179,6 +207,14 @@ class SelfStatusManifestTests(unittest.TestCase):
         self.assertEqual(payload["manifest_version"], "2.7A-4")
         self.assertEqual(payload["decision"], "preview_only")
         self.assertFalse(payload["would_execute"])
+
+    def test_action_preview_labels_research_preview_as_read_only(self) -> None:
+        preview = build_action_preview(action="preview latest web sources")
+
+        self.assertEqual(preview["decision"], "preview_only")
+        self.assertFalse(preview["would_execute"])
+        self.assertIn("research_preview_requested", preview["reason_codes"])
+        self.assertIn("title, URL, and snippet", preview["safety_message"])
 
 
 if __name__ == "__main__":

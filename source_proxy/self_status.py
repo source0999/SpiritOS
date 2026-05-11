@@ -118,6 +118,7 @@ def build_action_preview(
         "would_execute": False,
         "requires_human_approval": decision == "requires_human_approval",
         "approval_boundaries": _approval_boundaries(),
+        "safety_message": _preview_safety_message(reason_codes),
         "next_step": _preview_next_step(decision),
     }
 
@@ -219,12 +220,40 @@ def _enabled_tools(routes: list[dict[str, str | bool | None]]) -> list[dict[str,
             "endpoint": "POST /v1/decisions/api-vs-manual-preview",
         },
         {
+            "name": "coding_proxy_test_surface",
+            "category": "testing_surface",
+            "access": "browser_ui_only",
+            "endpoint": "GET /coding",
+            "notes": (
+                "Next.js /coding page exercises route decisions, research preview, "
+                "prompt packets, and path choices without touching /chat."
+            ),
+            "feature_flag": "SPIRIT_CODING_USE_PROXY",
+            "proxy_endpoints_used": [
+                "POST /v1/decisions/route",
+                "POST /v1/decisions/prompt-packet",
+            ],
+        },
+        {
             "name": "healthcheck",
             "category": "diagnostics",
             "access": "read_only",
             "endpoint": "GET /healthcheck",
         },
     ]
+
+    if _env_true("SPIRIT_ENABLE_PROXY_RESEARCH"):
+        tools.append(
+            {
+                "name": "research_preview",
+                "category": "research",
+                "access": "read_only_local_search_preview",
+                "endpoint": "POST /v1/decisions/route or POST /v1/decisions/prompt-packet",
+                "provider": "searxng",
+                "feature_flag": "SPIRIT_ENABLE_PROXY_RESEARCH",
+                "output_contract": "title_url_snippet_sources_only",
+            }
+        )
 
     if any(route.get("alias") == "local" and route.get("enabled") for route in routes):
         tools.append(
@@ -273,6 +302,17 @@ def _disabled_tools() -> list[dict[str, str]]:
             "reason": "Only configured roots and allowlists may be reported.",
         },
     ]
+    if not _env_true("SPIRIT_ENABLE_PROXY_RESEARCH"):
+        disabled.append(
+            {
+                "name": "research_preview",
+                "category": "research",
+                "reason": (
+                    "SPIRIT_ENABLE_PROXY_RESEARCH is not true; route decisions may "
+                    "recommend research but sources are not fetched."
+                ),
+            }
+        )
     if not (_env_true("SPIRIT_WINDOWS_FS_ENABLED") or _env_true("SPIRIT_DESKTOP_FS_ENABLED")):
         disabled.append(
             {
@@ -431,6 +471,9 @@ def _classify_preview_action(
     if route_type == "api_route" or _contains_any(combined, ["paid", "openai", "anthropic", "deepseek"]):
         reasons.append("paid_api_route_possible")
 
+    if _contains_any(combined, ["research", "search", "web", "source", "sources", "latest", "current"]):
+        reasons.append("research_preview_requested")
+
     if "broad_filesystem_scope" in reasons or "possible_secret_or_credential_scope" in reasons:
         return "blocked", reasons
 
@@ -446,6 +489,15 @@ def _preview_next_step(decision: str) -> str:
     if decision == "requires_human_approval":
         return "Show the relevant approval or spend preview before any execution."
     return "Safe to continue with read-only planning or manifest inspection only."
+
+
+def _preview_safety_message(reason_codes: list[str]) -> str:
+    if "research_preview_requested" in reason_codes:
+        return (
+            "Research preview is read-only and may return only verified source metadata "
+            "such as title, URL, and snippet when the feature flag is enabled."
+        )
+    return "This preview classifies the action only and does not execute it."
 
 
 def _contains_any(value: str, needles: list[str]) -> bool:

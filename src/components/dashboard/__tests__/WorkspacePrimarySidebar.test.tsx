@@ -58,6 +58,14 @@ describe("WorkspacePrimarySidebar", () => {
     );
   });
 
+  it("keeps source coding route on the rail", () => {
+    render(<WorkspacePrimarySidebar />);
+    expect(screen.getAllByRole("link", { name: /source coding/i })[0]).toHaveAttribute(
+      "href",
+      "/coding",
+    );
+  });
+
   it("does not link to /quarantine", () => {
     render(<WorkspacePrimarySidebar />);
     const quarantineLinks = screen.queryAllByRole("link", { name: /quarantine/i });

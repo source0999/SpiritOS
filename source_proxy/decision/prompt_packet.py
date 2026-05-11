@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Literal
 
 from source_proxy.decision.router import DecisionInput, RouteDecision, decide_route
@@ -32,6 +32,7 @@ class PromptPacket:
     paste_back_instructions: str
     prompt_text: str
     route_decision: RouteDecision
+    research_sources: list[dict[str, str]] = field(default_factory=list)
 
     def as_payload(self) -> dict[str, object]:
         return {
@@ -44,6 +45,7 @@ class PromptPacket:
             "paste_back_instructions": self.paste_back_instructions,
             "prompt_text": self.prompt_text,
             "route_decision": self.route_decision.as_payload(),
+            "research_sources": self.research_sources,
         }
 
 

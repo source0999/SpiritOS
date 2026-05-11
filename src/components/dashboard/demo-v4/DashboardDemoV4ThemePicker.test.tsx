@@ -132,6 +132,7 @@ describe("DashboardDemoV4ThemePicker", () => {
       const hrefs = Array.from(nav.querySelectorAll("a")).map((a) => a.getAttribute("href"));
       expect(hrefs).toContain("/");
       expect(hrefs).toContain("/chat");
+      expect(hrefs).toContain("/coding");
       expect(hrefs).toContain("/oracle");
     }
   });

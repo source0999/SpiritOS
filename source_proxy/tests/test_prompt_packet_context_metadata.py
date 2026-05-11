@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import os
 import unittest
+from unittest.mock import AsyncMock, patch
 
 from fastapi.testclient import TestClient
 
@@ -78,6 +80,84 @@ class PromptPacketContextMetadataTests(unittest.TestCase):
             payload["context_metadata"]["context_inclusion_mode"],
             "path_listing_only",
         )
+
+    def test_research_prompt_packet_endpoint_attaches_sources(self) -> None:
+        client = TestClient(app)
+        sources = [
+            {
+                "title": "Vite 6.0 is out!",
+                "url": "https://vite.dev/blog/announcing-vite6",
+                "snippet": "Vite 6 release notes.",
+            }
+        ]
+
+        with patch(
+            "source_proxy.decision.router.run_local_research_preview",
+            new=AsyncMock(return_value=sources),
+        ):
+            with patch.dict(os.environ, {"SPIRIT_ENABLE_PROXY_RESEARCH": "true"}, clear=False):
+                response = client.post(
+                    "/v1/decisions/prompt-packet",
+                    json={"task": "What are the latest changes in Vite 6?"},
+                )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(payload["route_decision"]["research_recommended"])
+        self.assertEqual(payload["research_sources"], sources)
+        self.assertEqual(payload["route_decision"]["research_sources"], sources)
+
+    def test_research_route_endpoint_attaches_sources(self) -> None:
+        client = TestClient(app)
+        sources = [
+            {
+                "title": "Releases | Vite",
+                "url": "https://vite.dev/releases",
+                "snippet": "Current releases.",
+            }
+        ]
+
+        with patch(
+            "source_proxy.decision.router.run_local_research_preview",
+            new=AsyncMock(return_value=sources),
+        ):
+            with patch.dict(os.environ, {"SPIRIT_ENABLE_PROXY_RESEARCH": "true"}, clear=False):
+                response = client.post(
+                    "/v1/decisions/route",
+                    json={"task": "What are the latest changes in Vite 6?"},
+                )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(payload["research_recommended"])
+        self.assertEqual(payload["research_sources"], sources)
+
+    def test_proxy_research_sources_are_disabled_by_default(self) -> None:
+        client = TestClient(app)
+        search = AsyncMock(
+            return_value=[
+                {
+                    "title": "Releases | Vite",
+                    "url": "https://vite.dev/releases",
+                    "snippet": "Current releases.",
+                }
+            ],
+        )
+
+        with (
+            patch.dict(os.environ, {"SPIRIT_ENABLE_PROXY_RESEARCH": ""}, clear=False),
+            patch("source_proxy.decision.router.run_local_research_preview", new=search),
+        ):
+            response = client.post(
+                "/v1/decisions/route",
+                json={"task": "What are the latest changes in Vite 6?"},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(payload["research_recommended"])
+        self.assertEqual(payload["research_sources"], [])
+        search.assert_not_awaited()
 
 
 if __name__ == "__main__":

@@ -4,7 +4,7 @@ import os
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 from fastapi.testclient import TestClient
 
@@ -62,6 +62,13 @@ class SourceProxyEndToEndTests(unittest.TestCase):
                         "needs_codebase_context": True,
                     },
                 ).json()
+                research_route = client.post(
+                    "/v1/decisions/route",
+                    json={
+                        "task": "What are the latest changes in Vite 6?",
+                        "needs_codebase_context": False,
+                    },
+                ).json()
                 packet = client.post(
                     "/v1/decisions/prompt-packet",
                     json={
@@ -92,6 +99,27 @@ class SourceProxyEndToEndTests(unittest.TestCase):
                         "route_type": "api_route",
                     },
                 ).json()
+                research_sources = [
+                    {
+                        "title": "Vite 6.0 is out!",
+                        "url": "https://vite.dev/blog/announcing-vite6",
+                        "snippet": "Vite 6 release notes.",
+                    }
+                ]
+                with (
+                    patch.dict(os.environ, {"SPIRIT_ENABLE_PROXY_RESEARCH": "true"}, clear=False),
+                    patch(
+                        "source_proxy.decision.router.run_local_research_preview",
+                        new=AsyncMock(return_value=research_sources),
+                    ),
+                ):
+                    research_packet = client.post(
+                        "/v1/decisions/prompt-packet",
+                        json={
+                            "task": "What are the latest changes in Vite 6?",
+                            "needs_codebase_context": False,
+                        },
+                    ).json()
 
         self.assertEqual(health["vram_total"], "12 GB")
         self.assertEqual(health["budget_remaining"], "$3.75")
@@ -117,6 +145,8 @@ class SourceProxyEndToEndTests(unittest.TestCase):
 
         self.assertEqual(route["recommended_route"], "manual_route")
         self.assertIn("large_context", route["reason_codes"])
+        self.assertFalse(route["research_recommended"])
+        self.assertTrue(research_route["research_recommended"])
 
         metadata = packet["context_metadata"]
         self.assertEqual(metadata["context_inclusion_mode"], "path_listing_only")
@@ -133,6 +163,10 @@ class SourceProxyEndToEndTests(unittest.TestCase):
         self.assertFalse(action["would_execute"])
         self.assertIn("broad_filesystem_scope", action["reason_codes"])
         self.assertIn("possible_secret_or_credential_scope", action["reason_codes"])
+
+        self.assertTrue(research_packet["route_decision"]["research_recommended"])
+        self.assertEqual(research_packet["research_sources"], research_sources)
+        self.assertEqual(research_packet["route_decision"]["research_sources"], research_sources)
 
 
 if __name__ == "__main__":

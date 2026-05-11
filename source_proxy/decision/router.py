@@ -1,7 +1,10 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+import os
+from dataclasses import dataclass, field, replace
 from typing import Literal
+
+from source_proxy.decision.research import run_local_research_preview
 
 RecommendedRoute = Literal["api_route", "manual_route", "local_route", "ask_user"]
 RiskTier = Literal["low", "medium", "high"]
@@ -11,6 +14,7 @@ RiskTier = Literal["low", "medium", "high"]
 class DecisionInput:
     task: str
     context_tokens: int | None = None
+    research_recommended: bool = False
     sensitive: bool = False
     needs_current_info: bool = False
     needs_codebase_context: bool = False
@@ -44,6 +48,8 @@ class RouteDecision:
     risk_tier: RiskTier
     context_estimate: ContextEstimate
     next_prompt_action: str
+    research_recommended: bool = False
+    research_sources: list[dict[str, str]] = field(default_factory=list)
 
     def as_payload(self) -> dict[str, object]:
         return {
@@ -53,6 +59,8 @@ class RouteDecision:
             "risk_tier": self.risk_tier,
             "context_estimate": self.context_estimate.as_payload(),
             "next_prompt_action": self.next_prompt_action,
+            "research_recommended": self.research_recommended,
+            "research_sources": self.research_sources,
         }
 
 
@@ -65,6 +73,10 @@ def decide_route(input_data: DecisionInput) -> RouteDecision:
     risk_tier = classify_risk(input_data, context_estimate, reason_codes)
     recommended_route = recommend_route(input_data, context_estimate, risk_tier, reason_codes)
     next_prompt_action = prompt_action_for_route(recommended_route)
+    research_recommended = input_data.research_recommended or input_data.needs_current_info or needs_research(
+        task,
+        input_data.context_tokens,
+    )
 
     return RouteDecision(
         task_classification=classification,
@@ -73,7 +85,84 @@ def decide_route(input_data: DecisionInput) -> RouteDecision:
         risk_tier=risk_tier,
         context_estimate=context_estimate,
         next_prompt_action=next_prompt_action,
+        research_recommended=research_recommended,
     )
+
+
+async def enrich_route_decision_with_research(
+    input_data: DecisionInput,
+    decision: RouteDecision | None = None,
+    max_results: int = 6,
+) -> RouteDecision:
+    route_decision = decision or decide_route(input_data)
+    if not route_decision.research_recommended or not proxy_research_enabled():
+        return route_decision
+
+    research_sources = await run_local_research_preview(input_data.task, max_results=max_results)
+    return replace(route_decision, research_sources=research_sources)
+
+
+def proxy_research_enabled() -> bool:
+    return _env_flag_enabled("SPIRIT_ENABLE_PROXY_RESEARCH")
+
+
+def needs_research(task: str, context_tokens: int | None = None) -> bool:
+    normalized = task.strip().lower()
+    if not normalized:
+        return False
+
+    current_info_terms = [
+        "latest",
+        "current",
+        "today",
+        "tonight",
+        "this week",
+        "this month",
+        "this year",
+        "recent",
+        "what's new",
+        "whats new",
+        "newly",
+        "news",
+        "breaking",
+        "release notes",
+        "changelog",
+        "version",
+        "updates",
+        "changed",
+        "changes",
+        "price",
+        "pricing",
+        "schedule",
+        "score",
+        "weather",
+        "lookup",
+        "look up",
+    ]
+    verification_terms = [
+        "verify",
+        "fact check",
+        "fact-check",
+        "confirm",
+        "source",
+        "sources",
+        "citation",
+        "citations",
+        "web",
+        "search",
+        "research",
+    ]
+
+    if _contains_any(normalized, current_info_terms):
+        return True
+    if _contains_any(normalized, verification_terms):
+        return True
+    if context_tokens and context_tokens > 0 and _contains_any(
+        normalized,
+        ["compare against", "validate against", "cross-check", "cross check"],
+    ):
+        return True
+    return False
 
 
 def estimate_context(task: str, provided_context_tokens: int | None = None) -> ContextEstimate:
@@ -193,3 +282,8 @@ def prompt_action_for_route(route: RecommendedRoute) -> str:
 
 def _contains_any(value: str, needles: list[str]) -> bool:
     return any(needle in value for needle in needles)
+
+
+def _env_flag_enabled(name: str) -> bool:
+    value = os.environ.get(name, "").strip().lower()
+    return value in {"1", "true", "yes", "on"}
