@@ -5,10 +5,12 @@ from fastapi import FastAPI
 import structlog
 
 from scout.api.health import router as health_router
+from scout.api.discovery_jobs import router as discovery_jobs_router
 from scout.api.overview import router as overview_router
 from scout.api.packets import router as packets_router
 from scout.api.poll_debug import router as poll_debug_router
 from scout.api.promotions import router as promotions_router
+from scout.api.sources import router as sources_router
 from scout.config import get_settings
 from scout.debugger.runner import register_debugger_job
 from scout.extractors import register_extractor_job
@@ -51,6 +53,8 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Scout v0.1", lifespan=lifespan)
 app.include_router(health_router)
 app.include_router(status_router)
+app.include_router(discovery_jobs_router)
+app.include_router(sources_router)
 app.include_router(overview_router)
 app.include_router(poll_debug_router)
 app.include_router(packets_router)

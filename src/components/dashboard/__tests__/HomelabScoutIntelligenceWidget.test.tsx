@@ -3,7 +3,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 import { HomelabScoutIntelligenceWidget } from "../HomelabScoutIntelligenceWidget";
-import type { ScoutOverview, ScoutPromotions } from "@/lib/scout-overview";
+import type { ScoutOverview, ScoutPromotions, ScoutSourceCandidates } from "@/lib/scout-overview";
 
 const origFetch = globalThis.fetch;
 const origConfirm = window.confirm;
@@ -90,13 +90,31 @@ function mockScoutFetch(
     rejected: [],
     counts: { pending: 0, queued: 0, approved: 0, rejected: 0, total: 0 },
   },
+  sourceCandidates: ScoutSourceCandidates = {
+    counts: {
+      recommended: 0,
+      needs_review: 0,
+      stored: 0,
+      rejected: 0,
+      blocked: 0,
+      approved: 0,
+    },
+    candidates: [],
+  },
 ) {
   globalThis.fetch = vi.fn((input: RequestInfo | URL) => {
     const url = String(input);
     if (url.includes("/api/scout/promotions") && !url.includes("/finalize")) {
       return Promise.resolve(new Response(JSON.stringify(promotions), { status: 200 }));
     }
-    if (url.includes("/api/scout/packets/") || url.includes("/api/scout/promotions/finalize")) {
+    if (url.includes("/api/scout/source-candidates") && !url.match(/\/(approve|reject|block)$/)) {
+      return Promise.resolve(new Response(JSON.stringify(sourceCandidates), { status: 200 }));
+    }
+    if (
+      url.includes("/api/scout/packets/") ||
+      url.includes("/api/scout/promotions/finalize") ||
+      url.match(/\/api\/scout\/source-candidates\/[^/]+\/(approve|reject|block)$/)
+    ) {
       return Promise.resolve(new Response(JSON.stringify({ ok: true }), { status: 200 }));
     }
     return Promise.resolve(new Response(JSON.stringify(overview), { status: 200 }));
@@ -269,8 +287,98 @@ describe("HomelabScoutIntelligenceWidget", () => {
     fireEvent.click(screen.getByRole("tab", { name: "Promoted" }));
     expect(screen.getByText("No promoted packets yet.")).toBeInTheDocument();
 
+    fireEvent.click(screen.getByRole("tab", { name: "Source Queue" }));
+    expect(screen.getByText("No source candidates waiting for review.")).toBeInTheDocument();
+
     fireEvent.click(screen.getByRole("tab", { name: "Sources" }));
     expect(screen.getByText("No source data available yet.")).toBeInTheDocument();
+  });
+
+  it("shows source candidates and review actions", async () => {
+    mockScoutFetch(
+      emptyOverview,
+      undefined,
+      {
+        counts: {
+          recommended: 1,
+          needs_review: 0,
+          stored: 0,
+          rejected: 0,
+          blocked: 0,
+          approved: 0,
+        },
+        candidates: [
+          {
+            candidate_id: "candidate-1",
+            canonical_uri: "https://blog.python.org/2024/10/python-3130-final-released",
+            display_uri: "https://blog.python.org/2024/10/python-3130-final-released/",
+            source_kind: "release_feed",
+            status: "recommended",
+            confidence_score: 0.97,
+            trust_label: "Official project blog",
+            recommendation: "Recommended for manual review before activation.",
+            discovered_from_uri: "https://blog.python.org/feeds/posts/default",
+            reason_codes: ["official_docs_pattern", "linked_from_active_source"],
+          },
+        ],
+      },
+    );
+
+    render(<HomelabScoutIntelligenceWidget />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("tab", { name: "Source Queue" })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole("tab", { name: "Source Queue" }));
+
+    expect(screen.getByLabelText("Scout source candidate counts")).toBeInTheDocument();
+    expect(screen.getByText("Needs Review")).toBeInTheDocument();
+    expect(screen.getByText("blog.python.org/2024/10/python-3130-final-released")).toBeInTheDocument();
+    expect(screen.getByText("recommended \u00b7 97%")).toBeInTheDocument();
+    expect(screen.getByText("Official project blog")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Approve" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Reject" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Block" })).toBeInTheDocument();
+  });
+
+  it("approves a source candidate through the Scout route", async () => {
+    window.confirm = vi.fn(() => true);
+    mockScoutFetch(
+      emptyOverview,
+      undefined,
+      {
+        counts: { recommended: 1 },
+        candidates: [
+          {
+            candidate_id: "candidate-approve",
+            canonical_uri: "github://fastapi/fastapi",
+            display_uri: "https://github.com/fastapi/fastapi",
+            source_kind: "github_repo",
+            status: "recommended",
+            confidence_score: 0.99,
+            recommendation: "Recommended for manual review before activation.",
+            reason_codes: ["official_repo_pattern"],
+          },
+        ],
+      },
+    );
+
+    render(<HomelabScoutIntelligenceWidget />);
+
+    await screen.findByRole("tab", { name: "Source Queue" });
+    fireEvent.click(screen.getByRole("tab", { name: "Source Queue" }));
+    fireEvent.click(screen.getByRole("button", { name: "Approve" }));
+
+    await waitFor(() => {
+      expect(globalThis.fetch).toHaveBeenCalledWith(
+        "/api/scout/source-candidates/candidate-approve/approve",
+        expect.objectContaining({
+          method: "POST",
+          body: expect.stringContaining('"approved_by":"manual-review"'),
+        }),
+      );
+    });
+    expect(await screen.findByText("Source candidate approved.")).toBeInTheDocument();
   });
 
   it("queues a packet through the Scout route and refreshes", async () => {

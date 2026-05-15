@@ -12,6 +12,8 @@ import yaml
 from scout.config import ScoutSettings
 from scout.pollers.github import poll_repo
 from scout.pollers.rss import poll_feed
+from scout.sources.models import SourceRegistryEntry
+from scout.sources.storage import list_registry_entries
 
 logger = structlog.get_logger()
 
@@ -57,6 +59,102 @@ def load_registry(path: Path) -> SourceRegistry:
     return registry
 
 
+def load_merged_registry(settings: ScoutSettings) -> SourceRegistry:
+    registry = load_registry(settings.config_path)
+    active_sources = list_registry_entries(settings.database_path, status="active")
+    return merge_active_sources(registry, active_sources)
+
+
+def merge_active_sources(
+    registry: SourceRegistry,
+    active_sources: list[SourceRegistryEntry],
+) -> SourceRegistry:
+    github_keys = {(source.owner.lower(), source.repo.lower()) for source in registry.github_repos}
+    rss_urls = {str(source.url).rstrip("/") for source in registry.rss_feeds}
+    web_urls = {str(source.url).rstrip("/") for source in registry.web_pages}
+    github_repos = list(registry.github_repos)
+    rss_feeds = list(registry.rss_feeds)
+    web_pages = list(registry.web_pages)
+
+    for source in active_sources:
+        interval = source.poll_interval_minutes or 60
+        if source.source_kind == "github_repo":
+            github_source = _github_source_from_registry(source, interval)
+            if github_source is None:
+                continue
+            key = (github_source.owner.lower(), github_source.repo.lower())
+            if key in github_keys:
+                continue
+            github_keys.add(key)
+            github_repos.append(github_source)
+            continue
+
+        if source.source_kind == "rss_feed":
+            rss_source = _rss_source_from_registry(source, interval)
+            if rss_source is None:
+                continue
+            key = str(rss_source.url).rstrip("/")
+            if key in rss_urls:
+                continue
+            rss_urls.add(key)
+            rss_feeds.append(rss_source)
+            continue
+
+        if source.source_kind in {"web_page", "docs_page", "blog", "changelog", "release_feed"}:
+            web_source = _web_source_from_registry(source, interval)
+            if web_source is None:
+                continue
+            key = str(web_source.url).rstrip("/")
+            if key in web_urls:
+                continue
+            web_urls.add(key)
+            web_pages.append(web_source)
+
+    return SourceRegistry(
+        version=registry.version,
+        github_repos=github_repos,
+        rss_feeds=rss_feeds,
+        web_pages=web_pages,
+    )
+
+
+def _github_source_from_registry(
+    source: SourceRegistryEntry,
+    interval: int,
+) -> GithubRepoSource | None:
+    if not source.canonical_uri.startswith("github://"):
+        return None
+    parts = [part for part in source.canonical_uri.removeprefix("github://").split("/") if part]
+    if len(parts) < 2:
+        return None
+    owner, repo = parts[:2]
+    if not _OWNER_REPO_RE.fullmatch(owner) or not _OWNER_REPO_RE.fullmatch(repo):
+        return None
+    return GithubRepoSource(owner=owner, repo=repo, poll_interval_minutes=interval)
+
+
+def _rss_source_from_registry(
+    source: SourceRegistryEntry,
+    interval: int,
+) -> RssFeedSource | None:
+    uri = source.display_uri or source.canonical_uri
+    try:
+        return RssFeedSource(url=uri, poll_interval_minutes=interval)
+    except Exception:
+        return None
+
+
+def _web_source_from_registry(
+    source: SourceRegistryEntry,
+    interval: int,
+) -> WebPageSource | None:
+    uri = source.display_uri or source.canonical_uri
+    try:
+        return WebPageSource(url=uri, poll_interval_minutes=interval)
+    except Exception:
+        return None
+
+
 async def _run_github_job(
     scheduler: AsyncIOScheduler,
     job_id: str,
@@ -92,7 +190,7 @@ async def _run_rss_job(
 
 
 def register_jobs(scheduler: AsyncIOScheduler, settings: ScoutSettings) -> SourceRegistry:
-    registry = load_registry(settings.config_path)
+    registry = load_merged_registry(settings)
     for source in registry.github_repos:
         job_id = f"github:{source.owner}/{source.repo}:commits"
         scheduler.add_job(

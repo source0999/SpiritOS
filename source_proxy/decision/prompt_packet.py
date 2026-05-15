@@ -260,7 +260,7 @@ def _constraints_for(
     if input_data.needs_codebase_context:
         constraints.append("When referencing code, cite file paths and ask for missing files instead of guessing.")
     if input_data.wants_implementation:
-        constraints.append("Prefer running the Coder Agent implementation path before generating a manual prompt packet.")
+        constraints.append("Prefer running the local Coder Agent implementation path before generating a manual browser prompt.")
         constraints.append("Coder Agent output must be strict JSON replacement content only; backend generates the unified diff.")
         constraints.append("Prefer minimal, reviewable code changes over broad rewrites.")
         constraints.append("When possible, show concrete file paths and the exact code changes to make.")

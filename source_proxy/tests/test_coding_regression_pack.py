@@ -464,7 +464,8 @@ class CodingRegressionPackTests(unittest.TestCase):
         )
         self.assertTrue(out["coder_blocked"])
         self.assertEqual(out["proposed_diff"], "")
-        self.assertEqual(out["reason_code"], "coder_response_not_json")
+        self.assertEqual(out["reason_code"], "coder_response_repair_exhausted")
+        self.assertIn("Unified diff ready", out["coder_diagnostics"]["raw_response_excerpt"])
 
     def test_approved_apply_moves_to_post_verification_state_only_after_approval(self) -> None:
         task = _doc_append_task()

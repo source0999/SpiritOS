@@ -83,10 +83,15 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
             "SOURCE_PROXY_LONG_RUNNING_TASKS_DB"
         )
         self._previous_spirit_project_path = os.environ.get("SPIRIT_PROJECT_PATH")
+        self._previous_audit_path = os.environ.get("SOURCE_PROXY_APPROVED_ACTION_AUDIT_LOG")
         self._tempdir = tempfile.TemporaryDirectory()
         os.environ["SOURCE_PROXY_LONG_RUNNING_TASKS_DB"] = os.path.join(
             self._tempdir.name,
             "tasks.sqlite3",
+        )
+        os.environ["SOURCE_PROXY_APPROVED_ACTION_AUDIT_LOG"] = os.path.join(
+            self._tempdir.name,
+            "approved_actions.audit.jsonl",
         )
         os.environ["SPIRIT_PROJECT_PATH"] = self._tempdir.name
         os.makedirs(os.path.join(self._tempdir.name, "source_proxy"), exist_ok=True)
@@ -110,6 +115,12 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
             os.environ.pop("SPIRIT_PROJECT_PATH", None)
         else:
             os.environ["SPIRIT_PROJECT_PATH"] = self._previous_spirit_project_path
+        if self._previous_audit_path is None:
+            os.environ.pop("SOURCE_PROXY_APPROVED_ACTION_AUDIT_LOG", None)
+        else:
+            os.environ["SOURCE_PROXY_APPROVED_ACTION_AUDIT_LOG"] = (
+                self._previous_audit_path
+            )
         self._tempdir.cleanup()
 
     def test_create_and_poll_task_without_execution(self) -> None:
@@ -641,7 +652,11 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                 ],
             )
 
-            self.assertEqual(failed["task"]["status"], "applied_verification_failed")
+            self.assertEqual(failed["task"]["status"], "verification_failed")
+            self.assertEqual(
+                failed["task"]["post_apply_verification"]["status"],
+                "verification_failed",
+            )
             self.assertNotEqual(failed["task"]["status"], "completed")
         finally:
             os.chdir(previous_cwd)
@@ -845,6 +860,295 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
             response.json()["detail"]["reason_code"],
             "invalid_post_apply_verification_state",
         )
+
+    def test_router_code_verify_rejects_unapplied_task(self) -> None:
+        app = FastAPI()
+        app.include_router(long_running_tasks_router)
+        client = TestClient(app)
+        task_id = client.post(
+            "/v1/tasks/long-running",
+            json={"description": "Task has not been applied"},
+        ).json()["task"]["id"]
+
+        response = client.post(
+            f"/v1/tasks/long-running/{task_id}/verify",
+            json={"run_code_verification": True},
+        )
+
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(
+            response.json()["detail"]["reason_code"],
+            "invalid_post_apply_verification_state",
+        )
+
+    def test_router_verify_runs_allowlisted_code_verification(self) -> None:
+        previous_cwd = os.getcwd()
+        try:
+            os.chdir(self._tempdir.name)
+            os.makedirs("src/lib/coding/__tests__", exist_ok=True)
+            with open("package.json", "w", encoding="utf-8") as handle:
+                json.dump(
+                    {
+                        "scripts": {
+                            "test:coding-frontend-regression": "vitest run coding",
+                        }
+                    },
+                    handle,
+                )
+            with open(
+                "src/lib/coding/__tests__/unified-diff-paths.test.ts",
+                "w",
+                encoding="utf-8",
+            ) as handle:
+                handle.write("export const value = 'old';\n")
+
+            app = FastAPI()
+            app.include_router(long_running_tasks_router)
+            client = TestClient(app)
+            task_id = client.post(
+                "/v1/tasks/long-running",
+                json={"description": "Update coding frontend test"},
+            ).json()["task"]["id"]
+            diff = "\n".join(
+                [
+                    "diff --git a/src/lib/coding/__tests__/unified-diff-paths.test.ts b/src/lib/coding/__tests__/unified-diff-paths.test.ts",
+                    "--- a/src/lib/coding/__tests__/unified-diff-paths.test.ts",
+                    "+++ b/src/lib/coding/__tests__/unified-diff-paths.test.ts",
+                    "@@ -1 +1 @@",
+                    "-export const value = 'old';",
+                    "+export const value = 'new';",
+                    "",
+                ]
+            )
+            applied = client.post(
+                f"/v1/tasks/long-running/{task_id}/execute-approved",
+                json={
+                    "action": "modify coding test",
+                    "approved": True,
+                    "approved_diff": diff,
+                    "target": "src/lib/coding/__tests__/unified-diff-paths.test.ts",
+                },
+            )
+            applied_verification = applied.json()["task"]["post_apply_verification"]
+            self.assertEqual(applied_verification["status"], "verification_ready")
+            self.assertEqual(
+                [check["id"] for check in applied_verification["checks"]],
+                ["coding_frontend_regression", "typescript_typecheck"],
+            )
+            self.assertTrue(
+                all(check["status"] == "pending" for check in applied_verification["checks"])
+            )
+
+            completed_process = mock.Mock()
+            completed_process.returncode = 0
+            completed_process.stdout = "ok"
+            completed_process.stderr = ""
+            with mock.patch(
+                "source_proxy.tasks.long_running.subprocess.run",
+                return_value=completed_process,
+            ) as run_mock:
+                response = client.post(
+                    f"/v1/tasks/long-running/{task_id}/verify",
+                    json={"run_code_verification": True},
+                )
+
+            self.assertEqual(response.status_code, 200)
+            payload = response.json()
+            self.assertEqual(payload["task"]["status"], "completed")
+            verification = payload["task"]["post_apply_verification"]
+            self.assertEqual(verification["status"], "verified")
+            self.assertEqual(
+                [check["id"] for check in verification["checks"]],
+                ["coding_frontend_regression", "typescript_typecheck"],
+            )
+            self.assertEqual(
+                [call.args[0] for call in run_mock.call_args_list],
+                [
+                    ["npm", "run", "test:coding-frontend-regression"],
+                    ["npx", "tsc", "--noEmit", "-p", "tsconfig.json"],
+                ],
+            )
+            self.assertTrue(
+                all(check["status"] == "passed" for check in verification["checks"])
+            )
+        finally:
+            os.chdir(previous_cwd)
+
+    def test_router_code_verify_failure_records_output_without_completion(self) -> None:
+        previous_cwd = os.getcwd()
+        try:
+            os.chdir(self._tempdir.name)
+            os.makedirs("src/app/demo", exist_ok=True)
+            with open("package.json", "w", encoding="utf-8") as handle:
+                json.dump({"scripts": {}}, handle)
+            with open("src/app/demo/page.tsx", "w", encoding="utf-8") as handle:
+                handle.write("export const value = 'old';\n")
+
+            app = FastAPI()
+            app.include_router(long_running_tasks_router)
+            client = TestClient(app)
+            task_id = client.post(
+                "/v1/tasks/long-running",
+                json={"description": "Update route code"},
+            ).json()["task"]["id"]
+            diff = "\n".join(
+                [
+                    "diff --git a/src/app/demo/page.tsx b/src/app/demo/page.tsx",
+                    "--- a/src/app/demo/page.tsx",
+                    "+++ b/src/app/demo/page.tsx",
+                    "@@ -1 +1 @@",
+                    "-export const value = 'old';",
+                    "+export const value = 'new';",
+                    "",
+                ]
+            )
+            client.post(
+                f"/v1/tasks/long-running/{task_id}/execute-approved",
+                json={
+                    "action": "modify route",
+                    "approved": True,
+                    "approved_diff": diff,
+                    "target": "src/app/demo/page.tsx",
+                },
+            )
+
+            failed_process = mock.Mock()
+            failed_process.returncode = 1
+            failed_process.stdout = ""
+            failed_process.stderr = "x" * 4100 + "TYPECHECK_FAILED_TAIL"
+            with mock.patch(
+                "source_proxy.tasks.long_running.subprocess.run",
+                return_value=failed_process,
+            ):
+                response = client.post(
+                    f"/v1/tasks/long-running/{task_id}/verify",
+                    json={"run_code_verification": True},
+                )
+
+            self.assertEqual(response.status_code, 200)
+            payload = response.json()
+            self.assertEqual(payload["task"]["status"], "verification_failed")
+            self.assertNotEqual(payload["task"]["status"], "completed")
+            verification = payload["task"]["post_apply_verification"]
+            self.assertEqual(verification["status"], "verification_failed")
+            failed_check = verification["checks"][0]
+            self.assertEqual(failed_check["id"], "typescript_typecheck")
+            self.assertEqual(failed_check["status"], "failed")
+            self.assertLessEqual(len(failed_check["output_tail"]), 4000)
+            self.assertIn("TYPECHECK_FAILED_TAIL", failed_check["output_tail"])
+            with open("src/app/demo/page.tsx", encoding="utf-8") as handle:
+                self.assertIn("'new'", handle.read())
+        finally:
+            os.chdir(previous_cwd)
+
+    def test_router_code_verify_rejects_docs_only_task(self) -> None:
+        previous_cwd = os.getcwd()
+        try:
+            os.chdir(self._tempdir.name)
+            os.makedirs("docs", exist_ok=True)
+            with open("docs/code-verify-docs.md", "w", encoding="utf-8") as handle:
+                handle.write("# Docs\n\nBefore.\n")
+
+            app = FastAPI()
+            app.include_router(long_running_tasks_router)
+            client = TestClient(app)
+            task_id = client.post(
+                "/v1/tasks/long-running",
+                json={"description": "Append docs note"},
+            ).json()["task"]["id"]
+            diff = "\n".join(
+                [
+                    "diff --git a/docs/code-verify-docs.md b/docs/code-verify-docs.md",
+                    "--- a/docs/code-verify-docs.md",
+                    "+++ b/docs/code-verify-docs.md",
+                    "@@ -1,3 +1,4 @@",
+                    " # Docs",
+                    " ",
+                    " Before.",
+                    "+After.",
+                    "",
+                ]
+            )
+            client.post(
+                f"/v1/tasks/long-running/{task_id}/execute-approved",
+                json={
+                    "action": "append docs note",
+                    "approved": True,
+                    "approved_diff": diff,
+                    "target": "docs/code-verify-docs.md",
+                },
+            )
+
+            response = client.post(
+                f"/v1/tasks/long-running/{task_id}/verify",
+                json={"run_code_verification": True},
+            )
+
+            self.assertEqual(response.status_code, 422)
+            self.assertEqual(
+                response.json()["detail"]["reason_code"],
+                "code_verification_not_applicable",
+            )
+        finally:
+            os.chdir(previous_cwd)
+
+    def test_unsupported_code_file_requires_manual_verification(self) -> None:
+        previous_cwd = os.getcwd()
+        try:
+            os.chdir(self._tempdir.name)
+            with open("source_proxy/demo.py", "w", encoding="utf-8") as handle:
+                handle.write("VALUE = 'old'\n")
+
+            app = FastAPI()
+            app.include_router(long_running_tasks_router)
+            client = TestClient(app)
+            task_id = client.post(
+                "/v1/tasks/long-running",
+                json={"description": "Update Python file"},
+            ).json()["task"]["id"]
+            diff = "\n".join(
+                [
+                    "diff --git a/source_proxy/demo.py b/source_proxy/demo.py",
+                    "--- a/source_proxy/demo.py",
+                    "+++ b/source_proxy/demo.py",
+                    "@@ -1 +1 @@",
+                    "-VALUE = 'old'",
+                    "+VALUE = 'new'",
+                    "",
+                ]
+            )
+            applied = client.post(
+                f"/v1/tasks/long-running/{task_id}/execute-approved",
+                json={
+                    "action": "modify python",
+                    "approved": True,
+                    "approved_diff": diff,
+                    "target": "source_proxy/demo.py",
+                },
+            )
+
+            self.assertEqual(applied.status_code, 200)
+            verification = applied.json()["task"]["post_apply_verification"]
+            self.assertEqual(verification["status"], "manual_verification_required")
+            self.assertTrue(verification["unsupported_code_verification"])
+            self.assertEqual(verification["unsupported_file_types"], [".py"])
+
+            response = client.post(
+                f"/v1/tasks/long-running/{task_id}/verify",
+                json={"run_code_verification": True},
+            )
+
+            self.assertEqual(response.status_code, 422)
+            self.assertEqual(
+                response.json()["detail"]["reason_code"],
+                "unsupported_code_verification_type",
+            )
+            self.assertEqual(
+                get_long_running_task(task_id)["task"]["status"],
+                "applied_needs_verification",
+            )
+        finally:
+            os.chdir(previous_cwd)
 
     def test_docs_only_verification_preserves_audit_and_backup_metadata(self) -> None:
         previous_cwd = os.getcwd()

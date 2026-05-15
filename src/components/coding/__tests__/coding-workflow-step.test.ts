@@ -397,6 +397,19 @@ describe("workflowStep", () => {
     );
   });
 
+  it("keeps manual browser prompt copy available after a blocked Coder response", () => {
+    expect(
+      promptTextForCoderPacket({
+        coderBlocked: true,
+        coderBlockedReason: "Coder response was not valid replacement JSON.",
+        coderDiffReady: false,
+        coderNeededContext: "Retry Local Coder.",
+        promptText:
+          "# Manual Browser Prompt: SpiritOS Coder Recovery\n\nReturn output to the SpiritOS portal for validation.",
+      }),
+    ).toContain("Manual Browser Prompt");
+  });
+
   it("uses resolved target when Architect plan target is missing", () => {
     expect(
       architectPlanDisplayTarget(
@@ -616,7 +629,7 @@ describe("workflowStep", () => {
     expect(state.response?.task.status).toBe("blocked_no_valid_diff");
     expect(state.response?.task.progress).toBeLessThan(90);
     expect(state.response?.task.next_action).toBe(
-      "Coder did not produce a valid approvable unified diff. Retry Coder Agent, copy manual prompt packet, or use Cloud/API route.",
+      "Coder did not produce a valid approvable unified diff. Retry Local Coder with stricter output repair, or copy a manual browser prompt.",
     );
     expect(longTaskVisibleState(state.response?.task).label).toBe(
       "Blocked: blocked_no_valid_diff",
@@ -1168,7 +1181,8 @@ describe("workflowStep", () => {
     expect(screen.queryByText("Mark verification complete")).toBeNull();
   });
 
-  it("shows Phase 2B copy for code-edit post-apply verification", () => {
+  it("shows the code verification action for code-edit post-apply verification", () => {
+    const onCodeVerify = vi.fn();
     render(
       createElement(VerificationSummary, {
         diffVerification: { error: null, isChecking: false, preview: null, unifiedDiff: "" },
@@ -1184,6 +1198,21 @@ describe("workflowStep", () => {
               id: "task-code",
               post_apply_verification: {
                 docs_only: false,
+                changed_files: [{ path: "src/lib/coding/example.test.ts" }],
+                checks: [
+                  {
+                    command: ["npm", "run", "test:coding-frontend-regression"],
+                    id: "coding_frontend_regression",
+                    required: true,
+                    status: "pending",
+                  },
+                  {
+                    command: ["npx", "tsc", "--noEmit", "-p", "tsconfig.json"],
+                    id: "typescript_typecheck",
+                    required: true,
+                    status: "pending",
+                  },
+                ],
                 required: true,
                 status: "verification_ready",
               },
@@ -1191,15 +1220,194 @@ describe("workflowStep", () => {
             },
           },
         },
+        onCodeVerify,
+        onDocsOnlyVerify: vi.fn(),
+      }),
+    );
+
+    expect(screen.getByText("Code verification required")).toBeTruthy();
+    expect(screen.getByText("src/lib/coding/example.test.ts")).toBeTruthy();
+    expect(screen.getByText("npm run test:coding-frontend-regression")).toBeTruthy();
+    expect(screen.getByText("npx tsc --noEmit -p tsconfig.json")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Run code verification" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Run code verification" }));
+    expect(onCodeVerify).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText("Complete docs-only verification")).toBeNull();
+    expect(screen.queryByText("Mark verification complete")).toBeNull();
+  });
+
+  it("shows running status while code verification is in flight", () => {
+    render(
+      createElement(VerificationSummary, {
+        diffVerification: { error: null, isChecking: false, preview: null, unifiedDiff: "" },
+        execution: { ok: true },
+        isVerifying: true,
+        longRunningTask: {
+          description: "",
+          error: null,
+          isChecking: true,
+          response: {
+            task: {
+              description: "Code task",
+              id: "task-code",
+              post_apply_verification: {
+                docs_only: false,
+                checks: [
+                  {
+                    command: ["npx", "tsc", "--noEmit", "-p", "tsconfig.json"],
+                    id: "typescript_typecheck",
+                    required: true,
+                    status: "pending",
+                  },
+                ],
+                required: true,
+                status: "verification_ready",
+              },
+              status: "applied_needs_verification",
+            },
+          },
+        },
+        onCodeVerify: vi.fn(),
+        onDocsOnlyVerify: vi.fn(),
+      }),
+    );
+
+    expect(screen.getByText(/running \| required/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Running verification..." })).toBeTruthy();
+  });
+
+  it("shows code verification complete and Task Complete after passing checks", () => {
+    const task = {
+      description: "Code task",
+      id: "task-code",
+      post_apply_verification: {
+        docs_only: false,
+        checks: [
+          {
+            command_text: "npx tsc --noEmit -p tsconfig.json",
+            exit_code: 0,
+            id: "typescript_typecheck",
+            required: true,
+            status: "passed",
+          },
+        ],
+        required: true,
+        status: "verified",
+      },
+      status: "completed",
+    };
+
+    render(
+      createElement(VerificationSummary, {
+        diffVerification: { error: null, isChecking: false, preview: null, unifiedDiff: "" },
+        execution: { ok: true },
+        isVerifying: false,
+        longRunningTask: {
+          description: "",
+          error: null,
+          isChecking: false,
+          response: { task },
+        },
+        onCodeVerify: vi.fn(),
+        onDocsOnlyVerify: vi.fn(),
+      }),
+    );
+    expect(screen.getByText("Code verification complete")).toBeTruthy();
+    expect(screen.getByText(/passed \| required/)).toBeTruthy();
+    cleanup();
+
+    render(createElement(TaskCompletionStatus, {
+      alreadySatisfied: false,
+      execution: null,
+      task,
+    }));
+    expect(screen.getByText("Task Complete")).toBeTruthy();
+    expect(longTaskVisibleState(task).label).toBe("Verification complete");
+  });
+
+  it("shows failed code verification command and output tail", () => {
+    const task = {
+      description: "Code task",
+      id: "task-code",
+      post_apply_verification: {
+        docs_only: false,
+        checks: [
+          {
+            command_text: "npx tsc --noEmit -p tsconfig.json",
+            exit_code: 1,
+            id: "typescript_typecheck",
+            output_tail: "TypeScript failed near the end",
+            required: true,
+            status: "failed",
+            summary: "TypeScript or JavaScript files changed.",
+          },
+        ],
+        required: true,
+        status: "verification_failed",
+      },
+      status: "verification_failed",
+    };
+
+    render(
+      createElement(VerificationSummary, {
+        diffVerification: { error: null, isChecking: false, preview: null, unifiedDiff: "" },
+        execution: { ok: true },
+        isVerifying: false,
+        longRunningTask: {
+          description: "",
+          error: null,
+          isChecking: false,
+          response: { task },
+        },
+        onCodeVerify: vi.fn(),
+        onDocsOnlyVerify: vi.fn(),
+      }),
+    );
+
+    expect(screen.getByText("Verification failed")).toBeTruthy();
+    expect(screen.getAllByText("npx tsc --noEmit -p tsconfig.json").length).toBeGreaterThan(0);
+    expect(screen.getByText("TypeScript failed near the end")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Run code verification" })).toBeNull();
+    expect(longTaskVisibleState(task).label).toBe("Verification failed");
+  });
+
+  it("shows unsupported code verification as manual verification required", () => {
+    render(
+      createElement(VerificationSummary, {
+        diffVerification: { error: null, isChecking: false, preview: null, unifiedDiff: "" },
+        execution: { ok: true },
+        isVerifying: false,
+        longRunningTask: {
+          description: "",
+          error: null,
+          isChecking: false,
+          response: {
+            task: {
+              description: "Python task",
+              id: "task-python",
+              post_apply_verification: {
+                changed_files: [{ path: "source_proxy/demo.py" }],
+                docs_only: false,
+                required: true,
+                status: "manual_verification_required",
+                unsupported_code_verification: true,
+                unsupported_file_types: [".py"],
+              },
+              status: "applied_needs_verification",
+            },
+          },
+        },
+        onCodeVerify: vi.fn(),
         onDocsOnlyVerify: vi.fn(),
       }),
     );
 
     expect(
-      screen.getByText("Automated verification for code changes will be handled in Phase 2B."),
+      screen.getByText("Manual verification required / unsupported code verification type"),
     ).toBeTruthy();
+    expect(screen.getByText("Unsupported types: .py")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Run code verification" })).toBeNull();
     expect(screen.queryByText("Complete docs-only verification")).toBeNull();
-    expect(screen.queryByText("Mark verification complete")).toBeNull();
   });
 
   it("dedupes SSE connection and stream fallback activity once per task", () => {

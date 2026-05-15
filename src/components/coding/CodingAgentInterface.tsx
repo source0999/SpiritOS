@@ -50,7 +50,7 @@ function unifiedDiffPayloadOrEmpty(raw: string): string {
 const BUNDLE_SNAPSHOT_DRIFT_REASON_CODE = "bundle_snapshot_drift";
 const NO_APPROVABLE_DIFF_MESSAGE = "No approvable diff was produced.";
 const NO_APPROVABLE_DIFF_NEXT_ACTION =
-  "Coder did not produce a valid approvable unified diff. Retry Coder Agent, copy manual prompt packet, or use Cloud/API route.";
+  "Coder did not produce a valid approvable unified diff. Retry Local Coder with stricter output repair, or copy a manual browser prompt.";
 const CLIENT_REJECTED_BACKEND_DIFF_MESSAGE =
   "Backend returned a proposed diff, but it did not pass client approval validation. No approval action is available.";
 
@@ -252,6 +252,7 @@ type CodingHistoryEntry = {
   model: string;
   recommendation: string;
   researchSourceCount: number;
+  recoveryPrompt?: string;
   risk: string;
   route: string;
   runId: number;
@@ -390,8 +391,12 @@ type PostApplyVerification = {
   backup_root?: string;
   changed_files?: DiffChangedFile[];
   checks?: {
-    command?: string[];
+    command?: string[] | string;
+    command_text?: string;
+    duration_ms?: number;
+    exit_code?: number;
     id?: string;
+    output_tail?: string;
     required?: boolean;
     status?: string;
     summary?: string;
@@ -408,6 +413,8 @@ type PostApplyVerification = {
   risk?: string;
   skip_reason?: string;
   status?: string;
+  unsupported_code_verification?: boolean;
+  unsupported_file_types?: string[];
   updated_at?: string;
   verification_note?: string;
 };
@@ -493,6 +500,7 @@ type DiffVerificationPreviewResponse = {
   would_execute?: boolean;
   git_apply_check_ok?: boolean;
   git_apply_check_error?: string;
+  unified_diff?: string;
 };
 
 type DiffVerificationState = {
@@ -1504,6 +1512,84 @@ export default function CodingAgentInterface({
     }
   }
 
+  async function previewManualResult() {
+    const payload = diffVerification.unifiedDiff.trim();
+    if (!payload) {
+      setDiffVerification((current) => ({
+        ...current,
+        error: "Paste browser JSON or a unified diff before previewing.",
+        isChecking: false,
+        preview: null,
+      }));
+      return;
+    }
+    setDiffVerification((current) => ({
+      ...current,
+      error: null,
+      isChecking: true,
+      preview: null,
+    }));
+    try {
+      const preview = await callManualResultPreview(payload, {
+        activeTaskId: longRunningTask.response?.task.id,
+        routeType:
+          proxyMetrics.route === "not run" || proxyMetrics.route === "pending"
+            ? undefined
+            : proxyMetrics.route,
+        nextPromptAction: finalOutput?.decision?.next_prompt_action,
+        taskSpec: taskSpecForPlan(architectPlan) ?? undefined,
+        taskText: inputText,
+      });
+      const normalizedPreview = normalizeDiffVerificationPreview(preview);
+      const unifiedDiffText =
+        typeof preview.unified_diff === "string" ? preview.unified_diff : payload;
+      const previewChangedFile = normalizedPreview.changed_files?.[0];
+      const previewDiffPath =
+        previewChangedFile?.path ?? collectPathsFromUnifiedDiff(unifiedDiffText)[0] ?? "";
+      const previewAction =
+        previewChangedFile?.change_type === "added" ? "create file" : "modify file";
+      setDiffVerification((current) => ({
+        ...current,
+        error: null,
+        isChecking: false,
+        preview: normalizedPreview,
+        unifiedDiff: unifiedDiffText,
+      }));
+      setApprovalGate((current) => ({
+        ...current,
+        action: previewDiffPath ? previewAction : current.action,
+        approvedAt: null,
+        deniedAt: null,
+        error: null,
+        fallbackScaffoldAccepted: false,
+        fallbackScaffoldBlocked: false,
+        fallbackScaffoldGenerated: false,
+        preview:
+          normalizedPreview.status === "blocked"
+            ? {
+                decision: "blocked",
+                reason_codes:
+                  normalizedPreview.blocked_reasons?.map((reason) => reason.reason_code) ??
+                  ["diff_preview_blocked"],
+                requires_human_approval: false,
+                safety_message:
+                  "Manual result preview blocked this proposal. Review the details before approving.",
+              }
+            : current.preview,
+        proposedDiff: unifiedDiffText,
+        target: previewDiffPath || current.target,
+      }));
+      await previewApprovalGate();
+    } catch (error) {
+      setDiffVerification((current) => ({
+        ...current,
+        error: error instanceof Error ? error.message : "Unknown manual result preview error.",
+        isChecking: false,
+        preview: null,
+      }));
+    }
+  }
+
   async function startLongRunningTask() {
     await runLongTaskRequest(async () =>
       callLongRunningTaskCreate(longRunningTask.description),
@@ -1574,6 +1660,49 @@ export default function CodingAgentInterface({
           error instanceof Error
             ? error.message
             : "Unknown post-apply verification error.",
+        isChecking: false,
+      }));
+    }
+  }
+
+  async function verifyCodeLongRunningTask() {
+    const taskId = longRunningTask.response?.task.id;
+    if (!taskId) {
+      setLongRunningTask((current) => ({
+        ...current,
+        error: "Apply an approved code diff before running verification.",
+      }));
+      return;
+    }
+
+    setLongRunningTask((current) => ({
+      ...current,
+      error: null,
+      isChecking: true,
+    }));
+    try {
+      const response = await callLongRunningTaskCodeVerify(taskId);
+      setLongRunningTask((current) => ({
+        ...current,
+        isChecking: false,
+        response,
+      }));
+      setProcessLogs((currentLogs) => [
+        ...currentLogs,
+        {
+          id: Date.now(),
+          label: "Code verified",
+          detail: "Server-side allowlisted code verification completed.",
+          level: response.task.status === "completed" ? "success" : "warning",
+        },
+      ]);
+    } catch (error) {
+      setLongRunningTask((current) => ({
+        ...current,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Unknown code verification error.",
         isChecking: false,
       }));
     }
@@ -1978,7 +2107,7 @@ export default function CodingAgentInterface({
                     ? "The generated diff was too shallow for this visual improvement task. It did not materially change styling, layout, hover, active, glow, spacing, or animation behavior."
                     : subjectiveImprovementNeedsDiff
                       ? "This is a subjective visual improvement task. No diff was produced, so it cannot be marked already satisfied."
-                      : "Coder Agent did not provide validated replacement content for backend diff generation. Retry Coder Agent, copy the manual prompt packet, or use the Cloud/API route.",
+                      : "Coder Agent did not provide validated replacement content for backend diff generation. Retry Local Coder with stricter output repair, or copy the manual browser prompt.",
           target: effectiveTarget || explicitTaskTarget || packetTarget || null,
         };
       }
@@ -2060,6 +2189,13 @@ export default function CodingAgentInterface({
         }),
       );
       void refreshTelemetry();
+      const finalPromptText = promptTextForCoderPacket({
+        coderBlocked,
+        coderBlockedReason,
+        coderDiffReady,
+        coderNeededContext,
+        promptText: promptPacket.prompt_text,
+      });
       setFinalOutput({
         attachedFiles,
         completedAt: new Date().toISOString(),
@@ -2068,13 +2204,7 @@ export default function CodingAgentInterface({
         decisionPayload: JSON.stringify(decisionForOutput, null, 2),
         coderAgentLocalDiff: coderDiffReady,
         fallbackScaffoldBlocked,
-        promptText: promptTextForCoderPacket({
-          coderBlocked,
-          coderBlockedReason,
-          coderDiffReady,
-          coderNeededContext,
-          promptText: promptPacket.prompt_text,
-        }),
+        promptText: finalPromptText,
         researchSources,
         requests: promptPacket.requests_for_more_information ?? [],
         runId,
@@ -2098,6 +2228,7 @@ export default function CodingAgentInterface({
             completedAt: new Date().toISOString(),
             decision: decisionForOutput,
             memoryEntries,
+            promptText: finalPromptText,
             promptPacket,
             priorTurns,
             researchSources,
@@ -2475,6 +2606,87 @@ export default function CodingAgentInterface({
     }
   }
 
+  function restoreHistoryEntry(entry: CodingHistoryEntry) {
+    const restoredTask = entry.task.trim();
+    if (!restoredTask) {
+      setProcessLogs((currentLogs) => [
+        ...currentLogs,
+        {
+          id: Date.now(),
+          label: "Restore skipped",
+          detail: `Run #${entry.runId} did not include a restorable prompt.`,
+          level: "warning",
+        },
+      ]);
+      return;
+    }
+
+    setInputText(restoredTask);
+    setFinalOutput(null);
+    setWorkflowStepFloor(1);
+    lastSubmittedTaskRef.current = "";
+    const restoredPlan = restoredArchitectPlanForHistoryEntry(entry);
+    if (restoredPlan) {
+      setArchitectPlan(restoredPlan);
+      setApprovalGate((current) => ({
+        ...current,
+        target: architectTargetPath(restoredPlan),
+      }));
+    }
+    applyDiscoveryWorkspaceForTask(restoredTask, { clearProposal: !restoredPlan });
+    setLongRunningTask((current) => ({
+      description: restoredTask,
+      error: null,
+      isChecking: false,
+      response: null,
+    }));
+    setProcessLogs((currentLogs) => [
+      ...currentLogs,
+      {
+        id: Date.now(),
+        label: "Prompt restored",
+        detail: `Restored Run #${entry.runId}. Review the task text, then submit when ready.`,
+        level: "success",
+      },
+    ]);
+  }
+
+  async function copyHistoryRecoveryPrompt(entry: CodingHistoryEntry) {
+    const restoredPlan = restoredArchitectPlanForHistoryEntry(entry);
+    const prompt =
+      entry.recoveryPrompt ||
+      manualBrowserPromptForCurrentState({
+        architectPlan: restoredPlan ?? architectPlan,
+        currentTask: entry.task,
+        promptText: "",
+        target: approvalGate.target || architectTargetPath(restoredPlan),
+      });
+    try {
+      await navigator.clipboard.writeText(
+        ["# Copy manual browser prompt", prompt].join("\n").trim(),
+      );
+      setProcessLogs((currentLogs) => [
+        ...currentLogs,
+        {
+          id: Date.now(),
+          label: "Manual browser prompt copied",
+          detail: `Copied recovery prompt for Run #${entry.runId}. Paste it into GPT/Gemini/Grok/Claude, not into the SpiritOS task box.`,
+          level: "success",
+        },
+      ]);
+    } catch (error) {
+      setProcessLogs((currentLogs) => [
+        ...currentLogs,
+        {
+          id: Date.now(),
+          label: "Copy failed",
+          detail: error instanceof Error ? error.message : "Clipboard unavailable.",
+          level: "warning",
+        },
+      ]);
+    }
+  }
+
   function runMockProxyFlow(
     task: string,
     priorTurns: CodingHistoryEntry[],
@@ -2553,6 +2765,7 @@ export default function CodingAgentInterface({
           completedAt: new Date().toISOString(),
           decision: mockDecision,
           memoryEntries,
+          promptText: mockPacket.prompt_text,
           promptPacket: mockPacket,
           priorTurns,
           researchSources: [],
@@ -2657,12 +2870,15 @@ export default function CodingAgentInterface({
               }
               onLongTaskPoll={pollLongRunningTask}
               onLongTaskStart={startLongRunningTask}
+              onLongTaskVerifyCode={verifyCodeLongRunningTask}
               onLongTaskVerifyDocsOnly={verifyDocsOnlyLongRunningTask}
               onInputChange={setInputText}
               onFilesAdded={(files) => setUploadedFiles((current) => [...current, ...files])}
               onPreviewApprovalGate={previewApprovalGate}
               onPreviewDiffVerification={previewDiffVerification}
-              onRestoreHistoryEntry={(entry) => setInputText(entry.task)}
+              onPreviewManualResult={previewManualResult}
+              onCopyHistoryRecoveryPrompt={copyHistoryRecoveryPrompt}
+              onRestoreHistoryEntry={restoreHistoryEntry}
               onRunProxyFlow={runProxyFlow}
               onStartNewTask={startNewCodingTask}
               onSubmit={runProxyFlow}
@@ -2871,10 +3087,11 @@ export function deriveCodingStabilitySummary({
   ];
   const targetUnresolved =
     reasonCodes.includes("target_unresolved") || reasonCodes.includes("target_missing");
+  const verificationFailed = isVerificationFailedStatus(taskStatus, postApplyVerification);
   const blocker =
     firstStabilityBlocker(reasonCodes) ??
     noDiffTerminalReason(taskStatus) ??
-    (taskStatus === "applied_verification_failed" ? "applied_verification_failed" : null) ??
+    (verificationFailed ? "verification_failed" : null) ??
     (diffVerification.preview?.git_apply_check_error ? "git_apply_check_failed" : null);
   const target = targetUnresolved
     ? "No target resolved"
@@ -2938,7 +3155,7 @@ export function deriveCodingStabilitySummary({
       : taskStatus === "applied_needs_verification" ||
           postApplyVerification?.status === "verification_ready"
         ? "applied_needs_verification"
-        : taskStatus === "applied_verification_failed" || taskStatus === "failed_needs_human"
+        : verificationFailed || taskStatus === "failed_needs_human"
           ? "failed"
           : taskStatus === "executing" || approved || longRunningTask.isChecking
             ? "applying"
@@ -2959,7 +3176,7 @@ export function deriveCodingStabilitySummary({
   } else if (postApplyVerification?.status === "verification_ready") {
     primaryState = "Verification ready";
   } else if (
-    taskStatus === "applied_verification_failed" ||
+    verificationFailed ||
     taskStatus === "failed_needs_human" ||
     diffVerification.error
   ) {
@@ -3028,7 +3245,10 @@ export function workflowStep({
   if (
     taskStatus === "applied_needs_verification" ||
     taskStatus === "applied_verification_failed" ||
-    postApplyVerification?.status === "verification_ready"
+    taskStatus === "verification_failed" ||
+    postApplyVerification?.status === "verification_failed" ||
+    postApplyVerification?.status === "verification_ready" ||
+    postApplyVerification?.status === "manual_verification_required"
   ) {
     return 6;
   }
@@ -3080,11 +3300,13 @@ function isPostApplyOrDoneState(
   return (
     execution?.ok === true ||
     status === "applied_needs_verification" ||
+    status === "verification_failed" ||
     status === "verification_ready" ||
     status === "verified" ||
     status === "completed" ||
     status === "done" ||
     verification?.status === "verification_ready" ||
+    verification?.status === "manual_verification_required" ||
     verification?.status === "verified"
   );
 }
@@ -3101,7 +3323,8 @@ function isPostApplyVerificationPending(
   return (
     status === "applied_needs_verification" ||
     status === "verification_ready" ||
-    verification?.status === "verification_ready"
+    verification?.status === "verification_ready" ||
+    verification?.status === "manual_verification_required"
   );
 }
 
@@ -3175,7 +3398,7 @@ function deriveVerificationState(
   verification: PostApplyVerification | null | undefined,
   taskStatus: string,
 ): string {
-  if (taskStatus === "applied_verification_failed" || verification?.status === "failed") {
+  if (isVerificationFailedStatus(taskStatus, verification)) {
     return "failed";
   }
   if (verification?.status === "verified" || taskStatus === "completed") {
@@ -3187,10 +3410,25 @@ function deriveVerificationState(
   if (verification?.status === "verification_ready") {
     return "verification ready";
   }
+  if (verification?.status === "manual_verification_required") {
+    return "manual verification required";
+  }
   if (verification?.required || taskStatus === "applied_needs_verification") {
     return "needs verification";
   }
   return "not required";
+}
+
+function isVerificationFailedStatus(
+  taskStatus?: string,
+  verification?: PostApplyVerification | null,
+): boolean {
+  return (
+    taskStatus === "applied_verification_failed" ||
+    taskStatus === "verification_failed" ||
+    verification?.status === "failed" ||
+    verification?.status === "verification_failed"
+  );
 }
 
 function deriveStreamState(logs: ProcessLog[], taskStatus: string, taskId?: string): string {
@@ -3508,12 +3746,14 @@ export function VerificationSummary({
   execution,
   isVerifying,
   longRunningTask,
+  onCodeVerify,
   onDocsOnlyVerify,
 }: {
   diffVerification: DiffVerificationState;
   execution: ApprovedActionExecutionResponse | null;
   isVerifying: boolean;
   longRunningTask: LongRunningTaskState;
+  onCodeVerify?: () => void;
   onDocsOnlyVerify: () => void;
 }) {
   const task = longRunningTask.response?.task ?? null;
@@ -3540,10 +3780,21 @@ export function VerificationSummary({
     postApplyVerification?.docs_only === true &&
     !verificationComplete &&
     task?.status === "applied_needs_verification";
-  const needsPhase2B =
+  const unsupportedCodeVerification =
+    postApplyVerification?.unsupported_code_verification === true ||
+    postApplyVerification?.status === "manual_verification_required";
+  const codeVerificationFlow =
     postApplyVerification &&
     postApplyVerification.docs_only === false &&
-    verificationPending;
+    !unsupportedCodeVerification;
+  const codeVerificationRequired =
+    Boolean(codeVerificationFlow) &&
+    verificationPending &&
+    !isVerificationFailedStatus(task?.status, postApplyVerification);
+  const codeVerificationComplete =
+    Boolean(codeVerificationFlow) &&
+    (postApplyVerification?.status === "verified" || verificationComplete);
+  const verificationFailed = isVerificationFailedStatus(task?.status, postApplyVerification);
   const displaySummary = buildPostApplyVerificationDisplaySummary({
     diffVerification,
     execution,
@@ -3569,7 +3820,9 @@ export function VerificationSummary({
         : "waiting";
   const primaryInstruction = verificationComplete
     ? "Post-apply verification is complete."
-    : "The approved diff has been applied. Review the changed file and backup, then mark verification complete.";
+    : unsupportedCodeVerification
+      ? "Manual verification is required because this file type is not supported by Phase 2B automation."
+      : "The approved diff has been applied. Review the changed file and backup, then mark verification complete.";
 
   return (
     <section className="rounded-lg border border-slate-300 bg-white p-5 shadow-sm">
@@ -3598,6 +3851,33 @@ export function VerificationSummary({
               {postApplyVerification.status ?? "verification_ready"}
             </span>
           </div>
+          {codeVerificationRequired ? (
+            <div className="border border-yellow-200 bg-white px-3 py-2 text-sm">
+              <div className="font-semibold text-slate-950">Code verification required</div>
+            </div>
+          ) : null}
+          {codeVerificationComplete ? (
+            <div className="border border-green-200 bg-white px-3 py-2 text-sm font-semibold text-green-800">
+              Code verification complete
+            </div>
+          ) : null}
+          {verificationFailed ? (
+            <div className="border border-red-200 bg-white px-3 py-2 text-sm font-semibold text-red-800">
+              Verification failed
+            </div>
+          ) : null}
+          {unsupportedCodeVerification ? (
+            <div className="border border-yellow-200 bg-white px-3 py-2 text-sm text-slate-700">
+              <div className="font-semibold text-slate-950">
+                Manual verification required / unsupported code verification type
+              </div>
+              {postApplyVerification.unsupported_file_types?.length ? (
+                <div className="mt-1">
+                  Unsupported types: {postApplyVerification.unsupported_file_types.join(", ")}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
           <div className="grid gap-2 md:grid-cols-3">
             <TelemetryStat
               label={displaySummary.changedFiles.length === 1 ? "Changed file" : "Changed files"}
@@ -3615,16 +3895,25 @@ export function VerificationSummary({
               {postApplyVerification.checks.map((check) => (
                 <div
                   className="border border-yellow-200 bg-white px-3 py-2 text-sm"
-                  key={check.id ?? check.command?.join(" ") ?? check.summary}
+                  key={check.id ?? verificationCommandLabel(check) ?? check.summary}
                 >
                   <div className="font-mono text-slate-900">
-                    {check.command?.join(" ") ?? check.id ?? "verification check"}
+                    {verificationCommandLabel(check)}
                   </div>
                   <div className="mt-1 text-slate-700">
-                    {check.status ?? "pending"}
+                    {isVerifying && (check.status ?? "pending") === "pending"
+                      ? "running"
+                      : check.status ?? "pending"}
                     {check.required ? " | required" : ""}
                     {check.summary ? ` | ${check.summary}` : ""}
+                    {typeof check.exit_code === "number" ? ` | exit ${check.exit_code}` : ""}
+                    {typeof check.duration_ms === "number" ? ` | ${check.duration_ms}ms` : ""}
                   </div>
+                  {check.output_tail ? (
+                    <pre className="mt-2 max-h-44 overflow-auto whitespace-pre-wrap border border-slate-200 bg-slate-50 p-2 text-xs leading-5 text-slate-700">
+                      {check.output_tail}
+                    </pre>
+                  ) : null}
                 </div>
               ))}
             </div>
@@ -3664,12 +3953,20 @@ export function VerificationSummary({
               ) : null}
             </div>
           ) : null}
-          {needsPhase2B ? (
-            <div className="border border-yellow-200 bg-white px-3 py-2 text-sm text-slate-700">
-              Automated verification for code changes will be handled in Phase 2B.
+          {codeVerificationRequired ? (
+            <div className="space-y-2 border border-yellow-200 bg-white px-3 py-2 text-sm text-slate-700">
+              <div className="font-semibold text-slate-950">Run code verification</div>
+              <button
+                className="border border-slate-900 bg-slate-950 px-3 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={isVerifying}
+                onClick={onCodeVerify}
+                type="button"
+              >
+                {isVerifying ? "Running verification..." : "Run code verification"}
+              </button>
             </div>
           ) : null}
-          {postApplyVerification.status === "failed" ? (
+          {verificationFailed ? (
             <pre className="overflow-x-auto whitespace-pre-wrap border border-yellow-200 bg-white p-3 text-xs leading-5 text-slate-800">
               {generateVerificationFixPrompt(postApplyVerification)}
             </pre>
@@ -3929,11 +4226,14 @@ function OutputWindow({
   onLongTaskDescriptionChange,
   onLongTaskPoll,
   onLongTaskStart,
+  onLongTaskVerifyCode,
   onLongTaskVerifyDocsOnly,
   onInputChange,
   onFilesAdded,
   onPreviewApprovalGate,
   onPreviewDiffVerification,
+  onPreviewManualResult,
+  onCopyHistoryRecoveryPrompt,
   onRestoreHistoryEntry,
   onRunProxyFlow,
   onStartNewTask,
@@ -3967,11 +4267,14 @@ function OutputWindow({
   onLongTaskDescriptionChange: (description: string) => void;
   onLongTaskPoll: () => void;
   onLongTaskStart: () => void;
+  onLongTaskVerifyCode: () => void;
   onLongTaskVerifyDocsOnly: () => void;
   onInputChange: (value: string) => void;
   onFilesAdded: (files: UploadedFile[]) => void;
   onPreviewApprovalGate: () => void;
   onPreviewDiffVerification: () => void;
+  onPreviewManualResult: () => void;
+  onCopyHistoryRecoveryPrompt: (entry: CodingHistoryEntry) => void;
   onRestoreHistoryEntry: (entry: CodingHistoryEntry) => void;
   onRunProxyFlow: () => void;
   onStartNewTask: () => void;
@@ -4002,10 +4305,19 @@ function OutputWindow({
     }
 
     try {
+      const promptText =
+        action.id === "cursor" && action.label.toLowerCase().includes("manual browser")
+          ? manualBrowserPromptForCurrentState({
+              architectPlan,
+              currentTask: inputText,
+              promptText: finalOutput.promptText,
+              target: approvalGate.target,
+            })
+          : finalOutput.promptText;
       await navigator.clipboard.writeText(
         buildClipboardPrompt(
           action,
-          finalOutput.promptText,
+          promptText,
           finalOutput.attachedFiles,
           finalOutput.selfCorrection,
         ),
@@ -4044,6 +4356,10 @@ function OutputWindow({
           "coder_sync_timeout",
         ].includes(code),
       ) === true);
+  const canManuallyPreviewDiff =
+    needsCoderDiff ||
+    Boolean(architectTargetPath(architectPlan)) ||
+    Boolean(resolvedTargetPathFromDecision(finalOutput?.decision));
   const derivedStep = workflowStep({
     approvalGate,
     diffVerification,
@@ -4104,6 +4420,17 @@ function OutputWindow({
                 onStartNewTask={onStartNewTask}
                 onSubmit={onSubmit}
               />
+              {!finalOutput && conversationHistory.length > 0 ? (
+                <div className="mt-4">
+                  <ConversationHistoryPanel
+                    entries={conversationHistory}
+                    onCopyRecoveryPrompt={onCopyHistoryRecoveryPrompt}
+                    onClear={onClearHistory}
+                    onRestore={onRestoreHistoryEntry}
+                    title="Recent Agent Runs"
+                  />
+                </div>
+              ) : null}
             </WorkflowStage>
 
             <WorkflowStage
@@ -4150,6 +4477,7 @@ function OutputWindow({
                   <SelfCorrectionPanel selfCorrection={finalOutput.selfCorrection} />
                   <ConversationHistoryPanel
                     entries={conversationHistory}
+                    onCopyRecoveryPrompt={onCopyHistoryRecoveryPrompt}
                     onClear={onClearHistory}
                     onRestore={onRestoreHistoryEntry}
                   />
@@ -4161,20 +4489,20 @@ function OutputWindow({
                         needsCoderDiff && action.id === "proxy"
                           ? {
                               ...action,
-                              label: "Retry Coder Agent",
-                              description: "Run the local Coder Agent again with the current repo context.",
+                              label: "Retry Local Coder",
+                              description: "Run local output repair/retry again with the current TaskSpec and repo context.",
                             }
                           : needsCoderDiff && action.id === "cursor"
                             ? {
                                 ...action,
-                                label: "Copy manual prompt packet",
-                                description: "Copy the fallback prompt packet for a manual implementation pass.",
+                                label: "Copy manual browser prompt",
+                                description: "Paste a strict prompt into GPT/Gemini/Grok/Claude, then validate the returned JSON or diff here.",
                               }
                             : needsCoderDiff && action.id === "codex"
                               ? {
                                   ...action,
                                   label: "Use Cloud/API route",
-                                  description: "Copy a full prompt for a configured cloud model route.",
+                                  description: "Optional: use a configured API route only when you explicitly choose it.",
                                 }
                               : action;
                       return (
@@ -4186,7 +4514,7 @@ function OutputWindow({
                           }`}
                           disabled={isRunning && action.id === "proxy"}
                           key={action.id}
-                          onClick={() => handleRouteAction(action)}
+                          onClick={() => handleRouteAction(displayAction)}
                           type="button"
                         >
                           <span className="block font-semibold">{displayAction.label}</span>
@@ -4219,13 +4547,24 @@ function OutputWindow({
               status={stages[2].status}
               title="Proposal / Diff Preview"
             >
-              {hasProposal || hasDiff ? (
+              {hasProposal || hasDiff || canManuallyPreviewDiff ? (
                 <div className="space-y-4">
                   <ProposalSummaryPanel gate={approvalGate} />
                   {alreadySatisfied ? (
                     <EmptyWorkflowMessage text="No diff is needed because the target file already satisfies this task." />
-                  ) : needsCoderDiff ? (
-                    <EmptyWorkflowMessage text="No diff is available to preview. Use Retry Coder Agent, Copy manual prompt packet, or Use Cloud/API route from the decision panel." />
+                  ) : needsCoderDiff || (!hasDiff && canManuallyPreviewDiff) ? (
+                    <div className="space-y-3">
+                      <EmptyWorkflowMessage text="No backend diff is available yet. Paste a unified diff below to run the normal preview and approval gates." />
+                      <DiffVerificationPanel
+                        buttonLabel="Preview manual result"
+                        fallbackUnifiedDiff={approvalGate.proposedDiff}
+                        placeholder="Paste a unified diff here for a read-only safety check..."
+                        state={diffVerification}
+                        title="Paste Manual Diff"
+                        onChange={onDiffChange}
+                        onPreview={onPreviewDiffVerification}
+                      />
+                    </div>
                   ) : (
                     <DiffVerificationPanel
                       fallbackUnifiedDiff={approvalGate.proposedDiff}
@@ -4303,6 +4642,7 @@ function OutputWindow({
                 execution={approvalGate.execution}
                 isVerifying={longRunningTask.isChecking}
                 longRunningTask={longRunningTask}
+                onCodeVerify={onLongTaskVerifyCode}
                 onDocsOnlyVerify={onLongTaskVerifyDocsOnly}
               />
             </WorkflowStage>
@@ -4391,17 +4731,21 @@ export function TaskCompletionStatus({
 
 function ConversationHistoryPanel({
   entries,
+  onCopyRecoveryPrompt,
   onClear,
   onRestore,
+  title = "Recent Agent Runs",
 }: {
   entries: CodingHistoryEntry[];
+  onCopyRecoveryPrompt: (entry: CodingHistoryEntry) => void;
   onClear: () => void;
   onRestore: (entry: CodingHistoryEntry) => void;
+  title?: string;
 }) {
   return (
     <section className="rounded-lg border border-slate-300 bg-white p-5 shadow-sm">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-base font-semibold text-slate-950">Recent Agent Runs</h2>
+        <h2 className="text-base font-semibold text-slate-950">{title}</h2>
         {entries.length > 0 ? (
           <button
             className="border border-slate-300 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-900 hover:bg-slate-100"
@@ -4436,13 +4780,26 @@ function ConversationHistoryPanel({
                   </div>
                   <p className="mt-2 line-clamp-2 text-slate-700">{entry.summary}</p>
                 </div>
-                <button
-                  className="shrink-0 border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-900 hover:bg-slate-100"
-                  onClick={() => onRestore(entry)}
-                  type="button"
-                >
-                  Restore prompt
-                </button>
+                <div className="flex shrink-0 flex-wrap gap-2">
+                  <button
+                    className="border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-900 hover:bg-slate-100"
+                    onClick={() => onRestore(entry)}
+                    type="button"
+                  >
+                    Restore prompt
+                  </button>
+                  {entry.recommendation === "Run with Proxy Agent" ||
+                  entry.recoveryPrompt ||
+                  entry.route === "local_route" ? (
+                    <button
+                      className="border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-900 hover:bg-slate-100"
+                      onClick={() => onCopyRecoveryPrompt(entry)}
+                      type="button"
+                    >
+                      Copy manual browser prompt
+                    </button>
+                  ) : null}
+                </div>
               </div>
             </div>
           ))}
@@ -5497,12 +5854,18 @@ function DiffVerificationPanel({
   onChange,
   onPreview,
   fallbackUnifiedDiff = "",
+  buttonLabel = "Preview diff",
+  placeholder = "Paste a proposed code change here for a read-only safety check...",
+  title = "Check a Code Change",
 }: {
   state: DiffVerificationState;
   onChange: (unifiedDiff: string) => void;
   onPreview: () => void;
   /** When the textarea is empty but the approval gate already carries a diff, still allow Preview. */
   fallbackUnifiedDiff?: string;
+  buttonLabel?: string;
+  placeholder?: string;
+  title?: string;
 }) {
   const status = state.preview?.status ?? "not previewed";
   const isBlocked = state.preview?.status === "blocked";
@@ -5512,7 +5875,7 @@ function DiffVerificationPanel({
   return (
     <section className="rounded-lg border border-slate-300 bg-white p-5 shadow-sm">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-base font-semibold text-slate-950">Check a Code Change</h2>
+        <h2 className="text-base font-semibold text-slate-950">{title}</h2>
         <div
           className={`border px-2 py-1 text-xs font-semibold ${
             isBlocked
@@ -5529,7 +5892,7 @@ function DiffVerificationPanel({
       <textarea
         className="mt-3 h-36 w-full resize-y border border-slate-300 bg-white p-3 font-mono text-sm text-slate-900 outline-none focus:border-slate-600"
         onChange={(event) => onChange(event.target.value)}
-        placeholder="Paste a proposed code change here for a read-only safety check..."
+        placeholder={placeholder}
         value={state.unifiedDiff}
       />
 
@@ -5540,7 +5903,7 @@ function DiffVerificationPanel({
           onClick={() => onPreview()}
           type="button"
         >
-          {state.isChecking ? "Checking" : "Preview diff"}
+          {state.isChecking ? "Checking" : buttonLabel}
         </button>
         {state.preview ? (
           <div className="text-sm text-slate-600">
@@ -5982,7 +6345,7 @@ export function longTaskVisibleState(task?: LongRunningTaskPayload | null): {
   ) {
     return { label: `Blocked: ${task.status}`, tone: "danger" };
   }
-  if (task.status === "applied_verification_failed") {
+  if (isVerificationFailedStatus(task.status, task.post_apply_verification)) {
     return { label: "Verification failed", tone: "danger" };
   }
   if (task.open_diffs?.some((diff) => diff.status === "pending_verification")) {
@@ -6006,6 +6369,7 @@ function isTerminalLongTaskStatus(status?: string) {
     status === "needs_context" ||
     status === "applied_needs_verification" ||
     status === "applied_verification_failed" ||
+    status === "verification_failed" ||
     status === "verification_ready" ||
     status === "verified"
   );
@@ -6069,6 +6433,7 @@ export function deriveTerminalLongTaskStateForApproval(
     task.status === "cancelled" ||
     task.status === "applied_needs_verification" ||
     task.status === "applied_verification_failed" ||
+    task.status === "verification_failed" ||
     task.status === "failed_needs_human"
   ) {
     return state;
@@ -6130,6 +6495,16 @@ function appendUniqueStrings(current: string[], additions: string[]) {
   return output;
 }
 
+function verificationCommandLabel(check: NonNullable<PostApplyVerification["checks"]>[number]) {
+  if (check.command_text) {
+    return check.command_text;
+  }
+  if (Array.isArray(check.command)) {
+    return check.command.join(" ");
+  }
+  return check.command ?? check.id ?? "verification check";
+}
+
 function generateVerificationFixPrompt(verification: PostApplyVerification) {
   const failed = verification.checks?.filter((check) => check.status === "failed") ?? [];
   return [
@@ -6139,7 +6514,7 @@ function generateVerificationFixPrompt(verification: PostApplyVerification) {
     ...(failed.length
       ? failed.map(
           (check) =>
-            `- ${check.command?.join(" ") ?? check.id ?? "check"}: ${check.summary ?? "failed"}`,
+            `- ${verificationCommandLabel(check)}: ${check.summary ?? "failed"}`,
         )
       : ["- Review post_apply_verification for failure details."]),
     "Return ONLY a clean unified diff.",
@@ -6526,10 +6901,10 @@ export function ApprovalGatePanel({
             {subjectiveImprovementNeedsDiff ? (
               <div className="flex flex-wrap gap-2">
                 {[
-                  "Retry Coder Agent",
+                  "Retry Local Coder with stricter output repair",
                   ...(bundleSnapshotDrift ? ["Regenerate plan"] : []),
-                  "Copy manual prompt packet",
-                  "Use Cloud/API route",
+                  "Copy manual browser prompt",
+                  "Use Cloud/API route, if configured",
                   "Manual visual review",
                 ].map((action) => (
                   <span
@@ -6606,7 +6981,7 @@ export function ApprovalGatePanel({
         <div className="mt-3 border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-950">
           <div className="font-semibold">needs_coder_diff</div>
           <div className="mt-1">
-            Retry Coder Agent, copy the manual prompt packet, or use the Cloud/API route.
+            Retry Local Coder with stricter output repair, or copy the manual browser prompt.
           </div>
         </div>
       ) : null}
@@ -7410,6 +7785,61 @@ async function callDiffVerificationPreview(
   return payload as DiffVerificationPreviewResponse;
 }
 
+async function callManualResultPreview(
+  payloadText: string,
+  options: {
+    activeTaskId?: string;
+    nextPromptAction?: string;
+    routeType?: string;
+    taskSpec?: CoderTaskSpecResponse;
+    taskText?: string;
+  } = {},
+): Promise<DiffVerificationPreviewResponse> {
+  const body: Record<string, unknown> = { payload: payloadText };
+  const activeTaskId = options.activeTaskId?.trim();
+  if (activeTaskId) {
+    body.active_task_id = activeTaskId;
+  }
+  if (options.routeType && options.routeType !== "not run" && options.routeType !== "pending") {
+    body.route_type = options.routeType;
+  }
+  const nextPromptAction = options.nextPromptAction?.trim();
+  if (nextPromptAction) {
+    body.next_prompt_action = nextPromptAction;
+  }
+  const taskText = options.taskText?.trim();
+  if (taskText) {
+    body.task_text = taskText;
+  }
+  if (options.taskSpec) {
+    body.task_spec = options.taskSpec;
+  }
+  const response = await fetch("/v1/verification/manual-result-preview", {
+    body: JSON.stringify(body),
+    headers: {
+      "content-type": "application/json",
+    },
+    method: "POST",
+  });
+  const payload = await readJsonResponse(response, "Manual result preview");
+
+  if (!response.ok) {
+    const message =
+      typeof payload === "object" &&
+      payload !== null &&
+      "detail" in payload &&
+      typeof payload.detail === "object" &&
+      payload.detail !== null &&
+      "error" in payload.detail &&
+      typeof payload.detail.error === "string"
+        ? payload.detail.error
+        : `Manual result preview failed with status ${response.status}.`;
+    throw new Error(message);
+  }
+
+  return payload as DiffVerificationPreviewResponse;
+}
+
 async function callLongRunningTaskCreate(
   description: string,
 ): Promise<LongRunningTaskResponse> {
@@ -7529,6 +7959,25 @@ async function callLongRunningTaskDocsOnlyVerify(
   return parseLongRunningTaskResponse(response, "Long-running task verification");
 }
 
+async function callLongRunningTaskCodeVerify(
+  taskId: string,
+): Promise<LongRunningTaskResponse> {
+  const response = await fetch(
+    `/v1/tasks/long-running/${encodeURIComponent(taskId)}/verify`,
+    {
+      body: JSON.stringify({
+        run_code_verification: true,
+      }),
+      headers: {
+        "content-type": "application/json",
+      },
+      method: "POST",
+    },
+  );
+
+  return parseLongRunningTaskResponse(response, "Long-running task code verification");
+}
+
 async function callSourceTelemetry(): Promise<SourceTelemetryResponse> {
   const response = await fetch("/v1/self/status", {
     method: "GET",
@@ -7601,6 +8050,13 @@ export function promptTextForCoderPacket({
   if (coderDiffReady) {
     return "Coder Agent produced replacement content; the backend generated the unified diff for the approval gate (see Proposal / Diff Preview).";
   }
+  if (
+    coderBlocked &&
+    typeof promptText === "string" &&
+    promptText.includes("Manual Browser Prompt")
+  ) {
+    return promptText;
+  }
   if (coderBlocked) {
     return coderNeededContext
       ? `${coderBlockedReason} Needed context: ${coderNeededContext}`
@@ -7616,7 +8072,7 @@ export function promptTextForCoderPacket({
     typeof promptText === "string" &&
     promptText.includes("backend converted into a unified diff")
   ) {
-    return "Coder Agent did not provide an approvable unified diff for this run. Retry Coder Agent, copy the manual prompt packet, or use the Cloud/API route.";
+    return "Coder Agent did not provide an approvable unified diff for this run. Retry Local Coder with stricter output repair, or copy the manual browser prompt.";
   }
   return promptText ?? "No prompt_text returned.";
 }
@@ -8131,6 +8587,139 @@ function buildClipboardPrompt(
     .trim();
 }
 
+function manualBrowserPromptForCurrentState({
+  architectPlan,
+  currentTask,
+  promptText,
+  target,
+}: {
+  architectPlan: ArchitectPlanResponse | null;
+  currentTask: string;
+  promptText: string;
+  target: string;
+}) {
+  if (promptText.includes("Manual Browser Prompt: SpiritOS Coder Recovery")) {
+    return promptText;
+  }
+
+  const taskSpec = taskSpecForPlan(architectPlan) ?? {};
+  const resolvedTarget =
+    normalizeRepoRelativePath(target) ||
+    normalizeRepoRelativePath(String(taskSpec.target ?? "")) ||
+    architectTargetPath(architectPlan);
+  const allowedFiles = taskSpec.allowed_files ?? taskSpec.allowedFiles ?? [];
+  const forbiddenFiles = taskSpec.forbidden_files ?? taskSpec.forbiddenFiles ?? [];
+  const literalRequirements =
+    taskSpec.literal_requirements ?? taskSpec.literalRequirements ?? [];
+  const verification = taskSpec.verification ?? [];
+  const criteria = architectPlan?.coder_packet?.acceptance_criteria ?? [];
+
+  return [
+    "# Manual Browser Prompt: SpiritOS Coder Recovery",
+    "",
+    "Use this in GPT, Gemini, Grok, Claude, or another browser model.",
+    "Return the model output to the SpiritOS portal for validation. Do not bypass the portal.",
+    "",
+    "## Task",
+    currentTask.trim() || `Modify ${resolvedTarget}.`,
+    "",
+    "## Required Output",
+    "Return only JSON. Prefer content_lines.",
+    "",
+    "```json",
+    JSON.stringify(
+      {
+        action: "replace_file",
+        target: resolvedTarget || "REPO_RELATIVE_PATH",
+        content_lines: ["line 1", "line 2"],
+        notes: "short optional note",
+      },
+      null,
+      2,
+    ),
+    "```",
+    "",
+    "## TaskSpec",
+    "```json",
+    JSON.stringify(
+      {
+        target: resolvedTarget || null,
+        allowed_files: allowedFiles,
+        forbidden_files: forbiddenFiles,
+        literal_requirements: literalRequirements,
+        verification,
+      },
+      null,
+      2,
+    ),
+    "```",
+    "",
+    "## Acceptance Criteria",
+    ...(criteria.length
+      ? criteria.map((item) => `- ${item.description ?? item.id ?? "Criterion"}`)
+      : ["- Modify only the TaskSpec target.", "- Preserve runtime behavior unless the task says otherwise."]),
+    "",
+    "## Portal Safety Contract",
+    "- Target must exactly match TaskSpec.target.",
+    "- Only edit files in TaskSpec.allowed_files.",
+    "- Paste the returned JSON or diff back into SpiritOS.",
+    "- SpiritOS must still run target-only, TaskSpec.allowed_files, git apply, reviewer, approval, protected apply, and verification.",
+    "",
+    "If you do not have enough file content to produce a safe full replacement, return blocked JSON explaining the missing context.",
+  ].join("\n");
+}
+
+function restoredArchitectPlanForHistoryEntry(
+  entry: CodingHistoryEntry,
+): ArchitectPlanResponse | null {
+  const target = explicitTargetFromText(entry.task);
+  if (!target) {
+    return null;
+  }
+  return {
+    coder_packet: {
+      acceptance_criteria: [
+        {
+          description: `Modify only ${target}.`,
+          id: "target-only",
+          kind: "behavioral",
+        },
+      ],
+      constraints: {
+        must_contain: [],
+        must_not_contain: [],
+        preserve_exports: [],
+        preserve_imports: [],
+      },
+      context_slices: [{ kind: "target", path: target }],
+      operation: "edit",
+      target_file: { exists: true, path: target },
+    },
+    source_task: entry.task,
+    task_spec: {
+      schema_version: 1,
+      task_type: "modify_existing_file",
+      target,
+      allowed_files: [target],
+      forbidden_files: [],
+      literal_requirements: [],
+      verification: ["git apply check", "target-only"],
+      risk_tier: "low",
+      source: "restored_history",
+    },
+    verification_plan: {
+      required_checks: [
+        { blocking: true, command: ["git", "apply", "--check"], id: "git_apply_check" },
+      ],
+    },
+  };
+}
+
+function explicitTargetFromText(text: string) {
+  const match = text.match(/^\s*Target file:\s*(.+?)\s*$/im);
+  return normalizeRepoRelativePath(match?.[1] ?? "");
+}
+
 function buildSelfCorrectionState({
   decision,
   memoryEntries,
@@ -8372,6 +8961,7 @@ function buildCodingHistoryEntry({
   completedAt,
   decision,
   memoryEntries,
+  promptText,
   promptPacket,
   priorTurns,
   researchSources,
@@ -8382,6 +8972,7 @@ function buildCodingHistoryEntry({
   completedAt: string;
   decision: ProxyRouteDecisionResponse;
   memoryEntries: DecisionMemoryEntry[];
+  promptText?: string;
   promptPacket: PromptPacketResponse;
   priorTurns: CodingHistoryEntry[];
   researchSources: ResearchSource[];
@@ -8408,6 +8999,9 @@ function buildCodingHistoryEntry({
     model: modelFromDecision(decision),
     recommendation,
     researchSourceCount: researchSources.length,
+    recoveryPrompt: promptText?.includes("Manual Browser Prompt")
+      ? promptText
+      : undefined,
     risk: formatRiskTier(decision.risk_tier),
     route: decision.recommended_route ?? "unknown route",
     runId,

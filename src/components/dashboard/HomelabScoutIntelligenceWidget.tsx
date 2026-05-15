@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { BrainCircuit, Check, RefreshCw, X } from "lucide-react";
+import { Ban, BrainCircuit, Check, RefreshCw, X } from "lucide-react";
 
 import { HomelabStatusBadge } from "@/components/dashboard/HomelabStatusBadge";
 import { useScoutOverview, type ScoutOverviewFetchState } from "@/hooks/useScoutOverview";
@@ -10,16 +10,19 @@ import type {
   ScoutPacket,
   ScoutPromotionItem,
   ScoutSchedulerJob,
+  ScoutSourceCandidate,
+  ScoutSourceCandidates,
   ScoutSourceSummary,
 } from "@/lib/scout-overview";
 
-type ScoutFeedTab = "useful" | "saved" | "review" | "promoted" | "sources";
+type ScoutFeedTab = "useful" | "saved" | "review" | "promoted" | "sourceQueue" | "sources";
 
 const scoutFeedTabs: Array<{ id: ScoutFeedTab; label: string }> = [
   { id: "useful", label: "Useful Now" },
   { id: "saved", label: "Saved Later" },
   { id: "review", label: "Review Queue" },
   { id: "promoted", label: "Promoted" },
+  { id: "sourceQueue", label: "Source Queue" },
   { id: "sources", label: "Sources" },
 ];
 
@@ -133,6 +136,9 @@ function ScoutCounts({ overview }: { overview: ScoutOverview }) {
   const memory = overview.human_summary?.memory_status;
   const promotion = overview.human_summary?.promotion_status;
   const sources = overview.sources ?? [];
+  const sourceCandidateCounts = overview.source_candidates?.counts ?? {};
+  const sourceQueueCount =
+    (sourceCandidateCounts.recommended ?? 0) + (sourceCandidateCounts.needs_review ?? 0);
   const scanFlow = overview.human_summary?.scan_flow;
   const stats =
     scanFlow && scanFlow.length > 0
@@ -152,6 +158,7 @@ function ScoutCounts({ overview }: { overview: ScoutOverview }) {
       memory?.active || (counts.packet_embeddings ?? 0) > 0 ? "Active" : "Inactive",
     ] as const,
     ["Promoted", promotion?.promoted_count] as const,
+    ["Source Queue", sourceQueueCount] as const,
     ["Sources", sources.length] as const,
   ];
 
@@ -432,30 +439,177 @@ function ScoutSourceCards({ sources }: { sources: ScoutSourceSummary[] }) {
   );
 }
 
+function percentScore(value: number | null | undefined): string {
+  if (typeof value !== "number") return "-";
+  return `${Math.round(value * 100)}%`;
+}
+
+function sourceCandidateTitle(candidate: ScoutSourceCandidate): string {
+  try {
+    if (candidate.canonical_uri.startsWith("github://")) return candidate.canonical_uri;
+    const url = new URL(candidate.canonical_uri);
+    return `${url.host}${url.pathname}`.replace(/\/$/, "");
+  } catch {
+    return candidate.canonical_uri;
+  }
+}
+
+function ScoutSourceCandidateCards({
+  candidates,
+  emptyLabel,
+  busyCandidateId,
+  onApprove,
+  onReject,
+  onBlock,
+}: {
+  candidates: ScoutSourceCandidate[];
+  emptyLabel: string;
+  busyCandidateId: string | null;
+  onApprove: (candidate: ScoutSourceCandidate) => void;
+  onReject: (candidate: ScoutSourceCandidate) => void;
+  onBlock: (candidate: ScoutSourceCandidate) => void;
+}) {
+  if (candidates.length === 0) {
+    return <p className="dashboard-demo-v4-scout-empty">{emptyLabel}</p>;
+  }
+
+  return (
+    <ul className="dashboard-demo-v4-scout-packet-list dashboard-demo-v4-scout-source-list">
+      {candidates.map((candidate) => {
+        const title = sourceCandidateTitle(candidate);
+        const busy = busyCandidateId === candidate.candidate_id;
+        const reasonCodes = (candidate.reason_codes ?? []).slice(0, 4);
+        const canReview =
+          candidate.status !== "approved" &&
+          candidate.status !== "rejected" &&
+          candidate.status !== "blocked";
+
+        return (
+          <li key={candidate.candidate_id}>
+            <div className="dashboard-demo-v4-scout-packet-topline">
+              <div className="dashboard-demo-v4-scout-packet-heading">
+                <span>{candidate.source_kind.replaceAll("_", " ")}</span>
+                <strong>{title}</strong>
+              </div>
+              <em className="dashboard-demo-v4-scout-status-chip">
+                {candidate.status.replaceAll("_", " ")} {"\u00b7"}{" "}
+                {percentScore(candidate.confidence_score)}
+              </em>
+            </div>
+            {candidate.trust_label ? (
+              <div className="dashboard-demo-v4-scout-trust-row">
+                <span className="dashboard-demo-v4-scout-trust-chip">
+                  {candidate.trust_label}
+                </span>
+              </div>
+            ) : null}
+            <p className="dashboard-demo-v4-scout-packet-summary">
+              {candidate.recommendation ?? "Review before activation."}
+            </p>
+            {candidate.discovered_from_uri ? (
+              <p className="dashboard-demo-v4-scout-source-meta">
+                From {candidate.discovered_from_uri}
+              </p>
+            ) : null}
+            {candidate.rejection_reason ? (
+              <p className="dashboard-demo-v4-scout-source-meta">
+                Rejected: {candidate.rejection_reason}
+              </p>
+            ) : null}
+            {candidate.blocked_reason ? (
+              <p className="dashboard-demo-v4-scout-source-meta">
+                Blocked: {candidate.blocked_reason}
+              </p>
+            ) : null}
+            {reasonCodes.length > 0 ? (
+              <div className="dashboard-demo-v4-scout-tags">
+                {reasonCodes.map((reason) => (
+                  <span key={reason}>{reason.replaceAll("_", " ")}</span>
+                ))}
+              </div>
+            ) : null}
+            {canReview ? (
+              <div className="dashboard-demo-v4-scout-actions">
+                <button type="button" onClick={() => onApprove(candidate)} disabled={busy}>
+                  <Check className="h-3.5 w-3.5" aria-hidden />
+                  Approve
+                </button>
+                <button type="button" onClick={() => onReject(candidate)} disabled={busy}>
+                  <X className="h-3.5 w-3.5" aria-hidden />
+                  Reject
+                </button>
+                <button type="button" onClick={() => onBlock(candidate)} disabled={busy}>
+                  <Ban className="h-3.5 w-3.5" aria-hidden />
+                  Block
+                </button>
+              </div>
+            ) : null}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+function ScoutSourceCandidateCounts({
+  counts,
+}: {
+  counts: ScoutSourceCandidates["counts"];
+}) {
+  const items = [
+    ["Recommended", counts?.recommended],
+    ["Needs Review", counts?.needs_review],
+    ["Stored", counts?.stored],
+    ["Rejected", counts?.rejected],
+    ["Blocked", counts?.blocked],
+    ["Approved", counts?.approved],
+  ] as const;
+
+  return (
+    <div className="dashboard-demo-v4-scout-counts" aria-label="Scout source candidate counts">
+      {items.map(([label, value]) => (
+        <div key={label} className="dashboard-demo-v4-scout-count">
+          <strong>{countValue(value)}</strong>
+          <span>{label}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function ScoutFeed({
   overview,
   selectedTab,
   onSelectedTabChange,
   busyPacketId,
   busyPromotionId,
+  busySourceCandidateId,
   onQueue,
   onRecheck,
   onApprove,
   onReject,
+  onApproveSourceCandidate,
+  onRejectSourceCandidate,
+  onBlockSourceCandidate,
 }: {
   overview: ScoutOverview;
   selectedTab: ScoutFeedTab;
   onSelectedTabChange: (tab: ScoutFeedTab) => void;
   busyPacketId: string | null;
   busyPromotionId: string | null;
+  busySourceCandidateId: string | null;
   onQueue: (packet: ScoutPacket) => void;
   onRecheck: (packet: ScoutPacket) => void;
   onApprove: (promotion: ScoutPromotionItem) => void;
   onReject: (promotion: ScoutPromotionItem) => void;
+  onApproveSourceCandidate: (candidate: ScoutSourceCandidate) => void;
+  onRejectSourceCandidate: (candidate: ScoutSourceCandidate) => void;
+  onBlockSourceCandidate: (candidate: ScoutSourceCandidate) => void;
 }) {
   const recent = overview.recent ?? {};
   const sources = overview.sources ?? [];
   const promotions = overview.promotions ?? {};
+  const sourceCandidates = overview.source_candidates?.candidates ?? [];
   const packetsByTab: Record<"useful" | "saved", ScoutPacket[]> = {
     useful: recent.surfaced ?? [],
     saved: recent.stored ?? [],
@@ -465,6 +619,7 @@ function ScoutFeed({
     saved: "No saved packets yet.",
     review: "No packets waiting for review.",
     promoted: "No promoted packets yet.",
+    sourceQueue: "No source candidates waiting for review.",
     sources: "No source data available yet.",
   };
 
@@ -486,6 +641,18 @@ function ScoutFeed({
       <div className="dashboard-demo-v4-scout-feed-scroll">
         {selectedTab === "sources" ? (
           <ScoutSourceCards sources={sources} />
+        ) : selectedTab === "sourceQueue" ? (
+          <>
+            <ScoutSourceCandidateCounts counts={overview.source_candidates?.counts} />
+            <ScoutSourceCandidateCards
+              candidates={sourceCandidates}
+              emptyLabel={emptyLabels.sourceQueue}
+              busyCandidateId={busySourceCandidateId}
+              onApprove={onApproveSourceCandidate}
+              onReject={onRejectSourceCandidate}
+              onBlock={onBlockSourceCandidate}
+            />
+          </>
         ) : selectedTab === "review" ? (
           <ScoutPromotionCards
             promotions={promotions.queued ?? []}
@@ -522,6 +689,7 @@ export function HomelabScoutIntelligenceWidget() {
   const [selectedTab, setSelectedTab] = useState<ScoutFeedTab>("useful");
   const [busyPacketId, setBusyPacketId] = useState<string | null>(null);
   const [busyPromotionId, setBusyPromotionId] = useState<string | null>(null);
+  const [busySourceCandidateId, setBusySourceCandidateId] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const badge = badgeForState(state);
@@ -598,6 +766,57 @@ export function HomelabScoutIntelligenceWidget() {
     }
   }
 
+  async function reviewSourceCandidate(
+    candidate: ScoutSourceCandidate,
+    action: "approve" | "reject" | "block",
+  ) {
+    const reason =
+      action === "approve"
+        ? null
+        : window.prompt(
+            action === "block"
+              ? "Reason for blocking this source?"
+              : "Reason for rejecting this source?",
+            action === "block" ? "Unsafe or noisy source." : "Not relevant enough.",
+          );
+    if (action !== "approve" && reason === null) return;
+    const confirmed =
+      action === "approve"
+        ? window.confirm("Approve this source for Scout polling?")
+        : window.confirm(`${action === "block" ? "Block" : "Reject"} this source candidate?`);
+    if (!confirmed) return;
+
+    setBusySourceCandidateId(candidate.candidate_id);
+    setActionError(null);
+    try {
+      const body =
+        action === "approve"
+          ? { approved_by: "manual-review" }
+          : { reason: reason || undefined, reviewed_by: "manual-review" };
+      const res = await fetch(
+        `/api/scout/source-candidates/${encodeURIComponent(candidate.candidate_id)}/${action}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        },
+      );
+      if (!res.ok) throw new Error("Could not review source candidate.");
+      setActionMessage(
+        action === "approve"
+          ? "Source candidate approved."
+          : action === "block"
+            ? "Source candidate blocked."
+            : "Source candidate rejected.",
+      );
+      await refresh();
+    } catch {
+      setActionError("Could not review source candidate.");
+    } finally {
+      setBusySourceCandidateId(null);
+    }
+  }
+
   return (
     <section
       aria-label="Scout intelligence"
@@ -650,6 +869,7 @@ export function HomelabScoutIntelligenceWidget() {
             onSelectedTabChange={setSelectedTab}
             busyPacketId={busyPacketId}
             busyPromotionId={busyPromotionId}
+            busySourceCandidateId={busySourceCandidateId}
             onQueue={(packet) =>
               void runPacketAction(
                 packet,
@@ -668,6 +888,11 @@ export function HomelabScoutIntelligenceWidget() {
             }
             onApprove={(promotion) => void finalizePromotion(promotion, "approve")}
             onReject={(promotion) => void finalizePromotion(promotion, "reject")}
+            onApproveSourceCandidate={(candidate) =>
+              void reviewSourceCandidate(candidate, "approve")
+            }
+            onRejectSourceCandidate={(candidate) => void reviewSourceCandidate(candidate, "reject")}
+            onBlockSourceCandidate={(candidate) => void reviewSourceCandidate(candidate, "block")}
           />
           <ScoutScheduler overview={data} />
         </div>

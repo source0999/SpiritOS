@@ -1,0 +1,200 @@
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+
+import scout.api.overview as overview_api
+import scout.api.sources as sources_api
+from scout.api.overview import router as overview_router
+from scout.api.sources import router
+from scout.config import ScoutSettings
+from scout.sources.storage import block_candidate, upsert_candidate
+from scout.sources.storage import approve_candidate
+from scout.storage.db import init_database
+from scout.storage.migrations import apply_migrations
+
+
+def _client(tmp_path, monkeypatch) -> tuple[TestClient, ScoutSettings]:
+    settings = ScoutSettings(data_dir=tmp_path, database_path=tmp_path / "scout.db")
+    init_database(settings.database_path)
+    apply_migrations(settings.database_path)
+    monkeypatch.setattr(sources_api, "get_settings", lambda: settings)
+
+    app = FastAPI()
+    app.include_router(router)
+    return TestClient(app), settings
+
+
+def test_source_candidates_api_lists_counts_and_filters(tmp_path, monkeypatch):
+    client, settings = _client(tmp_path, monkeypatch)
+    recommended = upsert_candidate(
+        settings.database_path,
+        display_uri="https://github.com/fastapi/fastapi",
+        source_kind="github_repo",
+        status="recommended",
+        confidence_score=0.98,
+        reason_codes=["official_repo_pattern"],
+    )
+    upsert_candidate(
+        settings.database_path,
+        display_uri="https://example.com/blog",
+        source_kind="blog",
+        status="needs_review",
+        confidence_score=0.65,
+    )
+
+    body = client.get(
+        "/v1/scout/source-candidates",
+        params={"status": "recommended"},
+    ).json()
+
+    assert body["counts"]["recommended"] == 1
+    assert body["counts"]["needs_review"] == 1
+    assert [item["candidate_id"] for item in body["candidates"]] == [
+        recommended.candidate_id
+    ]
+    assert body["candidates"][0]["reason_codes"] == ["official_repo_pattern"]
+
+
+def test_sources_api_lists_static_and_approved_registry_sources(tmp_path, monkeypatch):
+    client, settings = _client(tmp_path, monkeypatch)
+    config_path = tmp_path / "sources.yaml"
+    config_path.write_text(
+        """
+version: 1
+github_repos:
+  - owner: fastapi
+    repo: fastapi
+    poll_interval_minutes: 60
+rss_feeds: []
+web_pages: []
+""",
+        encoding="utf-8",
+    )
+    settings.config_path = config_path
+    candidate = upsert_candidate(
+        settings.database_path,
+        display_uri="https://github.com/anthropics/anthropic-sdk-python",
+        source_kind="github_repo",
+    )
+    approve_candidate(settings.database_path, candidate.candidate_id, approved_by="tester")
+
+    body = client.get("/v1/scout/sources").json()
+
+    sources = {source["canonical_uri"]: source for source in body["sources"]}
+    assert body["count"] == 2
+    assert sources["github://fastapi/fastapi"]["source_origin"] == "static_config"
+    assert sources["github://anthropics/anthropic-sdk-python"]["source_origin"] == (
+        "approved_registry"
+    )
+    assert sources["github://anthropics/anthropic-sdk-python"]["poller_supported"] is True
+
+
+def test_legacy_sources_route_returns_normalized_registry_shape(tmp_path, monkeypatch):
+    client, settings = _client(tmp_path, monkeypatch)
+    config_path = tmp_path / "sources.yaml"
+    config_path.write_text(
+        """
+version: 1
+github_repos: []
+rss_feeds: []
+web_pages: []
+""",
+        encoding="utf-8",
+    )
+    settings.config_path = config_path
+    monkeypatch.setattr(overview_api, "get_settings", lambda: settings)
+    app = FastAPI()
+    app.include_router(overview_router)
+    legacy_client = TestClient(app)
+
+    body = legacy_client.get("/v1/scout/sources").json()
+
+    assert body["count"] == 0
+    assert body["sources"] == []
+
+
+def test_main_app_prefers_normalized_sources_route():
+    from scout.main import app
+
+    matching = [
+        route
+        for route in app.routes
+        if getattr(route, "path", None) == "/v1/scout/sources"
+    ]
+
+    assert matching[0].endpoint.__name__ == "get_sources"
+
+
+def test_source_candidates_api_rejects_unknown_status(tmp_path, monkeypatch):
+    client, _settings = _client(tmp_path, monkeypatch)
+
+    response = client.get(
+        "/v1/scout/source-candidates",
+        params={"status": "pending"},
+    )
+
+    assert response.status_code == 422
+
+
+def test_source_candidates_api_approve_reject_and_block(tmp_path, monkeypatch):
+    client, settings = _client(tmp_path, monkeypatch)
+    approved = upsert_candidate(
+        settings.database_path,
+        display_uri="https://github.com/anthropics/anthropic-sdk-python",
+        source_kind="github_repo",
+        status="recommended",
+    )
+    rejected = upsert_candidate(
+        settings.database_path,
+        display_uri="https://example.com/noisy-blog",
+        source_kind="blog",
+    )
+    blocked = upsert_candidate(
+        settings.database_path,
+        display_uri="https://spam.example/tracker",
+        source_kind="unknown",
+    )
+
+    approve_body = client.post(
+        f"/v1/scout/source-candidates/{approved.candidate_id}/approve",
+        json={"approved_by": "tester", "poll_interval_minutes": 45},
+    ).json()
+    reject_body = client.post(
+        f"/v1/scout/source-candidates/{rejected.candidate_id}/reject",
+        json={"reason": "not useful", "reviewed_by": "tester"},
+    ).json()
+    block_body = client.post(
+        f"/v1/scout/source-candidates/{blocked.candidate_id}/block",
+        json={"reason": "spam", "reviewed_by": "tester"},
+    ).json()
+
+    assert approve_body["source"]["canonical_uri"] == (
+        "github://anthropics/anthropic-sdk-python"
+    )
+    assert approve_body["source"]["approved_by"] == "tester"
+    assert approve_body["source"]["poll_interval_minutes"] == 45
+    assert reject_body["candidate"]["status"] == "rejected"
+    assert reject_body["candidate"]["rejection_reason"] == "not useful"
+    assert block_body["candidate"]["status"] == "blocked"
+    assert block_body["candidate"]["blocked_reason"] == "spam"
+
+
+def test_source_candidates_api_does_not_approve_blocked_candidate(tmp_path, monkeypatch):
+    client, settings = _client(tmp_path, monkeypatch)
+    candidate = upsert_candidate(
+        settings.database_path,
+        display_uri="https://spam.example/tracker",
+    )
+    block_candidate(
+        settings.database_path,
+        candidate.candidate_id,
+        reason="spam",
+        blocked_by="tester",
+    )
+
+    response = client.post(
+        f"/v1/scout/source-candidates/{candidate.candidate_id}/approve",
+        json={"approved_by": "tester"},
+    )
+
+    assert response.status_code == 409
+    assert "blocked" in response.json()["detail"]

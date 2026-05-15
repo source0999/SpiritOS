@@ -44,6 +44,17 @@ def _json_response(rel: str, content: str) -> str:
     )
 
 
+def _json_lines_response(rel: str, content: str) -> str:
+    return json.dumps(
+        {
+            "action": "replace_file",
+            "target": rel,
+            "content_lines": content.rstrip("\n").split("\n"),
+            "notes": "ok",
+        }
+    )
+
+
 def _packet(rel: str, content: str, *, exists: bool = True) -> CoderPacket:
     context_mode = derive_context_mode(rel)
     return CoderPacket(
@@ -779,6 +790,119 @@ class CoderAgentRepomixDiffTests(unittest.TestCase):
             self.assertEqual(out["target"], rel)
             self.assertIn("Done", out["proposed_diff"])
 
+    def test_content_lines_replacement_returns_backend_generated_diff(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            rel = "src/app/demo/page.tsx"
+            (root / rel).parent.mkdir(parents=True)
+            (root / rel).write_text("export default function Page() { return null; }\n", encoding="utf-8")
+            _write_repomix(root, rel)
+
+            content = "export default function Page() {\n  return <main>Lines</main>;\n}\n"
+            out = propose_coder_agent_implementation_diff(
+                task=f"Target file: {rel}\nUpdate the page.",
+                workspace_root=root,
+                llm_call=lambda _prompt, _model: _json_lines_response(rel, content),
+            )
+
+            self.assertFalse(out.get("coder_blocked", False))
+            self.assertIn("Lines", out["proposed_diff"])
+            self.assertEqual(out["coder_diagnostics"]["json_attempt_count"], 1)
+
+    def test_content_lines_preferred_over_legacy_content(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            rel = "src/app/demo/page.tsx"
+            (root / rel).parent.mkdir(parents=True)
+            (root / rel).write_text("export default function Page() { return null; }\n", encoding="utf-8")
+            _write_repomix(root, rel)
+
+            out = propose_coder_agent_implementation_diff(
+                task=f"Target file: {rel}\nUpdate the page.",
+                workspace_root=root,
+                llm_call=lambda _prompt, _model: json.dumps(
+                    {
+                        "action": "replace_file",
+                        "target": rel,
+                        "content": "export default function Page() { return <main>Legacy</main>; }\n",
+                        "content_lines": [
+                            "export default function Page() {",
+                            "  return <main>Preferred</main>;",
+                            "}",
+                        ],
+                    }
+                ),
+            )
+
+            self.assertFalse(out.get("coder_blocked", False))
+            self.assertIn("Preferred", out["proposed_diff"])
+            self.assertNotIn("Legacy", out["proposed_diff"])
+
+    def test_content_lines_rejects_non_string_entries(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            rel = "src/app/demo/page.tsx"
+            (root / rel).parent.mkdir(parents=True)
+            (root / rel).write_text("export default function Page() { return null; }\n", encoding="utf-8")
+            _write_repomix(root, rel)
+
+            out = propose_coder_agent_implementation_diff(
+                task=f"Target file: {rel}\nUpdate the page.",
+                workspace_root=root,
+                llm_call=lambda _prompt, _model: json.dumps(
+                    {
+                        "action": "replace_file",
+                        "target": rel,
+                        "content_lines": ["export default function Page() {", 42, "}"],
+                    }
+                ),
+            )
+
+            self.assertTrue(out["coder_blocked"])
+            self.assertEqual(out["reason_code"], "coder_response_repair_exhausted")
+            self.assertIn("list of strings", out["coder_diagnostics"]["last_json_error"])
+
+    def test_prose_wrapped_json_replacement_is_recovered(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            rel = "src/app/demo/page.tsx"
+            (root / rel).parent.mkdir(parents=True)
+            (root / rel).write_text("export default function Page() { return null; }\n", encoding="utf-8")
+            _write_repomix(root, rel)
+
+            out = propose_coder_agent_implementation_diff(
+                task=f"Target file: {rel}\nUpdate the page.",
+                workspace_root=root,
+                llm_call=lambda _prompt, _model: "Here is the JSON:\n"
+                + _json_lines_response(rel, "export default function Page() { return <main>Recovered</main>; }\n")
+                + "\nDone.",
+            )
+
+            self.assertFalse(out.get("coder_blocked", False))
+            self.assertIn("Recovered", out["proposed_diff"])
+
+    def test_trailing_comma_json_replacement_is_repaired(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            rel = "src/app/demo/page.tsx"
+            (root / rel).parent.mkdir(parents=True)
+            (root / rel).write_text("export default function Page() { return null; }\n", encoding="utf-8")
+            _write_repomix(root, rel)
+
+            out = propose_coder_agent_implementation_diff(
+                task=f"Target file: {rel}\nUpdate the page.",
+                workspace_root=root,
+                llm_call=lambda _prompt, _model: (
+                    "{"
+                    f'"action":"replace_file","target":"{rel}",'
+                    '"content_lines":["export default function Page() { return <main>Repair</main>; }",],'
+                    "}"
+                ),
+            )
+
+            self.assertFalse(out.get("coder_blocked", False))
+            self.assertIn("Repair", out["proposed_diff"])
+
     def test_prose_response_returns_coder_response_not_json(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -794,8 +918,42 @@ class CoderAgentRepomixDiffTests(unittest.TestCase):
             )
 
             self.assertTrue(out["coder_blocked"])
-            self.assertEqual(out["reason_code"], "coder_response_not_json")
+            self.assertEqual(out["reason_code"], "coder_response_repair_exhausted")
             self.assertEqual(out["proposed_diff"], "")
+            self.assertIn("Here is what I would do.", out["coder_diagnostics"]["raw_response_excerpt"])
+            self.assertEqual(out["coder_diagnostics"]["json_attempt_count"], 2)
+
+    def test_unified_diff_response_retries_then_blocks_without_approval_diff(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            rel = "src/app/demo/page.tsx"
+            (root / rel).parent.mkdir(parents=True)
+            (root / rel).write_text("export default function Page() { return null; }\n", encoding="utf-8")
+            _write_repomix(root, rel)
+
+            out = propose_coder_agent_implementation_diff(
+                task=f"Target file: {rel}\nUpdate the page.",
+                workspace_root=root,
+                llm_call=lambda _prompt, _model: "\n".join(
+                    [
+                        "diff --git a/src/app/demo/page.tsx b/src/app/demo/page.tsx",
+                        "--- a/src/app/demo/page.tsx",
+                        "+++ b/src/app/demo/page.tsx",
+                        "@@ -1 +1 @@",
+                        "-export default function Page() { return null; }",
+                        "+export default function Page() { return <main>Diff</main>; }",
+                        "",
+                    ]
+                ),
+            )
+
+            self.assertTrue(out["coder_blocked"])
+            self.assertEqual(out["reason_code"], "coder_response_repair_exhausted")
+            self.assertEqual(out["proposed_diff"], "")
+            self.assertIn(
+                "unified diff",
+                out["coder_diagnostics"]["last_json_error"].lower(),
+            )
 
     def test_json_with_wrong_target_returns_coder_target_mismatch(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -834,7 +992,8 @@ class CoderAgentRepomixDiffTests(unittest.TestCase):
             )
 
             self.assertTrue(out["coder_blocked"])
-            self.assertEqual(out["reason_code"], "coder_invalid_replacement_payload")
+            self.assertEqual(out["reason_code"], "coder_response_repair_exhausted")
+            self.assertIn("content", out["coder_diagnostics"]["last_json_error"])
 
     def test_blocked_json_returns_coder_blocked_without_diff(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -946,7 +1105,8 @@ class CoderAgentRepomixDiffTests(unittest.TestCase):
             )
 
             self.assertTrue(out["coder_blocked"])
-            self.assertEqual(out["reason_code"], "coder_response_not_json")
+            self.assertEqual(out["reason_code"], "coder_response_repair_exhausted")
+            self.assertEqual(out["coder_diagnostics"]["json_attempt_count"], 2)
 
     def test_provider_exception_does_not_retry(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -1158,6 +1318,9 @@ class CoderAgentRepomixDiffTests(unittest.TestCase):
     def test_prompt_contract_mentions_json_replacement_and_blocked(self) -> None:
         self.assertIn("complete final content", CODER_SYSTEM_PROMPT)
         self.assertIn('"action":"replace_file"', CODER_SYSTEM_PROMPT)
+        self.assertIn('"content_lines":["line 1","line 2"]', CODER_SYSTEM_PROMPT)
+        self.assertIn("Return only JSON", CODER_SYSTEM_PROMPT)
+        self.assertIn("TaskSpec.allowed_files", CODER_SYSTEM_PROMPT)
         self.assertIn('"action":"blocked"', CODER_SYSTEM_PROMPT)
         self.assertNotIn("Output ONLY a valid unified diff", CODER_SYSTEM_PROMPT)
 

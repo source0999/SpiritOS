@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import functools
+import json
 import os
 import subprocess
 from typing import Any
@@ -194,9 +195,12 @@ async def _bounded_coder_diff_or_stub(
             else "Coder Agent failed before producing a safely approvable diff."
         )
         needed_context = (
-            "Retry Coder Agent, narrow scope, or increase the git apply validation timeout before approval."
+            "Retry Local Coder, narrow scope, or increase the git apply validation timeout before approval."
             if apply_timeout
-            else "Retry Coder Agent, use a manual prompt packet, or switch to Cloud/API route."
+            else (
+                "Retry Local Coder with stricter output repair, copy a manual browser prompt, "
+                "or use Cloud/API route only if configured and explicitly chosen."
+            )
         )
         return {
             "proposed_diff": "",
@@ -386,6 +390,17 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
                 task_type="target_unresolved",
                 reason_code="target_unresolved",
             )
+        manual_browser_prompt = _coder_agent_manual_browser_prompt_text(
+            task=reset_request.task,
+            target=target or explicit_target,
+            task_spec=task_spec_payload,
+            coder_packet=coder_packet_payload,
+            verification_plan=verification_plan_payload,
+            blocked_reason=blocked_reason,
+            needed_context=needed_context,
+            reason_code=reason_code,
+            diagnostics=diagnostics,
+        )
         packet_context_paths = _coder_packet_context_paths(coder_packet_payload)
         return {
             "target_model_hint": "coder_agent",
@@ -433,7 +448,7 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
                             "Set SOURCE_PROXY_CODER_MODEL_ALIAS to a valid enabled alias, then retry."
                         )
                         if coder_model_missing
-                        else "Coder Agent did not produce validated replacement content; use Retry Coder Agent, Manual Prompt Packet, or Cloud/API route."
+                        else "Coder Agent did not produce validated replacement content; retry Local Coder with stricter output repair, or copy a manual browser prompt."
                     )
                 ),
             ],
@@ -460,7 +475,7 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
                         if coder_empty_model
                         else "No unified diff was produced because the Coder model is not configured or the alias is not available. Configure SOURCE_PROXY_CODER_MODEL_ALIAS, then retry."
                         if coder_model_missing
-                        else "Manual Prompt Packet is available because local Coder Agent could not produce validated replacement content."
+                        else "Manual browser prompt is available because local Coder could not produce validated replacement content after repair/retry."
                     ),
                 ]
             ),
@@ -471,7 +486,7 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
                 if proposed
                 else "Generate a concrete visual refinement diff that changes className, styling, layout, hover, active, glow, spacing, or animation behavior."
                 if shallow_visual_diff
-                else "Produce an actual visual refinement diff, use manual visual review, copy the manual prompt packet, or switch to the Cloud/API route."
+                else "Produce an actual visual refinement diff, use manual visual review, or copy the manual browser prompt."
                 if subjective_improvement_needs_diff
                 else "Regenerate the Architect plan, then retry Coder Agent."
                 if bundle_snapshot_drift
@@ -481,7 +496,7 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
                 if coder_empty_model
                 else "Set SOURCE_PROXY_CODER_MODEL_ALIAS to a valid enabled model alias, then retry Coder Agent."
                 if coder_model_missing
-                else "Copy the manual prompt packet or switch to the Cloud/API route; do not approve an empty diff."
+                else "Retry Local Coder with stricter output repair or copy the manual browser prompt; do not approve an empty diff."
             ),
             "prompt_text": (
                 ALREADY_SATISFIED_PROMPT_TEXT
@@ -497,6 +512,8 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
                 else "Coder returned an empty model response; check SOURCE_PROXY_CODER_MODEL_ALIAS and provider health."
                 if coder_empty_model
                 else _coder_agent_stub_prompt_text(target, proposed)
+                if proposed
+                else manual_browser_prompt
             ),
             "route_decision": route_payload,
             "research_sources": decision.research_sources,
@@ -533,14 +550,14 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
             "cloudRouteAvailable": True,
             "next_actions": (
                 [
-                    "Retry Coder Agent",
+                    "Retry Local Coder with stricter output repair",
                     *(
                         ["Regenerate plan"]
                         if bundle_snapshot_drift
                         else []
                     ),
-                    "Copy manual prompt packet",
-                    "Use Cloud/API route",
+                    "Copy manual browser prompt",
+                    "Use Cloud/API route, if configured",
                     *(
                         ["Manual visual review"]
                         if subjective_improvement_needs_diff
@@ -1098,6 +1115,123 @@ def _short_task_summary(task: str) -> str:
     if len(normalized) <= 240:
         return normalized
     return f"{normalized[:237].rstrip()}..."
+
+
+def _coder_agent_manual_browser_prompt_text(
+    *,
+    task: str,
+    target: str,
+    task_spec: dict[str, Any],
+    coder_packet: dict[str, Any],
+    verification_plan: dict[str, Any],
+    blocked_reason: str,
+    needed_context: str,
+    reason_code: str,
+    diagnostics: dict[str, Any],
+) -> str:
+    context_slices = [
+        item
+        for item in coder_packet.get("context_slices", [])
+        if isinstance(item, dict)
+    ]
+    rendered_context: list[str] = []
+    for item in context_slices[:4]:
+        path = str(item.get("path") or "")
+        kind = str(item.get("kind") or "context")
+        content = str(item.get("content") or "")
+        rendered_context.append(
+            "\n".join(
+                [
+                    f"### {kind} slice: {path}",
+                    "```",
+                    content[:12000],
+                    "```",
+                ]
+            )
+        )
+
+    diagnostics_payload = {
+        key: diagnostics.get(key)
+        for key in (
+            "raw_response_excerpt",
+            "json_attempt_count",
+            "coder_format_retry_count",
+            "last_json_error",
+            "parse_error_class",
+            "parse_error_message",
+        )
+        if diagnostics.get(key) not in (None, "")
+    }
+    return "\n".join(
+        [
+            "# Manual Browser Prompt: SpiritOS Coder Recovery",
+            "",
+            "Use this prompt in GPT, Gemini, Grok, Claude, or another browser model.",
+            "Return output to the SpiritOS portal for validation. Do not bypass the portal.",
+            "",
+            "## Task",
+            task.strip() or f"Modify {target}.",
+            "",
+            "## Non-Negotiable Portal Contract",
+            "- Return only JSON, or a unified diff only if JSON is impossible.",
+            "- Prefer the content_lines JSON schema.",
+            "- Target must exactly match TaskSpec.target.",
+            "- Only edit files in TaskSpec.allowed_files.",
+            "- Do not include prose outside the returned JSON or diff.",
+            "- The portal will still run TaskSpec.allowed_files, target-only, git apply, reviewer, approval, protected apply, and post-apply verification.",
+            "",
+            "## Preferred Output Schema",
+            "```json",
+            json.dumps(
+                {
+                    "action": "replace_file",
+                    "target": target or "REPO_RELATIVE_PATH",
+                    "content_lines": ["line 1", "line 2"],
+                    "notes": "short optional note",
+                },
+                indent=2,
+            ),
+            "```",
+            "",
+            "## Legacy Accepted Schema",
+            "```json",
+            json.dumps(
+                {
+                    "action": "replace_file",
+                    "target": target or "REPO_RELATIVE_PATH",
+                    "content": "FULL_FILE_CONTENT",
+                    "notes": "short optional note",
+                },
+                indent=2,
+            ),
+            "```",
+            "",
+            "## TaskSpec",
+            "```json",
+            json.dumps(task_spec, indent=2, sort_keys=True),
+            "```",
+            "",
+            "## Verification Plan",
+            "```json",
+            json.dumps(verification_plan, indent=2, sort_keys=True),
+            "```",
+            "",
+            "## Local Coder Failure To Avoid",
+            f"- reason_code: {reason_code or 'coder_blocked'}",
+            f"- blocked_reason: {blocked_reason or 'none'}",
+            f"- needed_context: {needed_context or 'none'}",
+            "",
+            "## Coder Diagnostics",
+            "```json",
+            json.dumps(diagnostics_payload, indent=2, sort_keys=True),
+            "```",
+            "",
+            "## Repository Context",
+            "\n\n".join(rendered_context) or "No context slices were provided.",
+            "",
+            "Return the replacement JSON now.",
+        ]
+    )
 
 
 def _coder_agent_stub_prompt_text(target: str, proposed_diff: str) -> str:

@@ -107,6 +107,13 @@ class CoderResponse:
     reasoning: str
     blocked_reason: str | None
     blocked_needed_context: str | None
+    raw_response_excerpt: str = ""
+    raw_response_length: int = 0
+    parse_error_class: str = ""
+    parse_error_message: str = ""
+    json_attempt_count: int = 0
+    coder_format_retry_count: int = 0
+    last_json_error: str = ""
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "target_path", _normalize_repo_path(self.target_path))

@@ -45,10 +45,25 @@ export function useScoutOverview(pollMs = 30_000): UseScoutOverviewResult {
     });
     if (!promotionsRes.ok) return overviewJson;
     const promotionsJson = await promotionsRes.json();
-    if (promotionsJson && typeof promotionsJson === "object" && "ok" in promotionsJson) {
-      return overviewJson;
+    const withPromotions =
+      promotionsJson && typeof promotionsJson === "object" && "ok" in promotionsJson
+        ? overviewJson
+        : { ...overviewJson, promotions: promotionsJson };
+
+    const sourceCandidatesRes = await fetch("/api/scout/source-candidates?limit=50", {
+      cache: "no-store",
+      signal,
+    });
+    if (!sourceCandidatesRes.ok) return withPromotions;
+    const sourceCandidatesJson = await sourceCandidatesRes.json();
+    if (
+      sourceCandidatesJson &&
+      typeof sourceCandidatesJson === "object" &&
+      "ok" in sourceCandidatesJson
+    ) {
+      return withPromotions;
     }
-    return { ...overviewJson, promotions: promotionsJson };
+    return { ...withPromotions, source_candidates: sourceCandidatesJson };
   }, []);
 
   const refresh = useCallback(async () => {

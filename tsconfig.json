@@ -36,6 +36,7 @@
     ".next",
     "models",
     "backend",
+    ".spirit-backups",
     ".cursor",
     "repomix-output*.xml",
     "oldSpiritOS.xml",

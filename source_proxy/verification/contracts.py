@@ -176,13 +176,14 @@ def validate_replacement_content(
         _extract_class_fragments,
         _extract_explicit_target,
         _extract_import_requirements,
+        _requirement_source_text,
         _extract_text_requirements,
         _run_typescript_parse_check,
     )
 
     normalized_target = target_path.replace("\\", "/").lstrip("./")
     missing: list[str] = []
-    task = task_text or ""
+    task = _requirement_source_text(task_text or "")
 
     raw_prompt_markers = (
         "Target file:",

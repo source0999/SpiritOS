@@ -579,6 +579,33 @@ def _extract_explicit_target(task_text: str) -> str | None:
     return None
 
 
+_REQUIREMENT_CONTEXT_MARKER_RE = re.compile(
+    r"^\s*(?:"
+    r"file\s+content|"
+    r"current\s+file|"
+    r"repository\s+context|"
+    r"preferred\s+output\s+schema|"
+    r"legacy\s+accepted\s+schema|"
+    r"taskspec|"
+    r"portal\s+safety\s+contract|"
+    r"non-negotiable\s+portal\s+contract|"
+    r"verification\s+plan|"
+    r"coder\s+diagnostics|"
+    r"local\s+coder\s+failure\s+to\s+avoid|"
+    r"ask"
+    r")\s*:",
+    flags=re.IGNORECASE | re.MULTILINE,
+)
+
+
+def _requirement_source_text(task_text: str) -> str:
+    """Keep user requirements, but ignore pasted context/output schemas."""
+    match = _REQUIREMENT_CONTEXT_MARKER_RE.search(task_text)
+    if not match:
+        return task_text
+    return task_text[: match.start()].rstrip()
+
+
 def _route_to_app_router_page(route: str) -> str | None:
     route = route.strip()
     if not route.startswith("/"):
@@ -781,7 +808,7 @@ def _requirement_coverage(
     files: list[dict[str, Any]],
     task_text: str | None,
 ) -> dict[str, Any]:
-    task = (task_text or "").strip()
+    task = _requirement_source_text(task_text or "").strip()
     if not task:
         return {"ok": True, "skipped": True, "summary": "No task text supplied."}
 

@@ -51,6 +51,7 @@ class LongRunningTaskVerificationRequest(BaseModel):
     confirm_expected_change_present: bool = False
     confirm_no_unintended_files: bool = False
     manual_browser_check_done: bool = False
+    run_code_verification: bool = False
     skip_reason: str | None = Field(default=None, max_length=1000)
     verification_note: str | None = Field(default=None, max_length=1000)
 
@@ -165,6 +166,7 @@ async def long_running_task_stream(
                 "failed_needs_human",
                 "applied_needs_verification",
                 "applied_verification_failed",
+                "verification_failed",
             }:
                 return
             if max_events is not None and emitted >= max_events:
@@ -260,6 +262,7 @@ async def long_running_task_verification(
             confirm_expected_change_present=request.confirm_expected_change_present,
             confirm_no_unintended_files=request.confirm_no_unintended_files,
             manual_browser_check_done=request.manual_browser_check_done,
+            run_code_verification=request.run_code_verification,
             skip_reason=request.skip_reason,
             verification_note=request.verification_note,
         )

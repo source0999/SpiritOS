@@ -31,5 +31,42 @@ def test_apply_migrations_creates_phase_2_tables(tmp_path):
         "source_quality",
         "packet_embeddings",
         "promotion_queue",
+        "source_registry",
+        "source_candidates",
+        "source_discovery_events",
+        "blocked_sources",
+        "discovery_jobs",
     } <= tables
-    assert version == "9"
+    assert version == "11"
+
+
+def test_apply_migrations_is_idempotent_for_source_registry(tmp_path):
+    db_path = tmp_path / "scout.db"
+
+    apply_migrations(db_path)
+    apply_migrations(db_path)
+
+    conn = open_connection(db_path)
+    try:
+        version = conn.execute(
+            "SELECT value FROM schema_meta WHERE key = 'migration_version'"
+        ).fetchone()["value"]
+        indexes = {
+            row["name"]
+            for row in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type = 'index'"
+            ).fetchall()
+        }
+    finally:
+        conn.close()
+
+    assert version == "11"
+    assert {
+        "idx_source_registry_status",
+        "idx_source_registry_kind",
+        "idx_source_candidates_status",
+        "idx_source_candidates_confidence",
+        "idx_source_candidates_discovered_from",
+        "idx_discovery_jobs_status",
+        "idx_discovery_jobs_created",
+    } <= indexes

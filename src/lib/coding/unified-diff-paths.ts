@@ -1,6 +1,9 @@
 import { normalizeRepoRelativePath } from "@/lib/coding/explicit-task-target";
 
-/** Paths touched by a unified diff, de-duplicated, order preserved. */
+/**
+ * Paths touched by a unified diff, de-duplicated, order preserved.
+ * Supports both git-style diffs and standard unified diffs.
+ */
 export function collectPathsFromUnifiedDiff(diff: string): string[] {
   const out: string[] = [];
   const seen = new Set<string>();

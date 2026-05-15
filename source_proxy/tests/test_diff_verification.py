@@ -520,6 +520,47 @@ class DiffVerificationPreviewTests(unittest.TestCase):
         self.assertTrue(payload["requirement_coverage"]["ok"])
         self.assertTrue(payload["requirement_coverage"]["skipped"])
 
+    def test_requirement_coverage_ignores_pasted_current_file_context(self) -> None:
+        task = "\n".join(
+            [
+                "Target file: src/lib/coding/unified-diff-paths.ts",
+                "",
+                "Add a short comment above collectPathsFromUnifiedDiff explaining that it supports both git-style diffs and standard unified diffs. Do not change runtime behavior.",
+                "",
+                "file content:",
+                'const lines = diff.replace(/\\r\\n/g, "\\n").split("\\n");',
+                'path = path.replace(/^(?:a|b)\\//, "");',
+                'if (path === "/dev/null") return "";',
+                'Ask: "Return only the JSON, using content_lines."',
+            ]
+        )
+        payload = preview_diff_verification(
+            "\n".join(
+                [
+                    "diff --git a/src/lib/coding/unified-diff-paths.ts b/src/lib/coding/unified-diff-paths.ts",
+                    "--- a/src/lib/coding/unified-diff-paths.ts",
+                    "+++ b/src/lib/coding/unified-diff-paths.ts",
+                    "@@ -1,6 +1,9 @@",
+                    ' import { normalizeRepoRelativePath } from "@/lib/coding/explicit-task-target";',
+                    " ",
+                    "-/** Paths touched by a unified diff, de-duplicated, order preserved. */",
+                    "+/**",
+                    "+ * Paths touched by a unified diff, de-duplicated, order preserved.",
+                    "+ * Supports both git-style diffs and standard unified diffs.",
+                    "+ */",
+                    " export function collectPathsFromUnifiedDiff(diff: string): string[] {",
+                    "   const out: string[] = [];",
+                    "   const seen = new Set<string>();",
+                ]
+            ),
+            route_type="local_route",
+            task_text=task,
+        )
+
+        self.assertEqual(payload["status"], "preview_ready", payload["requirement_coverage"])
+        self.assertTrue(payload["requirement_coverage"]["ok"])
+        self.assertNotIn("content_lines", " ".join(payload["requirement_coverage"].get("missing", [])))
+
     def test_output_only_diff_task_blocks_raw_task_text_in_code(self) -> None:
         payload = preview_diff_verification(
             "\n".join(

@@ -38,6 +38,10 @@ SKIP_DIRS = {
 
 SKIP_GLOBS = ["*.lock", "test_*.py", "*.test.ts", "*.test.tsx", "*.spec.ts", "*.spec.tsx"]
 IDENTIFIER_RE = re.compile(r"\b[A-Za-z_][A-Za-z0-9_]*\b")
+PYTHON_SYMBOL_RE = re.compile(
+    r"^(?P<indent>\s*)(?P<kind>class|def)\s+(?P<name>[A-Za-z_][A-Za-z0-9_]*)\s*[\(:]",
+    re.MULTILINE,
+)
 
 
 @dataclass(frozen=True)
@@ -116,9 +120,10 @@ def _symbol_from_node(source: bytes, lines: list[str], rel_path: str, node) -> S
 def _collect_symbols(source: bytes, rel_path: str, language: str) -> tuple[list[SymbolInfo], set[str]]:
     parser = get_parser(language)
     tree = parser.parse(source)
-    lines = source.decode("utf-8", errors="replace").splitlines()
+    text = source.decode("utf-8", errors="replace")
+    lines = text.splitlines()
     symbols: list[SymbolInfo] = []
-    identifiers = set(IDENTIFIER_RE.findall(source.decode("utf-8", errors="replace")))
+    identifiers = set(IDENTIFIER_RE.findall(text))
     stack = [tree.root_node]
     interesting = {
         "function_definition",
@@ -142,7 +147,31 @@ def _collect_symbols(source: bytes, rel_path: str, language: str) -> tuple[list[
             if symbol:
                 symbols.append(symbol)
         stack.extend(reversed(node.children))
+    if not symbols and language == "python":
+        symbols = _collect_python_symbols_with_regex(text, lines, rel_path)
     return symbols, identifiers
+
+
+def _collect_python_symbols_with_regex(
+    text: str,
+    lines: list[str],
+    rel_path: str,
+) -> list[SymbolInfo]:
+    symbols: list[SymbolInfo] = []
+    for match in PYTHON_SYMBOL_RE.finditer(text):
+        line_index = text.count("\n", 0, match.start())
+        symbol_kind = "class_definition" if match.group("kind") == "class" else "function_definition"
+        symbols.append(
+            SymbolInfo(
+                name=match.group("name"),
+                kind=symbol_kind,
+                file_path=rel_path,
+                line=line_index + 1,
+                signature=_line_text(lines, line_index),
+                leading_comment=_leading_comment(lines, line_index),
+            )
+        )
+    return symbols
 
 
 def _pagerank(nodes: list[str], edges: set[tuple[str, str]], iterations: int = 20) -> dict[str, float]:
@@ -195,7 +224,13 @@ def build_repomap(
             rel_path = path.relative_to(repo_path).as_posix()
             found, identifiers = _collect_symbols(source, rel_path, language)
         except Exception:
-            continue
+            if language != "python":
+                continue
+            source = path.read_bytes()
+            rel_path = path.relative_to(repo_path).as_posix()
+            text = source.decode("utf-8", errors="replace")
+            found = _collect_python_symbols_with_regex(text, text.splitlines(), rel_path)
+            identifiers = set(IDENTIFIER_RE.findall(text))
         symbols.extend(found)
         file_identifiers[rel_path] = identifiers
 

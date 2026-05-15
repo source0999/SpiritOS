@@ -28,6 +28,17 @@ const DOCS_APPEND_GIT_STYLE_DIFF = [
   "",
 ].join("\n");
 
+const DOCS_APPEND_UNIFIED_DIFF_WITH_SPACES = [
+  "--- a/docs/file with spaces.md",
+  "+++ b/docs/file with spaces.md",
+  "@@ -1,3 +1,4 @@",
+  " # Phase 8 Manual Check",
+  " ",
+  " Approved diffs should require post-apply verification before completion.",
+  "+Frontend coding proxy smoke test.",
+  "",
+].join("\n");
+
 describe("unified diff path extraction", () => {
   it("keeps git-style diff path extraction", () => {
     expect(collectPathsFromUnifiedDiff(DOCS_APPEND_GIT_STYLE_DIFF)).toEqual([
@@ -83,5 +94,17 @@ describe("unified diff path extraction", () => {
     expect(collectPathsFromUnifiedDiff(diff)).toEqual([
       "docs/phase-8-manual-check.md",
     ]);
+  });
+
+  it("handles standard unified diff header paths containing spaces", () => {
+    expect(collectPathsFromUnifiedDiff(DOCS_APPEND_UNIFIED_DIFF_WITH_SPACES)).toEqual([
+      "docs/file with spaces.md",
+    ]);
+    expect(
+      diffTouchesExplicitTarget(
+        DOCS_APPEND_UNIFIED_DIFF_WITH_SPACES,
+        "docs/file with spaces.md",
+      ),
+    ).toBe(true);
   });
 });

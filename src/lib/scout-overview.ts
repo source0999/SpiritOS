@@ -143,6 +143,43 @@ export type ScoutSourceSummary = Partial<{
   source_quality_score: number | null;
 }>;
 
+export type ScoutSourceCandidateStatus =
+  | "recommended"
+  | "needs_review"
+  | "stored"
+  | "rejected"
+  | "blocked"
+  | "approved";
+
+export type ScoutSourceCandidate = {
+  candidate_id: string;
+  canonical_uri: string;
+  display_uri: string;
+  source_kind: string;
+  status: ScoutSourceCandidateStatus;
+  confidence_score: number;
+  trust_label?: string | null;
+  trust_tier?: string | null;
+  recommendation?: string | null;
+  discovered_from_uri?: string | null;
+  discovered_from_event_id?: string | null;
+  discovered_from_packet_id?: string | null;
+  reason_codes?: string[] | null;
+  explanation?: string | null;
+  first_seen_at?: string | null;
+  last_seen_at?: string | null;
+  reviewed_at?: string | null;
+  reviewed_by?: string | null;
+  rejection_reason?: string | null;
+  blocked_reason?: string | null;
+  metadata?: Record<string, unknown> | null;
+};
+
+export type ScoutSourceCandidates = Partial<{
+  counts: Partial<Record<ScoutSourceCandidateStatus, number>>;
+  candidates: ScoutSourceCandidate[];
+}>;
+
 export type ScoutOverview = Partial<{
   counts: ScoutCounts;
   backlog: ScoutBacklog;
@@ -156,6 +193,7 @@ export type ScoutOverview = Partial<{
   }>;
   scheduler: ScoutScheduler;
   promotions: ScoutPromotions;
+  source_candidates: ScoutSourceCandidates;
 }>;
 
 export type ScoutOverviewRouteError = {

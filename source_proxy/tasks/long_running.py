@@ -9,6 +9,7 @@ import sqlite3
 import shutil
 import subprocess
 import tempfile
+import time
 from contextlib import closing
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -507,7 +508,11 @@ INSTRUCTIONS (NEVER violate):
 - You must satisfy exact user requirements.
 - You are not writing a patch or unified diff.
 - You are writing the complete final content for exactly one target file.
-- Return strict JSON only. Do not wrap it in markdown unless using a single ```json fence.
+- Return only JSON. No prose. Do not wrap it in markdown unless using a single ```json fence.
+- Prefer content_lines: every line of the replacement file must be one string in content_lines.
+- Do not include a unified diff unless explicitly asked.
+- Target must exactly match the explicit Target file line and TaskSpec.target.
+- Only edit files in TaskSpec.allowed_files.
 - Include all imports needed by the final file.
 - Use only real repo components and imports from context.
 - Do not include explanations.
@@ -519,10 +524,12 @@ INSTRUCTIONS (NEVER violate):
   5. required existing components are imported from real repo paths
   6. TSX is syntactically valid
   7. no raw task text appears in code
-  8. content is the full replacement file, not a diff hunk
+  8. content_lines/content is the full replacement file, not a diff hunk
 
 Return exactly one of these JSON shapes:
-{{"action":"replace_file","target":"{file_path}","content":"FULL FILE CONTENT HERE","notes":"short optional note"}}
+{{"action":"replace_file","target":"REPO_RELATIVE_PATH","content_lines":["line 1","line 2"],"notes":"short optional note"}}
+Legacy accepted schema, but prefer content_lines:
+{{"action":"replace_file","target":"REPO_RELATIVE_PATH","content":"FULL_FILE_CONTENT","notes":"short optional note"}}
 {{"action":"blocked","reason_code":"coder_needs_context","reason":"Cannot produce safe file content because ...","needed_context":["specific file or check needed"]}}
 
 Return the JSON now.
@@ -604,7 +611,7 @@ class LongRunningTask:
             return min(75, max(25, self.poll_count * 25))
         if self.status == "failed_needs_human":
             return min(95, self.cycle_count * 18)
-        if self.status == "applied_verification_failed":
+        if self.status in {"applied_verification_failed", "verification_failed"}:
             return 95
         if self.status == "applied_needs_verification":
             return 92
@@ -633,16 +640,18 @@ class LongRunningTask:
                     f"Planning blocked ({self.architect_reason or 'unknown'}). "
                     "Fix the task target, proxy model configuration, or timeout settings and retry."
                 )
-            return "Coder did not produce an approvable diff. Regenerate the plan, retry Coder, or use a manual/cloud route."
+            return "Retry Local Coder with stricter output repair, then use a manual browser prompt if needed."
         if self.status == "failed_needs_human":
             return "The swarm hit the safety cycle limit. Review the latest diff and sandbox output manually."
-        if self.status == "applied_verification_failed":
+        if self.status in {"applied_verification_failed", "verification_failed"}:
             return "Approved diff was applied, but verification failed. Generate a fix prompt from the verification error."
         if self.status == "applied_needs_verification":
             verification = _current_post_apply_verification(self)
             if isinstance(verification, dict) and verification.get("docs_only"):
                 return "Docs-only verification ready. Complete the manual checklist before marking the task done."
-            return "Approved diff was applied. Automated verification for code changes will be handled in Phase 2B."
+            if isinstance(verification, dict) and verification.get("unsupported_code_verification"):
+                return "Manual verification required: unsupported code verification type."
+            return "Approved diff was applied. Run code verification before marking the task done."
         if self.status == "completed":
             if _has_approved_execution(self.open_diffs):
                 return "Approved execution finished and verification is complete."
@@ -949,6 +958,7 @@ def record_post_apply_verification(
     confirm_expected_change_present: bool = False,
     confirm_no_unintended_files: bool = False,
     manual_browser_check_done: bool = False,
+    run_code_verification: bool = False,
     skip_reason: str | None = None,
     verification_note: str | None = None,
 ) -> dict[str, Any]:
@@ -973,6 +983,32 @@ def record_post_apply_verification(
     changed_files = _verification_changed_files(verification, task)
     docs_only = _docs_only_changed_files(changed_files)
     skip = (skip_reason or "").strip()
+    if run_code_verification:
+        if docs_only:
+            raise LongRunningTaskError(
+                "Code verification is only available for code/test file changes.",
+                "code_verification_not_applicable",
+            )
+        if _unsupported_code_verification_paths(changed_files):
+            raise LongRunningTaskError(
+                "Manual verification is required for this unsupported code verification type.",
+                "unsupported_code_verification_type",
+            )
+        if not _has_frontend_code_changed(changed_files):
+            raise LongRunningTaskError(
+                "Manual verification is required for this unsupported code verification type.",
+                "unsupported_code_verification_type",
+            )
+        checks = _run_code_post_apply_verification(changed_files)
+        verification["checks"] = [dict(check) for check in checks]
+        manual_browser_check_done = bool(
+            manual_browser_check_done
+            or not verification.get("manual_browser_check_required")
+        )
+        verification_note = (
+            verification_note
+            or "Server-side code verification ran from the post-apply allowlist."
+        )
 
     confirmations = {
         "file_changed_as_expected": bool(
@@ -991,20 +1027,27 @@ def record_post_apply_verification(
     for check in verification.get("checks", []):
         check_id = str(check.get("id") or "")
         incoming_check = by_id.get(check_id)
+        if incoming_check is None and check_id == "typescript_typecheck":
+            incoming_check = by_id.get("typecheck")
+        if incoming_check is None and check_id == "typecheck":
+            incoming_check = by_id.get("typescript_typecheck")
         if incoming_check:
             status = str(incoming_check.get("status") or "").strip().lower()
             if status in {"passed", "failed", "skipped"}:
                 check["status"] = status
             if incoming_check.get("summary"):
                 check["summary"] = str(incoming_check["summary"])
+            for key in ("duration_ms", "exit_code", "output_tail"):
+                if key in incoming_check:
+                    check[key] = incoming_check[key]
         if check.get("required") and check.get("status") == "failed":
             any_failed = True
         updated_checks.append(check)
 
     if not any_failed:
-        if not docs_only and not skip:
+        if not docs_only and not skip and not run_code_verification:
             raise LongRunningTaskError(
-                "Docs-only verification cannot complete a task with code changes. Automated verification for code changes will be handled in Phase 2B.",
+                "Code changes require the server-side code verification action before completion.",
                 "code_verification_not_implemented",
             )
         if docs_only:
@@ -1040,8 +1083,8 @@ def record_post_apply_verification(
     )
 
     if any_failed:
-        verification["status"] = "failed"
-        task.status = "applied_verification_failed"
+        verification["status"] = "verification_failed"
+        task.status = "verification_failed"
     elif all_required_done and (not browser_required or browser_done):
         verification["status"] = "verified"
         task.status = "completed"
@@ -1073,6 +1116,7 @@ def _current_post_apply_verification(task: LongRunningTask) -> dict[str, Any] | 
         if diff.get("status") not in {
             "applied_needs_verification",
             "applied_verification_failed",
+            "verification_failed",
             "verified",
         }:
             continue
@@ -1142,6 +1186,149 @@ def _post_apply_has_backup_audit(task: LongRunningTask) -> bool:
     return isinstance(prior.get("audit"), dict) and bool(prior.get("backup_root"))
 
 
+_CODE_VERIFICATION_EXTENSIONS = {
+    ".js",
+    ".jsx",
+    ".ts",
+    ".tsx",
+}
+
+
+def _changed_file_paths(changed_files: list[dict[str, Any]]) -> list[str]:
+    paths: list[str] = []
+    for file in changed_files:
+        path = str(file.get("path") or "").strip().replace("\\", "/")
+        if path:
+            paths.append(path)
+    return paths
+
+
+def _has_frontend_code_changed(changed_files: list[dict[str, Any]]) -> bool:
+    return any(
+        Path(path).suffix.lower() in _CODE_VERIFICATION_EXTENSIONS
+        for path in _changed_file_paths(changed_files)
+    )
+
+
+def _unsupported_code_verification_paths(changed_files: list[dict[str, Any]]) -> list[str]:
+    unsupported: list[str] = []
+    for path in _changed_file_paths(changed_files):
+        suffix = Path(path).suffix.lower()
+        if suffix in {".md", ".mdx"}:
+            continue
+        if suffix not in _CODE_VERIFICATION_EXTENSIONS:
+            unsupported.append(path)
+    return unsupported
+
+
+def _needs_coding_frontend_regression(changed_files: list[dict[str, Any]]) -> bool:
+    for path in _changed_file_paths(changed_files):
+        normalized = path.lower()
+        if normalized.startswith("src/lib/coding/"):
+            return True
+        if normalized.startswith("src/components/coding/"):
+            return True
+    return False
+
+
+def _package_script_exists(root: Path, script_name: str) -> bool:
+    package_json = root / "package.json"
+    try:
+        data = json.loads(package_json.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+    scripts = data.get("scripts")
+    return isinstance(scripts, dict) and isinstance(scripts.get(script_name), str)
+
+
+def _allowed_code_verification_commands(
+    changed_files: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    root = _workspace_root()
+    if _unsupported_code_verification_paths(changed_files):
+        return []
+    if not _has_frontend_code_changed(changed_files):
+        return []
+
+    commands: list[dict[str, Any]] = []
+    if _needs_coding_frontend_regression(changed_files) and _package_script_exists(
+        root,
+        "test:coding-frontend-regression",
+    ):
+        commands.append(
+            {
+                "id": "coding_frontend_regression",
+                "command": ["npm", "run", "test:coding-frontend-regression"],
+                "required": True,
+                "summary": "Coding frontend regression surface changed.",
+            }
+        )
+    commands.append(
+        {
+            "id": "typescript_typecheck",
+            "command": ["npx", "tsc", "--noEmit", "-p", "tsconfig.json"],
+            "required": True,
+            "summary": "TypeScript or JavaScript files changed.",
+        }
+    )
+    return commands
+
+
+def _command_text(command: list[str]) -> str:
+    return " ".join(command)
+
+
+def _tail_output(stdout: str, stderr: str, limit: int = 4000) -> str:
+    combined = "\n".join(part for part in [stdout.strip(), stderr.strip()] if part)
+    return combined[-limit:]
+
+
+def _run_code_post_apply_verification(
+    changed_files: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    commands = _allowed_code_verification_commands(changed_files)
+    if not commands:
+        raise LongRunningTaskError(
+            "No allowlisted code verification commands matched the changed files.",
+            "code_verification_not_applicable",
+        )
+
+    root = _workspace_root()
+    results: list[dict[str, Any]] = []
+    for check in commands:
+        command = [str(part) for part in check["command"]]
+        started = time.perf_counter()
+        try:
+            result = subprocess.run(
+                command,
+                cwd=root,
+                capture_output=True,
+                text=True,
+                timeout=120,
+                check=False,
+            )
+            exit_code = int(result.returncode)
+            output_tail = _tail_output(result.stdout or "", result.stderr or "")
+        except subprocess.TimeoutExpired as exc:
+            exit_code = 124
+            output_tail = _tail_output(exc.stdout or "", exc.stderr or "")
+        duration_ms = int((time.perf_counter() - started) * 1000)
+        results.append(
+            {
+                "id": check["id"],
+                "command": command,
+                "command_text": _command_text(command),
+                "duration_ms": duration_ms,
+                "exit_code": exit_code,
+                "output_tail": output_tail,
+                "required": bool(check.get("required")),
+                "status": "passed" if exit_code == 0 else "failed",
+                "summary": check["summary"],
+            }
+        )
+    return results
+
+
 def _initial_post_apply_verification(verification: dict[str, Any]) -> dict[str, Any]:
     changed_files = [
         file for file in verification.get("changed_files", []) if isinstance(file, dict)
@@ -1149,28 +1336,17 @@ def _initial_post_apply_verification(verification: dict[str, Any]) -> dict[str, 
     suggested_commands = [
         item for item in verification.get("suggested_commands", []) if isinstance(item, dict)
     ]
-    ts_changed = any(
-        str(file.get("path") or "").lower().endswith((".ts", ".tsx"))
-        for file in changed_files
-    )
     route_or_ui_changed = any(
         str(file.get("path") or "").replace("\\", "/").startswith("src/app/")
         or str(file.get("path") or "").lower().endswith((".tsx", ".jsx", ".css"))
         for file in changed_files
     )
     docs_only = _docs_only_changed_files(changed_files)
+    unsupported_paths = _unsupported_code_verification_paths(changed_files)
 
     checks: list[dict[str, Any]] = []
-    if ts_changed:
-        checks.append(
-            {
-                "id": "typecheck",
-                "command": ["npm", "run", "typecheck"],
-                "required": True,
-                "status": "pending",
-                "summary": "TypeScript or JavaScript files changed.",
-            }
-        )
+    for item in _allowed_code_verification_commands(changed_files):
+        checks.append({**item, "status": "pending"})
     for item in suggested_commands:
         command = item.get("command")
         if not isinstance(command, list) or not command:
@@ -1178,6 +1354,10 @@ def _initial_post_apply_verification(verification: dict[str, Any]) -> dict[str, 
         command_text = " ".join(str(part) for part in command)
         check_id = "lint" if "eslint" in command_text else command_text
         if any(check.get("id") == check_id for check in checks):
+            continue
+        if check_id == "lint":
+            continue
+        if check_id == "npm run typecheck" or check_id == "typecheck":
             continue
         checks.append(
             {
@@ -1202,7 +1382,16 @@ def _initial_post_apply_verification(verification: dict[str, Any]) -> dict[str, 
         "manual_browser_check_required": route_or_ui_changed,
         "required": True,
         "skip_reason": "",
-        "status": "verification_ready",
+        "status": "manual_verification_required"
+        if unsupported_paths and not docs_only
+        else "verification_ready",
+        "unsupported_code_verification": bool(unsupported_paths and not docs_only),
+        "unsupported_file_types": sorted(
+            {
+                Path(path).suffix.lower() or "(none)"
+                for path in unsupported_paths
+            }
+        ),
         "updated_at": _now_iso(),
         "verification_note": "",
     }
@@ -1339,6 +1528,7 @@ def _has_approved_execution(open_diffs: list[dict[str, Any]]) -> bool:
             "applied",
             "applied_needs_verification",
             "applied_verification_failed",
+            "verification_failed",
             "verified",
         }
         for diff in open_diffs
@@ -1357,6 +1547,7 @@ def _terminal_or_waiting_statuses() -> set[str]:
         "needs_context",
         "applied_needs_verification",
         "applied_verification_failed",
+        "verification_failed",
     }
 
 
@@ -2192,6 +2383,13 @@ def replacement_content_matches_disk(
     )
 
 
+_CODER_RAW_RESPONSE_EXCERPT_LIMIT = 1500
+
+
+def _raw_response_excerpt(raw_response: str, limit: int = _CODER_RAW_RESPONSE_EXCERPT_LIMIT) -> str:
+    return (raw_response or "").replace("\r\n", "\n").replace("\r", "\n")[:limit]
+
+
 def _strip_json_fence(raw_response: str) -> str:
     raw = (raw_response or "").strip()
     if not raw.startswith("```"):
@@ -2204,37 +2402,162 @@ def _strip_json_fence(raw_response: str) -> str:
     return "\n".join(lines[1:-1]).strip()
 
 
-def _parse_coder_structured_output(raw_response: str) -> tuple[dict[str, Any] | None, str]:
-    raw = _strip_json_fence(raw_response)
+def _looks_like_unified_diff(raw_response: str) -> bool:
+    raw = (raw_response or "").lstrip()
+    if raw.startswith("diff --git "):
+        return True
+    return raw.startswith("--- ") and "\n+++ " in raw and "\n@@" in raw
+
+
+def _json_object_slice(raw_response: str) -> str:
+    raw = (raw_response or "").strip()
+    start = raw.find("{")
+    end = raw.rfind("}")
+    if start == -1 or end == -1 or end < start:
+        return raw
+    return raw[start : end + 1].strip()
+
+
+def _light_repair_json_text(raw_response: str) -> str:
+    repaired = raw_response.translate(
+        str.maketrans(
+            {
+                "\u201c": '"',
+                "\u201d": '"',
+                "\u201e": '"',
+                "\u201f": '"',
+                "\u2018": "'",
+                "\u2019": "'",
+            }
+        )
+    )
+    return re.sub(r",\s*([}\]])", r"\1", repaired)
+
+
+def _candidate_json_texts(raw_response: str) -> list[tuple[str, str]]:
+    raw = (raw_response or "").strip()
+    fenced = _strip_json_fence(raw)
+    extracted = _json_object_slice(fenced)
+    candidates = [
+        ("raw", raw),
+        ("fenced", fenced),
+        ("extracted", extracted),
+        ("repaired", _light_repair_json_text(extracted)),
+    ]
+    seen: set[str] = set()
+    unique: list[tuple[str, str]] = []
+    for source, value in candidates:
+        if not value or value in seen:
+            continue
+        seen.add(value)
+        unique.append((source, value))
+    return unique
+
+
+def _parse_coder_structured_output(
+    raw_response: str,
+) -> tuple[dict[str, Any] | None, str, dict[str, Any]]:
+    raw = (raw_response or "").strip()
+    meta: dict[str, Any] = {
+        "raw_response_length": len(raw_response or ""),
+        "raw_response_excerpt": _raw_response_excerpt(raw_response),
+        "parse_error_class": "",
+        "parse_error_message": "",
+        "last_json_error": "",
+        "json_repair_source": "",
+    }
     if not raw:
-        return None, "coder_empty_model_response"
-    try:
-        parsed = json.loads(raw)
-    except json.JSONDecodeError:
-        return None, "coder_response_not_json"
+        meta["parse_error_class"] = "empty_response"
+        meta["parse_error_message"] = "Coder returned an empty response."
+        meta["last_json_error"] = meta["parse_error_message"]
+        return None, "coder_empty_model_response", meta
+    if _looks_like_unified_diff(raw):
+        meta["parse_error_class"] = "wrong_format_unified_diff"
+        meta["parse_error_message"] = "Coder returned a unified diff instead of replacement JSON."
+        meta["last_json_error"] = meta["parse_error_message"]
+        return None, "coder_response_wrong_format_unified_diff", meta
+
+    parsed: Any = None
+    last_error: json.JSONDecodeError | None = None
+    for source, candidate in _candidate_json_texts(raw):
+        try:
+            parsed = json.loads(candidate)
+            meta["json_repair_source"] = source
+            break
+        except json.JSONDecodeError as error:
+            last_error = error
+    if parsed is None:
+        meta["parse_error_class"] = type(last_error).__name__ if last_error else "JSONDecodeError"
+        meta["parse_error_message"] = str(last_error) if last_error else "Response was not JSON."
+        meta["last_json_error"] = meta["parse_error_message"]
+        return None, "coder_response_not_json", meta
     if not isinstance(parsed, dict):
-        return None, "coder_response_not_json"
+        meta["parse_error_class"] = "schema_validation"
+        meta["parse_error_message"] = "Parsed JSON root was not an object."
+        meta["last_json_error"] = meta["parse_error_message"]
+        return None, "coder_response_not_json", meta
     action = parsed.get("action")
     if action == "blocked":
-        return parsed, ""
+        return parsed, "", meta
     if action != "replace_file":
-        return None, "coder_invalid_replacement_payload"
+        meta["parse_error_class"] = "schema_validation"
+        meta["parse_error_message"] = "JSON action must be replace_file or blocked."
+        meta["last_json_error"] = meta["parse_error_message"]
+        return None, "coder_invalid_replacement_payload", meta
     target = parsed.get("target")
-    content = parsed.get("content")
-    if not isinstance(target, str) or not target.strip() or not isinstance(content, str) or not content:
-        return None, "coder_invalid_replacement_payload"
-    return parsed, ""
+    if not isinstance(target, str) or not target.strip():
+        meta["parse_error_class"] = "schema_validation"
+        meta["parse_error_message"] = "replace_file.target must be a non-empty string."
+        meta["last_json_error"] = meta["parse_error_message"]
+        return None, "coder_invalid_replacement_payload", meta
+    if "content_lines" in parsed:
+        content_lines = parsed.get("content_lines")
+        if not isinstance(content_lines, list) or not all(
+            isinstance(line, str) for line in content_lines
+        ):
+            meta["parse_error_class"] = "schema_validation"
+            meta["parse_error_message"] = "replace_file.content_lines must be a list of strings."
+            meta["last_json_error"] = meta["parse_error_message"]
+            return None, "coder_replacement_content_validation_failed", meta
+        parsed = {**parsed, "content": "\n".join(content_lines), "content_source": "content_lines"}
+    else:
+        content = parsed.get("content")
+        if not isinstance(content, str) or not content:
+            meta["parse_error_class"] = "schema_validation"
+            meta["parse_error_message"] = "replace_file.content must be a non-empty string."
+            meta["last_json_error"] = meta["parse_error_message"]
+            return None, "coder_invalid_replacement_payload", meta
+        parsed = {**parsed, "content_source": "content"}
+    if not isinstance(parsed.get("content"), str) or parsed.get("content") == "":
+        meta["parse_error_class"] = "schema_validation"
+        meta["parse_error_message"] = "Replacement content must not be empty."
+        meta["last_json_error"] = meta["parse_error_message"]
+        return None, "coder_invalid_replacement_payload", meta
+    return parsed, "", meta
 
 
-def _coder_retry_prompt(base_prompt: str, reason: str, missing: list[str] | None = None) -> str:
+def _coder_retry_prompt(
+    base_prompt: str,
+    reason: str,
+    missing: list[str] | None = None,
+    parser_error: str = "",
+) -> str:
     if reason == "coder_response_not_json":
         failure = "Your previous response was not valid JSON."
+    elif reason == "coder_response_wrong_format_unified_diff":
+        failure = (
+            "You returned a diff, but this route requires JSON with content_lines. "
+            "Do not return unified diff hunks."
+        )
     elif reason == "coder_target_mismatch":
         failure = "Your previous JSON target did not match the explicit target."
     elif reason == "coder_invalid_replacement_payload":
         failure = "Your previous JSON was missing required replace_file fields."
     elif reason == "coder_replacement_content_validation_failed":
-        failure = f"Your previous content missed: {', '.join((missing or [])[:8])}."
+        if parser_error:
+            failure = parser_error
+        else:
+            failure = f"Your previous content missed: {', '.join((missing or [])[:8])}."
     elif reason == VISUAL_IMPROVEMENT_DIFF_TOO_SHALLOW_REASON_CODE:
         failure = (
             "Your previous replacement content produced a diff, but the diff only changed "
@@ -2244,7 +2567,13 @@ def _coder_retry_prompt(base_prompt: str, reason: str, missing: list[str] | None
         )
     else:
         failure = f"Your previous response failed validation: {reason}."
-    return f"{base_prompt}\n\nRETRY REQUIRED:\n{failure}\nReturn strict JSON only using the same schema."
+    if parser_error and parser_error not in failure:
+        failure = f"{failure}\nParser/schema error: {parser_error}"
+    return (
+        f"{base_prompt}\n\nRETRY REQUIRED:\n{failure}\n"
+        "Return only JSON using the same TaskSpec.target and TaskSpec.allowed_files. "
+        "Prefer content_lines."
+    )
 
 
 def _coder_reviewer_feedback_task(source_task: str, reviewer_feedback: list[str] | None) -> str:
@@ -2476,8 +2805,15 @@ def propose_coder_agent_implementation_diff(
     current_prompt = prompt
     last_reason = "Coder model did not return valid replacement JSON."
     last_reason_code = "coder_response_not_json"
-    last_needed_context = "Retry with local coder, use manual prompt packet, or switch to Cloud/API route."
-    for _attempt in range(3):
+    last_needed_context = (
+        "Retry Local Coder with stricter output repair, copy a manual browser prompt, "
+        "or use Cloud/API route only if configured and explicitly chosen."
+    )
+    last_parse_meta: dict[str, Any] = {}
+    last_failure_signature = ""
+    max_json_attempts = 3
+    for attempt_index in range(max_json_attempts):
+        json_attempt_count = attempt_index + 1
         try:
             raw_response = (
                 llm_call(current_prompt, selected_alias)
@@ -2494,11 +2830,32 @@ def propose_coder_agent_implementation_diff(
                 blocked_needed_context=str(error),
             )
 
-        parsed, parse_error = _parse_coder_structured_output(raw_response)
+        parsed, parse_error, parse_meta = _parse_coder_structured_output(raw_response)
+        parse_meta["json_attempt_count"] = json_attempt_count
+        parse_meta["coder_format_retry_count"] = max(0, json_attempt_count - 1)
         if parse_error:
+            last_parse_meta = parse_meta
             last_reason_code = parse_error
-            last_reason = "Coder response was not valid strict replacement JSON."
-            current_prompt = _coder_retry_prompt(prompt, parse_error)
+            parser_message = str(
+                parse_meta.get("parse_error_message")
+                or parse_meta.get("last_json_error")
+                or parse_error
+            )
+            last_reason = f"Coder response was not valid replacement JSON: {parser_message}"
+            failure_signature = f"{parse_error}:{parser_message}"
+            if failure_signature == last_failure_signature:
+                last_reason_code = "coder_response_repair_exhausted"
+                last_reason = (
+                    "Coder response repair exhausted after repeated parser/schema failure: "
+                    f"{parser_message}"
+                )
+                break
+            last_failure_signature = failure_signature
+            current_prompt = _coder_retry_prompt(
+                prompt,
+                parse_error,
+                parser_error=parser_message,
+            )
             continue
 
         assert parsed is not None
@@ -2514,22 +2871,53 @@ def propose_coder_agent_implementation_diff(
                 reasoning=f"{reason_code}: {reason}",
                 blocked_reason=reason,
                 blocked_needed_context=needed or "No needed context provided.",
+                raw_response_excerpt=str(parse_meta.get("raw_response_excerpt") or ""),
+                raw_response_length=int(parse_meta.get("raw_response_length") or 0),
+                parse_error_class=str(parse_meta.get("parse_error_class") or ""),
+                parse_error_message=str(parse_meta.get("parse_error_message") or ""),
+                json_attempt_count=json_attempt_count,
+                coder_format_retry_count=max(0, json_attempt_count - 1),
+                last_json_error=str(last_parse_meta.get("last_json_error") or ""),
             )
 
         replacement_target = str(parsed["target"]).replace("\\", "/").lstrip("./")
         if replacement_target != target_path:
             last_reason_code = "coder_target_mismatch"
             last_reason = f"Coder JSON targeted {replacement_target}, but packet target is {target_path}."
-            current_prompt = _coder_retry_prompt(prompt, "coder_target_mismatch")
+            last_parse_meta = {
+                **parse_meta,
+                "parse_error_class": "target_validation",
+                "parse_error_message": last_reason,
+                "last_json_error": last_reason,
+            }
+            current_prompt = _coder_retry_prompt(
+                prompt,
+                "coder_target_mismatch",
+                parser_error=last_reason,
+            )
             continue
 
         return CoderResponse(
             status="ok",
             target_path=replacement_target,
             replacement_content=str(parsed["content"]),
-            reasoning=str(parsed.get("notes") or "Coder returned replacement content."),
+            reasoning=str(
+                parsed.get("notes")
+                or (
+                    "Coder returned replacement content_lines."
+                    if parsed.get("content_source") == "content_lines"
+                    else "Coder returned replacement content."
+                )
+            ),
             blocked_reason=None,
             blocked_needed_context=None,
+            raw_response_excerpt=str(parse_meta.get("raw_response_excerpt") or ""),
+            raw_response_length=int(parse_meta.get("raw_response_length") or 0),
+            parse_error_class=str(last_parse_meta.get("parse_error_class") or ""),
+            parse_error_message=str(last_parse_meta.get("parse_error_message") or ""),
+            json_attempt_count=json_attempt_count,
+            coder_format_retry_count=max(0, json_attempt_count - 1),
+            last_json_error=str(last_parse_meta.get("last_json_error") or ""),
         )
 
     return CoderResponse(
@@ -2539,6 +2927,15 @@ def propose_coder_agent_implementation_diff(
         reasoning=f"{last_reason_code}: {last_reason}",
         blocked_reason=last_reason,
         blocked_needed_context=last_needed_context,
+        raw_response_excerpt=str(last_parse_meta.get("raw_response_excerpt") or ""),
+        raw_response_length=int(last_parse_meta.get("raw_response_length") or 0),
+        parse_error_class=str(last_parse_meta.get("parse_error_class") or ""),
+        parse_error_message=str(last_parse_meta.get("parse_error_message") or ""),
+        json_attempt_count=int(last_parse_meta.get("json_attempt_count") or max_json_attempts),
+        coder_format_retry_count=int(
+            last_parse_meta.get("coder_format_retry_count") or max(0, max_json_attempts - 1)
+        ),
+        last_json_error=str(last_parse_meta.get("last_json_error") or ""),
     )
 
 
@@ -2649,6 +3046,7 @@ def propose_coder_agent_diff_payload_from_plan(
             model_alias=model_alias,
             reviewer_feedback=reviewer_feedback,
         )
+    _merge_coder_response_diagnostics(diagnostics, response)
     if response.status == "blocked" or response.replacement_content is None:
         diagnostics["validation_status"] = "coder_blocked"
         reason_code = _coder_response_reason_code(response)
@@ -2699,7 +3097,10 @@ def propose_coder_agent_diff_payload_from_plan(
             diagnostics=diagnostics,
             bundle_name=bundle_name,
             reason=str(error),
-            needed_context="Retry with local coder, use manual prompt packet, or switch to Cloud/API route.",
+            needed_context=(
+                "Retry Local Coder with stricter output repair, copy a manual browser prompt, "
+                "or use Cloud/API route only if configured and explicitly chosen."
+            ),
             reason_code="coder_backend_diff_generation_failed",
         )
     diagnostics["generated_diff_length"] = len(unified)
@@ -2728,7 +3129,10 @@ def propose_coder_agent_diff_payload_from_plan(
             diagnostics=diagnostics,
             bundle_name=bundle_name,
             reason="Replacement content produced an empty diff.",
-            needed_context="Retry with local coder, use manual prompt packet, or switch to Cloud/API route.",
+            needed_context=(
+                "Retry Local Coder with stricter output repair, copy a manual browser prompt, "
+                "or use Cloud/API route only if configured and explicitly chosen."
+            ),
             reason_code="coder_backend_diff_generation_failed",
         )
 
@@ -2768,7 +3172,10 @@ def propose_coder_agent_diff_payload_from_plan(
             diagnostics=diagnostics,
             bundle_name=bundle_name,
             reason=reason,
-            needed_context="Retry with local coder, use manual prompt packet, or switch to Cloud/API route.",
+            needed_context=(
+                "Retry Local Coder with stricter output repair, copy a manual browser prompt, "
+                "or use Cloud/API route only if configured and explicitly chosen."
+            ),
             reason_code="coder_backend_diff_generation_failed",
         )
 
@@ -2964,6 +3371,11 @@ def _base_coder_diagnostics(target_path: str) -> dict[str, Any]:
         "router_call_attempted": False,
         "raw_response_length": 0,
         "raw_response_excerpt": "",
+        "parse_error_class": "",
+        "parse_error_message": "",
+        "json_attempt_count": 0,
+        "coder_format_retry_count": 0,
+        "last_json_error": "",
         "parsed_output_mode": "",
         "normalized_diff_length": 0,
         "generated_diff_length": 0,
@@ -2995,6 +3407,19 @@ def _base_coder_diagnostics(target_path: str) -> dict[str, Any]:
     }
 
 
+def _merge_coder_response_diagnostics(
+    diagnostics: dict[str, Any],
+    response: CoderResponse,
+) -> None:
+    diagnostics["raw_response_length"] = response.raw_response_length
+    diagnostics["raw_response_excerpt"] = response.raw_response_excerpt
+    diagnostics["parse_error_class"] = response.parse_error_class
+    diagnostics["parse_error_message"] = response.parse_error_message
+    diagnostics["json_attempt_count"] = response.json_attempt_count
+    diagnostics["coder_format_retry_count"] = response.coder_format_retry_count
+    diagnostics["last_json_error"] = response.last_json_error
+
+
 def _tampered_context_slices(packet: CoderPacket) -> list[str]:
     mismatched: list[str] = []
     for context_slice in packet.context_slices:
@@ -3017,8 +3442,11 @@ def _coder_response_reason_code(response: CoderResponse) -> str:
         "coder_task_spec_invalid",
         "coder_needs_context",
         "coder_response_not_json",
+        "coder_response_wrong_format_unified_diff",
+        "coder_response_repair_exhausted",
         "coder_target_mismatch",
         "coder_invalid_replacement_payload",
+        "coder_replacement_content_validation_failed",
     ):
         if reason_code in text:
             return reason_code
@@ -3100,11 +3528,16 @@ def _coder_blocked_payload(
         "target": target,
         "coder_notes": notes,
         "coder_diagnostics": diagnostics,
+        "coderDiagnostics": diagnostics,
         "bundle": bundle_name,
         "coder_blocked": True,
+        "coderBlocked": True,
         "blocked_reason": reason,
+        "blockedReason": reason,
         "needed_context": needed_context,
+        "neededContext": needed_context,
         "reason_code": reason_code,
+        "reasonCode": reason_code,
     }
 
 
@@ -3239,7 +3672,7 @@ def _coder_model_alias_configuration_error(alias: str) -> tuple[str, str] | None
     if not alias:
         return (
             "coder_model_not_configured",
-            "Set SOURCE_PROXY_CODER_MODEL_ALIAS to an available model alias or use manual/cloud route.",
+            "Set SOURCE_PROXY_CODER_MODEL_ALIAS to an available local model alias, or copy a manual browser prompt.",
         )
     if alias not in enabled:
         available = ", ".join(sorted(enabled)) or "none"
@@ -3247,7 +3680,7 @@ def _coder_model_alias_configuration_error(alias: str) -> tuple[str, str] | None
             "coder_model_not_configured",
             (
                 f"{alias!r} is not an available model alias. Available aliases: {available}. "
-                "Set SOURCE_PROXY_CODER_MODEL_ALIAS to an available model alias or use manual/cloud route."
+                "Set SOURCE_PROXY_CODER_MODEL_ALIAS to an available local model alias, or copy a manual browser prompt."
             ),
         )
     return None
