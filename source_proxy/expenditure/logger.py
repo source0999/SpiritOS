@@ -7,8 +7,6 @@ from decimal import Decimal
 from typing import Any
 from urllib.parse import quote
 
-import asyncpg
-
 logger = logging.getLogger(__name__)
 
 SCHEMA_SQL = """
@@ -53,17 +51,26 @@ async def initialize_expenditure_store() -> None:
     if not database_url:
         logger.info("SOURCE_PROXY_DATABASE_URL is unset; expenditure logging disabled.")
         return
+    asyncpg = _load_asyncpg()
+    if asyncpg is None:
+        return
 
-    connection = await asyncpg.connect(database_url)
     try:
-        await connection.execute(SCHEMA_SQL)
-    finally:
-        await connection.close()
+        connection = await asyncpg.connect(database_url)
+        try:
+            await connection.execute(SCHEMA_SQL)
+        finally:
+            await connection.close()
+    except Exception:
+        logger.exception("Expenditure logging database is unavailable; continuing with logging disabled.")
 
 
 async def log_completion_expenditure(record: ExpenditureRecord) -> None:
     database_url = _database_url()
     if not database_url:
+        return
+    asyncpg = _load_asyncpg()
+    if asyncpg is None:
         return
 
     try:
@@ -145,6 +152,15 @@ def _database_url() -> str | None:
     if value.strip().lower() in {"", "0", "false", "none", "disabled"}:
         return None
     return value
+
+
+def _load_asyncpg() -> Any | None:
+    try:
+        import asyncpg
+    except ModuleNotFoundError:
+        logger.warning("asyncpg is not installed; expenditure logging disabled.")
+        return None
+    return asyncpg
 
 
 def _default_database_url() -> str:

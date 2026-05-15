@@ -13,6 +13,8 @@ export type SpiritReasoningPatternId =
   | "source-honesty"
   | "direct-answer";
 
+export type SpiritSwarmAgentRole = "architect" | "coder" | "debugger";
+
 export type SpiritReasoningPattern = {
   id: SpiritReasoningPatternId;
   label: string;
@@ -31,6 +33,9 @@ const TASK_POLICY_TO_PATTERN: Record<SpiritTaskPolicyId, SpiritReasoningPatternI
   "citation-source-request": "source-honesty",
   "casual-direct-answer": "direct-answer",
 };
+
+const CURRENT_SOURCE_PHASE = "Phase 7C";
+const CURRENT_SOURCE_INCREMENT = "Increment 7C.4";
 
 const REASONING_PATTERNS: Record<SpiritReasoningPatternId, SpiritReasoningPattern> = {
   troubleshooting: {
@@ -91,8 +96,11 @@ const REASONING_PATTERNS: Record<SpiritReasoningPatternId, SpiritReasoningPatter
     label: "Technical planning pattern",
     purpose: "Turn a technical goal into a safe implementation path.",
     answerShape: [
+      `Name the active SpiritOS phase/increment when the prompt is about Source or /coding work; default to ${CURRENT_SOURCE_PHASE} / ${CURRENT_SOURCE_INCREMENT} when no newer increment is given.`,
       "Restate the goal and constraints in one line.",
       "Break the work into phases or ordered steps.",
+      "Use simple, direct language with short labels.",
+      "Call out concrete file paths and code changes when possible.",
       "Include validation: tests, checks, logs, or acceptance criteria.",
       "Name key risks and rollback or recovery steps when relevant.",
       "Respect explicit boundaries such as plan-only or do-not-edit.",
@@ -100,6 +108,7 @@ const REASONING_PATTERNS: Record<SpiritReasoningPatternId, SpiritReasoningPatter
     minimumBar: [
       "Do not imply implementation happened when the user asked for a plan.",
       "Do not skip tests or validation for risky technical work.",
+      "Do not hide behind vague prompt-packet wording when a direct repo action is possible.",
     ],
   },
   "practical-advice": {
@@ -166,6 +175,48 @@ const REASONING_PATTERNS: Record<SpiritReasoningPatternId, SpiritReasoningPatter
   },
 };
 
+const SWARM_AGENT_PROMPTS: Record<
+  SpiritSwarmAgentRole,
+  {
+    label: string;
+    purpose: string;
+    operatingRules: readonly string[];
+  }
+> = {
+  architect: {
+    label: "Architect",
+    purpose:
+      "Convert the task and repository context into a compact plan before code is changed.",
+    operatingRules: [
+      "Read and summarize the relevant context into ast_snapshot when available.",
+      "Populate a minimal ordered plan and identify files, risks, and verification checks.",
+      "Do not edit files or run tests from this role.",
+      "Handoff to Coder only when the implementation path is specific enough to execute.",
+    ],
+  },
+  coder: {
+    label: "Coder",
+    purpose: "Apply the planned code changes with the smallest useful diff.",
+    operatingRules: [
+      "Use the Architect plan as the boundary for edits.",
+      "Update open_diffs with the files changed and the reason for each change.",
+      "Do not broaden scope into unrelated refactors.",
+      "Handoff to Debugger after a coherent diff is ready for verification.",
+    ],
+  },
+  debugger: {
+    label: "Debugger",
+    purpose:
+      "Verify the diff, run sandboxed checks, and return compact failure evidence.",
+    operatingRules: [
+      "Run only the relevant verification path for the current diff.",
+      "Store long stderr/stdout tails in truncated_test_results instead of full logs.",
+      "Mark verified diffs so the blackboard save hook can purge them.",
+      "Handoff to Coder when failures remain; stop when tests pass or high-risk items are gone.",
+    ],
+  },
+};
+
 export function getSpiritReasoningPattern(id: SpiritReasoningPatternId): SpiritReasoningPattern {
   return REASONING_PATTERNS[id];
 }
@@ -177,6 +228,7 @@ export function resolveSpiritReasoningPattern(userText: string): SpiritReasoning
 
 export function buildReasoningPatternInstruction(userText: string): string {
   const pattern = resolveSpiritReasoningPattern(userText);
+  const sourceIncrementGuard = buildSourceIncrementGuard(userText);
   return [
     "[REASONING PATTERN]",
     `Pattern: ${pattern.label} (${pattern.id})`,
@@ -185,6 +237,70 @@ export function buildReasoningPatternInstruction(userText: string): string {
     ...pattern.answerShape.map((line) => `- ${line}`),
     "Minimum bar:",
     ...pattern.minimumBar.map((line) => `- ${line}`),
+    ...(sourceIncrementGuard ? ["Source increment guard:", ...sourceIncrementGuard.map((line) => `- ${line}`)] : []),
     "Keep the final answer natural; do not name this pattern unless the user asks how you are reasoning.",
+  ].join("\n");
+}
+
+function buildSourceIncrementGuard(userText: string): string[] {
+  const normalized = userText.toLowerCase();
+  const sourceTerms = [
+    "spiritos",
+    "source proxy",
+    "source_proxy",
+    "/coding",
+    "coding page",
+    "refinedproxy",
+    "phase 7",
+    "increment 7",
+    "proxy agent",
+  ];
+  if (!sourceTerms.some((term) => normalized.includes(term))) {
+    return [];
+  }
+
+  const explicitIncrement = userText.match(/(?:phase\s*)?(\d+[a-z]?)\s*[/.-]?\s*(?:increment\s*)?(\d+[a-z]?\.\d+)/i);
+  const incrementLabel = explicitIncrement
+    ? `Phase ${explicitIncrement[1].toUpperCase()} / Increment ${explicitIncrement[2].toUpperCase()}`
+    : `${CURRENT_SOURCE_PHASE} / ${CURRENT_SOURCE_INCREMENT}`;
+
+  return [
+    `Name the active work as ${incrementLabel}.`,
+    "Use simple, direct language.",
+    "When code is involved, include concrete files, exact changes, and checks to run.",
+  ];
+}
+
+export function normalizeSwarmAgentRole(
+  role?: string | null,
+): SpiritSwarmAgentRole | null {
+  if (!role) {
+    return null;
+  }
+  const normalized = role.trim().toLowerCase();
+  if (
+    normalized === "architect" ||
+    normalized === "coder" ||
+    normalized === "debugger"
+  ) {
+    return normalized;
+  }
+  return null;
+}
+
+export function buildSwarmAgentInstruction(role?: string | null): string {
+  const normalizedRole = normalizeSwarmAgentRole(role);
+  if (!normalizedRole) {
+    return "";
+  }
+
+  const profile = SWARM_AGENT_PROMPTS[normalizedRole];
+  return [
+    "[SWARM AGENT PROFILE]",
+    `Active role: ${profile.label} (${normalizedRole})`,
+    `Purpose: ${profile.purpose}`,
+    "Operating rules:",
+    ...profile.operatingRules.map((line) => `- ${line}`),
+    "Use the shared LongRunningTask blackboard as the handoff surface; do not unload or reload the base model to change roles.",
   ].join("\n");
 }

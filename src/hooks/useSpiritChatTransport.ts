@@ -479,8 +479,14 @@ export function useSpiritChatTransport(
       const toolCards = mergeSpiritToolActivityCardsForMessage(event.message);
       for (const c of toolCards) {
         const ev = spiritToolCardToActivityEvent(c);
-        const { id: _tid, at: _tat, ...rest } = ev;
-        pushActivity(rest as Omit<SpiritActivityEvent, "id" | "at">);
+        pushActivity({
+          kind: ev.kind,
+          label: ev.label,
+          status: ev.status,
+          target: ev.target,
+          summary: ev.summary,
+          safeMessage: ev.safeMessage,
+        });
       }
 
       if (plan.kind === "skip" && plan.reason === "empty-assistant-text") {

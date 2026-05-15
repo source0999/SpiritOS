@@ -6,15 +6,28 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from source_proxy.main import app
+from source_proxy.api.action_preview import router as action_preview_router
+from source_proxy.api.context_index import router as context_index_router
+from source_proxy.api.self_status import router as self_status_router
+from source_proxy.api.tools_manifest import router as tools_manifest_router
 from source_proxy.self_status import (
     build_action_preview,
     build_context_index_manifest,
     build_self_status_manifest,
     build_tools_manifest,
 )
+
+
+def _test_app() -> FastAPI:
+    app = FastAPI()
+    app.include_router(action_preview_router)
+    app.include_router(context_index_router)
+    app.include_router(self_status_router)
+    app.include_router(tools_manifest_router)
+    return app
 
 
 class SelfStatusManifestTests(unittest.TestCase):
@@ -54,7 +67,7 @@ class SelfStatusManifestTests(unittest.TestCase):
         self.assertNotIn("secret-token", str(bridge))
 
     def test_endpoint_returns_manifest(self) -> None:
-        client = TestClient(app)
+        client = TestClient(_test_app())
         response = client.get("/v1/self/status")
 
         self.assertEqual(response.status_code, 200)
@@ -108,12 +121,49 @@ class SelfStatusManifestTests(unittest.TestCase):
             "research_preview",
             {tool["name"] for tool in manifest["disabled_tools"]},
         )
+        workspace_tool = next(
+            tool
+            for tool in manifest["enabled_tools"]
+            if tool["name"] == "workspace_read_only_tools"
+        )
+        self.assertEqual(workspace_tool["access"], "read_only_allowlisted_workspace")
+        self.assertIn("POST /v1/workspace/read", workspace_tool["endpoints"])
+        sandbox_tool = next(
+            tool
+            for tool in manifest["enabled_tools"]
+            if tool["name"] == "sandboxed_terminal_run"
+        )
+        self.assertEqual(sandbox_tool["access"], "bubblewrap_sandboxed_terminal")
+        self.assertFalse(sandbox_tool["limits"]["workspace_writable"])
+        diff_tool = next(
+            tool
+            for tool in manifest["enabled_tools"]
+            if tool["name"] == "diff_verification_preview"
+        )
+        self.assertEqual(diff_tool["access"], "read_only_diff_preview")
+        self.assertFalse(diff_tool["limits"]["would_apply_diff"])
+        long_task_tool = next(
+            tool
+            for tool in manifest["enabled_tools"]
+            if tool["name"] == "long_running_task_tracker"
+        )
+        self.assertEqual(long_task_tool["access"], "read_only_status_tracking")
+        self.assertFalse(long_task_tool["limits"]["executes_commands"])
         api_route = next(
             route
             for route in manifest["available_routes"]
             if route["route_type"] == "api_route"
         )
         self.assertEqual(api_route["approval"], "spend_before_send_required")
+        coder_route = next(
+            route
+            for route in manifest["available_routes"]
+            if route["next_prompt_action"] == "run_with_coder_agent"
+        )
+        self.assertEqual(coder_route["route_type"], "local_route")
+        self.assertEqual(coder_route["display_name"], "Coder Agent")
+        self.assertEqual(coder_route["execution_path"], "coder_agent")
+        self.assertEqual(coder_route["status"], "available")
 
     def test_tools_manifest_lists_research_preview_when_enabled(self) -> None:
         with patch.dict(os.environ, {"SPIRIT_ENABLE_PROXY_RESEARCH": "true"}, clear=False):
@@ -129,7 +179,7 @@ class SelfStatusManifestTests(unittest.TestCase):
         self.assertEqual(research_tool["output_contract"], "title_url_snippet_sources_only")
 
     def test_tools_manifest_endpoint_returns_manifest(self) -> None:
-        client = TestClient(app)
+        client = TestClient(_test_app())
         response = client.get("/v1/tools/manifest")
 
         self.assertEqual(response.status_code, 200)
@@ -163,7 +213,7 @@ class SelfStatusManifestTests(unittest.TestCase):
         self.assertNotIn("SECRET_SHOULD_NOT_APPEAR", str(manifest))
 
     def test_context_index_endpoint_returns_manifest(self) -> None:
-        client = TestClient(app)
+        client = TestClient(_test_app())
         response = client.get("/v1/context/index")
 
         self.assertEqual(response.status_code, 200)
@@ -195,8 +245,30 @@ class SelfStatusManifestTests(unittest.TestCase):
         self.assertFalse(preview["would_execute"])
         self.assertIn("paid_api_route_possible", preview["reason_codes"])
 
+    def test_action_preview_requires_approval_for_create_file_action(self) -> None:
+        preview = build_action_preview(
+            action="create file",
+            target="src/app/design-demo/coding/page.tsx",
+        )
+
+        self.assertEqual(preview["decision"], "requires_human_approval")
+        self.assertTrue(preview["requires_human_approval"])
+        self.assertFalse(preview["would_execute"])
+        self.assertIn("implementation_or_terminal_action", preview["reason_codes"])
+
+    def test_action_preview_requires_approval_for_implement_file_change_action(self) -> None:
+        preview = build_action_preview(
+            action="implement proposed file change",
+            target="src/app/design-demo/coding/page.tsx",
+        )
+
+        self.assertEqual(preview["decision"], "requires_human_approval")
+        self.assertTrue(preview["requires_human_approval"])
+        self.assertFalse(preview["would_execute"])
+        self.assertIn("implementation_or_terminal_action", preview["reason_codes"])
+
     def test_action_preview_endpoint_returns_preview_without_execution(self) -> None:
-        client = TestClient(app)
+        client = TestClient(_test_app())
         response = client.post(
             "/v1/actions/preview",
             json={"action": "plan manual prompt packet", "route_type": "manual_route"},

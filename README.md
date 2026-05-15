@@ -355,6 +355,7 @@ Generate the full repository context bundle:
 
 ```bash
 npm run context:pack
+npx repomix --config repomix.config.json
 ```
 
 Generate the Tree-sitter compressed bundle for large-context model routing:

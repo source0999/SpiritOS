@@ -1,0 +1,1 @@
+"""Proxy memory write adapters."""

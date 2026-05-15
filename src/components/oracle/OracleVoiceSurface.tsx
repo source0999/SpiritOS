@@ -545,7 +545,7 @@ export function OracleVoiceSurface() {
       isProcessingTurnRef.current = false;
     }
     pushActivity({ kind: "assistant_finished", label: "Assistant replied (Oracle)" });
-  }, [displayMessages, transport.isBusy, voiceRt, tts, pushActivity]);
+  }, [displayMessages, modeRt.activeModelProfileId, transport.isBusy, voiceRt, tts, pushActivity]);
 
   // ── Hands-free relisten loop: after TTS finishes, schedule next listen turn.
   useEffect(() => {

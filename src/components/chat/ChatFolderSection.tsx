@@ -10,7 +10,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { ChevronRight, FolderOpen, PenLine, Trash2 } from "lucide-react";
-import { memo, useEffect, useState, type CSSProperties } from "react";
+import { memo, useState, type CSSProperties } from "react";
 
 import { StableChatThreadListItem } from "@/components/chat/ChatThreadListItem";
 import type { DragActivatorProps } from "@/components/chat/SortableChatThreadItem";
@@ -85,10 +85,6 @@ export const ChatFolderHeaderRow = memo(function ChatFolderHeaderRow({
   folderDndDragging = false,
 }: ChatFolderHeaderRowProps) {
   const [deleteConfirming, setDeleteConfirming] = useState(false);
-
-  useEffect(() => {
-    setDeleteConfirming(false);
-  }, [folder.id]);
 
   return (
     <div
@@ -361,6 +357,7 @@ export const ChatFolderSection = memo(function ChatFolderSection({
         tabIndex={-1}
       >
         <ChatFolderHeaderRow
+          key={folder.id}
           folder={folder}
           collapsed={collapsed}
           locked={locked}

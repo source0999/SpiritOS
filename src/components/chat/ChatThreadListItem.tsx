@@ -54,10 +54,6 @@ export type ChatThreadListItemProps = {
   actionLayout?: "inline" | "trinity-recent";
   /** Same DOM node as drag `listeners` (Sortable → useSortable.setActivatorNodeRef). */
   setDragActivatorRef?: (element: HTMLElement | null) => void;
-  /**
-   * @deprecated Whole-row drag competed with title clicks; handle-only DnD is the contract now.
-   */
-  dragWholeRowSurface?: boolean;
 };
 
 const POPOUT_W = 224;
@@ -120,7 +116,6 @@ export const ChatThreadListItem = memo(function ChatThreadListItem({
   hideUpdatedLabel = false,
   actionLayout = "inline",
   setDragActivatorRef,
-  dragWholeRowSurface: _dragWholeRowSurface = false,
 }: ChatThreadListItemProps) {
   const [moveOpen, setMoveOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);

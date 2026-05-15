@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import os
+import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 from source_proxy.decision import research
@@ -70,6 +72,121 @@ class ResearchPreviewTests(unittest.IsolatedAsyncioTestCase):
     async def test_run_local_research_preview_returns_empty_when_searxng_missing(self) -> None:
         with patch.dict(os.environ, {"SEARXNG_URL": ""}, clear=False):
             self.assertEqual(await research.run_local_research_preview("latest Vite 6"), [])
+
+    async def test_run_local_research_preview_includes_scout_when_enabled(self) -> None:
+        async def fake_scout(query: str, max_results: int = 6) -> list[dict[str, str]]:
+            return [
+                {
+                    "title": "Scout result",
+                    "url": "https://example.com/scout",
+                    "snippet": "Scout impact",
+                    "source": "scout",
+                }
+            ]
+
+        with (
+            patch.dict(os.environ, {"SEARXNG_URL": ""}, clear=False),
+            patch.object(research, "run_scout_research_preview", fake_scout),
+        ):
+            sources = await research.run_local_research_preview("latest Vite 6")
+
+        self.assertEqual(sources[0]["source"], "scout")
+
+    async def test_run_local_research_preview_returns_repo_sources_before_web(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project_root = Path(temp_dir)
+            (project_root / "package.json").write_text("{}", encoding="utf-8")
+            coding_component = project_root / "src/components/coding/CodingAgentInterface.tsx"
+            router = project_root / "source_proxy/decision/router.py"
+            coding_component.parent.mkdir(parents=True)
+            router.parent.mkdir(parents=True)
+            coding_component.write_text(
+                "export function CodingAgentInterface() {\n"
+                "  const historyBug = 'history bug on the coding page';\n"
+                "  return historyBug;\n"
+                "}\n",
+                encoding="utf-8",
+            )
+            router.write_text(
+                "def decide_route():\n"
+                "    return 'decision router'\n",
+                encoding="utf-8",
+            )
+
+            with patch.dict(
+                os.environ,
+                {"SPIRIT_PROJECT_PATH": str(project_root), "SEARXNG_URL": ""},
+                clear=False,
+            ):
+                sources = await research.run_local_research_preview(
+                    "fix the history bug on the /coding page",
+                    max_results=4,
+                )
+
+        self.assertGreaterEqual(len(sources), 1)
+        self.assertEqual(
+            sources[0]["url"],
+            "repo://src/components/coding/CodingAgentInterface.tsx",
+        )
+        self.assertIn("history bug", sources[0]["snippet"])
+
+    async def test_repo_research_finds_project_root_when_proxy_starts_in_source_proxy(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project_root = Path(temp_dir)
+            source_proxy_root = project_root / "source_proxy"
+            coding_page = project_root / "src/app/coding/page.tsx"
+            source_proxy_root.mkdir(parents=True)
+            coding_page.parent.mkdir(parents=True)
+            (project_root / "package.json").write_text("{}", encoding="utf-8")
+            coding_page.write_text(
+                "export default function CodingPage() { return 'coding page history'; }\n",
+                encoding="utf-8",
+            )
+
+            with (
+                patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": "", "SEARXNG_URL": ""}, clear=False),
+                patch.object(research.Path, "cwd", return_value=source_proxy_root),
+            ):
+                sources = await research.run_local_research_preview(
+                    "fix the history bug on the /coding page",
+                    max_results=4,
+                )
+
+        self.assertTrue(any(source["url"] == "repo://src/app/coding/page.tsx" for source in sources))
+
+    async def test_repo_research_ignores_stale_configured_project_root(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project_root = Path(temp_dir)
+            stale_root = project_root / "missing-linux-root"
+            source_proxy_root = project_root / "source_proxy"
+            coding_page = project_root / "src/app/coding/page.tsx"
+            source_proxy_root.mkdir(parents=True)
+            coding_page.parent.mkdir(parents=True)
+            (project_root / "package.json").write_text("{}", encoding="utf-8")
+            coding_page.write_text(
+                "export default function CodingPage() { return 'coding page history'; }\n",
+                encoding="utf-8",
+            )
+
+            with (
+                patch.dict(
+                    os.environ,
+                    {
+                        "SPIRIT_PROJECT_PATH": f"{stale_root},/mnt/spirit-projects/spiritOS",
+                        "SEARXNG_URL": "",
+                    },
+                    clear=False,
+                ),
+                patch.object(research.Path, "cwd", return_value=source_proxy_root),
+            ):
+                sources = await research.run_local_research_preview(
+                    "fix the history bug on the /coding page",
+                    max_results=4,
+                )
+
+        self.assertTrue(any(source["url"] == "repo://src/app/coding/page.tsx" for source in sources))
 
 
 if __name__ == "__main__":

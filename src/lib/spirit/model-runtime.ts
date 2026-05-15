@@ -14,7 +14,11 @@ import {
   DEFAULT_SPIRIT_RUNTIME_SURFACE,
   type SpiritRuntimeSurface,
 } from "@/lib/spirit/spirit-runtime-surface";
-import { buildReasoningPatternInstruction } from "@/lib/spirit/spirit-reasoning-patterns";
+import {
+  buildReasoningPatternInstruction,
+  buildSwarmAgentInstruction,
+  type SpiritSwarmAgentRole,
+} from "@/lib/spirit/spirit-reasoning-patterns";
 import { buildActiveTaskPolicyInstruction } from "@/lib/spirit/spirit-task-policy";
 import { buildSystemStateBlock, type SpiritSystemStateInput } from "@/lib/spirit/system-state";
 
@@ -44,6 +48,8 @@ export type BuildModelRuntimeOptions = {
   systemState?: SpiritSystemStateInput | null;
   /** Optional [ORACLE MEMORY CONTEXT] block from recent Oracle voice sessions. */
   oracleMemoryContext?: string | null;
+  /** Active shared-model swarm role for coding task handoffs. */
+  swarmAgentRole?: SpiritSwarmAgentRole | string | null;
 };
 
 export function buildSemanticRoutingInstruction(profile: ModelProfile): string {
@@ -87,6 +93,8 @@ export function buildModelRuntime(
   const intelligenceBlock = `\n\n${buildGeneralIntelligenceInstruction()}`;
   const taskPolicyBlock = `\n\n${buildActiveTaskPolicyInstruction(lastUser)}`;
   const reasoningPatternBlock = `\n\n${buildReasoningPatternInstruction(lastUser)}`;
+  const swarmAgentInstruction = buildSwarmAgentInstruction(opts?.swarmAgentRole);
+  const swarmAgentBlock = swarmAgentInstruction ? `\n\n${swarmAgentInstruction}` : "";
   const evidenceLadderBlock = `\n\n${buildEvidenceLadderInstruction(lastUser)}`;
 
   const budget = buildResponseBudgetInstruction(profile, lastUser || " ", {
@@ -143,7 +151,7 @@ ${extra}`
 
   const systemPrompt = `${profile.systemPrompt}
 
-${surfacePrefix}${budget}${systemStateBlock}${intelligenceBlock}${taskPolicyBlock}${reasoningPatternBlock}${evidenceLadderBlock}${semanticRoutingBlock}${deepBlock}${researchBlock}${planBlock}${oracleMemoryBlock}${prefsBlock}
+${surfacePrefix}${budget}${systemStateBlock}${intelligenceBlock}${taskPolicyBlock}${reasoningPatternBlock}${swarmAgentBlock}${evidenceLadderBlock}${semanticRoutingBlock}${deepBlock}${researchBlock}${planBlock}${oracleMemoryBlock}${prefsBlock}
 
 ${SPIRIT_CAPABILITY_CONTEXT_HINT}
 

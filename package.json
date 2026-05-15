@@ -22,12 +22,14 @@
     "next:mcp:ws": "node ./scripts/next-mcp-ws-bridge.mjs",
     "next:mcp:ws:probe": "node ./scripts/next-mcp-ws-probe.mjs",
     "next:mcp:ws:smoke": "node ./scripts/next-mcp-ws-smoke.mjs",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "check": "npm run lint && npm run typecheck && npm run build",
     "test": "vitest",
+    "test:coding-regression": "python -m pytest -q source_proxy/tests/test_coding_regression_pack.py",
+    "test:coding-frontend-regression": "vitest run src/lib/coding/__tests__/unified-diff-paths.test.ts src/components/coding/__tests__/approval-gate-binding.test.ts src/lib/coding/__tests__/proxy-route-payload.test.ts src/components/coding/__tests__/coding-workflow-step.test.ts src/components/coding/__tests__/client-fallback.test.ts",
     "test:ui": "vitest --ui"
   },
   "dependencies": {

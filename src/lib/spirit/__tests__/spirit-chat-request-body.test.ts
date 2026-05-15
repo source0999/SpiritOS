@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+/// <reference types="vitest/globals" />
 
 import {
   parseSpiritChatRequestBody,
@@ -156,6 +156,23 @@ describe("parseSpiritChatRequestBody", () => {
         messages: [minimalUserMessage],
         deepThinkEnabled: "yes",
       } as unknown),
+    ).toThrow(SpiritRequestValidationError);
+  });
+
+  it("accepts normalized swarmAgentRole", () => {
+    const out = parseSpiritChatRequestBody({
+      messages: [minimalUserMessage],
+      swarmAgentRole: "Debugger",
+    });
+    expect(out.swarmAgentRole).toBe("debugger");
+  });
+
+  it("rejects invalid swarmAgentRole", () => {
+    expect(() =>
+      parseSpiritChatRequestBody({
+        messages: [minimalUserMessage],
+        swarmAgentRole: "manager",
+      }),
     ).toThrow(SpiritRequestValidationError);
   });
 });

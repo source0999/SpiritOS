@@ -1,0 +1,1 @@
+"""Scout local intelligence service."""

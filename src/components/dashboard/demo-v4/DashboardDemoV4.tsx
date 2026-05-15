@@ -8,6 +8,7 @@ import { useEffect, useMemo } from "react";
 import { CheckCircle2, ListChecks } from "lucide-react";
 
 import { useClusterTelemetry } from "@/hooks/useClusterTelemetry";
+import { HomelabScoutIntelligenceWidget } from "@/components/dashboard/HomelabScoutIntelligenceWidget";
 import { DashboardDemoV4Atmosphere } from "@/components/dashboard/demo-v4/DashboardDemoV4Atmosphere";
 import { DashboardDemoV4Briefing } from "@/components/dashboard/demo-v4/DashboardDemoV4Briefing";
 import { DashboardDemoV4Header } from "@/components/dashboard/demo-v4/DashboardDemoV4Header";
@@ -174,8 +175,9 @@ export function DashboardDemoV4() {
               <DashboardDemoV4Storage data={data} state={state} error={error} />
             </div>
           </div>
-          <div className="xl:col-span-4 xl:self-start">
+          <div className="flex flex-col gap-4 xl:col-span-4 xl:self-start xl:gap-5">
             <DashboardDemoV4Briefing />
+            <HomelabScoutIntelligenceWidget />
           </div>
         </section>
       </div>

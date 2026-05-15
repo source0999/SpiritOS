@@ -74,6 +74,11 @@ _Reference (old repo): draft-first composer, rail auto-collapse hints - recreate
 
 - NUT probes, filesystem scanners, scripted actions - right rail or dashboard cards only when chat core is trustworthy.
 
+### Source coding agent (workspace + **Phase 7 clarity rollout**)
+
+- **`CodingAgentInterface`** (`src/components/coding/CodingAgentInterface.tsx`) powers **`/coding`** and the **Source coding agent** tab in **`SpiritTrinityChatShell`** (`/chat`). `embedded` skips the duplicate **`DashboardDemoV4FloatingNav`** because the Trinity shell already mounts it.
+- **Increment 7.1 (labels + layout):** friendlier section titles (e.g. results, activity log, prompt block), grouped status header with plain-language routing labels, and card-style activity entries—see component file (single source of truth; `src/app/coding/page.tsx` stays a thin re-export).
+
 ---
 
 ### Persistence & cross-device (explicit)

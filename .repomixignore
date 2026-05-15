@@ -25,6 +25,9 @@ nohup.out
 _reference/
 chatDesign/
 data/
+source_proxy/data/
+.spirit-backups/
+source_proxy/.spirit-backups/
 
 .probe-*.log
 .source-proxy-*.log

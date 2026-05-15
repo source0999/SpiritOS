@@ -3,6 +3,8 @@
 import { buildModelRuntime } from "@/lib/spirit/model-runtime";
 import {
   buildReasoningPatternInstruction,
+  buildSwarmAgentInstruction,
+  normalizeSwarmAgentRole,
   resolveSpiritReasoningPattern,
 } from "@/lib/spirit/spirit-reasoning-patterns";
 import type { SpiritSystemStateInput } from "@/lib/spirit/system-state";
@@ -125,5 +127,36 @@ describe("spirit-reasoning-patterns Phase 3", () => {
     expect(practical.systemPrompt).toContain("Pattern: Emotional-practical advice pattern");
     expect(troubleshooting.systemPrompt).toContain("Brutal mode");
     expect(practical.systemPrompt).toContain("Brutal mode");
+  });
+
+  it("builds swarm agent role instructions for Architect, Coder, and Debugger", () => {
+    const architect = buildSwarmAgentInstruction("architect");
+    const coder = buildSwarmAgentInstruction("coder");
+    const debuggerBlock = buildSwarmAgentInstruction("debugger");
+
+    expect(architect).toContain("[SWARM AGENT PROFILE]");
+    expect(architect).toContain("Active role: Architect");
+    expect(architect).toMatch(/Do not edit files/i);
+    expect(coder).toContain("Active role: Coder");
+    expect(coder).toMatch(/smallest useful diff/i);
+    expect(debuggerBlock).toContain("Active role: Debugger");
+    expect(debuggerBlock).toMatch(/truncated_test_results/i);
+  });
+
+  it("adds Source phase and concrete-change guard for /coding work", () => {
+    const block = buildReasoningPatternInstruction(
+      "Fix the history bug on the /coding page in SpiritOS.",
+    );
+
+    expect(block).toContain("Source increment guard:");
+    expect(block).toContain("Phase 7C / Increment 7C.4");
+    expect(block).toMatch(/simple, direct language/i);
+    expect(block).toMatch(/concrete files, exact changes, and checks/i);
+  });
+
+  it("normalizes unknown swarm roles to null", () => {
+    expect(normalizeSwarmAgentRole("Debugger")).toBe("debugger");
+    expect(normalizeSwarmAgentRole("")).toBeNull();
+    expect(normalizeSwarmAgentRole("manager")).toBeNull();
   });
 });

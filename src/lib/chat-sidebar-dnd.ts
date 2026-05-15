@@ -192,7 +192,6 @@ export const chatSidebarThreadCollisionDetection: CollisionDetection = (args) =>
     // closestCenter can be thread-only when the pointer sits over expanded thread lists; still pick
     // the nearest folder card by rect so reorder doesn't die with over=null / thread steal.
     const fb = fallbackNearestExcludingActive(args, activeId).filter((c) => {
-      const s = idStr(c);
       if (isThread(c)) return false;
       if (isFolderSort(c)) return true;
       return isFolderDrop(c);

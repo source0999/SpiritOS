@@ -7,12 +7,39 @@ from source_proxy.decision.router import DecisionInput, RouteDecision, decide_ro
 
 TargetModelHint = Literal["chatgpt", "claude", "gemini", "google_ai_studio", "grok"]
 
+CURRENT_PHASE_LABEL = "Phase 7C"
+CURRENT_INCREMENT_LABEL = "Increment 7C.4"
+CURRENT_INCREMENT_GOAL = (
+    "Add stronger self-correction: check if the agent is being passive, "
+    "confirm repo-first research ran, and confirm the active phase."
+)
+UNSCOPED_PHASE_LABEL = "Current task"
+UNSCOPED_INCREMENT_LABEL = "No inherited increment"
+UNSCOPED_INCREMENT_GOAL = "Use only the current user request; do not inherit phase state from prior runs."
+
+PROXY_AGENT_CONTEXT = (
+    "Coder Agent route selected. Read the repomix repository context and produce strict JSON replacement content only. "
+    "The backend generates the unified diff after validation; do not ask the model to write patch hunks."
+)
+
+ALREADY_SATISFIED_PROMPT_TEXT = (
+    "The target file already satisfies the requested task. No diff is needed."
+)
+ALREADY_SATISFIED_REQUESTED_OUTPUT = [
+    "No approval needed. Target file already matches requested content."
+]
+ALREADY_SATISFIED_PASTE_BACK_INSTRUCTIONS = (
+    "No code change was produced because the target is already up to date."
+)
+
 
 @dataclass(frozen=True)
 class PromptPacketInput:
     task: str
     target_model_hint: TargetModelHint | None = None
     relevant_context: str | None = None
+    active_task_id: str | None = None
+    current_agent_role: str | None = None
     context_tokens: int | None = None
     sensitive: bool = False
     needs_current_info: bool = False
@@ -24,6 +51,9 @@ class PromptPacketInput:
 @dataclass(frozen=True)
 class PromptPacket:
     target_model_hint: str
+    phase_label: str
+    increment_label: str
+    increment_goal: str
     task_summary: str
     relevant_context: str
     context_metadata: dict[str, object]
@@ -37,6 +67,9 @@ class PromptPacket:
     def as_payload(self) -> dict[str, object]:
         return {
             "target_model_hint": self.target_model_hint,
+            "phase_label": self.phase_label,
+            "increment_label": self.increment_label,
+            "increment_goal": self.increment_goal,
             "task_summary": self.task_summary,
             "relevant_context": self.relevant_context,
             "context_metadata": self.context_metadata,
@@ -52,6 +85,8 @@ class PromptPacket:
 def build_prompt_packet(input_data: PromptPacketInput) -> PromptPacket:
     decision_input = DecisionInput(
         task=input_data.task,
+        active_task_id=input_data.active_task_id,
+        current_agent_role=input_data.current_agent_role,
         context_tokens=input_data.context_tokens,
         sensitive=input_data.sensitive,
         needs_current_info=input_data.needs_current_info,
@@ -62,6 +97,7 @@ def build_prompt_packet(input_data: PromptPacketInput) -> PromptPacket:
     decision = decide_route(decision_input)
     target_model = input_data.target_model_hint or _default_model_for_decision(decision)
     task_summary = _summarize_task(input_data.task)
+    phase_label, increment_label, increment_goal = _phase_fields_for(input_data)
     relevant_context = _build_context_section(input_data)
     context_metadata = _context_metadata_for(input_data, relevant_context)
     constraints = _constraints_for(input_data, decision)
@@ -72,6 +108,9 @@ def build_prompt_packet(input_data: PromptPacketInput) -> PromptPacket:
     )
     prompt_text = _render_prompt_text(
         target_model_hint=target_model,
+        phase_label=phase_label,
+        increment_label=increment_label,
+        increment_goal=increment_goal,
         task_summary=task_summary,
         relevant_context=relevant_context,
         constraints=constraints,
@@ -81,6 +120,9 @@ def build_prompt_packet(input_data: PromptPacketInput) -> PromptPacket:
 
     return PromptPacket(
         target_model_hint=target_model,
+        phase_label=phase_label,
+        increment_label=increment_label,
+        increment_goal=increment_goal,
         task_summary=task_summary,
         relevant_context=relevant_context,
         context_metadata=context_metadata,
@@ -109,18 +151,52 @@ def _summarize_task(task: str) -> str:
     return f"{normalized[:237].rstrip()}..."
 
 
+def _task_mentions_current_phase(input_data: PromptPacketInput) -> bool:
+    combined = f"{input_data.task}\n{input_data.relevant_context or ''}".lower()
+    return "phase 7c" in combined or "increment 7c" in combined or "7c.4" in combined
+
+
+def _phase_fields_for(input_data: PromptPacketInput) -> tuple[str, str, str]:
+    if _task_mentions_current_phase(input_data):
+        return CURRENT_PHASE_LABEL, CURRENT_INCREMENT_LABEL, CURRENT_INCREMENT_GOAL
+    return UNSCOPED_PHASE_LABEL, UNSCOPED_INCREMENT_LABEL, UNSCOPED_INCREMENT_GOAL
+
+
+def _active_phase_context(input_data: PromptPacketInput) -> str:
+    if not _task_mentions_current_phase(input_data):
+        return ""
+    return (
+        f"Active work: {CURRENT_PHASE_LABEL} / {CURRENT_INCREMENT_LABEL}. "
+        f"Goal: {CURRENT_INCREMENT_GOAL}"
+    )
+
+
 def _build_context_section(input_data: PromptPacketInput) -> str:
+    phase_context = _active_phase_context(input_data)
     context = (input_data.relevant_context or "").strip()
     if context:
-        return context
+        if input_data.wants_implementation or input_data.needs_codebase_context:
+            return (
+                f"{phase_context}\n\n{PROXY_AGENT_CONTEXT}\n\n{context}"
+                if phase_context
+                else f"{PROXY_AGENT_CONTEXT}\n\n{context}"
+            )
+        return f"{phase_context}\n\n{context}" if phase_context else context
+
+    if input_data.wants_implementation:
+        return f"{phase_context}\n\n{PROXY_AGENT_CONTEXT}" if phase_context else PROXY_AGENT_CONTEXT
 
     if input_data.needs_codebase_context:
-        return (
-            "Use the repository context packet from Source if provided separately. "
-            "If context is missing, ask for the specific files or compressed XML excerpt needed."
+        ask_for_context = (
+            f"{PROXY_AGENT_CONTEXT} If context is missing, ask for the specific files or compressed XML excerpt needed."
         )
+        return f"{phase_context}\n\n{ask_for_context}" if phase_context else ask_for_context
 
-    return "No additional repository context was supplied."
+    return (
+        f"{phase_context}\n\nNo additional repository context was supplied."
+        if phase_context
+        else "No additional repository context was supplied."
+    )
 
 
 def _context_metadata_for(
@@ -172,14 +248,22 @@ def _constraints_for(
     constraints = [
         "Do not invent file contents, test results, URLs, logs, or tool output.",
         "Separate facts from assumptions.",
+        "Do not inherit target files, diffs, routes, phase labels, or approval state from previous runs.",
+        "Before acting, answer: Am I being passive? Did I scan the repo first? Am I on the correct phase?",
+        "Use simple, direct language.",
         "Keep recommendations actionable and scoped to the task.",
     ]
+    if _task_mentions_current_phase(input_data):
+        constraints.insert(2, f"Name {CURRENT_PHASE_LABEL} / {CURRENT_INCREMENT_LABEL} in the answer.")
     if input_data.sensitive or decision.risk_tier == "high":
         constraints.append("Treat secrets and private data as sensitive; do not echo credentials.")
     if input_data.needs_codebase_context:
         constraints.append("When referencing code, cite file paths and ask for missing files instead of guessing.")
     if input_data.wants_implementation:
-        constraints.append("Prefer minimal, reviewable implementation steps over broad rewrites.")
+        constraints.append("Prefer running the Coder Agent implementation path before generating a manual prompt packet.")
+        constraints.append("Coder Agent output must be strict JSON replacement content only; backend generates the unified diff.")
+        constraints.append("Prefer minimal, reviewable code changes over broad rewrites.")
+        constraints.append("When possible, show concrete file paths and the exact code changes to make.")
     if input_data.needs_current_info:
         constraints.append("Use current browsing/research if available and cite sources.")
     return constraints
@@ -191,13 +275,15 @@ def _requested_output_for(
 ) -> list[str]:
     if input_data.wants_implementation:
         return [
-            "A concise implementation plan",
+            "A short summary scoped only to the current task",
             "Specific files or modules likely involved",
+            "Concrete code changes or diff-style bullets when possible",
             "Risks, edge cases, and tests to run",
-            "A final Codex-ready instruction block",
+            "A final Coder-Agent-ready instruction block",
         ]
     if decision.task_classification == "codebase_analysis":
         return [
+            "A short summary scoped only to the current task",
             "Top findings ordered by importance",
             "Evidence or file-path references for each finding",
             "Open questions or missing context",
@@ -214,6 +300,9 @@ def _requested_output_for(
 def _render_prompt_text(
     *,
     target_model_hint: str,
+    phase_label: str,
+    increment_label: str,
+    increment_goal: str,
     task_summary: str,
     relevant_context: str,
     constraints: list[str],
@@ -222,9 +311,14 @@ def _render_prompt_text(
 ) -> str:
     constraints_text = "\n".join(f"- {item}" for item in constraints)
     output_text = "\n".join(f"- {item}" for item in requested_output)
-    return f"""# Source Manual Prompt Packet
+    return f"""# Source Prompt Packet - {phase_label} / {increment_label}
 
 Target model hint: {target_model_hint}
+
+## Active Increment
+{phase_label} / {increment_label}
+
+Goal: {increment_goal}
 
 ## Task
 {task_summary}

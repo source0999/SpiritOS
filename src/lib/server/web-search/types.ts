@@ -6,6 +6,7 @@ export type WebSearchProvider =
   | "ddgs"
   | "fetch"
   | "openai"
+  | "scout"
   | "manual";
 
 export type WebSearchStatus = "used" | "skipped" | "disabled" | "failed";

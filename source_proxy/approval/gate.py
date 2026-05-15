@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from decimal import Decimal
 from typing import Any
 
+from source_proxy.tasks.long_running import execute_approved_long_running_task
+
 
 @dataclass(frozen=True)
 class SpendBreakdown:
@@ -47,6 +49,31 @@ class SpendEstimationUnavailable(RuntimeError):
         )
         self.routed_model = routed_model
         self.last_error = last_error
+
+
+def execute_approved_action(
+    *,
+    task_id: str,
+    action: str,
+    approved_diff: str,
+    target: str | None = None,
+    approved_by: str = "human",
+    test_command: list[str] | None = None,
+) -> dict[str, Any]:
+    """Approval Gate execution handoff.
+
+    The gate does not apply edits itself. It delegates to the long-running task
+    layer, which re-runs diff verification, applies the patch, and writes audit
+    records in one place.
+    """
+    return execute_approved_long_running_task(
+        task_id,
+        action=action,
+        approved_by=approved_by,
+        approved_diff=approved_diff,
+        target=target,
+        test_command=test_command,
+    )
 
 
 async def async_pre_call_hook(

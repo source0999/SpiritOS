@@ -1,8 +1,9 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+/// <reference types="vitest/globals" />
 
 import {
   getSpiritDevCommandTools,
   getSpiritReadOnlyTools,
+  getSpiritToolsForSwarmRole,
   getSpiritToolsForRuntime,
   isLocalToolsEnabled,
   spiritToolsetIncludesRunDevCommand,
@@ -127,5 +128,68 @@ describe("tool-registry", () => {
     if (!tools) throw new Error("tools");
     expect(tools).toHaveProperty("propose_file_edit");
     expect(tools).toHaveProperty("run_dev_command");
+  });
+
+  it("Architect role receives only workspace read-only tools", () => {
+    vi.stubEnv("SPIRIT_ENABLE_LOCAL_TOOLS", "true");
+    vi.stubEnv("SPIRIT_OLLAMA_SUPPORTS_TOOLS", "true");
+    vi.stubEnv("SPIRIT_ENABLE_FILE_EDIT_TOOLS", "true");
+    vi.stubEnv("SPIRIT_ENABLE_SANDBOX_TOOLS", "true");
+    vi.stubEnv("SPIRIT_ENABLE_DEV_COMMAND_TOOLS", "true");
+
+    const tools = getSpiritToolsForSwarmRole("architect");
+    expect(tools).toBeDefined();
+    if (!tools) throw new Error("tools");
+    expect(Object.keys(tools).sort()).toEqual(
+      [
+        "get_system_status",
+        "list_workspace_files",
+        "read_log_tail",
+        "read_workspace_file",
+      ].sort(),
+    );
+  });
+
+  it("Coder role receives only file edit tools", () => {
+    vi.stubEnv("SPIRIT_ENABLE_LOCAL_TOOLS", "true");
+    vi.stubEnv("SPIRIT_OLLAMA_SUPPORTS_TOOLS", "true");
+    vi.stubEnv("SPIRIT_ENABLE_FILE_EDIT_TOOLS", "true");
+    vi.stubEnv("SPIRIT_ENABLE_SANDBOX_TOOLS", "true");
+    vi.stubEnv("SPIRIT_ENABLE_DEV_COMMAND_TOOLS", "true");
+
+    const tools = getSpiritToolsForSwarmRole("coder");
+    expect(tools).toBeDefined();
+    if (!tools) throw new Error("tools");
+    expect(Object.keys(tools).sort()).toEqual(
+      ["apply_confirmed_file_edit", "propose_file_edit"].sort(),
+    );
+  });
+
+  it("Debugger role receives only the Bubblewrap sandbox tool", () => {
+    vi.stubEnv("SPIRIT_ENABLE_LOCAL_TOOLS", "true");
+    vi.stubEnv("SPIRIT_OLLAMA_SUPPORTS_TOOLS", "true");
+    vi.stubEnv("SPIRIT_ENABLE_FILE_EDIT_TOOLS", "true");
+    vi.stubEnv("SPIRIT_ENABLE_SANDBOX_TOOLS", "true");
+    vi.stubEnv("SPIRIT_ENABLE_DEV_COMMAND_TOOLS", "true");
+
+    const tools = getSpiritToolsForSwarmRole("debugger");
+    expect(tools).toBeDefined();
+    if (!tools) throw new Error("tools");
+    expect(Object.keys(tools)).toEqual(["sandbox_terminal_run"]);
+  });
+
+  it("unknown role preserves legacy merged runtime tools", () => {
+    vi.stubEnv("SPIRIT_ENABLE_LOCAL_TOOLS", "true");
+    vi.stubEnv("SPIRIT_OLLAMA_SUPPORTS_TOOLS", "true");
+    vi.stubEnv("SPIRIT_ENABLE_FILE_EDIT_TOOLS", "true");
+    vi.stubEnv("SPIRIT_ENABLE_SANDBOX_TOOLS", "true");
+    vi.stubEnv("SPIRIT_ENABLE_DEV_COMMAND_TOOLS", "false");
+
+    const tools = getSpiritToolsForSwarmRole("manager");
+    expect(tools).toBeDefined();
+    if (!tools) throw new Error("tools");
+    expect(tools).toHaveProperty("read_workspace_file");
+    expect(tools).toHaveProperty("propose_file_edit");
+    expect(tools).toHaveProperty("sandbox_terminal_run");
   });
 });

@@ -7,6 +7,7 @@ import {
   type ModelProfileId,
 } from "@/lib/spirit/model-profile.types";
 import { isModelProfileId } from "@/lib/spirit/model-profiles";
+import type { SpiritSwarmAgentRole } from "@/lib/spirit/spirit-reasoning-patterns";
 
 export class SpiritRequestValidationError extends Error {
   constructor(
@@ -42,6 +43,8 @@ export type SpiritChatRequestBody = {
   researchPlanSummary?: string;
   /** Optional Oracle voice session memory context block (Phase 3). */
   oracleMemoryContext?: string;
+  /** Optional active coding swarm role for prompt and tool binding. */
+  swarmAgentRole?: SpiritSwarmAgentRole;
 };
 
 function assertMessagesShape(raw: unknown[]): void {
@@ -144,6 +147,25 @@ function normalizeOracleMemoryContext(raw: unknown): string | undefined {
   return t;
 }
 
+function normalizeSwarmAgentRole(raw: unknown): SpiritSwarmAgentRole | undefined {
+  if (raw === undefined || raw === null || raw === "") return undefined;
+  if (typeof raw !== "string") {
+    throw new SpiritRequestValidationError(400, "swarmAgentRole must be a string when provided");
+  }
+  const normalized = raw.trim().toLowerCase();
+  if (
+    normalized === "architect" ||
+    normalized === "coder" ||
+    normalized === "debugger"
+  ) {
+    return normalized;
+  }
+  throw new SpiritRequestValidationError(
+    400,
+    "swarmAgentRole must be architect, coder, or debugger",
+  );
+}
+
 /** Validates POST JSON for /api/spirit (messages + optional modelProfileId). */
 export function parseSpiritChatRequestBody(body: unknown): SpiritChatRequestBody {
   if (!body || typeof body !== "object") {
@@ -177,6 +199,7 @@ export function parseSpiritChatRequestBody(body: unknown): SpiritChatRequestBody
   );
   const researchPlanSummary = normalizeResearchPlanSummary(record.researchPlanSummary);
   const oracleMemoryContext = normalizeOracleMemoryContext(record.oracleMemoryContext);
+  const swarmAgentRole = normalizeSwarmAgentRole(record.swarmAgentRole);
 
   return {
     messages: maybeMessages as UIMessage[],
@@ -188,5 +211,6 @@ export function parseSpiritChatRequestBody(body: unknown): SpiritChatRequestBody
     teacherWebSearchEnabled,
     researchPlanSummary,
     oracleMemoryContext,
+    swarmAgentRole,
   };
 }

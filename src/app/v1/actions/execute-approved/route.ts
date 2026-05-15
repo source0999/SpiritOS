@@ -1,0 +1,92 @@
+import { executeApprovedAction } from "@/lib/spirit/approved-action-execution";
+
+import { sourceProxyFetch } from "@/lib/source-proxy-origin";
+
+export async function POST(request: Request) {
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return Response.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  if (!body || typeof body !== "object") {
+    return Response.json({ error: "Request body must be an object" }, { status: 400 });
+  }
+
+  const record = body as Record<string, unknown>;
+  const action = typeof record.action === "string" ? record.action : "";
+  const content = typeof record.content === "string" ? record.content : "";
+  const target = typeof record.target === "string" ? record.target : "";
+  const approved = record.approved === true;
+  const approvedDiff =
+    typeof record.approved_diff === "string"
+      ? record.approved_diff
+      : typeof record.approvedDiff === "string"
+        ? record.approvedDiff
+        : "";
+  const taskId =
+    typeof record.task_id === "string"
+      ? record.task_id
+      : typeof record.taskId === "string"
+        ? record.taskId
+        : "";
+
+  if (!approved) {
+    return Response.json(
+      { error: "approved must be true before execution" },
+      { status: 403 },
+    );
+  }
+  if (!action.trim() || !target.trim()) {
+    return Response.json(
+      { error: "action and target are required" },
+      { status: 400 },
+    );
+  }
+
+  // Approved real diffs execute through Source proxy's long-running task layer.
+  // That keeps diff verification, workspace writes, progress, and audit logging
+  // behind a single explicit approval boundary.
+  if (taskId.trim() && approvedDiff.trim()) {
+    if (process.env.SPIRIT_CODING_USE_PROXY !== "true") {
+      return Response.json(
+        { error: "SPIRIT_CODING_USE_PROXY is not true" },
+        { status: 409 },
+      );
+    }
+
+    const response = await sourceProxyFetch(
+      `/v1/tasks/long-running/${encodeURIComponent(taskId)}/execute-approved`,
+      {
+        body: JSON.stringify({
+          action,
+          approved: true,
+          approved_by: "coding-ui",
+          approved_diff: approvedDiff,
+          target,
+        }),
+        headers: {
+          "content-type": "application/json",
+        },
+        method: "POST",
+      },
+    );
+
+    return new Response(await response.text(), {
+      headers: {
+        "content-type": response.headers.get("content-type") ?? "application/json",
+      },
+      status: response.status,
+      statusText: response.statusText,
+    });
+  }
+
+  const result = await executeApprovedAction({
+    action,
+    approvedDiff,
+    content,
+    target,
+  });
+  return Response.json(result, { status: result.ok ? 200 : 422 });
+}

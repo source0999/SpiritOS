@@ -9,6 +9,7 @@ export type RawWebSearchSource = {
   snippet?: string | null;
   publishedAt?: string | null;
   provider?: WebSearchProvider;
+  source?: WebSearchProvider;
 };
 
 function trimToUndefined(value: string | null | undefined, maxLength: number): string | undefined {
@@ -60,7 +61,7 @@ export function normalizeWebSearchSources(
     const title = trimToUndefined(source.title, 180) ?? fallbackTitle(url);
     const snippet = trimToUndefined(source.snippet, 500);
     const publishedAt = trimToUndefined(source.publishedAt, 80);
-    const provider = source.provider ?? opts.provider;
+    const provider = source.provider ?? source.source ?? opts.provider;
 
     normalized.push({
       title,

@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 from typing import Any
 
+from source_proxy.api.decision import AVAILABLE_ROUTES
 from source_proxy.routing.litellm_router import routing_status
 
 
@@ -240,6 +241,61 @@ def _enabled_tools(routes: list[dict[str, str | bool | None]]) -> list[dict[str,
             "access": "read_only",
             "endpoint": "GET /healthcheck",
         },
+        {
+            "name": "workspace_read_only_tools",
+            "category": "workspace_context",
+            "access": "read_only_allowlisted_workspace",
+            "endpoints": [
+                "POST /v1/workspace/list",
+                "POST /v1/workspace/read",
+            ],
+            "limits": {
+                "writes_allowed": False,
+                "recursive_listing": False,
+                "hidden_files": False,
+                "secret_shaped_paths": False,
+            },
+        },
+        {
+            "name": "sandboxed_terminal_run",
+            "category": "sandbox",
+            "access": "bubblewrap_sandboxed_terminal",
+            "endpoint": "POST /v1/sandbox/terminal/run",
+            "limits": {
+                "workspace_mount": "/workspace",
+                "workspace_writable": False,
+                "network_default": "none",
+                "max_timeout_seconds": 30,
+                "home_hidden": True,
+            },
+        },
+        {
+            "name": "diff_verification_preview",
+            "category": "verification",
+            "access": "read_only_diff_preview",
+            "endpoint": "POST /v1/verification/diff-preview",
+            "limits": {
+                "would_apply_diff": False,
+                "would_execute": False,
+                "secret_shaped_paths": False,
+                "max_diff_bytes": 200_000,
+            },
+        },
+        {
+            "name": "long_running_task_tracker",
+            "category": "task_tracking",
+            "access": "read_only_status_tracking",
+            "endpoints": [
+                "POST /v1/tasks/long-running",
+                "GET /v1/tasks/long-running/{task_id}",
+                "POST /v1/tasks/long-running/{task_id}/cancel",
+            ],
+            "limits": {
+                "executes_commands": False,
+                "writes_files": False,
+                "persists_across_restart": False,
+            },
+        },
     ]
 
     if _env_true("SPIRIT_ENABLE_PROXY_RESEARCH"):
@@ -349,15 +405,19 @@ def _available_routes(routes: list[dict[str, str | bool | None]]) -> list[dict[s
     available: list[dict[str, Any]] = [
         {
             "route_type": "manual_route",
+            "next_prompt_action": "generate_manual_prompt_packet",
+            "display_name": AVAILABLE_ROUTES["generate_manual_prompt_packet"]["display_name"],
+            "execution_path": AVAILABLE_ROUTES["generate_manual_prompt_packet"]["execution_path"],
             "status": "available",
             "approval": "user_pastes_packet_externally",
             "spend": "none_from_source_proxy",
         },
         {
             "route_type": "local_route",
-            "status": "available"
-            if any(route.get("alias") == "local" and route.get("enabled") for route in routes)
-            else "unavailable",
+            "next_prompt_action": "run_with_coder_agent",
+            "display_name": AVAILABLE_ROUTES["run_with_coder_agent"]["display_name"],
+            "execution_path": AVAILABLE_ROUTES["run_with_coder_agent"]["execution_path"],
+            "status": "available",
             "approval": "request_required",
             "spend": "local_compute_only",
         },
@@ -369,6 +429,9 @@ def _available_routes(routes: list[dict[str, str | bool | None]]) -> list[dict[s
     available.append(
         {
             "route_type": "api_route",
+            "next_prompt_action": "call_api_model",
+            "display_name": AVAILABLE_ROUTES["call_api_model"]["display_name"],
+            "execution_path": AVAILABLE_ROUTES["call_api_model"]["execution_path"],
             "status": "available" if paid_enabled else "unavailable",
             "approval": "spend_before_send_required",
             "spend": "paid_provider_possible",
@@ -427,15 +490,27 @@ def _classify_preview_action(
             "delete",
             "remove",
             "overwrite",
+            "create",
+            "create file",
             "write",
             "edit",
             "patch",
+            "apply generated",
+            "modify file",
+            "modify ",
+            "implement",
+            "proposed file change",
             "commit",
             "push",
             "terminal",
             "shell",
             "exec",
             "run command",
+            "npm run",
+            "pnpm",
+            "yarn",
+            "pytest",
+            "python -m",
         ],
     ):
         reasons.append("implementation_or_terminal_action")

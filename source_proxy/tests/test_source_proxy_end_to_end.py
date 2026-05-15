@@ -145,7 +145,8 @@ class SourceProxyEndToEndTests(unittest.TestCase):
 
         self.assertEqual(route["recommended_route"], "manual_route")
         self.assertIn("large_context", route["reason_codes"])
-        self.assertFalse(route["research_recommended"])
+        self.assertTrue(route["research_recommended"])
+        self.assertIn("repo_first_research", route["reason_codes"])
         self.assertTrue(research_route["research_recommended"])
 
         metadata = packet["context_metadata"]

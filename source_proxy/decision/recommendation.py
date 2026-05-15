@@ -8,6 +8,8 @@ from source_proxy.decision.router import DecisionInput, RouteDecision, decide_ro
 @dataclass(frozen=True)
 class ModelRecommendationInput:
     task: str
+    active_task_id: str | None = None
+    current_agent_role: str | None = None
     context_tokens: int | None = None
     sensitive: bool = False
     needs_current_info: bool = False
@@ -40,6 +42,8 @@ def recommend_model(input_data: ModelRecommendationInput) -> ModelRecommendation
     decision = decide_route(
         DecisionInput(
             task=input_data.task,
+            active_task_id=input_data.active_task_id,
+            current_agent_role=input_data.current_agent_role,
             context_tokens=input_data.context_tokens,
             sensitive=input_data.sensitive,
             needs_current_info=input_data.needs_current_info,
@@ -64,10 +68,16 @@ def _choose_models(
     decision: RouteDecision,
 ) -> tuple[str, str, str]:
     if decision.recommended_route == "local_route":
+        if input_data.active_task_id and _is_active_swarm_file_change(decision):
+            return (
+                "coder_agent",
+                "chatgpt",
+                "Active swarm plan increments with file-change targets stay on the local File Edit route so the Coder can produce a reviewable diff.",
+            )
         return (
-            "local_ollama",
+            "coder_agent",
             "chatgpt",
-            "Small, low-risk work should stay local before spending API or subscription attention.",
+            "Coding and debugging work should start in the Coder Agent so it can inspect repo context and try the fix directly.",
         )
 
     if input_data.needs_current_info or decision.task_classification == "current_research":
@@ -116,10 +126,19 @@ def _expected_action(route_type: str, primary_model: str) -> str:
     if route_type == "manual_route":
         return f"Generate a prompt packet and paste it into {primary_model} in the browser."
     if route_type == "local_route":
-        return "Use the local Ollama route or local tooling first."
+        return "Run with the Coder Agent first; use a manual prompt only if the task is blocked by missing access."
     if route_type == "api_route":
         return "Show API cost preview and require explicit approval before sending."
     return "Ask the user to choose manual browser, local, or paid API route."
+
+
+def _is_active_swarm_file_change(decision: RouteDecision) -> bool:
+    return (
+        decision.task_classification == "implementation"
+        or "implementation_requested" in decision.reason_codes
+        or "active_swarm_actionable_increment" in decision.reason_codes
+        or "repo_first_research" in decision.reason_codes
+    )
 
 
 def _looks_visual_or_design(task: str) -> bool:

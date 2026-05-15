@@ -103,6 +103,7 @@ export async function POST(req: Request) {
       teacherWebSearchEnabled,
       researchPlanSummary,
       oracleMemoryContext,
+      swarmAgentRole,
     } = await readSpiritRequest(req);
 
     const lastUser = lastUserTextFromMessages(uiMessages);
@@ -111,7 +112,9 @@ export async function POST(req: Request) {
     const surface: SpiritRuntimeSurface =
       runtimeSurface === "oracle" ? "oracle" : "chat";
     const ollamaModelId = resolveOllamaModelId(surface);
-    const spiritTools = await resolveSpiritToolsForOllamaModel(ollamaModelId);
+    const spiritTools = await resolveSpiritToolsForOllamaModel(ollamaModelId, {
+      swarmAgentRole,
+    });
     const webGlob = isWebSearchGloballyEnabled();
 
     const capabilityKind = detectCapabilityIntent(lastUser);
@@ -519,6 +522,7 @@ export async function POST(req: Request) {
       runtimeSurface: surface,
       systemState,
       oracleMemoryContext: oracleMemoryContext ?? null,
+      swarmAgentRole: swarmAgentRole ?? null,
     });
 
     const maxOutputTokens =

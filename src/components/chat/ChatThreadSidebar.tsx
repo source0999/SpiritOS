@@ -2,7 +2,7 @@
 
 // ── ChatThreadSidebar - GPT rail: oldSpiritOS-style DnD + inline folder mint ────
 import { useDroppable } from "@dnd-kit/core";
-import type { DragCancelEvent, DragEndEvent } from "@dnd-kit/core";
+import type { DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { ChevronRight, FolderPlus, MessageSquarePlus, Search, X } from "lucide-react";
 import {
@@ -234,12 +234,9 @@ export const ChatThreadSidebar = memo(function ChatThreadSidebar({
     clearHoverExpand();
   }, [clearHoverExpand]);
 
-  const handleDragCancel = useCallback(
-    (_e: DragCancelEvent) => {
-      resetThreadDragChrome();
-    },
-    [resetThreadDragChrome],
-  );
+  const handleDragCancel = useCallback(() => {
+    resetThreadDragChrome();
+  }, [resetThreadDragChrome]);
 
   const handleDragEnd = useCallback(
     (e: DragEndEvent) => {
