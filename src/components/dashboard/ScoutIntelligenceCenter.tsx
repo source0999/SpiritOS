@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { ArrowUp } from "lucide-react";
 
 import { DashboardDemoV4Atmosphere } from "@/components/dashboard/demo-v4/DashboardDemoV4Atmosphere";
 import { DashboardDemoV4FloatingNav } from "@/components/dashboard/demo-v4/DashboardDemoV4FloatingNav";
@@ -240,6 +241,10 @@ function scrollToSection(targetId: string) {
   target.focus({ preventScroll: true });
   target.classList.add("scout-center-section-active");
   window.setTimeout(() => target.classList.remove("scout-center-section-active"), 1400);
+}
+
+function scrollToScoutTop() {
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function cardTargetId(card: ScoutActionInboxCard): string {
@@ -790,6 +795,9 @@ export function ScoutIntelligenceCenter() {
           </>
         ) : null}
       </div>
+      <button type="button" className="scout-center-back-to-top" onClick={scrollToScoutTop} aria-label="Back to top">
+        <ArrowUp aria-hidden="true" size={18} strokeWidth={2.4} />
+      </button>
       <DashboardDemoV4FloatingNav />
     </main>
   );
