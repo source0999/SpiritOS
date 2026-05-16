@@ -11,6 +11,7 @@ from source_proxy.testing.runner import (
     PROFILE_CARTOGRAPHER_SOAK_SNAPSHOT,
     PROFILE_DEPENDENCY_ENVIRONMENT_CHECKS,
     PROFILE_GLOBAL_SAFETY_REGRESSION,
+    PROFILE_MOBILE_LAN_TAILSCALE_QA,
     PROFILE_PROXY_CLOSEOUT,
     PROFILE_PROXY_REGRESSION,
     PROFILE_PROXY_SMOKE,
@@ -772,6 +773,60 @@ class ProxyRunnerTests(unittest.TestCase):
         self.assertEqual(payload["result"], "fail")
         self.assertFalse(payload["checks"]["node_dependencies"])
         self.assertEqual(payload["recommendation"], "fix dependency or environment blockers")
+
+    def test_mobile_lan_tailscale_qa_reports_dashboard_and_approval_safety(self) -> None:
+        dashboard = {
+            "command": "node node_modules/vitest/vitest.mjs run mobile.test.ts",
+            "result": "pass",
+            "returncode": 0,
+            "missing_files": [],
+            "stdout": "9 passed",
+            "stderr": "",
+            "error": None,
+        }
+        approval = {
+            "result": "pass",
+            "blockers": [],
+            "warnings": [],
+            "checks": {"apply_requires_approved_status": True},
+        }
+        network = {
+            "result": "pass",
+            "blockers": [],
+            "warnings": ["dashboard localhost unavailable; start Next before browser QA"],
+            "dashboard_localhost": {"ok": False, "status": None, "body": "", "error": "closed"},
+            "tailscale_ip": {"returncode": None, "stdout": "", "stderr": "", "error": "missing"},
+            "manual_targets": ["desktop browser at http://localhost:3000"],
+        }
+
+        with mock.patch(
+            "source_proxy.testing.runner._git_status_short",
+            side_effect=["clean", "clean"],
+        ), mock.patch(
+            "source_proxy.testing.runner._git_head",
+            side_effect=["abc123", "abc123"],
+        ), mock.patch(
+            "source_proxy.testing.runner._run_dashboard_mobile_qa_tests",
+            return_value=dashboard,
+        ), mock.patch(
+            "source_proxy.testing.runner._dashboard_approval_safety_check",
+            return_value=approval,
+        ), mock.patch(
+            "source_proxy.testing.runner._lan_tailscale_reachability_check",
+            return_value=network,
+        ):
+            payload = run_runner_profile(profile=PROFILE_MOBILE_LAN_TAILSCALE_QA)
+
+        self.assertEqual(payload["result"], "pass")
+        self.assertTrue(payload["checks"]["dashboard_mobile_tests"])
+        self.assertTrue(payload["checks"]["approval_cannot_be_accidental"])
+        self.assertTrue(payload["checks"]["lan_tailscale_diagnostics"])
+
+        report = format_runner_report(payload)
+
+        self.assertIn("MOBILE LAN TAILSCALE QA", report)
+        self.assertIn("dashboard localhost unavailable", report)
+        self.assertIn("approval_cannot_be_accidental: PASS", report)
 
     def test_scout_smoke_profile_reports_read_only_snapshot(self) -> None:
         responses = {
