@@ -52,4 +52,19 @@ describe("ResearchPlanPanel", () => {
     fireEvent.click(screen.getByTestId("research-plan-cancel"));
     expect(onClose).toHaveBeenCalled();
   });
+
+  it("trinityLiquid exposes data-trinity-liquid for global glass CSS", () => {
+    const plan = draftResearchPlanFromPrompt("x");
+    const { container } = render(
+      <ResearchPlanPanel
+        open
+        plan={plan}
+        onClose={() => {}}
+        onPlanChange={() => {}}
+        onStartResearch={() => {}}
+        trinityLiquid
+      />,
+    );
+    expect(container.querySelector('[data-trinity-liquid="research-panel"]')).toBeTruthy();
+  });
 });

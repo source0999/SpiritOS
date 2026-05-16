@@ -136,6 +136,33 @@ describe("buildModelRuntime", () => {
     expect(r.systemPrompt).toContain("Researcher mode");
   });
 
+  it("injects the active swarm role profile without changing the base model profile", () => {
+    const r = buildModelRuntime("normal-peer", {
+      lastUserMessage: "Implement the planned patch",
+      swarmAgentRole: "coder",
+    });
+
+    expect(r.profile.id).toBe("normal-peer");
+    expect(r.systemPrompt).toContain("[SWARM AGENT PROFILE]");
+    expect(r.systemPrompt).toContain("Active role: Coder");
+    expect(r.systemPrompt).toContain("Use the shared LongRunningTask blackboard");
+  });
+
+  it("places swarm role profile after reasoning pattern and before evidence ladder", () => {
+    const r = buildModelRuntime("normal-peer", {
+      lastUserMessage: "Implement the planned patch",
+      swarmAgentRole: "debugger",
+    });
+
+    const idxPattern = r.systemPrompt.indexOf("[REASONING PATTERN]");
+    const idxSwarm = r.systemPrompt.indexOf("[SWARM AGENT PROFILE]");
+    const idxEvidence = r.systemPrompt.indexOf("[EVIDENCE LADDER]");
+
+    expect(idxPattern).toBeGreaterThanOrEqual(0);
+    expect(idxSwarm).toBeGreaterThan(idxPattern);
+    expect(idxEvidence).toBeGreaterThan(idxSwarm);
+  });
+
   it("Oracle surface instruction precedes web research digest", () => {
     const digest = "## Web research digest (stub)\nVerified URL sources (1):";
     const r = buildModelRuntime("researcher", {
@@ -193,8 +220,8 @@ describe("buildModelRuntime", () => {
   });
 
   it("Teacher + verified digest shifts budget to link-first Study aids", () => {
-    const digest = `## Web research digest (OpenAI Responses + web_search)
-Provider: OpenAI
+    const digest = `## Web research digest
+Provider: SearXNG
 Search used: yes
 User query: test
 Verified URL sources (2):

@@ -1,0 +1,63 @@
+# Generated Repomix bundles
+repomix-output*
+oldSpiritOS.xml
+config/*.env
+
+# Local runtime output and generated screenshots
+.codex-smoke/
+.codex-next-*.log
+.codex-next-*.err.log
+nohup.out
+
+# Large binary/media artifacts
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.mp4
+*.mov
+*.wav
+*.mp3
+*.zip
+
+# Reference sandboxes and local scratch areas
+_reference/
+chatDesign/
+data/
+source_proxy/data/
+.spirit-backups/
+source_proxy/.spirit-backups/
+
+.probe-*.log
+.source-proxy-*.log
+.source-proxy-*.err.log
+
+# ── Make repomix tiny & focused (critical for Cursor/AI) ───────────────────
+# Tests & test data
+**/__tests__/**
+**/*.test.*
+**/*.spec.*
+
+# Demos & old UI experiments
+src/components/dashboard/demo-v4/**
+src/app/design-demo/**
+**/*demo*.*
+spirit_oracle_fairy_demo.*
+spiritos_dashboard_finished_demo*
+
+# Blueprints (optional — keep only if actively working on them)
+# _blueprints/**
+
+# Large generated / packed files
+repomix-output*
+*.xml
+
+# Backend runtime data
+backend/searxng_data/**
+backend/volumes/**
+
+# Node / build
+.next/
+dist/
+node_modules/

@@ -3,9 +3,12 @@
 // -- SpiritTrinityChatShell - dashboard v4 chrome around the real SpiritChat runtime --
 import { useEffect, useState } from "react";
 
+import CodingAgentInterface from "@/components/coding/CodingAgentInterface";
 import { SpiritChat } from "@/components/chat/SpiritChat";
 import type { SpiritChatProps } from "@/components/chat/SpiritChat";
 import { DashboardDemoV4FloatingNav } from "@/components/dashboard/demo-v4/DashboardDemoV4FloatingNav";
+
+type TrinityWorkspaceSurface = "chat" | "coding";
 
 function ClientOnlySpiritChat(props: SpiritChatProps) {
   const [mounted, setMounted] = useState(false);
@@ -21,6 +24,8 @@ function ClientOnlySpiritChat(props: SpiritChatProps) {
 }
 
 export default function SpiritTrinityChatShell() {
+  const [surface, setSurface] = useState<TrinityWorkspaceSurface>("chat");
+
   return (
     <div className="spirit-trinity-chat fixed inset-0 flex overflow-hidden text-[var(--spirit-text)]">
       <div className="spirit-trinity-atmosphere" aria-hidden>
@@ -30,16 +35,58 @@ export default function SpiritTrinityChatShell() {
         <div className="spirit-trinity-atmosphere__veil" />
       </div>
 
-      <main className="spirit-trinity-live-chat min-w-0 flex-1">
-        <ClientOnlySpiritChat
-          persistence
-          variant="workspace"
-          showThreadSidebar
-          chromeVariant="trinity"
-          title="Spirit"
-          subtitle="Workspace 1.5"
-          shellClassName="h-full min-h-0"
-        />
+      <main className="spirit-trinity-live-chat flex min-h-0 min-w-0 flex-1 flex-col">
+        {/* ── Phase 7.1: coding agent shares one shell with Trinity chat (refinedProxy.md) ── */}
+        <div
+          className="flex shrink-0 flex-wrap gap-2 border-b border-white/[0.08] px-3 py-2"
+          role="tablist"
+          aria-label="Workspace surface"
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={surface === "chat"}
+            className={`border px-3 py-1.5 text-xs font-semibold tracking-wide transition-colors ${
+              surface === "chat"
+                ? "border-cyan-400/50 bg-cyan-500/10 text-cyan-200"
+                : "border-white/15 bg-white/[0.03] text-[var(--spirit-text)]/70 hover:border-white/25 hover:text-[var(--spirit-text)]"
+            }`}
+            onClick={() => setSurface("chat")}
+          >
+            Trinity chat
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={surface === "coding"}
+            className={`border px-3 py-1.5 text-xs font-semibold tracking-wide transition-colors ${
+              surface === "coding"
+                ? "border-cyan-400/50 bg-cyan-500/10 text-cyan-200"
+                : "border-white/15 bg-white/[0.03] text-[var(--spirit-text)]/70 hover:border-white/25 hover:text-[var(--spirit-text)]"
+            }`}
+            onClick={() => setSurface("coding")}
+          >
+            Source coding agent
+          </button>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-hidden">
+          {surface === "chat" ? (
+            <ClientOnlySpiritChat
+              persistence
+              variant="workspace"
+              showThreadSidebar
+              chromeVariant="trinity"
+              title="Spirit"
+              subtitle="Workspace 1.5"
+              shellClassName="h-full min-h-0"
+            />
+          ) : (
+            <div className="h-full min-h-0 overflow-auto">
+              <CodingAgentInterface embedded />
+            </div>
+          )}
+        </div>
       </main>
 
       <DashboardDemoV4FloatingNav desktopVariant="full-height" />

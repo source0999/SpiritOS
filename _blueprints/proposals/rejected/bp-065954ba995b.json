@@ -1,0 +1,60 @@
+{
+  "action_taken": false,
+  "affected_blueprints": [
+    "system-state"
+  ],
+  "applied": false,
+  "approved_at": "2026-05-16T19:30:59Z",
+  "approved_by": "dashboard-blueprint-review",
+  "approved_diff": "diff --git a/_blueprints/current/system_state.md b/_blueprints/current/system_state.md\n--- a/_blueprints/current/system_state.md\n+++ b/_blueprints/current/system_state.md\n@@\n+### Cartographer Review Note\n+- Reason: component_code_changed.\n+- Component: scout.\n+- Changed files: scout/=8,, scout/soak-logs/scout-soak-snapshot-2026-05-16T160750Z.json, scout/soak-logs/scout-soak-snapshot-2026-05-16T161258Z.json, scout/src/scout/api/discovery_jobs.py, scout/src/scout/api/human.py, scout/src/scout/api/overview.py, scout/src/scout/api/packets.py, scout/src/scout/api/sources.py.\n+- Manual check: confirm this blueprint still matches the changed implementation.",
+  "changed_files": [
+    "scout/=8,",
+    "scout/soak-logs/scout-soak-snapshot-2026-05-16T160750Z.json",
+    "scout/soak-logs/scout-soak-snapshot-2026-05-16T161258Z.json",
+    "scout/src/scout/api/discovery_jobs.py",
+    "scout/src/scout/api/human.py",
+    "scout/src/scout/api/overview.py",
+    "scout/src/scout/api/packets.py",
+    "scout/src/scout/api/sources.py",
+    "scout/src/scout/sources/discovery_jobs.py",
+    "scout/src/scout/sources/scoring.py",
+    "scout/src/scout/sources/search_candidates.py",
+    "scout/src/scout/tests/test_discovery_jobs.py",
+    "scout/src/scout/tests/test_packets_api.py",
+    "scout/src/scout/tests/test_search_candidate_extraction.py",
+    "scout/src/scout/tests/test_sources_api.py"
+  ],
+  "component": "scout",
+  "confidence": "medium",
+  "diff_preview": "diff --git a/_blueprints/current/system_state.md b/_blueprints/current/system_state.md\n--- a/_blueprints/current/system_state.md\n+++ b/_blueprints/current/system_state.md\n@@\n+### Cartographer Review Note\n+- Reason: component_code_changed.\n+- Component: scout.\n+- Changed files: scout/=8,, scout/soak-logs/scout-soak-snapshot-2026-05-16T160750Z.json, scout/soak-logs/scout-soak-snapshot-2026-05-16T161258Z.json, scout/src/scout/api/discovery_jobs.py, scout/src/scout/api/human.py, scout/src/scout/api/overview.py, scout/src/scout/api/packets.py, scout/src/scout/api/sources.py.\n+- Manual check: confirm this blueprint still matches the changed implementation.",
+  "generated": false,
+  "persisted": true,
+  "project_id": "spiritos",
+  "proposal_id": "bp-065954ba995b",
+  "proposed_files": [
+    "_blueprints/current/system_state.md"
+  ],
+  "rationale": "component_code_changed affected scout; Cartographer drafted a doc-only preview for dashboard review.",
+  "rejection_reason": "Needs a narrower diff.",
+  "requires_approval": true,
+  "status": "approved",
+  "title": "Draft blueprint update for scout",
+  "transitions": [
+    {
+      "actor": "cartographer",
+      "status": "drafted",
+      "timestamp": "2026-05-16T19:16:08Z"
+    },
+    {
+      "actor": "dashboard-blueprint-review",
+      "status": "rejected",
+      "timestamp": "2026-05-16T19:16:08Z"
+    },
+    {
+      "actor": "dashboard-blueprint-review",
+      "status": "approved",
+      "timestamp": "2026-05-16T19:30:59Z"
+    }
+  ],
+  "type": "blueprint_update"
+}

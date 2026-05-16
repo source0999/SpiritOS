@@ -1,0 +1,64 @@
+{
+  "action_taken": true,
+  "affected_blueprints": [
+    "system-state"
+  ],
+  "applied": true,
+  "applied_at": "2026-05-16T22:02:59Z",
+  "applied_by": "Britton",
+  "applied_files": [
+    "_blueprints/current/system_state.md"
+  ],
+  "approved_diff": "diff --git a/_blueprints/current/system_state.md b/_blueprints/current/system_state.md\n--- a/_blueprints/current/system_state.md\n+++ b/_blueprints/current/system_state.md\n@@ -219,3 +219,9 @@\n - Component: scout.\n - Changed files: scout/=8,, scout/docs/V0_4_SCOUT_POLISH_CLOSEOUT.md, scout/soak-logs/scout-soak-snapshot-2026-05-16T160750Z.json, scout/soak-logs/scout-soak-snapshot-2026-05-16T161258Z.json, scout/soak-logs/scout-soak-snapshot-2026-05-16T194610Z.json, scout/src/scout/api/discovery_jobs.py, scout/src/scout/api/human.py, scout/src/scout/api/overview.py.\n - Manual check: confirm this blueprint still matches the changed implementation.\n+\n+### Cartographer Review Note\n+- Reason: route_changed.\n+- Component: architecture.\n+- Changed files: src/app/api/scout/source-candidates/batch-approve/route.ts, src/app/api/scout/sources/route.ts, src/app/v1/cartographer/audit-trail/route.ts, src/app/v1/cartographer/branch-recommendations/[recommendationId]/approve/route.ts, src/app/v1/cartographer/branch-recommendations/route.ts, src/app/v1/cartographer/commit-proposals/[commitProposalId]/approve/route.ts, src/app/v1/cartographer/project-health/route.ts, src/app/v1/cartographer/proposals/[proposalId]/apply-approved/route.ts.\n+- Manual check: confirm this blueprint still matches the changed implementation.",
+  "changed_files": [
+    "src/app/api/scout/source-candidates/batch-approve/route.ts",
+    "src/app/api/scout/sources/route.ts",
+    "src/app/v1/cartographer/audit-trail/route.ts",
+    "src/app/v1/cartographer/branch-recommendations/[recommendationId]/approve/route.ts",
+    "src/app/v1/cartographer/branch-recommendations/route.ts",
+    "src/app/v1/cartographer/commit-proposals/[commitProposalId]/approve/route.ts",
+    "src/app/v1/cartographer/project-health/route.ts",
+    "src/app/v1/cartographer/proposals/[proposalId]/apply-approved/route.ts",
+    "src/app/v1/cartographer/proposals/[proposalId]/review/route.ts",
+    "src/app/v1/cartographer/proposals/route.ts",
+    "src/app/v1/cartographer/push-queue/[pushId]/approve/route.ts",
+    "src/app/v1/cartographer/push-queue/route.ts"
+  ],
+  "committed": false,
+  "component": "architecture",
+  "confidence": "medium",
+  "diff_preview": "diff --git a/_blueprints/current/system_state.md b/_blueprints/current/system_state.md\n--- a/_blueprints/current/system_state.md\n+++ b/_blueprints/current/system_state.md\n@@ -219,3 +219,9 @@\n - Component: scout.\n - Changed files: scout/=8,, scout/docs/V0_4_SCOUT_POLISH_CLOSEOUT.md, scout/soak-logs/scout-soak-snapshot-2026-05-16T160750Z.json, scout/soak-logs/scout-soak-snapshot-2026-05-16T161258Z.json, scout/soak-logs/scout-soak-snapshot-2026-05-16T194610Z.json, scout/src/scout/api/discovery_jobs.py, scout/src/scout/api/human.py, scout/src/scout/api/overview.py.\n - Manual check: confirm this blueprint still matches the changed implementation.\n+\n+### Cartographer Review Note\n+- Reason: route_changed.\n+- Component: architecture.\n+- Changed files: src/app/api/scout/source-candidates/batch-approve/route.ts, src/app/api/scout/sources/route.ts, src/app/v1/cartographer/audit-trail/route.ts, src/app/v1/cartographer/branch-recommendations/[recommendationId]/approve/route.ts, src/app/v1/cartographer/branch-recommendations/route.ts, src/app/v1/cartographer/commit-proposals/[commitProposalId]/approve/route.ts, src/app/v1/cartographer/project-health/route.ts, src/app/v1/cartographer/proposals/[proposalId]/apply-approved/route.ts.\n+- Manual check: confirm this blueprint still matches the changed implementation.",
+  "generated": false,
+  "persisted": true,
+  "project_id": "spiritos",
+  "proposal_id": "bp-bd381907c203",
+  "proposed_files": [
+    "_blueprints/current/system_state.md"
+  ],
+  "pushed": false,
+  "rationale": "route_changed affected architecture; Cartographer drafted a doc-only preview for dashboard review.",
+  "rejection_reason": null,
+  "requires_approval": true,
+  "status": "applied",
+  "task_id": "task_4475fcb84729",
+  "title": "Draft blueprint update for architecture",
+  "transitions": [
+    {
+      "actor": "cartographer",
+      "status": "drafted",
+      "timestamp": "2026-05-16T21:59:33Z"
+    },
+    {
+      "actor": "Britton",
+      "status": "approved",
+      "timestamp": "2026-05-16T21:59:33Z"
+    },
+    {
+      "actor": "Britton",
+      "status": "applied",
+      "timestamp": "2026-05-16T22:02:59Z"
+    }
+  ],
+  "type": "blueprint_update",
+  "verification_status": "verified"
+}

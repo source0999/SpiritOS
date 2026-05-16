@@ -22,11 +22,11 @@ describe("spirit-search-telemetry", () => {
 
   it("buildSpiritSearchHeaders yields only ByteString-safe header values", () => {
     const h = buildSpiritSearchHeaders({
-      routeLane: "openai-web-search",
+      routeLane: "local-web-search",
       routeConfidence: "high",
       webSearch: "used",
       searchStatus: "used",
-      provider: "openai",
+      provider: "searxng",
       sourceCount: 1,
       queryTrimmed: "hello\u2026world",
       elapsedMs: 1,
@@ -46,7 +46,7 @@ describe("spirit-search-telemetry", () => {
   it("logSpiritSearchEvent never includes api key shaped strings", () => {
     const spy = vi.spyOn(console, "log").mockImplementation(() => {});
     logSpiritSearchEvent({
-      route: "openai-web-search",
+      route: "local-web-search",
       status: "failed",
       mode: "researcher",
       queryTrimmed: "ok",
@@ -60,21 +60,21 @@ describe("spirit-search-telemetry", () => {
 
   it("buildSpiritSearchHeaders emits source count and search status", () => {
     const h = buildSpiritSearchHeaders({
-      routeLane: "openai-web-search",
+      routeLane: "local-web-search",
       routeConfidence: "high",
       webSearch: "used",
       searchStatus: "used",
-      provider: "openai",
+      provider: "searxng",
       sourceCount: 3,
       queryTrimmed: "aba reinforcement",
       elapsedMs: 1200,
       searchKind: "researcher",
       skipReason: null,
-      webSourcesJson: '{"provider":"openai","count":3,"sources":[]}',
+      webSourcesJson: '{"provider":"searxng","count":3,"sources":[]}',
     });
     expect(h["x-spirit-source-count"]).toBe("3");
     expect(h["x-spirit-search-status"]).toBe("used");
-    expect(h["x-spirit-search-provider"]).toBe("openai");
+    expect(h["x-spirit-search-provider"]).toBe("searxng");
     expect(h["x-spirit-search-elapsed-ms"]).toBe("1200");
     expect(h["x-spirit-search-query"]).toContain("aba");
   });

@@ -48,9 +48,14 @@ vi.mock("@/lib/server/spirit-diagnostics", () => ({
 }));
 
 const mockSpawnNoShell = vi.hoisted(() => vi.fn());
+const runWebSearchSpy = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/spirit/tools/child-process-spawn", () => ({
   spawnNoShell: mockSpawnNoShell,
+}));
+
+vi.mock("@/lib/server/web-search/provider-router", () => ({
+  runWebSearch: runWebSearchSpy,
 }));
 
 vi.mock("ai", async (importOriginal) => {
@@ -400,6 +405,110 @@ describe("POST /api/spirit capability bridge", () => {
   });
 });
 
+describe("POST /api/spirit researcher web search", () => {
+  beforeEach(() => {
+    vi.stubEnv("WEB_SEARCH_ENABLED", "true");
+    runWebSearchSpy.mockResolvedValue({
+      ok: true,
+      searched: true,
+      provider: "searxng",
+      query: "research latest vite release notes with sources",
+      sources: [{ title: "Vite", url: "https://vite.dev/blog", snippet: "Release notes" }],
+      elapsedMs: 7,
+      providerTrace: [{ provider: "searxng", status: "used", sourceCount: 1 }],
+    });
+    vi.mocked(streamText).mockClear();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.clearAllMocks();
+  });
+
+  it("routes Researcher prefetch through the provider router and injects generic digest context", async () => {
+    const req = new Request("http://localhost/api/spirit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(
+        jsonBody({
+          modelProfileId: "researcher",
+          messages: [
+            {
+              role: "user",
+              id: "u-research",
+              parts: [{ type: "text", text: "research latest vite release notes with sources" }],
+            },
+          ],
+        }),
+      ),
+    });
+
+    await POST(req);
+
+    expect(runWebSearchSpy).toHaveBeenCalledWith({
+      query: "research latest vite release notes with sources",
+    });
+    const opts = vi.mocked(streamText).mock.calls[0]?.[0] as { system?: string };
+    expect(opts.system).toContain("## Web research digest");
+    expect(opts.system).toContain("Provider: SearXNG");
+    expect(opts.system).toContain("https://vite.dev/blog");
+    expect(opts.system).not.toContain("Responses + web_search");
+  });
+});
+
+describe("POST /api/spirit teacher web aids", () => {
+  beforeEach(() => {
+    vi.stubEnv("WEB_SEARCH_ENABLED", "true");
+    runWebSearchSpy.mockResolvedValue({
+      ok: true,
+      searched: true,
+      provider: "searxng",
+      query: "Explain the latest peer-reviewed studies on sleep and cognition for my exam",
+      sources: [{ title: "Sleep study", url: "https://example.edu/sleep", snippet: "Peer-reviewed summary" }],
+      elapsedMs: 6,
+      providerTrace: [{ provider: "searxng", status: "used", sourceCount: 1 }],
+    });
+    vi.mocked(streamText).mockClear();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.clearAllMocks();
+  });
+
+  it("routes Teacher study-aids prefetch through the provider router", async () => {
+    const req = new Request("http://localhost/api/spirit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(
+        jsonBody({
+          modelProfileId: "teacher",
+          teacherWebSearchEnabled: true,
+          messages: [
+            {
+              role: "user",
+              id: "u-teacher",
+              parts: [{ type: "text", text: "Explain the latest peer-reviewed studies on sleep and cognition for my exam" }],
+            },
+          ],
+        }),
+      ),
+    });
+
+    await POST(req);
+
+    expect(runWebSearchSpy).toHaveBeenCalledWith({
+      query: "Explain the latest peer-reviewed studies on sleep and cognition for my exam",
+      maxResults: 4,
+    });
+    const opts = vi.mocked(streamText).mock.calls[0]?.[0] as { system?: string };
+    expect(opts.system).toContain("## Web research digest");
+    expect(opts.system).toContain("Provider: SearXNG");
+    expect(opts.system).toContain("https://example.edu/sleep");
+    expect(opts.system).not.toContain("Responses + web_search");
+  });
+});
+
 describe("POST /api/spirit streamText tools wiring", () => {
   beforeEach(async () => {
     vi.stubEnv("WEB_SEARCH_ENABLED", "false");
@@ -674,7 +783,7 @@ describe("POST /api/spirit streamText tools wiring", () => {
     const res = await POST(req);
     expect(vi.mocked(streamText)).not.toHaveBeenCalled();
     const raw = await res.text();
-    expect(raw).toMatch(/Files in C:\\Projects/i);
+    expect(raw).toContain("Files in C:\\\\Projects");
     expect(raw).toContain("[dir] SpiritOS");
     vi.unstubAllGlobals();
   });

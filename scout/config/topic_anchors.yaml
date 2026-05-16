@@ -1,0 +1,13 @@
+# Edit these anchors to match the coding and research topics Scout should surface.
+version: 1
+anchors:
+  - python
+  - fastapi
+  - typescript
+  - local-llm
+  - agents
+  - sqlite
+  - docker
+  - security
+  - embeddings
+  - developer-tools

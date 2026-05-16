@@ -1,0 +1,55 @@
+{
+  "action_taken": true,
+  "affected_blueprints": [
+    "dashboard-state"
+  ],
+  "applied": true,
+  "applied_at": "2026-05-16T22:55:36Z",
+  "applied_by": "Britton",
+  "applied_files": [
+    "_blueprints/current/dashboard_state.md"
+  ],
+  "approved_diff": "diff --git a/_blueprints/current/dashboard_state.md b/_blueprints/current/dashboard_state.md\n--- a/_blueprints/current/dashboard_state.md\n+++ b/_blueprints/current/dashboard_state.md\n@@ -54,3 +54,9 @@\n - Component: dashboard.\n - Changed files: src/components/dashboard/HomelabBlueprintReviewWidget.tsx, src/components/dashboard/HomelabCartographerWidget.tsx, src/components/dashboard/HomelabScoutIntelligenceWidget.tsx, src/components/dashboard/HomelabTestRunnerWidget.tsx, src/components/dashboard/ScoutIntelligenceCenter.tsx, src/components/dashboard/__tests__/HomelabBlueprintReviewWidget.test.tsx, src/components/dashboard/__tests__/HomelabScoutIntelligenceWidget.test.tsx, src/components/dashboard/__tests__/HomelabTestRunnerWidget.test.tsx.\n - Manual check: confirm this blueprint still matches the changed implementation.\n+\n+### Cartographer Review Note\n+- Reason: component_code_changed.\n+- Component: dashboard.\n+- Changed files: src/components/dashboard/ScoutIntelligenceCenter.tsx.\n+- Manual check: confirm this blueprint still matches the changed implementation.",
+  "changed_files": [
+    "src/components/dashboard/ScoutIntelligenceCenter.tsx"
+  ],
+  "committed": false,
+  "component": "dashboard",
+  "confidence": "medium",
+  "deduped": true,
+  "diff_preview": "diff --git a/_blueprints/current/dashboard_state.md b/_blueprints/current/dashboard_state.md\n--- a/_blueprints/current/dashboard_state.md\n+++ b/_blueprints/current/dashboard_state.md\n@@ -54,3 +54,9 @@\n - Component: dashboard.\n - Changed files: src/components/dashboard/HomelabBlueprintReviewWidget.tsx, src/components/dashboard/HomelabCartographerWidget.tsx, src/components/dashboard/HomelabScoutIntelligenceWidget.tsx, src/components/dashboard/HomelabTestRunnerWidget.tsx, src/components/dashboard/ScoutIntelligenceCenter.tsx, src/components/dashboard/__tests__/HomelabBlueprintReviewWidget.test.tsx, src/components/dashboard/__tests__/HomelabScoutIntelligenceWidget.test.tsx, src/components/dashboard/__tests__/HomelabTestRunnerWidget.test.tsx.\n - Manual check: confirm this blueprint still matches the changed implementation.\n+\n+### Cartographer Review Note\n+- Reason: component_code_changed.\n+- Component: dashboard.\n+- Changed files: src/components/dashboard/ScoutIntelligenceCenter.tsx.\n+- Manual check: confirm this blueprint still matches the changed implementation.",
+  "fingerprint": "8fe32cca35e3e605",
+  "generated": false,
+  "persisted": true,
+  "project_id": "spiritos",
+  "proposal_id": "bp-spiritos-dashboard-component-code-changed-8fe32cca",
+  "proposed_files": [
+    "_blueprints/current/dashboard_state.md"
+  ],
+  "pushed": false,
+  "rationale": "component_code_changed affected dashboard; Cartographer drafted a doc-only preview for dashboard review.",
+  "rejection_reason": null,
+  "requires_approval": true,
+  "status": "applied",
+  "task_id": "task_e0f7bea8b67e",
+  "title": "Draft blueprint update for dashboard",
+  "transitions": [
+    {
+      "actor": "cartographer",
+      "status": "drafted",
+      "timestamp": "2026-05-16T22:55:35Z"
+    },
+    {
+      "actor": "Britton",
+      "status": "approved",
+      "timestamp": "2026-05-16T22:55:35Z"
+    },
+    {
+      "actor": "Britton",
+      "status": "applied",
+      "timestamp": "2026-05-16T22:55:36Z"
+    }
+  ],
+  "type": "blueprint_update",
+  "verification_status": "verified"
+}

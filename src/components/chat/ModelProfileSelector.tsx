@@ -14,6 +14,8 @@ export type ModelProfileSelectorProps = {
   compact?: boolean;
   /** Mobile chat top bar: hide visible “Mode” label, cap select width so Voice/Threads survive. */
   variant?: "default" | "topBar";
+  /** Trinity /chat: shared liquid-glass select surface (Language C). */
+  trinityLiquid?: boolean;
 };
 
 export const ModelProfileSelector = memo(function ModelProfileSelector({
@@ -22,6 +24,7 @@ export const ModelProfileSelector = memo(function ModelProfileSelector({
   disabled = false,
   compact = false,
   variant = "default",
+  trinityLiquid = false,
 }: ModelProfileSelectorProps) {
   const topBar = variant === "topBar";
   return (
@@ -51,6 +54,8 @@ export const ModelProfileSelector = memo(function ModelProfileSelector({
           "disabled:cursor-not-allowed disabled:opacity-40",
           compact && "py-1 text-[10px]",
           topBar && "max-w-[130px] flex-1 truncate py-1.5 text-[10px]",
+          trinityLiquid &&
+            "spirit-trinity-glass-select border-transparent bg-transparent shadow-none ring-0 focus:border-transparent focus:ring-0",
         )}
       >
         {MODEL_PROFILE_ORDER.map((id) => (

@@ -22,8 +22,13 @@ ollama pull hermes4
 # Certs for dev:https:lan - run once if ./certificates/spirit-dev*.pem are missing (see “Tailscale / LAN dev” below)
 # SPIRIT_TLS_EXTRA_HOSTS=10.0.0.186,100.111.32.31 bash scripts/gen-dev-cert.sh
 
-# Next HTTPS dev on 0.0.0.0 (LAN/Tailscale - generate certs once; see “Tailscale / LAN dev” below)
+# Terminal 1: Next HTTPS visual app on 0.0.0.0:3000
+# LAN/Tailscale - generate certs once; see “Tailscale / LAN dev” below.
 npm run dev:https:lan
+
+# Terminal 2: Source proxy HTTPS API on 0.0.0.0:8787
+# First run only on a new Linux host: npm run proxy:bootstrap
+npm run proxy:https:lan
 ```
 
 **Optional - Docker backends first, then same HTTPS dev:** `npm run dev:all:https:lan` (or run `(cd backend && docker compose up -d)` yourself, then `npm run dev:https:lan`).
@@ -34,9 +39,27 @@ npm run dev:https:lan
 curl -k -sS https://localhost:3000/api/spirit/health
 ```
 
+**Source proxy health check (VRAM diagnostics):**
+
+```bash
+curl -k -sS https://localhost:8787/healthcheck
+```
+
 **Brain vs TTS (do not conflate them):** `/api/spirit` uses `OLLAMA_MODEL` for `/chat` text generation. `/oracle` can use `ORACLE_OLLAMA_MODEL` when set. Voice is synthesized via same-origin **`/api/tts`** (`TTS_PROVIDER=piper` or `elevenlabs`); the browser never sees `ELEVENLABS_API_KEY`. Optional `ELEVENLABS_VOICE_SPEED` (default 1.12, clamped 0.7–1.2) sets ElevenLabs cadence; Voice settings can send a per-request `speed` override. **`GET /api/tts/voices`** feeds the Voice picker. **`ELEVENLABS_VOICE_ALLOWLIST`** supports **`Clarice:voice_id`** (recommended, no catalog read) or comma-separated **names only** (needs catalog + `voices_read`; if the catalog fails, switch to `Name:voice_id`). When any allowlist is set, the API returns **only** those voices - never the full catalog. Defaults prefer **`ELEVENLABS_DEFAULT_VOICE_ID`**, then **Clarice** by name, then **`ELEVENLABS_VOICE_ID`**. Response **`X-Spirit-TTS-Voice-Name-Encoded`** keeps display names ASCII-safe for Tailscale.
 
-**Prompt 10B / 10C-C / 10D-F:** Mode presets + **response token caps** (Sassy/Brutal/Peer stay short on casual prompts). **`/oracle`** adds a **voice surface** layer on top of the same modes (`buildRuntimeSurfaceInstruction`) - live spoken context, not coding-default; tighter caps apply only when `runtimeSurface=oracle`. **Deep think** and **Web search** prefs live under the `/chat` composer (`localStorage` key `spirit:threadUiPrefs:v2`; Researcher web defaults **ON** with tri-state `unset|enabled|disabled` - legacy `o:true` migrates to disabled). Assistant text passes **`sanitizeAssistantVisibleText`** before render, copy, TTS, and Dexie persist - strips `<think>` / leaked mode-contract lines. Researcher gets **source enforcement**: no fake `[n]` citations or Sources sections when search returned no verified `http(s)` URLs; `/api/spirit` adds `x-spirit-source-count`, `x-spirit-search-provider`, `x-spirit-search-status`, **`x-spirit-runtime-surface`**. Teacher + **Web search on** + educational prompts can prefetch OpenAI web for real **Study aids** links; otherwise **Study aids to search** (quoted phrases, no invented URLs). Research plan panel + workflow visualizer clear on thread/draft switch and sit **above** the composer; visualizer has a **compact** idle line after dismiss on casual modes.
+**Prompt 10B / 10C-C / 10D-F:** Mode presets + **response token caps** (Sassy/Brutal/Peer stay short on casual prompts). **`/oracle`** adds a **voice surface** layer on top of the same modes (`buildRuntimeSurfaceInstruction`) - live spoken context, not coding-default; tighter caps apply only when `runtimeSurface=oracle`. **Deep think** and **Web search** prefs live under the `/chat` composer (`localStorage` key `spirit:threadUiPrefs:v2`; Researcher web defaults **ON** with tri-state `unset|enabled|disabled` - legacy `o:true` migrates to disabled). Assistant text passes **`sanitizeAssistantVisibleText`** before render, copy, TTS, and Dexie persist - strips `<think>` / leaked mode-contract lines. Researcher gets **source enforcement**: no fake `[n]` citations or Sources sections when search returned no verified `http(s)` URLs; `/api/spirit` adds `x-spirit-source-count`, `x-spirit-search-provider`, `x-spirit-search-status`, **`x-spirit-runtime-surface`**. Teacher + **Web search on** + educational prompts can prefetch provider-router web sources for real **Study aids** links; otherwise **Study aids to search** (quoted phrases, no invented URLs). Research plan panel + workflow visualizer clear on thread/draft switch and sit **above** the composer; visualizer has a **compact** idle line after dismiss on casual modes.
+
+**Local-first web search env:** `/api/research/web-search` and `/api/spirit` Researcher/Teacher prefetch use the provider router. Server web search is disabled by default with `WEB_SEARCH_ENABLED=false`. The default provider order is `WEB_SEARCH_PROVIDER_ORDER=cache,searxng`; set `SEARXNG_URL=http://127.0.0.1:8080` when the optional local SearXNG profile is running. Direct page fetch is not in the default ladder and requires `WEB_SEARCH_FETCH_PAGE_ENABLED=true`. Its robots handling is conservative best-effort, not full RFC 9309 compliance: a 4xx `/robots.txt` response is treated as no policy found, while 5xx, network errors, and timeouts block direct fetch. Paid OpenAI fallback stays off with `WEB_SEARCH_PAID_FALLBACK_ENABLED=false` and requires explicit approval via `WEB_SEARCH_PAID_FALLBACK_REQUIRES_APPROVAL=true`.
+
+**Optional local SearXNG:** disabled by default. Start it only when you want local/free search:
+
+```bash
+cd backend
+docker compose --profile local-search up -d searxng
+curl "http://127.0.0.1:8080/search?q=test&format=json"
+```
+
+If the curl response is HTML instead of JSON, check `backend/searxng.yml` and confirm `search.formats` includes `json`, then restart SearXNG.
 
 **Routes**
 
@@ -55,9 +78,61 @@ curl -k -sS https://localhost:3000/api/spirit/health
 | **`GET /api/telemetry/self`** | Same schema when served by a node/agent (e.g. **`scripts/spiritdesktop-windows/agent.js`** on LAN). |
 | **`GET /api/telemetry/capabilities`** | Read-only **capability registry** JSON for UI and deterministic chat answers. |
 
-**Not wired yet:** chat UI cannot browse arbitrary folders; **app-level SSH execution** is not integrated (manual SSH outside the app is fine). See **Next Work Order** below.
+**Not wired yet:** app-level SSH execution is not integrated (manual SSH outside the app is fine). See **Next Work Order** below.
 
-**Optional Windows folder bridge:** `scripts/spiritdesktop-windows/agent.js` can expose read-only `POST /api/files/list` when `SPIRIT_DESKTOP_FS_ENABLED=true` on the Windows agent and the requested path is under `SPIRIT_DESKTOP_FS_ALLOWLIST` (default example: `C:\Projects`). The Next app calls it only when `SPIRIT_WINDOWS_FS_ENABLED=true` plus `SPIRIT_WINDOWS_FS_BASE_URL`, `SPIRIT_WINDOWS_FS_TOKEN`, and `SPIRIT_WINDOWS_FS_ALLOWLIST` are configured. This is not arbitrary drive browsing.
+### Windows desktop agent: telemetry + scoped `C:\Projects` file access
+
+Spirit chat can list an allowlisted Windows folder through `scripts/spiritdesktop-windows/agent.js`. The verified prompt was `whats in my c/projects folder?`, which returned a listing from `C:\Projects` via the Windows agent. This is **read-only**, scoped folder access; it is not arbitrary whole-machine browsing.
+
+Run the PowerShell command below on the Windows/main PC from the folder containing `agent.js` and `windows-drive-type.js`. If the Windows machine is using a copied runtime folder, copy both `scripts/spiritdesktop-windows/agent.js` and `scripts/spiritdesktop-windows/windows-drive-type.js` into that folder before launching. Editing the repo copy does not update an already-running copied agent.
+
+The Windows agent exposes `POST /api/files/list` only when `SPIRIT_DESKTOP_FS_ENABLED=true` and the requested path is under `SPIRIT_DESKTOP_FS_ALLOWLIST`. The Next app calls it only when `SPIRIT_WINDOWS_FS_ENABLED=true` plus `SPIRIT_WINDOWS_FS_BASE_URL`, `SPIRIT_WINDOWS_FS_TOKEN`, and `SPIRIT_WINDOWS_FS_ALLOWLIST` are configured.
+
+The token must match between `SPIRIT_TELEMETRY_TOKEN` on Windows and `SPIRIT_WINDOWS_FS_TOKEN` on the Dell. The allowlist defaults to `C:\Projects`, but keep it explicit. Spirit can list/read only allowed Windows paths, not the whole machine. Do not use angle brackets in `SPIRIT_WINDOWS_FS_BASE_URL`.
+
+Working PowerShell launch command on the Windows desktop agent:
+
+```powershell
+$env:PORT="3000"
+$env:SPIRIT_TELEMETRY_TOKEN="3399"
+$env:SPIRIT_DESKTOP_FS_ENABLED="true"
+$env:SPIRIT_DESKTOP_FS_ALLOWLIST="C:\Projects"
+node .\agent.js
+```
+
+Matching Dell/Next `.env.local` settings:
+
+```bash
+SPIRIT_ENABLE_LOCAL_TOOLS=true
+SPIRIT_OLLAMA_SUPPORTS_TOOLS=true
+SPIRIT_WINDOWS_FS_ENABLED=true
+SPIRIT_WINDOWS_FS_BASE_URL=http://REPLACE_WITH_WINDOWS_LAN_IP:3000
+SPIRIT_WINDOWS_FS_TOKEN=3399
+SPIRIT_WINDOWS_FS_ALLOWLIST=C:\Projects
+SPIRITDESKTOP_TELEMETRY_URL=http://REPLACE_WITH_WINDOWS_LAN_IP:3000/api/telemetry/self
+SPIRIT_TELEMETRY_TOKEN=3399
+```
+
+Verify telemetry from the Dell:
+
+```bash
+curl -H "Authorization: Bearer 3399" http://REPLACE_WITH_WINDOWS_LAN_IP:3000/api/telemetry/self
+```
+
+Verify from Spirit chat:
+
+```text
+whats in my c/projects folder?
+```
+
+Expected result: Spirit should return `Files in C:\Projects` with directories like `clinicPitch`, `crash-course`, `demo`, `DemoChat`, `fades-and-facials`, `hivemind`, `homelab`, and any other current allowlisted entries.
+
+Troubleshooting:
+
+- `The Windows agent rejected the bearer token.` means `SPIRIT_TELEMETRY_TOKEN` and `SPIRIT_WINDOWS_FS_TOKEN` do not match, or the wrong/old process is running.
+- `filesystem endpoint missing` means the Windows machine is running an older copied `agent.js`; copy the updated agent and restart `node .\agent.js`.
+- `outside allowlist` means `SPIRIT_DESKTOP_FS_ALLOWLIST` or `SPIRIT_WINDOWS_FS_ALLOWLIST` does not include the requested path.
+- `unreachable` means the Dell cannot reach the Windows LAN IP or port `3000`.
 
 ## Current Checkpoint
 
@@ -70,7 +145,7 @@ curl -k -sS https://localhost:3000/api/spirit/health
 - **Chat + Oracle tone** - normal dating/social advice stays in scope; **consent and safety boundaries** remain enforced (Hermes/Oracle behavior refined; not a license to ignore policy).
 - **Oracle visuals** - orb / fairy / visualizer direction has started; **`/oracle` still needs a full design-system pass** (polish backlog).
 - **Manual Dell → desktop SSH** exists **outside** the app; **in-app SSH tools / execution are not wired** yet.
-- **File/folder browsing from chat** is scoped: workspace reads stay under `SPIRIT_PROJECT_PATH`; Windows folder listing requires the optional SpiritDesktop filesystem bridge and allowlisted roots.
+- **File/folder browsing from chat** is scoped and now verified for allowlisted Windows folders: workspace reads stay under `SPIRIT_PROJECT_PATH`; Windows folder listing goes through the SpiritDesktop filesystem bridge and allowlisted roots such as `C:\Projects`.
 - **Project / progress tracker** - **planned**, not implemented (see **`_blueprints/progress_tracker_roadmap.md`**).
 
 ## Where I Left Off
@@ -80,8 +155,37 @@ curl -k -sS https://localhost:3000/api/spirit/health
 - **Sitewide iOS/Android responsiveness** - needs a focused pass (breakpoints, touch, safe areas).
 - **Personality / profile** - clearer settings, memory hygiene, and separation of “test chat” vs real personalization.
 - **Progress tracker / project tracker** - next **major product** feature after docs stabilize; read-only discovery before any writes.
-- **Safe tooling phase** - **read-only project discovery** from configured roots first - not write/edit/delete.
+- **Safe tooling phase** - **read-only project discovery** from configured roots first. Windows `C:\Projects` listing is verified; next work is safe context selection and prompt-packet excerpts, not write/edit/delete.
 - **SSH command execution** - stays **later**, behind explicit **approval gates**.
+
+### Seeded safety smoke harness
+
+The repeatable seeded safety harness covers **Manual Check 7: protected/secret path blocking** and **Manual Check 8: path traversal manual diff blocking**. A passing run means these seeded safety checks passed; it does not automatically accept, commit, approve, or close out the phase.
+
+Expected safety behavior:
+
+- Runs in dry-run mode only.
+- Does not approve anything.
+- Does not apply anything.
+- Does not write files.
+- Reports `applied_anything: false`.
+- Keeps approval unavailable for blocked cases.
+
+Manual Check 9 is now included for normalized target mismatch / allowed-file regression coverage.
+
+### Phase 4F proxy + Scout closeout
+
+Run the non-approving closeout lane:
+
+```bash
+cd ~/SpiritOS
+source .venv/bin/activate
+PYTHONPATH=. .venv/bin/python -m source_proxy.testing.runner --profile phase-4f-closeout
+```
+
+The dashboard `Manual Checks` card exposes the same proxy and Scout runner profiles. Confirmed buttons are required for `4F Closeout`, `Search Smoke`, and `Soak Snapshot`.
+
+Closeout runbook: `scout/docs/V0_3_PHASE4F_PROXY_SCOUT_CLOSEOUT.md`.
 
 ## Next Work Order
 
@@ -100,7 +204,8 @@ curl -k -sS https://localhost:3000/api/spirit/health
 
 **P2**
 
-- Read-only **project discovery** (allowed roots only).
+- Read-only **project discovery** from `SPIRIT_PROJECT_PATH` and allowlisted Windows roots.
+- Convert verified Windows folder listings into safe Source context candidates for manual prompt packets.
 - **`SPIRIT_PROJECT_PATH`** parsing + project scan.
 - **Git status** signals for the tracker (read-only at first).
 - **Capability-aware** dashboard cards.
@@ -123,6 +228,202 @@ npm run build
 
 ## Tailscale / LAN dev (HMR)
 
+### Source proxy start (`8787`)
+
+The Source proxy is a separate FastAPI/LiteLLM-side process from the visual Next app. Run it in its own terminal:
+
+```bash
+cd /home/source/SpiritOS
+npm run proxy:bootstrap   # first run only, creates .venv-source-proxy
+npm run proxy:https:lan   # HTTPS API on 0.0.0.0:8787
+```
+
+The proxy launcher loads `.env`, `.env.local`, and `config/source-proxy.env` before starting Python. Restart `npm run proxy:https:lan` after adding or changing API keys.
+
+Check it locally:
+
+```bash
+curl -k https://127.0.0.1:8787/healthcheck
+```
+
+Check it from LAN/Tailscale:
+
+```bash
+curl -k https://10.0.0.186:8787/healthcheck
+```
+
+List Source proxy routes:
+
+```bash
+curl -k https://127.0.0.1:8787/v1/models
+```
+
+Send a local Ollama generation through the unified LiteLLM route:
+
+```bash
+curl -k https://127.0.0.1:8787/v1/chat/completions \
+  -H 'Content-Type: application/json' \
+  -d '{"model":"local","messages":[{"role":"user","content":"Reply with exactly: source proxy ready"}],"max_tokens":16}'
+```
+
+For Increment 1.1, run that generation twice; the second response should include `source_proxy.response_ms` under `2000`.
+
+For Increment 1.2, start PostgreSQL before restarting the proxy:
+
+```bash
+(cd backend && docker compose up -d source-postgres)
+npm run proxy:bootstrap   # first run after requirements changed
+npm run proxy:https:lan
+```
+
+After a test generation, verify asynchronous expenditure logging:
+
+```bash
+docker exec -it source-postgres psql -U source_proxy -d source_proxy \
+  -c "select user_id, project_id, model_alias, routed_model, total_tokens, cost_usd from source_expenditure_log order by created_at desc limit 1;"
+```
+
+The row should contain `user_id`, `project_id`, and a calculated `cost_usd`. Local Ollama routes normally log `0.00000000` cost.
+
+For Increment 1.3, paid cloud routes require explicit spend approval before the provider request is sent. A request without approval:
+
+```bash
+curl -k https://127.0.0.1:8787/v1/chat/completions \
+  -H 'Content-Type: application/json' \
+  -d '{"model":"openai","user_id":"source","project_id":"source","messages":[{"role":"user","content":"Say hello"}],"max_tokens":32}'
+```
+
+should return `402 Payment Required` with a `spend_before_send` breakdown. To approve the spend, resend with:
+
+```json
+"approval": "y"
+```
+
+Local Ollama requests do not require approval because their projected provider cost is `$0.00000000`.
+
+DeepSeek is available as the `deepseek` alias when `DEEPSEEK_API_KEY` is set. The default routed model is `deepseek/deepseek-chat`, overrideable with `SOURCE_PROXY_DEEPSEEK_MODEL`.
+
+```bash
+curl -k https://127.0.0.1:8787/v1/chat/completions \
+  -H 'Content-Type: application/json' \
+  -d '{"model":"deepseek","user_id":"source","project_id":"source","messages":[{"role":"user","content":"Reply with only: deepseek route working"}],"max_tokens":16}'
+```
+
+Like other paid routes, the first request should return `402 Payment Required` with `spend_before_send`. Resend with `"approval":"y"` only when you want to spend.
+
+For Increment 2.4, preview whether Source should use an API route, manual browser route, local route, or ask you:
+
+```bash
+curl -k https://127.0.0.1:8787/v1/decisions/route \
+  -H 'Content-Type: application/json' \
+  -d '{"task":"Review this repo architecture and find risks","needs_codebase_context":true,"context_tokens":45000}'
+```
+
+The response should include `task_classification`, `recommended_route`, `reason_codes`, `risk_tier`, `context_estimate`, and `next_prompt_action`.
+
+For Increment 2.5, generate a paste-ready manual prompt packet:
+
+```bash
+curl -k https://127.0.0.1:8787/v1/decisions/prompt-packet \
+  -H 'Content-Type: application/json' \
+  -d '{"task":"Review the Source proxy routing architecture and propose safe next steps","needs_codebase_context":true,"wants_implementation":true,"context_tokens":45000,"relevant_context":"Files: source_proxy/routing/litellm_router.py, source_proxy/api/chat.py, proxyPlan.md"}'
+```
+
+The response should include `target_model_hint`, `task_summary`, `relevant_context`, `constraints`, `requested_output`, `paste_back_instructions`, and a copy-ready `prompt_text`.
+
+For Increment 2.6, get a manual/browser model recommendation:
+
+```bash
+curl -k https://127.0.0.1:8787/v1/decisions/recommend-model \
+  -H 'Content-Type: application/json' \
+  -d '{"task":"Review this whole repo for architecture risks","needs_codebase_context":true,"context_tokens":90000}'
+```
+
+The response should include `primary_model`, `fallback_model`, `route_type`, `rationale`, and `expected_user_action`.
+
+For Increment 2.7B, preview API-vs-manual routing before spending:
+
+```bash
+curl -k https://127.0.0.1:8787/v1/decisions/api-vs-manual-preview \
+  -H 'Content-Type: application/json' \
+  -d '{"task":"Review this whole repo for architecture risks","needs_codebase_context":true,"context_tokens":90000,"api_model_alias":"openai","max_completion_tokens":1024}'
+```
+
+The response should include `projected_api_cost`, `context_tokens`, `manual_model_recommendation`, `api_model_option`, `privacy_flags`, and `required_human_decision`.
+
+If bootstrap fails with `ensurepip` / `venv` missing on Ubuntu, install the host package and rerun:
+
+```bash
+sudo apt update
+sudo apt install -y python3.12-venv
+npm run proxy:bootstrap
+```
+
+If the endpoint returns `503` with an NVIDIA/NVML message, the API is running but the process cannot see GPU metrics yet. Verify `nvidia-smi` works for the `source` user before continuing proxy diagnostics.
+
+### Visual app start (`3000`)
+
+The browser UI is the Next dev server. Run it in a separate terminal from the proxy:
+
+```bash
+cd /home/source/SpiritOS
+npm run dev:https:lan
+```
+
+Then open:
+
+```text
+https://10.0.0.186:3000
+```
+
+The common mix-up: `npm run proxy:https:lan` starts only the API on **8787**. It does not start the visual site on **3000**.
+
+### Repository context bundles
+
+Generate the full repository context bundle:
+
+```bash
+npm run context:pack
+npx repomix --config repomix.config.json
+```
+
+Generate the Tree-sitter compressed bundle for large-context model routing:
+
+```bash
+npm run context:compress
+```
+
+The compressed command writes `repomix-output.ast.xml` with a strict XML envelope:
+
+```xml
+<system_directive>...</system_directive>
+<repository_context format="repomix-xml">...</repository_context>
+```
+
+### Next MCP WebSocket diagnostics
+
+Next.js 16 exposes runtime diagnostics at `/_next/mcp` while the dev server is running. The local bridge keeps a persistent WebSocket open for JSON-RPC tool calls and forwards `get_errors` / `get_page_metadata` through `next-devtools-mcp`.
+
+Terminal 1, start the visual app:
+
+```bash
+npm run dev:https:lan
+```
+
+Terminal 2, start the WebSocket bridge:
+
+```bash
+NEXT_MCP_PORT=3000 npm run next:mcp:ws
+```
+
+Terminal 3, query current errors:
+
+```bash
+npm run next:mcp:ws:probe get_errors
+```
+
+The bridge listens on `ws://127.0.0.1:3901` by default. Override it with `NEXT_MCP_WS_PORT`.
+
 Next blocks cross-origin dev assets unless the browser `Origin` hostname is allowlisted. Defaults live in `allowed-dev-origins.ts` and merge with **`NEXT_ALLOWED_DEV_ORIGINS`** (comma-separated hostnames in `.env.local`, no `http://` or ports). **Restart the dev server** after edits - `next.config.ts` only sees env at startup.
 
 ### Oracle microphone over LAN / Tailscale IP (`http://10…`, `http://100…`)
@@ -140,7 +441,7 @@ You cannot “fix” this in React alone; it is **browser security**.
 
 #### Remote browser shows “connection failed” (but `Ready` on the server)
 
-1. **Firewall on the Spirit host** - allow inbound TCP **3000**: e.g. `sudo ufw allow 3000/tcp` then `sudo ufw reload`. Confirm listen: `ss -tlnp | grep 3000` shows `0.0.0.0:3000`.
+1. **Firewall on the Spirit host** - allow inbound TCP **3000** for the visual app and **8787** for the proxy: e.g. `sudo ufw allow 3000/tcp`, `sudo ufw allow 8787/tcp`, then `sudo ufw reload`. Confirm listen: `ss -tlnp | grep -E ':3000|:8787'` shows `0.0.0.0:3000` and/or `0.0.0.0:8787`.
 2. **Ping / route** - client must reach the host IP on your LAN or Tailscale (`tailscale ping` helps).
 3. **TLS name mismatch** - use **`npm run dev:https:lan`** + **`gen-dev-cert.sh`** so the cert includes the hostname/IP you type in the bar.
 4. From the client, sanity-check: `curl -vk https://10.0.0.186:3000/` - if TCP fails before TLS, it is network/firewall, not Oracle.

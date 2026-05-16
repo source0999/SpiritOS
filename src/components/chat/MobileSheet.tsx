@@ -26,6 +26,8 @@ export type MobileSheetProps = {
   className?: string;
   /** `tray` = compact bottom sheet for quick actions (Prompt 9F). */
   variant?: MobileSheetVariant;
+  /** Trinity /chat: portaled panel uses global liquid-glass selectors (Language C). */
+  trinityLiquidChrome?: boolean;
 };
 
 export const MobileSheet = memo(function MobileSheet({
@@ -36,6 +38,7 @@ export const MobileSheet = memo(function MobileSheet({
   side = "bottom",
   className,
   variant = "panel",
+  trinityLiquidChrome = false,
 }: MobileSheetProps) {
   const [mounted, setMounted] = useState(false);
   const titleId = useId();
@@ -75,11 +78,17 @@ export const MobileSheet = memo(function MobileSheet({
 
   if (!mounted || !open) return null;
 
+  const liquidShell =
+    trinityLiquidChrome &&
+    "spirit-trinity-modal-glass border-transparent bg-transparent shadow-none backdrop-blur-xl";
+
   const panel =
     side === "left" ? (
       <div
+        data-trinity-liquid={trinityLiquidChrome ? "sheet-panel" : undefined}
         className={cn(
           "pointer-events-auto absolute inset-y-0 left-0 z-[2] flex w-[min(92vw,360px)] flex-col border-r border-[color:var(--spirit-border)] bg-[color:color-mix(in_oklab,var(--spirit-bg)_98%,black)] shadow-[8px_0_40px_-12px_rgba(0,0,0,0.65)]",
+          liquidShell,
           className,
         )}
       >
@@ -105,8 +114,10 @@ export const MobileSheet = memo(function MobileSheet({
       </div>
     ) : side === "right" ? (
       <div
+        data-trinity-liquid={trinityLiquidChrome ? "sheet-panel" : undefined}
         className={cn(
           "pointer-events-auto absolute inset-y-0 right-0 z-[2] flex w-[min(92vw,360px)] flex-col border-l border-[color:var(--spirit-border)] bg-[color:color-mix(in_oklab,var(--spirit-bg)_98%,black)] shadow-[-8px_0_40px_-12px_rgba(0,0,0,0.65)]",
+          liquidShell,
           className,
         )}
       >
@@ -132,6 +143,7 @@ export const MobileSheet = memo(function MobileSheet({
       </div>
     ) : (
       <div
+        data-trinity-liquid={trinityLiquidChrome ? "sheet-panel" : undefined}
         className={cn(
           "pointer-events-auto absolute inset-x-0 bottom-0 z-[2] flex flex-col rounded-t-2xl border border-b-0 border-[color:var(--spirit-border)] bg-[color:color-mix(in_oklab,var(--spirit-bg)_98%,black)] shadow-[0_-12px_48px_-8px_rgba(0,0,0,0.55)]",
           variant === "tray"
@@ -139,6 +151,7 @@ export const MobileSheet = memo(function MobileSheet({
             : variant === "trayCompact"
               ? "max-h-[min(45dvh,360px)] rounded-t-2xl"
               : "max-h-[min(70dvh,560px)]",
+          liquidShell,
           className,
         )}
       >

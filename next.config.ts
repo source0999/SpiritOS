@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { realpathSync } from "node:fs";
 
 import { buildAllowedDevOrigins } from "./allowed-dev-origins";
 
@@ -7,7 +8,9 @@ import { buildAllowedDevOrigins } from "./allowed-dev-origins";
  * Tailscale / LAN: set `NEXT_ALLOWED_DEV_ORIGINS` (comma-separated hostnames), restart dev.
  */
 const nextConfig: NextConfig = {
-  turbopack: {},
+  turbopack: {
+    root: realpathSync(process.cwd()),
+  },
 
   allowedDevOrigins: buildAllowedDevOrigins(),
 

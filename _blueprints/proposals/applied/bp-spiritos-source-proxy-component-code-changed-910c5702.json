@@ -1,0 +1,56 @@
+{
+  "action_taken": true,
+  "affected_blueprints": [
+    "system-state"
+  ],
+  "applied": true,
+  "applied_at": "2026-05-16T23:14:41Z",
+  "applied_by": "Britton",
+  "applied_files": [
+    "_blueprints/current/system_state.md"
+  ],
+  "approved_diff": "diff --git a/_blueprints/current/system_state.md b/_blueprints/current/system_state.md\n--- a/_blueprints/current/system_state.md\n+++ b/_blueprints/current/system_state.md\n@@ -225,3 +225,9 @@\n - Component: architecture.\n - Changed files: src/app/api/scout/source-candidates/batch-approve/route.ts, src/app/api/scout/sources/route.ts, src/app/v1/cartographer/audit-trail/route.ts, src/app/v1/cartographer/branch-recommendations/[recommendationId]/approve/route.ts, src/app/v1/cartographer/branch-recommendations/route.ts, src/app/v1/cartographer/commit-proposals/[commitProposalId]/approve/route.ts, src/app/v1/cartographer/project-health/route.ts, src/app/v1/cartographer/proposals/[proposalId]/apply-approved/route.ts.\n - Manual check: confirm this blueprint still matches the changed implementation.\n+\n+### Cartographer Review Note\n+- Reason: component_code_changed.\n+- Component: source-proxy.\n+- Changed files: source_proxy/testing/runner.py, source_proxy/tests/test_proxy_runner.py.\n+- Manual check: confirm this blueprint still matches the changed implementation.",
+  "changed_files": [
+    "source_proxy/testing/runner.py",
+    "source_proxy/tests/test_proxy_runner.py"
+  ],
+  "committed": false,
+  "component": "source-proxy",
+  "confidence": "medium",
+  "deduped": true,
+  "diff_preview": "diff --git a/_blueprints/current/system_state.md b/_blueprints/current/system_state.md\n--- a/_blueprints/current/system_state.md\n+++ b/_blueprints/current/system_state.md\n@@ -225,3 +225,9 @@\n - Component: architecture.\n - Changed files: src/app/api/scout/source-candidates/batch-approve/route.ts, src/app/api/scout/sources/route.ts, src/app/v1/cartographer/audit-trail/route.ts, src/app/v1/cartographer/branch-recommendations/[recommendationId]/approve/route.ts, src/app/v1/cartographer/branch-recommendations/route.ts, src/app/v1/cartographer/commit-proposals/[commitProposalId]/approve/route.ts, src/app/v1/cartographer/project-health/route.ts, src/app/v1/cartographer/proposals/[proposalId]/apply-approved/route.ts.\n - Manual check: confirm this blueprint still matches the changed implementation.\n+\n+### Cartographer Review Note\n+- Reason: component_code_changed.\n+- Component: source-proxy.\n+- Changed files: source_proxy/testing/runner.py, source_proxy/tests/test_proxy_runner.py.\n+- Manual check: confirm this blueprint still matches the changed implementation.",
+  "fingerprint": "910c5702c832a074",
+  "generated": false,
+  "persisted": true,
+  "project_id": "spiritos",
+  "proposal_id": "bp-spiritos-source-proxy-component-code-changed-910c5702",
+  "proposed_files": [
+    "_blueprints/current/system_state.md"
+  ],
+  "pushed": false,
+  "rationale": "component_code_changed affected source-proxy; Cartographer drafted a doc-only preview for dashboard review.",
+  "rejection_reason": null,
+  "requires_approval": true,
+  "status": "applied",
+  "task_id": "task_f2ade394414e",
+  "title": "Draft blueprint update for source-proxy",
+  "transitions": [
+    {
+      "actor": "cartographer",
+      "status": "drafted",
+      "timestamp": "2026-05-16T23:14:41Z"
+    },
+    {
+      "actor": "Britton",
+      "status": "approved",
+      "timestamp": "2026-05-16T23:14:41Z"
+    },
+    {
+      "actor": "Britton",
+      "status": "applied",
+      "timestamp": "2026-05-16T23:14:41Z"
+    }
+  ],
+  "type": "blueprint_update",
+  "verification_status": "verified"
+}

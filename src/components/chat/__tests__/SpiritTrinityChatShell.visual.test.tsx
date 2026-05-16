@@ -59,6 +59,7 @@ const navPath = resolve(
 );
 const cssPath = resolve(process.cwd(), "src/styles/spirit-trinity-chat.css");
 const dashboardCssPath = resolve(process.cwd(), "src/styles/dashboard-demo-v4.css");
+const chatPagePath = resolve(process.cwd(), "src/app/chat/page.tsx");
 const chatThreadListItemPath = resolve(
   process.cwd(),
   "src/components/chat/ChatThreadListItem.tsx",
@@ -149,14 +150,75 @@ describe("SpiritTrinityChatShell dashboard v4 visual integration", () => {
 
   it("mounts trinity atmosphere depth layers in the live shell", () => {
     const src = readFileSync(shellPath, "utf8");
+    expect(src).toContain("spirit-trinity-atmosphere");
+    expect(src).toContain("spirit-trinity-atmosphere__base");
     expect(src).toContain("spirit-trinity-atmosphere__grid");
+    expect(src).toContain("spirit-trinity-atmosphere__wash");
     expect(src).toContain("spirit-trinity-atmosphere__veil");
+  });
+
+  it("loads trinity chat stylesheet from the /chat route entry", () => {
+    const pageSrc = readFileSync(chatPagePath, "utf8");
+    expect(pageSrc).toContain("@/styles/dashboard-demo-v4.css");
+    expect(pageSrc).toContain("@/styles/spirit-trinity-chat.css");
+    expect(pageSrc).toContain("SpiritTrinityChatShell");
+  });
+
+  it("scopes decorative motion freeze to .spirit-trinity-chat only", () => {
+    const css = readFileSync(cssPath, "utf8");
+    expect(css).toMatch(/\.spirit-trinity-chat\s*\*\s*,/);
+    expect(css).toMatch(/\.spirit-trinity-chat\s*\*::before/);
+    expect(css).toMatch(/animation:\s*none\s*!important/);
+  });
+
+  it("defines Unified Liquid Input Language C hooks for shared glass controls", () => {
+    const css = readFileSync(cssPath, "utf8");
+    expect(css).toContain("Unified Liquid Input Language C");
+    expect(css).toContain(".spirit-trinity-modal-glass");
+    expect(css).toContain("[data-trinity-liquid=\"popout\"]");
+    expect(css).toContain(".spirit-trinity-glass-select");
+  });
+
+  it("locks trinity workspace composer under Demo Composer Rebuild D (pod + dock lane)", () => {
+    const css = readFileSync(cssPath, "utf8");
+    expect(css).toContain("Composer Border Cleanup B");
+    expect(css).toContain("Composer Border Cleanup C");
+    expect(css).toContain("Demo Composer Rebuild D");
+    const head = css.indexOf("Composer Border Cleanup B");
+    expect(head).toBeGreaterThan(-1);
+    const tail = css.slice(head);
+    const stop = tail.indexOf("@media (prefers-reduced-motion");
+    const section = stop === -1 ? tail : tail.slice(0, stop);
+    expect(section).toContain(".spirit-trinity-chat .spirit-trinity-chat__composer-dock");
+    expect(section).toContain(".spirit-trinity-chat .spirit-trinity-chat__composer-surface:focus-within");
+    expect(section).toContain(".spirit-trinity-chat .spirit-trinity-chat__panel");
+    expect(section).toContain(".spirit-trinity-command-pod");
+    expect(section).not.toMatch(
+      /\.spirit-trinity-chat \.spirit-trinity-chat__composer-surface:focus-within[\s\S]{0,900}border-color:\s*rgba\(255,\s*255,\s*255,\s*0\.[5-9]/,
+    );
+    expect(section).toMatch(
+      /\.spirit-trinity-chat \.spirit-trinity-chat__composer-dock[\s\S]{0,420}border-top-color:\s*transparent/,
+    );
+    const demo = css.indexOf("Demo Composer Rebuild D");
+    expect(demo).toBeGreaterThan(-1);
+    const demoTail = css.slice(demo);
+    expect(demoTail).toMatch(
+      /\.spirit-trinity-chat__composer-dock\.spirit-trinity-liquid-dock[\s\S]{0,520}background:\s*transparent/,
+    );
+    expect(demoTail).toMatch(
+      /\.spirit-trinity-command-pod[\s\S]{0,900}\.spirit-trinity-chat__composer-surface[\s\S]{0,420}border-color:\s*transparent/,
+    );
   });
 
   it("guards against the pale full-page trinity background regression", () => {
     const css = readFileSync(cssPath, "utf8");
+    expect(css).toContain(".spirit-trinity-atmosphere__base");
     expect(css).toContain(".spirit-trinity-atmosphere__grid");
+    expect(css).toContain(".spirit-trinity-atmosphere__wash");
     expect(css).toContain(".spirit-trinity-atmosphere__veil");
+    expect(css).not.toMatch(/saturate\(0%\)/);
+    expect(css).not.toMatch(/grayscale\(/);
+    expect(css).not.toContain("#b7bcc1");
     expect(css).not.toContain(".spirit-trinity-chat__bg-grid");
     expect(css).not.toContain(".spirit-trinity-chat__bg-vignette");
     expect(css).not.toContain("--spirit-bg: #e2e7ed");
@@ -168,6 +230,8 @@ describe("SpiritTrinityChatShell dashboard v4 visual integration", () => {
     expect(css).not.toContain("background: white");
     expect(css).not.toContain("background: #ffffff");
     expect(css).toContain("--ddv4-atmos-foundation");
+    expect(css).toContain("--ddv4-atmos-wash");
+    expect(css).toContain("var(--ddv4-atmos-wash)");
     expect(css).toContain("--ddv4-glass-bg");
   });
 
@@ -175,6 +239,7 @@ describe("SpiritTrinityChatShell dashboard v4 visual integration", () => {
     const chatSrc = readFileSync(chatPath, "utf8");
     const css = readFileSync(cssPath, "utf8");
 
+    expect(chatSrc).toContain("spirit-trinity-command-pod");
     expect(chatSrc).toContain("spirit-trinity-chat__composer-surface");
     expect(chatSrc).toContain("max-lg:text-base");
     expect(chatSrc).toContain("max-lg:max-h-[120px]");
@@ -219,7 +284,8 @@ describe("SpiritTrinityChatShell dashboard v4 visual integration", () => {
     const sidebarSrc = readFileSync(chatThreadSidebarPath, "utf8");
 
     expect(shellSrc).not.toMatch(/localhost:7644|trinity-dom-css-probe|#region agent log/);
-    expect(css).toContain("calc(100% - 2rem)");
+    expect(css).toContain("margin-block: 1.125rem");
+    expect(css).toContain("calc(100% - 2.25rem)");
     expect(css).toContain(".spirit-trinity-live-chat");
     expect(css).toMatch(/\.spirit-trinity-live-chat[\s\S]*box-sizing:\s*border-box/);
     expect(css).toContain("--trinity-sidebar-glass");
@@ -229,7 +295,8 @@ describe("SpiritTrinityChatShell dashboard v4 visual integration", () => {
     expect(listSrc).toContain("spirit-chat-thread-row");
     expect(listSrc).toContain("spirit-thread-row-shell");
     expect(sidebarSrc).toContain("spirit-trinity-sidebar--trinity");
-    expect(sidebarSrc).toContain("spirit-sidebar-draft-card");
+    expect(sidebarSrc).not.toContain("spirit-sidebar-draft-card");
+    expect(sidebarSrc).not.toContain("Draft · clears on first send");
     expect(sidebarSrc).toContain('data-sidebar-action="new-chat"');
     expect(sidebarSrc).toContain('data-sidebar-action="new-folder"');
   });

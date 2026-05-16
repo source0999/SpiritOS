@@ -415,7 +415,9 @@ export async function reorderThreadsInFolder(
   folderId: string | null,
   orderedThreadIds: string[],
 ): Promise<void> {
-  if (!db) return;
+  if (!db) {
+    return;
+  }
   const fid = folderId ?? undefined;
   try {
     await db.transaction("rw", db.threads, async () => {

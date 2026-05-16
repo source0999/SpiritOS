@@ -33,6 +33,8 @@ export type VoiceControlProps = {
   variant?: VoiceControlVariant;
   /** Oracle strip - hide Voice on/off toggle; parent owns enable policy */
   hideVoiceEnableToggle?: boolean;
+  /** Trinity /chat liquid chrome on controls + portaled settings. */
+  trinityLiquid?: boolean;
 };
 
 export const VoiceControl = memo(function VoiceControl({
@@ -50,6 +52,7 @@ export const VoiceControl = memo(function VoiceControl({
   disabled = false,
   variant = "desktop",
   hideVoiceEnableToggle = false,
+  trinityLiquid = false,
 }: VoiceControlProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
@@ -100,8 +103,12 @@ export const VoiceControl = memo(function VoiceControl({
           title="Voice"
           onClose={() => setMobileSheetOpen(false)}
           side="bottom"
+          trinityLiquidChrome={trinityLiquid}
         >
-          <div className="flex flex-col gap-2.5 px-0.5">
+          <div
+            className="flex flex-col gap-2.5 px-0.5"
+            data-trinity-liquid={trinityLiquid ? "voice-sheet-inner" : undefined}
+          >
             <div className="flex flex-wrap items-center gap-2">
               {!hideVoiceEnableToggle ? (
                 <button
@@ -148,6 +155,7 @@ export const VoiceControl = memo(function VoiceControl({
               onElevenLabsVoiceChange={onElevenLabsVoiceChange}
               onRetryVoiceCatalog={onRequestVoiceCatalog}
               disabled={disabled}
+              trinityLiquid={trinityLiquid}
             />
           </div>
         </MobileSheet>
@@ -157,6 +165,7 @@ export const VoiceControl = memo(function VoiceControl({
 
   return (
     <div
+      data-trinity-voice-strip={trinityLiquid ? "true" : undefined}
       className={cn(
         "relative flex w-full min-w-0 flex-col gap-1",
         disabled && "pointer-events-none opacity-40",
@@ -223,13 +232,22 @@ export const VoiceControl = memo(function VoiceControl({
                 id={panelId}
                 role="dialog"
                 aria-label="Voice settings"
+                data-trinity-liquid={trinityLiquid ? "voice-popover" : undefined}
                 className={cn(
-                  "fixed z-[85] flex flex-col gap-3 overflow-y-auto rounded-xl border border-[color:color-mix(in_oklab,var(--spirit-border)_45%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-bg)_94%,black)] p-3 shadow-2xl",
+                  "fixed z-[85] flex flex-col gap-3 overflow-y-auto rounded-xl p-3 shadow-2xl",
+                  trinityLiquid
+                    ? "spirit-trinity-modal-glass border border-transparent bg-transparent shadow-none backdrop-blur-xl"
+                    : "border border-[color:color-mix(in_oklab,var(--spirit-border)_45%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-bg)_94%,black)] shadow-2xl",
                   "inset-x-2 bottom-[max(0.5rem,env(safe-area-inset-bottom))] max-h-[min(85dvh,520px)] min-w-0 max-lg:max-h-[80dvh]",
                   "lg:inset-x-auto lg:bottom-auto lg:right-4 lg:top-[max(5rem,env(safe-area-inset-top))] lg:min-w-[420px] lg:w-[min(440px,calc(100vw-2rem))] lg:max-h-[min(70vh,640px)]",
                 )}
               >
-                <div className="flex items-center justify-between gap-2 border-b border-white/[0.06] pb-2 lg:hidden">
+                <div
+                  className={cn(
+                    "flex items-center justify-between gap-2 border-b pb-2 lg:hidden",
+                    trinityLiquid ? "border-white/[0.055]" : "border-white/[0.06]",
+                  )}
+                >
                   <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-chalk/55">
                     Voice settings
                   </p>
@@ -237,7 +255,12 @@ export const VoiceControl = memo(function VoiceControl({
                     type="button"
                     onClick={closeSettings}
                     aria-label="Close"
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[color:var(--spirit-border)] text-chalk/70"
+                    className={cn(
+                      "inline-flex h-9 w-9 items-center justify-center rounded-md text-chalk/70",
+                      trinityLiquid
+                        ? "border border-transparent bg-transparent"
+                        : "border border-[color:var(--spirit-border)]",
+                    )}
                   >
                     <X className="h-4 w-4" aria-hidden />
                   </button>
@@ -252,6 +275,7 @@ export const VoiceControl = memo(function VoiceControl({
                   onElevenLabsVoiceChange={onElevenLabsVoiceChange}
                   onRetryVoiceCatalog={onRequestVoiceCatalog}
                   disabled={disabled}
+                  trinityLiquid={trinityLiquid}
                 />
               </div>
             </>,

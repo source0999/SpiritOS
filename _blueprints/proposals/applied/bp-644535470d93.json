@@ -1,0 +1,80 @@
+{
+  "action_taken": true,
+  "affected_blueprints": [
+    "cartographer-agent"
+  ],
+  "applied": true,
+  "applied_at": "2026-05-16T22:05:18Z",
+  "applied_by": "Britton",
+  "applied_files": [
+    "_blueprints/components/cartographer_agent.md"
+  ],
+  "approved_diff": "diff --git a/_blueprints/components/cartographer_agent.md b/_blueprints/components/cartographer_agent.md\n--- a/_blueprints/components/cartographer_agent.md\n+++ b/_blueprints/components/cartographer_agent.md\n@@ -152,3 +152,9 @@\n - audit trail\n \n All dashboard states must fail closed: unavailable data should never reveal apply, commit, or push controls.\n+\n+### Cartographer Review Note\n+- Reason: component_code_changed.\n+- Component: cartographer.\n+- Changed files: source_proxy/cartographer/apply.py, source_proxy/cartographer/audit_trail.py, source_proxy/cartographer/blueprint_registry.py, source_proxy/cartographer/branch_recommendations.py, source_proxy/cartographer/commit_proposals.py, source_proxy/cartographer/component_mapper.py, source_proxy/cartographer/drift.py, source_proxy/cartographer/git_approvals.py.\n+- Manual check: confirm this blueprint still matches the changed implementation.",
+  "changed_files": [
+    "source_proxy/cartographer/apply.py",
+    "source_proxy/cartographer/audit_trail.py",
+    "source_proxy/cartographer/blueprint_registry.py",
+    "source_proxy/cartographer/branch_recommendations.py",
+    "source_proxy/cartographer/commit_proposals.py",
+    "source_proxy/cartographer/component_mapper.py",
+    "source_proxy/cartographer/drift.py",
+    "source_proxy/cartographer/git_approvals.py",
+    "source_proxy/cartographer/git_status.py",
+    "source_proxy/cartographer/models.py",
+    "source_proxy/cartographer/project_discovery.py",
+    "source_proxy/cartographer/project_health.py",
+    "source_proxy/cartographer/proposal_previews.py",
+    "source_proxy/cartographer/proposal_reviews.py",
+    "source_proxy/cartographer/proposals.py",
+    "source_proxy/cartographer/push_queue.py",
+    "source_proxy/cartographer/repo_map.py",
+    "source_proxy/cartographer/service.py",
+    "source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-2026-05-16T213941Z.json",
+    "source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-2026-05-16T214041Z.json",
+    "source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-2026-05-16T214242Z.json",
+    "source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-2026-05-16T214344Z.json",
+    "source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-2026-05-16T214552Z.json",
+    "source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-2026-05-16T214707Z.json",
+    "source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-2026-05-16T215459Z.json",
+    "source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-2026-05-16T220304Z.json",
+    "source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-2026-05-16T220325Z.json",
+    "source_proxy/cartographer/starter_blueprints.py"
+  ],
+  "committed": false,
+  "component": "cartographer",
+  "confidence": "medium",
+  "diff_preview": "diff --git a/_blueprints/components/cartographer_agent.md b/_blueprints/components/cartographer_agent.md\n--- a/_blueprints/components/cartographer_agent.md\n+++ b/_blueprints/components/cartographer_agent.md\n@@ -152,3 +152,9 @@\n - audit trail\n \n All dashboard states must fail closed: unavailable data should never reveal apply, commit, or push controls.\n+\n+### Cartographer Review Note\n+- Reason: component_code_changed.\n+- Component: cartographer.\n+- Changed files: source_proxy/cartographer/apply.py, source_proxy/cartographer/audit_trail.py, source_proxy/cartographer/blueprint_registry.py, source_proxy/cartographer/branch_recommendations.py, source_proxy/cartographer/commit_proposals.py, source_proxy/cartographer/component_mapper.py, source_proxy/cartographer/drift.py, source_proxy/cartographer/git_approvals.py.\n+- Manual check: confirm this blueprint still matches the changed implementation.",
+  "generated": false,
+  "persisted": true,
+  "project_id": "spiritos",
+  "proposal_id": "bp-644535470d93",
+  "proposed_files": [
+    "_blueprints/components/cartographer_agent.md"
+  ],
+  "pushed": false,
+  "rationale": "component_code_changed affected cartographer; Cartographer drafted a doc-only preview for dashboard review.",
+  "rejection_reason": null,
+  "requires_approval": true,
+  "status": "applied",
+  "task_id": "task_44b02401151c",
+  "title": "Draft blueprint update for cartographer",
+  "transitions": [
+    {
+      "actor": "cartographer",
+      "status": "drafted",
+      "timestamp": "2026-05-16T22:05:11Z"
+    },
+    {
+      "actor": "Britton",
+      "status": "approved",
+      "timestamp": "2026-05-16T22:05:11Z"
+    },
+    {
+      "actor": "Britton",
+      "status": "applied",
+      "timestamp": "2026-05-16T22:05:18Z"
+    }
+  ],
+  "type": "blueprint_update",
+  "verification_status": "verified"
+}

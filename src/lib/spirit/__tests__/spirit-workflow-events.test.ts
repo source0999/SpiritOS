@@ -6,13 +6,13 @@ import {
 } from "@/lib/spirit/spirit-workflow-events";
 
 describe("buildSpiritWorkflowStepLabels", () => {
-  it("uses OpenAI web labels when researcher web is not opted out", () => {
+  it("uses local-first web labels when researcher web is not opted out", () => {
     const steps = buildSpiritWorkflowStepLabels({
       modelProfileId: "researcher",
       webSearchOptOut: false,
       deepThinkEnabled: false,
     });
-    expect(steps.some((s) => s.includes("Searching OpenAI web") || s.includes("OpenAI web"))).toBe(
+    expect(steps.some((s) => s.includes("Searching web providers") || s.includes("Search route"))).toBe(
       true,
     );
   });
@@ -37,14 +37,14 @@ describe("buildSpiritWorkflowStepLabels", () => {
 });
 
 describe("buildWorkflowStepsForRouteDecision", () => {
-  it("returns web pipeline for openai-web-search lane", () => {
-    const steps = buildWorkflowStepsForRouteDecision("openai-web-search", {
+  it("returns web pipeline for local-web-search lane", () => {
+    const steps = buildWorkflowStepsForRouteDecision("local-web-search", {
       modelProfileId: "researcher",
       deepThink: false,
       busy: true,
       tick: 0,
     });
     expect(steps[0]?.label).toContain("Understanding");
-    expect(steps.some((s) => s.label.includes("Searching OpenAI web"))).toBe(true);
+    expect(steps.some((s) => s.label.includes("Searching web providers"))).toBe(true);
   });
 });

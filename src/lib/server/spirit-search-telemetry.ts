@@ -5,6 +5,7 @@ import "server-only";
 
 export type SpiritSearchLogRoute =
   | "openai-web-search"
+  | "local-web-search"
   | "teacher-web-aids"
   | "research-plan"
   | "local-chat"

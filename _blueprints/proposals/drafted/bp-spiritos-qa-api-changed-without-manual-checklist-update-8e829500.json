@@ -1,0 +1,45 @@
+{
+  "action_taken": false,
+  "affected_blueprints": [
+    "basic-chat-voice-qa",
+    "cartographer-dashboard-mobile-qa"
+  ],
+  "applied": false,
+  "approved_diff": null,
+  "changed_files": [
+    "src/app/api/scout/source-candidates/batch-approve/route.ts",
+    "src/app/api/scout/sources/route.ts"
+  ],
+  "component": "qa",
+  "confidence": "medium",
+  "deduped": true,
+  "diff_preview": "diff --git a/_blueprints/runbooks/basic_chat_voice_qa.md b/_blueprints/runbooks/basic_chat_voice_qa.md\n--- a/_blueprints/runbooks/basic_chat_voice_qa.md\n+++ b/_blueprints/runbooks/basic_chat_voice_qa.md\n@@ -87,3 +87,9 @@\n ## After env changes\n \n Always **restart** the Next dev server (`npm run dev` or `npm run dev:all`) so `next.config.ts` and server env are re-read.\n+\n+### Cartographer Review Note\n+- Reason: api_changed_without_manual_checklist_update.\n+- Component: qa.\n+- Changed files: src/app/api/scout/source-candidates/batch-approve/route.ts, src/app/api/scout/sources/route.ts.\n+- Manual check: confirm this blueprint still matches the changed implementation.\ndiff --git a/_blueprints/runbooks/cartographer_dashboard_mobile_qa.md b/_blueprints/runbooks/cartographer_dashboard_mobile_qa.md\n--- a/_blueprints/runbooks/cartographer_dashboard_mobile_qa.md\n+++ b/_blueprints/runbooks/cartographer_dashboard_mobile_qa.md\n@@ -125,3 +125,9 @@\n ```\n \n If any surface fails, keep the related proposal in review and do not proceed to commit or push approval.\n+\n+### Cartographer Review Note\n+- Reason: api_changed_without_manual_checklist_update.\n+- Component: qa.\n+- Changed files: src/app/api/scout/source-candidates/batch-approve/route.ts, src/app/api/scout/sources/route.ts.\n+- Manual check: confirm this blueprint still matches the changed implementation.",
+  "fingerprint": "8e829500d82cd369",
+  "generated": false,
+  "persisted": true,
+  "project_id": "spiritos",
+  "proposal_id": "bp-spiritos-qa-api-changed-without-manual-checklist-update-8e829500",
+  "proposed_files": [
+    "_blueprints/runbooks/basic_chat_voice_qa.md",
+    "_blueprints/runbooks/cartographer_dashboard_mobile_qa.md"
+  ],
+  "rationale": "api_changed_without_manual_checklist_update affected qa; Cartographer drafted a doc-only preview for dashboard review.",
+  "rejection_reason": null,
+  "requires_approval": true,
+  "review_note": "Do not apply a generic QA note. Regenerate with concrete manual checks for src/app/api/scout/source-candidates/batch-approve/route.ts and src/app/api/scout/sources/route.ts, including expected outcomes and next steps. Fix malformed spacing in the surrounding text.",
+  "status": "drafted",
+  "title": "Draft blueprint update for qa",
+  "transitions": [
+    {
+      "actor": "cartographer",
+      "status": "drafted",
+      "timestamp": "2026-05-16T22:14:31Z"
+    },
+    {
+      "actor": "Britton",
+      "status": "drafted",
+      "timestamp": "2026-05-16T22:14:31Z"
+    }
+  ],
+  "type": "blueprint_update"
+}

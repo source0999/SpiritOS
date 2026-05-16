@@ -1,0 +1,55 @@
+{
+  "action_taken": true,
+  "affected_blueprints": [
+    "dashboard-state"
+  ],
+  "applied": true,
+  "applied_at": "2026-05-16T23:14:40Z",
+  "applied_by": "Britton",
+  "applied_files": [
+    "_blueprints/current/dashboard_state.md"
+  ],
+  "approved_diff": "diff --git a/_blueprints/current/dashboard_state.md b/_blueprints/current/dashboard_state.md\n--- a/_blueprints/current/dashboard_state.md\n+++ b/_blueprints/current/dashboard_state.md\n@@ -60,3 +60,9 @@\n - Component: dashboard.\n - Changed files: src/components/dashboard/ScoutIntelligenceCenter.tsx.\n - Manual check: confirm this blueprint still matches the changed implementation.\n+\n+### Cartographer Review Note\n+- Reason: component_code_changed.\n+- Component: dashboard.\n+- Changed files: src/components/dashboard/__tests__/HomelabBlueprintReviewWidget.test.tsx.\n+- Manual check: confirm this blueprint still matches the changed implementation.",
+  "changed_files": [
+    "src/components/dashboard/__tests__/HomelabBlueprintReviewWidget.test.tsx"
+  ],
+  "committed": false,
+  "component": "dashboard",
+  "confidence": "medium",
+  "deduped": true,
+  "diff_preview": "diff --git a/_blueprints/current/dashboard_state.md b/_blueprints/current/dashboard_state.md\n--- a/_blueprints/current/dashboard_state.md\n+++ b/_blueprints/current/dashboard_state.md\n@@ -60,3 +60,9 @@\n - Component: dashboard.\n - Changed files: src/components/dashboard/ScoutIntelligenceCenter.tsx.\n - Manual check: confirm this blueprint still matches the changed implementation.\n+\n+### Cartographer Review Note\n+- Reason: component_code_changed.\n+- Component: dashboard.\n+- Changed files: src/components/dashboard/__tests__/HomelabBlueprintReviewWidget.test.tsx.\n+- Manual check: confirm this blueprint still matches the changed implementation.",
+  "fingerprint": "db5ced862891a69d",
+  "generated": false,
+  "persisted": true,
+  "project_id": "spiritos",
+  "proposal_id": "bp-spiritos-dashboard-component-code-changed-db5ced86",
+  "proposed_files": [
+    "_blueprints/current/dashboard_state.md"
+  ],
+  "pushed": false,
+  "rationale": "component_code_changed affected dashboard; Cartographer drafted a doc-only preview for dashboard review.",
+  "rejection_reason": null,
+  "requires_approval": true,
+  "status": "applied",
+  "task_id": "task_7d76f11fd987",
+  "title": "Draft blueprint update for dashboard",
+  "transitions": [
+    {
+      "actor": "cartographer",
+      "status": "drafted",
+      "timestamp": "2026-05-16T23:14:38Z"
+    },
+    {
+      "actor": "Britton",
+      "status": "approved",
+      "timestamp": "2026-05-16T23:14:38Z"
+    },
+    {
+      "actor": "Britton",
+      "status": "applied",
+      "timestamp": "2026-05-16T23:14:40Z"
+    }
+  ],
+  "type": "blueprint_update",
+  "verification_status": "verified"
+}

@@ -21,7 +21,8 @@ import {
   resolveOllamaModelId,
   type SpiritRuntimeSurface,
 } from "@/lib/server/model-routing";
-import { runOpenAiWebSearch } from "@/lib/server/openai-web-search";
+import { runWebSearch } from "@/lib/server/web-search/provider-router";
+import type { WebSearchResult } from "@/lib/server/web-search/types";
 import { readSpiritRequest } from "@/lib/server/spirit-request";
 import {
   buildSpiritSearchHeaders,
@@ -53,17 +54,16 @@ import {
   userRequestedFreshExternalSources,
   type SpiritSearchStatus,
 } from "@/lib/spirit/research-source-enforcement";
-import type { OpenAiWebSearchResult } from "@/lib/server/openai-web-search";
 import { resolveVerifiedHttpUrl } from "@/lib/verified-http-url";
 
-function logReasonFromSearchFailure(r: OpenAiWebSearchResult): string {
+function logReasonFromSearchFailure(r: WebSearchResult): string {
   if (r.ok) return "no_verified_urls";
   if (r.error === "missing_key") return "missing_openai_key";
   if (r.error === "disabled") return "web_search_env_disabled";
   return r.error;
 }
 
-function verifiedHttpSourcesFromSearch(r: OpenAiWebSearchResult): Array<{ url: string }> {
+function verifiedHttpSourcesFromSearch(r: WebSearchResult): Array<{ url: string }> {
   if (!r.ok || !r.searched) return [];
   const out: Array<{ url: string }> = [];
   for (const s of r.sources) {
@@ -86,8 +86,8 @@ function appendSourcePolicyBlock(
   return `${base.trim()}\n\n${pol}`.trim();
 }
 
-// ── Spirit → Ollama - Prompt 10B: system via AI SDK + optional OpenAI web proof ─
-// > System is NOT duplicated into messages[] - kills the AI SDK security warning.
+// Spirit -> Ollama: system via AI SDK + optional provider-router web proof.
+// System is not duplicated into messages[]; that avoids the AI SDK security warning.
 
 export async function POST(req: Request) {
   try {
@@ -103,6 +103,7 @@ export async function POST(req: Request) {
       teacherWebSearchEnabled,
       researchPlanSummary,
       oracleMemoryContext,
+      swarmAgentRole,
     } = await readSpiritRequest(req);
 
     const lastUser = lastUserTextFromMessages(uiMessages);
@@ -111,7 +112,9 @@ export async function POST(req: Request) {
     const surface: SpiritRuntimeSurface =
       runtimeSurface === "oracle" ? "oracle" : "chat";
     const ollamaModelId = resolveOllamaModelId(surface);
-    const spiritTools = await resolveSpiritToolsForOllamaModel(ollamaModelId);
+    const spiritTools = await resolveSpiritToolsForOllamaModel(ollamaModelId, {
+      swarmAgentRole,
+    });
     const webGlob = isWebSearchGloballyEnabled();
 
     const capabilityKind = detectCapabilityIntent(lastUser);
@@ -352,18 +355,18 @@ export async function POST(req: Request) {
 
       if (routeDecision.shouldSearchWeb) {
         logSpiritSearchEvent({
-          route: "openai-web-search",
+          route: "local-web-search",
           status: "starting",
           mode: "researcher",
           queryTrimmed: qLog,
         });
         const t0 = Date.now();
-        const r = await runOpenAiWebSearch({ query: lastUser.slice(0, 2000) });
+        const r = await runWebSearch({ query: lastUser.slice(0, 2000) });
         searchElapsedMs = Date.now() - t0;
         verified = verifiedHttpSourcesFromSearch(r);
         webVerifiedUrlCount = verified.length;
         spiritSourceCount = verified.length;
-        spiritSearchProvider = r.ok ? r.provider : "openai";
+        spiritSearchProvider = r.provider;
         researchWebContext = formatResearchContextForHermes(lastUser, r);
         webSearchHeader = r.ok && r.searched ? "used" : "failed";
         webSourcesHeader = buildWebSearchSourcesHeader(r);
@@ -373,7 +376,7 @@ export async function POST(req: Request) {
         }
         if (r.ok && r.searched && verified.length > 0) {
           logSpiritSearchEvent({
-            route: "openai-web-search",
+            route: "local-web-search",
             status: "used",
             mode: "researcher",
             queryTrimmed: qLog,
@@ -383,7 +386,7 @@ export async function POST(req: Request) {
           });
         } else if (r.ok && r.searched) {
           logSpiritSearchEvent({
-            route: "openai-web-search",
+            route: "local-web-search",
             status: "failed",
             mode: "researcher",
             queryTrimmed: qLog,
@@ -393,11 +396,11 @@ export async function POST(req: Request) {
           });
         } else {
           logSpiritSearchEvent({
-            route: "openai-web-search",
+            route: "local-web-search",
             status: "failed",
             mode: "researcher",
             queryTrimmed: qLog,
-            provider: "openai",
+            provider: r.provider,
             elapsedMs: searchElapsedMs,
             reason: logReasonFromSearchFailure(r),
           });
@@ -424,7 +427,6 @@ export async function POST(req: Request) {
           status: "skipped",
           mode: "researcher",
           queryTrimmed: qLog,
-          provider: "openai",
           reason: skipReason,
         });
       } else {
@@ -456,7 +458,7 @@ export async function POST(req: Request) {
         queryTrimmed: qLog,
       });
       const t0 = Date.now();
-      const r = await runOpenAiWebSearch({
+      const r = await runWebSearch({
         query: lastUser.slice(0, 2000),
         maxResults: 4,
       });
@@ -464,7 +466,7 @@ export async function POST(req: Request) {
       const verified = verifiedHttpSourcesFromSearch(r);
       webVerifiedUrlCount = verified.length;
       spiritSourceCount = verified.length;
-      spiritSearchProvider = r.ok ? r.provider : "openai";
+      spiritSearchProvider = r.provider;
       researchWebContext = formatResearchContextForHermes(lastUser, r);
       webSearchHeader = r.ok && r.searched ? "used" : "failed";
       webSourcesHeader = buildWebSearchSourcesHeader(r);
@@ -493,7 +495,7 @@ export async function POST(req: Request) {
           status: "failed",
           mode: "teacher",
           queryTrimmed: qLog,
-          provider: "openai",
+          provider: r.provider,
           elapsedMs: searchElapsedMs,
           reason: r.ok && r.searched ? "no_verified_urls" : logReasonFromSearchFailure(r),
         });
@@ -520,6 +522,7 @@ export async function POST(req: Request) {
       runtimeSurface: surface,
       systemState,
       oracleMemoryContext: oracleMemoryContext ?? null,
+      swarmAgentRole: swarmAgentRole ?? null,
     });
 
     const maxOutputTokens =

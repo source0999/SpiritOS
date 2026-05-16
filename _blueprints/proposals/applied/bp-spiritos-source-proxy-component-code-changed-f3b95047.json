@@ -1,0 +1,55 @@
+{
+  "action_taken": true,
+  "affected_blueprints": [
+    "system-state"
+  ],
+  "applied": true,
+  "applied_at": "2026-05-16T23:19:05Z",
+  "applied_by": "Britton",
+  "applied_files": [
+    "_blueprints/current/system_state.md"
+  ],
+  "approved_diff": "diff --git a/_blueprints/current/system_state.md b/_blueprints/current/system_state.md\n--- a/_blueprints/current/system_state.md\n+++ b/_blueprints/current/system_state.md\n@@ -231,3 +231,9 @@\n - Component: source-proxy.\n - Changed files: source_proxy/testing/runner.py, source_proxy/tests/test_proxy_runner.py.\n - Manual check: confirm this blueprint still matches the changed implementation.\n+\n+### Cartographer Review Note\n+- Reason: component_code_changed.\n+- Component: source-proxy.\n+- Changed files: source_proxy/testing/runner.py.\n+- Manual check: confirm this blueprint still matches the changed implementation.",
+  "changed_files": [
+    "source_proxy/testing/runner.py"
+  ],
+  "committed": false,
+  "component": "source-proxy",
+  "confidence": "medium",
+  "deduped": true,
+  "diff_preview": "diff --git a/_blueprints/current/system_state.md b/_blueprints/current/system_state.md\n--- a/_blueprints/current/system_state.md\n+++ b/_blueprints/current/system_state.md\n@@ -231,3 +231,9 @@\n - Component: source-proxy.\n - Changed files: source_proxy/testing/runner.py, source_proxy/tests/test_proxy_runner.py.\n - Manual check: confirm this blueprint still matches the changed implementation.\n+\n+### Cartographer Review Note\n+- Reason: component_code_changed.\n+- Component: source-proxy.\n+- Changed files: source_proxy/testing/runner.py.\n+- Manual check: confirm this blueprint still matches the changed implementation.",
+  "fingerprint": "f3b950471839e25f",
+  "generated": false,
+  "persisted": true,
+  "project_id": "spiritos",
+  "proposal_id": "bp-spiritos-source-proxy-component-code-changed-f3b95047",
+  "proposed_files": [
+    "_blueprints/current/system_state.md"
+  ],
+  "pushed": false,
+  "rationale": "component_code_changed affected source-proxy; Cartographer drafted a doc-only preview for dashboard review.",
+  "rejection_reason": null,
+  "requires_approval": true,
+  "status": "applied",
+  "task_id": "task_cd76fdcded3b",
+  "title": "Draft blueprint update for source-proxy",
+  "transitions": [
+    {
+      "actor": "cartographer",
+      "status": "drafted",
+      "timestamp": "2026-05-16T23:19:04Z"
+    },
+    {
+      "actor": "Britton",
+      "status": "approved",
+      "timestamp": "2026-05-16T23:19:04Z"
+    },
+    {
+      "actor": "Britton",
+      "status": "applied",
+      "timestamp": "2026-05-16T23:19:05Z"
+    }
+  ],
+  "type": "blueprint_update",
+  "verification_status": "verified"
+}

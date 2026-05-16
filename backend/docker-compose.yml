@@ -18,6 +18,26 @@
 
 services:
 
+  source-postgres:
+    image: postgres:16-alpine
+    container_name: source-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=source_proxy
+      - POSTGRES_USER=source_proxy
+      - POSTGRES_PASSWORD=source_proxy
+    volumes:
+      - source_postgres_data:/var/lib/postgresql/data
+    networks:
+      - spirit-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U source_proxy -d source_proxy"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # ── 1. Ollama (NVIDIA CUDA) ─────────────────────────────────────────────────
   ollama:
     image: ollama/ollama:latest
@@ -114,10 +134,36 @@ services:
       retries: 5
       start_period: 90s
 
+  # Optional local web search. Disabled by default; start with:
+  #   docker compose --profile local-search up -d searxng
+  searxng:
+    image: searxng/searxng:latest
+    container_name: spirit-searxng
+    restart: unless-stopped
+    profiles: ["local-search"]
+    ports:
+      - "8080:8080"
+    environment:
+      - BASE_URL=http://127.0.0.1:8080/
+      - INSTANCE_NAME=SpiritOS Local Search
+    volumes:
+      - ./searxng.yml:/etc/searxng/settings.yml:ro
+      - searxng_data:/var/cache/searxng
+    networks:
+      - spirit-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8080/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
 volumes:
+  source_postgres_data:
   ollama_data:
   whisper_cache:
   openedai_voices:
+  searxng_data:
 
 networks:
   spirit-net:

@@ -39,6 +39,8 @@ export type VoiceSettingsPanelProps = {
   /** Refetch `/api/tts/voices` after a catalog failure. */
   onRetryVoiceCatalog?: () => void | Promise<void>;
   disabled?: boolean;
+  /** Trinity /chat — section cards use liquid glass (Language C). */
+  trinityLiquid?: boolean;
 };
 
 export const VoiceSettingsPanel = memo(function VoiceSettingsPanel({
@@ -51,6 +53,7 @@ export const VoiceSettingsPanel = memo(function VoiceSettingsPanel({
   onElevenLabsVoiceChange,
   onRetryVoiceCatalog,
   disabled = false,
+  trinityLiquid = false,
 }: VoiceSettingsPanelProps) {
   const [debugTimingOpen, setDebugTimingOpen] = useState(false);
   const ctx = state.audioContextState;
@@ -70,6 +73,7 @@ export const VoiceSettingsPanel = memo(function VoiceSettingsPanel({
       className={cn(
         "flex min-w-0 flex-col gap-3.5",
         disabled && "pointer-events-none opacity-40",
+        trinityLiquid && "spirit-trinity-voice-settings-liquid",
       )}
     >
       <section className="flex min-w-0 flex-col gap-2 rounded-lg border border-white/[0.06] bg-black/20 p-2.5">

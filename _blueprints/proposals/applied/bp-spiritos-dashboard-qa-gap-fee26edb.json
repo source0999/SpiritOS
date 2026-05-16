@@ -1,0 +1,55 @@
+{
+  "action_taken": true,
+  "affected_blueprints": [
+    "cartographer-dashboard-mobile-qa"
+  ],
+  "applied": true,
+  "applied_at": "2026-05-16T23:14:40Z",
+  "applied_by": "Britton",
+  "applied_files": [
+    "_blueprints/runbooks/cartographer_dashboard_mobile_qa.md"
+  ],
+  "approved_diff": "diff --git a/_blueprints/runbooks/cartographer_dashboard_mobile_qa.md b/_blueprints/runbooks/cartographer_dashboard_mobile_qa.md\n--- a/_blueprints/runbooks/cartographer_dashboard_mobile_qa.md\n+++ b/_blueprints/runbooks/cartographer_dashboard_mobile_qa.md\n@@ -125,3 +125,9 @@\n ```\n \n If any surface fails, keep the related proposal in review and do not proceed to commit or push approval.\n+\n+### Cartographer Review Note\n+- Reason: qa_gap.\n+- Component: dashboard.\n+- Changed files: src/components/dashboard/__tests__/HomelabBlueprintReviewWidget.test.tsx.\n+- Manual check: confirm this blueprint still matches the changed implementation.",
+  "changed_files": [
+    "src/components/dashboard/__tests__/HomelabBlueprintReviewWidget.test.tsx"
+  ],
+  "committed": false,
+  "component": "dashboard",
+  "confidence": "medium",
+  "deduped": true,
+  "diff_preview": "diff --git a/_blueprints/runbooks/cartographer_dashboard_mobile_qa.md b/_blueprints/runbooks/cartographer_dashboard_mobile_qa.md\n--- a/_blueprints/runbooks/cartographer_dashboard_mobile_qa.md\n+++ b/_blueprints/runbooks/cartographer_dashboard_mobile_qa.md\n@@ -125,3 +125,9 @@\n ```\n \n If any surface fails, keep the related proposal in review and do not proceed to commit or push approval.\n+\n+### Cartographer Review Note\n+- Reason: qa_gap.\n+- Component: dashboard.\n+- Changed files: src/components/dashboard/__tests__/HomelabBlueprintReviewWidget.test.tsx.\n+- Manual check: confirm this blueprint still matches the changed implementation.",
+  "fingerprint": "fee26edb5c124de9",
+  "generated": false,
+  "persisted": true,
+  "project_id": "spiritos",
+  "proposal_id": "bp-spiritos-dashboard-qa-gap-fee26edb",
+  "proposed_files": [
+    "_blueprints/runbooks/cartographer_dashboard_mobile_qa.md"
+  ],
+  "pushed": false,
+  "rationale": "qa_gap affected dashboard; Cartographer drafted a doc-only preview for dashboard review.",
+  "rejection_reason": null,
+  "requires_approval": true,
+  "status": "applied",
+  "task_id": "task_b31b78544675",
+  "title": "Draft blueprint update for dashboard",
+  "transitions": [
+    {
+      "actor": "cartographer",
+      "status": "drafted",
+      "timestamp": "2026-05-16T23:14:40Z"
+    },
+    {
+      "actor": "Britton",
+      "status": "approved",
+      "timestamp": "2026-05-16T23:14:40Z"
+    },
+    {
+      "actor": "Britton",
+      "status": "applied",
+      "timestamp": "2026-05-16T23:14:40Z"
+    }
+  ],
+  "type": "blueprint_update",
+  "verification_status": "verified"
+}

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { useSpiritWorkspaceMobileChrome } from "@/components/dashboard/SpiritWorkspaceMobileChromeContext";
-import { LayoutDashboard, MessageCircle, Sparkles, Zap } from "lucide-react";
+import { Code2, LayoutDashboard, MessageCircle, Sparkles, Zap } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 const railBtn =
@@ -25,6 +25,7 @@ export function WorkspacePrimarySidebar() {
   const hideMobileDockForComposer = workspaceMobileChrome?.composerFocused ?? false;
   const homeActive = pathname === "/";
   const chatActive = pathname === "/chat" || pathname.startsWith("/chat/");
+  const codingActive = pathname === "/coding" || pathname.startsWith("/coding/");
   const oracleActive = pathname.startsWith("/oracle");
 
   const desktopRailNav = (
@@ -46,6 +47,15 @@ export function WorkspacePrimarySidebar() {
         title="Saved chat (/chat)"
       >
         <MessageCircle className="h-5 w-5" aria-hidden strokeWidth={2} />
+      </Link>
+      <Link
+        href="/coding"
+        className={cn(railBtn, codingActive && activeRail)}
+        aria-current={codingActive ? "page" : undefined}
+        aria-label="Source coding"
+        title="Source coding (/coding)"
+      >
+        <Code2 className="h-5 w-5" aria-hidden strokeWidth={2} />
       </Link>
       <Link
         href="/oracle"
@@ -135,6 +145,15 @@ export function WorkspacePrimarySidebar() {
           >
             <MessageCircle className="h-5 w-5 shrink-0" aria-hidden strokeWidth={2} />
             <span className="hidden sm:inline">Chat</span>
+          </Link>
+          <Link
+            href="/coding"
+            className={cn(pillItem, codingActive && activePillItem)}
+            aria-current={codingActive ? "page" : undefined}
+            aria-label="Source coding"
+          >
+            <Code2 className="h-5 w-5 shrink-0" aria-hidden strokeWidth={2} />
+            <span className="hidden sm:inline">Source</span>
           </Link>
           <Link
             href="/oracle"

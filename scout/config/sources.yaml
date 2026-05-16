@@ -1,0 +1,16 @@
+version: 1
+github_repos:
+  - owner: anthropics
+    repo: anthropic-sdk-python
+    poll_interval_minutes: 60
+  - owner: fastapi
+    repo: fastapi
+    poll_interval_minutes: 60
+rss_feeds:
+  - url: https://blog.python.org/feeds/posts/default
+    poll_interval_minutes: 60
+    regex_exclude:
+      - "(?i)\\brc\\b"
+      - "(?i)\\bbeta\\b"
+      - "(?i)\\balpha\\b"
+web_pages: []

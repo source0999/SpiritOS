@@ -5,6 +5,7 @@
 import { tool } from "ai";
 import { z } from "zod";
 
+import type { SpiritSwarmAgentRole } from "@/lib/spirit/spirit-reasoning-patterns";
 import { toolErrorFromUnknown } from "@/lib/spirit/tools/tool-safety";
 import { probeOllamaChatCompletionsAcceptsToolSchema } from "@/lib/server/ollama";
 import {
@@ -25,8 +26,11 @@ import {
   readWorkspaceFile,
 } from "@/lib/spirit/tools/workspace-tools";
 import { isWindowsFsEnabled, listWindowsFiles } from "@/lib/spirit/tools/windows-workspace-tools";
+import { sourceProxyFetch } from "@/lib/source-proxy-origin";
 
 export { isFileEditToolsEnvEnabled, isDevCommandToolsEnvEnabled };
+
+export type SpiritRuntimeToolset = Record<string, unknown>;
 
 /** True when streamText received run_dev_command from resolveSpiritToolsForOllamaModel. */
 export function spiritToolsetIncludesRunDevCommand(
@@ -42,6 +46,10 @@ export function isLocalToolsEnabled(): boolean {
 /** Ollama OpenAI-compat must accept tools on /v1/chat/completions (many models do not). */
 export function isOllamaToolTransportReady(): boolean {
   return process.env.SPIRIT_OLLAMA_SUPPORTS_TOOLS === "true";
+}
+
+function isSandboxToolsEnvEnabled(): boolean {
+  return process.env.SPIRIT_ENABLE_SANDBOX_TOOLS === "true";
 }
 
 export function getSpiritReadOnlyTools() {
@@ -210,10 +218,75 @@ function getSpiritFileEditTools() {
   };
 }
 
+function getSpiritSandboxTools() {
+  if (!isLocalToolsEnabled()) return {};
+  if (!isOllamaToolTransportReady()) return {};
+  if (!isSandboxToolsEnvEnabled()) return {};
+
+  return {
+    sandbox_terminal_run: tool({
+      description:
+        "Run a bounded command through the Source proxy Bubblewrap sandbox for verification. Accepts argv arrays only, uses the read-only workspace mount, and returns stdout/stderr without granting arbitrary shell access.",
+      inputSchema: z.object({
+        command: z
+          .array(z.string())
+          .min(1)
+          .max(32)
+          .describe("Command argv to run in the Bubblewrap sandbox."),
+        timeoutSeconds: z
+          .number()
+          .optional()
+          .describe("Timeout in seconds, clamped by the proxy to 30 seconds."),
+        networkPolicy: z
+          .enum(["none", "trusted_command"])
+          .optional()
+          .describe("Network policy for the sandbox; default is none."),
+      }),
+      execute: async (input) => {
+        try {
+          return await runSandboxTerminalViaSourceProxy(input);
+        } catch (e) {
+          return toolErrorFromUnknown(e);
+        }
+      },
+    }),
+  };
+}
+
 export function getSpiritToolsForRuntime() {
   const readOnly = getSpiritReadOnlyTools();
   if (!readOnly) return undefined;
-  return { ...readOnly, ...getSpiritFileEditTools(), ...getSpiritDevCommandTools() };
+  return {
+    ...readOnly,
+    ...getSpiritFileEditTools(),
+    ...getSpiritDevCommandTools(),
+    ...getSpiritSandboxTools(),
+  };
+}
+
+export function getSpiritToolsForSwarmRole(
+  role?: SpiritSwarmAgentRole | string | null,
+): SpiritRuntimeToolset | undefined {
+  const normalizedRole = normalizeSwarmToolRole(role);
+  if (!normalizedRole) {
+    return getSpiritToolsForRuntime();
+  }
+
+  if (normalizedRole === "architect") {
+    return getSpiritReadOnlyTools();
+  }
+
+  if (normalizedRole === "coder") {
+    if (!isLocalToolsEnabled()) return undefined;
+    if (!isOllamaToolTransportReady()) return undefined;
+    const fileEditTools = getSpiritFileEditTools();
+    return Object.keys(fileEditTools).length > 0 ? fileEditTools : undefined;
+  }
+
+  if (!isLocalToolsEnabled()) return undefined;
+  if (!isOllamaToolTransportReady()) return undefined;
+  const sandboxTools = getSpiritSandboxTools();
+  return Object.keys(sandboxTools).length > 0 ? sandboxTools : undefined;
 }
 
 const modelToolSchemaSupported = new Map<string, boolean>();
@@ -229,8 +302,9 @@ export function clearReadOnlyToolProbeCache(): void {
  */
 export async function resolveSpiritToolsForOllamaModel(
   modelId: string,
-): Promise<ReturnType<typeof getSpiritToolsForRuntime>> {
-  const tools = getSpiritToolsForRuntime();
+  opts?: { swarmAgentRole?: SpiritSwarmAgentRole | string | null },
+): Promise<SpiritRuntimeToolset | undefined> {
+  const tools = getSpiritToolsForSwarmRole(opts?.swarmAgentRole);
   if (!tools) return undefined;
 
   const cached = modelToolSchemaSupported.get(modelId);
@@ -245,4 +319,45 @@ export async function resolveSpiritToolsForOllamaModel(
   }
   modelToolSchemaSupported.set(modelId, supported);
   return supported ? tools : undefined;
+}
+
+function normalizeSwarmToolRole(
+  role?: SpiritSwarmAgentRole | string | null,
+): SpiritSwarmAgentRole | null {
+  const normalized = role?.trim().toLowerCase();
+  if (
+    normalized === "architect" ||
+    normalized === "coder" ||
+    normalized === "debugger"
+  ) {
+    return normalized;
+  }
+  return null;
+}
+
+async function runSandboxTerminalViaSourceProxy(input: {
+  command: string[];
+  timeoutSeconds?: number;
+  networkPolicy?: "none" | "trusted_command";
+}) {
+  const response = await sourceProxyFetch("/v1/sandbox/terminal/run", {
+    body: JSON.stringify({
+      command: input.command,
+      timeout_seconds: input.timeoutSeconds,
+      network_policy: input.networkPolicy ?? "none",
+    }),
+    headers: { "content-type": "application/json" },
+    method: "POST",
+  });
+
+  const payload = (await response.json().catch(() => null)) as unknown;
+  if (!response.ok) {
+    return {
+      ok: false,
+      code: "SANDBOX_PROXY_ERROR",
+      status: response.status,
+      payload,
+    };
+  }
+  return payload;
 }

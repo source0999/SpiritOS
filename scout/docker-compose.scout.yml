@@ -1,0 +1,91 @@
+services:
+  scout-api:
+    build: .
+    container_name: scout_v0_1
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - SCOUT_SYNTHESIS_BATCH_SIZE=${SCOUT_SYNTHESIS_BATCH_SIZE:-3}
+      - SCOUT_SEARCH_ENABLED=${SCOUT_SEARCH_ENABLED:-false}
+      - SCOUT_SEARXNG_URL=${SCOUT_SEARXNG_URL:-}
+      - SCOUT_SEARCH_MAX_RESULTS=${SCOUT_SEARCH_MAX_RESULTS:-5}
+      - SCOUT_SEARCH_TIMEOUT_SECONDS=${SCOUT_SEARCH_TIMEOUT_SECONDS:-10}
+      - SCOUT_DISCOVERY_JOBS_ENABLED=${SCOUT_DISCOVERY_JOBS_ENABLED:-true}
+      - SCOUT_DISCOVERY_JOBS_PER_DAY=${SCOUT_DISCOVERY_JOBS_PER_DAY:-3}
+      - SCOUT_DISCOVERY_CANDIDATES_PER_JOB=${SCOUT_DISCOVERY_CANDIDATES_PER_JOB:-5}
+    ports:
+      - "${SCOUT_API_PORT:-8077}:8077"
+    volumes:
+      - ./data:/app/data
+      - ./config:/app/config:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8077/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    profiles: ["cpu"]
+
+  scout-api-nvidia:
+    build: .
+    container_name: scout_v0_1_nvidia
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - SCOUT_SYNTHESIS_BATCH_SIZE=${SCOUT_SYNTHESIS_BATCH_SIZE:-3}
+      - SCOUT_SEARCH_ENABLED=${SCOUT_SEARCH_ENABLED:-false}
+      - SCOUT_SEARXNG_URL=${SCOUT_SEARXNG_URL:-}
+      - SCOUT_SEARCH_MAX_RESULTS=${SCOUT_SEARCH_MAX_RESULTS:-5}
+      - SCOUT_SEARCH_TIMEOUT_SECONDS=${SCOUT_SEARCH_TIMEOUT_SECONDS:-10}
+      - SCOUT_DISCOVERY_JOBS_ENABLED=${SCOUT_DISCOVERY_JOBS_ENABLED:-true}
+      - SCOUT_DISCOVERY_JOBS_PER_DAY=${SCOUT_DISCOVERY_JOBS_PER_DAY:-3}
+      - SCOUT_DISCOVERY_CANDIDATES_PER_JOB=${SCOUT_DISCOVERY_CANDIDATES_PER_JOB:-5}
+    ports:
+      - "${SCOUT_API_PORT:-8077}:8077"
+    volumes:
+      - ./data:/app/data
+      - ./config:/app/config:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8077/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    profiles: ["nvidia"]
+
+  scout-api-amd:
+    build: .
+    container_name: scout_v0_1_amd
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - SCOUT_SYNTHESIS_BATCH_SIZE=${SCOUT_SYNTHESIS_BATCH_SIZE:-3}
+      - SCOUT_SEARCH_ENABLED=${SCOUT_SEARCH_ENABLED:-false}
+      - SCOUT_SEARXNG_URL=${SCOUT_SEARXNG_URL:-}
+      - SCOUT_SEARCH_MAX_RESULTS=${SCOUT_SEARCH_MAX_RESULTS:-5}
+      - SCOUT_SEARCH_TIMEOUT_SECONDS=${SCOUT_SEARCH_TIMEOUT_SECONDS:-10}
+      - SCOUT_DISCOVERY_JOBS_ENABLED=${SCOUT_DISCOVERY_JOBS_ENABLED:-true}
+      - SCOUT_DISCOVERY_JOBS_PER_DAY=${SCOUT_DISCOVERY_JOBS_PER_DAY:-3}
+      - SCOUT_DISCOVERY_CANDIDATES_PER_JOB=${SCOUT_DISCOVERY_CANDIDATES_PER_JOB:-5}
+    ports:
+      - "${SCOUT_API_PORT:-8077}:8077"
+    volumes:
+      - ./data:/app/data
+      - ./config:/app/config:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8077/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    devices:
+      - /dev/kfd
+      - /dev/dri
+    group_add:
+      - video
+      - render
+    profiles: ["amd"]

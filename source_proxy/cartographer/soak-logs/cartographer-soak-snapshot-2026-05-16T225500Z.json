@@ -1,0 +1,168 @@
+{
+  "expected_outcomes": [
+    "cartographer-soak-snapshot: pass",
+    "mutation boundary: snapshot log only",
+    "recommendation: continue soak"
+  ],
+  "log_size_bytes": {
+    "error": null,
+    "file_count": 14,
+    "path": "source_proxy/cartographer/soak-logs",
+    "size_bytes": 194834
+  },
+  "mutated": true,
+  "mutation_boundary": {
+    "after": "M src/components/dashboard/ScoutIntelligenceCenter.tsx\n M src/styles/dashboard-demo-v4.css\n?? source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-2026-05-16T225500Z.json",
+    "allowed_writes": [
+      "source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-2026-05-16T225500Z.json"
+    ],
+    "background_status_delta": [],
+    "before": "M src/components/dashboard/ScoutIntelligenceCenter.tsx\n M src/styles/dashboard-demo-v4.css",
+    "head_after": "bccfa3bf932abe69cd6904c1a2cd448abdcbaf10",
+    "head_before": "bccfa3bf932abe69cd6904c1a2cd448abdcbaf10",
+    "head_changed": false,
+    "snapshot_log_only": true,
+    "status_delta": [
+      "?? source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-2026-05-16T225500Z.json"
+    ],
+    "unexpected_status_delta": []
+  },
+  "next_actions": [
+    "Review pending proposal bp-spiritos-dashboard-component-code-changed-8fe32cca (dashboard, None risk, 0 changed / 1 proposed); use the Blueprint Review dashboard or fetch details with curl -k -s https://10.0.0.186:3000/v1/cartographer/proposals | jq '.proposals[] | select(.proposal_id==\"bp-spiritos-dashboard-component-code-changed-8fe32cca\")'",
+    "Inspect drift 2a2431680cb1b6bc (dashboard: component_code_changed, 1 changed) with curl -k -s https://10.0.0.186:3000/v1/cartographer/drift | jq '.drift[] | select(.drift_id==\"2a2431680cb1b6bc\")'",
+    "Review commit proposal commit-prop-921286f965f3 (dashboard, medium risk, 1 files) with curl -k -s https://10.0.0.186:3000/v1/cartographer/commit-proposals | jq '.commit_proposals[] | select(.commit_proposal_id==\"commit-prop-921286f965f3\")'; do not approve until proposal/drift review is complete."
+  ],
+  "profile": "cartographer-soak-snapshot",
+  "read_only": false,
+  "recommendation": "continue soak",
+  "reliability": {
+    "grade": "watch",
+    "penalties": [
+      "pending proposals still require review",
+      "drift findings still require review",
+      "working tree is dirty"
+    ],
+    "score": 75
+  },
+  "result": "pass",
+  "snapshot_path": "source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-2026-05-16T225500Z.json",
+  "summary": {
+    "audit_event_count": 140,
+    "audit_event_counts": {
+      "applied": 4,
+      "apply approved Cartographer proposal bp-644535470d93": 1,
+      "apply approved Cartographer proposal bp-72e0e482e5b0": 1,
+      "apply approved Cartographer proposal bp-9fe794ff473b": 1,
+      "apply approved Cartographer proposal bp-bd381907c203": 1,
+      "approved": 5,
+      "branch_approved": 2,
+      "branch_created": 1,
+      "commit_created": 27,
+      "commit_pending": 2,
+      "create file": 2,
+      "drafted": 11,
+      "modify file": 52,
+      "plan_rejected": 2,
+      "push_approved": 27,
+      "rejected": 1
+    },
+    "blueprint_count": 19,
+    "branch": "cartographer/docs-blueprint-review",
+    "changed_file_count": 2,
+    "commit_proposal_count": 2,
+    "commit_proposal_examples": [
+      {
+        "commit_proposal_id": "commit-prop-921286f965f3",
+        "component": "dashboard",
+        "file_count": 1,
+        "risk": "medium",
+        "suggested_message": "feat(dashboard): update dashboard"
+      },
+      {
+        "commit_proposal_id": "commit-prop-9a295e342434",
+        "component": "unknown",
+        "file_count": 1,
+        "risk": "unknown",
+        "suggested_message": "feat(unknown): update unknown"
+      }
+    ],
+    "deduped": true,
+    "dirty": true,
+    "drift_count": 2,
+    "drift_examples": [
+      {
+        "changed_file_count": 1,
+        "component": "dashboard",
+        "drift_id": "2a2431680cb1b6bc",
+        "reason": "component_code_changed"
+      },
+      {
+        "changed_file_count": 1,
+        "component": "dashboard",
+        "drift_id": "c8162ad52ec365aa",
+        "reason": "qa_gap"
+      }
+    ],
+    "duplicate_proposals_present": 0,
+    "merge_blockers": [
+      "blueprint drift unresolved",
+      "proposal review still pending",
+      "working tree has uncommitted changes"
+    ],
+    "merge_ready_count": 0,
+    "pending_proposal_examples": [
+      {
+        "changed_file_count": 0,
+        "component": "dashboard",
+        "proposal_id": "bp-spiritos-dashboard-component-code-changed-8fe32cca",
+        "proposed_file_count": 1,
+        "risk": "None",
+        "status": "drafted"
+      },
+      {
+        "changed_file_count": 0,
+        "component": "dashboard",
+        "proposal_id": "bp-spiritos-dashboard-qa-gap-2db8efe3",
+        "proposed_file_count": 1,
+        "risk": "None",
+        "status": "drafted"
+      },
+      {
+        "changed_file_count": 0,
+        "component": "project",
+        "proposal_id": "bp-spiritos-project-readme-changed-9c7220f5",
+        "proposed_file_count": 3,
+        "risk": "None",
+        "status": "drafted"
+      },
+      {
+        "changed_file_count": 0,
+        "component": "qa",
+        "proposal_id": "bp-spiritos-qa-api-changed-without-manual-checklist-update-8e829500",
+        "proposed_file_count": 2,
+        "risk": "None",
+        "status": "drafted"
+      }
+    ],
+    "pending_proposals": 4,
+    "project_count": 1,
+    "proposal_count": 9,
+    "push_queue_count": 0,
+    "safety": {
+      "approval_required_for_commits": true,
+      "approval_required_for_file_writes": true,
+      "approval_required_for_pushes": true,
+      "scout_bypass_allowed": false,
+      "source_proxy_approval_bypass_allowed": false,
+      "write_policy": "read_only"
+    },
+    "staged": null,
+    "status": "observing",
+    "unstaged": null,
+    "untracked": null,
+    "write_actions_enabled": false
+  },
+  "timestamp": "2026-05-16T22:55:00+00:00",
+  "warnings": [],
+  "wrote_snapshot": true
+}

@@ -325,7 +325,7 @@ function formatSpiritOsOverview(opts: {
   );
   lines.push("- Help plan, code, and debug this repo through normal chat.");
   lines.push(
-    `- Researcher/Teacher OpenAI web prefetch is **${webSearchEnabled ? "enabled" : "disabled"}** via env (WEB_SEARCH_ENABLED).`,
+    `- Researcher/Teacher web prefetch is **${webSearchEnabled ? "enabled" : "disabled"}** via env (WEB_SEARCH_ENABLED).`,
   );
   lines.push("");
   lines.push("**What I cannot do from the app yet:**");

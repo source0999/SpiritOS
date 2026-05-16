@@ -8,6 +8,7 @@ import {
   SpiritRequestValidationError,
 } from "@/lib/spirit/spirit-chat-request-body";
 import type { ModelProfileId } from "@/lib/spirit/model-profile.types";
+import type { SpiritSwarmAgentRole } from "@/lib/spirit/spirit-reasoning-patterns";
 
 import type { SpiritRuntimeSurface } from "@/lib/spirit/spirit-runtime-surface";
 
@@ -21,6 +22,7 @@ export type SpiritRequestBody = {
   teacherWebSearchEnabled: boolean;
   researchPlanSummary?: string;
   oracleMemoryContext?: string;
+  swarmAgentRole?: SpiritSwarmAgentRole;
 };
 
 export async function readSpiritRequest(req: Request): Promise<SpiritRequestBody> {

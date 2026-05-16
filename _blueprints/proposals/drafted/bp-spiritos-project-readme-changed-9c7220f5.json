@@ -1,0 +1,46 @@
+{
+  "action_taken": false,
+  "affected_blueprints": [
+    "chat-runtime-architecture",
+    "design-system",
+    "oracle-voice"
+  ],
+  "applied": false,
+  "approved_diff": null,
+  "changed_files": [
+    "_blueprints/proposals/README.md"
+  ],
+  "component": "project",
+  "confidence": "medium",
+  "deduped": true,
+  "diff_preview": "diff --git a/_blueprints/components/chat_runtime_architecture.md b/_blueprints/components/chat_runtime_architecture.md\n--- a/_blueprints/components/chat_runtime_architecture.md\n+++ b/_blueprints/components/chat_runtime_architecture.md\n@@ -85,3 +85,9 @@\n | `src/hooks/useSpiritModeRuntime.ts` | Model profile, personalization summary fields for body. |\n | `src/hooks/useSpiritChatTransport.ts` | `useChat`, headers, workflow/research-plan, Dexie hydrate. |\n | `src/hooks/useSpiritVoiceRuntime.ts` | Speak-latest, sanitization, activity hooks around `useTTS`. |\n+\n+### Cartographer Review Note\n+- Reason: readme_changed.\n+- Component: project.\n+- Changed files: _blueprints/proposals/README.md.\n+- Manual check: confirm this blueprint still matches the changed implementation.\ndiff --git a/_blueprints/components/design_system.md b/_blueprints/components/design_system.md\n--- a/_blueprints/components/design_system.md\n+++ b/_blueprints/components/design_system.md\n@@ -121,3 +121,9 @@\n - **Sticky mobile navigation** - one coherent pattern for dashboard, chat, and Oracle.\n \n QA on a **real phone** over **HTTPS** to the LAN dev host is mandatory before calling this \u201cdone.\u201d\n+\n+### Cartographer Review Note\n+- Reason: readme_changed.\n+- Component: project.\n+- Changed files: _blueprints/proposals/README.md.\n+- Manual check: confirm this blueprint still matches the changed implementation.\ndiff --git a/_blueprints/components/oracle_voice.md b/_blueprints/components/oracle_voice.md\n--- a/_blueprints/components/oracle_voice.md\n+++ b/_blueprints/components/oracle_voice.md\n@@ -134,3 +134,9 @@\n | `src/hooks/useOracleSpeechInput.ts` | MediaRecorder + `/api/stt/transcribe`; mic enumeration; audio amplitude VAD; idempotent stop. |\n | `src/lib/oracle/oracle-voice-session.ts` | Status + event helpers + auto-restart predicate. |\n | `src/components/oracle/OracleVoiceStatusCard.tsx` | Compact telemetry (mode, runtime, STT, mic, audio level, silence ms, transcript, TTS). |\n+\n+### Cartographer Review Note\n+- Reason: readme_changed.\n+- Component: project.\n+- Changed files: _blueprints/proposals/README.md.\n+- Manual check: confirm this blueprint still matches the changed implementation.",
+  "fingerprint": "9c7220f51951e208",
+  "generated": false,
+  "persisted": true,
+  "project_id": "spiritos",
+  "proposal_id": "bp-spiritos-project-readme-changed-9c7220f5",
+  "proposed_files": [
+    "_blueprints/components/chat_runtime_architecture.md",
+    "_blueprints/components/design_system.md",
+    "_blueprints/components/oracle_voice.md"
+  ],
+  "rationale": "readme_changed affected project; Cartographer drafted a doc-only preview for dashboard review.",
+  "rejection_reason": null,
+  "requires_approval": true,
+  "review_note": "Do not apply generic README drift notes to chat_runtime_architecture, design_system, and oracle_voice. Regenerate a narrower proposal or skip if _blueprints/proposals/README.md does not materially change those blueprints. Also fix malformed diff spacing.",
+  "status": "drafted",
+  "title": "Draft blueprint update for project",
+  "transitions": [
+    {
+      "actor": "cartographer",
+      "status": "drafted",
+      "timestamp": "2026-05-16T22:13:12Z"
+    },
+    {
+      "actor": "Britton",
+      "status": "drafted",
+      "timestamp": "2026-05-16T22:13:12Z"
+    }
+  ],
+  "type": "blueprint_update"
+}

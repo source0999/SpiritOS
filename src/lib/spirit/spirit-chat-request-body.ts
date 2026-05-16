@@ -7,6 +7,7 @@ import {
   type ModelProfileId,
 } from "@/lib/spirit/model-profile.types";
 import { isModelProfileId } from "@/lib/spirit/model-profiles";
+import type { SpiritSwarmAgentRole } from "@/lib/spirit/spirit-reasoning-patterns";
 
 export class SpiritRequestValidationError extends Error {
   constructor(
@@ -32,16 +33,18 @@ export type SpiritChatRequestBody = {
   /** Prompt 10B - extra deliberation + modest token bump */
   deepThinkEnabled: boolean;
   /**
-   * Researcher only: when true, skip OpenAI web prefetch. Default false (web ON).
+   * Researcher only: when true, skip provider-router web prefetch. Default false (web ON).
    * Legacy clients sent `webSearchRequested`; we map `webSearchRequested: false` → opt-out true.
    */
   webSearchOptOut: boolean;
-  /** Teacher-only: opt-in OpenAI web prefetch for current-data prompts. */
+  /** Teacher-only: opt-in provider-router web prefetch for current-data prompts. */
   teacherWebSearchEnabled: boolean;
   /** Optional approved research plan text (Stage 5 stub). */
   researchPlanSummary?: string;
   /** Optional Oracle voice session memory context block (Phase 3). */
   oracleMemoryContext?: string;
+  /** Optional active coding swarm role for prompt and tool binding. */
+  swarmAgentRole?: SpiritSwarmAgentRole;
 };
 
 function assertMessagesShape(raw: unknown[]): void {
@@ -144,6 +147,25 @@ function normalizeOracleMemoryContext(raw: unknown): string | undefined {
   return t;
 }
 
+function normalizeSwarmAgentRole(raw: unknown): SpiritSwarmAgentRole | undefined {
+  if (raw === undefined || raw === null || raw === "") return undefined;
+  if (typeof raw !== "string") {
+    throw new SpiritRequestValidationError(400, "swarmAgentRole must be a string when provided");
+  }
+  const normalized = raw.trim().toLowerCase();
+  if (
+    normalized === "architect" ||
+    normalized === "coder" ||
+    normalized === "debugger"
+  ) {
+    return normalized;
+  }
+  throw new SpiritRequestValidationError(
+    400,
+    "swarmAgentRole must be architect, coder, or debugger",
+  );
+}
+
 /** Validates POST JSON for /api/spirit (messages + optional modelProfileId). */
 export function parseSpiritChatRequestBody(body: unknown): SpiritChatRequestBody {
   if (!body || typeof body !== "object") {
@@ -177,6 +199,7 @@ export function parseSpiritChatRequestBody(body: unknown): SpiritChatRequestBody
   );
   const researchPlanSummary = normalizeResearchPlanSummary(record.researchPlanSummary);
   const oracleMemoryContext = normalizeOracleMemoryContext(record.oracleMemoryContext);
+  const swarmAgentRole = normalizeSwarmAgentRole(record.swarmAgentRole);
 
   return {
     messages: maybeMessages as UIMessage[],
@@ -188,5 +211,6 @@ export function parseSpiritChatRequestBody(body: unknown): SpiritChatRequestBody
     teacherWebSearchEnabled,
     researchPlanSummary,
     oracleMemoryContext,
+    swarmAgentRole,
   };
 }

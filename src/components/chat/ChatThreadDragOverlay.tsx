@@ -1,6 +1,6 @@
 "use client";
 
-// ── ChatThreadDragOverlay - ghost card under cursor (oldSpiritOS ThreadDragOverlay) ─
+// ── ChatThreadDragOverlay - cursor follower; must read like the rail row, not a modal ──
 import { memo } from "react";
 
 import type { ChatThread } from "@/lib/chat-db.types";
@@ -16,19 +16,18 @@ export const ChatThreadDragOverlay = memo(function ChatThreadDragOverlay({
   return (
     <div
       className={cn(
-        "flex w-[min(232px,72vw)] max-w-[240px] items-center rounded-xl px-3 py-2.5",
-        "border border-[color:color-mix(in_oklab,var(--spirit-accent-strong)_38%,transparent)]",
-        "bg-[color:color-mix(in_oklab,var(--spirit-bg)_94%,transparent)]",
-        "shadow-[0_8px_32px_-8px_var(--spirit-glow)] backdrop-blur-md",
-        "cursor-grabbing",
+        "pointer-events-none z-[10050] flex w-[var(--chat-thread-rail-width,260px)] max-w-[min(260px,calc(100vw-16px))] min-w-0 cursor-grabbing items-center gap-1.5 rounded-md border px-2 py-1",
+        "border-[color:color-mix(in_oklab,var(--spirit-border)_45%,transparent)]",
+        "bg-[color:color-mix(in_oklab,var(--spirit-bg)_88%,transparent)]",
       )}
     >
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-[12px] font-medium text-chalk">{thread.title}</p>
-        <p className="mt-0.5 truncate font-mono text-[10px] text-chalk/45">
-          Moving thread…
-        </p>
-      </div>
+      <span
+        className="h-8 w-0.5 shrink-0 rounded-full bg-[color:color-mix(in_oklab,var(--spirit-accent-strong)_28%,transparent)]"
+        aria-hidden
+      />
+      <p className="min-w-0 flex-1 truncate text-left text-[12px] font-medium leading-tight text-chalk/90">
+        {thread.title}
+      </p>
     </div>
   );
 });
