@@ -152,3 +152,9 @@ The dashboard should expose:
 - audit trail
 
 All dashboard states must fail closed: unavailable data should never reveal apply, commit, or push controls.
+
+### Cartographer Review Note
+- Reason: component_code_changed.
+- Component: cartographer.
+- Changed files: source_proxy/cartographer/apply.py, source_proxy/cartographer/audit_trail.py, source_proxy/cartographer/blueprint_registry.py, source_proxy/cartographer/branch_recommendations.py, source_proxy/cartographer/commit_proposals.py, source_proxy/cartographer/component_mapper.py, source_proxy/cartographer/drift.py, source_proxy/cartographer/git_approvals.py.
+- Manual check: confirm this blueprint still matches the changed implementation.
