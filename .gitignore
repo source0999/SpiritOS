@@ -81,3 +81,7 @@ data/*.sqlite3
 
 # Local Scout backup/data exports
 scout/data.backup-*/
+
+# Local Scout virtualenv and backups
+scout/.venv/
+scout/data.backup-*/
