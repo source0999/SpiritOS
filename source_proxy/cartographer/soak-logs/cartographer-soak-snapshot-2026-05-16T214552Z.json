@@ -1,0 +1,72 @@
+{
+  "expected_outcomes": [
+    "cartographer-soak-snapshot: pass",
+    "mutation boundary: snapshot log only",
+    "recommendation: ready for next increment"
+  ],
+  "log_size_bytes": {
+    "error": null,
+    "file_count": 5,
+    "path": "source_proxy\\cartographer\\soak-logs",
+    "size_bytes": 52466
+  },
+  "mutated": true,
+  "mutation_boundary": {
+    "after": "M _blueprints/INDEX.md\n M _blueprints/_schema/blueprint-frontmatter.schema.md\n M _blueprints/runbooks/cartographer_manual_checks.md\n M docs/continue-lite-console-plan.md\n M docs/proxy-test-runner-plan.md\n D \"on                          |    3 +\"\n M requirements.txt\n D scout/.venv/bin/python\n D scout/.venv/bin/python3\n D scout/.venv/bin/python3.12\n D scout/.venv/lib64\n M scout/src/scout/api/discovery_jobs.py\n M scout/src/scout/api/human.py\n M scout/src/scout/api/overview.py\n M scout/src/scout/api/packets.py\n M scout/src/scout/api/sources.py\n M scout/src/scout/sources/discovery_jobs.py\n M scout/src/scout/sources/scoring.py\n M scout/src/scout/sources/search_candidates.py\n M scout/src/scout/tests/test_discovery_jobs.py\n M scout/src/scout/tests/test_packets_api.py\n M scout/src/scout/tests/test_search_candidate_extraction.py\n M scout/src/scout/tests/test_sources_api.py\n M scripts/validate-blueprints.mjs\n M source_proxy/api/cartographer.py\n M source_proxy/api/coding_self_tests.py\n M source_proxy/api/sandbox_terminal.py\n M source_proxy/api/scout_intake.py\n M source_proxy/cartographer/apply.py\n M source_proxy/cartographer/audit_trail.py\n M source_proxy/cartographer/blueprint_registry.py\n M source_proxy/cartographer/branch_recommendations.py\n M source_proxy/cartographer/commit_proposals.py\n M source_proxy/cartographer/component_mapper.py\n M source_proxy/cartographer/drift.py\n M source_proxy/cartographer/git_status.py\n M source_proxy/cartographer/models.py\n M source_proxy/cartographer/project_discovery.py\n M source_proxy/cartographer/project_health.py\n M source_proxy/cartographer/proposal_previews.py\n M source_proxy/cartographer/proposals.py\n M source_proxy/cartographer/push_queue.py\n M source_proxy/cartographer/repo_map.py\n M source_proxy/cartographer/service.py\n M source_proxy/cartographer/starter_blueprints.py\n M source_proxy/decision/research.py\n M source_proxy/decision/router.py\n M source_proxy/decision/scout_research.py\n M source_proxy/proxy_memory/scout_intake.py\n M source_proxy/tasks/long_running.py\n M source_proxy/testing/runner.py\n M source_proxy/tests/test_cartographer_api.py\n M source_proxy/tests/test_cartographer_safety_audit.py\n M source_proxy/tests/test_coding_self_tests.py\n M source_proxy/tests/test_prompt_packet_context_metadata.py\n M source_proxy/tests/test_proxy_runner.py\n M source_proxy/tests/test_research_preview.py\n M source_proxy/tests/test_sandbox_terminal_api.py\n M source_proxy/tests/test_scout_intake.py\n M source_proxy/tests/test_scout_research_bridge.py\n M src/app/v1/cartographer/audit-trail/route.ts\n M src/app/v1/cartographer/branch-recommendations/route.ts\n M src/app/v1/cartographer/project-health/route.ts\n M src/app/v1/cartographer/proposals/[proposalId]/apply-approved/route.ts\n M src/app/v1/cartographer/proposals/route.ts\n M src/app/v1/cartographer/push-queue/route.ts\n M src/components/coding/CodingAgentInterface.tsx\n M src/components/coding/__tests__/coding-workflow-step.test.ts\n M src/components/dashboard/HomelabBlueprintReviewWidget.tsx\n M src/components/dashboard/HomelabCartographerWidget.tsx\n M src/components/dashboard/HomelabScoutIntelligenceWidget.tsx\n M src/components/dashboard/HomelabTestRunnerWidget.tsx\n M src/components/dashboard/__tests__/HomelabBlueprintReviewWidget.test.tsx\n M src/components/dashboard/__tests__/HomelabScoutIntelligenceWidget.test.tsx\n M src/components/dashboard/__tests__/HomelabTestRunnerWidget.test.tsx\n M src/components/dashboard/demo-v4/DashboardDemoV4FloatingNav.tsx\n M src/hooks/useScoutOverview.ts\n M src/lib/scout-overview.ts\n M src/styles/dashboard-demo-v4.css\n?? _blueprints/proposals/\n?? cartogrpaherPlanAuto.md\n?? docs/cartographer-trust-source-plan.md\n?? masterOverhual.md\n?? scouUi.md\n?? scout/=8,\n?? scout/docs/V0_4_SCOUT_POLISH_CLOSEOUT.md\n?? scout/soak-logs/scout-soak-snapshot-2026-05-16T160750Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-16T161258Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-16T194610Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-16T195549Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-16T210942Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-16T211119Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-16T212209Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-16T212434Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-16T212527Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-16T212803Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-16T212901Z.json\n?? scoutRefinemint.md\n?? source_proxy/agents/\n?? source_proxy/cartographer/git_approvals.py\n?? source_proxy/cartographer/proposal_reviews.py\n?? source_proxy/cartographer/soak-logs/\n?? source_proxy/terminal_presets.py\n?? source_proxy/tests/test_agent_registry.py\n?? src/app/api/scout/source-candidates/batch-approve/\n?? src/app/intelligence/\n?? src/app/v1/cartographer/branch-recommendations/[recommendationId]/\n?? src/app/v1/cartographer/commit-proposals/[commitProposalId]/\n?? src/app/v1/cartographer/proposals/[proposalId]/review/\n?? src/app/v1/cartographer/push-queue/[pushId]/\n?? src/components/dashboard/ScoutIntelligenceCenter.tsx\n?? src/lib/scout-human-readable.ts",
+    "allowed_writes": [
+      "source_proxy\\cartographer\\soak-logs\\cartographer-soak-snapshot-2026-05-16T214552Z.json"
+    ],
+    "background_status_delta": [],
+    "before": "M _blueprints/INDEX.md\n M _blueprints/_schema/blueprint-frontmatter.schema.md\n M _blueprints/runbooks/cartographer_manual_checks.md\n M docs/continue-lite-console-plan.md\n M docs/proxy-test-runner-plan.md\n D \"on                          |    3 +\"\n M requirements.txt\n D scout/.venv/bin/python\n D scout/.venv/bin/python3\n D scout/.venv/bin/python3.12\n D scout/.venv/lib64\n M scout/src/scout/api/discovery_jobs.py\n M scout/src/scout/api/human.py\n M scout/src/scout/api/overview.py\n M scout/src/scout/api/packets.py\n M scout/src/scout/api/sources.py\n M scout/src/scout/sources/discovery_jobs.py\n M scout/src/scout/sources/scoring.py\n M scout/src/scout/sources/search_candidates.py\n M scout/src/scout/tests/test_discovery_jobs.py\n M scout/src/scout/tests/test_packets_api.py\n M scout/src/scout/tests/test_search_candidate_extraction.py\n M scout/src/scout/tests/test_sources_api.py\n M scripts/validate-blueprints.mjs\n M source_proxy/api/cartographer.py\n M source_proxy/api/coding_self_tests.py\n M source_proxy/api/sandbox_terminal.py\n M source_proxy/api/scout_intake.py\n M source_proxy/cartographer/apply.py\n M source_proxy/cartographer/audit_trail.py\n M source_proxy/cartographer/blueprint_registry.py\n M source_proxy/cartographer/branch_recommendations.py\n M source_proxy/cartographer/commit_proposals.py\n M source_proxy/cartographer/component_mapper.py\n M source_proxy/cartographer/drift.py\n M source_proxy/cartographer/git_status.py\n M source_proxy/cartographer/models.py\n M source_proxy/cartographer/project_discovery.py\n M source_proxy/cartographer/project_health.py\n M source_proxy/cartographer/proposal_previews.py\n M source_proxy/cartographer/proposals.py\n M source_proxy/cartographer/push_queue.py\n M source_proxy/cartographer/repo_map.py\n M source_proxy/cartographer/service.py\n M source_proxy/cartographer/starter_blueprints.py\n M source_proxy/decision/research.py\n M source_proxy/decision/router.py\n M source_proxy/decision/scout_research.py\n M source_proxy/proxy_memory/scout_intake.py\n M source_proxy/tasks/long_running.py\n M source_proxy/testing/runner.py\n M source_proxy/tests/test_cartographer_api.py\n M source_proxy/tests/test_cartographer_safety_audit.py\n M source_proxy/tests/test_coding_self_tests.py\n M source_proxy/tests/test_prompt_packet_context_metadata.py\n M source_proxy/tests/test_proxy_runner.py\n M source_proxy/tests/test_research_preview.py\n M source_proxy/tests/test_sandbox_terminal_api.py\n M source_proxy/tests/test_scout_intake.py\n M source_proxy/tests/test_scout_research_bridge.py\n M src/app/v1/cartographer/audit-trail/route.ts\n M src/app/v1/cartographer/branch-recommendations/route.ts\n M src/app/v1/cartographer/project-health/route.ts\n M src/app/v1/cartographer/proposals/[proposalId]/apply-approved/route.ts\n M src/app/v1/cartographer/proposals/route.ts\n M src/app/v1/cartographer/push-queue/route.ts\n M src/components/coding/CodingAgentInterface.tsx\n M src/components/coding/__tests__/coding-workflow-step.test.ts\n M src/components/dashboard/HomelabBlueprintReviewWidget.tsx\n M src/components/dashboard/HomelabCartographerWidget.tsx\n M src/components/dashboard/HomelabScoutIntelligenceWidget.tsx\n M src/components/dashboard/HomelabTestRunnerWidget.tsx\n M src/components/dashboard/__tests__/HomelabBlueprintReviewWidget.test.tsx\n M src/components/dashboard/__tests__/HomelabScoutIntelligenceWidget.test.tsx\n M src/components/dashboard/__tests__/HomelabTestRunnerWidget.test.tsx\n M src/components/dashboard/demo-v4/DashboardDemoV4FloatingNav.tsx\n M src/hooks/useScoutOverview.ts\n M src/lib/scout-overview.ts\n M src/styles/dashboard-demo-v4.css\n?? _blueprints/proposals/\n?? cartogrpaherPlanAuto.md\n?? docs/cartographer-trust-source-plan.md\n?? masterOverhual.md\n?? scouUi.md\n?? scout/=8,\n?? scout/docs/V0_4_SCOUT_POLISH_CLOSEOUT.md\n?? scout/soak-logs/scout-soak-snapshot-2026-05-16T160750Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-16T161258Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-16T194610Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-16T195549Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-16T210942Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-16T211119Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-16T212209Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-16T212434Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-16T212527Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-16T212803Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-16T212901Z.json\n?? scoutRefinemint.md\n?? source_proxy/agents/\n?? source_proxy/cartographer/git_approvals.py\n?? source_proxy/cartographer/proposal_reviews.py\n?? source_proxy/cartographer/soak-logs/\n?? source_proxy/terminal_presets.py\n?? source_proxy/tests/test_agent_registry.py\n?? src/app/api/scout/source-candidates/batch-approve/\n?? src/app/intelligence/\n?? src/app/v1/cartographer/branch-recommendations/[recommendationId]/\n?? src/app/v1/cartographer/commit-proposals/[commitProposalId]/\n?? src/app/v1/cartographer/proposals/[proposalId]/review/\n?? src/app/v1/cartographer/push-queue/[pushId]/\n?? src/components/dashboard/ScoutIntelligenceCenter.tsx\n?? src/lib/scout-human-readable.ts",
+    "head_after": "74315faac5b228dd22b54f0f530893b0e9a2988a",
+    "head_before": "74315faac5b228dd22b54f0f530893b0e9a2988a",
+    "head_changed": false,
+    "snapshot_log_only": true,
+    "status_delta": [],
+    "unexpected_status_delta": []
+  },
+  "profile": "cartographer-soak-snapshot",
+  "read_only": false,
+  "recommendation": "ready for next increment",
+  "reliability": {
+    "grade": "boring",
+    "penalties": [],
+    "score": 100
+  },
+  "result": "pass",
+  "snapshot_path": "source_proxy\\cartographer\\soak-logs\\cartographer-soak-snapshot-2026-05-16T214552Z.json",
+  "summary": {
+    "audit_event_count": 0,
+    "audit_event_counts": {},
+    "blueprint_count": 0,
+    "branch": null,
+    "changed_file_count": 0,
+    "commit_proposal_count": 0,
+    "deduped": true,
+    "dirty": false,
+    "drift_count": 0,
+    "duplicate_proposals_present": 0,
+    "merge_blockers": [],
+    "merge_ready_count": 0,
+    "pending_proposals": 0,
+    "project_count": 0,
+    "proposal_count": 0,
+    "push_queue_count": 0,
+    "safety": {
+      "approval_required_for_commits": true,
+      "approval_required_for_file_writes": true,
+      "approval_required_for_pushes": true,
+      "scout_bypass_allowed": false,
+      "source_proxy_approval_bypass_allowed": false,
+      "write_policy": "read_only"
+    },
+    "staged": null,
+    "status": "observing",
+    "unstaged": null,
+    "untracked": null,
+    "write_actions_enabled": false
+  },
+  "timestamp": "2026-05-16T21:45:52+00:00",
+  "warnings": [],
+  "wrote_snapshot": true
+}
