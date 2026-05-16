@@ -216,6 +216,7 @@ Run before routine use or after Cartographer edits:
 ```bash
 python3 -m pytest -q source_proxy/tests/test_cartographer_safety_audit.py
 python3 -m pytest -q source_proxy/tests/test_cartographer_api.py
+PYTHONPATH=. python3 -m source_proxy.testing.runner --profile cartographer-safety
 npm run validate:blueprints
 ```
 
@@ -226,7 +227,36 @@ Cartographer safety audit: passed
 Blueprint index valid
 ```
 
-## 10. Manual Dashboard QA
+## 10. Trust Soak Snapshots
+
+Run three snapshots over time:
+
+```bash
+PYTHONPATH=. python3 -m source_proxy.testing.runner --profile cartographer-soak-snapshot
+sleep 60
+PYTHONPATH=. python3 -m source_proxy.testing.runner --profile cartographer-soak-snapshot
+sleep 60
+PYTHONPATH=. python3 -m source_proxy.testing.runner --profile cartographer-soak-snapshot
+```
+
+Expected:
+
+```text
+cartographer-soak-snapshot: pass
+mutation boundary: snapshot log only
+recommendation: ready for next increment
+```
+
+If reliability is `watch`, expect `recommendation: continue soak` and a `Next actions` section with real proposal, drift, or commit proposal IDs plus copy-paste inspection commands. Do not proceed until those listed items are reviewed.
+
+Confirm:
+
+- No duplicate proposals appear between snapshots.
+- Git HEAD does not change.
+- The only intended write is `source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-*.json`.
+- Reliability score remains readable and any watch penalty maps to a concrete next action.
+
+## 11. Manual Dashboard QA
 
 Use `cartographer-dashboard-mobile-qa` for:
 

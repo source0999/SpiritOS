@@ -11,7 +11,7 @@ code_paths:
   - _blueprints/**
 related_blueprints: []
 write_policy: proposal_only_until_dashboard_approved
-last_verified: 2026-05-15
+last_verified: 2026-05-16
 ---
 
 # SpiritOS Blueprint Inventory
@@ -19,6 +19,18 @@ last_verified: 2026-05-15
 Inventory created for Spirit Cartographer Increment 0.1 on 2026-05-15.
 
 This index classifies the current `_blueprints` documents without rewriting their content. Each existing blueprint document is listed once.
+
+## Directory Governance
+
+| Directory | Purpose | Governance |
+| --- | --- | --- |
+| `current/` | Current project and dashboard state. | Canonical current truth; Cartographer may use these for drift checks. |
+| `components/` | Component architecture and component roadmaps. | Active component blueprints may be source-of-truth; planned roadmaps are not canonical truth until promoted. |
+| `runbooks/` | Manual QA, operating checks, and command recipes. | Operational guidance only; runbooks must not redefine architecture. |
+| `history/` | Phase receipts and historical evidence. | Preserved for context; ignored for current drift authority. |
+| `sandbox/` | Visual experiments and non-production concepts. | Explicitly non-production; cannot imply shipped behavior. |
+| `proposals/` | Draft blueprint and governance update proposals. | Proposal queue only; no proposal applies without review and approval. |
+| `_schema/` | Blueprint metadata and policy schema. | Governance reference for frontmatter and write policy rules. |
 
 ## Current Source Of Truth
 
@@ -72,6 +84,12 @@ This index classifies the current `_blueprints` documents without rewriting thei
 | Document | Classification | Notes |
 | --- | --- | --- |
 | `sandbox/design_demo.md` | visual sandbox | Visual-only design demo blueprint for `/design-demo`; explicitly not production rewiring. |
+
+## Proposal Queue
+
+| Document | Classification | Notes |
+| --- | --- | --- |
+| `proposals/README.md` | proposal queue placeholder | Explains where future reviewable blueprint proposals should live; contains no approved changes. |
 
 ## Deprecated / Parked Docs
 

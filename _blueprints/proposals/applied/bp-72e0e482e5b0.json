@@ -1,0 +1,69 @@
+{
+  "action_taken": true,
+  "affected_blueprints": [
+    "system-state"
+  ],
+  "applied": true,
+  "applied_at": "2026-05-16T19:50:12Z",
+  "applied_by": "Britton",
+  "applied_files": [
+    "_blueprints/current/system_state.md"
+  ],
+  "approved_diff": "diff --git a/_blueprints/current/system_state.md b/_blueprints/current/system_state.md\n--- a/_blueprints/current/system_state.md\n+++ b/_blueprints/current/system_state.md\n@@ -213,3 +213,9 @@\n ## 14. Next Step\n \n Next step requires explicit permission: begin Option C, Read-Only Architect Context Preview.\n+\n+### Cartographer Review Note\n+- Reason: component_code_changed.\n+- Component: scout.\n+- Changed files: scout/=8,, scout/docs/V0_4_SCOUT_POLISH_CLOSEOUT.md, scout/soak-logs/scout-soak-snapshot-2026-05-16T160750Z.json, scout/soak-logs/scout-soak-snapshot-2026-05-16T161258Z.json, scout/soak-logs/scout-soak-snapshot-2026-05-16T194610Z.json, scout/src/scout/api/discovery_jobs.py, scout/src/scout/api/human.py, scout/src/scout/api/overview.py.\n+- Manual check: confirm this blueprint still matches the changed implementation.",
+  "changed_files": [
+    "scout/=8,",
+    "scout/docs/V0_4_SCOUT_POLISH_CLOSEOUT.md",
+    "scout/soak-logs/scout-soak-snapshot-2026-05-16T160750Z.json",
+    "scout/soak-logs/scout-soak-snapshot-2026-05-16T161258Z.json",
+    "scout/soak-logs/scout-soak-snapshot-2026-05-16T194610Z.json",
+    "scout/src/scout/api/discovery_jobs.py",
+    "scout/src/scout/api/human.py",
+    "scout/src/scout/api/overview.py",
+    "scout/src/scout/api/packets.py",
+    "scout/src/scout/api/sources.py",
+    "scout/src/scout/sources/discovery_jobs.py",
+    "scout/src/scout/sources/scoring.py",
+    "scout/src/scout/sources/search_candidates.py",
+    "scout/src/scout/tests/test_discovery_jobs.py",
+    "scout/src/scout/tests/test_packets_api.py",
+    "scout/src/scout/tests/test_search_candidate_extraction.py",
+    "scout/src/scout/tests/test_sources_api.py"
+  ],
+  "committed": false,
+  "component": "scout",
+  "confidence": "medium",
+  "diff_preview": "diff --git a/_blueprints/current/system_state.md b/_blueprints/current/system_state.md\n--- a/_blueprints/current/system_state.md\n+++ b/_blueprints/current/system_state.md\n@@ -213,3 +213,9 @@\n ## 14. Next Step\n \n Next step requires explicit permission: begin Option C, Read-Only Architect Context Preview.\n+\n+### Cartographer Review Note\n+- Reason: component_code_changed.\n+- Component: scout.\n+- Changed files: scout/=8,, scout/docs/V0_4_SCOUT_POLISH_CLOSEOUT.md, scout/soak-logs/scout-soak-snapshot-2026-05-16T160750Z.json, scout/soak-logs/scout-soak-snapshot-2026-05-16T161258Z.json, scout/soak-logs/scout-soak-snapshot-2026-05-16T194610Z.json, scout/src/scout/api/discovery_jobs.py, scout/src/scout/api/human.py, scout/src/scout/api/overview.py.\n+- Manual check: confirm this blueprint still matches the changed implementation.",
+  "generated": false,
+  "persisted": true,
+  "project_id": "spiritos",
+  "proposal_id": "bp-72e0e482e5b0",
+  "proposed_files": [
+    "_blueprints/current/system_state.md"
+  ],
+  "pushed": false,
+  "rationale": "component_code_changed affected scout; Cartographer drafted a doc-only preview for dashboard review.",
+  "rejection_reason": null,
+  "requires_approval": true,
+  "status": "applied",
+  "task_id": "task_142ce4c23db5",
+  "title": "Draft blueprint update for scout",
+  "transitions": [
+    {
+      "actor": "cartographer",
+      "status": "drafted",
+      "timestamp": "2026-05-16T19:48:23Z"
+    },
+    {
+      "actor": "dashboard-blueprint-review",
+      "status": "approved",
+      "timestamp": "2026-05-16T19:48:23Z"
+    },
+    {
+      "actor": "Britton",
+      "status": "applied",
+      "timestamp": "2026-05-16T19:50:12Z"
+    }
+  ],
+  "type": "blueprint_update",
+  "verification_status": "verified"
+}
