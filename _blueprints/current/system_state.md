@@ -219,3 +219,9 @@ Next step requires explicit permission: begin Option C, Read-Only Architect Cont
 - Component: scout.
 - Changed files: scout/=8,, scout/docs/V0_4_SCOUT_POLISH_CLOSEOUT.md, scout/soak-logs/scout-soak-snapshot-2026-05-16T160750Z.json, scout/soak-logs/scout-soak-snapshot-2026-05-16T161258Z.json, scout/soak-logs/scout-soak-snapshot-2026-05-16T194610Z.json, scout/src/scout/api/discovery_jobs.py, scout/src/scout/api/human.py, scout/src/scout/api/overview.py.
 - Manual check: confirm this blueprint still matches the changed implementation.
+
+### Cartographer Review Note
+- Reason: route_changed.
+- Component: architecture.
+- Changed files: src/app/api/scout/source-candidates/batch-approve/route.ts, src/app/api/scout/sources/route.ts, src/app/v1/cartographer/audit-trail/route.ts, src/app/v1/cartographer/branch-recommendations/[recommendationId]/approve/route.ts, src/app/v1/cartographer/branch-recommendations/route.ts, src/app/v1/cartographer/commit-proposals/[commitProposalId]/approve/route.ts, src/app/v1/cartographer/project-health/route.ts, src/app/v1/cartographer/proposals/[proposalId]/apply-approved/route.ts.
+- Manual check: confirm this blueprint still matches the changed implementation.
