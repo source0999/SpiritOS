@@ -78,7 +78,7 @@ describe("DashboardDemoV4", () => {
   it("nav contains links to /, /chat, and /oracle", () => {
     render(<DashboardDemoV4 />);
     const desktopNav = screen.getByRole("navigation", {
-      name: /dashboard desktop navigation/i,
+      name: /spirit app desktop navigation/i,
     });
     const mobileNav = screen.getByRole("navigation", {
       name: /dashboard mobile navigation/i,
@@ -98,7 +98,7 @@ describe("DashboardDemoV4", () => {
     navMock.path = "/";
     render(<DashboardDemoV4 />);
     const desktopNav = screen.getByRole("navigation", {
-      name: /dashboard desktop navigation/i,
+      name: /spirit app desktop navigation/i,
     });
     const mobileNav = screen.getByRole("navigation", {
       name: /dashboard mobile navigation/i,
@@ -124,8 +124,9 @@ describe("DashboardDemoV4", () => {
     expect(screen.getByRole("region", { name: /project tracker/i })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: /system stats/i })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: /storage pool/i })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: /manual checks/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/daily briefing/i)).toBeInTheDocument();
-    expect(screen.getByText(/demo/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/demo/i).length).toBeGreaterThan(0);
   });
 
   it("renders the minimal Oracle hero with visuals and one /oracle action", () => {

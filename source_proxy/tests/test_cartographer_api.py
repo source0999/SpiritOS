@@ -12,18 +12,29 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from source_proxy.api.cartographer import router as cartographer_router
+from source_proxy.cartographer.apply import apply_approved_doc_proposal
 from source_proxy.cartographer.component_mapper import map_paths
 from source_proxy.cartographer.project_discovery import parse_project_roots
 from source_proxy.cartographer.service import (
+    build_cartographer_audit_trail,
     build_cartographer_blueprints,
+    build_cartographer_blueprint_scribe,
+    build_cartographer_branch_recommendations,
+    build_cartographer_change_scribe,
+    build_cartographer_commit_proposals,
     build_cartographer_components,
     build_cartographer_drift,
     build_cartographer_git,
+    build_cartographer_project_candidates,
+    build_cartographer_project_health,
     build_cartographer_projects,
     build_cartographer_proposals,
+    build_cartographer_push_queue,
     build_cartographer_reminders,
     build_cartographer_repo_map,
+    build_cartographer_runbook_scribe,
     build_cartographer_status,
+    build_cartographer_sub_cartographers,
 )
 from source_proxy.main import app
 
@@ -175,6 +186,12 @@ class CartographerApiTests(unittest.TestCase):
         for route in (
             "/v1/cartographer/status",
             "/v1/cartographer/projects",
+            "/v1/cartographer/project-candidates",
+            "/v1/cartographer/project-health",
+            "/v1/cartographer/branch-recommendations",
+            "/v1/cartographer/commit-proposals",
+            "/v1/cartographer/push-queue",
+            "/v1/cartographer/audit-trail",
             "/v1/cartographer/blueprints",
             "/v1/cartographer/components",
             "/v1/cartographer/repo-map",
@@ -182,6 +199,10 @@ class CartographerApiTests(unittest.TestCase):
             "/v1/cartographer/drift",
             "/v1/cartographer/reminders",
             "/v1/cartographer/proposals",
+            "/v1/cartographer/change-scribe",
+            "/v1/cartographer/blueprint-scribe",
+            "/v1/cartographer/runbook-scribe",
+            "/v1/cartographer/sub-cartographers",
         ):
             response = client.get(route)
             self.assertEqual(response.status_code, 200)
@@ -190,6 +211,12 @@ class CartographerApiTests(unittest.TestCase):
 
         self.assertEqual(client.post("/v1/cartographer/status").status_code, 405)
         self.assertEqual(client.post("/v1/cartographer/projects").status_code, 405)
+        self.assertEqual(client.post("/v1/cartographer/project-candidates").status_code, 405)
+        self.assertEqual(client.post("/v1/cartographer/project-health").status_code, 405)
+        self.assertEqual(client.post("/v1/cartographer/branch-recommendations").status_code, 405)
+        self.assertEqual(client.post("/v1/cartographer/commit-proposals").status_code, 405)
+        self.assertEqual(client.post("/v1/cartographer/push-queue").status_code, 405)
+        self.assertEqual(client.post("/v1/cartographer/audit-trail").status_code, 405)
         self.assertEqual(client.post("/v1/cartographer/blueprints").status_code, 405)
         self.assertEqual(client.post("/v1/cartographer/components").status_code, 405)
         self.assertEqual(client.post("/v1/cartographer/repo-map").status_code, 405)
@@ -197,6 +224,10 @@ class CartographerApiTests(unittest.TestCase):
         self.assertEqual(client.post("/v1/cartographer/drift").status_code, 405)
         self.assertEqual(client.post("/v1/cartographer/reminders").status_code, 405)
         self.assertEqual(client.post("/v1/cartographer/proposals").status_code, 405)
+        self.assertEqual(client.post("/v1/cartographer/change-scribe").status_code, 405)
+        self.assertEqual(client.post("/v1/cartographer/blueprint-scribe").status_code, 405)
+        self.assertEqual(client.post("/v1/cartographer/runbook-scribe").status_code, 405)
+        self.assertEqual(client.post("/v1/cartographer/sub-cartographers").status_code, 405)
 
     def test_main_app_mounts_cartographer_routes(self) -> None:
         with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": ""}, clear=False):
@@ -324,6 +355,596 @@ class CartographerApiTests(unittest.TestCase):
         self.assertNotIn("nested-project", str(payload))
         self.assertNotIn("SECRET_SHOULD_NOT_APPEAR", str(payload))
 
+    def test_project_candidate_detection_reports_new_child_project_without_writes(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            parent = Path(temp_dir)
+            child = parent / "ClientDashboard"
+            child.mkdir()
+            (child / ".git").mkdir()
+            (child / "README.md").write_text("candidate content stays unread", encoding="utf-8")
+            (child / "package.json").write_text('{"secret":"SHOULD_NOT_APPEAR"}', encoding="utf-8")
+
+            before = sorted(path.relative_to(parent).as_posix() for path in parent.rglob("*"))
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(parent)}, clear=False):
+                payload = build_cartographer_project_candidates()
+            after = sorted(path.relative_to(parent).as_posix() for path in parent.rglob("*"))
+
+        self.assertEqual(before, after)
+        self.assertEqual(payload["status"], "observing")
+        self.assertFalse(payload["write_actions_enabled"])
+        self.assertFalse(payload["actions_taken"])
+        self.assertEqual(payload["candidate_count"], 1)
+        candidate = payload["candidates"][0]
+        self.assertEqual(candidate["status"], "new_project_candidate")
+        self.assertEqual(candidate["approval_status"], "needs_approval")
+        self.assertEqual(candidate["name"], "ClientDashboard")
+        self.assertEqual(candidate["project_id"], "clientdashboard")
+        self.assertEqual(candidate["markers"], [".git", "package.json", "README.md"])
+        self.assertFalse(candidate["action_taken"])
+        self.assertNotIn("candidate content stays unread", str(payload))
+        self.assertNotIn("SHOULD_NOT_APPEAR", str(payload))
+
+    def test_project_candidate_detection_ignores_project_root_and_outside_roots(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir, tempfile.TemporaryDirectory() as outside_dir:
+            root = Path(temp_dir)
+            (root / ".git").mkdir()
+            (root / "package.json").write_text("{}", encoding="utf-8")
+            outside = Path(outside_dir) / "OutsideProject"
+            outside.mkdir()
+            (outside / "package.json").write_text("{}", encoding="utf-8")
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = build_cartographer_project_candidates()
+
+        self.assertEqual(payload["candidates"], [])
+        self.assertEqual(payload["candidate_count"], 0)
+        self.assertNotIn("OutsideProject", str(payload))
+
+    def test_projects_endpoint_includes_candidate_summary_for_dashboard(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            parent = Path(temp_dir)
+            child = parent / "ClientDashboard"
+            child.mkdir()
+            (child / "README.md").write_text("client", encoding="utf-8")
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(parent)}, clear=False):
+                payload = build_cartographer_projects()
+
+        self.assertEqual(payload["candidate_count"], 1)
+        self.assertEqual(payload["project_candidates"][0]["status"], "new_project_candidate")
+        self.assertEqual(payload["project_candidates"][0]["approval_status"], "needs_approval")
+
+    def test_starter_blueprint_pack_proposal_is_preview_only_for_new_project_candidate(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            parent = Path(temp_dir)
+            child = parent / "ClientDashboard"
+            child.mkdir()
+            (child / ".git").mkdir()
+            (child / "README.md").write_text("candidate readme stays unread", encoding="utf-8")
+            (child / "package.json").write_text("{}", encoding="utf-8")
+
+            before = sorted(path.relative_to(child).as_posix() for path in child.rglob("*"))
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(parent)}, clear=False):
+                payload = build_cartographer_proposals()
+            after = sorted(path.relative_to(child).as_posix() for path in child.rglob("*"))
+
+        self.assertEqual(before, after)
+        starter = [
+            proposal
+            for proposal in payload["proposals"]
+            if proposal["type"] == "starter_blueprint_pack"
+        ]
+        self.assertEqual(len(starter), 1)
+        proposal = starter[0]
+        self.assertTrue(proposal["proposal_id"].startswith("bp-starter-"))
+        self.assertEqual(proposal["status"], "drafted")
+        self.assertTrue(proposal["requires_approval"])
+        self.assertTrue(proposal["generated"])
+        self.assertFalse(proposal["persisted"])
+        self.assertFalse(proposal["action_taken"])
+        self.assertEqual(
+            proposal["proposed_files"],
+            [
+                "_blueprints/INDEX.md",
+                "_blueprints/current/project_state.md",
+                "_blueprints/components/app.md",
+                "_blueprints/runbooks/manual_checks.md",
+                "TODO.md",
+            ],
+        )
+        self.assertIn("diff --git a/_blueprints/INDEX.md", proposal["diff_preview"])
+        self.assertIn("+++ b/TODO.md", proposal["diff_preview"])
+        self.assertIn("Starter blueprint pack for ClientDashboard", proposal["title"])
+        self.assertNotIn("candidate readme stays unread", str(payload))
+
+    def test_sub_cartographer_routes_include_project_onboarding_scribe_for_starter_pack(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            parent = Path(temp_dir)
+            child = parent / "ClientDashboard"
+            child.mkdir()
+            (child / "README.md").write_text("client", encoding="utf-8")
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(parent)}, clear=False):
+                payload = build_cartographer_sub_cartographers()
+
+        onboarding_routes = [
+            route
+            for route in payload["routes"]
+            if route["contributors"] == ["project_onboarding_scribe"]
+        ]
+        self.assertEqual(len(onboarding_routes), 1)
+        route = onboarding_routes[0]
+        self.assertTrue(route["proposal_id"].startswith("bp-starter-"))
+        self.assertIn("starter blueprint pack pending approval", route["visible_outputs"])
+        self.assertIn("proposed files: 5", route["visible_outputs"])
+        self.assertIn("files written: 0", route["visible_outputs"])
+        self.assertFalse(route["action_taken"])
+
+    def test_project_health_summarizes_active_and_candidate_projects_for_dashboard(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            parent = Path(temp_dir)
+            spirit = parent / "SpiritOS"
+            spirit.mkdir()
+            _write_minimal_blueprints(spirit)
+            dashboard_file = spirit / "src" / "components" / "dashboard" / "Widget.tsx"
+            dashboard_file.parent.mkdir(parents=True)
+            dashboard_file.write_text("export function Widget() { return null; }\n", encoding="utf-8")
+            _git(spirit, "init")
+            _git(spirit, "config", "user.email", "cartographer@example.test")
+            _git(spirit, "config", "user.name", "Cartographer Test")
+            _git(spirit, "checkout", "-b", "cartographer-health")
+            _git(spirit, "add", ".")
+            _git(spirit, "commit", "-m", "initial commit")
+            dashboard_file.write_text("export function Widget() { return 'changed'; }\n", encoding="utf-8")
+
+            client = parent / "ClientDashboard"
+            client.mkdir()
+            (client / "README.md").write_text("client", encoding="utf-8")
+            (client / "package.json").write_text("{}", encoding="utf-8")
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(parent)}, clear=False):
+                payload = build_cartographer_project_health()
+
+        self.assertEqual(payload["status"], "observing")
+        self.assertFalse(payload["write_actions_enabled"])
+        self.assertFalse(payload["actions_taken"])
+        projects = {project["name"]: project for project in payload["projects"]}
+        self.assertEqual(payload["project_count"], 2)
+        self.assertEqual(projects["SpiritOS"]["status"], "pending_proposal_review")
+        self.assertEqual(projects["SpiritOS"]["blueprint_health"], "review_suggested")
+        self.assertEqual(projects["SpiritOS"]["blueprint_count"], 4)
+        self.assertEqual(projects["SpiritOS"]["pending_drift"], 1)
+        self.assertEqual(projects["SpiritOS"]["pending_proposals"], 1)
+        self.assertTrue(projects["SpiritOS"]["dirty"])
+        self.assertEqual(projects["SpiritOS"]["branch"], "cartographer-health")
+        self.assertIn("dirty", projects["SpiritOS"]["filters"])
+        self.assertEqual(
+            projects["ClientDashboard"]["status"],
+            "needs_starter_blueprint_approval",
+        )
+        self.assertEqual(
+            projects["ClientDashboard"]["blueprint_health"],
+            "missing_starter_blueprints",
+        )
+        self.assertEqual(projects["ClientDashboard"]["pending_proposals"], 1)
+        self.assertIn("candidate", projects["ClientDashboard"]["filters"])
+        self.assertIn("needs_approval", projects["ClientDashboard"]["filters"])
+        self.assertIn("dirty", payload["filters"])
+        self.assertIn("needs_approval", payload["filters"])
+
+    def test_project_health_reports_clean_blueprinted_project_as_active(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = build_cartographer_project_health()
+
+        project = payload["projects"][0]
+        self.assertEqual(project["status"], "active")
+        self.assertEqual(project["blueprint_health"], "healthy")
+        self.assertEqual(project["blueprint_count"], 4)
+        self.assertEqual(project["pending_drift"], 0)
+        self.assertEqual(project["pending_proposals"], 0)
+        self.assertFalse(project["dirty"])
+        self.assertIn("active", project["filters"])
+
+    def test_branch_recommendation_suggests_branch_on_dirty_main_without_creating_one(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            dashboard_file = root / "src" / "components" / "dashboard" / "Widget.tsx"
+            dashboard_file.parent.mkdir(parents=True)
+            dashboard_file.write_text("export function Widget() { return null; }\n", encoding="utf-8")
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "checkout", "-b", "main")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            dashboard_file.write_text("export function Widget() { return 'changed'; }\n", encoding="utf-8")
+
+            before_branch = _git_stdout(root, "branch", "--show-current").strip()
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = build_cartographer_branch_recommendations()
+            after_branch = _git_stdout(root, "branch", "--show-current").strip()
+            branches = _git_stdout(root, "branch", "--format=%(refname:short)")
+
+        self.assertEqual(before_branch, "main")
+        self.assertEqual(after_branch, "main")
+        self.assertNotIn("cartographer/dashboard-blueprint-review", branches.splitlines())
+        self.assertEqual(payload["status"], "observing")
+        self.assertFalse(payload["write_actions_enabled"])
+        self.assertFalse(payload["actions_taken"])
+        self.assertEqual(payload["recommendation_count"], 1)
+        recommendation = payload["recommendations"][0]
+        self.assertTrue(recommendation["recommendation_id"].startswith("branch-rec-"))
+        self.assertEqual(recommendation["current_branch"], "main")
+        self.assertEqual(
+            recommendation["suggested_branch"],
+            "cartographer/dashboard-blueprint-review",
+        )
+        self.assertEqual(recommendation["status"], "pending_approval")
+        self.assertTrue(recommendation["requires_approval"])
+        self.assertFalse(recommendation["branch_creation_enabled"])
+        self.assertFalse(recommendation["action_taken"])
+        self.assertIn("Working tree dirty on main", recommendation["reason"])
+        self.assertEqual(recommendation["changed_file_count"], 1)
+
+    def test_branch_recommendation_suggests_checkpoint_branch_for_many_changes(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            files = []
+            for index in range(8):
+                path = root / "src" / "components" / "dashboard" / f"Widget{index}.tsx"
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("export const value = 1;\n", encoding="utf-8")
+                files.append(path)
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "checkout", "-b", "feature/cartographer")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            for path in files:
+                path.write_text("export const value = 2;\n", encoding="utf-8")
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = build_cartographer_branch_recommendations()
+
+        recommendation = payload["recommendations"][0]
+        self.assertEqual(recommendation["current_branch"], "feature/cartographer")
+        self.assertEqual(recommendation["changed_file_count"], 8)
+        self.assertIn("8 changed files", recommendation["reason"])
+        self.assertTrue(recommendation["requires_approval"])
+        self.assertFalse(recommendation["action_taken"])
+
+    def test_branch_recommendation_stays_empty_for_clean_or_small_feature_branch(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "checkout", "-b", "feature/cartographer")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                clean_payload = build_cartographer_branch_recommendations()
+
+            note = root / "notes.md"
+            note.write_text("small change\n", encoding="utf-8")
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                dirty_payload = build_cartographer_branch_recommendations()
+
+        self.assertEqual(clean_payload["recommendations"], [])
+        self.assertEqual(clean_payload["recommendation_count"], 0)
+        self.assertEqual(dirty_payload["recommendations"], [])
+        self.assertEqual(dirty_payload["recommendation_count"], 0)
+
+    def test_commit_proposal_packages_applied_blueprint_files_without_committing(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            blueprint = root / "_blueprints" / "current" / "dashboard_state.md"
+            blueprint.write_text(
+                blueprint.read_text(encoding="utf-8") + "\nApplied update.\n",
+                encoding="utf-8",
+            )
+            _write_proposal(
+                root,
+                "applied",
+                "bp-20260515-applied",
+                {
+                    "status": "applied",
+                    "type": "blueprint_update",
+                    "component": "dashboard",
+                    "affected_blueprints": ["dashboard-state"],
+                    "changed_files": ["src/components/dashboard/Widget.tsx"],
+                    "proposed_files": ["_blueprints/current/dashboard_state.md"],
+                    "transitions": [
+                        {
+                            "status": "applied",
+                            "timestamp": "2026-05-15T10:08:00Z",
+                            "actor": "Britton",
+                        }
+                    ],
+                },
+            )
+
+            before_head = _git_stdout(root, "rev-parse", "HEAD").strip()
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = build_cartographer_commit_proposals()
+            after_head = _git_stdout(root, "rev-parse", "HEAD").strip()
+
+        self.assertEqual(before_head, after_head)
+        self.assertEqual(payload["status"], "observing")
+        self.assertFalse(payload["write_actions_enabled"])
+        self.assertFalse(payload["actions_taken"])
+        self.assertEqual(payload["commit_proposal_count"], 1)
+        proposal = payload["commit_proposals"][0]
+        self.assertTrue(proposal["commit_proposal_id"].startswith("commit-prop-"))
+        self.assertEqual(proposal["source_proposal_id"], "bp-20260515-applied")
+        self.assertEqual(proposal["status"], "commit_pending")
+        self.assertEqual(
+            proposal["suggested_message"],
+            "docs(dashboard): apply cartographer blueprint update",
+        )
+        self.assertEqual(proposal["files"], ["_blueprints/current/dashboard_state.md"])
+        self.assertTrue(proposal["editable"])
+        self.assertTrue(proposal["requires_approval"])
+        self.assertFalse(proposal["commit_enabled"])
+        self.assertFalse(proposal["action_taken"])
+
+    def test_commit_proposal_ignores_unapplied_or_clean_proposals(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            _write_proposal(
+                root,
+                "approved",
+                "bp-20260515-approved",
+                {
+                    "status": "approved",
+                    "type": "blueprint_update",
+                    "component": "dashboard",
+                    "proposed_files": ["_blueprints/current/dashboard_state.md"],
+                    "transitions": [
+                        {
+                            "status": "approved",
+                            "timestamp": "2026-05-15T10:09:00Z",
+                            "actor": "Britton",
+                        }
+                    ],
+                },
+            )
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = build_cartographer_commit_proposals()
+
+        self.assertEqual(payload["commit_proposals"], [])
+        self.assertEqual(payload["commit_proposal_count"], 0)
+        self.assertFalse(payload["actions_taken"])
+
+    def test_push_queue_reports_ahead_commit_without_pushing(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_root = Path(temp_dir)
+            remote = temp_root / "remote.git"
+            root = temp_root / "work"
+            _git(temp_root, "init", "--bare", str(remote))
+            root.mkdir()
+            _write_minimal_blueprints(root)
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "checkout", "-b", "cartographer/blueprint-review-widget")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            _git(root, "remote", "add", "origin", str(remote))
+            _git(root, "push", "-u", "origin", "cartographer/blueprint-review-widget")
+            blueprint = root / "_blueprints" / "current" / "dashboard_state.md"
+            blueprint.write_text(
+                blueprint.read_text(encoding="utf-8") + "\nCommitted update.\n",
+                encoding="utf-8",
+            )
+            _git(root, "add", "_blueprints/current/dashboard_state.md")
+            _git(root, "commit", "-m", "docs(dashboard): apply cartographer blueprint update")
+
+            remote_before = _git_stdout(
+                remote,
+                "rev-parse",
+                "refs/heads/cartographer/blueprint-review-widget",
+            ).strip()
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = build_cartographer_push_queue()
+            remote_after = _git_stdout(
+                remote,
+                "rev-parse",
+                "refs/heads/cartographer/blueprint-review-widget",
+            ).strip()
+
+        self.assertEqual(remote_before, remote_after)
+        self.assertEqual(payload["status"], "observing")
+        self.assertFalse(payload["write_actions_enabled"])
+        self.assertFalse(payload["actions_taken"])
+        self.assertEqual(payload["push_count"], 1)
+        item = payload["push_queue"][0]
+        self.assertTrue(item["push_id"].startswith("push-"))
+        self.assertEqual(item["remote"], "origin")
+        self.assertEqual(item["branch"], "cartographer/blueprint-review-widget")
+        self.assertEqual(item["upstream"], "origin/cartographer/blueprint-review-widget")
+        self.assertEqual(item["commits_ahead"], 1)
+        self.assertEqual(item["files"], ["_blueprints/current/dashboard_state.md"])
+        self.assertEqual(item["status"], "push_pending")
+        self.assertTrue(item["requires_approval"])
+        self.assertFalse(item["push_enabled"])
+        self.assertFalse(item["action_taken"])
+
+    def test_push_queue_empty_without_upstream_or_ahead_commits(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "checkout", "-b", "feature/local-only")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                no_upstream = build_cartographer_push_queue()
+
+        self.assertEqual(no_upstream["push_queue"], [])
+        self.assertEqual(no_upstream["push_count"], 0)
+        self.assertFalse(no_upstream["actions_taken"])
+
+    def test_audit_trail_surfaces_proposal_transitions_and_approved_action_log(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            audit_path = root / "data" / "approved_actions.audit.jsonl"
+            audit_path.parent.mkdir()
+            audit_path.write_text(
+                json.dumps(
+                    {
+                        "action": "apply approved Cartographer proposal bp-20260515-apply",
+                        "approved_at": "2026-05-15T10:10:00+00:00",
+                        "approved_by": "Britton",
+                        "changed_files": ["_blueprints/current/dashboard_state.md"],
+                        "proposal_id": "bp-20260515-apply",
+                        "result": "applied",
+                        "task_id": "task_123",
+                    },
+                    sort_keys=True,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            _write_proposal(
+                root,
+                "rejected",
+                "bp-20260515-rejected",
+                {
+                    "status": "rejected",
+                    "type": "blueprint_update",
+                    "component": "dashboard",
+                    "proposed_files": ["_blueprints/current/dashboard_state.md"],
+                    "rejection_reason": "Needs clearer dashboard evidence.",
+                    "transitions": [
+                        {
+                            "status": "pending_review",
+                            "timestamp": "2026-05-15T10:01:00Z",
+                            "actor": "cartographer",
+                        },
+                        {
+                            "status": "rejected",
+                            "timestamp": "2026-05-15T10:02:00Z",
+                            "actor": "Britton",
+                        },
+                    ],
+                },
+            )
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = build_cartographer_audit_trail()
+
+        self.assertEqual(payload["status"], "observing")
+        self.assertFalse(payload["write_actions_enabled"])
+        self.assertFalse(payload["actions_taken"])
+        self.assertFalse(payload["rollback_enabled"])
+        events = payload["events"]
+        by_event = {event["event"]: event for event in events}
+        self.assertIn("rejected", by_event)
+        self.assertEqual(by_event["rejected"]["actor"], "Britton")
+        self.assertEqual(by_event["rejected"]["proposal_id"], "bp-20260515-rejected")
+        self.assertEqual(by_event["rejected"]["result"], "Needs clearer dashboard evidence.")
+        self.assertIn("No rollback needed", by_event["rejected"]["rollback_hint"])
+        action_events = [
+            event
+            for event in events
+            if event["source"] == "approved_action_audit"
+        ]
+        self.assertEqual(len(action_events), 1)
+        self.assertEqual(action_events[0]["actor"], "Britton")
+        self.assertEqual(action_events[0]["proposal_id"], "bp-20260515-apply")
+        self.assertEqual(action_events[0]["task_id"], "task_123")
+        self.assertEqual(action_events[0]["result"], "applied")
+        self.assertEqual(action_events[0]["files"], ["_blueprints/current/dashboard_state.md"])
+
+    def test_audit_trail_includes_pending_commit_and_push_without_actions(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_root = Path(temp_dir)
+            remote = temp_root / "remote.git"
+            root = temp_root / "work"
+            _git(temp_root, "init", "--bare", str(remote))
+            root.mkdir()
+            _write_minimal_blueprints(root)
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "checkout", "-b", "cartographer/audit")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            _git(root, "remote", "add", "origin", str(remote))
+            _git(root, "push", "-u", "origin", "cartographer/audit")
+            blueprint = root / "_blueprints" / "current" / "dashboard_state.md"
+            blueprint.write_text(
+                blueprint.read_text(encoding="utf-8") + "\nApplied update.\n",
+                encoding="utf-8",
+            )
+            _write_proposal(
+                root,
+                "applied",
+                "bp-20260515-applied",
+                {
+                    "status": "applied",
+                    "type": "blueprint_update",
+                    "component": "dashboard",
+                    "proposed_files": ["_blueprints/current/dashboard_state.md"],
+                    "transitions": [
+                        {
+                            "status": "applied",
+                            "timestamp": "2026-05-15T10:11:00Z",
+                            "actor": "Britton",
+                        }
+                    ],
+                },
+            )
+            _git(root, "add", "_blueprints/current/dashboard_state.md")
+            _git(root, "commit", "-m", "docs(dashboard): apply cartographer blueprint update")
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = build_cartographer_audit_trail()
+
+        events = payload["events"]
+        self.assertFalse(payload["actions_taken"])
+        commit_events = [event for event in events if event["event"] == "commit_pending"]
+        push_events = [event for event in events if event["event"] == "push_pending"]
+        self.assertEqual(len(commit_events), 0)
+        self.assertEqual(len(push_events), 1)
+        self.assertEqual(push_events[0]["remote"], "origin")
+        self.assertEqual(push_events[0]["branch"], "cartographer/audit")
+        self.assertEqual(push_events[0]["result"], "pending_approval")
+        self.assertIn("remote untouched", push_events[0]["rollback_hint"])
+        self.assertFalse(payload["rollback_enabled"])
+
     def test_component_mapper_maps_known_paths_and_reports_unknowns(self) -> None:
         components, unmapped = map_paths(
             [
@@ -400,6 +1021,9 @@ class CartographerApiTests(unittest.TestCase):
         self.assertEqual(payload["project_count"], 1)
         repo_map = payload["maps"][0]
         self.assertEqual(repo_map["map_version"], 1)
+        self.assertGreaterEqual(repo_map["scan_duration_ms"], 0)
+        self.assertLessEqual(repo_map["files_indexed"], repo_map["max_files"])
+        self.assertLessEqual(repo_map["symbols_indexed"], repo_map["max_symbols"])
         files = {item["path"]: item for item in repo_map["files"]}
         self.assertIn("src/components/dashboard/Widget.tsx", files)
         self.assertEqual(files["src/components/dashboard/Widget.tsx"]["component_id"], "dashboard")
@@ -409,7 +1033,42 @@ class CartographerApiTests(unittest.TestCase):
         self.assertIn("build_cartographer_repo_map", files["source_proxy/cartographer/service.py"]["symbols"])
         self.assertNotIn("SECRET_SHOULD_NOT_APPEAR", str(payload))
         self.assertNotIn("shouldNotAppear", str(payload))
+        self.assertIn(".env.local", repo_map["skipped"])
         self.assertIn("node_modules", repo_map["skipped"])
+
+    def test_repo_map_enforces_file_symbol_and_large_file_limits(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            (root / "package.json").write_text("{}", encoding="utf-8")
+            source_proxy = root / "source_proxy"
+            source_proxy.mkdir()
+            for index in range(200):
+                (source_proxy / f"module_{index:03}.py").write_text(
+                    "\n".join(f"def symbol_{index}_{symbol}():\n    return {symbol}" for symbol in range(4)),
+                    encoding="utf-8",
+                )
+            large = root / "src" / "components" / "dashboard" / "Large.tsx"
+            large.parent.mkdir(parents=True)
+            large.write_text("x" * 170_000, encoding="utf-8")
+            (root / ".next" / "cache").mkdir(parents=True)
+            (root / ".next" / "cache" / "ignored.ts").write_text(
+                "export const shouldNotAppear = true;",
+                encoding="utf-8",
+            )
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = build_cartographer_repo_map()
+
+        repo_map = payload["maps"][0]
+        self.assertEqual(repo_map["max_files"], 180)
+        self.assertEqual(repo_map["max_symbols"], 500)
+        self.assertLessEqual(repo_map["files_indexed"], 180)
+        self.assertLessEqual(repo_map["symbols_indexed"], 500)
+        self.assertIn("file_limit_reached", repo_map["skipped"])
+        self.assertIn("symbol_limit_reached", repo_map["skipped"])
+        self.assertIn("large_file", repo_map["skipped"])
+        self.assertIn(".next", repo_map["skipped"])
+        self.assertNotIn("shouldNotAppear", str(payload))
 
     def test_repo_map_reports_unmapped_paths_without_guessing(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -856,6 +1515,547 @@ class CartographerApiTests(unittest.TestCase):
         self.assertEqual(first, second)
         self.assertTrue(first.startswith("bp-"))
 
+    def test_proposal_preview_generates_doc_only_diff_from_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            dashboard_file = root / "src" / "components" / "dashboard" / "Widget.tsx"
+            dashboard_file.parent.mkdir(parents=True)
+            dashboard_file.write_text("export function Widget() { return null; }\n", encoding="utf-8")
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            dashboard_file.write_text("export function Widget() { return 'changed'; }\n", encoding="utf-8")
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = build_cartographer_proposals()
+
+        self.assertEqual(payload["proposal_count"], 1)
+        self.assertEqual(payload["pending_proposals"], 1)
+        proposal = payload["proposals"][0]
+        self.assertEqual(proposal["status"], "drafted")
+        self.assertEqual(proposal["type"], "blueprint_update")
+        self.assertEqual(proposal["component"], "dashboard")
+        self.assertTrue(proposal["generated"])
+        self.assertFalse(proposal["persisted"])
+        self.assertEqual(proposal["proposed_files"], ["_blueprints/current/dashboard_state.md"])
+        self.assertTrue(all(path.startswith("_blueprints/") for path in proposal["proposed_files"]))
+        self.assertIn("src/components/dashboard/Widget.tsx", proposal["diff_preview"])
+        self.assertIn("Cartographer Review Note", proposal["diff_preview"])
+        self.assertFalse(proposal["action_taken"])
+
+    def test_proposal_preview_redacts_secret_shaped_changed_files(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            secret_note = root / "source_proxy" / "secret_token_notes.py"
+            secret_note.parent.mkdir(parents=True)
+            secret_note.write_text("SECRET_VALUE = 'initial'\n", encoding="utf-8")
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            secret_note.write_text("SECRET_VALUE = 'changed'\n", encoding="utf-8")
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = build_cartographer_proposals()
+
+        combined_diff = "\n".join(proposal["diff_preview"] or "" for proposal in payload["proposals"])
+        self.assertIn("[redacted]", combined_diff)
+        self.assertNotIn("secret_token_notes", combined_diff)
+
+    def test_rejected_persisted_proposal_suppresses_matching_generated_preview(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            dashboard_file = root / "src" / "components" / "dashboard" / "Widget.tsx"
+            dashboard_file.parent.mkdir(parents=True)
+            dashboard_file.write_text("export function Widget() { return null; }\n", encoding="utf-8")
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            dashboard_file.write_text("export function Widget() { return 'changed'; }\n", encoding="utf-8")
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                generated = build_cartographer_proposals()["proposals"][0]
+
+            _write_proposal(
+                root,
+                "rejected",
+                generated["proposal_id"],
+                {
+                    "status": "rejected",
+                    "type": "blueprint_update",
+                    "component": "dashboard",
+                    "rejection_reason": "Do not update this blueprint yet.",
+                    "transitions": [
+                        {
+                            "status": "rejected",
+                            "timestamp": "2026-05-15T10:05:00Z",
+                            "actor": "Britton",
+                        }
+                    ],
+                },
+            )
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = build_cartographer_proposals()
+
+        self.assertEqual(payload["proposal_count"], 1)
+        proposal = payload["proposals"][0]
+        self.assertEqual(proposal["status"], "rejected")
+        self.assertEqual(proposal["rejection_reason"], "Do not update this blueprint yet.")
+        self.assertFalse(proposal["generated"])
+
+    def test_apply_approved_doc_proposal_applies_and_verifies_blueprint_only_diff(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            _write_minimal_blueprint_validator(root)
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            diff = "\n".join(
+                [
+                    "diff --git a/_blueprints/current/dashboard_state.md b/_blueprints/current/dashboard_state.md",
+                    "--- a/_blueprints/current/dashboard_state.md",
+                    "+++ b/_blueprints/current/dashboard_state.md",
+                    "@@ -17,3 +17,5 @@ last_verified: 2026-05-15",
+                    " ---",
+                    " # Dashboard State",
+                    "+",
+                    "+Cartographer approved doc apply note.",
+                    "",
+                ]
+            )
+            _write_proposal(
+                root,
+                "approved",
+                "bp-20260515-apply",
+                {
+                    "status": "approved",
+                    "type": "blueprint_update",
+                    "component": "dashboard",
+                    "affected_blueprints": ["dashboard-state"],
+                    "changed_files": ["src/components/dashboard/HomelabBlueprintReviewWidget.tsx"],
+                    "proposed_files": ["_blueprints/current/dashboard_state.md"],
+                    "approved_diff": diff,
+                    "transitions": [
+                        {
+                            "status": "approved",
+                            "timestamp": "2026-05-15T10:06:00Z",
+                            "actor": "Britton",
+                        }
+                    ],
+                },
+            )
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = apply_approved_doc_proposal(
+                    proposal_id="bp-20260515-apply",
+                    approved=True,
+                    approved_by="test",
+                )
+
+            content = (root / "_blueprints" / "current" / "dashboard_state.md").read_text(
+                encoding="utf-8"
+            )
+
+        self.assertEqual(payload["status"], "applied")
+        self.assertEqual(payload["applied_files"], ["_blueprints/current/dashboard_state.md"])
+        self.assertIn("Cartographer approved doc apply note.", content)
+        self.assertTrue(payload["verification"]["allowed_files_passed"])
+        self.assertTrue(payload["verification"]["markdown_validation_passed"])
+        self.assertTrue(payload["verification"]["blueprint_metadata_validation_passed"])
+        self.assertEqual(payload["verification"]["status"], "verified")
+        self.assertFalse(payload["safety"]["commits_enabled"])
+        self.assertFalse(payload["safety"]["pushes_enabled"])
+
+    def test_apply_approved_doc_proposal_rejects_code_files_before_write(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            code_file = root / "src" / "app" / "page.tsx"
+            code_file.parent.mkdir(parents=True)
+            code_file.write_text("export default function Page() { return null; }\n", encoding="utf-8")
+            diff = "\n".join(
+                [
+                    "diff --git a/src/app/page.tsx b/src/app/page.tsx",
+                    "--- a/src/app/page.tsx",
+                    "+++ b/src/app/page.tsx",
+                    "@@ -1 +1 @@",
+                    "-export default function Page() { return null; }",
+                    "+export default function Page() { return 'blocked'; }",
+                    "",
+                ]
+            )
+            _write_proposal(
+                root,
+                "approved",
+                "bp-20260515-code",
+                {
+                    "status": "approved",
+                    "type": "blueprint_update",
+                    "component": "dashboard",
+                    "proposed_files": ["src/app/page.tsx"],
+                    "approved_diff": diff,
+                    "transitions": [
+                        {
+                            "status": "approved",
+                            "timestamp": "2026-05-15T10:07:00Z",
+                            "actor": "Britton",
+                        }
+                    ],
+                },
+            )
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                with self.assertRaisesRegex(Exception, "Markdown files under _blueprints"):
+                    apply_approved_doc_proposal(
+                        proposal_id="bp-20260515-code",
+                        approved=True,
+                        approved_by="test",
+                    )
+
+            content = code_file.read_text(encoding="utf-8")
+
+        self.assertIn("return null", content)
+
+    def test_apply_approved_doc_proposal_route_rejects_without_approval(self) -> None:
+        client = TestClient(_test_app())
+
+        response = client.post(
+            "/v1/cartographer/proposals/bp-20260515-apply/apply-approved",
+            json={"approved": False},
+        )
+
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(response.json()["detail"]["reason_code"], "approval_required")
+
+    def test_change_scribe_summarizes_code_change_with_evidence_and_uncertainty(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            dashboard_file = root / "src" / "components" / "dashboard" / "Widget.tsx"
+            dashboard_file.parent.mkdir(parents=True)
+            dashboard_file.write_text("export function Widget() { return null; }\n", encoding="utf-8")
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "checkout", "-b", "feature/change-scribe")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            dashboard_file.write_text("export function Widget() { return 'changed'; }\n", encoding="utf-8")
+
+            before = dashboard_file.read_text(encoding="utf-8")
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = build_cartographer_change_scribe()
+            after = dashboard_file.read_text(encoding="utf-8")
+
+        self.assertEqual(before, after)
+        self.assertEqual(payload["status"], "observing")
+        self.assertFalse(payload["write_actions_enabled"])
+        self.assertFalse(payload["actions_taken"])
+        self.assertEqual(payload["summary_count"], 1)
+        summary = payload["summaries"][0]
+        self.assertEqual(summary["branch"], "feature/change-scribe")
+        self.assertTrue(summary["dirty"])
+        self.assertEqual(summary["commit_state"], "dirty")
+        self.assertEqual(summary["components"], ["dashboard"])
+        self.assertEqual(summary["summary"], "Dashboard code changed.")
+        self.assertIn("src/components/dashboard/Widget.tsx changed", summary["evidence"])
+        self.assertIn("no blueprint update detected", summary["evidence"])
+        self.assertIn("review Dashboard blueprint", summary["recommended_actions"])
+        self.assertTrue(summary["uncertain_claims"])
+
+    def test_change_scribe_notes_blueprint_update_when_docs_changed_too(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            dashboard_file = root / "src" / "components" / "dashboard" / "Widget.tsx"
+            dashboard_file.parent.mkdir(parents=True)
+            dashboard_file.write_text("export function Widget() { return null; }\n", encoding="utf-8")
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            dashboard_file.write_text("export function Widget() { return 'changed'; }\n", encoding="utf-8")
+            (root / "_blueprints" / "current" / "dashboard_state.md").write_text(
+                _blueprint_doc(
+                    blueprint_id="dashboard-state",
+                    title="Dashboard State",
+                    component="dashboard",
+                    doc_type="current_state",
+                    status="active",
+                    source_of_truth=True,
+                    code_paths=["src/components/dashboard/**"],
+                )
+                + "\nDashboard update noted.\n",
+                encoding="utf-8",
+            )
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = build_cartographer_change_scribe()
+
+        summary = payload["summaries"][0]
+        self.assertTrue(summary["blueprint_update_detected"])
+        self.assertFalse(summary["drift_detected"])
+        self.assertIn("blueprint update detected", summary["evidence"])
+
+    def test_change_scribe_reports_clean_repo_without_recommended_write_action(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = build_cartographer_change_scribe()
+
+        summary = payload["summaries"][0]
+        self.assertEqual(summary["summary"], "No uncommitted changes detected.")
+        self.assertEqual(summary["commit_state"], "clean")
+        self.assertEqual(summary["recommended_actions"], ["no action needed"])
+
+    def test_blueprint_scribe_drafts_exact_blueprint_update_from_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            dashboard_file = root / "src" / "components" / "dashboard" / "Widget.tsx"
+            dashboard_file.parent.mkdir(parents=True)
+            dashboard_file.write_text("export function Widget() { return null; }\n", encoding="utf-8")
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "checkout", "-b", "feature/blueprint-scribe")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            dashboard_file.write_text("export function Widget() { return 'changed'; }\n", encoding="utf-8")
+
+            before = dashboard_file.read_text(encoding="utf-8")
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = build_cartographer_blueprint_scribe()
+            after = dashboard_file.read_text(encoding="utf-8")
+
+        self.assertEqual(before, after)
+        self.assertEqual(payload["status"], "observing")
+        self.assertFalse(payload["write_actions_enabled"])
+        self.assertFalse(payload["actions_taken"])
+        self.assertEqual(payload["draft_count"], 1)
+        draft = payload["drafts"][0]
+        self.assertTrue(draft["proposal_id"].startswith("bp-scribe-"))
+        self.assertEqual(draft["affected_blueprint"], "dashboard-state")
+        self.assertEqual(draft["proposed_file"], "_blueprints/current/dashboard_state.md")
+        self.assertEqual(draft["confidence"], "medium")
+        self.assertIn("component_code_changed", draft["reason"])
+        self.assertIn("Dashboard code changed", draft["reason"])
+        self.assertIn("src/components/dashboard/Widget.tsx", draft["suggested_update"])
+        self.assertIn("changed file: src/components/dashboard/Widget.tsx", draft["evidence"])
+        self.assertTrue(draft["editable"])
+        self.assertTrue(draft["rejectable"])
+        self.assertTrue(draft["requires_apply_approval"])
+        self.assertFalse(draft["action_taken"])
+        self.assertTrue(draft["avoids_overclaiming"])
+
+    def test_blueprint_scribe_does_not_draft_when_blueprint_changed_too(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            dashboard_file = root / "src" / "components" / "dashboard" / "Widget.tsx"
+            dashboard_file.parent.mkdir(parents=True)
+            dashboard_file.write_text("export function Widget() { return null; }\n", encoding="utf-8")
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            dashboard_file.write_text("export function Widget() { return 'changed'; }\n", encoding="utf-8")
+            (root / "_blueprints" / "current" / "dashboard_state.md").write_text(
+                _blueprint_doc(
+                    blueprint_id="dashboard-state",
+                    title="Dashboard State",
+                    component="dashboard",
+                    doc_type="current_state",
+                    status="active",
+                    source_of_truth=True,
+                    code_paths=["src/components/dashboard/**"],
+                )
+                + "\nDashboard update noted.\n",
+                encoding="utf-8",
+            )
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = build_cartographer_blueprint_scribe()
+
+        self.assertEqual(payload["drafts"], [])
+        self.assertEqual(payload["draft_count"], 0)
+
+    def test_runbook_scribe_suggests_api_checklist_with_expected_outputs(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            route_file = root / "src" / "app" / "api" / "widget" / "route.ts"
+            route_file.parent.mkdir(parents=True)
+            route_file.write_text("export async function GET() { return Response.json({}); }\n", encoding="utf-8")
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            route_file.write_text("export async function POST() { return Response.json({}); }\n", encoding="utf-8")
+
+            before = route_file.read_text(encoding="utf-8")
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = build_cartographer_runbook_scribe()
+            after = route_file.read_text(encoding="utf-8")
+
+        self.assertEqual(before, after)
+        self.assertEqual(payload["status"], "observing")
+        self.assertFalse(payload["write_actions_enabled"])
+        self.assertFalse(payload["actions_taken"])
+        self.assertEqual(payload["suggestion_count"], 1)
+        suggestion = payload["suggestions"][0]
+        self.assertEqual(suggestion["target_runbook"], "_blueprints/runbooks/basic_chat_voice_qa.md")
+        self.assertEqual(suggestion["component"], "qa")
+        self.assertIn("api_changed_without_manual_checklist_update", suggestion["reason"])
+        self.assertTrue(any("/api/widget" in item for item in suggestion["checklist_items"]))
+        self.assertIn("HTTP response is JSON.", suggestion["expected_outputs"])
+        self.assertIn("No commit or push occurs.", suggestion["expected_outputs"])
+        self.assertTrue(suggestion["editable"])
+        self.assertTrue(suggestion["rejectable"])
+        self.assertFalse(suggestion["action_taken"])
+
+    def test_runbook_scribe_suggests_dashboard_widget_manual_checks(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            widget = root / "src" / "components" / "dashboard" / "BlueprintReviewWidget.tsx"
+            widget.parent.mkdir(parents=True)
+            widget.write_text("export function BlueprintReviewWidget() { return null; }\n", encoding="utf-8")
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            widget.write_text("export function BlueprintReviewWidget() { return 'changed'; }\n", encoding="utf-8")
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = build_cartographer_runbook_scribe()
+
+        suggestion = payload["suggestions"][0]
+        self.assertEqual(suggestion["target_runbook"], "_blueprints/runbooks/basic_chat_voice_qa.md")
+        self.assertIn("Open the dashboard.", suggestion["checklist_items"])
+        self.assertIn("Changed widget is visible.", suggestion["expected_outputs"])
+        self.assertIn("No push occurs.", suggestion["expected_outputs"])
+
+    def test_sub_cartographer_roles_are_narrow_and_read_only(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = build_cartographer_sub_cartographers()
+
+        self.assertEqual(payload["status"], "observing")
+        self.assertFalse(payload["write_actions_enabled"])
+        self.assertFalse(payload["actions_taken"])
+        self.assertEqual(payload["failures_stop_at"], "proposal_queue")
+        role_ids = {role["role_id"] for role in payload["roles"]}
+        self.assertEqual(
+            role_ids,
+            {
+                "component_mapper",
+                "change_scribe",
+                "blueprint_scribe",
+                "runbook_scribe",
+                "commit_scribe",
+                "project_onboarding_scribe",
+            },
+        )
+        self.assertTrue(all(role["can_write_files"] is False for role in payload["roles"]))
+        self.assertTrue(
+            all(role["failure_policy"] == "stop_at_proposal_queue" for role in payload["roles"])
+        )
+
+    def test_sub_cartographer_routes_show_contributors_for_blueprint_drafts(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            dashboard_file = root / "src" / "components" / "dashboard" / "Widget.tsx"
+            dashboard_file.parent.mkdir(parents=True)
+            dashboard_file.write_text("export function Widget() { return null; }\n", encoding="utf-8")
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            dashboard_file.write_text("export function Widget() { return 'changed'; }\n", encoding="utf-8")
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = build_cartographer_sub_cartographers()
+
+        self.assertGreaterEqual(payload["route_count"], 1)
+        blueprint_routes = [
+            route for route in payload["routes"] if "blueprint_scribe" in route["contributors"]
+        ]
+        self.assertEqual(len(blueprint_routes), 1)
+        route = blueprint_routes[0]
+        self.assertTrue(route["proposal_id"].startswith("bp-scribe-"))
+        self.assertEqual(
+            route["contributors"],
+            ["component_mapper", "change_scribe", "blueprint_scribe"],
+        )
+        self.assertEqual(route["status"], "proposal_queue")
+        self.assertEqual(route["failures_stop_at"], "proposal_queue")
+        self.assertFalse(route["action_taken"])
+        self.assertIn("affected blueprint: dashboard-state", route["visible_outputs"])
+
+    def test_sub_cartographer_routes_include_runbook_scribe_for_api_qa_gap(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            route_file = root / "src" / "app" / "api" / "widget" / "route.ts"
+            route_file.parent.mkdir(parents=True)
+            route_file.write_text("export async function GET() { return Response.json({}); }\n", encoding="utf-8")
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            route_file.write_text("export async function POST() { return Response.json({}); }\n", encoding="utf-8")
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = build_cartographer_sub_cartographers()
+
+        runbook_routes = [
+            route for route in payload["routes"] if "runbook_scribe" in route["contributors"]
+        ]
+        self.assertEqual(len(runbook_routes), 1)
+        route = runbook_routes[0]
+        self.assertTrue(route["proposal_id"].startswith("rb-scribe-"))
+        self.assertEqual(
+            route["contributors"],
+            ["component_mapper", "change_scribe", "runbook_scribe"],
+        )
+        self.assertIn("target runbook: _blueprints/runbooks/basic_chat_voice_qa.md", route["visible_outputs"])
+        self.assertFalse(route["action_taken"])
+
 
 if __name__ == "__main__":
     unittest.main()
@@ -872,6 +2072,20 @@ def _git(root: Path, *args: str) -> None:
     )
     if result.returncode != 0:
         raise AssertionError(result.stderr or result.stdout)
+
+
+def _git_stdout(root: Path, *args: str) -> str:
+    result = subprocess.run(
+        ["git", *args],
+        cwd=root,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    if result.returncode != 0:
+        raise AssertionError(result.stderr or result.stdout)
+    return result.stdout
 
 
 def _write_minimal_blueprints(root: Path) -> None:
@@ -939,6 +2153,23 @@ def _write_minimal_blueprints(root: Path) -> None:
             status="historical",
             source_of_truth=False,
             code_paths=["src/components/dashboard/**"],
+        ),
+        encoding="utf-8",
+    )
+
+
+def _write_minimal_blueprint_validator(root: Path) -> None:
+    scripts = root / "scripts"
+    scripts.mkdir(exist_ok=True)
+    (scripts / "validate-blueprints.mjs").write_text(
+        "\n".join(
+            [
+                "console.log('Blueprint index valid');",
+                "console.log('Active blueprints: 2');",
+                "console.log('Runbooks: 1');",
+                "console.log('Historical docs: 1');",
+                "console.log('No missing required metadata');",
+            ]
         ),
         encoding="utf-8",
     )

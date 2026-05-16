@@ -189,6 +189,17 @@ export type ScoutSourceCandidate = {
   review_history?: ScoutSourceReviewEvent[] | null;
 };
 
+export type ScoutSourceActionResult = {
+  ok: true;
+  action: "approve" | "reject" | "block" | string;
+  candidate: ScoutSourceCandidate | null;
+  source: Record<string, unknown> | null;
+  review_event: ScoutSourceReviewEvent | null;
+  message: string;
+  poller_supported: boolean | null;
+  warnings: string[];
+};
+
 export type ScoutSourceCandidates = Partial<{
   counts: Partial<Record<ScoutSourceCandidateStatus, number>>;
   candidates: ScoutSourceCandidate[];

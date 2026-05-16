@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from source_proxy.cartographer.models import CartographerProject, ConfiguredRoot
+from source_proxy.cartographer.models import CartographerProject, ConfiguredRoot, ProjectCandidate
 
 _BROAD_ROOTS = {
     "/",
@@ -140,6 +140,44 @@ def discover_projects() -> list[CartographerProject]:
             )
 
     return projects
+
+
+def discover_project_candidates() -> list[ProjectCandidate]:
+    candidates: list[ProjectCandidate] = []
+    seen_roots: set[str] = set()
+
+    for configured_root in configured_project_roots():
+        root = Path(configured_root.path)
+        if not root.exists() or not root.is_dir() or _detect_project_markers(root):
+            continue
+
+        for candidate in _project_candidates(root):
+            resolved = str(candidate.resolve())
+            if resolved in seen_roots:
+                continue
+
+            markers = _detect_project_markers(candidate)
+            if not markers:
+                continue
+            if "_blueprints" in markers:
+                continue
+
+            seen_roots.add(resolved)
+            name = _project_name(candidate)
+            project_id = _project_id(name)
+            candidates.append(
+                ProjectCandidate(
+                    candidate_id=f"new-project-{project_id}",
+                    project_id=project_id,
+                    name=name,
+                    root=resolved,
+                    markers=markers,
+                    source_root=configured_root.path,
+                    action_taken=False,
+                )
+            )
+
+    return candidates
 
 
 def _split_env_paths(value: str) -> list[str]:

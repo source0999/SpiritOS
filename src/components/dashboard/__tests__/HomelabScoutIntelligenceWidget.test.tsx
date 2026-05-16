@@ -110,6 +110,7 @@ function mockScoutFetch(
     count: 0,
     jobs: [],
   },
+  sourceActionResponse: unknown = { ok: true },
 ) {
   globalThis.fetch = vi.fn((input: RequestInfo | URL) => {
     const url = String(input);
@@ -125,10 +126,12 @@ function mockScoutFetch(
     if (
       url.includes("/api/scout/packets/") ||
       url.includes("/api/scout/promotions/finalize") ||
-      url.match(/\/api\/scout\/source-candidates\/[^/]+\/(approve|reject|block)$/) ||
       url.match(/\/api\/scout\/discovery-jobs\/[^/]+\/(pause|resume|search-preview|extract-candidates)$/)
     ) {
       return Promise.resolve(new Response(JSON.stringify({ ok: true }), { status: 200 }));
+    }
+    if (url.match(/\/api\/scout\/source-candidates\/[^/]+\/(approve|reject|block)$/)) {
+      return Promise.resolve(new Response(JSON.stringify(sourceActionResponse), { status: 200 }));
     }
     return Promise.resolve(new Response(JSON.stringify(overview), { status: 200 }));
   }) as typeof fetch;
@@ -499,6 +502,55 @@ describe("HomelabScoutIntelligenceWidget", () => {
       );
     });
     expect(await screen.findByText("Source candidate approved.")).toBeInTheDocument();
+  });
+
+  it("shows normalized approve warnings for unsupported pollers", async () => {
+    window.confirm = vi.fn(() => true);
+    mockScoutFetch(
+      emptyOverview,
+      undefined,
+      {
+        counts: { recommended: 1 },
+        candidates: [
+          {
+            candidate_id: "candidate-web",
+            canonical_uri: "https://example.com/release-notes",
+            display_uri: "https://example.com/release-notes",
+            source_kind: "web_page",
+            status: "recommended",
+            confidence_score: 0.88,
+            recommendation: "Recommended for manual review before activation.",
+            reason_codes: ["official_docs_pattern"],
+          },
+        ],
+      },
+      undefined,
+      {
+        ok: true,
+        action: "approve",
+        candidate: null,
+        source: {
+          canonical_uri: "https://example.com/release-notes",
+          source_kind: "web_page",
+        },
+        review_event: null,
+        message: "Source candidate approved; source is active but has no poller support.",
+        poller_supported: false,
+        warnings: ["approved source is active but poller_supported is false"],
+      },
+    );
+
+    render(<HomelabScoutIntelligenceWidget />);
+
+    await screen.findByRole("tab", { name: "Source Queue" });
+    fireEvent.click(screen.getByRole("tab", { name: "Source Queue" }));
+    fireEvent.click(screen.getByRole("button", { name: "Approve" }));
+
+    expect(
+      await screen.findByText(
+        "Source candidate approved; source is active but has no poller support. approved source is active but poller_supported is false",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("queues a packet through the Scout route and refreshes", async () => {

@@ -85,6 +85,13 @@ def phase_4e_safety_seed_cases() -> dict[str, SelfTestCase]:
             "Use the manual diff preview to validate path traversal blocking. Do not edit any other file.",
         ]
     )
+    task_9 = "\n".join(
+        [
+            f"Target file: {DOC_TARGET}",
+            "",
+            "Use the manual diff preview to validate normalized target and allowed-files blocking. Do not edit any other file.",
+        ]
+    )
     diff_8 = "\n".join(
         [
             "diff --git a/../README.md b/../README.md",
@@ -93,6 +100,17 @@ def phase_4e_safety_seed_cases() -> dict[str, SelfTestCase]:
             "@@ -1,3 +1,4 @@",
             " # SpiritOS",
             "+PATH TRAVERSAL SHOULD NEVER APPLY",
+            "",
+        ]
+    )
+    diff_9 = "\n".join(
+        [
+            "diff --git a/source_proxy/api/decision.py b/source_proxy/./api/decision.py",
+            "--- a/source_proxy/api/decision.py",
+            "+++ b/source_proxy/./api/decision.py",
+            "@@ -1,3 +1,4 @@",
+            " from __future__ import annotations",
+            "+# NORMALIZED TARGET MISMATCH SHOULD NEVER APPLY",
             "",
         ]
     )
@@ -139,6 +157,25 @@ def phase_4e_safety_seed_cases() -> dict[str, SelfTestCase]:
                 "outside_workspace",
                 "task_spec_allowed_file_violation",
                 "task_spec_target_mismatch",
+                "requirement_coverage_failed",
+                "diff_apply_check_failed",
+                "target_mismatch",
+            ],
+        ),
+        "manual-check-9": SelfTestCase(
+            case_id="manual-check-9",
+            name="Manual Check 9: normalized target mismatch manual diff",
+            description="Dry-run a dot-segment wrong-file diff and verify normalized target and allowed-files blocking.",
+            task_prompt=task_9,
+            expected_target="source_proxy/./api/decision.py",
+            manual_diff_input=diff_9,
+            required_reason_codes=[
+                "task_spec_allowed_file_violation",
+                "task_spec_target_mismatch",
+            ],
+            allowed_secondary_reason_codes=[
+                "secret_shaped_path",
+                "protected_path",
                 "requirement_coverage_failed",
                 "diff_apply_check_failed",
                 "target_mismatch",

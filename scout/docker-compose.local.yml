@@ -2,3 +2,9 @@ services:
   scout-api:
     extra_hosts:
       - "host.docker.internal:host-gateway"
+  scout-api-nvidia:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+  scout-api-amd:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

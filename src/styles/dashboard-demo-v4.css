@@ -1575,6 +1575,143 @@ html[data-theme="solar-ember"] .dashboard-demo-v4-root {
   padding: 0.28rem 0.44rem;
 }
 
+.dashboard-demo-v4-test-runner-card {
+  display: grid;
+  gap: 0.95rem;
+}
+
+.dashboard-demo-v4-test-runner-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.dashboard-demo-v4-test-runner-profile {
+  display: flex;
+  min-height: 4.1rem;
+  align-items: center;
+  gap: 0.48rem;
+  border: 1px solid var(--ddv4-surface-border-soft);
+  border-radius: 0.68rem;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.10), transparent 48%),
+    color-mix(in oklab, var(--ddv4-surface-fill) 82%, transparent);
+  color: var(--ddv4-fg);
+  padding: 0.58rem;
+  text-align: left;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    transform 160ms ease;
+}
+
+.dashboard-demo-v4-test-runner-profile:hover:not(:disabled),
+.dashboard-demo-v4-test-runner-profile:focus-visible {
+  transform: translateY(-1px);
+  border-color: color-mix(in oklab, var(--spirit-accent-strong, #8fb8de) 62%, var(--ddv4-surface-border-crisp));
+  background: color-mix(in oklab, var(--spirit-accent, #8fb8de) 20%, var(--ddv4-surface-fill));
+}
+
+.dashboard-demo-v4-test-runner-profile:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.dashboard-demo-v4-test-runner-profile[data-tone="bounded"] {
+  border-color: color-mix(in oklab, oklch(0.75 0.13 84) 38%, var(--ddv4-surface-border-soft));
+}
+
+.dashboard-demo-v4-test-runner-profile[data-tone="snapshot"] {
+  border-color: color-mix(in oklab, oklch(0.68 0.12 245) 38%, var(--ddv4-surface-border-soft));
+}
+
+.dashboard-demo-v4-test-runner-profile svg {
+  flex-shrink: 0;
+  color: var(--ddv4-fg-muted);
+}
+
+.dashboard-demo-v4-test-runner-profile span {
+  display: grid;
+  min-width: 0;
+  gap: 0.22rem;
+}
+
+.dashboard-demo-v4-test-runner-profile strong,
+.dashboard-demo-v4-test-runner-profile em,
+.dashboard-demo-v4-test-runner-summary span {
+  overflow-wrap: anywhere;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  letter-spacing: 0;
+}
+
+.dashboard-demo-v4-test-runner-profile strong {
+  color: var(--ddv4-fg);
+  font-size: 0.68rem;
+  font-weight: 850;
+  line-height: 1.15;
+}
+
+.dashboard-demo-v4-test-runner-profile em {
+  color: var(--ddv4-fg-faint);
+  font-size: 0.56rem;
+  font-style: normal;
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+.dashboard-demo-v4-test-runner-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.dashboard-demo-v4-test-runner-summary > div {
+  display: grid;
+  min-height: 4.6rem;
+  grid-template-rows: auto 1fr auto;
+  align-items: center;
+  gap: 0.28rem;
+  border: 1px solid var(--ddv4-surface-border-soft);
+  border-radius: 0.78rem;
+  background: color-mix(in oklab, var(--ddv4-surface-fill) 78%, transparent);
+  padding: 0.58rem;
+}
+
+.dashboard-demo-v4-test-runner-summary svg {
+  color: var(--ddv4-fg-faint);
+}
+
+.dashboard-demo-v4-test-runner-summary strong {
+  color: var(--ddv4-fg);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 1.18rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1;
+}
+
+.dashboard-demo-v4-test-runner-summary span {
+  color: var(--ddv4-fg-faint);
+  font-size: 0.56rem;
+  font-weight: 800;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.dashboard-demo-v4-test-runner-report {
+  max-height: 15rem;
+  overflow: auto;
+  border: 1px solid var(--ddv4-surface-border-soft);
+  border-radius: 0.72rem;
+  background: rgba(5, 8, 14, 0.36);
+  color: rgba(248, 250, 252, 0.9);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.62rem;
+  line-height: 1.45;
+  padding: 0.75rem;
+  white-space: pre-wrap;
+}
+
 .dashboard-demo-v4-scout-source-list li {
   gap: 0.5rem;
   padding: 0.76rem 0.82rem;
@@ -1633,6 +1770,153 @@ html[data-theme="solar-ember"] .dashboard-demo-v4-root {
 
 .dashboard-demo-v4-cartographer-summary p {
   margin: 0;
+}
+
+.dashboard-demo-v4-blueprint-review-card {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.dashboard-demo-v4-blueprint-review-counts {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.42rem;
+}
+
+.dashboard-demo-v4-blueprint-review-counts > div {
+  min-width: 0;
+  border: 1px solid var(--ddv4-surface-border-soft);
+  border-radius: 8px;
+  background: var(--ddv4-surface-fill);
+  padding: 0.52rem;
+}
+
+.dashboard-demo-v4-blueprint-review-counts strong {
+  display: block;
+  color: var(--ddv4-fg);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.86rem;
+  line-height: 1;
+}
+
+.dashboard-demo-v4-blueprint-review-counts span,
+.dashboard-demo-v4-blueprint-review-meta span,
+.dashboard-demo-v4-blueprint-review-heading span,
+.dashboard-demo-v4-blueprint-review-heading em {
+  overflow: hidden;
+  color: var(--ddv4-fg-faint);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.55rem;
+  font-style: normal;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.dashboard-demo-v4-blueprint-review-proposal {
+  display: grid;
+  gap: 0.72rem;
+  border: 1px solid var(--ddv4-surface-border-soft);
+  border-radius: 8px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.1), transparent 48%),
+    var(--ddv4-surface-fill);
+  padding: 0.82rem;
+}
+
+.dashboard-demo-v4-blueprint-review-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.72rem;
+  min-width: 0;
+}
+
+.dashboard-demo-v4-blueprint-review-heading > div {
+  display: grid;
+  gap: 0.22rem;
+  min-width: 0;
+}
+
+.dashboard-demo-v4-blueprint-review-heading strong {
+  overflow: hidden;
+  color: var(--ddv4-fg);
+  font-size: 0.78rem;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-demo-v4-blueprint-review-heading em {
+  flex: 0 0 auto;
+  border: 1px solid color-mix(in oklab, var(--spirit-accent-strong, #8fb8de) 52%, transparent);
+  border-radius: 9999px;
+  background: color-mix(in oklab, var(--spirit-accent, #8fb8de) 18%, transparent);
+  color: var(--ddv4-fg);
+  padding: 0.3rem 0.46rem;
+}
+
+.dashboard-demo-v4-blueprint-review-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.36rem;
+}
+
+.dashboard-demo-v4-blueprint-review-meta span {
+  width: fit-content;
+  border: 1px solid color-mix(in oklab, var(--ddv4-surface-border-crisp) 68%, transparent);
+  border-radius: 9999px;
+  background: color-mix(in oklab, var(--ddv4-pill-bg) 68%, transparent);
+  padding: 0.3rem 0.46rem;
+}
+
+.dashboard-demo-v4-blueprint-review-proposal p {
+  color: var(--ddv4-fg-muted);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.68rem;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.dashboard-demo-v4-blueprint-review-diff-toggle {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  gap: 0.34rem;
+  min-height: 2rem;
+  border: 1px solid color-mix(in oklab, var(--ddv4-surface-border-crisp) 78%, transparent);
+  border-radius: 0.5rem;
+  background: color-mix(in oklab, var(--ddv4-surface-fill) 82%, rgba(255, 255, 255, 0.2));
+  color: var(--ddv4-fg);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.64rem;
+  letter-spacing: 0;
+  padding: 0.36rem 0.55rem;
+}
+
+.dashboard-demo-v4-blueprint-review-diff {
+  max-height: 16rem;
+  overflow: auto;
+  border: 1px solid color-mix(in oklab, var(--ddv4-surface-border-crisp) 62%, transparent);
+  border-radius: 8px;
+  background: color-mix(in oklab, black 18%, var(--ddv4-surface-fill));
+  color: var(--ddv4-fg);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.62rem;
+  line-height: 1.5;
+  padding: 0.72rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+@media (max-width: 680px) {
+  .dashboard-demo-v4-blueprint-review-counts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 680px) {

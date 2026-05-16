@@ -6,7 +6,9 @@ from pathlib import Path
 from typing import Any
 
 from source_proxy.cartographer.models import ProposalRecord, ProposalTransition
+from source_proxy.cartographer.proposal_previews import draft_proposals_from_drift
 from source_proxy.cartographer.project_discovery import discover_projects
+from source_proxy.cartographer.starter_blueprints import draft_starter_blueprint_pack_proposals
 
 
 PROPOSAL_STATES = (
@@ -40,6 +42,14 @@ def list_proposals() -> list[ProposalRecord]:
                     path=path,
                 )
             )
+
+    persisted_ids = {proposal.proposal_id for proposal in proposals}
+    for draft in draft_proposals_from_drift():
+        if draft.proposal_id not in persisted_ids:
+            proposals.append(draft)
+    for starter_pack in draft_starter_blueprint_pack_proposals():
+        if starter_pack.proposal_id not in persisted_ids:
+            proposals.append(starter_pack)
 
     return sorted(proposals, key=lambda proposal: proposal.proposal_id)
 
@@ -104,6 +114,12 @@ def _proposal_from_file(
         affected_blueprints=_string_list(payload.get("affected_blueprints")),
         changed_files=_string_list(payload.get("changed_files")),
         proposed_files=_string_list(payload.get("proposed_files")),
+        approved_diff=str(payload["approved_diff"]) if payload.get("approved_diff") is not None else None,
+        diff_preview=str(payload["diff_preview"]) if payload.get("diff_preview") is not None else None,
+        confidence=str(payload["confidence"]) if payload.get("confidence") is not None else None,
+        rationale=str(payload["rationale"]) if payload.get("rationale") is not None else None,
+        generated=False,
+        persisted=True,
         rejection_reason=(
             str(payload["rejection_reason"])
             if payload.get("rejection_reason") is not None

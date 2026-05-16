@@ -100,6 +100,59 @@ def source_candidate_to_dict(settings, candidate) -> dict:
     return body
 
 
+def _latest_review_event(candidate_body: dict) -> dict | None:
+    history = candidate_body.get("review_history")
+    if isinstance(history, list) and history:
+        latest = history[0]
+        return latest if isinstance(latest, dict) else None
+    return None
+
+
+def _poller_supported_for_source(source_body: dict | None) -> bool | None:
+    if not source_body:
+        return None
+    source_kind = str(source_body.get("source_kind") or "")
+    return source_kind in {"github_repo", "rss_feed"}
+
+
+def _action_message(action: str, *, source_body: dict | None = None) -> str:
+    if action == "approve" and source_body:
+        supported = _poller_supported_for_source(source_body)
+        if supported is False:
+            return "Source candidate approved; source is active but has no poller support."
+        return "Source candidate approved."
+    if action == "reject":
+        return "Source candidate rejected."
+    if action == "block":
+        return "Source candidate blocked."
+    return f"Source candidate {action} completed."
+
+
+def _action_warnings(action: str, *, source_body: dict | None = None) -> list[str]:
+    warnings: list[str] = []
+    if action == "approve" and _poller_supported_for_source(source_body) is False:
+        warnings.append("approved source is active but poller_supported is false")
+    return warnings
+
+
+def normalized_action_result(
+    *,
+    action: str,
+    candidate_body: dict | None = None,
+    source_body: dict | None = None,
+) -> dict:
+    return {
+        "ok": True,
+        "action": action,
+        "candidate": candidate_body,
+        "source": source_body,
+        "review_event": _latest_review_event(candidate_body or {}),
+        "message": _action_message(action, source_body=source_body),
+        "poller_supported": _poller_supported_for_source(source_body),
+        "warnings": _action_warnings(action, source_body=source_body),
+    }
+
+
 @router.get("/sources")
 async def get_sources() -> dict:
     return build_sources_response(get_settings())
@@ -139,7 +192,8 @@ async def approve_source_candidate(
             approved_by=request.approved_by or "manual-review",
             poll_interval_minutes=request.poll_interval_minutes,
         )
-        return {"source": asdict(entry)}
+        source_body = asdict(entry)
+        return normalized_action_result(action="approve", source_body=source_body)
     except SourceRegistryError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
 
@@ -157,7 +211,8 @@ async def reject_source_candidate(
             reason=request.reason or "Rejected during manual Scout source review.",
             reviewed_by=request.reviewed_by or "manual-review",
         )
-        return {"candidate": source_candidate_to_dict(settings, candidate)}
+        candidate_body = source_candidate_to_dict(settings, candidate)
+        return normalized_action_result(action="reject", candidate_body=candidate_body)
     except SourceRegistryError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
@@ -180,6 +235,7 @@ async def block_source_candidate(
             reason=request.reason or "Blocked during manual Scout source review.",
             blocked_by=request.reviewed_by or "manual-review",
         )
-        return {"candidate": source_candidate_to_dict(settings, candidate)}
+        candidate_body = source_candidate_to_dict(settings, candidate)
+        return normalized_action_result(action="block", candidate_body=candidate_body)
     except SourceRegistryError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc

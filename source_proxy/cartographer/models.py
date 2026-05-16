@@ -41,6 +41,19 @@ class CartographerProject:
 
 
 @dataclass(frozen=True)
+class ProjectCandidate:
+    candidate_id: str
+    project_id: str
+    name: str
+    root: str
+    markers: list[str] = field(default_factory=list)
+    status: Literal["new_project_candidate"] = "new_project_candidate"
+    approval_status: Literal["needs_approval"] = "needs_approval"
+    source_root: str | None = None
+    action_taken: bool = False
+
+
+@dataclass(frozen=True)
 class BlueprintRecord:
     blueprint_id: str
     title: str
@@ -87,6 +100,7 @@ class RepoMapFile:
 class RepoMapSummary:
     project_id: str
     map_version: int
+    scan_duration_ms: int
     files_seen: int
     files_indexed: int
     symbols_indexed: int
@@ -140,6 +154,159 @@ class CartographerReminder:
 
 
 @dataclass(frozen=True)
+class ChangeScribeSummary:
+    project_id: str
+    summary: str
+    branch: str | None = None
+    dirty: bool = False
+    commit_state: str = "unknown"
+    components: list[str] = field(default_factory=list)
+    changed_files: list[str] = field(default_factory=list)
+    evidence: list[str] = field(default_factory=list)
+    recommended_actions: list[str] = field(default_factory=list)
+    uncertain_claims: list[str] = field(default_factory=list)
+    blueprint_update_detected: bool = False
+    drift_detected: bool = False
+
+
+@dataclass(frozen=True)
+class BlueprintScribeDraft:
+    proposal_id: str
+    project_id: str
+    component: str
+    affected_blueprint: str
+    proposed_file: str
+    suggested_update: str
+    confidence: Literal["low", "medium", "high"] = "medium"
+    reason: str = ""
+    evidence: list[str] = field(default_factory=list)
+    changed_files: list[str] = field(default_factory=list)
+    avoids_overclaiming: list[str] = field(default_factory=list)
+    editable: bool = True
+    rejectable: bool = True
+    requires_apply_approval: bool = True
+    action_taken: bool = False
+
+
+@dataclass(frozen=True)
+class RunbookScribeSuggestion:
+    suggestion_id: str
+    project_id: str
+    component: str
+    target_runbook: str
+    reason: str
+    changed_files: list[str] = field(default_factory=list)
+    checklist_items: list[str] = field(default_factory=list)
+    expected_outputs: list[str] = field(default_factory=list)
+    evidence: list[str] = field(default_factory=list)
+    editable: bool = True
+    rejectable: bool = True
+    action_taken: bool = False
+
+
+@dataclass(frozen=True)
+class SubCartographerRole:
+    role_id: str
+    label: str
+    responsibility: str
+    consumes: list[str] = field(default_factory=list)
+    produces: list[str] = field(default_factory=list)
+    can_write_files: bool = False
+    failure_policy: str = "stop_at_proposal_queue"
+
+
+@dataclass(frozen=True)
+class SubCartographerRoute:
+    route_id: str
+    project_id: str
+    proposal_id: str
+    contributors: list[str] = field(default_factory=list)
+    visible_outputs: list[str] = field(default_factory=list)
+    status: str = "proposal_queue"
+    failures_stop_at: str = "proposal_queue"
+    action_taken: bool = False
+
+
+@dataclass(frozen=True)
+class ProjectHealth:
+    project_id: str
+    name: str
+    root: str
+    status: str
+    blueprint_health: str
+    blueprint_count: int = 0
+    pending_drift: int = 0
+    pending_proposals: int = 0
+    dirty: bool = False
+    branch: str | None = None
+    markers: list[str] = field(default_factory=list)
+    filters: list[str] = field(default_factory=list)
+    action_taken: bool = False
+
+
+@dataclass(frozen=True)
+class BranchRecommendation:
+    recommendation_id: str
+    project_id: str
+    current_branch: str | None
+    suggested_branch: str
+    reason: str
+    changed_file_count: int = 0
+    related_files: list[str] = field(default_factory=list)
+    status: Literal["pending_approval"] = "pending_approval"
+    requires_approval: bool = True
+    branch_creation_enabled: bool = False
+    action_taken: bool = False
+
+
+@dataclass(frozen=True)
+class CommitProposal:
+    commit_proposal_id: str
+    project_id: str
+    source_proposal_id: str
+    status: Literal["commit_pending"] = "commit_pending"
+    suggested_message: str = ""
+    files: list[str] = field(default_factory=list)
+    reason: str = ""
+    editable: bool = True
+    requires_approval: bool = True
+    commit_enabled: bool = False
+    action_taken: bool = False
+
+
+@dataclass(frozen=True)
+class PushQueueItem:
+    push_id: str
+    project_id: str
+    remote: str
+    branch: str
+    upstream: str | None = None
+    commits_ahead: int = 0
+    files: list[str] = field(default_factory=list)
+    status: Literal["push_pending"] = "push_pending"
+    requires_approval: bool = True
+    push_enabled: bool = False
+    action_taken: bool = False
+
+
+@dataclass(frozen=True)
+class AuditTrailEvent:
+    event_id: str
+    project_id: str
+    event: str
+    actor: str | None = None
+    timestamp: str | None = None
+    proposal_id: str | None = None
+    task_id: str | None = None
+    result: str | None = None
+    files: list[str] = field(default_factory=list)
+    branch: str | None = None
+    remote: str | None = None
+    rollback_hint: str | None = None
+    source: str = "cartographer"
+
+
+@dataclass(frozen=True)
 class ProposalTransition:
     status: ProposalStatus | str
     timestamp: str | None
@@ -158,6 +325,12 @@ class ProposalRecord:
     affected_blueprints: list[str] = field(default_factory=list)
     changed_files: list[str] = field(default_factory=list)
     proposed_files: list[str] = field(default_factory=list)
+    approved_diff: str | None = None
+    diff_preview: str | None = None
+    confidence: str | None = None
+    rationale: str | None = None
+    generated: bool = False
+    persisted: bool = True
     rejection_reason: str | None = None
     transitions: list[ProposalTransition] = field(default_factory=list)
     applied: bool = False

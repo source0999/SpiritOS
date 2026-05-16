@@ -8,8 +8,10 @@ import { useEffect, useMemo } from "react";
 import { CheckCircle2, ListChecks } from "lucide-react";
 
 import { useClusterTelemetry } from "@/hooks/useClusterTelemetry";
+import { HomelabBlueprintReviewWidget } from "@/components/dashboard/HomelabBlueprintReviewWidget";
 import { HomelabCartographerWidget } from "@/components/dashboard/HomelabCartographerWidget";
 import { HomelabScoutIntelligenceWidget } from "@/components/dashboard/HomelabScoutIntelligenceWidget";
+import { HomelabTestRunnerWidget } from "@/components/dashboard/HomelabTestRunnerWidget";
 import { DashboardDemoV4Atmosphere } from "@/components/dashboard/demo-v4/DashboardDemoV4Atmosphere";
 import { DashboardDemoV4Briefing } from "@/components/dashboard/demo-v4/DashboardDemoV4Briefing";
 import { DashboardDemoV4Header } from "@/components/dashboard/demo-v4/DashboardDemoV4Header";
@@ -80,7 +82,7 @@ export function DashboardDemoV4() {
   useEffect(() => {
     const widgets = Array.from(
       document.querySelectorAll<HTMLElement>(
-        ".dashboard-demo-v4-oracle-hero, .dashboard-demo-v4-project-tracker, .dashboard-demo-v4-card, .dashboard-demo-v4-briefing, .dashboard-demo-v4-cartographer-card",
+        ".dashboard-demo-v4-oracle-hero, .dashboard-demo-v4-project-tracker, .dashboard-demo-v4-card, .dashboard-demo-v4-briefing, .dashboard-demo-v4-cartographer-card, .dashboard-demo-v4-blueprint-review-card",
       ),
     );
 
@@ -179,7 +181,9 @@ export function DashboardDemoV4() {
           <div className="flex flex-col gap-4 xl:col-span-4 xl:self-start xl:gap-5">
             <DashboardDemoV4Briefing />
             <HomelabScoutIntelligenceWidget />
+            <HomelabTestRunnerWidget />
             <HomelabCartographerWidget />
+            <HomelabBlueprintReviewWidget />
           </div>
         </section>
       </div>

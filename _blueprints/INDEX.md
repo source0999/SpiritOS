@@ -38,6 +38,7 @@ This index classifies the current `_blueprints` documents without rewriting thei
 | Document | Classification | Notes |
 | --- | --- | --- |
 | `components/chat_runtime_architecture.md` | component blueprint | Chat runtime architecture, local-only persistence boundary, server-backed transport, Oracle reuse notes, and key files. |
+| `components/cartographer_agent.md` | component blueprint | Spirit Cartographer operating contract, sub-role graph, approval lanes, onboarding, performance limits, and audit boundaries. |
 | `components/design_system.md` | component blueprint | Spirit OS design language, palette, primitives, responsive targets, and chat workspace design notes. |
 | `components/oracle_voice.md` | component blueprint | Oracle voice surface, hands-free loop, secure context, shared runtime/TTS systems, and deferred work. |
 
@@ -53,6 +54,8 @@ This index classifies the current `_blueprints` documents without rewriting thei
 | Document | Classification | Notes |
 | --- | --- | --- |
 | `runbooks/basic_chat_voice_qa.md` | manual QA/runbook | Manual checks for chat, voice, routes, LAN/Tailscale origins, and environment settings. |
+| `runbooks/cartographer_dashboard_mobile_qa.md` | manual QA/runbook | Manual checks for Cartographer dashboard, LAN/Tailscale parity, mobile layout, and approval safety. |
+| `runbooks/cartographer_manual_checks.md` | manual QA/runbook | Routine Cartographer operating checks for detection, approvals, onboarding, audit, rollback guidance, and regression commands. |
 
 ## History / Phase Receipts
 

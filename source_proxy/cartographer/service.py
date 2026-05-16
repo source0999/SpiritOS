@@ -2,24 +2,34 @@ from __future__ import annotations
 
 from typing import Any
 
+from source_proxy.cartographer.audit_trail import build_audit_trail
 from source_proxy.cartographer.blueprint_registry import count_blueprint_documents, list_blueprints
+from source_proxy.cartographer.blueprint_scribe import draft_blueprint_updates
+from source_proxy.cartographer.branch_recommendations import recommend_branches
+from source_proxy.cartographer.change_scribe import summarize_changes
+from source_proxy.cartographer.commit_proposals import build_commit_proposals
 from source_proxy.cartographer.component_mapper import build_component_map
 from source_proxy.cartographer.drift import detect_blueprint_drift
 from source_proxy.cartographer.git_status import read_git_status, read_git_statuses
 from source_proxy.cartographer.models import CartographerStatus, to_jsonable
 from source_proxy.cartographer.project_discovery import (
     blocked_project_roots,
+    discover_project_candidates,
     configured_project_roots,
     discover_projects,
 )
+from source_proxy.cartographer.project_health import build_project_health
 from source_proxy.cartographer.proposals import (
     list_proposals,
     pending_proposal_count,
     proposal_states,
 )
+from source_proxy.cartographer.push_queue import build_push_queue
 from source_proxy.cartographer.reminders import build_reminders
 from source_proxy.cartographer.repo_map import build_repo_maps
+from source_proxy.cartographer.runbook_scribe import suggest_runbook_updates
 from source_proxy.cartographer.safety import cartographer_safety_manifest
+from source_proxy.cartographer.sub_cartographers import route_sub_cartographers, sub_cartographer_roles
 
 
 def build_cartographer_status() -> dict[str, Any]:
@@ -39,12 +49,89 @@ def build_cartographer_status() -> dict[str, Any]:
 
 
 def build_cartographer_projects() -> dict[str, Any]:
+    candidates = discover_project_candidates()
     return {
         "status": "observing",
         "write_actions_enabled": False,
         "configured_roots": to_jsonable(configured_project_roots()),
         "blocked_roots": to_jsonable(blocked_project_roots()),
         "projects": to_jsonable(discover_projects()),
+        "project_candidates": to_jsonable(candidates),
+        "candidate_count": len(candidates),
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_project_candidates() -> dict[str, Any]:
+    candidates = discover_project_candidates()
+    return {
+        "status": "observing",
+        "write_actions_enabled": False,
+        "candidates": to_jsonable(candidates),
+        "candidate_count": len(candidates),
+        "actions_taken": False,
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_project_health() -> dict[str, Any]:
+    projects = build_project_health()
+    return {
+        "status": "observing",
+        "write_actions_enabled": False,
+        "projects": to_jsonable(projects),
+        "project_count": len(projects),
+        "filters": sorted({filter_name for project in projects for filter_name in project.filters}),
+        "actions_taken": False,
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_branch_recommendations() -> dict[str, Any]:
+    recommendations = recommend_branches()
+    return {
+        "status": "observing",
+        "write_actions_enabled": False,
+        "recommendations": to_jsonable(recommendations),
+        "recommendation_count": len(recommendations),
+        "actions_taken": False,
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_commit_proposals() -> dict[str, Any]:
+    proposals = build_commit_proposals()
+    return {
+        "status": "observing",
+        "write_actions_enabled": False,
+        "commit_proposals": to_jsonable(proposals),
+        "commit_proposal_count": len(proposals),
+        "actions_taken": False,
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_push_queue() -> dict[str, Any]:
+    items = build_push_queue()
+    return {
+        "status": "observing",
+        "write_actions_enabled": False,
+        "push_queue": to_jsonable(items),
+        "push_count": len(items),
+        "actions_taken": False,
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_audit_trail() -> dict[str, Any]:
+    events = build_audit_trail()
+    return {
+        "status": "observing",
+        "write_actions_enabled": False,
+        "events": to_jsonable(events),
+        "event_count": len(events),
+        "actions_taken": False,
+        "rollback_enabled": False,
         "safety": cartographer_safety_manifest(),
     }
 
@@ -140,5 +227,57 @@ def build_cartographer_proposals() -> dict[str, Any]:
         "pending_proposals": pending_proposal_count(),
         "proposal_states": proposal_states(),
         "actions_taken": False,
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_change_scribe() -> dict[str, Any]:
+    summaries = summarize_changes()
+    return {
+        "status": "observing",
+        "write_actions_enabled": False,
+        "summaries": to_jsonable(summaries),
+        "summary_count": len(summaries),
+        "actions_taken": False,
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_blueprint_scribe() -> dict[str, Any]:
+    drafts = draft_blueprint_updates()
+    return {
+        "status": "observing",
+        "write_actions_enabled": False,
+        "drafts": to_jsonable(drafts),
+        "draft_count": len(drafts),
+        "actions_taken": False,
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_runbook_scribe() -> dict[str, Any]:
+    suggestions = suggest_runbook_updates()
+    return {
+        "status": "observing",
+        "write_actions_enabled": False,
+        "suggestions": to_jsonable(suggestions),
+        "suggestion_count": len(suggestions),
+        "actions_taken": False,
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_sub_cartographers() -> dict[str, Any]:
+    roles = sub_cartographer_roles()
+    routes = route_sub_cartographers()
+    return {
+        "status": "observing",
+        "write_actions_enabled": False,
+        "roles": to_jsonable(roles),
+        "role_count": len(roles),
+        "routes": to_jsonable(routes),
+        "route_count": len(routes),
+        "actions_taken": False,
+        "failures_stop_at": "proposal_queue",
         "safety": cartographer_safety_manifest(),
     }

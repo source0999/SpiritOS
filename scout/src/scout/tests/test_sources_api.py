@@ -170,15 +170,63 @@ def test_source_candidates_api_approve_reject_and_block(tmp_path, monkeypatch):
     assert approve_body["source"]["canonical_uri"] == (
         "github://anthropics/anthropic-sdk-python"
     )
+    assert approve_body["ok"] is True
+    assert approve_body["action"] == "approve"
+    assert approve_body["candidate"] is None
+    assert approve_body["review_event"] is None
+    assert approve_body["message"] == "Source candidate approved."
+    assert approve_body["poller_supported"] is True
+    assert approve_body["warnings"] == []
     assert approve_body["source"]["approved_by"] == "tester"
     assert approve_body["source"]["poll_interval_minutes"] == 45
+    assert reject_body["ok"] is True
+    assert reject_body["action"] == "reject"
     assert reject_body["candidate"]["status"] == "rejected"
     assert reject_body["candidate"]["rejection_reason"] == "not useful"
+    assert reject_body["source"] is None
+    assert reject_body["review_event"]["action"] == "reject"
+    assert reject_body["message"] == "Source candidate rejected."
+    assert reject_body["poller_supported"] is None
+    assert reject_body["warnings"] == []
     assert reject_body["candidate"]["review_history"][0]["action"] == "reject"
     assert reject_body["candidate"]["review_history"][0]["reason"] == "not useful"
+    assert block_body["ok"] is True
+    assert block_body["action"] == "block"
     assert block_body["candidate"]["status"] == "blocked"
     assert block_body["candidate"]["blocked_reason"] == "spam"
+    assert block_body["source"] is None
+    assert block_body["review_event"]["action"] == "block"
+    assert block_body["message"] == "Source candidate blocked."
+    assert block_body["poller_supported"] is None
+    assert block_body["warnings"] == []
     assert block_body["candidate"]["review_history"][0]["action"] == "block"
+
+
+def test_source_candidates_api_approve_unsupported_source_reports_poller_false(
+    tmp_path,
+    monkeypatch,
+):
+    client, settings = _client(tmp_path, monkeypatch)
+    candidate = upsert_candidate(
+        settings.database_path,
+        display_uri="https://example.com/release-notes",
+        source_kind="web_page",
+        status="recommended",
+    )
+
+    body = client.post(
+        f"/v1/scout/source-candidates/{candidate.candidate_id}/approve",
+        json={"approved_by": "tester"},
+    ).json()
+
+    assert body["ok"] is True
+    assert body["action"] == "approve"
+    assert body["source"]["canonical_uri"] == "https://example.com/release-notes"
+    assert body["poller_supported"] is False
+    assert body["message"] == (
+        "Source candidate approved; source is active but has no poller support."
+    )
+    assert body["warnings"] == ["approved source is active but poller_supported is false"]
 
 
 def test_source_candidates_api_does_not_approve_blocked_candidate(tmp_path, monkeypatch):

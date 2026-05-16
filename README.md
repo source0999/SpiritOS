@@ -158,6 +158,35 @@ Troubleshooting:
 - **Safe tooling phase** - **read-only project discovery** from configured roots first. Windows `C:\Projects` listing is verified; next work is safe context selection and prompt-packet excerpts, not write/edit/delete.
 - **SSH command execution** - stays **later**, behind explicit **approval gates**.
 
+### Seeded safety smoke harness
+
+The repeatable seeded safety harness covers **Manual Check 7: protected/secret path blocking** and **Manual Check 8: path traversal manual diff blocking**. A passing run means these seeded safety checks passed; it does not automatically accept, commit, approve, or close out the phase.
+
+Expected safety behavior:
+
+- Runs in dry-run mode only.
+- Does not approve anything.
+- Does not apply anything.
+- Does not write files.
+- Reports `applied_anything: false`.
+- Keeps approval unavailable for blocked cases.
+
+Manual Check 9 is now included for normalized target mismatch / allowed-file regression coverage.
+
+### Phase 4F proxy + Scout closeout
+
+Run the non-approving closeout lane:
+
+```bash
+cd ~/SpiritOS
+source .venv/bin/activate
+PYTHONPATH=. .venv/bin/python -m source_proxy.testing.runner --profile phase-4f-closeout
+```
+
+The dashboard `Manual Checks` card exposes the same proxy and Scout runner profiles. Confirmed buttons are required for `4F Closeout`, `Search Smoke`, and `Soak Snapshot`.
+
+Closeout runbook: `scout/docs/V0_3_PHASE4F_PROXY_SCOUT_CLOSEOUT.md`.
+
 ## Next Work Order
 
 **P0 - now**

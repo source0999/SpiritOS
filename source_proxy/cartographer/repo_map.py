@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from time import perf_counter
 from pathlib import Path
 
 from source_proxy.cartographer.component_mapper import map_paths
@@ -89,6 +90,7 @@ def build_repo_maps() -> list[RepoMapSummary]:
 
 
 def build_repo_map_for_project(project_id: str, root: Path) -> RepoMapSummary:
+    started = perf_counter()
     files_seen = 0
     files: list[RepoMapFile] = []
     unmapped: list[UnmappedPath] = []
@@ -126,6 +128,7 @@ def build_repo_map_for_project(project_id: str, root: Path) -> RepoMapSummary:
     return RepoMapSummary(
         project_id=project_id,
         map_version=MAP_VERSION,
+        scan_duration_ms=max(0, round((perf_counter() - started) * 1000)),
         files_seen=files_seen,
         files_indexed=len(files),
         symbols_indexed=symbols_indexed,

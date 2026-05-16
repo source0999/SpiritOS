@@ -14,6 +14,7 @@ import type {
   ScoutSchedulerJob,
   ScoutSourceCandidate,
   ScoutSourceCandidates,
+  ScoutSourceActionResult,
   ScoutSourceSummary,
 } from "@/lib/scout-overview";
 
@@ -464,6 +465,17 @@ function sourceCandidateTitle(candidate: ScoutSourceCandidate): string {
   } catch {
     return candidate.canonical_uri;
   }
+}
+
+function isScoutSourceActionResult(value: unknown): value is ScoutSourceActionResult {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    "ok" in value &&
+    (value as { ok?: unknown }).ok === true &&
+    "action" in value &&
+    "message" in value
+  );
 }
 
 function ScoutSourceCandidateCards({
@@ -1015,13 +1027,19 @@ export function HomelabScoutIntelligenceWidget() {
         },
       );
       if (!res.ok) throw new Error("Could not review source candidate.");
-      setActionMessage(
-        action === "approve"
-          ? "Source candidate approved."
-          : action === "block"
-            ? "Source candidate blocked."
-            : "Source candidate rejected.",
-      );
+      const result = (await res.json().catch(() => null)) as unknown;
+      if (isScoutSourceActionResult(result)) {
+        const warnings = result.warnings.length > 0 ? ` ${result.warnings.join(" ")}` : "";
+        setActionMessage(`${result.message}${warnings}`);
+      } else {
+        setActionMessage(
+          action === "approve"
+            ? "Source candidate approved."
+            : action === "block"
+              ? "Source candidate blocked."
+              : "Source candidate rejected.",
+        );
+      }
       await refresh();
     } catch {
       setActionError("Could not review source candidate.");
