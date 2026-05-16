@@ -213,3 +213,9 @@ Scout context remains read-only. Approval Gate remains unchanged. There are no a
 ## 14. Next Step
 
 Next step requires explicit permission: begin Option C, Read-Only Architect Context Preview.
+
+### Cartographer Review Note
+- Reason: component_code_changed.
+- Component: scout.
+- Changed files: scout/=8,, scout/docs/V0_4_SCOUT_POLISH_CLOSEOUT.md, scout/soak-logs/scout-soak-snapshot-2026-05-16T160750Z.json, scout/soak-logs/scout-soak-snapshot-2026-05-16T161258Z.json, scout/soak-logs/scout-soak-snapshot-2026-05-16T194610Z.json, scout/src/scout/api/discovery_jobs.py, scout/src/scout/api/human.py, scout/src/scout/api/overview.py.
+- Manual check: confirm this blueprint still matches the changed implementation.
