@@ -302,6 +302,39 @@ describe("HomelabBlueprintReviewWidget", () => {
     expect(screen.queryByRole("button", { name: "Request edit" })).toBeNull();
   });
 
+  it("keeps apply unavailable until a proposal is already approved", async () => {
+    const proposal = {
+      proposal_id: "bp-20260515-pending",
+      project_id: "spiritos",
+      status: "pending_review",
+      type: "blueprint_update",
+      component: "dashboard",
+      requires_approval: true,
+      affected_blueprints: ["dashboard-state"],
+      changed_files: ["src/components/dashboard/HomelabBlueprintReviewWidget.tsx"],
+      proposed_files: ["_blueprints/current/dashboard_state.md"],
+      diff_preview: "+ pending docs",
+    };
+    mockProposalsFetch({
+      status: "observing",
+      write_actions_enabled: false,
+      proposal_count: 1,
+      pending_proposals: 1,
+      actions_taken: false,
+      proposals: [proposal],
+    });
+
+    render(<HomelabBlueprintReviewWidget />);
+
+    await screen.findAllByText("dashboard blueprint update");
+
+    expect(screen.getByRole("button", { name: "Approve" })).toHaveAttribute("type", "button");
+    expect(screen.getByRole("button", { name: "Reject" })).toHaveAttribute("type", "button");
+    expect(screen.getByRole("button", { name: "Request edit" })).toHaveAttribute("type", "button");
+    expect(screen.queryByRole("button", { name: "Apply approved docs" })).toBeNull();
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+  });
+
   it("shows an empty review queue without exposing apply commit or push buttons", async () => {
     mockProposalsFetch({
       status: "observing",
