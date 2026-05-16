@@ -56,6 +56,40 @@ describe("HomelabTestRunnerWidget", () => {
     expect(screen.getByText(/"profile": "proxy-smoke"/i)).toBeInTheDocument();
   });
 
+  it("runs the Cartographer safety profile as a read-only manual check", async () => {
+    fetchMock.mockResolvedValueOnce(
+      mockJsonResponse({
+        applied_anything: false,
+        checks: {
+          pytest_passed: true,
+          no_unapproved_writes: true,
+          no_unapproved_commits: true,
+          no_unapproved_pushes: true,
+        },
+        mode: "dry_run",
+        profile: "cartographer-safety",
+        recommendation: "ready for next increment",
+        result: "pass",
+      }),
+    );
+
+    render(<HomelabTestRunnerWidget />);
+
+    fireEvent.click(screen.getByRole("button", { name: /cartographer safety/i }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/v1/coding/self-tests/run",
+        expect.objectContaining({
+          body: JSON.stringify({ mode: "dry_run", profile: "cartographer-safety" }),
+          method: "POST",
+        }),
+      );
+    });
+    expect(await screen.findByText(/cartographer-safety: pass/i)).toBeInTheDocument();
+    expect(screen.getByText(/"profile": "cartographer-safety"/i)).toBeInTheDocument();
+  });
+
   it("asks before running bounded Scout search smoke", async () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValueOnce(false);
     render(<HomelabTestRunnerWidget />);
@@ -136,5 +170,29 @@ describe("HomelabTestRunnerWidget", () => {
     expect(confirm).toHaveBeenCalledWith(expect.stringContaining("Phase 4F closeout"));
     expect(await screen.findByText(/phase-4f-closeout: pass/i)).toBeInTheDocument();
     expect(screen.getByText("6")).toBeInTheDocument();
+  });
+
+  it("requires confirmation before writing a Cartographer soak snapshot", async () => {
+    fetchMock.mockResolvedValueOnce(
+      mockJsonResponse({
+        applied_anything: false,
+        checks: {
+          snapshot_log_only: true,
+          head_changed: false,
+        },
+        mode: "dry_run",
+        profile: "cartographer-soak-snapshot",
+        recommendation: "ready for next increment",
+        result: "pass",
+      }),
+    );
+    const confirm = vi.spyOn(window, "confirm").mockReturnValueOnce(true);
+
+    render(<HomelabTestRunnerWidget />);
+
+    fireEvent.click(screen.getByRole("button", { name: /cartographer soak/i }));
+
+    expect(confirm).toHaveBeenCalledWith(expect.stringContaining("Cartographer soak snapshot"));
+    expect(await screen.findByText(/cartographer-soak-snapshot: pass/i)).toBeInTheDocument();
   });
 });
