@@ -14,6 +14,8 @@ type RunnerProfileId =
   | "proxy-smoke"
   | "proxy-regression"
   | "proxy-closeout"
+  | "cartographer-safety"
+  | "cartographer-soak-snapshot"
   | "phase-4f-closeout"
   | "scout-smoke"
   | "scout-source-gate"
@@ -24,7 +26,7 @@ type RunnerProfileId =
 type RunnerProfile = {
   id: RunnerProfileId;
   label: string;
-  group: "Proxy" | "Scout";
+  group: "Proxy" | "Scout" | "Cartographer";
   tone: "read_only" | "bounded" | "snapshot";
   confirm?: string;
 };
@@ -53,6 +55,20 @@ const RUNNER_PROFILES: RunnerProfile[] = [
   { id: "proxy-smoke", label: "Proxy Smoke", group: "Proxy", tone: "read_only" },
   { id: "proxy-regression", label: "Proxy Regression", group: "Proxy", tone: "read_only" },
   { id: "proxy-closeout", label: "Proxy Closeout", group: "Proxy", tone: "read_only" },
+  {
+    id: "cartographer-safety",
+    label: "Cartographer Safety",
+    group: "Cartographer",
+    tone: "read_only",
+  },
+  {
+    id: "cartographer-soak-snapshot",
+    label: "Cartographer Soak",
+    group: "Cartographer",
+    tone: "snapshot",
+    confirm:
+      "Write a Cartographer soak snapshot under source_proxy/cartographer/soak-logs? This does not approve, apply, commit, or push.",
+  },
   {
     id: "phase-4f-closeout",
     label: "4F Closeout",

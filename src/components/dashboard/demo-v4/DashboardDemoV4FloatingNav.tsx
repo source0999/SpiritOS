@@ -6,7 +6,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Code2, LayoutDashboard, MessageSquare, Palette, Sparkles } from "lucide-react";
+import { BrainCircuit, Code2, LayoutDashboard, MessageSquare, Palette, Sparkles } from "lucide-react";
 
 import { DashboardDemoV4ThemePicker } from "@/components/dashboard/demo-v4/DashboardDemoV4ThemePicker";
 import { cn } from "@/lib/cn";
@@ -38,6 +38,12 @@ const NAV: readonly NavSpec[] = [
     label: "Source",
     icon: Code2,
     match: (p) => p === "/coding" || p.startsWith("/coding/"),
+  },
+  {
+    href: "/intelligence",
+    label: "Scout",
+    icon: BrainCircuit,
+    match: (p) => p === "/intelligence" || p.startsWith("/intelligence/"),
   },
   {
     href: "/oracle",

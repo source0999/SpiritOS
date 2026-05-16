@@ -8,6 +8,8 @@ type CartographerProject = {
   name: string;
   root: string;
   markers: string[];
+  has_blueprints?: boolean;
+  blueprint_root?: string | null;
   status: string;
   write_policy: string;
 };
