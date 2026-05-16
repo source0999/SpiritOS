@@ -4,3 +4,6 @@
 # basic bootstrap can complete cleanly on machines that do not expose NVIDIA
 # drivers to the shell. Install requirements.cuda.txt on the RTX 3060 host.
 -r requirements.core.txt
+
+# Test runner used by source_proxy.testing.runner closeout profiles.
+pytest>=8,<9

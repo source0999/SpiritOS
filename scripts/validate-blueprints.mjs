@@ -5,6 +5,18 @@ const root = process.cwd();
 const blueprintsDir = path.join(root, "_blueprints");
 const indexPath = path.join(blueprintsDir, "INDEX.md");
 
+const requiredDirectories = [
+  "_schema",
+  "current",
+  "components",
+  "runbooks",
+  "history",
+  "proposals",
+];
+
+const allowedTopLevelDirectories = new Set([...requiredDirectories, "sandbox"]);
+const allowedTopLevelFiles = new Set(["INDEX.md"]);
+
 const requiredFields = [
   "blueprint_id",
   "title",
@@ -29,6 +41,24 @@ const allowedStatuses = new Set([
   "deprecated",
 ]);
 
+const allowedDocTypes = new Set([
+  "current_state",
+  "component_blueprint",
+  "component_roadmap",
+  "runbook",
+  "phase_receipt",
+  "visual_sandbox",
+  "proposal_queue",
+  "schema",
+  "index",
+]);
+
+const allowedWritePolicies = new Set([
+  "proposal_only_until_dashboard_approved",
+  "historical_read_only",
+  "sandbox_proposal_only",
+]);
+
 const sourceOfTruthPrefixes = ["current/", "components/", "_schema/"];
 
 async function listMarkdownFiles(dir) {
@@ -47,6 +77,28 @@ async function listMarkdownFiles(dir) {
   return files;
 }
 
+async function validateLayout(errors) {
+  const entries = await readdir(blueprintsDir, { withFileTypes: true });
+  const seenDirectories = new Set();
+
+  for (const entry of entries) {
+    if (entry.isDirectory()) {
+      seenDirectories.add(entry.name);
+      if (!allowedTopLevelDirectories.has(entry.name)) {
+        errors.push(`_blueprints/: unmanaged top-level directory '${entry.name}'`);
+      }
+    } else if (entry.isFile() && !allowedTopLevelFiles.has(entry.name)) {
+      errors.push(`_blueprints/: unmanaged top-level file '${entry.name}'`);
+    }
+  }
+
+  for (const dir of requiredDirectories) {
+    if (!seenDirectories.has(dir)) {
+      errors.push(`_blueprints/: missing required directory '${dir}/'`);
+    }
+  }
+}
+
 function toBlueprintPath(filePath) {
   return path.relative(blueprintsDir, filePath).split(path.sep).join("/");
 }
@@ -62,14 +114,30 @@ function parseFrontmatter(content) {
   }
 
   const fields = new Map();
+  let currentKey = null;
   for (const line of match[1].split(/\r?\n/)) {
     const fieldMatch = line.match(/^([A-Za-z0-9_]+):(?:\s*(.*))?$/);
     if (fieldMatch) {
-      fields.set(fieldMatch[1], fieldMatch[2] ?? "");
+      const value = fieldMatch[2] ?? "";
+      fields.set(fieldMatch[1], value === "[]" ? [] : value);
+      currentKey = fieldMatch[1];
+      continue;
+    }
+
+    const listMatch = line.match(/^\s*-\s*(.+?)\s*$/);
+    if (listMatch && currentKey) {
+      const existing = fields.get(currentKey);
+      const values = Array.isArray(existing) ? existing : [];
+      values.push(listMatch[1]);
+      fields.set(currentKey, values);
     }
   }
 
   return fields;
+}
+
+function stringValue(value) {
+  return Array.isArray(value) ? "" : (value ?? "").trim();
 }
 
 function parseBoolean(value) {
@@ -92,21 +160,44 @@ function validateFrontmatter(relPath, fields, errors) {
     }
   }
 
-  const status = fields.get("status")?.trim();
+  const blueprintId = stringValue(fields.get("blueprint_id"));
+  if (blueprintId && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(blueprintId)) {
+    errors.push(`${relPath}: blueprint_id must be stable kebab-case`);
+  }
+
+  const docType = stringValue(fields.get("doc_type"));
+  if (docType && !allowedDocTypes.has(docType)) {
+    errors.push(`${relPath}: invalid doc_type '${docType}'`);
+  }
+
+  const status = stringValue(fields.get("status"));
   if (status && !allowedStatuses.has(status)) {
     errors.push(`${relPath}: invalid status '${status}'`);
   }
 
-  const sourceOfTruth = parseBoolean(fields.get("source_of_truth")?.trim());
+  const writePolicy = stringValue(fields.get("write_policy"));
+  if (writePolicy && !allowedWritePolicies.has(writePolicy)) {
+    errors.push(`${relPath}: invalid write_policy '${writePolicy}'`);
+  }
+
+  const sourceOfTruth = parseBoolean(stringValue(fields.get("source_of_truth")));
   if (sourceOfTruth === null) {
     errors.push(`${relPath}: source_of_truth must be true or false`);
   } else if (sourceOfTruth && !isSourceOfTruthAllowed(relPath)) {
     errors.push(`${relPath}: source_of_truth true is only allowed for canonical current/component/schema docs or INDEX.md`);
   }
 
-  const lastVerified = fields.get("last_verified")?.trim();
+  const lastVerified = stringValue(fields.get("last_verified"));
   if (lastVerified && !/^\d{4}-\d{2}-\d{2}$/.test(lastVerified)) {
     errors.push(`${relPath}: last_verified must use YYYY-MM-DD`);
+  }
+  if (sourceOfTruth === true && !lastVerified) {
+    errors.push(`${relPath}: source_of_truth documents must have last_verified`);
+  }
+
+  const codePaths = fields.get("code_paths");
+  if (status === "active" && (!Array.isArray(codePaths) || codePaths.length === 0)) {
+    errors.push(`${relPath}: active blueprints must list at least one code_paths entry`);
   }
 }
 
@@ -119,6 +210,8 @@ function extractIndexedPaths(indexContent) {
 const files = (await listMarkdownFiles(blueprintsDir)).sort();
 const errors = [];
 const records = [];
+
+await validateLayout(errors);
 
 for (const file of files) {
   const relPath = toBlueprintPath(file);
@@ -133,9 +226,9 @@ for (const file of files) {
   validateFrontmatter(relPath, fields, errors);
   records.push({
     relPath,
-    blueprintId: fields.get("blueprint_id")?.trim(),
-    status: fields.get("status")?.trim(),
-    docType: fields.get("doc_type")?.trim(),
+    blueprintId: stringValue(fields.get("blueprint_id")),
+    status: stringValue(fields.get("status")),
+    docType: stringValue(fields.get("doc_type")),
   });
 }
 

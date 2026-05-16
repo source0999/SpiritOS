@@ -53,6 +53,11 @@ export type ScoutPacket = {
   raw_status?: string | null;
   human_status_label?: string | null;
   status_explanation?: ScoutStatusExplanation | null;
+  usefulness_label?: string | null;
+  usefulness_reason?: string | null;
+  recommended_action?: string | null;
+  confidence_label?: string | null;
+  source_trust_label?: string | null;
   status?: string | null;
   source_label?: string | null;
   trust_label?: string | null;
@@ -115,6 +120,10 @@ export type ScoutHumanSummary = Partial<{
   memory_status: {
     label: string;
     active: boolean;
+    state?: "inactive" | "read_only_context" | "manual_import_only" | "approved_memory_write" | string;
+    write_enabled?: boolean;
+    mode_label?: string;
+    safety_label?: string;
     reason?: string;
   };
   promotion_status: {
@@ -127,7 +136,14 @@ export type ScoutHumanSummary = Partial<{
 
 export type ScoutSourceSummary = Partial<{
   source_uri: string;
+  canonical_uri: string;
+  display_uri: string;
   label: string;
+  source_kind: string;
+  source_origin: string;
+  status: string;
+  poll_interval_minutes: number;
+  poller_supported: boolean;
   trust_category: string;
   trust_label: string;
   trust_tier: string;
@@ -174,6 +190,12 @@ export type ScoutSourceCandidate = {
   trust_label?: string | null;
   trust_tier?: string | null;
   recommendation?: string | null;
+  automation_tier?: string | null;
+  automation_label?: string | null;
+  suggested_action?: string | null;
+  auto_approval_dry_run?: boolean | null;
+  auto_approval_dry_run_reason?: string | null;
+  auto_approval_dry_run_label?: string | null;
   discovered_from_uri?: string | null;
   discovered_from_event_id?: string | null;
   discovered_from_packet_id?: string | null;
@@ -187,6 +209,7 @@ export type ScoutSourceCandidate = {
   blocked_reason?: string | null;
   metadata?: Record<string, unknown> | null;
   review_history?: ScoutSourceReviewEvent[] | null;
+  poller_supported?: boolean | null;
 };
 
 export type ScoutSourceActionResult = {
@@ -200,8 +223,17 @@ export type ScoutSourceActionResult = {
   warnings: string[];
 };
 
+export type ScoutSourceReviewBundle = {
+  key: string;
+  label: string;
+  description?: string | null;
+  count: number;
+  candidate_ids: string[];
+};
+
 export type ScoutSourceCandidates = Partial<{
   counts: Partial<Record<ScoutSourceCandidateStatus, number>>;
+  review_bundles: ScoutSourceReviewBundle[];
   candidates: ScoutSourceCandidate[];
 }>;
 
@@ -218,6 +250,9 @@ export type ScoutDiscoveryJob = {
   query: string;
   topic_anchor?: string | null;
   status: ScoutDiscoveryJobStatus;
+  computed_status?: string | null;
+  attention_label?: string | null;
+  safe_next_action?: string | null;
   max_results: number;
   budget: number;
   created_at: string;
@@ -228,8 +263,30 @@ export type ScoutDiscoveryJob = {
   metadata?: Record<string, unknown> | null;
 };
 
+export type ScoutDiscoveryBudget = Partial<{
+  daily_limit: number;
+  used_today: number;
+  remaining_today: number;
+  can_create_job: boolean;
+  blocked_reason: string | null;
+  next_reset_hint: string;
+  queued_jobs: number;
+  running_jobs: number;
+  completed_jobs: number;
+  failed_jobs: number;
+}>;
+
 export type ScoutDiscoveryJobs = Partial<{
   count: number;
+  budget: ScoutDiscoveryBudget;
+  execution: Partial<{
+    mode: string;
+    automatic_execution: boolean;
+    worker_registered: boolean;
+    queued_job_meaning: string;
+    advance_actions: string[];
+    explanation: string;
+  }>;
   jobs: ScoutDiscoveryJob[];
 }>;
 

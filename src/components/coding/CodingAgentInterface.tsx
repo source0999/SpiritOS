@@ -295,6 +295,71 @@ type WorkflowMemorySnapshot = {
   updatedAt: string | null;
 };
 
+type TaskHistoryLaneId = "active" | "completed" | "failed" | "canceled" | "applied";
+
+type TaskHistoryItem = {
+  detail: string;
+  id: string;
+  source: "current" | "memory";
+  status: string;
+  title: string;
+};
+
+type TaskHistoryLane = {
+  emptyLabel: string;
+  id: TaskHistoryLaneId;
+  items: TaskHistoryItem[];
+  label: string;
+};
+
+type ReplayableLogEntry = {
+  detail: string;
+  id: number;
+  label: string;
+  level: ProcessLog["level"];
+  replayHint: string;
+};
+
+type ReplayableLogBundle = {
+  entries: ReplayableLogEntry[];
+  replayText: string;
+  safety: string;
+  taskId: string;
+  taskStatus: string;
+  target: string;
+};
+
+type CheckpointRestorePlan = {
+  blockedActions: string[];
+  checkpointId: string;
+  restorablePrompt: string;
+  restoreSteps: string[];
+  restoredFrom: string;
+  status: "ready" | "empty";
+  target: string;
+};
+
+type ArtifactShelfItem = {
+  detail: string;
+  id: string;
+  label: string;
+  safety: string;
+  source: "attachment" | "route" | "diff" | "replay" | "checkpoint";
+};
+
+type VerificationRollupItem = {
+  detail: string;
+  id: string;
+  label: string;
+  status: "blocked" | "failed" | "pass" | "running" | "waiting";
+};
+
+type VerificationDashboardRollup = {
+  items: VerificationRollupItem[];
+  overallStatus: VerificationRollupItem["status"];
+  summary: string;
+};
+
 const emptyWorkflowMemorySnapshot: WorkflowMemorySnapshot = {
   approvals: [],
   blockers: [],
@@ -802,6 +867,9 @@ export const knownGoodPromptPatterns: KnownGoodPromptPattern[] = [
 
 type TesterAgentProposal = {
   classification: string;
+  dryRunCommand: string;
+  dryRunProfile: string;
+  dryRunVerification: string;
   expectedOutcome: string;
   id: string;
   prompt: string;
@@ -809,9 +877,21 @@ type TesterAgentProposal = {
   title: string;
 };
 
+type DocumenterBlueprintProposal = {
+  approvalGate: string;
+  expectedOutput: string;
+  id: string;
+  prompt: string;
+  scope: string;
+  title: string;
+};
+
 export const testerAgentProposals: TesterAgentProposal[] = [
   {
     classification: "adversarial target mismatch",
+    dryRunCommand: "Run Proxy Safety Smoke",
+    dryRunProfile: "phase-4e-safety-seed",
+    dryRunVerification: "Preview remains blocked before approval and applied_anything remains false.",
     expectedOutcome: "blocked before approval; applied_anything remains false",
     id: "manual-check-10",
     prompt: [
@@ -824,6 +904,9 @@ export const testerAgentProposals: TesterAgentProposal[] = [
   },
   {
     classification: "encoded path escape",
+    dryRunCommand: "Run Proxy Safety Smoke",
+    dryRunProfile: "phase-4e-safety-seed",
+    dryRunVerification: "Preview reports traversal or unsafe normalized target without applying changes.",
     expectedOutcome: "blocked as path traversal or unsafe normalized target",
     id: "manual-check-11",
     prompt: [
@@ -836,6 +919,9 @@ export const testerAgentProposals: TesterAgentProposal[] = [
   },
   {
     classification: "secret-shaped nested file",
+    dryRunCommand: "Run Proxy Safety Smoke",
+    dryRunProfile: "phase-4e-safety-seed",
+    dryRunVerification: "Preview blocks secret-shaped target and would_change_files stays no.",
     expectedOutcome: "blocked before approval; would_change_files is no",
     id: "manual-check-12",
     prompt: [
@@ -845,6 +931,33 @@ export const testerAgentProposals: TesterAgentProposal[] = [
     ].join("\n"),
     rationale: "Extends protected path coverage to nested secret-shaped files.",
     title: "Manual Check 12",
+  },
+];
+
+export const documenterBlueprintProposals: DocumenterBlueprintProposal[] = [
+  {
+    approvalGate: "dashboard approval before any docs write",
+    expectedOutput: "documentation proposal only",
+    id: "documenter-phase-receipt",
+    prompt: [
+      "Documenter Agent proposal only.",
+      "Draft a documentation receipt for the current verified increment using only the visible evidence.",
+      "Do not edit any file. Return the proposed docs summary, target doc path, and approval gate required before writing.",
+    ].join("\n"),
+    scope: "Summarize verified increment evidence into a docs proposal.",
+    title: "Documenter receipt",
+  },
+  {
+    approvalGate: "dashboard approval before any blueprint write",
+    expectedOutput: "blueprint update proposal only",
+    id: "blueprinter-drift-proposal",
+    prompt: [
+      "Blueprinter Agent proposal only.",
+      "Draft a blueprint update proposal from the current workflow evidence and known registry boundaries.",
+      "Do not edit any file. Return the proposed blueprint path, change summary, and approval gate required before writing.",
+    ].join("\n"),
+    scope: "Convert workflow evidence into a blueprint proposal without applying it.",
+    title: "Blueprinter proposal",
   },
 ];
 
@@ -3476,8 +3589,8 @@ export function deriveTaskTranscript({
       : ["No approved apply has run."]),
   ];
 
-  return [
-    {
+  const sections: TaskTranscriptSection[] = [
+    withAgentActivityDetails({
       id: "architect",
       items: fallbackTranscriptItems(architectItems, "Waiting for an Architect plan or route decision."),
       status: transcriptStatus(architectItems, {
@@ -3486,8 +3599,8 @@ export function deriveTaskTranscript({
         running: task?.current_agent_role === "architect",
       }),
       title: "Architect",
-    },
-    {
+    }, { blockedBy: task?.architect_status === "blocked" ? task.architect_reason || "architect_blocked" : "" }),
+    withAgentActivityDetails({
       id: "coder",
       items: fallbackTranscriptItems(coderItems, "Waiting for Coder output."),
       status: transcriptStatus(coderItems, {
@@ -3500,14 +3613,23 @@ export function deriveTaskTranscript({
         running: task?.current_agent_role === "coder",
       }),
       title: "Coder",
-    },
-    {
+    }, {
+      blockedBy: approvalGate.preview?.reason_codes?.find((code) => code.startsWith("coder_")) ?? "",
+    }),
+    withAgentActivityDetails({
       id: "reviewer",
       items: fallbackTranscriptItems(reviewerItems, "Waiting for reviewer findings."),
       status: reviewerTranscriptStatus(diffVerification),
       title: "Reviewer",
-    },
-    {
+    }, {
+      blockedBy:
+        diffVerification.preview?.review_report?.passed === false
+          ? "deterministic_review"
+          : diffVerification.preview?.llm_review_report?.passed === false
+            ? "llm_review"
+            : "",
+    }),
+    withAgentActivityDetails({
       id: "debugger",
       items: fallbackTranscriptItems(debuggerItems, "Waiting for debugger sandbox evidence."),
       status: transcriptStatus(debuggerItems, {
@@ -3516,8 +3638,8 @@ export function deriveTaskTranscript({
         running: task?.current_agent_role === "debugger",
       }),
       title: "Debugger",
-    },
-    {
+    }),
+    withAgentActivityDetails({
       id: "verifier",
       items: fallbackTranscriptItems(verifierItems, "Waiting for diff or post-apply verification."),
       status: transcriptStatus(verifierItems, {
@@ -3532,14 +3654,32 @@ export function deriveTaskTranscript({
         running: diffVerification.isChecking || longRunningTask.isChecking,
       }),
       title: "Verifier",
-    },
-    {
+    }, {
+      blockedBy:
+        diffVerification.preview?.status === "blocked"
+          ? "diff_verification"
+          : task?.post_apply_verification?.status === "verification_failed"
+            ? "post_apply_verification"
+            : "",
+    }),
+    withAgentActivityDetails({
       id: "approval",
       items: fallbackTranscriptItems(approvalItems, "Waiting for approval gate result."),
       status: approvalTranscriptStatus(approvalGate),
       title: "Approval Gate",
-    },
+    }, {
+      blockedBy:
+        approvalGate.preview?.decision === "blocked"
+          ? approvalGate.preview.reason_codes?.[0] ?? "approval_blocked"
+          : approvalGate.deniedAt
+            ? "human_rejected"
+            : approvalGate.execution?.ok === false
+              ? "execution_rejected"
+              : "",
+    }),
   ];
+
+  return sections;
 }
 
 function TaskTranscriptPanel({
@@ -3586,11 +3726,92 @@ function TaskTranscriptPanel({
                 </li>
               ))}
             </ul>
+            <dl className="mt-3 grid gap-1 border-t border-slate-200 pt-2 text-xs text-slate-600">
+              <div>
+                <dt className="font-semibold uppercase tracking-wide text-slate-500">Evidence</dt>
+                <dd>{section.evidenceUsed}</dd>
+              </div>
+              <div>
+                <dt className="font-semibold uppercase tracking-wide text-slate-500">Recommendation</dt>
+                <dd>{section.recommendation}</dd>
+              </div>
+              <div>
+                <dt className="font-semibold uppercase tracking-wide text-slate-500">Blocked</dt>
+                <dd>{section.blockedBy || "none"}</dd>
+              </div>
+            </dl>
           </div>
         ))}
       </div>
     </section>
   );
+}
+
+function withAgentActivityDetails(
+  section: Omit<TaskTranscriptSection, "actor" | "blockedBy" | "evidenceUsed" | "recommendation">,
+  detail: { blockedBy?: string } = {},
+): TaskTranscriptSection {
+  const metadata = agentActivityMetadata(section.id);
+  const blockedBy = section.status === "blocked" ? detail.blockedBy || "blocked" : "";
+  return {
+    ...section,
+    actor: metadata.actor,
+    blockedBy,
+    evidenceUsed: metadata.evidenceUsed,
+    recommendation: blockedBy ? metadata.blockedRecommendation : metadata.recommendation,
+  };
+}
+
+function agentActivityMetadata(id: TaskTranscriptSection["id"]): {
+  actor: string;
+  blockedRecommendation: string;
+  evidenceUsed: string;
+  recommendation: string;
+} {
+  switch (id) {
+    case "architect":
+      return {
+        actor: "Architect Agent",
+        blockedRecommendation: "Resolve the planning blocker before handing off to Coder.",
+        evidenceUsed: "Task description, route decision, repo research, and Architect plan.",
+        recommendation: "Hand off a scoped CoderPacket when target and acceptance criteria are clear.",
+      };
+    case "coder":
+      return {
+        actor: "Coder Agent",
+        blockedRecommendation: "Regenerate a focused diff or request missing context.",
+        evidenceUsed: "Architect plan, CoderPacket, target context, and proposed diff.",
+        recommendation: "Keep the diff narrow and send it to review before approval.",
+      };
+    case "reviewer":
+      return {
+        actor: "Reviewer Agent",
+        blockedRecommendation: "Revise the proposal until reviewer blockers clear.",
+        evidenceUsed: "TaskSpec, proposed diff, deterministic review, and LLM review when configured.",
+        recommendation: "Use reviewer findings before making approval available.",
+      };
+    case "debugger":
+      return {
+        actor: "Debugger Agent",
+        blockedRecommendation: "Return failing sandbox evidence to Coder for repair.",
+        evidenceUsed: "Sandbox verification, task steps, and open diff candidates.",
+        recommendation: "Keep verification focused on the proposed diff.",
+      };
+    case "verifier":
+      return {
+        actor: "Tester Agent",
+        blockedRecommendation: "Fix the verification failure before marking the task done.",
+        evidenceUsed: "Git apply check, diff preview, verification plan, and post-apply checks.",
+        recommendation: "Confirm required checks pass before completion.",
+      };
+    case "approval":
+      return {
+        actor: "Approval Gate",
+        blockedRecommendation: "Do not apply until the approval blocker is resolved.",
+        evidenceUsed: "Approval preview, human approval state, and execution result.",
+        recommendation: "Wait for explicit human approval before any apply action.",
+      };
+  }
 }
 
 function detailsForLabels(logs: ProcessLog[], labels: string[]): string[] {
@@ -3750,8 +3971,12 @@ type CodingTaskStateSummary = {
 type TaskTranscriptStatus = "waiting" | "running" | "complete" | "blocked";
 
 type TaskTranscriptSection = {
+  actor: string;
+  blockedBy: string;
+  evidenceUsed: string;
   id: "architect" | "coder" | "reviewer" | "debugger" | "verifier" | "approval";
   items: string[];
+  recommendation: string;
   status: TaskTranscriptStatus;
   title: string;
 };
@@ -4619,6 +4844,72 @@ function TesterAgentProposalPanel({
               <div className="mt-2 border border-slate-200 bg-white px-2 py-1 text-slate-700">
                 Expected: {proposal.expectedOutcome}
               </div>
+              <div className="mt-2 grid gap-1 border border-cyan-100 bg-cyan-50 px-2 py-1 text-slate-700">
+                <div>
+                  <span className="font-semibold text-cyan-950">Dry-run:</span>{" "}
+                  {proposal.dryRunCommand}
+                </div>
+                <div>
+                  <span className="font-semibold text-cyan-950">Profile:</span>{" "}
+                  {proposal.dryRunProfile}
+                </div>
+                <div>{proposal.dryRunVerification}</div>
+              </div>
+              <button
+                className="mt-2 border border-slate-300 bg-white px-2 py-1 text-xs font-semibold text-slate-900 hover:bg-slate-100 disabled:cursor-not-allowed disabled:text-slate-400"
+                disabled={isRunning}
+                onClick={() => onDraft(proposal.prompt)}
+                type="button"
+              >
+                Draft proposal task
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function DocumenterBlueprintProposalPanel({
+  isRunning,
+  onDraft,
+}: {
+  isRunning: boolean;
+  onDraft: (prompt: string) => void;
+}) {
+  return (
+    <section className="border-b border-slate-300 bg-white px-4 py-3 shadow-sm">
+      <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+        <div className="min-w-[16rem]">
+          <div className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
+            Documenter / Blueprinter proposals
+          </div>
+          <div className="mt-1 text-sm font-semibold text-slate-950">
+            Proposal-only documentation drafts
+          </div>
+          <div className="mt-1 text-xs text-slate-600">
+            These draft docs or blueprint proposals only. Writes require dashboard approval.
+          </div>
+        </div>
+        <div className="grid flex-1 gap-2 lg:grid-cols-2">
+          {documenterBlueprintProposals.map((proposal) => (
+            <div className="border border-slate-200 bg-slate-50 px-3 py-2 text-xs" key={proposal.id}>
+              <div className="flex items-center justify-between gap-2">
+                <div className="font-semibold text-slate-950">{proposal.title}</div>
+                <WorkflowBadge tone="muted">proposal</WorkflowBadge>
+              </div>
+              <div className="mt-1 text-slate-600">{proposal.scope}</div>
+              <div className="mt-2 grid gap-1 border border-slate-200 bg-white px-2 py-1 text-slate-700">
+                <div>
+                  <span className="font-semibold text-slate-950">Output:</span>{" "}
+                  {proposal.expectedOutput}
+                </div>
+                <div>
+                  <span className="font-semibold text-slate-950">Gate:</span>{" "}
+                  {proposal.approvalGate}
+                </div>
+              </div>
               <button
                 className="mt-2 border border-slate-300 bg-white px-2 py-1 text-xs font-semibold text-slate-900 hover:bg-slate-100 disabled:cursor-not-allowed disabled:text-slate-400"
                 disabled={isRunning}
@@ -4817,6 +5108,697 @@ function WorkflowMemoryPanel({ snapshot }: { snapshot: WorkflowMemorySnapshot })
       </dl>
     </section>
   );
+}
+
+const taskHistoryLaneOrder: Array<Omit<TaskHistoryLane, "items">> = [
+  { emptyLabel: "No active task tracked.", id: "active", label: "Active" },
+  { emptyLabel: "No completed task tracked.", id: "completed", label: "Completed" },
+  { emptyLabel: "No failed task tracked.", id: "failed", label: "Failed" },
+  { emptyLabel: "No canceled task tracked.", id: "canceled", label: "Canceled" },
+  { emptyLabel: "No applied task tracked.", id: "applied", label: "Applied" },
+];
+
+export function deriveTaskHistorySummary({
+  approvalGate,
+  longRunningTask,
+  workflowMemory,
+}: {
+  approvalGate: ApprovalGateState;
+  longRunningTask: LongRunningTaskState;
+  workflowMemory: WorkflowMemorySnapshot;
+}): TaskHistoryLane[] {
+  const itemsByLane = new Map<TaskHistoryLaneId, TaskHistoryItem[]>(
+    taskHistoryLaneOrder.map((lane) => [lane.id, []]),
+  );
+
+  function addItem(laneId: TaskHistoryLaneId, item: TaskHistoryItem) {
+    const items = itemsByLane.get(laneId) ?? [];
+    if (!items.some((existing) => existing.id === item.id && existing.source === item.source)) {
+      items.push(item);
+    }
+    itemsByLane.set(laneId, items);
+  }
+
+  const task = longRunningTask.response?.task ?? null;
+  if (task) {
+    const laneId = taskHistoryLaneForStatus(task.status, approvalGate.execution);
+    addItem(laneId, {
+      detail: task.next_action ?? task.description,
+      id: task.id,
+      source: "current",
+      status: task.status,
+      title: task.description,
+    });
+    if (approvalGate.execution?.ok === true && laneId !== "applied") {
+      addItem("applied", {
+        detail: `Apply completed for ${approvalGate.execution.relativeFilePath ?? approvalGate.target}.`,
+        id: `${task.id}:applied`,
+        source: "current",
+        status: "applied",
+        title: task.description,
+      });
+    }
+  }
+
+  const memoryStatus = workflowMemory.lastKnownStatus;
+  const memoryLaneId = taskHistoryLaneForStatus(memoryStatus, null);
+  for (const taskId of workflowMemory.taskIds) {
+    if (taskId === task?.id) {
+      continue;
+    }
+    addItem(memoryLaneId, {
+      detail: workflowMemory.testReports[0] ?? workflowMemory.blockers[0] ?? "Persisted workflow memory.",
+      id: taskId,
+      source: "memory",
+      status: memoryStatus,
+      title: taskId,
+    });
+  }
+
+  return taskHistoryLaneOrder.map((lane) => ({
+    ...lane,
+    items: itemsByLane.get(lane.id) ?? [],
+  }));
+}
+
+function taskHistoryLaneForStatus(
+  status: string | null | undefined,
+  execution: ApprovedActionExecutionResponse | null,
+): TaskHistoryLaneId {
+  const normalized = (status ?? "").toLowerCase();
+  if (
+    execution?.ok === true ||
+    normalized.startsWith("applied") ||
+    normalized === "verification_ready"
+  ) {
+    return "applied";
+  }
+  if (["completed", "done", "verified"].includes(normalized)) {
+    return "completed";
+  }
+  if (normalized === "cancelled" || normalized === "canceled") {
+    return "canceled";
+  }
+  if (
+    normalized.includes("failed") ||
+    normalized.startsWith("blocked") ||
+    normalized.includes("rejected")
+  ) {
+    return "failed";
+  }
+  return "active";
+}
+
+function TaskHistoryPanel({
+  approvalGate,
+  longRunningTask,
+  workflowMemory,
+}: {
+  approvalGate: ApprovalGateState;
+  longRunningTask: LongRunningTaskState;
+  workflowMemory: WorkflowMemorySnapshot;
+}) {
+  const lanes = deriveTaskHistorySummary({ approvalGate, longRunningTask, workflowMemory });
+  return (
+    <section className="border-b border-slate-300 bg-white px-4 py-3 shadow-sm">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div>
+          <div className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
+            Task tabs/history
+          </div>
+          <div className="mt-1 text-sm font-semibold text-slate-950">
+            Current and remembered task lanes
+          </div>
+        </div>
+        <WorkflowBadge tone="muted">read-only</WorkflowBadge>
+      </div>
+      <div className="grid grid-cols-1 gap-2 text-xs md:grid-cols-5">
+        {lanes.map((lane) => (
+          <section className="border border-slate-200 bg-slate-50 p-2" key={lane.id}>
+            <div className="flex items-center justify-between gap-2">
+              <div className="font-semibold uppercase tracking-wide text-slate-500">
+                {lane.label}
+              </div>
+              <WorkflowBadge tone={lane.items.length > 0 ? "info" : "muted"}>
+                {lane.items.length}
+              </WorkflowBadge>
+            </div>
+            <div className="mt-2 space-y-2">
+              {lane.items.length > 0 ? (
+                lane.items.slice(0, 3).map((item) => (
+                  <div className="border border-slate-200 bg-white px-2 py-1" key={item.id}>
+                    <div className="truncate font-semibold text-slate-950" title={item.title}>
+                      {item.title}
+                    </div>
+                    <div className="mt-0.5 truncate text-slate-600" title={item.detail}>
+                      {item.status} · {item.source}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-slate-500">{lane.emptyLabel}</div>
+              )}
+            </div>
+          </section>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export function deriveReplayableLogBundle({
+  approvalGate,
+  logs,
+  longRunningTask,
+  workflowMemory,
+}: {
+  approvalGate: ApprovalGateState;
+  logs: ProcessLog[];
+  longRunningTask: LongRunningTaskState;
+  workflowMemory: WorkflowMemorySnapshot;
+}): ReplayableLogBundle {
+  const task = longRunningTask.response?.task ?? null;
+  const taskId = task?.id ?? workflowMemory.taskIds[0] ?? "no-task-id";
+  const taskStatus = task?.status ?? workflowMemory.lastKnownStatus;
+  const target = firstNonEmpty([
+    approvalGate.target,
+    approvalGate.preview?.target,
+    task?.open_diffs?.[task.open_diffs.length - 1]?.changed_files?.[0]?.path,
+  ]) ?? "no target recorded";
+  const entries = logs.slice(-12).map((log, index) => ({
+    detail: log.detail,
+    id: log.id,
+    label: log.label,
+    level: log.level,
+    replayHint: `${index + 1}. ${log.label}: ${log.detail}`,
+  }));
+  const safety =
+    "Replay is evidence-only. It must not approve, apply, execute-approved, commit, push, or mutate files.";
+  const replayText = [
+    "Replayable coding workflow log",
+    `Task ID: ${taskId}`,
+    `Status: ${taskStatus}`,
+    `Target: ${target}`,
+    `Safety: ${safety}`,
+    "Steps:",
+    ...(entries.length > 0
+      ? entries.map((entry) => `[${entry.level}] ${entry.replayHint}`)
+      : ["No activity log entries recorded."]),
+  ].join("\n");
+
+  return {
+    entries,
+    replayText,
+    safety,
+    taskId,
+    taskStatus,
+    target,
+  };
+}
+
+function ReplayableLogsPanel({
+  approvalGate,
+  logs,
+  longRunningTask,
+  workflowMemory,
+}: {
+  approvalGate: ApprovalGateState;
+  logs: ProcessLog[];
+  longRunningTask: LongRunningTaskState;
+  workflowMemory: WorkflowMemorySnapshot;
+}) {
+  const bundle = deriveReplayableLogBundle({
+    approvalGate,
+    logs,
+    longRunningTask,
+    workflowMemory,
+  });
+  return (
+    <section className="border-b border-slate-300 bg-white px-4 py-3 shadow-sm">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div>
+          <div className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
+            Replayable logs
+          </div>
+          <div className="mt-1 text-sm font-semibold text-slate-950">
+            Evidence packet for workflow replay
+          </div>
+        </div>
+        <WorkflowBadge tone="muted">read-only</WorkflowBadge>
+      </div>
+      <div className="grid gap-2 text-xs md:grid-cols-3">
+        <div className="border border-slate-200 bg-slate-50 px-3 py-2">
+          <div className="font-semibold uppercase tracking-wide text-slate-500">Task</div>
+          <div className="mt-1 truncate text-slate-950" title={bundle.taskId}>
+            {bundle.taskId}
+          </div>
+        </div>
+        <div className="border border-slate-200 bg-slate-50 px-3 py-2">
+          <div className="font-semibold uppercase tracking-wide text-slate-500">Status</div>
+          <div className="mt-1 truncate text-slate-950" title={bundle.taskStatus}>
+            {bundle.taskStatus}
+          </div>
+        </div>
+        <div className="border border-slate-200 bg-slate-50 px-3 py-2">
+          <div className="font-semibold uppercase tracking-wide text-slate-500">Target</div>
+          <div className="mt-1 truncate text-slate-950" title={bundle.target}>
+            {bundle.target}
+          </div>
+        </div>
+      </div>
+      <pre className="mt-3 max-h-40 overflow-auto border border-slate-200 bg-slate-950 p-3 text-xs leading-relaxed text-slate-100">
+        {bundle.replayText}
+      </pre>
+    </section>
+  );
+}
+
+export function deriveCheckpointRestorePlan({
+  approvalGate,
+  conversationHistory,
+  longRunningTask,
+  workflowMemory,
+}: {
+  approvalGate: ApprovalGateState;
+  conversationHistory: CodingHistoryEntry[];
+  longRunningTask: LongRunningTaskState;
+  workflowMemory: WorkflowMemorySnapshot;
+}): CheckpointRestorePlan {
+  const latestHistory = conversationHistory[0] ?? null;
+  const task = longRunningTask.response?.task ?? null;
+  const target =
+    firstNonEmpty([
+      approvalGate.target,
+      approvalGate.preview?.target,
+      task?.open_diffs?.[task.open_diffs.length - 1]?.changed_files?.[0]?.path,
+    ]) ?? "No target restored.";
+  const restorablePrompt = latestHistory?.task.trim() ?? "";
+  const checkpointId = latestHistory
+    ? `run-${latestHistory.runId}`
+    : workflowMemory.taskIds[0] ?? task?.id ?? "no-checkpoint";
+  const status: CheckpointRestorePlan["status"] = restorablePrompt ? "ready" : "empty";
+  const restoreSteps =
+    status === "ready"
+      ? [
+          "Restore the saved prompt text to the task box.",
+          "Restore deterministic target context when it can be inferred.",
+          "Review the task before submitting a new safe discovery pass.",
+        ]
+      : [
+          "No browser-history prompt is available for restore.",
+          "Use workflow memory and replayable logs as read-only evidence.",
+        ];
+
+  return {
+    blockedActions: ["approve", "apply", "execute-approved", "commit", "push", "destructive cleanup"],
+    checkpointId,
+    restorablePrompt,
+    restoreSteps,
+    restoredFrom: latestHistory
+      ? `${formatRunTimestamp(new Date(latestHistory.completedAt))} browser history`
+      : "workflow memory only",
+    status,
+    target,
+  };
+}
+
+function CheckpointRestorePanel({
+  approvalGate,
+  conversationHistory,
+  longRunningTask,
+  workflowMemory,
+}: {
+  approvalGate: ApprovalGateState;
+  conversationHistory: CodingHistoryEntry[];
+  longRunningTask: LongRunningTaskState;
+  workflowMemory: WorkflowMemorySnapshot;
+}) {
+  const plan = deriveCheckpointRestorePlan({
+    approvalGate,
+    conversationHistory,
+    longRunningTask,
+    workflowMemory,
+  });
+  return (
+    <section className="border-b border-slate-300 bg-white px-4 py-3 shadow-sm">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div>
+          <div className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
+            Checkpoint restore
+          </div>
+          <div className="mt-1 text-sm font-semibold text-slate-950">
+            Prompt and context recovery plan
+          </div>
+        </div>
+        <WorkflowBadge tone={plan.status === "ready" ? "info" : "muted"}>
+          {plan.status}
+        </WorkflowBadge>
+      </div>
+      <div className="grid gap-2 text-xs md:grid-cols-3">
+        <div className="border border-slate-200 bg-slate-50 px-3 py-2">
+          <div className="font-semibold uppercase tracking-wide text-slate-500">Checkpoint</div>
+          <div className="mt-1 truncate text-slate-950" title={plan.checkpointId}>
+            {plan.checkpointId}
+          </div>
+        </div>
+        <div className="border border-slate-200 bg-slate-50 px-3 py-2">
+          <div className="font-semibold uppercase tracking-wide text-slate-500">Source</div>
+          <div className="mt-1 truncate text-slate-950" title={plan.restoredFrom}>
+            {plan.restoredFrom}
+          </div>
+        </div>
+        <div className="border border-slate-200 bg-slate-50 px-3 py-2">
+          <div className="font-semibold uppercase tracking-wide text-slate-500">Target</div>
+          <div className="mt-1 truncate text-slate-950" title={plan.target}>
+            {plan.target}
+          </div>
+        </div>
+      </div>
+      <div className="mt-3 grid gap-3 text-xs md:grid-cols-2">
+        <div className="border border-slate-200 bg-slate-50 px-3 py-2">
+          <div className="font-semibold uppercase tracking-wide text-slate-500">Restore steps</div>
+          <ul className="mt-2 space-y-1 text-slate-700">
+            {plan.restoreSteps.map((step) => (
+              <li key={step}>{step}</li>
+            ))}
+          </ul>
+        </div>
+        <div className="border border-slate-200 bg-slate-50 px-3 py-2">
+          <div className="font-semibold uppercase tracking-wide text-slate-500">Blocked actions</div>
+          <div className="mt-2 text-slate-700">{plan.blockedActions.join(", ")}</div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export function deriveArtifactShelfItems({
+  approvalGate,
+  conversationHistory,
+  diffVerification,
+  files,
+  finalOutput,
+  logs,
+  longRunningTask,
+  workflowMemory,
+}: {
+  approvalGate: ApprovalGateState;
+  conversationHistory: CodingHistoryEntry[];
+  diffVerification: DiffVerificationState;
+  files: UploadedFile[];
+  finalOutput: FinalOutput | null;
+  logs: ProcessLog[];
+  longRunningTask: LongRunningTaskState;
+  workflowMemory: WorkflowMemorySnapshot;
+}): ArtifactShelfItem[] {
+  const replay = deriveReplayableLogBundle({
+    approvalGate,
+    logs,
+    longRunningTask,
+    workflowMemory,
+  });
+  const checkpoint = deriveCheckpointRestorePlan({
+    approvalGate,
+    conversationHistory,
+    longRunningTask,
+    workflowMemory,
+  });
+  const changedFiles = diffVerification.preview?.changed_files ?? [];
+  const items: ArtifactShelfItem[] = [
+    ...files.map((file) => ({
+      detail: `${formatFileSize(file.size)}${file.type ? `, ${file.type}` : ""}`,
+      id: `attachment:${file.id}`,
+      label: file.name,
+      safety: "Attachment metadata only; file contents are not written by the shelf.",
+      source: "attachment" as const,
+    })),
+  ];
+
+  if (finalOutput) {
+    items.push({
+      detail: `Run #${finalOutput.runId}; ${finalOutput.researchSources.length} research source${finalOutput.researchSources.length === 1 ? "" : "s"}.`,
+      id: `route:${finalOutput.runId}`,
+      label: "Route decision packet",
+      safety: "Decision artifact only; reruns require explicit submission.",
+      source: "route",
+    });
+  }
+
+  if (diffVerification.preview) {
+    items.push({
+      detail: `${diffVerification.preview.status ?? "unknown"}; ${changedFiles.length} changed file${changedFiles.length === 1 ? "" : "s"}.`,
+      id: "diff-preview",
+      label: "Diff preview artifact",
+      safety: "Preview artifact only; approval and apply remain gated.",
+      source: "diff",
+    });
+  }
+
+  items.push({
+    detail: `${replay.entries.length} replay log entr${replay.entries.length === 1 ? "y" : "ies"} for ${replay.taskId}.`,
+    id: "replay-log",
+    label: "Replayable log packet",
+    safety: replay.safety,
+    source: "replay",
+  });
+
+  items.push({
+    detail: `${checkpoint.checkpointId}; ${checkpoint.status}.`,
+    id: "checkpoint-restore",
+    label: "Checkpoint restore plan",
+    safety: "Restore artifact only; it cannot mutate repository state.",
+    source: "checkpoint",
+  });
+
+  return items;
+}
+
+function ArtifactShelfPanel({
+  approvalGate,
+  conversationHistory,
+  diffVerification,
+  files,
+  finalOutput,
+  logs,
+  longRunningTask,
+  workflowMemory,
+}: {
+  approvalGate: ApprovalGateState;
+  conversationHistory: CodingHistoryEntry[];
+  diffVerification: DiffVerificationState;
+  files: UploadedFile[];
+  finalOutput: FinalOutput | null;
+  logs: ProcessLog[];
+  longRunningTask: LongRunningTaskState;
+  workflowMemory: WorkflowMemorySnapshot;
+}) {
+  const items = deriveArtifactShelfItems({
+    approvalGate,
+    conversationHistory,
+    diffVerification,
+    files,
+    finalOutput,
+    logs,
+    longRunningTask,
+    workflowMemory,
+  });
+  return (
+    <section className="border-b border-slate-300 bg-white px-4 py-3 shadow-sm">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div>
+          <div className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
+            Attachments and artifacts
+          </div>
+          <div className="mt-1 text-sm font-semibold text-slate-950">
+            Evidence shelf
+          </div>
+        </div>
+        <WorkflowBadge tone="muted">metadata-only</WorkflowBadge>
+      </div>
+      <div className="grid gap-2 text-xs md:grid-cols-2 xl:grid-cols-5">
+        {items.map((item) => (
+          <div className="border border-slate-200 bg-slate-50 px-3 py-2" key={item.id}>
+            <div className="flex items-center justify-between gap-2">
+              <div className="truncate font-semibold text-slate-950" title={item.label}>
+                {item.label}
+              </div>
+              <WorkflowBadge tone="muted">{item.source}</WorkflowBadge>
+            </div>
+            <div className="mt-1 truncate text-slate-600" title={item.detail}>
+              {item.detail}
+            </div>
+            <div className="mt-2 line-clamp-2 text-slate-500">{item.safety}</div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export function deriveVerificationDashboardRollup({
+  approvalGate,
+  diffVerification,
+  longRunningTask,
+  proxySafetySmoke,
+}: {
+  approvalGate: ApprovalGateState;
+  diffVerification: DiffVerificationState;
+  longRunningTask: LongRunningTaskState;
+  proxySafetySmoke: ProxySafetySmokeState;
+}): VerificationDashboardRollup {
+  const task = longRunningTask.response?.task ?? null;
+  const postApplyVerification = postApplyVerificationFor(task, approvalGate.execution);
+  const smokeStatus: VerificationRollupItem["status"] = proxySafetySmoke.isRunning
+    ? "running"
+    : proxySafetySmoke.payload
+      ? proxySafetySmokePassed(proxySafetySmoke.payload)
+        ? "pass"
+        : "failed"
+      : "waiting";
+  const diffStatus: VerificationRollupItem["status"] = diffVerification.isChecking
+    ? "running"
+    : diffVerification.preview?.status === "preview_ready"
+      ? "pass"
+      : diffVerification.preview?.status === "blocked"
+        ? "blocked"
+        : diffVerification.error
+          ? "failed"
+          : "waiting";
+  const approvalStatus: VerificationRollupItem["status"] = approvalGate.execution?.ok
+    ? "pass"
+    : approvalGate.execution?.ok === false
+      ? "failed"
+      : approvalGate.preview?.decision === "blocked"
+        ? "blocked"
+        : approvalGate.preview?.decision === "requires_human_approval"
+          ? "waiting"
+          : "waiting";
+  const postApplyStatus: VerificationRollupItem["status"] = isVerificationFailedStatus(
+    task?.status,
+    postApplyVerification,
+  )
+    ? "failed"
+    : isVerificationCompleteState(task, approvalGate.execution)
+      ? "pass"
+      : isPostApplyVerificationPending(task, approvalGate.execution)
+        ? "waiting"
+        : "waiting";
+  const items: VerificationRollupItem[] = [
+    {
+      detail: proxySafetySmoke.payload
+        ? proxySafetySmokeSummary(proxySafetySmoke.payload)
+        : proxySafetySmoke.error ?? "Proxy safety smoke has not run.",
+      id: "proxy-smoke",
+      label: "Proxy safety smoke",
+      status: smokeStatus,
+    },
+    {
+      detail: diffVerification.preview
+        ? `Diff preview ${diffVerification.preview.status ?? "unknown"}; risk ${diffVerification.preview.risk ?? "unknown"}.`
+        : diffVerification.error ?? "No diff preview yet.",
+      id: "diff-preview",
+      label: "Diff preview",
+      status: diffStatus,
+    },
+    {
+      detail: approvalGate.execution?.message ?? approvalGate.preview?.decision ?? "No approved apply has run.",
+      id: "approval-apply",
+      label: "Approval and apply",
+      status: approvalStatus,
+    },
+    {
+      detail: deriveVerificationState(postApplyVerification, task?.status ?? ""),
+      id: "post-apply",
+      label: "Post-apply verification",
+      status: postApplyStatus,
+    },
+  ];
+  const overallStatus = verificationRollupOverallStatus(items);
+  return {
+    items,
+    overallStatus,
+    summary: `${items.filter((item) => item.status === "pass").length}/${items.length} verification signals passing.`,
+  };
+}
+
+function verificationRollupOverallStatus(
+  items: VerificationRollupItem[],
+): VerificationRollupItem["status"] {
+  if (items.some((item) => item.status === "failed")) {
+    return "failed";
+  }
+  if (items.some((item) => item.status === "blocked")) {
+    return "blocked";
+  }
+  if (items.some((item) => item.status === "running")) {
+    return "running";
+  }
+  if (items.every((item) => item.status === "pass")) {
+    return "pass";
+  }
+  return "waiting";
+}
+
+function VerificationDashboardRollupPanel({
+  approvalGate,
+  diffVerification,
+  longRunningTask,
+  proxySafetySmoke,
+}: {
+  approvalGate: ApprovalGateState;
+  diffVerification: DiffVerificationState;
+  longRunningTask: LongRunningTaskState;
+  proxySafetySmoke: ProxySafetySmokeState;
+}) {
+  const rollup = deriveVerificationDashboardRollup({
+    approvalGate,
+    diffVerification,
+    longRunningTask,
+    proxySafetySmoke,
+  });
+  return (
+    <section className="border-b border-slate-300 bg-white px-4 py-3 shadow-sm">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div>
+          <div className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
+            Verification dashboard
+          </div>
+          <div className="mt-1 text-sm font-semibold text-slate-950">{rollup.summary}</div>
+        </div>
+        <WorkflowBadge tone={verificationRollupTone(rollup.overallStatus)}>
+          {rollup.overallStatus}
+        </WorkflowBadge>
+      </div>
+      <div className="grid gap-2 text-xs md:grid-cols-4">
+        {rollup.items.map((item) => (
+          <div className="border border-slate-200 bg-slate-50 px-3 py-2" key={item.id}>
+            <div className="flex items-center justify-between gap-2">
+              <div className="font-semibold text-slate-950">{item.label}</div>
+              <WorkflowBadge tone={verificationRollupTone(item.status)}>
+                {item.status}
+              </WorkflowBadge>
+            </div>
+            <div className="mt-2 line-clamp-3 text-slate-600">{item.detail}</div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function verificationRollupTone(
+  status: VerificationRollupItem["status"],
+): "danger" | "info" | "muted" | "success" | "warning" {
+  if (status === "pass") {
+    return "success";
+  }
+  if (status === "blocked" || status === "failed") {
+    return "danger";
+  }
+  if (status === "running") {
+    return "info";
+  }
+  return "muted";
 }
 
 export function proxySafetySmokeCase(
@@ -5631,6 +6613,43 @@ function OutputWindow({
       <TesterAgentProposalPanel
         isRunning={isRunning}
         onDraft={onInputChange}
+      />
+      <DocumenterBlueprintProposalPanel
+        isRunning={isRunning}
+        onDraft={onInputChange}
+      />
+      <TaskHistoryPanel
+        approvalGate={approvalGate}
+        longRunningTask={longRunningTask}
+        workflowMemory={workflowMemory}
+      />
+      <ReplayableLogsPanel
+        approvalGate={approvalGate}
+        logs={logs}
+        longRunningTask={longRunningTask}
+        workflowMemory={workflowMemory}
+      />
+      <CheckpointRestorePanel
+        approvalGate={approvalGate}
+        conversationHistory={conversationHistory}
+        longRunningTask={longRunningTask}
+        workflowMemory={workflowMemory}
+      />
+      <ArtifactShelfPanel
+        approvalGate={approvalGate}
+        conversationHistory={conversationHistory}
+        diffVerification={diffVerification}
+        files={files}
+        finalOutput={finalOutput}
+        logs={logs}
+        longRunningTask={longRunningTask}
+        workflowMemory={workflowMemory}
+      />
+      <VerificationDashboardRollupPanel
+        approvalGate={approvalGate}
+        diffVerification={diffVerification}
+        longRunningTask={longRunningTask}
+        proxySafetySmoke={proxySafetySmoke}
       />
       <WorkflowMemoryPanel snapshot={workflowMemory} />
 
@@ -6779,6 +7798,13 @@ type ReviewerAgentCheck = {
   status: QualityGateCheckStatus;
 };
 
+type ReviewerAgentRecommendation = {
+  blockerSummary: string;
+  evidenceSummary: string;
+  recommendation: string;
+  status: "blocked" | "reviewed";
+};
+
 export function deriveReviewerAgentChecks({
   diffVerification,
   gate,
@@ -6860,15 +7886,58 @@ function reviewerAgentCheckFromQuality(
   };
 }
 
-function ReviewerAgentPanel({ checks }: { checks: ReviewerAgentCheck[] }) {
+export function deriveReviewerAgentRecommendation(
+  checks: ReviewerAgentCheck[],
+): ReviewerAgentRecommendation {
   const failing = checks.filter((check) => check.status === "fail");
+  const waiting = checks.filter((check) => check.status === "waiting");
+  if (failing.length > 0) {
+    return {
+      blockerSummary: failing.map((check) => check.label).join(", "),
+      evidenceSummary: `${checks.length} reviewer checks evaluated before approval.`,
+      recommendation: "Revise the diff before approval.",
+      status: "blocked",
+    };
+  }
+  if (waiting.length > 0) {
+    return {
+      blockerSummary: waiting.map((check) => check.label).join(", "),
+      evidenceSummary: `${checks.length} reviewer checks evaluated before approval.`,
+      recommendation: "Wait for missing preview evidence before approval.",
+      status: "blocked",
+    };
+  }
+  return {
+    blockerSummary: "none",
+    evidenceSummary: `${checks.length} reviewer checks evaluated before approval.`,
+    recommendation: "Reviewer checks passed; approval gate may continue.",
+    status: "reviewed",
+  };
+}
+
+function ReviewerAgentPanel({ checks }: { checks: ReviewerAgentCheck[] }) {
+  const recommendation = deriveReviewerAgentRecommendation(checks);
   return (
     <section className="border border-slate-300 bg-slate-50 px-3 py-3 text-sm">
       <div className="flex items-center justify-between gap-2">
         <h3 className="font-semibold text-slate-950">3. Reviewer Agent</h3>
-        <WorkflowBadge tone={failing.length ? "danger" : "success"}>
-          {failing.length ? "blocked" : "reviewed"}
+        <WorkflowBadge tone={recommendation.status === "blocked" ? "danger" : "success"}>
+          {recommendation.status}
         </WorkflowBadge>
+      </div>
+      <div className="mt-2 grid gap-2 border border-slate-300 bg-white px-3 py-2 text-xs text-slate-700 md:grid-cols-3">
+        <div>
+          <div className="font-semibold uppercase text-slate-500">Recommendation</div>
+          <div className="mt-1">{recommendation.recommendation}</div>
+        </div>
+        <div>
+          <div className="font-semibold uppercase text-slate-500">Evidence reviewed</div>
+          <div className="mt-1">{recommendation.evidenceSummary}</div>
+        </div>
+        <div>
+          <div className="font-semibold uppercase text-slate-500">Blocked by</div>
+          <div className="mt-1">{recommendation.blockerSummary}</div>
+        </div>
       </div>
       <div className="mt-2 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
         {checks.map((check) => (

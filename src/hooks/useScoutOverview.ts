@@ -50,22 +50,43 @@ export function useScoutOverview(pollMs = 30_000): UseScoutOverviewResult {
         ? overviewJson
         : { ...overviewJson, promotions: promotionsJson };
 
-    const sourceCandidatesRes = await fetch("/api/scout/source-candidates?limit=50", {
+    const sourcesRes = await fetch("/api/scout/sources", {
       cache: "no-store",
       signal,
     });
-    if (!sourceCandidatesRes.ok) return withPromotions;
+    let withSources = withPromotions;
+    if (sourcesRes.ok) {
+      const sourcesJson = await sourcesRes.json();
+      if (!(sourcesJson && typeof sourcesJson === "object" && "ok" in sourcesJson)) {
+        withSources = {
+          ...withPromotions,
+          sources:
+            sourcesJson &&
+            typeof sourcesJson === "object" &&
+            "sources" in sourcesJson &&
+            Array.isArray(sourcesJson.sources)
+              ? sourcesJson.sources
+              : withPromotions.sources,
+        };
+      }
+    }
+
+    const sourceCandidatesRes = await fetch("/api/scout/source-candidates?limit=200", {
+      cache: "no-store",
+      signal,
+    });
+    if (!sourceCandidatesRes.ok) return withSources;
     const sourceCandidatesJson = await sourceCandidatesRes.json();
     if (
       sourceCandidatesJson &&
       typeof sourceCandidatesJson === "object" &&
       "ok" in sourceCandidatesJson
     ) {
-      return withPromotions;
+      return withSources;
     }
-    const withSourceCandidates = { ...withPromotions, source_candidates: sourceCandidatesJson };
+    const withSourceCandidates = { ...withSources, source_candidates: sourceCandidatesJson };
 
-    const discoveryJobsRes = await fetch("/api/scout/discovery-jobs?limit=20", {
+    const discoveryJobsRes = await fetch("/api/scout/discovery-jobs?limit=50", {
       cache: "no-store",
       signal,
     });
