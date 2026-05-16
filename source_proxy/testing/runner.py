@@ -1704,6 +1704,8 @@ def _run_command(
             check=False,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=timeout_seconds,
             env={**os.environ, **env} if env else None,
         )
@@ -1738,6 +1740,8 @@ def _run_command_with_progress(
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             env={**os.environ, **env} if env else None,
         )
     except OSError as error:
@@ -3028,8 +3032,8 @@ def _pass_fail(passed: bool) -> str:
     return "PASS" if passed else "FAIL"
 
 
-def _output_tail(value: str, *, max_lines: int) -> str:
-    lines = value.strip().splitlines()
+def _output_tail(value: str | None, *, max_lines: int) -> str:
+    lines = (value or "").strip().splitlines()
     if not lines:
         return ""
     return "\n".join(lines[-max_lines:])
