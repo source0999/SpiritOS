@@ -507,7 +507,7 @@ function SourceApprovals({ overview }: { overview: ScoutOverview }) {
           <li key={candidate.candidate_id}>
             <strong>{sourceDisplayName(candidate.display_uri || candidate.canonical_uri)}</strong>
             <span>
-              {candidate.trust_label ?? "Trust not labeled"} ·{" "}
+              {candidate.trust_label ?? "Trust not labeled"} -{" "}
               {humanizeScoutLabel(candidate.suggested_action ?? candidate.status)}
             </span>
             <p>{candidate.explanation ?? candidate.recommendation ?? "Suggested source needs review."}</p>
@@ -564,11 +564,11 @@ function SearchQueue({ overview }: { overview: ScoutOverview }) {
           <li key={job.job_id}>
             <strong>{job.query}</strong>
             <span>
-              {humanizeScoutLabel(job.status)} ·{" "}
+              {humanizeScoutLabel(job.status)} -{" "}
               {job.attention_label ?? job.safe_next_action ?? "No immediate action"}
             </span>
             <p>
-              Topic: {job.topic_anchor ?? "None"} · Updated {formatDateTime(job.updated_at)}
+              Topic: {job.topic_anchor ?? "None"} - Updated {formatDateTime(job.updated_at)}
             </p>
             <button type="button" disabled>
               Cleanup controls are not built yet. Safe next step: leave queued, preview when budget resets, or plan a cleanup patch.
@@ -639,13 +639,13 @@ function WatchedSources({ overview }: { overview: ScoutOverview }) {
           <li key={source.source_uri ?? source.label}>
             <strong>{source.label ?? sourceDisplayName(source.source_uri)}</strong>
             <span>
-              {source.trust_label ?? "Trust not labeled"} ·{" "}
+              {source.trust_label ?? "Trust not labeled"} -{" "}
               {source.health_label?.toLowerCase().includes("unsupported")
                 ? "Needs poller support"
                 : source.health_label ?? "Health unknown"}
             </span>
             <p>
-              {countValue(source.packets_surfaced)} useful packets · Last checked{" "}
+              {countValue(source.packets_surfaced)} useful packets - Last checked{" "}
               {formatDateTime(source.last_polled_at)}
             </p>
             <details>
