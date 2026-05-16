@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import subprocess
+import json
+from dataclasses import asdict
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -90,6 +93,7 @@ def apply_approved_doc_proposal(
         raise CartographerApplyError(str(error), error.reason_code) from error
 
     validation = _run_blueprint_validation()
+    diff_check = _run_git_diff_check(allowed_paths)
     checks = [
         {
             "id": "allowed_files",
@@ -112,6 +116,13 @@ def apply_approved_doc_proposal(
             "status": "passed" if validation["ok"] else "failed",
             "summary": validation["summary"],
         },
+        {
+            "id": "git_diff_check",
+            "label": "git diff whitespace check passed",
+            "required": True,
+            "status": "passed" if diff_check["ok"] else "failed",
+            "summary": diff_check["summary"],
+        },
     ]
 
     try:
@@ -127,17 +138,30 @@ def apply_approved_doc_proposal(
     except LongRunningTaskError as error:
         raise CartographerApplyError(str(error), error.reason_code) from error
 
+    _record_applied_proposal(
+        proposal=proposal,
+        applied_files=allowed_paths,
+        applied_by=approved_by,
+        task_id=task_id,
+        verification_status=verified["task"]["post_apply_verification"]["status"],
+    )
+
     return {
+        "ok": True,
         "status": "applied",
         "write_actions_enabled": True,
         "proposal_id": proposal.proposal_id,
         "applied_files": allowed_paths,
+        "changed_files": allowed_paths,
+        "committed": False,
+        "pushed": False,
         "task_id": task_id,
         "execution": applied["execution"],
         "verification": {
             "allowed_files_passed": True,
             "markdown_validation_passed": True,
             "blueprint_metadata_validation_passed": validation["ok"],
+            "git_diff_check_passed": diff_check["ok"],
             "status": verified["task"]["post_apply_verification"]["status"],
             "checks": checks,
         },
@@ -203,11 +227,129 @@ def _run_blueprint_validation() -> dict[str, Any]:
     }
 
 
+def _run_git_diff_check(paths: list[str]) -> dict[str, Any]:
+    root = _first_project_root()
+    if root is None:
+        return {"ok": False, "summary": "No project root available for git diff check."}
+    result = subprocess.run(
+        ["git", "diff", "--check", "--", *paths],
+        cwd=root,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    output = "\n".join(part for part in [result.stdout.strip(), result.stderr.strip()] if part)
+    return {
+        "ok": result.returncode == 0,
+        "summary": output[-1000:] if output else "git diff --check passed for applied files.",
+    }
+
+
+def _record_applied_proposal(
+    *,
+    proposal: ProposalRecord,
+    applied_files: list[str],
+    applied_by: str,
+    task_id: str,
+    verification_status: str,
+) -> None:
+    project_root = _project_root(proposal.project_id)
+    if project_root is None:
+        raise CartographerApplyError(
+            "Proposal project root was not found after apply.",
+            "project_not_found",
+        )
+    payload = asdict(proposal)
+    payload.pop("warnings", None)
+    timestamp = _now_timestamp()
+    payload.update(
+        {
+            "status": "applied",
+            "generated": False,
+            "persisted": True,
+            "applied": True,
+            "action_taken": True,
+            "applied_by": applied_by,
+            "applied_at": timestamp,
+            "applied_files": applied_files,
+            "task_id": task_id,
+            "verification_status": verification_status,
+            "committed": False,
+            "pushed": False,
+            "transitions": [
+                *_transition_payloads(proposal),
+                {
+                    "status": "applied",
+                    "timestamp": timestamp,
+                    "actor": applied_by or "cartographer-ui",
+                },
+            ],
+        }
+    )
+    proposal_root = project_root / "_blueprints" / "proposals"
+    existing_path = _existing_proposal_path(proposal_root, proposal.proposal_id)
+    proposal_path = _proposal_path(project_root, proposal)
+    proposal_path.parent.mkdir(parents=True, exist_ok=True)
+    proposal_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    if existing_path is not None and existing_path != proposal_path:
+        existing_path.unlink(missing_ok=True)
+
+
 def _first_project_root() -> Path | None:
     projects = discover_projects()
     if not projects:
         return None
     return Path(projects[0].root)
+
+
+def _project_root(project_id: str) -> Path | None:
+    for project in discover_projects():
+        if project.project_id == project_id:
+            return Path(project.root)
+    return None
+
+
+def _proposal_path(project_root: Path, proposal: ProposalRecord) -> Path:
+    proposal_root = project_root / "_blueprints" / "proposals"
+    return proposal_root / "applied" / f"{proposal.proposal_id}.json"
+
+
+def _existing_proposal_path(proposal_root: Path, proposal_id: str) -> Path | None:
+    if not proposal_root.exists() or not proposal_root.is_dir():
+        return None
+    try:
+        files = sorted(proposal_root.rglob("*.json"))
+    except OSError:
+        return None
+    for path in files:
+        if not path.is_file():
+            continue
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        if isinstance(payload, dict) and str(payload.get("proposal_id") or "") == proposal_id:
+            return path
+    return None
+
+
+def _transition_payloads(proposal: ProposalRecord) -> list[dict[str, str]]:
+    transitions: list[dict[str, str]] = []
+    for transition in proposal.transitions:
+        if transition.status and transition.timestamp and transition.actor:
+            transitions.append(
+                {
+                    "status": str(transition.status),
+                    "timestamp": str(transition.timestamp),
+                    "actor": str(transition.actor),
+                }
+            )
+    return transitions
+
+
+def _now_timestamp() -> str:
+    return datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
 def _normalize_repo_path(path: str) -> str:
