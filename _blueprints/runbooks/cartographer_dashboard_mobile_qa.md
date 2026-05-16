@@ -125,3 +125,9 @@ Cartographer dashboard QA passed:
 ```
 
 If any surface fails, keep the related proposal in review and do not proceed to commit or push approval.
+
+### Cartographer Review Note
+- Reason: qa_gap.
+- Component: dashboard.
+- Changed files: src/components/dashboard/__tests__/HomelabBlueprintReviewWidget.test.tsx.
+- Manual check: confirm this blueprint still matches the changed implementation.
