@@ -3090,10 +3090,16 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     if args.json_output:
-        print(json.dumps(payload, indent=2, sort_keys=True))
+        _print_console(json.dumps(payload, indent=2, sort_keys=True))
     else:
-        print(format_runner_report(payload))
+        _print_console(format_runner_report(payload))
     return 0 if payload["result"] == "pass" else 1
+
+
+def _print_console(value: str) -> None:
+    encoding = sys.stdout.encoding or "utf-8"
+    sys.stdout.write(value.encode(encoding, errors="replace").decode(encoding, errors="replace"))
+    sys.stdout.write("\n")
 
 
 if __name__ == "__main__":
