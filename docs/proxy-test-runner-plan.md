@@ -84,6 +84,37 @@ cd ~/SpiritOS
 PYTHONPATH=. python3 -m source_proxy.testing.runner --profile phase-4f-closeout
 ```
 
+## Current Cartographer Safety Command
+
+```bash
+cd ~/SpiritOS
+PYTHONPATH=. python3 -m source_proxy.testing.runner --profile cartographer-safety
+```
+
+Expected output:
+
+```text
+Cartographer safety audit: passed
+No unapproved writes
+No unapproved commits
+No unapproved pushes
+```
+
+## Current Cartographer Soak Snapshot Command
+
+```bash
+cd ~/SpiritOS
+PYTHONPATH=. python3 -m source_proxy.testing.runner --profile cartographer-soak-snapshot
+```
+
+Expected output:
+
+```text
+cartographer-soak-snapshot: pass
+mutation boundary: snapshot log only
+recommendation: ready for next increment
+```
+
 Detailed closeout runbook:
 
 - `scout/docs/V0_3_PHASE4F_PROXY_SCOUT_CLOSEOUT.md`
@@ -112,6 +143,8 @@ The runner may:
 
 - Run the `phase-4e-safety-seed` dry-run harness.
 - Run selected pytest files that are explicitly part of the proxy regression battery.
+- Run the Cartographer safety audit/regression profile without applying, committing, or pushing.
+- Write timestamped Cartographer soak snapshot evidence under `source_proxy/cartographer/soak-logs/`.
 - Call the coding self-test dry-run API when the Source Proxy service is already available.
 - Call Scout read-only GET endpoints for smoke/status profiles.
 - Run read-only Docker/container diagnostics for Scout search connectivity.
@@ -133,6 +166,7 @@ The runner must not:
 - Commit changes.
 - Push changes.
 - Create branches.
+- Treat `cartographer-safety` as approval for apply, commit, push, or merge.
 - Patch failed tests automatically.
 - Approve, reject, block, pause, resume, create, preview, or extract Scout source/discovery state from default smoke profiles.
 - Edit Scout compose/env files from diagnostics profiles.
@@ -353,12 +387,14 @@ Bounded actions:
 Expected outputs:
 
 - preview returns a result object or provider error
+- when the discovery job daily cap is exhausted, result is `BLOCKED_BY_BUDGET`
 - preview candidate delta is `0`
 - source count does not change after preview
 - source count does not change after extraction
 - approved candidate count does not increase
 - newly created search candidates, when present, have `search://` provenance
 - newly created search candidates, when present, include `discovered_from_search_result`
+- budget-blocked runs still report source and approval count deltas before recommending a wait, stale-job cleanup, or a bounded temporary budget increase
 
 Safety expectations:
 
