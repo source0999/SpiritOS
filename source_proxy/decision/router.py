@@ -6,6 +6,12 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Literal
 
+from source_proxy.agents.registry import (
+    AGENT_REGISTRY,
+    SwarmAgentRole,
+    normalize_agent_role,
+    role_system_prompt,
+)
 from source_proxy.decision.research import run_local_research_preview
 from source_proxy.tasks.long_running import (
     LongRunningTaskError,
@@ -19,7 +25,6 @@ from source_proxy.safety.paths import (
 
 RecommendedRoute = Literal["api_route", "manual_route", "local_route", "ask_user"]
 RiskTier = Literal["low", "medium", "high"]
-SwarmAgentRole = Literal["architect", "coder", "debugger"]
 ResolvedTargetSource = Literal["explicit_line", "inferred"]
 TARGET_HARD_BLOCK_REASON_CODES = {
     "protected_path",
@@ -30,21 +35,7 @@ TARGET_HARD_BLOCK_REASON_CODES = {
 
 
 SWARM_AGENT_SYSTEM_PROMPTS: dict[SwarmAgentRole, str] = {
-    "architect": (
-        "You are the Architect in the Spirit OS swarm. Produce a compact plan, "
-        "summarize AST/context state, identify risky files, and hand off only "
-        "when the Coder has a specific implementation path. Do not edit files."
-    ),
-    "coder": (
-        "You are the Coder in the Spirit OS swarm. Apply the Architect plan with "
-        "the smallest coherent diff, record open_diffs, and hand off to Debugger "
-        "when the change is ready. Do not broaden scope."
-    ),
-    "debugger": (
-        "You are the Debugger in the Spirit OS swarm. Run focused verification "
-        "through sandboxed tools, store compact test-output tails, mark verified "
-        "diffs, and return failures to Coder when needed."
-    ),
+    role: entry.system_prompt for role, entry in AGENT_REGISTRY.items()
 }
 
 
@@ -414,23 +405,6 @@ def resolve_active_agent_role(input_data: DecisionInput) -> SwarmAgentRole | Non
     if isinstance(task, dict):
         return normalize_agent_role(task.get("current_agent_role"))
     return None
-
-
-def normalize_agent_role(value: object) -> SwarmAgentRole | None:
-    normalized = str(value or "").strip().lower()
-    if normalized == "architect":
-        return "architect"
-    if normalized == "coder":
-        return "coder"
-    if normalized == "debugger":
-        return "debugger"
-    return None
-
-
-def role_system_prompt(role: SwarmAgentRole | None) -> str | None:
-    if role is None:
-        return None
-    return SWARM_AGENT_SYSTEM_PROMPTS[role]
 
 
 async def enrich_route_decision_with_research(

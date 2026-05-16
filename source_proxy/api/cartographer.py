@@ -7,6 +7,14 @@ from fastapi import HTTPException
 from pydantic import BaseModel, Field
 
 from source_proxy.cartographer.apply import CartographerApplyError, apply_approved_doc_proposal
+from source_proxy.cartographer.git_approvals import (
+    CartographerGitApprovalError,
+    approve_git_queue_item,
+)
+from source_proxy.cartographer.proposal_reviews import (
+    CartographerProposalReviewError,
+    review_blueprint_proposal,
+)
 from source_proxy.cartographer.service import (
     build_cartographer_audit_trail,
     build_cartographer_blueprints,
@@ -37,6 +45,18 @@ class CartographerApplyApprovedRequest(BaseModel):
     approved_by: str = Field(default="cartographer-ui", max_length=120)
 
 
+class CartographerProposalReviewRequest(BaseModel):
+    decision: str = Field(max_length=40)
+    actor: str = Field(default="dashboard-blueprint-review", max_length=120)
+    reason: str | None = Field(default=None, max_length=500)
+    proposal: dict[str, Any] | None = None
+
+
+class CartographerGitApprovalRequest(BaseModel):
+    approved: bool
+    approved_by: str = Field(default="cartographer-ui", max_length=120)
+
+
 @router.get("/status")
 async def cartographer_status() -> dict[str, Any]:
     return build_cartographer_status()
@@ -62,14 +82,71 @@ async def cartographer_branch_recommendations() -> dict[str, Any]:
     return build_cartographer_branch_recommendations()
 
 
+@router.post("/branch-recommendations/{recommendation_id}/approve")
+async def cartographer_approve_branch_recommendation(
+    recommendation_id: str,
+    request: CartographerGitApprovalRequest,
+) -> dict[str, Any]:
+    try:
+        return approve_git_queue_item(
+            kind="branch",
+            item_id=recommendation_id,
+            approved=request.approved,
+            approved_by=request.approved_by,
+        )
+    except CartographerGitApprovalError as error:
+        raise HTTPException(
+            status_code=422,
+            detail={"message": str(error), "reason_code": error.reason_code},
+        ) from error
+
+
 @router.get("/commit-proposals")
 async def cartographer_commit_proposals() -> dict[str, Any]:
     return build_cartographer_commit_proposals()
 
 
+@router.post("/commit-proposals/{commit_proposal_id}/approve")
+async def cartographer_approve_commit_proposal(
+    commit_proposal_id: str,
+    request: CartographerGitApprovalRequest,
+) -> dict[str, Any]:
+    try:
+        return approve_git_queue_item(
+            kind="commit",
+            item_id=commit_proposal_id,
+            approved=request.approved,
+            approved_by=request.approved_by,
+        )
+    except CartographerGitApprovalError as error:
+        raise HTTPException(
+            status_code=422,
+            detail={"message": str(error), "reason_code": error.reason_code},
+        ) from error
+
+
 @router.get("/push-queue")
 async def cartographer_push_queue() -> dict[str, Any]:
     return build_cartographer_push_queue()
+
+
+@router.post("/push-queue/{push_id}/approve")
+async def cartographer_approve_push_queue_item(
+    push_id: str,
+    request: CartographerGitApprovalRequest,
+) -> dict[str, Any]:
+    try:
+        return approve_git_queue_item(
+            kind="push",
+            item_id=push_id,
+            approved=request.approved,
+            approved_by=request.approved_by,
+        )
+    except CartographerGitApprovalError as error:
+        raise HTTPException(
+            status_code=422,
+            detail={"message": str(error), "reason_code": error.reason_code},
+        ) from error
 
 
 @router.get("/audit-trail")
@@ -110,6 +187,26 @@ async def cartographer_reminders() -> dict[str, Any]:
 @router.get("/proposals")
 async def cartographer_proposals() -> dict[str, Any]:
     return build_cartographer_proposals()
+
+
+@router.post("/proposals/{proposal_id}/review")
+async def cartographer_review_proposal(
+    proposal_id: str,
+    request: CartographerProposalReviewRequest,
+) -> dict[str, Any]:
+    try:
+        return review_blueprint_proposal(
+            proposal_id=proposal_id,
+            decision=request.decision,  # type: ignore[arg-type]
+            actor=request.actor,
+            reason=request.reason,
+            proposal_snapshot=request.proposal,
+        )
+    except CartographerProposalReviewError as error:
+        raise HTTPException(
+            status_code=422,
+            detail={"message": str(error), "reason_code": error.reason_code},
+        ) from error
 
 
 @router.get("/change-scribe")

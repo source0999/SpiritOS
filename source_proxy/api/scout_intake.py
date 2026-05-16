@@ -9,7 +9,10 @@ import sys
 
 from fastapi import APIRouter, Header, HTTPException, Request
 
-from source_proxy.proxy_memory.scout_intake import write as write_scout_intake
+from source_proxy.proxy_memory.scout_intake import (
+    ScoutIntakeConfigError,
+    write as write_scout_intake,
+)
 
 router = APIRouter(prefix="/v1/scout-intake")
 
@@ -63,10 +66,13 @@ async def ingest_scout_promotion(
     if verdict.packet_id != packet.packet_id:
         raise HTTPException(status_code=409, detail="packet/verdict mismatch")
 
-    result = write_scout_intake(
-        packet,
-        verdict,
-        promotion_id=str(payload.get("promotion_id")),
-        approved_by=str(payload.get("approved_by") or "human"),
-    )
+    try:
+        result = write_scout_intake(
+            packet,
+            verdict,
+            promotion_id=str(payload.get("promotion_id")),
+            approved_by=str(payload.get("approved_by") or "human"),
+        )
+    except ScoutIntakeConfigError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
     return {"ok": True, "result": result}

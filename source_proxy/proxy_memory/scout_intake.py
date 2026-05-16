@@ -7,14 +7,16 @@ import json
 import os
 
 
+class ScoutIntakeConfigError(RuntimeError):
+    pass
+
+
 def write(packet: Any, verdict: Any, *, promotion_id: str, approved_by: str) -> dict[str, Any]:
     """Persist a Scout promotion into the proxy's v0.1 append-only intake log."""
-    path = Path(
-        os.environ.get(
-            "SOURCE_PROXY_SCOUT_INTAKE_LOG",
-            str(Path("data") / "scout_intake.memory.jsonl"),
-        )
-    )
+    configured_path = os.environ.get("SOURCE_PROXY_SCOUT_INTAKE_LOG", "").strip()
+    if not configured_path:
+        raise ScoutIntakeConfigError("SOURCE_PROXY_SCOUT_INTAKE_LOG is required")
+    path = Path(configured_path)
     path.parent.mkdir(parents=True, exist_ok=True)
     record = {
         "event": "scout_promotion_intake",
@@ -32,4 +34,7 @@ def write(packet: Any, verdict: Any, *, promotion_id: str, approved_by: str) -> 
         "path": str(path),
         "packet_id": packet.packet_id,
         "promotion_id": promotion_id,
+        "authority": "append_only_evidence",
+        "applied": False,
+        "approved_proxy_action": False,
     }

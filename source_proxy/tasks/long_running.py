@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any, Callable, Literal
 from uuid import uuid4
 
+from source_proxy.agents.registry import SwarmAgentRole, normalize_agent_role
 from source_proxy.routing.litellm_router import available_model_aliases, get_router
 from source_proxy.planning.plan import (
     AcceptanceCriterion,
@@ -536,7 +537,6 @@ Return the JSON now.
 """
 DEFAULT_SQLITE_PATH = Path("data") / "long_running_tasks.sqlite3"
 DEFAULT_AUDIT_LOG_PATH = Path("data") / "approved_actions.audit.jsonl"
-SwarmAgentRole = Literal["architect", "coder", "debugger"]
 DEFAULT_STEPS = [
     "Capture task scope.",
     "Collect safe context.",
@@ -815,12 +815,29 @@ def execute_approved_long_running_task(
         "action": action,
         "approved_at": _now_iso(),
         "approved_by": approved_by,
+        "approved_diff_sha256": hashlib.sha256(approved_diff.encode("utf-8")).hexdigest(),
         "changed_files": [file["path"] for file in verification["changed_files"]],
+        "backup_manifest": apply_result["manifest_path"],
+        "backup_root": apply_result["backup_root"],
+        "approved_diff_path": apply_result["approved_diff_path"],
         "risk": verification["risk"],
+        "rollback_hint": "Use the backup manifest and approved.diff under backup_root before reverting files.",
         "target": target,
         "task_id": task.id,
     }
+    snapshot = _ensure_ast_snapshot_dict(task)
+    snapshot["post_apply_backup_audit"] = {
+        "backup_manifest": audit_record["backup_manifest"],
+        "backup_root": audit_record["backup_root"],
+        "task_id": task.id,
+    }
+    task.ast_snapshot = snapshot
     _append_audit_log(audit_record)
+    _finalize_backup_manifest(
+        workspace_root=Path(apply_result["workspace_root"]),
+        manifest_path=apply_result["manifest_path"],
+        audit_record=audit_record,
+    )
 
     task.status = "applied_needs_verification"
     _set_task_role(task, "debugger", reason="approved_diff_applied")
@@ -838,6 +855,13 @@ def execute_approved_long_running_task(
             "verification_plan": verification["verification_plan"],
         },
         indent=2,
+    )
+    _record_approved_execution_evidence(
+        task,
+        audit_record=audit_record,
+        backup_root=apply_result["backup_root"],
+        post_apply_verification=post_apply_verification,
+        verification_plan=verification["verification_plan"],
     )
     task.steps = _append_unique_steps(
         task.steps,
@@ -1176,14 +1200,64 @@ def _post_apply_results_json(
     return json.dumps(prior, indent=2)
 
 
+def _record_approved_execution_evidence(
+    task: LongRunningTask,
+    *,
+    audit_record: dict[str, Any],
+    backup_root: str,
+    post_apply_verification: dict[str, Any],
+    verification_plan: list[str],
+) -> None:
+    snapshot = _ensure_ast_snapshot_dict(task)
+    snapshot["approved_execution_evidence"] = {
+        "audit": audit_record,
+        "backup_root": backup_root,
+        "backup_manifest": audit_record.get("backup_manifest"),
+        "approved_diff_path": audit_record.get("approved_diff_path"),
+        "approved_diff_sha256": audit_record.get("approved_diff_sha256"),
+        "post_apply_verification": post_apply_verification,
+        "verification_plan": verification_plan,
+    }
+    task.ast_snapshot = snapshot
+
+
 def _post_apply_has_backup_audit(task: LongRunningTask) -> bool:
+    snapshot = task.ast_snapshot if isinstance(task.ast_snapshot, dict) else {}
+    backup_audit = snapshot.get("post_apply_backup_audit")
+    if (
+        isinstance(backup_audit, dict)
+        and backup_audit.get("task_id") == task.id
+        and backup_audit.get("backup_root")
+        and backup_audit.get("backup_manifest")
+    ):
+        return True
     try:
         prior = json.loads(task.truncated_test_results or "{}")
     except json.JSONDecodeError:
+        prior = {}
+    if isinstance(prior, dict) and isinstance(prior.get("audit"), dict) and bool(prior.get("backup_root")):
+        return True
+    return _approved_action_audit_has_backup(task.id)
+
+
+def _approved_action_audit_has_backup(task_id: str) -> bool:
+    audit_path = _audit_log_path()
+    if not audit_path.is_file():
         return False
-    if not isinstance(prior, dict):
+    try:
+        lines = audit_path.read_text(encoding="utf-8").splitlines()
+    except OSError:
         return False
-    return isinstance(prior.get("audit"), dict) and bool(prior.get("backup_root"))
+    for line in reversed(lines[-200:]):
+        try:
+            payload = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(payload, dict) or payload.get("task_id") != task_id:
+            continue
+        if payload.get("backup_root") and payload.get("backup_manifest"):
+            return True
+    return False
 
 
 _CODE_VERIFICATION_EXTENSIONS = {
@@ -1682,6 +1756,9 @@ def _apply_verified_diff(
     workspace_root = workspace_root.resolve()
     backup_root = _backup_root_for(workspace_root)
     backup_root.mkdir(parents=True, exist_ok=True)
+    approved_diff_path = backup_root / "approved.diff"
+    approved_diff_path.write_text(unified_diff, encoding="utf-8")
+    backed_up_files: list[dict[str, Any]] = []
 
     for file in changed_files:
         rel_path = str(file["path"])
@@ -1695,6 +1772,32 @@ def _apply_verified_diff(
             backup_path = backup_root / rel_path
             backup_path.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(resolved, backup_path)
+            backed_up_files.append(
+                {
+                    "path": rel_path,
+                    "backup_path": str(backup_path.relative_to(workspace_root)).replace("\\", "/"),
+                    "sha256": _sha256_file(resolved),
+                }
+            )
+        else:
+            backed_up_files.append(
+                {
+                    "path": rel_path,
+                    "backup_path": None,
+                    "sha256": None,
+                    "missing_before_apply": True,
+                }
+            )
+
+    manifest_path = backup_root / "manifest.json"
+    _write_backup_manifest(
+        manifest_path=manifest_path,
+        workspace_root=workspace_root,
+        approved_diff_path=approved_diff_path,
+        changed_files=changed_files,
+        backed_up_files=backed_up_files,
+        stage="before_apply",
+    )
 
     chosen: str | None = None
     for candidate in patch_candidates:
@@ -1760,7 +1863,12 @@ def _apply_verified_diff(
         last_msg = check_failures[-1] if check_failures else "No diff variants to try."
         raise LongRunningTaskError(f"{last_msg}\n{hint}".strip(), "diff_apply_check_failed")
 
-    return {"backup_root": str(backup_root.relative_to(workspace_root)).replace("\\", "/")}
+    return {
+        "backup_root": str(backup_root.relative_to(workspace_root)).replace("\\", "/"),
+        "workspace_root": str(workspace_root),
+        "manifest_path": str(manifest_path.relative_to(workspace_root)).replace("\\", "/"),
+        "approved_diff_path": str(approved_diff_path.relative_to(workspace_root)).replace("\\", "/"),
+    }
 
 
 def _backup_root_for(workspace_root: Path) -> Path:
@@ -1772,6 +1880,64 @@ def _backup_root_for(workspace_root: Path) -> Path:
 
 def _backup_root() -> Path:
     return _backup_root_for(_workspace_root())
+
+
+def _write_backup_manifest(
+    *,
+    manifest_path: Path,
+    workspace_root: Path,
+    approved_diff_path: Path,
+    changed_files: list[dict[str, Any]],
+    backed_up_files: list[dict[str, Any]],
+    stage: str,
+) -> None:
+    payload = {
+        "created_at": _now_iso(),
+        "stage": stage,
+        "workspace_root": str(workspace_root),
+        "approved_diff_path": str(approved_diff_path.relative_to(workspace_root)).replace("\\", "/"),
+        "approved_diff_sha256": _sha256_file(approved_diff_path),
+        "changed_files": changed_files,
+        "backed_up_files": backed_up_files,
+        "rollback_hint": "Rollback by restoring backed_up_files from backup_path after reviewing approved.diff and current git diff.",
+    }
+    manifest_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def _finalize_backup_manifest(
+    *,
+    workspace_root: Path,
+    manifest_path: str,
+    audit_record: dict[str, Any],
+) -> None:
+    path = (workspace_root / manifest_path).resolve()
+    if not _is_relative_to(path, workspace_root) or not path.is_file():
+        return
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return
+    if not isinstance(payload, dict):
+        return
+    payload.update(
+        {
+            "stage": "applied",
+            "applied_at": audit_record["approved_at"],
+            "approved_by": audit_record["approved_by"],
+            "action": audit_record["action"],
+            "task_id": audit_record["task_id"],
+            "audit_record": audit_record,
+        }
+    )
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def _append_audit_log(record: dict[str, Any]) -> None:
@@ -3813,7 +3979,4 @@ def _target_from_unified_diff(unified_diff: str) -> str | None:
 
 
 def _normalize_agent_role(value: Any) -> SwarmAgentRole:
-    normalized = str(value or "").strip().lower()
-    if normalized in {"architect", "coder", "debugger"}:
-        return normalized  # type: ignore[return-value]
-    return "architect"
+    return normalize_agent_role(value) or "architect"

@@ -133,6 +133,15 @@ def run_repo_research_preview(query: str, max_results: int = 6) -> list[dict[str
             "title": f"Repo: {relative_path}",
             "url": f"repo://{relative_path}",
             "snippet": _repo_snippet(relative_path, content, query_terms),
+            "source": "repo",
+            "evidence": {
+                "source": f"repo://{relative_path}",
+                "freshness": _file_freshness(file_path),
+                "trust_status": "workspace",
+                "review_status": "repo_first_match",
+                "packet_summary": f"Repository file selected for local-first research: {relative_path}",
+                "why_relevant": _repo_relevance_reason(relative_path, score, query_terms),
+            },
         }
         scored_sources.append((score, -priority, source))
 
@@ -158,6 +167,15 @@ def _normalize_sources(raw_results: list[Any], max_results: int) -> list[dict[st
         source = {"title": title, "url": url}
         if snippet:
             source["snippet"] = snippet
+        source["source"] = "web"
+        source["evidence"] = {
+            "source": url,
+            "freshness": "unknown",
+            "trust_status": "unreviewed_web_result",
+            "review_status": "normalized_preview",
+            "packet_summary": title,
+            "why_relevant": "Search result returned by the configured local research provider.",
+        }
         sources.append(source)
 
         if len(sources) >= max_results:
@@ -294,6 +312,20 @@ def _repo_snippet(relative_path: str, content: str, query_terms: list[str]) -> s
     if matched_lines:
         return "Matched repo lines: " + " | ".join(matched_lines)
     return f"Relevant repository file selected for local-first research: {relative_path}"
+
+
+def _file_freshness(file_path: Path) -> str:
+    try:
+        return f"mtime:{int(file_path.stat().st_mtime)}"
+    except OSError:
+        return "unknown"
+
+
+def _repo_relevance_reason(relative_path: str, score: int, query_terms: list[str]) -> str:
+    terms = ", ".join(query_terms[:6])
+    if terms:
+        return f"Matched query terms in {relative_path}; relevance score {score}. Terms: {terms}."
+    return f"Selected by repo-first research rules for {relative_path}; relevance score {score}."
 
 
 def _read_timeout_seconds() -> float:

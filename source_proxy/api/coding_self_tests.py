@@ -6,6 +6,8 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from source_proxy.testing.runner import (
+    PROFILE_CARTOGRAPHER_SAFETY,
+    PROFILE_CARTOGRAPHER_SOAK_SNAPSHOT,
     PROFILE_PROXY_CLOSEOUT,
     PROFILE_PROXY_REGRESSION,
     PROFILE_PROXY_SMOKE,
@@ -47,6 +49,8 @@ async def coding_self_tests_run(request: CodingSelfTestRunRequest) -> dict[str, 
     if request.profile is not None:
         supported_profiles = {
             PROFILE_PROXY_SMOKE,
+            PROFILE_CARTOGRAPHER_SAFETY,
+            PROFILE_CARTOGRAPHER_SOAK_SNAPSHOT,
             PROFILE_PROXY_REGRESSION,
             PROFILE_PROXY_CLOSEOUT,
             PROFILE_PHASE_4F_CLOSEOUT,
