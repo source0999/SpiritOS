@@ -137,6 +137,31 @@ function searchPlanLabel(job: ScoutDiscoveryJob): string {
   return humanizeScoutLabel(job.computed_status ?? job.status);
 }
 
+function searchPlanManualOptions(job: ScoutDiscoveryJob, budget: ScoutDiscoveryBudget | undefined): string[] {
+  const label = searchPlanLabel(job).toLowerCase();
+  const safeAction = job.safe_next_action?.toLowerCase() ?? "";
+  const options = ["Leave queued"];
+
+  if (budget?.remaining_today === 0 || budget?.can_create_job === false) {
+    options.push("Preview after budget reset");
+  } else {
+    options.push("Preview Search manually");
+  }
+
+  if (
+    label.includes("duplicate") ||
+    label.includes("stale") ||
+    label.includes("noisy") ||
+    safeAction.includes("cancel")
+  ) {
+    options.push("Mark for cleanup patch");
+  } else {
+    options.push("Extract candidates only after preview");
+  }
+
+  return options;
+}
+
 function budgetHelpText(budget: ScoutDiscoveryBudget | undefined): string {
   if (!budget) return "Daily search budget remaining.";
   if (budget.blocked_reason) return `${humanizeScoutLabel(budget.blocked_reason)}. Budget resets ${budget.next_reset_hint ?? "next UTC day"}.`;
@@ -570,14 +595,17 @@ function SearchQueue({ overview }: { overview: ScoutOverview }) {
             <strong>{job.query}</strong>
             <span>
               {humanizeScoutLabel(job.status)} -{" "}
-              {job.attention_label ?? job.safe_next_action ?? "No immediate action"}
+              {job.attention_label ?? searchPlanLabel(job)}
             </span>
             <p>
               Topic: {job.topic_anchor ?? "None"} - Updated {formatDateTime(job.updated_at)}
             </p>
-            <button type="button" disabled>
-              Cleanup controls are not built yet. Safe next step: leave queued, preview when budget resets, or plan a cleanup patch.
-            </button>
+            <div className="scout-center-manual-options" aria-label={`Manual options for ${job.query}`}>
+              <span>Manual options</span>
+              {searchPlanManualOptions(job, budget).map((option) => (
+                <span key={option}>{option}</span>
+              ))}
+            </div>
             <details>
               <summary>Details</summary>
               <dl>

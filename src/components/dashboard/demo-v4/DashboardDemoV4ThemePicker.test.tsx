@@ -71,25 +71,27 @@ describe("DashboardDemoV4ThemePicker", () => {
   it("renders one card per palette and marks the active palette", () => {
     render(<DashboardDemoV4FloatingNav />);
     openThemePickerFromMobileNav();
+    const dialog = screen.getByRole("dialog", { name: /interface theme picker/i });
 
     for (const palette of SPIRIT_PALETTES) {
       expect(
-        screen.getByRole("button", { name: new RegExp(palette.label, "i") }),
+        within(dialog).getByRole("button", { name: new RegExp(palette.label, "i") }),
       ).toBeInTheDocument();
     }
 
     const active = SPIRIT_PALETTES.find((palette) => palette.id === "frozen-water")!;
     expect(
-      screen.getByRole("button", { name: new RegExp(active.label, "i") }),
+      within(dialog).getByRole("button", { name: new RegExp(active.label, "i") }),
     ).toHaveAttribute("aria-pressed", "true");
   });
 
   it("selecting a palette calls setTheme and closes the picker", async () => {
     render(<DashboardDemoV4FloatingNav />);
     openThemePickerFromMobileNav();
+    const dialog = screen.getByRole("dialog", { name: /interface theme picker/i });
 
     const target = SPIRIT_PALETTES.find((palette) => palette.id === "deep-sky")!;
-    fireEvent.click(screen.getByRole("button", { name: new RegExp(target.label, "i") }));
+    fireEvent.click(within(dialog).getByRole("button", { name: new RegExp(target.label, "i") }));
 
     expect(mockSetTheme).toHaveBeenCalledWith("deep-sky");
     await waitFor(() => {
@@ -122,7 +124,7 @@ describe("DashboardDemoV4ThemePicker", () => {
   it("keeps the nav links rendered", () => {
     render(<DashboardDemoV4FloatingNav />);
     const desktopNav = screen.getByRole("navigation", {
-      name: /dashboard desktop navigation/i,
+      name: /spirit app desktop navigation/i,
     });
     const mobileNav = screen.getByRole("navigation", {
       name: /dashboard mobile navigation/i,
