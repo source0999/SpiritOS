@@ -4,6 +4,14 @@ const SUBJECTIVE_IMPROVEMENT_REQUIRES_DIFF_REASON_CODE =
   "coder_subjective_improvement_requires_diff_or_review";
 const VISUAL_IMPROVEMENT_DIFF_TOO_SHALLOW_REASON_CODE =
   "coder_visual_improvement_diff_too_shallow";
+const HARD_TARGET_BLOCK_REASON_CODES = new Set([
+  "protected_path",
+  "secret_path",
+  "secret_shaped_path",
+  "path_escape",
+  "outside_workspace",
+  "absolute_path",
+]);
 
 export type ApprovalGateBindingDecision = {
   next_prompt_action?: string;
@@ -79,10 +87,13 @@ export function deriveApprovalGateProposal(
   if (
     decision.reason_codes?.includes("target_missing") ||
     decision.reason_codes?.includes("target_unresolved") ||
+    decision.reason_codes?.some((reason) => HARD_TARGET_BLOCK_REASON_CODES.has(reason)) ||
     promptPacket.reason_code === "target_missing" ||
     promptPacket.reasonCode === "target_missing" ||
     promptPacket.reason_code === "target_unresolved" ||
-    promptPacket.reasonCode === "target_unresolved"
+    promptPacket.reasonCode === "target_unresolved" ||
+    HARD_TARGET_BLOCK_REASON_CODES.has(promptPacket.reason_code ?? "") ||
+    HARD_TARGET_BLOCK_REASON_CODES.has(promptPacket.reasonCode ?? "")
   ) {
     return null;
   }

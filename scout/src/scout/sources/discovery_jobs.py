@@ -69,6 +69,7 @@ def create_discovery_job(
     topic_anchor: str | None = None,
     max_results: int = DEFAULT_MAX_RESULTS,
     budget: int = DEFAULT_BUDGET,
+    max_jobs_per_day: int | None = None,
     metadata: dict[str, Any] | None = None,
 ) -> DiscoveryJob:
     clean_query = query.strip()
@@ -79,6 +80,8 @@ def create_discovery_job(
     job_id = str(uuid.uuid4())
     conn = open_connection(db_path)
     try:
+        if max_jobs_per_day is not None:
+            _enforce_daily_job_limit(conn, max_jobs_per_day=max_jobs_per_day, now=now)
         conn.execute(
             """
             INSERT INTO discovery_jobs (
@@ -271,6 +274,32 @@ def _validate_limits(*, max_results: int, budget: int) -> None:
         raise DiscoveryJobError("max_results must be between 1 and 50")
     if budget < 1 or budget > MAX_RESULTS_LIMIT:
         raise DiscoveryJobError("budget must be between 1 and 50")
+
+
+def _enforce_daily_job_limit(
+    conn: sqlite3.Connection,
+    *,
+    max_jobs_per_day: int,
+    now: str,
+) -> None:
+    if max_jobs_per_day < 1:
+        raise DiscoveryJobError("discovery job daily limit must be at least 1")
+    day_start = datetime.fromisoformat(now).astimezone(timezone.utc).replace(
+        hour=0,
+        minute=0,
+        second=0,
+        microsecond=0,
+    )
+    row = conn.execute(
+        """
+        SELECT COUNT(*) AS count
+        FROM discovery_jobs
+        WHERE created_at >= ?
+        """,
+        (day_start.isoformat(),),
+    ).fetchone()
+    if row["count"] >= max_jobs_per_day:
+        raise DiscoveryJobError("discovery job daily limit reached")
 
 
 def _validate_status(status: str) -> None:

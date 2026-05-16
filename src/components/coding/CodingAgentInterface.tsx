@@ -39,6 +39,16 @@ const SUBJECTIVE_IMPROVEMENT_REQUIRES_DIFF_REASON_CODE =
   "coder_subjective_improvement_requires_diff_or_review";
 const VISUAL_IMPROVEMENT_DIFF_TOO_SHALLOW_REASON_CODE =
   "coder_visual_improvement_diff_too_shallow";
+const PROTECTED_PATH_REASON_CODES = new Set([
+  "protected_path",
+  "secret_path",
+  "secret_shaped_path",
+]);
+const PATH_ESCAPE_REASON_CODES = new Set([
+  "path_escape",
+  "outside_workspace",
+  "absolute_path",
+]);
 
 // ── Unified diff hygiene ─────────────────────────────────────────────────────
 // `git apply` wants a trailing newline on the patch text. `String.trim()` on the
@@ -1537,7 +1547,8 @@ export default function CodingAgentInterface({
             ? undefined
             : proxyMetrics.route,
         nextPromptAction: finalOutput?.decision?.next_prompt_action,
-        taskSpec: taskSpecForPlan(architectPlan) ?? undefined,
+        taskSpec:
+          taskSpecForManualPreview(architectPlan, finalOutput?.decision, inputText) ?? undefined,
         taskText: inputText,
       });
       const normalizedPreview = normalizeDiffVerificationPreview(preview);
@@ -3359,6 +3370,12 @@ function firstTaskDiffPath(task: LongRunningTaskPayload | null | undefined): str
 
 function firstStabilityBlocker(reasonCodes: string[]): string | null {
   const priority = [
+    "protected_path",
+    "secret_path",
+    "secret_shaped_path",
+    "path_escape",
+    "outside_workspace",
+    "absolute_path",
     "target_unresolved",
     "target_missing",
     "client_rejected_proposed_diff",
@@ -3374,6 +3391,28 @@ function firstStabilityBlocker(reasonCodes: string[]): string | null {
     "route_response_invalid",
   ];
   return priority.find((reason) => reasonCodes.includes(reason)) ?? reasonCodes[0] ?? null;
+}
+
+function safetyReasonCopy(reasonCodes: string[]): { detail: string; title: string } | null {
+  if (reasonCodes.some((reason) => PROTECTED_PATH_REASON_CODES.has(reason))) {
+    return {
+      detail: "Protected and secret-shaped paths cannot be edited through the approval flow.",
+      title: "Blocked: protected/secret path",
+    };
+  }
+  if (reasonCodes.some((reason) => PATH_ESCAPE_REASON_CODES.has(reason))) {
+    return {
+      detail: "Use a repo-relative path inside the workspace. Traversal, absolute, and drive paths are blocked.",
+      title: "Blocked: path escapes workspace",
+    };
+  }
+  if (reasonCodes.includes("target_unresolved")) {
+    return {
+      detail: "Add a Target file: line.",
+      title: "No safe file target was resolved.",
+    };
+  }
+  return null;
 }
 
 function noDiffTerminalReason(status: string): string | null {
@@ -3605,6 +3644,12 @@ function WorkflowBadge({
 
 export function CodingStabilityCard({ summary }: { summary: CodingStabilitySummary }) {
   const tone = codingStabilityTone(summary.primaryState);
+  const blockerCopy =
+    summary.lastBlocker &&
+    (PROTECTED_PATH_REASON_CODES.has(summary.lastBlocker) ||
+      PATH_ESCAPE_REASON_CODES.has(summary.lastBlocker))
+      ? safetyReasonCopy([summary.lastBlocker])
+      : null;
   const fields = [
     ["Target", summary.target],
     ["Diff", summary.diffState],
@@ -3636,8 +3681,8 @@ export function CodingStabilityCard({ summary }: { summary: CodingStabilitySumma
       {summary.lastBlocker ? (
         <div className="mt-2 inline-flex max-w-full border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-950">
           <span className="mr-2 shrink-0 text-red-700">Last blocker</span>
-          <span className="truncate" title={summary.lastBlocker}>
-            {summary.lastBlocker}
+          <span className="truncate" title={blockerCopy?.title ?? summary.lastBlocker}>
+            {blockerCopy?.title ?? summary.lastBlocker}
           </span>
         </div>
       ) : null}
@@ -5108,6 +5153,34 @@ export function taskSpecForPlan(
     risk_tier:
       operation === "delete_file" ? "high" : operation === "create_new_file" ? "medium" : "low",
     source: "deterministic",
+  };
+}
+
+export function taskSpecForManualPreview(
+  plan: ArchitectPlanResponse | null | undefined,
+  decision: ProxyRouteDecisionResponse | null | undefined,
+  taskText: string,
+): CoderTaskSpecResponse | null {
+  const planSpec = taskSpecForPlan(plan);
+  if (planSpec) {
+    return planSpec;
+  }
+  const target = normalizeRepoRelativePath(
+    resolvedTargetPathFromDecision(decision) || explicitTargetFromText(taskText),
+  );
+  if (!target) {
+    return null;
+  }
+  return {
+    schema_version: 1,
+    task_type: "modify_existing_file",
+    target,
+    allowed_files: [target],
+    forbidden_files: [],
+    literal_requirements: [],
+    verification: ["git apply check", "target-only"],
+    risk_tier: "low",
+    source: "manual_preview_target",
   };
 }
 
@@ -6774,6 +6847,7 @@ export function ApprovalGatePanel({
     gate.preview?.reason_codes?.includes(BUNDLE_SNAPSHOT_DRIFT_REASON_CODE) === true;
   const clientRejectedBackendDiff =
     gate.preview?.reason_codes?.includes("client_rejected_proposed_diff") === true;
+  const targetSafetyCopy = safetyReasonCopy(gate.preview?.reason_codes ?? []);
   const fallbackScaffoldBlocked = !alreadySatisfied && gate.fallbackScaffoldBlocked;
 
 
@@ -6872,9 +6946,13 @@ export function ApprovalGatePanel({
         </div>
 
         <div className="mt-3 border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-950">
-          <div className="font-semibold">No approval action is available yet</div>
+          <div className="font-semibold">
+            {targetSafetyCopy?.title ?? "No approval action is available yet"}
+          </div>
           <div className="mt-1">
-            {shallowVisualDiff
+            {targetSafetyCopy
+              ? targetSafetyCopy.detail
+              : shallowVisualDiff
               ? "The generated diff was too shallow for this visual improvement task. It did not materially change styling, layout, hover, active, glow, spacing, or animation behavior."
               : subjectiveImprovementNeedsDiff
               ? "This is a subjective visual improvement task. No diff was produced, so it cannot be marked already satisfied."

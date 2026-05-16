@@ -61,6 +61,15 @@ const incrementLabel = "Increment 7C.4";
 const incrementGoal =
   "Add stronger self-correction: check if the agent is being passive, confirm repo-first research ran, and confirm the active phase.";
 const activeIncrementContext = `Active work: ${phaseLabel} / ${incrementLabel}. Goal: ${incrementGoal}`;
+const hardTargetBlockReasonCodes = new Set([
+  "protected_path",
+  "secret_path",
+  "path_escape",
+  "outside_workspace",
+  "absolute_path",
+  "target_unresolved",
+  "target_missing",
+]);
 
 function taskMentionsActiveIncrement(task: string) {
   const normalized = task.toLowerCase();
@@ -90,6 +99,9 @@ export function mergeRepoFirstResearchSources(
   }
 
   const task = typeof requestPayload.task === "string" ? requestPayload.task : "";
+  if (hasHardTargetBlock(responsePayload)) {
+    return responseBodyText;
+  }
   if (!needsRepoFirstResearch(task, requestPayload)) {
     return responseBodyText;
   }
@@ -126,6 +138,18 @@ export function mergeRepoFirstResearchSources(
     responsePayload.increment_goal ??= incrementGoal;
   }
   return JSON.stringify(responsePayload);
+}
+
+function hasHardTargetBlock(payload: Record<string, unknown>) {
+  const reasonCodes = new Set(readReasonCodes(payload.reason_codes));
+  if (isRecord(payload.route_decision)) {
+    readReasonCodes(payload.route_decision.reason_codes).forEach((code) => reasonCodes.add(code));
+  }
+  return Array.from(reasonCodes).some((code) => hardTargetBlockReasonCodes.has(code));
+}
+
+function readReasonCodes(value: unknown) {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
 }
 
 function applySelfCorrectionChecks(

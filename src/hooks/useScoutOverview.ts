@@ -63,7 +63,22 @@ export function useScoutOverview(pollMs = 30_000): UseScoutOverviewResult {
     ) {
       return withPromotions;
     }
-    return { ...withPromotions, source_candidates: sourceCandidatesJson };
+    const withSourceCandidates = { ...withPromotions, source_candidates: sourceCandidatesJson };
+
+    const discoveryJobsRes = await fetch("/api/scout/discovery-jobs?limit=20", {
+      cache: "no-store",
+      signal,
+    });
+    if (!discoveryJobsRes.ok) return withSourceCandidates;
+    const discoveryJobsJson = await discoveryJobsRes.json();
+    if (
+      discoveryJobsJson &&
+      typeof discoveryJobsJson === "object" &&
+      "ok" in discoveryJobsJson
+    ) {
+      return withSourceCandidates;
+    }
+    return { ...withSourceCandidates, discovery_jobs: discoveryJobsJson };
   }, []);
 
   const refresh = useCallback(async () => {

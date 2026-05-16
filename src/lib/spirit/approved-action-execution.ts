@@ -68,7 +68,7 @@ export async function executeApprovedAction(
 ): Promise<ApprovedActionExecutionResult> {
   const action = input.action.trim();
   const target = input.target.trim();
-  let nextContent =
+  const nextContent =
     approvedFileContentFor(action, target, input.content) ||
     (await nextContentFromApprovedUnifiedDiff(target, input.approvedDiff ?? ""));
   if (!nextContent) {

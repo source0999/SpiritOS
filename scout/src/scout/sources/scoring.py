@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 import re
 from urllib.parse import urlparse
@@ -24,6 +25,15 @@ KNOWN_ECOSYSTEM_DOMAINS = {
     "fastapi.tiangolo.com",
     "github.com",
     "pypi.org",
+    "www.typescriptlang.org",
+}
+OFFICIAL_SOURCE_DOMAINS = {
+    "blog.python.org",
+    "docs.python.org",
+    "fastapi.tiangolo.com",
+    "github.com",
+    "pypi.org",
+    "www.python.org",
     "www.typescriptlang.org",
 }
 KNOWN_GITHUB_ORGS = {
@@ -65,6 +75,9 @@ def score_candidate(
     canonical_uri: str,
     source_kind: str,
     discovered_from_uri: str | None = None,
+    title: str | None = None,
+    snippet: str | None = None,
+    published_at: str | None = None,
 ) -> SourceScore:
     trust = classify_source(canonical_uri)
     reason_codes: list[str] = []
@@ -121,6 +134,9 @@ def score_candidate(
     parsed = urlparse(canonical_uri)
     host = parsed.hostname or ""
     path = parsed.path.lower()
+    evidence_text = " ".join(
+        part for part in [canonical_uri, title or "", snippet or ""] if part
+    ).lower()
     if host.startswith("docs.") or "/docs" in path:
         score += 0.1
         reason_codes.append("official_docs_pattern")
@@ -130,15 +146,28 @@ def score_candidate(
     if host in KNOWN_ECOSYSTEM_DOMAINS:
         score += 0.1
         reason_codes.append("known_ecosystem_match")
-    if _matches_topic_anchor(canonical_uri):
+    if host in OFFICIAL_SOURCE_DOMAINS:
+        score += 0.08
+        reason_codes.append("official_domain_match")
+    topic_hits = _topic_anchor_hits(evidence_text)
+    if topic_hits:
         score += 0.08
         reason_codes.append("matches_topic_anchor")
-    if discovered_from_uri:
+    if topic_hits >= 2:
+        score += 0.06
+        reason_codes.append("topic_anchor_density")
+    if discovered_from_uri and _is_active_discovery_source(discovered_from_uri):
         score += 0.08
         reason_codes.append("linked_from_active_source")
     if source_kind in {"docs_page", "github_repo", "changelog", "release_feed"}:
         score += 0.05
         reason_codes.append("metadata_sufficient")
+    if title or snippet:
+        score += 0.04
+        reason_codes.append("source_metadata_quality")
+    if published_at and _is_fresh_source(published_at):
+        score += 0.04
+        reason_codes.append("fresh_source")
 
     if not reason_codes:
         reason_codes.append("low_evidence")
@@ -196,9 +225,23 @@ def _has_spam_pattern(canonical_uri: str) -> bool:
     return any(pattern in lowered for pattern in SPAM_PATTERNS)
 
 
-def _matches_topic_anchor(canonical_uri: str) -> bool:
-    lowered = canonical_uri.lower()
-    return any(anchor in lowered for anchor in TOPIC_ANCHORS)
+def _topic_anchor_hits(text: str) -> int:
+    return sum(1 for anchor in TOPIC_ANCHORS if anchor in text)
+
+
+def _is_active_discovery_source(discovered_from_uri: str) -> bool:
+    return not discovered_from_uri.startswith("search://")
+
+
+def _is_fresh_source(published_at: str) -> bool:
+    try:
+        parsed = datetime.fromisoformat(published_at.replace("Z", "+00:00"))
+    except ValueError:
+        return False
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    age_days = (datetime.now(timezone.utc) - parsed.astimezone(timezone.utc)).days
+    return 0 <= age_days <= 730
 
 
 def _is_blocked(db_path: Path, canonical_uri: str) -> bool:

@@ -343,6 +343,45 @@ def _v11_discovery_jobs(conn: sqlite3.Connection) -> None:
     )
 
 
+@register(12)
+def _v12_source_review_events(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS source_review_events (
+            review_event_id TEXT PRIMARY KEY,
+            candidate_id TEXT NOT NULL,
+            canonical_uri TEXT NOT NULL,
+            action TEXT NOT NULL,
+            previous_status TEXT,
+            new_status TEXT NOT NULL,
+            reviewed_by TEXT,
+            reason TEXT,
+            created_at TEXT NOT NULL,
+            metadata_json TEXT NOT NULL DEFAULT '{}',
+            FOREIGN KEY(candidate_id) REFERENCES source_candidates(candidate_id)
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_source_review_events_candidate
+        ON source_review_events(candidate_id)
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_source_review_events_canonical
+        ON source_review_events(canonical_uri)
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_source_review_events_created
+        ON source_review_events(created_at)
+        """
+    )
+
+
 def apply_migrations(db_path: Path) -> None:
     conn = open_connection(db_path)
     try:

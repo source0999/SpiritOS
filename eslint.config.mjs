@@ -20,6 +20,7 @@ const eslintConfig = defineConfig([
     ".codex-smoke/**",
     ".cursor/**",
     ".spirit-backups/**",
+    "**/.venv/**",
     ".venv-source-proxy/**",
     ".venv-source-proxy-windows/**",
     "backend/**",

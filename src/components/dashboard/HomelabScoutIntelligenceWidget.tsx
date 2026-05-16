@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Ban, BrainCircuit, Check, RefreshCw, X } from "lucide-react";
+import { Ban, BrainCircuit, Check, Pause, Play, Plus, RefreshCw, Search, X } from "lucide-react";
 
 import { HomelabStatusBadge } from "@/components/dashboard/HomelabStatusBadge";
 import { useScoutOverview, type ScoutOverviewFetchState } from "@/hooks/useScoutOverview";
 import type {
   ScoutOverview,
+  ScoutDiscoveryJob,
+  ScoutDiscoveryJobs,
   ScoutPacket,
   ScoutPromotionItem,
   ScoutSchedulerJob,
@@ -15,7 +17,14 @@ import type {
   ScoutSourceSummary,
 } from "@/lib/scout-overview";
 
-type ScoutFeedTab = "useful" | "saved" | "review" | "promoted" | "sourceQueue" | "sources";
+type ScoutFeedTab =
+  | "useful"
+  | "saved"
+  | "review"
+  | "promoted"
+  | "sourceQueue"
+  | "discovery"
+  | "sources";
 
 const scoutFeedTabs: Array<{ id: ScoutFeedTab; label: string }> = [
   { id: "useful", label: "Useful Now" },
@@ -23,6 +32,7 @@ const scoutFeedTabs: Array<{ id: ScoutFeedTab; label: string }> = [
   { id: "review", label: "Review Queue" },
   { id: "promoted", label: "Promoted" },
   { id: "sourceQueue", label: "Source Queue" },
+  { id: "discovery", label: "Discovery" },
   { id: "sources", label: "Sources" },
 ];
 
@@ -139,6 +149,7 @@ function ScoutCounts({ overview }: { overview: ScoutOverview }) {
   const sourceCandidateCounts = overview.source_candidates?.counts ?? {};
   const sourceQueueCount =
     (sourceCandidateCounts.recommended ?? 0) + (sourceCandidateCounts.needs_review ?? 0);
+  const discoveryJobCount = overview.discovery_jobs?.count ?? overview.discovery_jobs?.jobs?.length ?? 0;
   const scanFlow = overview.human_summary?.scan_flow;
   const stats =
     scanFlow && scanFlow.length > 0
@@ -159,6 +170,7 @@ function ScoutCounts({ overview }: { overview: ScoutOverview }) {
     ] as const,
     ["Promoted", promotion?.promoted_count] as const,
     ["Source Queue", sourceQueueCount] as const,
+    ["Discovery Jobs", discoveryJobCount] as const,
     ["Sources", sources.length] as const,
   ];
 
@@ -479,6 +491,8 @@ function ScoutSourceCandidateCards({
         const title = sourceCandidateTitle(candidate);
         const busy = busyCandidateId === candidate.candidate_id;
         const reasonCodes = (candidate.reason_codes ?? []).slice(0, 4);
+        const latestReview = candidate.review_history?.[0] ?? null;
+        const latestReviewTime = formatDateTime(latestReview?.created_at);
         const canReview =
           candidate.status !== "approved" &&
           candidate.status !== "rejected" &&
@@ -519,6 +533,13 @@ function ScoutSourceCandidateCards({
             {candidate.blocked_reason ? (
               <p className="dashboard-demo-v4-scout-source-meta">
                 Blocked: {candidate.blocked_reason}
+              </p>
+            ) : null}
+            {latestReview ? (
+              <p className="dashboard-demo-v4-scout-source-meta">
+                {latestReview.action} by {latestReview.reviewed_by ?? "manual-review"}
+                {latestReviewTime ? ` at ${latestReviewTime}` : ""}
+                {latestReview.reason ? `: ${latestReview.reason}` : ""}
               </p>
             ) : null}
             {reasonCodes.length > 0 ? (
@@ -577,6 +598,160 @@ function ScoutSourceCandidateCounts({
   );
 }
 
+function ScoutDiscoveryJobCounts({ jobs }: { jobs: ScoutDiscoveryJobs }) {
+  const items = [
+    ["Queued", jobs.jobs?.filter((job) => job.status === "queued").length],
+    ["Paused", jobs.jobs?.filter((job) => job.status === "paused").length],
+    ["Running", jobs.jobs?.filter((job) => job.status === "running").length],
+    ["Finished", jobs.jobs?.filter((job) => job.status === "completed").length],
+  ] as const;
+
+  return (
+    <div className="dashboard-demo-v4-scout-counts" aria-label="Scout discovery job counts">
+      {items.map(([label, value]) => (
+        <div key={label} className="dashboard-demo-v4-scout-count">
+          <strong>{countValue(value)}</strong>
+          <span>{label}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ScoutDiscoveryJobs({
+  jobs,
+  emptyLabel,
+  busyJobId,
+  onPause,
+  onResume,
+  onPreview,
+  onExtract,
+}: {
+  jobs: ScoutDiscoveryJob[];
+  emptyLabel: string;
+  busyJobId: string | null;
+  onPause: (job: ScoutDiscoveryJob) => void;
+  onResume: (job: ScoutDiscoveryJob) => void;
+  onPreview: (job: ScoutDiscoveryJob) => void;
+  onExtract: (job: ScoutDiscoveryJob) => void;
+}) {
+  if (jobs.length === 0) {
+    return <p className="dashboard-demo-v4-scout-empty">{emptyLabel}</p>;
+  }
+
+  return (
+    <ul className="dashboard-demo-v4-scout-packet-list dashboard-demo-v4-scout-source-list">
+      {jobs.map((job) => {
+        const busy = busyJobId === job.job_id;
+        const created = formatDateTime(job.created_at);
+        const canRun = job.status === "queued";
+        const canPause = job.status === "queued" || job.status === "running";
+        const canResume = job.status === "paused";
+        return (
+          <li key={job.job_id}>
+            <div className="dashboard-demo-v4-scout-packet-topline">
+              <div className="dashboard-demo-v4-scout-packet-heading">
+                <span>{job.topic_anchor ?? "Discovery job"}</span>
+                <strong>{job.query}</strong>
+              </div>
+              <em className="dashboard-demo-v4-scout-status-chip">
+                {job.status} {"\u00b7"} {job.max_results}/{job.budget}
+              </em>
+            </div>
+            <p className="dashboard-demo-v4-scout-packet-summary">
+              {created ? `Created ${created}` : "Discovery job queued for controlled search."}
+            </p>
+            {job.error ? (
+              <p className="dashboard-demo-v4-scout-source-meta">{job.error}</p>
+            ) : null}
+            <div className="dashboard-demo-v4-scout-actions">
+              {canPause ? (
+                <button type="button" onClick={() => onPause(job)} disabled={busy}>
+                  <Pause className="h-3.5 w-3.5" aria-hidden />
+                  Pause
+                </button>
+              ) : null}
+              {canResume ? (
+                <button type="button" onClick={() => onResume(job)} disabled={busy}>
+                  <Play className="h-3.5 w-3.5" aria-hidden />
+                  Resume
+                </button>
+              ) : null}
+              <button type="button" onClick={() => onPreview(job)} disabled={!canRun || busy}>
+                <Search className="h-3.5 w-3.5" aria-hidden />
+                Preview
+              </button>
+              <button type="button" onClick={() => onExtract(job)} disabled={!canRun || busy}>
+                <Plus className="h-3.5 w-3.5" aria-hidden />
+                Extract
+              </button>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+function ScoutDiscoveryPanel({
+  jobs,
+  query,
+  topicAnchor,
+  busyJobId,
+  onQueryChange,
+  onTopicAnchorChange,
+  onCreate,
+  onPause,
+  onResume,
+  onPreview,
+  onExtract,
+}: {
+  jobs: ScoutDiscoveryJobs;
+  query: string;
+  topicAnchor: string;
+  busyJobId: string | null;
+  onQueryChange: (value: string) => void;
+  onTopicAnchorChange: (value: string) => void;
+  onCreate: () => void;
+  onPause: (job: ScoutDiscoveryJob) => void;
+  onResume: (job: ScoutDiscoveryJob) => void;
+  onPreview: (job: ScoutDiscoveryJob) => void;
+  onExtract: (job: ScoutDiscoveryJob) => void;
+}) {
+  return (
+    <>
+      <ScoutDiscoveryJobCounts jobs={jobs} />
+      <div className="dashboard-demo-v4-scout-actions">
+        <input
+          aria-label="Discovery query"
+          value={query}
+          onChange={(event) => onQueryChange(event.target.value)}
+          placeholder="official FastAPI release notes"
+        />
+        <input
+          aria-label="Topic anchor"
+          value={topicAnchor}
+          onChange={(event) => onTopicAnchorChange(event.target.value)}
+          placeholder="FastAPI"
+        />
+        <button type="button" onClick={onCreate} disabled={!query.trim()}>
+          <Plus className="h-3.5 w-3.5" aria-hidden />
+          Create
+        </button>
+      </div>
+      <ScoutDiscoveryJobs
+        jobs={jobs.jobs ?? []}
+        emptyLabel="No discovery jobs yet."
+        busyJobId={busyJobId}
+        onPause={onPause}
+        onResume={onResume}
+        onPreview={onPreview}
+        onExtract={onExtract}
+      />
+    </>
+  );
+}
+
 function ScoutFeed({
   overview,
   selectedTab,
@@ -591,6 +766,16 @@ function ScoutFeed({
   onApproveSourceCandidate,
   onRejectSourceCandidate,
   onBlockSourceCandidate,
+  discoveryQuery,
+  discoveryTopicAnchor,
+  busyDiscoveryJobId,
+  onDiscoveryQueryChange,
+  onDiscoveryTopicAnchorChange,
+  onCreateDiscoveryJob,
+  onPauseDiscoveryJob,
+  onResumeDiscoveryJob,
+  onPreviewDiscoveryJob,
+  onExtractDiscoveryJob,
 }: {
   overview: ScoutOverview;
   selectedTab: ScoutFeedTab;
@@ -605,6 +790,16 @@ function ScoutFeed({
   onApproveSourceCandidate: (candidate: ScoutSourceCandidate) => void;
   onRejectSourceCandidate: (candidate: ScoutSourceCandidate) => void;
   onBlockSourceCandidate: (candidate: ScoutSourceCandidate) => void;
+  discoveryQuery: string;
+  discoveryTopicAnchor: string;
+  busyDiscoveryJobId: string | null;
+  onDiscoveryQueryChange: (value: string) => void;
+  onDiscoveryTopicAnchorChange: (value: string) => void;
+  onCreateDiscoveryJob: () => void;
+  onPauseDiscoveryJob: (job: ScoutDiscoveryJob) => void;
+  onResumeDiscoveryJob: (job: ScoutDiscoveryJob) => void;
+  onPreviewDiscoveryJob: (job: ScoutDiscoveryJob) => void;
+  onExtractDiscoveryJob: (job: ScoutDiscoveryJob) => void;
 }) {
   const recent = overview.recent ?? {};
   const sources = overview.sources ?? [];
@@ -620,6 +815,7 @@ function ScoutFeed({
     review: "No packets waiting for review.",
     promoted: "No promoted packets yet.",
     sourceQueue: "No source candidates waiting for review.",
+    discovery: "No discovery jobs yet.",
     sources: "No source data available yet.",
   };
 
@@ -641,6 +837,20 @@ function ScoutFeed({
       <div className="dashboard-demo-v4-scout-feed-scroll">
         {selectedTab === "sources" ? (
           <ScoutSourceCards sources={sources} />
+        ) : selectedTab === "discovery" ? (
+          <ScoutDiscoveryPanel
+            jobs={overview.discovery_jobs ?? {}}
+            query={discoveryQuery}
+            topicAnchor={discoveryTopicAnchor}
+            busyJobId={busyDiscoveryJobId}
+            onQueryChange={onDiscoveryQueryChange}
+            onTopicAnchorChange={onDiscoveryTopicAnchorChange}
+            onCreate={onCreateDiscoveryJob}
+            onPause={onPauseDiscoveryJob}
+            onResume={onResumeDiscoveryJob}
+            onPreview={onPreviewDiscoveryJob}
+            onExtract={onExtractDiscoveryJob}
+          />
         ) : selectedTab === "sourceQueue" ? (
           <>
             <ScoutSourceCandidateCounts counts={overview.source_candidates?.counts} />
@@ -690,6 +900,9 @@ export function HomelabScoutIntelligenceWidget() {
   const [busyPacketId, setBusyPacketId] = useState<string | null>(null);
   const [busyPromotionId, setBusyPromotionId] = useState<string | null>(null);
   const [busySourceCandidateId, setBusySourceCandidateId] = useState<string | null>(null);
+  const [busyDiscoveryJobId, setBusyDiscoveryJobId] = useState<string | null>(null);
+  const [discoveryQuery, setDiscoveryQuery] = useState("official FastAPI release notes");
+  const [discoveryTopicAnchor, setDiscoveryTopicAnchor] = useState("FastAPI");
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const badge = badgeForState(state);
@@ -817,6 +1030,87 @@ export function HomelabScoutIntelligenceWidget() {
     }
   }
 
+  async function createDiscoveryJob() {
+    const query = discoveryQuery.trim();
+    if (!query) return;
+    setActionError(null);
+    try {
+      const res = await fetch("/api/scout/discovery-jobs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query,
+          topic_anchor: discoveryTopicAnchor.trim() || null,
+          max_results: 5,
+          budget: 5,
+        }),
+      });
+      if (!res.ok) throw new Error("Could not create discovery job.");
+      setActionMessage("Discovery job created.");
+      await refresh();
+    } catch {
+      setActionError("Could not create discovery job.");
+    }
+  }
+
+  async function runDiscoveryJobAction(
+    job: ScoutDiscoveryJob,
+    action: "pause" | "resume" | "search-preview" | "extract-candidates",
+  ) {
+    const confirmed =
+      action === "search-preview"
+        ? true
+        : action === "extract-candidates"
+          ? window.confirm("Extract source candidates from this discovery job?")
+          : true;
+    if (!confirmed) return;
+
+    setBusyDiscoveryJobId(job.job_id);
+    setActionError(null);
+    try {
+      const res = await fetch(
+        `/api/scout/discovery-jobs/${encodeURIComponent(job.job_id)}/${action}`,
+        { method: "POST" },
+      );
+      if (!res.ok) throw new Error("Could not update discovery job.");
+      const body = await res.json().catch(() => null);
+      if (action === "search-preview") {
+        const count =
+          body &&
+          typeof body === "object" &&
+          "result" in body &&
+          body.result &&
+          typeof body.result === "object" &&
+          "sources" in body.result &&
+          Array.isArray(body.result.sources)
+            ? body.result.sources.length
+            : 0;
+        setActionMessage(`Discovery preview returned ${count} source${count === 1 ? "" : "s"}.`);
+      } else if (action === "extract-candidates") {
+        const created =
+          body &&
+          typeof body === "object" &&
+          "extraction" in body &&
+          body.extraction &&
+          typeof body.extraction === "object" &&
+          "candidates_created" in body.extraction &&
+          typeof body.extraction.candidates_created === "number"
+            ? body.extraction.candidates_created
+            : 0;
+        setActionMessage(
+          `Discovery extraction created ${created} candidate${created === 1 ? "" : "s"}.`,
+        );
+      } else {
+        setActionMessage(action === "pause" ? "Discovery job paused." : "Discovery job resumed.");
+      }
+      await refresh();
+    } catch {
+      setActionError("Could not update discovery job.");
+    } finally {
+      setBusyDiscoveryJobId(null);
+    }
+  }
+
   return (
     <section
       aria-label="Scout intelligence"
@@ -893,6 +1187,18 @@ export function HomelabScoutIntelligenceWidget() {
             }
             onRejectSourceCandidate={(candidate) => void reviewSourceCandidate(candidate, "reject")}
             onBlockSourceCandidate={(candidate) => void reviewSourceCandidate(candidate, "block")}
+            discoveryQuery={discoveryQuery}
+            discoveryTopicAnchor={discoveryTopicAnchor}
+            busyDiscoveryJobId={busyDiscoveryJobId}
+            onDiscoveryQueryChange={setDiscoveryQuery}
+            onDiscoveryTopicAnchorChange={setDiscoveryTopicAnchor}
+            onCreateDiscoveryJob={() => void createDiscoveryJob()}
+            onPauseDiscoveryJob={(job) => void runDiscoveryJobAction(job, "pause")}
+            onResumeDiscoveryJob={(job) => void runDiscoveryJobAction(job, "resume")}
+            onPreviewDiscoveryJob={(job) => void runDiscoveryJobAction(job, "search-preview")}
+            onExtractDiscoveryJob={(job) =>
+              void runDiscoveryJobAction(job, "extract-candidates")
+            }
           />
           <ScoutScheduler overview={data} />
         </div>

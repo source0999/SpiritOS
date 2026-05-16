@@ -55,4 +55,52 @@ describe("repo research response merge", () => {
     expect(merged.phase_label).toBe("Phase 7C");
     expect(merged.increment_label).toBe("Increment 7C.4");
   });
+
+  it("does not add repo research to hard target blocks", () => {
+    const request = JSON.stringify({
+      task: "Target file: .env.local\n\nAdd TEST_VALUE=1. Do not edit any other file.",
+      wants_implementation: true,
+      needs_codebase_context: true,
+    });
+    const response = JSON.stringify({
+      task_classification: "implementation",
+      recommended_route: "local_route",
+      next_prompt_action: "run_with_coder_agent",
+      reason_codes: ["implementation_requested", "protected_path", "secret_path"],
+      research_recommended: false,
+      research_sources: [],
+      relevant_context: "Blocked protected/secret path: .env.local",
+      constraints: [],
+    });
+
+    const merged = JSON.parse(mergeRepoFirstResearchSources(request, response));
+
+    expect(merged.research_recommended).toBe(false);
+    expect(merged.research_sources).toEqual([]);
+    expect(merged.reason_codes).not.toContain("repo_first_research");
+  });
+
+  it("does not add repo research to unresolved-target blocks", () => {
+    const request = JSON.stringify({
+      task: "Make a small improvement to the docs explaining approval safety.",
+      wants_implementation: true,
+      needs_codebase_context: true,
+    });
+    const response = JSON.stringify({
+      task_classification: "implementation",
+      recommended_route: "local_route",
+      next_prompt_action: "run_with_coder_agent",
+      reason_codes: ["implementation_requested", "target_unresolved"],
+      research_recommended: false,
+      research_sources: [],
+      relevant_context: "No safe file target was resolved.",
+      constraints: [],
+    });
+
+    const merged = JSON.parse(mergeRepoFirstResearchSources(request, response));
+
+    expect(merged.research_recommended).toBe(false);
+    expect(merged.research_sources).toEqual([]);
+    expect(merged.reason_codes).not.toContain("repo_first_research");
+  });
 });

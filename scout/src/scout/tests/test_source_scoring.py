@@ -84,3 +84,38 @@ def test_score_candidate_detects_blocked_source(tmp_path):
     assert score.status == "blocked"
     assert score.confidence_score == 0.0
     assert score.reason_codes == ["blocked_source"]
+
+
+def test_score_candidate_uses_structural_evidence_without_llm(tmp_path):
+    db_path = _db_path(tmp_path)
+
+    score = score_candidate(
+        db_path,
+        canonical_uri="https://fastapi.tiangolo.com/release-notes",
+        source_kind="release_feed",
+        discovered_from_uri="https://blog.python.org/feed",
+        title="FastAPI release notes",
+        snippet="Official FastAPI changelog for Python API changes.",
+        published_at="2026-01-15T00:00:00+00:00",
+    )
+
+    assert score.status == "recommended"
+    assert "official_domain_match" in score.reason_codes
+    assert "topic_anchor_density" in score.reason_codes
+    assert "source_metadata_quality" in score.reason_codes
+    assert "fresh_source" in score.reason_codes
+
+
+def test_score_candidate_does_not_treat_search_job_as_active_source_link(tmp_path):
+    db_path = _db_path(tmp_path)
+
+    score = score_candidate(
+        db_path,
+        canonical_uri="https://fastapi.tiangolo.com/release-notes",
+        source_kind="release_feed",
+        discovered_from_uri="search://job-id",
+        title="FastAPI release notes",
+    )
+
+    assert "linked_from_active_source" not in score.reason_codes
+    assert "source_metadata_quality" in score.reason_codes

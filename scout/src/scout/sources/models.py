@@ -104,3 +104,32 @@ class SourceCandidate:
             blocked_reason=row["blocked_reason"],
             metadata=_json_object(row["metadata_json"]),
         )
+
+
+@dataclass(frozen=True)
+class SourceReviewEvent:
+    review_event_id: str
+    candidate_id: str
+    canonical_uri: str
+    action: str
+    previous_status: str | None
+    new_status: str
+    reviewed_by: str | None
+    reason: str | None
+    created_at: str
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+    @classmethod
+    def from_row(cls, row: sqlite3.Row) -> SourceReviewEvent:
+        return cls(
+            review_event_id=row["review_event_id"],
+            candidate_id=row["candidate_id"],
+            canonical_uri=row["canonical_uri"],
+            action=row["action"],
+            previous_status=row["previous_status"],
+            new_status=row["new_status"],
+            reviewed_by=row["reviewed_by"],
+            reason=row["reason"],
+            created_at=row["created_at"],
+            metadata=_json_object(row["metadata_json"]),
+        )

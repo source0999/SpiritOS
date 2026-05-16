@@ -9,6 +9,7 @@ from scout.sources.storage import (
     get_candidate,
     list_candidates,
     list_registry_entries,
+    list_review_events,
     record_discovery_event,
     reject_candidate,
     upsert_candidate,
@@ -94,6 +95,12 @@ def test_approve_candidate_adds_active_registry_entry(tmp_path):
     assert reviewed.status == "approved"
     assert reviewed.reviewed_by == "tester"
     assert list_registry_entries(db_path, status="active") == [entry]
+    events = list_review_events(db_path, candidate_id=candidate.candidate_id)
+    assert len(events) == 1
+    assert events[0].action == "approve"
+    assert events[0].previous_status == "recommended"
+    assert events[0].new_status == "approved"
+    assert events[0].reviewed_by == "tester"
 
 
 def test_reject_candidate_preserves_manual_state_on_later_upsert(tmp_path):
@@ -122,6 +129,10 @@ def test_reject_candidate_preserves_manual_state_on_later_upsert(tmp_path):
     assert rejected.rejection_reason == "not relevant"
     assert rediscovered.status == "rejected"
     assert rediscovered.rejection_reason == "not relevant"
+    events = list_review_events(db_path, canonical_uri=candidate.canonical_uri)
+    assert len(events) == 1
+    assert events[0].action == "reject"
+    assert events[0].reason == "not relevant"
 
 
 def test_block_candidate_prevents_approval_and_requeue(tmp_path):
@@ -151,6 +162,10 @@ def test_block_candidate_prevents_approval_and_requeue(tmp_path):
     assert blocked.blocked_reason == "spam pattern"
     assert rediscovered.status == "blocked"
     assert rediscovered.blocked_reason == "spam pattern"
+    events = list_review_events(db_path, candidate_id=candidate.candidate_id)
+    assert len(events) == 1
+    assert events[0].action == "block"
+    assert events[0].reason == "spam pattern"
     with pytest.raises(SourceRegistryError):
         approve_candidate(db_path, candidate.candidate_id, approved_by="tester")
 

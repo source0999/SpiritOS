@@ -1580,6 +1580,61 @@ html[data-theme="solar-ember"] .dashboard-demo-v4-root {
   padding: 0.76rem 0.82rem;
 }
 
+.dashboard-demo-v4-cartographer-card {
+  display: grid;
+  gap: 1rem;
+}
+
+.dashboard-demo-v4-cartographer-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.dashboard-demo-v4-cartographer-metric {
+  min-height: 5.5rem;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid var(--ddv4-surface-border-soft);
+  border-radius: 8px;
+  background: var(--ddv4-surface-fill);
+  padding: 0.75rem;
+  color: var(--ddv4-fg-muted);
+}
+
+.dashboard-demo-v4-cartographer-metric svg {
+  color: color-mix(in oklab, var(--spirit-accent-strong, currentColor) 78%, currentColor);
+}
+
+.dashboard-demo-v4-cartographer-metric strong {
+  min-width: 0;
+  color: var(--ddv4-fg);
+  font-size: clamp(1rem, 1.8vw, 1.35rem);
+  font-weight: 760;
+  line-height: 1;
+  overflow-wrap: anywhere;
+}
+
+.dashboard-demo-v4-cartographer-metric span,
+.dashboard-demo-v4-cartographer-summary {
+  color: var(--ddv4-fg-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.35;
+}
+
+.dashboard-demo-v4-cartographer-summary {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.dashboard-demo-v4-cartographer-summary p {
+  margin: 0;
+}
+
 @media (max-width: 680px) {
   .dashboard-demo-v4-scout-counts,
   .dashboard-demo-v4-scout-scheduler {

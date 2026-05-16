@@ -1,5 +1,3 @@
-import { executeApprovedAction } from "@/lib/spirit/approved-action-execution";
-
 import { sourceProxyFetch } from "@/lib/source-proxy-origin";
 
 export async function POST(request: Request) {
@@ -16,7 +14,6 @@ export async function POST(request: Request) {
 
   const record = body as Record<string, unknown>;
   const action = typeof record.action === "string" ? record.action : "";
-  const content = typeof record.content === "string" ? record.content : "";
   const target = typeof record.target === "string" ? record.target : "";
   const approved = record.approved === true;
   const approvedDiff =
@@ -45,48 +42,57 @@ export async function POST(request: Request) {
     );
   }
 
+  if (!taskId.trim()) {
+    return Response.json(
+      {
+        error:
+          "execute-approved requires task_id so Source Proxy can re-run verification before apply.",
+      },
+      { status: 400 },
+    );
+  }
+  if (!approvedDiff.trim()) {
+    return Response.json(
+      {
+        error:
+          "execute-approved requires approved_diff so Source Proxy can re-run verification before apply.",
+      },
+      { status: 400 },
+    );
+  }
+
   // Approved real diffs execute through Source proxy's long-running task layer.
   // That keeps diff verification, workspace writes, progress, and audit logging
   // behind a single explicit approval boundary.
-  if (taskId.trim() && approvedDiff.trim()) {
-    if (process.env.SPIRIT_CODING_USE_PROXY !== "true") {
-      return Response.json(
-        { error: "SPIRIT_CODING_USE_PROXY is not true" },
-        { status: 409 },
-      );
-    }
-
-    const response = await sourceProxyFetch(
-      `/v1/tasks/long-running/${encodeURIComponent(taskId)}/execute-approved`,
-      {
-        body: JSON.stringify({
-          action,
-          approved: true,
-          approved_by: "coding-ui",
-          approved_diff: approvedDiff,
-          target,
-        }),
-        headers: {
-          "content-type": "application/json",
-        },
-        method: "POST",
-      },
+  if (process.env.SPIRIT_CODING_USE_PROXY !== "true") {
+    return Response.json(
+      { error: "SPIRIT_CODING_USE_PROXY is not true" },
+      { status: 409 },
     );
-
-    return new Response(await response.text(), {
-      headers: {
-        "content-type": response.headers.get("content-type") ?? "application/json",
-      },
-      status: response.status,
-      statusText: response.statusText,
-    });
   }
 
-  const result = await executeApprovedAction({
-    action,
-    approvedDiff,
-    content,
-    target,
+  const response = await sourceProxyFetch(
+    `/v1/tasks/long-running/${encodeURIComponent(taskId)}/execute-approved`,
+    {
+      body: JSON.stringify({
+        action,
+        approved: true,
+        approved_by: "coding-ui",
+        approved_diff: approvedDiff,
+        target,
+      }),
+      headers: {
+        "content-type": "application/json",
+      },
+      method: "POST",
+    },
+  );
+
+  return new Response(await response.text(), {
+    headers: {
+      "content-type": response.headers.get("content-type") ?? "application/json",
+    },
+    status: response.status,
+    statusText: response.statusText,
   });
-  return Response.json(result, { status: result.ok ? 200 : 422 });
 }

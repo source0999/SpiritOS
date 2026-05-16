@@ -151,6 +151,19 @@ export type ScoutSourceCandidateStatus =
   | "blocked"
   | "approved";
 
+export type ScoutSourceReviewEvent = {
+  review_event_id: string;
+  candidate_id: string;
+  canonical_uri: string;
+  action: "approve" | "reject" | "block" | string;
+  previous_status?: string | null;
+  new_status: string;
+  reviewed_by?: string | null;
+  reason?: string | null;
+  created_at: string;
+  metadata?: Record<string, unknown> | null;
+};
+
 export type ScoutSourceCandidate = {
   candidate_id: string;
   canonical_uri: string;
@@ -173,11 +186,40 @@ export type ScoutSourceCandidate = {
   rejection_reason?: string | null;
   blocked_reason?: string | null;
   metadata?: Record<string, unknown> | null;
+  review_history?: ScoutSourceReviewEvent[] | null;
 };
 
 export type ScoutSourceCandidates = Partial<{
   counts: Partial<Record<ScoutSourceCandidateStatus, number>>;
   candidates: ScoutSourceCandidate[];
+}>;
+
+export type ScoutDiscoveryJobStatus =
+  | "queued"
+  | "paused"
+  | "running"
+  | "completed"
+  | "failed"
+  | "canceled";
+
+export type ScoutDiscoveryJob = {
+  job_id: string;
+  query: string;
+  topic_anchor?: string | null;
+  status: ScoutDiscoveryJobStatus;
+  max_results: number;
+  budget: number;
+  created_at: string;
+  updated_at: string;
+  started_at?: string | null;
+  finished_at?: string | null;
+  error?: string | null;
+  metadata?: Record<string, unknown> | null;
+};
+
+export type ScoutDiscoveryJobs = Partial<{
+  count: number;
+  jobs: ScoutDiscoveryJob[];
 }>;
 
 export type ScoutOverview = Partial<{
@@ -194,6 +236,7 @@ export type ScoutOverview = Partial<{
   scheduler: ScoutScheduler;
   promotions: ScoutPromotions;
   source_candidates: ScoutSourceCandidates;
+  discovery_jobs: ScoutDiscoveryJobs;
 }>;
 
 export type ScoutOverviewRouteError = {

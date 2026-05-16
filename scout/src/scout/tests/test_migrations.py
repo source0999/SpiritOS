@@ -36,8 +36,9 @@ def test_apply_migrations_creates_phase_2_tables(tmp_path):
         "source_discovery_events",
         "blocked_sources",
         "discovery_jobs",
+        "source_review_events",
     } <= tables
-    assert version == "11"
+    assert version == "12"
 
 
 def test_apply_migrations_is_idempotent_for_source_registry(tmp_path):
@@ -60,7 +61,7 @@ def test_apply_migrations_is_idempotent_for_source_registry(tmp_path):
     finally:
         conn.close()
 
-    assert version == "11"
+    assert version == "12"
     assert {
         "idx_source_registry_status",
         "idx_source_registry_kind",
@@ -69,4 +70,7 @@ def test_apply_migrations_is_idempotent_for_source_registry(tmp_path):
         "idx_source_candidates_discovered_from",
         "idx_discovery_jobs_status",
         "idx_discovery_jobs_created",
+        "idx_source_review_events_candidate",
+        "idx_source_review_events_canonical",
+        "idx_source_review_events_created",
     } <= indexes

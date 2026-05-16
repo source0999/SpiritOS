@@ -19,6 +19,7 @@
     "proxy:https:lan": "node ./scripts/source-proxy-dev.mjs --https --lan",
     "context:pack": "repomix --config repomix.config.json .",
     "context:compress": "node ./scripts/source-context-compress.mjs",
+    "validate:blueprints": "node ./scripts/validate-blueprints.mjs",
     "next:mcp:ws": "node ./scripts/next-mcp-ws-bridge.mjs",
     "next:mcp:ws:probe": "node ./scripts/next-mcp-ws-probe.mjs",
     "next:mcp:ws:smoke": "node ./scripts/next-mcp-ws-smoke.mjs",

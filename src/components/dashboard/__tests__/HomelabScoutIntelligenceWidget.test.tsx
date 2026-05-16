@@ -3,7 +3,12 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 import { HomelabScoutIntelligenceWidget } from "../HomelabScoutIntelligenceWidget";
-import type { ScoutOverview, ScoutPromotions, ScoutSourceCandidates } from "@/lib/scout-overview";
+import type {
+  ScoutDiscoveryJobs,
+  ScoutOverview,
+  ScoutPromotions,
+  ScoutSourceCandidates,
+} from "@/lib/scout-overview";
 
 const origFetch = globalThis.fetch;
 const origConfirm = window.confirm;
@@ -101,6 +106,10 @@ function mockScoutFetch(
     },
     candidates: [],
   },
+  discoveryJobs: ScoutDiscoveryJobs = {
+    count: 0,
+    jobs: [],
+  },
 ) {
   globalThis.fetch = vi.fn((input: RequestInfo | URL) => {
     const url = String(input);
@@ -110,10 +119,14 @@ function mockScoutFetch(
     if (url.includes("/api/scout/source-candidates") && !url.match(/\/(approve|reject|block)$/)) {
       return Promise.resolve(new Response(JSON.stringify(sourceCandidates), { status: 200 }));
     }
+    if (url.includes("/api/scout/discovery-jobs") && !url.match(/\/(pause|resume|search-preview|extract-candidates)$/)) {
+      return Promise.resolve(new Response(JSON.stringify(discoveryJobs), { status: 200 }));
+    }
     if (
       url.includes("/api/scout/packets/") ||
       url.includes("/api/scout/promotions/finalize") ||
-      url.match(/\/api\/scout\/source-candidates\/[^/]+\/(approve|reject|block)$/)
+      url.match(/\/api\/scout\/source-candidates\/[^/]+\/(approve|reject|block)$/) ||
+      url.match(/\/api\/scout\/discovery-jobs\/[^/]+\/(pause|resume|search-preview|extract-candidates)$/)
     ) {
       return Promise.resolve(new Response(JSON.stringify({ ok: true }), { status: 200 }));
     }
@@ -172,6 +185,7 @@ describe("HomelabScoutIntelligenceWidget", () => {
     expect(screen.getAllByText("Review Queue").length).toBeGreaterThan(1);
     expect(screen.queryByText("Needs Review")).not.toBeInTheDocument();
     expect(screen.getByText("Semantic Memory")).toBeInTheDocument();
+    expect(screen.getByText("Discovery Jobs")).toBeInTheDocument();
     expect(screen.getByText("Inactive")).toBeInTheDocument();
     expect(screen.queryByText(/failure/i)).not.toBeInTheDocument();
     expect(screen.getByText("Running")).toBeInTheDocument();
@@ -290,8 +304,99 @@ describe("HomelabScoutIntelligenceWidget", () => {
     fireEvent.click(screen.getByRole("tab", { name: "Source Queue" }));
     expect(screen.getByText("No source candidates waiting for review.")).toBeInTheDocument();
 
+    fireEvent.click(screen.getByRole("tab", { name: "Discovery" }));
+    expect(screen.getByText("No discovery jobs yet.")).toBeInTheDocument();
+
     fireEvent.click(screen.getByRole("tab", { name: "Sources" }));
     expect(screen.getByText("No source data available yet.")).toBeInTheDocument();
+  });
+
+  it("shows discovery jobs and controls", async () => {
+    mockScoutFetch(emptyOverview, undefined, undefined, {
+      count: 1,
+      jobs: [
+        {
+          job_id: "job-1",
+          query: "official FastAPI release notes",
+          topic_anchor: "FastAPI",
+          status: "queued",
+          max_results: 5,
+          budget: 5,
+          created_at: "2026-05-15T21:00:00Z",
+          updated_at: "2026-05-15T21:00:00Z",
+        },
+      ],
+    });
+
+    render(<HomelabScoutIntelligenceWidget />);
+
+    await screen.findByRole("tab", { name: "Discovery" });
+    fireEvent.click(screen.getByRole("tab", { name: "Discovery" }));
+
+    expect(screen.getByLabelText("Scout discovery job counts")).toBeInTheDocument();
+    expect(screen.getByText("official FastAPI release notes")).toBeInTheDocument();
+    expect(screen.getByText("queued \u00b7 5/5")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Pause" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Preview" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Extract" })).toBeInTheDocument();
+  });
+
+  it("creates a discovery job through the Scout route", async () => {
+    mockScoutFetch(emptyOverview);
+
+    render(<HomelabScoutIntelligenceWidget />);
+
+    await screen.findByRole("tab", { name: "Discovery" });
+    fireEvent.click(screen.getByRole("tab", { name: "Discovery" }));
+    fireEvent.change(screen.getByLabelText("Discovery query"), {
+      target: { value: "official Python release notes" },
+    });
+    fireEvent.change(screen.getByLabelText("Topic anchor"), {
+      target: { value: "Python" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Create" }));
+
+    await waitFor(() => {
+      expect(globalThis.fetch).toHaveBeenCalledWith(
+        "/api/scout/discovery-jobs",
+        expect.objectContaining({
+          method: "POST",
+          body: expect.stringContaining('"query":"official Python release notes"'),
+        }),
+      );
+    });
+    expect(await screen.findByText("Discovery job created.")).toBeInTheDocument();
+  });
+
+  it("pauses and resumes discovery jobs through the Scout route", async () => {
+    mockScoutFetch(emptyOverview, undefined, undefined, {
+      count: 1,
+      jobs: [
+        {
+          job_id: "job-control",
+          query: "official FastAPI release notes",
+          topic_anchor: "FastAPI",
+          status: "queued",
+          max_results: 5,
+          budget: 5,
+          created_at: "2026-05-15T21:00:00Z",
+          updated_at: "2026-05-15T21:00:00Z",
+        },
+      ],
+    });
+
+    render(<HomelabScoutIntelligenceWidget />);
+
+    await screen.findByRole("tab", { name: "Discovery" });
+    fireEvent.click(screen.getByRole("tab", { name: "Discovery" }));
+    fireEvent.click(screen.getByRole("button", { name: "Pause" }));
+
+    await waitFor(() => {
+      expect(globalThis.fetch).toHaveBeenCalledWith(
+        "/api/scout/discovery-jobs/job-control/pause",
+        { method: "POST" },
+      );
+    });
   });
 
   it("shows source candidates and review actions", async () => {
@@ -319,6 +424,19 @@ describe("HomelabScoutIntelligenceWidget", () => {
             recommendation: "Recommended for manual review before activation.",
             discovered_from_uri: "https://blog.python.org/feeds/posts/default",
             reason_codes: ["official_docs_pattern", "linked_from_active_source"],
+            review_history: [
+              {
+                review_event_id: "event-1",
+                candidate_id: "candidate-1",
+                canonical_uri: "https://blog.python.org/2024/10/python-3130-final-released",
+                action: "reject",
+                previous_status: "recommended",
+                new_status: "rejected",
+                reviewed_by: "tester",
+                reason: "duplicate",
+                created_at: "2026-05-15T21:00:00Z",
+              },
+            ],
           },
         ],
       },
@@ -336,6 +454,8 @@ describe("HomelabScoutIntelligenceWidget", () => {
     expect(screen.getByText("blog.python.org/2024/10/python-3130-final-released")).toBeInTheDocument();
     expect(screen.getByText("recommended \u00b7 97%")).toBeInTheDocument();
     expect(screen.getByText("Official project blog")).toBeInTheDocument();
+    expect(screen.getByText(/reject by tester/)).toBeInTheDocument();
+    expect(screen.getByText(/duplicate/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Approve" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Reject" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Block" })).toBeInTheDocument();

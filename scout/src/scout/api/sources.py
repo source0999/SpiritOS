@@ -16,6 +16,7 @@ from scout.sources.storage import (
     candidate_counts,
     list_candidates,
     list_registry_entries,
+    list_review_events,
     reject_candidate,
 )
 
@@ -86,6 +87,19 @@ def build_sources_response(settings) -> dict:
     return {"count": len(sources), "sources": sources}
 
 
+def source_candidate_to_dict(settings, candidate) -> dict:
+    body = asdict(candidate)
+    body["review_history"] = [
+        asdict(event)
+        for event in list_review_events(
+            settings.database_path,
+            candidate_id=candidate.candidate_id,
+            limit=20,
+        )
+    ]
+    return body
+
+
 @router.get("/sources")
 async def get_sources() -> dict:
     return build_sources_response(get_settings())
@@ -102,7 +116,7 @@ async def get_source_candidates(
     return {
         "counts": candidate_counts(settings.database_path),
         "candidates": [
-            asdict(candidate)
+            source_candidate_to_dict(settings, candidate)
             for candidate in list_candidates(
                 settings.database_path,
                 status=status,
@@ -135,14 +149,15 @@ async def reject_source_candidate(
     candidate_id: str,
     request: SourceReviewRequest,
 ) -> dict:
+    settings = get_settings()
     try:
         candidate = reject_candidate(
-            get_settings().database_path,
+            settings.database_path,
             candidate_id,
             reason=request.reason or "Rejected during manual Scout source review.",
             reviewed_by=request.reviewed_by or "manual-review",
         )
-        return {"candidate": asdict(candidate)}
+        return {"candidate": source_candidate_to_dict(settings, candidate)}
     except SourceRegistryError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
@@ -157,13 +172,14 @@ async def block_source_candidate(
     candidate_id: str,
     request: SourceReviewRequest,
 ) -> dict:
+    settings = get_settings()
     try:
         candidate = block_candidate(
-            get_settings().database_path,
+            settings.database_path,
             candidate_id,
             reason=request.reason or "Blocked during manual Scout source review.",
             blocked_by=request.reviewed_by or "manual-review",
         )
-        return {"candidate": asdict(candidate)}
+        return {"candidate": source_candidate_to_dict(settings, candidate)}
     except SourceRegistryError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc

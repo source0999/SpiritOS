@@ -10,7 +10,7 @@ from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 import uuid
 
 from scout.api.source_trust import classify_source
-from scout.sources.models import SourceCandidate, SourceRegistryEntry
+from scout.sources.models import SourceCandidate, SourceRegistryEntry, SourceReviewEvent
 from scout.storage.db import open_connection
 
 
@@ -27,14 +27,33 @@ CANDIDATE_STATUSES = {
     "approved",
 }
 REGISTRY_STATUSES = {"active", "paused", "disabled"}
+REVIEW_ACTIONS = {"approve", "reject", "block"}
 TRACKING_QUERY_PREFIXES = ("utm_",)
 TRACKING_QUERY_PARAMS = {
+    "_hsenc",
+    "_hsmi",
     "fbclid",
     "gclid",
+    "igshid",
     "mc_cid",
     "mc_eid",
+    "mkt_tok",
     "ref",
+    "ref_src",
+    "ref_url",
     "spm",
+    "wt.mc_id",
+    "yclid",
+}
+HTTPS_CANONICAL_HOSTS = {
+    "blog.python.org",
+    "docs.python.org",
+    "fastapi.tiangolo.com",
+    "github.com",
+    "pypi.org",
+    "www.github.com",
+    "www.python.org",
+    "www.typescriptlang.org",
 }
 
 
@@ -67,10 +86,19 @@ def canonicalize_uri(uri: str) -> str:
             return _github_repo_uri(parts[0], parts[1])
 
     query = _clean_query(parsed.query)
-    netloc = host
-    if parsed.port:
-        netloc = f"{host}:{parsed.port}"
+    scheme = "https" if scheme == "http" and host in HTTPS_CANONICAL_HOSTS else scheme
+    netloc = _canonical_netloc(host, parsed.port, scheme)
     return urlunparse((scheme, netloc, path, "", query, ""))
+
+
+def _canonical_netloc(host: str, port: int | None, scheme: str) -> str:
+    if port is None:
+        return host
+    if scheme == "https" and port == 443:
+        return host
+    if scheme == "http" and port == 80:
+        return host
+    return f"{host}:{port}"
 
 
 def upsert_candidate(
@@ -262,6 +290,7 @@ def approve_candidate(
         ).fetchone()
         if not candidate:
             raise SourceRegistryError("source candidate not found")
+        previous_status = candidate["status"]
         if candidate["status"] == "blocked" or _is_blocked(conn, candidate["canonical_uri"]):
             raise SourceRegistryError("blocked source candidate cannot be approved")
 
@@ -323,6 +352,18 @@ def approve_candidate(
             """,
             (now, approved_by, candidate_id),
         )
+        _record_review_event(
+            conn,
+            candidate_id=candidate_id,
+            canonical_uri=candidate["canonical_uri"],
+            action="approve",
+            previous_status=previous_status,
+            new_status="approved",
+            reviewed_by=approved_by,
+            reason=None,
+            metadata={"source_id": source_id, "poll_interval_minutes": poll_interval_minutes},
+            created_at=now,
+        )
         conn.commit()
         return _get_registry_by_canonical(conn, candidate["canonical_uri"])
     finally:
@@ -362,6 +403,7 @@ def block_candidate(
         ).fetchone()
         if not candidate:
             raise SourceRegistryError("source candidate not found")
+        previous_status = candidate["status"]
         conn.execute(
             """
             INSERT INTO blocked_sources (
@@ -392,6 +434,18 @@ def block_candidate(
             WHERE candidate_id = ?
             """,
             (now, blocked_by, reason, candidate_id),
+        )
+        _record_review_event(
+            conn,
+            candidate_id=candidate_id,
+            canonical_uri=candidate["canonical_uri"],
+            action="block",
+            previous_status=previous_status,
+            new_status="blocked",
+            reviewed_by=blocked_by,
+            reason=reason,
+            metadata={},
+            created_at=now,
         )
         conn.commit()
         return _get_candidate(conn, candidate_id)
@@ -467,6 +521,41 @@ def record_discovery_event(
         conn.close()
 
 
+def list_review_events(
+    db_path: Path,
+    *,
+    candidate_id: str | None = None,
+    canonical_uri: str | None = None,
+    limit: int = 50,
+) -> list[SourceReviewEvent]:
+    if limit < 1 or limit > 200:
+        raise SourceRegistryError("review event limit must be between 1 and 200")
+    conn = open_connection(db_path)
+    try:
+        params: list[Any] = []
+        where = ""
+        if candidate_id:
+            where = "WHERE candidate_id = ?"
+            params.append(candidate_id)
+        elif canonical_uri:
+            where = "WHERE canonical_uri = ?"
+            params.append(canonical_uri)
+        params.append(limit)
+        rows = conn.execute(
+            f"""
+            SELECT *
+            FROM source_review_events
+            {where}
+            ORDER BY created_at DESC
+            LIMIT ?
+            """,
+            params,
+        ).fetchall()
+        return [SourceReviewEvent.from_row(row) for row in rows]
+    finally:
+        conn.close()
+
+
 def _review_candidate(
     db_path: Path,
     candidate_id: str,
@@ -479,6 +568,12 @@ def _review_candidate(
     now = _now()
     conn = open_connection(db_path)
     try:
+        candidate = conn.execute(
+            "SELECT * FROM source_candidates WHERE candidate_id = ?",
+            (candidate_id,),
+        ).fetchone()
+        if not candidate:
+            raise SourceRegistryError("source candidate not found")
         cursor = conn.execute(
             f"""
             UPDATE source_candidates
@@ -492,6 +587,18 @@ def _review_candidate(
         )
         if cursor.rowcount != 1:
             raise SourceRegistryError("source candidate not found")
+        _record_review_event(
+            conn,
+            candidate_id=candidate_id,
+            canonical_uri=candidate["canonical_uri"],
+            action=status.removesuffix("ed") if status in {"rejected", "blocked"} else status,
+            previous_status=candidate["status"],
+            new_status=status,
+            reviewed_by=reviewed_by,
+            reason=reason,
+            metadata={},
+            created_at=now,
+        )
         conn.commit()
         return _get_candidate(conn, candidate_id)
     finally:
@@ -540,6 +647,45 @@ def _is_blocked(conn: sqlite3.Connection, canonical_uri: str) -> bool:
         (canonical_uri,),
     ).fetchone()
     return row is not None
+
+
+def _record_review_event(
+    conn: sqlite3.Connection,
+    *,
+    candidate_id: str,
+    canonical_uri: str,
+    action: str,
+    previous_status: str | None,
+    new_status: str,
+    reviewed_by: str | None,
+    reason: str | None,
+    metadata: dict[str, Any] | None,
+    created_at: str,
+) -> None:
+    if action not in REVIEW_ACTIONS:
+        raise SourceRegistryError(f"unsupported source review action: {action}")
+    conn.execute(
+        """
+        INSERT INTO source_review_events (
+            review_event_id, candidate_id, canonical_uri, action,
+            previous_status, new_status, reviewed_by, reason,
+            created_at, metadata_json
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            str(uuid.uuid4()),
+            candidate_id,
+            canonical_uri,
+            action,
+            previous_status,
+            new_status,
+            reviewed_by,
+            reason,
+            created_at,
+            _json_object(metadata),
+        ),
+    )
 
 
 def _merge_candidate_status(current: str, incoming: str) -> str:

@@ -15,6 +15,7 @@ import {
   longTaskVisibleState,
   promptTextForCoderPacket,
   shouldAppendTaskActivityLog,
+  taskSpecForManualPreview,
   taskSpecForPlan,
   TaskCompletionStatus,
   VerificationSummary,
@@ -266,6 +267,68 @@ describe("deriveCodingStabilitySummary", () => {
     expect(summary.primaryState).toBe("Blocked");
     expect(summary.target).toBe("No target resolved");
     expect(summary.lastBlocker).toBe("target_unresolved");
+  });
+
+  it("prioritizes protected path blockers over generic no-diff copy", () => {
+    const summary = stabilitySummary({
+      approvalGate: {
+        ...baseArgs().approvalGate,
+        action: "needs_coder_diff",
+        preview: {
+          decision: "blocked",
+          reason_codes: ["protected_path"],
+          requires_human_approval: false,
+        },
+        target: ".env.local",
+      },
+    });
+
+    expect(summary.primaryState).toBe("Blocked");
+    expect(summary.approvalState).toBe("unavailable");
+    expect(summary.lastBlocker).toBe("protected_path");
+    expect(summary.target).toBe(".env.local");
+  });
+
+  it("prioritizes path escape blockers over inferred targets", () => {
+    const summary = stabilitySummary({
+      approvalGate: {
+        ...baseArgs().approvalGate,
+        action: "needs_coder_diff",
+        preview: {
+          decision: "blocked",
+          reason_codes: ["path_escape"],
+          requires_human_approval: false,
+        },
+        target: "../outside.txt",
+      },
+      finalOutput: {
+        attachedFiles: [],
+        completedAt: "t",
+        contextTurnCount: 0,
+        decision: {
+          reason_codes: ["path_escape"],
+          resolved_target: { path: "../outside.txt" },
+        },
+        decisionPayload: "{}",
+        promptText: "",
+        researchSources: [],
+        requests: [],
+        runId: 1,
+        selfCorrection: {
+          checks: [],
+          confidence: 0,
+          reasons: [],
+          refinedInstruction: "",
+          triggered: false,
+        },
+        summary: "Route ok",
+      },
+    });
+
+    expect(summary.primaryState).toBe("Blocked");
+    expect(summary.lastBlocker).toBe("path_escape");
+    expect(summary.target).toBe("../outside.txt");
+    expect(summary.target).not.toBe("public/next.svg");
   });
 
   it("shows applied docs-only work as verification required", () => {
@@ -1181,6 +1244,83 @@ describe("workflowStep", () => {
     expect(screen.queryByText("Mark verification complete")).toBeNull();
   });
 
+  it("shows protected-path approval blockers honestly", () => {
+    render(
+      createElement(
+        ApprovalGatePanel,
+        approvalPanelProps({
+          gate: {
+            ...baseArgs().approvalGate,
+            action: "needs_coder_diff",
+            preview: {
+              decision: "blocked",
+              reason_codes: ["protected_path"],
+              requires_human_approval: false,
+            },
+            target: ".env.local",
+          },
+        }),
+      ),
+    );
+
+    expect(screen.getByText("Blocked: protected/secret path")).toBeTruthy();
+    expect(
+      screen.getByText(
+        "Protected and secret-shaped paths cannot be edited through the approval flow.",
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByText(/Coder did not produce a valid approvable unified diff/)).toBeNull();
+  });
+
+  it("shows path traversal approval blockers honestly", () => {
+    render(
+      createElement(
+        ApprovalGatePanel,
+        approvalPanelProps({
+          gate: {
+            ...baseArgs().approvalGate,
+            action: "needs_coder_diff",
+            preview: {
+              decision: "blocked",
+              reason_codes: ["path_escape"],
+              requires_human_approval: false,
+            },
+            target: "../outside.txt",
+          },
+        }),
+      ),
+    );
+
+    expect(screen.getByText("Blocked: path escapes workspace")).toBeTruthy();
+    expect(
+      screen.getByText(
+        "Use a repo-relative path inside the workspace. Traversal, absolute, and drive paths are blocked.",
+      ),
+    ).toBeTruthy();
+  });
+
+  it("shows target-unresolved approval blockers with a concrete next step", () => {
+    render(
+      createElement(
+        ApprovalGatePanel,
+        approvalPanelProps({
+          gate: {
+            ...baseArgs().approvalGate,
+            action: "needs_coder_diff",
+            preview: {
+              decision: "blocked",
+              reason_codes: ["target_unresolved"],
+              requires_human_approval: false,
+            },
+          },
+        }),
+      ),
+    );
+
+    expect(screen.getByText("No safe file target was resolved.")).toBeTruthy();
+    expect(screen.getByText("Add a Target file: line.")).toBeTruthy();
+  });
+
   it("shows the code verification action for code-edit post-apply verification", () => {
     const onCodeVerify = vi.fn();
     render(
@@ -1610,5 +1750,23 @@ describe("coding diff quality gates", () => {
       }),
     );
     expect(checks.some((check) => check.required && check.status !== "pass")).toBe(true);
+  });
+
+  it("builds manual preview TaskSpec from the current Target file line without an architect plan", () => {
+    const taskSpec = taskSpecForManualPreview(
+      null,
+      null,
+      [
+        "Target file: docs/phase-8-manual-check.md",
+        "",
+        "Use the manual diff preview to validate wrong-file blocking. Do not edit any other file.",
+      ].join("\n"),
+    );
+
+    expect(taskSpec).toMatchObject({
+      target: "docs/phase-8-manual-check.md",
+      allowed_files: ["docs/phase-8-manual-check.md"],
+      source: "manual_preview_target",
+    });
   });
 });

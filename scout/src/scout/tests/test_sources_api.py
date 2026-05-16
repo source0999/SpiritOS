@@ -174,8 +174,11 @@ def test_source_candidates_api_approve_reject_and_block(tmp_path, monkeypatch):
     assert approve_body["source"]["poll_interval_minutes"] == 45
     assert reject_body["candidate"]["status"] == "rejected"
     assert reject_body["candidate"]["rejection_reason"] == "not useful"
+    assert reject_body["candidate"]["review_history"][0]["action"] == "reject"
+    assert reject_body["candidate"]["review_history"][0]["reason"] == "not useful"
     assert block_body["candidate"]["status"] == "blocked"
     assert block_body["candidate"]["blocked_reason"] == "spam"
+    assert block_body["candidate"]["review_history"][0]["action"] == "block"
 
 
 def test_source_candidates_api_does_not_approve_blocked_candidate(tmp_path, monkeypatch):
@@ -198,3 +201,26 @@ def test_source_candidates_api_does_not_approve_blocked_candidate(tmp_path, monk
 
     assert response.status_code == 409
     assert "blocked" in response.json()["detail"]
+
+
+def test_source_candidates_api_includes_review_history(tmp_path, monkeypatch):
+    client, settings = _client(tmp_path, monkeypatch)
+    candidate = upsert_candidate(
+        settings.database_path,
+        display_uri="https://example.com/noisy-blog",
+        source_kind="blog",
+    )
+    reject_candidate = client.post(
+        f"/v1/scout/source-candidates/{candidate.candidate_id}/reject",
+        json={"reason": "duplicate source", "reviewed_by": "tester"},
+    )
+    assert reject_candidate.status_code == 200
+
+    body = client.get("/v1/scout/source-candidates").json()
+
+    reviewed = body["candidates"][0]
+    assert reviewed["candidate_id"] == candidate.candidate_id
+    assert reviewed["review_history"][0]["action"] == "reject"
+    assert reviewed["review_history"][0]["previous_status"] == "needs_review"
+    assert reviewed["review_history"][0]["new_status"] == "rejected"
+    assert reviewed["review_history"][0]["reviewed_by"] == "tester"
