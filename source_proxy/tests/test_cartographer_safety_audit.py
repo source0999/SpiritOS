@@ -136,6 +136,53 @@ class CartographerSafetyAuditTests(unittest.TestCase):
         self.assertFalse(push_queue["actions_taken"])
         self.assertFalse(audit_trail["actions_taken"])
 
+    def test_apply_blocks_diff_target_mismatch_without_writing(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            blueprint = root / "_blueprints" / "current" / "dashboard_state.md"
+            before = blueprint.read_text(encoding="utf-8")
+            mismatch_diff = "\n".join(
+                [
+                    "diff --git a/_blueprints/current/system_state.md b/_blueprints/current/system_state.md",
+                    "--- a/_blueprints/current/system_state.md",
+                    "+++ b/_blueprints/current/system_state.md",
+                    "@@",
+                    "+Mismatched target should not apply.",
+                    "",
+                ]
+            )
+            _write_proposal(
+                root,
+                "approved",
+                "bp-target-mismatch",
+                {
+                    "status": "approved",
+                    "type": "blueprint_update",
+                    "component": "dashboard",
+                    "proposed_files": ["_blueprints/current/dashboard_state.md"],
+                    "approved_diff": mismatch_diff,
+                    "transitions": [
+                        {
+                            "status": "approved",
+                            "timestamp": "2026-05-16T10:00:00Z",
+                            "actor": "Britton",
+                        }
+                    ],
+                },
+            )
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                with self.assertRaises(CartographerApplyError) as raised:
+                    apply_approved_doc_proposal(
+                        proposal_id="bp-target-mismatch",
+                        approved=True,
+                        approved_by="safety-test",
+                    )
+            self.assertEqual(blueprint.read_text(encoding="utf-8"), before)
+
+        self.assertEqual(raised.exception.reason_code, "approved_diff_path_mismatch")
+
     def test_cartographer_safety_manifest_keeps_bypass_and_write_controls_locked(self) -> None:
         with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": ""}, clear=False):
             payload = build_cartographer_status()
