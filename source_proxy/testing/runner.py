@@ -31,6 +31,7 @@ PROFILE_CARTOGRAPHER_SAFETY = "cartographer-safety"
 PROFILE_CARTOGRAPHER_SOAK_SNAPSHOT = "cartographer-soak-snapshot"
 PROFILE_GLOBAL_SAFETY_REGRESSION = "global-safety-regression"
 PROFILE_DEPENDENCY_ENVIRONMENT_CHECKS = "dependency-environment-checks"
+PROFILE_MOBILE_LAN_TAILSCALE_QA = "mobile-lan-tailscale-qa"
 DEFAULT_SCOUT_BASE_URL = "http://localhost:8077"
 DEFAULT_CARTOGRAPHER_DASHBOARD_URL = "http://localhost:3000"
 SCOUT_CONTAINER_NAME = "scout_v0_1"
@@ -79,6 +80,18 @@ DASHBOARD_SMOKE_TEST_FILES = [
     "src/components/dashboard/__tests__/HomelabScoutIntelligenceWidget.test.tsx",
 ]
 
+DASHBOARD_MOBILE_QA_TEST_FILES = [
+    "src/components/dashboard/__tests__/SpiritWorkspaceShell-visual-viewport.test.ts",
+    "src/components/dashboard/__tests__/SpiritWorkspaceShell-scroll-policy.test.ts",
+    "src/components/dashboard/__tests__/SpiritWorkspaceShell.test.tsx",
+    "src/components/dashboard/__tests__/WorkspacePrimarySidebar.test.tsx",
+    "src/components/dashboard/__tests__/HomelabCartographerWidget.test.tsx",
+    "src/components/dashboard/__tests__/HomelabBlueprintReviewWidget.test.tsx",
+    "src/components/dashboard/__tests__/HomelabTestRunnerWidget.test.tsx",
+    "src/components/dashboard/demo-v4/DashboardDemoV4.test.tsx",
+    "src/components/dashboard/demo-v4/DashboardDemoV4ThemePicker.test.tsx",
+]
+
 
 def run_runner_profile(*, profile: str) -> dict[str, Any]:
     if profile == PROFILE_PROXY_SMOKE:
@@ -107,6 +120,8 @@ def run_runner_profile(*, profile: str) -> dict[str, Any]:
         return _run_global_safety_regression_profile()
     if profile == PROFILE_DEPENDENCY_ENVIRONMENT_CHECKS:
         return _run_dependency_environment_checks_profile()
+    if profile == PROFILE_MOBILE_LAN_TAILSCALE_QA:
+        return _run_mobile_lan_tailscale_qa_profile()
     raise ValueError(f"Unknown runner profile: {profile}")
 
 
@@ -819,6 +834,45 @@ def _run_dependency_environment_checks_profile() -> dict[str, Any]:
     }
 
 
+def _run_mobile_lan_tailscale_qa_profile() -> dict[str, Any]:
+    before = _git_status_short()
+    before_head = _git_head()
+    dashboard_tests = _run_dashboard_mobile_qa_tests()
+    approval_safety = _dashboard_approval_safety_check()
+    network = _lan_tailscale_reachability_check()
+    after = _git_status_short()
+    after_head = _git_head()
+    status_delta = _git_status_delta(before, after)
+    unexpected_status_delta = _unexpected_status_delta(status_delta)
+    checks = {
+        "dashboard_mobile_tests": dashboard_tests["result"] == "pass",
+        "approval_cannot_be_accidental": approval_safety["result"] == "pass",
+        "lan_tailscale_diagnostics": network["result"] == "pass",
+        "no_unexpected_mutation": not unexpected_status_delta,
+        "no_commit": before_head == after_head,
+    }
+    result = "pass" if all(checks.values()) else "fail"
+    return {
+        "profile": PROFILE_MOBILE_LAN_TAILSCALE_QA,
+        "result": result,
+        "read_only": True,
+        "dashboard_mobile_tests": dashboard_tests,
+        "approval_safety": approval_safety,
+        "network": network,
+        "checks": checks,
+        "file_change_verdict": {
+            "before": before,
+            "after": after,
+            "status_delta": status_delta,
+            "unexpected_status_delta": unexpected_status_delta,
+            "head_before": before_head,
+            "head_after": after_head,
+            "head_changed": before_head != after_head,
+        },
+        "recommendation": "ready for mobile/LAN QA" if result == "pass" else "fix mobile/LAN QA blockers",
+    }
+
+
 def _run_scout_smoke_profile(
     *,
     base_url: str = DEFAULT_SCOUT_BASE_URL,
@@ -1303,6 +1357,80 @@ def _run_dashboard_smoke_tests() -> dict[str, Any]:
         **completed,
         "result": "pass" if completed["returncode"] == 0 else "fail",
         "missing_files": [],
+    }
+
+
+def _run_dashboard_mobile_qa_tests() -> dict[str, Any]:
+    command = _vitest_command(DASHBOARD_MOBILE_QA_TEST_FILES)
+    missing_files = [
+        test_file for test_file in DASHBOARD_MOBILE_QA_TEST_FILES if not Path(test_file).is_file()
+    ]
+    if missing_files:
+        return {
+            "command": _format_command(command),
+            "result": "missing_files",
+            "returncode": None,
+            "missing_files": missing_files,
+            "stdout": "",
+            "stderr": "",
+            "error": None,
+        }
+    completed = _run_command(command, timeout_seconds=180)
+    return {
+        **completed,
+        "result": "pass" if completed["returncode"] == 0 else "fail",
+        "missing_files": [],
+    }
+
+
+def _dashboard_approval_safety_check() -> dict[str, Any]:
+    path = Path("src/components/dashboard/HomelabBlueprintReviewWidget.tsx")
+    if not path.is_file():
+        return {
+            "result": "fail",
+            "blockers": ["Blueprint Review widget missing"],
+            "warnings": [],
+            "checks": {},
+        }
+    src = path.read_text(encoding="utf-8")
+    button_count = src.count("<button")
+    typed_button_count = src.count('type="button"')
+    checks = {
+        "all_buttons_explicit_type": typed_button_count >= button_count,
+        "apply_requires_approved_status": 'activeProposal.status !== "approved"' in src,
+        "review_and_apply_routes_separate": "/review" in src and "/apply-approved" in src,
+        "commit_push_not_called": "/commit-proposals/" not in src and "/push-queue/" not in src,
+        "no_apply_commit_push_copy": "No apply, commit, or push ran" in src,
+    }
+    blockers = [name for name, passed in checks.items() if not passed]
+    return {
+        "result": "pass" if not blockers else "fail",
+        "blockers": blockers,
+        "warnings": [],
+        "checks": checks,
+    }
+
+
+def _lan_tailscale_reachability_check() -> dict[str, Any]:
+    dashboard = _http_get_text(DEFAULT_CARTOGRAPHER_DASHBOARD_URL)
+    tailscale = _run_command(["tailscale", "ip", "-4"], timeout_seconds=10)
+    warnings = []
+    if not dashboard["ok"]:
+        warnings.append("dashboard localhost unavailable; start Next before browser QA")
+    if tailscale["returncode"] != 0:
+        warnings.append("tailscale CLI unavailable or not logged in; Tailscale browser QA must run manually")
+    return {
+        "result": "pass",
+        "blockers": [],
+        "warnings": warnings,
+        "dashboard_localhost": dashboard,
+        "tailscale_ip": tailscale,
+        "manual_targets": [
+            "desktop browser at http://localhost:3000",
+            "LAN browser at http://<source-server-lan-ip>:3000",
+            "Tailscale browser at http://<tailscale-ip>:3000",
+            "phone viewport or physical phone over LAN/Tailscale",
+        ],
     }
 
 
@@ -2118,6 +2246,8 @@ def _safety_verdict(smoke: dict[str, Any]) -> dict[str, bool]:
 
 
 def format_runner_report(payload: dict[str, Any]) -> str:
+    if payload["profile"] == PROFILE_MOBILE_LAN_TAILSCALE_QA:
+        return _format_mobile_lan_tailscale_qa_report(payload)
     if payload["profile"] == PROFILE_DEPENDENCY_ENVIRONMENT_CHECKS:
         return _format_dependency_environment_report(payload)
     if payload["profile"] == PROFILE_GLOBAL_SAFETY_REGRESSION:
@@ -2143,6 +2273,55 @@ def format_runner_report(payload: dict[str, Any]) -> str:
     if payload["profile"] == PROFILE_SCOUT_SOAK_SNAPSHOT:
         return _format_scout_soak_snapshot_report(payload)
     return _format_smoke_report(payload)
+
+
+def _format_mobile_lan_tailscale_qa_report(payload: dict[str, Any]) -> str:
+    dashboard = payload["dashboard_mobile_tests"]
+    approval = payload["approval_safety"]
+    network = payload["network"]
+    file_change = payload["file_change_verdict"]
+    lines = [
+        "MOBILE LAN TAILSCALE QA",
+        "",
+        f"Profile: {payload['profile']}",
+        f"Result: {payload['result'].upper()}",
+        "",
+        "Checks:",
+        *[f"- {name}: {_pass_fail(passed)}" for name, passed in payload["checks"].items()],
+        "",
+        "Dashboard mobile tests:",
+        f"- result: {dashboard['result'].upper()}",
+        f"- command: {dashboard['command']}",
+        f"- missing files: {_plain_list(dashboard.get('missing_files', []))}",
+        "",
+        "Approval safety:",
+        f"- result: {approval['result'].upper()}",
+        f"- blockers: {_plain_list(approval['blockers'])}",
+        *[f"- {name}: {_pass_fail(passed)}" for name, passed in approval["checks"].items()],
+        "",
+        "Network QA:",
+        f"- result: {network['result'].upper()}",
+        f"- blockers: {_plain_list(network['blockers'])}",
+        f"- warnings: {_plain_list(network['warnings'])}",
+        f"- dashboard localhost: {_check_status(network['dashboard_localhost'])}",
+        f"- tailscale ip: {_command_result_text(network['tailscale_ip'])}",
+        "- manual targets:",
+        *[f"  - {target}" for target in network["manual_targets"]],
+        "",
+        "Mutation verdict:",
+        f"- unexpected status delta: {_plain_list(file_change['unexpected_status_delta'])}",
+        f"- head before: {file_change.get('head_before') or 'unknown'}",
+        f"- head after: {file_change.get('head_after') or 'unknown'}",
+        f"- head changed: {_bool_text(file_change['head_changed'])}",
+    ]
+    stdout_tail = _output_tail(dashboard.get("stdout", ""), max_lines=10)
+    stderr_tail = _output_tail(dashboard.get("stderr", ""), max_lines=10)
+    if stdout_tail:
+        lines.extend(["", "dashboard stdout:", stdout_tail])
+    if stderr_tail:
+        lines.extend(["", "dashboard stderr:", stderr_tail])
+    lines.extend(["", f"Recommendation: {payload['recommendation']}"])
+    return "\n".join(lines)
 
 
 def _format_dependency_environment_report(payload: dict[str, Any]) -> str:
