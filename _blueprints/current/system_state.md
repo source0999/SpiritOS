@@ -231,3 +231,9 @@ Next step requires explicit permission: begin Option C, Read-Only Architect Cont
 - Component: source-proxy.
 - Changed files: source_proxy/testing/runner.py, source_proxy/tests/test_proxy_runner.py.
 - Manual check: confirm this blueprint still matches the changed implementation.
+
+### Cartographer Review Note
+- Reason: component_code_changed.
+- Component: source-proxy.
+- Changed files: source_proxy/testing/runner.py.
+- Manual check: confirm this blueprint still matches the changed implementation.
