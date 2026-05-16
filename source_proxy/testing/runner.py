@@ -2272,6 +2272,8 @@ def _format_global_safety_regression_report(payload: dict[str, Any]) -> str:
         "Mutation verdict:",
         f"- changed by test run: {_bool_text(file_change['changed_by_test_run'])}",
         f"- unexpected status delta: {_plain_list(file_change['unexpected_status_delta'])}",
+        f"- head before: {file_change.get('head_before') or 'unknown'}",
+        f"- head after: {file_change.get('head_after') or 'unknown'}",
         f"- head changed: {_bool_text(file_change['head_changed'])}",
         "",
         "Checks:",
