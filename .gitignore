@@ -85,3 +85,9 @@ scout/data.backup-*/
 # Local Scout virtualenv and backups
 scout/.venv/
 scout/data.backup-*/
+
+# Local generated/runtime artifacts
+scout/.venv/
+scout/data.backup-*/
+tmp/
+data/source-proxy/visual-index/
