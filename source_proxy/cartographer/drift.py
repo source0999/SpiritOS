@@ -67,6 +67,35 @@ def detect_blueprint_drift() -> list[DriftFinding]:
         ):
             _append_unique(findings, seen, finding)
 
+        for finding in _cartographer_api_runbook_gap(
+            project_id=project_id,
+            blueprints=project_blueprints,
+            changed_files=changed_files,
+            blueprint_changed=blueprint_changed,
+        ):
+            _append_unique(findings, seen, finding)
+
+        for finding in _dashboard_qa_gap(
+            project_id=project_id,
+            blueprints=project_blueprints,
+            changed_files=changed_files,
+            blueprint_changed=blueprint_changed,
+        ):
+            _append_unique(findings, seen, finding)
+
+        for finding in _safety_test_gap(
+            project_id=project_id,
+            changed_files=changed_files,
+        ):
+            _append_unique(findings, seen, finding)
+
+        for finding in _scout_doc_drift(
+            project_id=project_id,
+            changed_files=changed_files,
+            blueprint_changed=blueprint_changed,
+        ):
+            _append_unique(findings, seen, finding)
+
     return findings
 
 
@@ -232,6 +261,142 @@ def _api_qa_gap(
     ]
 
 
+def _cartographer_api_runbook_gap(
+    *,
+    project_id: str,
+    blueprints: list[BlueprintRecord],
+    changed_files: list[str],
+    blueprint_changed: set[str],
+) -> list[DriftFinding]:
+    route_changes = [
+        path
+        for path in changed_files
+        if path.startswith("src/app/v1/cartographer/")
+    ]
+    if not route_changes or _runbook_changed(changed_files):
+        return []
+
+    runbooks = [
+        blueprint.blueprint_id
+        for blueprint in blueprints
+        if blueprint.status == "runbook" and blueprint.blueprint_id not in blueprint_changed
+    ]
+    if not runbooks:
+        return []
+
+    return [
+        _finding(
+            project_id=project_id,
+            component="cartographer-api-bridge",
+            reason="runbook_gap",
+            affected_blueprints=runbooks,
+            changed_files=route_changes,
+            severity="action_recommended",
+        )
+    ]
+
+
+def _dashboard_qa_gap(
+    *,
+    project_id: str,
+    blueprints: list[BlueprintRecord],
+    changed_files: list[str],
+    blueprint_changed: set[str],
+) -> list[DriftFinding]:
+    dashboard_changes = [
+        path
+        for path in changed_files
+        if path.startswith("src/components/dashboard/")
+    ]
+    if not dashboard_changes or _runbook_changed(changed_files):
+        return []
+
+    target_runbooks = [
+        blueprint.blueprint_id
+        for blueprint in blueprints
+        if blueprint.blueprint_id == "cartographer-dashboard-mobile-qa"
+        and blueprint.blueprint_id not in blueprint_changed
+    ]
+    if not target_runbooks:
+        return []
+
+    return [
+        _finding(
+            project_id=project_id,
+            component="dashboard",
+            reason="qa_gap",
+            affected_blueprints=target_runbooks,
+            changed_files=dashboard_changes,
+            severity="action_recommended",
+        )
+    ]
+
+
+def _safety_test_gap(
+    *,
+    project_id: str,
+    changed_files: list[str],
+) -> list[DriftFinding]:
+    safety_changes = [
+        path
+        for path in changed_files
+        if (
+            path.startswith("source_proxy/approval/")
+            or path in {
+                "source_proxy/cartographer/apply.py",
+                "source_proxy/cartographer/commit_proposals.py",
+                "source_proxy/cartographer/push_queue.py",
+                "source_proxy/cartographer/safety.py",
+            }
+        )
+    ]
+    if not safety_changes:
+        return []
+    if any(path.startswith("source_proxy/tests/") and "safety" in path for path in changed_files):
+        return []
+
+    return [
+        _finding(
+            project_id=project_id,
+            component="safety",
+            reason="safety_gap",
+            affected_blueprints=["system-state"],
+            changed_files=safety_changes,
+            severity="action_recommended",
+        )
+    ]
+
+
+def _scout_doc_drift(
+    *,
+    project_id: str,
+    changed_files: list[str],
+    blueprint_changed: set[str],
+) -> list[DriftFinding]:
+    scout_changes = [
+        path
+        for path in changed_files
+        if path.startswith("scout/") and not path.startswith("scout/docs/")
+    ]
+    if not scout_changes:
+        return []
+    if any(path.startswith("scout/docs/") or path.startswith("docs/scout") for path in changed_files):
+        return []
+    if "system-state" in blueprint_changed:
+        return []
+
+    return [
+        _finding(
+            project_id=project_id,
+            component="scout",
+            reason="scout_doc_drift",
+            affected_blueprints=["system-state"],
+            changed_files=scout_changes,
+            severity="review_suggested",
+        )
+    ]
+
+
 def _changed_blueprint_ids(
     blueprints: list[BlueprintRecord], changed_files: list[str]
 ) -> set[str]:
@@ -241,6 +406,10 @@ def _changed_blueprint_ids(
         for blueprint in blueprints
         if f"_blueprints/{blueprint.path}" in changed
     }
+
+
+def _runbook_changed(changed_files: list[str]) -> bool:
+    return any(path.startswith("_blueprints/runbooks/") for path in changed_files)
 
 
 def _finding(
@@ -264,8 +433,48 @@ def _finding(
         reason=reason,
         affected_blueprints=normalized_blueprints,
         changed_files=normalized_files,
+        message=_message_for_reason(reason),
+        evidence=_evidence_for_finding(
+            reason=reason,
+            affected_blueprints=normalized_blueprints,
+            changed_files=normalized_files,
+        ),
         severity=severity,  # type: ignore[arg-type]
     )
+
+
+def _message_for_reason(reason: str) -> str:
+    if reason == "component_code_changed":
+        return "This code changed. This blueprint may now be stale."
+    if reason == "readme_changed":
+        return "README changed. Current blueprints may need review."
+    if reason == "todo_changed":
+        return "Planning notes changed. Roadmap blueprints may need review."
+    if reason == "route_changed":
+        return "A route changed. Architecture documentation may now be stale."
+    if reason == "api_changed_without_manual_checklist_update":
+        return "An API route changed. Manual QA runbooks may need an update."
+    if reason == "runbook_gap":
+        return "A Cartographer API route changed. Operating runbooks may need an update."
+    if reason == "qa_gap":
+        return "Dashboard UI changed. Manual QA notes may need an update."
+    if reason == "safety_gap":
+        return "Safety-sensitive code changed without a matching safety test update."
+    if reason == "scout_doc_drift":
+        return "Scout changed. Scout documentation or system blueprints may need review."
+    return "Repository state changed. Blueprint review may be needed."
+
+
+def _evidence_for_finding(
+    *,
+    reason: str,
+    affected_blueprints: list[str],
+    changed_files: list[str],
+) -> list[str]:
+    evidence = [f"rule: {reason}"]
+    evidence.extend(f"changed file: {path}" for path in changed_files[:8])
+    evidence.extend(f"affected blueprint: {blueprint}" for blueprint in affected_blueprints)
+    return evidence
 
 
 def _append_unique(
@@ -278,4 +487,7 @@ def _append_unique(
 
 
 def _normalize_repo_path(path: str) -> str:
-    return path.strip().replace("\\", "/").lstrip("./")
+    normalized = path.strip().replace("\\", "/")
+    while normalized.startswith("./"):
+        normalized = normalized[2:]
+    return normalized

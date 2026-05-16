@@ -4,8 +4,9 @@ from collections import Counter
 
 from source_proxy.cartographer.blueprint_registry import list_blueprints
 from source_proxy.cartographer.drift import detect_blueprint_drift
+from source_proxy.cartographer.git_approvals import read_git_approval_records
 from source_proxy.cartographer.git_status import read_git_statuses
-from source_proxy.cartographer.models import ProjectHealth
+from source_proxy.cartographer.models import GitStatus, ProjectHealth
 from source_proxy.cartographer.project_discovery import discover_project_candidates, discover_projects
 from source_proxy.cartographer.proposals import list_proposals
 
@@ -51,6 +52,12 @@ def build_project_health() -> list[ProjectHealth]:
         blueprint_count = blueprints_by_project[project.project_id]
         pending_drift = drift_by_project[project.project_id]
         pending_proposals = proposals_by_project[project.project_id]
+        readiness = _merge_readiness(
+            project_id=project.project_id,
+            git_status=git_status,
+            pending_drift=pending_drift,
+            pending_proposals=pending_proposals,
+        )
         health.append(
             ProjectHealth(
                 project_id=project.project_id,
@@ -70,12 +77,19 @@ def build_project_health() -> list[ProjectHealth]:
                 pending_proposals=pending_proposals,
                 dirty=bool(git_status and git_status.dirty),
                 branch=git_status.branch if git_status else None,
+                merge_ready=readiness["merge_ready"],
+                merge_blockers=readiness["merge_blockers"],
+                recommended_next_step=readiness["recommended_next_step"],
+                merge_target=readiness["merge_target"],
+                pushed=readiness["pushed"],
+                checks_passed=readiness["checks_passed"],
                 markers=project.markers,
                 filters=_filters(
                     blueprint_count=blueprint_count,
                     pending_drift=pending_drift,
                     pending_proposals=pending_proposals,
                     dirty=bool(git_status and git_status.dirty),
+                    merge_ready=readiness["merge_ready"],
                 ),
                 action_taken=False,
             )
@@ -113,6 +127,7 @@ def _filters(
     pending_drift: int,
     pending_proposals: int,
     dirty: bool,
+    merge_ready: bool,
 ) -> list[str]:
     filters = ["active" if blueprint_count else "needs_approval"]
     if pending_drift:
@@ -121,4 +136,127 @@ def _filters(
         filters.append("pending_proposals")
     if dirty:
         filters.append("dirty")
+    if merge_ready:
+        filters.append("merge_ready")
     return filters
+
+
+def _merge_readiness(
+    *,
+    project_id: str,
+    git_status: GitStatus | None,
+    pending_drift: int,
+    pending_proposals: int,
+) -> dict[str, object]:
+    blockers: list[str] = []
+    if git_status is None or not git_status.available:
+        blockers.append("git status unavailable")
+        return _readiness_payload(blockers, pushed=False, checks_passed=False, merge_target=None)
+
+    merge_target = _merge_target(git_status.upstream)
+    pushed = _push_audit_exists(project_id, git_status.branch)
+    checks_passed = _latest_commit_checks_passed(project_id, git_status.branch)
+
+    if git_status.dirty:
+        blockers.append("working tree has uncommitted changes")
+    if git_status.ahead > 0:
+        blockers.append("branch has unpushed commits")
+    if git_status.behind > 0:
+        blockers.append("branch is behind upstream")
+    if not git_status.upstream:
+        blockers.append("merge target unknown")
+    if git_status.branch in {None, "main", "master", "trunk"}:
+        blockers.append("work is not on a review branch")
+    if pending_drift:
+        blockers.append("blueprint drift unresolved")
+    if pending_proposals:
+        blockers.append("proposal review still pending")
+    if not pushed:
+        blockers.append("push audit missing")
+    if not checks_passed:
+        blockers.append("required checks not recorded as passed")
+
+    return _readiness_payload(
+        blockers,
+        pushed=pushed,
+        checks_passed=checks_passed,
+        merge_target=merge_target,
+    )
+
+
+def _readiness_payload(
+    blockers: list[str],
+    *,
+    pushed: bool,
+    checks_passed: bool,
+    merge_target: str | None,
+) -> dict[str, object]:
+    return {
+        "merge_ready": not blockers,
+        "merge_blockers": blockers,
+        "recommended_next_step": _recommended_next_step(blockers),
+        "merge_target": merge_target,
+        "pushed": pushed,
+        "checks_passed": checks_passed,
+    }
+
+
+def _recommended_next_step(blockers: list[str]) -> str:
+    if not blockers:
+        return "open merge review"
+    if "working tree has uncommitted changes" in blockers:
+        return "commit or discard remaining local changes"
+    if "branch has unpushed commits" in blockers:
+        return "push branch after approval"
+    if "proposal review still pending" in blockers:
+        return "review pending Cartographer proposals"
+    if "blueprint drift unresolved" in blockers:
+        return "resolve or accept blueprint drift"
+    if "required checks not recorded as passed" in blockers:
+        return "run required checks before merge review"
+    if "merge target unknown" in blockers:
+        return "set upstream or merge target"
+    return "resolve merge blockers"
+
+
+def _merge_target(upstream: str | None) -> str | None:
+    if not upstream:
+        return None
+    remote, _separator, branch = upstream.partition("/")
+    if not remote or not branch:
+        return upstream
+    return f"{remote}/{branch}"
+
+
+def _push_audit_exists(project_id: str, branch: str | None) -> bool:
+    if not branch:
+        return False
+    return any(
+        record.get("project_id") == project_id
+        and record.get("event") == "push_approved"
+        and record.get("result") == "pushed"
+        and record.get("branch") == branch
+        for record in read_git_approval_records()
+    )
+
+
+def _latest_commit_checks_passed(project_id: str, branch: str | None) -> bool:
+    if not branch:
+        return False
+    for record in reversed(read_git_approval_records()):
+        if (
+            record.get("project_id") == project_id
+            and record.get("event") == "commit_created"
+            and record.get("branch") == branch
+        ):
+            checks = record.get("checks")
+            if not isinstance(checks, list) or not checks:
+                return False
+            required = {"git_diff_check", "blueprint_metadata_validation", "cartographer_pytest"}
+            passed = {
+                str(check.get("id"))
+                for check in checks
+                if isinstance(check, dict) and check.get("status") == "passed"
+            }
+            return required.issubset(passed)
+    return False

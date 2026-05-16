@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from collections import Counter
 from time import perf_counter
 from pathlib import Path
 
@@ -95,6 +96,8 @@ def build_repo_map_for_project(project_id: str, root: Path) -> RepoMapSummary:
     files: list[RepoMapFile] = []
     unmapped: list[UnmappedPath] = []
     skipped: set[str] = set()
+    component_counts: Counter[str] = Counter()
+    risk_counts: Counter[str] = Counter()
     symbols_indexed = 0
 
     for path in _walk_project_files(root, skipped):
@@ -104,9 +107,12 @@ def build_repo_map_for_project(project_id: str, root: Path) -> RepoMapSummary:
             break
 
         rel_path = path.relative_to(root).as_posix()
-        component_id, blueprint_id, mapped = _component_for_path(rel_path)
+        component_id, blueprint_id, risk, mapped = _component_for_path(rel_path)
+        risk_counts[risk] += 1
         if not mapped:
-            unmapped.append(UnmappedPath(path=rel_path))
+            unmapped.append(UnmappedPath(path=rel_path, risk=risk))
+        elif component_id:
+            component_counts[component_id] += 1
 
         symbols: list[str] = []
         if path.suffix in _SYMBOL_SUFFIXES and symbols_indexed < MAX_SYMBOLS:
@@ -121,9 +127,16 @@ def build_repo_map_for_project(project_id: str, root: Path) -> RepoMapSummary:
                 path=rel_path,
                 component_id=component_id,
                 blueprint_id=blueprint_id,
+                risk=risk,
                 symbols=symbols,
             )
         )
+
+    key_directories = _key_directories(files)
+    api_routes = _paths_matching(files, _is_api_route)
+    dashboard_widgets = _paths_matching(files, _is_dashboard_widget)
+    tests = _paths_matching(files, _is_test_file)
+    blueprints = _paths_matching(files, _is_blueprint_file)
 
     return RepoMapSummary(
         project_id=project_id,
@@ -134,6 +147,13 @@ def build_repo_map_for_project(project_id: str, root: Path) -> RepoMapSummary:
         symbols_indexed=symbols_indexed,
         max_files=MAX_FILES,
         max_symbols=MAX_SYMBOLS,
+        component_counts=dict(sorted(component_counts.items())),
+        risk_counts=dict(sorted(risk_counts.items())),
+        key_directories=key_directories,
+        api_routes=api_routes,
+        dashboard_widgets=dashboard_widgets,
+        tests=tests,
+        blueprints=blueprints,
         skipped=sorted(skipped),
         files=files,
         unmapped_paths=unmapped,
@@ -222,12 +242,66 @@ def _skip_reason(parts: list[str]) -> str | None:
     return None
 
 
-def _component_for_path(rel_path: str) -> tuple[str | None, str | None, bool]:
+def _component_for_path(rel_path: str) -> tuple[str | None, str | None, str, bool]:
     components, unmapped = map_paths([rel_path])
     if unmapped or not components:
-        return None, None, False
+        risk = unmapped[0].risk if unmapped else "unknown"
+        return None, None, risk, False
     component = components[0]
-    return component.component_id, component.blueprint_id, True
+    return (
+        component.component_id,
+        component.blueprint_id,
+        component.matched_path_risks.get(rel_path, component.risk),
+        True,
+    )
+
+
+def _key_directories(files: list[RepoMapFile]) -> list[str]:
+    directories: set[str] = set()
+    for item in files:
+        parts = item.path.split("/")
+        if len(parts) >= 2:
+            directories.add("/".join(parts[:2]))
+        elif parts:
+            directories.add(parts[0])
+    return sorted(directories)
+
+
+def _paths_matching(files: list[RepoMapFile], predicate: object) -> list[str]:
+    return sorted(item.path for item in files if predicate(item.path))
+
+
+def _is_api_route(path: str) -> bool:
+    return (
+        path.startswith("src/app/api/")
+        or path.startswith("src/app/v1/")
+        or path.endswith("/route.ts")
+        or path.endswith("/route.tsx")
+        or path.startswith("source_proxy/api/")
+    )
+
+
+def _is_dashboard_widget(path: str) -> bool:
+    return (
+        path.startswith("src/components/dashboard/")
+        and path.endswith((".ts", ".tsx", ".js", ".jsx"))
+    )
+
+
+def _is_test_file(path: str) -> bool:
+    name = Path(path).name.lower()
+    return (
+        "/tests/" in path
+        or "/__tests__/" in path
+        or name.startswith("test_")
+        or name.endswith(".test.ts")
+        or name.endswith(".test.tsx")
+        or name.endswith("_test.py")
+    )
+
+
+def _is_blueprint_file(path: str) -> bool:
+    return path.startswith("_blueprints/") and path.endswith(".md")
 
 
 def _extract_symbols(path: Path, limit: int) -> list[str]:

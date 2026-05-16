@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from source_proxy.cartographer.models import ProposalRecord, ProposalTransition
-from source_proxy.cartographer.proposal_previews import draft_proposals_from_drift
+from source_proxy.cartographer.proposal_previews import draft_proposals_from_drift, proposal_fingerprint
 from source_proxy.cartographer.project_discovery import discover_projects
 from source_proxy.cartographer.starter_blueprints import draft_starter_blueprint_pack_proposals
 
@@ -26,6 +26,8 @@ PROPOSAL_STATES = (
     "failed",
 )
 PENDING_PROPOSAL_STATES = {"detected", "drafted", "pending_review"}
+FALLBACK_TRANSITION_TIMESTAMP = "1970-01-01T00:00:00Z"
+FALLBACK_TRANSITION_ACTOR = "unknown"
 
 
 def list_proposals() -> list[ProposalRecord]:
@@ -44,8 +46,13 @@ def list_proposals() -> list[ProposalRecord]:
             )
 
     persisted_ids = {proposal.proposal_id for proposal in proposals}
+    persisted_fingerprints = {
+        proposal.fingerprint
+        for proposal in proposals
+        if proposal.fingerprint
+    }
     for draft in draft_proposals_from_drift():
-        if draft.proposal_id not in persisted_ids:
+        if draft.proposal_id not in persisted_ids and draft.fingerprint not in persisted_fingerprints:
             proposals.append(draft)
     for starter_pack in draft_starter_blueprint_pack_proposals():
         if starter_pack.proposal_id not in persisted_ids:
@@ -101,19 +108,33 @@ def _proposal_from_file(
 
     transitions = _transitions(payload.get("transitions"), status, warnings)
     proposal_id = str(payload.get("proposal_id") or _stable_proposal_id(project_id, rel_path, payload))
+    changed_files = _string_list(payload.get("changed_files"))
+    proposed_files = _string_list(payload.get("proposed_files"))
+    affected_blueprints = _string_list(payload.get("affected_blueprints"))
+    proposal_type = str(payload.get("type") or "blueprint_update")
+    component = str(payload.get("component") or "unknown")
+    fingerprint = str(payload.get("fingerprint") or _fingerprint_from_payload(
+        project_id=project_id,
+        proposal_type=proposal_type,
+        component=component,
+        payload=payload,
+        changed_files=changed_files,
+        proposed_files=proposed_files,
+        affected_blueprints=affected_blueprints,
+    ))
     applied = bool(payload.get("applied")) or status in {"applied", "commit_pending", "commit_approved", "push_pending", "push_approved", "pushed"}
 
     return ProposalRecord(
         proposal_id=proposal_id,
         project_id=project_id,
         status=status,
-        type=str(payload.get("type") or "blueprint_update"),
-        component=str(payload.get("component") or "unknown"),
+        type=proposal_type,
+        component=component,
         requires_approval=_bool(payload.get("requires_approval"), default=True),
         title=str(payload["title"]) if payload.get("title") is not None else None,
-        affected_blueprints=_string_list(payload.get("affected_blueprints")),
-        changed_files=_string_list(payload.get("changed_files")),
-        proposed_files=_string_list(payload.get("proposed_files")),
+        affected_blueprints=affected_blueprints,
+        changed_files=changed_files,
+        proposed_files=proposed_files,
         approved_diff=str(payload["approved_diff"]) if payload.get("approved_diff") is not None else None,
         diff_preview=str(payload["diff_preview"]) if payload.get("diff_preview") is not None else None,
         confidence=str(payload["confidence"]) if payload.get("confidence") is not None else None,
@@ -128,7 +149,33 @@ def _proposal_from_file(
         transitions=transitions,
         applied=applied,
         action_taken=applied,
+        fingerprint=fingerprint,
+        deduped=True,
         warnings=warnings,
+    )
+
+
+def _fingerprint_from_payload(
+    *,
+    project_id: str,
+    proposal_type: str,
+    component: str,
+    payload: dict[str, Any],
+    changed_files: list[str],
+    proposed_files: list[str],
+    affected_blueprints: list[str],
+) -> str:
+    reason = str(payload.get("reason") or "")
+    if not reason and isinstance(payload.get("rationale"), str):
+        reason = str(payload["rationale"]).split(" affected ", 1)[0]
+    return proposal_fingerprint(
+        project_id=project_id,
+        proposal_type=proposal_type,
+        component=component,
+        reason=reason or "unknown",
+        changed_files=changed_files,
+        proposed_files=proposed_files,
+        affected_blueprints=affected_blueprints,
     )
 
 
@@ -140,7 +187,13 @@ def _status_from_path(rel_path: str) -> str | None:
 def _transitions(value: Any, status: str, warnings: list[str]) -> list[ProposalTransition]:
     if not isinstance(value, list) or not value:
         warnings.append("missing_transition_history")
-        return [ProposalTransition(status=status, timestamp=None, actor=None)]
+        return [
+            ProposalTransition(
+                status=status,
+                timestamp=FALLBACK_TRANSITION_TIMESTAMP,
+                actor=FALLBACK_TRANSITION_ACTOR,
+            )
+        ]
 
     transitions: list[ProposalTransition] = []
     for item in value:
@@ -155,8 +208,12 @@ def _transitions(value: Any, status: str, warnings: list[str]) -> list[ProposalT
         transitions.append(
             ProposalTransition(
                 status=transition_status or status,
-                timestamp=str(timestamp) if timestamp is not None else None,
-                actor=str(actor) if actor is not None else None,
+                timestamp=(
+                    str(timestamp)
+                    if timestamp is not None
+                    else FALLBACK_TRANSITION_TIMESTAMP
+                ),
+                actor=str(actor) if actor is not None else FALLBACK_TRANSITION_ACTOR,
             )
         )
     return transitions

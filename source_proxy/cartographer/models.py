@@ -35,6 +35,8 @@ class CartographerProject:
     name: str
     root: str
     markers: list[str] = field(default_factory=list)
+    has_blueprints: bool = False
+    blueprint_root: str | None = None
     status: Literal["detected"] = "detected"
     write_policy: WritePolicy = "read_only"
     source_root: str | None = None
@@ -79,6 +81,8 @@ class ComponentMapping:
     paths: list[str] = field(default_factory=list)
     blueprint_id: str | None = None
     matched_paths: list[str] = field(default_factory=list)
+    risk: str = "low"
+    matched_path_risks: dict[str, str] = field(default_factory=dict)
     sandbox: bool = False
 
 
@@ -86,6 +90,7 @@ class ComponentMapping:
 class UnmappedPath:
     path: str
     reason: str = "no_component_mapping_rule"
+    risk: str = "unknown"
 
 
 @dataclass(frozen=True)
@@ -93,6 +98,7 @@ class RepoMapFile:
     path: str
     component_id: str | None = None
     blueprint_id: str | None = None
+    risk: str = "unknown"
     symbols: list[str] = field(default_factory=list)
 
 
@@ -106,6 +112,13 @@ class RepoMapSummary:
     symbols_indexed: int
     max_files: int
     max_symbols: int
+    component_counts: dict[str, int] = field(default_factory=dict)
+    risk_counts: dict[str, int] = field(default_factory=dict)
+    key_directories: list[str] = field(default_factory=list)
+    api_routes: list[str] = field(default_factory=list)
+    dashboard_widgets: list[str] = field(default_factory=list)
+    tests: list[str] = field(default_factory=list)
+    blueprints: list[str] = field(default_factory=list)
     skipped: list[str] = field(default_factory=list)
     files: list[RepoMapFile] = field(default_factory=list)
     unmapped_paths: list[UnmappedPath] = field(default_factory=list)
@@ -119,6 +132,18 @@ class GitStatus:
     dirty: bool = False
     branch: str | None = None
     changed_files: list[str] = field(default_factory=list)
+    staged_files: list[str] = field(default_factory=list)
+    unstaged_files: list[str] = field(default_factory=list)
+    untracked_files: list[str] = field(default_factory=list)
+    ahead: int = 0
+    behind: int = 0
+    upstream: str | None = None
+    is_primary_branch: bool = False
+    needs_branch_recommendation: bool = False
+    needs_commit: bool = False
+    needs_push: bool = False
+    merge_ready: bool = False
+    write_mode: str = "locked"
     last_commit: dict[str, str] | None = None
     error: str | None = None
 
@@ -131,6 +156,8 @@ class DriftFinding:
     reason: str
     affected_blueprints: list[str] = field(default_factory=list)
     changed_files: list[str] = field(default_factory=list)
+    message: str = ""
+    evidence: list[str] = field(default_factory=list)
     severity: Literal["info", "review_suggested", "action_recommended"] = "review_suggested"
     status: Literal["open"] = "open"
     dismissible: bool = True
@@ -239,6 +266,12 @@ class ProjectHealth:
     pending_proposals: int = 0
     dirty: bool = False
     branch: str | None = None
+    merge_ready: bool = False
+    merge_blockers: list[str] = field(default_factory=list)
+    recommended_next_step: str = "no action needed"
+    merge_target: str | None = None
+    pushed: bool = False
+    checks_passed: bool = False
     markers: list[str] = field(default_factory=list)
     filters: list[str] = field(default_factory=list)
     action_taken: bool = False
@@ -268,6 +301,12 @@ class CommitProposal:
     suggested_message: str = ""
     files: list[str] = field(default_factory=list)
     reason: str = ""
+    component: str = "unknown"
+    risk: str = "unknown"
+    generated: bool = False
+    staged_files: list[str] = field(default_factory=list)
+    unstaged_files: list[str] = field(default_factory=list)
+    untracked_files: list[str] = field(default_factory=list)
     editable: bool = True
     requires_approval: bool = True
     commit_enabled: bool = False
@@ -294,14 +333,19 @@ class AuditTrailEvent:
     event_id: str
     project_id: str
     event: str
+    action: str | None = None
     actor: str | None = None
     timestamp: str | None = None
     proposal_id: str | None = None
     task_id: str | None = None
+    component: str | None = None
+    reason: str | None = None
     result: str | None = None
     files: list[str] = field(default_factory=list)
+    changed_files: list[str] = field(default_factory=list)
     branch: str | None = None
     remote: str | None = None
+    commit_sha: str | None = None
     rollback_hint: str | None = None
     source: str = "cartographer"
 
@@ -335,6 +379,8 @@ class ProposalRecord:
     transitions: list[ProposalTransition] = field(default_factory=list)
     applied: bool = False
     action_taken: bool = False
+    fingerprint: str | None = None
+    deduped: bool = True
     warnings: list[str] = field(default_factory=list)
 
 

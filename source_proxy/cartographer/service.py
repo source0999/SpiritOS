@@ -89,11 +89,19 @@ def build_cartographer_project_health() -> dict[str, Any]:
 
 def build_cartographer_branch_recommendations() -> dict[str, Any]:
     recommendations = recommend_branches()
+    first = recommendations[0] if recommendations else None
     return {
         "status": "observing",
         "write_actions_enabled": False,
+        "recommended": first is not None,
+        "branch_name": first.suggested_branch if first else None,
+        "reason": first.reason if first else None,
+        "requires_approval": first.requires_approval if first else False,
         "recommendations": to_jsonable(recommendations),
         "recommendation_count": len(recommendations),
+        "approval_type": "branch_creation",
+        "approval_endpoint_template": "/v1/cartographer/branch-recommendations/{recommendation_id}/approve",
+        "branch_creation_enabled": False,
         "actions_taken": False,
         "safety": cartographer_safety_manifest(),
     }
@@ -106,6 +114,9 @@ def build_cartographer_commit_proposals() -> dict[str, Any]:
         "write_actions_enabled": False,
         "commit_proposals": to_jsonable(proposals),
         "commit_proposal_count": len(proposals),
+        "approval_type": "commit_creation",
+        "approval_endpoint_template": "/v1/cartographer/commit-proposals/{commit_proposal_id}/approve",
+        "commit_enabled": False,
         "actions_taken": False,
         "safety": cartographer_safety_manifest(),
     }
@@ -118,6 +129,9 @@ def build_cartographer_push_queue() -> dict[str, Any]:
         "write_actions_enabled": False,
         "push_queue": to_jsonable(items),
         "push_count": len(items),
+        "approval_type": "push",
+        "approval_endpoint_template": "/v1/cartographer/push-queue/{push_id}/approve",
+        "push_enabled": False,
         "actions_taken": False,
         "safety": cartographer_safety_manifest(),
     }
@@ -130,6 +144,15 @@ def build_cartographer_audit_trail() -> dict[str, Any]:
         "write_actions_enabled": False,
         "events": to_jsonable(events),
         "event_count": len(events),
+        "rollback_hints_present": all(bool(event.rollback_hint) for event in events),
+        "explainability_fields_present": all(
+            bool(event.event_id)
+            and bool(event.event)
+            and event.action is not None
+            and event.result is not None
+            and event.changed_files == event.files
+            for event in events
+        ),
         "actions_taken": False,
         "rollback_enabled": False,
         "safety": cartographer_safety_manifest(),
@@ -186,6 +209,7 @@ def build_cartographer_git() -> dict[str, Any]:
     return {
         "status": "observing",
         "write_actions_enabled": False,
+        "write_mode": "locked",
         "git_statuses": to_jsonable(statuses),
         "git": to_jsonable(statuses[0]) if statuses else to_jsonable(read_git_status()),
         "project_count": len(statuses),
@@ -219,13 +243,30 @@ def build_cartographer_reminders() -> dict[str, Any]:
 
 def build_cartographer_proposals() -> dict[str, Any]:
     proposals = list_proposals()
+    lifecycle = proposal_states()
+    fingerprints = [
+        proposal.fingerprint
+        for proposal in proposals
+        if proposal.fingerprint
+    ]
+    duplicate_proposals = len(fingerprints) - len(set(fingerprints))
     return {
         "status": "observing",
         "write_actions_enabled": False,
         "proposals": to_jsonable(proposals),
         "proposal_count": len(proposals),
         "pending_proposals": pending_proposal_count(),
-        "proposal_states": proposal_states(),
+        "deduped": duplicate_proposals == 0,
+        "duplicate_proposals_suppressed": 0,
+        "duplicate_proposals_present": duplicate_proposals,
+        "proposal_states": lifecycle,
+        "proposal_lifecycle": lifecycle,
+        "lifecycle": lifecycle,
+        "transition_audit_complete": all(
+            transition.actor and transition.timestamp
+            for proposal in proposals
+            for transition in proposal.transitions
+        ),
         "actions_taken": False,
         "safety": cartographer_safety_manifest(),
     }

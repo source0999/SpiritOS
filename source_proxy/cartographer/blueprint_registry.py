@@ -10,6 +10,23 @@ from source_proxy.cartographer.project_discovery import discover_projects
 _INDEX_ROW_RE = re.compile(r"^\|\s*`([^`]+\.md)`\s*\|\s*([^|]+?)\s*\|", re.MULTILINE)
 _FRONTMATTER_RE = re.compile(r"^---\r?\n(?P<body>.*?)\r?\n---(?:\r?\n|$)", re.DOTALL)
 _DRIFT_STATUSES = {"active", "planned", "runbook"}
+_STABLE_ID_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+_ALLOWED_DOC_TYPES = {
+    "current_state",
+    "component_blueprint",
+    "component_roadmap",
+    "runbook",
+    "phase_receipt",
+    "visual_sandbox",
+    "proposal_queue",
+    "schema",
+    "index",
+}
+_ALLOWED_WRITE_POLICIES = {
+    "proposal_only_until_dashboard_approved",
+    "historical_read_only",
+    "sandbox_proposal_only",
+}
 
 
 def list_blueprints() -> list[BlueprintRecord]:
@@ -61,6 +78,10 @@ def list_blueprints() -> list[BlueprintRecord]:
             records.append(record)
 
     return records
+
+
+def load_blueprints() -> list[BlueprintRecord]:
+    return list_blueprints()
 
 
 def count_blueprint_documents() -> int:
@@ -121,6 +142,16 @@ def _record_from_file(
     if not frontmatter:
         warnings.append("missing_frontmatter")
 
+    blueprint_id = str(frontmatter.get("blueprint_id") or _fallback_blueprint_id(rel_path))
+    if frontmatter.get("blueprint_id") is None:
+        warnings.append("missing_blueprint_id")
+    elif not _STABLE_ID_RE.match(blueprint_id):
+        warnings.append("unstable_blueprint_id")
+
+    doc_type = str(frontmatter.get("doc_type") or "unknown")
+    if doc_type != "unknown" and doc_type not in _ALLOWED_DOC_TYPES:
+        warnings.append("invalid_doc_type")
+
     status = str(frontmatter.get("status") or "unknown")
     source_of_truth = _parse_bool(frontmatter.get("source_of_truth"))
     if source_of_truth is None:
@@ -129,24 +160,32 @@ def _record_from_file(
 
     code_paths = _as_string_list(frontmatter.get("code_paths"))
     related_blueprints = _as_string_list(frontmatter.get("related_blueprints"))
+    write_policy = str(frontmatter.get("write_policy") or "proposal_only_until_dashboard_approved")
+    last_verified = (
+        str(frontmatter["last_verified"])
+        if frontmatter.get("last_verified") is not None
+        else None
+    )
+    if status == "active" and not code_paths:
+        warnings.append("active_blueprint_missing_code_paths")
+    if source_of_truth and not last_verified:
+        warnings.append("source_of_truth_missing_last_verified")
+    if write_policy not in _ALLOWED_WRITE_POLICIES:
+        warnings.append("invalid_write_policy")
 
     return BlueprintRecord(
-        blueprint_id=str(frontmatter.get("blueprint_id") or _fallback_blueprint_id(rel_path)),
+        blueprint_id=blueprint_id,
         title=str(frontmatter.get("title") or path.stem.replace("_", " ").title()),
         project_id=project_id,
         path=rel_path,
         component=str(frontmatter.get("component") or "unknown"),
-        doc_type=str(frontmatter.get("doc_type") or "unknown"),
+        doc_type=doc_type,
         status=status,
         source_of_truth=source_of_truth,
         code_paths=code_paths,
         related_blueprints=related_blueprints,
-        write_policy=str(frontmatter.get("write_policy") or "proposal_only_until_dashboard_approved"),
-        last_verified=(
-            str(frontmatter["last_verified"])
-            if frontmatter.get("last_verified") is not None
-            else None
-        ),
+        write_policy=write_policy,
+        last_verified=last_verified,
         index_classification=classification,
         used_for_drift=_used_for_drift(status, source_of_truth),
         warnings=warnings,

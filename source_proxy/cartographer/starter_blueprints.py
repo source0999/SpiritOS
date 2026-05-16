@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from hashlib import sha256
 
 from source_proxy.cartographer.models import ProjectCandidate, ProposalRecord, ProposalTransition
@@ -43,7 +44,7 @@ def _proposal_for_candidate(candidate: ProjectCandidate) -> ProposalRecord:
         transitions=[
             ProposalTransition(
                 status="drafted",
-                timestamp=None,
+                timestamp=_now_timestamp(),
                 actor="cartographer",
             )
         ],
@@ -189,3 +190,7 @@ def _todo_doc(candidate: ProjectCandidate) -> str:
 def _proposal_id(candidate: ProjectCandidate) -> str:
     key = "|".join([candidate.project_id, candidate.root, ",".join(candidate.markers)])
     return f"bp-starter-{sha256(key.encode('utf-8')).hexdigest()[:12]}"
+
+
+def _now_timestamp() -> str:
+    return datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")

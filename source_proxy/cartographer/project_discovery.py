@@ -129,12 +129,15 @@ def discover_projects() -> list[CartographerProject]:
 
             seen_roots.add(resolved)
             name = _project_name(candidate)
+            blueprint_root = _blueprint_root(candidate)
             projects.append(
                 CartographerProject(
                     project_id=_project_id(name),
                     name=name,
                     root=resolved,
                     markers=markers,
+                    has_blueprints=blueprint_root is not None,
+                    blueprint_root=blueprint_root,
                     source_root=configured_root.path,
                 )
             )
@@ -212,6 +215,9 @@ def _blocked_root_reason(path: str) -> str | None:
         for segment in path.replace("\\", "/").split("/")
         if segment and segment != ":"
     ]
+    if ".." in segments:
+        return "path_traversal_root_not_allowed"
+
     for segment in segments:
         if (
             segment in _BLOCKED_SEGMENTS
@@ -239,6 +245,8 @@ def _project_candidates(root: Path) -> list[Path]:
         return candidates
 
     for child in children:
+        if not _is_within_root(child, root):
+            continue
         if not child.is_dir() or _is_ignored_project_candidate(child):
             continue
         candidates.append(child)
@@ -256,6 +264,16 @@ def _detect_project_markers(candidate: Path) -> list[str]:
         except OSError:
             continue
     return markers
+
+
+def _blueprint_root(candidate: Path) -> str | None:
+    blueprint_path = candidate / "_blueprints"
+    try:
+        if blueprint_path.is_dir():
+            return str(blueprint_path.resolve())
+    except OSError:
+        return None
+    return None
 
 
 def _is_ignored_project_candidate(path: Path) -> bool:
@@ -277,6 +295,14 @@ def _is_ignored_project_candidate(path: Path) -> bool:
     }:
         return True
     return _blocked_root_reason(str(path)) is not None
+
+
+def _is_within_root(path: Path, root: Path) -> bool:
+    try:
+        path.resolve().relative_to(root.resolve())
+    except (OSError, ValueError):
+        return False
+    return True
 
 
 def _project_id(name: str) -> str:

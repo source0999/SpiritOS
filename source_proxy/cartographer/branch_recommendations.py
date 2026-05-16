@@ -5,6 +5,7 @@ from hashlib import sha256
 from source_proxy.cartographer.component_mapper import map_paths
 from source_proxy.cartographer.git_status import read_git_statuses
 from source_proxy.cartographer.models import BranchRecommendation, GitStatus
+from source_proxy.cartographer.proposals import list_proposals
 
 
 PRIMARY_BRANCHES = {"main", "master", "trunk"}
@@ -30,16 +31,19 @@ def _recommendation_for_status(git_status: GitStatus) -> BranchRecommendation | 
     current_branch = git_status.branch
     on_primary = current_branch in PRIMARY_BRANCHES
     many_changes = changed_count >= MANY_CHANGED_FILES_THRESHOLD
+    applied_proposal_component = _applied_proposal_commit_component(project_id)
+    applied_proposal_commit_needed = applied_proposal_component is not None
 
-    if not on_primary and not many_changes:
+    if not on_primary and not many_changes and not applied_proposal_commit_needed:
         return None
 
-    suggested_branch = _suggested_branch(changed_files)
+    suggested_branch = _suggested_branch(changed_files, fallback_component=applied_proposal_component)
     reason = _reason(
         current_branch=current_branch,
         changed_count=changed_count,
         on_primary=on_primary,
         many_changes=many_changes,
+        applied_proposal_commit_needed=applied_proposal_commit_needed,
     )
     return BranchRecommendation(
         recommendation_id=_recommendation_id(project_id, current_branch, suggested_branch, changed_files),
@@ -62,21 +66,39 @@ def _reason(
     changed_count: int,
     on_primary: bool,
     many_changes: bool,
+    applied_proposal_commit_needed: bool,
 ) -> str:
     branch = current_branch or "detached"
-    if on_primary and many_changes:
-        return f"Working tree dirty on {branch} with {changed_count} changed files."
+    if applied_proposal_commit_needed and on_primary:
+        return f"Applied proposal left docs changes uncommitted on {branch}; branch creation requires approval."
+    if applied_proposal_commit_needed:
+        return "Applied proposal left docs changes uncommitted; checkpoint branch requires approval."
+    if many_changes:
+        return f"Working tree has {changed_count} changed files; checkpoint branch requires approval."
     if on_primary:
         return f"Working tree dirty on {branch}; branch creation requires approval."
     return f"Working tree has {changed_count} changed files; checkpoint branch requires approval."
 
 
-def _suggested_branch(changed_files: list[str]) -> str:
+def _suggested_branch(changed_files: list[str], *, fallback_component: str | None = None) -> str:
     components, _unmapped = map_paths(
         [path for path in changed_files if not path.startswith("_blueprints/")]
     )
-    component = components[0].component_id if components else "work"
+    component = components[0].component_id if components else fallback_component or "work"
+    if component == "scout":
+        return "scout/source-gate-polish"
+    if component == "source-proxy":
+        return "proxy/runner-closeout"
+    if component.startswith("cartographer"):
+        return "cartographer/scout-blueprint-review"
     return f"cartographer/{_slug(component)}-blueprint-review"
+
+
+def _applied_proposal_commit_component(project_id: str) -> str | None:
+    for proposal in list_proposals():
+        if proposal.project_id == project_id and proposal.status == "applied" and proposal.applied:
+            return proposal.component
+    return None
 
 
 def _recommendation_id(
