@@ -1,3 +1,0 @@
-{"action": "modify file", "approved_at": "2026-05-12T03:14:48.451850+00:00", "approved_by": "human", "changed_files": ["tmp_cwd_probe.txt"], "risk": "low", "target": "tmp_cwd_probe.txt", "task_id": "task_3701f2c5bc1c"}
-{"action": "modify file", "approved_at": "2026-05-12T03:15:00.961121+00:00", "approved_by": "human", "changed_files": ["tmp_cwd_probe.txt"], "risk": "low", "target": "tmp_cwd_probe.txt", "task_id": "task_b6e979515626"}
-{"action": "modify file", "approved_at": "2026-05-12T03:15:06.121995+00:00", "approved_by": "human", "changed_files": ["tmp_cwd_probe.txt"], "risk": "low", "target": "tmp_cwd_probe.txt", "task_id": "task_890984cacc6b"}

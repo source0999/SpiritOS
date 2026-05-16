@@ -3,12 +3,15 @@
 node_modules
 .venv-source-proxy
 .venv-source-proxy-windows
+.venv/
+**/.venv/
 __pycache__/
 *.py[cod]
 .next
 out
 *.tsbuildinfo
 .env.local
+.claude/settings.local.json
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -53,6 +56,7 @@ repomix-output*.ast*
 # Common temp
 *.log
 *.tmp
+OIWWJQ~A
 .DS_Store
 Thumbs.db
 
@@ -62,3 +66,15 @@ Thumbs.db
 .probe-*.log
 .source-proxy-*.log
 .source-proxy-*.err.log
+
+# Local Source Proxy runtime artifacts
+source_proxy/.spirit-backups/
+source_proxy/data/*.jsonl
+source_proxy/data/*.sqlite3
+source_proxy/**/__pycache__/
+source_proxy/**/*.py[cod]
+
+# Local root runtime artifacts
+.spirit-backups/
+data/*.jsonl
+data/*.sqlite3
