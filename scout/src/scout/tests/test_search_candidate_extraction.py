@@ -99,6 +99,75 @@ def test_search_result_extraction_dedupes_existing_candidates(tmp_path):
     assert extraction.candidates_created == 0
 
 
+def test_search_result_extraction_dedupes_duplicate_results_in_same_payload(tmp_path):
+    db_path = _db_path(tmp_path)
+    job = create_discovery_job(db_path, query="official FastAPI release notes")
+    result = SearchResult(
+        ok=True,
+        searched=True,
+        provider="searxng",
+        query=job.query,
+        elapsed_ms=1,
+        sources=[
+            SearchSource(
+                title="FastAPI Release Notes",
+                url="https://fastapi.tiangolo.com/release-notes/?utm_source=x",
+            ),
+            SearchSource(
+                title="FastAPI Release Notes duplicate",
+                url="http://fastapi.tiangolo.com/release-notes/#latest",
+            ),
+            SearchSource(
+                title="FastAPI GitHub",
+                url="https://github.com/FastAPI/FastAPI/issues/123",
+            ),
+            SearchSource(
+                title="FastAPI GitHub duplicate",
+                url="https://github.com/fastapi/fastapi",
+            ),
+        ],
+    )
+
+    extraction = create_candidates_from_search_result(db_path, job=job, result=result)
+
+    assert extraction.candidates_seen == 2
+    assert extraction.candidates_created == 2
+    assert extraction.discovery_events == 2
+    assert extraction.skipped_results == 2
+    conn = open_connection(db_path)
+    try:
+        candidates = conn.execute(
+            """
+            SELECT canonical_uri, discovered_from_uri, reason_codes_json, metadata_json
+            FROM source_candidates
+            ORDER BY canonical_uri
+            """
+        ).fetchall()
+        events = conn.execute(
+            """
+            SELECT canonical_uri, source_uri, discovery_kind
+            FROM source_discovery_events
+            ORDER BY canonical_uri
+            """
+        ).fetchall()
+    finally:
+        conn.close()
+
+    assert [row["canonical_uri"] for row in candidates] == [
+        "github://fastapi/fastapi",
+        "https://fastapi.tiangolo.com/release-notes",
+    ]
+    assert all(row["discovered_from_uri"] == f"search://{job.job_id}" for row in candidates)
+    assert all("discovered_from_search_result" in row["reason_codes_json"] for row in candidates)
+    assert all(job.job_id in row["metadata_json"] for row in candidates)
+    assert [row["canonical_uri"] for row in events] == [
+        "github://fastapi/fastapi",
+        "https://fastapi.tiangolo.com/release-notes",
+    ]
+    assert all(row["source_uri"] == f"search://{job.job_id}" for row in events)
+    assert all(row["discovery_kind"] == "search_result" for row in events)
+
+
 def test_search_result_extraction_skips_already_active_sources(tmp_path):
     db_path = _db_path(tmp_path)
     job = create_discovery_job(db_path, query="FastAPI repo")
@@ -142,4 +211,69 @@ def test_search_result_extraction_reports_provider_failure_without_candidates(tm
     assert extraction.errors == [
         {"provider": "searxng", "error": "searxng_unreachable", "detail": "down"}
     ]
+    assert extraction.candidate_limit == 10
     assert all(value == 0 for value in candidate_counts(db_path).values())
+
+
+def test_search_result_extraction_enforces_candidate_cap_and_audits_events(tmp_path):
+    db_path = _db_path(tmp_path)
+    job = create_discovery_job(
+        db_path,
+        query="official Python projects",
+        max_results=5,
+        budget=5,
+    )
+    result = SearchResult(
+        ok=True,
+        searched=True,
+        provider="searxng",
+        query=job.query,
+        elapsed_ms=1,
+        sources=[
+            SearchSource(title="FastAPI", url="https://github.com/fastapi/fastapi"),
+            SearchSource(title="Pydantic", url="https://github.com/pydantic/pydantic"),
+            SearchSource(title="Starlette", url="https://github.com/encode/starlette"),
+        ],
+    )
+
+    extraction = create_candidates_from_search_result(
+        db_path,
+        job=job,
+        result=result,
+        max_candidates=2,
+    )
+
+    assert extraction.candidate_limit == 2
+    assert extraction.candidates_seen == 2
+    assert extraction.candidates_created == 2
+    assert extraction.discovery_events == 2
+    assert extraction.skipped_results == 1
+    assert extraction.skipped_by_limit == 1
+    counts = candidate_counts(db_path)
+    assert counts["approved"] == 0
+
+    conn = open_connection(db_path)
+    try:
+        rows = conn.execute(
+            """
+            SELECT canonical_uri, metadata_json
+            FROM source_discovery_events
+            ORDER BY canonical_uri
+            """
+        ).fetchall()
+        active_count = conn.execute(
+            "SELECT COUNT(*) AS count FROM source_registry WHERE status = 'active'"
+        ).fetchone()["count"]
+    finally:
+        conn.close()
+
+    assert [row["canonical_uri"] for row in rows] == [
+        "github://fastapi/fastapi",
+        "github://pydantic/pydantic",
+    ]
+    assert active_count == 0
+    assert all('"candidate_limit": 2' in row["metadata_json"] for row in rows)
+    assert all(
+        '"activation_policy": "manual_review_required"' in row["metadata_json"]
+        for row in rows
+    )

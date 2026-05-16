@@ -291,7 +291,13 @@ def test_scout_overview_empty(tmp_path, monkeypatch):
     assert body["backlog"]["debugger_pending_packets"] == 0
     assert body["backlog"]["debugger_pending_without_verdict"] == 0
     assert body["human_summary"]["pipeline_health"] == "idle"
-    assert body["human_summary"]["memory_status"]["label"] == "Semantic memory inactive"
+    memory_status = body["human_summary"]["memory_status"]
+    assert memory_status["label"] == "Semantic memory inactive"
+    assert memory_status["state"] == "inactive"
+    assert memory_status["mode_label"] == "Inactive"
+    assert memory_status["write_enabled"] is False
+    assert "not writing into proxy memory" in memory_status["reason"]
+    assert "not writing to proxy memory" in memory_status["safety_label"]
     assert body["human_summary"]["promotion_status"]["promoted_count"] == 0
     assert body["recent"]["surfaced"] == []
     assert body["recent"]["stored"] == []
@@ -344,6 +350,10 @@ def test_scout_overview_uses_effective_status(tmp_path, monkeypatch):
     assert surfaced["_verdict"]["decision"] == "surface"
     assert surfaced["status_explanation"]["verdict_decision"] == "surface"
     assert surfaced["status_explanation"]["label"] == "Useful now"
+    assert surfaced["usefulness_label"] == "Useful now"
+    assert surfaced["usefulness_reason"] == "sentence-transformers unavailable"
+    assert surfaced["recommended_action"] == "inspect_now"
+    assert surfaced["confidence_label"] == "high"
 
 
 def test_source_trust_classifies_seed_sources():
@@ -424,6 +434,9 @@ def test_packet_status_explanation_prefers_verdict_decision_label(tmp_path, monk
     assert body["status_explanation"]["verdict_decision"] == "store"
     assert body["status_explanation"]["label"] == "Saved for later"
     assert body["human_status_label"] == "Saved for later"
+    assert body["usefulness_label"] == "Saved for later"
+    assert body["recommended_action"] == "save_for_later"
+    assert body["confidence_label"] == "medium"
 
 
 def test_packet_embedding_skipped_gets_human_semantic_memory_label(tmp_path, monkeypatch):
@@ -470,6 +483,11 @@ def test_packet_explorer_returns_human_source_status_and_findings(tmp_path, monk
     assert item["trust_label"] == "Official GitHub repo"
     assert item["effective_status"] == "surfaced"
     assert item["human_status_label"] == "Useful now"
+    assert item["usefulness_label"] == "Useful now"
+    assert item["usefulness_reason"] == "sentence-transformers unavailable"
+    assert item["recommended_action"] == "inspect_now"
+    assert item["confidence_label"] == "high"
+    assert item["source_trust_label"] == "Official GitHub repo"
     assert item["summary"]
     assert item["entity_tags"] == ["fastapi", "release"]
     assert item["confidence_score"] == 0.75

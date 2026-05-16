@@ -31,14 +31,16 @@ def test_source_candidates_api_lists_counts_and_filters(tmp_path, monkeypatch):
         source_kind="github_repo",
         status="recommended",
         confidence_score=0.98,
-        reason_codes=["official_repo_pattern"],
+        trust_tier="official",
+        reason_codes=["official_repo_pattern", "metadata_sufficient"],
     )
     upsert_candidate(
         settings.database_path,
-        display_uri="https://example.com/blog",
+        display_uri="https://casino.example.com/blog",
         source_kind="blog",
-        status="needs_review",
-        confidence_score=0.65,
+        status="stored",
+        confidence_score=0.2,
+        reason_codes=["spam_pattern_detected"],
     )
 
     body = client.get(
@@ -47,11 +49,46 @@ def test_source_candidates_api_lists_counts_and_filters(tmp_path, monkeypatch):
     ).json()
 
     assert body["counts"]["recommended"] == 1
-    assert body["counts"]["needs_review"] == 1
+    assert body["counts"]["needs_review"] == 0
+    assert body["counts"]["stored"] == 1
     assert [item["candidate_id"] for item in body["candidates"]] == [
         recommended.candidate_id
     ]
-    assert body["candidates"][0]["reason_codes"] == ["official_repo_pattern"]
+    assert body["candidates"][0]["reason_codes"] == [
+        "official_repo_pattern",
+        "metadata_sufficient",
+    ]
+    assert body["candidates"][0]["automation_tier"] == "low_risk_recommended"
+    assert body["candidates"][0]["automation_label"] == "Low-risk recommended"
+    assert body["candidates"][0]["suggested_action"] == "manual_review_for_approval"
+    assert body["candidates"][0]["auto_approval_dry_run"] is True
+    assert body["candidates"][0]["auto_approval_dry_run_reason"] == "eligible_dry_run_only"
+    assert body["candidates"][0]["auto_approval_dry_run_label"] == (
+        "Would be eligible for auto-approval dry run"
+    )
+    assert body["review_bundles"] == [
+        {
+            "key": "official_github_repos",
+            "label": "Official GitHub repos",
+            "description": "High-confidence GitHub repositories with official project signals.",
+            "count": 1,
+            "candidate_ids": [recommended.candidate_id],
+        }
+    ]
+
+    all_candidates = client.get("/v1/scout/source-candidates").json()["candidates"]
+    noisy = next(item for item in all_candidates if item["status"] == "stored")
+    assert noisy["automation_tier"] == "noisy"
+    assert noisy["automation_label"] == "Noisy"
+    assert noisy["suggested_action"] == "review_for_rejection_or_block"
+    assert noisy["auto_approval_dry_run"] is False
+    assert noisy["auto_approval_dry_run_reason"] == "blocked_or_noisy_signal"
+    bundles = {
+        bundle["key"]: bundle
+        for bundle in client.get("/v1/scout/source-candidates").json()["review_bundles"]
+    }
+    assert bundles["official_github_repos"]["count"] == 1
+    assert bundles["block_suggested"]["count"] == 1
 
 
 def test_sources_api_lists_static_and_approved_registry_sources(tmp_path, monkeypatch):
@@ -200,6 +237,68 @@ def test_source_candidates_api_approve_reject_and_block(tmp_path, monkeypatch):
     assert block_body["poller_supported"] is None
     assert block_body["warnings"] == []
     assert block_body["candidate"]["review_history"][0]["action"] == "block"
+
+
+def test_source_candidates_api_batch_approves_selected_low_risk_only(tmp_path, monkeypatch):
+    client, settings = _client(tmp_path, monkeypatch)
+    first = upsert_candidate(
+        settings.database_path,
+        display_uri="https://github.com/fastapi/fastapi",
+        source_kind="github_repo",
+        status="recommended",
+        confidence_score=0.98,
+        trust_tier="official",
+        reason_codes=["official_repo_pattern", "metadata_sufficient"],
+    )
+    second = upsert_candidate(
+        settings.database_path,
+        display_uri="https://github.com/python/cpython",
+        source_kind="github_repo",
+        status="recommended",
+        confidence_score=0.97,
+        trust_tier="official",
+        reason_codes=["official_repo_pattern", "metadata_sufficient"],
+    )
+    noisy = upsert_candidate(
+        settings.database_path,
+        display_uri="https://casino.example.com/feed",
+        source_kind="blog",
+        status="stored",
+        confidence_score=0.2,
+        reason_codes=["spam_pattern_detected"],
+    )
+
+    blocked_response = client.post(
+        "/v1/scout/source-candidates/batch-approve",
+        json={"candidate_ids": [first.candidate_id, noisy.candidate_id], "approved_by": "tester"},
+    )
+    body = client.post(
+        "/v1/scout/source-candidates/batch-approve",
+        json={
+            "candidate_ids": [first.candidate_id, second.candidate_id],
+            "approved_by": "tester",
+            "poll_interval_minutes": 30,
+        },
+    ).json()
+    reviewed = client.get("/v1/scout/source-candidates").json()["candidates"]
+    reviewed_by_id = {item["candidate_id"]: item for item in reviewed}
+
+    assert blocked_response.status_code == 409
+    assert "not low-risk recommended" in blocked_response.json()["detail"]
+    assert body["ok"] is True
+    assert body["action"] == "batch_approve"
+    assert body["requested"] == 2
+    assert body["approved_count"] == 2
+    assert [item["canonical_uri"] for item in body["approved"]] == [
+        "github://fastapi/fastapi",
+        "github://python/cpython",
+    ]
+    assert body["approved"][0]["source"]["poll_interval_minutes"] == 30
+    assert body["warnings"] == []
+    assert reviewed_by_id[first.candidate_id]["status"] == "approved"
+    assert reviewed_by_id[first.candidate_id]["review_history"][0]["action"] == "approve"
+    assert reviewed_by_id[second.candidate_id]["review_history"][0]["reviewed_by"] == "tester"
+    assert reviewed_by_id[noisy.candidate_id]["status"] == "stored"
 
 
 def test_source_candidates_api_approve_unsupported_source_reports_poller_false(
