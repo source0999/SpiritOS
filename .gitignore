@@ -78,3 +78,6 @@ source_proxy/**/*.py[cod]
 .spirit-backups/
 data/*.jsonl
 data/*.sqlite3
+
+# Local Scout backup/data exports
+scout/data.backup-*/
