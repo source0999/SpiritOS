@@ -19,7 +19,9 @@ class _FakeResponse:
                     "summary": "Surface packet summary",
                     "impact_analysis": "Surface packet impact",
                     "source_uri": "https://example.com/surface",
-                    "_verdict": {"decision": "surface"},
+                    "timestamp": "2026-05-16T10:00:00+00:00",
+                    "entity_tags": ["FastAPI", "release-notes"],
+                    "_verdict": {"decision": "surface", "source_quality_score": 0.9},
                 },
                 {
                     "packet_id": "promote_1",
@@ -124,6 +126,21 @@ class ScoutResearchBridgeTests(unittest.IsolatedAsyncioTestCase):
             [result["scout_decision"] for result in results],
             ["surface", "promote"],
         )
+        self.assertTrue(
+            all(result["authority"] == "evidence_only" for result in results)
+        )
+        self.assertTrue(all(result["can_apply"] is False for result in results))
+        self.assertTrue(all(result["can_approve"] is False for result in results))
+        self.assertTrue(
+            all(result["can_mutate_proxy_memory"] is False for result in results)
+        )
+        first_evidence = results[0]["evidence"]
+        self.assertEqual(first_evidence["source"], "https://example.com/surface")
+        self.assertEqual(first_evidence["freshness"], "2026-05-16T10:00:00+00:00")
+        self.assertEqual(first_evidence["trust_status"], "high")
+        self.assertEqual(first_evidence["review_status"], "surface")
+        self.assertEqual(first_evidence["packet_summary"], "Surface packet summary")
+        self.assertIn("FastAPI", first_evidence["why_relevant"])
 
     async def test_admin_adds_stored_but_never_ignored_or_pending(self) -> None:
         with (

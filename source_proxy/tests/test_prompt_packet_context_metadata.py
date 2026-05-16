@@ -433,7 +433,7 @@ class PromptPacketContextMetadataTests(unittest.TestCase):
         self.assertEqual(body.get("proposed_diff"), "")
         self.assertFalse(body.get("coder_agent_local_diff"))
         self.assertTrue(body.get("manual_prompt_packet_available"))
-        self.assertEqual(body.get("reason_code"), "coder_packet_missing_context")
+        self.assertEqual(body.get("reason_code"), "target_missing")
         rd = body.get("route_decision") or {}
         self.assertEqual(rd.get("recommended_route"), "local_route")
 

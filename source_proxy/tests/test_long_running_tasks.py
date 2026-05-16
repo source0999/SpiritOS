@@ -1194,7 +1194,7 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                 approved_diff=diff,
                 target="docs/preserve.md",
             )
-            before = json.loads(applied["task"]["truncated_test_results"])
+            before = applied["task"]["ast_snapshot"]["approved_execution_evidence"]
 
             completed = record_post_apply_verification(
                 task_id,
@@ -1202,11 +1202,12 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                 confirm_expected_change_present=True,
                 confirm_no_unintended_files=True,
             )
-            after = json.loads(completed["task"]["truncated_test_results"])
+            after = completed["task"]["ast_snapshot"]["approved_execution_evidence"]
 
             self.assertEqual(after["audit"], before["audit"])
             self.assertEqual(after["backup_root"], before["backup_root"])
-            self.assertEqual(after["post_apply_verification"]["status"], "verified")
+            verification = json.loads(completed["task"]["truncated_test_results"])
+            self.assertEqual(verification["post_apply_verification"]["status"], "verified")
         finally:
             os.chdir(previous_cwd)
 

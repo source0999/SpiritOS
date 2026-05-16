@@ -1,11 +1,16 @@
 from __future__ import annotations
 
 import json
+import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
 
 from source_proxy.testing.runner import (
+    PROFILE_CARTOGRAPHER_SAFETY,
+    PROFILE_CARTOGRAPHER_SOAK_SNAPSHOT,
+    PROFILE_DEPENDENCY_ENVIRONMENT_CHECKS,
+    PROFILE_GLOBAL_SAFETY_REGRESSION,
     PROFILE_PROXY_CLOSEOUT,
     PROFILE_PROXY_REGRESSION,
     PROFILE_PROXY_SMOKE,
@@ -22,6 +27,309 @@ from source_proxy.testing.runner import (
 
 
 class ProxyRunnerTests(unittest.TestCase):
+    def test_cartographer_safety_profile_reports_pytest_and_write_verdicts(self) -> None:
+        completed = mock.Mock(returncode=0, stdout="94 passed\n", stderr="")
+
+        with mock.patch("source_proxy.testing.runner.subprocess.run") as run:
+            run.side_effect = [
+                mock.Mock(returncode=0, stdout="", stderr=""),
+                mock.Mock(returncode=0, stdout="abc123\n", stderr=""),
+                completed,
+                mock.Mock(returncode=0, stdout="", stderr=""),
+                mock.Mock(returncode=0, stdout="abc123\n", stderr=""),
+            ]
+            payload = run_runner_profile(profile=PROFILE_CARTOGRAPHER_SAFETY)
+
+        self.assertEqual(payload["result"], "pass")
+        self.assertEqual(payload["regression_tests"]["result"], "pass")
+        self.assertIn("test_cartographer_safety_audit.py", payload["regression_tests"]["command"])
+        self.assertTrue(payload["safety_verdict"]["no_unapproved_writes"])
+        self.assertTrue(payload["safety_verdict"]["no_unapproved_commits"])
+        self.assertFalse(payload["mutated"])
+        self.assertFalse(payload["applied_anything"])
+        self.assertFalse(payload["commit_ran"])
+        self.assertFalse(payload["push_ran"])
+
+    def test_cartographer_safety_report_names_expected_outcomes(self) -> None:
+        payload = {
+            "profile": PROFILE_CARTOGRAPHER_SAFETY,
+            "result": "pass",
+            "regression_tests": {
+                "command": "python -m pytest source_proxy/tests/test_cartographer_safety_audit.py",
+                "result": "pass",
+                "returncode": 0,
+                "stdout": "94 passed\n",
+                "stderr": "",
+            },
+            "safety_verdict": {
+                "no_unapproved_writes": True,
+                "no_unapproved_apply": True,
+                "no_unapproved_commits": True,
+                "no_unapproved_pushes": True,
+                "approval_bypass_locked": True,
+            },
+            "file_change_verdict": {
+                "before": "clean",
+                "after": "clean",
+                "changed_by_test_run": False,
+                "head_changed": False,
+            },
+            "expected_outcomes": [
+                "Cartographer safety audit: passed",
+                "No unapproved writes",
+                "No unapproved commits",
+                "No unapproved pushes",
+            ],
+            "recommendation": "ready for next increment",
+        }
+
+        report = format_runner_report(payload)
+
+        self.assertIn("CARTOGRAPHER SAFETY AUDIT", report)
+        self.assertIn("No unapproved writes", report)
+        self.assertIn("Recommendation: ready for next increment", report)
+
+    def test_cartographer_safety_profile_ignores_background_scout_soak_snapshot(self) -> None:
+        completed = mock.Mock(returncode=0, stdout="94 passed\n", stderr="")
+        after_status = "?? scout/soak-logs/scout-soak-snapshot-2026-05-16T212901Z.json\n"
+
+        with mock.patch("source_proxy.testing.runner.subprocess.run") as run:
+            run.side_effect = [
+                mock.Mock(returncode=0, stdout="", stderr=""),
+                mock.Mock(returncode=0, stdout="abc123\n", stderr=""),
+                completed,
+                mock.Mock(returncode=0, stdout=after_status, stderr=""),
+                mock.Mock(returncode=0, stdout="abc123\n", stderr=""),
+            ]
+            payload = run_runner_profile(profile=PROFILE_CARTOGRAPHER_SAFETY)
+
+        self.assertEqual(payload["result"], "pass")
+        self.assertFalse(payload["file_change_verdict"]["changed_by_test_run"])
+        self.assertEqual(payload["file_change_verdict"]["unexpected_status_delta"], [])
+        self.assertEqual(
+            payload["file_change_verdict"]["background_status_delta"],
+            [after_status.strip()],
+        )
+
+    def test_cartographer_soak_snapshot_writes_reliability_report(self) -> None:
+        from source_proxy.testing.runner import _run_cartographer_soak_snapshot_profile
+
+        safety = {
+            "write_policy": "read_only",
+            "approval_required_for_file_writes": True,
+            "approval_required_for_commits": True,
+            "approval_required_for_pushes": True,
+            "scout_bypass_allowed": False,
+            "source_proxy_approval_bypass_allowed": False,
+        }
+        with tempfile.TemporaryDirectory() as tmp_dir, mock.patch(
+            "source_proxy.testing.runner._git_status_short",
+            side_effect=["clean", "clean"],
+        ), mock.patch(
+            "source_proxy.testing.runner._git_head",
+            side_effect=["abc123", "abc123"],
+        ), mock.patch(
+            "source_proxy.cartographer.service.build_cartographer_status",
+            return_value={
+                "status": "observing",
+                "write_actions_enabled": False,
+                "projects": [{"project_id": "spiritos"}],
+                "blueprint_count": 8,
+                "safety": safety,
+            },
+        ), mock.patch(
+            "source_proxy.cartographer.service.build_cartographer_git",
+            return_value={
+                "git_statuses": [
+                    {
+                        "branch": "cartographer/docs-blueprint-review",
+                        "dirty": False,
+                        "changed_file_count": 0,
+                        "staged": 0,
+                        "unstaged": 0,
+                        "untracked": 0,
+                    }
+                ]
+            },
+        ), mock.patch(
+            "source_proxy.cartographer.service.build_cartographer_project_health",
+            return_value={"projects": [{"merge_ready": True, "merge_blockers": []}]},
+        ), mock.patch(
+            "source_proxy.cartographer.service.build_cartographer_proposals",
+            return_value={
+                "proposal_count": 2,
+                "pending_proposals": 0,
+                "deduped": True,
+                "duplicate_proposals_present": 0,
+            },
+        ), mock.patch(
+            "source_proxy.cartographer.service.build_cartographer_drift",
+            return_value={"drift_count": 0},
+        ), mock.patch(
+            "source_proxy.cartographer.service.build_cartographer_commit_proposals",
+            return_value={"commit_proposal_count": 0},
+        ), mock.patch(
+            "source_proxy.cartographer.service.build_cartographer_push_queue",
+            return_value={"push_count": 0},
+        ), mock.patch(
+            "source_proxy.cartographer.service.build_cartographer_audit_trail",
+            return_value={"events": [{"event": "commit_created"}, {"event": "push_approved"}]},
+        ):
+            payload = _run_cartographer_soak_snapshot_profile(output_dir=Path(tmp_dir))
+            self.assertTrue(Path(payload["snapshot_path"]).is_file())
+
+        self.assertEqual(payload["profile"], PROFILE_CARTOGRAPHER_SOAK_SNAPSHOT)
+        self.assertEqual(payload["result"], "pass")
+        self.assertEqual(payload["summary"]["proposal_count"], 2)
+        self.assertEqual(payload["summary"]["audit_event_counts"]["commit_created"], 1)
+        self.assertGreaterEqual(payload["reliability"]["score"], 90)
+        self.assertTrue(payload["mutation_boundary"]["snapshot_log_only"])
+
+    def test_cartographer_soak_snapshot_report_names_manual_outcomes(self) -> None:
+        payload = {
+            "profile": PROFILE_CARTOGRAPHER_SOAK_SNAPSHOT,
+            "result": "pass",
+            "timestamp": "2026-05-16T21:40:00+00:00",
+            "snapshot_path": "source_proxy/cartographer/soak-logs/cartographer-soak-snapshot.json",
+            "summary": {
+                "branch": "cartographer/docs-blueprint-review",
+                "dirty": False,
+                "changed_file_count": 0,
+                "blueprint_count": 8,
+                "proposal_count": 2,
+                "pending_proposals": 0,
+                "duplicate_proposals_present": 0,
+                "drift_count": 0,
+                "commit_proposal_count": 0,
+                "push_queue_count": 0,
+                "audit_event_count": 4,
+            },
+            "reliability": {"score": 95, "grade": "boring", "penalties": []},
+            "mutation_boundary": {
+                "snapshot_log_only": True,
+                "unexpected_status_delta": [],
+                "head_changed": False,
+            },
+            "warnings": [],
+            "next_actions": [
+                "Run two more cartographer-soak-snapshot checks before considering 6.21.",
+            ],
+            "expected_outcomes": [
+                "cartographer-soak-snapshot: pass",
+                "mutation boundary: snapshot log only",
+                "recommendation: ready for next increment",
+            ],
+            "recommendation": "ready for next increment",
+        }
+
+        report = format_runner_report(payload)
+
+        self.assertIn("CARTOGRAPHER SOAK SNAPSHOT", report)
+        self.assertIn("score: 95", report)
+        self.assertIn("mutation boundary: snapshot log only", report)
+        self.assertIn("Recommendation: ready for next increment", report)
+
+    def test_cartographer_soak_snapshot_watch_grade_recommends_continue_soak(self) -> None:
+        from source_proxy.testing.runner import _run_cartographer_soak_snapshot_profile
+
+        safety = {
+            "write_policy": "read_only",
+            "approval_required_for_file_writes": True,
+            "approval_required_for_commits": True,
+            "approval_required_for_pushes": True,
+            "scout_bypass_allowed": False,
+            "source_proxy_approval_bypass_allowed": False,
+        }
+        with tempfile.TemporaryDirectory() as tmp_dir, mock.patch(
+            "source_proxy.cartographer.service.build_cartographer_status",
+            return_value={
+                "status": "observing",
+                "write_actions_enabled": False,
+                "projects": [{"project_id": "spiritos"}],
+                "blueprint_count": 8,
+                "safety": safety,
+            },
+        ), mock.patch(
+            "source_proxy.cartographer.service.build_cartographer_git",
+            return_value={
+                "git_statuses": [
+                    {
+                        "branch": "cartographer/docs-blueprint-review",
+                        "dirty": True,
+                        "changed_files": ["source_proxy/cartographer/service.py"],
+                    }
+                ]
+            },
+        ), mock.patch(
+            "source_proxy.cartographer.service.build_cartographer_project_health",
+            return_value={"projects": [{"merge_ready": False, "merge_blockers": ["working tree has uncommitted changes"]}]},
+        ), mock.patch(
+            "source_proxy.cartographer.service.build_cartographer_proposals",
+            return_value={
+                "proposal_count": 12,
+                "pending_proposals": 10,
+                "deduped": True,
+                "duplicate_proposals_present": 0,
+                "proposals": [
+                    {
+                        "proposal_id": "bp-project-scout-component-code-changed-24f17bf2",
+                        "status": "drafted",
+                        "component": "scout",
+                        "risk": "medium",
+                        "changed_file_count": 29,
+                        "proposed_files": ["_blueprints/current/system_state.md"],
+                    }
+                ],
+            },
+        ), mock.patch(
+            "source_proxy.cartographer.service.build_cartographer_drift",
+            return_value={
+                "drift_count": 10,
+                "drift": [
+                    {
+                        "drift_id": "drift-scout-component-code-changed",
+                        "component": "scout",
+                        "reason": "component_code_changed",
+                        "changed_files": ["scout/src/scout/api/sources.py"],
+                    }
+                ],
+            },
+        ), mock.patch(
+            "source_proxy.cartographer.service.build_cartographer_commit_proposals",
+            return_value={
+                "commit_proposal_count": 22,
+                "commit_proposals": [
+                    {
+                        "commit_proposal_id": "commit-prop-46a7e40f39aa",
+                        "component": "scout",
+                        "risk": "medium",
+                        "suggested_message": "feat(scout): update scout",
+                        "files": ["scout/src/scout/api/sources.py"],
+                    }
+                ],
+            },
+        ), mock.patch(
+            "source_proxy.cartographer.service.build_cartographer_push_queue",
+            return_value={"push_count": 0},
+        ), mock.patch(
+            "source_proxy.cartographer.service.build_cartographer_audit_trail",
+            return_value={"events": []},
+        ):
+            payload = _run_cartographer_soak_snapshot_profile(output_dir=Path(tmp_dir))
+
+        self.assertEqual(payload["result"], "pass")
+        self.assertEqual(payload["reliability"]["grade"], "watch")
+        self.assertEqual(payload["summary"]["changed_file_count"], 1)
+        self.assertEqual(payload["recommendation"], "continue soak")
+        self.assertIn("recommendation: continue soak", payload["expected_outcomes"])
+        next_actions = "\n".join(payload["next_actions"])
+        self.assertIn("bp-project-scout-component-code-changed-24f17bf2", next_actions)
+        self.assertIn("drift-scout-component-code-changed", next_actions)
+        self.assertIn("commit-prop-46a7e40f39aa", next_actions)
+        self.assertIn("/v1/cartographer/proposals", next_actions)
+        self.assertIn("/v1/cartographer/drift", next_actions)
+        self.assertIn("/v1/cartographer/commit-proposals", next_actions)
+
     def test_proxy_smoke_profile_reports_seeded_safety_pass(self) -> None:
         payload = run_runner_profile(profile=PROFILE_PROXY_SMOKE)
 
@@ -260,6 +568,210 @@ class ProxyRunnerTests(unittest.TestCase):
 
         self.assertEqual(payload["result"], "fail")
         self.assertEqual(payload["recommendation"], "fix needed")
+
+    def test_global_safety_regression_combines_required_phase_10_1_checks(self) -> None:
+        proxy_smoke = {"profile": PROFILE_PROXY_SMOKE, "result": "pass"}
+        cartographer = {"profile": PROFILE_CARTOGRAPHER_SAFETY, "result": "pass"}
+        command_result = {
+            "command": "python -m pytest test_file.py",
+            "returncode": 0,
+            "stdout": "passed\n",
+            "stderr": "",
+            "error": None,
+        }
+
+        with mock.patch(
+            "source_proxy.testing.runner._git_status_short",
+            side_effect=["clean", "clean"],
+        ), mock.patch(
+            "source_proxy.testing.runner._git_head",
+            side_effect=["abc123", "abc123"],
+        ), mock.patch(
+            "source_proxy.testing.runner._run_proxy_smoke_profile",
+            return_value=proxy_smoke,
+        ), mock.patch(
+            "source_proxy.testing.runner._run_cartographer_safety_profile",
+            return_value=cartographer,
+        ), mock.patch(
+            "source_proxy.testing.runner._run_command",
+            side_effect=[command_result, command_result, command_result],
+        ):
+            payload = run_runner_profile(profile=PROFILE_GLOBAL_SAFETY_REGRESSION)
+
+        self.assertEqual(payload["result"], "pass")
+        self.assertTrue(payload["checks"]["proxy_safety_harness"])
+        self.assertTrue(payload["checks"]["source_proxy_tests"])
+        self.assertTrue(payload["checks"]["scout_backend_tests"])
+        self.assertTrue(payload["checks"]["cartographer_safety"])
+        self.assertTrue(payload["checks"]["dashboard_smoke_tests"])
+        self.assertTrue(payload["safety_boundary"]["no_approve"])
+        self.assertFalse(payload["file_change_verdict"]["changed_by_test_run"])
+
+        report = format_runner_report(payload)
+
+        self.assertIn("GLOBAL SAFETY REGRESSION PACK", report)
+        self.assertIn("source proxy tests: PASS", report)
+        self.assertIn("Scout backend tests: PASS", report)
+        self.assertIn("dashboard smoke tests: PASS", report)
+
+    def test_global_safety_regression_fails_on_unexpected_mutation(self) -> None:
+        proxy_smoke = {"profile": PROFILE_PROXY_SMOKE, "result": "pass"}
+        cartographer = {"profile": PROFILE_CARTOGRAPHER_SAFETY, "result": "pass"}
+        command_result = {
+            "command": "python -m pytest test_file.py",
+            "returncode": 0,
+            "stdout": "passed\n",
+            "stderr": "",
+            "error": None,
+        }
+
+        with mock.patch(
+            "source_proxy.testing.runner._git_status_short",
+            side_effect=["clean", " M src/app/page.tsx"],
+        ), mock.patch(
+            "source_proxy.testing.runner._git_head",
+            side_effect=["abc123", "abc123"],
+        ), mock.patch(
+            "source_proxy.testing.runner._run_proxy_smoke_profile",
+            return_value=proxy_smoke,
+        ), mock.patch(
+            "source_proxy.testing.runner._run_cartographer_safety_profile",
+            return_value=cartographer,
+        ), mock.patch(
+            "source_proxy.testing.runner._run_command",
+            side_effect=[command_result, command_result, command_result],
+        ):
+            payload = run_runner_profile(profile=PROFILE_GLOBAL_SAFETY_REGRESSION)
+
+        self.assertEqual(payload["result"], "fail")
+        self.assertTrue(payload["file_change_verdict"]["changed_by_test_run"])
+        self.assertEqual(payload["recommendation"], "fix needed")
+
+    def test_dependency_environment_checks_report_required_baseline(self) -> None:
+        dependency_payload = {"result": "pass", "blockers": [], "warnings": []}
+        service_payload = {
+            **dependency_payload,
+            "scout_api": {"ok": True, "status": 200, "body": {}, "error": None},
+            "searxng": {"ok": True, "status": 200, "body": {}, "error": None},
+            "dashboard": {"ok": True, "status": 200, "body": "", "error": None},
+        }
+        environment_payload = {
+            **dependency_payload,
+            "spirit_project_paths": ["/repo"],
+            "missing_spirit_project_paths": [],
+            "source_proxy_origin": None,
+            "scout_api_url": "http://localhost:8077",
+        }
+        python_payload = {
+            "result": "pass",
+            "blockers": [],
+            "imports": {"returncode": 0, "stdout": "ok", "stderr": "", "error": None},
+            "pip_check": {"returncode": 0, "stdout": "ok", "stderr": "", "error": None},
+        }
+        node_payload = {
+            "result": "pass",
+            "blockers": [],
+            "missing_paths": [],
+            "checks": {
+                "node": {"returncode": 0, "stdout": "v20", "stderr": "", "error": None},
+                "typescript": {"returncode": 0, "stdout": "Version 5", "stderr": "", "error": None},
+                "vitest": {"returncode": 0, "stdout": "vitest/4", "stderr": "", "error": None},
+                "eslint": {"returncode": 0, "stdout": "v9", "stderr": "", "error": None},
+            },
+        }
+
+        with mock.patch(
+            "source_proxy.testing.runner._git_status_short",
+            side_effect=["clean", "clean"],
+        ), mock.patch(
+            "source_proxy.testing.runner._git_head",
+            side_effect=["abc123", "abc123"],
+        ), mock.patch(
+            "source_proxy.testing.runner._python_dependency_check",
+            return_value=python_payload,
+        ), mock.patch(
+            "source_proxy.testing.runner._node_dependency_check",
+            return_value=node_payload,
+        ), mock.patch(
+            "source_proxy.testing.runner._service_availability_check",
+            return_value=service_payload,
+        ), mock.patch(
+            "source_proxy.testing.runner._environment_variable_check",
+            return_value=environment_payload,
+        ), mock.patch(
+            "source_proxy.testing.runner._database_freshness_check",
+            return_value={**dependency_payload, "databases": []},
+        ):
+            payload = run_runner_profile(profile=PROFILE_DEPENDENCY_ENVIRONMENT_CHECKS)
+
+        self.assertEqual(payload["result"], "pass")
+        self.assertTrue(payload["checks"]["python_dependencies"])
+        self.assertTrue(payload["checks"]["node_dependencies"])
+        self.assertTrue(payload["checks"]["required_services"])
+        self.assertTrue(payload["checks"]["environment_variables"])
+        self.assertTrue(payload["checks"]["databases"])
+
+        report = format_runner_report(payload)
+
+        self.assertIn("DEPENDENCY AND ENVIRONMENT CHECKS", report)
+        self.assertIn("Python dependencies:", report)
+        self.assertIn("Node dependencies:", report)
+        self.assertIn("Databases:", report)
+
+    def test_dependency_environment_checks_fail_on_missing_node_dependency(self) -> None:
+        dependency_payload = {"result": "pass", "blockers": [], "warnings": []}
+        service_payload = {
+            **dependency_payload,
+            "scout_api": {"ok": True, "status": 200, "body": {}, "error": None},
+            "searxng": {"ok": True, "status": 200, "body": {}, "error": None},
+            "dashboard": {"ok": True, "status": 200, "body": "", "error": None},
+        }
+        environment_payload = {
+            **dependency_payload,
+            "spirit_project_paths": ["/repo"],
+            "missing_spirit_project_paths": [],
+            "source_proxy_origin": None,
+            "scout_api_url": "http://localhost:8077",
+        }
+        node_payload = {
+            "result": "fail",
+            "blockers": ["missing node_modules/vitest/vitest.mjs"],
+            "missing_paths": ["node_modules/vitest/vitest.mjs"],
+            "checks": {
+                "node": {"returncode": 0, "stdout": "v20", "stderr": "", "error": None},
+                "typescript": {"returncode": None, "stdout": "", "stderr": "", "error": "skipped"},
+                "vitest": {"returncode": None, "stdout": "", "stderr": "", "error": "skipped"},
+                "eslint": {"returncode": None, "stdout": "", "stderr": "", "error": "skipped"},
+            },
+        }
+
+        with mock.patch(
+            "source_proxy.testing.runner._git_status_short",
+            side_effect=["clean", "clean"],
+        ), mock.patch(
+            "source_proxy.testing.runner._git_head",
+            side_effect=["abc123", "abc123"],
+        ), mock.patch(
+            "source_proxy.testing.runner._python_dependency_check",
+            return_value={**dependency_payload, "imports": {}, "pip_check": {}},
+        ), mock.patch(
+            "source_proxy.testing.runner._node_dependency_check",
+            return_value=node_payload,
+        ), mock.patch(
+            "source_proxy.testing.runner._service_availability_check",
+            return_value=service_payload,
+        ), mock.patch(
+            "source_proxy.testing.runner._environment_variable_check",
+            return_value=environment_payload,
+        ), mock.patch(
+            "source_proxy.testing.runner._database_freshness_check",
+            return_value={**dependency_payload, "databases": []},
+        ):
+            payload = run_runner_profile(profile=PROFILE_DEPENDENCY_ENVIRONMENT_CHECKS)
+
+        self.assertEqual(payload["result"], "fail")
+        self.assertFalse(payload["checks"]["node_dependencies"])
+        self.assertEqual(payload["recommendation"], "fix dependency or environment blockers")
 
     def test_scout_smoke_profile_reports_read_only_snapshot(self) -> None:
         responses = {
@@ -611,6 +1123,73 @@ class ProxyRunnerTests(unittest.TestCase):
         self.assertEqual(payload["findings"], [])
         self.assertEqual(payload["recommendation"], "ready for search smoke")
 
+    def test_scout_search_diagnostics_treats_missing_docker_as_warning_when_host_search_works(self) -> None:
+        compose = {
+            "ok": True,
+            "path": "scout/docker-compose.scout.yml",
+            "error": None,
+            "env_file_mentions": [".env"],
+            "search_env_wired": True,
+            "searxng_url_wired": True,
+        }
+        docker_error = (
+            "failed to connect to the docker API at npipe:////./pipe/dockerDesktopLinuxEngine; "
+            "check if the path is correct and if the daemon is running"
+        )
+        unavailable = {
+            "command": "docker exec scout_v0_1 env",
+            "returncode": 1,
+            "stdout": "",
+            "stderr": docker_error,
+            "error": None,
+            "keys": [],
+            "search_enabled_present": False,
+            "searxng_url_present": False,
+        }
+        host = {
+            "ok": True,
+            "status": 200,
+            "url": "http://localhost:8080/search?q=fastapi&format=json",
+            "body": {"results": [{"url": "https://fastapi.tiangolo.com"}]},
+            "error": None,
+        }
+        probe = {
+            "ok": False,
+            "status": None,
+            "url": "http://searxng:8080/search?q=fastapi&format=json",
+            "body": {},
+            "returncode": 1,
+            "stdout": "",
+            "stderr": docker_error,
+            "error": docker_error,
+        }
+
+        with mock.patch(
+            "source_proxy.testing.runner._inspect_scout_compose",
+            return_value=compose,
+        ), mock.patch(
+            "source_proxy.testing.runner._inspect_scout_container_env",
+            return_value=unavailable,
+        ), mock.patch(
+            "source_proxy.testing.runner._inspect_scout_container_settings",
+            return_value=unavailable,
+        ), mock.patch(
+            "source_proxy.testing.runner._http_get_json",
+            return_value=host,
+        ), mock.patch(
+            "source_proxy.testing.runner._probe_container_url",
+            return_value=probe,
+        ):
+            payload = run_runner_profile(profile=PROFILE_SCOUT_SEARCH_DIAGNOSTICS)
+
+        self.assertEqual(payload["result"], "pass")
+        self.assertEqual(payload["findings"], [])
+        self.assertIn(
+            "docker unavailable; skipped Scout container SearXNG probes",
+            payload["warnings"],
+        )
+        self.assertIn("Warnings:", format_runner_report(payload))
+
     def test_scout_compose_wires_search_environment(self) -> None:
         from source_proxy.testing.runner import _inspect_scout_compose
 
@@ -764,7 +1343,7 @@ class ProxyRunnerTests(unittest.TestCase):
         self.assertEqual(payload["result"], "fail")
         self.assertFalse(payload["invariants"]["preview_does_not_create_candidates"])
 
-    def test_scout_search_smoke_report_includes_create_job_error_detail(self) -> None:
+    def test_scout_search_smoke_reports_budget_blocked_create_job(self) -> None:
         candidates = {
             "ok": True,
             "status": 200,
@@ -798,8 +1377,12 @@ class ProxyRunnerTests(unittest.TestCase):
 
         report = format_runner_report(payload)
 
-        self.assertEqual(payload["result"], "fail")
+        self.assertEqual(payload["result"], "blocked_by_budget")
+        self.assertEqual(payload["summary"]["blocked_reason"], "daily_limit_reached")
         self.assertIn("create discovery job: FAIL (422): daily discovery job limit reached", report)
+        self.assertIn("Result: BLOCKED_BY_BUDGET", report)
+        self.assertIn("blocked reason: daily_limit_reached", report)
+        self.assertIn("wait for the next UTC budget reset", report)
 
     def test_scout_soak_snapshot_writes_timestamped_report(self) -> None:
         import tempfile
@@ -887,6 +1470,38 @@ class ProxyRunnerTests(unittest.TestCase):
 
         self.assertEqual(payload["result"], "fail")
         self.assertIn("recent docker logs contain error", payload["summary"]["warnings"])
+
+    def test_scout_soak_snapshot_treats_missing_docker_logs_as_non_fatal_warning(self) -> None:
+        import tempfile
+        from source_proxy.testing.runner import _run_scout_soak_snapshot_profile
+
+        ok = {"ok": True, "status": 200, "url": "", "body": {}, "error": None}
+        logs = {
+            "command": "docker logs --tail 80 scout_v0_1",
+            "returncode": 1,
+            "stdout": "",
+            "stderr": (
+                "failed to connect to the docker API at npipe:////./pipe/dockerDesktopLinuxEngine; "
+                "check if the path is correct and if the daemon is running"
+            ),
+            "error": None,
+        }
+
+        with tempfile.TemporaryDirectory() as tmp_dir, mock.patch(
+            "source_proxy.testing.runner._http_get_json",
+            side_effect=[ok, ok, ok, ok],
+        ), mock.patch(
+            "source_proxy.testing.runner._file_size",
+            return_value={"path": "scout/data/scout.db", "size_bytes": 1234, "error": None},
+        ), mock.patch(
+            "source_proxy.testing.runner._run_command",
+            return_value=logs,
+        ):
+            payload = _run_scout_soak_snapshot_profile(output_dir=Path(tmp_dir))
+
+        self.assertEqual(payload["result"], "pass")
+        self.assertEqual(payload["recommendation"], "ready with warnings")
+        self.assertEqual(payload["summary"]["warnings"], ["docker logs command failed"])
 
     def test_scout_soak_snapshot_ignores_empty_error_counters(self) -> None:
         import tempfile

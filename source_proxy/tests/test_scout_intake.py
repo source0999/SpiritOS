@@ -23,8 +23,14 @@ def _payload(decision: str = "promote") -> bytes:
         "source_uri": "https://example.com/feed.xml",
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "entity_tags": ["example"],
-        "summary": "This is a sufficiently long packet summary for intake testing.",
-        "impact_analysis": "This is a sufficiently long impact analysis for intake testing.",
+        "summary": (
+            "This is a sufficiently long packet summary for intake testing, with enough "
+            "detail to satisfy the Scout packet schema minimum length."
+        ),
+        "impact_analysis": (
+            "This is a sufficiently long impact analysis for intake testing, with enough "
+            "detail to satisfy the Scout packet schema minimum length."
+        ),
         "confidence_score": 0.8,
         "graph_relations": [],
         "status": "debugger_pending",
@@ -96,8 +102,36 @@ class ScoutIntakeTests(unittest.TestCase):
 
             self.assertEqual(bad.status_code, 401)
             self.assertEqual(good.status_code, 200)
+            self.assertEqual(
+                good.json()["result"]["authority"],
+                "append_only_evidence",
+            )
+            self.assertFalse(good.json()["result"]["applied"])
+            self.assertFalse(good.json()["result"]["approved_proxy_action"])
             self.assertEqual(not_promote.status_code, 409)
             self.assertTrue((Path(temp_dir) / "intake.jsonl").exists())
+
+    def test_requires_explicit_intake_log_path_before_writing_memory(self) -> None:
+        body = _payload()
+        app = FastAPI()
+        app.include_router(router)
+        client = TestClient(app)
+        with patch.dict(
+            os.environ,
+            {
+                "SCOUT_PROMOTION_SIGNING_KEY": "secret",
+                "SOURCE_PROXY_SCOUT_INTAKE_LOG": "",
+            },
+            clear=False,
+        ):
+            response = client.post(
+                "/v1/scout-intake/promotion",
+                content=body,
+                headers={"X-Scout-Signature": _signature("secret", body)},
+            )
+
+        self.assertEqual(response.status_code, 503)
+        self.assertIn("SOURCE_PROXY_SCOUT_INTAKE_LOG", response.json()["detail"])
 
 
 if __name__ == "__main__":

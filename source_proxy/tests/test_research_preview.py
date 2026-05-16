@@ -65,6 +65,15 @@ class ResearchPreviewTests(unittest.IsolatedAsyncioTestCase):
                     "title": "Vite 6 release notes",
                     "url": "https://vite.dev/blog/vite6",
                     "snippet": "Latest Vite changes.",
+                    "source": "web",
+                    "evidence": {
+                        "source": "https://vite.dev/blog/vite6",
+                        "freshness": "unknown",
+                        "trust_status": "unreviewed_web_result",
+                        "review_status": "normalized_preview",
+                        "packet_summary": "Vite 6 release notes",
+                        "why_relevant": "Search result returned by the configured local research provider.",
+                    },
                 }
             ],
         )
@@ -129,6 +138,10 @@ class ResearchPreviewTests(unittest.IsolatedAsyncioTestCase):
             "repo://src/components/coding/CodingAgentInterface.tsx",
         )
         self.assertIn("history bug", sources[0]["snippet"])
+        self.assertEqual(sources[0]["source"], "repo")
+        self.assertEqual(sources[0]["evidence"]["trust_status"], "workspace")
+        self.assertEqual(sources[0]["evidence"]["review_status"], "repo_first_match")
+        self.assertIn("relevance score", sources[0]["evidence"]["why_relevant"])
 
     async def test_repo_research_finds_project_root_when_proxy_starts_in_source_proxy(
         self,

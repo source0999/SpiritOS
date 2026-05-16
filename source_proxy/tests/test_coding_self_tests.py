@@ -263,6 +263,64 @@ class CodingSelfTests(unittest.TestCase):
         self.assertEqual(payload["mode"], "dry_run")
         self.assertFalse(payload["applied_anything"])
 
+    def test_endpoint_accepts_cartographer_safety_profile_in_dry_run_mode(self) -> None:
+        app = FastAPI()
+        app.include_router(coding_self_tests_router)
+        client = TestClient(app)
+        runner_payload = {
+            "profile": "cartographer-safety",
+            "result": "pass",
+            "checks": {
+                "pytest_passed": True,
+                "no_unapproved_writes": True,
+                "no_unapproved_commits": True,
+            },
+            "recommendation": "ready for next increment",
+        }
+
+        with mock.patch(
+            "source_proxy.api.coding_self_tests.run_runner_profile",
+            return_value=runner_payload,
+        ) as run_profile:
+            response = client.post(
+                "/v1/coding/self-tests/run",
+                json={"profile": "cartographer-safety", "mode": "dry_run"},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        run_profile.assert_called_once_with(profile="cartographer-safety")
+        payload = response.json()
+        self.assertEqual(payload["profile"], "cartographer-safety")
+        self.assertEqual(payload["mode"], "dry_run")
+        self.assertFalse(payload["applied_anything"])
+
+    def test_endpoint_accepts_cartographer_soak_snapshot_profile_in_dry_run_mode(self) -> None:
+        app = FastAPI()
+        app.include_router(coding_self_tests_router)
+        client = TestClient(app)
+        runner_payload = {
+            "profile": "cartographer-soak-snapshot",
+            "result": "pass",
+            "checks": {"snapshot_log_only": True},
+            "recommendation": "ready for next increment",
+        }
+
+        with mock.patch(
+            "source_proxy.api.coding_self_tests.run_runner_profile",
+            return_value=runner_payload,
+        ) as run_profile:
+            response = client.post(
+                "/v1/coding/self-tests/run",
+                json={"profile": "cartographer-soak-snapshot", "mode": "dry_run"},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        run_profile.assert_called_once_with(profile="cartographer-soak-snapshot")
+        payload = response.json()
+        self.assertEqual(payload["profile"], "cartographer-soak-snapshot")
+        self.assertEqual(payload["mode"], "dry_run")
+        self.assertFalse(payload["applied_anything"])
+
     def test_endpoint_rejects_unknown_runner_profile(self) -> None:
         app = FastAPI()
         app.include_router(coding_self_tests_router)
