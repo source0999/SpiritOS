@@ -54,3 +54,9 @@ Design reference (Vite prototype) moved to `_reference/dashboardDemo/`. Excluded
 - Component: dashboard.
 - Changed files: src/components/dashboard/HomelabBlueprintReviewWidget.tsx, src/components/dashboard/HomelabCartographerWidget.tsx, src/components/dashboard/HomelabScoutIntelligenceWidget.tsx, src/components/dashboard/HomelabTestRunnerWidget.tsx, src/components/dashboard/ScoutIntelligenceCenter.tsx, src/components/dashboard/__tests__/HomelabBlueprintReviewWidget.test.tsx, src/components/dashboard/__tests__/HomelabScoutIntelligenceWidget.test.tsx, src/components/dashboard/__tests__/HomelabTestRunnerWidget.test.tsx.
 - Manual check: confirm this blueprint still matches the changed implementation.
+
+### Cartographer Review Note
+- Reason: component_code_changed.
+- Component: dashboard.
+- Changed files: src/components/dashboard/ScoutIntelligenceCenter.tsx.
+- Manual check: confirm this blueprint still matches the changed implementation.
