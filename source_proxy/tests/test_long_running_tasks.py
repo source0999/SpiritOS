@@ -507,6 +507,21 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
         )
         self.assertEqual(advanced["task"]["current_agent_role"], "coder")
 
+    def test_architect_blocks_vague_write_without_llm_target_guess(self) -> None:
+        created = create_long_running_task(
+            "Make a small improvement to the docs explaining approval safety."
+        )
+        task_id = created["task"]["id"]
+
+        with mock.patch("source_proxy.planning.architect.plan_task_with_llm") as llm_mock:
+            advanced = advance_long_running_task(task_id)
+
+        llm_mock.assert_not_called()
+        self.assertEqual(advanced["task"]["status"], "blocked")
+        self.assertEqual(advanced["task"]["architect_status"], "blocked")
+        self.assertEqual(advanced["task"]["architect_reason"], "target_unresolved")
+        self.assertFalse(advanced["task"]["writes_allowed"])
+
     def test_approved_execution_applies_verified_diff_and_audits(self) -> None:
         previous_cwd = os.getcwd()
         audit_path = os.path.join(self._tempdir.name, "audit.jsonl")

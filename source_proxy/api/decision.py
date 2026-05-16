@@ -38,11 +38,13 @@ from source_proxy.decision.recommendation import (
 )
 from source_proxy.decision.router import (
     DecisionInput,
+    TARGET_HARD_BLOCK_REASON_CODES,
     _parse_explicit_target_file_line,
     decide_route,
     enrich_route_decision_with_research,
 )
 from source_proxy.planning.plan import load_plan, task_spec_from_packet, task_spec_from_plan
+from source_proxy.safety.paths import unsafe_target_from_task
 
 router = APIRouter(prefix="/v1/decisions")
 
@@ -262,26 +264,41 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
         if isinstance(route_reasons_raw, list)
         else []
     )
-    target_gate_blocked = "target_unresolved" in route_reasons or "target_missing" in route_reasons
+    unsafe_target = unsafe_target_from_task(reset_request.task, _workspace_root())
+    hard_target_reason = _first_target_hard_block_reason(route_reasons)
+    target_gate_blocked = bool(
+        hard_target_reason
+        or "target_unresolved" in route_reasons
+        or "target_missing" in route_reasons
+    )
     if _route_payload_requests_coder_agent_diff(route_payload) and (
         reset_request.wants_implementation or bool(explicit_target)
     ):
         if target_gate_blocked:
             missing = "target_missing" in route_reasons
-            rc = "target_missing" if missing else "target_unresolved"
+            rc = hard_target_reason or ("target_missing" if missing else "target_unresolved")
+            blocked_target = unsafe_target.path if unsafe_target is not None else explicit_target
             blocked = (
-                f"Resolved target {explicit_target!r} is not an existing file under the workspace."
-                if missing and explicit_target
-                else "No safe implementation file could be resolved from the task text. Add a `Target file:` line or mention an existing repo-relative path."
+                _target_safety_blocked_reason(rc, blocked_target)
+                if hard_target_reason
+                else (
+                    f"Resolved target {explicit_target!r} is not an existing file under the workspace."
+                    if missing and explicit_target
+                    else "No safe implementation file could be resolved from the task text. Add a `Target file:` line or mention an existing repo-relative path."
+                )
             )
             needed = (
-                "Create the missing file or fix the path spelling, then retry."
-                if missing
-                else "Embed a concrete repo-relative path (for example docs/phase-8-manual-check.md) or a Target file: line."
+                _target_safety_needed_context(rc)
+                if hard_target_reason
+                else (
+                    "Create the missing file or fix the path spelling, then retry."
+                    if missing
+                    else "Embed a concrete repo-relative path (for example docs/phase-8-manual-check.md) or a Target file: line."
+                )
             )
             coder = {
                 "proposed_diff": "",
-                "target": explicit_target if missing else "",
+                "target": blocked_target if hard_target_reason else explicit_target if missing else "",
                 "coder_notes": [f"CODER_BLOCKED reason_code: {rc}"],
                 "bundle": None,
                 "coder_blocked": True,
@@ -289,10 +306,10 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
                 "needed_context": needed,
                 "reason_code": rc,
                 "coder_diagnostics": {
-                    "context_mode": derive_context_mode(explicit_target),
+                    "context_mode": derive_context_mode(blocked_target),
                     "context_slices": [],
                     "forbidden_paths": list(
-                        forbidden_paths_for_context_mode(derive_context_mode(explicit_target))
+                        forbidden_paths_for_context_mode(derive_context_mode(blocked_target))
                     ),
                 },
             }
@@ -385,10 +402,13 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
         )
         verification_plan_payload = _verification_plan_payload_for_response(architect_plan)
         task_spec_payload = _task_spec_payload_for_response(architect_plan, coder_packet_payload)
-        if reason_code == "target_unresolved":
+        if reason_code in TARGET_HARD_BLOCK_REASON_CODES or reason_code == "target_unresolved":
             task_spec_payload = _blocked_task_spec_payload(
-                task_type="target_unresolved",
-                reason_code="target_unresolved",
+                task_type=reason_code,
+                reason_code=reason_code,
+                target=(target or explicit_target)
+                if reason_code in TARGET_HARD_BLOCK_REASON_CODES
+                else None,
             )
         manual_browser_prompt = _coder_agent_manual_browser_prompt_text(
             task=reset_request.task,
@@ -437,6 +457,8 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
                     else (
                         "Coder Agent mode: resolved implementation file is missing on disk; fix the path or create the file."
                         if reason_code == "target_missing"
+                        else _target_safety_constraint(reason_code)
+                        if reason_code in TARGET_HARD_BLOCK_REASON_CODES
                         else "Coder Agent mode: no safe file target could be resolved from the task text; add `Target file:` or mention an existing repo-relative path."
                         if reason_code == "target_unresolved"
                         else "Coder Agent mode: Coder repomix+LLM exceeded the proxy sync deadline; raise SOURCE_PROXY_CODER_SYNC_DEADLINE_SEC or narrow scope."
@@ -467,6 +489,8 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
                         if bundle_snapshot_drift
                         else "No unified diff was produced because the resolved target file is missing on disk."
                         if reason_code == "target_missing"
+                        else _target_safety_requested_output(reason_code)
+                        if reason_code in TARGET_HARD_BLOCK_REASON_CODES
                         else "No unified diff was produced because no safe target path could be resolved from the task."
                         if reason_code == "target_unresolved"
                         else "No unified diff was produced because Coder exceeded the proxy sync deadline."
@@ -490,6 +514,8 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
                 if subjective_improvement_needs_diff
                 else "Regenerate the Architect plan, then retry Coder Agent."
                 if bundle_snapshot_drift
+                else _target_safety_paste_back(reason_code)
+                if reason_code in TARGET_HARD_BLOCK_REASON_CODES
                 else "Raise SOURCE_PROXY_CODER_SYNC_DEADLINE_SEC or narrow Coder scope; the repomix+LLM run exceeded the proxy deadline."
                 if coder_sync_timeout
                 else "Verify SOURCE_PROXY_CODER_MODEL_ALIAS and provider health; Coder returned an empty model response."
@@ -660,7 +686,7 @@ def _coder_prompt_packet_status(
         return "coder_config_blocked"
     if reason_code == "coder_sync_timeout":
         return "blocked"
-    if reason_code in {"target_missing", "target_unresolved"}:
+    if reason_code in {"target_missing", "target_unresolved"} | TARGET_HARD_BLOCK_REASON_CODES:
         return "blocked"
     if reason_code == "blocked_after_retries":
         return "blocked_after_retries"
@@ -869,11 +895,16 @@ def _task_spec_payload_for_response(
         }
 
 
-def _blocked_task_spec_payload(*, task_type: str, reason_code: str) -> dict[str, Any]:
+def _blocked_task_spec_payload(
+    *,
+    task_type: str,
+    reason_code: str,
+    target: str | None = None,
+) -> dict[str, Any]:
     return {
         "schema_version": 1,
         "task_type": task_type,
-        "target": None,
+        "target": target,
         "allowed_files": [],
         "forbidden_files": [],
         "literal_requirements": [],
@@ -882,6 +913,54 @@ def _blocked_task_spec_payload(*, task_type: str, reason_code: str) -> dict[str,
         "source": "deterministic",
         "blockers": [reason_code],
     }
+
+
+def _first_target_hard_block_reason(reason_codes: list[str]) -> str:
+    for reason in ("protected_path", "secret_path", "path_escape", "outside_workspace"):
+        if reason in reason_codes:
+            return reason
+    return ""
+
+
+def _target_safety_blocked_reason(reason_code: str, target: str) -> str:
+    target_suffix = f": {target}" if target else "."
+    if reason_code in {"protected_path", "secret_path"}:
+        return f"Blocked protected/secret path{target_suffix}"
+    if reason_code in {"path_escape", "outside_workspace"}:
+        return f"Blocked path escapes workspace{target_suffix}"
+    return "Blocked unsafe target path."
+
+
+def _target_safety_needed_context(reason_code: str) -> str:
+    if reason_code in {"protected_path", "secret_path"}:
+        return "Choose a non-secret repo file. Protected and secret-shaped paths cannot be edited through the approval flow."
+    if reason_code in {"path_escape", "outside_workspace"}:
+        return "Use a repo-relative path inside the workspace. Traversal, absolute, and drive paths are blocked."
+    return "Choose a safe repo-relative target file."
+
+
+def _target_safety_constraint(reason_code: str) -> str:
+    if reason_code in {"protected_path", "secret_path"}:
+        return "Coder Agent mode: blocked before Coder because the requested target is a protected/secret path."
+    if reason_code in {"path_escape", "outside_workspace"}:
+        return "Coder Agent mode: blocked before Coder because the requested target escapes the workspace."
+    return "Coder Agent mode: blocked before Coder because the requested target is unsafe."
+
+
+def _target_safety_requested_output(reason_code: str) -> str:
+    if reason_code in {"protected_path", "secret_path"}:
+        return "No unified diff was produced because the requested target is a protected/secret path."
+    if reason_code in {"path_escape", "outside_workspace"}:
+        return "No unified diff was produced because the requested target escapes the workspace."
+    return "No unified diff was produced because the requested target is unsafe."
+
+
+def _target_safety_paste_back(reason_code: str) -> str:
+    if reason_code in {"protected_path", "secret_path"}:
+        return "Use a non-secret repo-relative target file; do not approve or paste a diff for protected paths."
+    if reason_code in {"path_escape", "outside_workspace"}:
+        return "Use a repo-relative path inside the workspace; do not approve or paste a traversal/absolute-path diff."
+    return "Use a safe repo-relative target file before retrying."
 
 
 def _verification_plan_payload_for_response(architect_plan: Any | None) -> dict[str, Any]:

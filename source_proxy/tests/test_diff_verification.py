@@ -125,6 +125,24 @@ class DiffVerificationPreviewTests(unittest.TestCase):
         self.assertIn("regenerate the patch", payload["self_correction"]["safer_next_action"])
         self.assertIn(".env.local", payload["self_correction"]["retry_prompt"])
 
+    def test_dot_slash_secret_shaped_path_is_blocked(self) -> None:
+        payload = preview_diff_verification(
+            "\n".join(
+                [
+                    "diff --git a/./.env.local b/./.env.local",
+                    "--- a/./.env.local",
+                    "+++ b/./.env.local",
+                    "@@ -1 +1 @@",
+                    "-OLD=1",
+                    "+NEW=1",
+                ]
+            )
+        )
+
+        reason_codes = {item["reason_code"] for item in payload["blocked_reasons"]}
+        self.assertEqual(payload["status"], "blocked")
+        self.assertIn("secret_shaped_path", reason_codes)
+
     def test_path_escape_is_blocked(self) -> None:
         payload = preview_diff_verification(
             "\n".join(
@@ -132,6 +150,24 @@ class DiffVerificationPreviewTests(unittest.TestCase):
                     "diff --git a/../outside.txt b/../outside.txt",
                     "--- a/../outside.txt",
                     "+++ b/../outside.txt",
+                    "@@ -1 +1 @@",
+                    "-old",
+                    "+new",
+                ]
+            )
+        )
+
+        reason_codes = {item["reason_code"] for item in payload["blocked_reasons"]}
+        self.assertIn("path_escape", reason_codes)
+        self.assertEqual(payload["status"], "blocked")
+
+    def test_windows_slash_path_escape_is_blocked(self) -> None:
+        payload = preview_diff_verification(
+            "\n".join(
+                [
+                    "diff --git a/..\\outside.txt b/..\\outside.txt",
+                    "--- a/..\\outside.txt",
+                    "+++ b/..\\outside.txt",
                     "@@ -1 +1 @@",
                     "-old",
                     "+new",
@@ -170,6 +206,145 @@ class DiffVerificationPreviewTests(unittest.TestCase):
         self.assertEqual(payload["changed_files"][0]["risk_flags"], ["high_impact_file"])
         self.assertTrue(payload["self_correction"]["triggered"])
         self.assertEqual(payload["self_correction"]["severity"], "high")
+        self.assertFalse(payload["limits"]["file_writes_allowed"])
+
+    def test_manual_result_preview_blocks_secret_shaped_path(self) -> None:
+        app = FastAPI()
+        app.include_router(diff_verification_router)
+        client = TestClient(app)
+
+        response = client.post(
+            "/v1/verification/manual-result-preview",
+            json={
+                "payload": "\n".join(
+                    [
+                        "diff --git a/.env.local b/.env.local",
+                        "--- a/.env.local",
+                        "+++ b/.env.local",
+                        "@@ -1 +1 @@",
+                        "-OLD=1",
+                        "+NEW=1",
+                    ]
+                ),
+                "route_type": "local_route",
+            },
+        )
+
+        payload = response.json()
+        reason_codes = {item["reason_code"] for item in payload["blocked_reasons"]}
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(payload["status"], "blocked")
+        self.assertFalse(payload["limits"]["file_writes_allowed"])
+        self.assertIn("secret_shaped_path", reason_codes)
+        self.assertIn("protected_path", reason_codes)
+
+    def test_manual_result_preview_safe_intended_target_previews_only(self) -> None:
+        app = FastAPI()
+        app.include_router(diff_verification_router)
+        client = TestClient(app)
+        diff = "\n".join(
+            [
+                "--- a/docs/phase-8-manual-check.md",
+                "+++ b/docs/phase-8-manual-check.md",
+                "@@ -1,1 +1,2 @@",
+                " # Phase 8 Manual Check",
+                "+Phase 4E-2 manual fallback safe diff validation passed.",
+                "",
+            ]
+        )
+
+        response = client.post(
+            "/v1/verification/manual-result-preview",
+            json={
+                "payload": diff,
+                "route_type": "local_route",
+                "task_spec": {
+                    "schema_version": 1,
+                    "task_type": "modify_existing_file",
+                    "target": "docs/phase-8-manual-check.md",
+                    "allowed_files": ["docs/phase-8-manual-check.md"],
+                    "forbidden_files": [],
+                },
+            },
+        )
+
+        payload = response.json()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(payload["status"], "preview_ready")
+        self.assertEqual(
+            payload["task_spec_check"]["changed_files"],
+            ["docs/phase-8-manual-check.md"],
+        )
+        self.assertTrue(payload["task_spec_check"]["ok"])
+        self.assertTrue(payload["git_apply_check_ok"])
+        self.assertFalse(payload["would_apply_diff"])
+        self.assertFalse(payload["would_execute"])
+
+    def test_manual_result_preview_wrong_file_blocks_allowed_files(self) -> None:
+        app = FastAPI()
+        app.include_router(diff_verification_router)
+        client = TestClient(app)
+        diff = "\n".join(
+            [
+                "--- a/source_proxy/api/decision.py",
+                "+++ b/source_proxy/api/decision.py",
+                "@@ -1,1 +1,2 @@",
+                " from __future__ import annotations",
+                "+# Phase 4E-2 wrong-file manual fallback should be blocked.",
+                "",
+            ]
+        )
+
+        response = client.post(
+            "/v1/verification/manual-result-preview",
+            json={
+                "payload": diff,
+                "route_type": "local_route",
+                "task_spec": {
+                    "schema_version": 1,
+                    "task_type": "modify_existing_file",
+                    "target": "docs/phase-8-manual-check.md",
+                    "allowed_files": ["docs/phase-8-manual-check.md"],
+                    "forbidden_files": [],
+                },
+            },
+        )
+
+        payload = response.json()
+        reason_codes = {item["reason_code"] for item in payload["blocked_reasons"]}
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(payload["status"], "blocked")
+        self.assertIn("task_spec_allowed_file_violation", reason_codes)
+        self.assertFalse(payload["limits"]["file_writes_allowed"])
+        self.assertFalse(payload["would_apply_diff"])
+
+    def test_manual_result_preview_blocks_path_traversal(self) -> None:
+        app = FastAPI()
+        app.include_router(diff_verification_router)
+        client = TestClient(app)
+
+        response = client.post(
+            "/v1/verification/manual-result-preview",
+            json={
+                "payload": "\n".join(
+                    [
+                        "--- a/../outside.txt",
+                        "+++ b/../outside.txt",
+                        "@@ -0,0 +1 @@",
+                        "+hello",
+                        "",
+                    ]
+                ),
+                "route_type": "local_route",
+            },
+        )
+
+        payload = response.json()
+        reason_codes = {item["reason_code"] for item in payload["blocked_reasons"]}
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(payload["status"], "blocked")
+        self.assertIn("path_escape", reason_codes)
+        self.assertIn("outside_workspace", reason_codes)
         self.assertFalse(payload["limits"]["file_writes_allowed"])
 
     def test_git_apply_check_failure_blocks_preview(self) -> None:

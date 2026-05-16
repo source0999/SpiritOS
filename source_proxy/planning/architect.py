@@ -26,6 +26,7 @@ from source_proxy.planning.plan import (
     VerificationPlan,
 )
 from source_proxy.routing.litellm_router import available_model_aliases, get_router
+from source_proxy.safety.paths import normalize_repo_path_candidate, unsafe_target_from_task
 from source_proxy.tasks.long_running import (
     REPOMIX_BUNDLE_NAMES,
     derive_context_mode,
@@ -207,6 +208,9 @@ def plan_task_deterministically(
     root = workspace_root.resolve()
     if len(clean_task) > 500:
         return FallthroughToLLM("task_too_long")
+    unsafe_target = unsafe_target_from_task(clean_task, root)
+    if unsafe_target is not None:
+        return Block(unsafe_target.reason_code)
     if _CREATION_INTENT_RE.search(clean_task):
         return FallthroughToLLM("creation_task")
 
@@ -280,6 +284,9 @@ def plan_markdown_append_deterministically(
     root = workspace_root.resolve()
     if not clean_task or len(clean_task) > 500:
         return FallthroughToLLM("task_too_long")
+    unsafe_target = unsafe_target_from_task(clean_task, root)
+    if unsafe_target is not None:
+        return Block(unsafe_target.reason_code)
     if _CREATION_INTENT_RE.search(clean_task):
         return FallthroughToLLM("creation_task")
     if _RISKY_COMMAND_RE.search(clean_task):
@@ -1084,7 +1091,7 @@ def _slug(value: str) -> str:
 
 
 def _normalize_repo_path(path: str) -> str:
-    return path.replace("\\", "/").lstrip("./")
+    return normalize_repo_path_candidate(path)
 
 
 def _architect_model_alias() -> str:

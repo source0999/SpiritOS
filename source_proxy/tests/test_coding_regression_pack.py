@@ -5,7 +5,12 @@ import os
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+
+from source_proxy.api.decision import router as decision_router
 from source_proxy.decision.router import DecisionInput, decide_route, resolve_target_from_task
 from source_proxy.planning.architect import Plan, plan_task_deterministically
 from source_proxy.planning.plan import task_spec_from_plan, save_plan
@@ -85,6 +90,11 @@ class CodingRegressionPackTests(unittest.TestCase):
         planned = plan_task_deterministically(task or _doc_append_task(), task_id, self.root)
         self.assertIsInstance(planned, Plan, planned)
         return planned.plan
+
+    def _decision_client(self) -> TestClient:
+        app = FastAPI()
+        app.include_router(decision_router)
+        return TestClient(app)
 
     def test_simple_docs_edit_reaches_safe_preview_without_writing(self) -> None:
         task = _doc_append_task()
@@ -299,6 +309,92 @@ class CodingRegressionPackTests(unittest.TestCase):
         self.assertNotEqual(decision.resolved_target.path, "source_proxy/api/decision.py")
         self.assertNotEqual(decision.resolved_target.path, DOC_TARGET)
         self.assertNotIsInstance(planned, Plan)
+
+    def test_prompt_packet_blocks_vague_docs_prompt_before_coder_or_architect_target_guess(self) -> None:
+        task = "Make a small improvement to the docs explaining approval safety."
+        client = self._decision_client()
+        with (
+            mock.patch(
+                "source_proxy.api.decision.propose_coder_agent_diff_payload_from_plan"
+            ) as coder_mock,
+            mock.patch("source_proxy.planning.architect.plan_task_with_llm") as llm_architect_mock,
+        ):
+            response = client.post(
+                "/v1/decisions/prompt-packet",
+                json={
+                    "task": task,
+                    "wants_implementation": True,
+                    "decision_memory": [
+                        {"target": "src/lib/spirit/approved-action-execution.ts"}
+                    ],
+                    "relevant_context": "Research source: source_proxy/api/decision.py",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        coder_mock.assert_not_called()
+        llm_architect_mock.assert_not_called()
+        self.assertEqual(payload["reason_code"], "target_unresolved")
+        self.assertEqual(payload["target"], "")
+        self.assertEqual(payload["proposed_diff"], "")
+        self.assertTrue(payload["coder_blocked"])
+        self.assertEqual(payload["task_spec"]["task_type"], "target_unresolved")
+        self.assertEqual(payload["task_spec"]["allowed_files"], [])
+        self.assertNotEqual(payload["target"], "src/lib/spirit/approved-action-execution.ts")
+        self.assertNotIn("source_proxy/api/decision.py", payload["task_spec"]["allowed_files"])
+
+    def test_prompt_packet_blocks_protected_path_before_coder(self) -> None:
+        client = self._decision_client()
+        for task in (
+            ".env.local, add TEST_VALUE=1",
+            "Target file: .env.local\n\nAdd TEST_VALUE=1",
+            "Target file: ./.env.local\n\nAdd TEST_VALUE=1",
+        ):
+            with self.subTest(task=task):
+                with mock.patch(
+                    "source_proxy.api.decision.propose_coder_agent_diff_payload_from_plan"
+                ) as coder_mock:
+                    response = client.post(
+                        "/v1/decisions/prompt-packet",
+                        json={"task": task, "wants_implementation": True},
+                    )
+
+                self.assertEqual(response.status_code, 200, response.text)
+                payload = response.json()
+                coder_mock.assert_not_called()
+                self.assertEqual(payload["reason_code"], "protected_path")
+                self.assertIn("protected_path", payload["route_decision"]["reason_codes"])
+                self.assertEqual(payload["task_spec"]["allowed_files"], [])
+                self.assertEqual(payload["proposed_diff"], "")
+                self.assertTrue(payload["coder_blocked"])
+                self.assertNotEqual(payload["target"], "env.local")
+
+    def test_prompt_packet_blocks_path_traversal_before_coder_without_fallback_target(self) -> None:
+        client = self._decision_client()
+        for task in (
+            "../outside.txt, write hello",
+            "Target file: ../outside.txt\n\nWrite hello.",
+            "Target file: ..\\outside.txt\n\nWrite hello.",
+        ):
+            with self.subTest(task=task):
+                with mock.patch(
+                    "source_proxy.api.decision.propose_coder_agent_diff_payload_from_plan"
+                ) as coder_mock:
+                    response = client.post(
+                        "/v1/decisions/prompt-packet",
+                        json={"task": task, "wants_implementation": True},
+                    )
+
+                self.assertEqual(response.status_code, 200, response.text)
+                payload = response.json()
+                coder_mock.assert_not_called()
+                self.assertEqual(payload["reason_code"], "path_escape")
+                self.assertIn("path_escape", payload["route_decision"]["reason_codes"])
+                self.assertEqual(payload["task_spec"]["allowed_files"], [])
+                self.assertEqual(payload["proposed_diff"], "")
+                self.assertTrue(payload["coder_blocked"])
+                self.assertNotEqual(payload["target"], "public/next.svg")
 
     def test_fake_prompt_diff_is_not_promoted_to_proposed_diff_or_target(self) -> None:
         task = "\n".join(

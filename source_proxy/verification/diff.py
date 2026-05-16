@@ -1344,7 +1344,7 @@ def _dedupe_paths(values) -> list[str]:
     return result
 
 
-def _normalize_task_spec_path(raw_path: str) -> str:
+def _clean_repo_path(raw_path: str, *, strip_diff_prefix: bool) -> str:
     path = raw_path.strip().strip('"').strip("'").replace("\\", "/")
     if "\t" in path:
         path = path.split("\t", 1)[0].strip()
@@ -1355,7 +1355,9 @@ def _normalize_task_spec_path(raw_path: str) -> str:
     ).strip()
     if path in {"", "/dev/null", "dev/null", "a/dev/null", "b/dev/null"}:
         return ""
-    if path.startswith("a/") or path.startswith("b/"):
+    if strip_diff_prefix and (path.startswith("a/") or path.startswith("b/")):
+        path = path[2:]
+    while path.startswith("./"):
         path = path[2:]
     while path and path[-1] in ".,:;!?":
         candidate = path[:-1]
@@ -1363,7 +1365,11 @@ def _normalize_task_spec_path(raw_path: str) -> str:
             path = candidate
             continue
         break
-    return path.lstrip("./")
+    return path
+
+
+def _normalize_task_spec_path(raw_path: str) -> str:
+    return _clean_repo_path(raw_path, strip_diff_prefix=False)
 
 
 def _ensure_record(records: dict[str, dict[str, Any]], path: str) -> dict[str, Any]:
@@ -1380,7 +1386,7 @@ def _ensure_record(records: dict[str, dict[str, Any]], path: str) -> dict[str, A
 
 
 def _normalize_diff_path(raw_path: str) -> str | None:
-    path = _normalize_task_spec_path(raw_path)
+    path = _clean_repo_path(raw_path, strip_diff_prefix=True)
     if not path:
         return None
     return path or None
@@ -1401,11 +1407,15 @@ def _blocked_reasons(files: list[dict[str, Any]]) -> list[dict[str, str]]:
         flags = set(file["risk_flags"])
         if "path_escape" in flags:
             reasons.append({"path": path, "reason_code": "path_escape"})
+            reasons.append({"path": path, "reason_code": "outside_workspace"})
         if "absolute_path" in flags:
             reasons.append({"path": path, "reason_code": "absolute_path"})
+            reasons.append({"path": path, "reason_code": "path_escape"})
+            reasons.append({"path": path, "reason_code": "outside_workspace"})
         if "secret_shaped_path" in flags:
             reasons.append({"path": path, "reason_code": "secret_shaped_path"})
-    return reasons
+            reasons.append({"path": path, "reason_code": "protected_path"})
+    return [dict(item) for item in dict.fromkeys(tuple(item.items()) for item in reasons)]
 
 
 def _file_risk_flags(path: str) -> list[str]:

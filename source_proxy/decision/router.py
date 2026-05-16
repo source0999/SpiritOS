@@ -11,11 +11,22 @@ from source_proxy.tasks.long_running import (
     LongRunningTaskError,
     get_long_running_task_snapshot,
 )
+from source_proxy.safety.paths import (
+    normalize_repo_path_candidate,
+    explicit_target_from_task,
+    unsafe_target_from_task,
+)
 
 RecommendedRoute = Literal["api_route", "manual_route", "local_route", "ask_user"]
 RiskTier = Literal["low", "medium", "high"]
 SwarmAgentRole = Literal["architect", "coder", "debugger"]
 ResolvedTargetSource = Literal["explicit_line", "inferred"]
+TARGET_HARD_BLOCK_REASON_CODES = {
+    "protected_path",
+    "secret_path",
+    "path_escape",
+    "outside_workspace",
+}
 
 
 SWARM_AGENT_SYSTEM_PROMPTS: dict[SwarmAgentRole, str] = {
@@ -122,13 +133,15 @@ def decide_route(input_data: DecisionInput) -> RouteDecision:
     normalized = task.lower()
     context_estimate = estimate_context(task, input_data.context_tokens)
     classification = classify_task(normalized, input_data)
-    reason_codes = build_reason_codes(normalized, input_data, context_estimate)
     resolved_target = resolve_target_from_task(task)
+    unsafe_target = unsafe_target_from_task(task)
+    reason_codes = build_reason_codes(normalized, input_data, context_estimate)
     reason_codes = _reason_codes_with_target_honesty(
         reason_codes,
         resolved_target=resolved_target,
         classification=classification,
         wants_implementation=input_data.wants_implementation,
+        unsafe_reason_code=unsafe_target.reason_code if unsafe_target else "",
     )
     risk_tier = classify_risk(input_data, context_estimate, reason_codes)
     recommended_route = recommend_route(input_data, context_estimate, risk_tier, reason_codes)
@@ -136,7 +149,13 @@ def decide_route(input_data: DecisionInput) -> RouteDecision:
         recommended_route = "local_route"
     next_prompt_action = prompt_action_for_route(recommended_route)
     current_agent_role = resolve_active_agent_role(input_data)
-    research_recommended = (
+    hard_blocked = bool(
+        TARGET_HARD_BLOCK_REASON_CODES.intersection(reason_codes)
+        or "target_unresolved" in reason_codes
+    )
+    if hard_blocked:
+        reason_codes = [code for code in reason_codes if code != "repo_first_research"]
+    research_recommended = False if hard_blocked else (
         input_data.research_recommended
         or input_data.needs_current_info
         or input_data.needs_codebase_context
@@ -197,15 +216,7 @@ def _strip_wrapping_quotes(raw: str) -> str:
 
 
 def _parse_explicit_target_file_line(task: str) -> str:
-    last = ""
-    text = (task or "").strip()
-    for match in _EXPLICIT_TARGET_LINE_RE.finditer(text):
-        raw = _strip_wrapping_quotes(match.group(1))
-        if raw:
-            last = _strip_repo_path_sentence_punctuation(
-                raw.replace("\\", "/").lstrip("./")
-            )
-    return last
+    return explicit_target_from_task(task or "")
 
 
 _REPO_PATH_TOKEN_RE = re.compile(
@@ -226,7 +237,7 @@ def _candidate_repo_paths_from_task_body(task: str) -> list[str]:
     ordered: list[str] = []
     for match in _REPO_PATH_TOKEN_RE.finditer(text):
         raw = _strip_repo_path_sentence_punctuation(
-            match.group(1).strip().replace("\\", "/").lstrip("./")
+            normalize_repo_path_candidate(match.group(1).strip())
         )
         if not raw or raw in seen:
             continue
@@ -255,15 +266,22 @@ def _reason_codes_with_target_honesty(
     resolved_target: ResolvedTarget,
     classification: str,
     wants_implementation: bool,
+    unsafe_reason_code: str = "",
 ) -> list[str]:
     out = list(reason_codes)
+    if unsafe_reason_code:
+        if unsafe_reason_code not in out:
+            out.append(unsafe_reason_code)
+        if unsafe_reason_code == "protected_path" and "secret_path" not in out:
+            out.append("secret_path")
+        if unsafe_reason_code == "path_escape" and "outside_workspace" not in out:
+            out.append("outside_workspace")
+        return out
     needs_missing_flag = wants_implementation or classification == "implementation"
     if resolved_target.path and not resolved_target.exists and needs_missing_flag:
         if "target_missing" not in out:
             out.append("target_missing")
-    # Only the explicit UI toggle arms the strict "must resolve from task text" gate.
-    # Heuristic implementation classification still allows Architect/Coder to pick targets.
-    elif not resolved_target.path and wants_implementation:
+    elif not resolved_target.path and needs_missing_flag:
         if "target_unresolved" not in out:
             out.append("target_unresolved")
     return out
@@ -280,6 +298,10 @@ def resolve_target_from_task(
         abs_target = (root / target_path).resolve()
         exists = _is_relative_to(abs_target, root) and abs_target.is_file()
         return ResolvedTarget(path=target_path, exists=exists, source="explicit_line")
+
+    unsafe_target = unsafe_target_from_task(task, root)
+    if unsafe_target is not None:
+        return ResolvedTarget(path=unsafe_target.path, exists=False, source="explicit_line")
 
     for candidate in _candidate_repo_paths_from_task_body(task):
         abs_candidate = (root / candidate).resolve()
@@ -309,6 +331,11 @@ def build_self_correction_checks(
         normalized,
         ["fix", "debug", "implement", "patch", "refactor", "/coding", "repo", "codebase"],
     )
+    target_hard_blocked = bool(
+        TARGET_HARD_BLOCK_REASON_CODES.intersection(reason_codes)
+        or "target_unresolved" in reason_codes
+        or "target_missing" in reason_codes
+    )
     mentions_7c = _contains_any(normalized, ["7c", "phase 7c", "increment 7c"])
 
     active_swarm_coding_task = bool(active_task_id and codebase_like)
@@ -318,7 +345,7 @@ def build_self_correction_checks(
         or not codebase_like
         or recommended_route == "local_route"
     )
-    repo_ok = not codebase_like or "repo_first_research" in reason_codes
+    repo_ok = target_hard_blocked or not codebase_like or "repo_first_research" in reason_codes
 
     return [
         {
@@ -342,7 +369,9 @@ def build_self_correction_checks(
             "question": "Did I scan the repo first?",
             "passed": repo_ok,
             "answer": (
-                "Yes. repo_first_research is active, so repository sources are gathered before web sources."
+                "Repo-first research is not required for this prompt."
+                if target_hard_blocked
+                else "Yes. repo_first_research is active, so repository sources are gathered before web sources."
                 if repo_ok and codebase_like
                 else "Repo-first research is not required for this prompt."
                 if repo_ok
@@ -535,6 +564,8 @@ def estimate_context(task: str, provided_context_tokens: int | None = None) -> C
 def classify_task(normalized_task: str, input_data: DecisionInput) -> str:
     if _looks_like_file_change_intent(normalized_task):
         return "implementation"
+    if input_data.wants_implementation:
+        return "implementation"
     if input_data.active_task_id and (
         _looks_like_codebase_intent(normalized_task, input_data)
         or _contains_action_word(normalized_task)
@@ -547,7 +578,7 @@ def classify_task(normalized_task: str, input_data: DecisionInput) -> str:
         ["latest", "today", "current", "news", "price", "schedule", "lookup"],
     ):
         return "current_research"
-    if input_data.wants_implementation or _contains_any(
+    if _contains_any(
         normalized_task,
         ["implement", "fix", "patch", "add endpoint", "refactor", "write code"],
     ):

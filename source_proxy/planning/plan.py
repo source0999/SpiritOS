@@ -6,6 +6,7 @@ from contextlib import closing
 from typing import Any, Literal, TypeVar
 
 from source_proxy.planning.migrations import PLAN_MIGRATORS
+from source_proxy.safety.paths import normalize_repo_path_candidate
 
 
 PLAN_SCHEMA_VERSION = 1
@@ -596,4 +597,4 @@ def _literal(payload: dict[str, Any], key: str, allowed: set[str]) -> Any:
 
 
 def _normalize_repo_path(path: str) -> str:
-    return path.replace("\\", "/").lstrip("./")
+    return normalize_repo_path_candidate(path)

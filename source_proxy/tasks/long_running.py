@@ -1943,6 +1943,23 @@ def _run_architect_handoff(task: LongRunningTask) -> None:
         _set_task_role(task, "coder", reason="architect_plan_ready")
         return
     if isinstance(result, FallthroughToLLM):
+        if result.reason == "no_explicit_target":
+            task.architect_status = "blocked"
+            task.architect_reason = "target_unresolved"
+            task.status = "blocked"
+            _set_task_role(task, "architect", reason="architect_target_unresolved")
+            task.truncated_test_results = (
+                "target_unresolved: No safe implementation file could be resolved "
+                "from the task text."
+            )
+            task.steps = _append_unique_steps(
+                task.steps,
+                [
+                    "Architect blocked before LLM planning: target_unresolved.",
+                    "Add a Target file: line or mention one existing repo-relative file.",
+                ],
+            )
+            return
         try:
             llm_plan = plan_task_with_llm(
                 task.description,
@@ -3542,7 +3559,9 @@ def _coder_blocked_payload(
 
 
 def _normalize_repo_rel_path(rel_path: str) -> str:
-    return rel_path.replace("\\", "/").lstrip("./").lower()
+    from source_proxy.safety.paths import normalize_repo_path_candidate
+
+    return normalize_repo_path_candidate(rel_path).lower()
 
 
 def derive_context_mode(target_path: str) -> ContextMode:

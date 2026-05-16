@@ -21,7 +21,9 @@ class ProxyAgentRoutingTests(unittest.TestCase):
         self.assertEqual(decision.task_classification, "implementation")
         self.assertEqual(decision.recommended_route, "local_route")
         self.assertEqual(decision.next_prompt_action, "run_with_coder_agent")
-        self.assertIn("repo_first_research", decision.reason_codes)
+        self.assertIn("target_unresolved", decision.reason_codes)
+        self.assertNotIn("repo_first_research", decision.reason_codes)
+        self.assertFalse(decision.research_recommended)
 
     def test_debug_prompt_prefers_proxy_agent_route(self) -> None:
         decision = decide_route(
@@ -75,7 +77,9 @@ class ProxyAgentRoutingTests(unittest.TestCase):
 
         self.assertEqual(decision.task_classification, "implementation")
         self.assertEqual(decision.recommended_route, "local_route")
-        self.assertIn("repo_first_research", decision.reason_codes)
+        self.assertIn("target_unresolved", decision.reason_codes)
+        self.assertNotIn("repo_first_research", decision.reason_codes)
+        self.assertFalse(decision.research_recommended)
 
     def test_visual_layout_prompt_is_codebase_intent(self) -> None:
         decision = decide_route(
@@ -87,7 +91,9 @@ class ProxyAgentRoutingTests(unittest.TestCase):
 
         self.assertEqual(decision.task_classification, "implementation")
         self.assertEqual(decision.recommended_route, "local_route")
-        self.assertIn("repo_first_research", decision.reason_codes)
+        self.assertIn("target_unresolved", decision.reason_codes)
+        self.assertNotIn("repo_first_research", decision.reason_codes)
+        self.assertFalse(decision.research_recommended)
 
     def test_padding_prompt_is_implementation_even_with_current_info_hint(self) -> None:
         decision = decide_route(
@@ -99,7 +105,9 @@ class ProxyAgentRoutingTests(unittest.TestCase):
 
         self.assertEqual(decision.task_classification, "implementation")
         self.assertEqual(decision.recommended_route, "local_route")
-        self.assertIn("repo_first_research", decision.reason_codes)
+        self.assertIn("target_unresolved", decision.reason_codes)
+        self.assertNotIn("repo_first_research", decision.reason_codes)
+        self.assertFalse(decision.research_recommended)
 
     def test_active_swarm_action_word_defaults_to_codebase_intent(self) -> None:
         decision = decide_route(
@@ -213,6 +221,10 @@ class ProxyAgentRoutingTests(unittest.TestCase):
             "No. This is a coding/debugging task. A proactive agent route is required.",
         )
         self.assertTrue(checks["repo_first_check"]["passed"])
+        self.assertEqual(
+            checks["repo_first_check"]["answer"],
+            "Repo-first research is not required for this prompt.",
+        )
         self.assertTrue(checks["phase_check"]["passed"])
         self.assertIn("7C.4", str(checks["phase_check"]["answer"]))
 
@@ -277,6 +289,55 @@ class ProxyAgentRoutingTests(unittest.TestCase):
 
         self.assertEqual(resolved.path, "source_proxy/decision/router.py")
         self.assertEqual(resolved.source, "explicit_line")
+
+    def test_env_local_explicit_target_blocks_before_dot_is_stripped(self) -> None:
+        for task in (
+            ".env.local, add TEST_VALUE=1",
+            "Target file: .env.local\n\nAdd TEST_VALUE=1",
+            "Target file: ./.env.local\n\nAdd TEST_VALUE=1",
+        ):
+            with self.subTest(task=task):
+                decision = decide_route(
+                    DecisionInput(task=task, wants_implementation=True)
+                )
+
+                self.assertIn("protected_path", decision.reason_codes)
+                self.assertIn("secret_path", decision.reason_codes)
+                self.assertNotIn("repo_first_research", decision.reason_codes)
+                self.assertFalse(decision.research_recommended)
+                self.assertNotEqual(decision.resolved_target.path, "env.local")
+                self.assertIn(decision.resolved_target.path, {".env.local", ""})
+
+    def test_path_traversal_target_blocks_without_random_fallback(self) -> None:
+        for task in (
+            "../outside.txt, write hello",
+            "Target file: ../outside.txt\n\nWrite hello.",
+            "Target file: ..\\outside.txt\n\nWrite hello.",
+        ):
+            with self.subTest(task=task):
+                decision = decide_route(
+                    DecisionInput(task=task, wants_implementation=True)
+                )
+
+                self.assertIn("path_escape", decision.reason_codes)
+                self.assertIn("outside_workspace", decision.reason_codes)
+                self.assertNotIn("repo_first_research", decision.reason_codes)
+                self.assertFalse(decision.research_recommended)
+                self.assertIn(decision.resolved_target.path, {"../outside.txt", ""})
+                self.assertNotEqual(decision.resolved_target.path, "public/next.svg")
+
+    def test_vague_docs_write_blocks_as_target_unresolved(self) -> None:
+        decision = decide_route(
+            DecisionInput(
+                task="Make a small improvement to the docs explaining approval safety.",
+                wants_implementation=True,
+            )
+        )
+
+        self.assertIn("target_unresolved", decision.reason_codes)
+        self.assertNotIn("repo_first_research", decision.reason_codes)
+        self.assertFalse(decision.research_recommended)
+        self.assertEqual(decision.resolved_target.path, "")
 
 
 if __name__ == "__main__":
