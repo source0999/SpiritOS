@@ -11,11 +11,18 @@ import {
   CodingStabilityCard,
   CodingTaskStateCard,
   deriveApprovalStateChecklist,
+  deriveArtifactShelfItems,
+  deriveCheckpointRestorePlan,
   deriveCodingStabilitySummary,
   deriveCodingTaskStateSummary,
+  documenterBlueprintProposals,
   deriveReviewerAgentChecks,
+  deriveReviewerAgentRecommendation,
+  deriveReplayableLogBundle,
+  deriveTaskHistorySummary,
   deriveTaskTranscript,
   deriveTerminalLongTaskStateForApproval,
+  deriveVerificationDashboardRollup,
   deriveWorkflowMemorySnapshot,
   latestLongTaskEvidenceLines,
   knownGoodPromptPatterns,
@@ -180,7 +187,33 @@ describe("testerAgentProposals", () => {
         proposal.prompt.includes("Do not install the case. Do not edit any file."),
       ),
     ).toBe(true);
+    expect(
+      testerAgentProposals.every(
+        (proposal) =>
+          proposal.dryRunCommand === "Run Proxy Safety Smoke" &&
+          proposal.dryRunProfile === "phase-4e-safety-seed",
+      ),
+    ).toBe(true);
+    expect(testerAgentProposals[1]?.dryRunVerification).toContain("without applying changes");
     expect(testerAgentProposals[0]?.expectedOutcome).toContain("applied_anything remains false");
+  });
+});
+
+describe("documenterBlueprintProposals", () => {
+  it("drafts documentation and blueprint proposals without write authority", () => {
+    expect(documenterBlueprintProposals.map((proposal) => proposal.id)).toEqual([
+      "documenter-phase-receipt",
+      "blueprinter-drift-proposal",
+    ]);
+    expect(
+      documenterBlueprintProposals.every((proposal) =>
+        proposal.prompt.includes("Do not edit any file."),
+      ),
+    ).toBe(true);
+    expect(documenterBlueprintProposals[0]?.approvalGate).toContain("dashboard approval");
+    expect(documenterBlueprintProposals[1]?.expectedOutput).toBe(
+      "blueprint update proposal only",
+    );
   });
 });
 
@@ -302,6 +335,297 @@ describe("deriveWorkflowMemorySnapshot", () => {
     expect(merged.blockers).toEqual(["new blocker", "old blocker"]);
     expect(merged.testReports).toContain("phase-4e-safety-seed: 3 passed");
     expect(merged.knownGoodExamples).toEqual(["Manual Check 10", "Safe docs append"]);
+  });
+});
+
+describe("deriveTaskHistorySummary", () => {
+  it("groups current and remembered tasks into read-only history lanes", () => {
+    const lanes = deriveTaskHistorySummary({
+      approvalGate: {
+        ...baseArgs().approvalGate,
+        execution: {
+          message: "Applied approved action.",
+          ok: true,
+          relativeFilePath: "docs/phase-8-manual-check.md",
+        },
+        target: "docs/phase-8-manual-check.md",
+      },
+      longRunningTask: {
+        ...baseArgs().longRunningTask,
+        response: {
+          task: {
+            description: "Apply reviewed docs diff",
+            id: "task-current",
+            next_action: "Run post-apply verification.",
+            status: "applied_needs_verification",
+          },
+        },
+      },
+      workflowMemory: {
+        approvals: [],
+        blockers: [],
+        knownGoodExamples: [],
+        lastKnownStatus: "completed",
+        rejections: [],
+        taskIds: ["task-current", "task-previous"],
+        testReports: ["Docs verification passed."],
+        updatedAt: "2026-05-16T20:00:00.000Z",
+      },
+    });
+
+    expect(lanes.find((lane) => lane.id === "applied")?.items[0]).toMatchObject({
+      id: "task-current",
+      source: "current",
+      status: "applied_needs_verification",
+    });
+    expect(lanes.find((lane) => lane.id === "completed")?.items[0]).toMatchObject({
+      id: "task-previous",
+      source: "memory",
+      status: "completed",
+    });
+    expect(lanes.find((lane) => lane.id === "active")?.items).toEqual([]);
+  });
+});
+
+describe("deriveReplayableLogBundle", () => {
+  it("builds a bounded read-only replay packet from activity logs", () => {
+    const bundle = deriveReplayableLogBundle({
+      approvalGate: {
+        ...baseArgs().approvalGate,
+        target: "docs/phase-8-manual-check.md",
+      },
+      logs: [
+        {
+          detail: "Started at 20:25.",
+          id: 1,
+          label: "Run started",
+          level: "info",
+        },
+        {
+          detail: "Diff preview ready.",
+          id: 2,
+          label: "Unified diff ready",
+          level: "success",
+        },
+      ],
+      longRunningTask: {
+        ...baseArgs().longRunningTask,
+        response: {
+          task: {
+            description: "Target file: docs/phase-8-manual-check.md",
+            id: "task-replay",
+            status: "running",
+          },
+        },
+      },
+      workflowMemory: {
+        approvals: [],
+        blockers: [],
+        knownGoodExamples: [],
+        lastKnownStatus: "running",
+        rejections: [],
+        taskIds: ["task-replay"],
+        testReports: [],
+        updatedAt: "2026-05-16T20:25:00.000Z",
+      },
+    });
+
+    expect(bundle.taskId).toBe("task-replay");
+    expect(bundle.target).toBe("docs/phase-8-manual-check.md");
+    expect(bundle.entries.map((entry) => entry.label)).toEqual([
+      "Run started",
+      "Unified diff ready",
+    ]);
+    expect(bundle.replayText).toContain("Replayable coding workflow log");
+    expect(bundle.safety).toContain("must not approve");
+  });
+});
+
+describe("deriveCheckpointRestorePlan", () => {
+  it("restores only prompt and context metadata from the latest checkpoint", () => {
+    const plan = deriveCheckpointRestorePlan({
+      approvalGate: {
+        ...baseArgs().approvalGate,
+        target: "docs/phase-8-manual-check.md",
+      },
+      conversationHistory: [
+        {
+          attachedFileCount: 0,
+          completedAt: "2026-05-16T20:30:00.000Z",
+          contextTurnCount: 3,
+          id: "history-1",
+          model: "test",
+          recommendation: "Run with Proxy Agent",
+          researchSourceCount: 0,
+          risk: "Low",
+          route: "local_route",
+          runId: 42,
+          summary: "Prior task summary.",
+          task: "Target file: docs/phase-8-manual-check.md\nAdd a safe docs sentence.",
+        },
+      ],
+      longRunningTask: baseArgs().longRunningTask,
+      workflowMemory: {
+        approvals: [],
+        blockers: [],
+        knownGoodExamples: [],
+        lastKnownStatus: "completed",
+        rejections: [],
+        taskIds: ["task-checkpoint"],
+        testReports: [],
+        updatedAt: "2026-05-16T20:30:00.000Z",
+      },
+    });
+
+    expect(plan.status).toBe("ready");
+    expect(plan.checkpointId).toBe("run-42");
+    expect(plan.restorablePrompt).toContain("Add a safe docs sentence.");
+    expect(plan.target).toBe("docs/phase-8-manual-check.md");
+    expect(plan.restoreSteps.join(" ")).toContain("safe discovery pass");
+    expect(plan.blockedActions).toContain("apply");
+    expect(plan.blockedActions).toContain("push");
+  });
+});
+
+describe("deriveArtifactShelfItems", () => {
+  it("lists attachments and generated evidence artifacts without write authority", () => {
+    const items = deriveArtifactShelfItems({
+      approvalGate: {
+        ...baseArgs().approvalGate,
+        target: "docs/phase-8-manual-check.md",
+      },
+      conversationHistory: [],
+      diffVerification: {
+        error: null,
+        isChecking: false,
+        preview: {
+          changed_files: [{ path: "docs/phase-8-manual-check.md" }],
+          status: "preview_ready",
+        },
+        unifiedDiff: DOCS_APPEND_STANDARD_UNIFIED_DIFF,
+      },
+      files: [
+        {
+          id: "notes-md",
+          lastModified: 1,
+          name: "notes.md",
+          size: 2048,
+          type: "text/markdown",
+        },
+      ],
+      finalOutput: null,
+      logs: [
+        {
+          detail: "Diff preview ready.",
+          id: 1,
+          label: "Unified diff ready",
+          level: "success",
+        },
+      ],
+      longRunningTask: baseArgs().longRunningTask,
+      workflowMemory: {
+        approvals: [],
+        blockers: [],
+        knownGoodExamples: [],
+        lastKnownStatus: "preview_ready",
+        rejections: [],
+        taskIds: ["task-artifacts"],
+        testReports: [],
+        updatedAt: "2026-05-16T20:45:00.000Z",
+      },
+    });
+
+    expect(items.map((item) => item.source)).toEqual([
+      "attachment",
+      "diff",
+      "replay",
+      "checkpoint",
+    ]);
+    expect(items.find((item) => item.source === "attachment")?.detail).toContain("2.0 KB");
+    expect(items.find((item) => item.source === "diff")?.safety).toContain("approval");
+    expect(items.every((item) => !/apply immediately|commit now|push now/i.test(item.safety))).toBe(
+      true,
+    );
+  });
+});
+
+describe("deriveVerificationDashboardRollup", () => {
+  it("summarizes existing verification signals without running checks", () => {
+    const rollup = deriveVerificationDashboardRollup({
+      approvalGate: {
+        ...baseArgs().approvalGate,
+        execution: {
+          message: "Applied approved action.",
+          ok: true,
+          post_apply_verification: {
+            docs_only: true,
+            status: "verified",
+          },
+        },
+      },
+      diffVerification: {
+        error: null,
+        isChecking: false,
+        preview: {
+          git_apply_check_ok: true,
+          risk: "low",
+          status: "preview_ready",
+        },
+        unifiedDiff: DOCS_APPEND_STANDARD_UNIFIED_DIFF,
+      },
+      longRunningTask: {
+        ...baseArgs().longRunningTask,
+        response: {
+          task: {
+            description: "Docs task",
+            id: "task-verify",
+            post_apply_verification: {
+              docs_only: true,
+              status: "verified",
+            },
+            status: "completed",
+          },
+        },
+      },
+      proxySafetySmoke: {
+        error: null,
+        isRunning: false,
+        lastRunAt: "2026-05-16T20:55:00.000Z",
+        payload: {
+          applied_anything: false,
+          cases: [
+            {
+              case_id: "manual-check-7",
+              evidence: { approval_available: false, would_change_files: "no" },
+              status: "pass",
+            },
+            {
+              case_id: "manual-check-8",
+              evidence: { approval_available: false, would_change_files: "no" },
+              status: "pass",
+            },
+            {
+              case_id: "manual-check-9",
+              evidence: { approval_available: false, would_change_files: "no" },
+              status: "pass",
+            },
+          ],
+          mode: "dry_run",
+          suite: "phase-4e-safety-seed",
+          summary: { failed: 0, passed: 3, skipped: 0 },
+        },
+      },
+    });
+
+    expect(rollup.overallStatus).toBe("pass");
+    expect(rollup.summary).toBe("4/4 verification signals passing.");
+    expect(rollup.items.map((item) => item.id)).toEqual([
+      "proxy-smoke",
+      "diff-preview",
+      "approval-apply",
+      "post-apply",
+    ]);
+    expect(rollup.items.every((item) => item.status === "pass")).toBe(true);
   });
 });
 
@@ -800,7 +1124,18 @@ describe("deriveTaskTranscript", () => {
     expect(transcript.find((section) => section.id === "debugger")?.items.join(" ")).toContain(
       "Debugger verifies the diff in the sandbox.",
     );
+    expect(transcript.find((section) => section.id === "architect")?.actor).toBe("Architect Agent");
+    expect(transcript.find((section) => section.id === "reviewer")?.evidenceUsed).toContain(
+      "TaskSpec",
+    );
+    expect(transcript.find((section) => section.id === "verifier")?.actor).toBe("Tester Agent");
     expect(transcript.find((section) => section.id === "verifier")?.status).toBe("blocked");
+    expect(transcript.find((section) => section.id === "verifier")?.blockedBy).toBe(
+      "diff_verification",
+    );
+    expect(transcript.find((section) => section.id === "approval")?.recommendation).toContain(
+      "approval blocker",
+    );
     expect(transcript.find((section) => section.id === "approval")?.status).toBe("blocked");
     expect(transcript.find((section) => section.id === "approval")?.items.join(" ")).toContain(
       "No approved apply has run.",
@@ -832,6 +1167,8 @@ describe("deriveTaskTranscript", () => {
     const approval = transcript.find((section) => section.id === "approval");
     expect(approval?.status).toBe("complete");
     expect(approval?.items.join(" ")).toContain("Approval Gate applied");
+    expect(approval?.blockedBy).toBe("");
+    expect(approval?.evidenceUsed).toContain("execution result");
   });
 
   it("does not mark approval complete before human approval or apply", () => {
@@ -1695,7 +2032,7 @@ describe("workflowStep", () => {
     expect(screen.getByText("Requirement coverage")).toBeTruthy();
     expect(screen.getByText("Safety reasons")).toBeTruthy();
     expect(screen.getByText("Test coverage")).toBeTruthy();
-    expect(screen.getByText("Likely regression risk")).toBeTruthy();
+    expect(screen.getAllByText("Likely regression risk").length).toBeGreaterThan(0);
     expect(screen.getByText("Approval State")).toBeTruthy();
     expect(screen.getByText("Test passed")).toBeTruthy();
     expect(screen.getByText("Verification passed")).toBeTruthy();
@@ -2239,6 +2576,12 @@ describe("coding diff quality gates", () => {
     expect(checks.find((check) => check.label === "Likely regression risk")?.detail).toContain(
       "changed lines 13",
     );
+    expect(deriveReviewerAgentRecommendation(checks)).toEqual({
+      blockerSummary: "none",
+      evidenceSummary: "6 reviewer checks evaluated before approval.",
+      recommendation: "Reviewer checks passed; approval gate may continue.",
+      status: "reviewed",
+    });
   });
 
   it("lets reviewer agent block unsafe diffs", () => {
@@ -2272,6 +2615,12 @@ describe("coding diff quality gates", () => {
     expect(checks.find((check) => check.label === "Target correctness")?.status).toBe("fail");
     expect(checks.find((check) => check.label === "Safety reasons")?.status).toBe("fail");
     expect(checks.find((check) => check.label === "Likely regression risk")?.status).toBe("fail");
+    expect(deriveReviewerAgentRecommendation(checks)).toEqual({
+      blockerSummary: "Target correctness, Safety reasons, Likely regression risk",
+      evidenceSummary: "6 reviewer checks evaluated before approval.",
+      recommendation: "Revise the diff before approval.",
+      status: "blocked",
+    });
   });
 
   it("passes preview gates for the exact backend-style standard unified diff fixture", () => {
