@@ -25,6 +25,22 @@ _STATUS_HELP = {
     "debugger_pending": "Scout has created the packet, but the debugger has not reviewed it yet.",
 }
 
+_RECOMMENDED_ACTIONS = {
+    "surfaced": "inspect_now",
+    "stored": "save_for_later",
+    "ignored": "no_action",
+    "promoted": "review_memory_promotion",
+    "debugger_pending": "wait_for_debugger",
+}
+
+_CONFIDENCE_LABELS = {
+    "surfaced": "high",
+    "promoted": "high",
+    "stored": "medium",
+    "ignored": "low",
+    "debugger_pending": "pending",
+}
+
 
 def verdict_decision(verdict: dict[str, Any] | None) -> str | None:
     if not verdict:
@@ -103,3 +119,30 @@ def human_status_label(
             effective_status=effective_status,
         )["label"]
     )
+
+
+def usefulness_explanation(
+    *,
+    raw_status: str | None,
+    verdict: dict[str, Any] | None,
+    effective_status: str,
+) -> dict[str, str | None]:
+    status = status_explanation(
+        raw_status=raw_status,
+        verdict=verdict,
+        effective_status=effective_status,
+    )
+    reason = str(status["help"] or "")
+    findings = finding_summaries(verdict)
+    reason_codes = (verdict or {}).get("reason_codes") or []
+    if findings:
+        reason = findings[0]["detail"] or reason
+    elif reason_codes:
+        reason = f"Scout reason codes: {', '.join(str(code) for code in reason_codes[:3])}."
+
+    return {
+        "usefulness_label": status["label"],
+        "usefulness_reason": reason,
+        "recommended_action": _RECOMMENDED_ACTIONS.get(effective_status, "review_packet"),
+        "confidence_label": _CONFIDENCE_LABELS.get(effective_status, "unknown"),
+    }

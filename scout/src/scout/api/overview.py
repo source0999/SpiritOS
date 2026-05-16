@@ -70,10 +70,20 @@ def _human_summary(counts: dict, backlog: dict, promotion_status: dict) -> dict:
     memory_status = {
         "label": "Semantic memory active" if memory_active else "Semantic memory inactive",
         "active": memory_active,
+        "state": "read_only_context" if memory_active else "inactive",
+        "write_enabled": False,
+        "mode_label": "Read-only context" if memory_active else "Inactive",
+        "safety_label": (
+            "Scout is not writing to proxy memory or coding context automatically."
+        ),
     }
     if not memory_active:
         memory_status["reason"] = (
-            "No packet embeddings are stored. Scout summaries and verdicts are still available."
+            "Scout is storing packets and source decisions, but it is not writing into proxy memory or coding context automatically."
+        )
+    else:
+        memory_status["reason"] = (
+            "Packet embeddings are available for Scout context, but memory writes still require an explicit approved bridge."
         )
 
     return {

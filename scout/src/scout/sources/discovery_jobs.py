@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import json
 from pathlib import Path
 import sqlite3
@@ -27,6 +27,14 @@ ACTIVE_DISCOVERY_JOB_STATUSES = {"queued", "paused", "running"}
 DEFAULT_MAX_RESULTS = 10
 MAX_RESULTS_LIMIT = 50
 DEFAULT_BUDGET = 10
+STALE_QUEUED_AFTER = timedelta(hours=6)
+NOISY_QUERY_TERMS = {
+    "coupon",
+    "crack",
+    "free download",
+    "mirror spam",
+    "spam",
+}
 
 
 @dataclass(frozen=True)
@@ -60,6 +68,27 @@ class DiscoveryJob:
             error=row["error"],
             metadata=_json_object_from_row(row["metadata_json"]),
         )
+
+
+@dataclass(frozen=True)
+class DiscoveryJobBudget:
+    daily_limit: int
+    used_today: int
+    remaining_today: int
+    can_create_job: bool
+    blocked_reason: str | None
+    next_reset_hint: str
+    queued_jobs: int
+    running_jobs: int
+    completed_jobs: int
+    failed_jobs: int
+
+
+@dataclass(frozen=True)
+class DiscoveryJobComputedState:
+    computed_status: str
+    attention_label: str | None
+    safe_next_action: str
 
 
 def create_discovery_job(
@@ -138,6 +167,85 @@ def list_discovery_jobs(
         return [DiscoveryJob.from_row(row) for row in rows]
     finally:
         conn.close()
+
+
+def get_discovery_job_budget(
+    db_path: Path,
+    *,
+    max_jobs_per_day: int,
+) -> DiscoveryJobBudget:
+    now = _now()
+    day_start = _utc_day_start(now)
+    conn = open_connection(db_path)
+    try:
+        used_today_row = conn.execute(
+            """
+            SELECT COUNT(*) AS count
+            FROM discovery_jobs
+            WHERE created_at >= ?
+            """,
+            (day_start.isoformat(),),
+        ).fetchone()
+        status_counts = {
+            row["status"]: row["count"]
+            for row in conn.execute(
+                """
+                SELECT status, COUNT(*) AS count
+                FROM discovery_jobs
+                GROUP BY status
+                """
+            ).fetchall()
+        }
+    finally:
+        conn.close()
+
+    used_today = used_today_row["count"] if used_today_row else 0
+    if max_jobs_per_day < 1:
+        return DiscoveryJobBudget(
+            daily_limit=max_jobs_per_day,
+            used_today=used_today,
+            remaining_today=0,
+            can_create_job=False,
+            blocked_reason="daily_limit_invalid",
+            next_reset_hint="next UTC day",
+            queued_jobs=status_counts.get("queued", 0),
+            running_jobs=status_counts.get("running", 0),
+            completed_jobs=status_counts.get("completed", 0),
+            failed_jobs=status_counts.get("failed", 0),
+        )
+
+    remaining_today = max(max_jobs_per_day - used_today, 0)
+    return DiscoveryJobBudget(
+        daily_limit=max_jobs_per_day,
+        used_today=used_today,
+        remaining_today=remaining_today,
+        can_create_job=remaining_today > 0,
+        blocked_reason="daily_limit_reached" if remaining_today == 0 else None,
+        next_reset_hint="next UTC day",
+        queued_jobs=status_counts.get("queued", 0),
+        running_jobs=status_counts.get("running", 0),
+        completed_jobs=status_counts.get("completed", 0),
+        failed_jobs=status_counts.get("failed", 0),
+    )
+
+
+def classify_discovery_job_states(
+    jobs: list[DiscoveryJob],
+    *,
+    budget: DiscoveryJobBudget | None = None,
+    now: str | None = None,
+) -> dict[str, DiscoveryJobComputedState]:
+    current_time = datetime.fromisoformat(now or _now()).astimezone(timezone.utc)
+    duplicate_keys = _duplicate_queued_keys(jobs)
+    return {
+        job.job_id: _classify_discovery_job_state(
+            job,
+            duplicate_keys=duplicate_keys,
+            budget=budget,
+            current_time=current_time,
+        )
+        for job in jobs
+    }
 
 
 def get_discovery_job(db_path: Path, job_id: str) -> DiscoveryJob | None:
@@ -284,12 +392,7 @@ def _enforce_daily_job_limit(
 ) -> None:
     if max_jobs_per_day < 1:
         raise DiscoveryJobError("discovery job daily limit must be at least 1")
-    day_start = datetime.fromisoformat(now).astimezone(timezone.utc).replace(
-        hour=0,
-        minute=0,
-        second=0,
-        microsecond=0,
-    )
+    day_start = _utc_day_start(now)
     row = conn.execute(
         """
         SELECT COUNT(*) AS count
@@ -307,6 +410,86 @@ def _validate_status(status: str) -> None:
         raise DiscoveryJobError(f"unsupported discovery job status: {status}")
 
 
+def _classify_discovery_job_state(
+    job: DiscoveryJob,
+    *,
+    duplicate_keys: set[tuple[str, str | None]],
+    budget: DiscoveryJobBudget | None,
+    current_time: datetime,
+) -> DiscoveryJobComputedState:
+    if job.status == "running":
+        return DiscoveryJobComputedState("running", None, "wait_for_completion")
+    if job.status == "completed":
+        return DiscoveryJobComputedState("completed", None, "inspect_results")
+    if job.status == "failed":
+        return DiscoveryJobComputedState("failed", "Discovery job failed", "inspect_error")
+    if job.status == "paused":
+        return DiscoveryJobComputedState("paused", "Discovery job paused", "resume_or_cancel")
+    if job.status == "canceled":
+        return DiscoveryJobComputedState("canceled", None, "none")
+    if job.status != "queued":
+        return DiscoveryJobComputedState(job.status, None, "inspect_job")
+
+    normalized_key = _job_duplicate_key(job)
+    if _is_noisy_query(job.query):
+        return DiscoveryJobComputedState(
+            "spam_test",
+            "Noisy test search",
+            "cancel_or_keep_for_test_evidence",
+        )
+    if normalized_key in duplicate_keys:
+        return DiscoveryJobComputedState(
+            "duplicate_queued",
+            "Duplicate queued search",
+            "cancel_duplicate_or_wait",
+        )
+    if _is_stale_queued(job, current_time=current_time):
+        return DiscoveryJobComputedState(
+            "stale_queued",
+            "Stale queued search",
+            "cancel_stale_or_investigate_worker",
+        )
+    if budget is not None and not budget.can_create_job:
+        return DiscoveryJobComputedState(
+            "blocked_by_budget",
+            "Discovery budget exhausted",
+            "wait_for_budget_reset",
+        )
+    return DiscoveryJobComputedState("queued", None, "wait_for_worker")
+
+
+def _duplicate_queued_keys(jobs: list[DiscoveryJob]) -> set[tuple[str, str | None]]:
+    counts: dict[tuple[str, str | None], int] = {}
+    for job in jobs:
+        if job.status != "queued":
+            continue
+        key = _job_duplicate_key(job)
+        counts[key] = counts.get(key, 0) + 1
+    return {key for key, count in counts.items() if count > 1}
+
+
+def _job_duplicate_key(job: DiscoveryJob) -> tuple[str, str | None]:
+    return (_normalize_text(job.query) or "", _normalize_text(job.topic_anchor))
+
+
+def _normalize_text(value: str | None) -> str | None:
+    if value is None:
+        return None
+    return " ".join(value.strip().lower().split())
+
+
+def _is_noisy_query(query: str) -> bool:
+    normalized = _normalize_text(query) or ""
+    return any(term in normalized for term in NOISY_QUERY_TERMS)
+
+
+def _is_stale_queued(job: DiscoveryJob, *, current_time: datetime) -> bool:
+    if job.started_at is not None:
+        return False
+    created_at = datetime.fromisoformat(job.created_at).astimezone(timezone.utc)
+    return current_time - created_at >= STALE_QUEUED_AFTER
+
+
 def _json_object(value: dict[str, Any] | None) -> str:
     return json.dumps(value or {}, sort_keys=True)
 
@@ -316,6 +499,15 @@ def _json_object_from_row(value: str | None) -> dict[str, Any]:
         return {}
     parsed = json.loads(value)
     return parsed if isinstance(parsed, dict) else {}
+
+
+def _utc_day_start(value: str) -> datetime:
+    return datetime.fromisoformat(value).astimezone(timezone.utc).replace(
+        hour=0,
+        minute=0,
+        second=0,
+        microsecond=0,
+    )
 
 
 def _now() -> str:

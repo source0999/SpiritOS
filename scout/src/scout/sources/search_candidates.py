@@ -18,6 +18,8 @@ class SearchCandidateExtraction:
     candidates_created: int
     discovery_events: int
     skipped_results: int
+    candidate_limit: int
+    skipped_by_limit: int
     errors: list[dict[str, Any]] = field(default_factory=list)
 
 
@@ -26,13 +28,17 @@ def create_candidates_from_search_result(
     *,
     job: DiscoveryJob,
     result: SearchResult,
+    max_candidates: int | None = None,
 ) -> SearchCandidateExtraction:
+    candidate_limit = _candidate_limit(job, max_candidates=max_candidates)
     if not result.ok:
         return SearchCandidateExtraction(
             candidates_seen=0,
             candidates_created=0,
             discovery_events=0,
             skipped_results=0,
+            candidate_limit=candidate_limit,
+            skipped_by_limit=0,
             errors=[
                 {
                     "provider": result.provider,
@@ -46,12 +52,22 @@ def create_candidates_from_search_result(
     candidates_created = 0
     discovery_events = 0
     skipped_results = 0
+    skipped_by_limit = 0
     errors: list[dict[str, Any]] = []
     discovery_source = f"search://{job.job_id}"
+    seen_canonical_uris: set[str] = set()
 
-    for source in result.sources:
+    for source_index, source in enumerate(result.sources):
+        if source_index >= candidate_limit:
+            skipped_results += 1
+            skipped_by_limit += 1
+            continue
         try:
             canonical_uri = canonicalize_uri(source.url)
+            if canonical_uri in seen_canonical_uris:
+                skipped_results += 1
+                continue
+            seen_canonical_uris.add(canonical_uri)
             if _is_already_active(db_path, canonical_uri):
                 skipped_results += 1
                 continue
@@ -86,6 +102,11 @@ def create_candidates_from_search_result(
                     "title": source.title,
                     "snippet": source.snippet,
                     "published_at": source.published_at,
+                    "extraction_audit": _extraction_audit(
+                        job,
+                        candidate_limit=candidate_limit,
+                        source_index=source_index,
+                    ),
                 },
             )
             record_discovery_event(
@@ -100,6 +121,11 @@ def create_candidates_from_search_result(
                     "provider": source.provider,
                     "query": job.query,
                     "title": source.title,
+                    "extraction_audit": _extraction_audit(
+                        job,
+                        candidate_limit=candidate_limit,
+                        source_index=source_index,
+                    ),
                 },
             )
             candidates_seen += 1
@@ -114,6 +140,8 @@ def create_candidates_from_search_result(
         candidates_created=candidates_created,
         discovery_events=discovery_events,
         skipped_results=skipped_results,
+        candidate_limit=candidate_limit,
+        skipped_by_limit=skipped_by_limit,
         errors=errors,
     )
 
@@ -124,7 +152,33 @@ def extraction_to_dict(extraction: SearchCandidateExtraction) -> dict[str, Any]:
         "candidates_created": extraction.candidates_created,
         "discovery_events": extraction.discovery_events,
         "skipped_results": extraction.skipped_results,
+        "candidate_limit": extraction.candidate_limit,
+        "skipped_by_limit": extraction.skipped_by_limit,
+        "activation_policy": "manual_review_required",
         "errors": extraction.errors,
+    }
+
+
+def _candidate_limit(job: DiscoveryJob, *, max_candidates: int | None) -> int:
+    limits = [job.max_results, job.budget]
+    if max_candidates is not None:
+        limits.append(max_candidates)
+    return max(1, min(limits))
+
+
+def _extraction_audit(
+    job: DiscoveryJob,
+    *,
+    candidate_limit: int,
+    source_index: int,
+) -> dict[str, Any]:
+    return {
+        "bounded": True,
+        "candidate_limit": candidate_limit,
+        "source_index": source_index,
+        "job_max_results": job.max_results,
+        "job_budget": job.budget,
+        "activation_policy": "manual_review_required",
     }
 
 

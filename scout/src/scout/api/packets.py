@@ -4,7 +4,12 @@ import structlog
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
-from scout.api.human import finding_summaries, status_explanation, verdict_decision
+from scout.api.human import (
+    finding_summaries,
+    status_explanation,
+    usefulness_explanation,
+    verdict_decision,
+)
 from scout.api.source_trust import classify_source
 from scout.config import get_settings
 from scout.debugger.runner import recheck_packet
@@ -78,6 +83,17 @@ def _enrich_packet_response(
         effective_status=effective,
     )
     packet["human_status_label"] = packet["status_explanation"]["label"]
+    packet.update(
+        usefulness_explanation(
+            raw_status=raw_status,
+            verdict=verdict,
+            effective_status=effective,
+        )
+    )
+    source_uri = packet.get("source_uri") or (packet.get("provenance") or {}).get("source_uri")
+    if source_uri:
+        trust = classify_source(source_uri)
+        packet["source_trust_label"] = trust.trust_label
     packet["status"] = effective
     promotion = _promotion_state_for_packet(conn, packet.get("packet_id"))
     packet["promotion_status"] = promotion["promotion_status"] if promotion else None
@@ -175,6 +191,11 @@ def _packet_explorer_item(conn, row) -> dict:
         "effective_status": packet.get("effective_status"),
         "human_status_label": packet.get("human_status_label"),
         "status_explanation": packet.get("status_explanation"),
+        "usefulness_label": packet.get("usefulness_label"),
+        "usefulness_reason": packet.get("usefulness_reason"),
+        "recommended_action": packet.get("recommended_action"),
+        "confidence_label": packet.get("confidence_label"),
+        "source_trust_label": packet.get("source_trust_label") or trust.trust_label,
         "reason_codes": (verdict or {}).get("reason_codes") or [],
         "findings": finding_summaries(verdict),
         "source_quality_score": (verdict or {}).get("source_quality_score"),

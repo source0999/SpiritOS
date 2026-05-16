@@ -69,6 +69,20 @@ class SourceScore:
     explanation: str
 
 
+@dataclass(frozen=True)
+class SourceAutomationRank:
+    automation_tier: str
+    automation_label: str
+    suggested_action: str
+
+
+@dataclass(frozen=True)
+class SourceAutoApprovalDryRun:
+    eligible: bool
+    reason: str
+    label: str
+
+
 def score_candidate(
     db_path: Path,
     *,
@@ -182,6 +196,97 @@ def score_candidate(
         recommendation=_recommendation_for_status(status),
         reason_codes=list(dict.fromkeys(reason_codes)),
         explanation=_explanation_for_status(status),
+    )
+
+
+def rank_source_candidate(
+    *,
+    status: str,
+    confidence_score: float,
+    reason_codes: list[str] | None = None,
+    trust_tier: str | None = None,
+) -> SourceAutomationRank:
+    reasons = set(reason_codes or [])
+    if status == "blocked" or "blocked_source" in reasons:
+        return SourceAutomationRank(
+            automation_tier="block_candidate_suggested",
+            automation_label="Block candidate suggested",
+            suggested_action="keep_blocked_or_review_block_reason",
+        )
+    if status in {"approved", "rejected"}:
+        return SourceAutomationRank(
+            automation_tier=f"{status}_manual_state",
+            automation_label=f"{status.title()} manual state",
+            suggested_action="no_automatic_action",
+        )
+    if "spam_pattern_detected" in reasons or confidence_score < 0.35:
+        return SourceAutomationRank(
+            automation_tier="noisy",
+            automation_label="Noisy",
+            suggested_action="review_for_rejection_or_block",
+        )
+    if status == "recommended" and confidence_score >= 0.9:
+        official_signal = trust_tier == "official" or bool(
+            reasons
+            & {
+                "official_repo_pattern",
+                "official_docs_pattern",
+                "official_domain_match",
+                "known_ecosystem_match",
+            }
+        )
+        return SourceAutomationRank(
+            automation_tier="low_risk_recommended" if official_signal else "good_but_needs_review",
+            automation_label="Low-risk recommended" if official_signal else "Good but needs review",
+            suggested_action="manual_review_for_approval",
+        )
+    if status == "needs_review" or confidence_score >= 0.7:
+        return SourceAutomationRank(
+            automation_tier="good_but_needs_review",
+            automation_label="Good but needs review",
+            suggested_action="inspect_evidence",
+        )
+    return SourceAutomationRank(
+        automation_tier="weak_evidence",
+        automation_label="Weak evidence",
+        suggested_action="save_for_later",
+    )
+
+
+def auto_approval_dry_run(
+    *,
+    status: str,
+    confidence_score: float,
+    source_kind: str,
+    reason_codes: list[str] | None = None,
+    trust_tier: str | None = None,
+) -> SourceAutoApprovalDryRun:
+    reasons = set(reason_codes or [])
+    if status in {"approved", "rejected", "blocked"}:
+        return SourceAutoApprovalDryRun(False, f"manual_state_{status}", "Manual state excluded")
+    if "blocked_source" in reasons or "spam_pattern_detected" in reasons:
+        return SourceAutoApprovalDryRun(False, "blocked_or_noisy_signal", "Blocked or noisy signal")
+    if confidence_score < 0.95:
+        return SourceAutoApprovalDryRun(False, "score_below_0_95", "Score below dry-run threshold")
+    if source_kind not in {"github_repo", "rss_feed"}:
+        return SourceAutoApprovalDryRun(False, "unsupported_source_type", "Unsupported source type")
+    official_signal = trust_tier == "official" or bool(
+        reasons
+        & {
+            "official_repo_pattern",
+            "official_docs_pattern",
+            "official_domain_match",
+            "known_ecosystem_match",
+        }
+    )
+    if not official_signal:
+        return SourceAutoApprovalDryRun(False, "missing_official_signal", "Missing official signal")
+    if "metadata_sufficient" not in reasons:
+        return SourceAutoApprovalDryRun(False, "metadata_not_sufficient", "Metadata not sufficient")
+    return SourceAutoApprovalDryRun(
+        True,
+        "eligible_dry_run_only",
+        "Would be eligible for auto-approval dry run",
     )
 
 
