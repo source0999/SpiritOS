@@ -2181,6 +2181,72 @@ html[data-theme="solar-ember"] .dashboard-demo-v4-root {
   text-transform: uppercase;
 }
 
+.scout-center-job-actions {
+  display: flex;
+  max-width: 42rem;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.scout-center-list .scout-center-job-actions button {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  align-items: center;
+  gap: 0.36rem;
+  border: 1px solid color-mix(in oklab, var(--ddv4-surface-border-crisp) 88%, transparent);
+  border-radius: 8px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.16), transparent 50%),
+    color-mix(in oklab, rgba(15, 23, 42, 0.62) 70%, var(--ddv4-surface-fill));
+  color: rgba(248, 250, 252, 0.95);
+  cursor: pointer;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+  padding: 0.4rem 0.58rem;
+  white-space: normal;
+}
+
+.scout-center-list .scout-center-job-actions button:hover:not(:disabled),
+.scout-center-list .scout-center-job-actions button:focus-visible {
+  border-color: color-mix(in oklab, var(--spirit-accent-strong, #8fb8de) 70%, var(--ddv4-surface-border-crisp));
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.2), transparent 50%),
+    color-mix(in oklab, var(--spirit-accent, #8fb8de) 18%, rgba(16, 23, 34, 0.88));
+  outline: none;
+}
+
+.scout-center-list .scout-center-job-actions button:disabled {
+  cursor: progress;
+  opacity: 0.72;
+}
+
+.scout-center-action-message,
+.scout-center-action-error {
+  max-width: 74rem;
+  border: 1px solid color-mix(in oklab, var(--ddv4-surface-border-crisp) 64%, transparent);
+  border-radius: 8px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.45;
+  margin: 0;
+  padding: 0.58rem 0.68rem;
+}
+
+.scout-center-action-message {
+  background: color-mix(in oklab, #56b783 16%, rgba(15, 23, 42, 0.42));
+  color: rgba(234, 252, 241, 0.94);
+}
+
+.scout-center-action-error {
+  background: color-mix(in oklab, #db7f67 18%, rgba(15, 23, 42, 0.46));
+  color: rgba(255, 238, 234, 0.96);
+}
+
 .scout-center-list button {
   width: fit-content;
   max-width: 100%;
