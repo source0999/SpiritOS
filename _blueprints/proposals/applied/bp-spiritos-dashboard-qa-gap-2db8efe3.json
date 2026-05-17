@@ -1,0 +1,55 @@
+{
+  "action_taken": true,
+  "affected_blueprints": [
+    "cartographer-dashboard-mobile-qa"
+  ],
+  "applied": true,
+  "applied_at": "2026-05-17T00:01:08Z",
+  "applied_by": "Britton",
+  "applied_files": [
+    "_blueprints/runbooks/cartographer_dashboard_mobile_qa.md"
+  ],
+  "approved_diff": "diff --git a/_blueprints/runbooks/cartographer_dashboard_mobile_qa.md b/_blueprints/runbooks/cartographer_dashboard_mobile_qa.md\n--- a/_blueprints/runbooks/cartographer_dashboard_mobile_qa.md\n+++ b/_blueprints/runbooks/cartographer_dashboard_mobile_qa.md\n@@ -137,3 +137,9 @@\n - Component: dashboard.\n - Changed files: src/components/dashboard/ScoutIntelligenceCenter.tsx, src/components/dashboard/demo-v4/DashboardDemoV4ThemePicker.test.tsx.\n - Manual check: confirm this blueprint still matches the changed implementation.\n+\n+### Cartographer Review Note\n+- Reason: qa_gap.\n+- Component: dashboard.\n+- Changed files: src/components/dashboard/ScoutIntelligenceCenter.tsx.\n+- Manual check: confirm this blueprint still matches the changed implementation.",
+  "changed_files": [
+    "src/components/dashboard/ScoutIntelligenceCenter.tsx"
+  ],
+  "committed": false,
+  "component": "dashboard",
+  "confidence": "medium",
+  "deduped": true,
+  "diff_preview": "diff --git a/_blueprints/runbooks/cartographer_dashboard_mobile_qa.md b/_blueprints/runbooks/cartographer_dashboard_mobile_qa.md\n--- a/_blueprints/runbooks/cartographer_dashboard_mobile_qa.md\n+++ b/_blueprints/runbooks/cartographer_dashboard_mobile_qa.md\n@@ -137,3 +137,9 @@\n - Component: dashboard.\n - Changed files: src/components/dashboard/ScoutIntelligenceCenter.tsx, src/components/dashboard/demo-v4/DashboardDemoV4ThemePicker.test.tsx.\n - Manual check: confirm this blueprint still matches the changed implementation.\n+\n+### Cartographer Review Note\n+- Reason: qa_gap.\n+- Component: dashboard.\n+- Changed files: src/components/dashboard/ScoutIntelligenceCenter.tsx.\n+- Manual check: confirm this blueprint still matches the changed implementation.",
+  "fingerprint": "2db8efe384746fbe",
+  "generated": false,
+  "persisted": true,
+  "project_id": "spiritos",
+  "proposal_id": "bp-spiritos-dashboard-qa-gap-2db8efe3",
+  "proposed_files": [
+    "_blueprints/runbooks/cartographer_dashboard_mobile_qa.md"
+  ],
+  "pushed": false,
+  "rationale": "qa_gap affected dashboard; Cartographer drafted a doc-only preview for dashboard review.",
+  "rejection_reason": null,
+  "requires_approval": true,
+  "status": "applied",
+  "task_id": "task_4308d48ecf94",
+  "title": "Draft blueprint update for dashboard",
+  "transitions": [
+    {
+      "actor": "cartographer",
+      "status": "drafted",
+      "timestamp": "2026-05-17T00:01:06Z"
+    },
+    {
+      "actor": "Britton",
+      "status": "approved",
+      "timestamp": "2026-05-17T00:01:06Z"
+    },
+    {
+      "actor": "Britton",
+      "status": "applied",
+      "timestamp": "2026-05-17T00:01:08Z"
+    }
+  ],
+  "type": "blueprint_update",
+  "verification_status": "verified"
+}
