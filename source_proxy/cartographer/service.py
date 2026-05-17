@@ -7,6 +7,7 @@ from source_proxy.cartographer.blueprint_registry import count_blueprint_documen
 from source_proxy.cartographer.blueprint_scribe import draft_blueprint_updates
 from source_proxy.cartographer.branch_recommendations import recommend_branches
 from source_proxy.cartographer.change_scribe import summarize_changes
+from source_proxy.cartographer.codex_evidence import build_codex_evidence_rollup
 from source_proxy.cartographer.commit_proposals import build_commit_proposals
 from source_proxy.cartographer.component_mapper import build_component_map
 from source_proxy.cartographer.drift import detect_blueprint_drift
@@ -76,12 +77,25 @@ def build_cartographer_project_candidates() -> dict[str, Any]:
 
 def build_cartographer_project_health() -> dict[str, Any]:
     projects = build_project_health()
+    codex_evidence = build_codex_evidence_rollup()
     return {
         "status": "observing",
         "write_actions_enabled": False,
         "projects": to_jsonable(projects),
         "project_count": len(projects),
         "filters": sorted({filter_name for project in projects for filter_name in project.filters}),
+        "codex_evidence": to_jsonable(codex_evidence),
+        "actions_taken": False,
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_codex_evidence() -> dict[str, Any]:
+    codex_evidence = build_codex_evidence_rollup()
+    return {
+        "status": "observing",
+        "write_actions_enabled": False,
+        "codex_evidence": to_jsonable(codex_evidence),
         "actions_taken": False,
         "safety": cartographer_safety_manifest(),
     }

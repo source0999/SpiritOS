@@ -12,6 +12,17 @@ from source_proxy.codex.adapter import (
     validate_codex_envelope,
     validate_codex_cli_argv,
 )
+from source_proxy.codex.task_packet import (
+    CODEX_TASK_SAFETY_RULES,
+    CodexTaskPacketError,
+    build_codex_task_packet,
+)
+from source_proxy.codex.evidence import (
+    CodexEvidenceError,
+    build_codex_evidence_packet,
+    utc_now_iso,
+    write_codex_evidence_packet,
+)
 
 __all__ = [
     "BLOCKED_CODEX_FLAGS",
@@ -26,4 +37,11 @@ __all__ = [
     "codex_subprocess_env",
     "validate_codex_envelope",
     "validate_codex_cli_argv",
+    "CODEX_TASK_SAFETY_RULES",
+    "CodexTaskPacketError",
+    "build_codex_task_packet",
+    "CodexEvidenceError",
+    "build_codex_evidence_packet",
+    "utc_now_iso",
+    "write_codex_evidence_packet",
 ]

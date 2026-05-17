@@ -23,6 +23,7 @@ from source_proxy.cartographer.service import (
     build_cartographer_blueprint_scribe,
     build_cartographer_branch_recommendations,
     build_cartographer_change_scribe,
+    build_cartographer_codex_evidence,
     build_cartographer_commit_proposals,
     build_cartographer_components,
     build_cartographer_drift,
@@ -280,6 +281,7 @@ class CartographerApiTests(unittest.TestCase):
             "/v1/cartographer/projects",
             "/v1/cartographer/project-candidates",
             "/v1/cartographer/project-health",
+            "/v1/cartographer/codex-evidence",
             "/v1/cartographer/branch-recommendations",
             "/v1/cartographer/commit-proposals",
             "/v1/cartographer/push-queue",
@@ -305,6 +307,7 @@ class CartographerApiTests(unittest.TestCase):
         self.assertEqual(client.post("/v1/cartographer/projects").status_code, 405)
         self.assertEqual(client.post("/v1/cartographer/project-candidates").status_code, 405)
         self.assertEqual(client.post("/v1/cartographer/project-health").status_code, 405)
+        self.assertEqual(client.post("/v1/cartographer/codex-evidence").status_code, 405)
         self.assertEqual(client.post("/v1/cartographer/branch-recommendations").status_code, 405)
         self.assertEqual(client.post("/v1/cartographer/commit-proposals").status_code, 405)
         self.assertEqual(client.post("/v1/cartographer/push-queue").status_code, 405)
@@ -698,6 +701,76 @@ class CartographerApiTests(unittest.TestCase):
         self.assertEqual(project["pending_proposals"], 0)
         self.assertFalse(project["dirty"])
         self.assertIn("active", project["filters"])
+
+    def test_project_health_surfaces_codex_evidence_without_action_authority(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            evidence_dir = root / "codex-evidence"
+            _write_codex_evidence(
+                evidence_dir,
+                "phase-10-11-1-t4",
+                ["source_proxy/tests/test_codex_cli_adapter.py"],
+            )
+            _write_minimal_blueprints(root)
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+
+            with patch.dict(
+                os.environ,
+                {
+                    "SPIRIT_PROJECT_PATH": str(root),
+                    "SPIRIT_CODEX_EVIDENCE_PATHS": str(evidence_dir),
+                },
+                clear=False,
+            ):
+                payload = build_cartographer_project_health()
+
+        evidence = payload["codex_evidence"]
+        self.assertFalse(payload["write_actions_enabled"])
+        self.assertFalse(payload["actions_taken"])
+        self.assertEqual(evidence["evidence_count"], 1)
+        self.assertEqual(evidence["latest_task_ids"], ["phase-10-11-1-t4"])
+        self.assertEqual(evidence["changed_files"], ["source_proxy/tests/test_codex_cli_adapter.py"])
+        self.assertIn("source-proxy", evidence["components"])
+        self.assertIn("medium", evidence["risk_labels"])
+        self.assertTrue(evidence["proposal_pending_review"])
+        self.assertTrue(evidence["commit_proposal_needed"])
+        self.assertFalse(evidence["approval_authority"])
+        self.assertFalse(evidence["apply_authority"])
+        self.assertFalse(evidence["commit_authority"])
+        self.assertFalse(evidence["push_authority"])
+        self.assertFalse(evidence["actions_taken"])
+
+    def test_codex_evidence_route_is_read_only_and_context_only(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            evidence_dir = root / "codex-evidence"
+            _write_codex_evidence(
+                evidence_dir,
+                "phase-10-11-1-t6",
+                ["src/components/coding/CodingAgentInterface.tsx"],
+            )
+
+            with patch.dict(os.environ, {"SPIRIT_CODEX_EVIDENCE_PATHS": str(evidence_dir)}, clear=False):
+                payload = build_cartographer_codex_evidence()
+                client = TestClient(_test_app())
+                response = client.get("/v1/cartographer/codex-evidence")
+
+        self.assertEqual(response.status_code, 200)
+        route_payload = response.json()
+        for item in (payload, route_payload):
+            self.assertEqual(item["status"], "observing")
+            self.assertFalse(item["write_actions_enabled"])
+            self.assertFalse(item["actions_taken"])
+            self.assertEqual(item["codex_evidence"]["evidence_count"], 1)
+            self.assertEqual(item["codex_evidence"]["latest_task_ids"], ["phase-10-11-1-t6"])
+            self.assertFalse(item["codex_evidence"]["approval_authority"])
+            self.assertFalse(item["codex_evidence"]["apply_authority"])
+            self.assertFalse(item["codex_evidence"]["commit_authority"])
+            self.assertFalse(item["codex_evidence"]["push_authority"])
 
     def test_project_health_blocks_merge_when_dirty_or_unpushed(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -1571,6 +1644,41 @@ class CartographerApiTests(unittest.TestCase):
         self.assertIn("remote untouched", push_events[0]["rollback_hint"])
         self.assertFalse(payload["rollback_enabled"])
 
+    def test_audit_trail_surfaces_codex_evidence_as_read_only_context(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            evidence_dir = root / "codex-evidence"
+            _write_minimal_blueprints(root)
+            _write_codex_evidence(
+                evidence_dir,
+                "phase-10-11-1-t5",
+                ["src/components/coding/__tests__/coding-workflow-step.test.ts"],
+            )
+
+            with patch.dict(
+                os.environ,
+                {
+                    "SPIRIT_PROJECT_PATH": str(root),
+                    "SPIRIT_CODEX_EVIDENCE_PATHS": str(evidence_dir),
+                },
+                clear=False,
+            ):
+                payload = build_cartographer_audit_trail()
+
+        self.assertFalse(payload["write_actions_enabled"])
+        self.assertFalse(payload["actions_taken"])
+        events = [event for event in payload["events"] if event["source"] == "codex_evidence"]
+        self.assertEqual(len(events), 1)
+        event = events[0]
+        self.assertEqual(event["event"], "codex_task_evidence")
+        self.assertEqual(event["action"], "codex_proposal_recorded")
+        self.assertEqual(event["task_id"], "phase-10-11-1-t5")
+        self.assertEqual(event["result"], "passed")
+        self.assertEqual(event["reason"], "ready_for_review")
+        self.assertEqual(event["changed_files"], ["src/components/coding/__tests__/coding-workflow-step.test.ts"])
+        self.assertEqual(event["files"], event["changed_files"])
+        self.assertIn("read-only", event["rollback_hint"])
+
     def test_audit_trail_surfaces_branch_commit_push_details_and_rollback_hints(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -1643,8 +1751,10 @@ class CartographerApiTests(unittest.TestCase):
                 "scout/src/scout/api/discovery_jobs.py",
                 "source_proxy/cartographer/service.py",
                 "src/app/v1/cartographer/status/route.ts",
+                "src/app/v1/coding/codex/route.ts",
                 "src/app/api/scout/overview/route.ts",
                 "src/components/dashboard/HomelabCartographerWidget.tsx",
+                "src/components/coding/CodingAgentInterface.tsx",
                 "src/app/chat/page.tsx",
                 "src/app/oracle/page.tsx",
                 "scripts/spiritdesktop-windows/agent.ps1",
@@ -1668,6 +1778,15 @@ class CartographerApiTests(unittest.TestCase):
         self.assertIn(
             "src/app/v1/cartographer/status/route.ts",
             by_id["cartographer-api-bridge"].matched_paths,
+        )
+        self.assertEqual(by_id["coding-workflow"].blueprint_id, "dashboard-state")
+        self.assertEqual(by_id["coding-workflow"].risk, "medium")
+        self.assertEqual(
+            by_id["coding-workflow"].matched_paths,
+            [
+                "src/app/v1/coding/codex/route.ts",
+                "src/components/coding/CodingAgentInterface.tsx",
+            ],
         )
         self.assertEqual(by_id["scout-dashboard-bridge"].label, "Scout dashboard bridge")
         self.assertEqual(by_id["dashboard"].blueprint_id, "dashboard-state")
@@ -3120,6 +3239,88 @@ class CartographerApiTests(unittest.TestCase):
         self.assertEqual(payload["drafts"], [])
         self.assertEqual(payload["draft_count"], 0)
 
+    def test_blueprint_scribe_drafts_codex_trial_summary_without_applying_blueprints(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            evidence_dir = root / "codex-evidence"
+            _write_minimal_blueprints(root)
+            _write_cartographer_blueprint_targets(root)
+            _write_codex_evidence(
+                evidence_dir,
+                "phase-10-11-2-summary",
+                ["source_proxy/cartographer/codex_evidence.py"],
+            )
+            cartographer_blueprint = root / "_blueprints" / "components" / "cartographer_agent.md"
+            before = cartographer_blueprint.read_text(encoding="utf-8")
+
+            with patch.dict(
+                os.environ,
+                {
+                    "SPIRIT_PROJECT_PATH": str(root),
+                    "SPIRIT_CODEX_EVIDENCE_PATHS": str(evidence_dir),
+                },
+                clear=False,
+            ):
+                payload = build_cartographer_blueprint_scribe()
+
+            after = cartographer_blueprint.read_text(encoding="utf-8")
+
+        self.assertEqual(before, after)
+        self.assertEqual(payload["status"], "observing")
+        self.assertFalse(payload["write_actions_enabled"])
+        self.assertFalse(payload["actions_taken"])
+        codex_drafts = [draft for draft in payload["drafts"] if draft["component"] == "codex-adapter"]
+        self.assertEqual(len(codex_drafts), 2)
+        affected = {draft["affected_blueprint"] for draft in codex_drafts}
+        self.assertEqual(affected, {"cartographer-agent", "cartographer-manual-checks"})
+        for draft in codex_drafts:
+            self.assertTrue(draft["proposal_id"].startswith("bp-scribe-codex-"))
+            self.assertIn("Codex adapter trial summary", draft["suggested_update"])
+            self.assertIn("codex_trial_summary_ready", draft["reason"])
+            self.assertIn("approval/apply/commit/push authority: false", draft["evidence"])
+            self.assertTrue(draft["editable"])
+            self.assertTrue(draft["rejectable"])
+            self.assertTrue(draft["requires_apply_approval"])
+            self.assertFalse(draft["action_taken"])
+
+    def test_proposals_include_codex_trial_summary_as_pending_review_preview_only(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            evidence_dir = root / "codex-evidence"
+            _write_minimal_blueprints(root)
+            _write_cartographer_blueprint_targets(root)
+            _write_codex_evidence(
+                evidence_dir,
+                "phase-10-11-2-proposal",
+                ["source_proxy/cartographer/codex_evidence.py"],
+            )
+
+            with patch.dict(
+                os.environ,
+                {
+                    "SPIRIT_PROJECT_PATH": str(root),
+                    "SPIRIT_CODEX_EVIDENCE_PATHS": str(evidence_dir),
+                },
+                clear=False,
+            ):
+                payload = build_cartographer_proposals()
+
+        codex_proposals = [
+            proposal for proposal in payload["proposals"] if proposal["component"] == "codex-adapter"
+        ]
+        self.assertEqual(len(codex_proposals), 2)
+        self.assertFalse(payload["write_actions_enabled"])
+        self.assertFalse(payload["actions_taken"])
+        for proposal in codex_proposals:
+            self.assertEqual(proposal["status"], "pending_review")
+            self.assertEqual(proposal["type"], "blueprint_update")
+            self.assertTrue(proposal["requires_approval"])
+            self.assertTrue(proposal["generated"])
+            self.assertFalse(proposal["persisted"])
+            self.assertFalse(proposal["applied"])
+            self.assertFalse(proposal["action_taken"])
+            self.assertIn("Codex Adapter Trial Summary", proposal["diff_preview"])
+
     def test_runbook_scribe_suggests_api_checklist_with_expected_outputs(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -3394,6 +3595,41 @@ def _write_minimal_blueprint_validator(root: Path) -> None:
     )
 
 
+def _write_cartographer_blueprint_targets(root: Path) -> None:
+    blueprints = root / "_blueprints"
+    components = blueprints / "components"
+    runbooks = blueprints / "runbooks"
+    components.mkdir(parents=True, exist_ok=True)
+    runbooks.mkdir(parents=True, exist_ok=True)
+    with (blueprints / "INDEX.md").open("a", encoding="utf-8") as handle:
+        handle.write("\n| `components/cartographer_agent.md` | component blueprint | Cartographer. |")
+        handle.write("\n| `runbooks/cartographer_manual_checks.md` | manual QA/runbook | Cartographer checks. |\n")
+    (components / "cartographer_agent.md").write_text(
+        _blueprint_doc(
+            blueprint_id="cartographer-agent",
+            title="Cartographer Agent",
+            component="cartographer",
+            doc_type="component_blueprint",
+            status="active",
+            source_of_truth=True,
+            code_paths=["source_proxy/cartographer/**"],
+        ),
+        encoding="utf-8",
+    )
+    (runbooks / "cartographer_manual_checks.md").write_text(
+        _blueprint_doc(
+            blueprint_id="cartographer-manual-checks",
+            title="Cartographer Manual Checks",
+            component="cartographer",
+            doc_type="runbook",
+            status="runbook",
+            source_of_truth=False,
+            code_paths=["source_proxy/cartographer/**"],
+        ),
+        encoding="utf-8",
+    )
+
+
 def _write_proposal(root: Path, state: str, proposal_id: str, payload: dict[str, object]) -> None:
     proposal_dir = root / "_blueprints" / "proposals" / state
     proposal_dir.mkdir(parents=True, exist_ok=True)
@@ -3409,6 +3645,38 @@ def _write_git_approval_record(root: Path, payload: dict[str, object]) -> None:
     audit_path.parent.mkdir(parents=True, exist_ok=True)
     with audit_path.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(payload, sort_keys=True) + "\n")
+
+
+def _write_codex_evidence(evidence_dir: Path, task_id: str, changed_files: list[str]) -> None:
+    evidence_dir.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "apply_authority": False,
+        "approval_authority": False,
+        "artifact_version": "codex_evidence.v1",
+        "changed_files_after": changed_files,
+        "changed_files_before": changed_files,
+        "command": ["codex", "exec", "--sandbox", "read-only", "proposal"],
+        "commit_authority": False,
+        "diff_excerpt": "",
+        "diff_stat": "",
+        "exit_code": 0,
+        "final_message_excerpt": "Codex evidence captured.",
+        "finished_at": "2026-05-17T21:40:00Z",
+        "head_after": "aee3351",
+        "head_before": "aee3351",
+        "json_event_count": 2,
+        "push_authority": False,
+        "recommendation": "ready_for_review",
+        "rollback_hint": "No rollback needed.",
+        "safety_verdict": "passed",
+        "sandbox": "read-only",
+        "started_at": "2026-05-17T21:39:00Z",
+        "stderr_excerpt": "",
+        "stdout_excerpt": "{\"type\":\"thread.started\"}\n{\"type\":\"turn.completed\"}",
+        "task_id": task_id,
+        "worker": "codex_cli",
+    }
+    (evidence_dir / f"{task_id}.json").write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
 
 def _branch_names(output: str) -> list[str]:

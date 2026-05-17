@@ -347,6 +347,34 @@ type ArtifactShelfItem = {
   source: "attachment" | "route" | "diff" | "replay" | "checkpoint";
 };
 
+export type CodexEvidencePacket = {
+  apply_authority?: boolean;
+  approval_authority?: boolean;
+  artifact_version?: string;
+  changed_files_after?: string[];
+  changed_files_before?: string[];
+  command?: string[];
+  commit_authority?: boolean;
+  diff_excerpt?: string;
+  diff_stat?: string;
+  exit_code?: number | null;
+  final_message_excerpt?: string;
+  finished_at?: string;
+  head_after?: string | null;
+  head_before?: string | null;
+  json_event_count?: number;
+  push_authority?: boolean;
+  recommendation?: string;
+  rollback_hint?: string;
+  safety_verdict?: string;
+  sandbox?: string;
+  started_at?: string;
+  stderr_excerpt?: string;
+  stdout_excerpt?: string;
+  task_id?: string;
+  worker?: string;
+};
+
 type VerificationRollupItem = {
   detail: string;
   id: string;
@@ -5635,6 +5663,141 @@ function ArtifactShelfPanel({
   );
 }
 
+export function CodexEvidencePanel({
+  initialEvidence = null,
+}: {
+  initialEvidence?: CodexEvidencePacket | null;
+}) {
+  const [rawEvidence, setRawEvidence] = useState("");
+  const [evidence, setEvidence] = useState<CodexEvidencePacket | null>(initialEvidence);
+  const [error, setError] = useState<string | null>(null);
+
+  function loadEvidence() {
+    try {
+      const parsed = JSON.parse(rawEvidence) as unknown;
+      if (!parsed || typeof parsed !== "object") {
+        throw new Error("Evidence must be a JSON object.");
+      }
+      setEvidence(parsed as CodexEvidencePacket);
+      setError(null);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Evidence JSON could not be parsed.");
+    }
+  }
+
+  const changedFiles = evidence?.changed_files_after ?? [];
+  const diffAvailable = Boolean(
+    evidence?.diff_excerpt?.trim() || evidence?.diff_stat?.trim(),
+  );
+  const testsRun =
+    evidence?.json_event_count != null
+      ? `${evidence.json_event_count} JSON events captured`
+      : "not reported";
+  const approvalState =
+    evidence?.approval_authority === false &&
+    evidence?.apply_authority === false &&
+    evidence?.commit_authority === false &&
+    evidence?.push_authority === false
+      ? "separate; no Codex authority"
+      : "unverified";
+
+  return (
+    <section className="border-b border-slate-300 bg-white px-4 py-3 shadow-sm">
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <div className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
+            Codex worker evidence
+          </div>
+          <div className="mt-1 text-sm font-semibold text-slate-950">
+            Replay evidence packet
+          </div>
+        </div>
+        <WorkflowBadge tone={evidence ? "success" : "muted"}>
+          {evidence ? evidence.safety_verdict ?? "loaded" : "read-only"}
+        </WorkflowBadge>
+      </div>
+
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,24rem)]">
+        <div className="grid gap-2 text-xs sm:grid-cols-2 xl:grid-cols-4">
+          <EvidenceField label="Worker" value={evidence?.worker ?? "codex_cli"} />
+          <EvidenceField label="Task ID" value={evidence?.task_id ?? "No evidence loaded"} />
+          <EvidenceField label="Status" value={evidence?.safety_verdict ?? "waiting"} />
+          <EvidenceField label="Sandbox" value={evidence?.sandbox ?? "read-only"} />
+          <EvidenceField
+            label="Changed files"
+            value={changedFiles.length ? changedFiles.join(", ") : "none"}
+          />
+          <EvidenceField label="Diff available" value={diffAvailable ? "yes" : "no"} />
+          <EvidenceField label="Tests run" value={testsRun} />
+          <EvidenceField label="Recommendation" value={evidence?.recommendation ?? "waiting"} />
+          <EvidenceField label="Approval state" value={approvalState} />
+          <EvidenceField
+            label="HEAD"
+            value={
+              evidence?.head_before || evidence?.head_after
+                ? `${evidence.head_before ?? "unknown"} -> ${evidence.head_after ?? "unknown"}`
+                : "not reported"
+            }
+          />
+          <EvidenceField
+            label="Exit code"
+            value={evidence?.exit_code == null ? "not reported" : String(evidence.exit_code)}
+          />
+          <EvidenceField
+            label="Rollback"
+            value={evidence?.rollback_hint ?? "No rollback action loaded."}
+          />
+        </div>
+
+        <div className="border border-slate-200 bg-slate-50 p-3">
+          <label
+            className="text-xs font-semibold uppercase tracking-wide text-slate-500"
+            htmlFor="codex-evidence-json"
+          >
+            Evidence JSON
+          </label>
+          <textarea
+            className="mt-2 h-28 w-full resize-y border border-slate-300 bg-white p-2 font-mono text-xs text-slate-900"
+            id="codex-evidence-json"
+            onChange={(event) => setRawEvidence(event.target.value)}
+            placeholder='{"artifact_version":"codex_evidence.v1", ...}'
+            value={rawEvidence}
+          />
+          {error ? <div className="mt-2 text-xs font-semibold text-red-700">{error}</div> : null}
+          <button
+            className="mt-2 inline-flex items-center gap-2 border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-900 hover:bg-slate-100"
+            onClick={loadEvidence}
+            type="button"
+          >
+            <Eye className="h-3.5 w-3.5" aria-hidden />
+            Load evidence
+          </button>
+        </div>
+      </div>
+
+      {evidence ? (
+        <div className="mt-3 grid gap-3 lg:grid-cols-2">
+          <pre className="max-h-40 overflow-auto border border-slate-200 bg-slate-950 p-3 text-xs text-slate-100">
+            {evidence.final_message_excerpt || "No final message excerpt."}
+          </pre>
+          <pre className="max-h-40 overflow-auto border border-slate-200 bg-slate-950 p-3 text-xs text-slate-100">
+            {evidence.diff_excerpt || evidence.diff_stat || "No diff captured."}
+          </pre>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function EvidenceField({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border border-slate-200 bg-slate-50 px-3 py-2">
+      <div className="font-semibold uppercase tracking-wide text-slate-500">{label}</div>
+      <div className="mt-1 break-words text-sm font-medium text-slate-950">{value}</div>
+    </div>
+  );
+}
+
 export function deriveVerificationDashboardRollup({
   approvalGate,
   diffVerification,
@@ -6645,6 +6808,7 @@ function OutputWindow({
         longRunningTask={longRunningTask}
         workflowMemory={workflowMemory}
       />
+      <CodexEvidencePanel />
       <VerificationDashboardRollupPanel
         approvalGate={approvalGate}
         diffVerification={diffVerification}

@@ -8,6 +8,7 @@ import {
   ApprovalGatePanel,
   architectPlanDisplayTarget,
   buildQualityGateChecks,
+  CodexEvidencePanel,
   CodingStabilityCard,
   CodingTaskStateCard,
   deriveApprovalStateChecklist,
@@ -214,6 +215,73 @@ describe("documenterBlueprintProposals", () => {
     expect(documenterBlueprintProposals[1]?.expectedOutput).toBe(
       "blueprint update proposal only",
     );
+  });
+});
+
+describe("CodexEvidencePanel", () => {
+  const evidence = {
+    apply_authority: false,
+    approval_authority: false,
+    artifact_version: "codex_evidence.v1",
+    changed_files_after: [],
+    changed_files_before: [],
+    command: ["codex", "exec", "--sandbox", "read-only"],
+    commit_authority: false,
+    diff_excerpt: "",
+    diff_stat: "",
+    exit_code: 0,
+    final_message_excerpt: "Safety boundaries listed.",
+    head_after: "aee3351",
+    head_before: "aee3351",
+    json_event_count: 2,
+    push_authority: false,
+    recommendation: "ready_for_review",
+    rollback_hint: "No rollback needed.",
+    safety_verdict: "passed",
+    sandbox: "read-only",
+    task_id: "phase-10.9.2-smoke",
+    worker: "codex_cli",
+  };
+
+  it("shows loaded Codex evidence without apply commit or push controls", () => {
+    render(createElement(CodexEvidencePanel, { initialEvidence: evidence }));
+
+    expect(screen.getByText("phase-10.9.2-smoke")).toBeInTheDocument();
+    expect(screen.getAllByText("passed").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("none").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("2 JSON events captured")).toBeInTheDocument();
+    expect(screen.getByText("ready_for_review")).toBeInTheDocument();
+    expect(screen.getByText("separate; no Codex authority")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /apply/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /commit/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /push/i })).not.toBeInTheDocument();
+  });
+
+  it("keeps evidence card labels visible without apply commit or push controls", () => {
+    render(createElement(CodexEvidencePanel, { initialEvidence: evidence }));
+
+    expect(screen.getByText("Codex worker evidence")).toBeInTheDocument();
+    expect(screen.getByText("Replay evidence packet")).toBeInTheDocument();
+    expect(screen.getByText("Task ID")).toBeInTheDocument();
+    expect(screen.getByText("Changed files")).toBeInTheDocument();
+    expect(screen.getByText("Diff available")).toBeInTheDocument();
+    expect(screen.getByText("Tests run")).toBeInTheDocument();
+    expect(screen.getByText("Approval state")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /apply/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /commit/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /push/i })).not.toBeInTheDocument();
+  });
+
+  it("loads pasted Codex evidence JSON into the replay card", () => {
+    render(createElement(CodexEvidencePanel));
+
+    fireEvent.change(screen.getByLabelText("Evidence JSON"), {
+      target: { value: JSON.stringify(evidence) },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /load evidence/i }));
+
+    expect(screen.getByText("phase-10.9.2-smoke")).toBeInTheDocument();
+    expect(screen.getByText("Safety boundaries listed.")).toBeInTheDocument();
   });
 });
 
