@@ -4,6 +4,7 @@ from source_proxy import __version__
 from source_proxy.api.action_preview import router as action_preview_router
 from source_proxy.api.cartographer import router as cartographer_router
 from source_proxy.api.chat import router as chat_router
+from source_proxy.api.codex_adapter import router as codex_adapter_router
 from source_proxy.api.coding_self_tests import router as coding_self_tests_router
 from source_proxy.api.context_index import router as context_index_router
 from source_proxy.api.context_inventory import router as context_inventory_router
@@ -30,6 +31,7 @@ app.state.coder_agent_execution = {
 app.include_router(action_preview_router)
 app.include_router(cartographer_router)
 app.include_router(chat_router)
+app.include_router(codex_adapter_router)
 app.include_router(coding_self_tests_router)
 app.include_router(context_index_router)
 app.include_router(context_inventory_router)

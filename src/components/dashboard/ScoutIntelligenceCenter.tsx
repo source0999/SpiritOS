@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import type { ReactNode } from "react";
-import { ArrowUp } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { ArrowUp, ListPlus, Search } from "lucide-react";
 
 import { DashboardDemoV4Atmosphere } from "@/components/dashboard/demo-v4/DashboardDemoV4Atmosphere";
 import { DashboardDemoV4FloatingNav } from "@/components/dashboard/demo-v4/DashboardDemoV4FloatingNav";
@@ -40,6 +40,36 @@ function formatDateTime(value: string | null | undefined): string {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function discoveryPreviewCount(body: unknown): number {
+  if (
+    body &&
+    typeof body === "object" &&
+    "result" in body &&
+    body.result &&
+    typeof body.result === "object" &&
+    "sources" in body.result &&
+    Array.isArray(body.result.sources)
+  ) {
+    return body.result.sources.length;
+  }
+  return 0;
+}
+
+function discoveryExtractionCount(body: unknown): number {
+  if (
+    body &&
+    typeof body === "object" &&
+    "extraction" in body &&
+    body.extraction &&
+    typeof body.extraction === "object" &&
+    "candidates_created" in body.extraction &&
+    typeof body.extraction.candidates_created === "number"
+  ) {
+    return body.extraction.candidates_created;
+  }
+  return 0;
 }
 
 function packetTitle(packet: ScoutPacket): string {
@@ -137,16 +167,9 @@ function searchPlanLabel(job: ScoutDiscoveryJob): string {
   return humanizeScoutLabel(job.computed_status ?? job.status);
 }
 
-function searchPlanManualOptions(job: ScoutDiscoveryJob, budget: ScoutDiscoveryBudget | undefined): string[] {
+function searchPlanHints(job: ScoutDiscoveryJob): string[] {
   const label = searchPlanLabel(job).toLowerCase();
   const safeAction = job.safe_next_action?.toLowerCase() ?? "";
-  const options = ["Leave queued"];
-
-  if (budget?.remaining_today === 0 || budget?.can_create_job === false) {
-    options.push("Preview after budget reset");
-  } else {
-    options.push("Preview Search manually");
-  }
 
   if (
     label.includes("duplicate") ||
@@ -154,12 +177,10 @@ function searchPlanManualOptions(job: ScoutDiscoveryJob, budget: ScoutDiscoveryB
     label.includes("noisy") ||
     safeAction.includes("cancel")
   ) {
-    options.push("Mark for cleanup patch");
-  } else {
-    options.push("Extract candidates only after preview");
+    return ["Cleanup is not wired here yet; leave queued or plan a cleanup patch."];
   }
 
-  return options;
+  return ["Extract only after reviewing preview results; extraction creates suggestions, not approvals."];
 }
 
 function budgetHelpText(budget: ScoutDiscoveryBudget | undefined): string {
@@ -562,12 +583,58 @@ function SourceApprovals({ overview }: { overview: ScoutOverview }) {
   );
 }
 
-function SearchQueue({ overview }: { overview: ScoutOverview }) {
+function SearchQueue({ overview, refresh }: { overview: ScoutOverview; refresh: () => Promise<void> }) {
   const jobs = overview.discovery_jobs?.jobs ?? [];
   const budget = overview.discovery_jobs?.budget;
   const execution = overview.discovery_jobs?.execution;
   const queuedCount = budget?.queued_jobs ?? jobs.filter((job) => job.status === "queued").length;
   const runningCount = budget?.running_jobs ?? jobs.filter((job) => job.status === "running").length;
+  const [busyJobId, setBusyJobId] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  async function runDiscoveryJobAction(job: ScoutDiscoveryJob, action: "search-preview" | "extract-candidates") {
+    if (action === "extract-candidates") {
+      const confirmed = window.confirm(
+        "Extract source candidates from this discovery job? This creates review suggestions only; it does not approve or activate sources.",
+      );
+      if (!confirmed) return;
+    }
+
+    setBusyJobId(job.job_id);
+    setActionMessage(null);
+    setActionError(null);
+    try {
+      const res = await fetch(`/api/scout/discovery-jobs/${encodeURIComponent(job.job_id)}/${action}`, {
+        method: "POST",
+      });
+      const body = await res.json().catch(() => null);
+      if (!res.ok) {
+        const message =
+          body && typeof body === "object" && "error" in body && typeof body.error === "string"
+            ? body.error
+            : "Could not update discovery job.";
+        throw new Error(message);
+      }
+
+      if (action === "search-preview") {
+        const count = discoveryPreviewCount(body);
+        setActionMessage(
+          `Preview returned ${count} possible source${count === 1 ? "" : "s"}. No source was approved or activated.`,
+        );
+      } else {
+        const count = discoveryExtractionCount(body);
+        setActionMessage(
+          `Extraction created ${count} source suggestion${count === 1 ? "" : "s"}. Manual approval is still required.`,
+        );
+      }
+      await refresh();
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "Could not update discovery job.");
+    } finally {
+      setBusyJobId(null);
+    }
+  }
 
   return (
     <Section
@@ -588,41 +655,70 @@ function SearchQueue({ overview }: { overview: ScoutOverview }) {
         Preview Search shows possible results and does not activate sources. Extract Candidates turns
         results into source suggestions and does not approve sources.
       </p>
+      {actionMessage ? <p className="scout-center-action-message">{actionMessage}</p> : null}
+      {actionError ? <p className="scout-center-action-error">{actionError}</p> : null}
       <DiscoveryBudgetBars overview={overview} />
       <ul className="scout-center-list">
-        {jobs.slice(0, 8).map((job: ScoutDiscoveryJob) => (
-          <li key={job.job_id}>
-            <strong>{job.query}</strong>
-            <span>
-              {humanizeScoutLabel(job.status)} -{" "}
-              {job.attention_label ?? searchPlanLabel(job)}
-            </span>
-            <p>
-              Topic: {job.topic_anchor ?? "None"} - Updated {formatDateTime(job.updated_at)}
-            </p>
-            <div className="scout-center-manual-options" aria-label={`Suggested next steps for ${job.query}`}>
-              <span>Suggested next steps:</span>
-              {searchPlanManualOptions(job, budget).map((option) => (
-                <span key={option}>{option}</span>
-              ))}
-            </div>
-            <details>
-              <summary>Details</summary>
-              <dl>
-                <dt>Status</dt>
-                <dd>{humanizeScoutLabel(job.status)}</dd>
-                <dt>Plan label</dt>
-                <dd>{searchPlanLabel(job)}</dd>
-                <dt>Computed status</dt>
-                <dd>{humanizeScoutLabel(job.computed_status)}</dd>
-                <dt>Safe next action</dt>
-                <dd>{job.safe_next_action ?? "No action suggested"}</dd>
-                <dt>Budget</dt>
-                <dd>{job.budget}</dd>
-              </dl>
-            </details>
-          </li>
-        ))}
+        {jobs.slice(0, 8).map((job: ScoutDiscoveryJob) => {
+          const busy = busyJobId === job.job_id;
+          const canRun = job.status === "queued";
+
+          return (
+            <li key={job.job_id}>
+              <strong>{job.query}</strong>
+              <span>
+                {humanizeScoutLabel(job.status)} -{" "}
+                {job.attention_label ?? searchPlanLabel(job)}
+              </span>
+              <p>
+                Topic: {job.topic_anchor ?? "None"} - Updated {formatDateTime(job.updated_at)}
+              </p>
+              {canRun ? (
+                <div className="scout-center-job-actions">
+                  <button
+                    type="button"
+                    onClick={() => void runDiscoveryJobAction(job, "search-preview")}
+                    disabled={busy}
+                  >
+                    <Search aria-hidden size={14} strokeWidth={2.2} />
+                    {busy ? "Working" : "Preview Search"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void runDiscoveryJobAction(job, "extract-candidates")}
+                    disabled={busy}
+                  >
+                    <ListPlus aria-hidden size={14} strokeWidth={2.2} />
+                    Extract Candidates
+                  </button>
+                </div>
+              ) : (
+                <p className="scout-center-helper">Controls unlock when this plan is queued.</p>
+              )}
+              <div className="scout-center-manual-options" aria-label={`Suggested next steps for ${job.query}`}>
+                <span>Suggested next steps:</span>
+                {searchPlanHints(job).map((option) => (
+                  <span key={option}>{option}</span>
+                ))}
+              </div>
+              <details>
+                <summary>Details</summary>
+                <dl>
+                  <dt>Status</dt>
+                  <dd>{humanizeScoutLabel(job.status)}</dd>
+                  <dt>Plan label</dt>
+                  <dd>{searchPlanLabel(job)}</dd>
+                  <dt>Computed status</dt>
+                  <dd>{humanizeScoutLabel(job.computed_status)}</dd>
+                  <dt>Safe next action</dt>
+                  <dd>{job.safe_next_action ?? "No action suggested"}</dd>
+                  <dt>Budget</dt>
+                  <dd>{job.budget}</dd>
+                </dl>
+              </details>
+            </li>
+          );
+        })}
       </ul>
       {jobs.length === 0 ? <p className="scout-center-empty">No search jobs are queued.</p> : null}
     </Section>
@@ -779,7 +875,7 @@ function HealthChecks({ overview }: { overview: ScoutOverview }) {
 }
 
 export function ScoutIntelligenceCenter() {
-  const { data, state, error } = useScoutOverview();
+  const { data, state, error, refresh } = useScoutOverview();
 
   return (
     <main className="dashboard-demo-v4-root scout-center-root">
@@ -817,7 +913,7 @@ export function ScoutIntelligenceCenter() {
             <Briefing overview={data} />
             <Findings overview={data} />
             <SourceApprovals overview={data} />
-            <SearchQueue overview={data} />
+            <SearchQueue overview={data} refresh={refresh} />
             <WatchedSources overview={data} />
             <HealthChecks overview={data} />
           </>

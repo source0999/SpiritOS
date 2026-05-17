@@ -23,6 +23,13 @@ COMPONENT_RULES: tuple[ComponentMapping, ...] = (
         risk="medium",
     ),
     ComponentMapping(
+        component_id="coding-workflow",
+        label="Coding workflow",
+        paths=["src/app/v1/coding/**", "src/components/coding/**"],
+        blueprint_id="dashboard-state",
+        risk="medium",
+    ),
+    ComponentMapping(
         component_id="scout-dashboard-bridge",
         label="Scout dashboard bridge",
         paths=["src/app/api/scout/**"],
@@ -233,6 +240,7 @@ def _risk_for_path(path: str) -> str:
 
     if (
         lowered.startswith("src/components/dashboard/")
+        or lowered.startswith("src/components/coding/")
         or lowered.startswith("src/app/")
         or lowered.startswith("source_proxy/")
         or lowered.startswith("scout/")

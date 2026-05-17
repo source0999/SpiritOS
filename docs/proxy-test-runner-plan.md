@@ -10,6 +10,8 @@ The proxy test runner turns proxy safety checks into a repeatable Codex-run lane
 
 This runner is a reporting and evidence tool. It must not become an approval, apply, commit, or push tool.
 
+Codex adapter trial tasks must keep runner evidence reporting-only unless a separate human approval explicitly authorizes apply, commit, or push.
+
 Scout runner profiles extend the same reporting-only contract to Scout operational checks. Default Scout profiles observe health, source candidates, approved sources, and discovery jobs without approving, rejecting, blocking, creating jobs, extracting candidates, or changing files.
 
 ## Current Smoke Command

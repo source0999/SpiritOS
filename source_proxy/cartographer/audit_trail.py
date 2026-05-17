@@ -6,6 +6,7 @@ from hashlib import sha256
 from pathlib import Path
 from typing import Any
 
+from source_proxy.cartographer.codex_evidence import list_codex_evidence_records
 from source_proxy.cartographer.commit_proposals import build_commit_proposals
 from source_proxy.cartographer.component_mapper import map_paths
 from source_proxy.cartographer.git_approvals import read_git_approval_records
@@ -25,6 +26,7 @@ def build_audit_trail() -> list[AuditTrailEvent]:
         events.extend(_events_from_proposal(proposal))
     for project in projects.values():
         events.extend(_events_from_approved_action_log(project))
+    events.extend(_events_from_codex_evidence(_codex_project_id(projects)))
     events.extend(_events_from_git_approval_records())
     for proposal in build_commit_proposals():
         events.append(
@@ -61,6 +63,36 @@ def build_audit_trail() -> list[AuditTrailEvent]:
             )
         )
     return sorted(events, key=lambda event: (event.timestamp or "", event.event_id))
+
+
+def _events_from_codex_evidence(project_id: str) -> list[AuditTrailEvent]:
+    events: list[AuditTrailEvent] = []
+    for record in list_codex_evidence_records():
+        events.append(
+            AuditTrailEvent(
+                event_id=_event_id("codex_evidence", record.task_id, record.artifact_path),
+                project_id=project_id,
+                event="codex_task_evidence",
+                action="codex_proposal_recorded",
+                task_id=record.task_id,
+                component=record.components[0] if record.components else "unknown",
+                reason=record.recommendation,
+                result=record.safety_verdict,
+                files=record.changed_files,
+                changed_files=record.changed_files,
+                rollback_hint="Codex evidence is read-only; review the referenced artifact before changing files.",
+                source="codex_evidence",
+            )
+        )
+    return events
+
+
+def _codex_project_id(projects: dict[str, CartographerProject]) -> str:
+    if "spiritos" in projects:
+        return "spiritos"
+    if projects:
+        return next(iter(projects))
+    return "spiritos"
 
 
 def _events_from_git_approval_records() -> list[AuditTrailEvent]:

@@ -1589,6 +1589,70 @@ class ProxyRunnerTests(unittest.TestCase):
         self.assertEqual(payload["result"], "pass")
         self.assertEqual(payload["summary"]["warnings"], [])
 
+    def test_scout_soak_snapshot_reports_list_error_counters(self) -> None:
+        import tempfile
+        from source_proxy.testing.runner import _run_scout_soak_snapshot_profile
+
+        ok = {"ok": True, "status": 200, "url": "", "body": {}, "error": None}
+        logs = {
+            "command": "docker logs --tail 80 scout_v0_1",
+            "returncode": 0,
+            "stdout": (
+                '{"checked": 1, "processed": 0, "errors": ["provider timeout"], '
+                '"event": "debugger_run_complete"}\n'
+            ),
+            "stderr": "",
+            "error": None,
+        }
+
+        with tempfile.TemporaryDirectory() as tmp_dir, mock.patch(
+            "source_proxy.testing.runner._http_get_json",
+            side_effect=[ok, ok, ok, ok],
+        ), mock.patch(
+            "source_proxy.testing.runner._file_size",
+            return_value={"path": "scout/data/scout.db", "size_bytes": 1234, "error": None},
+        ), mock.patch(
+            "source_proxy.testing.runner._run_command",
+            return_value=logs,
+        ):
+            payload = _run_scout_soak_snapshot_profile(output_dir=Path(tmp_dir))
+
+        self.assertEqual(payload["result"], "fail")
+        self.assertIn("recent docker logs contain error", payload["summary"]["warnings"])
+
+    def test_scout_soak_snapshot_ignores_errors_before_latest_startup(self) -> None:
+        import tempfile
+        from source_proxy.testing.runner import _run_scout_soak_snapshot_profile
+
+        ok = {"ok": True, "status": 200, "url": "", "body": {}, "error": None}
+        logs = {
+            "command": "docker logs --tail 80 scout_v0_1",
+            "returncode": 0,
+            "stdout": (
+                "ERROR old missing config from previous container boot\n"
+                '{"db_path": "/app/data/scout.db", "event": "scout_starting"}\n'
+                '{"checked": 0, "processed": 0, "errors": [], '
+                '"event": "packet_synthesis_run_complete"}\n'
+            ),
+            "stderr": "",
+            "error": None,
+        }
+
+        with tempfile.TemporaryDirectory() as tmp_dir, mock.patch(
+            "source_proxy.testing.runner._http_get_json",
+            side_effect=[ok, ok, ok, ok],
+        ), mock.patch(
+            "source_proxy.testing.runner._file_size",
+            return_value={"path": "scout/data/scout.db", "size_bytes": 1234, "error": None},
+        ), mock.patch(
+            "source_proxy.testing.runner._run_command",
+            return_value=logs,
+        ):
+            payload = _run_scout_soak_snapshot_profile(output_dir=Path(tmp_dir))
+
+        self.assertEqual(payload["result"], "pass")
+        self.assertEqual(payload["summary"]["warnings"], [])
+
 
 if __name__ == "__main__":
     unittest.main()

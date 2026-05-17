@@ -75,6 +75,8 @@ class SelfStatusManifestTests(unittest.TestCase):
         self.assertEqual(payload["service"], "source-proxy")
         self.assertIn("configured_roots", payload)
         self.assertIn("approval_boundaries", payload)
+        self.assertEqual(payload["codex_cli_status"]["tool"], "codex_cli")
+        self.assertFalse(payload["codex_cli_status"]["would_run_task"])
 
     def test_tools_manifest_lists_gated_and_disabled_capabilities(self) -> None:
         manifest = build_tools_manifest(
@@ -98,6 +100,8 @@ class SelfStatusManifestTests(unittest.TestCase):
 
         self.assertEqual(manifest["manifest_version"], "2.7A-2")
         self.assertIn("not permission to execute", manifest["access_scope"])
+        self.assertEqual(manifest["codex_cli_status"]["tool"], "codex_cli")
+        self.assertFalse(manifest["codex_cli_status"]["approval_authority"])
         self.assertIn(
             "paid_api_chat_routes",
             {tool["name"] for tool in manifest["enabled_tools"]},

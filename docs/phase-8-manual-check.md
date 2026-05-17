@@ -11,3 +11,4 @@ Phase 6: source_proxy/api/decision.py performance test.
 Phase 7: source_proxy/api/decision.py security audit.
 Phase 8: source_proxy/api/decision.py documentation review.
 Phase 4E-2 safe tiny edit manual check.
+Phase 10.10 Codex real-task trial docs-only Task 1 was captured safely.

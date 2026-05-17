@@ -24,10 +24,11 @@
     "_blueprints/runbooks/cartographer_dashboard_mobile_qa.md"
   ],
   "rationale": "api_changed_without_manual_checklist_update affected qa; Cartographer drafted a doc-only preview for dashboard review.",
-  "rejection_reason": null,
+  "rejected_at": "2026-05-17T00:07:37Z",
+  "rejected_by": "Britton",
+  "rejection_reason": "Rejected stale generic QA proposal. Regenerate only with concrete manual checks for the Scout API routes, expected outcomes, and next steps; do not apply generic review notes.",
   "requires_approval": true,
-  "review_note": "Do not apply a generic QA note. Regenerate with concrete manual checks for src/app/api/scout/source-candidates/batch-approve/route.ts and src/app/api/scout/sources/route.ts, including expected outcomes and next steps. Fix malformed spacing in the surrounding text.",
-  "status": "drafted",
+  "status": "rejected",
   "title": "Draft blueprint update for qa",
   "transitions": [
     {
@@ -39,6 +40,11 @@
       "actor": "Britton",
       "status": "drafted",
       "timestamp": "2026-05-16T22:14:31Z"
+    },
+    {
+      "actor": "Britton",
+      "status": "rejected",
+      "timestamp": "2026-05-17T00:07:37Z"
     }
   ],
   "type": "blueprint_update"

@@ -1136,6 +1136,7 @@ def _run_scout_soak_snapshot_profile(
 ) -> dict[str, Any]:
     base_url = base_url.rstrip("/")
     timestamp = dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
+    docker_since = timestamp.replace("+00:00", "Z")
     checks = {
         "health": _http_get_json(f"{base_url}/health"),
         "source_candidates": _http_get_json(f"{base_url}/v1/scout/source-candidates?limit=200"),
@@ -1143,7 +1144,7 @@ def _run_scout_soak_snapshot_profile(
         "discovery_jobs": _http_get_json(f"{base_url}/v1/scout/discovery-jobs?limit=50"),
     }
     db_size = _file_size("scout/data/scout.db")
-    logs = _run_command(["docker", "logs", "--tail", "80", SCOUT_CONTAINER_NAME], timeout_seconds=15)
+    logs = _run_command(["docker", "logs", "--since", docker_since, SCOUT_CONTAINER_NAME], timeout_seconds=15)
     warnings = _soak_snapshot_warnings(checks=checks, logs=logs)
     snapshot = {
         "profile": PROFILE_SCOUT_SOAK_SNAPSHOT,
@@ -1815,7 +1816,8 @@ def _soak_snapshot_warnings(
     for name, check in checks.items():
         if not check["ok"]:
             warnings.append(f"{name} check failed: {_check_error_detail(check)}")
-    for marker in _log_warning_markers((logs.get("stdout") or "") + "\n" + (logs.get("stderr") or "")):
+    log_text = _current_scout_log_session((logs.get("stdout") or "") + "\n" + (logs.get("stderr") or ""))
+    for marker in _log_warning_markers(log_text):
         warnings.append(f"recent docker logs contain {marker}")
     if logs.get("returncode") not in {0, None}:
         warnings.append("docker logs command failed")
@@ -1824,6 +1826,15 @@ def _soak_snapshot_warnings(
 
 def _fatal_soak_snapshot_warnings(warnings: list[str]) -> list[str]:
     return [warning for warning in warnings if warning != "docker logs command failed"]
+
+
+def _current_scout_log_session(log_text: str) -> str:
+    lines = log_text.splitlines()
+    start_index = 0
+    for index, line in enumerate(lines):
+        if '"event": "scout_starting"' in line or '"event":"scout_starting"' in line:
+            start_index = index
+    return "\n".join(lines[start_index:])
 
 
 def _log_warning_markers(log_text: str) -> list[str]:
@@ -1852,8 +1863,10 @@ def _line_has_real_error(line: str) -> bool:
     if not isinstance(payload, dict):
         return True
     errors = payload.get("errors")
-    if isinstance(errors, list) and not errors:
-        return False
+    if isinstance(errors, list):
+        return bool(errors)
+    if isinstance(errors, dict):
+        return bool(errors)
     if errors in {0, None, ""}:
         return False
     level = str(payload.get("level") or "").lower()
