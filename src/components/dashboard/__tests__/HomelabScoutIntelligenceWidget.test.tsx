@@ -1,8 +1,9 @@
 /// <reference types="vitest" />
 
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 
 import { HomelabScoutIntelligenceWidget } from "../HomelabScoutIntelligenceWidget";
+import { ScoutIntelligenceCenter } from "../ScoutIntelligenceCenter";
 import { buildScoutHumanReadModel } from "@/lib/scout-human-readable";
 import type {
   ScoutDiscoveryJobs,
@@ -413,5 +414,22 @@ describe("HomelabScoutIntelligenceWidget", () => {
     expect(screen.getByText("Cleaned up")).toBeInTheDocument();
     expect(screen.getByText("Summaries made")).toBeInTheDocument();
     expect(screen.getByText("Verified")).toBeInTheDocument();
+  });
+
+  it("wires Manual Search Plan preview controls to the discovery preview endpoint", async () => {
+    mockScoutFetch(overview);
+
+    render(<ScoutIntelligenceCenter />);
+
+    const previewButtons = await screen.findAllByRole("button", { name: /Preview Search/i });
+    fireEvent.click(previewButtons[0]);
+
+    await waitFor(() => {
+      expect(globalThis.fetch).toHaveBeenCalledWith(
+        "/api/scout/discovery-jobs/job-1/search-preview",
+        expect.objectContaining({ method: "POST" }),
+      );
+    });
+    expect(await screen.findByText(/No source was approved or activated\./)).toBeInTheDocument();
   });
 });
