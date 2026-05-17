@@ -2156,27 +2156,27 @@ html[data-theme="solar-ember"] .dashboard-demo-v4-root {
 }
 
 .scout-center-manual-options {
-  display: flex;
+  display: grid;
   max-width: 58rem;
-  flex-wrap: wrap;
-  gap: 0.35rem;
+  gap: 0.28rem;
+  padding-top: 0.1rem;
 }
 
 .scout-center-manual-options span {
-  width: fit-content;
-  border: 1px solid color-mix(in oklab, var(--ddv4-surface-border-crisp) 62%, transparent);
-  border-radius: 8px;
-  background: color-mix(in oklab, rgba(15, 23, 42, 0.5) 72%, var(--ddv4-surface-fill));
   color: rgba(235, 241, 248, 0.9);
   font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: 0.66rem;
+  font-size: 0.68rem;
   font-weight: 800;
   letter-spacing: 0;
-  padding: 0.24rem 0.44rem;
+  line-height: 1.45;
+}
+
+.scout-center-manual-options span:not(:first-child)::before {
+  content: "- ";
+  color: color-mix(in oklab, var(--spirit-accent-strong, #8fb8de) 70%, rgba(248, 250, 252, 0.92));
 }
 
 .scout-center-manual-options span:first-child {
-  border-color: color-mix(in oklab, var(--spirit-accent-strong, #8fb8de) 48%, var(--ddv4-surface-border-crisp));
   color: color-mix(in oklab, var(--spirit-accent-strong, #8fb8de) 70%, rgba(248, 250, 252, 0.92));
   text-transform: uppercase;
 }
