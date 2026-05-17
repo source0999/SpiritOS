@@ -143,3 +143,9 @@ If any surface fails, keep the related proposal in review and do not proceed to 
 - Component: dashboard.
 - Changed files: src/components/dashboard/ScoutIntelligenceCenter.tsx.
 - Manual check: confirm this blueprint still matches the changed implementation.
+
+### Cartographer Review Note
+- Reason: qa_gap.
+- Component: dashboard.
+- Changed files: src/components/dashboard/ScoutIntelligenceCenter.tsx, src/components/dashboard/__tests__/HomelabScoutIntelligenceWidget.test.tsx.
+- Manual check: confirm this blueprint still matches the changed implementation.
