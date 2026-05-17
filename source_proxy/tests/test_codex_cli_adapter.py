@@ -1,10 +1,17 @@
 from __future__ import annotations
 
 import subprocess
+import tempfile
 import unittest
+from pathlib import Path
 
 from source_proxy.codex.adapter import (
+    CodexEnvelopeError,
+    CodexExecutionEnvelope,
+    build_codex_command,
     build_codex_cli_status,
+    codex_subprocess_env,
+    validate_codex_envelope,
     validate_codex_cli_argv,
 )
 
@@ -105,6 +112,79 @@ class CodexCliAdapterTests(unittest.TestCase):
 
         self.assertTrue(payload["allowed"])
         self.assertEqual(payload["blocked_reasons"], [])
+
+    def test_command_builder_emits_safe_defaults(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            envelope = CodexExecutionEnvelope(
+                workspace=root,
+                task_id="codex-task-1",
+                prompt_file=root / "tmp" / "codex" / "task.md",
+                output_file=root / "tmp" / "codex" / "final.md",
+                output_dir=root / "tmp" / "codex",
+                allowed_files=("docs/codex-cli-adapter-plan.md",),
+                blocked_files=("source_proxy/main.py",),
+                sandbox="workspace-write",
+            )
+
+            command = build_codex_command(envelope)
+
+        self.assertEqual(command[:5], ["codex", "exec", "--cd", str(root), "--json"])
+        self.assertIn("--output-last-message", command)
+        self.assertIn("--sandbox", command)
+        self.assertIn("workspace-write", command)
+        self.assertEqual(command[-1], str((root / "tmp" / "codex" / "task.md").resolve()))
+
+    def test_envelope_rejects_dangerous_sandbox(self) -> None:
+        root = Path("/repo").resolve()
+        envelope = CodexExecutionEnvelope(
+            workspace=root,
+            task_id="codex-task-2",
+            prompt_file=root / "tmp" / "task.md",
+            output_file=root / "tmp" / "final.md",
+            output_dir=root / "tmp",
+            sandbox="danger-full-access",
+        )
+
+        validation = validate_codex_envelope(envelope)
+
+        self.assertFalse(validation["ok"])
+        self.assertIn(
+            {"path": "*", "reason_code": "unsafe_sandbox"},
+            validation["blocked_reasons"],
+        )
+        with self.assertRaises(CodexEnvelopeError):
+            build_codex_command(envelope)
+
+    def test_envelope_rejects_secret_and_escape_paths(self) -> None:
+        root = Path("/repo").resolve()
+        envelope = CodexExecutionEnvelope(
+            workspace=root,
+            task_id="codex-task-3",
+            prompt_file=root / "tmp" / "task.md",
+            output_file=root / "tmp" / "final.md",
+            output_dir=root / "tmp",
+            allowed_files=("../outside.py", ".env.local"),
+        )
+
+        validation = validate_codex_envelope(envelope)
+        reason_codes = {item["reason_code"] for item in validation["blocked_reasons"]}
+
+        self.assertFalse(validation["ok"])
+        self.assertIn("allowed_file_path_escape", reason_codes)
+        self.assertIn("allowed_file_protected_path", reason_codes)
+
+    def test_env_allowlist_drops_secret_values(self) -> None:
+        env = codex_subprocess_env(
+            {
+                "PATH": "/usr/bin",
+                "HOME": "/home/source",
+                "OPENAI_API_KEY": "secret",
+                "SOURCE_PROXY_TOKEN": "secret",
+            }
+        )
+
+        self.assertEqual(env, {"PATH": "/usr/bin", "HOME": "/home/source"})
 
 
 if __name__ == "__main__":

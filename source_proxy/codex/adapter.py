@@ -4,7 +4,11 @@ import re
 import shutil
 import subprocess
 from collections.abc import Callable, Sequence
+from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
+
+from source_proxy.safety.paths import is_secret_shaped_path, path_escapes_workspace
 
 SAFE_CODEX_SANDBOXES = ("read-only", "workspace-write")
 BLOCKED_CODEX_SANDBOXES = ("danger-full-access",)
@@ -21,9 +25,46 @@ EXPECTED_CODEX_FEATURES = {
     "sandbox_read_only": True,
     "sandbox_workspace_write": True,
 }
+DEFAULT_CODEX_TIMEOUT_SECONDS = 300
+DEFAULT_CODEX_MAX_OUTPUT_BYTES = 200_000
+CODEX_ENV_ALLOWLIST = (
+    "HOME",
+    "PATH",
+    "SHELL",
+    "SYSTEMROOT",
+    "TEMP",
+    "TMP",
+    "USER",
+    "USERNAME",
+)
+CODEX_COMMAND_ALLOWLIST = (
+    "codex exec",
+)
 
 CommandResolver = Callable[[str], str | None]
 CommandRunner = Callable[..., subprocess.CompletedProcess[str]]
+
+
+class CodexEnvelopeError(ValueError):
+    def __init__(self, message: str, reason_code: str) -> None:
+        super().__init__(message)
+        self.reason_code = reason_code
+
+
+@dataclass(frozen=True)
+class CodexExecutionEnvelope:
+    workspace: Path
+    task_id: str
+    prompt_file: Path
+    output_file: Path
+    output_dir: Path
+    allowed_files: tuple[str, ...] = field(default_factory=tuple)
+    blocked_files: tuple[str, ...] = field(default_factory=tuple)
+    sandbox: str = "read-only"
+    timeout_seconds: int = DEFAULT_CODEX_TIMEOUT_SECONDS
+    model_mode: str = "default"
+    max_output_bytes: int = DEFAULT_CODEX_MAX_OUTPUT_BYTES
+    binary: str = "codex"
 
 
 def build_codex_cli_status(
@@ -97,6 +138,93 @@ def build_codex_cli_status(
     return status
 
 
+def build_codex_command(envelope: CodexExecutionEnvelope) -> list[str]:
+    validation = validate_codex_envelope(envelope)
+    if not validation["ok"]:
+        reasons = validation["blocked_reasons"]
+        reason_code = str(reasons[0]["reason_code"] if reasons else "codex_envelope_invalid")
+        raise CodexEnvelopeError("Codex execution envelope is not safe.", reason_code)
+
+    command = [
+        envelope.binary,
+        "exec",
+        "--cd",
+        str(envelope.workspace.resolve()),
+        "--json",
+        "--output-last-message",
+        str(envelope.output_file.resolve()),
+        "--sandbox",
+        envelope.sandbox,
+    ]
+    if envelope.model_mode and envelope.model_mode != "default":
+        command.extend(["--profile", envelope.model_mode])
+    command.append(str(envelope.prompt_file.resolve()))
+
+    argv_validation = validate_codex_cli_argv(command)
+    if not argv_validation["allowed"]:
+        raise CodexEnvelopeError("Codex command includes blocked flags.", "codex_dangerous_flag")
+    return command
+
+
+def validate_codex_envelope(envelope: CodexExecutionEnvelope) -> dict[str, Any]:
+    blocked: list[dict[str, str]] = []
+    workspace = envelope.workspace.resolve()
+    output_dir = envelope.output_dir.resolve()
+
+    if not envelope.task_id.strip():
+        blocked.append({"path": "*", "reason_code": "missing_task_id"})
+    if envelope.sandbox not in SAFE_CODEX_SANDBOXES:
+        blocked.append({"path": "*", "reason_code": "unsafe_sandbox"})
+    if envelope.timeout_seconds <= 0 or envelope.timeout_seconds > 3600:
+        blocked.append({"path": "*", "reason_code": "unsafe_timeout"})
+    if envelope.max_output_bytes <= 0 or envelope.max_output_bytes > 5_000_000:
+        blocked.append({"path": "*", "reason_code": "unsafe_max_output_size"})
+
+    for label, path in (
+        ("workspace", workspace),
+        ("prompt_file", envelope.prompt_file.resolve()),
+        ("output_file", envelope.output_file.resolve()),
+        ("output_dir", output_dir),
+    ):
+        if _secret_path_object(path):
+            blocked.append({"path": str(path), "reason_code": f"{label}_protected_path"})
+
+    for label, path in (
+        ("prompt_file", envelope.prompt_file.resolve()),
+        ("output_file", envelope.output_file.resolve()),
+    ):
+        if not (_is_relative_to(path, workspace) or _is_relative_to(path, output_dir)):
+            blocked.append({"path": str(path), "reason_code": f"{label}_outside_workspace_or_output_dir"})
+
+    for path in envelope.allowed_files:
+        reason = _repo_path_block_reason(path, workspace=workspace)
+        if reason:
+            blocked.append({"path": path, "reason_code": f"allowed_file_{reason}"})
+    for path in envelope.blocked_files:
+        reason = _repo_path_block_reason(path, workspace=workspace)
+        if reason:
+            blocked.append({"path": path, "reason_code": f"blocked_file_{reason}"})
+
+    return {
+        "ok": not blocked,
+        "blocked_reasons": _dedupe_blocked_reasons(blocked),
+        "command_allowlist": list(CODEX_COMMAND_ALLOWLIST),
+        "environment_allowlist": list(CODEX_ENV_ALLOWLIST),
+        "dangerous_flag_denylist": list(BLOCKED_CODEX_FLAGS),
+        "safe_sandboxes": list(SAFE_CODEX_SANDBOXES),
+        "blocked_sandboxes": list(BLOCKED_CODEX_SANDBOXES),
+        "limits": {
+            "timeout_seconds": envelope.timeout_seconds,
+            "max_output_bytes": envelope.max_output_bytes,
+        },
+        "would_run_task": False,
+    }
+
+
+def codex_subprocess_env(source_env: dict[str, str]) -> dict[str, str]:
+    return {key: value for key, value in source_env.items() if key.upper() in CODEX_ENV_ALLOWLIST}
+
+
 def validate_codex_cli_argv(argv: Sequence[str]) -> dict[str, Any]:
     blocked: list[str] = []
     normalized = [str(part).strip() for part in argv]
@@ -155,3 +283,27 @@ def _run_version_probe(
             timeout=timeout_seconds,
             check=False,
         )
+
+
+def _repo_path_block_reason(path: str, *, workspace: Path) -> str | None:
+    if path_escapes_workspace(path, workspace_root=workspace):
+        return "path_escape"
+    if is_secret_shaped_path(path):
+        return "protected_path"
+    return None
+
+
+def _secret_path_object(path: Path) -> bool:
+    return any(is_secret_shaped_path(part) for part in path.parts)
+
+
+def _is_relative_to(path: Path, root: Path) -> bool:
+    try:
+        path.relative_to(root)
+    except ValueError:
+        return False
+    return True
+
+
+def _dedupe_blocked_reasons(blocked: list[dict[str, str]]) -> list[dict[str, str]]:
+    return [dict(item) for item in dict.fromkeys(tuple(item.items()) for item in blocked)]
