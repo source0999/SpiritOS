@@ -600,8 +600,8 @@ function SearchQueue({ overview }: { overview: ScoutOverview }) {
             <p>
               Topic: {job.topic_anchor ?? "None"} - Updated {formatDateTime(job.updated_at)}
             </p>
-            <div className="scout-center-manual-options" aria-label={`Manual options for ${job.query}`}>
-              <span>Manual options</span>
+            <div className="scout-center-manual-options" aria-label={`Suggested next steps for ${job.query}`}>
+              <span>Suggested next steps:</span>
               {searchPlanManualOptions(job, budget).map((option) => (
                 <span key={option}>{option}</span>
               ))}
