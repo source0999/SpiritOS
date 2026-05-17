@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from source_proxy.api.decision import AVAILABLE_ROUTES
+from source_proxy.codex.adapter import build_codex_cli_status
 from source_proxy.routing.litellm_router import routing_status
 
 
@@ -26,6 +27,7 @@ def build_self_status_manifest(project_root: Path | None = None) -> dict[str, An
         "disabled_tools": tools_manifest["disabled_tools"],
         "approval_boundaries": tools_manifest["approval_boundaries"],
         "available_routes": tools_manifest["available_routes"],
+        "codex_cli_status": tools_manifest["codex_cli_status"],
         "context_bundle_status": _context_bundle_status(root),
         "repo_metadata": _repo_metadata(root),
     }
@@ -35,6 +37,7 @@ def build_tools_manifest(
     routes: list[dict[str, str | bool | None]] | None = None,
 ) -> dict[str, Any]:
     route_status = routes if routes is not None else routing_status()
+    codex_cli_status = build_codex_cli_status()
     return {
         "service": "source-proxy",
         "manifest_version": "2.7A-2",
@@ -46,6 +49,7 @@ def build_tools_manifest(
         "disabled_tools": _disabled_tools(),
         "approval_boundaries": _approval_boundaries(),
         "available_routes": _available_routes(route_status),
+        "codex_cli_status": codex_cli_status,
         "tool_manifest_notes": [
             "Unavailable tools are listed explicitly instead of omitted.",
             "Paid API routes remain gated by spend-before-send approval.",
