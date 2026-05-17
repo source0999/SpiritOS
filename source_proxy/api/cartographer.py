@@ -21,6 +21,7 @@ from source_proxy.cartographer.service import (
     build_cartographer_blueprint_scribe,
     build_cartographer_branch_recommendations,
     build_cartographer_change_scribe,
+    build_cartographer_codex_evidence,
     build_cartographer_commit_proposals,
     build_cartographer_components,
     build_cartographer_drift,
@@ -75,6 +76,11 @@ async def cartographer_project_candidates() -> dict[str, Any]:
 @router.get("/project-health")
 async def cartographer_project_health() -> dict[str, Any]:
     return build_cartographer_project_health()
+
+
+@router.get("/codex-evidence")
+async def cartographer_codex_evidence() -> dict[str, Any]:
+    return build_cartographer_codex_evidence()
 
 
 @router.get("/branch-recommendations")

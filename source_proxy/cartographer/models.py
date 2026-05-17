@@ -197,6 +197,25 @@ class ChangeScribeSummary:
 
 
 @dataclass(frozen=True)
+class CodexEvidenceRecord:
+    task_id: str
+    artifact_path: str
+    safety_verdict: str
+    recommendation: str
+    changed_files: list[str] = field(default_factory=list)
+    components: list[str] = field(default_factory=list)
+    risk: str = "unknown"
+    tests_run: str = "not reported"
+    proposal_pending_review: bool = False
+    commit_proposal_needed: bool = False
+    approval_authority: bool = False
+    apply_authority: bool = False
+    commit_authority: bool = False
+    push_authority: bool = False
+    action_taken: bool = False
+
+
+@dataclass(frozen=True)
 class BlueprintScribeDraft:
     proposal_id: str
     project_id: str

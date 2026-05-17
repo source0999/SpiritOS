@@ -5,6 +5,7 @@ from hashlib import sha256
 from pathlib import Path
 from typing import Any
 
+from source_proxy.cartographer.blueprint_scribe import draft_codex_trial_summary_updates
 from source_proxy.cartographer.models import ProposalRecord, ProposalTransition
 from source_proxy.cartographer.proposal_previews import draft_proposals_from_drift, proposal_fingerprint
 from source_proxy.cartographer.project_discovery import discover_projects
@@ -57,8 +58,75 @@ def list_proposals() -> list[ProposalRecord]:
     for starter_pack in draft_starter_blueprint_pack_proposals():
         if starter_pack.proposal_id not in persisted_ids:
             proposals.append(starter_pack)
+    for codex_summary in _draft_codex_summary_proposals():
+        if (
+            codex_summary.proposal_id not in persisted_ids
+            and codex_summary.fingerprint not in persisted_fingerprints
+        ):
+            proposals.append(codex_summary)
 
     return sorted(proposals, key=lambda proposal: proposal.proposal_id)
+
+
+def _draft_codex_summary_proposals() -> list[ProposalRecord]:
+    proposals: list[ProposalRecord] = []
+    for draft in draft_codex_trial_summary_updates():
+        fingerprint = proposal_fingerprint(
+            project_id=draft.project_id,
+            proposal_type="blueprint_update",
+            component=draft.component,
+            reason=draft.reason,
+            changed_files=draft.changed_files,
+            proposed_files=[draft.proposed_file],
+            affected_blueprints=[draft.affected_blueprint],
+        )
+        proposals.append(
+            ProposalRecord(
+                proposal_id=draft.proposal_id.replace("bp-scribe-", "bp-"),
+                project_id=draft.project_id,
+                status="pending_review",
+                type="blueprint_update",
+                component=draft.component,
+                requires_approval=True,
+                title="Codex adapter trial blueprint summary",
+                affected_blueprints=[draft.affected_blueprint],
+                changed_files=draft.changed_files,
+                proposed_files=[draft.proposed_file],
+                diff_preview=_codex_summary_diff_preview(draft),
+                confidence=draft.confidence,
+                rationale=draft.reason,
+                generated=True,
+                persisted=False,
+                fingerprint=fingerprint,
+                deduped=True,
+                transitions=[
+                    ProposalTransition(
+                        status="pending_review",
+                        timestamp=FALLBACK_TRANSITION_TIMESTAMP,
+                        actor="blueprint_scribe",
+                    )
+                ],
+                applied=False,
+                action_taken=False,
+            )
+        )
+    return proposals
+
+
+def _codex_summary_diff_preview(draft: Any) -> str:
+    return "\n".join(
+        [
+            f"diff --git a/{draft.proposed_file} b/{draft.proposed_file}",
+            f"--- a/{draft.proposed_file}",
+            f"+++ b/{draft.proposed_file}",
+            "@@",
+            "+### Codex Adapter Trial Summary",
+            f"+- Reason: {draft.reason}",
+            f"+- Suggested update: {draft.suggested_update}",
+            "+- Manual check: confirm the Codex evidence remains proposal-only before applying this blueprint update.",
+            "",
+        ]
+    )
 
 
 def pending_proposal_count() -> int:
