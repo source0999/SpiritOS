@@ -1,0 +1,82 @@
+{
+  "expected_outcomes": [
+    "cartographer-soak-snapshot: pass",
+    "mutation boundary: snapshot log only",
+    "recommendation: ready for next increment"
+  ],
+  "log_size_bytes": {
+    "error": null,
+    "file_count": 20,
+    "path": "source_proxy\\cartographer\\soak-logs",
+    "size_bytes": 221191
+  },
+  "mutated": true,
+  "mutation_boundary": {
+    "after": "D \"on                          |    3 +\"\n M source_proxy/testing/runner.py\n M source_proxy/tests/test_proxy_runner.py\n?? proxyCLI.md\n?? scout/soak-logs/scout-soak-snapshot-2026-05-17T022415Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-17T022449Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-17T022846Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-17T023515Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-17T023549Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-17T024001Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-17T030121Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-17T030240Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-17T031247Z.json\n?? source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-2026-05-17T021830Z.json\n?? source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-2026-05-17T030121Z.json\n?? source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-2026-05-17T030304Z.json\n?? source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-2026-05-17T031150Z.json\n?? source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-2026-05-17T031201Z.json\n?? source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-2026-05-17T031252Z.json",
+    "allowed_writes": [
+      "source_proxy\\cartographer\\soak-logs\\cartographer-soak-snapshot-2026-05-17T031252Z.json"
+    ],
+    "background_status_delta": [
+      "?? source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-2026-05-17T031252Z.json"
+    ],
+    "before": "D \"on                          |    3 +\"\n M source_proxy/testing/runner.py\n M source_proxy/tests/test_proxy_runner.py\n?? proxyCLI.md\n?? scout/soak-logs/scout-soak-snapshot-2026-05-17T022415Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-17T022449Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-17T022846Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-17T023515Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-17T023549Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-17T024001Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-17T030121Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-17T030240Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-17T031247Z.json\n?? source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-2026-05-17T021830Z.json\n?? source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-2026-05-17T030121Z.json\n?? source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-2026-05-17T030304Z.json\n?? source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-2026-05-17T031150Z.json\n?? source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-2026-05-17T031201Z.json",
+    "head_after": "d7d38aa1a1f995d55734526c19dcd1a1c2f02b84",
+    "head_before": "d7d38aa1a1f995d55734526c19dcd1a1c2f02b84",
+    "head_changed": false,
+    "snapshot_log_only": true,
+    "status_delta": [
+      "?? source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-2026-05-17T031252Z.json"
+    ],
+    "unexpected_status_delta": []
+  },
+  "next_actions": [
+    "Run two more cartographer-soak-snapshot checks before considering 6.21."
+  ],
+  "profile": "cartographer-soak-snapshot",
+  "read_only": false,
+  "recommendation": "ready for next increment",
+  "reliability": {
+    "grade": "boring",
+    "penalties": [],
+    "score": 100
+  },
+  "result": "pass",
+  "snapshot_path": "source_proxy\\cartographer\\soak-logs\\cartographer-soak-snapshot-2026-05-17T031252Z.json",
+  "summary": {
+    "audit_event_count": 0,
+    "audit_event_counts": {},
+    "blueprint_count": 0,
+    "branch": null,
+    "changed_file_count": 0,
+    "commit_proposal_count": 0,
+    "commit_proposal_examples": [],
+    "deduped": true,
+    "dirty": false,
+    "drift_count": 0,
+    "drift_examples": [],
+    "duplicate_proposals_present": 0,
+    "merge_blockers": [],
+    "merge_ready_count": 0,
+    "pending_proposal_examples": [],
+    "pending_proposals": 0,
+    "project_count": 0,
+    "proposal_count": 0,
+    "push_queue_count": 0,
+    "safety": {
+      "approval_required_for_commits": true,
+      "approval_required_for_file_writes": true,
+      "approval_required_for_pushes": true,
+      "scout_bypass_allowed": false,
+      "source_proxy_approval_bypass_allowed": false,
+      "write_policy": "read_only"
+    },
+    "staged": null,
+    "status": "observing",
+    "unstaged": null,
+    "untracked": null,
+    "write_actions_enabled": false
+  },
+  "timestamp": "2026-05-17T03:12:52+00:00",
+  "warnings": [],
+  "wrote_snapshot": true
+}
