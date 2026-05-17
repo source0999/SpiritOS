@@ -25,10 +25,11 @@
     "_blueprints/components/oracle_voice.md"
   ],
   "rationale": "readme_changed affected project; Cartographer drafted a doc-only preview for dashboard review.",
-  "rejection_reason": null,
+  "rejected_at": "2026-05-17T00:07:37Z",
+  "rejected_by": "Britton",
+  "rejection_reason": "Rejected stale generic README drift proposal. _blueprints/proposals/README.md does not justify generic notes across chat_runtime_architecture, design_system, and oracle_voice; regenerate only if there is a narrower material blueprint change.",
   "requires_approval": true,
-  "review_note": "Do not apply generic README drift notes to chat_runtime_architecture, design_system, and oracle_voice. Regenerate a narrower proposal or skip if _blueprints/proposals/README.md does not materially change those blueprints. Also fix malformed diff spacing.",
-  "status": "drafted",
+  "status": "rejected",
   "title": "Draft blueprint update for project",
   "transitions": [
     {
@@ -40,6 +41,11 @@
       "actor": "Britton",
       "status": "drafted",
       "timestamp": "2026-05-16T22:13:12Z"
+    },
+    {
+      "actor": "Britton",
+      "status": "rejected",
+      "timestamp": "2026-05-17T00:07:37Z"
     }
   ],
   "type": "blueprint_update"
