@@ -309,6 +309,31 @@ class ProxyAgentRoutingTests(unittest.TestCase):
         self.assertEqual(resolved.path, "source_proxy/decision/router.py")
         self.assertEqual(resolved.source, "explicit_line")
 
+    def test_bounded_proposal_target_file_not_replaced_by_forbidden_env(self) -> None:
+        import json
+
+        task = "\n".join(
+            [
+                "Proposal task:",
+                "",
+                "```json",
+                json.dumps(
+                    {
+                        "allowed_files": ["src/app/proxy-backend/page.tsx"],
+                        "forbidden_files": [".env", ".env.local", ".env.*"],
+                        "mode": "proposal",
+                        "target_file": "src/app/proxy-backend/page.tsx",
+                        "task": "Create the proxy backend page.",
+                    },
+                    indent=2,
+                ),
+                "```",
+            ]
+        )
+        resolved = resolve_target_from_task(task)
+        self.assertEqual(resolved.path, "src/app/proxy-backend/page.tsx")
+        self.assertNotEqual(resolved.path, ".env")
+
     def test_env_local_explicit_target_blocks_before_dot_is_stripped(self) -> None:
         for task in (
             ".env.local, add TEST_VALUE=1",

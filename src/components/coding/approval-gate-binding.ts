@@ -80,7 +80,9 @@ export function deriveApprovalGateProposal(
   }
   if (
     promptPacket.reason_code === "coder_model_not_configured" ||
-    promptPacket.reasonCode === "coder_model_not_configured"
+    promptPacket.reasonCode === "coder_model_not_configured" ||
+    promptPacket.reason_code === "local_model_unavailable" ||
+    promptPacket.reasonCode === "local_model_unavailable"
   ) {
     return null;
   }
@@ -340,6 +342,78 @@ function codeBlockForTarget(promptText: string, target: string) {
 
 function stripTrailingBlankLine(value: string) {
   return value.replace(/\s+$/, "") + "\n";
+}
+
+export type DiffPreviewLike = {
+  blocked_reasons?: Array<{ reason_code?: string }>;
+  git_apply_check_ok?: boolean;
+  status?: string;
+};
+
+export type ApprovalPreviewLike = {
+  decision?: string;
+  reason_codes?: string[];
+  requires_human_approval?: boolean;
+  safety_message?: string;
+  target?: string | null;
+};
+
+/** After Submit produces a diff, seed approval gate preview so Approve is not stuck on missing_approval_preview. */
+export function buildCombinedApprovalPreviewAfterDiff({
+  explicitTaskTarget,
+  initialDiffPreview,
+  effectiveTarget,
+  existing,
+}: {
+  explicitTaskTarget?: string;
+  initialDiffPreview: DiffPreviewLike | null;
+  effectiveTarget: string;
+  existing: ApprovalPreviewLike | null;
+}): ApprovalPreviewLike | null {
+  const target = normalizeRepoRelativePath(effectiveTarget || explicitTaskTarget || "");
+  if (!target) {
+    return existing;
+  }
+  // A valid diff preview wins over stale blocked previews (e.g. target_missing on new files).
+  if (
+    initialDiffPreview?.status === "preview_ready" &&
+    initialDiffPreview.git_apply_check_ok === true
+  ) {
+    return {
+      decision: "requires_human_approval",
+      reason_codes: [],
+      requires_human_approval: true,
+      safety_message:
+        "Unified diff passed preview checks. Human approval is required before any protected apply.",
+      target,
+    };
+  }
+  if (existing) {
+    return existing;
+  }
+  if (initialDiffPreview?.status === "blocked") {
+    const reasonCodes =
+      initialDiffPreview.blocked_reasons
+        ?.map((reason) => String(reason.reason_code ?? "").trim())
+        .filter(Boolean) ?? ["diff_preview_blocked"];
+    return {
+      decision: "blocked",
+      reason_codes: reasonCodes.length > 0 ? reasonCodes : ["diff_preview_blocked"],
+      requires_human_approval: false,
+      safety_message:
+        "Diff verification blocked this proposal. Review the diff preview panel for details.",
+      target,
+    };
+  }
+  return {
+    decision: "preview_only",
+    reason_codes:
+      initialDiffPreview === null ? ["approval_preview_pending"] : ["git_apply_pending"],
+    requires_human_approval: false,
+    safety_message:
+      "Click Check action to refresh approval and diff preview gates before approving.",
+    target,
+  };
 }
 
 function proposalWithOptionalContent({

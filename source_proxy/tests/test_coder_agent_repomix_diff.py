@@ -1132,6 +1132,29 @@ class CoderAgentRepomixDiffTests(unittest.TestCase):
             self.assertTrue(out["coder_blocked"])
             self.assertEqual(out["reason_code"], "coder_model_router_error")
 
+    def test_ollama_connection_refused_maps_to_local_model_unavailable(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            rel = "docs/phase-8-manual-check.md"
+            (root / rel).parent.mkdir(parents=True)
+            (root / rel).write_text("# Phase 8\n", encoding="utf-8")
+            _write_repomix(root, rel)
+
+            def fail(_prompt: str, _model: str) -> str:
+                raise RuntimeError(
+                    "litellm.APIConnectionError: Ollama_chatException - [Errno 111] Connection refused. "
+                    "Received Model Group=local"
+                )
+
+            out = propose_coder_agent_implementation_diff(
+                task=f"Target file: {rel}\nAppend one sentence.",
+                workspace_root=root,
+                llm_call=fail,
+            )
+
+            self.assertTrue(out["coder_blocked"])
+            self.assertEqual(out["reason_code"], "local_model_unavailable")
+
     def test_missing_repomix_returns_empty_diff(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             out = propose_coder_agent_implementation_diff(

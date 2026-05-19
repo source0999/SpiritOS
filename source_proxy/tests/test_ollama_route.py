@@ -1,0 +1,103 @@
+from __future__ import annotations
+
+import os
+import unittest
+from unittest import mock
+
+from source_proxy.routing.litellm_router import clear_router_cache, route_models
+from source_proxy.routing.ollama_route import (
+    clear_ollama_route_cache,
+    local_model_unavailable_from_error,
+    resolve_ollama_model_name,
+    resolve_ollama_route,
+)
+
+
+class OllamaRouteTests(unittest.TestCase):
+    def tearDown(self) -> None:
+        clear_ollama_route_cache()
+        clear_router_cache()
+
+    def test_unreachable_primary_base_falls_back_to_localhost(self) -> None:
+        with mock.patch.dict(
+            os.environ,
+            {
+                "OLLAMA_BASE_URL": "http://100.111.32.31:11434",
+                "OLLAMA_URL": "http://127.0.0.1:11434",
+                "SOURCE_PROXY_OLLAMA_BASE_URL": "",
+                "SOURCE_PROXY_OLLAMA_MODEL": "",
+                "OLLAMA_MODEL": "",
+            },
+            clear=False,
+        ):
+            clear_ollama_route_cache()
+            route = resolve_ollama_route(probe=True)
+        self.assertTrue(route.probe_ok, route)
+        self.assertIn("127.0.0.1", route.api_base)
+        self.assertEqual(route.model, "qwen2.5-coder:7b")
+
+    def test_default_model_is_qwen_coder_when_unconfigured(self) -> None:
+        with mock.patch.dict(
+            os.environ,
+            {
+                "SOURCE_PROXY_OLLAMA_MODEL": "",
+                "OLLAMA_MODEL": "",
+            },
+            clear=False,
+        ):
+            self.assertEqual(resolve_ollama_model_name(), "qwen2.5-coder:7b")
+
+    def test_local_route_maps_to_ollama_chat_model(self) -> None:
+        with mock.patch.dict(
+            os.environ,
+            {
+                "OLLAMA_BASE_URL": "http://127.0.0.1:11434",
+                "SOURCE_PROXY_OLLAMA_MODEL": "qwen2.5-coder:7b",
+            },
+            clear=False,
+        ):
+            clear_ollama_route_cache()
+            clear_router_cache()
+            local = next(item for item in route_models() if item.alias == "local")
+        self.assertEqual(local.model, "ollama_chat/qwen2.5-coder:7b")
+
+    def test_connection_refused_maps_to_local_model_unavailable(self) -> None:
+        error = RuntimeError(
+            "litellm.APIConnectionError: Ollama_chatException - [Errno 111] Connection refused. "
+            "Received Model Group=local"
+        )
+        self.assertTrue(local_model_unavailable_from_error(error))
+
+
+class OllamaRouteCoderReasonTests(unittest.TestCase):
+    def test_coder_router_error_reason_code_for_local_connection_refused(self) -> None:
+        from source_proxy.planning.plan import CoderPacket, TargetFile
+        from source_proxy.tasks.long_running import CoderResponse, _coder_response_reason_code
+
+        response = CoderResponse(
+            status="blocked",
+            target_path="docs/phase-8-manual-check.md",
+            replacement_content=None,
+            reasoning="Coder model/router call failed: Connection refused Model Group=local",
+            blocked_reason="Coder model/router call failed.",
+            blocked_needed_context="litellm.APIConnectionError: Ollama_chatException - [Errno 111] Connection refused",
+        )
+        packet = CoderPacket(
+            target_file=TargetFile(path="docs/phase-8-manual-check.md", exists=True, sha256_before=None),
+            operation="edit",
+            acceptance_criteria=[],
+            constraints=__import__(
+                "source_proxy.planning.plan", fromlist=["ContentConstraints"]
+            ).ContentConstraints(
+                must_contain=[],
+                must_not_contain=[],
+                preserve_imports=[],
+                preserve_exports=[],
+                max_added_lines=10,
+                max_removed_lines=0,
+            ),
+            context_slices=[],
+            forbidden_paths=[],
+            style_directives=[],
+        )
+        self.assertEqual(_coder_response_reason_code(response), "local_model_unavailable")

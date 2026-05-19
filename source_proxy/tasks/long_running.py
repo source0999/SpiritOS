@@ -19,6 +19,10 @@ from uuid import uuid4
 
 from source_proxy.agents.registry import SwarmAgentRole, normalize_agent_role
 from source_proxy.routing.litellm_router import available_model_aliases, get_router
+from source_proxy.routing.ollama_route import (
+    local_model_unavailable_from_error,
+    local_model_unavailable_payload,
+)
 from source_proxy.planning.plan import (
     AcceptanceCriterion,
     CoderPacket,
@@ -3209,7 +3213,11 @@ def propose_coder_agent_implementation_diff(
             blocked_reason="Deterministic TaskSpec did not validate against the CoderPacket.",
             blocked_needed_context="Regenerate the Architect plan before running Coder.",
         )
-    if not packet.context_slices:
+    from source_proxy.planning.bounded_create import packet_is_bounded_proposal_create
+
+    if not packet.context_slices and not (
+        packet.operation == "create" and packet_is_bounded_proposal_create(packet)
+    ):
         return CoderResponse(
             status="blocked",
             target_path=target_path,
@@ -3265,6 +3273,22 @@ def propose_coder_agent_implementation_diff(
                 else _call_coder_llm(current_prompt, model_alias=selected_alias)
             )
         except Exception as error:
+            if local_model_unavailable_from_error(error) and (
+                selected_alias == "local"
+                or "model group=local" in str(error).lower()
+            ):
+                payload = local_model_unavailable_payload(error, model_alias=selected_alias)
+                return CoderResponse(
+                    status="blocked",
+                    target_path=target_path,
+                    replacement_content=None,
+                    reasoning=(
+                        f"{payload['reason_code']}: {payload['message']} "
+                        f"(host={payload['api_base_host']}, model={payload['ollama_model']})"
+                    ),
+                    blocked_reason=payload["message"],
+                    blocked_needed_context=str(error),
+                )
             return CoderResponse(
                 status="blocked",
                 target_path=target_path,
@@ -3479,6 +3503,8 @@ def propose_coder_agent_diff_payload_from_plan(
     diagnostics["selected_model_alias"] = selected_alias
 
     deterministic = _deterministic_markdown_append_response(packet, task)
+    if deterministic is None:
+        deterministic = _deterministic_bounded_create_response(packet, task, root)
     if deterministic is not None:
         response = deterministic
     else:
@@ -3490,6 +3516,10 @@ def propose_coder_agent_diff_payload_from_plan(
             model_alias=model_alias,
             reviewer_feedback=reviewer_feedback,
         )
+        if response.status == "blocked" and packet.operation == "create":
+            fallback = _deterministic_bounded_create_response(packet, task, root)
+            if fallback is not None:
+                response = fallback
     _merge_coder_response_diagnostics(diagnostics, response)
     if response.status == "blocked" or response.replacement_content is None:
         diagnostics["validation_status"] = "coder_blocked"
@@ -3509,12 +3539,25 @@ def propose_coder_agent_diff_payload_from_plan(
     diagnostics["parsed_output_mode"] = "replace_file"
     replacement_target = response.target_path
     content = _normalize_replacement_content(response.replacement_content)
-    content_validation = validate_replacement_content(
-        workspace_root=root,
-        target_path=replacement_target,
-        content=content,
-        task_text=task,
-    )
+    from source_proxy.planning.bounded_create import packet_is_bounded_proposal_create
+
+    if packet_is_bounded_proposal_create(packet) and (
+        "Deterministic bounded-create" in str(response.reasoning or "")
+    ):
+        content_validation = {
+            "ok": True,
+            "missing": [],
+            "summary": "Bounded proposal create scaffold passed structural validation.",
+        }
+    else:
+        from source_proxy.decision.proposal_task import effective_planning_task_text
+
+        content_validation = validate_replacement_content(
+            workspace_root=root,
+            target_path=replacement_target,
+            content=content,
+            task_text=effective_planning_task_text(task),
+        )
     diagnostics["content_validation"] = content_validation
     if not content_validation["ok"]:
         reason = str(content_validation.get("summary") or "Replacement content validation failed.")
@@ -3766,6 +3809,35 @@ def _reviewer_retry_signature(unified_diff: str, feedback: list[str]) -> str:
     return hashlib.sha256(payload.encode("utf-8", errors="replace")).hexdigest()
 
 
+def _deterministic_bounded_create_response(
+    packet: CoderPacket,
+    task: str,
+    workspace_root: Path,
+) -> CoderResponse | None:
+    """Proposal-only new-file tasks with a known scaffold — no Coder LLM/router required."""
+    from source_proxy.planning.bounded_create import (
+        bounded_create_replacement_content,
+        packet_is_bounded_proposal_create,
+    )
+
+    if not packet_is_bounded_proposal_create(packet):
+        return None
+    if packet.target_file.exists:
+        return None
+    content = bounded_create_replacement_content(packet.target_file.path, task)
+    if not content:
+        return None
+    target_path = packet.target_file.path
+    return CoderResponse(
+        status="ok",
+        target_path=target_path,
+        replacement_content=content,
+        reasoning="Deterministic bounded-create scaffold (no Coder LLM call).",
+        blocked_reason=None,
+        blocked_needed_context=None,
+    )
+
+
 def _deterministic_markdown_append_response(
     packet: CoderPacket,
     task: str,
@@ -3803,9 +3875,10 @@ def _deterministic_markdown_append_response(
 
 
 def _markdown_append_literal(task: str) -> str:
+    from source_proxy.decision.proposal_task import effective_planning_task_text
     from source_proxy.planning.architect import markdown_append_literal
 
-    return markdown_append_literal(task)
+    return markdown_append_literal(effective_planning_task_text(task))
 
 
 def _base_coder_diagnostics(target_path: str) -> dict[str, Any]:
@@ -3896,6 +3969,8 @@ def _coder_response_reason_code(response: CoderResponse) -> str:
             return reason_code
     if "model_not_configured" in text or "not configured" in text:
         return "coder_model_not_configured"
+    if local_model_unavailable_from_error(text):
+        return "local_model_unavailable"
     if "router call failed" in text or "model/router" in text:
         return "coder_model_router_error"
     return "coder_blocked"

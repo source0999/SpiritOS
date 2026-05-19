@@ -4,7 +4,7 @@ import CodingAgentInterface from "@/components/coding/CodingAgentInterface";
 export default function CodingPage() {
   return (
     <main className="min-h-dvh bg-slate-950">
-      <CodingAgentInterface />
+      <CodingAgentInterface layoutMode="task" />
     </main>
   );
 }

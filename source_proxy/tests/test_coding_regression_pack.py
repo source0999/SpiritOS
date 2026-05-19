@@ -12,7 +12,12 @@ from fastapi.testclient import TestClient
 
 from source_proxy.api.decision import router as decision_router
 from source_proxy.decision.router import DecisionInput, decide_route, resolve_target_from_task
-from source_proxy.planning.architect import Plan, plan_task_deterministically
+from source_proxy.planning.architect import (
+    FallthroughToLLM,
+    Plan,
+    plan_bounded_proposal_create_deterministically,
+    plan_task_deterministically,
+)
 from source_proxy.planning.plan import task_spec_from_plan, save_plan
 from source_proxy.tasks.long_running import (
     approval_id_for_approved_diff,
@@ -22,6 +27,7 @@ from source_proxy.tasks.long_running import (
     record_post_apply_verification,
     reset_long_running_tasks,
 )
+from source_proxy.planning.bounded_create import bounded_create_replacement_content
 from source_proxy.verification.diff import DiffVerificationError, preview_diff_verification
 
 
@@ -264,6 +270,388 @@ class CodingRegressionPackTests(unittest.TestCase):
         self.assertEqual(preview["status"], "blocked")
         self.assertIn("task_spec_target_unresolved", reason_codes)
         self.assertFalse(preview["limits"]["file_writes_allowed"])
+
+    def test_bounded_proposal_json_target_file_wins_over_forbidden_env(self) -> None:
+        task = "\n".join(
+            [
+                "Proposal task:",
+                "",
+                "```json",
+                json.dumps(
+                    {
+                        "allowed_files": ["src/app/proxy-backend/page.tsx"],
+                        "expected_checks": ["git diff --check", "target-only"],
+                        "forbidden_files": [".env", ".env.local", ".env.*", "package.json"],
+                        "mode": "proposal",
+                        "rollback_hint": "git restore <target_file>",
+                        "target_file": "src/app/proxy-backend/page.tsx",
+                        "task": "Create the proxy backend page.",
+                    },
+                    indent=2,
+                ),
+                "```",
+                "",
+                "Safety: proposal draft only. Do not apply, commit, push, or edit files from this draft.",
+            ]
+        )
+        resolved = resolve_target_from_task(task, workspace_root=self.root)
+        decision = decide_route(DecisionInput(task=task, wants_implementation=True))
+
+        self.assertEqual(resolved.path, "src/app/proxy-backend/page.tsx")
+        self.assertEqual(resolved.source, "explicit_line")
+        self.assertNotEqual(resolved.path, ".env")
+        self.assertNotIn("protected_path", decision.reason_codes)
+        self.assertNotIn("target_missing", decision.reason_codes)
+
+    def _bounded_proxy_backend_proposal_task(self) -> str:
+        return "\n".join(
+            [
+                "Target file: src/app/proxy-backend/page.tsx",
+                "",
+                "Create the proxy backend page.",
+                "",
+                "Proposal task:",
+                "",
+                "```json",
+                json.dumps(
+                    {
+                        "allowed_files": ["src/app/proxy-backend/page.tsx"],
+                        "expected_checks": ["git diff --check", "target-only"],
+                        "forbidden_files": [
+                            ".env",
+                            ".env.local",
+                            ".env.*",
+                            "package.json",
+                            "next.config.ts",
+                            "README.md",
+                        ],
+                        "mode": "proposal",
+                        "rollback_hint": "git restore <target_file>",
+                        "target_file": "src/app/proxy-backend/page.tsx",
+                        "task": "Create the proxy backend page.",
+                    },
+                    indent=2,
+                ),
+                "```",
+            ]
+        )
+
+    def test_bounded_proposal_new_file_not_target_missing(self) -> None:
+        task = self._bounded_proxy_backend_proposal_task()
+        decision = decide_route(DecisionInput(task=task, wants_implementation=True))
+        self.assertNotIn("target_missing", decision.reason_codes)
+
+    def test_bounded_proposal_new_file_deterministic_coder_diff_without_llm(self) -> None:
+        task = self._bounded_proxy_backend_proposal_task()
+        result = plan_task_deterministically(task, "task-proxy-backend-coder", self.root)
+        self.assertIsInstance(result, Plan, result)
+
+        def fail_llm(_prompt: str, _model: str) -> str:
+            raise RuntimeError("router unavailable for test")
+
+        out = propose_coder_agent_diff_payload_from_plan(
+            architect_plan=result.plan,
+            workspace_root=self.root,
+            llm_call=fail_llm,
+        )
+        self.assertFalse(out.get("coder_blocked"), out)
+        self.assertIn("src/app/proxy-backend/page.tsx", out.get("target", ""))
+        diff = str(out.get("proposed_diff") or "")
+        self.assertIn("--- /dev/null", diff)
+        self.assertIn("+++ b/src/app/proxy-backend/page.tsx", diff)
+        self.assertIn("CodingAgentInterface", diff)
+
+    def _bounded_doc_append_proposal_task(
+        self,
+        literal: str = "Proxy backend layout smoke test passed.",
+    ) -> str:
+        return "\n".join(
+            [
+                f"Target file: {DOC_TARGET}",
+                "",
+                f'Append this exact sentence to {DOC_TARGET}: "{literal}"',
+                "",
+                "Proposal task:",
+                "",
+                "```json",
+                json.dumps(
+                    {
+                        "allowed_files": [DOC_TARGET],
+                        "expected_checks": ["git diff --check", "target-only"],
+                        "forbidden_files": [
+                            ".env",
+                            ".env.local",
+                            ".env.*",
+                            "package.json",
+                            "README.md",
+                        ],
+                        "mode": "proposal",
+                        "rollback_hint": f"git restore {DOC_TARGET}",
+                        "target_file": DOC_TARGET,
+                        "task": f'Append this exact sentence to {DOC_TARGET}: "{literal}"',
+                    },
+                    indent=2,
+                ),
+                "```",
+            ]
+        )
+
+    def test_bounded_doc_append_preview_empty_proposal_task_ignores_json_envelope(self) -> None:
+        import json
+
+        from source_proxy.decision.proposal_task import effective_planning_task_text
+        from source_proxy.verification.diff import preview_diff_verification
+
+        literal = "Proxy backend layout smoke test passed."
+        task = "\n".join(
+            [
+                f"Target file: {DOC_TARGET}",
+                "",
+                f'Append this exact sentence to {DOC_TARGET}: "{literal}"',
+                "",
+                "Proposal task:",
+                "",
+                "```json",
+                json.dumps(
+                    {
+                        "allowed_files": [DOC_TARGET],
+                        "expected_checks": ["target-only"],
+                        "forbidden_files": [".env"],
+                        "mode": "proposal",
+                        "target_file": DOC_TARGET,
+                        "task": "",
+                    },
+                    indent=2,
+                ),
+                "```",
+            ]
+        )
+        effective = effective_planning_task_text(task)
+        self.assertNotIn("allowed_files", effective)
+        result = plan_task_deterministically(task, "task-empty-proposal-task", self.root)
+        self.assertIsInstance(result, Plan, result)
+        from source_proxy.tasks.long_running import propose_coder_agent_diff_payload_from_plan
+
+        out = propose_coder_agent_diff_payload_from_plan(
+            architect_plan=result.plan,
+            workspace_root=self.root,
+            llm_call=lambda *_args: (_ for _ in ()).throw(AssertionError("LLM should not run")),
+        )
+        diff = str(out.get("proposed_diff") or "")
+        self.assertIn(literal, diff)
+        preview = preview_diff_verification(
+            diff,
+            route_type="local_route",
+            task_text=task,
+            architect_plan=result.plan,
+        )
+        self.assertTrue(preview["requirement_coverage"]["ok"], preview["requirement_coverage"])
+        self.assertEqual(preview["status"], "preview_ready", preview.get("blocked_reasons"))
+
+    def test_bounded_doc_append_plan_and_validation_ignore_json_envelope(self) -> None:
+        from source_proxy.verification.contracts import validate_replacement_content
+
+        task = self._bounded_doc_append_proposal_task()
+        result = plan_task_deterministically(task, "task-bounded-doc-append", self.root)
+        self.assertIsInstance(result, Plan, result)
+        self.assertTrue(result.plan.plan_id.startswith("det-md-append-"))
+        literal = "Proxy backend layout smoke test passed."
+        base = (self.root / DOC_TARGET).read_text(encoding="utf-8")
+        content = f"{base.rstrip()}\n{literal}\n"
+        validation = validate_replacement_content(
+            workspace_root=self.root,
+            target_path=DOC_TARGET,
+            content=content,
+            task_text=task,
+        )
+        self.assertTrue(validation["ok"], validation)
+        missing_text = " ".join(validation.get("missing", []))
+        for token in ("allowed_files", "forbidden_files", "expected_checks", ".env.local"):
+            self.assertNotIn(token, missing_text, missing_text)
+
+        out = propose_coder_agent_diff_payload_from_plan(
+            architect_plan=result.plan,
+            workspace_root=self.root,
+            llm_call=lambda *_args: (_ for _ in ()).throw(AssertionError("LLM should not run")),
+        )
+        self.assertFalse(out.get("coder_blocked"), out)
+        self.assertIn(literal, str(out.get("proposed_diff") or ""))
+
+    def test_bounded_proposal_diff_preview_ignores_json_envelope_requirements(self) -> None:
+        task = self._bounded_proxy_backend_proposal_task()
+        plan = plan_task_deterministically(task, "task-proxy-preview", self.root)
+        self.assertIsInstance(plan, Plan, plan)
+        from source_proxy.planning.bounded_create import bounded_create_replacement_content
+        from source_proxy.tasks.long_running import generate_unified_diff_from_content
+
+        content = bounded_create_replacement_content(
+            "src/app/proxy-backend/page.tsx",
+            "Create the proxy backend page.",
+        )
+        diff = generate_unified_diff_from_content(
+            self.root,
+            "src/app/proxy-backend/page.tsx",
+            content or "",
+        )
+        preview = preview_diff_verification(
+            diff,
+            route_type="local_route",
+            next_prompt_action="run_with_coder_agent",
+            task_text=task,
+            architect_plan=plan.plan,
+        )
+        self.assertEqual(preview["status"], "preview_ready")
+        self.assertTrue(preview["limits"]["file_writes_allowed"])
+
+    def test_bounded_create_scaffold_content(self) -> None:
+        content = bounded_create_replacement_content(
+            "src/app/proxy-backend/page.tsx",
+            "Create the proxy backend page.",
+        )
+        self.assertIsNotNone(content)
+        assert content is not None
+        self.assertIn("ProxyBackendPage", content)
+        self.assertIn("CodingAgentInterface", content)
+
+    def test_bounded_proposal_new_file_deterministic_architect_plan(self) -> None:
+        task = self._bounded_proxy_backend_proposal_task()
+        result = plan_task_deterministically(task, "task-proxy-backend-create", self.root)
+        self.assertIsInstance(result, Plan, result)
+        self.assertEqual(result.plan.coder_packet.target_file.path, "src/app/proxy-backend/page.tsx")
+        self.assertEqual(result.plan.coder_packet.operation, "create")
+        self.assertFalse(result.plan.coder_packet.target_file.exists)
+
+    def test_bounded_proposal_new_file_env_target_blocked(self) -> None:
+        task = "\n".join(
+            [
+                "Proposal task:",
+                "",
+                "```json",
+                json.dumps(
+                    {
+                        "allowed_files": [".env"],
+                        "forbidden_files": [],
+                        "mode": "proposal",
+                        "target_file": ".env",
+                        "task": "Create env file.",
+                    },
+                    indent=2,
+                ),
+                "```",
+            ]
+        )
+        result = plan_bounded_proposal_create_deterministically(
+            task,
+            "task-env-create",
+            self.root,
+        )
+        self.assertNotIsInstance(result, Plan)
+        decision = decide_route(DecisionInput(task=task, wants_implementation=True))
+        self.assertIn("protected_path", decision.reason_codes)
+
+    def test_bounded_proposal_new_file_package_json_forbidden(self) -> None:
+        task = "\n".join(
+            [
+                "Proposal task:",
+                "",
+                "```json",
+                json.dumps(
+                    {
+                        "allowed_files": ["package.json"],
+                        "forbidden_files": ["package.json"],
+                        "mode": "proposal",
+                        "target_file": "package.json",
+                        "task": "Create package manifest.",
+                    },
+                    indent=2,
+                ),
+                "```",
+            ]
+        )
+        result = plan_bounded_proposal_create_deterministically(
+            task,
+            "task-package-create",
+            self.root,
+        )
+        self.assertIsInstance(result, FallthroughToLLM)
+
+    def test_bounded_proposal_new_file_not_in_allowed_files(self) -> None:
+        task = "\n".join(
+            [
+                "Proposal task:",
+                "",
+                "```json",
+                json.dumps(
+                    {
+                        "allowed_files": ["src/app/other/page.tsx"],
+                        "forbidden_files": [],
+                        "mode": "proposal",
+                        "target_file": "src/app/proxy-backend/page.tsx",
+                        "task": "Create page.",
+                    },
+                    indent=2,
+                ),
+                "```",
+            ]
+        )
+        result = plan_bounded_proposal_create_deterministically(
+            task,
+            "task-allowed-mismatch",
+            self.root,
+        )
+        self.assertIsInstance(result, FallthroughToLLM)
+        self.assertEqual(result.reason, "target_not_in_allowed_files")
+
+    def test_bounded_proposal_forbidden_files_are_not_inferred_targets(self) -> None:
+        task = "\n".join(
+            [
+                "Proposal task:",
+                "",
+                "```json",
+                json.dumps(
+                    {
+                        "allowed_files": [],
+                        "expected_checks": [],
+                        "forbidden_files": [".env", ".env.local"],
+                        "mode": "proposal",
+                        "rollback_hint": "",
+                        "target_file": None,
+                        "task": "Describe env safety only.",
+                    },
+                    indent=2,
+                ),
+                "```",
+            ]
+        )
+        resolved = resolve_target_from_task(task, workspace_root=self.root)
+
+        self.assertNotEqual(resolved.path, ".env")
+        self.assertNotEqual(resolved.path, ".env.local")
+
+    def test_bounded_proposal_protected_target_file_still_blocks(self) -> None:
+        task = "\n".join(
+            [
+                "Proposal task:",
+                "",
+                "```json",
+                json.dumps(
+                    {
+                        "allowed_files": [".env"],
+                        "forbidden_files": [],
+                        "mode": "proposal",
+                        "target_file": ".env",
+                        "task": "Never do this.",
+                    },
+                    indent=2,
+                ),
+                "```",
+            ]
+        )
+        resolved = resolve_target_from_task(task, workspace_root=self.root)
+        decision = decide_route(DecisionInput(task=task, wants_implementation=True))
+
+        self.assertEqual(resolved.path, ".env")
+        self.assertIn("protected_path", decision.reason_codes)
 
     def test_explicit_target_line_wins_without_punctuation_drift(self) -> None:
         task = "\n".join(

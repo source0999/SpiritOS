@@ -599,11 +599,14 @@ _REQUIREMENT_CONTEXT_MARKER_RE = re.compile(
 
 
 def _requirement_source_text(task_text: str) -> str:
-    """Keep user requirements, but ignore pasted context/output schemas."""
-    match = _REQUIREMENT_CONTEXT_MARKER_RE.search(task_text)
+    """Keep user requirements, but ignore pasted context/output schemas and proposal JSON envelopes."""
+    from source_proxy.decision.proposal_task import effective_planning_task_text
+
+    normalized = effective_planning_task_text(task_text or "")
+    match = _REQUIREMENT_CONTEXT_MARKER_RE.search(normalized)
     if not match:
-        return task_text
-    return task_text[: match.start()].rstrip()
+        return normalized
+    return normalized[: match.start()].rstrip()
 
 
 def _route_to_app_router_page(route: str) -> str | None:
@@ -620,12 +623,55 @@ def _route_to_app_router_page(route: str) -> str | None:
     return "src/app/" + "/".join(segments) + "/page.tsx"
 
 
+_PATH_PREFIX_BEFORE_ROUTE_RE = re.compile(
+    r"(?:^|[\s`\"'])(?:src|lib|app|components|pages?)/[\w./-]*$",
+    re.IGNORECASE,
+)
+
+_NEGATIVE_CONSTRAINT_LINE_RE = re.compile(
+    r"(?im)^\s*(?:"
+    r"(?:do\s+not|don't|never|not)\s+(?:modify|edit|touch|change|update|alter)\b"
+    r"|(?:forbidden|blocked)\b"
+    r")"
+)
+
+
+def _line_bounds(task_text: str, index: int) -> tuple[int, int]:
+    line_start = task_text.rfind("\n", 0, index) + 1
+    line_end = task_text.find("\n", index)
+    if line_end == -1:
+        line_end = len(task_text)
+    return line_start, line_end
+
+
+def _negative_constraint_route_paths(task_text: str) -> set[str]:
+    blocked: set[str] = set()
+    for line in task_text.splitlines():
+        if not _NEGATIVE_CONSTRAINT_LINE_RE.search(line):
+            continue
+        for match in re.finditer(r"(?<![A-Za-z0-9_./@<-])(/[A-Za-z0-9_()/.-]+)", line):
+            cleaned = match.group(1).rstrip(".,;:")
+            if "." in PurePosixPath(cleaned).name:
+                continue
+            blocked.add(cleaned)
+    return blocked
+
+
 def _extract_route_path(task_text: str) -> str | None:
-    for route in re.findall(r"(?<![A-Za-z0-9_./@<-])(/[A-Za-z0-9_()/.-]+)", task_text):
-        cleaned = route.rstrip(".,;:")
+    negative_routes = _negative_constraint_route_paths(task_text)
+    for match in re.finditer(r"(?<![A-Za-z0-9_./@<-])(/[A-Za-z0-9_()/.-]+)", task_text):
+        cleaned = match.group(1).rstrip(".,;:")
         if "." in PurePosixPath(cleaned).name:
             continue
         if cleaned.lower() in {"/h1", "/main", "/div", "/section"}:
+            continue
+        if cleaned in negative_routes:
+            continue
+        line_start, line_end = _line_bounds(task_text, match.start())
+        if _NEGATIVE_CONSTRAINT_LINE_RE.search(task_text[line_start:line_end]):
+            continue
+        prefix = task_text[max(0, match.start() - 40) : match.start()]
+        if _PATH_PREFIX_BEFORE_ROUTE_RE.search(prefix):
             continue
         return cleaned
     return None
@@ -701,10 +747,53 @@ def _extract_transformation_text_requirements(task_text: str) -> dict[str, list[
     }
 
 
+def _extract_markdown_append_literal(task_text: str) -> str:
+    """Single append literal from quotes or the standalone line after an exact-sentence instruction."""
+    normalized = (task_text or "").strip()
+    if not re.search(r"\bappend\b", normalized, re.IGNORECASE):
+        return ""
+    if not re.search(r"\bexact\s+sentence\b", normalized, re.IGNORECASE):
+        return ""
+
+    without_target = "\n".join(
+        line
+        for line in normalized.splitlines()
+        if not line.strip().lower().startswith("target file:")
+    )
+    quoted = [
+        match.group(2).strip()
+        for match in re.finditer(r"([\"'`])(.+?)\1", without_target)
+        if match.group(2).strip() and "\n" not in match.group(2)
+    ]
+    if len(quoted) == 1:
+        literal = quoted[0]
+        if 3 <= len(literal) <= 240:
+            return literal
+
+    lines = [line.strip() for line in without_target.splitlines() if line.strip()]
+    for index, line in enumerate(lines):
+        if not re.search(r"\bappend\b.*\bexact\s+sentence\b", line, re.IGNORECASE):
+            continue
+        for candidate in lines[index + 1 :]:
+            lowered = candidate.lower()
+            if lowered.startswith(("do not", "don't", "never ", "not ")):
+                continue
+            if candidate.startswith("/") and " " not in candidate.strip("/"):
+                continue
+            if 3 <= len(candidate) <= 240:
+                return candidate
+        break
+    return ""
+
+
 def _extract_text_requirements(task_text: str) -> dict[str, list[str]]:
     transformations = _extract_transformation_text_requirements(task_text)
     source_terms = set(transformations["source_terms"])
     found: list[str] = list(transformations["required_final_terms"])
+
+    append_literal = _extract_markdown_append_literal(task_text)
+    if append_literal:
+        found.append(append_literal)
 
     for match in _QUOTED_TEXT_RE.finditer(task_text):
         value = match.group("value").strip()
@@ -803,10 +892,33 @@ def _extract_import_requirements(task_text: str) -> list[dict[str, str]]:
     return list({f"{item['symbol']}::{item['source']}": item for item in requirements}.values())
 
 
+def _resolve_requirement_target(
+    task_text: str,
+    *,
+    architect_plan: ArchitectPlan | None = None,
+    task_spec: dict[str, Any] | None = None,
+) -> str | None:
+    target = _extract_explicit_target(task_text)
+    if target:
+        return target
+    if architect_plan is not None:
+        plan_target = str(architect_plan.coder_packet.target_file.path or "").replace("\\", "/").strip()
+        if plan_target:
+            return plan_target
+    if isinstance(task_spec, dict):
+        for key in ("target_file", "target", "path"):
+            raw = task_spec.get(key)
+            if isinstance(raw, str) and raw.strip():
+                return raw.replace("\\", "/").strip()
+    return None
+
+
 def _requirement_coverage(
     unified_diff: str,
     files: list[dict[str, Any]],
     task_text: str | None,
+    *,
+    explicit_target: str | None = None,
 ) -> dict[str, Any]:
     task = _requirement_source_text(task_text or "").strip()
     if not task:
@@ -817,9 +929,15 @@ def _requirement_coverage(
     changed_paths = {str(file.get("path") or "").replace("\\", "/") for file in files}
     missing: list[str] = []
 
-    target = _extract_explicit_target(task)
+    target = explicit_target or _extract_explicit_target(task)
     route = _extract_route_path(task)
     route_target = _route_to_app_router_page(route) if route else None
+    if changed_paths and all(path.endswith(".md") for path in changed_paths if path):
+        route = None
+        route_target = None
+    elif target and target.endswith(".md"):
+        route = None
+        route_target = None
     text_requirements = _extract_text_requirements(task)
     texts = text_requirements["required_final_terms"]
     class_fragments = _extract_class_fragments(task)
@@ -878,6 +996,15 @@ def _requirement_coverage(
     }
 
 
+def _task_text_for_diff_preview(task_text: str | None) -> str:
+    from source_proxy.decision.proposal_task import effective_planning_task_text
+
+    raw = (task_text or "").strip()
+    if not raw:
+        return ""
+    return effective_planning_task_text(raw)
+
+
 def preview_diff_verification(
     unified_diff: str,
     *,
@@ -889,6 +1016,7 @@ def preview_diff_verification(
     task_spec: dict[str, Any] | None = None,
     reviewer_llm_call=None,
 ) -> dict[str, Any]:
+    preview_task_text = _task_text_for_diff_preview(task_text)
     unified_diff = sanitize_unified_diff_for_git_apply(unified_diff)
     if not unified_diff.strip():
         raise DiffVerificationError("A unified diff is required.", "empty_diff")
@@ -931,9 +1059,19 @@ def preview_diff_verification(
                 "reason_code": "typescript_syntax_or_typecheck_failed",
             },
         ]
-    requirement_coverage = _requirement_coverage(unified_diff, files, task_text)
+    resolved_target = _resolve_requirement_target(
+        preview_task_text,
+        architect_plan=architect_plan,
+        task_spec=task_spec_payload if isinstance(task_spec_payload, dict) else None,
+    )
+    requirement_coverage = _requirement_coverage(
+        unified_diff,
+        files,
+        preview_task_text,
+        explicit_target=resolved_target,
+    )
     if not requirement_coverage["ok"]:
-        path = _extract_explicit_target(task_text or "") or "*"
+        path = _extract_explicit_target(preview_task_text) or "*"
         blocked_reasons = [
             *blocked_reasons,
             {

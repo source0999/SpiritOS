@@ -9,10 +9,19 @@ import { Ban, Eye, Play, RefreshCw, RotateCw, ShieldCheck, XCircle } from "lucid
 import { DashboardDemoV4Atmosphere } from "@/components/dashboard/demo-v4/DashboardDemoV4Atmosphere";
 import { DashboardDemoV4FloatingNav } from "@/components/dashboard/demo-v4/DashboardDemoV4FloatingNav";
 import {
+  buildCombinedApprovalPreviewAfterDiff,
   deriveApprovalGateProposal,
   resolvedTargetPathFromDecision,
 } from "@/components/coding/approval-gate-binding";
 import { normalizeRepoRelativePath } from "@/lib/coding/explicit-task-target";
+import {
+  boundedProposalMatchesText,
+  buildWorkflowTaskFromProposal,
+  effectivePlanningTaskText,
+  parseBoundedProposalTask,
+  proposalDraftResultToBounded,
+  type BoundedProposalDraft,
+} from "@/lib/coding/proposal-task-handoff";
 import {
   fetchJsonWithTimeout,
   isPlanUnavailableEnvelope,
@@ -23,6 +32,13 @@ import {
   collectPathsFromUnifiedDiff,
   diffTouchesExplicitTarget,
 } from "@/lib/coding/unified-diff-paths";
+import {
+  deriveWorkflowProgressCopy,
+  formatWorkflowBlockerTitle,
+  isApprovalPendingGateReason,
+  type WorkflowApplyChecklistItem,
+  type WorkflowProgressCopy,
+} from "@/lib/coding/workflow-progress-copy";
 import "@/styles/dashboard-demo-v4.css";
 
 const acceptedFileTypes =
@@ -1129,8 +1145,10 @@ function friendlyTokenLine(tokens: number | null): string {
 // Same proxy harness for `/coding` and embedded `/chat` tab; `embedded` drops duplicate chrome.
 export default function CodingAgentInterface({
   embedded = false,
+  layoutMode = "workflow",
 }: {
   embedded?: boolean;
+  layoutMode?: "backend-console" | "task" | "workflow";
 }) {
   const isRunningRef = useRef(false);
   const runSequenceRef = useRef(0);
@@ -1138,6 +1156,7 @@ export default function CodingAgentInterface({
   /** Survives into catch() so a post-route failure can still render the route decision summary. */
   const lastRouteDecisionRef = useRef<ProxyRouteDecisionResponse | null>(null);
   const lastSubmittedTaskRef = useRef("");
+  const boundedProposalDraftRef = useRef<BoundedProposalDraft | null>(null);
   const [inputText, setInputText] = useState("");
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [processLogs, setProcessLogs] = useState<ProcessLog[]>(DEFAULT_PROCESS_LOGS);
@@ -1207,6 +1226,7 @@ export default function CodingAgentInterface({
   });
   const [architectPlan, setArchitectPlan] = useState<ArchitectPlanResponse | null>(null);
   const [isRunning, setIsRunning] = useState(false);
+  const [proposalPanelKey, setProposalPanelKey] = useState(0);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -1699,7 +1719,7 @@ export default function CodingAgentInterface({
               ? undefined
               : proxyMetrics.route,
           nextPromptAction: finalOutput?.decision?.next_prompt_action,
-          taskText: inputText,
+          taskText: effectivePlanningTaskText(inputText),
         });
         const normalizedDiffPreview = normalizeDiffVerificationPreview(diffPreview);
         setDiffVerification((current) => ({
@@ -1997,7 +2017,7 @@ export default function CodingAgentInterface({
             ? undefined
             : proxyMetrics.route,
         nextPromptAction: finalOutput?.decision?.next_prompt_action,
-        taskText: inputText,
+        taskText: effectivePlanningTaskText(inputText),
       });
       const normalizedPreview = normalizeDiffVerificationPreview(preview);
       const previewChangedFile = normalizedPreview.changed_files?.[0];
@@ -2024,20 +2044,26 @@ export default function CodingAgentInterface({
         fallbackScaffoldAccepted: false,
         fallbackScaffoldBlocked: false,
         fallbackScaffoldGenerated: false,
-        preview: normalizedPreview.status === "blocked"
-          ? {
-              decision: "blocked",
-              reason_codes:
-                normalizedPreview.blocked_reasons?.map(
-                  (reason) => reason.reason_code,
-                ) ?? ["diff_preview_blocked"],
-              requires_human_approval: false,
-              safety_message:
-                normalizedPreview.requirement_coverage?.summary ||
-                normalizedPreview.git_apply_check_error ||
-                "Diff verification blocked this proposal.",
-            }
-          : current.preview,
+        preview:
+          normalizedPreview.status === "blocked"
+            ? {
+                decision: "blocked",
+                reason_codes:
+                  normalizedPreview.blocked_reasons?.map(
+                    (reason) => reason.reason_code,
+                  ) ?? ["diff_preview_blocked"],
+                requires_human_approval: false,
+                safety_message:
+                  normalizedPreview.requirement_coverage?.summary ||
+                  normalizedPreview.git_apply_check_error ||
+                  "Diff verification blocked this proposal.",
+              }
+            : buildCombinedApprovalPreviewAfterDiff({
+                existing: current.preview,
+                explicitTaskTarget: current.target,
+                initialDiffPreview: normalizedPreview,
+                effectiveTarget: previewDiffPath || current.target,
+              }) ?? current.preview,
         proposedDiff: unifiedDiffText,
         target: previewDiffPath || current.target,
       }));
@@ -2375,7 +2401,8 @@ export default function CodingAgentInterface({
     const startedAt = new Date();
     setIsRunning(true);
 
-    const task = inputText.trim();
+    const rawTask = inputText.trim();
+    const task = resolveWorkflowTaskText(rawTask);
     lastSubmittedTaskRef.current = task;
     const attachedFiles = uploadedFiles;
     const priorTurns = conversationHistory.slice(0, maxMultiTurnContextEntries);
@@ -2526,9 +2553,14 @@ export default function CodingAgentInterface({
       const mergedProposedDiff =
         unifiedDiffPayloadOrEmpty(approvalProposal?.proposedDiff ?? "") || packetDiff;
       const mergedTarget = (approvalProposal?.target ?? "").trim() || packetTarget;
+      const targetExists =
+        decision.resolved_target?.exists === true ||
+        decision.resolvedTarget?.exists === true;
       const mergedAction =
         mergedProposedDiff && mergedTarget
-          ? "modify file"
+          ? targetExists
+            ? "modify file"
+            : "create file"
           : (approvalProposal?.action ?? "");
       const coderBlocked = promptPacket.coder_blocked === true || promptPacket.coderBlocked === true;
       const coderBlockedReason =
@@ -2631,7 +2663,7 @@ export default function CodingAgentInterface({
             activeTaskId: trackedTask.task.id,
             routeType: routeForVerify,
             nextPromptAction: decision.next_prompt_action,
-            taskText: task,
+            taskText: effectivePlanningTaskText(task),
           });
           initialDiffPreview = normalizeDiffVerificationPreview(rawPreview);
         } catch {
@@ -2737,6 +2769,41 @@ export default function CodingAgentInterface({
             ? `${combinedApprovalPreview.safety_message} ${applyMsg}`
             : applyMsg,
         };
+      }
+      if (!alreadySatisfied && effectiveProposedDiff) {
+        combinedApprovalPreview = buildCombinedApprovalPreviewAfterDiff({
+          existing: combinedApprovalPreview,
+          explicitTaskTarget,
+          initialDiffPreview,
+          effectiveTarget,
+        });
+        if (
+          combinedApprovalPreview?.requires_human_approval &&
+          effectiveAction &&
+          effectiveTarget
+        ) {
+          try {
+            const actionPreview = await callActionPreview({
+              action: effectiveAction,
+              routeType: decision.recommended_route ?? "local_route",
+              target: effectiveTarget,
+            });
+            combinedApprovalPreview = normalizeApprovalPreview({
+              action: effectiveAction,
+              preview: {
+                ...actionPreview,
+                decision:
+                  initialDiffPreview?.status === "blocked"
+                    ? "blocked"
+                    : "requires_human_approval",
+                requires_human_approval: initialDiffPreview?.status !== "blocked",
+              },
+              target: effectiveTarget,
+            });
+          } catch {
+            /* Diff-derived preview is enough for bounded create smoke tests. */
+          }
+        }
       }
 
       setProxyMetrics({
@@ -3188,14 +3255,46 @@ export default function CodingAgentInterface({
   function startNewCodingTask() {
     setWorkflowStepFloor(null);
     lastSubmittedTaskRef.current = "";
-    applyDiscoveryWorkspaceForTask(
-      "Review a large implementation task and prepare a verification plan.",
-      { clearProposal: true },
-    );
-    setInputText("");
+    boundedProposalDraftRef.current = null;
+    isRunningRef.current = false;
+    setIsRunning(false);
+    setArchitectPlan(null);
     setFinalOutput(null);
+    setProposalPanelKey((key) => key + 1);
+    setApprovalGate({
+      action: "",
+      alreadySatisfied: false,
+      approvedAt: null,
+      coderDiagnostics: undefined,
+      content: "",
+      deniedAt: null,
+      error: null,
+      execution: null,
+      fallbackScaffoldAccepted: false,
+      fallbackScaffoldBlocked: false,
+      fallbackScaffoldGenerated: false,
+      isChecking: false,
+      preview: null,
+      proposedDiff: "",
+      target: "",
+    });
+    setDiffVerification({
+      error: null,
+      isChecking: false,
+      preview: null,
+      unifiedDiff: "",
+    });
+    setLongRunningTask({
+      description: "",
+      error: null,
+      isChecking: false,
+      response: null,
+    });
+    setWorkflowMemory(emptyWorkflowMemorySnapshot);
+    setInputText("");
     setUploadedFiles([]);
     setProcessLogs(DEFAULT_PROCESS_LOGS);
+    setToastMessage("Started a new task. Approval, proposal, and run state were cleared.");
     if (typeof window !== "undefined") {
       try {
         window.localStorage.removeItem(activityLogStorageKey);
@@ -3400,6 +3499,39 @@ export default function CodingAgentInterface({
     ]);
   }
 
+  function resolveWorkflowTaskText(rawTask: string): string {
+    const stored = boundedProposalDraftRef.current;
+    if (stored && boundedProposalMatchesText(stored, rawTask)) {
+      return buildWorkflowTaskFromProposal(stored);
+    }
+    const parsed = parseBoundedProposalTask(rawTask);
+    if (parsed?.target_file) {
+      return buildWorkflowTaskFromProposal(parsed);
+    }
+    if (stored) {
+      boundedProposalDraftRef.current = null;
+    }
+    return rawTask;
+  }
+
+  function handleProposalDraft(draft: ProposalDraftResult) {
+    if (!draft.text.trim() || draft.blocked) {
+      return;
+    }
+    const bounded = proposalDraftResultToBounded(draft);
+    boundedProposalDraftRef.current = bounded;
+    setInputText(buildWorkflowTaskFromProposal(bounded));
+    setWorkflowStepFloor(1);
+    setToastMessage("Proposal draft copied to Task Description (step 1).");
+    if (typeof document !== "undefined") {
+      window.requestAnimationFrame(() => {
+        document
+          .getElementById("coding-workflow-task-description")
+          ?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+    }
+  }
+
   return (
     <div className="dashboard-demo-v4-root">
       <DashboardDemoV4Atmosphere />
@@ -3478,6 +3610,7 @@ export default function CodingAgentInterface({
               onLongTaskVerifyCode={verifyCodeLongRunningTask}
               onLongTaskVerifyDocsOnly={verifyDocsOnlyLongRunningTask}
               onInputChange={setInputText}
+              onProposalDraft={handleProposalDraft}
               onFilesAdded={(files) => setUploadedFiles((current) => [...current, ...files])}
               onPreviewApprovalGate={previewApprovalGate}
               onPreviewDiffVerification={previewDiffVerification}
@@ -3487,9 +3620,11 @@ export default function CodingAgentInterface({
               onRunProxyFlow={runProxyFlow}
               onStartNewTask={startNewCodingTask}
               onSubmit={runProxyFlow}
+              proposalPanelKey={proposalPanelKey}
               telemetry={telemetry}
               proxySafetySmoke={proxySafetySmoke}
               workflowStepFloor={workflowStepFloor}
+              layoutMode={layoutMode}
             />
           </section>
         </div>
@@ -4085,8 +4220,11 @@ type CodingStabilitySummary = {
   approvalState: string;
   diffState: string;
   executionState: string;
+  headline: string;
   lastBlocker: string | null;
+  nextAction: string | null;
   primaryState: CodingStabilityPrimaryState;
+  stepLabel: string;
   streamState: string;
   target: string;
   verificationState: string;
@@ -4095,11 +4233,14 @@ type CodingStabilitySummary = {
 type CodingTaskStateSummary = {
   allowedFiles: string;
   appliedAnything: string;
+  applyExecuted: string;
+  applyExecutedHelper: string;
   approvalAvailable: string;
   currentWorkflowState: string;
   lastBlocker: string;
   safetyLevel: string;
   target: string;
+  /** @deprecated Use applyExecuted — preview always reports would_apply_diff false. */
   wouldChangeFiles: string;
 };
 
@@ -4257,12 +4398,37 @@ export function deriveCodingStabilitySummary({
     primaryState = "Planning";
   }
 
+  const progress = deriveWorkflowProgressCopy({
+    approvalGate: {
+      approvedAt: approvalGate.approvedAt,
+      execution: approvalGate.execution,
+      isChecking: approvalGate.isChecking,
+      preview: approvalGate.preview,
+    },
+    diffVerification: {
+      preview: diffVerification.preview,
+    },
+    longRunningTask: {
+      isChecking: longRunningTask.isChecking,
+      response: longRunningTask.response,
+    },
+    stability: {
+      approvalState,
+      diffState,
+      lastBlocker: blocker,
+      primaryState,
+    },
+  });
+
   return {
     approvalState,
     diffState,
     executionState,
+    headline: progress.headline,
     lastBlocker: blocker,
+    nextAction: progress.nextAction,
     primaryState,
+    stepLabel: progress.stepLabel,
     streamState,
     target,
     verificationState,
@@ -4314,16 +4480,48 @@ export function deriveCodingTaskStateSummary({
       taskStatus === "completed" ||
       taskStatus === "verified",
   );
+  const progress = deriveWorkflowProgressCopy({
+    approvalGate: {
+      approvedAt: approvalGate.approvedAt,
+      execution: approvalGate.execution,
+      isChecking: approvalGate.isChecking,
+      preview: approvalGate.preview,
+    },
+    diffVerification: {
+      preview: diffVerification.preview,
+    },
+    longRunningTask: {
+      isChecking: longRunningTask.isChecking,
+      response: longRunningTask.response,
+    },
+    stability: {
+      approvalState: stability.approvalState,
+      diffState: stability.diffState,
+      lastBlocker: stability.lastBlocker,
+      primaryState: stability.primaryState,
+    },
+  });
+
+  const rawBlocker = stability.lastBlocker ?? firstPreviewBlocker ?? "none";
+  const blockerContext = {
+    primaryState: stability.primaryState,
+    stepLabel: stability.stepLabel,
+  };
 
   return {
     allowedFiles: allowedFiles || "none",
     appliedAnything: String(appliedAnything),
+    applyExecuted: progress.applyExecuted,
+    applyExecutedHelper: progress.applyExecutedHelper,
     approvalAvailable: String(approvalAvailable),
-    currentWorkflowState: stability.primaryState,
-    lastBlocker: stability.lastBlocker ?? firstPreviewBlocker ?? "none",
+    currentWorkflowState: stability.stepLabel,
+    lastBlocker:
+      rawBlocker === "none"
+        ? "none"
+        : formatWorkflowBlockerTitle(rawBlocker, blockerContext),
     safetyLevel: preview?.risk ?? finalOutput?.decision.risk_tier ?? "unknown",
     target: stability.target,
-    wouldChangeFiles: preview?.would_apply_diff === true ? "yes" : "no",
+    wouldChangeFiles: progress.applyExecuted,
   };
 }
 
@@ -4753,12 +4951,23 @@ function WorkflowBadge({
 
 export function CodingStabilityCard({ summary }: { summary: CodingStabilitySummary }) {
   const tone = codingStabilityTone(summary.primaryState);
+  const approvalGatePending = isApprovalPendingGateReason(summary.lastBlocker, {
+    primaryState: summary.primaryState,
+    stepLabel: summary.stepLabel,
+  });
   const blockerCopy =
     summary.lastBlocker &&
+    !approvalGatePending &&
     (PROTECTED_PATH_REASON_CODES.has(summary.lastBlocker) ||
       PATH_ESCAPE_REASON_CODES.has(summary.lastBlocker))
       ? safetyReasonCopy([summary.lastBlocker])
       : null;
+  const blockerTitle = summary.lastBlocker
+    ? formatWorkflowBlockerTitle(summary.lastBlocker, {
+        primaryState: summary.primaryState,
+        stepLabel: summary.stepLabel,
+      })
+    : null;
   const fields = [
     ["Target", summary.target],
     ["Diff", summary.diffState],
@@ -4772,9 +4981,13 @@ export function CodingStabilityCard({ summary }: { summary: CodingStabilitySumma
       <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
         <div className="flex min-w-[13rem] flex-col gap-1">
           <div className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
-            Current workflow state
+            Current run summary
           </div>
-          <WorkflowBadge tone={tone}>{summary.primaryState}</WorkflowBadge>
+          <WorkflowBadge tone={tone}>{summary.stepLabel}</WorkflowBadge>
+          <p className="text-sm font-medium text-slate-900">{summary.headline}</p>
+          {summary.nextAction ? (
+            <p className="text-xs text-slate-700">{summary.nextAction}</p>
+          ) : null}
         </div>
         <dl className="grid flex-1 grid-cols-1 gap-2 text-xs sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           {fields.map(([label, value]) => (
@@ -4788,10 +5001,23 @@ export function CodingStabilityCard({ summary }: { summary: CodingStabilitySumma
         </dl>
       </div>
       {summary.lastBlocker ? (
-        <div className="mt-2 inline-flex max-w-full border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-950">
-          <span className="mr-2 shrink-0 text-red-700">Last blocker</span>
-          <span className="truncate" title={blockerCopy?.title ?? summary.lastBlocker}>
-            {blockerCopy?.title ?? summary.lastBlocker}
+        <div
+          className={`mt-2 inline-flex max-w-full border px-3 py-1.5 text-xs font-semibold ${
+            approvalGatePending
+              ? "border-amber-200 bg-amber-50 text-amber-950"
+              : "border-red-200 bg-red-50 text-red-950"
+          }`}
+        >
+          <span
+            className={`mr-2 shrink-0 ${approvalGatePending ? "text-amber-800" : "text-red-700"}`}
+          >
+            {approvalGatePending ? "Approval gate" : "Last blocker"}
+          </span>
+          <span
+            className="truncate"
+            title={blockerCopy?.title ?? blockerTitle ?? summary.lastBlocker}
+          >
+            {blockerCopy?.title ?? blockerTitle}
           </span>
         </div>
       ) : null}
@@ -4799,14 +5025,69 @@ export function CodingStabilityCard({ summary }: { summary: CodingStabilitySumma
   );
 }
 
+function workflowStepLabelTone(
+  stepLabel: string,
+  approvalAvailable: string,
+): "danger" | "info" | "muted" | "success" | "warning" {
+  if (stepLabel.startsWith("Blocked") || stepLabel === "Failed") {
+    return "danger";
+  }
+  if (stepLabel === "Verified complete" || stepLabel === "Done") {
+    return "success";
+  }
+  if (
+    approvalAvailable === "true" ||
+    stepLabel.startsWith("Preview ready") ||
+    stepLabel.includes("verification required")
+  ) {
+    return "warning";
+  }
+  return "muted";
+}
+
+export function WorkflowApplyProgressChecklist({
+  items,
+}: {
+  items: WorkflowApplyChecklistItem[];
+}) {
+  return (
+    <section className="border border-slate-300 bg-slate-50 px-3 py-3 text-sm">
+      <div className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+        Apply progress checklist
+      </div>
+      <ul className="mt-2 space-y-2">
+        {items.map((item) => (
+          <li className="flex items-start gap-2" key={item.id}>
+            <WorkflowBadge
+              tone={
+                item.status === "pass"
+                  ? "success"
+                  : item.status === "blocked"
+                    ? "danger"
+                    : "muted"
+              }
+            >
+              {item.status}
+            </WorkflowBadge>
+            <div className="min-w-0">
+              <div className="font-medium text-slate-950">{item.label}</div>
+              {item.detail ? <div className="text-xs text-slate-600">{item.detail}</div> : null}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 export function CodingTaskStateCard({ summary }: { summary: CodingTaskStateSummary }) {
   const fields = [
-    ["Workflow", summary.currentWorkflowState],
+    ["Workflow step", summary.currentWorkflowState],
     ["Target", summary.target],
     ["Allowed files", summary.allowedFiles],
     ["Last blocker", summary.lastBlocker],
     ["Safety", summary.safetyLevel],
-    ["Would change files", summary.wouldChangeFiles],
+    ["Apply executed", summary.applyExecuted],
     ["Approval available", summary.approvalAvailable],
     ["Applied anything", summary.appliedAnything],
   ];
@@ -4822,21 +5103,12 @@ export function CodingTaskStateCard({ summary }: { summary: CodingTaskStateSumma
           </div>
         </div>
         <WorkflowBadge
-          tone={
-            summary.currentWorkflowState === "Blocked" ||
-            summary.currentWorkflowState === "Failed"
-              ? "danger"
-              : summary.approvalAvailable === "true"
-                ? "warning"
-                : summary.currentWorkflowState === "Done" ||
-                    summary.currentWorkflowState === "Verified"
-                  ? "success"
-                  : "muted"
-          }
+          tone={workflowStepLabelTone(summary.currentWorkflowState, summary.approvalAvailable)}
         >
           {summary.currentWorkflowState}
         </WorkflowBadge>
       </div>
+      <p className="mb-3 text-xs text-slate-700">{summary.applyExecutedHelper}</p>
       <dl className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-2 lg:grid-cols-4">
         {fields.map(([label, value]) => (
           <div className="min-w-0 border border-slate-200 bg-slate-50 px-3 py-2" key={label}>
@@ -5280,13 +5552,16 @@ function WorkflowMemoryPanel({ snapshot }: { snapshot: WorkflowMemorySnapshot })
   );
 }
 
-export function deriveProposalDraft(input: ProposalDraftInput): ProposalDraftResult {
+export function deriveProposalEnablement(input: ProposalDraftInput): {
+  allowedFiles: string[];
+  blocked: boolean;
+  reasonCodes: string[];
+  targetFile: string;
+  task: string;
+} {
   const task = input.task.trim();
   const targetFile = normalizeRepoRelativePath(input.targetFile);
   const allowedFiles = uniqueNonEmpty(splitProposalList(input.allowedFilesText));
-  const forbiddenFiles = uniqueNonEmpty(splitProposalList(input.forbiddenFilesText));
-  const expectedChecks = uniqueNonEmpty(splitProposalList(input.expectedChecksText));
-  const rollbackHint = input.rollbackHint.trim();
   const reasonCodes: string[] = [];
   if (!task) {
     reasonCodes.push("missing_task");
@@ -5297,18 +5572,30 @@ export function deriveProposalDraft(input: ProposalDraftInput): ProposalDraftRes
   if (targetFile && proposalPathIsProtected(targetFile)) {
     reasonCodes.push("protected_target");
   }
-  if (targetFile && !allowedFiles.includes(targetFile)) {
-    reasonCodes.push("target_not_allowed");
-  }
   if (input.mode === "proposal" && allowedFiles.length === 0) {
     reasonCodes.push("missing_allowed_files");
   }
-  if (expectedChecks.length === 0) {
-    reasonCodes.push("missing_expected_checks");
+  if (targetFile && allowedFiles.length > 0 && !allowedFiles.includes(targetFile)) {
+    reasonCodes.push("target_not_allowed");
   }
-  if (!rollbackHint) {
-    reasonCodes.push("missing_rollback_hint");
-  }
+  return {
+    allowedFiles,
+    blocked: reasonCodes.length > 0,
+    reasonCodes,
+    targetFile,
+    task,
+  };
+}
+
+export function deriveProposalDraft(input: ProposalDraftInput): ProposalDraftResult {
+  const enablement = deriveProposalEnablement(input);
+  const task = enablement.task;
+  const targetFile = enablement.targetFile;
+  const allowedFiles = enablement.allowedFiles;
+  const forbiddenFiles = uniqueNonEmpty(splitProposalList(input.forbiddenFilesText));
+  const expectedChecks = uniqueNonEmpty(splitProposalList(input.expectedChecksText));
+  const rollbackHint = input.rollbackHint.trim();
+  const reasonCodes = [...enablement.reasonCodes];
   const payload = {
     allowed_files: allowedFiles,
     expected_checks: expectedChecks,
@@ -5329,7 +5616,7 @@ export function deriveProposalDraft(input: ProposalDraftInput): ProposalDraftRes
   ].join("\n");
   return {
     allowedFiles,
-    blocked: reasonCodes.length > 0,
+    blocked: enablement.blocked,
     expectedChecks,
     forbiddenFiles,
     mode: input.mode,
@@ -5364,33 +5651,141 @@ function proposalPathIsProtected(path: string): boolean {
   );
 }
 
-function ProposalCreationPanel({
+type ProposalFormState = {
+  allowed_files_text: string;
+  expected_checks_text: string;
+  forbidden_files_text: string;
+  mode: "proposal" | "readonly";
+  rollback_hint: string;
+  target_file: string;
+  task: string;
+};
+
+function createInitialProposalForm(taskText: string, defaultTarget: string): ProposalFormState {
+  const normalizedTarget = normalizeRepoRelativePath(defaultTarget);
+  return {
+    allowed_files_text: normalizedTarget,
+    expected_checks_text: "git diff --check\ntarget-only",
+    forbidden_files_text: "",
+    mode: "proposal",
+    rollback_hint: "git restore <target_file>",
+    target_file: normalizedTarget,
+    task: taskText,
+  };
+}
+
+function proposalFormToDraftInput(form: ProposalFormState): ProposalDraftInput {
+  return {
+    allowedFilesText: form.allowed_files_text,
+    expectedChecksText: form.expected_checks_text,
+    forbiddenFilesText: form.forbidden_files_text,
+    mode: form.mode,
+    rollbackHint: form.rollback_hint,
+    targetFile: form.target_file,
+    task: form.task,
+  };
+}
+
+export function ProposalCreationPanel({
   defaultTarget,
   isRunning,
+  resetKey = 0,
   taskText,
   onDraft,
+  onStartNewTask,
 }: {
   defaultTarget: string;
   isRunning: boolean;
+  resetKey?: number;
   taskText: string;
-  onDraft: (value: string) => void;
+  onDraft: (draft: ProposalDraftResult) => void;
+  onStartNewTask?: () => void;
 }) {
-  const [task, setTask] = useState(taskText);
-  const [targetFile, setTargetFile] = useState(defaultTarget);
-  const [allowedFilesText, setAllowedFilesText] = useState(defaultTarget);
-  const [forbiddenFilesText, setForbiddenFilesText] = useState("");
-  const [mode, setMode] = useState<"proposal" | "readonly">("proposal");
-  const [expectedChecksText, setExpectedChecksText] = useState("git diff --check\ntarget-only");
-  const [rollbackHint, setRollbackHint] = useState("git restore <target_file>");
-  const draft = deriveProposalDraft({
-    allowedFilesText,
-    expectedChecksText,
-    forbiddenFilesText,
-    mode,
-    rollbackHint,
-    targetFile,
-    task,
-  });
+  const taskInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const targetFileInputRef = useRef<HTMLInputElement | null>(null);
+  const allowedFilesInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const [proposalForm, setProposalForm] = useState(() =>
+    createInitialProposalForm(taskText, defaultTarget),
+  );
+  const [draftCopiedAck, setDraftCopiedAck] = useState(false);
+  const mergeProposalField = <K extends keyof ProposalFormState>(
+    key: K,
+    value: ProposalFormState[K],
+  ) => {
+    setProposalForm((current) =>
+      current[key] === value ? current : { ...current, [key]: value },
+    );
+  };
+  const seedEmptyProposalFieldsFromProps = () => {
+    const normalizedTarget = normalizeRepoRelativePath(defaultTarget);
+    setProposalForm((current) => {
+      const next = { ...current };
+      let changed = false;
+      if (!current.task.trim() && taskText.trim()) {
+        next.task = taskText;
+        changed = true;
+      }
+      if (!current.target_file.trim() && normalizedTarget) {
+        next.target_file = normalizedTarget;
+        changed = true;
+      }
+      if (!current.allowed_files_text.trim() && normalizedTarget) {
+        next.allowed_files_text = normalizedTarget;
+        changed = true;
+      }
+      return changed ? next : current;
+    });
+  };
+  const syncAutofillFromDom = () => {
+    const domTask = taskInputRef.current?.value ?? "";
+    const domTarget = targetFileInputRef.current?.value ?? "";
+    const domAllowed = allowedFilesInputRef.current?.value ?? "";
+    setProposalForm((current) => {
+      const next = { ...current };
+      let changed = false;
+      if (!current.task.trim() && domTask.trim()) {
+        next.task = domTask;
+        changed = true;
+      }
+      if (!current.target_file.trim() && domTarget.trim()) {
+        next.target_file = domTarget;
+        changed = true;
+      }
+      if (!current.allowed_files_text.trim() && domAllowed.trim()) {
+        next.allowed_files_text = domAllowed;
+        changed = true;
+      }
+      return changed ? next : current;
+    });
+  };
+  useEffect(() => {
+    seedEmptyProposalFieldsFromProps();
+  }, [defaultTarget, taskText]);
+  useEffect(() => {
+    setProposalForm(createInitialProposalForm(taskText, defaultTarget));
+    setDraftCopiedAck(false);
+  }, [resetKey]);
+  useEffect(() => {
+    syncAutofillFromDom();
+    const syncSoon = window.setTimeout(syncAutofillFromDom, 0);
+    const syncLater = window.setTimeout(syncAutofillFromDom, 300);
+    return () => {
+      window.clearTimeout(syncSoon);
+      window.clearTimeout(syncLater);
+    };
+  }, []);
+  const draftInput = proposalFormToDraftInput(proposalForm);
+  const enablement = deriveProposalEnablement(draftInput);
+  const draft = deriveProposalDraft(draftInput);
+  const proposalDraftDisabled = enablement.blocked || isRunning;
+  const handleDraftProposalTask = () => {
+    if (proposalDraftDisabled || !draft.text.trim()) {
+      return;
+    }
+    onDraft(draft);
+    setDraftCopiedAck(true);
+    window.setTimeout(() => setDraftCopiedAck(false), 5000);
+  };
   return (
     <section className="border-b border-slate-300 bg-white px-4 py-3 shadow-sm">
       <div className="mb-3 flex items-center justify-between gap-3">
@@ -5402,17 +5797,33 @@ function ProposalCreationPanel({
             Bounded proposal draft
           </div>
         </div>
-        <WorkflowBadge tone={draft.blocked ? "warning" : "info"}>
-          {draft.blocked ? "blocked" : "draft-ready"}
-        </WorkflowBadge>
+        <div className="flex flex-wrap items-center gap-2">
+          {onStartNewTask ? (
+            <button
+              className="border border-slate-400 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-400"
+              data-testid="start-new-task-proposal"
+              disabled={isRunning}
+              onClick={() => onStartNewTask()}
+              type="button"
+            >
+              Start new task
+            </button>
+          ) : null}
+          <WorkflowBadge tone={enablement.blocked ? "warning" : "info"}>
+            {enablement.blocked ? "blocked" : "draft-ready"}
+          </WorkflowBadge>
+        </div>
       </div>
       <div className="grid gap-3 text-xs lg:grid-cols-2">
         <label className="font-semibold text-slate-700">
           Task
           <textarea
+            autoComplete="off"
             className="mt-1 h-20 w-full resize-y border border-slate-300 bg-white p-2 font-normal text-slate-900"
-            onChange={(event) => setTask(event.target.value)}
-            value={task}
+            onChange={(event) => mergeProposalField("task", event.target.value)}
+            onInput={(event) => mergeProposalField("task", event.currentTarget.value)}
+            ref={taskInputRef}
+            value={proposalForm.task}
           />
         </label>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -5420,8 +5831,13 @@ function ProposalCreationPanel({
             Mode
             <select
               className="mt-1 w-full border border-slate-300 bg-white p-2 font-normal text-slate-900"
-              onChange={(event) => setMode(event.target.value === "readonly" ? "readonly" : "proposal")}
-              value={mode}
+              onChange={(event) =>
+                setProposalForm((current) => ({
+                  ...current,
+                  mode: event.target.value === "readonly" ? "readonly" : "proposal",
+                }))
+              }
+              value={proposalForm.mode}
             >
               <option value="proposal">proposal</option>
               <option value="readonly">readonly</option>
@@ -5430,54 +5846,83 @@ function ProposalCreationPanel({
           <label className="font-semibold text-slate-700">
             Target file
             <input
+              autoComplete="off"
               className="mt-1 w-full border border-slate-300 bg-white p-2 font-normal text-slate-900"
-              onChange={(event) => setTargetFile(event.target.value)}
-              value={targetFile}
+              onChange={(event) => mergeProposalField("target_file", event.target.value)}
+              onInput={(event) => mergeProposalField("target_file", event.currentTarget.value)}
+              ref={targetFileInputRef}
+              value={proposalForm.target_file}
             />
           </label>
         </div>
         <label className="font-semibold text-slate-700">
           Allowed files
           <textarea
+            autoComplete="off"
             className="mt-1 h-20 w-full resize-y border border-slate-300 bg-white p-2 font-normal text-slate-900"
-            onChange={(event) => setAllowedFilesText(event.target.value)}
-            value={allowedFilesText}
+            onChange={(event) => mergeProposalField("allowed_files_text", event.target.value)}
+            onInput={(event) =>
+              mergeProposalField("allowed_files_text", event.currentTarget.value)
+            }
+            ref={allowedFilesInputRef}
+            value={proposalForm.allowed_files_text}
           />
         </label>
         <label className="font-semibold text-slate-700">
           Forbidden files
           <textarea
             className="mt-1 h-20 w-full resize-y border border-slate-300 bg-white p-2 font-normal text-slate-900"
-            onChange={(event) => setForbiddenFilesText(event.target.value)}
-            value={forbiddenFilesText}
+            onChange={(event) =>
+              setProposalForm((current) => ({
+                ...current,
+                forbidden_files_text: event.target.value,
+              }))
+            }
+            value={proposalForm.forbidden_files_text}
           />
         </label>
         <label className="font-semibold text-slate-700">
           Expected checks
           <textarea
             className="mt-1 h-20 w-full resize-y border border-slate-300 bg-white p-2 font-normal text-slate-900"
-            onChange={(event) => setExpectedChecksText(event.target.value)}
-            value={expectedChecksText}
+            onChange={(event) =>
+              setProposalForm((current) => ({
+                ...current,
+                expected_checks_text: event.target.value,
+              }))
+            }
+            value={proposalForm.expected_checks_text}
           />
         </label>
         <label className="font-semibold text-slate-700">
           Rollback hint
           <textarea
             className="mt-1 h-20 w-full resize-y border border-slate-300 bg-white p-2 font-normal text-slate-900"
-            onChange={(event) => setRollbackHint(event.target.value)}
-            value={rollbackHint}
+            onChange={(event) =>
+              setProposalForm((current) => ({ ...current, rollback_hint: event.target.value }))
+            }
+            value={proposalForm.rollback_hint}
           />
         </label>
       </div>
       <div className="mt-3 border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700">
-        {draft.blocked
-          ? `Blocked: ${draft.reasonCodes.join(", ")}`
+        {enablement.blocked
+          ? `Blocked: ${enablement.reasonCodes.join(", ")}`
           : "Draft is bounded. It can be copied into the task input for preview only."}
       </div>
+      {draftCopiedAck ? (
+        <div
+          className="mt-3 border border-green-300 bg-green-50 px-3 py-2 text-xs font-semibold text-green-950"
+          data-testid="proposal-draft-copied-ack"
+        >
+          Proposal draft copied to Task Description (step 1 below).
+        </div>
+      ) : null}
       <button
         className="mt-3 border border-slate-900 bg-slate-950 px-3 py-2 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:border-slate-300 disabled:bg-slate-200 disabled:text-slate-500"
-        disabled={draft.blocked || isRunning}
-        onClick={() => onDraft(draft.text)}
+        data-testid="draft-proposal-task-button"
+        disabled={proposalDraftDisabled}
+        onClick={handleDraftProposalTask}
         type="button"
       >
         Draft proposal task
@@ -7240,6 +7685,7 @@ function OutputWindow({
   onLongTaskVerifyCode,
   onLongTaskVerifyDocsOnly,
   onInputChange,
+  onProposalDraft,
   onFilesAdded,
   onPreviewApprovalGate,
   onPreviewDiffVerification,
@@ -7249,9 +7695,11 @@ function OutputWindow({
   onRunProxyFlow,
   onStartNewTask,
   onSubmit,
+  proposalPanelKey,
   telemetry,
   proxySafetySmoke,
   workflowStepFloor,
+  layoutMode,
 }: {
   architectPlan: ArchitectPlanResponse | null;
   approvalGate: ApprovalGateState;
@@ -7288,6 +7736,7 @@ function OutputWindow({
   onLongTaskVerifyCode: () => void;
   onLongTaskVerifyDocsOnly: () => void;
   onInputChange: (value: string) => void;
+  onProposalDraft: (draft: ProposalDraftResult) => void;
   onFilesAdded: (files: UploadedFile[]) => void;
   onPreviewApprovalGate: () => void;
   onPreviewDiffVerification: () => void;
@@ -7297,9 +7746,11 @@ function OutputWindow({
   onRunProxyFlow: () => void;
   onStartNewTask: () => void;
   onSubmit: () => void;
+  proposalPanelKey: number;
   telemetry: TelemetryState;
   proxySafetySmoke: ProxySafetySmokeState;
   workflowStepFloor: number | null;
+  layoutMode: "backend-console" | "task" | "workflow";
 }) {
   const outputFingerprint = finalOutput?.decisionPayload ?? "pending";
   const [actionStatus, setActionStatus] = useState<{
@@ -7412,6 +7863,111 @@ function OutputWindow({
     longRunningTask,
   });
 
+  if (layoutMode === "backend-console") {
+    return (
+      <BackendConsoleLayout
+        activeStep={activeStep}
+        architectPlan={architectPlan}
+        approvalGate={approvalGate}
+        canManuallyPreviewDiff={canManuallyPreviewDiff}
+        conversationHistory={conversationHistory}
+        decisionMemory={decisionMemory}
+        diffVerification={diffVerification}
+        files={files}
+        finalOutput={finalOutput}
+        hasDiff={hasDiff}
+        hasProposal={hasProposal}
+        inputText={inputText}
+        isRunning={isRunning}
+        longRunningTask={longRunningTask}
+        logs={logs}
+        needsCoderDiff={needsCoderDiff}
+        proxySafetySmoke={proxySafetySmoke}
+        stabilitySummary={stabilitySummary}
+        stages={stages}
+        taskQueue={taskQueue}
+        taskStateSummary={taskStateSummary}
+        telemetry={telemetry}
+        visibleActionStatus={visibleActionStatus}
+        workflowMemory={workflowMemory}
+        onApprovalActionChange={onApprovalActionChange}
+        onApprovalContentChange={onApprovalContentChange}
+        onApprovalTargetChange={onApprovalTargetChange}
+        onApprovePreviewedAction={onApprovePreviewedAction}
+        onClearHistory={onClearHistory}
+        onClearMemory={onClearMemory}
+        onCopyHistoryRecoveryPrompt={onCopyHistoryRecoveryPrompt}
+        onDenyPreviewedAction={onDenyPreviewedAction}
+        onDiffChange={onDiffChange}
+        onFallbackScaffoldAcceptedChange={onFallbackScaffoldAcceptedChange}
+        onFilesAdded={onFilesAdded}
+        onInputChange={onInputChange}
+        onLongTaskCancel={onLongTaskCancel}
+        onLongTaskDescriptionChange={onLongTaskDescriptionChange}
+        onLongTaskPoll={onLongTaskPoll}
+        onLongTaskRejectPlan={onLongTaskRejectPlan}
+        onLongTaskRetry={onLongTaskRetry}
+        onLongTaskRetryVerification={onLongTaskRetryVerification}
+        onLongTaskStart={onLongTaskStart}
+        onLongTaskVerifyCode={onLongTaskVerifyCode}
+        onLongTaskVerifyDocsOnly={onLongTaskVerifyDocsOnly}
+        onPreviewApprovalGate={onPreviewApprovalGate}
+        onPreviewDiffVerification={onPreviewDiffVerification}
+        onProposalDraft={onProposalDraft}
+        onRefreshTelemetry={onRefreshTelemetry}
+        onRestoreHistoryEntry={onRestoreHistoryEntry}
+        onRunProxySafetySmoke={onRunProxySafetySmoke}
+        onStartNewTask={onStartNewTask}
+        onSubmit={onSubmit}
+        onTrackedDiffSelect={onTrackedDiffSelect}
+        proposalPanelKey={proposalPanelKey}
+      />
+    );
+  }
+
+  if (layoutMode === "task") {
+    return (
+      <CodingTaskLayout
+        architectPlan={architectPlan}
+        approvalGate={approvalGate}
+        canManuallyPreviewDiff={canManuallyPreviewDiff}
+        conversationHistory={conversationHistory}
+        decisionMemory={decisionMemory}
+        diffVerification={diffVerification}
+        files={files}
+        finalOutput={finalOutput}
+        hasDiff={hasDiff}
+        hasProposal={hasProposal}
+        inputText={inputText}
+        isRunning={isRunning}
+        longRunningTask={longRunningTask}
+        needsCoderDiff={needsCoderDiff}
+        stabilitySummary={stabilitySummary}
+        taskStateSummary={taskStateSummary}
+        telemetry={telemetry}
+        workflowMemory={workflowMemory}
+        onApprovalActionChange={onApprovalActionChange}
+        onApprovalContentChange={onApprovalContentChange}
+        onApprovalTargetChange={onApprovalTargetChange}
+        onApprovePreviewedAction={onApprovePreviewedAction}
+        onClearMemory={onClearMemory}
+        onDenyPreviewedAction={onDenyPreviewedAction}
+        onDiffChange={onDiffChange}
+        onFallbackScaffoldAcceptedChange={onFallbackScaffoldAcceptedChange}
+        onFilesAdded={onFilesAdded}
+        onInputChange={onInputChange}
+        onLongTaskVerifyCode={onLongTaskVerifyCode}
+        onLongTaskVerifyDocsOnly={onLongTaskVerifyDocsOnly}
+        onPreviewApprovalGate={onPreviewApprovalGate}
+        onPreviewDiffVerification={onPreviewDiffVerification}
+        onProposalDraft={onProposalDraft}
+        onRefreshTelemetry={onRefreshTelemetry}
+        onStartNewTask={onStartNewTask}
+        onSubmit={onSubmit}
+      />
+    );
+  }
+
   return (
     <section className="flex min-h-0 flex-col bg-slate-100/80 p-4 sm:p-6">
       <div className="border-b border-slate-300 bg-white px-4 py-3 shadow-sm">
@@ -7452,7 +8008,7 @@ function OutputWindow({
           normalizeRepoRelativePath(approvalGate.target)
         }
         isRunning={isRunning}
-        onDraft={onInputChange}
+        onDraft={onProposalDraft}
         taskText={inputText}
       />
       <UnifiedTaskQueuePanel
@@ -7497,6 +8053,7 @@ function OutputWindow({
             <WorkflowStage
               description="Describe the task and submit it to the safe discovery pass."
               index={1}
+              sectionId="coding-workflow-task-description"
               status={stages[0].status}
               title="Task Description"
             >
@@ -7773,6 +8330,787 @@ function OutputWindow({
             />
           </div>
         </div>
+      </div>
+    </section>
+  );
+}
+
+type BackendConsoleLayoutProps = {
+  activeStep: number;
+  architectPlan: ArchitectPlanResponse | null;
+  approvalGate: ApprovalGateState;
+  canManuallyPreviewDiff: boolean;
+  conversationHistory: CodingHistoryEntry[];
+  decisionMemory: DecisionMemoryEntry[];
+  diffVerification: DiffVerificationState;
+  files: UploadedFile[];
+  finalOutput: FinalOutput | null;
+  hasDiff: boolean;
+  hasProposal: boolean;
+  inputText: string;
+  isRunning: boolean;
+  longRunningTask: LongRunningTaskState;
+  logs: ProcessLog[];
+  needsCoderDiff: boolean;
+  proxySafetySmoke: ProxySafetySmokeState;
+  stabilitySummary: CodingStabilitySummary;
+  stages: WorkflowStageItem[];
+  taskQueue: TaskQueueState;
+  taskStateSummary: CodingTaskStateSummary;
+  telemetry: TelemetryState;
+  visibleActionStatus: string | null;
+  workflowMemory: WorkflowMemorySnapshot;
+  onApprovalActionChange: (action: string) => void;
+  onApprovalContentChange: (content: string) => void;
+  onApprovalTargetChange: (target: string) => void;
+  onApprovePreviewedAction: (event: MouseEvent<HTMLButtonElement>) => void;
+  onClearHistory: () => void;
+  onClearMemory: () => void;
+  onCopyHistoryRecoveryPrompt: (entry: CodingHistoryEntry) => void;
+  onDenyPreviewedAction: (reasonCode: ApprovalRejectionReason) => void;
+  onDiffChange: (unifiedDiff: string) => void;
+  onFallbackScaffoldAcceptedChange: (accepted: boolean) => void;
+  onFilesAdded: (files: UploadedFile[]) => void;
+  onInputChange: (value: string) => void;
+  onLongTaskCancel: () => void;
+  onLongTaskDescriptionChange: (description: string) => void;
+  onLongTaskPoll: () => void;
+  onLongTaskRejectPlan: () => void;
+  onLongTaskRetry: () => void;
+  onLongTaskRetryVerification: () => void;
+  onLongTaskStart: () => void;
+  onLongTaskVerifyCode: () => void;
+  onLongTaskVerifyDocsOnly: () => void;
+  onPreviewApprovalGate: () => void;
+  onPreviewDiffVerification: () => void;
+  onProposalDraft: (draft: ProposalDraftResult) => void;
+  onRefreshTelemetry: () => void;
+  onRestoreHistoryEntry: (entry: CodingHistoryEntry) => void;
+  onRunProxySafetySmoke: () => void;
+  onStartNewTask: () => void;
+  onSubmit: () => void;
+  onTrackedDiffSelect: (unifiedDiff: string) => void;
+  proposalPanelKey: number;
+};
+
+type CodingTaskLayoutProps = {
+  architectPlan: ArchitectPlanResponse | null;
+  approvalGate: ApprovalGateState;
+  canManuallyPreviewDiff: boolean;
+  conversationHistory: CodingHistoryEntry[];
+  decisionMemory: DecisionMemoryEntry[];
+  diffVerification: DiffVerificationState;
+  files: UploadedFile[];
+  finalOutput: FinalOutput | null;
+  hasDiff: boolean;
+  hasProposal: boolean;
+  inputText: string;
+  isRunning: boolean;
+  longRunningTask: LongRunningTaskState;
+  needsCoderDiff: boolean;
+  stabilitySummary: CodingStabilitySummary;
+  taskStateSummary: CodingTaskStateSummary;
+  telemetry: TelemetryState;
+  workflowMemory: WorkflowMemorySnapshot;
+  onApprovalActionChange: (action: string) => void;
+  onApprovalContentChange: (content: string) => void;
+  onApprovalTargetChange: (target: string) => void;
+  onApprovePreviewedAction: (event: MouseEvent<HTMLButtonElement>) => void;
+  onClearMemory: () => void;
+  onDenyPreviewedAction: (reasonCode: ApprovalRejectionReason) => void;
+  onDiffChange: (unifiedDiff: string) => void;
+  onFallbackScaffoldAcceptedChange: (accepted: boolean) => void;
+  onFilesAdded: (files: UploadedFile[]) => void;
+  onInputChange: (value: string) => void;
+  onLongTaskVerifyCode: () => void;
+  onLongTaskVerifyDocsOnly: () => void;
+  onPreviewApprovalGate: () => void;
+  onPreviewDiffVerification: () => void;
+  onProposalDraft: (draft: ProposalDraftResult) => void;
+  onRefreshTelemetry: () => void;
+  onStartNewTask: () => void;
+  onSubmit: () => void;
+};
+
+function CodingTaskLayout({
+  architectPlan,
+  approvalGate,
+  canManuallyPreviewDiff,
+  decisionMemory,
+  diffVerification,
+  files,
+  finalOutput,
+  hasDiff,
+  hasProposal,
+  inputText,
+  isRunning,
+  longRunningTask,
+  needsCoderDiff,
+  stabilitySummary,
+  taskStateSummary,
+  telemetry,
+  workflowMemory,
+  onApprovalActionChange,
+  onApprovalContentChange,
+  onApprovalTargetChange,
+  onApprovePreviewedAction,
+  onClearMemory,
+  onDenyPreviewedAction,
+  onDiffChange,
+  onFallbackScaffoldAcceptedChange,
+  onFilesAdded,
+  onInputChange,
+  onLongTaskVerifyCode,
+  onLongTaskVerifyDocsOnly,
+  onPreviewApprovalGate,
+  onPreviewDiffVerification,
+  onProposalDraft,
+  onRefreshTelemetry,
+  onStartNewTask,
+  onSubmit,
+}: CodingTaskLayoutProps) {
+  const task = longRunningTask.response?.task ?? null;
+  const resolvedTargetPath = resolvedTargetPathFromDecision(finalOutput?.decision);
+  const alreadySatisfied = isAlreadySatisfiedGate(approvalGate);
+  const showManualDiff = needsCoderDiff || (!hasDiff && canManuallyPreviewDiff);
+
+  return (
+    <section className="min-h-0 overflow-y-auto bg-slate-100/80 p-4 sm:p-6">
+      <div className="mx-auto max-w-6xl space-y-5">
+        <section className="border border-slate-300 bg-white p-5 shadow-sm">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <h1 className="text-2xl font-semibold text-slate-950">Coding Workspace</h1>
+              <p className="mt-1 text-sm text-slate-600">
+                describe a guarded code change, review the diff, approve explicitly, then verify
+              </p>
+            </div>
+            <WorkflowBadge
+              tone={
+                stabilitySummary.primaryState === "Blocked" ||
+                stabilitySummary.primaryState === "Failed"
+                  ? "danger"
+                  : stabilitySummary.primaryState === "Needs approval" ||
+                      stabilitySummary.primaryState === "Applied, verification required"
+                    ? "warning"
+                    : stabilitySummary.primaryState === "Done" ||
+                        stabilitySummary.primaryState === "Verified"
+                      ? "success"
+                      : "muted"
+              }
+            >
+              {stabilitySummary.primaryState}
+            </WorkflowBadge>
+          </div>
+          <div className="mt-4">
+            <PromptInput
+              files={files}
+              inputText={inputText}
+              isRunning={isRunning}
+              onChange={onInputChange}
+              onFilesAdded={onFilesAdded}
+              onStartNewTask={onStartNewTask}
+              onSubmit={onSubmit}
+            />
+          </div>
+        </section>
+
+        <section className="border border-slate-300 bg-white p-5 shadow-sm">
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-slate-950">Current Change</h2>
+            <p className="mt-1 text-sm text-slate-600">
+              The safety state for the active task, without backend diagnostic noise.
+            </p>
+          </div>
+          <CurrentRunSummaryCard
+            approvalGate={approvalGate}
+            diffVerification={diffVerification}
+            longRunningTask={longRunningTask}
+            stabilitySummary={stabilitySummary}
+            taskStateSummary={taskStateSummary}
+          />
+          {finalOutput ? (
+            <div className="mt-4 border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800">
+              <div className="font-semibold text-slate-950">Agent summary</div>
+              <p className="mt-1 leading-6">{finalOutput.summary}</p>
+            </div>
+          ) : null}
+          {workflowMemory.lastKnownStatus !== emptyWorkflowMemorySnapshot.lastKnownStatus ? (
+            <div className="mt-4 border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600">
+              Last remembered state: {workflowMemory.lastKnownStatus}
+            </div>
+          ) : null}
+        </section>
+
+        <section className="border border-slate-300 bg-white p-5 shadow-sm">
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-slate-950">Review and Apply</h2>
+            <p className="mt-1 text-sm text-slate-600">
+              Apply remains unavailable until the diff preview and approval gate pass.
+            </p>
+          </div>
+          <div className="space-y-4">
+            {hasProposal || hasDiff || canManuallyPreviewDiff ? (
+              <>
+                <ProposalSummaryPanel gate={approvalGate} />
+                {alreadySatisfied ? (
+                  <EmptyWorkflowMessage text="No diff is needed because the target file already satisfies this task." />
+                ) : (
+                  <DiffVerificationPanel
+                    buttonLabel={showManualDiff ? "Preview manual result" : undefined}
+                    fallbackUnifiedDiff={approvalGate.proposedDiff}
+                    gate={approvalGate}
+                    placeholder={
+                      showManualDiff
+                        ? "Paste a unified diff here for a read-only safety check..."
+                        : undefined
+                    }
+                    resolvedTargetPath={resolvedTargetPath}
+                    state={diffVerification}
+                    title={showManualDiff ? "Paste Manual Diff" : "Diff Preview"}
+                    onChange={onDiffChange}
+                    onPreview={onPreviewDiffVerification}
+                  />
+                )}
+              </>
+            ) : (
+              <EmptyWorkflowMessage text="Submit a task to get a target and diff for review." />
+            )}
+            <QualityGatePanel
+              architectPlan={architectPlan}
+              diffVerification={diffVerification}
+              gate={approvalGate}
+              onFallbackAcceptChange={onFallbackScaffoldAcceptedChange}
+              resolvedTargetPath={resolvedTargetPath}
+            />
+            <ApprovalGatePanel
+              architectPlan={architectPlan}
+              coderAgentLocalDiff={Boolean(finalOutput?.coderAgentLocalDiff)}
+              diffVerification={diffVerification}
+              gate={approvalGate}
+              onActionChange={onApprovalActionChange}
+              onApprove={onApprovePreviewedAction}
+              onContentChange={onApprovalContentChange}
+              onDeny={onDenyPreviewedAction}
+              onPreview={onPreviewApprovalGate}
+              onTargetChange={onApprovalTargetChange}
+              resolvedTargetPath={resolvedTargetPath}
+              task={task}
+            />
+          </div>
+        </section>
+
+        <section className="border border-slate-300 bg-white p-5 shadow-sm">
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-slate-950">Verification</h2>
+            <p className="mt-1 text-sm text-slate-600">
+              After an approved apply, finish with the required checks before considering the task done.
+            </p>
+          </div>
+          <VerificationSummary
+            diffVerification={diffVerification}
+            execution={approvalGate.execution}
+            isVerifying={longRunningTask.isChecking}
+            longRunningTask={longRunningTask}
+            onCodeVerify={onLongTaskVerifyCode}
+            onDocsOnlyVerify={onLongTaskVerifyDocsOnly}
+          />
+          <TaskCompletionStatus
+            alreadySatisfied={alreadySatisfied}
+            execution={approvalGate.execution}
+            task={task}
+          />
+        </section>
+
+        <details className="border border-slate-300 bg-white p-5 shadow-sm">
+          <summary className="cursor-pointer text-lg font-semibold text-slate-950">
+            Advanced task setup
+          </summary>
+          <div className="mt-4">
+            <ProposalCreationPanel
+              defaultTarget={
+                architectPlanDisplayTarget(architectPlan, resolvedTargetPath) ||
+                normalizeRepoRelativePath(approvalGate.target)
+              }
+              isRunning={isRunning}
+              onDraft={onProposalDraft}
+              taskText={inputText}
+            />
+          </div>
+        </details>
+
+        <details className="border border-slate-300 bg-white p-5 shadow-sm">
+          <summary className="cursor-pointer text-lg font-semibold text-slate-950">
+            Backend diagnostics
+          </summary>
+          <div className="mt-4">
+            <AdvancedDiagnostics
+              decisionMemory={decisionMemory}
+              diffVerification={diffVerification}
+              finalOutput={finalOutput}
+              onClearMemory={onClearMemory}
+              onRefreshTelemetry={onRefreshTelemetry}
+              telemetry={telemetry}
+            />
+          </div>
+        </details>
+      </div>
+    </section>
+  );
+}
+
+function BackendConsoleLayout({
+  activeStep,
+  architectPlan,
+  approvalGate,
+  canManuallyPreviewDiff,
+  conversationHistory,
+  decisionMemory,
+  diffVerification,
+  files,
+  finalOutput,
+  hasDiff,
+  hasProposal,
+  inputText,
+  isRunning,
+  longRunningTask,
+  logs,
+  needsCoderDiff,
+  proxySafetySmoke,
+  stabilitySummary,
+  stages,
+  taskQueue,
+  taskStateSummary,
+  telemetry,
+  visibleActionStatus,
+  workflowMemory,
+  onApprovalActionChange,
+  onApprovalContentChange,
+  onApprovalTargetChange,
+  onApprovePreviewedAction,
+  onClearHistory,
+  onClearMemory,
+  onCopyHistoryRecoveryPrompt,
+  onDenyPreviewedAction,
+  onDiffChange,
+  onFallbackScaffoldAcceptedChange,
+  onFilesAdded,
+  onInputChange,
+  onLongTaskCancel,
+  onLongTaskDescriptionChange,
+  onLongTaskPoll,
+  onLongTaskRejectPlan,
+  onLongTaskRetry,
+  onLongTaskRetryVerification,
+  onLongTaskStart,
+  onLongTaskVerifyCode,
+  onLongTaskVerifyDocsOnly,
+  onPreviewApprovalGate,
+  onPreviewDiffVerification,
+  onProposalDraft,
+  onRefreshTelemetry,
+  onRestoreHistoryEntry,
+  onRunProxySafetySmoke,
+  onStartNewTask,
+  onSubmit,
+  onTrackedDiffSelect,
+  proposalPanelKey,
+}: BackendConsoleLayoutProps) {
+  const task = longRunningTask.response?.task ?? null;
+  const resolvedTargetPath = resolvedTargetPathFromDecision(finalOutput?.decision);
+  const alreadySatisfied = isAlreadySatisfiedGate(approvalGate);
+  const showManualDiff =
+    needsCoderDiff || (!hasDiff && canManuallyPreviewDiff);
+  const applyProgressChecklist = deriveWorkflowProgressCopy({
+    approvalGate: {
+      approvedAt: approvalGate.approvedAt,
+      execution: approvalGate.execution,
+      isChecking: approvalGate.isChecking,
+      preview: approvalGate.preview,
+    },
+    diffVerification: {
+      preview: diffVerification.preview,
+    },
+    longRunningTask: {
+      isChecking: longRunningTask.isChecking,
+      response: longRunningTask.response,
+    },
+    stability: {
+      approvalState: stabilitySummary.approvalState,
+      diffState: stabilitySummary.diffState,
+      lastBlocker: stabilitySummary.lastBlocker,
+      primaryState: stabilitySummary.primaryState,
+    },
+  }).checklist;
+
+  return (
+    <section className="min-h-0 overflow-y-auto bg-slate-100/80 p-4 sm:p-6">
+      <div className="mx-auto max-w-7xl space-y-5">
+        <section className="border border-slate-300 bg-white p-5 shadow-sm">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <h1 className="text-2xl font-semibold text-slate-950">
+                Source Proxy Backend Console
+              </h1>
+              <p className="mt-1 text-sm text-slate-600">
+                diagnostic and approval console for guarded code changes
+              </p>
+            </div>
+            <WorkflowBadge
+              tone={workflowStepLabelTone(
+                stabilitySummary.stepLabel,
+                taskStateSummary.approvalAvailable,
+              )}
+            >
+              {stabilitySummary.stepLabel}
+            </WorkflowBadge>
+          </div>
+          <CurrentRunSummaryCard
+            approvalGate={approvalGate}
+            diffVerification={diffVerification}
+            longRunningTask={longRunningTask}
+            stabilitySummary={stabilitySummary}
+            taskStateSummary={taskStateSummary}
+          />
+        </section>
+
+        <section className="border border-slate-300 bg-white p-5 shadow-sm">
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-slate-950">Bounded Proposal</h2>
+            <p className="mt-1 text-sm text-slate-600">
+              Create a constrained proposal task without granting apply, commit, or push authority.
+            </p>
+          </div>
+          <ProposalCreationPanel
+            defaultTarget={
+              architectPlanDisplayTarget(architectPlan, resolvedTargetPath) ||
+              normalizeRepoRelativePath(approvalGate.target)
+            }
+            isRunning={isRunning}
+            onDraft={onProposalDraft}
+            onStartNewTask={onStartNewTask}
+            resetKey={proposalPanelKey}
+            taskText={inputText}
+          />
+          <details className="mt-4 border border-slate-300 bg-slate-50 p-4">
+            <summary className="cursor-pointer text-sm font-semibold text-slate-950">
+              Debug JSON
+            </summary>
+            <div className="mt-4">
+              <AdvancedDiagnostics
+                decisionMemory={decisionMemory}
+                diffVerification={diffVerification}
+                finalOutput={finalOutput}
+                onClearMemory={onClearMemory}
+                onRefreshTelemetry={onRefreshTelemetry}
+                telemetry={telemetry}
+              />
+            </div>
+          </details>
+        </section>
+
+        <section className="border border-slate-300 bg-white p-5 shadow-sm">
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-slate-950">Current Task Progress</h2>
+            <CurrentTaskProgressSummary
+              approvalGate={approvalGate}
+              longRunningTask={longRunningTask}
+              stabilitySummary={stabilitySummary}
+            />
+          </div>
+          <LongRunningTaskPanel
+            state={longRunningTask}
+            onCancel={onLongTaskCancel}
+            onDescriptionChange={onLongTaskDescriptionChange}
+            onDiffSelect={onTrackedDiffSelect}
+            onPoll={onLongTaskPoll}
+            onRejectPlan={onLongTaskRejectPlan}
+            onRetry={onLongTaskRetry}
+            onRetryVerification={onLongTaskRetryVerification}
+            onStart={onLongTaskStart}
+          />
+        </section>
+
+        <section className="border border-slate-300 bg-white p-5 shadow-sm">
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-slate-950">
+              Diff, Approval, and Verification
+            </h2>
+            <p className="mt-1 text-sm text-slate-600">
+              Preview first, require explicit approval, then verify after any apply.
+            </p>
+          </div>
+          <div className="space-y-4">
+            {hasProposal || hasDiff || canManuallyPreviewDiff ? (
+              <>
+                <ProposalSummaryPanel gate={approvalGate} />
+                {alreadySatisfied ? (
+                  <EmptyWorkflowMessage text="No diff is needed because the target file already satisfies this task." />
+                ) : (
+                  <DiffVerificationPanel
+                    buttonLabel={showManualDiff ? "Preview manual result" : undefined}
+                    fallbackUnifiedDiff={approvalGate.proposedDiff}
+                    gate={approvalGate}
+                    placeholder={
+                      showManualDiff
+                        ? "Paste a unified diff here for a read-only safety check..."
+                        : undefined
+                    }
+                    resolvedTargetPath={resolvedTargetPath}
+                    state={diffVerification}
+                    title={showManualDiff ? "Paste Manual Diff" : undefined}
+                    onChange={onDiffChange}
+                    onPreview={onPreviewDiffVerification}
+                  />
+                )}
+              </>
+            ) : (
+              <EmptyWorkflowMessage text="No proposed code change yet. The backend must produce a target and diff before approval." />
+            )}
+            <WorkflowApplyProgressChecklist items={applyProgressChecklist} />
+            <QualityGatePanel
+              architectPlan={architectPlan}
+              diffVerification={diffVerification}
+              gate={approvalGate}
+              onFallbackAcceptChange={onFallbackScaffoldAcceptedChange}
+              resolvedTargetPath={resolvedTargetPath}
+            />
+            <ApprovalGatePanel
+              architectPlan={architectPlan}
+              coderAgentLocalDiff={Boolean(finalOutput?.coderAgentLocalDiff)}
+              diffVerification={diffVerification}
+              gate={approvalGate}
+              onActionChange={onApprovalActionChange}
+              onApprove={onApprovePreviewedAction}
+              onContentChange={onApprovalContentChange}
+              onDeny={onDenyPreviewedAction}
+              onPreview={onPreviewApprovalGate}
+              onTargetChange={onApprovalTargetChange}
+              resolvedTargetPath={resolvedTargetPath}
+              task={task}
+            />
+            <VerificationSummary
+              diffVerification={diffVerification}
+              execution={approvalGate.execution}
+              isVerifying={longRunningTask.isChecking}
+              longRunningTask={longRunningTask}
+              onCodeVerify={onLongTaskVerifyCode}
+              onDocsOnlyVerify={onLongTaskVerifyDocsOnly}
+            />
+          </div>
+        </section>
+
+        <details className="border border-slate-300 bg-white p-5 shadow-sm">
+          <summary className="cursor-pointer text-lg font-semibold text-slate-950">
+            Task launcher and recent runs
+          </summary>
+          <div className="mt-4 space-y-4">
+            <PromptInput
+              files={files}
+              inputText={inputText}
+              isRunning={isRunning}
+              onChange={onInputChange}
+              onFilesAdded={onFilesAdded}
+              onStartNewTask={onStartNewTask}
+              onSubmit={onSubmit}
+            />
+            {visibleActionStatus ? (
+              <div className="border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-900">
+                {visibleActionStatus}
+              </div>
+            ) : null}
+            <ConversationHistoryPanel
+              entries={conversationHistory}
+              onCopyRecoveryPrompt={onCopyHistoryRecoveryPrompt}
+              onClear={onClearHistory}
+              onRestore={onRestoreHistoryEntry}
+            />
+          </div>
+        </details>
+
+        <details className="border border-slate-300 bg-white p-5 shadow-sm">
+          <summary className="cursor-pointer text-lg font-semibold text-slate-950">
+            Advanced run stages
+          </summary>
+          <div className="mt-4 space-y-4">
+            <LegacyWorkflowDiagnostics activeStep={activeStep} stages={stages} />
+            <SwarmRolePipeline approvalGate={approvalGate} task={task} />
+            <CodingStabilityCard summary={stabilitySummary} />
+            <CodingTaskStateCard summary={taskStateSummary} />
+          </div>
+        </details>
+
+        <details className="border border-slate-300 bg-white p-5 shadow-sm">
+          <summary className="cursor-pointer text-lg font-semibold text-slate-950">
+            Advanced diagnostics and history
+          </summary>
+          <div className="mt-4 space-y-4">
+            <ProxySafetySmokePanel onRun={onRunProxySafetySmoke} state={proxySafetySmoke} />
+            <TesterAgentProposalPanel isRunning={isRunning} onDraft={onInputChange} />
+            <DocumenterBlueprintProposalPanel isRunning={isRunning} onDraft={onInputChange} />
+            <TaskHistoryPanel
+              approvalGate={approvalGate}
+              longRunningTask={longRunningTask}
+              workflowMemory={workflowMemory}
+            />
+            <UnifiedTaskQueuePanel longRunningTask={longRunningTask} taskQueue={taskQueue} />
+            <ReplayableLogsPanel
+              approvalGate={approvalGate}
+              logs={logs}
+              longRunningTask={longRunningTask}
+              workflowMemory={workflowMemory}
+            />
+            <CheckpointRestorePanel
+              approvalGate={approvalGate}
+              conversationHistory={conversationHistory}
+              longRunningTask={longRunningTask}
+              workflowMemory={workflowMemory}
+            />
+            <ArtifactShelfPanel
+              approvalGate={approvalGate}
+              conversationHistory={conversationHistory}
+              diffVerification={diffVerification}
+              files={files}
+              finalOutput={finalOutput}
+              logs={logs}
+              longRunningTask={longRunningTask}
+              workflowMemory={workflowMemory}
+            />
+            <CodexEvidencePanel />
+            <VerificationDashboardRollupPanel
+              approvalGate={approvalGate}
+              diffVerification={diffVerification}
+              longRunningTask={longRunningTask}
+              proxySafetySmoke={proxySafetySmoke}
+            />
+            <WorkflowMemoryPanel snapshot={workflowMemory} />
+            <TaskTranscriptPanel
+              approvalGate={approvalGate}
+              diffVerification={diffVerification}
+              logs={logs}
+              longRunningTask={longRunningTask}
+            />
+            <ProcessWindow logs={logs} />
+            <TaskCompletionStatus
+              alreadySatisfied={alreadySatisfied}
+              execution={approvalGate.execution}
+              task={task}
+            />
+          </div>
+        </details>
+      </div>
+    </section>
+  );
+}
+
+function CurrentRunSummaryCard({
+  approvalGate,
+  diffVerification,
+  longRunningTask,
+  stabilitySummary,
+  taskStateSummary,
+}: {
+  approvalGate: ApprovalGateState;
+  diffVerification: DiffVerificationState;
+  longRunningTask: LongRunningTaskState;
+  stabilitySummary: CodingStabilitySummary;
+  taskStateSummary: CodingTaskStateSummary;
+}) {
+  const task = longRunningTask.response?.task ?? null;
+  const postApplyVerification = postApplyVerificationFor(task, approvalGate.execution);
+  const nextSafeAction = deriveBlockerNextSafeActionSummary({
+    canApprove: approvalGate.preview?.requires_human_approval === true,
+    diffVerification,
+    gate: approvalGate,
+    task,
+  }).nextSafeAction;
+  const fields = [
+    ["Workflow step", stabilitySummary.stepLabel],
+    ["Headline", stabilitySummary.headline],
+    ["Target", stabilitySummary.target],
+    ["Diff status", stabilitySummary.diffState],
+    ["Approval status", stabilitySummary.approvalState],
+    ["Apply executed", taskStateSummary.applyExecuted],
+    ["Execution status", stabilitySummary.executionState],
+    ["Verification status", postApplyVerification?.status ?? stabilitySummary.verificationState],
+    ["Applied anything", taskStateSummary.appliedAnything],
+    ["Next action", stabilitySummary.nextAction ?? nextSafeAction],
+  ];
+  return (
+    <dl
+      className="mt-4 grid grid-cols-1 gap-2 text-xs sm:grid-cols-2 lg:grid-cols-4"
+      data-testid="current-run-summary"
+    >
+      {fields.map(([label, value]) => (
+        <div className="min-w-0 border border-slate-200 bg-slate-50 px-3 py-2" key={label}>
+          <dt className="font-semibold uppercase tracking-wide text-slate-500">{label}</dt>
+          <dd className="mt-1 break-words font-medium text-slate-950">{value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function CurrentTaskProgressSummary({
+  approvalGate,
+  longRunningTask,
+  stabilitySummary,
+}: {
+  approvalGate: ApprovalGateState;
+  longRunningTask: LongRunningTaskState;
+  stabilitySummary: CodingStabilitySummary;
+}) {
+  const task = longRunningTask.response?.task ?? null;
+  const fields = [
+    ["Task id", task?.id ?? "No active task"],
+    ["Status", task?.status ?? "not started"],
+    ["Target", stabilitySummary.target],
+    ["Last blocker", stabilitySummary.lastBlocker ?? "none"],
+    ["Next safe action", task?.next_action ?? "Start or poll the tracked task when ready."],
+    ["Applied", approvalGate.execution?.ok ? "yes" : "no"],
+  ];
+  return (
+    <dl className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-2 lg:grid-cols-3">
+      {fields.map(([label, value]) => (
+        <div className="min-w-0 border border-slate-200 bg-slate-50 px-3 py-2" key={label}>
+          <dt className="font-semibold uppercase tracking-wide text-slate-500">{label}</dt>
+          <dd className="mt-1 break-words font-medium text-slate-950">{value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function LegacyWorkflowDiagnostics({
+  activeStep,
+  stages,
+}: {
+  activeStep: number;
+  stages: WorkflowStageItem[];
+}) {
+  return (
+    <section className="border border-slate-300 bg-slate-50 p-4">
+      <div className="text-sm font-semibold text-slate-950">Legacy workflow diagnostics</div>
+      <p className="mt-1 text-xs text-slate-600">
+        Old 1/2/3/4/5/6/7 stage labels are retained here for debugging only.
+      </p>
+      <div className="mt-3 grid gap-3 lg:grid-cols-[16rem_1fr]">
+        <WorkflowRail stages={stages} />
+        <ol className="grid gap-2 text-sm">
+          {stages.map((stage) => (
+            <li
+              className="flex items-center justify-between gap-3 border border-slate-200 bg-white px-3 py-2"
+              key={stage.index}
+            >
+              <span className="font-medium text-slate-900">
+                {stage.index}. {stage.label}
+              </span>
+              <span className="text-xs font-semibold uppercase text-slate-500">
+                {stage.index === activeStep ? "current" : stage.status}
+              </span>
+            </li>
+          ))}
+        </ol>
       </div>
     </section>
   );
@@ -9492,9 +10830,12 @@ function DiffVerificationPanel({
         </button>
         {state.preview ? (
           <div className="text-sm text-slate-600">
-            Safety level: {state.preview.risk ?? "unknown"} | Would change files:{" "}
+            Safety level: {state.preview.risk ?? "unknown"} | Apply executed:{" "}
             {state.preview.would_apply_diff ? "yes" : "no"} | Would run commands:{" "}
             {state.preview.would_execute ? "yes" : "no"}
+            <span className="mt-1 block text-xs text-slate-500">
+              Preview only. No file writes happen until you approve and apply.
+            </span>
           </div>
         ) : null}
       </div>
@@ -10472,7 +11813,7 @@ type ProposalDraftInput = {
   task: string;
 };
 
-type ProposalDraftResult = {
+export type ProposalDraftResult = {
   allowedFiles: string[];
   blocked: boolean;
   expectedChecks: string[];
@@ -10744,6 +12085,21 @@ function blockerCopy(reasonCode: string): {
         nextSafeAction: "Regenerate the diff for the exact target file before previewing approval again.",
         title: "Target mismatch",
       };
+    case "local_model_unavailable":
+      return {
+        detail:
+          "The local coder route (Model Group=local) could not reach Ollama/LiteLLM. Check the resolved Ollama host and model in coder diagnostics.",
+        nextSafeAction:
+          "Start Ollama/LiteLLM, fix OLLAMA_BASE_URL or SOURCE_PROXY_OLLAMA_BASE_URL, choose another configured route, or use manual diff preview.",
+        title: "Local model unavailable",
+      };
+    case "coder_model_router_error":
+      return {
+        detail: "The configured coder model route failed before producing a diff.",
+        nextSafeAction:
+          "Check Source Proxy route status, provider configuration, and logs; choose another route or use manual diff preview.",
+        title: "Coder route failed",
+      };
     case "route_unavailable":
     case "route_response_invalid":
     case "coder_sync_timeout":
@@ -10772,6 +12128,15 @@ function blockerCopy(reasonCode: string): {
         detail: "The preview is ready, but human approval has not been recorded.",
         nextSafeAction: "Review target, diff, and verification gates, then approve or reject explicitly.",
         title: "Approval required",
+      };
+    case "implementation_or_terminal_action":
+    case "paid_api_route_possible":
+    case "client_command_shape_detected":
+      return {
+        detail:
+          "Preview passed. This route requires an explicit human approve-and-apply step before any file write or terminal action.",
+        nextSafeAction: "Inspect the diff, then click Approve and apply.",
+        title: "Awaiting human approval to apply",
       };
     case "apply_required":
       return {
@@ -11224,8 +12589,8 @@ export function ApprovalGatePanel({
           {exactCommand}
         </pre>
         <p className="mt-2 text-slate-600">
-          This preview explains what will be reviewed. Approve applies only the reviewed
-          diff or explicit file content through the protected execution layer.
+          Preview only until you click Approve and apply. That button records human
+          approval and runs the protected execution layer in one step.
         </p>
       </div>
 
@@ -11277,7 +12642,7 @@ export function ApprovalGatePanel({
               }}
               type="button"
             >
-              Approve
+              {gate.isChecking ? "Applying" : "Approve and apply"}
             </button>
           ) : null}
           <button

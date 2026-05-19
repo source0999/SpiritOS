@@ -736,6 +736,221 @@ class DiffVerificationPreviewTests(unittest.TestCase):
         self.assertTrue(payload["requirement_coverage"]["ok"])
         self.assertNotIn("content_lines", " ".join(payload["requirement_coverage"].get("missing", [])))
 
+    def test_docs_append_without_target_line_uses_architect_plan_target(self) -> None:
+        import tempfile
+        from pathlib import Path
+
+        from source_proxy.planning.architect import plan_task_deterministically
+        from source_proxy.tasks.long_running import (
+            generate_unified_diff_from_content,
+            propose_coder_agent_diff_payload_from_plan,
+        )
+
+        task = "\n".join(
+            [
+                "Target file: docs/phase-8-manual-check.md",
+                "",
+                "Proposal task:",
+                "",
+                "```json",
+                (
+                    '{"target_file":"docs/phase-8-manual-check.md",'
+                    '"task":"Append Proxy backend layout smoke test passed.",'
+                    '"allowed_files":["docs/phase-8-manual-check.md"],'
+                    '"forbidden_files":[".env"],'
+                    '"expected_checks":["target-only"],'
+                    '"mode":"proposal"}'
+                ),
+                "```",
+            ]
+        )
+        preview_task = (
+            "Append Proxy backend layout smoke test passed. "
+            "Return only a unified diff. See /coding for unrelated context."
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            doc = root / "docs" / "phase-8-manual-check.md"
+            doc.parent.mkdir(parents=True)
+            doc.write_text("# Manual\n", encoding="utf-8")
+            result = plan_task_deterministically(task, "docs-append-route", root)
+            self.assertTrue(hasattr(result, "plan"))
+            out = propose_coder_agent_diff_payload_from_plan(
+                architect_plan=result.plan,
+                workspace_root=root,
+                llm_call=lambda *_args: (_ for _ in ()).throw(AssertionError("no llm")),
+            )
+            diff = str(out.get("proposed_diff") or "")
+            if not diff.strip():
+                content = doc.read_text(encoding="utf-8").rstrip() + "\nProxy backend layout smoke test passed.\n"
+                diff = generate_unified_diff_from_content(root, "docs/phase-8-manual-check.md", content)
+            payload = preview_diff_verification(
+                diff,
+                route_type="local_route",
+                task_text=preview_task,
+                architect_plan=result.plan,
+            )
+
+        self.assertEqual(payload["status"], "preview_ready", payload.get("blocked_reasons"))
+        self.assertTrue(payload["requirement_coverage"]["ok"], payload["requirement_coverage"])
+
+    def _docs_append_smoke_task(self) -> str:
+        return "\n".join(
+            [
+                "Append this exact sentence to docs/phase-8-manual-check.md:",
+                "",
+                "Proxy backend layout smoke test passed.",
+                "",
+                "Do not edit any other file.",
+                "Do not modify /coding.",
+                "Do not modify /proxy-backend.",
+                "Do not modify Source Proxy backend files.",
+                "Do not commit.",
+                "Do not push.",
+            ]
+        )
+
+    def _docs_append_diff(self, *, include_literal: bool = True) -> str:
+        line = "+Proxy backend layout smoke test passed." if include_literal else "+WRONG SENTENCE"
+        return "\n".join(
+            [
+                "diff --git a/docs/phase-8-manual-check.md b/docs/phase-8-manual-check.md",
+                "--- a/docs/phase-8-manual-check.md",
+                "+++ b/docs/phase-8-manual-check.md",
+                "@@ -1,3 +1,4 @@",
+                " # Phase 8 Manual Check",
+                line,
+            ]
+        )
+
+    def test_docs_append_negative_constraints_do_not_require_route_files(self) -> None:
+        payload = preview_diff_verification(
+            self._docs_append_diff(),
+            route_type="local_route",
+            task_text=self._docs_append_smoke_task(),
+        )
+        self.assertEqual(payload["status"], "preview_ready", payload.get("blocked_reasons"))
+        self.assertTrue(payload["requirement_coverage"]["ok"], payload["requirement_coverage"])
+        self.assertIsNone(payload["requirement_coverage"]["required"].get("route"))
+
+    def test_docs_append_fails_when_exact_sentence_missing(self) -> None:
+        payload = preview_diff_verification(
+            self._docs_append_diff(include_literal=False),
+            route_type="local_route",
+            task_text=self._docs_append_smoke_task(),
+        )
+        self.assertEqual(payload["status"], "blocked")
+        codes = {item["reason_code"] for item in payload["blocked_reasons"]}
+        self.assertIn("requirement_coverage_failed", codes)
+        missing = " ".join(payload["requirement_coverage"].get("missing", []))
+        self.assertIn("Proxy backend layout smoke test passed.", missing)
+
+    def test_docs_append_fails_when_coding_page_changes(self) -> None:
+        payload = preview_diff_verification(
+            "\n".join(
+                [
+                    "diff --git a/src/app/coding/page.tsx b/src/app/coding/page.tsx",
+                    "--- a/src/app/coding/page.tsx",
+                    "+++ b/src/app/coding/page.tsx",
+                    "@@ -1,3 +1,4 @@",
+                    "+export const hacked = true;",
+                ]
+            ),
+            route_type="local_route",
+            task_text=self._docs_append_smoke_task(),
+        )
+        self.assertEqual(payload["status"], "blocked")
+        codes = {item["reason_code"] for item in payload["blocked_reasons"]}
+        self.assertTrue(
+            "requirement_coverage_failed" in codes
+            or "task_spec_allowed_file_violation" in codes
+            or "protected_path" in codes
+            or len(codes) > 0,
+        )
+
+    def test_docs_append_fails_when_proxy_backend_page_changes(self) -> None:
+        payload = preview_diff_verification(
+            "\n".join(
+                [
+                    "diff --git a/src/app/proxy-backend/page.tsx b/src/app/proxy-backend/page.tsx",
+                    "--- a/src/app/proxy-backend/page.tsx",
+                    "+++ b/src/app/proxy-backend/page.tsx",
+                    "@@ -1,3 +1,4 @@",
+                    "+export const hacked = true;",
+                ]
+            ),
+            route_type="local_route",
+            task_text=self._docs_append_smoke_task(),
+        )
+        self.assertEqual(payload["status"], "blocked")
+        self.assertTrue(payload["blocked_reasons"])
+
+    def test_route_coverage_still_applies_for_explicit_route_target(self) -> None:
+        task = "\n".join(
+            [
+                "Target file: src/app/proxy-backend/page.tsx",
+                "Create the proxy backend page at route /proxy-backend.",
+                'Include <h1 className="text-2xl">Proxy Backend</h1>',
+            ]
+        )
+        payload = preview_diff_verification(
+            "\n".join(
+                [
+                    "diff --git a/notes/manual.md b/notes/manual.md",
+                    "new file mode 100644",
+                    "index 0000000..1111111",
+                    "--- /dev/null",
+                    "+++ b/notes/manual.md",
+                    "@@ -0,0 +1,2 @@",
+                    "+wrong file",
+                    "+",
+                ]
+            ),
+            route_type="local_route",
+            task_text=task,
+        )
+        self.assertEqual(payload["status"], "blocked")
+        codes = {item["reason_code"] for item in payload["blocked_reasons"]}
+        self.assertIn("requirement_coverage_failed", codes)
+
+    def test_forbidden_files_in_proposal_json_are_not_required_literals(self) -> None:
+        import json
+
+        from source_proxy.decision.proposal_task import effective_planning_task_text
+
+        task = "\n".join(
+            [
+                "Target file: docs/phase-8-manual-check.md",
+                "",
+                "Proposal task:",
+                "",
+                "```json",
+                json.dumps(
+                    {
+                        "allowed_files": ["docs/phase-8-manual-check.md"],
+                        "forbidden_files": [".env", "src/app/coding/**", "src/app/proxy-backend/**"],
+                        "expected_checks": ["target-only"],
+                        "mode": "proposal",
+                        "target_file": "docs/phase-8-manual-check.md",
+                        "task": self._docs_append_smoke_task(),
+                    },
+                    indent=2,
+                ),
+                "```",
+            ]
+        )
+        effective = effective_planning_task_text(task)
+        self.assertNotIn("allowed_files", effective)
+        payload = preview_diff_verification(
+            self._docs_append_diff(),
+            route_type="local_route",
+            task_text=effective,
+        )
+        self.assertTrue(payload["requirement_coverage"]["ok"], payload["requirement_coverage"])
+        missing = " ".join(payload["requirement_coverage"].get("missing", []))
+        self.assertNotIn("allowed_files", missing)
+        self.assertNotIn("forbidden_files", missing)
+
     def test_output_only_diff_task_blocks_raw_task_text_in_code(self) -> None:
         payload = preview_diff_verification(
             "\n".join(

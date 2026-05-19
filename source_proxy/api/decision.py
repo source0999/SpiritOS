@@ -44,7 +44,11 @@ from source_proxy.decision.router import (
     enrich_route_decision_with_research,
 )
 from source_proxy.planning.plan import load_plan, task_spec_from_packet, task_spec_from_plan
-from source_proxy.safety.paths import unsafe_target_from_task
+from source_proxy.decision.proposal_task import (
+    bounded_proposal_create_allowed,
+    parse_bounded_proposal_task,
+)
+from source_proxy.decision.router import ResolvedTarget, resolve_target_from_task, unsafe_target_for_route
 
 router = APIRouter(prefix="/v1/decisions")
 
@@ -264,12 +268,17 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
         if isinstance(route_reasons_raw, list)
         else []
     )
-    unsafe_target = unsafe_target_from_task(reset_request.task, _workspace_root())
+    resolved_for_safety = resolve_target_from_task(reset_request.task, _workspace_root())
+    unsafe_target = unsafe_target_for_route(
+        reset_request.task,
+        resolved_for_safety,
+        _workspace_root(),
+    )
     hard_target_reason = _first_target_hard_block_reason(route_reasons)
     target_gate_blocked = bool(
         hard_target_reason
         or "target_unresolved" in route_reasons
-        or "target_missing" in route_reasons
+        or _target_missing_blocks_prompt_packet(reset_request.task, route_reasons)
     )
     if _route_payload_requests_coder_agent_diff(route_payload) and (
         reset_request.wants_implementation or bool(explicit_target)
@@ -665,7 +674,23 @@ def _architect_plan_has_usable_coder_packet(architect_plan: Any | None) -> bool:
     target_file = getattr(packet, "target_file", None)
     target_path = str(getattr(target_file, "path", "") or "").strip()
     context_slices = getattr(packet, "context_slices", None)
+    operation = str(getattr(packet, "operation", "") or "").strip()
+    if operation == "create":
+        return bool(target_path)
     return bool(target_path and isinstance(context_slices, list) and context_slices)
+
+
+def _target_missing_blocks_prompt_packet(task: str, route_reasons: list[str]) -> bool:
+    if "target_missing" not in route_reasons:
+        return False
+    proposal = parse_bounded_proposal_task(task)
+    if proposal is None:
+        return True
+    create_ok, _blocked_reason = bounded_proposal_create_allowed(
+        proposal,
+        workspace_root=_workspace_root(),
+    )
+    return not create_ok
 
 
 def _coder_prompt_packet_status(
@@ -682,7 +707,11 @@ def _coder_prompt_packet_status(
         return "preview_ready"
     if reason_code in {"coder_packet_missing_context", "coder_needs_context"}:
         return "needs_context"
-    if reason_code in {"coder_model_not_configured", "coder_empty_model_response"}:
+    if reason_code in {
+        "coder_model_not_configured",
+        "coder_empty_model_response",
+        "local_model_unavailable",
+    }:
         return "coder_config_blocked"
     if reason_code == "coder_sync_timeout":
         return "blocked"
