@@ -34,6 +34,11 @@ from source_proxy.cartographer.service import (
     build_cartographer_docs_autopilot_soak,
     build_cartographer_drift,
     build_cartographer_git,
+    build_cartographer_level_2_api_contract,
+    build_cartographer_level_2_closeout,
+    build_cartographer_level_2_dirty_tree,
+    build_cartographer_level_2_dirty_tree_resolution,
+    build_cartographer_level_2_readiness,
     build_cartographer_project_candidates,
     build_cartographer_project_health,
     build_cartographer_projects,
@@ -63,6 +68,7 @@ from source_proxy.cartographer.service import (
     build_cartographer_v1_proof_recording_proposal,
     build_cartographer_v1_proof_validation,
     build_cartographer_v1_readiness,
+    run_cartographer_level_2_docs_apply,
     run_cartographer_docs_autopilot_apply,
     write_cartographer_starter_blueprints,
     apply_cartographer_clutter_proposal,
@@ -153,15 +159,38 @@ class CartographerApiTests(unittest.TestCase):
 
         self.assertEqual(before, after)
         self.assertTrue(payload["dry_run"])
+        self.assertEqual(payload["level"], 1)
+        self.assertEqual(payload["mode"], "dry_run")
+        self.assertFalse(payload["authority_granted"])
         self.assertFalse(payload["write_actions_enabled"])
+        self.assertFalse(payload["apply_enabled"])
+        self.assertFalse(payload["commit_enabled"])
+        self.assertFalse(payload["push_enabled"])
         self.assertFalse(payload["approval_available"])
         self.assertFalse(payload["apply_available"])
         self.assertFalse(payload["actions_taken"])
+        self.assertTrue(payload["operator_review_required"])
+        self.assertEqual(payload["recommended_next_action"], "operator_review_required")
+        self.assertEqual(payload["git_head_before"], payload["git_head_after"])
+        self.assertFalse(payload["head_changed"])
+        self.assertEqual(payload["unexpected_status_delta"], [])
+        self.assertEqual(payload["candidate_count"], payload["proposal_count"])
+        self.assertEqual(payload["dirty_tree_summary"]["changed_files"], ["src/components/dashboard/Widget.tsx"])
+        self.assertIn("docs/**/*.md", payload["allowed_scope"])
+        self.assertIn("src/**", payload["forbidden_scope"])
         self.assertGreater(payload["proposal_count"], 0)
+        candidate = payload["candidates"][0]
+        self.assertEqual(candidate["risk_level"], "low")
+        self.assertFalse(candidate["blocked"])
+        self.assertIn("why_no_source_edit_is_needed", candidate)
         proposal = payload["proposals"][0]
         self.assertTrue(proposal["dry_run"])
         self.assertFalse(proposal["approval_available"])
         self.assertFalse(proposal["apply_available"])
+        self.assertTrue(proposal["approval_required"])
+        self.assertFalse(proposal["apply_allowed"])
+        self.assertFalse(proposal["commit_allowed"])
+        self.assertFalse(proposal["push_allowed"])
         self.assertFalse(proposal["would_write_files"])
         self.assertFalse(proposal["action_taken"])
         self.assertIn("diff --git", proposal["diff_preview"])
@@ -249,6 +278,310 @@ class CartographerApiTests(unittest.TestCase):
         self.assertEqual(blocked_second["status"], "blocked")
         self.assertIn("daily_cap_available", blocked_second["blockers"])
 
+    def test_level_2_apply_blocks_without_human_approval(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            _write_docs_target(root)
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            _write_level_2_proposal(root, proposal_id="level-2-unapproved")
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = run_cartographer_level_2_docs_apply(proposal_id="level-2-unapproved")
+
+        self.assertEqual(payload["level"], 2)
+        self.assertEqual(payload["status"], "blocked")
+        self.assertFalse(payload["write_actions_enabled"])
+        self.assertFalse(payload["actions_taken"])
+        self.assertIn("human_approval_id_required", payload["blocker_reasons"])
+
+    def test_level_2_apply_blocks_source_target(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            source_file = root / "src" / "app" / "page.tsx"
+            source_file.parent.mkdir(parents=True)
+            source_file.write_text("export default function Page() { return null; }\n", encoding="utf-8")
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            _write_level_2_proposal(
+                root,
+                proposal_id="level-2-source",
+                target_path="src/app/page.tsx",
+                patch_text="\n".join(
+                    [
+                        "diff --git a/src/app/page.tsx b/src/app/page.tsx",
+                        "--- a/src/app/page.tsx",
+                        "+++ b/src/app/page.tsx",
+                        "@@ -1 +1,2 @@",
+                        " export default function Page() { return null; }",
+                        "+// not allowed",
+                        "",
+                    ]
+                ),
+            )
+
+            before = source_file.read_text(encoding="utf-8")
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = run_cartographer_level_2_docs_apply(
+                    proposal_id="level-2-source",
+                    approval_id="approval-level-2-source",
+                    approval_actor="Britton",
+                )
+            after = source_file.read_text(encoding="utf-8")
+
+        self.assertEqual(before, after)
+        self.assertEqual(payload["status"], "blocked")
+        self.assertIn("forbidden_paths_detected", payload["blocker_reasons"])
+        self.assertEqual(payload["files_written"], [])
+
+    def test_level_2_apply_blocks_forbidden_path_variants(self) -> None:
+        forbidden_targets = [
+            "/tmp/secret.md",
+            "../outside.md",
+            ".env.local",
+            "package.json",
+        ]
+        for index, target_path in enumerate(forbidden_targets):
+            with self.subTest(target_path=target_path):
+                with tempfile.TemporaryDirectory() as temp_dir:
+                    root = Path(temp_dir)
+                    _write_minimal_blueprints(root)
+                    _write_docs_target(root)
+                    _git(root, "init")
+                    _git(root, "config", "user.email", "cartographer@example.test")
+                    _git(root, "config", "user.name", "Cartographer Test")
+                    _git(root, "add", ".")
+                    _git(root, "commit", "-m", "initial commit")
+                    proposal_id = f"level-2-forbidden-{index}"
+                    _write_level_2_proposal(
+                        root,
+                        proposal_id=proposal_id,
+                        target_path=target_path,
+                        patch_text="\n".join(
+                            [
+                                f"diff --git a/{target_path} b/{target_path}",
+                                f"--- a/{target_path}",
+                                f"+++ b/{target_path}",
+                                "@@ -1 +1,2 @@",
+                                " existing",
+                                "+blocked",
+                                "",
+                            ]
+                        ),
+                    )
+
+                    with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                        payload = run_cartographer_level_2_docs_apply(
+                            proposal_id=proposal_id,
+                            approval_id=f"approval-{proposal_id}",
+                            approval_actor="Britton",
+                        )
+
+                self.assertEqual(payload["status"], "blocked")
+                self.assertIn("forbidden_paths_detected", payload["blocker_reasons"])
+                self.assertEqual(payload["files_written"], [])
+
+    def test_level_2_apply_blocks_stale_head(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            _write_docs_target(root)
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            _write_level_2_proposal(
+                root,
+                proposal_id="level-2-stale",
+                git_head_at_creation="stale-head",
+            )
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = run_cartographer_level_2_docs_apply(
+                    proposal_id="level-2-stale",
+                    approval_id="approval-level-2-stale",
+                    approval_actor="Britton",
+                )
+
+        self.assertEqual(payload["status"], "blocked")
+        self.assertIn("proposal_head_mismatch", payload["blocker_reasons"])
+        self.assertEqual(payload["files_written"], [])
+
+    def test_level_2_apply_blocks_changed_proposal_target_path(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            _write_docs_target(root)
+            other_docs = root / "docs" / "other-approved.md"
+            other_docs.write_text("# Other\n", encoding="utf-8")
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            _write_level_2_proposal(
+                root,
+                proposal_id="level-2-target-changed",
+                target_path="docs/level-2-approved.md",
+                patch_text="\n".join(
+                    [
+                        "diff --git a/docs/other-approved.md b/docs/other-approved.md",
+                        "--- a/docs/other-approved.md",
+                        "+++ b/docs/other-approved.md",
+                        "@@ -1 +1,2 @@",
+                        " # Other",
+                        "+Changed target.",
+                        "",
+                    ]
+                ),
+            )
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = run_cartographer_level_2_docs_apply(
+                    proposal_id="level-2-target-changed",
+                    approval_id="approval-level-2-target-changed",
+                    approval_actor="Britton",
+                )
+
+        self.assertEqual(payload["status"], "blocked")
+        self.assertIn("proposal_target_path_changed", payload["blocker_reasons"])
+        self.assertIn("forbidden_paths_detected", payload["blocker_reasons"])
+        self.assertEqual(payload["files_written"], [])
+        self.assertFalse(payload["audit_receipt_written"])
+
+    def test_level_2_apply_blocks_cartographer_self_approval(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            _write_docs_target(root)
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            _write_level_2_proposal(root, proposal_id="level-2-self-approved", approved_by="cartographer")
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = run_cartographer_level_2_docs_apply(
+                    proposal_id="level-2-self-approved",
+                    approval_id="approval-level-2-self-approved",
+                    approval_actor="cartographer",
+                )
+
+        self.assertEqual(payload["status"], "blocked")
+        self.assertIn("cartographer_self_approval_blocked", payload["blocker_reasons"])
+        self.assertEqual(payload["files_written"], [])
+
+    def test_level_2_apply_blocks_dirty_unrelated_source_file(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            _write_docs_target(root)
+            source_file = root / "src" / "components" / "dashboard" / "Widget.tsx"
+            source_file.parent.mkdir(parents=True)
+            source_file.write_text("export function Widget() { return null; }\n", encoding="utf-8")
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            _write_level_2_proposal(root, proposal_id="level-2-dirty")
+            source_file.write_text("export function Widget() { return 'dirty'; }\n", encoding="utf-8")
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = run_cartographer_level_2_docs_apply(
+                    proposal_id="level-2-dirty",
+                    approval_id="approval-level-2-dirty",
+                    approval_actor="Britton",
+                )
+
+        self.assertEqual(payload["status"], "blocked")
+        self.assertIn("dirty_tree_unclassified", payload["blocker_reasons"])
+        self.assertEqual(payload["files_written"], [])
+
+    def test_level_2_approved_docs_apply_writes_docs_receipt_without_commit_push_or_stage(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            docs_target = _write_docs_target(root)
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "checkout", "-b", "level-2-test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            _write_level_2_proposal(root, proposal_id="level-2-approved")
+            head_before = _git_stdout(root, "rev-parse", "HEAD").strip()
+            branch_before = _git_stdout(root, "branch", "--show-current").strip()
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = run_cartographer_level_2_docs_apply(
+                    proposal_id="level-2-approved",
+                    approval_id="approval-level-2-approved",
+                    approval_actor="Britton",
+                )
+
+            head_after = _git_stdout(root, "rev-parse", "HEAD").strip()
+            branch_after = _git_stdout(root, "branch", "--show-current").strip()
+            staged_files = _git_stdout(root, "diff", "--cached", "--name-only").splitlines()
+            changed_files = _git_stdout(root, "status", "--porcelain").splitlines()
+            receipt = root / "docs" / "cartographer-level-2-apply-receipts" / "level-2-approved.md"
+            receipt_exists = receipt.exists()
+            receipt_payload = _level_2_receipt_json(receipt)
+            docs_target_text = docs_target.read_text(encoding="utf-8")
+
+        self.assertEqual(payload["status"], "applied")
+        self.assertEqual(payload["schema_version"], "cartographer.level_2.apply_receipt.v1")
+        self.assertEqual(payload["level"], 2)
+        self.assertEqual(payload["mode"], "approved_docs_apply")
+        self.assertEqual(payload["approval_id"], "approval-level-2-approved")
+        self.assertEqual(payload["approval_actor"], "Britton")
+        self.assertTrue(payload["approval_validated"])
+        self.assertTrue(payload["apply_requires_human_approval"])
+        self.assertFalse(payload["cartographer_self_approval"])
+        self.assertTrue(payload["write_actions_enabled"])
+        self.assertTrue(payload["actions_taken"])
+        self.assertEqual(payload["files_requested"], ["docs/level-2-approved.md"])
+        self.assertIn("docs/level-2-approved.md", payload["files_written"])
+        self.assertIn("docs/cartographer-level-2-apply-receipts/level-2-approved.md", payload["files_written"])
+        self.assertFalse(payload["commit_created"])
+        self.assertFalse(payload["push_created"])
+        self.assertFalse(payload["branch_created"])
+        self.assertFalse(payload["committed"])
+        self.assertFalse(payload["pushed"])
+        self.assertFalse(payload["commit_allowed"])
+        self.assertFalse(payload["push_allowed"])
+        self.assertFalse(payload["branch_allowed"])
+        self.assertFalse(payload["delete_allowed"])
+        self.assertFalse(payload["cleanup_allowed"])
+        self.assertFalse(payload["source_code_allowed"])
+        self.assertFalse(payload["self_promotion_allowed"])
+        self.assertFalse(payload["head_changed"])
+        self.assertTrue(payload["audit_receipt_written"])
+        self.assertEqual(payload["receipt_path"], "docs/cartographer-level-2-apply-receipts/level-2-approved.md")
+        self.assertEqual(head_before, head_after)
+        self.assertEqual(branch_before, branch_after)
+        self.assertEqual(staged_files, [])
+        self.assertTrue(receipt_exists)
+        self.assertEqual(receipt_payload["schema_version"], payload["schema_version"])
+        self.assertEqual(receipt_payload["proposal_id"], "level-2-approved")
+        self.assertEqual(receipt_payload["receipt_path"], payload["receipt_path"])
+        self.assertEqual(receipt_payload["files_written"], payload["files_written"])
+        self.assertFalse(receipt_payload["commit_created"])
+        self.assertFalse(receipt_payload["push_created"])
+        self.assertFalse(receipt_payload["branch_created"])
+        self.assertTrue(any("docs/level-2-approved.md" in line for line in changed_files))
+        self.assertIn("Level 2 applied.", docs_target_text)
+
     def test_docs_autopilot_soak_marks_seven_boring_cycles_green(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -277,11 +610,26 @@ class CartographerApiTests(unittest.TestCase):
                 payload = build_cartographer_docs_autopilot_soak()
 
         self.assertEqual(payload["soak_grade"], "green")
+        self.assertEqual(payload["level"], 1)
+        self.assertEqual(payload["mode"], "soak")
+        self.assertFalse(payload["authority_granted"])
         self.assertEqual(payload["level9_status"], "GREEN")
         self.assertEqual(payload["observed_days"], 7)
         self.assertEqual(payload["cycle_count"], 7)
         self.assertFalse(payload["write_actions_enabled"])
+        self.assertFalse(payload["apply_enabled"])
+        self.assertFalse(payload["commit_enabled"])
+        self.assertFalse(payload["push_enabled"])
         self.assertFalse(payload["actions_taken"])
+        self.assertTrue(payload["snapshot_log_only"])
+        self.assertFalse(payload["head_changed"])
+        self.assertEqual(payload["unexpected_status_delta"], [])
+        self.assertTrue(payload["apply_disabled"])
+        self.assertTrue(payload["commit_disabled"])
+        self.assertTrue(payload["push_disabled"])
+        self.assertTrue(payload["approval_bypass_disabled"])
+        self.assertEqual(payload["candidate_generation"], "proposal_only")
+        self.assertTrue(payload["operator_review_required"])
         checks = {check["code"]: check for check in payload["checks"]}
         self.assertTrue(checks["no_app_code_touched"]["passed"])
         self.assertTrue(checks["no_safety_code_touched"]["passed"])
@@ -316,6 +664,11 @@ class CartographerApiTests(unittest.TestCase):
                 payload = build_cartographer_docs_autopilot_soak()
 
         self.assertEqual(payload["soak_grade"], "not_ready")
+        self.assertEqual(payload["level"], 1)
+        self.assertFalse(payload["authority_granted"])
+        self.assertFalse(payload["apply_enabled"])
+        self.assertFalse(payload["commit_enabled"])
+        self.assertFalse(payload["push_enabled"])
         self.assertEqual(payload["level9_status"], "YELLOW")
         checks = {check["code"]: check for check in payload["checks"]}
         self.assertFalse(checks["no_app_code_touched"]["passed"])
@@ -544,6 +897,11 @@ class CartographerApiTests(unittest.TestCase):
             "/v1/cartographer/codex-evidence",
             "/v1/cartographer/docs-autopilot/dry-run",
             "/v1/cartographer/docs-autopilot/soak",
+            "/v1/cartographer/level-2-readiness",
+            "/v1/cartographer/level-2-dirty-tree",
+            "/v1/cartographer/level-2-dirty-tree-resolution",
+            "/v1/cartographer/level-2-api-contract",
+            "/v1/cartographer/level-2-closeout",
             "/v1/cartographer/branch-recommendations",
             "/v1/cartographer/commit-proposals",
             "/v1/cartographer/push-queue",
@@ -572,6 +930,11 @@ class CartographerApiTests(unittest.TestCase):
         self.assertEqual(client.post("/v1/cartographer/codex-evidence").status_code, 405)
         self.assertEqual(client.post("/v1/cartographer/docs-autopilot/dry-run").status_code, 405)
         self.assertEqual(client.post("/v1/cartographer/docs-autopilot/soak").status_code, 405)
+        self.assertEqual(client.post("/v1/cartographer/level-2-readiness").status_code, 405)
+        self.assertEqual(client.post("/v1/cartographer/level-2-dirty-tree").status_code, 405)
+        self.assertEqual(client.post("/v1/cartographer/level-2-dirty-tree-resolution").status_code, 405)
+        self.assertEqual(client.post("/v1/cartographer/level-2-api-contract").status_code, 405)
+        self.assertEqual(client.post("/v1/cartographer/level-2-closeout").status_code, 405)
         self.assertEqual(client.post("/v1/cartographer/branch-recommendations").status_code, 405)
         self.assertEqual(client.post("/v1/cartographer/commit-proposals").status_code, 405)
         self.assertEqual(client.post("/v1/cartographer/push-queue").status_code, 405)
@@ -1276,6 +1639,11 @@ class CartographerApiTests(unittest.TestCase):
         self.assertFalse(payload["promotion_enabled"])
         self.assertFalse(payload["authority_change_allowed"])
         self.assertFalse(payload["actions_taken"])
+        self.assertFalse(payload["level_1_authority_granted"])
+        self.assertFalse(payload["level_1_enablement_allowed"])
+        self.assertIn("level_2_readiness", payload)
+        self.assertIn(payload["level_2_recommendation"], {"blocked", "watch", "ready_for_review"})
+        self.assertFalse(payload["level_2_authority_granted"])
         self.assertTrue(payload["requires_human_approval"])
         self.assertTrue(payload["cannot_self_promote"])
         self.assertEqual(payload["current_level"], 5)
@@ -1290,6 +1658,284 @@ class CartographerApiTests(unittest.TestCase):
         self.assertTrue(gates["authority_locked"]["passed"])
         self.assertGreater(payload["blocker_count"], 0)
         self.assertEqual(payload["blocker_count"], len(payload["blockers"]))
+        level_1 = payload["level_1_readiness"]
+        self.assertEqual(level_1["level"], 1)
+        self.assertIn(level_1["label"], {"blocked", "watch", "ready_for_level_1_review"})
+        self.assertEqual(payload["level_1_recommendation"], level_1["label"])
+        self.assertEqual(payload["level_1_readiness_score"], level_1["score"])
+        self.assertFalse(level_1["authority_granted"])
+        self.assertFalse(level_1["enablement_allowed"])
+        self.assertFalse(level_1["actions_taken"])
+        self.assertTrue(level_1["operator_review_required"])
+        self.assertGreater(level_1["check_count"], 0)
+        self.assertEqual(level_1["check_count"], len(level_1["checks"]))
+        self.assertEqual(level_1["blocker_count"], len(level_1["blockers"]))
+        checks = {check["code"]: check for check in level_1["checks"]}
+        self.assertIn("v1_freeze_valid", checks)
+        self.assertIn("latest_soak_pass", checks)
+        self.assertIn("apply_disabled", checks)
+        self.assertIn("commit_disabled", checks)
+        self.assertIn("push_disabled", checks)
+        self.assertIn("approval_bypass_disabled", checks)
+        self.assertIn("docs_only_candidate_filters_valid", checks)
+        self.assertIn("kill_switch_visible", checks)
+        self.assertIn("daily_cap_visible", checks)
+        self.assertIn("rollback_hints_present", checks)
+        self.assertTrue(checks["apply_disabled"]["passed"])
+        self.assertTrue(checks["commit_disabled"]["passed"])
+        self.assertTrue(checks["push_disabled"]["passed"])
+
+    def test_level_2_readiness_exposes_apply_boundary_without_commit_push_authority(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            (root / "package.json").write_text("{}", encoding="utf-8")
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            client = TestClient(_test_app())
+
+            with patch.dict(
+                os.environ,
+                {
+                    "SPIRIT_PROJECT_PATH": str(root),
+                    "CARTOGRAPHER_LEVEL_1_ACCEPTED_BY_BRITTON": "true",
+                },
+                clear=False,
+            ):
+                payload = build_cartographer_level_2_readiness()
+                response = client.get("/v1/cartographer/level-2-readiness")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["level"], 2)
+        self.assertEqual(payload["level"], 2)
+        self.assertEqual(payload["mode"], "human_approved_docs_apply")
+        self.assertIn(payload["label"], {"blocked", "watch", "ready_for_review"})
+        self.assertFalse(payload["authority_granted"])
+        self.assertTrue(payload["apply_requires_human_approval"])
+        self.assertFalse(payload["commit_allowed"])
+        self.assertFalse(payload["push_allowed"])
+        self.assertFalse(payload["branch_allowed"])
+        self.assertFalse(payload["delete_allowed"])
+        self.assertFalse(payload["cleanup_allowed"])
+        self.assertFalse(payload["source_code_allowed"])
+        self.assertFalse(payload["self_promotion_allowed"])
+        self.assertFalse(payload["actions_taken"])
+        checks = {check["code"]: check for check in payload["checks"]}
+        self.assertTrue(checks["level_1_review_gate"]["passed"])
+        self.assertTrue(checks["dirty_tree_classified"]["passed"])
+        self.assertTrue(checks["docs_only_path_filter_exists"]["passed"])
+        self.assertTrue(checks["approval_validation_exists"]["passed"])
+        self.assertTrue(checks["apply_receipt_exists"]["passed"])
+        self.assertTrue(checks["commit_push_branch_locked"]["passed"])
+        self.assertTrue(checks["source_apply_blocked"]["passed"])
+        self.assertTrue(checks["self_promotion_blocked"]["passed"])
+
+    def test_level_2_readiness_blocks_unclassified_dirty_tree(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            (root / "package.json").write_text("{}", encoding="utf-8")
+            source_file = root / "src" / "app" / "page.tsx"
+            source_file.parent.mkdir(parents=True)
+            source_file.write_text("export default function Page() { return null; }\n", encoding="utf-8")
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            source_file.write_text("export default function Page() { return 'dirty'; }\n", encoding="utf-8")
+
+            with patch.dict(
+                os.environ,
+                {
+                    "SPIRIT_PROJECT_PATH": str(root),
+                    "CARTOGRAPHER_LEVEL_1_ACCEPTED_BY_BRITTON": "true",
+                },
+                clear=False,
+            ):
+                payload = build_cartographer_level_2_readiness()
+
+        self.assertEqual(payload["label"], "blocked")
+        self.assertTrue(payload["dirty_tree_block"])
+        self.assertIn("src/app/page.tsx", payload["unrelated_dirty_files"])
+        checks = {check["code"]: check for check in payload["checks"]}
+        self.assertFalse(checks["dirty_tree_classified"]["passed"])
+
+    def test_level_2_dirty_tree_classification_groups_allowed_docs_and_blockers(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            (root / "package.json").write_text("{}", encoding="utf-8")
+            (root / "docs").mkdir()
+            (root / "docs" / "cartographer-level-2-autonomy-plan.md").write_text("# L2\n", encoding="utf-8")
+            source_file = root / "src" / "components" / "coding" / "CodingCockpitShell.tsx"
+            source_file.parent.mkdir(parents=True)
+            source_file.write_text("export function CodingCockpitShell() { return null; }\n", encoding="utf-8")
+            scout_file = root / "scout" / "src" / "scout" / "api" / "discovery_jobs.py"
+            scout_file.parent.mkdir(parents=True)
+            scout_file.write_text("VALUE = 1\n", encoding="utf-8")
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            (root / "docs" / "cartographer-level-2-autonomy-plan.md").write_text("# L2\n\nUpdated.\n", encoding="utf-8")
+            source_file.write_text("export function CodingCockpitShell() { return 'dirty'; }\n", encoding="utf-8")
+            scout_file.write_text("VALUE = 2\n", encoding="utf-8")
+            client = TestClient(_test_app())
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = build_cartographer_level_2_dirty_tree()
+                response = client.get("/v1/cartographer/level-2-dirty-tree")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(payload["level"], 2)
+        self.assertEqual(payload["mode"], "dirty_tree_classification")
+        self.assertFalse(payload["write_actions_enabled"])
+        self.assertFalse(payload["actions_taken"])
+        classification = payload["classification"]
+        self.assertTrue(classification["blocks_level_2_apply"])
+        self.assertIn("docs/cartographer-level-2-autonomy-plan.md", classification["buckets"]["level_2_plan_doc"])
+        self.assertIn("src/components/coding/CodingCockpitShell.tsx", classification["buckets"]["coding_cockpit_dirty"])
+        self.assertIn("scout/src/scout/api/discovery_jobs.py", classification["buckets"]["scout_dirty"])
+        self.assertIn("src/components/coding/CodingCockpitShell.tsx", classification["unclassified_blockers"])
+        self.assertIn("scout/src/scout/api/discovery_jobs.py", classification["unclassified_blockers"])
+
+    def test_level_2_dirty_tree_resolution_packet_groups_human_owned_blockers(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            (root / "package.json").write_text("{}", encoding="utf-8")
+            level_2_doc = root / "docs" / "cartographer-level-2-autonomy-plan.md"
+            level_2_doc.parent.mkdir(parents=True)
+            level_2_doc.write_text("# L2\n", encoding="utf-8")
+            level_2_file = root / "source_proxy" / "cartographer" / "level_2_apply.py"
+            level_2_file.parent.mkdir(parents=True)
+            level_2_file.write_text("VALUE = 1\n", encoding="utf-8")
+            scout_file = root / "scout" / "src" / "scout" / "api" / "discovery_jobs.py"
+            scout_file.parent.mkdir(parents=True)
+            scout_file.write_text("VALUE = 1\n", encoding="utf-8")
+            coding_file = root / "src" / "components" / "coding" / "CodingCockpitShell.tsx"
+            coding_file.parent.mkdir(parents=True)
+            coding_file.write_text("export function CodingCockpitShell() { return null; }\n", encoding="utf-8")
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            level_2_doc.write_text("# L2\n\nUpdated.\n", encoding="utf-8")
+            level_2_file.write_text("VALUE = 2\n", encoding="utf-8")
+            scout_file.write_text("VALUE = 2\n", encoding="utf-8")
+            coding_file.write_text("export function CodingCockpitShell() { return 'dirty'; }\n", encoding="utf-8")
+            client = TestClient(_test_app())
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = build_cartographer_level_2_dirty_tree_resolution()
+                response = client.get("/v1/cartographer/level-2-dirty-tree-resolution")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["resolution_version"], payload["resolution_version"])
+        self.assertEqual(payload["level"], 2)
+        self.assertEqual(payload["mode"], "dirty_tree_resolution_packet")
+        self.assertFalse(payload["write_actions_enabled"])
+        self.assertFalse(payload["authority_granted"])
+        self.assertFalse(payload["actions_taken"])
+        self.assertTrue(payload["dirty_tree_block"])
+        self.assertGreater(payload["blocking_file_count"], 0)
+        groups = {group["group_id"]: group for group in payload["resolution_groups"]}
+        self.assertFalse(groups["level_2_docs_and_receipts"]["blocks_apply"])
+        self.assertTrue(groups["level_2_implementation"]["blocks_apply"])
+        self.assertTrue(groups["app_and_dashboard_source"]["blocks_apply"])
+        self.assertTrue(groups["scout_work"]["blocks_apply"])
+        self.assertIn("source_proxy/cartographer/level_2_apply.py", groups["level_2_implementation"]["files"])
+        self.assertIn("src/components/coding/CodingCockpitShell.tsx", groups["app_and_dashboard_source"]["files"])
+        self.assertIn("scout/src/scout/api/discovery_jobs.py", groups["scout_work"]["files"])
+        self.assertIn("auto delete", payload["forbidden_resolution_actions"])
+        self.assertIn("auto commit", payload["forbidden_resolution_actions"])
+        self.assertEqual(payload["next_increment"], "Human Resolve Dirty Tree Or Keep Level 2 Blocked")
+
+    def test_level_2_api_contract_review_packet_is_read_only_and_lists_boundaries(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            (root / "package.json").write_text("{}", encoding="utf-8")
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            client = TestClient(_test_app())
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = build_cartographer_level_2_api_contract()
+                response = client.get("/v1/cartographer/level-2-api-contract")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["contract_version"], payload["contract_version"])
+        self.assertEqual(payload["level"], 2)
+        self.assertEqual(payload["mode"], "api_contract_review_packet")
+        self.assertFalse(payload["write_actions_enabled"])
+        self.assertFalse(payload["authority_granted"])
+        self.assertFalse(payload["actions_taken"])
+        self.assertEqual(payload["endpoint_count"], 3)
+        endpoints = {endpoint["endpoint"]: endpoint for endpoint in payload["endpoints"]}
+        self.assertEqual(endpoints["/v1/cartographer/level-2-readiness"]["method"], "GET")
+        self.assertEqual(endpoints["/v1/cartographer/level-2-dirty-tree"]["method"], "GET")
+        self.assertEqual(endpoints["/v1/cartographer/docs-autopilot/level-2/apply"]["method"], "POST")
+        self.assertEqual(
+            endpoints["/v1/cartographer/docs-autopilot/level-2/apply"]["request_fields"],
+            ["proposal_id", "approval_id", "approval_actor"],
+        )
+        self.assertEqual(payload["required_apply_request_fields"], ["proposal_id", "approval_id", "approval_actor"])
+        self.assertIn("src/**", payload["forbidden_paths"])
+        self.assertIn("source_proxy/**", payload["forbidden_paths"])
+        self.assertIn("commit_created", payload["required_receipt_fields"])
+        self.assertIn("push_created", payload["required_receipt_fields"])
+        self.assertIn("branch_created", payload["required_receipt_fields"])
+        self.assertIn("apply when unrelated dirty files are present", payload["forbidden_actions"])
+        self.assertEqual(payload["next_increment"], "Level 2 UI Review Card Read-Only Projection")
+
+    def test_level_2_closeout_packet_summarizes_completed_surfaces_without_activation(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            (root / "package.json").write_text("{}", encoding="utf-8")
+            dirty_source = root / "src" / "app" / "page.tsx"
+            dirty_source.parent.mkdir(parents=True)
+            dirty_source.write_text("export default function Page() { return null; }\n", encoding="utf-8")
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            dirty_source.write_text("export default function Page() { return 'dirty'; }\n", encoding="utf-8")
+            client = TestClient(_test_app())
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = build_cartographer_level_2_closeout()
+                response = client.get("/v1/cartographer/level-2-closeout")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["closeout_version"], payload["closeout_version"])
+        self.assertEqual(payload["level"], 2)
+        self.assertEqual(payload["mode"], "level_2_closeout")
+        self.assertTrue(payload["implementation_complete"])
+        self.assertFalse(payload["ready_for_activation"])
+        self.assertEqual(payload["recommendation"], "blocked")
+        self.assertFalse(payload["write_actions_enabled"])
+        self.assertFalse(payload["authority_granted"])
+        self.assertFalse(payload["actions_taken"])
+        self.assertFalse(payload["docs_apply_enabled"])
+        self.assertIn("level_1_review_gate", payload["blockers"])
+        self.assertIn("dirty_tree_classified", payload["blockers"])
+        self.assertTrue(payload["dirty_tree_block"])
+        self.assertGreater(payload["dirty_tree_blocker_count"], 0)
+        self.assertIn("/v1/cartographer/level-2-readiness", payload["surfaces_completed"])
+        self.assertIn("/v1/cartographer/docs-autopilot/level-2/apply", payload["surfaces_completed"])
+        self.assertIn("HomelabCartographerWidget Level 2 review card", payload["surfaces_completed"])
+        self.assertTrue(payload["safety_contract"]["apply_requires_human_approval"])
+        self.assertFalse(payload["safety_contract"]["commit_allowed"])
+        self.assertFalse(payload["safety_contract"]["push_allowed"])
+        self.assertFalse(payload["safety_contract"]["source_code_allowed"])
+        self.assertEqual(payload["evidence"]["api_contract_version"], "cartographer.level_2.api_contract.v1")
+        self.assertIn("npm test -- HomelabCartographerWidget", payload["manual_checks"])
 
     def test_v1_readiness_defines_final_gates_without_granting_authority(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -4827,7 +5473,18 @@ class CartographerApiTests(unittest.TestCase):
 
         self.assertEqual(payload["status"], "observing")
         self.assertFalse(payload["write_actions_enabled"])
+        self.assertEqual(payload["level"], 1)
+        self.assertEqual(payload["mode"], "proposal_draft")
+        self.assertFalse(payload["authority_granted"])
         self.assertFalse(payload["actions_taken"])
+        self.assertFalse(payload["apply_allowed"])
+        self.assertFalse(payload["commit_allowed"])
+        self.assertFalse(payload["push_allowed"])
+        self.assertTrue(payload["operator_review_required"])
+        self.assertTrue(payload["proposal_only_contract"]["proposal_drafts_only"])
+        self.assertFalse(payload["proposal_only_contract"]["apply_allowed"])
+        self.assertFalse(payload["proposal_only_contract"]["commit_allowed"])
+        self.assertFalse(payload["proposal_only_contract"]["push_allowed"])
         self.assertIn("pending_review", payload["proposal_states"])
         self.assertIn("push_approved", payload["proposal_states"])
         self.assertIn("deferred", payload["proposal_states"])
@@ -4851,6 +5508,17 @@ class CartographerApiTests(unittest.TestCase):
         self.assertEqual(proposal["type"], "blueprint_update")
         self.assertEqual(proposal["component"], "dashboard")
         self.assertTrue(proposal["requires_approval"])
+        self.assertTrue(proposal["proposal_draft"])
+        self.assertEqual(proposal["target_docs_path"], "_blueprints/current/dashboard_state.md")
+        self.assertEqual(proposal["risk_level"], "low")
+        self.assertIn("git diff -- _blueprints/current/dashboard_state.md", proposal["manual_check"])
+        self.assertIn("git restore _blueprints/current/dashboard_state.md", proposal["rollback_hint"])
+        self.assertTrue(proposal["approval_required"])
+        self.assertFalse(proposal["apply_allowed"])
+        self.assertFalse(proposal["commit_allowed"])
+        self.assertFalse(proposal["push_allowed"])
+        self.assertFalse(proposal["creates_commit_proposal"])
+        self.assertFalse(proposal["creates_push_queue_item"])
         self.assertFalse(proposal["applied"])
         self.assertFalse(proposal["action_taken"])
         self.assertTrue(all(item["timestamp"] and item["actor"] for item in proposal["transitions"]))
@@ -5047,6 +5715,19 @@ class CartographerApiTests(unittest.TestCase):
         self.assertFalse(payload["actions_taken"])
         self.assertTrue(payload["proposals"][0]["generated"])
         self.assertFalse(payload["proposals"][0]["persisted"])
+        proposal = payload["proposals"][0]
+        self.assertTrue(proposal["proposal_draft"])
+        self.assertEqual(proposal["target_docs_path"], "_blueprints/current/dashboard_state.md")
+        self.assertTrue(proposal["approval_required"])
+        self.assertFalse(proposal["apply_allowed"])
+        self.assertFalse(proposal["commit_allowed"])
+        self.assertFalse(proposal["push_allowed"])
+        self.assertFalse(proposal["apply_enabled"])
+        self.assertFalse(proposal["commit_enabled"])
+        self.assertFalse(proposal["push_enabled"])
+        self.assertFalse(proposal["creates_commit_proposal"])
+        self.assertFalse(proposal["creates_push_queue_item"])
+        self.assertIn("source edits are forbidden", proposal["why_no_source_edit_is_needed"])
 
     def test_proposal_preview_redacts_secret_shaped_changed_files(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -6288,6 +6969,79 @@ def _write_minimal_blueprints(root: Path) -> None:
         ),
         encoding="utf-8",
     )
+
+
+def _write_docs_target(root: Path) -> Path:
+    docs_target = root / "docs" / "level-2-approved.md"
+    docs_target.parent.mkdir(parents=True, exist_ok=True)
+    docs_target.write_text("# Level 2 Approved\n", encoding="utf-8")
+    return docs_target
+
+
+def _write_level_2_proposal(
+    root: Path,
+    *,
+    proposal_id: str,
+    target_path: str = "docs/level-2-approved.md",
+    patch_text: str | None = None,
+    git_head_at_creation: str | None = None,
+    approved_by: str = "Britton",
+) -> None:
+    if patch_text is None:
+        patch_text = "\n".join(
+            [
+                f"diff --git a/{target_path} b/{target_path}",
+                f"--- a/{target_path}",
+                f"+++ b/{target_path}",
+                "@@ -1 +1,2 @@",
+                " # Level 2 Approved",
+                "+Level 2 applied.",
+                "",
+            ]
+        )
+    proposal_dir = root / "_blueprints" / "proposals" / "approved"
+    proposal_dir.mkdir(parents=True, exist_ok=True)
+    proposal_path = proposal_dir / f"{proposal_id}.json"
+    payload = {
+        "proposal_id": proposal_id,
+        "status": "approved",
+        "type": "level_2_docs_apply",
+        "component": "cartographer",
+        "target_paths": [target_path],
+        "proposed_files": [target_path],
+        "approved_diff": patch_text,
+        "created_at": "2026-05-19T10:00:00Z",
+        "git_head_at_creation": git_head_at_creation or _git_stdout(root, "rev-parse", "HEAD").strip(),
+        "approval_id": f"approval-{proposal_id}",
+        "approved_by": approved_by,
+        "approved_at": "2026-05-19T10:05:00Z",
+        "rollback_hint": f"git checkout -- {target_path}",
+        "manual_check_command": "git diff --check",
+        "transitions": [
+            {
+                "status": "pending_human_approval",
+                "timestamp": "2026-05-19T10:00:00Z",
+                "actor": "cartographer",
+            },
+            {
+                "status": "approved",
+                "timestamp": "2026-05-19T10:05:00Z",
+                "actor": approved_by,
+            },
+        ],
+    }
+    proposal_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def _level_2_receipt_json(path: Path) -> dict[str, object]:
+    text = path.read_text(encoding="utf-8")
+    marker = "```json"
+    start = text.index(marker) + len(marker)
+    end = text.index("```", start)
+    payload = json.loads(text[start:end].strip())
+    if not isinstance(payload, dict):
+        raise AssertionError("Level 2 receipt JSON was not an object.")
+    return payload
 
 
 def _write_minimal_blueprint_validator(root: Path) -> None:
