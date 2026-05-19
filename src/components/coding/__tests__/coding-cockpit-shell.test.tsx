@@ -94,10 +94,10 @@ describe("CodingCockpitShell", () => {
     expect(await screen.findByText(/Preview ready. No files changed yet/)).toBeInTheDocument();
     expect(screen.getAllByText(/Approval is required before apply/).length).toBeGreaterThan(0);
     expect(screen.getByText("approval available")).toBeInTheDocument();
-    expect(screen.getByText(/Approval state is visible for review only/)).toBeInTheDocument();
-    expect(screen.getByText(/Commit and push are not available here/)).toBeInTheDocument();
+    expect(screen.getByText(/Approval is separate from apply/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Commit and push are not available here/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/No files changed yet/).length).toBeGreaterThan(0);
-    expect(screen.queryByRole("button", { name: "Approve" })).not.toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Approve" }).length).toBeGreaterThan(0);
     expect(screen.queryByRole("button", { name: /apply/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /verify/i })).not.toBeInTheDocument();
     expect(screen.getAllByText("docs/phase-8-manual-check.md").length).toBeGreaterThan(0);
@@ -112,7 +112,7 @@ describe("CodingCockpitShell", () => {
     );
   });
 
-  it("stops at preview wiring without approve, apply, or verify controls", async () => {
+  it("separates approval from apply and executes approved diff through Source Proxy route", async () => {
     vi.spyOn(globalThis, "fetch")
       .mockResolvedValueOnce(
         new Response(
@@ -145,6 +145,20 @@ describe("CodingCockpitShell", () => {
           }),
           { status: 200 },
         ),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ task: { id: "task-123" } }), { status: 200 }),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            changed_files: [{ path: "docs/phase-8-manual-check.md" }],
+            message: "Applied docs/phase-8-manual-check.md.",
+            ok: true,
+            status: "applied",
+          }),
+          { status: 200 },
+        ),
       );
 
     render(<CodingCockpitShell />);
@@ -162,14 +176,35 @@ describe("CodingCockpitShell", () => {
 
     expect(await screen.findByText(/Preview ready. No files changed yet/)).toBeInTheDocument();
     expect(screen.getByText(/approval available/)).toBeInTheDocument();
-    expect(screen.getByText(/Approval display does not apply files/)).toBeInTheDocument();
-    expect(screen.getByText(/No verification action is available here yet/)).toBeInTheDocument();
-    expect(screen.getByText(/apply controls are intentionally unavailable/i)).toBeInTheDocument();
     expect(globalThis.fetch).toHaveBeenCalledTimes(2);
-    expect(screen.queryByRole("button", { name: "Approve" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /apply/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /verify/i })).not.toBeInTheDocument();
-    expect(screen.queryByText("Task Receipt")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getAllByRole("button", { name: "Approve" })[0]);
+    expect(screen.getAllByText(/Approved, not applied/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Files are still unchanged/).length).toBeGreaterThan(0);
+    expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+
+    fireEvent.click(screen.getByRole("button", { name: "Apply approved diff" }));
+    await waitFor(() =>
+      expect(screen.getAllByText(/Applied, verification required/).length).toBeGreaterThan(0),
+    );
+    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(4));
+    expect(globalThis.fetch).toHaveBeenNthCalledWith(
+      3,
+      "/v1/tasks/long-running",
+      expect.objectContaining({ method: "POST" }),
+    );
+    expect(globalThis.fetch).toHaveBeenNthCalledWith(
+      4,
+      "/v1/actions/execute-approved",
+      expect.objectContaining({
+        body: expect.stringContaining('"approved":true'),
+        method: "POST",
+      }),
+    );
+    expect(screen.getAllByText(/Commit and push are not available here/).length).toBeGreaterThan(0);
+    expect(screen.queryByRole("button", { name: /verify/i })).not.toBeInTheDocument();
   });
 
   it("blocks protected targets in the composer UI", () => {

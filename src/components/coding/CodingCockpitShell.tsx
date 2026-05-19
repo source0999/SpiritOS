@@ -30,15 +30,20 @@ const navItems = [
 
 type PreviewState = {
   approvalAvailable: boolean;
+  approvedAt: string | null;
+  appliedAt: string | null;
+  applySummary: string;
   blocker: string | null;
   changedFiles: string[];
   diff: string;
   error: string | null;
+  isApplying: boolean;
   isLoading: boolean;
   requirementSummary: string;
   reviewerSummary: string;
-  status: "idle" | "ready" | "blocked" | "error";
+  status: "idle" | "ready" | "approved" | "applied" | "blocked" | "error";
   targetMatch: boolean;
+  taskId: string;
   taskSpecAllowed: boolean;
   verifierSummary: string;
 };
@@ -46,15 +51,20 @@ type PreviewState = {
 function idlePreviewState(): PreviewState {
   return {
     approvalAvailable: false,
+    approvedAt: null,
+    appliedAt: null,
+    applySummary: "",
     blocker: null,
     changedFiles: [],
     diff: "",
     error: null,
+    isApplying: false,
     isLoading: false,
     requirementSummary: "Waiting for preview.",
     reviewerSummary: "Waiting for preview.",
     status: "idle",
     targetMatch: false,
+    taskId: "",
     taskSpecAllowed: false,
     verifierSummary: "Waiting for preview.",
   };
@@ -82,6 +92,12 @@ function isProtectedTarget(value: string): boolean {
 }
 
 function statusStepIndex(previewState: PreviewState): number {
+  if (previewState.status === "applied") {
+    return 3;
+  }
+  if (previewState.status === "approved") {
+    return 2;
+  }
   if (previewState.approvalAvailable) {
     return 2;
   }
@@ -101,8 +117,14 @@ function nextSafeActionText({
   if (!draftReady) {
     return "Write the task, open Advanced options for target and allowed files, then preview safely. Preview does not write files.";
   }
-  if (previewState.status === "ready") {
-    return "Review the approval gates. Approval is required before apply, and apply is locked until the next approved increment.";
+  if (previewState.status === "applied") {
+    return "Applied, verification required. Commit and push are not available here.";
+  }
+  if (previewState.status === "approved") {
+    return "Apply the approved diff through Source Proxy, or reject and restart. Approval alone has not changed files.";
+  }
+  if (previewState.status === "ready" && previewState.approvalAvailable) {
+    return "Review the approval gates, then approve. Approval is required before apply.";
   }
   return "Resolve any preview blocker, then retry safe preview. No files have been changed.";
 }
@@ -155,15 +177,20 @@ export default function CodingCockpitShell() {
     setDraftReady(true);
     setPreviewState({
       approvalAvailable: false,
+      approvedAt: null,
+      appliedAt: null,
+      applySummary: "",
       blocker: null,
       changedFiles: [],
       diff: "",
       error: null,
+      isApplying: false,
       isLoading: true,
       requirementSummary: "Waiting for preview.",
       reviewerSummary: "Waiting for preview.",
       status: "idle",
       targetMatch: false,
+      taskId: "",
       taskSpecAllowed: false,
       verifierSummary: "Waiting for preview.",
     });
@@ -199,15 +226,20 @@ export default function CodingCockpitShell() {
       if (!proposedDiff) {
         setPreviewState({
           approvalAvailable: false,
+          approvedAt: null,
+          appliedAt: null,
+          applySummary: "",
           blocker: messageFromPayload(proposalPayload, proposalResponse.status),
           changedFiles: [],
           diff: "",
           error: null,
+          isApplying: false,
           isLoading: false,
           requirementSummary: "No diff returned for requirement review.",
           reviewerSummary: "No reviewer evidence available.",
           status: "blocked",
           targetMatch: false,
+          taskId: "",
           taskSpecAllowed: false,
           verifierSummary: "No verifier evidence available.",
         });
@@ -233,33 +265,127 @@ export default function CodingCockpitShell() {
       const gate = approvalGateFromPreview(diffPayload, targetFile.trim(), allowedFileList);
       setPreviewState({
         approvalAvailable: !blocked && gate.approvalAvailable,
+        approvedAt: null,
+        appliedAt: null,
+        applySummary: "",
         blocker: blocked ? blockerFromPayload(diffPayload) : null,
         changedFiles,
         diff: proposedDiff,
         error: null,
+        isApplying: false,
         isLoading: false,
         requirementSummary: gate.requirementSummary,
         reviewerSummary: gate.reviewerSummary,
         status: blocked ? "blocked" : "ready",
         targetMatch: gate.targetMatch,
+        taskId: taskIdFromPayload(diffPayload) || taskIdFromPayload(proposalPayload),
         taskSpecAllowed: gate.taskSpecAllowed,
         verifierSummary: gate.verifierSummary,
       });
     } catch (error) {
       setPreviewState({
         approvalAvailable: false,
+        approvedAt: null,
+        appliedAt: null,
+        applySummary: "",
         blocker: null,
         changedFiles: [],
         diff: "",
         error: error instanceof Error ? error.message : "Preview failed.",
+        isApplying: false,
         isLoading: false,
         requirementSummary: "Preview failed before requirement review.",
         reviewerSummary: "Preview failed before reviewer evidence.",
         status: "error",
         targetMatch: false,
+        taskId: "",
         taskSpecAllowed: false,
         verifierSummary: "Preview failed before verifier evidence.",
       });
+    }
+  }
+
+  function handleRejectPreview() {
+    setPreviewState((current) => ({
+      ...current,
+      approvalAvailable: false,
+      approvedAt: null,
+      appliedAt: null,
+      applySummary: "",
+      blocker: "Rejected by human reviewer. No files changed.",
+      status: "blocked",
+    }));
+  }
+
+  function handleApprovePreview() {
+    if (!previewState.approvalAvailable || previewState.status !== "ready") {
+      return;
+    }
+    setPreviewState((current) => ({
+      ...current,
+      approvedAt: new Date().toISOString(),
+      status: "approved",
+    }));
+  }
+
+  async function handleApplyApprovedDiff() {
+    if (!previewState.approvedAt || !previewState.diff || previewState.status !== "approved") {
+      return;
+    }
+    setPreviewState((current) => ({
+      ...current,
+      error: null,
+      isApplying: true,
+    }));
+    try {
+      let taskId = previewState.taskId;
+      if (!taskId) {
+        const taskResponse = await fetch("/v1/tasks/long-running", {
+          body: JSON.stringify({ description: task.trim() || "Coding cockpit approved diff" }),
+          headers: { "content-type": "application/json" },
+          method: "POST",
+        });
+        const taskPayload = await readJson(taskResponse);
+        if (!taskResponse.ok) {
+          throw new Error(messageFromPayload(taskPayload, taskResponse.status));
+        }
+        taskId = taskIdFromPayload(taskPayload);
+        if (!taskId) {
+          throw new Error("Long-running task create did not return a task id.");
+        }
+      }
+      const applyResponse = await fetch("/v1/actions/execute-approved", {
+        body: JSON.stringify({
+          action: `Modify ${targetFile.trim()}`,
+          approved: true,
+          approved_diff: previewState.diff,
+          target: targetFile.trim(),
+          task_id: taskId,
+        }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      });
+      const applyPayload = await readJson(applyResponse);
+      if (!applyResponse.ok) {
+        throw new Error(messageFromPayload(applyPayload, applyResponse.status));
+      }
+      const appliedFiles = changedFilesFromPayload(applyPayload);
+      setPreviewState((current) => ({
+        ...current,
+        appliedAt: new Date().toISOString(),
+        applySummary: messageFromPayload(applyPayload, applyResponse.status),
+        changedFiles: appliedFiles.length > 0 ? appliedFiles : current.changedFiles,
+        error: null,
+        isApplying: false,
+        status: "applied",
+        taskId,
+      }));
+    } catch (error) {
+      setPreviewState((current) => ({
+        ...current,
+        error: error instanceof Error ? error.message : "Approved apply failed.",
+        isApplying: false,
+      }));
     }
   }
 
@@ -543,9 +669,13 @@ export default function CodingCockpitShell() {
                   <div>
                     <h2 className="text-base font-semibold text-white">Approval State</h2>
                     <p className="mt-1 text-sm text-slate-400">
-                      {previewState.approvalAvailable
-                        ? "Preview ready. Approval is available, but apply is locked for this increment."
-                        : "Approval unavailable until preview gates pass. No files changed yet."}
+                      {previewState.status === "applied"
+                        ? "Applied. Verification required before this task is done."
+                        : previewState.status === "approved"
+                          ? "Approved, not applied. Files are still unchanged."
+                          : previewState.approvalAvailable
+                            ? "Preview ready. Approval is available. Approval is separate from apply."
+                            : "Approval unavailable until preview gates pass. No files changed yet."}
                     </p>
                   </div>
                   <span
@@ -600,13 +730,23 @@ export default function CodingCockpitShell() {
                   />
                   <GateStatus
                     label="Apply"
-                    ok={false}
-                    value="Locked in this increment. Approval display does not apply files."
+                    ok={previewState.status === "applied"}
+                    value={
+                      previewState.status === "applied"
+                        ? "Approved diff was applied through Source Proxy."
+                        : previewState.status === "approved"
+                          ? "Ready to apply approved diff through Source Proxy."
+                          : "Locked until human approval is recorded."
+                    }
                   />
                   <GateStatus
                     label="Verification"
                     ok={false}
-                    value="Runs after a separately approved apply flow. No verification action is available here yet."
+                    value={
+                      previewState.status === "applied"
+                        ? "Verification required. Run checks before treating this task as done."
+                        : "Runs after a separately approved apply flow."
+                    }
                   />
                 </dl>
 
@@ -617,7 +757,63 @@ export default function CodingCockpitShell() {
                 ) : null}
 
                 <div className="mt-4 rounded-md border border-sky-300/30 bg-sky-300/10 p-3 text-sm text-sky-100">
-                  No files changed yet. Approval state is visible for review only; apply controls are intentionally unavailable in this increment. Commit and push are not available here.
+                  {previewState.status === "applied"
+                    ? "Applied, verification required. Commit and push are not available here."
+                    : previewState.status === "approved"
+                      ? "Approved, not applied. Files are still unchanged until you apply the approved diff."
+                      : "No files changed yet. Approval is required before apply. Commit and push are not available here."}
+                </div>
+
+                <div className="mt-4 rounded-md border border-white/10 bg-slate-950/60 p-3">
+                  <div className="mb-3 text-sm font-medium text-slate-200">
+                    {previewState.status === "applied"
+                      ? "Last action: approved diff applied. Verification is required next."
+                      : previewState.status === "approved"
+                        ? "Last action: human approval recorded. No files changed yet."
+                        : "Next legal action appears after preview gates pass."}
+                  </div>
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    {previewState.status === "ready" && previewState.approvalAvailable ? (
+                      <>
+                        <button
+                          className="inline-flex min-h-11 items-center justify-center rounded-md border border-white/15 px-3 text-sm font-medium text-slate-200"
+                          onClick={handleRejectPreview}
+                          type="button"
+                        >
+                          Reject
+                        </button>
+                        <button
+                          className="inline-flex min-h-11 items-center justify-center rounded-md bg-emerald-300 px-3 text-sm font-semibold text-slate-950"
+                          onClick={handleApprovePreview}
+                          type="button"
+                        >
+                          Approve
+                        </button>
+                      </>
+                    ) : null}
+                    {previewState.status === "approved" ? (
+                      <>
+                        <button
+                          className="inline-flex min-h-11 items-center justify-center rounded-md border border-white/15 px-3 text-sm font-medium text-slate-200"
+                          onClick={handleRejectPreview}
+                          type="button"
+                        >
+                          Reject
+                        </button>
+                        <button
+                          className="inline-flex min-h-11 items-center justify-center rounded-md bg-emerald-300 px-3 text-sm font-semibold text-slate-950"
+                          disabled={previewState.isApplying}
+                          onClick={handleApplyApprovedDiff}
+                          type="button"
+                        >
+                          {previewState.isApplying ? "Applying..." : "Apply approved diff"}
+                        </button>
+                      </>
+                    ) : null}
+                  </div>
+                  {previewState.applySummary ? (
+                    <p className="mt-3 text-sm text-slate-300">{previewState.applySummary}</p>
+                  ) : null}
                 </div>
               </section>
             ) : null}
@@ -640,23 +836,66 @@ export default function CodingCockpitShell() {
         <div className="mx-auto flex max-w-6xl items-center gap-3">
           <div className="min-w-0 flex-1">
             <div className="truncate text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-              {previewState.approvalAvailable ? "Preview ready" : "Draft"}
+              {previewState.status === "applied"
+                ? "Verification required"
+                : previewState.status === "approved"
+                  ? "Approved, not applied"
+                  : previewState.approvalAvailable
+                    ? "Preview ready"
+                    : "Draft"}
             </div>
             <div className="truncate text-sm font-medium text-slate-200">
-              No files changed
+              {previewState.status === "applied" ? "Files applied" : "No files changed"}
             </div>
           </div>
-          <button
-            className={`inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-md bg-emerald-300 px-4 text-sm font-semibold text-slate-950 ${
-              canPreview ? "" : "opacity-60"
-            }`}
-            disabled={!canPreview || previewState.isLoading}
-            onClick={handleDraftPreview}
-            type="button"
-          >
-            <ShieldCheck aria-hidden="true" size={18} />
-            {previewState.isLoading ? "Previewing" : "Preview"}
-          </button>
+          {previewState.status === "ready" && previewState.approvalAvailable ? (
+            <>
+              <button
+                className="inline-flex min-h-12 shrink-0 items-center justify-center rounded-md border border-white/15 px-3 text-sm font-medium text-slate-200"
+                onClick={handleRejectPreview}
+                type="button"
+              >
+                Reject
+              </button>
+              <button
+                className="inline-flex min-h-12 shrink-0 items-center justify-center rounded-md bg-emerald-300 px-4 text-sm font-semibold text-slate-950"
+                onClick={handleApprovePreview}
+                type="button"
+              >
+                Approve
+              </button>
+            </>
+          ) : previewState.status === "approved" ? (
+            <>
+              <button
+                className="inline-flex min-h-12 shrink-0 items-center justify-center rounded-md border border-white/15 px-3 text-sm font-medium text-slate-200"
+                onClick={handleRejectPreview}
+                type="button"
+              >
+                Reject
+              </button>
+              <button
+                className="inline-flex min-h-12 shrink-0 items-center justify-center rounded-md bg-emerald-300 px-4 text-sm font-semibold text-slate-950"
+                disabled={previewState.isApplying}
+                onClick={handleApplyApprovedDiff}
+                type="button"
+              >
+                {previewState.isApplying ? "Applying" : "Apply"}
+              </button>
+            </>
+          ) : (
+            <button
+              className={`inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-md bg-emerald-300 px-4 text-sm font-semibold text-slate-950 ${
+                canPreview ? "" : "opacity-60"
+              }`}
+              disabled={!canPreview || previewState.isLoading}
+              onClick={handleDraftPreview}
+              type="button"
+            >
+              <ShieldCheck aria-hidden="true" size={18} />
+              {previewState.isLoading ? "Previewing" : "Preview"}
+            </button>
+          )}
         </div>
       </div>
     </main>
@@ -716,6 +955,17 @@ function changedFilesFromPayload(payload: unknown): string[] {
 
 function statusFromPayload(payload: unknown): string {
   return stringValue(asRecord(payload).status) ?? "";
+}
+
+function taskIdFromPayload(payload: unknown): string {
+  const record = asRecord(payload);
+  return (
+    stringValue(record.task_id) ??
+    stringValue(record.taskId) ??
+    stringValue(asRecord(record.task).id) ??
+    stringValue(asRecord(asRecord(record.data).task).id) ??
+    ""
+  );
 }
 
 function blockerFromPayload(payload: unknown): string {
