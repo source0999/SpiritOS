@@ -55,6 +55,7 @@ def execute_approved_action(
     *,
     task_id: str,
     action: str,
+    approval_id: str,
     approved_diff: str,
     target: str | None = None,
     approved_by: str = "human",
@@ -69,6 +70,7 @@ def execute_approved_action(
     return execute_approved_long_running_task(
         task_id,
         action=action,
+        approval_id=approval_id,
         approved_by=approved_by,
         approved_diff=approved_diff,
         target=target,

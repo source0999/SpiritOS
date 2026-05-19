@@ -1365,7 +1365,21 @@ def _clean_repo_path(raw_path: str, *, strip_diff_prefix: bool) -> str:
             path = candidate
             continue
         break
-    return path
+    return _remove_current_directory_segments(path)
+
+
+def _remove_current_directory_segments(path: str) -> str:
+    if not path:
+        return ""
+    absolute = path.startswith("/")
+    trailing_slash = path.endswith("/") and path != "/"
+    parts = [part for part in path.split("/") if part and part != "."]
+    normalized = "/".join(parts)
+    if absolute:
+        normalized = f"/{normalized}"
+    if trailing_slash and normalized and not normalized.endswith("/"):
+        normalized = f"{normalized}/"
+    return normalized
 
 
 def _normalize_task_spec_path(raw_path: str) -> str:

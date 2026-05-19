@@ -1,21 +1,33 @@
 from __future__ import annotations
 
 from hashlib import sha256
+from pathlib import Path
+import subprocess
 
 from source_proxy.cartographer.component_mapper import map_paths
-from source_proxy.cartographer.git_status import read_git_statuses
+from source_proxy.cartographer.git_status import read_git_status_for_project, read_git_statuses
 from source_proxy.cartographer.models import CommitProposal, GitStatus, ProposalRecord
 from source_proxy.cartographer.proposals import list_proposals
 
 
 COMMIT_READY_STATES = {"applied", "commit_pending"}
 RISK_ORDER = {"low": 0, "medium": 1, "high": 2, "blocked": 3, "unknown": 4}
+REQUIRED_COMMIT_CHECKS = [
+    "git_diff_check",
+    "blueprint_metadata_validation",
+    "cartographer_pytest",
+]
 
 
 def build_commit_proposals() -> list[CommitProposal]:
+    statuses = read_git_statuses()
+    if not statuses:
+        cwd = Path.cwd()
+        if (cwd / ".git").exists():
+            statuses = [read_git_status_for_project(project_id=cwd.name.lower(), root=cwd)]
     git_by_project = {
         status.project_id: status
-        for status in read_git_statuses()
+        for status in statuses
         if status.project_id and status.available
     }
     proposals: list[CommitProposal] = []
@@ -58,20 +70,38 @@ def _commit_proposal(
     git_status: GitStatus,
 ) -> CommitProposal:
     component, risk = _component_and_risk(files)
+    purpose = _purpose_for_files(files)
     staged_files, unstaged_files, untracked_files = _status_buckets(files, git_status)
+    excluded_files = _excluded_files(files, git_status)
+    verification_status, verification_checks, verification_blockers = _proposal_verification(proposal)
+    commit_blockers = [*_commit_blockers(risk), *verification_blockers]
     return CommitProposal(
         commit_proposal_id=_commit_proposal_id(proposal, files),
         project_id=proposal.project_id,
         source_proposal_id=proposal.proposal_id,
         status="commit_pending",
         suggested_message=_suggested_message(proposal),
+        story=_story_for_group(component, risk, purpose),
+        group_key=_group_key(component, risk, purpose),
+        group_reason=_group_reason(component, risk, purpose),
         files=files,
+        included_files=files,
+        excluded_files=excluded_files,
         reason=(
             f"Proposal {proposal.proposal_id} is {proposal.status}; "
             "package reviewed files into a commit only after approval."
         ),
         component=component,
         risk=risk,
+        diff_summary=_diff_summary(git_status, files),
+        required_checks=REQUIRED_COMMIT_CHECKS,
+        verification_status=verification_status,
+        verification_checks=verification_checks,
+        audit_state="commit_not_created",
+        rollback_command=_rollback_command(),
+        stronger_confirmation_required=_stronger_confirmation_required(risk),
+        commit_blocked=bool(commit_blockers),
+        commit_blockers=commit_blockers,
         generated=False,
         staged_files=staged_files,
         unstaged_files=unstaged_files,
@@ -96,6 +126,8 @@ def _dirty_tree_commit_proposals(
     proposals: list[CommitProposal] = []
     for (component, risk, purpose), files in sorted(grouped.items()):
         staged_files, unstaged_files, untracked_files = _status_buckets(files, git_status)
+        excluded_files = _excluded_files(files, git_status)
+        commit_blockers = _commit_blockers(risk)
         proposals.append(
             CommitProposal(
                 commit_proposal_id=_dirty_commit_proposal_id(
@@ -109,13 +141,27 @@ def _dirty_tree_commit_proposals(
                 source_proposal_id="dirty-tree",
                 status="commit_pending",
                 suggested_message=_dirty_tree_message(component, risk, purpose),
+                story=_story_for_group(component, risk, purpose),
+                group_key=_group_key(component, risk, purpose),
+                group_reason=_group_reason(component, risk, purpose),
                 files=files,
+                included_files=files,
+                excluded_files=excluded_files,
                 reason=(
                     "Dirty tree files are grouped by component, risk, and purpose; "
                     "stage and commit only after explicit approval."
                 ),
                 component=component,
                 risk=risk,
+        diff_summary=_diff_summary(git_status, files),
+        required_checks=REQUIRED_COMMIT_CHECKS,
+        verification_status="manual_dirty_tree_review_required",
+        verification_checks=[],
+        audit_state="commit_not_created",
+                rollback_command=_rollback_command(),
+                stronger_confirmation_required=_stronger_confirmation_required(risk),
+                commit_blocked=bool(commit_blockers),
+                commit_blockers=commit_blockers,
                 generated=True,
                 staged_files=staged_files,
                 unstaged_files=unstaged_files,
@@ -157,9 +203,11 @@ def _component_and_risk(files: list[str]) -> tuple[str, str]:
     components, unmapped = map_paths(files)
     if components:
         component = components[0].component_id
-        risks = [component.risk for component in components]
+        risks: list[str] = []
         for item in components:
             risks.extend(item.matched_path_risks.values())
+        if not risks:
+            risks = [component.risk for component in components]
     else:
         component = "unknown"
         risks = [item.risk for item in unmapped] or ["unknown"]
@@ -180,6 +228,77 @@ def _status_buckets(
     )
 
 
+def _excluded_files(files: list[str], git_status: GitStatus) -> list[str]:
+    included = {_normalize_repo_path(path) for path in files}
+    return [
+        _normalize_repo_path(path)
+        for path in git_status.changed_files
+        if _normalize_repo_path(path) not in included
+    ]
+
+
+def _diff_summary(git_status: GitStatus, files: list[str]) -> str:
+    if not git_status.root:
+        return f"{len(files)} file(s) selected for commit preview."
+    result = subprocess.run(
+        ["git", "diff", "--stat", "--", *files],
+        cwd=git_status.root,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    output = result.stdout.strip()
+    if output:
+        return output
+    if any(path in {_normalize_repo_path(item) for item in git_status.untracked_files} for path in files):
+        return f"{len(files)} untracked file(s) selected for commit preview."
+    return f"{len(files)} file(s) selected for commit preview."
+
+
+def _commit_blockers(risk: str) -> list[str]:
+    if risk == "unknown":
+        return ["unknown_files_require_manual_classification"]
+    if risk == "blocked":
+        return ["blocked_files_cannot_be_committed_by_cartographer"]
+    return []
+
+
+def _proposal_verification(proposal: ProposalRecord) -> tuple[str, list[dict[str, object]], list[str]]:
+    verification = proposal.post_apply_verification
+    if not isinstance(verification, dict):
+        return "missing", [], ["post_apply_verification_missing"]
+
+    status = str(verification.get("status") or "unknown")
+    checks = [
+        check
+        for check in verification.get("checks", [])
+        if isinstance(check, dict)
+    ]
+    blockers: list[str] = []
+    if status != "verified":
+        blockers.append(
+            "post_apply_verification_failed"
+            if status in {"failed", "verification_failed"}
+            else "post_apply_verification_incomplete"
+        )
+    if bool(verification.get("commit_proposal_blocked")):
+        blockers.extend(
+            str(item)
+            for item in verification.get("commit_blockers", [])
+            if item
+        )
+    return status, checks, list(dict.fromkeys(blockers))
+
+
+def _stronger_confirmation_required(risk: str) -> bool:
+    return risk in {"high", "blocked", "unknown"}
+
+
+def _rollback_command() -> str:
+    return "git reset --soft HEAD~1"
+
+
 def _purpose_for_path(path: str) -> str:
     lowered = path.lower()
     if "soak-log" in lowered or "/soak-logs/" in lowered:
@@ -189,6 +308,38 @@ def _purpose_for_path(path: str) -> str:
     if "/tests/" in lowered or "/__tests__/" in lowered or lowered.endswith(".test.ts") or lowered.endswith("_test.py"):
         return "test"
     return "code"
+
+
+def _purpose_for_files(files: list[str]) -> str:
+    purposes = sorted({_purpose_for_path(path) for path in files})
+    if len(purposes) == 1:
+        return purposes[0]
+    return "mixed"
+
+
+def _group_key(component: str, risk: str, purpose: str) -> str:
+    return f"{component}:{risk}:{purpose}"
+
+
+def _group_reason(component: str, risk: str, purpose: str) -> str:
+    return (
+        f"Grouped as {component} {purpose} work with {risk} risk so review can keep "
+        "unrelated commit stories separate before approval."
+    )
+
+
+def _story_for_group(component: str, risk: str, purpose: str) -> str:
+    if risk in {"high", "blocked"}:
+        return f"{_display_component(component)} safety hardening"
+    if purpose == "soak":
+        return f"{_display_component(component)} soak evidence"
+    if purpose == "docs":
+        return f"{_display_component(component)} docs/runbook update"
+    if purpose == "test":
+        return f"{_display_component(component)} test fix"
+    if purpose == "mixed":
+        return f"{_display_component(component)} reviewed change set"
+    return f"{_display_component(component)} implementation update"
 
 
 def _dirty_tree_message(component: str, risk: str, purpose: str) -> str:
@@ -205,6 +356,12 @@ def _commit_scope(component: str) -> str:
     if component in {"blueprint-system", "cartographer-api-bridge"}:
         return "cartographer"
     return component.replace("_", "-") or "work"
+
+
+def _display_component(component: str) -> str:
+    if component == "unknown":
+        return "Unknown file"
+    return component.replace("-", " ").replace("_", " ").title()
 
 
 def _max_risk(risks: list[str]) -> str:

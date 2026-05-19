@@ -12,7 +12,7 @@ from source_proxy.cartographer.project_discovery import discover_projects
 from source_proxy.cartographer.proposals import PROPOSAL_STATES, list_proposals
 
 
-ReviewDecision = Literal["approve", "reject", "request_edit"]
+ReviewDecision = Literal["approve", "reject", "request_edit", "defer", "mark_stale"]
 
 
 class CartographerProposalReviewError(ValueError):
@@ -29,7 +29,7 @@ def review_blueprint_proposal(
     reason: str | None = None,
     proposal_snapshot: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    if decision not in {"approve", "reject", "request_edit"}:
+    if decision not in {"approve", "reject", "request_edit", "defer", "mark_stale"}:
         raise CartographerProposalReviewError(
             "Unknown proposal review decision.",
             "invalid_review_decision",
@@ -75,6 +75,18 @@ def review_blueprint_proposal(
         payload["rejected_by"] = actor or "dashboard-blueprint-review"
         payload["rejected_at"] = timestamp
         payload["rejection_reason"] = reason or "Rejected from dashboard review."
+        payload["applied"] = False
+        payload["action_taken"] = False
+    elif decision == "defer":
+        payload["deferred_by"] = actor or "dashboard-blueprint-review"
+        payload["deferred_at"] = timestamp
+        payload["review_note"] = reason or "Deferred from dashboard review."
+        payload["applied"] = False
+        payload["action_taken"] = False
+    elif decision == "mark_stale":
+        payload["marked_stale_by"] = actor or "dashboard-blueprint-review"
+        payload["marked_stale_at"] = timestamp
+        payload["review_note"] = reason or "Marked stale from dashboard review."
         payload["applied"] = False
         payload["action_taken"] = False
     else:
@@ -131,6 +143,8 @@ def _proposal_from_snapshot(proposal_id: str, payload: dict[str, Any]) -> Propos
         diff_preview=str(payload["diff_preview"]) if payload.get("diff_preview") is not None else None,
         confidence=str(payload["confidence"]) if payload.get("confidence") is not None else None,
         rationale=str(payload["rationale"]) if payload.get("rationale") is not None else None,
+        source_drift_id=str(payload["source_drift_id"]) if payload.get("source_drift_id") is not None else None,
+        review_note=str(payload["review_note"]) if payload.get("review_note") is not None else None,
         generated=bool(payload.get("generated", True)),
         persisted=False,
         transitions=[
@@ -160,6 +174,10 @@ def _status_for_decision(decision: ReviewDecision) -> str:
         return "approved"
     if decision == "reject":
         return "rejected"
+    if decision == "defer":
+        return "deferred"
+    if decision == "mark_stale":
+        return "stale"
     return "drafted"
 
 

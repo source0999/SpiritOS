@@ -125,6 +125,11 @@ def _find_item(kind: ApprovalKind, item_id: str) -> dict[str, Any] | None:
                     "recommendation_id": item.recommendation_id,
                     "current_branch": item.current_branch,
                     "suggested_branch": item.suggested_branch,
+                    "source_head": item.source_head,
+                    "dirty_state_requirement": item.dirty_state_requirement,
+                    "rollback_command": item.rollback_command,
+                    "branch_exists": item.branch_exists,
+                    "preview_generated": item.preview_generated,
                     "related_files": item.related_files,
                     "status": item.status,
                     "branch_creation_enabled": item.branch_creation_enabled,
@@ -139,6 +144,18 @@ def _find_item(kind: ApprovalKind, item_id: str) -> dict[str, Any] | None:
                     "source_proposal_id": item.source_proposal_id,
                     "suggested_message": item.suggested_message,
                     "files": item.files,
+                    "included_files": item.included_files,
+                    "excluded_files": item.excluded_files,
+                    "risk": item.risk,
+                    "diff_summary": item.diff_summary,
+                    "required_checks": item.required_checks,
+                    "verification_status": item.verification_status,
+                    "verification_checks": item.verification_checks,
+                    "audit_state": item.audit_state,
+                    "rollback_command": item.rollback_command,
+                    "stronger_confirmation_required": item.stronger_confirmation_required,
+                    "commit_blocked": item.commit_blocked,
+                    "commit_blockers": item.commit_blockers,
                     "status": item.status,
                     "commit_enabled": item.commit_enabled,
                     "action_taken": item.action_taken,
@@ -152,8 +169,23 @@ def _find_item(kind: ApprovalKind, item_id: str) -> dict[str, Any] | None:
                     "remote": item.remote,
                     "branch": item.branch,
                     "upstream": item.upstream,
+                    "ahead": item.ahead,
+                    "behind": item.behind,
                     "commits_ahead": item.commits_ahead,
+                    "commits_to_push": item.commits_to_push,
                     "files": item.files,
+                    "audit_status": item.audit_status,
+                    "commit_audit_status": item.commit_audit_status,
+                    "test_status": item.test_status,
+                    "dirty": item.dirty,
+                    "drift_status": item.drift_status,
+                    "push_command_preview": item.push_command_preview,
+                    "rollback_guidance": item.rollback_guidance,
+                    "approval_status": item.approval_status,
+                    "reason_codes": item.reason_codes,
+                    "push_blockers": item.push_blockers,
+                    "branch_protection_warnings": item.branch_protection_warnings,
+                    "remote_status": item.remote_status,
                     "status": item.status,
                     "push_enabled": item.push_enabled,
                     "action_taken": item.action_taken,
@@ -233,6 +265,7 @@ def _create_approved_branch(
         )
 
     before_branch = _current_branch(project_root)
+    source_head = _git(project_root, "rev-parse", "HEAD").stdout.strip()
     result = _git(project_root, "switch", "-c", branch_name)
     if result.returncode != 0:
         raise CartographerGitApprovalError(
@@ -241,6 +274,7 @@ def _create_approved_branch(
         )
 
     timestamp = _now_timestamp()
+    rollback_command = _branch_rollback_command(before_branch, branch_name)
     event = {
         "event": "branch_created",
         "approved_at": timestamp,
@@ -252,6 +286,8 @@ def _create_approved_branch(
         "changed_files": item.get("related_files") or [],
         "branch": branch_name,
         "previous_branch": before_branch,
+        "source_head": source_head,
+        "rollback_command": rollback_command,
         "remote": None,
         "action_taken": True,
         "branch_created": True,
@@ -269,6 +305,8 @@ def _create_approved_branch(
         "approved_at": timestamp,
         "branch": branch_name,
         "previous_branch": before_branch,
+        "source_head": source_head,
+        "rollback_command": rollback_command,
         "item": item,
         "actions_taken": True,
         "branch_created": True,
@@ -305,12 +343,25 @@ def _create_approved_commit(
             "Commit proposal has no files to commit.",
             "commit_proposal_empty",
         )
+    commit_blockers = item.get("commit_blockers")
+    if item.get("commit_blocked") or commit_blockers:
+        raise CartographerGitApprovalError(
+            "Commit proposal is blocked until preview blockers are resolved.",
+            str((commit_blockers or ["commit_preview_blocked"])[0]),
+        )
+    staged_conflicts = _staged_files_outside_approval(project_root, files)
+    if staged_conflicts:
+        raise CartographerGitApprovalError(
+            "Unrelated staged files would make the commit larger than the reviewed file set.",
+            "unrelated_staged_files_present",
+        )
     message = str(item.get("suggested_message") or "").strip()
     if not message:
         raise CartographerGitApprovalError(
             "Commit proposal has no approved commit message.",
             "commit_message_required",
         )
+    parent_sha = _git(project_root, "rev-parse", "HEAD").stdout.strip()
 
     checks = _run_commit_checks(project_root, files)
     failing = [check for check in checks if check["status"] == "failed"]
@@ -327,7 +378,7 @@ def _create_approved_commit(
             "git_add_failed",
         )
 
-    commit_result = _git(project_root, "commit", "-m", message)
+    commit_result = _git(project_root, "commit", "-m", message, "--", *files)
     if commit_result.returncode != 0:
         raise CartographerGitApprovalError(
             (commit_result.stderr or commit_result.stdout or "Git commit failed.").strip(),
@@ -337,6 +388,8 @@ def _create_approved_commit(
     commit_sha = _git(project_root, "rev-parse", "HEAD").stdout.strip()
     branch = _current_branch(project_root)
     timestamp = _now_timestamp()
+    excluded_files = _string_list(item.get("excluded_files"))
+    rollback_command = f"git reset --hard {parent_sha}"
     event = {
         "event": "commit_created",
         "approved_at": timestamp,
@@ -346,9 +399,13 @@ def _create_approved_commit(
         "project_id": item["project_id"],
         "result": "commit_created",
         "changed_files": files,
+        "approved_files": files,
+        "excluded_files": excluded_files,
         "branch": branch,
+        "parent_sha": parent_sha,
         "commit_sha": commit_sha,
         "commit_message": message,
+        "rollback_command": rollback_command,
         "remote": None,
         "action_taken": True,
         "branch_created": False,
@@ -367,8 +424,12 @@ def _create_approved_commit(
         "approved_at": timestamp,
         "item": item,
         "branch": branch,
+        "parent_sha": parent_sha,
         "commit_sha": commit_sha,
         "commit_message": message,
+        "approved_files": files,
+        "excluded_files": excluded_files,
+        "rollback_command": rollback_command,
         "checks": checks,
         "actions_taken": True,
         "branch_created": False,
@@ -407,6 +468,26 @@ def _run_approved_push(
             "push_target_required",
         )
     _validate_safe_branch_name(branch)
+    if item.get("commit_audit_status") != "recorded":
+        raise CartographerGitApprovalError(
+            "Push is blocked until every commit to push has a commit_created audit record.",
+            "commit_audit_missing",
+        )
+    if item.get("test_status") != "passed":
+        raise CartographerGitApprovalError(
+            "Push is blocked until the audited commit has passing required checks.",
+            "required_checks_not_passed",
+        )
+    if item.get("dirty"):
+        raise CartographerGitApprovalError(
+            "Push is blocked while the working tree is dirty.",
+            "working_tree_dirty",
+        )
+    if item.get("drift_status") == "open":
+        raise CartographerGitApprovalError(
+            "Push is blocked while Cartographer drift is open.",
+            "blueprint_drift_open",
+        )
 
     upstream = item.get("upstream")
     push_args = ["push", remote, branch]
@@ -433,12 +514,21 @@ def _run_approved_push(
         "remote": remote,
         "upstream": item.get("upstream"),
         "commits_ahead": item.get("commits_ahead"),
+        "commits_to_push": item.get("commits_to_push") or [],
+        "push_command_preview": item.get("push_command_preview"),
+        "rollback_guidance": item.get("rollback_guidance"),
+        "branch_protection_warnings": item.get("branch_protection_warnings") or [],
+        "remote_status": item.get("remote_status") or {},
         "action_taken": True,
         "branch_created": False,
         "commit_created": False,
         "push_ran": True,
     }
     _append_approval_record(event)
+    completed_event = dict(event)
+    completed_event["event"] = "push_completed"
+    completed_event["result"] = "push_completed"
+    _append_approval_record(completed_event)
 
     return {
         "status": "pushed",
@@ -450,13 +540,16 @@ def _run_approved_push(
         "item": item,
         "remote": remote,
         "branch": branch,
+        "commits_to_push": item.get("commits_to_push") or [],
+        "push_command_preview": item.get("push_command_preview"),
+        "rollback_guidance": item.get("rollback_guidance"),
         "actions_taken": True,
         "branch_created": False,
         "commit_created": False,
         "push_ran": True,
         "committed": False,
         "pushed": True,
-        "next_step": "Push completed; review merge readiness before merging.",
+        "next_step": "Push completed and audited; review merge readiness before merging.",
         "safety": {
             "approval_recorded": True,
             "branch_creation_enabled": False,
@@ -476,6 +569,30 @@ def _approval_files(item: dict[str, Any]) -> list[str]:
         if normalized and not normalized.startswith("/") and ".." not in normalized.split("/"):
             files.append(normalized)
     return files
+
+
+def _string_list(value: object) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    values: list[str] = []
+    for item in value:
+        normalized = str(item).strip().replace("\\", "/")
+        if normalized:
+            values.append(normalized)
+    return values
+
+
+def _staged_files_outside_approval(project_root: Path, files: list[str]) -> list[str]:
+    approved = set(files)
+    result = _git(project_root, "diff", "--cached", "--name-only")
+    if result.returncode != 0:
+        return []
+    staged = [line.strip().replace("\\", "/") for line in result.stdout.splitlines() if line.strip()]
+    return [path for path in staged if path not in approved]
+
+
+def _branch_rollback_command(previous_branch: str, branch_name: str) -> str:
+    return f"git switch {previous_branch} && git branch -D {branch_name}"
 
 
 def _run_commit_checks(project_root: Path, files: list[str]) -> list[dict[str, Any]]:

@@ -5,7 +5,7 @@ from fnmatch import fnmatchcase
 from source_proxy.cartographer.models import ComponentMapping, UnmappedPath
 
 
-RISK_ORDER = {"low": 0, "medium": 1, "high": 2, "blocked": 3, "unknown": 4}
+RISK_ORDER = {"low": 0, "medium": 1, "unknown": 2, "high": 3, "blocked": 4}
 
 COMPONENT_RULES: tuple[ComponentMapping, ...] = (
     ComponentMapping(
@@ -60,8 +60,20 @@ COMPONENT_RULES: tuple[ComponentMapping, ...] = (
     ComponentMapping(
         component_id="chat-workspace",
         label="Chat workspace",
-        paths=["src/app/chat/**", "src/components/chat/**", "src/hooks/useSpirit*"],
+        paths=[
+            "chatDesign/components/chat/**",
+            "src/app/chat/**",
+            "src/components/chat/**",
+            "src/hooks/useSpirit*",
+        ],
         blueprint_id="chat-workspace",
+        risk="medium",
+    ),
+    ComponentMapping(
+        component_id="server-capabilities",
+        label="Server capabilities",
+        paths=["src/lib/server/capabilities/**"],
+        blueprint_id="system-state",
         risk="medium",
     ),
     ComponentMapping(
@@ -230,6 +242,7 @@ def _risk_for_path(path: str) -> str:
         lowered.startswith("docs/")
         or lowered == "readme.md"
         or lowered.startswith("_blueprints/")
+        or "/soak-logs/" in lowered
         or "/runbooks/" in lowered
         or "/tests/" in lowered
         or lowered.endswith(".test.ts")
@@ -239,9 +252,11 @@ def _risk_for_path(path: str) -> str:
         return "low"
 
     if (
-        lowered.startswith("src/components/dashboard/")
+        lowered.startswith("chatdesign/")
+        or lowered.startswith("src/components/dashboard/")
         or lowered.startswith("src/components/coding/")
         or lowered.startswith("src/app/")
+        or lowered.startswith("src/lib/server/")
         or lowered.startswith("source_proxy/")
         or lowered.startswith("scout/")
         or lowered.startswith("scripts/spiritdesktop-windows/")

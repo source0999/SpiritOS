@@ -1,4 +1,5 @@
 import { sourceProxyFetch } from "@/lib/source-proxy-origin";
+import { createHash } from "crypto";
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -27,6 +28,12 @@ export async function POST(request: Request) {
       ? record.task_id
       : typeof record.taskId === "string"
         ? record.taskId
+        : "";
+  const approvalId =
+    typeof record.approval_id === "string"
+      ? record.approval_id
+      : typeof record.approvalId === "string"
+        ? record.approvalId
         : "";
 
   if (!approved) {
@@ -60,6 +67,21 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
+  const expectedApprovalId = approvalIdForApprovedDiff({
+    approvedDiff,
+    target,
+    taskId,
+  });
+  if (approvalId.trim() && approvalId !== expectedApprovalId) {
+    return Response.json(
+      {
+        error:
+          "execute-approved approval_id does not match task_id, target, and approved_diff.",
+        expected_approval_id: expectedApprovalId,
+      },
+      { status: 409 },
+    );
+  }
 
   // Approved real diffs execute through Source proxy's long-running task layer.
   // That keeps diff verification, workspace writes, progress, and audit logging
@@ -77,6 +99,7 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         action,
         approved: true,
+        approval_id: expectedApprovalId,
         approved_by: "coding-ui",
         approved_diff: approvedDiff,
         target,
@@ -95,4 +118,18 @@ export async function POST(request: Request) {
     status: response.status,
     statusText: response.statusText,
   });
+}
+
+function approvalIdForApprovedDiff({
+  approvedDiff,
+  target,
+  taskId,
+}: {
+  approvedDiff: string;
+  target: string;
+  taskId: string;
+}) {
+  const diffHash = createHash("sha256").update(approvedDiff).digest("hex");
+  const key = [taskId.trim(), target.trim(), diffHash].join("|");
+  return `approval-${createHash("sha256").update(key).digest("hex").slice(0, 16)}`;
 }

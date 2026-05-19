@@ -5,6 +5,7 @@ from collections import Counter
 import datetime as dt
 import json
 import os
+import ssl
 import subprocess
 import sys
 import urllib.error
@@ -33,7 +34,9 @@ PROFILE_GLOBAL_SAFETY_REGRESSION = "global-safety-regression"
 PROFILE_DEPENDENCY_ENVIRONMENT_CHECKS = "dependency-environment-checks"
 PROFILE_MOBILE_LAN_TAILSCALE_QA = "mobile-lan-tailscale-qa"
 DEFAULT_SCOUT_BASE_URL = "http://localhost:8077"
-DEFAULT_CARTOGRAPHER_DASHBOARD_URL = "http://localhost:3000"
+DEFAULT_CARTOGRAPHER_DASHBOARD_URL = "https://localhost:3000"
+GLOBAL_SAFETY_SOURCE_PROXY_TIMEOUT_SECONDS = 180
+GLOBAL_SAFETY_SCOUT_BACKEND_TIMEOUT_SECONDS = 300
 SCOUT_CONTAINER_NAME = "scout_v0_1"
 SCOUT_SEARCH_PROBE_URLS = [
     "http://spirit-searxng:8080/search?q=fastapi&format=json",
@@ -185,32 +188,178 @@ def _run_proxy_regression_profile() -> dict[str, Any]:
 
 def _run_proxy_closeout_profile() -> dict[str, Any]:
     before = _git_status_short()
+    before_head = _git_head()
     smoke_payload = _run_proxy_smoke_profile()
     regression_payload = _run_proxy_regression_profile()
+    codex_adapter = _run_command(
+        [
+            sys.executable,
+            "-m",
+            "pytest",
+            "source_proxy/tests/test_codex_cli_adapter.py",
+            "source_proxy/tests/test_source_proxy_end_to_end.py",
+        ],
+        timeout_seconds=120,
+    )
+    dashboard_smoke = _run_dashboard_smoke_tests()
+    route_validation = _proxy_closeout_route_validation()
+    cartographer_health = _proxy_closeout_cartographer_health(route_validation["project_health"])
     after = _git_status_short()
-    changed_by_test_run = before != after
+    after_head = _git_head()
+    status_delta = _git_status_delta(before, after)
+    unexpected_status_delta = _unexpected_status_delta(status_delta)
+    head_changed = bool(before_head and after_head and before_head != after_head)
+    changed_by_test_run = bool(unexpected_status_delta or head_changed)
     safety = smoke_payload["safety_verdict"]
+    checks = {
+        "safety_seed": smoke_payload["result"] == "pass",
+        "proxy_regression": regression_payload["result"] == "pass",
+        "codex_adapter": codex_adapter["returncode"] == 0,
+        "dashboard_smoke": dashboard_smoke["returncode"] == 0,
+        "route_validation": route_validation["ok"],
+        "cartographer_project_health": cartographer_health["ok"],
+        "no_unexpected_file_changes": not changed_by_test_run,
+        "safety_verdict": all(safety.values()),
+    }
+    blockers = _proxy_closeout_blockers(checks, route_validation, cartographer_health, changed_by_test_run)
     result = (
         "pass"
-        if smoke_payload["result"] == "pass"
-        and regression_payload["result"] == "pass"
-        and all(safety.values())
+        if all(checks.values())
+        else "warn"
+        if checks["safety_seed"]
+        and checks["proxy_regression"]
+        and checks["codex_adapter"]
+        and checks["dashboard_smoke"]
+        and checks["safety_verdict"]
         and not changed_by_test_run
         else "fail"
     )
     return {
         "profile": PROFILE_PROXY_CLOSEOUT,
         "result": result,
+        "closeout_status": "PASS" if result == "pass" else "WARN" if result == "warn" else "BLOCKED",
         "smoke_harness": smoke_payload["smoke_harness"],
         "safety_verdict": safety,
         "regression_tests": regression_payload["regression_tests"],
+        "codex_adapter_tests": codex_adapter,
+        "dashboard_smoke_tests": dashboard_smoke,
+        "route_validation": route_validation,
+        "cartographer_project_health": cartographer_health,
+        "checks": checks,
+        "blockers": blockers,
+        "next_safe_action": _proxy_closeout_next_safe_action(result, blockers),
         "file_change_verdict": {
             "before": before,
             "after": after,
+            "head_before": before_head,
+            "head_after": after_head,
+            "status_delta": status_delta,
+            "unexpected_status_delta": unexpected_status_delta,
+            "head_changed": head_changed,
             "changed_by_test_run": changed_by_test_run,
         },
-        "recommendation": "ready for next increment" if result == "pass" else "fix needed",
+        "recommendation": "ready for next increment" if result == "pass" else "review warnings" if result == "warn" else "fix needed",
     }
+
+
+def _run_dashboard_smoke_tests() -> dict[str, Any]:
+    missing = [test_file for test_file in DASHBOARD_SMOKE_TEST_FILES if not Path(test_file).is_file()]
+    if missing:
+        return {
+            "command": _format_command(_vitest_command(DASHBOARD_SMOKE_TEST_FILES)),
+            "returncode": None,
+            "stdout": "",
+            "stderr": "",
+            "error": f"missing dashboard smoke files: {', '.join(missing)}",
+        }
+    return _run_command(_vitest_command(DASHBOARD_SMOKE_TEST_FILES), timeout_seconds=180)
+
+
+def _proxy_closeout_route_validation() -> dict[str, Any]:
+    base_url = _cartographer_dashboard_url()
+    checks = {
+        "self_status": _http_get_json(f"{base_url}/v1/self/status", timeout_seconds=10),
+        "codex_route": _http_post_json(
+            f"{base_url}/v1/coding/codex",
+            {
+                "mode": "readonly",
+                "task": "Closeout route validation.",
+                "allowed_files": [],
+                "target_file": None,
+            },
+            timeout_seconds=15,
+        ),
+        "project_health": _http_get_json(f"{base_url}/v1/cartographer/project-health", timeout_seconds=15),
+    }
+    codex_body = _body_dict(checks["codex_route"])
+    ok = (
+        checks["self_status"]["ok"]
+        and checks["codex_route"]["status"] in {200, 400, 502}
+        and codex_body.get("apply_authority") is not True
+        and codex_body.get("commit_authority") is not True
+        and codex_body.get("push_authority") is not True
+        and checks["project_health"]["ok"]
+    )
+    return {
+        "ok": ok,
+        "base_url": base_url,
+        "checks": checks,
+        "project_health": checks["project_health"],
+    }
+
+
+def _proxy_closeout_cartographer_health(project_health_check: dict[str, Any]) -> dict[str, Any]:
+    body = _body_dict(project_health_check)
+    projects = _dict_list(body.get("projects"))
+    first = _first_dict(projects)
+    blockers = _list_value(first.get("merge_blockers")) if first else []
+    expected_evidence = _list_value(first.get("expected_evidence_files")) if first else []
+    unsafe_dirty = _list_value(first.get("unsafe_dirty_files")) if first else []
+    ok = bool(project_health_check.get("ok")) and body.get("write_actions_enabled") is False
+    return {
+        "ok": ok,
+        "project_count": len(projects),
+        "project_id": first.get("project_id") if first else None,
+        "status": first.get("status") if first else None,
+        "dirty": first.get("dirty") if first else None,
+        "dirty_file_count": first.get("dirty_file_count") if first else 0,
+        "expected_evidence_files": expected_evidence,
+        "unsafe_dirty_files": unsafe_dirty,
+        "merge_ready": first.get("merge_ready") if first else None,
+        "merge_blockers": blockers,
+        "recommended_next_step": first.get("recommended_next_step") if first else "project health unavailable",
+        "write_actions_enabled": body.get("write_actions_enabled"),
+        "actions_taken": body.get("actions_taken"),
+    }
+
+
+def _proxy_closeout_blockers(
+    checks: dict[str, bool],
+    route_validation: dict[str, Any],
+    cartographer_health: dict[str, Any],
+    changed_by_test_run: bool,
+) -> list[str]:
+    blockers = [name for name, passed in checks.items() if not passed]
+    if not route_validation["ok"]:
+        failed_routes = [
+            name
+            for name, check in route_validation["checks"].items()
+            if not check.get("ok") and check.get("status") not in {400, 502}
+        ]
+        blockers.extend(f"route_unavailable:{name}" for name in failed_routes)
+    if changed_by_test_run:
+        blockers.append("closeout_changed_files_or_head")
+    if cartographer_health.get("write_actions_enabled") is not False:
+        blockers.append("cartographer_write_actions_enabled")
+    return sorted(set(blockers))
+
+
+def _proxy_closeout_next_safe_action(result: str, blockers: list[str]) -> str:
+    if result == "pass":
+        return "continue to the next increment"
+    if blockers:
+        return f"fix or inspect blocker: {blockers[0]}"
+    return "inspect closeout warnings before continuing"
 
 
 def _run_cartographer_safety_profile() -> dict[str, Any]:
@@ -322,8 +471,9 @@ def _run_cartographer_soak_snapshot_profile(
         push_queue=push_queue,
         audit=audit,
     )
+    autonomy = _cartographer_autonomy_escalation_check(summary)
     reliability = _cartographer_reliability_score(summary)
-    warnings = _cartographer_soak_warnings(summary)
+    warnings = _cartographer_soak_warnings(summary, autonomy)
     next_actions = _cartographer_soak_next_actions(summary)
     expected_recommendation = (
         "ready for next increment"
@@ -337,12 +487,15 @@ def _run_cartographer_soak_snapshot_profile(
         "mutated": False,
         "wrote_snapshot": True,
         "summary": summary,
+        "autonomy_escalation": autonomy,
         "reliability": reliability,
         "warnings": warnings,
         "next_actions": next_actions,
         "expected_outcomes": [
             "cartographer-soak-snapshot: pass",
             "mutation boundary: snapshot log only",
+            "autonomous apply/commit/push disabled",
+            "docs-only autopilot disabled unless explicitly configured",
             f"recommendation: {expected_recommendation}",
         ],
     }
@@ -371,6 +524,7 @@ def _run_cartographer_soak_snapshot_profile(
         "pass"
         if snapshot["mutation_boundary"]["snapshot_log_only"]
         and not snapshot["mutation_boundary"]["head_changed"]
+        and autonomy["passed"]
         else "fail"
     )
     snapshot["result"] = result
@@ -380,7 +534,7 @@ def _run_cartographer_soak_snapshot_profile(
         if result == "pass" and reliability["grade"] == "boring" and not warnings
         else "continue soak"
         if result == "pass"
-        else "fix soak mutation boundary"
+        else "fix soak mutation boundary or autonomy escalation"
     )
     path.write_text(json.dumps(snapshot, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return snapshot
@@ -474,7 +628,9 @@ def _cartographer_soak_summary(
         "duplicate_proposals_present": proposals.get("duplicate_proposals_present"),
         "drift_count": drift.get("drift_count"),
         "commit_proposal_count": commit_proposals.get("commit_proposal_count"),
+        "commit_enabled": commit_proposals.get("commit_enabled"),
         "push_queue_count": push_queue.get("push_queue_count", push_queue.get("push_count")),
+        "push_enabled": push_queue.get("push_enabled"),
         "audit_event_count": len(events),
         "audit_event_counts": event_counts,
         "pending_proposal_examples": [
@@ -525,7 +681,43 @@ def _cartographer_soak_summary(
             "approval_required_for_pushes": safety.get("approval_required_for_pushes"),
             "scout_bypass_allowed": safety.get("scout_bypass_allowed"),
             "source_proxy_approval_bypass_allowed": safety.get("source_proxy_approval_bypass_allowed"),
+            "docs_autopilot_enabled": safety.get("docs_autopilot_enabled"),
+            "docs_autopilot_daily_cap": safety.get("docs_autopilot_daily_cap"),
+            "autopilot_kill_switch": safety.get("autopilot_kill_switch"),
+            "autopilot_action_available": safety.get("autopilot_action_available"),
         },
+    }
+
+
+def _cartographer_autonomy_escalation_check(summary: dict[str, Any]) -> dict[str, Any]:
+    safety = summary.get("safety") if isinstance(summary.get("safety"), dict) else {}
+    checks = {
+        "autonomous_apply_disabled": (
+            summary.get("write_actions_enabled") is False
+            and safety.get("approval_required_for_file_writes") is True
+        ),
+        "autonomous_commit_disabled": (
+            summary.get("commit_enabled") is not True
+            and safety.get("approval_required_for_commits") is True
+        ),
+        "autonomous_push_disabled": (
+            summary.get("push_enabled") is not True
+            and safety.get("approval_required_for_pushes") is True
+        ),
+        "docs_autopilot_disabled_or_explicit": (
+            safety.get("docs_autopilot_enabled") is False
+            and safety.get("autopilot_action_available") is False
+        ),
+        "approval_bypasses_locked": (
+            safety.get("scout_bypass_allowed") is False
+            and safety.get("source_proxy_approval_bypass_allowed") is False
+        ),
+    }
+    failures = [name for name, passed in checks.items() if not passed]
+    return {
+        "passed": not failures,
+        "checks": checks,
+        "failures": failures,
     }
 
 
@@ -562,7 +754,10 @@ def _cartographer_reliability_score(summary: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _cartographer_soak_warnings(summary: dict[str, Any]) -> list[str]:
+def _cartographer_soak_warnings(
+    summary: dict[str, Any],
+    autonomy: dict[str, Any] | None = None,
+) -> list[str]:
     warnings: list[str] = []
     safety = summary.get("safety") if isinstance(summary.get("safety"), dict) else {}
     if summary.get("write_actions_enabled") is not False:
@@ -579,6 +774,8 @@ def _cartographer_soak_warnings(summary: dict[str, Any]) -> list[str]:
         warnings.append("Source Proxy approval bypass was not locked")
     if _int_value(summary.get("duplicate_proposals_present")) > 0:
         warnings.append("duplicate proposals present")
+    if autonomy and not autonomy.get("passed"):
+        warnings.extend(f"autonomy escalation check failed: {failure}" for failure in autonomy.get("failures", []))
     return warnings
 
 
@@ -636,6 +833,7 @@ def _cartographer_dashboard_url() -> str:
 
 def _run_phase_4f_closeout_profile() -> dict[str, Any]:
     before = _git_status_short()
+    before_head = _git_head()
     proxy_closeout = _run_proxy_closeout_profile()
     runner_self_tests = _run_command(
         [
@@ -652,7 +850,15 @@ def _run_phase_4f_closeout_profile() -> dict[str, Any]:
     scout_search_diagnostics = _run_scout_search_diagnostics_profile()
     scout_soak_snapshot = _run_scout_soak_snapshot_profile()
     after = _git_status_short()
-    changed_by_test_run = before != after
+    after_head = _git_head()
+    status_delta = _git_status_delta(before, after)
+    unexpected_status_delta = _unexpected_status_delta(status_delta)
+    expected_status_delta = [
+        line for line in status_delta if line not in unexpected_status_delta
+    ]
+    head_changed = bool(before_head and after_head and before_head != after_head)
+    changed_by_test_run = bool(unexpected_status_delta or head_changed)
+    evidence_review_needed = bool(expected_status_delta)
     checks = {
         "proxy_closeout": proxy_closeout["result"] == "pass",
         "runner_self_tests": runner_self_tests["returncode"] == 0,
@@ -660,6 +866,7 @@ def _run_phase_4f_closeout_profile() -> dict[str, Any]:
         "scout_source_gate": scout_source_gate["result"] == "pass",
         "scout_search_diagnostics": scout_search_diagnostics["result"] == "pass",
         "scout_soak_snapshot": scout_soak_snapshot["result"] == "pass",
+        "no_unexpected_file_changes": not changed_by_test_run,
     }
     result = "pass" if all(checks.values()) else "fail"
     return {
@@ -674,7 +881,14 @@ def _run_phase_4f_closeout_profile() -> dict[str, Any]:
         "file_change_verdict": {
             "before": before,
             "after": after,
+            "head_before": before_head,
+            "head_after": after_head,
             "changed_by_test_run": changed_by_test_run,
+            "status_delta": status_delta,
+            "expected_status_delta": expected_status_delta,
+            "unexpected_status_delta": unexpected_status_delta,
+            "head_changed": head_changed,
+            "evidence_review_needed": evidence_review_needed,
             "expected_writes": ["scout/soak-logs/scout-soak-snapshot-*.json"],
         },
         "optional_checks": {
@@ -688,7 +902,13 @@ def _run_phase_4f_closeout_profile() -> dict[str, Any]:
             }
         },
         "checks": checks,
-        "recommendation": "ready for 4F closeout" if result == "pass" else "fix needed",
+        "recommendation": (
+            "ready for 4F closeout; review expected evidence snapshot"
+            if result == "pass" and evidence_review_needed
+            else "ready for 4F closeout"
+            if result == "pass"
+            else "fix needed"
+        ),
     }
 
 
@@ -704,7 +924,7 @@ def _run_global_safety_regression_profile() -> dict[str, Any]:
     _progress("global-safety-regression: Source Proxy safety tests")
     source_proxy_tests = _run_pytest_file_group(
         test_files=SOURCE_PROXY_SAFETY_TEST_FILES,
-        timeout_seconds=180,
+        timeout_seconds=GLOBAL_SAFETY_SOURCE_PROXY_TIMEOUT_SECONDS,
         progress_label="Source Proxy safety tests",
     )
     _progress(
@@ -714,7 +934,7 @@ def _run_global_safety_regression_profile() -> dict[str, Any]:
     _progress("global-safety-regression: Scout backend safety tests")
     scout_backend_tests = _run_pytest_file_group(
         test_files=SCOUT_BACKEND_SAFETY_TEST_FILES,
-        timeout_seconds=180,
+        timeout_seconds=GLOBAL_SAFETY_SCOUT_BACKEND_TIMEOUT_SECONDS,
         env=_pythonpath_env(["scout/src"]),
         progress_label="Scout backend safety tests",
     )
@@ -1595,7 +1815,7 @@ def _skipped_command(reason: str) -> dict[str, Any]:
 def _http_get_text(url: str) -> dict[str, Any]:
     request = urllib.request.Request(url, method="GET")
     try:
-        with urllib.request.urlopen(request, timeout=5) as response:
+        with urllib.request.urlopen(request, timeout=5, context=_ssl_context_for_url(url)) as response:
             body = response.read(500).decode("utf-8", errors="replace")
         return {"ok": True, "status": response.status, "url": url, "body": body, "error": None}
     except (OSError, urllib.error.URLError) as error:
@@ -1989,7 +2209,11 @@ def _search_result_count(body: Any) -> int:
 def _http_get_json(url: str, *, timeout_seconds: int = 5) -> dict[str, Any]:
     try:
         request = urllib.request.Request(url, method="GET")
-        with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
+        with urllib.request.urlopen(
+            request,
+            timeout=timeout_seconds,
+            context=_ssl_context_for_url(url),
+        ) as response:
             raw = response.read().decode("utf-8")
             body = json.loads(raw) if raw.strip() else {}
             status = int(getattr(response, "status", 200))
@@ -2028,7 +2252,11 @@ def _http_post_json(url: str, body: dict[str, Any], *, timeout_seconds: int = 10
             method="POST",
             headers={"Content-Type": "application/json"},
         )
-        with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
+        with urllib.request.urlopen(
+            request,
+            timeout=timeout_seconds,
+            context=_ssl_context_for_url(url),
+        ) as response:
             raw = response.read().decode("utf-8")
             response_body = json.loads(raw) if raw.strip() else {}
             status = int(getattr(response, "status", 200))
@@ -2066,6 +2294,12 @@ def _skipped_http_check(reason: str) -> dict[str, Any]:
         "body": {},
         "error": reason,
     }
+
+
+def _ssl_context_for_url(url: str) -> ssl.SSLContext | None:
+    if url.startswith("https://localhost") or url.startswith("https://127.0.0.1"):
+        return ssl._create_unverified_context()
+    return None
 
 
 def _json_or_text(raw: str) -> Any:
@@ -2540,6 +2774,8 @@ def _format_cartographer_soak_snapshot_report(payload: dict[str, Any]) -> str:
     summary = payload["summary"]
     reliability = payload["reliability"]
     boundary = payload["mutation_boundary"]
+    autonomy = payload.get("autonomy_escalation", {})
+    autonomy_checks = autonomy.get("checks", {}) if isinstance(autonomy, dict) else {}
     lines = [
         "CARTOGRAPHER SOAK SNAPSHOT",
         "",
@@ -2552,6 +2788,14 @@ def _format_cartographer_soak_snapshot_report(payload: dict[str, Any]) -> str:
         f"- snapshot log only: {_bool_text(boundary['snapshot_log_only'])}",
         f"- unexpected status delta: {_plain_list(boundary['unexpected_status_delta'])}",
         f"- head changed: {_bool_text(boundary['head_changed'])}",
+        "",
+        "Autonomy escalation:",
+        f"- passed: {_bool_text(autonomy.get('passed')) if isinstance(autonomy, dict) else 'unknown'}",
+        f"- autonomous apply disabled: {_bool_text(autonomy_checks.get('autonomous_apply_disabled'))}",
+        f"- autonomous commit disabled: {_bool_text(autonomy_checks.get('autonomous_commit_disabled'))}",
+        f"- autonomous push disabled: {_bool_text(autonomy_checks.get('autonomous_push_disabled'))}",
+        f"- docs autopilot disabled or explicit: {_bool_text(autonomy_checks.get('docs_autopilot_disabled_or_explicit'))}",
+        f"- failures: {_plain_list(autonomy.get('failures', [])) if isinstance(autonomy, dict) else 'unknown'}",
         "",
         "Cartographer summary:",
         f"- branch: {summary.get('branch')}",
@@ -2664,9 +2908,24 @@ def _format_closeout_report(payload: dict[str, Any]) -> str:
     regression = payload["regression_tests"]
     safety = payload["safety_verdict"]
     file_change = payload["file_change_verdict"]
+    codex = payload.get("codex_adapter_tests", {})
+    dashboard = payload.get("dashboard_smoke_tests", {})
+    route_validation = payload.get("route_validation", {})
+    health = payload.get("cartographer_project_health", {})
+    checks = payload.get("checks", {})
     smoke_result = "PASS" if summary["failed"] == 0 and smoke["applied_anything"] is False else "FAIL"
     lines = [
         "PROXY TEST RUNNER CLOSEOUT",
+        "",
+        f"Closeout status: {payload.get('closeout_status', str(payload['result']).upper())}",
+        f"Recommendation: {payload['recommendation']}",
+        f"Next safe action: {payload.get('next_safe_action', 'inspect report')}",
+        "",
+        "Blockers:",
+        f"- {_plain_list(payload.get('blockers', []))}",
+        "",
+        "Checks:",
+        *[f"- {name}: {_bool_text(passed)}" for name, passed in checks.items()],
         "",
         "Smoke harness:",
         f"- suite: {smoke['suite']}",
@@ -2691,6 +2950,34 @@ def _format_closeout_report(payload: dict[str, Any]) -> str:
             f"- result: {str(regression['result']).upper()}",
             f"- failures: {_regression_failures(regression)}",
             "",
+            "Codex adapter tests:",
+            f"- command: {codex.get('command')}",
+            f"- result: {_command_result_text(codex)}",
+            f"- failures: {_command_failure_excerpt(codex)}",
+            "",
+            "Dashboard smoke tests:",
+            f"- command: {dashboard.get('command')}",
+            f"- result: {_command_result_text(dashboard)}",
+            f"- failures: {_command_failure_excerpt(dashboard)}",
+            "",
+            "Route validation:",
+            f"- base URL: {route_validation.get('base_url')}",
+            f"- result: {_bool_text(route_validation.get('ok'))}",
+            f"- self status: {_route_status(route_validation, 'self_status')}",
+            f"- Codex route: {_route_status(route_validation, 'codex_route')}",
+            f"- project health: {_route_status(route_validation, 'project_health')}",
+            "",
+            "Cartographer project health:",
+            f"- project: {health.get('project_id')}",
+            f"- status: {health.get('status')}",
+            f"- dirty: {_bool_text(health.get('dirty'))}",
+            f"- dirty file count: {health.get('dirty_file_count')}",
+            f"- expected evidence files: {len(health.get('expected_evidence_files') or [])}",
+            f"- unsafe dirty files: {len(health.get('unsafe_dirty_files') or [])}",
+            f"- merge ready: {_bool_text(health.get('merge_ready'))}",
+            f"- merge blockers: {_plain_list(health.get('merge_blockers') or [])}",
+            f"- recommended next step: {health.get('recommended_next_step')}",
+            "",
             "Safety verdict:",
             f"- no approve: {_bool_text(safety['no_approve'])}",
             f"- no apply: {_bool_text(safety['no_apply'])}",
@@ -2705,11 +2992,42 @@ def _format_closeout_report(payload: dict[str, Any]) -> str:
             f"- before: {_one_line(file_change['before'])}",
             f"- after: {_one_line(file_change['after'])}",
             f"- changed by test run: {_bool_text(file_change['changed_by_test_run'])}",
+            f"- unexpected status delta: {_plain_list(file_change.get('unexpected_status_delta', []))}",
+            f"- head changed: {_bool_text(file_change.get('head_changed'))}",
             "",
             f"Recommendation: {payload['recommendation']}",
         ]
     )
     return "\n".join(lines)
+
+
+def _command_result_text(command_payload: dict[str, Any]) -> str:
+    if command_payload.get("returncode") == 0:
+        return "PASS"
+    if command_payload.get("returncode") is None:
+        return "ERROR"
+    return "FAIL"
+
+
+def _command_failure_excerpt(command_payload: dict[str, Any]) -> str:
+    if command_payload.get("returncode") == 0:
+        return "none"
+    text = "\n".join(
+        part for part in [str(command_payload.get("stdout") or ""), str(command_payload.get("stderr") or ""), str(command_payload.get("error") or "")] if part
+    ).strip()
+    return _one_line(text[:500]) if text else "unknown"
+
+
+def _route_status(route_validation: dict[str, Any], name: str) -> str:
+    checks = route_validation.get("checks")
+    if not isinstance(checks, dict):
+        return "unavailable"
+    check = checks.get(name)
+    if not isinstance(check, dict):
+        return "missing"
+    if check.get("ok"):
+        return f"PASS {check.get('status')}"
+    return f"WARN {check.get('status')}: {_one_line(str(check.get('error') or 'not ok'))}"
 
 
 def _format_scout_smoke_report(payload: dict[str, Any]) -> str:
@@ -2955,6 +3273,11 @@ def _format_phase_4f_closeout_report(payload: dict[str, Any]) -> str:
     runner_tests = payload["runner_self_tests"]
     file_change = payload["file_change_verdict"]
     optional_search = payload["optional_checks"]["scout_search_smoke"]
+    blockers = [
+        name.replace("_", " ")
+        for name, passed in payload["checks"].items()
+        if not passed
+    ]
     lines = [
         "PHASE 4F CLOSEOUT",
         "",
@@ -2980,6 +3303,10 @@ def _format_phase_4f_closeout_report(payload: dict[str, Any]) -> str:
         f"- after: {_one_line(file_change['after'])}",
         f"- changed by test run: {_bool_text(file_change['changed_by_test_run'])}",
         f"- expected writes: {_plain_list(file_change['expected_writes'])}",
+        f"- expected status delta: {_plain_list(file_change.get('expected_status_delta', []))}",
+        f"- unexpected status delta: {_plain_list(file_change.get('unexpected_status_delta', []))}",
+        f"- evidence review needed: {_bool_text(file_change.get('evidence_review_needed'))}",
+        f"- head changed: {_bool_text(file_change.get('head_changed'))}",
         "",
         "Manual checks:",
         "- dashboard Manual Checks card can run proxy and Scout profiles",
@@ -2987,6 +3314,20 @@ def _format_phase_4f_closeout_report(payload: dict[str, Any]) -> str:
         "- Soak Snapshot may write one timestamped JSON report",
         "",
         f"Recommendation: {payload['recommendation']}",
+        "",
+        "REMOTE CHECK RECEIPT",
+        f"CHECK: {payload['profile']}",
+        f"RESULT: {payload['result'].upper()}",
+        (
+            "COMMAND: PYTHONPATH=. .venv/bin/python -m "
+            "source_proxy.testing.runner --profile phase-4f-closeout"
+        ),
+        f"HEAD_BEFORE: {file_change.get('head_before') or 'unknown'}",
+        f"HEAD_AFTER: {file_change.get('head_after') or 'unknown'}",
+        f"DIRTY_FILES: {_plain_list(_status_lines(file_change['after']))}",
+        f"EXPECTED_DIRTY: {_plain_list(file_change.get('expected_status_delta', []))}",
+        f"BLOCKERS: {_plain_list(blockers)}",
+        f"NEXT_ACTION: {payload['recommendation']}",
     ]
     return "\n".join(lines)
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from source_proxy.agents.registry import provider_capability
 from source_proxy.decision.router import DecisionInput, RouteDecision, decide_route
 
 
@@ -26,6 +27,7 @@ class ModelRecommendation:
     rationale: str
     expected_user_action: str
     route_decision: RouteDecision
+    provider_capability: dict[str, object] | None = None
 
     def as_payload(self) -> dict[str, object]:
         return {
@@ -35,6 +37,7 @@ class ModelRecommendation:
             "rationale": self.rationale,
             "expected_user_action": self.expected_user_action,
             "route_decision": self.route_decision.as_payload(),
+            "provider_capability": self.provider_capability,
         }
 
 
@@ -60,6 +63,7 @@ def recommend_model(input_data: ModelRecommendationInput) -> ModelRecommendation
         rationale=rationale,
         expected_user_action=_expected_action(decision.recommended_route, primary),
         route_decision=decision,
+        provider_capability=_provider_capability_payload(primary),
     )
 
 
@@ -108,10 +112,10 @@ def _choose_models(
             "Implementation planning benefits from strong coding output and a Codex-ready final instruction block.",
         )
 
-    if decision.risk_tier == "high":
+    if input_data.sensitive or decision.risk_tier == "high":
         return (
-            "chatgpt",
             "local_ollama",
+            "chatgpt",
             "Sensitive work should stay manual or local so you can inspect what leaves the machine.",
         )
 
@@ -130,6 +134,22 @@ def _expected_action(route_type: str, primary_model: str) -> str:
     if route_type == "api_route":
         return "Show API cost preview and require explicit approval before sending."
     return "Ask the user to choose manual browser, local, or paid API route."
+
+
+def _provider_capability_payload(primary_model: str) -> dict[str, object] | None:
+    provider_id = {
+        "coder_agent": "codex_cli",
+        "local_ollama": "local_ollama",
+        "gemini": "gemini_cli",
+        "chatgpt": "api_adapter",
+        "claude": "api_adapter",
+    }.get(primary_model)
+    if provider_id is None:
+        return None
+    capability = provider_capability(provider_id)
+    if capability is None:
+        return None
+    return capability.as_payload()
 
 
 def _is_active_swarm_file_change(decision: RouteDecision) -> bool:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import subprocess
+from datetime import datetime, timezone
 from pathlib import Path
 
 from source_proxy.cartographer.models import GitStatus
@@ -23,22 +24,25 @@ def read_git_statuses() -> list[GitStatus]:
 
 
 def read_git_status_for_project(project_id: str, root: Path) -> GitStatus:
+    generated_at = _generated_at()
     if not (root / ".git").exists():
         return GitStatus(
             project_id=project_id,
             root=str(root),
             available=False,
+            generated_at=generated_at,
             error="not_a_git_repository",
         )
 
     branch_result = _git(root, "branch", "--show-current")
     status_result = _git(root, "status", "--porcelain=v1", "-z", "--untracked-files=all")
+    head_result = _git(root, "rev-parse", "HEAD")
     commit_result = _git(root, "log", "-1", "--format=%H%x00%s")
     upstream_result = _git(root, "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{upstream}")
 
     errors = [
         result.stderr.strip()
-        for result in (branch_result, status_result, commit_result)
+        for result in (branch_result, status_result, head_result, commit_result)
         if result.returncode != 0 and result.stderr.strip()
     ]
     if errors:
@@ -46,13 +50,16 @@ def read_git_status_for_project(project_id: str, root: Path) -> GitStatus:
             project_id=project_id,
             root=str(root),
             available=False,
+            generated_at=generated_at,
             error=errors[0],
         )
 
     branch = branch_result.stdout.strip() or None
+    head_sha = head_result.stdout.strip() or None
     parsed_status = _parse_porcelain_status(status_result.stdout)
     last_commit = _parse_last_commit(commit_result.stdout)
     upstream = upstream_result.stdout.strip() if upstream_result.returncode == 0 else None
+    no_upstream_reason = None if upstream else _no_upstream_reason(branch, upstream_result)
     ahead, behind = _ahead_behind(root, upstream)
     dirty = bool(parsed_status["changed_files"])
     is_primary_branch = branch in _PRIMARY_BRANCHES
@@ -62,6 +69,7 @@ def read_git_status_for_project(project_id: str, root: Path) -> GitStatus:
         available=True,
         dirty=dirty,
         branch=branch,
+        head_sha=head_sha,
         changed_files=parsed_status["changed_files"],
         staged_files=parsed_status["staged_files"],
         unstaged_files=parsed_status["unstaged_files"],
@@ -69,6 +77,8 @@ def read_git_status_for_project(project_id: str, root: Path) -> GitStatus:
         ahead=ahead,
         behind=behind,
         upstream=upstream,
+        no_upstream_reason=no_upstream_reason,
+        generated_at=generated_at,
         is_primary_branch=is_primary_branch,
         needs_branch_recommendation=dirty and is_primary_branch,
         needs_commit=dirty,
@@ -97,6 +107,10 @@ def _git(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
             stdout="",
             stderr="git_command_timeout",
         )
+
+
+def _generated_at() -> str:
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 def _parse_porcelain_status(output: str) -> dict[str, list[str]]:
@@ -161,6 +175,20 @@ def _ahead_behind(root: Path, upstream: str | None) -> tuple[int, int]:
     except ValueError:
         return 0, 0
     return ahead, behind
+
+
+def _no_upstream_reason(
+    branch: str | None,
+    upstream_result: subprocess.CompletedProcess[str],
+) -> str:
+    if not branch:
+        return "detached_head_or_no_current_branch"
+    stderr = upstream_result.stderr.strip()
+    if "no upstream configured" in stderr:
+        return "no_upstream_configured"
+    if upstream_result.returncode != 0:
+        return "upstream_lookup_failed"
+    return "no_upstream_configured"
 
 
 def _parse_last_commit(output: str) -> dict[str, str] | None:

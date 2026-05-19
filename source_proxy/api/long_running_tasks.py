@@ -17,6 +17,7 @@ from source_proxy.tasks.long_running import (
     create_long_running_task,
     get_long_running_task,
     get_long_running_task_snapshot,
+    list_long_running_tasks,
     record_post_apply_verification,
     reject_long_running_task_plan,
 )
@@ -38,6 +39,7 @@ class LongRunningTaskAdvanceRequest(BaseModel):
 class LongRunningTaskExecuteApprovedRequest(BaseModel):
     action: str = Field(min_length=1, max_length=1000)
     approved: bool
+    approval_id: str = Field(min_length=1, max_length=120)
     approved_by: str = Field(default="human", max_length=120)
     approved_diff: str = Field(min_length=1, max_length=200_000)
     target: str | None = Field(default=None, max_length=1000)
@@ -75,6 +77,17 @@ async def long_running_task_create(
         ) from error
 
 
+@router.get("/long-running")
+async def long_running_task_queue(
+    include_completed: bool = Query(default=True),
+    limit: int = Query(default=25, ge=1, le=100),
+) -> dict[str, Any]:
+    return list_long_running_tasks(
+        include_completed=include_completed,
+        limit=limit,
+    )
+
+
 @router.post("/long-running/{task_id}/advance")
 async def long_running_task_advance(
     task_id: str,
@@ -108,6 +121,7 @@ async def long_running_task_execute_approved(
         return execute_approved_action(
             task_id=task_id,
             action=request.action,
+            approval_id=request.approval_id,
             approved_by=request.approved_by,
             approved_diff=request.approved_diff,
             target=request.target,

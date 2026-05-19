@@ -7,6 +7,7 @@ from pathlib import Path
 from unittest import mock
 
 from source_proxy.testing.runner import (
+    GLOBAL_SAFETY_SCOUT_BACKEND_TIMEOUT_SECONDS,
     PROFILE_CARTOGRAPHER_SAFETY,
     PROFILE_CARTOGRAPHER_SOAK_SNAPSHOT,
     PROFILE_DEPENDENCY_ENVIRONMENT_CHECKS,
@@ -122,6 +123,10 @@ class ProxyRunnerTests(unittest.TestCase):
             "approval_required_for_pushes": True,
             "scout_bypass_allowed": False,
             "source_proxy_approval_bypass_allowed": False,
+            "docs_autopilot_enabled": False,
+            "docs_autopilot_daily_cap": 0,
+            "autopilot_kill_switch": True,
+            "autopilot_action_available": False,
         }
         with tempfile.TemporaryDirectory() as tmp_dir, mock.patch(
             "source_proxy.testing.runner._git_status_short",
@@ -185,6 +190,10 @@ class ProxyRunnerTests(unittest.TestCase):
         self.assertEqual(payload["summary"]["audit_event_counts"]["commit_created"], 1)
         self.assertGreaterEqual(payload["reliability"]["score"], 90)
         self.assertTrue(payload["mutation_boundary"]["snapshot_log_only"])
+        self.assertTrue(payload["autonomy_escalation"]["passed"])
+        self.assertTrue(payload["autonomy_escalation"]["checks"]["autonomous_apply_disabled"])
+        self.assertTrue(payload["autonomy_escalation"]["checks"]["autonomous_commit_disabled"])
+        self.assertTrue(payload["autonomy_escalation"]["checks"]["autonomous_push_disabled"])
 
     def test_cartographer_soak_snapshot_report_names_manual_outcomes(self) -> None:
         payload = {
@@ -211,6 +220,17 @@ class ProxyRunnerTests(unittest.TestCase):
                 "unexpected_status_delta": [],
                 "head_changed": False,
             },
+            "autonomy_escalation": {
+                "passed": True,
+                "checks": {
+                    "autonomous_apply_disabled": True,
+                    "autonomous_commit_disabled": True,
+                    "autonomous_push_disabled": True,
+                    "docs_autopilot_disabled_or_explicit": True,
+                    "approval_bypasses_locked": True,
+                },
+                "failures": [],
+            },
             "warnings": [],
             "next_actions": [
                 "Run two more cartographer-soak-snapshot checks before considering 6.21.",
@@ -228,6 +248,7 @@ class ProxyRunnerTests(unittest.TestCase):
         self.assertIn("CARTOGRAPHER SOAK SNAPSHOT", report)
         self.assertIn("score: 95", report)
         self.assertIn("mutation boundary: snapshot log only", report)
+        self.assertIn("autonomous apply disabled: true", report)
         self.assertIn("Recommendation: ready for next increment", report)
 
     def test_cartographer_soak_snapshot_watch_grade_recommends_continue_soak(self) -> None:
@@ -240,6 +261,10 @@ class ProxyRunnerTests(unittest.TestCase):
             "approval_required_for_pushes": True,
             "scout_bypass_allowed": False,
             "source_proxy_approval_bypass_allowed": False,
+            "docs_autopilot_enabled": False,
+            "docs_autopilot_daily_cap": 0,
+            "autopilot_kill_switch": True,
+            "autopilot_action_available": False,
         }
         with tempfile.TemporaryDirectory() as tmp_dir, mock.patch(
             "source_proxy.cartographer.service.build_cartographer_status",
@@ -330,6 +355,30 @@ class ProxyRunnerTests(unittest.TestCase):
         self.assertIn("/v1/cartographer/proposals", next_actions)
         self.assertIn("/v1/cartographer/drift", next_actions)
         self.assertIn("/v1/cartographer/commit-proposals", next_actions)
+
+    def test_cartographer_autonomy_escalation_check_blocks_enabled_commit_or_push(self) -> None:
+        from source_proxy.testing.runner import _cartographer_autonomy_escalation_check
+
+        payload = _cartographer_autonomy_escalation_check(
+            {
+                "write_actions_enabled": False,
+                "commit_enabled": True,
+                "push_enabled": True,
+                "safety": {
+                    "approval_required_for_file_writes": True,
+                    "approval_required_for_commits": True,
+                    "approval_required_for_pushes": True,
+                    "scout_bypass_allowed": False,
+                    "source_proxy_approval_bypass_allowed": False,
+                    "docs_autopilot_enabled": False,
+                    "autopilot_action_available": False,
+                },
+            }
+        )
+
+        self.assertFalse(payload["passed"])
+        self.assertIn("autonomous_commit_disabled", payload["failures"])
+        self.assertIn("autonomous_push_disabled", payload["failures"])
 
     def test_proxy_smoke_profile_reports_seeded_safety_pass(self) -> None:
         payload = run_runner_profile(profile=PROFILE_PROXY_SMOKE)
@@ -438,17 +487,62 @@ class ProxyRunnerTests(unittest.TestCase):
             "source_proxy.testing.runner._run_proxy_regression_profile",
             return_value=regression,
         ), mock.patch(
+            "source_proxy.testing.runner._run_command",
+            return_value={
+                "command": "python -m pytest source_proxy/tests/test_codex_cli_adapter.py",
+                "returncode": 0,
+                "stdout": "22 passed\n",
+                "stderr": "",
+                "error": None,
+            },
+        ), mock.patch(
+            "source_proxy.testing.runner._run_dashboard_smoke_tests",
+            return_value={
+                "command": "npx vitest run src/components/coding/__tests__/coding-workflow-step.test.ts",
+                "returncode": 0,
+                "stdout": "passed\n",
+                "stderr": "",
+                "error": None,
+            },
+        ), mock.patch(
+            "source_proxy.testing.runner._proxy_closeout_route_validation",
+            return_value={"ok": True, "base_url": "http://localhost:3000", "checks": {}, "project_health": {}},
+        ), mock.patch(
+            "source_proxy.testing.runner._proxy_closeout_cartographer_health",
+            return_value={
+                "ok": True,
+                "project_id": "spiritos",
+                "status": "active",
+                "dirty": False,
+                "dirty_file_count": 0,
+                "expected_evidence_files": [],
+                "unsafe_dirty_files": [],
+                "merge_ready": True,
+                "merge_blockers": [],
+                "recommended_next_step": "open merge review",
+                "write_actions_enabled": False,
+            },
+        ), mock.patch(
             "source_proxy.testing.runner._git_status_short",
             side_effect=["clean", "clean"],
+        ), mock.patch(
+            "source_proxy.testing.runner._git_head",
+            side_effect=["abc123", "abc123"],
         ):
             payload = run_runner_profile(profile=PROFILE_PROXY_CLOSEOUT)
 
         self.assertEqual(payload["result"], "pass")
+        self.assertEqual(payload["closeout_status"], "PASS")
         self.assertFalse(payload["file_change_verdict"]["changed_by_test_run"])
+        self.assertEqual(payload["next_safe_action"], "continue to the next increment")
         report = format_runner_report(payload)
         self.assertIn("PROXY TEST RUNNER CLOSEOUT", report)
+        self.assertIn("Closeout status: PASS", report)
         self.assertIn("manual-check-7: PASS", report)
         self.assertIn("- failures: none", report)
+        self.assertIn("Codex adapter tests:", report)
+        self.assertIn("Dashboard smoke tests:", report)
+        self.assertIn("Cartographer project health:", report)
         self.assertIn("- changed by test run: false", report)
 
     def test_proxy_closeout_fails_when_file_status_changes(self) -> None:
@@ -474,13 +568,29 @@ class ProxyRunnerTests(unittest.TestCase):
             "source_proxy.testing.runner._run_proxy_regression_profile",
             return_value=regression,
         ), mock.patch(
+            "source_proxy.testing.runner._run_command",
+            return_value={"command": "pytest codex", "returncode": 0, "stdout": "", "stderr": "", "error": None},
+        ), mock.patch(
+            "source_proxy.testing.runner._run_dashboard_smoke_tests",
+            return_value={"command": "vitest", "returncode": 0, "stdout": "", "stderr": "", "error": None},
+        ), mock.patch(
+            "source_proxy.testing.runner._proxy_closeout_route_validation",
+            return_value={"ok": True, "base_url": "http://localhost:3000", "checks": {}, "project_health": {}},
+        ), mock.patch(
+            "source_proxy.testing.runner._proxy_closeout_cartographer_health",
+            return_value={"ok": True, "write_actions_enabled": False},
+        ), mock.patch(
             "source_proxy.testing.runner._git_status_short",
             side_effect=["clean", " M README.md"],
+        ), mock.patch(
+            "source_proxy.testing.runner._git_head",
+            side_effect=["abc123", "abc123"],
         ):
             payload = run_runner_profile(profile=PROFILE_PROXY_CLOSEOUT)
 
         self.assertEqual(payload["result"], "fail")
         self.assertTrue(payload["file_change_verdict"]["changed_by_test_run"])
+        self.assertIn("closeout_changed_files_or_head", payload["blockers"])
 
     def test_phase_4f_closeout_combines_safe_runner_and_scout_checks(self) -> None:
         proxy_closeout = {"profile": PROFILE_PROXY_CLOSEOUT, "result": "pass"}
@@ -500,6 +610,9 @@ class ProxyRunnerTests(unittest.TestCase):
         with mock.patch(
             "source_proxy.testing.runner._git_status_short",
             side_effect=["clean", "clean"],
+        ), mock.patch(
+            "source_proxy.testing.runner._git_head",
+            side_effect=["abc123", "abc123"],
         ), mock.patch(
             "source_proxy.testing.runner._run_proxy_closeout_profile",
             return_value=proxy_closeout,
@@ -523,6 +636,8 @@ class ProxyRunnerTests(unittest.TestCase):
 
         self.assertEqual(payload["result"], "pass")
         self.assertFalse(payload["file_change_verdict"]["changed_by_test_run"])
+        self.assertFalse(payload["file_change_verdict"]["evidence_review_needed"])
+        self.assertEqual(payload["file_change_verdict"]["unexpected_status_delta"], [])
         self.assertEqual(payload["optional_checks"]["scout_search_smoke"]["status"], "not_run")
         run_command.assert_called_once()
         report = format_runner_report(payload)
@@ -531,6 +646,68 @@ class ProxyRunnerTests(unittest.TestCase):
         self.assertIn("runner self tests: PASS", report)
         self.assertIn("scout search smoke: not run by default", report)
         self.assertIn("approve/apply/commit/push: not run", report)
+        self.assertIn("unexpected status delta: none", report)
+        self.assertIn("REMOTE CHECK RECEIPT", report)
+        self.assertIn("CHECK: phase-4f-closeout", report)
+        self.assertIn("RESULT: PASS", report)
+        self.assertIn("HEAD_BEFORE: abc123", report)
+        self.assertIn("HEAD_AFTER: abc123", report)
+        self.assertIn("BLOCKERS: none", report)
+
+    def test_phase_4f_closeout_labels_expected_snapshot_writes_as_evidence_review(self) -> None:
+        proxy_closeout = {"profile": PROFILE_PROXY_CLOSEOUT, "result": "pass"}
+        command_result = {
+            "command": "python -m pytest source_proxy/tests/test_proxy_runner.py",
+            "returncode": 0,
+            "stdout": "35 passed\n",
+            "stderr": "",
+            "error": None,
+        }
+        scout_payload = {"result": "pass"}
+        soak_payload = {
+            "result": "pass",
+            "snapshot_path": "scout/soak-logs/scout-soak-snapshot-2026.json",
+        }
+        snapshot_status = "?? scout/soak-logs/scout-soak-snapshot-2026-05-18T110315Z.json"
+
+        with mock.patch(
+            "source_proxy.testing.runner._git_status_short",
+            side_effect=["clean", snapshot_status],
+        ), mock.patch(
+            "source_proxy.testing.runner._git_head",
+            side_effect=["abc123", "abc123"],
+        ), mock.patch(
+            "source_proxy.testing.runner._run_proxy_closeout_profile",
+            return_value=proxy_closeout,
+        ), mock.patch(
+            "source_proxy.testing.runner._run_command",
+            return_value=command_result,
+        ), mock.patch(
+            "source_proxy.testing.runner._run_scout_smoke_profile",
+            return_value=scout_payload,
+        ), mock.patch(
+            "source_proxy.testing.runner._run_scout_source_gate_profile",
+            return_value=scout_payload,
+        ), mock.patch(
+            "source_proxy.testing.runner._run_scout_search_diagnostics_profile",
+            return_value=scout_payload,
+        ), mock.patch(
+            "source_proxy.testing.runner._run_scout_soak_snapshot_profile",
+            return_value=soak_payload,
+        ):
+            payload = run_runner_profile(profile=PROFILE_PHASE_4F_CLOSEOUT)
+
+        self.assertEqual(payload["result"], "pass")
+        self.assertFalse(payload["file_change_verdict"]["changed_by_test_run"])
+        self.assertTrue(payload["file_change_verdict"]["evidence_review_needed"])
+        self.assertEqual(payload["file_change_verdict"]["expected_status_delta"], [snapshot_status])
+        self.assertEqual(payload["file_change_verdict"]["unexpected_status_delta"], [])
+        self.assertIn("review expected evidence snapshot", payload["recommendation"])
+        report = format_runner_report(payload)
+        self.assertIn("expected status delta: ?? scout/soak-logs/scout-soak-snapshot", report)
+        self.assertIn("unexpected status delta: none", report)
+        self.assertIn("evidence review needed: true", report)
+        self.assertIn(f"EXPECTED_DIRTY: {snapshot_status}", report)
 
     def test_phase_4f_closeout_fails_when_required_check_fails(self) -> None:
         proxy_closeout = {"profile": PROFILE_PROXY_CLOSEOUT, "result": "pass"}
@@ -546,6 +723,9 @@ class ProxyRunnerTests(unittest.TestCase):
         with mock.patch(
             "source_proxy.testing.runner._git_status_short",
             side_effect=["clean", "clean"],
+        ), mock.patch(
+            "source_proxy.testing.runner._git_head",
+            side_effect=["abc123", "abc123"],
         ), mock.patch(
             "source_proxy.testing.runner._run_proxy_closeout_profile",
             return_value=proxy_closeout,
@@ -614,6 +794,41 @@ class ProxyRunnerTests(unittest.TestCase):
         self.assertIn("source proxy tests: PASS", report)
         self.assertIn("Scout backend tests: PASS", report)
         self.assertIn("dashboard smoke tests: PASS", report)
+
+    def test_global_safety_regression_gives_scout_backend_enough_time(self) -> None:
+        proxy_smoke = {"profile": PROFILE_PROXY_SMOKE, "result": "pass"}
+        cartographer = {"profile": PROFILE_CARTOGRAPHER_SAFETY, "result": "pass"}
+        command_result = {
+            "command": "python -m pytest test_file.py",
+            "returncode": 0,
+            "stdout": "passed\n",
+            "stderr": "",
+            "error": None,
+        }
+
+        with mock.patch(
+            "source_proxy.testing.runner._git_status_short",
+            side_effect=["clean", "clean"],
+        ), mock.patch(
+            "source_proxy.testing.runner._git_head",
+            side_effect=["abc123", "abc123"],
+        ), mock.patch(
+            "source_proxy.testing.runner._run_proxy_smoke_profile",
+            return_value=proxy_smoke,
+        ), mock.patch(
+            "source_proxy.testing.runner._run_cartographer_safety_profile",
+            return_value=cartographer,
+        ), mock.patch(
+            "source_proxy.testing.runner._run_command",
+            side_effect=[command_result, command_result, command_result],
+        ) as run_command:
+            payload = run_runner_profile(profile=PROFILE_GLOBAL_SAFETY_REGRESSION)
+
+        self.assertEqual(payload["result"], "pass")
+        self.assertEqual(
+            run_command.call_args_list[1].kwargs["timeout_seconds"],
+            GLOBAL_SAFETY_SCOUT_BACKEND_TIMEOUT_SECONDS,
+        )
 
     def test_global_safety_regression_fails_on_unexpected_mutation(self) -> None:
         proxy_smoke = {"profile": PROFILE_PROXY_SMOKE, "result": "pass"}

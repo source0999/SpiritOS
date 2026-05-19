@@ -80,9 +80,31 @@ describe("execute-approved route", () => {
     expect(JSON.parse(String(init?.body))).toEqual({
       action: "modify file",
       approved: true,
+      approval_id: "approval-54865365133e9340",
       approved_by: "coding-ui",
       approved_diff: "--- a/src/demo.ts\n+++ b/src/demo.ts\n@@ -1 +1 @@\n-old\n+new\n",
       target: "src/demo.ts",
     });
+  });
+
+  it("rejects stale approval ids before forwarding", async () => {
+    const response = await POST(
+      jsonRequest({
+        action: "modify file",
+        approval_id: "approval-stale",
+        approved: true,
+        approved_diff: "--- a/src/demo.ts\n+++ b/src/demo.ts\n@@ -1 +1 @@\n-old\n+new\n",
+        target: "src/demo.ts",
+        task_id: "task-123",
+      }),
+    );
+
+    await expect(response.json()).resolves.toMatchObject({
+      error:
+        "execute-approved approval_id does not match task_id, target, and approved_diff.",
+      expected_approval_id: "approval-54865365133e9340",
+    });
+    expect(response.status).toBe(409);
+    expect(mockedSourceProxyFetch).not.toHaveBeenCalled();
   });
 });

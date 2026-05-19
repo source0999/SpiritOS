@@ -2501,15 +2501,16 @@ html[data-theme="solar-ember"] .dashboard-demo-v4-root {
 
 .dashboard-demo-v4-cartographer-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(8.5rem, 1fr));
   gap: 0.65rem;
 }
 
 .dashboard-demo-v4-cartographer-metric {
-  min-height: 5.5rem;
+  min-width: 0;
+  min-height: 6.25rem;
   display: grid;
-  grid-template-rows: auto 1fr auto;
-  align-items: center;
+  grid-template-rows: auto minmax(1.25rem, auto) auto auto;
+  align-items: start;
   gap: 0.35rem;
   border: 1px solid var(--ddv4-surface-border-soft);
   border-radius: 8px;
@@ -2525,19 +2526,30 @@ html[data-theme="solar-ember"] .dashboard-demo-v4-root {
 .dashboard-demo-v4-cartographer-metric strong {
   min-width: 0;
   color: var(--ddv4-fg);
-  font-size: clamp(1rem, 1.8vw, 1.35rem);
+  font-size: 1rem;
   font-weight: 760;
-  line-height: 1;
+  line-height: 1.15;
+  max-width: 100%;
   overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
-.dashboard-demo-v4-cartographer-metric span,
+.dashboard-demo-v4-cartographer-metric-label,
+.dashboard-demo-v4-cartographer-metric-detail,
 .dashboard-demo-v4-cartographer-summary {
   color: var(--ddv4-fg-muted);
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0;
   line-height: 1.35;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.dashboard-demo-v4-cartographer-metric-detail {
+  color: var(--ddv4-fg-faint);
+  font-size: 0.62rem;
+  font-weight: 650;
 }
 
 .dashboard-demo-v4-cartographer-summary {
@@ -2547,6 +2559,13 @@ html[data-theme="solar-ember"] .dashboard-demo-v4-root {
 
 .dashboard-demo-v4-cartographer-summary p {
   margin: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 560px) {
+  .dashboard-demo-v4-cartographer-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .dashboard-demo-v4-blueprint-review-card {

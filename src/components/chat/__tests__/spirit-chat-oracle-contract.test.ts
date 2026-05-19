@@ -14,7 +14,7 @@ describe("SpiritChat oracle contract", () => {
   it("/chat page still mounts workspace shell", () => {
     const p = resolve(process.cwd(), "src/app/chat/page.tsx");
     const src = readFileSync(p, "utf8");
-    expect(src).toContain("SpiritWorkspaceShell");
+    expect(src).toContain("SpiritTrinityChatShell");
   });
 
   it("Oracle voice surface is standalone (no SpiritChat import)", () => {

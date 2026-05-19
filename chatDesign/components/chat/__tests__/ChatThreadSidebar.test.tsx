@@ -26,7 +26,7 @@ describe("ChatThreadSidebar", () => {
     expect(src).not.toContain("useSyncExternalStore");
   });
 
-  it("shows the draft headline when draft lane is focused", () => {
+  it("does not render the under-search draft status card when draftActive and trinity", () => {
     render(
       <ChatThreadSidebar
         savedThreadCount={1}
@@ -35,6 +35,7 @@ describe("ChatThreadSidebar", () => {
         allFolders={[]}
         activeThreadId="z"
         draftActive
+        chromeVariant="trinity"
         onNewChat={noop}
         onCreateFolder={noop}
         onSelectThread={noop}
@@ -48,8 +49,8 @@ describe("ChatThreadSidebar", () => {
     );
 
     expect(
-      screen.getByText(/draft · clears on first send/i),
-    ).toBeInTheDocument();
+      screen.queryByText(/draft · clears on first send/i),
+    ).not.toBeInTheDocument();
   });
 
   it("orders trinity nav sections as Pinned, Folders, then Recent", () => {
@@ -104,12 +105,10 @@ describe("ChatThreadSidebar", () => {
     expect(labels).toEqual(["pinned", "folders", "recent"]);
   });
 
-  it("keeps the mobile drawer on handle drag while desktop trinity can use row drag", () => {
+  it('uses handle-only thread drag layout (const threadDragLayout = "handle")', () => {
     const p = resolve(process.cwd(), "src/components/chat/ChatThreadSidebar.tsx");
     const src = readFileSync(p, "utf8");
-    expect(src).toContain(
-      'trinityChrome && layoutVariant !== "drawer" ? "row" : "handle"',
-    );
+    expect(src).toContain('const threadDragLayout = "handle"');
   });
 
   it("pins New chat disabled while muted without firing handlers", () => {

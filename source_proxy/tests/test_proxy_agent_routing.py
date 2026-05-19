@@ -133,6 +133,25 @@ class ProxyAgentRoutingTests(unittest.TestCase):
         self.assertEqual(recommendation.route_type, "local_route")
         self.assertEqual(recommendation.primary_model, "coder_agent")
         self.assertIn("Coder Agent", recommendation.expected_user_action)
+        self.assertEqual(recommendation.provider_capability["provider_id"], "codex_cli")
+        self.assertFalse(recommendation.provider_capability["apply_authority"])
+
+    def test_model_recommendation_is_recommendation_only_for_config_blocked_local_provider(self) -> None:
+        recommendation = recommend_model(
+            ModelRecommendationInput(
+                task="Review whether .env.local should be changed.",
+                sensitive=True,
+                prefer_free=True,
+            )
+        )
+
+        self.assertEqual(recommendation.primary_model, "local_ollama")
+        self.assertEqual(recommendation.provider_capability["status"], "config_blocked")
+        self.assertTrue(recommendation.provider_capability["recommendation_only"])
+        self.assertFalse(recommendation.provider_capability["approval_authority"])
+        self.assertFalse(recommendation.provider_capability["apply_authority"])
+        self.assertFalse(recommendation.provider_capability["commit_authority"])
+        self.assertFalse(recommendation.provider_capability["push_authority"])
 
     def test_model_recommendation_prioritizes_local_route_for_active_swarm_task(self) -> None:
         recommendation = recommend_model(

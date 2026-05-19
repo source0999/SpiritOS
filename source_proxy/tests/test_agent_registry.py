@@ -6,7 +6,9 @@ from source_proxy.agents.registry import (
     AGENT_REGISTRY,
     MAX_DEFAULT_AUTHORITY_LEVEL,
     get_agent_registry_payload,
+    get_provider_capability_payload,
     normalize_agent_role,
+    provider_capability,
     role_system_prompt,
     validate_registry_authority,
 )
@@ -49,6 +51,25 @@ class AgentRegistryTests(unittest.TestCase):
         self.assertEqual(payload["tester"]["output_type"], "test_plan_or_dry_run_report")
         self.assertEqual(payload["oracle"]["authority_level"], 1)
         self.assertIn("write_without_approval", payload["cartographer"]["forbidden_actions"])
+
+    def test_provider_capability_registry_is_recommendation_only(self) -> None:
+        payload = get_provider_capability_payload()
+
+        self.assertEqual(
+            set(payload),
+            {"codex_cli", "local_ollama", "gemini_cli", "api_adapter"},
+        )
+        self.assertEqual(payload["codex_cli"]["status"], "available")
+        self.assertEqual(payload["local_ollama"]["status"], "config_blocked")
+        self.assertEqual(payload["local_ollama"]["missing_reason"], "not_probed_in_phase_9_1")
+        for provider in payload.values():
+            self.assertTrue(provider["recommendation_only"])
+            self.assertFalse(provider["approval_authority"])
+            self.assertFalse(provider["apply_authority"])
+            self.assertFalse(provider["commit_authority"])
+            self.assertFalse(provider["push_authority"])
+
+        self.assertIsNone(provider_capability("missing_provider"))
 
     def test_role_prompt_resolution_uses_registry(self) -> None:
         self.assertEqual(normalize_agent_role("Reviewer Agent"), "reviewer")

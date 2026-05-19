@@ -102,8 +102,26 @@ async function buildLocalPushQueue() {
     remote,
     branch,
     upstream: upstream || null,
+    ahead: commitsAhead,
+    behind: 0,
     commits_ahead: commitsAhead,
     files,
+    reason_codes: [
+      "push_requires_separate_approval",
+      "push_disabled_until_approved",
+    ],
+    push_blockers: [
+      "push_requires_separate_approval",
+      "commit_audit_status_unavailable_in_frontend_fallback",
+    ],
+    branch_protection_warnings: branchProtectionWarnings(branch, upstream),
+    remote_status: {
+      remote,
+      branch,
+      upstream: upstream || null,
+      ahead: commitsAhead,
+      behind: 0,
+    },
     status: "push_pending",
     requires_approval: true,
     push_enabled: false,
@@ -160,6 +178,17 @@ async function firstRemote(repoRoot: string) {
 function pushId(projectId: string, upstream: string, branch: string, commitsAhead: number) {
   const key = [projectId, upstream, branch, String(commitsAhead)].join("|");
   return `push-${createHash("sha256").update(key).digest("hex").slice(0, 12)}`;
+}
+
+function branchProtectionWarnings(branch: string, upstream: string) {
+  const warnings = ["review_remote_branch_protection_before_push"];
+  if (["main", "master", "trunk"].includes(branch)) {
+    warnings.push("base_branch_push_requires_extra_review");
+  }
+  if (!upstream) {
+    warnings.push("new_remote_branch_may_not_have_protection_rules");
+  }
+  return warnings;
 }
 
 async function optionalGit(repoRoot: string, args: string[]) {

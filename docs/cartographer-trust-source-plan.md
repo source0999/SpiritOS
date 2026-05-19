@@ -12,6 +12,7 @@ PYTHONPATH=. python3 -m source_proxy.testing.runner --profile cartographer-soak-
 ## Trust Inputs
 
 - Safety manifest keeps write actions disabled and approval bypasses locked.
+- Autonomy escalation check confirms autonomous apply, commit, push, and docs autopilot action remain disabled.
 - Proposal queue remains deduped with no duplicate pending proposals.
 - Drift, commit proposal, and push queue counts stay explainable.
 - Audit trail contains rollback hints and explainability fields.
@@ -52,6 +53,8 @@ Expected:
 ```text
 cartographer-soak-snapshot: pass
 mutation boundary: snapshot log only
+autonomous apply/commit/push disabled
+docs-only autopilot disabled unless explicitly configured
 recommendation: ready for next increment
 ```
 

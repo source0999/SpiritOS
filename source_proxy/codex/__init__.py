@@ -20,6 +20,7 @@ from source_proxy.codex.task_packet import (
 from source_proxy.codex.evidence import (
     CodexEvidenceError,
     build_codex_evidence_packet,
+    summarize_codex_evidence,
     utc_now_iso,
     write_codex_evidence_packet,
 )
@@ -42,6 +43,7 @@ __all__ = [
     "build_codex_task_packet",
     "CodexEvidenceError",
     "build_codex_evidence_packet",
+    "summarize_codex_evidence",
     "utc_now_iso",
     "write_codex_evidence_packet",
 ]

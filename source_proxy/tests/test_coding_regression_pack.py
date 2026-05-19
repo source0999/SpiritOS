@@ -15,6 +15,7 @@ from source_proxy.decision.router import DecisionInput, decide_route, resolve_ta
 from source_proxy.planning.architect import Plan, plan_task_deterministically
 from source_proxy.planning.plan import task_spec_from_plan, save_plan
 from source_proxy.tasks.long_running import (
+    approval_id_for_approved_diff,
     create_long_running_task,
     execute_approved_long_running_task,
     propose_coder_agent_diff_payload_from_plan,
@@ -506,6 +507,47 @@ class CodingRegressionPackTests(unittest.TestCase):
             {finding["path"] for finding in preview["review_report"]["findings"]},
         )
 
+    def test_dot_segment_wrong_file_diff_normalizes_before_target_review(self) -> None:
+        task = "\n".join(
+            [
+                f"Target file: {DOC_TARGET}",
+                f'Update the file by appending the sentence "{DOC_LITERAL}" under the existing paragraph.',
+            ]
+        )
+        plan = self._planned_doc_task(task)
+        wrong_path = "source_proxy/api/decision.py"
+        _write(self.root / wrong_path, "old\n")
+        wrong_diff = "\n".join(
+            [
+                f"diff --git a/{wrong_path} b/source_proxy/./api/decision.py",
+                f"--- a/{wrong_path}",
+                "+++ b/source_proxy/./api/decision.py",
+                "@@ -1 +1 @@",
+                "-old",
+                f"+{DOC_LITERAL}",
+                "",
+            ]
+        )
+
+        preview = preview_diff_verification(
+            wrong_diff,
+            route_type="local_route",
+            task_text=task,
+            architect_plan=plan,
+        )
+
+        reason_codes = {reason["reason_code"] for reason in preview["blocked_reasons"]}
+        self.assertEqual(preview["status"], "blocked")
+        self.assertEqual([file["path"] for file in preview["changed_files"]], [wrong_path])
+        self.assertIn("task_spec_allowed_file_violation", reason_codes)
+        self.assertIn("task_spec_target_mismatch", reason_codes)
+        self.assertNotIn("path_escape", reason_codes)
+        self.assertNotIn("secret_shaped_path", reason_codes)
+        self.assertNotIn("protected_path", reason_codes)
+        self.assertFalse(preview["limits"]["file_writes_allowed"])
+        self.assertFalse(preview["would_apply_diff"])
+        self.assertFalse(preview["would_execute"])
+
     def test_small_code_edit_preview_suggests_checks_without_execution_or_write(self) -> None:
         target = "src/example.py"
         _write(self.root / target, "VALUE = 'old'\n")
@@ -579,6 +621,11 @@ class CodingRegressionPackTests(unittest.TestCase):
         payload = execute_approved_long_running_task(
             task_id,
             action="append approved docs sentence",
+            approval_id=approval_id_for_approved_diff(
+                task_id=task_id,
+                approved_diff=diff,
+                target=DOC_TARGET,
+            ),
             approved_by="test",
             approved_diff=diff,
             target=DOC_TARGET,

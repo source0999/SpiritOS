@@ -366,3 +366,55 @@ Expected outputs:
 ### Next Recommended Increment
 
 Ask for explicit approval before staging and committing this package. Ask again before any push.
+
+## 2026-05-18 Production-Hardening Follow-Up
+
+Status date: 2026-05-18
+
+### Result
+
+The remaining Codex trial hardening items were completed as Source Proxy regressions and runbook clarification, without promoting Codex or enabling live route execution.
+
+Completed follow-up coverage:
+
+- T3: dangerous Codex flags and unsafe sandbox values remain blocked.
+- T8: evidence packets now expose truncation metadata and replay summaries for bounded UI/Cartographer display.
+- T9: safe readonly/proposal route validation returns `config_blocked` previews with `would_run_task: false`, no changed files, and no approval/apply/commit/push authority.
+- T10: rollback guidance remains command-line and human-reviewed; no first-class rollback control is authorized by this trial.
+
+### Current Rollback Guidance
+
+Rollback remains guidance-only. If a Codex trial or evidence replay surfaces unexpected files, use the file-specific rollback command from the task table or restore the exact touched files from the increment closeout. Do not run broad cleanup commands.
+
+For the current hardening files, use targeted restores only:
+
+```bash
+git restore source_proxy/api/codex_adapter.py \
+  source_proxy/codex/__init__.py \
+  source_proxy/codex/evidence.py \
+  source_proxy/tests/test_codex_cli_adapter.py \
+  src/app/v1/coding/codex/route.ts
+rm -rf src/app/v1/coding/codex/__tests__
+git restore docs/codex-real-task-trial.md
+```
+
+Do not restore unrelated dirty files. The working tree may contain other reviewed or in-progress Source Proxy, Cartographer, Scout, dashboard, and documentation changes.
+
+### Boundary
+
+Codex remains experimental. The `/v1/coding/codex` route validates requests and returns config-blocked previews unless a later explicit increment enables a narrowly scoped live execution path. Approval, apply, commit, and push authority remain false.
+
+### Verification
+
+Expected checks:
+
+- `.venv/bin/python -m pytest source_proxy/tests/test_codex_cli_adapter.py source_proxy/tests/test_source_proxy_end_to_end.py`
+- `git diff --check`
+- `git status --short`
+
+Expected outputs:
+
+- Codex adapter tests pass.
+- Route responses preserve config-blocked/no-authority behavior.
+- Evidence summaries are truncated and replayable.
+- No Codex promotion, apply, commit, push, or cleanup action occurs.

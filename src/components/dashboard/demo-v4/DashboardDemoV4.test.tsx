@@ -25,6 +25,7 @@ vi.mock("@/theme/useSpiritTheme", () => ({
 }));
 
 const navMock = vi.hoisted(() => ({ path: "/" }));
+const originalFetch = globalThis.fetch;
 
 vi.mock("next/navigation", () => ({
   usePathname: () => navMock.path,
@@ -58,6 +59,7 @@ describe("DashboardDemoV4", () => {
   beforeEach(() => {
     navMock.path = "/";
     telemetryMock.useClusterTelemetry.mockClear();
+    globalThis.fetch = originalFetch;
   });
 
   it("renders a <main> with class dashboard-demo-v4-root", () => {
@@ -127,6 +129,91 @@ describe("DashboardDemoV4", () => {
     expect(screen.getByRole("region", { name: /manual checks/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/daily briefing/i)).toBeInTheDocument();
     expect(screen.getAllByText(/demo/i).length).toBeGreaterThan(0);
+  });
+
+  it("surfaces the Cartographer v1 closeout rollup without write controls", async () => {
+    globalThis.fetch = vi.fn((input) => {
+      const url = String(input);
+      if (url === "/v1/cartographer/v1-closeout-dashboard") {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              status: "observing",
+              write_actions_enabled: false,
+              authority_granted: false,
+              actions_taken: false,
+              dashboard_mode: "read_only_v1_closeout_surface",
+              docs_path: "docs/cartographer-v1-evidence-artifacts.md",
+              docs_label: "Cartographer v1 evidence artifact contract",
+              primary_status: "blocked_missing_evidence",
+              primary_label: "Blocked by missing evidence",
+              next_action: "Record three clean diagnostic or closeout proof artifacts with passing results.",
+              dashboard_cards: [
+                {
+                  card_id: "v1-readiness",
+                  label: "V1 readiness",
+                  status: "not_ready",
+                  value: "blocked",
+                  detail: "8 blockers",
+                  endpoint: "/v1/cartographer/v1-readiness",
+                },
+                {
+                  card_id: "v1-evidence",
+                  label: "Evidence",
+                  status: "blocked",
+                  value: 8,
+                  detail: "missing real proof artifacts",
+                  endpoint: "/v1/cartographer/v1-evidence",
+                },
+                {
+                  card_id: "v1-freeze-marker",
+                  label: "Freeze marker",
+                  status: "missing",
+                  value: "data/cartographer-v1-freeze/freeze-marker.json",
+                  detail: "external marker validation",
+                  endpoint: "/v1/cartographer/v1-freeze-marker-validation",
+                },
+                {
+                  card_id: "v1-authority",
+                  label: "Authority",
+                  status: "locked",
+                  value: "locked",
+                  detail: "passing checks do not grant authority",
+                  endpoint: "/v1/cartographer/v1-closeout-status",
+                },
+                {
+                  card_id: "v1-docs",
+                  label: "Evidence contract",
+                  status: "read_only",
+                  value: "docs/cartographer-v1-evidence-artifacts.md",
+                  detail: "human-recorded artifact shapes",
+                  endpoint: "/v1/cartographer/v1-closeout-dashboard",
+                },
+              ],
+            }),
+            { status: 200 },
+          ),
+        );
+      }
+
+      return Promise.resolve(
+        new Response(JSON.stringify({ status: "unavailable" }), { status: 200 }),
+      );
+    }) as typeof fetch;
+
+    render(<DashboardDemoV4 />);
+
+    const cartographer = screen.getByRole("region", { name: /spirit cartographer/i });
+    expect(await within(cartographer).findByText("Blocked by missing evidence")).toBeInTheDocument();
+    expect(within(cartographer).getByText("V1 readiness")).toBeInTheDocument();
+    expect(within(cartographer).getByText("Freeze marker")).toBeInTheDocument();
+    expect(within(cartographer).getByText("Evidence contract")).toBeInTheDocument();
+    expect(within(cartographer).getByText("data/cartographer-v1-freeze/freeze-marker.json")).toBeInTheDocument();
+    expect(within(cartographer).getByText("docs/cartographer-v1-evidence-artifacts.md")).toBeInTheDocument();
+    expect(within(cartographer).queryByRole("button", { name: /approve|apply|commit|push/i })).toBeNull();
+    expect(globalThis.fetch).toHaveBeenCalledWith("/v1/cartographer/v1-closeout-dashboard", {
+      cache: "no-store",
+    });
   });
 
   it("renders the minimal Oracle hero with visuals and one /oracle action", () => {
