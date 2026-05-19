@@ -416,6 +416,55 @@ describe("HomelabScoutIntelligenceWidget", () => {
     expect(screen.getByText("Verified")).toBeInTheDocument();
   });
 
+  it("shows packet review evidence on useful packet cards", async () => {
+    mockScoutFetch({
+      ...overview,
+      recent: {
+        surfaced: [
+          {
+            packet_id: "packet-evidence",
+            title: "FastAPI release packet",
+            summary: "FastAPI release notes changed in a way worth reviewing.",
+            source_uri: "https://example.com/releases",
+            human_status_label: "Useful now",
+            usefulness_label: "Useful now",
+            usefulness_reason: "packet validates against IntelligencePacket",
+            recommended_action: "inspect_now",
+            confidence_label: "high",
+            source_quality_score: 0.75,
+            evaluated_at: "2026-05-14T00:00:00+00:00",
+            provenance: {
+              source_uri: "https://example.com/releases",
+              extracted_artifact_path: "extracted/example/packet.md",
+              synthesized_at: "2026-05-14T00:01:00+00:00",
+            },
+            findings: [
+              {
+                check_id: "schema_completeness",
+                tier: 1,
+                status: "passed",
+                detail: "packet validates",
+              },
+            ],
+          },
+        ],
+        stored: [],
+        pending: [],
+        promoted: [],
+      },
+    });
+
+    render(<ScoutIntelligenceCenter />);
+
+    expect(await screen.findByText("FastAPI release packet")).toBeInTheDocument();
+    expect(screen.getByText("Source Trust")).toBeInTheDocument();
+    expect(screen.getByText("Quality")).toBeInTheDocument();
+    expect(screen.getByText("75%")).toBeInTheDocument();
+    expect(screen.getByText("Artifact")).toBeInTheDocument();
+    expect(screen.getByText("extracted/example/packet.md")).toBeInTheDocument();
+    expect(screen.getByText("schema completeness: passed")).toBeInTheDocument();
+  });
+
   it("wires Manual Search Plan preview controls to the discovery preview endpoint", async () => {
     mockScoutFetch(overview);
 

@@ -72,6 +72,11 @@ def _enrich_packet_response(
         if row:
             packet["_verdict"] = json.loads(row["verdict_json"])
     verdict = packet.get("_verdict")
+    if verdict:
+        packet["reason_codes"] = verdict.get("reason_codes") or []
+        packet["findings"] = finding_summaries(verdict)
+        packet["source_quality_score"] = verdict.get("source_quality_score")
+        packet["evaluated_at"] = verdict.get("evaluated_at")
     raw_status = packet.get("status")
     effective = _effective_status(raw_status, db_status, verdict)
     packet["raw_status"] = raw_status

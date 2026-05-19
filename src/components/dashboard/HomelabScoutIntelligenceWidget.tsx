@@ -129,6 +129,33 @@ function packetRecommendedAction(packet: ScoutPacket): string | null {
   return packet.recommended_action ? humanizeScoutLabel(packet.recommended_action) : null;
 }
 
+function packetArtifactPath(packet: ScoutPacket): string | null {
+  return packet.artifact_path ?? packet.provenance?.extracted_artifact_path ?? null;
+}
+
+function packetSynthesizedAt(packet: ScoutPacket): string | null {
+  return packet.synthesized_at ?? packet.provenance?.synthesized_at ?? null;
+}
+
+function packetEvidenceRows(packet: ScoutPacket, sources: ScoutSourceSummary[]): Array<[string, string]> {
+  const rows: Array<[string, string | null | undefined]> = [
+    ["Source Trust", sourceTrustLabel(packet, sources)],
+    ["Confidence", packet.confidence_label ?? percentScore(packet.confidence_score)],
+    ["Quality", percentScore(packet.source_quality_score)],
+    ["Synthesized", formatDateTime(packetSynthesizedAt(packet))],
+    ["Checked", formatDateTime(packet.evaluated_at)],
+    ["Artifact", packetArtifactPath(packet)],
+  ];
+
+  return rows.filter((row): row is [string, string] => Boolean(row[1]));
+}
+
+function packetFindingLabel(finding: NonNullable<ScoutPacket["findings"]>[number]): string {
+  const check = finding.check_id ? humanizeScoutLabel(finding.check_id) : "check";
+  const status = finding.status ? humanizeScoutLabel(finding.status) : "unknown";
+  return `${check}: ${status}`;
+}
+
 function formatDateTime(value: string | null | undefined): string | null {
   if (!value) return null;
   const date = new Date(value);
@@ -564,6 +591,8 @@ function ScoutPackets({
       {packets.map((packet, index) => {
         const tags = (packet.entity_tags ?? packet.tags)?.filter(Boolean).slice(0, 3) ?? [];
         const trust = sourceTrustLabel(packet, sources);
+        const evidenceRows = packetEvidenceRows(packet, sources);
+        const findings = (packet.findings ?? packet._verdict?.findings ?? []).slice(0, 4);
         const id = packetId(packet);
         const promotionStatus = packet.promotion_status;
         const queueDisabled =
@@ -597,12 +626,34 @@ function ScoutPackets({
                 {packet.usefulness_label ?? packetStatus(packet)}: {packetUsefulnessReason(packet)}
               </p>
             ) : null}
+            {evidenceRows.length > 0 ? (
+              <dl
+                className="dashboard-demo-v4-scout-evidence-grid"
+                aria-label={`${packetTitle(packet)} packet evidence`}
+              >
+                {evidenceRows.map(([label, value]) => (
+                  <div key={label}>
+                    <dt>{label}</dt>
+                    <dd>{value}</dd>
+                  </div>
+                ))}
+              </dl>
+            ) : null}
             {packetRecommendedAction(packet) || packet.confidence_label ? (
               <div className="dashboard-demo-v4-scout-tags">
                 {packetRecommendedAction(packet) ? (
                   <span>Action: {packetRecommendedAction(packet)}</span>
                 ) : null}
                 {packet.confidence_label ? <span>Confidence: {packet.confidence_label}</span> : null}
+              </div>
+            ) : null}
+            {findings.length > 0 ? (
+              <div className="dashboard-demo-v4-scout-tags" aria-label={`${packetTitle(packet)} debugger findings`}>
+                {findings.map((finding, findingIndex) => (
+                  <span key={`${finding.check_id ?? "finding"}-${findingIndex}`}>
+                    {packetFindingLabel(finding)}
+                  </span>
+                ))}
               </div>
             ) : null}
             {tags.length > 0 ? (

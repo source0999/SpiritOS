@@ -11,10 +11,10 @@ const timelineItems = ["Draft", "Plan", "Diff", "Approval", "Apply", "Verificati
 
 export default function CodingCockpitShell() {
   return (
-    <main className="min-h-dvh bg-slate-950 text-slate-100">
+    <main className="min-h-dvh overflow-x-hidden bg-slate-950 pb-28 text-slate-100 lg:pb-0">
       <div className="mx-auto flex min-h-dvh w-full max-w-6xl flex-col px-4 py-5 sm:px-6 lg:px-8">
         <header className="flex flex-col gap-4 border-b border-white/10 pb-5 sm:flex-row sm:items-start sm:justify-between">
-          <div className="space-y-2">
+          <div className="min-w-0 space-y-2">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-200">
               Source Proxy cockpit
             </p>
@@ -25,7 +25,7 @@ export default function CodingCockpitShell() {
             </p>
           </div>
           <Link
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-white/15 bg-white/5 px-4 text-sm font-medium text-slate-100 transition hover:border-emerald-300/50 hover:bg-emerald-300/10 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+            className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md border border-white/15 bg-white/5 px-4 text-sm font-medium text-slate-100 transition hover:border-emerald-300/50 hover:bg-emerald-300/10 focus:outline-none focus:ring-2 focus:ring-emerald-300 sm:w-auto"
             href="/proxy-backend"
           >
             Advanced diagnostics
@@ -38,7 +38,10 @@ export default function CodingCockpitShell() {
           className="grid gap-3 border-b border-white/10 py-4 sm:grid-cols-3"
         >
           {statusItems.map((item) => (
-            <div className="rounded-md border border-white/10 bg-white/[0.03] p-4" key={item.label}>
+            <div
+              className="min-w-0 rounded-md border border-white/10 bg-white/[0.03] p-4"
+              key={item.label}
+            >
               <div className="text-xs font-medium uppercase tracking-[0.14em] text-slate-500">
                 {item.label}
               </div>
@@ -48,13 +51,13 @@ export default function CodingCockpitShell() {
         </section>
 
         <div className="grid flex-1 gap-5 py-5 lg:grid-cols-[minmax(0,1fr)_minmax(320px,420px)]">
-          <section className="space-y-5" aria-labelledby="task-composer-heading">
+          <section className="min-w-0 space-y-5" aria-labelledby="task-composer-heading">
             <div className="rounded-md border border-white/10 bg-slate-900/70 p-4 sm:p-5">
               <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-md bg-emerald-300/10 text-emerald-200">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-emerald-300/10 text-emerald-200">
                   <FileText aria-hidden="true" size={20} />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <h2 id="task-composer-heading" className="text-lg font-semibold text-white">
                     Task Composer
                   </h2>
@@ -66,7 +69,7 @@ export default function CodingCockpitShell() {
                 <label className="block">
                   <span className="mb-2 block text-sm font-medium text-slate-200">Task</span>
                   <textarea
-                    className="min-h-32 w-full resize-y rounded-md border border-white/10 bg-slate-950/80 px-3 py-3 text-sm text-slate-200 placeholder:text-slate-600"
+                    className="min-h-36 w-full resize-y rounded-md border border-white/10 bg-slate-950/80 px-3 py-3 text-base text-slate-200 placeholder:text-slate-600 sm:text-sm"
                     disabled
                     placeholder="Describe the coding task here."
                   />
@@ -78,7 +81,7 @@ export default function CodingCockpitShell() {
                       Target file
                     </span>
                     <input
-                      className="min-h-11 w-full rounded-md border border-white/10 bg-slate-950/80 px-3 text-sm text-slate-200 placeholder:text-slate-600"
+                      className="min-h-12 w-full rounded-md border border-white/10 bg-slate-950/80 px-3 text-base text-slate-200 placeholder:text-slate-600 sm:text-sm"
                       disabled
                       placeholder="docs/example.md"
                     />
@@ -88,7 +91,7 @@ export default function CodingCockpitShell() {
                       Allowed files
                     </span>
                     <input
-                      className="min-h-11 w-full rounded-md border border-white/10 bg-slate-950/80 px-3 text-sm text-slate-200 placeholder:text-slate-600"
+                      className="min-h-12 w-full rounded-md border border-white/10 bg-slate-950/80 px-3 text-base text-slate-200 placeholder:text-slate-600 sm:text-sm"
                       disabled
                       placeholder="Same as target"
                     />
@@ -96,7 +99,7 @@ export default function CodingCockpitShell() {
                 </div>
 
                 <button
-                  className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-emerald-300 px-4 text-sm font-semibold text-slate-950 opacity-60 sm:w-auto"
+                  className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-emerald-300 px-4 text-sm font-semibold text-slate-950 opacity-60 sm:w-auto"
                   disabled
                   type="button"
                 >
@@ -108,8 +111,8 @@ export default function CodingCockpitShell() {
 
             <div className="rounded-md border border-dashed border-white/15 bg-white/[0.02] p-5">
               <div className="flex items-start gap-3">
-                <Activity className="mt-0.5 text-slate-400" aria-hidden="true" size={20} />
-                <div>
+                <Activity className="mt-0.5 shrink-0 text-slate-400" aria-hidden="true" size={20} />
+                <div className="min-w-0">
                   <h2 className="text-base font-semibold text-white">No active task</h2>
                   <p className="mt-1 text-sm leading-6 text-slate-400">
                     Approval and apply controls will appear only after a safe preview exists and
@@ -120,7 +123,7 @@ export default function CodingCockpitShell() {
             </div>
           </section>
 
-          <aside className="space-y-5" aria-label="Task timeline and actions">
+          <aside className="min-w-0 space-y-5" aria-label="Task timeline and actions">
             <section className="rounded-md border border-white/10 bg-slate-900/70 p-4">
               <h2 className="text-base font-semibold text-white">Current Task Timeline</h2>
               <ol className="mt-4 space-y-3">
@@ -150,6 +153,28 @@ export default function CodingCockpitShell() {
               </p>
             </section>
           </aside>
+        </div>
+      </div>
+      <div
+        aria-label="Mobile action bar"
+        className="fixed inset-x-0 bottom-0 z-20 border-t border-white/10 bg-slate-950/95 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-3 shadow-2xl shadow-black/50 backdrop-blur lg:hidden"
+        data-testid="mobile-action-bar"
+      >
+        <div className="mx-auto flex max-w-6xl items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+              Draft
+            </div>
+            <div className="truncate text-sm font-medium text-slate-200">No files changed</div>
+          </div>
+          <button
+            className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-md bg-emerald-300 px-4 text-sm font-semibold text-slate-950 opacity-60"
+            disabled
+            type="button"
+          >
+            <ShieldCheck aria-hidden="true" size={18} />
+            Preview
+          </button>
         </div>
       </div>
     </main>

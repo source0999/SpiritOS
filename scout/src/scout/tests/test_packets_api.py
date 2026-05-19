@@ -364,6 +364,10 @@ def test_scout_overview_uses_effective_status(tmp_path, monkeypatch):
     assert surfaced["usefulness_reason"] == "sentence-transformers unavailable"
     assert surfaced["recommended_action"] == "inspect_now"
     assert surfaced["confidence_label"] == "high"
+    assert surfaced["reason_codes"] == ["test_reason"]
+    assert surfaced["findings"][0]["check_id"] == "embedding_storage"
+    assert surfaced["source_quality_score"] == 0.75
+    assert surfaced["evaluated_at"] == "2026-05-14T00:00:00+00:00"
 
 
 def test_source_trust_classifies_seed_sources():

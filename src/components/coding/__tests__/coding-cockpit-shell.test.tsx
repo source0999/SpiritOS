@@ -15,6 +15,8 @@ describe("CodingCockpitShell", () => {
     expect(screen.getByText("Task Composer")).toBeInTheDocument();
     expect(screen.getByText("No active task")).toBeInTheDocument();
     expect(screen.getByText("Preview safely")).toBeDisabled();
+    expect(screen.getByTestId("mobile-action-bar")).toHaveTextContent("No files changed");
+    expect(screen.getByRole("button", { name: "Preview" })).toBeDisabled();
 
     expect(screen.queryByText(/raw debug json/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/replayable logs/i)).not.toBeInTheDocument();

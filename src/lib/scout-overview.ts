@@ -33,6 +33,17 @@ export type ScoutScheduler = Partial<{
 export type ScoutPacketVerdict = Partial<{
   decision: string | null;
   effective_status: string | null;
+  reason_codes: string[] | null;
+  findings: ScoutPacketFinding[] | null;
+  source_quality_score: number | null;
+  evaluated_at: string | null;
+}>;
+
+export type ScoutPacketFinding = Partial<{
+  check_id: string;
+  tier: number;
+  status: string;
+  detail: string;
 }>;
 
 export type ScoutStatusExplanation = Partial<{
@@ -57,7 +68,14 @@ export type ScoutPacket = {
   usefulness_reason?: string | null;
   recommended_action?: string | null;
   confidence_label?: string | null;
+  confidence_score?: number | null;
   source_trust_label?: string | null;
+  reason_codes?: string[] | null;
+  findings?: ScoutPacketFinding[] | null;
+  source_quality_score?: number | null;
+  evaluated_at?: string | null;
+  artifact_path?: string | null;
+  synthesized_at?: string | null;
   status?: string | null;
   source_label?: string | null;
   trust_label?: string | null;
@@ -75,6 +93,9 @@ export type ScoutPacket = {
     source_uri?: string | null;
     source_url?: string | null;
     uri?: string | null;
+    raw_event_id?: string | null;
+    extracted_artifact_path?: string | null;
+    synthesized_at?: string | null;
   } | null;
   _verdict?: ScoutPacketVerdict | null;
 };
