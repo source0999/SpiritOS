@@ -153,6 +153,7 @@ function humanScoutMetricLabel(label: string): string {
     Summarized: "Summaries made",
     Checked: "Verified",
     "Packet Gate": "Packet review",
+    "Packet Model": "Packet model",
     "Source Gate": "Sources to Approve",
     "Discovery Jobs": "Manual Search Plans",
     Sources: "Watching Now",
@@ -428,6 +429,7 @@ function ScoutCounts({ overview }: { overview: ScoutOverview }) {
   const memory = overview.human_summary?.memory_status;
   const promotion = overview.human_summary?.promotion_status;
   const model = buildScoutHumanReadModel(overview);
+  const synthesis = model.packetSynthesisSummary;
   const sourceCandidateCounts = overview.source_candidates?.counts ?? {};
   const sourceQueueCount =
     (sourceCandidateCounts.recommended ?? 0) + (sourceCandidateCounts.needs_review ?? 0);
@@ -447,6 +449,7 @@ function ScoutCounts({ overview }: { overview: ScoutOverview }) {
   const metrics = [
     ...stats,
     ["Packet Gate", needsReview] as const,
+    ["Packet Model", synthesis.label] as const,
     [
       "Semantic Memory",
       memory?.active || (counts.packet_embeddings ?? 0) > 0 ? "Active" : "Inactive",
@@ -505,6 +508,7 @@ function ScoutNotes({ overview }: { overview: ScoutOverview }) {
   const memory = overview.human_summary?.memory_status;
   const promotion = overview.human_summary?.promotion_status;
   const promotedCount = countValue(promotion?.promoted_count);
+  const synthesis = overview.packet_synthesis ?? overview.human_summary?.packet_synthesis_status;
 
   return (
     <div className="dashboard-demo-v4-scout-summary" aria-label="Scout status summary">
@@ -512,6 +516,13 @@ function ScoutNotes({ overview }: { overview: ScoutOverview }) {
       <p className="dashboard-demo-v4-empty-copy">
         Unique scans are counted once. Idle runs after backlog drain are normal.
       </p>
+      {synthesis ? (
+        <p className="dashboard-demo-v4-empty-copy">
+          {synthesis.label ?? "Packet synthesis status unknown"} {"\u00b7"}{" "}
+          {synthesis.model ?? "model unknown"} {"\u00b7"}{" "}
+          {synthesis.route_configured ? "Model route configured" : "Model route not configured"}
+        </p>
+      ) : null}
       <p className="dashboard-demo-v4-empty-copy">
         {memory?.label ?? "Semantic memory inactive"} {"\u00b7"}{" "}
         {memory?.mode_label ?? (memory?.active ? "Read-only context" : "Inactive")} {"\u00b7"}{" "}

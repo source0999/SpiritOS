@@ -42,7 +42,44 @@ def _debugger_pending_without_verdict_count(conn) -> int:
     ).fetchone()[0]
 
 
-def _human_summary(counts: dict, backlog: dict, promotion_status: dict) -> dict:
+def _packet_synthesis_status(settings, backlog: dict) -> dict:
+    route_configured = bool(settings.litellm_api_base)
+    pending_artifacts = int(backlog.get("unsynthesized_artifacts") or 0)
+    if not settings.litellm_model:
+        state = "not_configured"
+        label = "Packet model not configured"
+        help_text = "Scout cannot synthesize model-backed packets until a LiteLLM model is configured."
+    elif not route_configured and settings.litellm_model.lower().startswith("ollama/"):
+        state = "route_missing"
+        label = "Ollama route missing"
+        help_text = "Set a Scout-reachable Ollama API base before claiming packet synthesis is model-backed ready."
+    elif pending_artifacts > 0:
+        state = "pending"
+        label = "Packet synthesis pending"
+        help_text = f"{pending_artifacts} extracted artifact(s) are waiting for packet synthesis."
+    else:
+        state = "ready"
+        label = "Packet synthesis ready"
+        help_text = "Model route is configured and no extracted artifacts are waiting for synthesis."
+
+    return {
+        "state": state,
+        "label": label,
+        "help": help_text,
+        "model": settings.litellm_model,
+        "api_base": settings.litellm_api_base,
+        "timeout_seconds": settings.litellm_timeout_seconds,
+        "route_configured": route_configured,
+        "pending_artifacts": pending_artifacts,
+    }
+
+
+def _human_summary(
+    counts: dict,
+    backlog: dict,
+    promotion_status: dict,
+    packet_synthesis_status: dict,
+) -> dict:
     raw = counts["raw_event_index"]
     extracted = counts["extracted_artifacts"]
     packets = counts["packets"]
@@ -117,6 +154,7 @@ def _human_summary(counts: dict, backlog: dict, promotion_status: dict) -> dict:
         ],
         "memory_status": memory_status,
         "promotion_status": promotion_status,
+        "packet_synthesis_status": packet_synthesis_status,
     }
 
 
@@ -308,7 +346,13 @@ async def scout_overview(
             "debugger_pending_without_verdict": _debugger_pending_without_verdict_count(conn),
         }
         promotion_status = _promotion_status(conn)
-        human_summary = _human_summary(counts, backlog, promotion_status)
+        packet_synthesis_status = _packet_synthesis_status(settings, backlog)
+        human_summary = _human_summary(
+            counts,
+            backlog,
+            promotion_status,
+            packet_synthesis_status,
+        )
         sources = _source_summaries(conn)
         recent_surfaced = _recent_packets_by_effective_status(
             conn,
@@ -332,10 +376,11 @@ async def scout_overview(
         conn.close()
 
     return {
-        "counts": counts,
-        "backlog": backlog,
-        "human_summary": human_summary,
-        "sources": sources,
+            "counts": counts,
+            "backlog": backlog,
+            "human_summary": human_summary,
+            "packet_synthesis": packet_synthesis_status,
+            "sources": sources,
         "recent": {
             "surfaced": recent_surfaced,
             "stored": recent_stored,

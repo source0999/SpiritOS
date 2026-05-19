@@ -132,6 +132,18 @@ export type ScoutHumanSummary = Partial<{
     rejected_count?: number;
     label: string;
   };
+  packet_synthesis_status: ScoutPacketSynthesisStatus;
+}>;
+
+export type ScoutPacketSynthesisStatus = Partial<{
+  state: "ready" | "pending" | "route_missing" | "not_configured" | string;
+  label: string;
+  help: string;
+  model: string | null;
+  api_base: string | null;
+  timeout_seconds: number;
+  route_configured: boolean;
+  pending_artifacts: number;
 }>;
 
 export type ScoutSourceSummary = Partial<{
@@ -302,6 +314,7 @@ export type ScoutOverview = Partial<{
     promoted: ScoutPacket[];
   }>;
   scheduler: ScoutScheduler;
+  packet_synthesis: ScoutPacketSynthesisStatus;
   promotions: ScoutPromotions;
   source_candidates: ScoutSourceCandidates;
   discovery_jobs: ScoutDiscoveryJobs;
