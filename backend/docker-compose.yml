@@ -44,8 +44,8 @@ services:
     container_name: spirit-ollama
     restart: unless-stopped
     runtime: nvidia
-    ports:
-      - "11434:11434"
+    # Keep container Ollama on the Docker network. Host port 11434 may already
+    # be owned by the host Ollama service; Scout reaches this as spirit-ollama.
     volumes:
       - ollama_data:/root/.ollama
     environment:

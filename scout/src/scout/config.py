@@ -21,7 +21,8 @@ class ScoutSettings(BaseSettings):
     fetch_max_bytes: int = 2_000_000
     debug_poll_enabled: bool = False
     litellm_model: str = "ollama/llama3"
-    litellm_timeout_seconds: int = 30
+    litellm_api_base: str | None = None
+    litellm_timeout_seconds: int = 120
     litellm_require_authed: bool = True
     synthesis_batch_size: int = 3
     vector_packet_cap: int = 200_000

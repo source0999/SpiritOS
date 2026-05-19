@@ -267,6 +267,8 @@ def _synthesize_ollama_with_repairs(
             "timeout": settings.litellm_timeout_seconds,
             "max_tokens": 900,
         }
+        if settings.litellm_api_base:
+            completion_kwargs["api_base"] = settings.litellm_api_base
         try:
             response = litellm.completion(**completion_kwargs)
         except Exception as exc:
@@ -387,6 +389,8 @@ def synthesize_packet(
         "max_tokens": 900,
         "response_format": IntelligencePacket,
     }
+    if settings.litellm_api_base:
+        completion_kwargs["api_base"] = settings.litellm_api_base
     try:
         response = litellm.completion(**completion_kwargs)
     except Exception as exc:
