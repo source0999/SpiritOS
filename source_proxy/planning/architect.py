@@ -10,7 +10,14 @@ from pathlib import Path
 from typing import Any, Callable, Literal
 from uuid import uuid4
 
-from source_proxy.decision.router import resolve_target_from_task
+from source_proxy.decision.proposal_task import (
+    BoundedProposal,
+    bounded_proposal_create_allowed,
+    effective_planning_task_text,
+    merge_proposal_forbidden_paths,
+    parse_bounded_proposal_task,
+)
+from source_proxy.decision.router import resolve_target_from_task, unsafe_target_for_route
 from source_proxy.planning.plan import (
     PLAN_SCHEMA_VERSION,
     AcceptanceCriterion,
@@ -26,7 +33,7 @@ from source_proxy.planning.plan import (
     VerificationPlan,
 )
 from source_proxy.routing.litellm_router import available_model_aliases, get_router
-from source_proxy.safety.paths import normalize_repo_path_candidate, unsafe_target_from_task
+from source_proxy.safety.paths import normalize_repo_path_candidate
 from source_proxy.tasks.long_running import (
     REPOMIX_BUNDLE_NAMES,
     derive_context_mode,
@@ -199,6 +206,89 @@ class ArchitectLLMError(ValueError):
         self.reason_code = reason_code
 
 
+BOUNDED_CREATE_REFERENCE_PAGE = "src/app/coding/page.tsx"
+
+
+def plan_bounded_proposal_create_deterministically(
+    task: str,
+    task_id: str,
+    workspace_root: Path,
+    *,
+    proposal: BoundedProposal | None = None,
+) -> Plan | FallthroughToLLM | Block:
+    root = workspace_root.resolve()
+    bounded = proposal or parse_bounded_proposal_task(task)
+    if bounded is None:
+        return FallthroughToLLM("no_bounded_proposal")
+    create_ok, blocked_reason = bounded_proposal_create_allowed(bounded, workspace_root=root)
+    if not create_ok:
+        if blocked_reason in {"protected_path", "secret_path", "path_escape", "outside_workspace"}:
+            return Block(blocked_reason)
+        return FallthroughToLLM(blocked_reason or "bounded_create_not_allowed")
+
+    target_path = normalize_repo_path_candidate(bounded.target_file)
+    planning_task = bounded.task or effective_planning_task_text(task)
+    context_mode = derive_context_mode(target_path)
+    forbidden_paths = merge_proposal_forbidden_paths(
+        bounded,
+        context_defaults=forbidden_paths_for_context_mode(context_mode),
+    )
+    context_slices: list[ContextSlice] = []
+    reference_page = root / BOUNDED_CREATE_REFERENCE_PAGE
+    if reference_page.is_file():
+        reference_content = reference_page.read_text(encoding="utf-8", errors="replace")
+        context_slices.append(
+            _context_slice(BOUNDED_CREATE_REFERENCE_PAGE, "import", reference_content)
+        )
+
+    plan = ArchitectPlan(
+        plan_id=uuid4().hex,
+        task_id=task_id,
+        schema_version=PLAN_SCHEMA_VERSION,
+        created_at=_now_iso(),
+        source_task=task,
+        bundle_snapshot=_bundle_snapshot(root),
+        classification=_classify_task(planning_task, target_path),
+        coder_packet=CoderPacket(
+            target_file=TargetFile(
+                path=target_path,
+                exists=False,
+                sha256_before=None,
+            ),
+            operation="create",
+            acceptance_criteria=[
+                AcceptanceCriterion(
+                    id="create-target-only",
+                    description=f"Create only {target_path} as a Next.js app route page.",
+                    kind="behavioral",
+                ),
+            ],
+            constraints=ContentConstraints(
+                must_contain=[],
+                must_not_contain=["Target file:", "Proposal task:"],
+                preserve_imports=[],
+                preserve_exports=[],
+                max_added_lines=120,
+                max_removed_lines=0,
+            ),
+            context_slices=context_slices,
+            forbidden_paths=forbidden_paths,
+            style_directives=[
+                "bounded_proposal_create",
+                "deterministic_new_file_route",
+                *_style_directives(target_path),
+            ],
+        ),
+        verification_plan=_verification_plan(target_path),
+        budget=PlanBudget(
+            max_coder_attempts=3,
+            max_total_seconds=120,
+            cloud_escalation_allowed=True,
+        ),
+    )
+    return Plan(plan)
+
+
 def plan_task_deterministically(
     task: str,
     task_id: str,
@@ -206,20 +296,26 @@ def plan_task_deterministically(
 ) -> DeterministicPlanResult:
     clean_task = (task or "").strip()
     root = workspace_root.resolve()
-    if len(clean_task) > 500:
+    planning_text = effective_planning_task_text(clean_task)
+    if len(planning_text) > 500:
         return FallthroughToLLM("task_too_long")
-    unsafe_target = unsafe_target_from_task(clean_task, root)
-    if unsafe_target is not None:
-        return Block(unsafe_target.reason_code)
-    if _CREATION_INTENT_RE.search(clean_task):
-        return FallthroughToLLM("creation_task")
+
+    bounded_create = plan_bounded_proposal_create_deterministically(task, task_id, root)
+    if isinstance(bounded_create, (Plan, Block)):
+        return bounded_create
 
     resolved = resolve_target_from_task(clean_task, root)
+    unsafe_target = unsafe_target_for_route(clean_task, resolved, root)
+    if unsafe_target is not None:
+        return Block(unsafe_target.reason_code)
+    if _CREATION_INTENT_RE.search(planning_text):
+        return FallthroughToLLM("creation_task")
     markdown_append = plan_markdown_append_deterministically(
         clean_task,
         task_id,
         root,
         resolved=resolved,
+        proposal=parse_bounded_proposal_task(clean_task),
     )
     if isinstance(markdown_append, (Plan, Block)):
         return markdown_append
@@ -248,7 +344,7 @@ def plan_task_deterministically(
         created_at=_now_iso(),
         source_task=clean_task,
         bundle_snapshot=_bundle_snapshot(root),
-        classification=_classify_task(clean_task, resolved.path),
+        classification=_classify_task(planning_text, resolved.path),
         coder_packet=CoderPacket(
             target_file=TargetFile(
                 path=resolved.path,
@@ -256,8 +352,8 @@ def plan_task_deterministically(
                 sha256_before=target_hash,
             ),
             operation="edit",
-            acceptance_criteria=_acceptance_criteria(clean_task, resolved.path),
-            constraints=_content_constraints(clean_task, target_content),
+            acceptance_criteria=_acceptance_criteria(planning_text, resolved.path),
+            constraints=_content_constraints(planning_text, target_content),
             context_slices=context_slices,
             forbidden_paths=forbidden_paths,
             style_directives=_style_directives(resolved.path),
@@ -278,21 +374,27 @@ def plan_markdown_append_deterministically(
     workspace_root: Path,
     *,
     resolved: Any | None = None,
+    proposal: BoundedProposal | None = None,
 ) -> DeterministicPlanResult:
     """Build the narrow no-LLM plan for tiny explicit Markdown append requests."""
     clean_task = (task or "").strip()
+    planning_text = effective_planning_task_text(clean_task)
     root = workspace_root.resolve()
-    if not clean_task or len(clean_task) > 500:
+    if not planning_text or len(planning_text) > 500:
         return FallthroughToLLM("task_too_long")
-    unsafe_target = unsafe_target_from_task(clean_task, root)
+    bounded = proposal or parse_bounded_proposal_task(clean_task)
+    resolved_target = resolved or resolve_target_from_task(clean_task, root)
+    unsafe_target = unsafe_target_for_route(clean_task, resolved_target, root)
     if unsafe_target is not None:
         return Block(unsafe_target.reason_code)
-    if _CREATION_INTENT_RE.search(clean_task):
+    if bounded is not None and bounded.allowed_files:
+        target_path = _normalize_repo_path(str(getattr(resolved_target, "path", "") or ""))
+        if target_path and target_path not in bounded.allowed_files:
+            return FallthroughToLLM("target_not_in_allowed_files")
+    if _CREATION_INTENT_RE.search(planning_text):
         return FallthroughToLLM("creation_task")
-    if _RISKY_COMMAND_RE.search(clean_task):
+    if _RISKY_COMMAND_RE.search(planning_text):
         return FallthroughToLLM("risky_command_requested")
-
-    resolved_target = resolved or resolve_target_from_task(clean_task, root)
     if getattr(resolved_target, "source", "") != "explicit_line":
         return FallthroughToLLM("no_explicit_target")
     target_path = _normalize_repo_path(str(getattr(resolved_target, "path", "") or ""))
@@ -301,7 +403,7 @@ def plan_markdown_append_deterministically(
     if getattr(resolved_target, "exists", False) is not True:
         return FallthroughToLLM("target_missing")
 
-    literal = markdown_append_literal(clean_task)
+    literal = markdown_append_literal(planning_text)
     if not literal:
         return FallthroughToLLM("ambiguous_markdown_append_literal")
 
@@ -314,6 +416,12 @@ def plan_markdown_append_deterministically(
     target_content = target_abs.read_text(encoding="utf-8", errors="replace")
     target_hash = _sha256_bytes(target_abs.read_bytes())
     context_mode = derive_context_mode(target_path)
+    forbidden_paths = list(forbidden_paths_for_context_mode(context_mode))
+    if bounded is not None:
+        forbidden_paths = merge_proposal_forbidden_paths(
+            bounded,
+            context_defaults=forbidden_paths,
+        )
     plan = ArchitectPlan(
         plan_id=f"det-md-append-{uuid4().hex}",
         task_id=task_id,
@@ -353,14 +461,14 @@ def plan_markdown_append_deterministically(
             ],
             constraints=ContentConstraints(
                 must_contain=[literal],
-                must_not_contain=["Target file:"],
+                must_not_contain=["Target file:", "Proposal task:"],
                 preserve_imports=[],
                 preserve_exports=[],
                 max_added_lines=4,
                 max_removed_lines=0,
             ),
             context_slices=[_context_slice(target_path, "target", target_content)],
-            forbidden_paths=list(forbidden_paths_for_context_mode(context_mode)),
+            forbidden_paths=forbidden_paths,
             style_directives=[
                 "Plan source: deterministic small Markdown append fallback.",
                 "Append only the requested literal sentence to the target Markdown file.",
@@ -402,7 +510,12 @@ def plan_task_with_llm(
     if llm_call is None:
         _raise_if_model_alias_unavailable(alias)
 
-    prompt = _architect_prompt(clean_task, file_index, rejection_feedback=rejection_feedback)
+    prompt = _architect_prompt(
+        effective_planning_task_text(clean_task),
+        file_index,
+        rejection_feedback=rejection_feedback,
+        bounded_proposal=parse_bounded_proposal_task(clean_task),
+    )
     last_error = ""
     last_reason_code = "architect_llm_invalid_json"
     for attempt in range(2):
@@ -498,14 +611,15 @@ def _architect_plan_from_llm_payload(
         packet_payload.get("style_directives"),
         default=_style_directives(target_path),
     )[:6]
+    planning_text = effective_planning_task_text(task)
     packet_payload["acceptance_criteria"] = _coerce_acceptance_criteria(
         packet_payload.get("acceptance_criteria"),
-        task,
+        planning_text,
         target_path,
     )
     packet_payload["constraints"] = _coerce_constraints(
         packet_payload.get("constraints"),
-        task,
+        planning_text,
         target_content,
         operation=operation,
     )
@@ -546,14 +660,28 @@ def _architect_prompt(
     file_index: list[str],
     *,
     rejection_feedback: list[dict[str, Any]] | None = None,
+    bounded_proposal: BoundedProposal | None = None,
 ) -> str:
     file_index_text = "\n".join(f"- {path}" for path in file_index[:400])
     rejection_text = _render_rejection_feedback(rejection_feedback or [])
+    bounded_block = ""
+    if bounded_proposal is not None:
+        bounded_block = "\n".join(
+            [
+                "",
+                "Bounded proposal metadata (safety only — do not require these keys in file content):",
+                f"- target_file: {bounded_proposal.target_file}",
+                f"- allowed_files: {', '.join(bounded_proposal.allowed_files) or 'none'}",
+                f"- forbidden_files: {', '.join(bounded_proposal.forbidden_files) or 'none'}",
+                f"- expected_checks (verification commands, not output text): {', '.join(bounded_proposal.expected_checks) or 'none'}",
+            ]
+        )
     return f"""You are the SpiritOS Architect.
 Your job is to choose one concrete target file and produce strict planning JSON.
 
 Task:
 {task}
+{bounded_block}
 
 Workspace file index (paths only):
 {file_index_text or "- No file index available"}
@@ -597,7 +725,8 @@ Rules:
 - If the task is too vague to choose a real target, return {{"status":"blocked","reason_code":"task_too_vague_for_plan"}}.
 - If previous attempts were rejected, adjust the target, approach, or constraints according to that feedback.
 - Do not invent file contents. Leave context_slices empty; the Python wrapper fills them.
-- Include exact quoted strings from the task in must_contain and as literal criteria.
+- Include exact quoted strings from the Task body only in must_contain and as literal criteria.
+- Never treat JSON field names (allowed_files, forbidden_files, expected_checks) as required output text.
 - Keep target_file.path repo-relative with forward slashes.
 """
 

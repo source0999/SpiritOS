@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -102,7 +103,11 @@ def explicit_target_from_task(task: str) -> str:
     return paths[-1] if paths else ""
 
 
-def explicit_or_unsafe_target_candidates(task: str) -> list[str]:
+def explicit_or_unsafe_target_candidates(
+    task: str,
+    *,
+    skip_paths: frozenset[str] | None = None,
+) -> list[str]:
     text = task or ""
     candidates: list[str] = []
     candidates.extend(explicit_target_file_lines(text))
@@ -110,11 +115,26 @@ def explicit_or_unsafe_target_candidates(task: str) -> list[str]:
         candidates.append(normalize_repo_path_candidate(match.group("path")))
     for match in _UNSAFE_PATH_TOKEN_RE.finditer(text):
         candidates.append(normalize_repo_path_candidate(match.group("path")))
-    return _dedupe_paths(candidates)
+    if not skip_paths:
+        return _dedupe_paths(candidates)
+    filtered: list[str] = []
+    for candidate in _dedupe_paths(candidates):
+        if candidate in skip_paths:
+            continue
+        filtered.append(candidate)
+    return filtered
 
 
-def unsafe_target_from_task(task: str, workspace_root: Path | None = None) -> UnsafeTargetFinding | None:
-    for candidate in explicit_or_unsafe_target_candidates(task):
+def unsafe_target_from_task(
+    task: str,
+    workspace_root: Path | None = None,
+    *,
+    skip_paths: frozenset[str] | None = None,
+    skip_path_checker: Callable[[str], bool] | None = None,
+) -> UnsafeTargetFinding | None:
+    for candidate in explicit_or_unsafe_target_candidates(task, skip_paths=skip_paths):
+        if skip_path_checker is not None and skip_path_checker(candidate):
+            continue
         finding = unsafe_target_finding(candidate, workspace_root=workspace_root)
         if finding is not None:
             return finding

@@ -5,6 +5,12 @@ from dataclasses import dataclass
 from functools import lru_cache
 from typing import Any
 
+from source_proxy.routing.ollama_route import (
+    clear_ollama_route_cache,
+    resolve_ollama_model_name,
+    resolve_ollama_route,
+)
+
 
 @dataclass(frozen=True)
 class RouteModel:
@@ -16,9 +22,8 @@ class RouteModel:
 
 
 def route_models() -> list[RouteModel]:
-    ollama_model = os.getenv("SOURCE_PROXY_OLLAMA_MODEL") or os.getenv(
-        "OLLAMA_MODEL", "hermes4"
-    )
+    ollama_resolution = resolve_ollama_route(probe=True)
+    ollama_model = ollama_resolution.model
     openai_model = os.getenv("SOURCE_PROXY_OPENAI_MODEL", "gpt-4o-mini")
     anthropic_model = os.getenv(
         "SOURCE_PROXY_ANTHROPIC_MODEL", "claude-3-7-sonnet-20250219"
@@ -73,10 +78,7 @@ def get_router():
 
         litellm_params: dict[str, Any] = {"model": route_model.model}
         if route_model.provider == "ollama":
-            litellm_params["api_base"] = os.getenv(
-                "SOURCE_PROXY_OLLAMA_BASE_URL",
-                os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
-            )
+            litellm_params["api_base"] = resolve_ollama_route(probe=True).api_base
             litellm_params["keep_alive"] = _parse_ollama_keep_alive(
                 os.getenv(
                     "SOURCE_PROXY_OLLAMA_KEEP_ALIVE",
@@ -144,6 +146,15 @@ def routing_status() -> list[dict[str, str | bool | None]]:
 
 def clear_router_cache() -> None:
     get_router.cache_clear()
+    clear_ollama_route_cache()
+
+
+def configured_local_ollama_model() -> str:
+    return resolve_ollama_model_name()
+
+
+def configured_local_ollama_base_url() -> str:
+    return resolve_ollama_route(probe=False).api_base
 
 
 def _parse_ollama_keep_alive(value: str) -> int | str:

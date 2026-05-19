@@ -1,6 +1,9 @@
 /// <reference types="vitest/globals" />
 
-import { deriveApprovalGateProposal } from "@/components/coding/approval-gate-binding";
+import {
+  buildCombinedApprovalPreviewAfterDiff,
+  deriveApprovalGateProposal,
+} from "@/components/coding/approval-gate-binding";
 
 const DOCS_APPEND_STANDARD_UNIFIED_DIFF = [
   "--- a/docs/phase-8-manual-check.md",
@@ -461,5 +464,37 @@ describe("approval gate binding", () => {
     );
 
     expect(proposal).toBeNull();
+  });
+});
+
+describe("buildCombinedApprovalPreviewAfterDiff", () => {
+  it("upgrades stale blocked existing when diff preview is preview_ready", () => {
+    const preview = buildCombinedApprovalPreviewAfterDiff({
+      effectiveTarget: "src/app/proxy-backend/page.tsx",
+      existing: {
+        decision: "blocked",
+        reason_codes: ["target_missing"],
+        requires_human_approval: false,
+      },
+      initialDiffPreview: {
+        git_apply_check_ok: true,
+        status: "preview_ready",
+      },
+    });
+    expect(preview?.requires_human_approval).toBe(true);
+    expect(preview?.decision).toBe("requires_human_approval");
+  });
+
+  it("seeds requires_human_approval when diff preview is preview_ready", () => {
+    const preview = buildCombinedApprovalPreviewAfterDiff({
+      effectiveTarget: "src/app/proxy-backend/page.tsx",
+      existing: null,
+      initialDiffPreview: {
+        git_apply_check_ok: true,
+        status: "preview_ready",
+      },
+    });
+    expect(preview?.requires_human_approval).toBe(true);
+    expect(preview?.decision).toBe("requires_human_approval");
   });
 });

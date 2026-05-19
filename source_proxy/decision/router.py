@@ -17,9 +17,16 @@ from source_proxy.tasks.long_running import (
     LongRunningTaskError,
     get_long_running_task_snapshot,
 )
+from source_proxy.decision.proposal_task import (
+    BoundedProposal,
+    bounded_proposal_create_allowed,
+    parse_bounded_proposal_task,
+    path_matches_forbidden,
+)
 from source_proxy.safety.paths import (
     normalize_repo_path_candidate,
     explicit_target_from_task,
+    unsafe_target_finding,
     unsafe_target_from_task,
 )
 
@@ -125,10 +132,11 @@ def decide_route(input_data: DecisionInput) -> RouteDecision:
     context_estimate = estimate_context(task, input_data.context_tokens)
     classification = classify_task(normalized, input_data)
     resolved_target = resolve_target_from_task(task)
-    unsafe_target = unsafe_target_from_task(task)
+    unsafe_target = unsafe_target_for_route(task, resolved_target)
     reason_codes = build_reason_codes(normalized, input_data, context_estimate)
     reason_codes = _reason_codes_with_target_honesty(
         reason_codes,
+        task=task,
         resolved_target=resolved_target,
         classification=classification,
         wants_implementation=input_data.wants_implementation,
@@ -254,6 +262,7 @@ def _strip_repo_path_sentence_punctuation(path: str) -> str:
 def _reason_codes_with_target_honesty(
     reason_codes: list[str],
     *,
+    task: str = "",
     resolved_target: ResolvedTarget,
     classification: str,
     wants_implementation: bool,
@@ -270,6 +279,15 @@ def _reason_codes_with_target_honesty(
         return out
     needs_missing_flag = wants_implementation or classification == "implementation"
     if resolved_target.path and not resolved_target.exists and needs_missing_flag:
+        proposal = parse_bounded_proposal_task(task)
+        if proposal is not None:
+            root = _workspace_root_from_router()
+            create_ok, _blocked_reason = bounded_proposal_create_allowed(
+                proposal,
+                workspace_root=root,
+            )
+            if create_ok:
+                return out
         if "target_missing" not in out:
             out.append("target_missing")
     elif not resolved_target.path and needs_missing_flag:
@@ -282,30 +300,99 @@ def resolve_target_from_task(
     task: str,
     workspace_root: Path | None = None,
 ) -> ResolvedTarget:
-    target_path = _parse_explicit_target_file_line(task)
     root = (workspace_root or _workspace_root_from_router()).resolve()
+    proposal = parse_bounded_proposal_task(task)
+    forbidden_skip = _forbidden_path_skip_set(proposal)
 
+    bounded_target = _resolved_target_from_bounded_proposal(proposal, root)
+    if bounded_target is not None:
+        return bounded_target
+
+    target_path = _parse_explicit_target_file_line(task)
     if target_path:
         abs_target = (root / target_path).resolve()
         exists = _is_relative_to(abs_target, root) and abs_target.is_file()
         return ResolvedTarget(path=target_path, exists=exists, source="explicit_line")
 
-    unsafe_target = unsafe_target_from_task(task, root)
+    unsafe_target = unsafe_target_from_task(
+        task,
+        root,
+        skip_paths=forbidden_skip,
+        skip_path_checker=(
+            (lambda candidate: path_matches_forbidden(candidate, proposal.forbidden_files))
+            if proposal is not None
+            else None
+        ),
+    )
     if unsafe_target is not None:
         return ResolvedTarget(path=unsafe_target.path, exists=False, source="explicit_line")
 
     for candidate in _candidate_repo_paths_from_task_body(task):
+        if proposal is not None and path_matches_forbidden(candidate, proposal.forbidden_files):
+            continue
         abs_candidate = (root / candidate).resolve()
         if not _is_relative_to(abs_candidate, root):
             continue
         if abs_candidate.is_file():
             return ResolvedTarget(path=candidate, exists=True, source="inferred")
     for candidate in _candidate_repo_paths_from_task_body(task):
+        if proposal is not None and path_matches_forbidden(candidate, proposal.forbidden_files):
+            continue
         abs_candidate = (root / candidate).resolve()
         if _is_relative_to(abs_candidate, root):
             return ResolvedTarget(path=candidate, exists=False, source="inferred")
 
     return ResolvedTarget(path="", exists=False, source="inferred")
+
+
+def _resolved_target_from_bounded_proposal(
+    proposal: BoundedProposal | None,
+    root: Path,
+) -> ResolvedTarget | None:
+    if proposal is None or not proposal.target_file:
+        return None
+    target_path = normalize_repo_path_candidate(proposal.target_file)
+    if not target_path:
+        return None
+    abs_target = (root / target_path).resolve()
+    exists = _is_relative_to(abs_target, root) and abs_target.is_file()
+    return ResolvedTarget(path=target_path, exists=exists, source="explicit_line")
+
+
+def unsafe_target_for_route(
+    task: str,
+    resolved_target: ResolvedTarget,
+    workspace_root: Path | None = None,
+) -> UnsafeTargetFinding | None:
+    """Honor bounded proposal target_file; do not treat forbidden_files mentions as the target."""
+    root = (workspace_root or _workspace_root_from_router()).resolve()
+    proposal = parse_bounded_proposal_task(task)
+    if proposal is not None and proposal.target_file:
+        target_path = normalize_repo_path_candidate(proposal.target_file)
+        if target_path and resolved_target.path == target_path:
+            return unsafe_target_finding(target_path, workspace_root=root)
+    forbidden_skip = _forbidden_path_skip_set(proposal)
+    return unsafe_target_from_task(
+        task,
+        root,
+        skip_paths=forbidden_skip,
+        skip_path_checker=(
+            (lambda candidate: path_matches_forbidden(candidate, proposal.forbidden_files))
+            if proposal is not None
+            else None
+        ),
+    )
+
+
+def _forbidden_path_skip_set(proposal: BoundedProposal | None) -> frozenset[str] | None:
+    if proposal is None or not proposal.forbidden_files:
+        return None
+    normalized = {
+        normalize_repo_path_candidate(path)
+        for path in proposal.forbidden_files
+        if normalize_repo_path_candidate(path)
+    }
+    return frozenset(normalized) if normalized else None
 
 
 def build_self_correction_checks(

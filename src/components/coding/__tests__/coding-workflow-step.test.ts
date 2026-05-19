@@ -4,7 +4,7 @@ import { createElement } from "react";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 
 import { ROUTE_RESPONSE_INVALID_PREFIX } from "@/lib/coding/proxy-route-payload";
-import {
+import CodingAgentInterface, {
   ApprovalGatePanel,
   architectPlanDisplayTarget,
   buildQualityGateChecks,
@@ -21,6 +21,7 @@ import {
   deriveCodingTaskStateSummary,
   deriveDiffPreviewIntegrationSummary,
   deriveProposalDraft,
+  deriveProposalEnablement,
   deriveVerifierReviewerResultCards,
   documenterBlueprintProposals,
   deriveReviewerAgentChecks,
@@ -39,6 +40,7 @@ import {
   longTaskVisibleState,
   mergeWorkflowMemorySnapshots,
   promptTextForCoderPacket,
+  ProposalCreationPanel,
   shouldAppendTaskActivityLog,
   taskSpecForManualPreview,
   taskSpecForPlan,
@@ -591,6 +593,27 @@ describe("deriveWorkerEvidenceLanes", () => {
 });
 
 describe("deriveProposalDraft", () => {
+  it("blocks missing task, target, and allowed files", () => {
+    const draft = deriveProposalDraft({
+      allowedFilesText: "",
+      expectedChecksText: "git diff --check",
+      forbiddenFilesText: "",
+      mode: "proposal",
+      rollbackHint: "git restore docs/example.md",
+      targetFile: "",
+      task: "   ",
+    });
+
+    expect(draft.blocked).toBe(true);
+    expect(draft.reasonCodes).toEqual(
+      expect.arrayContaining([
+        "missing_task",
+        "missing_target_file",
+        "missing_allowed_files",
+      ]),
+    );
+  });
+
   it("requires target and allowed files for proposal mode", () => {
     const draft = deriveProposalDraft({
       allowedFilesText: "",
@@ -625,9 +648,9 @@ describe("deriveProposalDraft", () => {
 
   it("builds a bounded proposal task without action authority", () => {
     const draft = deriveProposalDraft({
-      allowedFilesText: "docs/example.md",
+      allowedFilesText: "docs/example.md\ndocs/notes.md",
       expectedChecksText: "git diff --check, npm run typecheck",
-      forbiddenFilesText: "docs/secret.md",
+      forbiddenFilesText: "",
       mode: "proposal",
       rollbackHint: "git restore docs/example.md",
       targetFile: "docs/example.md",
@@ -635,11 +658,293 @@ describe("deriveProposalDraft", () => {
     });
 
     expect(draft.blocked).toBe(false);
-    expect(draft.allowedFiles).toEqual(["docs/example.md"]);
+    expect(draft.allowedFiles).toEqual(["docs/example.md", "docs/notes.md"]);
+    expect(draft.forbiddenFiles).toEqual([]);
     expect(draft.expectedChecks).toEqual(["git diff --check", "npm run typecheck"]);
     expect(draft.text).toContain('"mode": "proposal"');
     expect(draft.text).toContain('"target_file": "docs/example.md"');
     expect(draft.text).not.toMatch(/apply now|commit now|push now/i);
+  });
+});
+
+function proposalDraftButton() {
+  return screen.getByTestId("draft-proposal-task-button");
+}
+
+describe("deriveProposalEnablement", () => {
+  it("does not require expected checks or rollback hint", () => {
+    const enablement = deriveProposalEnablement({
+      allowedFilesText: "docs/example.md",
+      expectedChecksText: "",
+      forbiddenFilesText: "",
+      mode: "proposal",
+      rollbackHint: "",
+      targetFile: "docs/example.md",
+      task: "Update docs.",
+    });
+
+    expect(enablement.blocked).toBe(false);
+    expect(enablement.reasonCodes).not.toContain("missing_expected_checks");
+    expect(enablement.reasonCodes).not.toContain("missing_rollback_hint");
+  });
+});
+
+describe("ProposalCreationPanel", () => {
+  it("starts blocked when required fields are empty", () => {
+    render(
+      createElement(ProposalCreationPanel, {
+        defaultTarget: "",
+        isRunning: false,
+        onDraft: vi.fn(),
+        taskText: "",
+      }),
+    );
+
+    expect(proposalDraftButton()).toBeDisabled();
+    expect(screen.getByText(/missing_task/i)).toBeInTheDocument();
+    expect(screen.getByText(/missing_target_file/i)).toBeInTheDocument();
+    expect(screen.getByText(/missing_allowed_files/i)).toBeInTheDocument();
+  });
+
+  it("enables draft when task, target, and allowed files are filled", () => {
+    render(
+      createElement(ProposalCreationPanel, {
+        defaultTarget: "",
+        isRunning: false,
+        onDraft: vi.fn(),
+        taskText: "",
+      }),
+    );
+
+    fireEvent.change(screen.getByLabelText(/^task$/i), {
+      target: { value: "Add /proxy-backend alias page for CodingAgentInterface." },
+    });
+    fireEvent.change(screen.getByLabelText(/target file/i), {
+      target: { value: "src/app/proxy-backend/page.tsx" },
+    });
+    fireEvent.change(screen.getByLabelText(/allowed files/i), {
+      target: { value: "src/app/proxy-backend/page.tsx" },
+    });
+
+    expect(screen.queryByText(/missing_task/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/missing_target_file/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/missing_allowed_files/i)).not.toBeInTheDocument();
+    expect(proposalDraftButton()).toBeEnabled();
+  });
+
+  it("re-adds missing_task when task is cleared", () => {
+    render(
+      createElement(ProposalCreationPanel, {
+        defaultTarget: "src/app/proxy-backend/page.tsx",
+        isRunning: false,
+        onDraft: vi.fn(),
+        taskText: "Seed task",
+      }),
+    );
+
+    fireEvent.change(screen.getByLabelText(/^task$/i), { target: { value: "" } });
+
+    expect(screen.getByText(/missing_task/i)).toBeInTheDocument();
+    expect(proposalDraftButton()).toBeDisabled();
+  });
+
+  it("re-adds missing_target_file when target is cleared", () => {
+    render(
+      createElement(ProposalCreationPanel, {
+        defaultTarget: "",
+        isRunning: false,
+        onDraft: vi.fn(),
+        taskText: "Seed task",
+      }),
+    );
+
+    fireEvent.change(screen.getByLabelText(/target file/i), { target: { value: "" } });
+
+    expect(screen.getByText(/missing_target_file/i)).toBeInTheDocument();
+    expect(proposalDraftButton()).toBeDisabled();
+  });
+
+  it("re-adds missing_allowed_files when allowed files are cleared", () => {
+    render(
+      createElement(ProposalCreationPanel, {
+        defaultTarget: "",
+        isRunning: false,
+        onDraft: vi.fn(),
+        taskText: "Seed task",
+      }),
+    );
+
+    fireEvent.change(screen.getByLabelText(/target file/i), {
+      target: { value: "src/app/proxy-backend/page.tsx" },
+    });
+    fireEvent.change(screen.getByLabelText(/allowed files/i), { target: { value: "" } });
+
+    expect(screen.getByText(/missing_allowed_files/i)).toBeInTheDocument();
+    expect(proposalDraftButton()).toBeDisabled();
+  });
+
+  it("parses newline-separated allowed files", () => {
+    render(
+      createElement(ProposalCreationPanel, {
+        defaultTarget: "",
+        isRunning: false,
+        onDraft: vi.fn(),
+        taskText: "Seed task",
+      }),
+    );
+
+    fireEvent.change(screen.getByLabelText(/target file/i), {
+      target: { value: "src/app/proxy-backend/page.tsx" },
+    });
+    fireEvent.change(screen.getByLabelText(/allowed files/i), {
+      target: {
+        value: "src/app/proxy-backend/page.tsx\nsrc/app/proxy-backend/notes.md",
+      },
+    });
+
+    expect(screen.queryByText(/missing_allowed_files/i)).not.toBeInTheDocument();
+    expect(proposalDraftButton()).toBeEnabled();
+  });
+
+  it("parses comma-separated allowed files", () => {
+    render(
+      createElement(ProposalCreationPanel, {
+        defaultTarget: "",
+        isRunning: false,
+        onDraft: vi.fn(),
+        taskText: "Seed task",
+      }),
+    );
+
+    fireEvent.change(screen.getByLabelText(/target file/i), {
+      target: { value: "src/app/proxy-backend/page.tsx" },
+    });
+    fireEvent.change(screen.getByLabelText(/allowed files/i), {
+      target: {
+        value: "src/app/proxy-backend/page.tsx, src/app/proxy-backend/notes.md",
+      },
+    });
+
+    expect(screen.queryByText(/missing_allowed_files/i)).not.toBeInTheDocument();
+    expect(proposalDraftButton()).toBeEnabled();
+  });
+
+  it("keeps forbidden files optional for enabling draft", () => {
+    render(
+      createElement(ProposalCreationPanel, {
+        defaultTarget: "src/app/proxy-backend/page.tsx",
+        isRunning: false,
+        onDraft: vi.fn(),
+        taskText: "Seed task",
+      }),
+    );
+
+    expect(screen.queryByText(/missing_allowed_files/i)).not.toBeInTheDocument();
+    expect(proposalDraftButton()).toBeEnabled();
+  });
+
+  it("applies late defaults without wiping user edits", () => {
+    const onDraft = vi.fn();
+    const { rerender } = render(
+      createElement(ProposalCreationPanel, {
+        defaultTarget: "",
+        isRunning: false,
+        onDraft,
+        taskText: "",
+      }),
+    );
+
+    fireEvent.change(screen.getByLabelText(/^task$/i), {
+      target: { value: "Create the proxy backend page." },
+    });
+
+    rerender(
+      createElement(ProposalCreationPanel, {
+        defaultTarget: "src/app/proxy-backend/page.tsx",
+        isRunning: false,
+        onDraft,
+        taskText: "Ignored after user edit",
+      }),
+    );
+
+    expect(screen.getByLabelText(/^task$/i)).toHaveValue("Create the proxy backend page.");
+    expect(proposalDraftButton()).toBeEnabled();
+  });
+
+  it("seeds empty proposal fields from taskText and defaultTarget props", () => {
+    const { rerender } = render(
+      createElement(ProposalCreationPanel, {
+        defaultTarget: "",
+        isRunning: false,
+        onDraft: vi.fn(),
+        taskText: "",
+      }),
+    );
+
+    expect(proposalDraftButton()).toBeDisabled();
+
+    rerender(
+      createElement(ProposalCreationPanel, {
+        defaultTarget: "src/app/proxy-backend/page.tsx",
+        isRunning: false,
+        onDraft: vi.fn(),
+        taskText: "Create the proxy backend page.",
+      }),
+    );
+
+    expect(screen.getByLabelText(/^task$/i)).toHaveValue("Create the proxy backend page.");
+    expect(screen.getByLabelText(/target file/i)).toHaveValue("src/app/proxy-backend/page.tsx");
+    expect(screen.getByLabelText(/allowed files/i)).toHaveValue("src/app/proxy-backend/page.tsx");
+    expect(proposalDraftButton()).toBeEnabled();
+  });
+
+  it("syncs browser-autofill DOM values into proposal state after mount", async () => {
+    vi.useFakeTimers();
+    render(
+      createElement(ProposalCreationPanel, {
+        defaultTarget: "",
+        isRunning: false,
+        onDraft: vi.fn(),
+        taskText: "",
+      }),
+    );
+
+    const taskInput = screen.getByLabelText(/^task$/i) as HTMLTextAreaElement;
+    const targetInput = screen.getByLabelText(/target file/i) as HTMLInputElement;
+    const allowedFilesInput = screen.getByLabelText(/allowed files/i) as HTMLTextAreaElement;
+    fireEvent.change(taskInput, { target: { value: "" } });
+    taskInput.value = "Create the proxy backend page.";
+    targetInput.value = "src/app/proxy-backend/page.tsx";
+    allowedFilesInput.value = "src/app/proxy-backend/page.tsx";
+
+    await vi.advanceTimersByTimeAsync(300);
+
+    expect(proposalDraftButton()).toBeEnabled();
+    vi.useRealTimers();
+  });
+
+  it("drafts a bounded proposal from the top panel button", () => {
+    const onDraft = vi.fn();
+    render(
+      createElement(ProposalCreationPanel, {
+        defaultTarget: "src/app/proxy-backend/page.tsx",
+        isRunning: false,
+        onDraft,
+        taskText: "Create the proxy backend page.",
+      }),
+    );
+
+    fireEvent.click(proposalDraftButton());
+
+    expect(onDraft).toHaveBeenCalledTimes(1);
+    const drafted = onDraft.mock.calls[0]?.[0] as import("@/components/coding/CodingAgentInterface").ProposalDraftResult;
+    expect(drafted.text).toContain('"mode": "proposal"');
+    expect(drafted.text).toContain('"target_file": "src/app/proxy-backend/page.tsx"');
+    expect(drafted.text).toContain('"allowed_files": [');
+    expect(drafted.targetFile).toBe("src/app/proxy-backend/page.tsx");
+    expect(drafted.text).toContain("proposal draft only");
+    expect(drafted.text).not.toMatch(/apply now|commit now|push now/i);
+    expect(screen.getByTestId("proposal-draft-copied-ack")).toBeInTheDocument();
   });
 });
 
@@ -1219,6 +1524,11 @@ describe("deriveCodingStabilitySummary", () => {
     });
 
     expect(summary.primaryState).toBe("Needs approval");
+    expect(summary.stepLabel).toBe("Preview ready, waiting for approval");
+    expect(summary.headline).toBe(
+      "Preview ready. Human approval required before apply.",
+    );
+    expect(summary.nextAction).toContain("No files have changed yet");
     expect(summary.diffState).toBe("preview ready");
     expect(summary.approvalState).toBe("requires human approval");
   });
@@ -1514,7 +1824,7 @@ describe("deriveCodingTaskStateSummary", () => {
       allowedFiles: "docs/phase-8-manual-check.md",
       appliedAnything: "false",
       approvalAvailable: "false",
-      currentWorkflowState: "Blocked",
+      currentWorkflowState: "Blocked: task_spec_allowed_file_violation",
       lastBlocker: "task_spec_allowed_file_violation",
       safetyLevel: "blocked",
       target: "docs/phase-8-manual-check.md",
@@ -1566,7 +1876,9 @@ describe("deriveCodingTaskStateSummary", () => {
     });
 
     expect(summary.approvalAvailable).toBe("true");
-    expect(summary.currentWorkflowState).toBe("Needs approval");
+    expect(summary.currentWorkflowState).toBe("Preview ready, waiting for approval");
+    expect(summary.applyExecuted).toBe("no");
+    expect(summary.applyExecutedHelper).toContain("Preview only");
     expect(summary.safetyLevel).toBe("low");
   });
 
@@ -1576,6 +1888,8 @@ describe("deriveCodingTaskStateSummary", () => {
         summary: {
           allowedFiles: "docs/phase-8-manual-check.md",
           appliedAnything: "false",
+          applyExecuted: "no",
+          applyExecutedHelper: "Preview only. No file writes happen until you click Approve.",
           approvalAvailable: "false",
           currentWorkflowState: "Blocked",
           lastBlocker: "protected_path",
@@ -2479,7 +2793,7 @@ describe("workflowStep", () => {
     ).toBe("Verification complete");
 
     render(createElement(CodingStabilityCard, { summary }));
-    expect(screen.getByText("Done")).toBeTruthy();
+    expect(screen.getAllByText("Verified complete").length).toBeGreaterThan(0);
     cleanup();
 
     render(
@@ -2591,7 +2905,7 @@ describe("workflowStep", () => {
     );
 
     expect(screen.getByRole("button", { name: "Check action" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Approve" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Approve and apply" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Reject" })).toBeTruthy();
     expect(screen.getByText("3. Reviewer Agent")).toBeTruthy();
     expect(screen.getByText("Target correctness")).toBeTruthy();
@@ -2714,6 +3028,25 @@ describe("workflowStep", () => {
     expect(approvalRequired.blocker).toBe("approval_required");
     expect(approvalRequired.nextSafeAction).toContain("approve or reject explicitly");
     expect(JSON.stringify([protectedPath, approvalRequired])).not.toMatch(/auto-fix|push now/i);
+
+    const localModelDown = deriveBlockerNextSafeActionSummary({
+      canApprove: false,
+      diffVerification: baseArgs().diffVerification,
+      gate: {
+        ...baseArgs().approvalGate,
+        preview: {
+          decision: "coder_config_blocked",
+          reason_codes: ["local_model_unavailable"],
+          requires_human_approval: false,
+        },
+      },
+      task: null,
+    });
+
+    expect(localModelDown.blocker).toBe("local_model_unavailable");
+    expect(localModelDown.title).toBe("Local model unavailable");
+    expect(localModelDown.nextSafeAction).toContain("OLLAMA_BASE_URL");
+    expect(localModelDown.nextSafeAction).toContain("manual diff preview");
   });
 
   it("uses readable rejection reasons and preserves reason codes", () => {
@@ -3449,5 +3782,130 @@ describe("coding diff quality gates", () => {
       allowed_files: ["docs/phase-8-manual-check.md"],
       source: "manual_preview_target",
     });
+  });
+});
+
+describe("backend console layout", () => {
+  beforeEach(() => {
+    Element.prototype.scrollIntoView = vi.fn();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/v1/tasks/queue")) {
+          return new Response(JSON.stringify({ tasks: [] }), { status: 200 });
+        }
+        if (url.includes("/v1/self/status")) {
+          return new Response(JSON.stringify({ service: "source_proxy" }), {
+            status: 200,
+          });
+        }
+        return new Response(JSON.stringify({}), { status: 200 });
+      }),
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("renders the backend console summary with bounded proposal and gated approval", async () => {
+    render(createElement(CodingAgentInterface, { layoutMode: "backend-console" }));
+
+    expect(
+      await screen.findByRole("heading", { name: "Source Proxy Backend Console" }),
+    ).toBeTruthy();
+    expect(screen.getByTestId("current-run-summary")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Bounded Proposal" })).toBeTruthy();
+    expect(
+      screen.getByRole("heading", { name: "Diff, Approval, and Verification" }),
+    ).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Approve" })).toBeNull();
+  });
+
+  it("start new task resets bounded proposal form on backend console", async () => {
+    render(createElement(CodingAgentInterface, { layoutMode: "backend-console" }));
+    await screen.findByRole("heading", { name: "Bounded Proposal" });
+
+    fireEvent.change(screen.getByLabelText(/^task$/i), {
+      target: { value: "Protected path smoke test." },
+    });
+    fireEvent.change(screen.getByLabelText(/target file/i), {
+      target: { value: ".env.local" },
+    });
+    fireEvent.change(screen.getByLabelText(/allowed files/i), {
+      target: { value: ".env.local" },
+    });
+
+    expect(screen.getByText(/protected_target/i)).toBeTruthy();
+
+    fireEvent.click(screen.getByTestId("start-new-task-proposal"));
+
+    expect(screen.queryByText(/protected_target/i)).toBeNull();
+    expect(screen.getByLabelText(/target file/i)).toHaveValue("");
+    expect(screen.getByText(/Started a new task/i)).toBeTruthy();
+  });
+
+  it("keeps legacy workflow and noisy diagnostics collapsed by default", async () => {
+    render(createElement(CodingAgentInterface, { layoutMode: "backend-console" }));
+    await screen.findByRole("heading", { name: "Source Proxy Backend Console" });
+
+    const advancedStages = screen.getByText("Advanced run stages").closest("details");
+    const advancedDiagnostics = screen
+      .getByText("Advanced diagnostics and history")
+      .closest("details");
+    const debugJson = screen.getByText("Debug JSON").closest("details");
+
+    expect(advancedStages?.hasAttribute("open")).toBe(false);
+    expect(advancedDiagnostics?.hasAttribute("open")).toBe(false);
+    expect(debugJson?.hasAttribute("open")).toBe(false);
+  });
+});
+
+describe("coding task layout", () => {
+  beforeEach(() => {
+    Element.prototype.scrollIntoView = vi.fn();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/v1/tasks/queue")) {
+          return new Response(JSON.stringify({ tasks: [] }), { status: 200 });
+        }
+        if (url.includes("/v1/self/status")) {
+          return new Response(JSON.stringify({ service: "source_proxy" }), {
+            status: 200,
+          });
+        }
+        return new Response(JSON.stringify({}), { status: 200 });
+      }),
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("renders a task-first coding workspace instead of the backend console", async () => {
+    render(createElement(CodingAgentInterface, { layoutMode: "task" }));
+
+    expect(await screen.findByRole("heading", { name: "Coding Workspace" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Current Change" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Review and Apply" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Verification" })).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Source Proxy Backend Console" })).toBeNull();
+    expect(screen.queryByText("Coding Workflow")).toBeNull();
+  });
+
+  it("keeps advanced setup and backend diagnostics collapsed by default", async () => {
+    render(createElement(CodingAgentInterface, { layoutMode: "task" }));
+    await screen.findByRole("heading", { name: "Coding Workspace" });
+
+    const advancedSetup = screen.getByText("Advanced task setup").closest("details");
+    const backendDiagnostics = screen.getByText("Backend diagnostics").closest("details");
+
+    expect(advancedSetup?.hasAttribute("open")).toBe(false);
+    expect(backendDiagnostics?.hasAttribute("open")).toBe(false);
+    expect(screen.queryByRole("button", { name: "Approve" })).toBeNull();
   });
 });
