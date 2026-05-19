@@ -34,6 +34,11 @@ from source_proxy.cartographer.service import (
     build_cartographer_docs_autopilot_soak,
     build_cartographer_drift,
     build_cartographer_git,
+    build_cartographer_level_2_api_contract,
+    build_cartographer_level_2_closeout,
+    build_cartographer_level_2_dirty_tree,
+    build_cartographer_level_2_dirty_tree_resolution,
+    build_cartographer_level_2_readiness,
     build_cartographer_projects,
     build_cartographer_project_candidates,
     build_cartographer_project_health,
@@ -65,6 +70,7 @@ from source_proxy.cartographer.service import (
     build_cartographer_v1_readiness,
     apply_cartographer_clutter_proposal,
     run_cartographer_docs_autopilot_apply,
+    run_cartographer_level_2_docs_apply,
     write_cartographer_starter_blueprints,
 )
 
@@ -96,6 +102,12 @@ class CartographerStarterBlueprintWriteRequest(BaseModel):
 class CartographerClutterCleanupRequest(BaseModel):
     approved: bool
     approved_by: str = Field(default="cartographer-ui", max_length=120)
+
+
+class CartographerLevel2ApplyRequest(BaseModel):
+    proposal_id: str = Field(max_length=160)
+    approval_id: str | None = Field(default=None, max_length=160)
+    approval_actor: str | None = Field(default=None, max_length=120)
 
 
 @router.get("/status")
@@ -133,6 +145,17 @@ async def cartographer_docs_autopilot_apply() -> dict[str, Any]:
     return run_cartographer_docs_autopilot_apply()
 
 
+@router.post("/docs-autopilot/level-2/apply")
+async def cartographer_level_2_docs_apply(
+    request: CartographerLevel2ApplyRequest,
+) -> dict[str, Any]:
+    return run_cartographer_level_2_docs_apply(
+        proposal_id=request.proposal_id,
+        approval_id=request.approval_id,
+        approval_actor=request.approval_actor,
+    )
+
+
 @router.get("/docs-autopilot/soak")
 async def cartographer_docs_autopilot_soak() -> dict[str, Any]:
     return build_cartographer_docs_autopilot_soak()
@@ -146,6 +169,31 @@ async def cartographer_trust_score() -> dict[str, Any]:
 @router.get("/autonomy-promotion")
 async def cartographer_autonomy_promotion() -> dict[str, Any]:
     return build_cartographer_autonomy_promotion()
+
+
+@router.get("/level-2-readiness")
+async def cartographer_level_2_readiness() -> dict[str, Any]:
+    return build_cartographer_level_2_readiness()
+
+
+@router.get("/level-2-dirty-tree")
+async def cartographer_level_2_dirty_tree() -> dict[str, Any]:
+    return build_cartographer_level_2_dirty_tree()
+
+
+@router.get("/level-2-dirty-tree-resolution")
+async def cartographer_level_2_dirty_tree_resolution() -> dict[str, Any]:
+    return build_cartographer_level_2_dirty_tree_resolution()
+
+
+@router.get("/level-2-api-contract")
+async def cartographer_level_2_api_contract() -> dict[str, Any]:
+    return build_cartographer_level_2_api_contract()
+
+
+@router.get("/level-2-closeout")
+async def cartographer_level_2_closeout() -> dict[str, Any]:
+    return build_cartographer_level_2_closeout()
 
 
 @router.get("/v1-readiness")

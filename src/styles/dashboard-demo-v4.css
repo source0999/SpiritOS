@@ -2562,9 +2562,151 @@ html[data-theme="solar-ember"] .dashboard-demo-v4-root {
   overflow-wrap: anywhere;
 }
 
+.dashboard-demo-v4-cartographer-level-two {
+  display: grid;
+  gap: 0.7rem;
+  border: 1px solid var(--ddv4-surface-border-soft);
+  border-radius: 8px;
+  background: var(--ddv4-surface-fill);
+  padding: 0.78rem;
+}
+
+.dashboard-demo-v4-cartographer-level-two-heading {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.dashboard-demo-v4-cartographer-level-two-heading h3 {
+  margin: 0;
+  color: var(--ddv4-fg);
+  font-size: 0.95rem;
+  font-weight: 780;
+  letter-spacing: 0;
+  line-height: 1.18;
+}
+
+.dashboard-demo-v4-cartographer-level-two-heading strong {
+  min-width: 0;
+  color: var(--ddv4-fg);
+  font-size: 0.72rem;
+  font-weight: 780;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.dashboard-demo-v4-cartographer-level-two-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.dashboard-demo-v4-cartographer-level-two-grid > div {
+  min-width: 0;
+  display: grid;
+  gap: 0.24rem;
+  border: 1px solid var(--ddv4-surface-border-soft);
+  border-radius: 8px;
+  padding: 0.58rem;
+}
+
+.dashboard-demo-v4-cartographer-level-two-grid span,
+.dashboard-demo-v4-cartographer-level-two-lines p {
+  color: var(--ddv4-fg-faint);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.3;
+}
+
+.dashboard-demo-v4-cartographer-level-two-grid strong {
+  min-width: 0;
+  color: var(--ddv4-fg);
+  font-size: 0.82rem;
+  font-weight: 760;
+  letter-spacing: 0;
+  line-height: 1.22;
+  overflow-wrap: anywhere;
+}
+
+.dashboard-demo-v4-cartographer-level-two-lines {
+  display: grid;
+  gap: 0.42rem;
+}
+
+.dashboard-demo-v4-cartographer-level-two-lines p {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 0.42rem;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.dashboard-demo-v4-cartographer-level-two-lines svg {
+  color: color-mix(in oklab, var(--spirit-accent-strong, currentColor) 78%, currentColor);
+}
+
+.dashboard-demo-v4-cartographer-mobile-review {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.dashboard-demo-v4-cartographer-mobile-review > div {
+  min-width: 0;
+  display: grid;
+  gap: 0.28rem;
+  border: 1px solid var(--ddv4-surface-border-soft);
+  border-radius: 8px;
+  background: rgba(5, 8, 14, 0.24);
+  padding: 0.62rem;
+}
+
+.dashboard-demo-v4-cartographer-mobile-review span,
+.dashboard-demo-v4-cartographer-mobile-review strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.dashboard-demo-v4-cartographer-mobile-review span {
+  color: var(--ddv4-fg-faint);
+  font-size: 0.6rem;
+  font-weight: 720;
+  letter-spacing: 0;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.dashboard-demo-v4-cartographer-mobile-review strong {
+  color: var(--ddv4-fg);
+  font-size: 0.72rem;
+  font-weight: 760;
+  letter-spacing: 0;
+  line-height: 1.25;
+}
+
 @media (max-width: 560px) {
   .dashboard-demo-v4-cartographer-grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dashboard-demo-v4-cartographer-mobile-review {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dashboard-demo-v4-cartographer-level-two-heading,
+  .dashboard-demo-v4-cartographer-level-two-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dashboard-demo-v4-cartographer-level-two-heading strong {
+    text-align: left;
   }
 }
 

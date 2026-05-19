@@ -28,6 +28,14 @@ from source_proxy.cartographer.git_status import (
     read_git_status_for_project,
     read_git_statuses,
 )
+from source_proxy.cartographer.level_2_apply import run_level_2_docs_apply
+from source_proxy.cartographer.level_2_readiness import (
+    build_level_2_api_contract_review_packet,
+    build_level_2_closeout_packet,
+    build_level_2_dirty_tree_classification,
+    build_level_2_dirty_tree_resolution_packet,
+    build_level_2_readiness,
+)
 from source_proxy.cartographer.models import CartographerStatus, to_jsonable
 from source_proxy.cartographer.project_discovery import (
     blocked_project_roots,
@@ -157,6 +165,21 @@ def run_cartographer_docs_autopilot_apply() -> dict[str, Any]:
     return run_docs_autopilot_apply()
 
 
+def run_cartographer_level_2_docs_apply(
+    *,
+    proposal_id: str,
+    approval_id: str | None = None,
+    approval_actor: str | None = None,
+) -> dict[str, Any]:
+    payload = run_level_2_docs_apply(
+        proposal_id=proposal_id,
+        approval_id=approval_id,
+        approval_actor=approval_actor,
+    )
+    payload["safety"] = cartographer_safety_manifest()
+    return payload
+
+
 def build_cartographer_docs_autopilot_soak() -> dict[str, Any]:
     return build_docs_autopilot_soak_report()
 
@@ -170,6 +193,40 @@ def build_cartographer_trust_score() -> dict[str, Any]:
 
 def build_cartographer_autonomy_promotion() -> dict[str, Any]:
     payload = build_autonomy_promotion_recommendation()
+    payload["level_2_readiness"] = build_level_2_readiness()
+    payload["level_2_recommendation"] = payload["level_2_readiness"]["label"]
+    payload["level_2_authority_granted"] = False
+    payload["level_2_enablement_allowed"] = bool(payload["level_2_readiness"]["docs_apply_enabled"])
+    payload["safety"] = cartographer_safety_manifest()
+    return payload
+
+
+def build_cartographer_level_2_readiness() -> dict[str, Any]:
+    payload = build_level_2_readiness()
+    payload["safety"] = cartographer_safety_manifest()
+    return payload
+
+
+def build_cartographer_level_2_dirty_tree() -> dict[str, Any]:
+    payload = build_level_2_dirty_tree_classification()
+    payload["safety"] = cartographer_safety_manifest()
+    return payload
+
+
+def build_cartographer_level_2_dirty_tree_resolution() -> dict[str, Any]:
+    payload = build_level_2_dirty_tree_resolution_packet()
+    payload["safety"] = cartographer_safety_manifest()
+    return payload
+
+
+def build_cartographer_level_2_api_contract() -> dict[str, Any]:
+    payload = build_level_2_api_contract_review_packet()
+    payload["safety"] = cartographer_safety_manifest()
+    return payload
+
+
+def build_cartographer_level_2_closeout() -> dict[str, Any]:
+    payload = build_level_2_closeout_packet()
     payload["safety"] = cartographer_safety_manifest()
     return payload
 
@@ -1002,7 +1059,10 @@ def build_cartographer_proposals() -> dict[str, Any]:
     return {
         "status": "observing",
         "write_actions_enabled": False,
-        "proposals": to_jsonable(proposals),
+        "level": 1,
+        "mode": "proposal_draft",
+        "authority_granted": False,
+        "proposals": [_proposal_draft_payload(proposal) for proposal in proposals],
         "proposal_count": len(proposals),
         "pending_proposals": pending_proposal_count(),
         "deduped": duplicate_proposals == 0,
@@ -1017,6 +1077,10 @@ def build_cartographer_proposals() -> dict[str, Any]:
         "lifecycle": lifecycle,
         "review_decisions": ["approve", "reject", "request_edit", "defer", "mark_stale"],
         "review_actions_apply_files": False,
+        "apply_allowed": False,
+        "commit_allowed": False,
+        "push_allowed": False,
+        "operator_review_required": True,
         "proposal_only_contract": _proposal_only_contract(),
         "transition_audit_complete": all(
             transition.actor and transition.timestamp
@@ -1026,6 +1090,62 @@ def build_cartographer_proposals() -> dict[str, Any]:
         "actions_taken": False,
         "safety": cartographer_safety_manifest(),
     }
+
+
+def _proposal_draft_payload(proposal: Any) -> dict[str, Any]:
+    payload = to_jsonable(proposal)
+    proposed_files = [
+        str(path)
+        for path in payload.get("proposed_files", [])
+        if str(path)
+    ]
+    target_path = proposed_files[0] if proposed_files else ""
+    payload.update(
+        {
+            "level": 1,
+            "proposal_draft": True,
+            "target_docs_path": target_path,
+            "reason": payload.get("rationale") or payload.get("title") or "Cartographer proposal draft.",
+            "risk_level": _proposal_risk_level(proposed_files),
+            "proposed_change_summary": payload.get("title") or "Review proposed docs update.",
+            "rollback_hint": f"git restore {target_path}" if target_path else "No rollback needed; no files were changed.",
+            "manual_check": f"git diff -- {target_path}" if target_path else "git status -sb",
+            "why_no_source_edit_is_needed": "Level 1 proposal drafts are review evidence only; source edits are forbidden.",
+            "approval_required": True,
+            "apply_allowed": False,
+            "commit_allowed": False,
+            "push_allowed": False,
+            "apply_enabled": False,
+            "commit_enabled": False,
+            "push_enabled": False,
+            "creates_commit_proposal": False,
+            "creates_push_queue_item": False,
+        }
+    )
+    return payload
+
+
+def _proposal_risk_level(proposed_files: list[str]) -> str:
+    if not proposed_files:
+        return "blocked"
+    if any(
+        path.startswith(
+            (
+                "src/",
+                "source_proxy/",
+                "scout/src/",
+                "backend/",
+                "scripts/",
+            )
+        )
+        or path.startswith(".env")
+        or "secret" in path.lower()
+        or "token" in path.lower()
+        or "certificate" in path.lower()
+        for path in proposed_files
+    ):
+        return "blocked"
+    return "low"
 
 
 def build_cartographer_change_scribe() -> dict[str, Any]:
@@ -1070,8 +1190,14 @@ def build_cartographer_runbook_scribe() -> dict[str, Any]:
 def _proposal_only_contract() -> dict[str, Any]:
     return {
         "max_authority": "proposal_only",
+        "level": 1,
+        "proposal_drafts_only": True,
         "blueprinter_can_write_source_of_truth_docs": False,
         "review_required": True,
+        "approval_required": True,
+        "apply_allowed": False,
+        "commit_allowed": False,
+        "push_allowed": False,
         "apply_requires_approval": True,
         "commit_requires_separate_approval": True,
         "push_requires_separate_approval": True,
