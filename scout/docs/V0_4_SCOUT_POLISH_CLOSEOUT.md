@@ -214,6 +214,39 @@ The baseline soak snapshot reported:
 
 Do not enable real auto-approval yet.
 
+## Live Soak Addendum: Packet Synthesis Route Not Clean
+
+Date: 2026-05-19
+
+The previous v0.4 deterministic gates remain valid:
+
+- Scout core is stable.
+- `/health` returns HTTP 200 with `{"status":"observing","version":"v0.1"}`.
+- `scout_v0_1` is up and Docker reports it as healthy.
+- source count remains 5.
+- source candidate counts remain bounded: `needs_review: 2`, `approved: 2`, `recommended: 12`, `rejected: 1`, `blocked: 1`, `stored: 0`.
+- discovery jobs remain bounded at 5 queued jobs with `max_results: 5` and `budget: 5`.
+- discovery execution remains manual-controlled.
+- real auto-approval remains disabled.
+- background discovery worker remains not registered unless later live diagnostics prove otherwise.
+
+The long soak cannot be considered fully clean while repeated `packet_synthesis_model_failed` appears in service logs. Repeated log errors violate the proceed condition that logs do not show repeated errors.
+
+Current live route evidence:
+
+- Scout is attached to `scout_default`.
+- `spirit-ollama` is not attached to `scout_default` in the observed Docker inspect output.
+- `docker port spirit-ollama` reports no published port.
+- host `localhost:11434/api/tags` responds with local Ollama models.
+- the requested in-container `wget` probes could not validate Scout-to-Ollama routing because `wget` is not installed in `scout_v0_1`.
+- Scout logs still show `litellm.APIConnectionError: OllamaException - [Errno 111] Connection refused`.
+
+Scout remains in observing v0.1 mode. Packet synthesis is not fully proven. This blocks deeper polish until the model route is fixed or intentionally downgraded.
+
+Next recommended phase:
+
+Run v0.4.1 live-state reconciliation and Ollama route diagnosis before further polish. Do not change Docker networking, compose behavior, service state, source activation, proxy memory, coding context, or code without a separate permission gate.
+
 Recommended next step:
 
 Run the long soak routine from `scout/docs/V0_3_PHASE10_LONG_RUNNING_SOAK.md` for 24 to 72 hours:

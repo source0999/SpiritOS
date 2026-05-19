@@ -158,9 +158,20 @@ Stop the soak and inspect before proceeding if:
 - candidate counts grow unexpectedly while discovery/search is disabled
 - discovery job creation bypasses daily caps
 - logs repeat the same error across multiple intervals
+- logs repeatedly show `packet_synthesis_model_failed`
 - DB size grows rapidly without corresponding bounded discovery activity
 - review history is missing after reject/block/approve
 - any source-gate code path writes to coding or proxy memory
+
+Repeated `packet_synthesis_model_failed` is a soak warning and blocker for model-backed readiness. Deterministic Scout gates may still pass, but packet synthesis is not validated while Scout cannot reach the configured model route.
+
+Record this state as:
+
+```text
+core stable, model route blocked
+```
+
+Do not call the long soak fully clean until the packet synthesis route is fixed or the release intentionally downgrades packet synthesis to a deterministic/no-model path.
 
 Recommended next step:
 

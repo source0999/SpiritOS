@@ -2128,3 +2128,185 @@ Expected outputs.
 Risks.
 Rollback.
 Ask: "Do you want me to implement Phase 0.1 now?"
+
+# Scout v0.4.1: Live State Reconciliation and Packet Synthesis Route Blocker
+
+Status date: 2026-05-19
+
+Goal:
+Correct the Scout plan against the latest live soak evidence before deeper polish. Scout core is stable, but packet synthesis is not fully proven while model-backed synthesis cannot reach Ollama.
+
+## Current live state summary
+
+Live diagnostics on 2026-05-19 show:
+
+- `/health` returns HTTP 200 with `{"status":"observing","version":"v0.1"}`.
+- `scout_v0_1` is up and Docker reports it as healthy.
+- Scout is still in observing mode.
+- Source count is stable at 5 active sources.
+- Candidate counts are bounded: `needs_review: 2`, `approved: 2`, `recommended: 12`, `rejected: 1`, `blocked: 1`, `stored: 0`.
+- Discovery has 5 queued jobs, 0 running jobs, 0 completed jobs, and 0 failed jobs.
+- Discovery execution is `manual_controlled`.
+- `automatic_execution` is false.
+- `worker_registered` is false.
+- Queued discovery jobs are saved controlled plans, not an active background worker.
+
+Passing test evidence from the latest Scout evidence set:
+
+- focused soak/discovery checks passed: 23 passed
+- full Scout suite passed: 159 passed, 3 skipped
+
+## Live API counts
+
+Sources:
+
+- total active sources: 5
+- static config GitHub/RSS sources remain active
+- manually approved web page sources remain active
+- no source activation should happen without manual approval
+
+Source candidates:
+
+- `needs_review`: 2
+- `approved`: 2
+- `recommended`: 12
+- `rejected`: 1
+- `blocked`: 1
+- `stored`: 0
+
+Discovery queue:
+
+- queued jobs: 5
+- running jobs: 0
+- completed jobs: 0
+- failed jobs: 0
+- max results per queued job: 5
+- budget per queued job: 5
+- daily limit visible in API response
+
+## Safety boundaries
+
+Continue to enforce these boundaries:
+
+- Do not auto-activate sources.
+- Do not auto-approve, auto-reject, or auto-block source candidates.
+- Do not write to proxy memory.
+- Do not write to coding context.
+- Do not treat queued discovery jobs as active background work.
+- Do not call Scout fully autonomous.
+- Do not claim a clean long soak while repeated model errors remain in logs.
+
+## Blocker: packet synthesis model route
+
+Recent live logs repeatedly show:
+
+```text
+packet_synthesis_model_failed
+litellm.APIConnectionError: OllamaException - [Errno 111] Connection refused
+```
+
+Current route evidence:
+
+- Scout is attached to Docker network `scout_default`.
+- `spirit-ollama` is not attached to `scout_default` in the observed Docker inspect output.
+- `docker port spirit-ollama` reports no published port.
+- Host `localhost:11434/api/tags` responds with local Ollama models.
+- The requested in-container probe using `wget` could not validate Scout-to-Ollama routing because `wget` is not installed in `scout_v0_1`.
+- The repeated Scout log error still proves the live packet synthesis model call is failing with connection refused.
+
+Packet synthesis is not fully proven. This blocks deeper polish until the model route is fixed or intentionally downgraded.
+
+## Decision
+
+Scout is stable observer/polish-ready in the deterministic shell:
+
+- health is good
+- container health is good
+- deterministic source, candidate, and discovery gates are explainable
+- discovery jobs are saved controlled plans, not an active background worker
+- source candidate states persist and remain bounded
+
+Scout is not fully v1 autonomous, and the model-backed packet synthesis path is not soak-clean.
+
+Do not proceed to deeper polish until one of these is true:
+
+- Scout-to-Ollama route is repaired and packet synthesis completes without repeated `packet_synthesis_model_failed` logs.
+- Product scope explicitly downgrades packet synthesis to deterministic/no-model behavior for this release and documents that decision.
+
+## Next increment
+
+Name:
+Scout v0.4.1 live-state reconciliation and Ollama route fix plan.
+
+Goal:
+Diagnose and repair Scout-to-Ollama networking/model routing so packet synthesis can be validated by soak evidence.
+
+Allowed first step:
+Read-only route diagnosis only.
+
+Likely diagnosis areas:
+
+- Scout container model base URL configuration
+- Docker network membership for Scout and Ollama
+- whether Ollama should be reached through a published host port or shared Docker network DNS
+- whether the live Ollama service is the same service Scout is configured to call
+- whether the Scout image has a useful in-container HTTP probe tool
+
+Do not implement a route fix without a separate permission gate.
+
+## Manual checks
+
+Run read-only checks before any route change:
+
+```bash
+cd ~/SpiritOS
+
+curl -s -i http://localhost:8077/health | sed -n '1,40p'
+curl -s http://localhost:8077/v1/scout/sources | jq '{count}'
+curl -s "http://localhost:8077/v1/scout/source-candidates?limit=200" | jq '{counts}'
+curl -s "http://localhost:8077/v1/scout/discovery-jobs?limit=50" | jq '{count,budget,execution}'
+
+docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}\t{{.Networks}}' | grep -E 'scout|ollama|searxng|spirit' || true
+docker inspect scout_v0_1 --format '{{json .NetworkSettings.Networks}}' 2>/dev/null | jq . || true
+docker inspect spirit-ollama --format '{{json .NetworkSettings.Networks}}' 2>/dev/null | jq . || true
+docker port spirit-ollama 2>/dev/null || true
+
+curl -sS --max-time 5 http://localhost:11434/api/tags | jq . 2>/dev/null || true
+docker logs --tail=300 scout_v0_1 2>&1 | grep -E 'packet_synthesis_model_failed|ollama|11434|model' || true
+```
+
+If probing from inside the Scout container, first confirm the available probe tools:
+
+```bash
+docker exec scout_v0_1 sh -lc 'command -v curl || command -v wget || command -v python || true'
+```
+
+Then use the available tool to check:
+
+- `http://host.docker.internal:11434/api/tags`
+- `http://spirit-ollama:11434/api/tags`
+- `http://localhost:11434/api/tags` from inside Scout
+
+## Expected outputs
+
+Stable deterministic Scout shell:
+
+- `/health` stays HTTP 200.
+- source count remains 5 unless manually approved changes happen.
+- source candidate counts remain bounded.
+- discovery execution remains manual-controlled.
+- `automatic_execution` remains false.
+- `worker_registered` remains false.
+- queued jobs remain explainable saved search plans.
+
+Packet route fixed:
+
+- Scout can reach the configured Ollama endpoint from inside the Scout runtime.
+- packet synthesis no longer logs repeated `packet_synthesis_model_failed`.
+- packet synthesis creates expected packet/verdict artifacts during the manual packet check.
+
+## Rollback and no-op notes
+
+This increment starts as docs and diagnostics only. There is nothing to roll back if only read-only checks are run.
+
+Before any Docker, compose, network, service, code, commit, push, cleanup, or promotion action, stop and ask for explicit permission.
