@@ -35,6 +35,16 @@ export type ScoutPipelineCounts = {
   promotedBriefings: number;
 };
 
+export type ScoutPacketSynthesisSummary = {
+  label: string;
+  state: string;
+  routeConfigured: boolean;
+  pendingArtifacts: number;
+  model: string | null;
+  apiBase: string | null;
+  timeoutSeconds: number | null;
+};
+
 export type ScoutActionInboxCard = {
   id:
     | "sources-to-approve"
@@ -60,6 +70,7 @@ export type ScoutHumanReadModel = {
   sourceCandidateGroups: ScoutSourceCandidateGroup[];
   sourceStatusCounts: Record<string, number>;
   discoveryBudgetSummary: ScoutDiscoveryBudgetSummary;
+  packetSynthesisSummary: ScoutPacketSynthesisSummary;
   pipelineCounts: ScoutPipelineCounts;
   reviewInboxCount: number;
   actionInboxCards: ScoutActionInboxCard[];
@@ -294,6 +305,20 @@ export function buildScoutHumanReadModel(overview: ScoutOverview): ScoutHumanRea
     (source) => source.health_label?.toLowerCase().includes("unsupported"),
   ).length;
   const memoryStatus = overview.human_summary?.memory_status;
+  const packetSynthesis =
+    overview.packet_synthesis ?? overview.human_summary?.packet_synthesis_status ?? {};
+  const packetSynthesisSummary = {
+    label: packetSynthesis.label ?? "Packet synthesis unknown",
+    state: packetSynthesis.state ?? "unknown",
+    routeConfigured: packetSynthesis.route_configured === true,
+    pendingArtifacts: valueOrZero(packetSynthesis.pending_artifacts),
+    model: packetSynthesis.model ?? null,
+    apiBase: packetSynthesis.api_base ?? null,
+    timeoutSeconds:
+      typeof packetSynthesis.timeout_seconds === "number"
+        ? packetSynthesis.timeout_seconds
+        : null,
+  };
   const memoryWritesOff = memoryStatus?.write_enabled !== true;
   const manualApprovalRequired = true;
   const needsReview = sourceSuggestions + packetReviews;
@@ -324,12 +349,19 @@ export function buildScoutHumanReadModel(overview: ScoutOverview): ScoutHumanRea
 
   const summarySentence = [
     "Scout is online.",
+    packetSynthesisSummary.state === "route_missing"
+      ? "Packet model route needs repair."
+      : packetSynthesisSummary.state === "pending"
+        ? `${plural(packetSynthesisSummary.pendingArtifacts, "artifact")} waiting for packet synthesis.`
+        : null,
     usefulFinds > 0
       ? `${plural(usefulFinds, "promoted briefing")} ready.`
       : "No promoted briefings yet.",
     needsReview > 0 ? `${plural(needsReview, "item")} need review.` : "Nothing needs approval right now.",
     queuedJobs > 0 ? `${plural(queuedJobs, "search job")} queued.` : "No search jobs are queued.",
-  ].join(" ");
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   const queueSentence =
     clutterParts.length > 0
@@ -388,6 +420,7 @@ export function buildScoutHumanReadModel(overview: ScoutOverview): ScoutHumanRea
     sourceCandidateGroups,
     sourceStatusCounts,
     discoveryBudgetSummary,
+    packetSynthesisSummary,
     pipelineCounts,
     reviewInboxCount,
     actionInboxCards,

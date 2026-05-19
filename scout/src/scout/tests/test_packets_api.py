@@ -291,6 +291,13 @@ def test_scout_overview_empty(tmp_path, monkeypatch):
     assert body["backlog"]["debugger_pending_packets"] == 0
     assert body["backlog"]["debugger_pending_without_verdict"] == 0
     assert body["human_summary"]["pipeline_health"] == "idle"
+    synthesis = body["packet_synthesis"]
+    assert synthesis["state"] == "route_missing"
+    assert synthesis["label"] == "Ollama route missing"
+    assert synthesis["model"] == "ollama/llama3"
+    assert synthesis["route_configured"] is False
+    assert synthesis["pending_artifacts"] == 0
+    assert body["human_summary"]["packet_synthesis_status"] == synthesis
     memory_status = body["human_summary"]["memory_status"]
     assert memory_status["label"] == "Semantic memory inactive"
     assert memory_status["state"] == "inactive"
@@ -307,6 +314,7 @@ def test_scout_overview_empty(tmp_path, monkeypatch):
 
 def test_scout_overview_counts_pending_and_surfaced(tmp_path, monkeypatch):
     client, settings = _overview_client(tmp_path, monkeypatch)
+    settings.litellm_api_base = "http://spirit-ollama:11434"
     _insert_unsynthesized_artifact(settings)
     stored_packet = make_packet("pkt_stored")
     surfaced_packet = make_packet("pkt_surfaced")
@@ -325,6 +333,8 @@ def test_scout_overview_counts_pending_and_surfaced(tmp_path, monkeypatch):
     assert body["counts"]["packets"] == 3
     assert body["counts"]["verdicts"] == 1
     assert body["backlog"]["unsynthesized_artifacts"] == 1
+    assert body["packet_synthesis"]["state"] == "pending"
+    assert body["packet_synthesis"]["pending_artifacts"] == 1
     assert body["backlog"]["debugger_pending_packets"] == 1
     assert body["human_summary"]["scan_flow"][0]["label"] == "Scanned"
     assert body["human_summary"]["scan_flow"][0]["count"] == 1
