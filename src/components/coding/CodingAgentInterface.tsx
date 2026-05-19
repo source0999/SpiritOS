@@ -5708,6 +5708,11 @@ export function ProposalCreationPanel({
     createInitialProposalForm(taskText, defaultTarget),
   );
   const [draftCopiedAck, setDraftCopiedAck] = useState(false);
+  const [lastSeedProps, setLastSeedProps] = useState(() => ({
+    defaultTarget,
+    taskText,
+  }));
+  const [lastResetKey, setLastResetKey] = useState(resetKey);
   const mergeProposalField = <K extends keyof ProposalFormState>(
     key: K,
     value: ProposalFormState[K],
@@ -5716,26 +5721,38 @@ export function ProposalCreationPanel({
       current[key] === value ? current : { ...current, [key]: value },
     );
   };
-  const seedEmptyProposalFieldsFromProps = () => {
+  const seedEmptyProposalFieldsFromProps = (
+    current: ProposalFormState,
+  ): ProposalFormState => {
     const normalizedTarget = normalizeRepoRelativePath(defaultTarget);
-    setProposalForm((current) => {
-      const next = { ...current };
-      let changed = false;
-      if (!current.task.trim() && taskText.trim()) {
-        next.task = taskText;
-        changed = true;
-      }
-      if (!current.target_file.trim() && normalizedTarget) {
-        next.target_file = normalizedTarget;
-        changed = true;
-      }
-      if (!current.allowed_files_text.trim() && normalizedTarget) {
-        next.allowed_files_text = normalizedTarget;
-        changed = true;
-      }
-      return changed ? next : current;
-    });
+    const next = { ...current };
+    let changed = false;
+    if (!current.task.trim() && taskText.trim()) {
+      next.task = taskText;
+      changed = true;
+    }
+    if (!current.target_file.trim() && normalizedTarget) {
+      next.target_file = normalizedTarget;
+      changed = true;
+    }
+    if (!current.allowed_files_text.trim() && normalizedTarget) {
+      next.allowed_files_text = normalizedTarget;
+      changed = true;
+    }
+    return changed ? next : current;
   };
+  if (
+    lastSeedProps.defaultTarget !== defaultTarget ||
+    lastSeedProps.taskText !== taskText
+  ) {
+    setLastSeedProps({ defaultTarget, taskText });
+    setProposalForm(seedEmptyProposalFieldsFromProps);
+  }
+  if (lastResetKey !== resetKey) {
+    setLastResetKey(resetKey);
+    setProposalForm(createInitialProposalForm(taskText, defaultTarget));
+    setDraftCopiedAck(false);
+  }
   const syncAutofillFromDom = () => {
     const domTask = taskInputRef.current?.value ?? "";
     const domTarget = targetFileInputRef.current?.value ?? "";
@@ -5758,13 +5775,6 @@ export function ProposalCreationPanel({
       return changed ? next : current;
     });
   };
-  useEffect(() => {
-    seedEmptyProposalFieldsFromProps();
-  }, [defaultTarget, taskText]);
-  useEffect(() => {
-    setProposalForm(createInitialProposalForm(taskText, defaultTarget));
-    setDraftCopiedAck(false);
-  }, [resetKey]);
   useEffect(() => {
     syncAutofillFromDom();
     const syncSoon = window.setTimeout(syncAutofillFromDom, 0);
