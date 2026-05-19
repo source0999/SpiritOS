@@ -26,6 +26,8 @@ describe("CodingCockpitShell", () => {
     expect(screen.getByTestId("mobile-action-bar")).toHaveTextContent("No files changed");
     expect(screen.getByRole("button", { name: "Preview" })).toBeDisabled();
     expect(screen.getByLabelText("Coding status")).toHaveTextContent("Draft");
+    expect(screen.getByLabelText("Coding status")).toHaveTextContent("Apply");
+    expect(screen.getByLabelText("Coding status")).toHaveTextContent("Verify");
     expect(screen.getByRole("complementary", { name: "Task actions" })).toHaveTextContent(
       "Next Safe Action",
     );
@@ -92,6 +94,8 @@ describe("CodingCockpitShell", () => {
     expect(await screen.findByText(/Preview ready. No files changed yet/)).toBeInTheDocument();
     expect(screen.getAllByText(/Approval is required before apply/).length).toBeGreaterThan(0);
     expect(screen.getByText("approval available")).toBeInTheDocument();
+    expect(screen.getByText(/Approval state is visible for review only/)).toBeInTheDocument();
+    expect(screen.getByText(/Commit and push are not available here/)).toBeInTheDocument();
     expect(screen.getAllByText(/No files changed yet/).length).toBeGreaterThan(0);
     expect(screen.queryByRole("button", { name: "Approve" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /apply/i })).not.toBeInTheDocument();
@@ -158,7 +162,9 @@ describe("CodingCockpitShell", () => {
 
     expect(await screen.findByText(/Preview ready. No files changed yet/)).toBeInTheDocument();
     expect(screen.getByText(/approval available/)).toBeInTheDocument();
-    expect(screen.getByText(/Apply controls are intentionally unavailable/)).toBeInTheDocument();
+    expect(screen.getByText(/Approval display does not apply files/)).toBeInTheDocument();
+    expect(screen.getByText(/No verification action is available here yet/)).toBeInTheDocument();
+    expect(screen.getByText(/apply controls are intentionally unavailable/i)).toBeInTheDocument();
     expect(globalThis.fetch).toHaveBeenCalledTimes(2);
     expect(screen.queryByRole("button", { name: "Approve" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /apply/i })).not.toBeInTheDocument();

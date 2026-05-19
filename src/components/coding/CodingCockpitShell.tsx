@@ -19,7 +19,7 @@ const statusItems = [
   { label: "Workspace", value: "SpiritOS", tone: "text-slate-100" },
 ];
 
-const statusStripItems = ["Draft", "Preview", "Approval"];
+const statusStripItems = ["Draft", "Preview", "Approval", "Apply", "Verify"];
 const navItems = [
   { href: "/", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/chat", icon: MessageSquare, label: "Chat" },
@@ -102,7 +102,7 @@ function nextSafeActionText({
     return "Write the task, open Advanced options for target and allowed files, then preview safely. Preview does not write files.";
   }
   if (previewState.status === "ready") {
-    return "Review the preview. Approval is required before apply, and apply is not exposed in this preview-only increment.";
+    return "Review the approval gates. Approval is required before apply, and apply is locked until the next approved increment.";
   }
   return "Resolve any preview blocker, then retry safe preview. No files have been changed.";
 }
@@ -544,7 +544,7 @@ export default function CodingCockpitShell() {
                     <h2 className="text-base font-semibold text-white">Approval State</h2>
                     <p className="mt-1 text-sm text-slate-400">
                       {previewState.approvalAvailable
-                        ? "Preview ready. Approval is required before apply; apply is not exposed in this preview-only increment."
+                        ? "Preview ready. Approval is available, but apply is locked for this increment."
                         : "Approval unavailable until preview gates pass. No files changed yet."}
                     </p>
                   </div>
@@ -598,6 +598,16 @@ export default function CodingCockpitShell() {
                     ok={!previewState.reviewerSummary.toLowerCase().includes("blocked")}
                     value={previewState.reviewerSummary}
                   />
+                  <GateStatus
+                    label="Apply"
+                    ok={false}
+                    value="Locked in this increment. Approval display does not apply files."
+                  />
+                  <GateStatus
+                    label="Verification"
+                    ok={false}
+                    value="Runs after a separately approved apply flow. No verification action is available here yet."
+                  />
                 </dl>
 
                 {previewState.error ? (
@@ -607,7 +617,7 @@ export default function CodingCockpitShell() {
                 ) : null}
 
                 <div className="mt-4 rounded-md border border-sky-300/30 bg-sky-300/10 p-3 text-sm text-sky-100">
-                  No files changed yet. Apply controls are intentionally unavailable in this increment.
+                  No files changed yet. Approval state is visible for review only; apply controls are intentionally unavailable in this increment. Commit and push are not available here.
                 </div>
               </section>
             ) : null}
