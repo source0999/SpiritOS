@@ -1,0 +1,392 @@
+{
+  "blockers": [
+    "codex_adapter",
+    "proxy_regression"
+  ],
+  "cartographer_project_health": {
+    "actions_taken": false,
+    "dirty": true,
+    "dirty_file_count": null,
+    "expected_evidence_files": [],
+    "merge_blockers": [
+      "working tree has uncommitted changes",
+      "work is not on a review branch"
+    ],
+    "merge_ready": false,
+    "ok": true,
+    "project_count": 1,
+    "project_id": "spiritos",
+    "recommended_next_step": "commit or discard remaining local changes",
+    "status": "active",
+    "unsafe_dirty_files": [],
+    "write_actions_enabled": false
+  },
+  "checks": {
+    "cartographer_project_health": true,
+    "codex_adapter": false,
+    "dashboard_smoke": true,
+    "no_unexpected_file_changes": true,
+    "proxy_regression": false,
+    "route_validation": true,
+    "safety_seed": true,
+    "safety_verdict": true
+  },
+  "closeout_status": "BLOCKED",
+  "codex_adapter_tests": {
+    "command": "python -m pytest source_proxy/tests/test_codex_cli_adapter.py source_proxy/tests/test_source_proxy_end_to_end.py",
+    "error": null,
+    "returncode": 1,
+    "stderr": "/usr/bin/python3: No module named pytest\n",
+    "stdout": ""
+  },
+  "dashboard_smoke_tests": {
+    "command": "node node_modules/vitest/vitest.mjs run src/components/coding/__tests__/coding-workflow-step.test.ts src/components/dashboard/__tests__/HomelabScoutIntelligenceWidget.test.tsx",
+    "error": null,
+    "missing_files": [],
+    "result": "pass",
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "\n RUN  v4.1.5 /home/source/SpiritOS\n\n\n Test Files  2 passed (2)\n      Tests  94 passed (94)\n   Start at  00:21:29\n   Duration  2.08s (transform 793ms, setup 113ms, import 1.55s, tests 1.02s, environment 814ms)\n\n"
+  },
+  "file_change_verdict": {
+    "after": "M README.md\n M chatDesign/components/chat/__tests__/ChatThreadSidebar.test.tsx\n M docs/cartographer-trust-source-plan.md\n M docs/codex-real-task-trial.md\n M docs/proxy-test-runner-plan.md\n D proxyCLI.md\n M source_proxy/agents/registry.py\n M source_proxy/api/cartographer.py\n M source_proxy/api/codex_adapter.py\n M source_proxy/api/long_running_tasks.py\n M source_proxy/approval/gate.py\n M source_proxy/cartographer/apply.py\n M source_proxy/cartographer/audit_trail.py\n M source_proxy/cartographer/branch_recommendations.py\n M source_proxy/cartographer/change_scribe.py\n M source_proxy/cartographer/commit_proposals.py\n M source_proxy/cartographer/component_mapper.py\n M source_proxy/cartographer/drift.py\n M source_proxy/cartographer/git_approvals.py\n M source_proxy/cartographer/git_status.py\n M source_proxy/cartographer/models.py\n M source_proxy/cartographer/project_discovery.py\n M source_proxy/cartographer/project_health.py\n M source_proxy/cartographer/proposal_previews.py\n M source_proxy/cartographer/proposal_reviews.py\n M source_proxy/cartographer/proposals.py\n M source_proxy/cartographer/push_queue.py\n M source_proxy/cartographer/safety.py\n M source_proxy/cartographer/service.py\n M source_proxy/cartographer/starter_blueprints.py\n M source_proxy/cartographer/sub_cartographers.py\n M source_proxy/codex/__init__.py\n M source_proxy/codex/evidence.py\n M source_proxy/decision/recommendation.py\n M source_proxy/safety/paths.py\n M source_proxy/self_status.py\n M source_proxy/tasks/long_running.py\n M source_proxy/testing/runner.py\n M source_proxy/tests/test_agent_registry.py\n M source_proxy/tests/test_cartographer_api.py\n M source_proxy/tests/test_codex_cli_adapter.py\n M source_proxy/tests/test_coding_regression_pack.py\n M source_proxy/tests/test_coding_self_tests.py\n M source_proxy/tests/test_long_running_tasks.py\n M source_proxy/tests/test_proxy_agent_routing.py\n M source_proxy/tests/test_proxy_runner.py\n M source_proxy/tests/test_self_status.py\n M source_proxy/verification/diff.py\n M src/app/(dashboard)/page.tsx\n M src/app/api/scout/overview/route.ts\n M src/app/intelligence/page.tsx\n M src/app/v1/actions/execute-approved/__tests__/route.test.ts\n M src/app/v1/actions/execute-approved/route.ts\n M src/app/v1/cartographer/push-queue/route.ts\n M src/app/v1/coding/codex/route.ts\n M src/app/v1/tasks/long-running/route.ts\n M src/components/chat/__tests__/spirit-chat-oracle-contract.test.ts\n M src/components/coding/CodingAgentInterface.tsx\n M src/components/coding/__tests__/coding-workflow-step.test.ts\n M src/components/dashboard/HomelabCartographerWidget.tsx\n M src/components/dashboard/HomelabScoutIntelligenceWidget.tsx\n M src/components/dashboard/ScoutIntelligenceCenter.tsx\n M src/components/dashboard/SpiritDashboardHome.tsx\n M src/components/dashboard/__tests__/HomelabCartographerWidget.test.tsx\n M src/components/dashboard/__tests__/SpiritDashboardHome.test.tsx\n M src/components/dashboard/demo-v4/DashboardDemoV4.test.tsx\n M src/components/dashboard/demo-v4/DashboardDemoV4.tsx\n M src/hooks/useClusterTelemetry.ts\n M src/hooks/useScoutOverview.ts\n M src/lib/server/capabilities/format-capability-answer.ts\n M src/styles/dashboard-demo-v4.css\n?? data/cartographer-v1-diagnostics/\n?? docs/agent-wrapper-reference-study.md\n?? docs/aionui-bridge-reassessment.md\n?? docs/aionui-reference-study.md\n?? docs/cartographer-v1-evidence-artifacts.md\n?? docs/limited-autopilot-design.md\n?? docs/local-ollama-provider-study.md\n?? docs/plan-index.md\n?? docs/scheduled-provider-tasks-design.md\n?? docs/source-proxy-daily-use-runbook.md\n?? docs/source-proxy-hardening-closeout.md\n?? docs/source-proxy-production-hardening-plan.md\n?? docs/source-proxy-regression-matrix.md\n?? docs/source-proxy-remote-manual-checks.md\n?? docs/source-proxy-worktree-study.md\n?? docs/spirit-cowork-console-reassessment.md\n?? docs/spirit-cowork-gap-report.md\n?? docs/spiritos-mobile-surface-decision.md\n?? productionProxy.md\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T022851Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T041707Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T042305Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T042542Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T110315Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T110546Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T110712Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T185656Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T185757Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T190127Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T192908Z.json\n?? source_proxy/cartographer/autonomy_promotion.py\n?? source_proxy/cartographer/autopilot_apply.py\n?? source_proxy/cartographer/autopilot_config.py\n?? source_proxy/cartographer/autopilot_dry_run.py\n?? source_proxy/cartographer/autopilot_soak.py\n?? source_proxy/cartographer/clutter_inventory.py\n?? source_proxy/cartographer/clutter_proposals.py\n?? source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-2026-05-18T022743Z.json\n?? source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-2026-05-18T205159Z.json\n?? source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-2026-05-18T205758Z.json\n?? source_proxy/cartographer/trust_score.py\n?? source_proxy/cartographer/v1_evidence.py\n?? source_proxy/cartographer/v1_readiness.py\n?? src/app/v1/cartographer/autonomy-promotion/\n?? src/app/v1/cartographer/clutter-inventory/\n?? src/app/v1/cartographer/clutter-proposals/\n?? src/app/v1/cartographer/clutter-review/\n?? src/app/v1/cartographer/codex-evidence/\n?? src/app/v1/cartographer/docs-autopilot/\n?? src/app/v1/cartographer/starter-blueprints/\n?? src/app/v1/cartographer/trust-score/\n?? src/app/v1/cartographer/v1-closeout-audit-summary/\n?? src/app/v1/cartographer/v1-closeout-checklist/\n?? src/app/v1/cartographer/v1-closeout-dashboard/\n?? src/app/v1/cartographer/v1-closeout-endpoints/\n?? src/app/v1/cartographer/v1-closeout-finalization/\n?? src/app/v1/cartographer/v1-closeout-handoff/\n?? src/app/v1/cartographer/v1-closeout-status/\n?? src/app/v1/cartographer/v1-combined-readiness-dry-run/\n?? src/app/v1/cartographer/v1-diagnostic-import-dry-run/\n?? src/app/v1/cartographer/v1-evidence-gap-report/\n?? src/app/v1/cartographer/v1-evidence/\n?? src/app/v1/cartographer/v1-freeze-marker-proposal/\n?? src/app/v1/cartographer/v1-freeze-marker-validation/\n?? src/app/v1/cartographer/v1-proof-contract/\n?? src/app/v1/cartographer/v1-proof-import-dry-run/\n?? src/app/v1/cartographer/v1-proof-recording-proposal/\n?? src/app/v1/cartographer/v1-proof-validation/\n?? src/app/v1/cartographer/v1-readiness/\n?? src/app/v1/coding/codex/__tests__/",
+    "before": "M README.md\n M chatDesign/components/chat/__tests__/ChatThreadSidebar.test.tsx\n M docs/cartographer-trust-source-plan.md\n M docs/codex-real-task-trial.md\n M docs/proxy-test-runner-plan.md\n D proxyCLI.md\n M source_proxy/agents/registry.py\n M source_proxy/api/cartographer.py\n M source_proxy/api/codex_adapter.py\n M source_proxy/api/long_running_tasks.py\n M source_proxy/approval/gate.py\n M source_proxy/cartographer/apply.py\n M source_proxy/cartographer/audit_trail.py\n M source_proxy/cartographer/branch_recommendations.py\n M source_proxy/cartographer/change_scribe.py\n M source_proxy/cartographer/commit_proposals.py\n M source_proxy/cartographer/component_mapper.py\n M source_proxy/cartographer/drift.py\n M source_proxy/cartographer/git_approvals.py\n M source_proxy/cartographer/git_status.py\n M source_proxy/cartographer/models.py\n M source_proxy/cartographer/project_discovery.py\n M source_proxy/cartographer/project_health.py\n M source_proxy/cartographer/proposal_previews.py\n M source_proxy/cartographer/proposal_reviews.py\n M source_proxy/cartographer/proposals.py\n M source_proxy/cartographer/push_queue.py\n M source_proxy/cartographer/safety.py\n M source_proxy/cartographer/service.py\n M source_proxy/cartographer/starter_blueprints.py\n M source_proxy/cartographer/sub_cartographers.py\n M source_proxy/codex/__init__.py\n M source_proxy/codex/evidence.py\n M source_proxy/decision/recommendation.py\n M source_proxy/safety/paths.py\n M source_proxy/self_status.py\n M source_proxy/tasks/long_running.py\n M source_proxy/testing/runner.py\n M source_proxy/tests/test_agent_registry.py\n M source_proxy/tests/test_cartographer_api.py\n M source_proxy/tests/test_codex_cli_adapter.py\n M source_proxy/tests/test_coding_regression_pack.py\n M source_proxy/tests/test_coding_self_tests.py\n M source_proxy/tests/test_long_running_tasks.py\n M source_proxy/tests/test_proxy_agent_routing.py\n M source_proxy/tests/test_proxy_runner.py\n M source_proxy/tests/test_self_status.py\n M source_proxy/verification/diff.py\n M src/app/(dashboard)/page.tsx\n M src/app/api/scout/overview/route.ts\n M src/app/intelligence/page.tsx\n M src/app/v1/actions/execute-approved/__tests__/route.test.ts\n M src/app/v1/actions/execute-approved/route.ts\n M src/app/v1/cartographer/push-queue/route.ts\n M src/app/v1/coding/codex/route.ts\n M src/app/v1/tasks/long-running/route.ts\n M src/components/chat/__tests__/spirit-chat-oracle-contract.test.ts\n M src/components/coding/CodingAgentInterface.tsx\n M src/components/coding/__tests__/coding-workflow-step.test.ts\n M src/components/dashboard/HomelabCartographerWidget.tsx\n M src/components/dashboard/HomelabScoutIntelligenceWidget.tsx\n M src/components/dashboard/ScoutIntelligenceCenter.tsx\n M src/components/dashboard/SpiritDashboardHome.tsx\n M src/components/dashboard/__tests__/HomelabCartographerWidget.test.tsx\n M src/components/dashboard/__tests__/SpiritDashboardHome.test.tsx\n M src/components/dashboard/demo-v4/DashboardDemoV4.test.tsx\n M src/components/dashboard/demo-v4/DashboardDemoV4.tsx\n M src/hooks/useClusterTelemetry.ts\n M src/hooks/useScoutOverview.ts\n M src/lib/server/capabilities/format-capability-answer.ts\n M src/styles/dashboard-demo-v4.css\n?? data/cartographer-v1-diagnostics/\n?? docs/agent-wrapper-reference-study.md\n?? docs/aionui-bridge-reassessment.md\n?? docs/aionui-reference-study.md\n?? docs/cartographer-v1-evidence-artifacts.md\n?? docs/limited-autopilot-design.md\n?? docs/local-ollama-provider-study.md\n?? docs/plan-index.md\n?? docs/scheduled-provider-tasks-design.md\n?? docs/source-proxy-daily-use-runbook.md\n?? docs/source-proxy-hardening-closeout.md\n?? docs/source-proxy-production-hardening-plan.md\n?? docs/source-proxy-regression-matrix.md\n?? docs/source-proxy-remote-manual-checks.md\n?? docs/source-proxy-worktree-study.md\n?? docs/spirit-cowork-console-reassessment.md\n?? docs/spirit-cowork-gap-report.md\n?? docs/spiritos-mobile-surface-decision.md\n?? productionProxy.md\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T022851Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T041707Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T042305Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T042542Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T110315Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T110546Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T110712Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T185656Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T185757Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T190127Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T192908Z.json\n?? source_proxy/cartographer/autonomy_promotion.py\n?? source_proxy/cartographer/autopilot_apply.py\n?? source_proxy/cartographer/autopilot_config.py\n?? source_proxy/cartographer/autopilot_dry_run.py\n?? source_proxy/cartographer/autopilot_soak.py\n?? source_proxy/cartographer/clutter_inventory.py\n?? source_proxy/cartographer/clutter_proposals.py\n?? source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-2026-05-18T022743Z.json\n?? source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-2026-05-18T205159Z.json\n?? source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-2026-05-18T205758Z.json\n?? source_proxy/cartographer/trust_score.py\n?? source_proxy/cartographer/v1_evidence.py\n?? source_proxy/cartographer/v1_readiness.py\n?? src/app/v1/cartographer/autonomy-promotion/\n?? src/app/v1/cartographer/clutter-inventory/\n?? src/app/v1/cartographer/clutter-proposals/\n?? src/app/v1/cartographer/clutter-review/\n?? src/app/v1/cartographer/codex-evidence/\n?? src/app/v1/cartographer/docs-autopilot/\n?? src/app/v1/cartographer/starter-blueprints/\n?? src/app/v1/cartographer/trust-score/\n?? src/app/v1/cartographer/v1-closeout-audit-summary/\n?? src/app/v1/cartographer/v1-closeout-checklist/\n?? src/app/v1/cartographer/v1-closeout-dashboard/\n?? src/app/v1/cartographer/v1-closeout-endpoints/\n?? src/app/v1/cartographer/v1-closeout-finalization/\n?? src/app/v1/cartographer/v1-closeout-handoff/\n?? src/app/v1/cartographer/v1-closeout-status/\n?? src/app/v1/cartographer/v1-combined-readiness-dry-run/\n?? src/app/v1/cartographer/v1-diagnostic-import-dry-run/\n?? src/app/v1/cartographer/v1-evidence-gap-report/\n?? src/app/v1/cartographer/v1-evidence/\n?? src/app/v1/cartographer/v1-freeze-marker-proposal/\n?? src/app/v1/cartographer/v1-freeze-marker-validation/\n?? src/app/v1/cartographer/v1-proof-contract/\n?? src/app/v1/cartographer/v1-proof-import-dry-run/\n?? src/app/v1/cartographer/v1-proof-recording-proposal/\n?? src/app/v1/cartographer/v1-proof-validation/\n?? src/app/v1/cartographer/v1-readiness/\n?? src/app/v1/coding/codex/__tests__/",
+    "changed_by_test_run": false,
+    "head_after": "683793732031b6d9471de7995931310065df84a5",
+    "head_before": "683793732031b6d9471de7995931310065df84a5",
+    "head_changed": false,
+    "status_delta": [],
+    "unexpected_status_delta": []
+  },
+  "next_safe_action": "fix or inspect blocker: codex_adapter",
+  "profile": "proxy-closeout",
+  "recommendation": "fix needed",
+  "regression_tests": {
+    "command": "python -m pytest source_proxy/tests/test_coding_self_tests.py source_proxy/tests/test_coding_regression_pack.py source_proxy/tests/test_diff_verification.py source_proxy/tests/test_verification_contracts.py source_proxy/tests/test_long_running_tasks.py source_proxy/tests/test_coder_agent_repomix_diff.py source_proxy/tests/test_source_proxy_end_to_end.py",
+    "missing_files": [],
+    "result": "fail",
+    "returncode": 1,
+    "stderr": "/usr/bin/python3: No module named pytest\n",
+    "stdout": ""
+  },
+  "result": "fail",
+  "route_validation": {
+    "base_url": "https://localhost:3000",
+    "checks": {
+      "codex_route": {
+        "body": {
+          "apply_authority": false,
+          "approval_authority": false,
+          "changed_files": [],
+          "commit_authority": false,
+          "detail": "fetch failed",
+          "execution_state": "config_blocked",
+          "message": "The Codex route could not reach Source Proxy. No Codex task was executed.",
+          "push_authority": false,
+          "reason_code": "source_proxy_unavailable",
+          "route": "codex_adapter",
+          "service": "source-proxy",
+          "status": "config_blocked",
+          "would_run_task": false
+        },
+        "error": null,
+        "ok": true,
+        "status": 200,
+        "url": "https://localhost:3000/v1/coding/codex"
+      },
+      "project_health": {
+        "body": {
+          "actions_taken": false,
+          "detail": {
+            "error": "fetch failed",
+            "message": "The dashboard could not reach the Source Proxy project health endpoint.",
+            "reason_code": "source_proxy_unavailable"
+          },
+          "project_count": 1,
+          "projects": [
+            {
+              "action_taken": false,
+              "blueprint_health": "healthy",
+              "branch": "main",
+              "checks_passed": true,
+              "dirty": true,
+              "filters": [
+                "active",
+                "dirty"
+              ],
+              "markers": [
+                ".git",
+                "package.json",
+                "_blueprints"
+              ],
+              "merge_blockers": [
+                "working tree has uncommitted changes",
+                "work is not on a review branch"
+              ],
+              "merge_ready": false,
+              "merge_target": "origin/main",
+              "name": "SpiritOS",
+              "project_id": "spiritos",
+              "pushed": true,
+              "recommended_next_step": "commit or discard remaining local changes",
+              "root": "/home/source/SpiritOS",
+              "status": "active"
+            }
+          ],
+          "status": "observing",
+          "write_actions_enabled": false
+        },
+        "error": null,
+        "ok": true,
+        "status": 200,
+        "url": "https://localhost:3000/v1/cartographer/project-health"
+      },
+      "self_status": {
+        "body": {
+          "access_scope": "telemetry_unavailable: this fallback only reports that the Source proxy status endpoint could not be reached.",
+          "approval_boundaries": {},
+          "available_routes": [],
+          "context_bundle_status": {
+            "bundles": [],
+            "content_included": false
+          },
+          "detail": "fetch failed",
+          "disabled_tools": [],
+          "enabled_tools": [],
+          "error": "The coding page could not reach the Source proxy telemetry endpoint. Coding approvals still depend on their own preview gates.",
+          "manifest_version": "telemetry-degraded",
+          "service": "source-proxy",
+          "status": "telemetry_unavailable",
+          "windows_bridge_status": {
+            "status": "not_probed"
+          }
+        },
+        "error": null,
+        "ok": true,
+        "status": 200,
+        "url": "https://localhost:3000/v1/self/status"
+      }
+    },
+    "ok": true,
+    "project_health": {
+      "body": {
+        "actions_taken": false,
+        "detail": {
+          "error": "fetch failed",
+          "message": "The dashboard could not reach the Source Proxy project health endpoint.",
+          "reason_code": "source_proxy_unavailable"
+        },
+        "project_count": 1,
+        "projects": [
+          {
+            "action_taken": false,
+            "blueprint_health": "healthy",
+            "branch": "main",
+            "checks_passed": true,
+            "dirty": true,
+            "filters": [
+              "active",
+              "dirty"
+            ],
+            "markers": [
+              ".git",
+              "package.json",
+              "_blueprints"
+            ],
+            "merge_blockers": [
+              "working tree has uncommitted changes",
+              "work is not on a review branch"
+            ],
+            "merge_ready": false,
+            "merge_target": "origin/main",
+            "name": "SpiritOS",
+            "project_id": "spiritos",
+            "pushed": true,
+            "recommended_next_step": "commit or discard remaining local changes",
+            "root": "/home/source/SpiritOS",
+            "status": "active"
+          }
+        ],
+        "status": "observing",
+        "write_actions_enabled": false
+      },
+      "error": null,
+      "ok": true,
+      "status": 200,
+      "url": "https://localhost:3000/v1/cartographer/project-health"
+    }
+  },
+  "safety_verdict": {
+    "applied_anything_false": true,
+    "approval_unavailable_for_blocked_cases": true,
+    "no_apply": true,
+    "no_approve": true,
+    "no_execute_approved": true
+  },
+  "smoke_harness": {
+    "applied_anything": false,
+    "cases": [
+      {
+        "case_id": "manual-check-7",
+        "evidence": {
+          "applied_anything": false,
+          "approval_available": false,
+          "blocked_reasons": [
+            {
+              "path": ".env.local",
+              "reason_code": "secret_shaped_path"
+            },
+            {
+              "path": ".env.local",
+              "reason_code": "protected_path"
+            },
+            {
+              "path": ".env.local",
+              "reason_code": "task_spec_allowed_file_violation"
+            },
+            {
+              "path": "docs/phase-8-manual-check.md",
+              "reason_code": "task_spec_target_mismatch"
+            },
+            {
+              "path": "docs/phase-8-manual-check.md",
+              "reason_code": "requirement_coverage_failed"
+            },
+            {
+              "path": "*",
+              "reason_code": "diff_apply_check_failed"
+            }
+          ],
+          "check_code_change": "blocked",
+          "current_workflow_state": "Blocked",
+          "file_written": false,
+          "last_blocker": "Blocked: protected/secret path",
+          "safety_level": "blocked",
+          "target": ".env.local",
+          "task_spec_allowed_files": "fail",
+          "ui_text": [
+            "Approval is disabled until required gates pass"
+          ],
+          "would_apply_diff": false,
+          "would_change_files": "no",
+          "would_execute": false
+        },
+        "missing": [],
+        "status": "pass"
+      },
+      {
+        "case_id": "manual-check-8",
+        "evidence": {
+          "applied_anything": false,
+          "approval_available": false,
+          "blocked_reasons": [
+            {
+              "path": "../README.md",
+              "reason_code": "path_escape"
+            },
+            {
+              "path": "../README.md",
+              "reason_code": "outside_workspace"
+            },
+            {
+              "path": "../README.md",
+              "reason_code": "secret_shaped_path"
+            },
+            {
+              "path": "../README.md",
+              "reason_code": "protected_path"
+            },
+            {
+              "path": "../README.md",
+              "reason_code": "task_spec_allowed_file_violation"
+            },
+            {
+              "path": "docs/phase-8-manual-check.md",
+              "reason_code": "task_spec_target_mismatch"
+            },
+            {
+              "path": "docs/phase-8-manual-check.md",
+              "reason_code": "requirement_coverage_failed"
+            },
+            {
+              "path": "*",
+              "reason_code": "diff_apply_check_failed"
+            }
+          ],
+          "changed_files": [
+            "../README.md"
+          ],
+          "check_code_change": "blocked",
+          "current_workflow_state": "Blocked",
+          "file_writes_allowed": false,
+          "file_written": false,
+          "git_apply_check_ok": false,
+          "last_blocker": "Blocked: path escapes workspace",
+          "safety_level": "blocked",
+          "target": "../README.md",
+          "task_spec_allowed_files": "fail",
+          "ui_text": [
+            "Approval is disabled until required gates pass"
+          ],
+          "would_apply_diff": false,
+          "would_change_files": "no",
+          "would_execute": false
+        },
+        "missing": [],
+        "status": "pass"
+      },
+      {
+        "case_id": "manual-check-9",
+        "evidence": {
+          "applied_anything": false,
+          "approval_available": false,
+          "blocked_reasons": [
+            {
+              "path": "source_proxy/api/decision.py",
+              "reason_code": "task_spec_allowed_file_violation"
+            },
+            {
+              "path": "docs/phase-8-manual-check.md",
+              "reason_code": "task_spec_target_mismatch"
+            },
+            {
+              "path": "docs/phase-8-manual-check.md",
+              "reason_code": "requirement_coverage_failed"
+            },
+            {
+              "path": "*",
+              "reason_code": "diff_apply_check_failed"
+            }
+          ],
+          "changed_files": [
+            "source_proxy/api/decision.py"
+          ],
+          "check_code_change": "blocked",
+          "current_workflow_state": "Blocked",
+          "file_writes_allowed": false,
+          "file_written": false,
+          "git_apply_check_ok": false,
+          "last_blocker": "Blocked: task_spec_allowed_file_violation",
+          "safety_level": "blocked",
+          "target": "source_proxy/api/decision.py",
+          "task_spec_allowed_files": "fail",
+          "ui_text": [
+            "Approval is disabled until required gates pass"
+          ],
+          "would_apply_diff": false,
+          "would_change_files": "no",
+          "would_execute": false
+        },
+        "missing": [],
+        "status": "pass"
+      }
+    ],
+    "mode": "dry_run",
+    "suite": "phase-4e-safety-seed",
+    "summary": {
+      "failed": 0,
+      "passed": 3,
+      "skipped": 0
+    }
+  }
+}

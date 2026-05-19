@@ -1,0 +1,1436 @@
+{
+  "compose": {
+    "env_file_mentions": [
+      ".env"
+    ],
+    "error": null,
+    "ok": true,
+    "path": "scout/docker-compose.scout.yml",
+    "search_env_wired": true,
+    "search_max_results_wired": true,
+    "search_timeout_wired": true,
+    "searxng_url_wired": true
+  },
+  "container_connectivity": {
+    "http://host.docker.internal:8080/search?q=fastapi&format=json": {
+      "body": {
+        "answers": [
+          {
+            "answer": "FastAPI is a web framework for building HTTP-based service APIs in Python 3.8+. It uses Pydantic and type hints to validate, serialize and deserialize data. FastAPI also automatically generates OpenAPI documentation for APIs built with it. It was first released in 2018. More at Wikipedia",
+            "engine": "duckduckgo",
+            "parsed_url": [
+              "https",
+              "en.wikipedia.org",
+              "/wiki/FastAPI",
+              "",
+              "",
+              ""
+            ],
+            "template": "answer/legacy.html",
+            "url": "https://en.wikipedia.org/wiki/FastAPI"
+          }
+        ],
+        "corrections": [],
+        "infoboxes": [
+          {
+            "attributes": [],
+            "category": "",
+            "content": "FastAPI is a web framework for building HTTP-based service APIs in Python 3.8+. It uses Pydantic and type hints to validate, serialize and deserialize data. FastAPI also automatically generates OpenAPI documentation for APIs built with it. It was first released in 2018.",
+            "engine": "wikipedia",
+            "engines": [
+              "wikipedia"
+            ],
+            "id": "https://en.wikipedia.org/wiki/FastAPI",
+            "img_src": null,
+            "infobox": "FastAPI",
+            "parsed_url": null,
+            "positions": "",
+            "priority": "",
+            "publishedDate": null,
+            "score": 0,
+            "template": "default.html",
+            "thumbnail": "",
+            "title": "",
+            "url": null,
+            "urls": [
+              {
+                "title": "Wikipedia",
+                "url": "https://en.wikipedia.org/wiki/FastAPI"
+              }
+            ]
+          }
+        ],
+        "number_of_results": 0,
+        "query": "fastapi",
+        "results": [
+          {
+            "category": "general",
+            "content": "FastAPI is a modern, fast (high-performance), web framework for building APIs with Python based on standard Python type hints. The key features are: Fast: Very high performance, on par with NodeJS and Go (thanks to Starlette and Pydantic). One of the fastest Python frameworks available. Fast to code: Increase the speed to develop features by about 200% to 300%. Fewer bugs: Reduce about 40% of ...",
+            "engine": "google",
+            "engines": [
+              "startpage",
+              "duckduckgo",
+              "google"
+            ],
+            "img_src": "",
+            "parsed_url": [
+              "https",
+              "fastapi.tiangolo.com",
+              "/",
+              "",
+              "",
+              ""
+            ],
+            "positions": [
+              1,
+              1,
+              1
+            ],
+            "priority": "",
+            "publishedDate": null,
+            "score": 9.0,
+            "template": "default.html",
+            "thumbnail": null,
+            "title": "FastAPI",
+            "url": "https://fastapi.tiangolo.com/"
+          },
+          {
+            "category": "general",
+            "content": "Full stack, modern web application template. Using FastAPI, React, SQLModel, PostgreSQL, Docker, GitHub Actions, automatic HTTPS and more.",
+            "engine": "google",
+            "engines": [
+              "startpage",
+              "google"
+            ],
+            "img_src": "",
+            "parsed_url": [
+              "https",
+              "github.com",
+              "/fastapi",
+              "",
+              "",
+              ""
+            ],
+            "positions": [
+              7,
+              8,
+              2
+            ],
+            "priority": "",
+            "publishedDate": null,
+            "score": 2.303571428571429,
+            "template": "default.html",
+            "thumbnail": null,
+            "title": "FastAPI - GitHub",
+            "url": "https://github.com/fastapi"
+          },
+          {
+            "category": "general",
+            "content": "FastAPI is a web framework for building HTTP -based service APIs in Python 3.8+. [3] It uses Pydantic and type hints to validate, serialize and deserialize data.",
+            "engine": "google",
+            "engines": [
+              "startpage",
+              "duckduckgo",
+              "google"
+            ],
+            "img_src": "",
+            "parsed_url": [
+              "https",
+              "en.wikipedia.org",
+              "/wiki/FastAPI",
+              "",
+              "",
+              ""
+            ],
+            "positions": [
+              6,
+              4,
+              5
+            ],
+            "priority": "",
+            "publishedDate": null,
+            "score": 1.85,
+            "template": "default.html",
+            "thumbnail": null,
+            "title": "FastAPI - Wikipedia",
+            "url": "https://en.wikipedia.org/wiki/FastAPI"
+          },
+          {
+            "category": "general",
+            "content": "This tutorial shows you how to use FastAPI with most of its features, step by step. Each section gradually builds on the previous ones.",
+            "engine": "google",
+            "engines": [
+              "startpage",
+              "google"
+            ],
+            "img_src": "",
+            "parsed_url": [
+              "https",
+              "fastapi.tiangolo.com",
+              "/tutorial/",
+              "",
+              "",
+              ""
+            ],
+            "positions": [
+              3,
+              3
+            ],
+            "priority": "",
+            "publishedDate": null,
+            "score": 1.3333333333333333,
+            "template": "default.html",
+            "thumbnail": null,
+            "title": "Tutorial - User Guide - FastAPI",
+            "url": "https://fastapi.tiangolo.com/tutorial/"
+          },
+          {
+            "category": "general",
+            "content": "Jun 25, 2025 ... FastAPI is best for a simple completely stateless open API. Even there it falls short. Most API development should be contract first with code\u00a0...",
+            "engine": "google",
+            "engines": [
+              "startpage",
+              "google"
+            ],
+            "img_src": "",
+            "parsed_url": [
+              "https",
+              "www.reddit.com",
+              "/r/Python/comments/1ljrsti/fastapi_is_usually_the_right_choice/",
+              "",
+              "",
+              ""
+            ],
+            "positions": [
+              4,
+              6
+            ],
+            "priority": "",
+            "publishedDate": null,
+            "score": 0.8333333333333333,
+            "template": "default.html",
+            "thumbnail": null,
+            "title": "FastAPI is usually the right choice : r/Python - Reddit",
+            "url": "https://www.reddit.com/r/Python/comments/1ljrsti/fastapi_is_usually_the_right_choice/"
+          },
+          {
+            "category": "general",
+            "content": "FastAPI is a modern, fast (high-performance), web framework for building APIs with Python based on standard Python type hints. The key features are: Fast: Very high performance, on par with NodeJS and Go (thanks to Starlette and Pydantic). One of the fastest Python frameworks available. Fast to code: Increase the speed to develop features by about 200% to 300%. Fewer bugs: Reduce about 40% of ...",
+            "engine": "google",
+            "engines": [
+              "duckduckgo",
+              "google"
+            ],
+            "img_src": "",
+            "parsed_url": [
+              "https",
+              "pypi.org",
+              "/project/fastapi/",
+              "",
+              "",
+              ""
+            ],
+            "positions": [
+              10,
+              4
+            ],
+            "priority": "",
+            "publishedDate": null,
+            "score": 0.7,
+            "template": "default.html",
+            "thumbnail": null,
+            "title": "fastapi - PyPI",
+            "url": "https://pypi.org/project/fastapi/"
+          },
+          {
+            "category": "general",
+            "content": "To deploy an application means to perform the necessary steps to make it available to the users. For a web API, it normally involves putting it in a remote ...",
+            "engine": "google",
+            "engines": [
+              "startpage",
+              "google"
+            ],
+            "img_src": "",
+            "parsed_url": [
+              "https",
+              "fastapi.tiangolo.com",
+              "/deployment/",
+              "",
+              "",
+              ""
+            ],
+            "positions": [
+              5,
+              7
+            ],
+            "priority": "",
+            "publishedDate": null,
+            "score": 0.6857142857142857,
+            "template": "default.html",
+            "thumbnail": null,
+            "title": "Deployment - FastAPI",
+            "url": "https://fastapi.tiangolo.com/deployment/"
+          },
+          {
+            "category": "general",
+            "content": "Jan 12, 2026 ... In this series of videos, we'll be learning how to build a full-featured web application from the ground up using the FastAPI framework in\u00a0...",
+            "engine": "google",
+            "engines": [
+              "startpage",
+              "google"
+            ],
+            "img_src": "",
+            "parsed_url": [
+              "https",
+              "www.youtube.com",
+              "/watch",
+              "",
+              "v=7AMjmCTumuo",
+              ""
+            ],
+            "positions": [
+              9,
+              5
+            ],
+            "priority": "",
+            "publishedDate": null,
+            "score": 0.6222222222222222,
+            "template": "default.html",
+            "thumbnail": null,
+            "title": "Python FastAPI Tutorial (Part 1): Getting Started - YouTube",
+            "url": "https://www.youtube.com/watch?v=7AMjmCTumuo"
+          },
+          {
+            "category": "general",
+            "content": "FastAPI is a modern, fast (high-performance), web framework for building APIs with Python based on standard Python type hints.",
+            "engine": "google",
+            "engines": [
+              "google"
+            ],
+            "img_src": "",
+            "parsed_url": [
+              "https",
+              "github.com",
+              "/fastapi/fastapi",
+              "",
+              "",
+              ""
+            ],
+            "positions": [
+              2
+            ],
+            "priority": "",
+            "publishedDate": null,
+            "score": 0.5,
+            "template": "default.html",
+            "thumbnail": null,
+            "title": "FastAPI framework, high performance, easy to learn ... - GitHub",
+            "url": "https://github.com/fastapi/fastapi"
+          },
+          {
+            "audio_src": "",
+            "author": "",
+            "category": "general",
+            "close_group": false,
+            "content": "FastAPI is a modern, high performance Python web framework for building APIs quickly and efficiently. It offers automatic data validation, type checking, async support and built-in interactive API docs using Swagger UI and ReDoc.",
+            "engine": "duckduckgo",
+            "engines": [
+              "duckduckgo"
+            ],
+            "iframe_src": "",
+            "img_src": "",
+            "length": null,
+            "metadata": "",
+            "open_group": false,
+            "parsed_url": [
+              "https",
+              "www.geeksforgeeks.org",
+              "/python/fastapi-tutorial/",
+              "",
+              "",
+              ""
+            ],
+            "positions": [
+              2
+            ],
+            "priority": "",
+            "pubdate": "",
+            "publishedDate": null,
+            "score": 0.5,
+            "template": "default.html",
+            "thumbnail": "",
+            "title": "FastAPI Tutorial - GeeksforGeeks",
+            "url": "https://www.geeksforgeeks.org/python/fastapi-tutorial/",
+            "views": ""
+          },
+          {
+            "category": "general",
+            "content": "#3 FastAPI : Building the Server and Get API. Telusko \u00b7 12:14 \u00b7 #4 FastAPI - Pydantic and Fetching all products. Telusko \u00b7 8:42. #5 FastAPI : Fetch by ID and ...",
+            "engine": "google",
+            "engines": [
+              "startpage",
+              "google"
+            ],
+            "img_src": "",
+            "parsed_url": [
+              "https",
+              "www.youtube.com",
+              "/playlist",
+              "",
+              "list=PLsyeobzWxl7qF4ASwCZZDXor_Y0YJ3Qfc",
+              ""
+            ],
+            "positions": [
+              11,
+              8
+            ],
+            "priority": "",
+            "publishedDate": null,
+            "score": 0.4318181818181818,
+            "template": "default.html",
+            "thumbnail": null,
+            "title": "FastAPI Tutorial | Python Web Framework - YouTube",
+            "url": "https://www.youtube.com/playlist?list=PLsyeobzWxl7qF4ASwCZZDXor_Y0YJ3Qfc"
+          },
+          {
+            "audio_src": "",
+            "author": "",
+            "category": "general",
+            "close_group": false,
+            "content": "FastAPI framework, high performance, easy to learn, fast to code, ready for production - fastapi/fastapi",
+            "engine": "duckduckgo",
+            "engines": [
+              "duckduckgo"
+            ],
+            "iframe_src": "",
+            "img_src": "",
+            "length": null,
+            "metadata": "",
+            "open_group": false,
+            "parsed_url": [
+              "https",
+              "github.com",
+              "/FastAPI/FastAPI",
+              "",
+              "",
+              ""
+            ],
+            "positions": [
+              3
+            ],
+            "priority": "",
+            "pubdate": "",
+            "publishedDate": null,
+            "score": 0.3333333333333333,
+            "template": "default.html",
+            "thumbnail": "",
+            "title": "GitHub - fastapi/fastapi: FastAPI framework, high performance, easy to ...",
+            "url": "https://github.com/FastAPI/FastAPI",
+            "views": ""
+          },
+          {
+            "audio_src": "",
+            "author": "",
+            "category": "general",
+            "close_group": false,
+            "content": "FastAPI is the first choice when creating APIs in Python. Explore FastAPI code examples and get the most frequent questions about FastAPI answered.",
+            "engine": "duckduckgo",
+            "engines": [
+              "duckduckgo"
+            ],
+            "iframe_src": "",
+            "img_src": "",
+            "length": null,
+            "metadata": "",
+            "open_group": false,
+            "parsed_url": [
+              "https",
+              "realpython.com",
+              "/get-started-with-fastapi/",
+              "",
+              "",
+              ""
+            ],
+            "positions": [
+              6
+            ],
+            "priority": "",
+            "pubdate": "",
+            "publishedDate": null,
+            "score": 0.16666666666666666,
+            "template": "default.html",
+            "thumbnail": "",
+            "title": "Get Started With FastAPI - Real Python",
+            "url": "https://realpython.com/get-started-with-fastapi/",
+            "views": ""
+          },
+          {
+            "audio_src": "",
+            "author": "",
+            "category": "general",
+            "close_group": false,
+            "content": "FastAPI is a modern and efficient Python web framework for building REST APIs. This tutorial covers installation, features, and best practices of FastAPI with examples and resources.",
+            "engine": "duckduckgo",
+            "engines": [
+              "duckduckgo"
+            ],
+            "iframe_src": "",
+            "img_src": "",
+            "length": null,
+            "metadata": "",
+            "open_group": false,
+            "parsed_url": [
+              "https",
+              "www.tutorialspoint.com",
+              "/fastapi/index.htm",
+              "",
+              "",
+              ""
+            ],
+            "positions": [
+              7
+            ],
+            "priority": "",
+            "pubdate": "",
+            "publishedDate": null,
+            "score": 0.14285714285714285,
+            "template": "default.html",
+            "thumbnail": "",
+            "title": "FastAPI Tutorial - Online Tutorials Library",
+            "url": "https://www.tutorialspoint.com/fastapi/index.htm",
+            "views": ""
+          },
+          {
+            "audio_src": "",
+            "author": "",
+            "category": "general",
+            "close_group": false,
+            "content": "Learn how to create a course administration API using FastAPI, a fast web framework, and MongoDB, a NoSQL database. This tutorial covers API design, testing, and containerization with Docker.",
+            "engine": "duckduckgo",
+            "engines": [
+              "duckduckgo"
+            ],
+            "iframe_src": "",
+            "img_src": "",
+            "length": null,
+            "metadata": "",
+            "open_group": false,
+            "parsed_url": [
+              "https",
+              "www.freecodecamp.org",
+              "/news/fastapi-quickstart/",
+              "",
+              "",
+              ""
+            ],
+            "positions": [
+              8
+            ],
+            "priority": "",
+            "pubdate": "",
+            "publishedDate": null,
+            "score": 0.125,
+            "template": "default.html",
+            "thumbnail": "",
+            "title": "FastAPI Handbook - How to Develop, Test, and Deploy APIs",
+            "url": "https://www.freecodecamp.org/news/fastapi-quickstart/",
+            "views": ""
+          },
+          {
+            "category": "general",
+            "content": "FastAPI Cloud streamlines building, deploying, and running APIs and AI agents with minimal effort. One command, easy for humans and AI coding agents alike.",
+            "engine": "startpage",
+            "engines": [
+              "startpage"
+            ],
+            "img_src": "",
+            "parsed_url": [
+              "https",
+              "fastapicloud.com",
+              "/",
+              "",
+              "",
+              ""
+            ],
+            "positions": [
+              9
+            ],
+            "priority": "",
+            "publishedDate": null,
+            "score": 0.1111111111111111,
+            "template": "default.html",
+            "thumbnail": "",
+            "title": "FastAPI Cloud",
+            "url": "https://fastapicloud.com/"
+          },
+          {
+            "audio_src": "",
+            "author": "",
+            "category": "general",
+            "close_group": false,
+            "content": "With FastAPI, you can go from zero to a fully functional REST API in under 10 minutes. I've built dozens of APIs, and FastAPI is hands-down the fastest way to get a production-ready backend running.",
+            "engine": "duckduckgo",
+            "engines": [
+              "duckduckgo"
+            ],
+            "iframe_src": "",
+            "img_src": "",
+            "length": null,
+            "metadata": "",
+            "open_group": false,
+            "parsed_url": [
+              "https",
+              "dev.to",
+              "/suifeng023/how-to-build-a-rest-api-in-10-minutes-with-fastapi-2025-guide-ecn",
+              "",
+              "",
+              ""
+            ],
+            "positions": [
+              9
+            ],
+            "priority": "",
+            "pubdate": "",
+            "publishedDate": null,
+            "score": 0.1111111111111111,
+            "template": "default.html",
+            "thumbnail": "",
+            "title": "How to Build a REST API in 10 Minutes with FastAPI (2025 Guide)",
+            "url": "https://dev.to/suifeng023/how-to-build-a-rest-api-in-10-minutes-with-fastapi-2025-guide-ecn",
+            "views": ""
+          },
+          {
+            "category": "general",
+            "content": "Apr 30, 2026 ... In this video, we'll be learning how to build a full-featured web application from the ground up using the FastAPI framework in Python.",
+            "engine": "startpage",
+            "engines": [
+              "startpage"
+            ],
+            "img_src": "",
+            "parsed_url": [
+              "https",
+              "www.youtube.com",
+              "/watch",
+              "",
+              "v=iukOehU5aF4",
+              ""
+            ],
+            "positions": [
+              10
+            ],
+            "priority": "",
+            "publishedDate": null,
+            "score": 0.1,
+            "template": "default.html",
+            "thumbnail": "",
+            "title": "Python FastAPI Tutorial: Full Course for Beginners - YouTube",
+            "url": "https://www.youtube.com/watch?v=iukOehU5aF4"
+          },
+          {
+            "audio_src": "",
+            "author": "",
+            "category": "general",
+            "close_group": false,
+            "content": "Learn to build your first REST API with FastAPI in Python, a step-by-step guide covering installation, routing, data validation, and automatic documentation.",
+            "engine": "duckduckgo",
+            "engines": [
+              "duckduckgo"
+            ],
+            "iframe_src": "",
+            "img_src": "",
+            "length": null,
+            "metadata": "",
+            "open_group": false,
+            "parsed_url": [
+              "https",
+              "pytutorial.com",
+              "/fastapi-tutorial-build-your-first-python-rest-api/",
+              "",
+              "",
+              ""
+            ],
+            "positions": [
+              10
+            ],
+            "priority": "",
+            "pubdate": "",
+            "publishedDate": null,
+            "score": 0.1,
+            "template": "default.html",
+            "thumbnail": "",
+            "title": "FastAPI Tutorial: Build Your First Python REST API",
+            "url": "https://pytutorial.com/fastapi-tutorial-build-your-first-python-rest-api/",
+            "views": ""
+          }
+        ],
+        "suggestions": [],
+        "unresponsive_engines": [
+          [
+            "brave",
+            "Suspended: too many requests"
+          ],
+          [
+            "karmasearch",
+            "Suspended: access denied"
+          ]
+        ]
+      },
+      "command": "docker exec scout_v0_1 python -c import json, sys, urllib.error, urllib.request\nurl=sys.argv[1]\ntry:\n    with urllib.request.urlopen(url, timeout=8) as r:\n        raw=r.read().decode('utf-8', errors='replace')\n        try:\n            body=json.loads(raw) if raw.strip() else {}\n        except json.JSONDecodeError:\n            body={'raw': raw[:500]}\n        print(json.dumps({'ok': 200 <= r.status < 300, 'status': r.status, 'body': body, 'error': None}))\nexcept Exception as e:\n    print(json.dumps({'ok': False, 'status': None, 'body': {}, 'error': str(e)}))\n http://host.docker.internal:8080/search?q=fastapi&format=json",
+      "error": null,
+      "ok": true,
+      "returncode": 0,
+      "status": 200,
+      "stderr": "",
+      "stdout": "{\"ok\": true, \"status\": 200, \"body\": {\"query\": \"fastapi\", \"number_of_results\": 0, \"results\": [{\"url\": \"https://fastapi.tiangolo.com/\", \"title\": \"FastAPI\", \"content\": \"FastAPI is a modern, fast (high-performance), web framework for building APIs with Python based on standard Python type hints. The key features are: Fast: Very high performance, on par with NodeJS and Go (thanks to Starlette and Pydantic). One of the fastest Python frameworks available. Fast to code: Increase the speed to develop features by about 200% to 300%. Fewer bugs: Reduce about 40% of ...\", \"thumbnail\": null, \"engine\": \"google\", \"template\": \"default.html\", \"parsed_url\": [\"https\", \"fastapi.tiangolo.com\", \"/\", \"\", \"\", \"\"], \"img_src\": \"\", \"priority\": \"\", \"engines\": [\"startpage\", \"duckduckgo\", \"google\"], \"positions\": [1, 1, 1], \"score\": 9.0, \"category\": \"general\", \"publishedDate\": null}, {\"url\": \"https://github.com/fastapi\", \"title\": \"FastAPI - GitHub\", \"content\": \"Full stack, modern web application template. Using FastAPI, React, SQLModel, PostgreSQL, Docker, GitHub Actions, automatic HTTPS and more.\", \"thumbnail\": null, \"engine\": \"google\", \"template\": \"default.html\", \"parsed_url\": [\"https\", \"github.com\", \"/fastapi\", \"\", \"\", \"\"], \"img_src\": \"\", \"priority\": \"\", \"engines\": [\"startpage\", \"google\"], \"positions\": [7, 8, 2], \"score\": 2.303571428571429, \"category\": \"general\", \"publishedDate\": null}, {\"url\": \"https://en.wikipedia.org/wiki/FastAPI\", \"title\": \"FastAPI - Wikipedia\", \"content\": \"FastAPI is a web framework for building HTTP -based service APIs in Python 3.8+. [3] It uses Pydantic and type hints to validate, serialize and deserialize data.\", \"thumbnail\": null, \"engine\": \"google\", \"template\": \"default.html\", \"parsed_url\": [\"https\", \"en.wikipedia.org\", \"/wiki/FastAPI\", \"\", \"\", \"\"], \"img_src\": \"\", \"priority\": \"\", \"engines\": [\"startpage\", \"duckduckgo\", \"google\"], \"positions\": [6, 4, 5], \"score\": 1.85, \"category\": \"general\", \"publishedDate\": null}, {\"url\": \"https://fastapi.tiangolo.com/tutorial/\", \"title\": \"Tutorial - User Guide - FastAPI\", \"content\": \"This tutorial shows you how to use FastAPI with most of its features, step by step. Each section gradually builds on the previous ones.\", \"thumbnail\": null, \"engine\": \"google\", \"template\": \"default.html\", \"parsed_url\": [\"https\", \"fastapi.tiangolo.com\", \"/tutorial/\", \"\", \"\", \"\"], \"img_src\": \"\", \"priority\": \"\", \"engines\": [\"startpage\", \"google\"], \"positions\": [3, 3], \"score\": 1.3333333333333333, \"category\": \"general\", \"publishedDate\": null}, {\"url\": \"https://www.reddit.com/r/Python/comments/1ljrsti/fastapi_is_usually_the_right_choice/\", \"title\": \"FastAPI is usually the right choice : r/Python - Reddit\", \"content\": \"Jun 25, 2025 ... FastAPI is best for a simple completely stateless open API. Even there it falls short. Most API development should be contract first with code\\u00a0...\", \"thumbnail\": null, \"engine\": \"google\", \"template\": \"default.html\", \"parsed_url\": [\"https\", \"www.reddit.com\", \"/r/Python/comments/1ljrsti/fastapi_is_usually_the_right_choice/\", \"\", \"\", \"\"], \"img_src\": \"\", \"priority\": \"\", \"engines\": [\"startpage\", \"google\"], \"positions\": [4, 6], \"score\": 0.8333333333333333, \"category\": \"general\", \"publishedDate\": null}, {\"url\": \"https://pypi.org/project/fastapi/\", \"title\": \"fastapi - PyPI\", \"content\": \"FastAPI is a modern, fast (high-performance), web framework for building APIs with Python based on standard Python type hints. The key features are: Fast: Very high performance, on par with NodeJS and Go (thanks to Starlette and Pydantic). One of the fastest Python frameworks available. Fast to code: Increase the speed to develop features by about 200% to 300%. Fewer bugs: Reduce about 40% of ...\", \"thumbnail\": null, \"engine\": \"google\", \"template\": \"default.html\", \"parsed_url\": [\"https\", \"pypi.org\", \"/project/fastapi/\", \"\", \"\", \"\"], \"img_src\": \"\", \"priority\": \"\", \"engines\": [\"duckduckgo\", \"google\"], \"positions\": [10, 4], \"score\": 0.7, \"category\": \"general\", \"publishedDate\": null}, {\"url\": \"https://fastapi.tiangolo.com/deployment/\", \"title\": \"Deployment - FastAPI\", \"content\": \"To deploy an application means to perform the necessary steps to make it available to the users. For a web API, it normally involves putting it in a remote ...\", \"thumbnail\": null, \"engine\": \"google\", \"template\": \"default.html\", \"parsed_url\": [\"https\", \"fastapi.tiangolo.com\", \"/deployment/\", \"\", \"\", \"\"], \"img_src\": \"\", \"priority\": \"\", \"engines\": [\"startpage\", \"google\"], \"positions\": [5, 7], \"score\": 0.6857142857142857, \"category\": \"general\", \"publishedDate\": null}, {\"url\": \"https://www.youtube.com/watch?v=7AMjmCTumuo\", \"title\": \"Python FastAPI Tutorial (Part 1): Getting Started - YouTube\", \"content\": \"Jan 12, 2026 ... In this series of videos, we'll be learning how to build a full-featured web application from the ground up using the FastAPI framework in\\u00a0...\", \"thumbnail\": null, \"engine\": \"google\", \"template\": \"default.html\", \"parsed_url\": [\"https\", \"www.youtube.com\", \"/watch\", \"\", \"v=7AMjmCTumuo\", \"\"], \"img_src\": \"\", \"priority\": \"\", \"engines\": [\"startpage\", \"google\"], \"positions\": [9, 5], \"score\": 0.6222222222222222, \"category\": \"general\", \"publishedDate\": null}, {\"url\": \"https://github.com/fastapi/fastapi\", \"title\": \"FastAPI framework, high performance, easy to learn ... - GitHub\", \"content\": \"FastAPI is a modern, fast (high-performance), web framework for building APIs with Python based on standard Python type hints.\", \"thumbnail\": null, \"engine\": \"google\", \"template\": \"default.html\", \"parsed_url\": [\"https\", \"github.com\", \"/fastapi/fastapi\", \"\", \"\", \"\"], \"img_src\": \"\", \"priority\": \"\", \"engines\": [\"google\"], \"positions\": [2], \"score\": 0.5, \"category\": \"general\", \"publishedDate\": null}, {\"template\": \"default.html\", \"title\": \"FastAPI Tutorial - GeeksforGeeks\", \"content\": \"FastAPI is a modern, high performance Python web framework for building APIs quickly and efficiently. It offers automatic data validation, type checking, async support and built-in interactive API docs using Swagger UI and ReDoc.\", \"img_src\": \"\", \"iframe_src\": \"\", \"audio_src\": \"\", \"thumbnail\": \"\", \"publishedDate\": null, \"pubdate\": \"\", \"length\": null, \"views\": \"\", \"author\": \"\", \"metadata\": \"\", \"priority\": \"\", \"engines\": [\"duckduckgo\"], \"open_group\": false, \"close_group\": false, \"positions\": [2], \"score\": 0.5, \"category\": \"general\", \"url\": \"https://www.geeksforgeeks.org/python/fastapi-tutorial/\", \"engine\": \"duckduckgo\", \"parsed_url\": [\"https\", \"www.geeksforgeeks.org\", \"/python/fastapi-tutorial/\", \"\", \"\", \"\"]}, {\"url\": \"https://www.youtube.com/playlist?list=PLsyeobzWxl7qF4ASwCZZDXor_Y0YJ3Qfc\", \"title\": \"FastAPI Tutorial | Python Web Framework - YouTube\", \"content\": \"#3 FastAPI : Building the Server and Get API. Telusko \\u00b7 12:14 \\u00b7 #4 FastAPI - Pydantic and Fetching all products. Telusko \\u00b7 8:42. #5 FastAPI : Fetch by ID and ...\", \"thumbnail\": null, \"engine\": \"google\", \"template\": \"default.html\", \"parsed_url\": [\"https\", \"www.youtube.com\", \"/playlist\", \"\", \"list=PLsyeobzWxl7qF4ASwCZZDXor_Y0YJ3Qfc\", \"\"], \"img_src\": \"\", \"priority\": \"\", \"engines\": [\"startpage\", \"google\"], \"positions\": [11, 8], \"score\": 0.4318181818181818, \"category\": \"general\", \"publishedDate\": null}, {\"template\": \"default.html\", \"title\": \"GitHub - fastapi/fastapi: FastAPI framework, high performance, easy to ...\", \"content\": \"FastAPI framework, high performance, easy to learn, fast to code, ready for production - fastapi/fastapi\", \"img_src\": \"\", \"iframe_src\": \"\", \"audio_src\": \"\", \"thumbnail\": \"\", \"publishedDate\": null, \"pubdate\": \"\", \"length\": null, \"views\": \"\", \"author\": \"\", \"metadata\": \"\", \"priority\": \"\", \"engines\": [\"duckduckgo\"], \"open_group\": false, \"close_group\": false, \"positions\": [3], \"score\": 0.3333333333333333, \"category\": \"general\", \"url\": \"https://github.com/FastAPI/FastAPI\", \"engine\": \"duckduckgo\", \"parsed_url\": [\"https\", \"github.com\", \"/FastAPI/FastAPI\", \"\", \"\", \"\"]}, {\"template\": \"default.html\", \"title\": \"Get Started With FastAPI - Real Python\", \"content\": \"FastAPI is the first choice when creating APIs in Python. Explore FastAPI code examples and get the most frequent questions about FastAPI answered.\", \"img_src\": \"\", \"iframe_src\": \"\", \"audio_src\": \"\", \"thumbnail\": \"\", \"publishedDate\": null, \"pubdate\": \"\", \"length\": null, \"views\": \"\", \"author\": \"\", \"metadata\": \"\", \"priority\": \"\", \"engines\": [\"duckduckgo\"], \"open_group\": false, \"close_group\": false, \"positions\": [6], \"score\": 0.16666666666666666, \"category\": \"general\", \"url\": \"https://realpython.com/get-started-with-fastapi/\", \"engine\": \"duckduckgo\", \"parsed_url\": [\"https\", \"realpython.com\", \"/get-started-with-fastapi/\", \"\", \"\", \"\"]}, {\"template\": \"default.html\", \"title\": \"FastAPI Tutorial - Online Tutorials Library\", \"content\": \"FastAPI is a modern and efficient Python web framework for building REST APIs. This tutorial covers installation, features, and best practices of FastAPI with examples and resources.\", \"img_src\": \"\", \"iframe_src\": \"\", \"audio_src\": \"\", \"thumbnail\": \"\", \"publishedDate\": null, \"pubdate\": \"\", \"length\": null, \"views\": \"\", \"author\": \"\", \"metadata\": \"\", \"priority\": \"\", \"engines\": [\"duckduckgo\"], \"open_group\": false, \"close_group\": false, \"positions\": [7], \"score\": 0.14285714285714285, \"category\": \"general\", \"url\": \"https://www.tutorialspoint.com/fastapi/index.htm\", \"engine\": \"duckduckgo\", \"parsed_url\": [\"https\", \"www.tutorialspoint.com\", \"/fastapi/index.htm\", \"\", \"\", \"\"]}, {\"template\": \"default.html\", \"title\": \"FastAPI Handbook - How to Develop, Test, and Deploy APIs\", \"content\": \"Learn how to create a course administration API using FastAPI, a fast web framework, and MongoDB, a NoSQL database. This tutorial covers API design, testing, and containerization with Docker.\", \"img_src\": \"\", \"iframe_src\": \"\", \"audio_src\": \"\", \"thumbnail\": \"\", \"publishedDate\": null, \"pubdate\": \"\", \"length\": null, \"views\": \"\", \"author\": \"\", \"metadata\": \"\", \"priority\": \"\", \"engines\": [\"duckduckgo\"], \"open_group\": false, \"close_group\": false, \"positions\": [8], \"score\": 0.125, \"category\": \"general\", \"url\": \"https://www.freecodecamp.org/news/fastapi-quickstart/\", \"engine\": \"duckduckgo\", \"parsed_url\": [\"https\", \"www.freecodecamp.org\", \"/news/fastapi-quickstart/\", \"\", \"\", \"\"]}, {\"url\": \"https://fastapicloud.com/\", \"title\": \"FastAPI Cloud\", \"content\": \"FastAPI Cloud streamlines building, deploying, and running APIs and AI agents with minimal effort. One command, easy for humans and AI coding agents alike.\", \"publishedDate\": null, \"engine\": \"startpage\", \"template\": \"default.html\", \"parsed_url\": [\"https\", \"fastapicloud.com\", \"/\", \"\", \"\", \"\"], \"img_src\": \"\", \"thumbnail\": \"\", \"priority\": \"\", \"engines\": [\"startpage\"], \"positions\": [9], \"score\": 0.1111111111111111, \"category\": \"general\"}, {\"template\": \"default.html\", \"title\": \"How to Build a REST API in 10 Minutes with FastAPI (2025 Guide)\", \"content\": \"With FastAPI, you can go from zero to a fully functional REST API in under 10 minutes. I've built dozens of APIs, and FastAPI is hands-down the fastest way to get a production-ready backend running.\", \"img_src\": \"\", \"iframe_src\": \"\", \"audio_src\": \"\", \"thumbnail\": \"\", \"publishedDate\": null, \"pubdate\": \"\", \"length\": null, \"views\": \"\", \"author\": \"\", \"metadata\": \"\", \"priority\": \"\", \"engines\": [\"duckduckgo\"], \"open_group\": false, \"close_group\": false, \"positions\": [9], \"score\": 0.1111111111111111, \"category\": \"general\", \"url\": \"https://dev.to/suifeng023/how-to-build-a-rest-api-in-10-minutes-with-fastapi-2025-guide-ecn\", \"engine\": \"duckduckgo\", \"parsed_url\": [\"https\", \"dev.to\", \"/suifeng023/how-to-build-a-rest-api-in-10-minutes-with-fastapi-2025-guide-ecn\", \"\", \"\", \"\"]}, {\"url\": \"https://www.youtube.com/watch?v=iukOehU5aF4\", \"title\": \"Python FastAPI Tutorial: Full Course for Beginners - YouTube\", \"content\": \"Apr 30, 2026 ... In this video, we'll be learning how to build a full-featured web application from the ground up using the FastAPI framework in Python.\", \"publishedDate\": null, \"engine\": \"startpage\", \"template\": \"default.html\", \"parsed_url\": [\"https\", \"www.youtube.com\", \"/watch\", \"\", \"v=iukOehU5aF4\", \"\"], \"img_src\": \"\", \"thumbnail\": \"\", \"priority\": \"\", \"engines\": [\"startpage\"], \"positions\": [10], \"score\": 0.1, \"category\": \"general\"}, {\"template\": \"default.html\", \"title\": \"FastAPI Tutorial: Build Your First Python REST API\", \"content\": \"Learn to build your first REST API with FastAPI in Python, a step-by-step guide covering installation, routing, data validation, and automatic documentation.\", \"img_src\": \"\", \"iframe_src\": \"\", \"audio_src\": \"\", \"thumbnail\": \"\", \"publishedDate\": null, \"pubdate\": \"\", \"length\": null, \"views\": \"\", \"author\": \"\", \"metadata\": \"\", \"priority\": \"\", \"engines\": [\"duckduckgo\"], \"open_group\": false, \"close_group\": false, \"positions\": [10], \"score\": 0.1, \"category\": \"general\", \"url\": \"https://pytutorial.com/fastapi-tutorial-build-your-first-python-rest-api/\", \"engine\": \"duckduckgo\", \"parsed_url\": [\"https\", \"pytutorial.com\", \"/fastapi-tutorial-build-your-first-python-rest-api/\", \"\", \"\", \"\"]}], \"answers\": [{\"url\": \"https://en.wikipedia.org/wiki/FastAPI\", \"engine\": \"duckduckgo\", \"parsed_url\": [\"https\", \"en.wikipedia.org\", \"/wiki/FastAPI\", \"\", \"\", \"\"], \"template\": \"answer/legacy.html\", \"answer\": \"FastAPI is a web framework for building HTTP-based service APIs in Python 3.8+. It uses Pydantic and type hints to validate, serialize and deserialize data. FastAPI also automatically generates OpenAPI documentation for APIs built with it. It was first released in 2018. More at Wikipedia\"}], \"corrections\": [], \"infoboxes\": [{\"infobox\": \"FastAPI\", \"id\": \"https://en.wikipedia.org/wiki/FastAPI\", \"content\": \"FastAPI is a web framework for building HTTP-based service APIs in Python 3.8+. It uses Pydantic and type hints to validate, serialize and deserialize data. FastAPI also automatically generates OpenAPI documentation for APIs built with it. It was first released in 2018.\", \"img_src\": null, \"urls\": [{\"title\": \"Wikipedia\", \"url\": \"https://en.wikipedia.org/wiki/FastAPI\"}], \"engine\": \"wikipedia\", \"url\": null, \"template\": \"default.html\", \"parsed_url\": null, \"title\": \"\", \"thumbnail\": \"\", \"priority\": \"\", \"engines\": [\"wikipedia\"], \"positions\": \"\", \"score\": 0, \"category\": \"\", \"publishedDate\": null, \"attributes\": []}], \"suggestions\": [], \"unresponsive_engines\": [[\"brave\", \"Suspended: too many requests\"], [\"karmasearch\", \"Suspended: access denied\"]]}, \"error\": null}\n",
+      "url": "http://host.docker.internal:8080/search?q=fastapi&format=json"
+    },
+    "http://searxng:8080/search?q=fastapi&format=json": {
+      "body": {},
+      "command": "docker exec scout_v0_1 python -c import json, sys, urllib.error, urllib.request\nurl=sys.argv[1]\ntry:\n    with urllib.request.urlopen(url, timeout=8) as r:\n        raw=r.read().decode('utf-8', errors='replace')\n        try:\n            body=json.loads(raw) if raw.strip() else {}\n        except json.JSONDecodeError:\n            body={'raw': raw[:500]}\n        print(json.dumps({'ok': 200 <= r.status < 300, 'status': r.status, 'body': body, 'error': None}))\nexcept Exception as e:\n    print(json.dumps({'ok': False, 'status': None, 'body': {}, 'error': str(e)}))\n http://searxng:8080/search?q=fastapi&format=json",
+      "error": "<urlopen error [Errno -3] Temporary failure in name resolution>",
+      "ok": false,
+      "returncode": 0,
+      "status": null,
+      "stderr": "",
+      "stdout": "{\"ok\": false, \"status\": null, \"body\": {}, \"error\": \"<urlopen error [Errno -3] Temporary failure in name resolution>\"}\n",
+      "url": "http://searxng:8080/search?q=fastapi&format=json"
+    },
+    "http://spirit-searxng:8080/search?q=fastapi&format=json": {
+      "body": {},
+      "command": "docker exec scout_v0_1 python -c import json, sys, urllib.error, urllib.request\nurl=sys.argv[1]\ntry:\n    with urllib.request.urlopen(url, timeout=8) as r:\n        raw=r.read().decode('utf-8', errors='replace')\n        try:\n            body=json.loads(raw) if raw.strip() else {}\n        except json.JSONDecodeError:\n            body={'raw': raw[:500]}\n        print(json.dumps({'ok': 200 <= r.status < 300, 'status': r.status, 'body': body, 'error': None}))\nexcept Exception as e:\n    print(json.dumps({'ok': False, 'status': None, 'body': {}, 'error': str(e)}))\n http://spirit-searxng:8080/search?q=fastapi&format=json",
+      "error": "<urlopen error [Errno -3] Temporary failure in name resolution>",
+      "ok": false,
+      "returncode": 0,
+      "status": null,
+      "stderr": "",
+      "stdout": "{\"ok\": false, \"status\": null, \"body\": {}, \"error\": \"<urlopen error [Errno -3] Temporary failure in name resolution>\"}\n",
+      "url": "http://spirit-searxng:8080/search?q=fastapi&format=json"
+    }
+  },
+  "container_env": {
+    "command": "docker exec scout_v0_1 sh -lc env | sort | grep \"^SCOUT_\"",
+    "error": null,
+    "keys": [
+      "SCOUT_API_PORT",
+      "SCOUT_CONFIG_PATH",
+      "SCOUT_DATABASE_PATH",
+      "SCOUT_DATA_DIR",
+      "SCOUT_DEBUGGER_BATCH_SIZE",
+      "SCOUT_DEBUG_POLL_ENABLED",
+      "SCOUT_DISCOVERY_CANDIDATES_PER_JOB",
+      "SCOUT_DISCOVERY_JOBS_ENABLED",
+      "SCOUT_DISCOVERY_JOBS_PER_DAY",
+      "SCOUT_FETCH_MAX_BYTES",
+      "SCOUT_FETCH_TIMEOUT_SECONDS",
+      "SCOUT_GITHUB_RATELIMIT_FLOOR",
+      "SCOUT_LITELLM_MODEL",
+      "SCOUT_LITELLM_REQUIRE_AUTHED",
+      "SCOUT_LITELLM_TIMEOUT_SECONDS",
+      "SCOUT_PROMOTION_PROXY_INTAKE_URL",
+      "SCOUT_SEARCH_ENABLED",
+      "SCOUT_SEARCH_MAX_RESULTS",
+      "SCOUT_SEARCH_TIMEOUT_SECONDS",
+      "SCOUT_SEARXNG_URL",
+      "SCOUT_SYNTHESIS_BATCH_SIZE",
+      "SCOUT_VECTOR_PACKET_CAP"
+    ],
+    "returncode": 0,
+    "search_enabled_present": true,
+    "searxng_url_present": true,
+    "stderr": "",
+    "stdout": "SCOUT_API_PORT=8077\nSCOUT_CONFIG_PATH=/app/config/sources.yaml\nSCOUT_DATABASE_PATH=/app/data/scout.db\nSCOUT_DATA_DIR=/app/data\nSCOUT_DEBUGGER_BATCH_SIZE=25\nSCOUT_DEBUG_POLL_ENABLED=0\nSCOUT_DISCOVERY_CANDIDATES_PER_JOB=5\nSCOUT_DISCOVERY_JOBS_ENABLED=true\nSCOUT_DISCOVERY_JOBS_PER_DAY=3\nSCOUT_FETCH_MAX_BYTES=2000000\nSCOUT_FETCH_TIMEOUT_SECONDS=15\nSCOUT_GITHUB_RATELIMIT_FLOOR=200\nSCOUT_LITELLM_MODEL=ollama/llama3\nSCOUT_LITELLM_REQUIRE_AUTHED=1\nSCOUT_LITELLM_TIMEOUT_SECONDS=30\nSCOUT_PROMOTION_PROXY_INTAKE_URL=http://localhost:8077/v1/scout-intake/promotion\nSCOUT_SEARCH_ENABLED=true\nSCOUT_SEARCH_MAX_RESULTS=5\nSCOUT_SEARCH_TIMEOUT_SECONDS=10\nSCOUT_SEARXNG_URL=http://host.docker.internal:8080\nSCOUT_SYNTHESIS_BATCH_SIZE=3\nSCOUT_VECTOR_PACKET_CAP=200000\n"
+  },
+  "findings": [],
+  "host_searxng": {
+    "body": {
+      "answers": [
+        {
+          "answer": "FastAPI is a web framework for building HTTP-based service APIs in Python 3.8+. It uses Pydantic and type hints to validate, serialize and deserialize data. FastAPI also automatically generates OpenAPI documentation for APIs built with it. It was first released in 2018. More at Wikipedia",
+          "engine": "duckduckgo",
+          "parsed_url": [
+            "https",
+            "en.wikipedia.org",
+            "/wiki/FastAPI",
+            "",
+            "",
+            ""
+          ],
+          "template": "answer/legacy.html",
+          "url": "https://en.wikipedia.org/wiki/FastAPI"
+        }
+      ],
+      "corrections": [],
+      "infoboxes": [
+        {
+          "attributes": [],
+          "category": "",
+          "content": "FastAPI is a web framework for building HTTP-based service APIs in Python 3.8+. It uses Pydantic and type hints to validate, serialize and deserialize data. FastAPI also automatically generates OpenAPI documentation for APIs built with it. It was first released in 2018.",
+          "engine": "wikipedia",
+          "engines": [
+            "wikipedia"
+          ],
+          "id": "https://en.wikipedia.org/wiki/FastAPI",
+          "img_src": null,
+          "infobox": "FastAPI",
+          "parsed_url": null,
+          "positions": "",
+          "priority": "",
+          "publishedDate": null,
+          "score": 0,
+          "template": "default.html",
+          "thumbnail": "",
+          "title": "",
+          "url": null,
+          "urls": [
+            {
+              "title": "Wikipedia",
+              "url": "https://en.wikipedia.org/wiki/FastAPI"
+            }
+          ]
+        }
+      ],
+      "number_of_results": 0,
+      "query": "fastapi",
+      "results": [
+        {
+          "category": "general",
+          "content": "FastAPI is a modern, fast (high-performance), web framework for building APIs with Python based on standard Python type hints. The key features are: Fast: Very high performance, on par with NodeJS and Go (thanks to Starlette and Pydantic). One of the fastest Python frameworks available. Fast to code: Increase the speed to develop features by about 200% to 300%. * Fewer bugs: Reduce about 40% ...",
+          "engine": "google",
+          "engines": [
+            "startpage",
+            "duckduckgo",
+            "google"
+          ],
+          "img_src": "",
+          "parsed_url": [
+            "https",
+            "fastapi.tiangolo.com",
+            "/",
+            "",
+            "",
+            ""
+          ],
+          "positions": [
+            1,
+            1,
+            1
+          ],
+          "priority": "",
+          "publishedDate": null,
+          "score": 9.0,
+          "template": "default.html",
+          "thumbnail": null,
+          "title": "FastAPI",
+          "url": "https://fastapi.tiangolo.com/"
+        },
+        {
+          "category": "general",
+          "content": "Full stack, modern web application template. Using FastAPI, React, SQLModel, PostgreSQL, Docker, GitHub Actions, automatic HTTPS and more.",
+          "engine": "google",
+          "engines": [
+            "startpage",
+            "google"
+          ],
+          "img_src": "",
+          "parsed_url": [
+            "https",
+            "github.com",
+            "/fastapi",
+            "",
+            "",
+            ""
+          ],
+          "positions": [
+            8,
+            9,
+            2
+          ],
+          "priority": "",
+          "publishedDate": null,
+          "score": 2.208333333333333,
+          "template": "default.html",
+          "thumbnail": null,
+          "title": "FastAPI - GitHub",
+          "url": "https://github.com/fastapi"
+        },
+        {
+          "category": "general",
+          "content": "FastAPI is a web framework for building HTTP -based service APIs in Python 3.8+. [3] It uses Pydantic and type hints to validate, serialize and deserialize data.",
+          "engine": "google",
+          "engines": [
+            "startpage",
+            "duckduckgo",
+            "google"
+          ],
+          "img_src": "",
+          "parsed_url": [
+            "https",
+            "en.wikipedia.org",
+            "/wiki/FastAPI",
+            "",
+            "",
+            ""
+          ],
+          "positions": [
+            4,
+            4,
+            5
+          ],
+          "priority": "",
+          "publishedDate": null,
+          "score": 2.1,
+          "template": "default.html",
+          "thumbnail": null,
+          "title": "FastAPI - Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/FastAPI"
+        },
+        {
+          "category": "general",
+          "content": "This tutorial shows you how to use FastAPI with most of its features, step by step. Each section gradually builds on the previous ones.",
+          "engine": "google",
+          "engines": [
+            "startpage",
+            "google"
+          ],
+          "img_src": "",
+          "parsed_url": [
+            "https",
+            "fastapi.tiangolo.com",
+            "/tutorial/",
+            "",
+            "",
+            ""
+          ],
+          "positions": [
+            3,
+            3
+          ],
+          "priority": "",
+          "publishedDate": null,
+          "score": 1.3333333333333333,
+          "template": "default.html",
+          "thumbnail": null,
+          "title": "Tutorial - User Guide - FastAPI",
+          "url": "https://fastapi.tiangolo.com/tutorial/"
+        },
+        {
+          "category": "general",
+          "content": "Jan 12, 2026 ... In this series of videos, we'll be learning how to build a full-featured web application from the ground up using the FastAPI framework in\u00a0...",
+          "engine": "google",
+          "engines": [
+            "startpage",
+            "google"
+          ],
+          "img_src": "",
+          "parsed_url": [
+            "https",
+            "www.youtube.com",
+            "/watch",
+            "",
+            "v=7AMjmCTumuo",
+            ""
+          ],
+          "positions": [
+            5,
+            6
+          ],
+          "priority": "",
+          "publishedDate": null,
+          "score": 0.7333333333333334,
+          "template": "default.html",
+          "thumbnail": null,
+          "title": "Python FastAPI Tutorial (Part 1): Getting Started - YouTube",
+          "url": "https://www.youtube.com/watch?v=7AMjmCTumuo"
+        },
+        {
+          "category": "general",
+          "content": "Jun 25, 2025 ... FastAPI is best for a simple completely stateless open API. Even there it falls short. Most API development should be contract first with code\u00a0...",
+          "engine": "google",
+          "engines": [
+            "startpage",
+            "google"
+          ],
+          "img_src": "",
+          "parsed_url": [
+            "https",
+            "www.reddit.com",
+            "/r/Python/comments/1ljrsti/fastapi_is_usually_the_right_choice/",
+            "",
+            "",
+            ""
+          ],
+          "positions": [
+            6,
+            5
+          ],
+          "priority": "",
+          "publishedDate": null,
+          "score": 0.7333333333333334,
+          "template": "default.html",
+          "thumbnail": null,
+          "title": "FastAPI is usually the right choice : r/Python - Reddit",
+          "url": "https://www.reddit.com/r/Python/comments/1ljrsti/fastapi_is_usually_the_right_choice/"
+        },
+        {
+          "category": "general",
+          "content": "FastAPI is a modern, fast (high-performance), web framework for building APIs with Python based on standard Python type hints. The key features are: Fast: Very high performance, on par with NodeJS and Go (thanks to Starlette and Pydantic). One of the fastest Python frameworks available. Fast to code: Increase the speed to develop features by about 200% to 300%. * Fewer bugs: Reduce about 40% ...",
+          "engine": "google",
+          "engines": [
+            "duckduckgo",
+            "google"
+          ],
+          "img_src": "",
+          "parsed_url": [
+            "https",
+            "pypi.org",
+            "/project/fastapi/",
+            "",
+            "",
+            ""
+          ],
+          "positions": [
+            10,
+            4
+          ],
+          "priority": "",
+          "publishedDate": null,
+          "score": 0.7,
+          "template": "default.html",
+          "thumbnail": null,
+          "title": "fastapi - PyPI",
+          "url": "https://pypi.org/project/fastapi/"
+        },
+        {
+          "category": "general",
+          "content": "To deploy an application means to perform the necessary steps to make it available to the users. For a web API, it normally involves putting it in a remote ...",
+          "engine": "google",
+          "engines": [
+            "startpage",
+            "google"
+          ],
+          "img_src": "",
+          "parsed_url": [
+            "https",
+            "fastapi.tiangolo.com",
+            "/deployment/",
+            "",
+            "",
+            ""
+          ],
+          "positions": [
+            7,
+            7
+          ],
+          "priority": "",
+          "publishedDate": null,
+          "score": 0.5714285714285714,
+          "template": "default.html",
+          "thumbnail": null,
+          "title": "Deployment - FastAPI",
+          "url": "https://fastapi.tiangolo.com/deployment/"
+        },
+        {
+          "category": "general",
+          "content": "FastAPI is a modern, fast (high-performance), web framework for building APIs with Python based on standard Python type hints.",
+          "engine": "google",
+          "engines": [
+            "google"
+          ],
+          "img_src": "",
+          "parsed_url": [
+            "https",
+            "github.com",
+            "/fastapi/fastapi",
+            "",
+            "",
+            ""
+          ],
+          "positions": [
+            2
+          ],
+          "priority": "",
+          "publishedDate": null,
+          "score": 0.5,
+          "template": "default.html",
+          "thumbnail": null,
+          "title": "FastAPI framework, high performance, easy to learn ... - GitHub",
+          "url": "https://github.com/fastapi/fastapi"
+        },
+        {
+          "audio_src": "",
+          "author": "",
+          "category": "general",
+          "close_group": false,
+          "content": "FastAPI is a modern, high performance Python web framework for building APIs quickly and efficiently. It offers automatic data validation, type checking, async support and built-in interactive API docs using Swagger UI and ReDoc.",
+          "engine": "duckduckgo",
+          "engines": [
+            "duckduckgo"
+          ],
+          "iframe_src": "",
+          "img_src": "",
+          "length": null,
+          "metadata": "",
+          "open_group": false,
+          "parsed_url": [
+            "https",
+            "www.geeksforgeeks.org",
+            "/python/fastapi-tutorial/",
+            "",
+            "",
+            ""
+          ],
+          "positions": [
+            2
+          ],
+          "priority": "",
+          "pubdate": "",
+          "publishedDate": null,
+          "score": 0.5,
+          "template": "default.html",
+          "thumbnail": "",
+          "title": "FastAPI Tutorial - GeeksforGeeks",
+          "url": "https://www.geeksforgeeks.org/python/fastapi-tutorial/",
+          "views": ""
+        },
+        {
+          "category": "general",
+          "content": "#3 FastAPI : Building the Server and Get API. Telusko \u00b7 12:14 \u00b7 #4 FastAPI - Pydantic and Fetching all products. Telusko \u00b7 8:42. #5 FastAPI : Fetch by ID and ...",
+          "engine": "google",
+          "engines": [
+            "startpage",
+            "google"
+          ],
+          "img_src": "",
+          "parsed_url": [
+            "https",
+            "www.youtube.com",
+            "/playlist",
+            "",
+            "list=PLsyeobzWxl7qF4ASwCZZDXor_Y0YJ3Qfc",
+            ""
+          ],
+          "positions": [
+            11,
+            8
+          ],
+          "priority": "",
+          "publishedDate": null,
+          "score": 0.4318181818181818,
+          "template": "default.html",
+          "thumbnail": null,
+          "title": "FastAPI Tutorial | Python Web Framework - YouTube",
+          "url": "https://www.youtube.com/playlist?list=PLsyeobzWxl7qF4ASwCZZDXor_Y0YJ3Qfc"
+        },
+        {
+          "audio_src": "",
+          "author": "",
+          "category": "general",
+          "close_group": false,
+          "content": "FastAPI framework, high performance, easy to learn, fast to code, ready for production - fastapi/fastapi",
+          "engine": "duckduckgo",
+          "engines": [
+            "duckduckgo"
+          ],
+          "iframe_src": "",
+          "img_src": "",
+          "length": null,
+          "metadata": "",
+          "open_group": false,
+          "parsed_url": [
+            "https",
+            "github.com",
+            "/FastAPI/FastAPI",
+            "",
+            "",
+            ""
+          ],
+          "positions": [
+            3
+          ],
+          "priority": "",
+          "pubdate": "",
+          "publishedDate": null,
+          "score": 0.3333333333333333,
+          "template": "default.html",
+          "thumbnail": "",
+          "title": "GitHub - fastapi/fastapi: FastAPI framework, high performance, easy to ...",
+          "url": "https://github.com/FastAPI/FastAPI",
+          "views": ""
+        },
+        {
+          "audio_src": "",
+          "author": "",
+          "category": "general",
+          "close_group": false,
+          "content": "FastAPI is the first choice when creating APIs in Python. Explore FastAPI code examples and get the most frequent questions about FastAPI answered.",
+          "engine": "duckduckgo",
+          "engines": [
+            "duckduckgo"
+          ],
+          "iframe_src": "",
+          "img_src": "",
+          "length": null,
+          "metadata": "",
+          "open_group": false,
+          "parsed_url": [
+            "https",
+            "realpython.com",
+            "/get-started-with-fastapi/",
+            "",
+            "",
+            ""
+          ],
+          "positions": [
+            6
+          ],
+          "priority": "",
+          "pubdate": "",
+          "publishedDate": null,
+          "score": 0.16666666666666666,
+          "template": "default.html",
+          "thumbnail": "",
+          "title": "Get Started With FastAPI - Real Python",
+          "url": "https://realpython.com/get-started-with-fastapi/",
+          "views": ""
+        },
+        {
+          "audio_src": "",
+          "author": "",
+          "category": "general",
+          "close_group": false,
+          "content": "With FastAPI, you can go from zero to a fully functional REST API in under 10 minutes. I've built dozens of APIs, and FastAPI is hands-down the fastest way to get a production-ready backend running.",
+          "engine": "duckduckgo",
+          "engines": [
+            "duckduckgo"
+          ],
+          "iframe_src": "",
+          "img_src": "",
+          "length": null,
+          "metadata": "",
+          "open_group": false,
+          "parsed_url": [
+            "https",
+            "dev.to",
+            "/suifeng023/how-to-build-a-rest-api-in-10-minutes-with-fastapi-2025-guide-ecn",
+            "",
+            "",
+            ""
+          ],
+          "positions": [
+            7
+          ],
+          "priority": "",
+          "pubdate": "",
+          "publishedDate": null,
+          "score": 0.14285714285714285,
+          "template": "default.html",
+          "thumbnail": "",
+          "title": "How to Build a REST API in 10 Minutes with FastAPI (2025 Guide)",
+          "url": "https://dev.to/suifeng023/how-to-build-a-rest-api-in-10-minutes-with-fastapi-2025-guide-ecn",
+          "views": ""
+        },
+        {
+          "audio_src": "",
+          "author": "",
+          "category": "general",
+          "close_group": false,
+          "content": "FastAPI is a modern and efficient Python web framework for building REST APIs. This tutorial covers installation, features, and best practices of FastAPI with examples and resources.",
+          "engine": "duckduckgo",
+          "engines": [
+            "duckduckgo"
+          ],
+          "iframe_src": "",
+          "img_src": "",
+          "length": null,
+          "metadata": "",
+          "open_group": false,
+          "parsed_url": [
+            "https",
+            "www.tutorialspoint.com",
+            "/fastapi/index.htm",
+            "",
+            "",
+            ""
+          ],
+          "positions": [
+            8
+          ],
+          "priority": "",
+          "pubdate": "",
+          "publishedDate": null,
+          "score": 0.125,
+          "template": "default.html",
+          "thumbnail": "",
+          "title": "FastAPI Tutorial - Online Tutorials Library",
+          "url": "https://www.tutorialspoint.com/fastapi/index.htm",
+          "views": ""
+        },
+        {
+          "category": "general",
+          "content": "FastAPI Cloud streamlines building, deploying, and running APIs and AI agents with minimal effort. One command, easy for humans and AI coding agents alike.",
+          "engine": "startpage",
+          "engines": [
+            "startpage"
+          ],
+          "img_src": "",
+          "parsed_url": [
+            "https",
+            "fastapicloud.com",
+            "/",
+            "",
+            "",
+            ""
+          ],
+          "positions": [
+            9
+          ],
+          "priority": "",
+          "publishedDate": null,
+          "score": 0.1111111111111111,
+          "template": "default.html",
+          "thumbnail": "",
+          "title": "FastAPI Cloud",
+          "url": "https://fastapicloud.com/"
+        },
+        {
+          "audio_src": "",
+          "author": "",
+          "category": "general",
+          "close_group": false,
+          "content": "Learn how to create a course administration API using FastAPI, a fast web framework, and MongoDB, a NoSQL database. This tutorial covers API design, testing, and containerization with Docker.",
+          "engine": "duckduckgo",
+          "engines": [
+            "duckduckgo"
+          ],
+          "iframe_src": "",
+          "img_src": "",
+          "length": null,
+          "metadata": "",
+          "open_group": false,
+          "parsed_url": [
+            "https",
+            "www.freecodecamp.org",
+            "/news/fastapi-quickstart/",
+            "",
+            "",
+            ""
+          ],
+          "positions": [
+            9
+          ],
+          "priority": "",
+          "pubdate": "",
+          "publishedDate": null,
+          "score": 0.1111111111111111,
+          "template": "default.html",
+          "thumbnail": "",
+          "title": "FastAPI Handbook - How to Develop, Test, and Deploy APIs",
+          "url": "https://www.freecodecamp.org/news/fastapi-quickstart/",
+          "views": ""
+        },
+        {
+          "category": "general",
+          "content": "Apr 30, 2026 ... In this video, we'll be learning how to build a full-featured web application from the ground up using the FastAPI framework in Python.",
+          "engine": "startpage",
+          "engines": [
+            "startpage"
+          ],
+          "img_src": "",
+          "parsed_url": [
+            "https",
+            "www.youtube.com",
+            "/watch",
+            "",
+            "v=iukOehU5aF4",
+            ""
+          ],
+          "positions": [
+            10
+          ],
+          "priority": "",
+          "publishedDate": null,
+          "score": 0.1,
+          "template": "default.html",
+          "thumbnail": "",
+          "title": "Python FastAPI Tutorial: Full Course for Beginners - YouTube",
+          "url": "https://www.youtube.com/watch?v=iukOehU5aF4"
+        },
+        {
+          "audio_src": "",
+          "author": "",
+          "category": "general",
+          "close_group": false,
+          "content": "Learn to build your first REST API with FastAPI in Python, a step-by-step guide covering installation, routing, data validation, and automatic documentation.",
+          "engine": "duckduckgo",
+          "engines": [
+            "duckduckgo"
+          ],
+          "iframe_src": "",
+          "img_src": "",
+          "length": null,
+          "metadata": "",
+          "open_group": false,
+          "parsed_url": [
+            "https",
+            "pytutorial.com",
+            "/fastapi-tutorial-build-your-first-python-rest-api/",
+            "",
+            "",
+            ""
+          ],
+          "positions": [
+            10
+          ],
+          "priority": "",
+          "pubdate": "",
+          "publishedDate": null,
+          "score": 0.1,
+          "template": "default.html",
+          "thumbnail": "",
+          "title": "FastAPI Tutorial: Build Your First Python REST API",
+          "url": "https://pytutorial.com/fastapi-tutorial-build-your-first-python-rest-api/",
+          "views": ""
+        }
+      ],
+      "suggestions": [],
+      "unresponsive_engines": [
+        [
+          "brave",
+          "too many requests"
+        ],
+        [
+          "karmasearch",
+          "access denied"
+        ]
+      ]
+    },
+    "error": null,
+    "ok": true,
+    "status": 200,
+    "url": "http://localhost:8080/search?q=fastapi&format=json"
+  },
+  "mutated": false,
+  "profile": "scout-search-diagnostics",
+  "read_only": true,
+  "recommendation": "ready for search smoke",
+  "result": "pass",
+  "settings": {
+    "command": "docker exec scout_v0_1 python -c import json\nfrom scout.config import get_settings\ns=get_settings()\nprint(json.dumps({\n'search_enabled': s.search_enabled,\n'searxng_url_present': bool(s.searxng_url),\n'searxng_url': s.searxng_url,\n'search_provider': s.search_provider,\n'search_max_results': s.search_max_results,\n'search_timeout_seconds': s.search_timeout_seconds,\n'discovery_jobs_enabled': s.discovery_jobs_enabled,\n'discovery_jobs_per_day': s.discovery_jobs_per_day,\n'discovery_candidates_per_job': s.discovery_candidates_per_job,\n}, sort_keys=True))\n",
+    "error": null,
+    "returncode": 0,
+    "settings": {
+      "discovery_candidates_per_job": 5,
+      "discovery_jobs_enabled": true,
+      "discovery_jobs_per_day": 3,
+      "search_enabled": true,
+      "search_max_results": 5,
+      "search_provider": "searxng",
+      "search_timeout_seconds": 10,
+      "searxng_url": "http://host.docker.internal:8080",
+      "searxng_url_present": true
+    },
+    "stderr": "",
+    "stdout": "{\"discovery_candidates_per_job\": 5, \"discovery_jobs_enabled\": true, \"discovery_jobs_per_day\": 3, \"search_enabled\": true, \"search_max_results\": 5, \"search_provider\": \"searxng\", \"search_timeout_seconds\": 10, \"searxng_url\": \"http://host.docker.internal:8080\", \"searxng_url_present\": true}\n"
+  },
+  "warnings": []
+}
