@@ -1,0 +1,43 @@
+{
+  "profile": "cartographer-v1-proof-gates",
+  "result": "pass",
+  "generated_at": "2026-05-19T00:24:48.312Z",
+  "head_sha": "683793732031b6d9471de7995931310065df84a5",
+  "branch": "main",
+  "actor": "codex-validation-only",
+  "source": "manual proof evidence closeout run",
+  "command": "npm run typecheck && npm run lint && npm run validate:blueprints && git diff --check && npx vitest run src/app/v1/coding/codex/__tests__/route.test.ts src/components/dashboard/__tests__/HomelabCartographerWidget.test.tsx src/components/coding/__tests__/coding-workflow-step.test.ts",
+  "checks": [
+    {
+      "id": "typecheck",
+      "status": "passed",
+      "summary": "npm run typecheck exited 0; tsc --noEmit produced no diagnostics"
+    },
+    {
+      "id": "lint",
+      "status": "warnings_only",
+      "summary": "npm run lint exited 0 with 0 errors and 6 warnings"
+    },
+    {
+      "id": "blueprint_metadata_validation",
+      "status": "passed",
+      "summary": "npm run validate:blueprints exited 0; Blueprint index valid; Active blueprints: 8; Runbooks: 3; Historical docs: 5; No missing required metadata"
+    },
+    {
+      "id": "git_diff_check",
+      "status": "passed",
+      "summary": "git diff --check exited 0 with no output"
+    },
+    {
+      "id": "targeted_vitest",
+      "status": "passed",
+      "summary": "npx vitest run targeted slice exited 0; Test Files 3 passed; Tests 94 passed"
+    }
+  ],
+  "authority_boundary": {
+    "write_actions_enabled": false,
+    "authority_granted": false,
+    "actions_taken": false,
+    "passing_tests_grant_authority": false
+  }
+}

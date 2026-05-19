@@ -1,0 +1,26 @@
+{
+  "marker_version": "cartographer.v1.freeze_marker.v1",
+  "created_at": "2026-05-19T00:38:37Z",
+  "head_sha": "683793732031b6d9471de7995931310065df84a5",
+  "branch": "main",
+  "readiness": "ready_for_human_v1_review",
+  "v1_ready": true,
+  "evidence_summary": {
+    "current_missing_count": 0,
+    "current_missing_evidence": [],
+    "dry_run_would_satisfy_count": 0,
+    "remaining_after_dry_run": []
+  },
+  "authority_boundary": {
+    "write_actions_enabled": false,
+    "authority_granted": false,
+    "actions_taken": false,
+    "passing_tests_grant_authority": false
+  },
+  "human_review_notes": [
+    "Cartographer reached v1 readiness for human review before this marker was recorded.",
+    "This marker records reviewed readiness state only and does not grant authority.",
+    "Do not treat readiness, proof artifacts, passing tests, or this freeze marker as approval to apply, commit, push, delete, clean up, merge, enable autopilot, or promote authority.",
+    "Commit and push still require separate explicit human approval."
+  ]
+}
