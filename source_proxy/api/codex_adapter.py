@@ -89,11 +89,20 @@ def build_codex_adapter_preview(request: CodexAdapterRequest) -> dict[str, Any]:
         "route": "codex_adapter",
         "mode": mode,
         "status": "config_blocked",
+        "execution_state": "config_blocked",
         "reason_code": "codex_route_live_execution_not_enabled",
         "message": (
             "Codex route validation is available, but server-side live execution "
             "is not enabled in this increment."
         ),
+        "live_execution": {
+            "enabled": False,
+            "reason_code": "codex_route_live_execution_not_enabled",
+            "allowed_modes": sorted(ALLOWED_CODEX_MODES),
+            "blocked_modes": sorted(BLOCKED_CODEX_MODES),
+            "readonly_contract": "validate envelope and return command preview only",
+            "proposal_contract": "validate target_file and allowed_files, then return command preview only",
+        },
         "target_file": target_file,
         "allowed_files": list(allowed_files),
         "sandbox_policy": request.sandbox_policy,
@@ -102,6 +111,7 @@ def build_codex_adapter_preview(request: CodexAdapterRequest) -> dict[str, Any]:
         "envelope_validation": envelope_validation,
         "codex_cli_status": codex_status,
         "would_run_task": False,
+        "changed_files": [],
         "proposal_ready": mode == "proposal",
         "preview_ready": mode == "readonly",
         "approval_authority": False,

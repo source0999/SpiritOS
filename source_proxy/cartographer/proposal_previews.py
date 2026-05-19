@@ -52,6 +52,7 @@ def draft_proposals_from_drift() -> list[ProposalRecord]:
                 diff_preview=_diff_preview(finding, proposed_files, project_roots.get(finding.project_id)),
                 confidence="medium",
                 rationale=_rationale(finding),
+                source_drift_id=finding.drift_id,
                 generated=True,
                 persisted=False,
                 fingerprint=fingerprint,

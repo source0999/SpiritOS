@@ -18,7 +18,11 @@ from source_proxy.codex.adapter import (
     validate_codex_cli_argv,
 )
 from source_proxy.codex.task_packet import CodexTaskPacketError, build_codex_task_packet
-from source_proxy.codex.evidence import build_codex_evidence_packet, write_codex_evidence_packet
+from source_proxy.codex.evidence import (
+    build_codex_evidence_packet,
+    summarize_codex_evidence,
+    write_codex_evidence_packet,
+)
 from source_proxy.main import app
 
 
@@ -211,7 +215,12 @@ class CodexCliAdapterTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         payload = response.json()
         self.assertEqual(payload["status"], "config_blocked")
+        self.assertEqual(payload["execution_state"], "config_blocked")
         self.assertEqual(payload["reason_code"], "codex_route_live_execution_not_enabled")
+        self.assertFalse(payload["live_execution"]["enabled"])
+        self.assertEqual(payload["live_execution"]["allowed_modes"], ["proposal", "readonly"])
+        self.assertEqual(payload["live_execution"]["blocked_modes"], ["apply", "commit", "push"])
+        self.assertEqual(payload["changed_files"], [])
         self.assertTrue(payload["preview_ready"])
         self.assertFalse(payload["would_run_task"])
         self.assertFalse(payload["approval_authority"])
@@ -246,7 +255,10 @@ class CodexCliAdapterTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         payload = response.json()
         self.assertEqual(payload["status"], "config_blocked")
+        self.assertEqual(payload["execution_state"], "config_blocked")
         self.assertEqual(payload["reason_code"], "codex_route_live_execution_not_enabled")
+        self.assertFalse(payload["live_execution"]["enabled"])
+        self.assertEqual(payload["changed_files"], [])
         self.assertTrue(payload["preview_ready"])
         self.assertFalse(payload["would_run_task"])
         self.assertFalse(payload["approval_authority"])
@@ -316,6 +328,102 @@ class CodexCliAdapterTests(unittest.TestCase):
         self.assertEqual(unsafe_target.json()["detail"]["reason_code"], "codex_protected_path")
         self.assertEqual(unsafe_sandbox.status_code, 400)
         self.assertEqual(unsafe_sandbox.json()["detail"]["reason_code"], "unsafe_sandbox")
+
+    def test_codex_route_blocks_protected_allowed_files_and_escape_paths(self) -> None:
+        client = TestClient(app)
+        cases = [
+            (
+                {
+                    "mode": "proposal",
+                    "task": "Update local env.",
+                    "target_file": ".env.local",
+                    "allowed_files": [".env.local"],
+                },
+                "codex_protected_path",
+            ),
+            (
+                {
+                    "mode": "proposal",
+                    "task": "Update certificate.",
+                    "target_file": "certificates/spirit-dev-key.pem",
+                    "allowed_files": ["certificates/spirit-dev-key.pem"],
+                },
+                "codex_protected_path",
+            ),
+            (
+                {
+                    "mode": "proposal",
+                    "task": "Update outside file.",
+                    "target_file": "../outside.md",
+                    "allowed_files": ["../outside.md"],
+                },
+                "codex_path_escape",
+            ),
+            (
+                {
+                    "mode": "proposal",
+                    "task": "Update absolute file.",
+                    "target_file": "/tmp/outside.md",
+                    "allowed_files": ["/tmp/outside.md"],
+                },
+                "codex_path_escape",
+            ),
+            (
+                {
+                    "mode": "proposal",
+                    "task": "Update Windows absolute file.",
+                    "target_file": "C:\\Users\\source\\.env",
+                    "allowed_files": ["C:\\Users\\source\\.env"],
+                },
+                "codex_path_escape",
+            ),
+        ]
+
+        for body, reason_code in cases:
+            with self.subTest(reason_code=reason_code, body=body):
+                response = client.post("/v1/coding/codex", json=body)
+
+                self.assertEqual(response.status_code, 400)
+                self.assertEqual(response.json()["detail"]["reason_code"], reason_code)
+
+    def test_codex_route_rejects_proposal_target_not_in_allowed_files(self) -> None:
+        client = TestClient(app)
+
+        response = client.post(
+            "/v1/coding/codex",
+            json={
+                "mode": "proposal",
+                "task": "Update one docs file.",
+                "target_file": "docs/phase-8-manual-check.md",
+                "allowed_files": ["docs/proxy-test-runner-plan.md"],
+            },
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["detail"]["reason_code"], "codex_target_not_allowed")
+
+    def test_codex_route_readonly_preserves_empty_allowed_files_without_authority(self) -> None:
+        client = TestClient(app)
+
+        response = client.post(
+            "/v1/coding/codex",
+            json={
+                "mode": "readonly",
+                "task": "Summarize Source Proxy safety boundaries.",
+                "allowed_files": [],
+                "target_file": None,
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["allowed_files"], [])
+        self.assertIsNone(payload["target_file"])
+        self.assertFalse(payload["would_run_task"])
+        self.assertFalse(payload["approval_authority"])
+        self.assertFalse(payload["apply_authority"])
+        self.assertFalse(payload["commit_authority"])
+        self.assertFalse(payload["push_authority"])
 
     def test_task_packet_includes_target_scope_and_safety_boundaries(self) -> None:
         packet = build_codex_task_packet(
@@ -390,10 +498,50 @@ class CodexCliAdapterTests(unittest.TestCase):
         self.assertEqual(packet["json_event_count"], 2)
         self.assertEqual(packet["safety_verdict"], "passed")
         self.assertEqual(packet["recommendation"], "ready_for_review")
+        self.assertFalse(packet["truncation"]["stdout"])
+        self.assertEqual(packet["replay_summary"]["task_id"], "codex-task-1")
+        self.assertEqual(packet["replay_summary"]["mode"], "readonly")
+        self.assertFalse(packet["replay_summary"]["changed_files_delta"])
         self.assertFalse(packet["approval_authority"])
         self.assertFalse(packet["apply_authority"])
         self.assertFalse(packet["commit_authority"])
         self.assertFalse(packet["push_authority"])
+
+    def test_evidence_summary_is_truncated_replayable_and_authority_free(self) -> None:
+        packet = build_codex_evidence_packet(
+            task_id="codex-task-long",
+            command=["codex", "exec", "--sandbox", "workspace-write"],
+            sandbox="workspace-write",
+            started_at="2026-05-17T20:00:00Z",
+            finished_at="2026-05-17T20:00:05Z",
+            exit_code=0,
+            final_message="M" * 80,
+            stdout='{"type":"thread.started"}\n' + ("O" * 80),
+            stderr="E" * 80,
+            changed_files_before=[],
+            changed_files_after=["docs/phase-8-manual-check.md"],
+            diff_stat="docs/phase-8-manual-check.md | 1 +",
+            diff="D" * 80,
+            head_before="aee3351",
+            head_after="aee3351",
+            excerpt_chars=24,
+        )
+        summary = summarize_codex_evidence(packet)
+
+        self.assertTrue(packet["truncation"]["final_message"])
+        self.assertTrue(packet["truncation"]["stdout"])
+        self.assertTrue(packet["truncation"]["stderr"])
+        self.assertTrue(packet["truncation"]["diff"])
+        self.assertIn("[truncated]", summary["stdout_excerpt"])
+        self.assertEqual(summary["mode"], "proposal")
+        self.assertEqual(summary["changed_files_after"], ["docs/phase-8-manual-check.md"])
+        self.assertTrue(summary["changed_files_delta"])
+        self.assertEqual(summary["safety_verdict"], "blocked_changed_files_delta")
+        self.assertEqual(summary["recommendation"], "blocked")
+        self.assertFalse(summary["approval_authority"])
+        self.assertFalse(summary["apply_authority"])
+        self.assertFalse(summary["commit_authority"])
+        self.assertFalse(summary["push_authority"])
 
     def test_evidence_packet_blocks_head_or_changed_file_drift(self) -> None:
         changed = build_codex_evidence_packet(

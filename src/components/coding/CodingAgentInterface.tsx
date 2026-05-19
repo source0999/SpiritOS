@@ -286,10 +286,13 @@ type DecisionMemoryEntry = {
 
 type WorkflowMemorySnapshot = {
   approvals: string[];
+  approvalState: string;
+  artifactIds: string[];
   blockers: string[];
   knownGoodExamples: string[];
   lastKnownStatus: string;
   rejections: string[];
+  rejectionState: string;
   taskIds: string[];
   testReports: string[];
   updatedAt: string | null;
@@ -344,7 +347,7 @@ type ArtifactShelfItem = {
   id: string;
   label: string;
   safety: string;
-  source: "attachment" | "route" | "diff" | "replay" | "checkpoint";
+  source: "attachment" | "route" | "diff" | "replay" | "checkpoint" | "evidence" | "test" | "rollback";
 };
 
 export type CodexEvidencePacket = {
@@ -365,6 +368,7 @@ export type CodexEvidencePacket = {
   json_event_count?: number;
   push_authority?: boolean;
   recommendation?: string;
+  replay_summary?: Record<string, unknown>;
   rollback_hint?: string;
   safety_verdict?: string;
   sandbox?: string;
@@ -388,12 +392,23 @@ type VerificationDashboardRollup = {
   summary: string;
 };
 
+type VerifierReviewerCard = {
+  detail: string;
+  id: string;
+  label: string;
+  required: boolean;
+  status: "advisory" | "failed" | "passed" | "unavailable" | "waiting";
+};
+
 const emptyWorkflowMemorySnapshot: WorkflowMemorySnapshot = {
   approvals: [],
+  approvalState: "none",
+  artifactIds: [],
   blockers: [],
   knownGoodExamples: [],
   lastKnownStatus: "No workflow story persisted yet.",
   rejections: [],
+  rejectionState: "none",
   taskIds: [],
   testReports: [],
   updatedAt: null,
@@ -552,6 +567,8 @@ type PostApplyVerification = {
     status?: string;
     summary?: string;
   }[];
+  commit_blockers?: string[];
+  commit_proposal_blocked?: boolean;
   docs_only?: boolean;
   docs_only_confirmations?: {
     backup_audit_present?: boolean;
@@ -560,6 +577,8 @@ type PostApplyVerification = {
   };
   manual_browser_check_done?: boolean;
   manual_browser_check_required?: boolean;
+  push_blockers?: string[];
+  push_path_available?: boolean;
   required?: boolean;
   risk?: string;
   skip_reason?: string;
@@ -661,6 +680,18 @@ type DiffVerificationState = {
   unifiedDiff: string;
 };
 
+type DiffPreviewIntegrationStatus = "blocked" | "clear" | "failed" | "passed" | "waiting";
+
+type DiffPreviewIntegrationSummary = {
+  allowedFilesMatch: DiffPreviewIntegrationStatus;
+  approvalAvailable: boolean;
+  changedPaths: string[];
+  protectedPathStatus: DiffPreviewIntegrationStatus;
+  protectedPathReasons: string[];
+  target: string;
+  targetMatch: DiffPreviewIntegrationStatus;
+};
+
 type LongRunningTaskPayload = {
   architect_reason?: string;
   architect_status?: string;
@@ -682,7 +713,21 @@ type LongRunningTaskPayload = {
   truncated_test_results?: string;
   updated_at?: string;
   would_execute?: boolean;
+  worker_lanes?: WorkerEvidenceLane[];
   writes_allowed?: boolean;
+};
+
+type WorkerEvidenceLane = {
+  approval_authority?: boolean;
+  apply_authority?: boolean;
+  commit_authority?: boolean;
+  evidence_type?: string;
+  id: string;
+  label: string;
+  mode?: string;
+  note?: string;
+  push_authority?: boolean;
+  status?: string;
 };
 
 type RoleTransitionPayload = {
@@ -707,6 +752,34 @@ type LongRunningTaskResponse = {
   limits?: Record<string, unknown>;
   task: LongRunningTaskPayload;
   tool?: string;
+};
+
+type TaskQueueItem = {
+  allowed_files?: string[];
+  blocker?: string | null;
+  created_at?: string;
+  mode?: string;
+  next_safe_action?: string;
+  status: string;
+  target_file?: string | null;
+  task_id: string;
+  title: string;
+  updated_at?: string;
+  worker?: string;
+  worker_lanes?: WorkerEvidenceLane[];
+};
+
+type TaskQueueResponse = {
+  access_scope?: string;
+  count?: number;
+  tasks?: TaskQueueItem[];
+  tool?: string;
+};
+
+type TaskQueueState = {
+  error: string | null;
+  isLoading: boolean;
+  response: TaskQueueResponse | null;
 };
 
 type ArchitectPlanResponse = {
@@ -1121,6 +1194,11 @@ export default function CodingAgentInterface({
     isChecking: false,
     response: null,
   });
+  const [taskQueue, setTaskQueue] = useState<TaskQueueState>({
+    error: null,
+    isLoading: false,
+    response: null,
+  });
   const [proxySafetySmoke, setProxySafetySmoke] = useState<ProxySafetySmokeState>({
     error: null,
     isRunning: false,
@@ -1138,6 +1216,34 @@ export default function CodingAgentInterface({
     const timeout = window.setTimeout(() => setToastMessage(null), 5000);
     return () => window.clearTimeout(timeout);
   }, [toastMessage]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (typeof fetch !== "function") {
+      return;
+    }
+    setTaskQueue((current) => ({ ...current, error: null, isLoading: true }));
+    void callTaskQueue()
+      .then((response) => {
+        if (cancelled) {
+          return;
+        }
+        setTaskQueue({ error: null, isLoading: false, response });
+      })
+      .catch((error) => {
+        if (cancelled) {
+          return;
+        }
+        setTaskQueue({
+          error: error instanceof Error ? error.message : "Task queue unavailable.",
+          isLoading: false,
+          response: null,
+        });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [longRunningTask.response?.task.id, longRunningTask.response?.task.status]);
 
   useEffect(() => {
     const taskId = longRunningTask.response?.task.id;
@@ -3315,6 +3421,7 @@ export default function CodingAgentInterface({
               isRunning={isRunning}
               longRunningTask={longRunningTask}
               logs={processLogs}
+              taskQueue={taskQueue}
               workflowMemory={workflowMemory}
               onRefreshTelemetry={refreshTelemetry}
               onRunProxySafetySmoke={runProxySafetySmoke}
@@ -5026,6 +5133,27 @@ export function deriveWorkflowMemorySnapshot({
       .filter((log) => /rejected|denied/i.test(`${log.label} ${log.detail}`))
       .map((log) => `${log.label}: ${log.detail}`),
   ]).slice(0, 6);
+  const artifactIds = uniqueNonEmpty([
+    finalOutput ? `route:${finalOutput.runId}` : "",
+    diffVerification.preview ? "diff-preview" : "",
+    proxySafetySmoke.payload ? "proxy-safety-smoke" : "",
+    ...(task?.open_diffs?.flatMap((diff) =>
+      diff.changed_files?.map((file) => `task-diff:${file.path ?? "unknown"}`) ?? [],
+    ) ?? []),
+    ...logs
+      .map((log) => log.detail.match(/\b(?:artifact|snapshot|evidence)[-_][A-Za-z0-9_.-]+\b/i)?.[0] ?? "")
+      .filter(Boolean),
+  ]).slice(0, 10);
+  const approvalState = approvalGate.approvedAt
+    ? "human_approved"
+    : approvalGate.preview?.decision === "requires_human_approval"
+      ? "approval_required"
+      : approvalGate.preview?.decision ?? "none";
+  const rejectionState = approvalGate.deniedAt
+    ? "human_rejected"
+    : approvalGate.execution?.ok === false
+      ? "execution_rejected"
+      : "none";
   const taskIds = uniqueNonEmpty([
     task?.id,
     ...logs
@@ -5046,10 +5174,13 @@ export function deriveWorkflowMemorySnapshot({
 
   return {
     approvals,
+    approvalState,
+    artifactIds,
     blockers,
     knownGoodExamples: knownGood,
     lastKnownStatus,
     rejections,
+    rejectionState,
     taskIds,
     testReports,
     updatedAt: new Date().toISOString(),
@@ -5062,6 +5193,9 @@ export function mergeWorkflowMemorySnapshots(
 ): WorkflowMemorySnapshot {
   return {
     approvals: uniqueNonEmpty([...next.approvals, ...current.approvals]).slice(0, 8),
+    approvalState:
+      next.approvalState === "none" ? current.approvalState : next.approvalState,
+    artifactIds: uniqueNonEmpty([...next.artifactIds, ...current.artifactIds]).slice(0, 10),
     blockers: uniqueNonEmpty([...next.blockers, ...current.blockers]).slice(0, 8),
     knownGoodExamples: uniqueNonEmpty([
       ...next.knownGoodExamples,
@@ -5072,6 +5206,8 @@ export function mergeWorkflowMemorySnapshots(
         ? current.lastKnownStatus
         : next.lastKnownStatus,
     rejections: uniqueNonEmpty([...next.rejections, ...current.rejections]).slice(0, 6),
+    rejectionState:
+      next.rejectionState === "none" ? current.rejectionState : next.rejectionState,
     taskIds: uniqueNonEmpty([...next.taskIds, ...current.taskIds]).slice(0, 6),
     testReports: uniqueNonEmpty([...next.testReports, ...current.testReports]).slice(0, 8),
     updatedAt: next.updatedAt ?? current.updatedAt,
@@ -5081,10 +5217,13 @@ export function mergeWorkflowMemorySnapshots(
 function workflowMemoryHasStory(snapshot: WorkflowMemorySnapshot): boolean {
   return (
     snapshot.taskIds.length > 0 ||
+    snapshot.artifactIds.length > 0 ||
     snapshot.blockers.length > 0 ||
     snapshot.testReports.length > 0 ||
     snapshot.approvals.length > 0 ||
     snapshot.rejections.length > 0 ||
+    snapshot.approvalState !== "none" ||
+    snapshot.rejectionState !== "none" ||
     snapshot.lastKnownStatus !== "No active workflow status."
   );
 }
@@ -5100,8 +5239,11 @@ function WorkflowMemoryPanel({ snapshot }: { snapshot: WorkflowMemorySnapshot })
     ["Task IDs", snapshot.taskIds.join(", ") || "none"],
     ["Last known status", snapshot.lastKnownStatus],
     ["Blockers", snapshot.blockers.join(" | ") || "none"],
+    ["Artifacts", snapshot.artifactIds.join(", ") || "none"],
     ["Test reports", snapshot.testReports.join(" | ") || "none"],
+    ["Approval state", snapshot.approvalState],
     ["Approvals", snapshot.approvals.join(" | ") || "none"],
+    ["Rejection state", snapshot.rejectionState],
     ["Rejections", snapshot.rejections.join(" | ") || "none"],
     ["Known-good examples", snapshot.knownGoodExamples.join(", ") || "none"],
     [
@@ -5134,6 +5276,212 @@ function WorkflowMemoryPanel({ snapshot }: { snapshot: WorkflowMemorySnapshot })
           </div>
         ))}
       </dl>
+    </section>
+  );
+}
+
+export function deriveProposalDraft(input: ProposalDraftInput): ProposalDraftResult {
+  const task = input.task.trim();
+  const targetFile = normalizeRepoRelativePath(input.targetFile);
+  const allowedFiles = uniqueNonEmpty(splitProposalList(input.allowedFilesText));
+  const forbiddenFiles = uniqueNonEmpty(splitProposalList(input.forbiddenFilesText));
+  const expectedChecks = uniqueNonEmpty(splitProposalList(input.expectedChecksText));
+  const rollbackHint = input.rollbackHint.trim();
+  const reasonCodes: string[] = [];
+  if (!task) {
+    reasonCodes.push("missing_task");
+  }
+  if (!targetFile) {
+    reasonCodes.push("missing_target_file");
+  }
+  if (targetFile && proposalPathIsProtected(targetFile)) {
+    reasonCodes.push("protected_target");
+  }
+  if (targetFile && !allowedFiles.includes(targetFile)) {
+    reasonCodes.push("target_not_allowed");
+  }
+  if (input.mode === "proposal" && allowedFiles.length === 0) {
+    reasonCodes.push("missing_allowed_files");
+  }
+  if (expectedChecks.length === 0) {
+    reasonCodes.push("missing_expected_checks");
+  }
+  if (!rollbackHint) {
+    reasonCodes.push("missing_rollback_hint");
+  }
+  const payload = {
+    allowed_files: allowedFiles,
+    expected_checks: expectedChecks,
+    forbidden_files: forbiddenFiles,
+    mode: input.mode,
+    rollback_hint: rollbackHint,
+    target_file: targetFile || null,
+    task,
+  };
+  const text = [
+    "Proposal task:",
+    "",
+    "```json",
+    JSON.stringify(payload, null, 2),
+    "```",
+    "",
+    "Safety: proposal draft only. Do not apply, commit, push, or edit files from this draft.",
+  ].join("\n");
+  return {
+    allowedFiles,
+    blocked: reasonCodes.length > 0,
+    expectedChecks,
+    forbiddenFiles,
+    mode: input.mode,
+    reasonCodes,
+    rollbackHint,
+    targetFile,
+    task,
+    text,
+  };
+}
+
+function splitProposalList(value: string): string[] {
+  return value
+    .split(/[\n,]/)
+    .map((item) => normalizeRepoRelativePath(item))
+    .filter(Boolean);
+}
+
+function proposalPathIsProtected(path: string): boolean {
+  const normalized = path.toLowerCase();
+  return (
+    normalized.includes("..") ||
+    normalized.startsWith("/") ||
+    /^[a-z]:\//i.test(path) ||
+    normalized.includes(".env") ||
+    normalized.includes("secret") ||
+    normalized.includes("token") ||
+    normalized.includes("password") ||
+    normalized.includes("certificate") ||
+    normalized.endsWith(".pem") ||
+    normalized.endsWith(".key")
+  );
+}
+
+function ProposalCreationPanel({
+  defaultTarget,
+  isRunning,
+  taskText,
+  onDraft,
+}: {
+  defaultTarget: string;
+  isRunning: boolean;
+  taskText: string;
+  onDraft: (value: string) => void;
+}) {
+  const [task, setTask] = useState(taskText);
+  const [targetFile, setTargetFile] = useState(defaultTarget);
+  const [allowedFilesText, setAllowedFilesText] = useState(defaultTarget);
+  const [forbiddenFilesText, setForbiddenFilesText] = useState("");
+  const [mode, setMode] = useState<"proposal" | "readonly">("proposal");
+  const [expectedChecksText, setExpectedChecksText] = useState("git diff --check\ntarget-only");
+  const [rollbackHint, setRollbackHint] = useState("git restore <target_file>");
+  const draft = deriveProposalDraft({
+    allowedFilesText,
+    expectedChecksText,
+    forbiddenFilesText,
+    mode,
+    rollbackHint,
+    targetFile,
+    task,
+  });
+  return (
+    <section className="border-b border-slate-300 bg-white px-4 py-3 shadow-sm">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div>
+          <div className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
+            Proposal creation
+          </div>
+          <div className="mt-1 text-sm font-semibold text-slate-950">
+            Bounded proposal draft
+          </div>
+        </div>
+        <WorkflowBadge tone={draft.blocked ? "warning" : "info"}>
+          {draft.blocked ? "blocked" : "draft-ready"}
+        </WorkflowBadge>
+      </div>
+      <div className="grid gap-3 text-xs lg:grid-cols-2">
+        <label className="font-semibold text-slate-700">
+          Task
+          <textarea
+            className="mt-1 h-20 w-full resize-y border border-slate-300 bg-white p-2 font-normal text-slate-900"
+            onChange={(event) => setTask(event.target.value)}
+            value={task}
+          />
+        </label>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="font-semibold text-slate-700">
+            Mode
+            <select
+              className="mt-1 w-full border border-slate-300 bg-white p-2 font-normal text-slate-900"
+              onChange={(event) => setMode(event.target.value === "readonly" ? "readonly" : "proposal")}
+              value={mode}
+            >
+              <option value="proposal">proposal</option>
+              <option value="readonly">readonly</option>
+            </select>
+          </label>
+          <label className="font-semibold text-slate-700">
+            Target file
+            <input
+              className="mt-1 w-full border border-slate-300 bg-white p-2 font-normal text-slate-900"
+              onChange={(event) => setTargetFile(event.target.value)}
+              value={targetFile}
+            />
+          </label>
+        </div>
+        <label className="font-semibold text-slate-700">
+          Allowed files
+          <textarea
+            className="mt-1 h-20 w-full resize-y border border-slate-300 bg-white p-2 font-normal text-slate-900"
+            onChange={(event) => setAllowedFilesText(event.target.value)}
+            value={allowedFilesText}
+          />
+        </label>
+        <label className="font-semibold text-slate-700">
+          Forbidden files
+          <textarea
+            className="mt-1 h-20 w-full resize-y border border-slate-300 bg-white p-2 font-normal text-slate-900"
+            onChange={(event) => setForbiddenFilesText(event.target.value)}
+            value={forbiddenFilesText}
+          />
+        </label>
+        <label className="font-semibold text-slate-700">
+          Expected checks
+          <textarea
+            className="mt-1 h-20 w-full resize-y border border-slate-300 bg-white p-2 font-normal text-slate-900"
+            onChange={(event) => setExpectedChecksText(event.target.value)}
+            value={expectedChecksText}
+          />
+        </label>
+        <label className="font-semibold text-slate-700">
+          Rollback hint
+          <textarea
+            className="mt-1 h-20 w-full resize-y border border-slate-300 bg-white p-2 font-normal text-slate-900"
+            onChange={(event) => setRollbackHint(event.target.value)}
+            value={rollbackHint}
+          />
+        </label>
+      </div>
+      <div className="mt-3 border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700">
+        {draft.blocked
+          ? `Blocked: ${draft.reasonCodes.join(", ")}`
+          : "Draft is bounded. It can be copied into the task input for preview only."}
+      </div>
+      <button
+        className="mt-3 border border-slate-900 bg-slate-950 px-3 py-2 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:border-slate-300 disabled:bg-slate-200 disabled:text-slate-500"
+        disabled={draft.blocked || isRunning}
+        onClick={() => onDraft(draft.text)}
+        type="button"
+      >
+        Draft proposal task
+      </button>
     </section>
   );
 }
@@ -5247,6 +5595,7 @@ function TaskHistoryPanel({
   workflowMemory: WorkflowMemorySnapshot;
 }) {
   const lanes = deriveTaskHistorySummary({ approvalGate, longRunningTask, workflowMemory });
+  const workerLanes = deriveWorkerEvidenceLanes(longRunningTask);
   return (
     <section className="border-b border-slate-300 bg-white px-4 py-3 shadow-sm">
       <div className="mb-3 flex items-center justify-between gap-3">
@@ -5289,6 +5638,194 @@ function TaskHistoryPanel({
             </div>
           </section>
         ))}
+      </div>
+      <div className="mt-3 grid grid-cols-1 gap-2 text-xs md:grid-cols-3 xl:grid-cols-6">
+        {workerLanes.map((lane) => (
+          <section className="border border-slate-200 bg-white p-2" key={lane.id}>
+            <div className="flex items-center justify-between gap-2">
+              <div className="font-semibold text-slate-950">{lane.label}</div>
+              <WorkflowBadge tone={lane.status === "evidence" ? "info" : "muted"}>
+                {lane.status ?? "waiting"}
+              </WorkflowBadge>
+            </div>
+            <div className="mt-1 text-slate-600">{lane.evidence_type ?? "evidence"}</div>
+            <div className="mt-1 font-semibold text-slate-500">read-only evidence</div>
+          </section>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export function deriveWorkerEvidenceLanes(
+  longRunningTask: LongRunningTaskState,
+): WorkerEvidenceLane[] {
+  const task = longRunningTask.response?.task;
+  const lanes = task?.worker_lanes ?? [];
+  if (lanes.length > 0) {
+    return lanes.map((lane) => ({
+      ...lane,
+      approval_authority: false,
+      apply_authority: false,
+      commit_authority: false,
+      push_authority: false,
+    }));
+  }
+  return [
+    {
+      id: "codex_cli",
+      label: "Codex CLI",
+      status: "waiting",
+      mode: "read_only_evidence",
+      evidence_type: "readonly/proposal evidence",
+      approval_authority: false,
+      apply_authority: false,
+      commit_authority: false,
+      push_authority: false,
+    },
+    {
+      id: "deterministic_verifier",
+      label: "Deterministic verifier",
+      status: "waiting",
+      mode: "read_only_evidence",
+      evidence_type: "diff and post-apply verification evidence",
+      approval_authority: false,
+      apply_authority: false,
+      commit_authority: false,
+      push_authority: false,
+    },
+    {
+      id: "cartographer",
+      label: "Cartographer",
+      status: "waiting",
+      mode: "read_only_evidence",
+      evidence_type: "repo-state evidence",
+      approval_authority: false,
+      apply_authority: false,
+      commit_authority: false,
+      push_authority: false,
+    },
+  ];
+}
+
+export function deriveUnifiedTaskQueueItems({
+  longRunningTask,
+  taskQueue,
+}: {
+  longRunningTask: LongRunningTaskState;
+  taskQueue: TaskQueueState;
+}): TaskQueueItem[] {
+  const items = new Map<string, TaskQueueItem>();
+  for (const item of taskQueue.response?.tasks ?? []) {
+    if (item.task_id) {
+      items.set(item.task_id, item);
+    }
+  }
+  const activeTask = longRunningTask.response?.task;
+  if (activeTask) {
+    const allowedFiles = uniqueNonEmpty(
+      activeTask.open_diffs?.flatMap((diff) =>
+        diff.changed_files?.map((changedFile) => changedFile.path ?? "") ?? [],
+      ) ?? [],
+    );
+    items.set(activeTask.id, {
+      allowed_files: allowedFiles,
+      blocker: isNoDiffTerminalLongTaskStatus(activeTask.status)
+        ? activeTask.architect_reason ?? activeTask.truncated_test_results ?? activeTask.status
+        : null,
+      created_at: activeTask.created_at,
+      mode: "read_only_status_tracking",
+      next_safe_action: activeTask.next_action,
+      status: activeTask.status,
+      target_file: allowedFiles[0] ?? null,
+      task_id: activeTask.id,
+      title: activeTask.description,
+      updated_at: activeTask.updated_at,
+      worker: activeTask.current_agent_role,
+    });
+  }
+  return Array.from(items.values()).sort((left, right) =>
+    (right.updated_at ?? "").localeCompare(left.updated_at ?? ""),
+  );
+}
+
+function UnifiedTaskQueuePanel({
+  longRunningTask,
+  taskQueue,
+}: {
+  longRunningTask: LongRunningTaskState;
+  taskQueue: TaskQueueState;
+}) {
+  const items = deriveUnifiedTaskQueueItems({ longRunningTask, taskQueue });
+  return (
+    <section className="border-b border-slate-300 bg-white px-4 py-3 shadow-sm">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div>
+          <div className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
+            Unified task queue
+          </div>
+          <div className="mt-1 text-sm font-semibold text-slate-950">
+            Read-only Source Proxy task state
+          </div>
+        </div>
+        <WorkflowBadge tone={taskQueue.error ? "warning" : items.length > 0 ? "info" : "muted"}>
+          {taskQueue.isLoading ? "loading" : `${items.length} tracked`}
+        </WorkflowBadge>
+      </div>
+      {taskQueue.error ? (
+        <div className="mb-3 border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-950">
+          {taskQueue.error}
+        </div>
+      ) : null}
+      <div className="grid grid-cols-1 gap-2 text-xs lg:grid-cols-2">
+        {items.length > 0 ? (
+          items.slice(0, 6).map((item) => (
+            <article className="border border-slate-200 bg-slate-50 p-3" key={item.task_id}>
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="truncate font-semibold text-slate-950" title={item.title}>
+                    {item.title}
+                  </div>
+                  <div className="mt-1 truncate text-slate-500" title={item.task_id}>
+                    {item.task_id}
+                  </div>
+                </div>
+                <WorkflowBadge tone={item.blocker ? "warning" : "info"}>
+                  {item.status}
+                </WorkflowBadge>
+              </div>
+              <dl className="mt-3 grid grid-cols-2 gap-2">
+                <div>
+                  <dt className="font-semibold uppercase tracking-wide text-slate-500">Worker</dt>
+                  <dd className="truncate text-slate-950">{item.worker ?? "unknown"}</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold uppercase tracking-wide text-slate-500">Mode</dt>
+                  <dd className="truncate text-slate-950">{item.mode ?? "read-only"}</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold uppercase tracking-wide text-slate-500">Target</dt>
+                  <dd className="truncate text-slate-950" title={item.target_file ?? "none"}>
+                    {item.target_file ?? "none"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="font-semibold uppercase tracking-wide text-slate-500">Files</dt>
+                  <dd className="truncate text-slate-950">
+                    {item.allowed_files?.length ?? 0}
+                  </dd>
+                </div>
+              </dl>
+              <div className="mt-3 truncate text-slate-700" title={item.next_safe_action ?? ""}>
+                {item.blocker ? `Blocked: ${item.blocker}` : item.next_safe_action ?? "No next action recorded."}
+              </div>
+            </article>
+          ))
+        ) : (
+          <div className="border border-slate-200 bg-slate-50 px-3 py-2 text-slate-500">
+            No Source Proxy tasks are currently tracked.
+          </div>
+        )}
       </div>
     </section>
   );
@@ -5601,6 +6138,53 @@ export function deriveArtifactShelfItems({
   return items;
 }
 
+export function deriveCodexEvidenceArtifactItems(
+  evidence: CodexEvidencePacket | null,
+): ArtifactShelfItem[] {
+  if (!evidence) {
+    return [];
+  }
+  const changedFiles = evidence.changed_files_after ?? [];
+  const artifacts: ArtifactShelfItem[] = [
+    {
+      detail: `${evidence.artifact_version ?? "codex_evidence"}; ${changedFiles.length} changed file${changedFiles.length === 1 ? "" : "s"}.`,
+      id: "codex-evidence-packet",
+      label: "Codex evidence packet",
+      safety: `Safety verdict: ${evidence.safety_verdict ?? "unknown"}. Evidence alone does not approve, apply, commit, or push.`,
+      source: "evidence",
+    },
+    {
+      detail: evidence.diff_stat?.trim() || evidence.diff_excerpt?.trim() || "not captured",
+      id: "codex-diff-preview",
+      label: "Diff preview",
+      safety: "Diff artifact only; approval and apply remain separate gated actions.",
+      source: "diff",
+    },
+    {
+      detail: evidence.stdout_excerpt?.trim() || evidence.stderr_excerpt?.trim() || "not captured",
+      id: "codex-test-output",
+      label: "stdout/stderr excerpt",
+      safety: "Output excerpt is review evidence only; reruns require an explicit command.",
+      source: "test",
+    },
+    {
+      detail: evidence.final_message_excerpt?.trim() || "not captured",
+      id: "codex-final-message",
+      label: "Final message",
+      safety: "Final message is an artifact, not approval authority.",
+      source: "evidence",
+    },
+    {
+      detail: evidence.rollback_hint?.trim() || "not captured",
+      id: "codex-rollback-hint",
+      label: "Rollback hint",
+      safety: "Rollback guidance only; restore commands require explicit human review.",
+      source: "rollback",
+    },
+  ];
+  return artifacts;
+}
+
 function ArtifactShelfPanel({
   approvalGate,
   conversationHistory,
@@ -5700,6 +6284,7 @@ export function CodexEvidencePanel({
     evidence?.push_authority === false
       ? "separate; no Codex authority"
       : "unverified";
+  const evidenceArtifacts = deriveCodexEvidenceArtifactItems(evidence);
 
   return (
     <section className="border-b border-slate-300 bg-white px-4 py-3 shadow-sm">
@@ -5776,13 +6361,41 @@ export function CodexEvidencePanel({
       </div>
 
       {evidence ? (
-        <div className="mt-3 grid gap-3 lg:grid-cols-2">
-          <pre className="max-h-40 overflow-auto border border-slate-200 bg-slate-950 p-3 text-xs text-slate-100">
-            {evidence.final_message_excerpt || "No final message excerpt."}
-          </pre>
-          <pre className="max-h-40 overflow-auto border border-slate-200 bg-slate-950 p-3 text-xs text-slate-100">
-            {evidence.diff_excerpt || evidence.diff_stat || "No diff captured."}
-          </pre>
+        <div className="mt-3 space-y-3">
+          <div className="grid gap-2 text-xs md:grid-cols-2 xl:grid-cols-5">
+            {evidenceArtifacts.map((item) => (
+              <div className="border border-slate-200 bg-slate-50 px-3 py-2" key={item.id}>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="truncate font-semibold text-slate-950" title={item.label}>
+                    {item.label}
+                  </div>
+                  <WorkflowBadge tone="muted">{item.source}</WorkflowBadge>
+                </div>
+                <div className="mt-1 line-clamp-2 text-slate-600" title={item.detail}>
+                  {item.detail}
+                </div>
+                <div className="mt-2 line-clamp-2 text-slate-500">{item.safety}</div>
+              </div>
+            ))}
+          </div>
+          <div className="grid gap-3 lg:grid-cols-2">
+            <EvidenceExcerpt
+              label="Final message excerpt"
+              value={evidence.final_message_excerpt}
+            />
+            <EvidenceExcerpt
+              label="Diff excerpt"
+              value={evidence.diff_excerpt || evidence.diff_stat}
+            />
+            <EvidenceExcerpt
+              label="stdout excerpt"
+              value={evidence.stdout_excerpt}
+            />
+            <EvidenceExcerpt
+              label="stderr excerpt"
+              value={evidence.stderr_excerpt}
+            />
+          </div>
         </div>
       ) : null}
     </section>
@@ -5795,6 +6408,19 @@ function EvidenceField({ label, value }: { label: string; value: string }) {
       <div className="font-semibold uppercase tracking-wide text-slate-500">{label}</div>
       <div className="mt-1 break-words text-sm font-medium text-slate-950">{value}</div>
     </div>
+  );
+}
+
+function EvidenceExcerpt({ label, value }: { label: string; value?: string }) {
+  return (
+    <details className="border border-slate-200 bg-slate-50">
+      <summary className="cursor-pointer px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600">
+        {label}
+      </summary>
+      <pre className="max-h-40 overflow-auto border-t border-slate-200 bg-slate-950 p-3 text-xs text-slate-100">
+        {value?.trim() || "not captured"}
+      </pre>
+    </details>
   );
 }
 
@@ -6237,6 +6863,34 @@ export function VerificationSummary({
             <TelemetryStat label="Backup" value={displaySummary.backupRoot} />
             <TelemetryStat label="Risk" value={displaySummary.risk} />
           </div>
+          <div className="grid gap-2 md:grid-cols-2">
+            <div className="border border-yellow-200 bg-white px-3 py-2 text-sm">
+              <div className="font-semibold text-slate-950">Commit proposal</div>
+              <div className="mt-1 text-slate-700">
+                {postApplyVerification.commit_proposal_blocked === false
+                  ? "available after verified post-apply checks"
+                  : "blocked until post-apply verification passes"}
+              </div>
+              {postApplyVerification.commit_blockers?.length ? (
+                <div className="mt-1 text-xs text-slate-600">
+                  {postApplyVerification.commit_blockers.join(", ")}
+                </div>
+              ) : null}
+            </div>
+            <div className="border border-yellow-200 bg-white px-3 py-2 text-sm">
+              <div className="font-semibold text-slate-950">Push path</div>
+              <div className="mt-1 text-slate-700">
+                {postApplyVerification.push_path_available
+                  ? "available"
+                  : "not available from post-apply verification"}
+              </div>
+              {postApplyVerification.push_blockers?.length ? (
+                <div className="mt-1 text-xs text-slate-600">
+                  {postApplyVerification.push_blockers.join(", ")}
+                </div>
+              ) : null}
+            </div>
+          </div>
           {postApplyVerification.checks?.length ? (
             <div className="space-y-2">
               {postApplyVerification.checks.map((check) => (
@@ -6264,7 +6918,11 @@ export function VerificationSummary({
                 </div>
               ))}
             </div>
-          ) : null}
+          ) : (
+            <div className="border border-yellow-200 bg-white px-3 py-2 text-sm text-slate-700">
+              No automated post-apply checks were selected for this change. Manual verification remains required.
+            </div>
+          )}
           {postApplyVerification.manual_browser_check_required ? (
             <div className="border border-yellow-200 bg-white px-3 py-2 text-sm">
               Manual browser check required
@@ -6558,6 +7216,7 @@ function OutputWindow({
   isRunning,
   longRunningTask,
   logs,
+  taskQueue,
   workflowMemory,
   onRefreshTelemetry,
   onRunProxySafetySmoke,
@@ -6605,6 +7264,7 @@ function OutputWindow({
   isRunning: boolean;
   longRunningTask: LongRunningTaskState;
   logs: ProcessLog[];
+  taskQueue: TaskQueueState;
   workflowMemory: WorkflowMemorySnapshot;
   onRefreshTelemetry: () => void;
   onRunProxySafetySmoke: () => void;
@@ -6785,6 +7445,19 @@ function OutputWindow({
         approvalGate={approvalGate}
         longRunningTask={longRunningTask}
         workflowMemory={workflowMemory}
+      />
+      <ProposalCreationPanel
+        defaultTarget={
+          architectPlanDisplayTarget(architectPlan, resolvedTargetPathFromDecision(finalOutput?.decision)) ||
+          normalizeRepoRelativePath(approvalGate.target)
+        }
+        isRunning={isRunning}
+        onDraft={onInputChange}
+        taskText={inputText}
+      />
+      <UnifiedTaskQueuePanel
+        longRunningTask={longRunningTask}
+        taskQueue={taskQueue}
       />
       <ReplayableLogsPanel
         approvalGate={approvalGate}
@@ -6975,6 +7648,8 @@ function OutputWindow({
                         buttonLabel="Preview manual result"
                         fallbackUnifiedDiff={approvalGate.proposedDiff}
                         placeholder="Paste a unified diff here for a read-only safety check..."
+                        gate={approvalGate}
+                        resolvedTargetPath={resolvedTargetPathFromDecision(finalOutput?.decision)}
                         state={diffVerification}
                         title="Paste Manual Diff"
                         onChange={onDiffChange}
@@ -6984,6 +7659,8 @@ function OutputWindow({
                   ) : (
                     <DiffVerificationPanel
                       fallbackUnifiedDiff={approvalGate.proposedDiff}
+                      gate={approvalGate}
+                      resolvedTargetPath={resolvedTargetPathFromDecision(finalOutput?.decision)}
                       state={diffVerification}
                       onChange={onDiffChange}
                       onPreview={onPreviewDiffVerification}
@@ -7956,6 +8633,150 @@ export function buildQualityGateChecks({
   return checks;
 }
 
+export function deriveDiffPreviewIntegrationSummary({
+  diffVerification,
+  gate,
+  resolvedTargetPath,
+}: {
+  diffVerification: DiffVerificationState;
+  gate: ApprovalGateState;
+  resolvedTargetPath?: string;
+}): DiffPreviewIntegrationSummary {
+  const preview = diffVerification.preview;
+  const qualityChecks = buildQualityGateChecks({
+    diffVerification,
+    gate,
+    resolvedTargetPath,
+  });
+  const checkStatus = (label: string): DiffPreviewIntegrationStatus => {
+    const status = qualityChecks.find((check) => check.label === label)?.status;
+    if (status === "pass") return "passed";
+    if (status === "fail") return "failed";
+    return "waiting";
+  };
+  const changedPaths = (preview?.changed_files ?? [])
+    .map((file) => normalizeRepoRelativePath(file.path))
+    .filter(Boolean);
+  const blockedReasonCodes = [
+    ...(preview?.blocked_reasons ?? []).map((reason) => reason.reason_code),
+    ...(preview?.task_spec_check?.reason_codes ?? []),
+  ];
+  const protectedPathReasons = blockedReasonCodes.filter(
+    (reason) =>
+      PROTECTED_PATH_REASON_CODES.has(reason) || PATH_ESCAPE_REASON_CODES.has(reason),
+  );
+  const requiredChecksPass = qualityChecks.every(
+    (check) => !check.required || check.status === "pass",
+  );
+  const diffPreviewBlocked = preview?.status === "blocked";
+  const applyCheckOk = preview?.git_apply_check_ok !== false;
+
+  return {
+    allowedFilesMatch: checkStatus("TaskSpec Allowed Files"),
+    approvalAvailable:
+      Boolean(preview) && !diffPreviewBlocked && applyCheckOk && requiredChecksPass,
+    changedPaths,
+    protectedPathReasons,
+    protectedPathStatus: !preview
+      ? "waiting"
+      : protectedPathReasons.length > 0
+        ? "blocked"
+        : "clear",
+    target:
+      normalizeRepoRelativePath(resolvedTargetPath ?? "") ||
+      normalizeRepoRelativePath(gate.target) ||
+      normalizeRepoRelativePath(preview?.task_spec_check?.target ?? "") ||
+      "unresolved",
+    targetMatch: checkStatus("Target Match"),
+  };
+}
+
+export function deriveVerifierReviewerResultCards(
+  preview: DiffVerificationPreviewResponse | null,
+): VerifierReviewerCard[] {
+  if (!preview) {
+    return [
+      {
+        detail: "Preview the diff to run deterministic verification and reviewer checks.",
+        id: "preview-waiting",
+        label: "Verifier / Reviewer",
+        required: true,
+        status: "waiting",
+      },
+    ];
+  }
+
+  const deterministicCards = (preview.deterministic_checks ?? []).map((check) => {
+    const status =
+      check.status === "passed"
+        ? "passed"
+        : check.status === "failed"
+          ? "failed"
+          : "waiting";
+    return {
+      detail: check.output || check.id || "Deterministic check reported no detail.",
+      id: `deterministic-${check.id ?? "unknown"}`,
+      label: check.id ? `Verifier: ${check.id}` : "Verifier",
+      required: check.blocking === true,
+      status,
+    } satisfies VerifierReviewerCard;
+  });
+
+  const reviewerStatus = preview.review_report?.skipped
+    ? "unavailable"
+    : preview.review_report?.passed === true
+      ? "passed"
+      : preview.review_report?.passed === false
+        ? "advisory"
+        : "waiting";
+  const reviewerFindings = preview.review_report?.findings ?? [];
+  const llmStatus = preview.llm_review_report?.skipped
+    ? "unavailable"
+    : preview.llm_review_report?.passed === true
+      ? "passed"
+      : preview.llm_review_report?.passed === false
+        ? "advisory"
+        : "unavailable";
+  const llmFindings = preview.llm_review_report?.findings ?? [];
+
+  return [
+    ...deterministicCards,
+    {
+      detail:
+        reviewerFindings.length > 0
+          ? reviewerFindings
+              .map((finding) => [finding.path, finding.id, finding.details].filter(Boolean).join(": "))
+              .join(" | ")
+          : preview.review_report?.skipped
+            ? "Deterministic reviewer was unavailable for this preview."
+            : preview.review_report?.passed === true
+              ? "Deterministic reviewer found no blocking issues."
+              : "Deterministic reviewer has no result yet.",
+      id: "deterministic-reviewer",
+      label: "Reviewer: deterministic",
+      required: false,
+      status: reviewerStatus,
+    },
+    {
+      detail:
+        llmFindings.length > 0
+          ? llmFindings
+              .map((finding) => [finding.path, finding.id, finding.details].filter(Boolean).join(": "))
+              .join(" | ")
+          : preview.llm_review_report?.reason ??
+            (preview.llm_review_report?.skipped
+              ? "LLM reviewer unavailable; this is not treated as a strong pass."
+              : preview.llm_review_report?.passed === true
+                ? "LLM reviewer found no advisory issues."
+                : "LLM reviewer is not configured for this preview."),
+      id: "llm-reviewer",
+      label: "Reviewer: LLM",
+      required: false,
+      status: llmStatus,
+    },
+  ];
+}
+
 type ReviewerAgentCheck = {
   detail: string;
   label: string;
@@ -8478,13 +9299,123 @@ function staleMemoryQualityCheck(
   };
 }
 
+function DiffPreviewIntegrationPanel({
+  summary,
+}: {
+  summary: DiffPreviewIntegrationSummary;
+}) {
+  const statusTone = (status: DiffPreviewIntegrationStatus) =>
+    status === "passed" || status === "clear"
+      ? "success"
+      : status === "failed" || status === "blocked"
+        ? "danger"
+        : "muted";
+
+  return (
+    <div className="border border-slate-300 bg-slate-50 px-3 py-3 text-sm text-slate-800">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <h3 className="font-semibold text-slate-950">Verified Diff Preview</h3>
+        <WorkflowBadge tone={summary.approvalAvailable ? "success" : "danger"}>
+          approval {summary.approvalAvailable ? "available" : "blocked"}
+        </WorkflowBadge>
+      </div>
+      <div className="mt-2 grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+        <div className="border border-slate-300 bg-white px-3 py-2">
+          <div className="text-xs font-semibold uppercase text-slate-500">Changed paths</div>
+          <div className="mt-1 font-mono text-xs text-slate-900">
+            {summary.changedPaths.length > 0 ? summary.changedPaths.join(", ") : "none"}
+          </div>
+        </div>
+        <div className="border border-slate-300 bg-white px-3 py-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="text-xs font-semibold uppercase text-slate-500">
+              Target match
+            </div>
+            <WorkflowBadge tone={statusTone(summary.targetMatch)}>
+              {summary.targetMatch}
+            </WorkflowBadge>
+          </div>
+          <div className="mt-1 font-mono text-xs text-slate-900">{summary.target}</div>
+        </div>
+        <div className="border border-slate-300 bg-white px-3 py-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="text-xs font-semibold uppercase text-slate-500">
+              Allowed files
+            </div>
+            <WorkflowBadge tone={statusTone(summary.allowedFilesMatch)}>
+              {summary.allowedFilesMatch}
+            </WorkflowBadge>
+          </div>
+          <div className="mt-1 text-xs text-slate-700">TaskSpec diff scope.</div>
+        </div>
+        <div className="border border-slate-300 bg-white px-3 py-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="text-xs font-semibold uppercase text-slate-500">
+              Protected path
+            </div>
+            <WorkflowBadge tone={statusTone(summary.protectedPathStatus)}>
+              {summary.protectedPathStatus}
+            </WorkflowBadge>
+          </div>
+          <div className="mt-1 text-xs text-slate-700">
+            {summary.protectedPathReasons.length > 0
+              ? summary.protectedPathReasons.join(", ")
+              : "No protected-path reason returned."}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function VerifierReviewerResultCards({
+  cards,
+}: {
+  cards: VerifierReviewerCard[];
+}) {
+  const toneForStatus = (
+    status: VerifierReviewerCard["status"],
+  ): "danger" | "info" | "muted" | "success" | "warning" =>
+    status === "passed"
+      ? "success"
+      : status === "failed"
+        ? "danger"
+        : status === "advisory" || status === "unavailable"
+          ? "warning"
+          : "muted";
+
+  return (
+    <div className="space-y-2 border border-slate-300 bg-slate-50 p-3">
+      <h3 className="text-sm font-semibold text-slate-950">
+        Verifier and Reviewer Results
+      </h3>
+      <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+        {cards.map((card) => (
+          <div className="border border-slate-300 bg-white px-3 py-2 text-sm" key={card.id}>
+            <div className="flex items-center justify-between gap-2">
+              <div className="font-semibold text-slate-950">{card.label}</div>
+              <WorkflowBadge tone={toneForStatus(card.status)}>{card.status}</WorkflowBadge>
+            </div>
+            <div className="mt-1 text-xs font-semibold uppercase text-slate-500">
+              {card.required ? "required" : "advisory"}
+            </div>
+            <div className="mt-2 text-slate-700">{card.detail}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function DiffVerificationPanel({
   state,
   onChange,
   onPreview,
   fallbackUnifiedDiff = "",
   buttonLabel = "Preview diff",
+  gate,
   placeholder = "Paste a proposed code change here for a read-only safety check...",
+  resolvedTargetPath,
   title = "Check a Code Change",
 }: {
   state: DiffVerificationState;
@@ -8493,13 +9424,38 @@ function DiffVerificationPanel({
   /** When the textarea is empty but the approval gate already carries a diff, still allow Preview. */
   fallbackUnifiedDiff?: string;
   buttonLabel?: string;
+  gate?: ApprovalGateState;
   placeholder?: string;
+  resolvedTargetPath?: string;
   title?: string;
 }) {
   const status = state.preview?.status ?? "not previewed";
   const isBlocked = state.preview?.status === "blocked";
   const hasAnyDiffSource =
     state.unifiedDiff.trim().length > 0 || fallbackUnifiedDiff.trim().length > 0;
+  const previewSummary = state.preview
+    ? deriveDiffPreviewIntegrationSummary({
+        diffVerification: state,
+        gate: gate ?? {
+          action: "",
+          alreadySatisfied: false,
+          approvedAt: null,
+          content: "",
+          deniedAt: null,
+          error: null,
+          execution: null,
+          fallbackScaffoldAccepted: false,
+          fallbackScaffoldBlocked: false,
+          fallbackScaffoldGenerated: false,
+          isChecking: false,
+          preview: null,
+          proposedDiff: fallbackUnifiedDiff,
+          target: resolvedTargetPath ?? "",
+        },
+        resolvedTargetPath,
+      })
+    : null;
+  const verifierReviewerCards = deriveVerifierReviewerResultCards(state.preview);
 
   return (
     <section className="rounded-lg border border-slate-300 bg-white p-5 shadow-sm">
@@ -8551,6 +9507,12 @@ function DiffVerificationPanel({
 
       {state.preview ? (
         <div className="mt-3 space-y-3">
+          {previewSummary ? (
+            <DiffPreviewIntegrationPanel summary={previewSummary} />
+          ) : null}
+
+          <VerifierReviewerResultCards cards={verifierReviewerCards} />
+
           {state.preview.task_spec_check && !state.preview.task_spec_check.skipped ? (
             <div
               className={`border px-3 py-2 text-sm ${
@@ -9487,6 +10449,42 @@ type ApprovalStateChecklistItem = {
   status: "fail" | "pass" | "waiting";
 };
 
+type ApprovalButtonGuard = {
+  canApprove: boolean;
+  reasons: string[];
+};
+
+type BlockerNextActionSummary = {
+  blocker: string;
+  detail: string;
+  nextSafeAction: string;
+  status: "blocked" | "ready" | "waiting";
+  title: string;
+};
+
+type ProposalDraftInput = {
+  allowedFilesText: string;
+  expectedChecksText: string;
+  forbiddenFilesText: string;
+  mode: "proposal" | "readonly";
+  rollbackHint: string;
+  targetFile: string;
+  task: string;
+};
+
+type ProposalDraftResult = {
+  allowedFiles: string[];
+  blocked: boolean;
+  expectedChecks: string[];
+  forbiddenFiles: string[];
+  mode: "proposal" | "readonly";
+  reasonCodes: string[];
+  rollbackHint: string;
+  targetFile: string;
+  task: string;
+  text: string;
+};
+
 export function deriveApprovalStateChecklist({
   canApprove,
   diffVerification,
@@ -9583,6 +10581,257 @@ export function deriveApprovalStateChecklist({
   ];
 }
 
+export function deriveApprovalButtonGuard({
+  coderAgentLocalDiff,
+  diffVerification,
+  fileMutationIntent,
+  gate,
+  hasExecutableApprovalPayload,
+  qualityRequiredPasses,
+  resolvedTargetPath,
+}: {
+  coderAgentLocalDiff: boolean;
+  diffVerification: DiffVerificationState;
+  fileMutationIntent: boolean;
+  gate: ApprovalGateState;
+  hasExecutableApprovalPayload: boolean;
+  qualityRequiredPasses: boolean;
+  resolvedTargetPath?: string;
+}): ApprovalButtonGuard {
+  const preview = diffVerification.preview;
+  const reasons: string[] = [];
+  const normalizedTarget =
+    normalizeRepoRelativePath(resolvedTargetPath ?? "") ||
+    normalizeRepoRelativePath(gate.target) ||
+    normalizeRepoRelativePath(preview?.task_spec_check?.target ?? "");
+  const taskSpec = preview?.task_spec_check;
+  const allowedFilesKnown =
+    Boolean(taskSpec && !taskSpec.skipped && (taskSpec.allowed_files?.length ?? 0) > 0);
+  const protectedOrSecretReason = [
+    ...(gate.preview?.reason_codes ?? []),
+    ...(preview?.blocked_reasons?.map((reason) => reason.reason_code) ?? []),
+    ...(taskSpec?.reason_codes ?? []),
+  ].find(
+    (reason) => PROTECTED_PATH_REASON_CODES.has(reason) || PATH_ESCAPE_REASON_CODES.has(reason),
+  );
+  const actionEscalates = /\b(?:approve\s+and\s+)?(?:apply|commit|push|merge|deploy)\b/i.test(
+    gate.action,
+  );
+  const limits = preview?.limits;
+  const fileWritesAllowed =
+    typeof limits === "object" &&
+    limits !== null &&
+    (limits as Record<string, unknown>).file_writes_allowed === true;
+  const hasDiffPayload =
+    gate.proposedDiff.trim().length > 0 || diffVerification.unifiedDiff.trim().length > 0;
+  const approvalPreviewAvailable =
+    gate.preview?.requires_human_approval === true ||
+    (fileWritesAllowed && coderAgentLocalDiff && hasDiffPayload);
+
+  if (!gate.preview) reasons.push("missing_approval_preview");
+  if (gate.preview?.decision === "blocked") reasons.push("approval_preview_blocked");
+  if (!preview) reasons.push("missing_diff_preview");
+  if (preview?.status === "blocked") reasons.push("diff_preview_blocked");
+  if (!normalizedTarget) reasons.push("target_unknown");
+  if (!allowedFilesKnown) reasons.push("allowed_files_unknown");
+  if (taskSpec?.ok === false) reasons.push("task_spec_failed");
+  if (preview?.git_apply_check_ok !== true) reasons.push("git_apply_not_passed");
+  if (!qualityRequiredPasses) reasons.push("required_gates_not_passed");
+  if (protectedOrSecretReason) reasons.push(protectedOrSecretReason);
+  if (actionEscalates) reasons.push("action_mode_escalation");
+  if (!approvalPreviewAvailable) reasons.push("approval_authority_unavailable");
+  if (fileMutationIntent && !hasExecutableApprovalPayload) {
+    reasons.push("missing_executable_payload");
+  }
+
+  return {
+    canApprove: reasons.length === 0,
+    reasons: uniqueNonEmpty(reasons),
+  };
+}
+
+export function deriveBlockerNextSafeActionSummary({
+  canApprove,
+  diffVerification,
+  gate,
+  task,
+}: {
+  canApprove: boolean;
+  diffVerification: DiffVerificationState;
+  gate: ApprovalGateState;
+  task?: LongRunningTaskPayload | null;
+}): BlockerNextActionSummary {
+  const reasonCodes = [
+    ...(gate.preview?.reason_codes ?? []),
+    ...(diffVerification.preview?.blocked_reasons?.map((reason) =>
+      String(reason.reason_code ?? ""),
+    ) ?? []),
+    ...(diffVerification.preview?.task_spec_check?.reason_codes ?? []),
+    noDiffTerminalReason(task?.status ?? "") ?? "",
+    task?.architect_reason ?? "",
+    blockerReasonCodeFromText(task?.truncated_test_results ?? "") ?? "",
+  ].filter(Boolean);
+  const primary = firstStabilityBlocker(reasonCodes);
+  const executionOk = gate.execution?.ok === true;
+  const postApplyVerified = isVerificationCompleteState(task, gate.execution);
+  const summary =
+    primary != null
+      ? blockerCopy(primary)
+      : canApprove && !gate.approvedAt
+        ? blockerCopy("approval_required")
+        : gate.approvedAt && !executionOk
+          ? blockerCopy("apply_required")
+          : executionOk && !postApplyVerified
+            ? blockerCopy("tests_failed")
+            : postApplyVerified
+              ? blockerCopy("commit_required")
+              : {
+                  detail: "No blocking reason has been reported.",
+                  nextSafeAction: task?.next_action ?? "Continue with the next explicit manual check.",
+                  title: "No blocker reported",
+                };
+  return {
+    blocker: primary ?? (postApplyVerified ? "commit_required" : canApprove ? "approval_required" : "none"),
+    detail: summary.detail,
+    nextSafeAction: summary.nextSafeAction,
+    status: primary ? "blocked" : canApprove || gate.approvedAt || executionOk ? "ready" : "waiting",
+    title: summary.title,
+  };
+}
+
+function blockerReasonCodeFromText(value: string): string | null {
+  const reasonMatch = value.match(/reason_code[:=]\s*([A-Za-z0-9_-]+)/);
+  if (reasonMatch?.[1]) {
+    return reasonMatch[1];
+  }
+  const prefixMatch = value.match(/^([A-Za-z0-9_-]+):/);
+  return prefixMatch?.[1] ?? null;
+}
+
+function blockerCopy(reasonCode: string): {
+  detail: string;
+  nextSafeAction: string;
+  title: string;
+} {
+  switch (reasonCode) {
+    case "coder_config_blocked":
+    case "config_blocked":
+      return {
+        detail: "The worker route is blocked by missing or disabled configuration.",
+        nextSafeAction: "Check Source Proxy status and configure the required model alias before retrying.",
+        title: "Configuration blocked",
+      };
+    case "missing_allowed_files":
+    case "task_spec_allowed_file_violation":
+      return {
+        detail: "The diff touches a file outside the allowed file list.",
+        nextSafeAction: "Regenerate the task spec so allowed_files includes only the intended target files.",
+        title: "Allowed files mismatch",
+      };
+    case "protected_path":
+    case "secret_path":
+    case "secret_shaped_path":
+      return {
+        detail: "Protected or secret-shaped paths cannot be edited through this approval flow.",
+        nextSafeAction: "Choose a non-secret repo-relative target or stop for a separate protected-path procedure.",
+        title: "Protected path blocked",
+      };
+    case "target_mismatch":
+    case "target_mismatch_stale_diff":
+    case "client_rejected_proposed_diff":
+      return {
+        detail: "The proposed diff does not match the approved target.",
+        nextSafeAction: "Regenerate the diff for the exact target file before previewing approval again.",
+        title: "Target mismatch",
+      };
+    case "route_unavailable":
+    case "route_response_invalid":
+    case "coder_sync_timeout":
+    case "coder_proxy_deadline_blocked":
+      return {
+        detail: "The coding route did not return a usable response.",
+        nextSafeAction: "Check /v1/self/status, Source Proxy logs, and rerun the scoped preview command.",
+        title: "Route unavailable",
+      };
+    case "tests_failed":
+    case "git_apply_check_failed":
+    case "diff_apply_check_failed":
+      return {
+        detail: "A required preview, apply check, or verification command failed.",
+        nextSafeAction: "Rerun the failing check, then regenerate the diff if the failure is still present.",
+        title: "Tests failed",
+      };
+    case "evidence_review_needed":
+      return {
+        detail: "A check produced expected evidence that still needs human review.",
+        nextSafeAction: "Review the receipt and expected dirty files before starting the next increment.",
+        title: "Evidence review needed",
+      };
+    case "approval_required":
+      return {
+        detail: "The preview is ready, but human approval has not been recorded.",
+        nextSafeAction: "Review target, diff, and verification gates, then approve or reject explicitly.",
+        title: "Approval required",
+      };
+    case "apply_required":
+      return {
+        detail: "Human approval exists, but no protected apply result has been recorded.",
+        nextSafeAction: "Run the protected apply path only if the approved diff and target still match.",
+        title: "Apply required",
+      };
+    case "commit_required":
+      return {
+        detail: "Verification is complete; commit is still a separate gate.",
+        nextSafeAction: "Prepare a scoped commit proposal and wait for explicit commit approval.",
+        title: "Commit gate required",
+      };
+    case "push_approval_required":
+      return {
+        detail: "Push is never implied by commit or verification.",
+        nextSafeAction: "Request separate push approval with branch, remote, and commit list.",
+        title: "Push approval required",
+      };
+    case "target_unresolved":
+    case "target_missing":
+      return {
+        detail: "No safe target file was resolved for this task.",
+        nextSafeAction: "Add a Target file: line with one repo-relative path, then regenerate the plan.",
+        title: "Target unresolved",
+      };
+    default:
+      return {
+        detail: `Source Proxy reported ${reasonCode}.`,
+        nextSafeAction: "Use the reported reason code to rerun the smallest scoped diagnostic before changing files.",
+        title: "Blocked",
+      };
+  }
+}
+
+function BlockerNextSafeActionPanel({ summary }: { summary: BlockerNextActionSummary }) {
+  const tone =
+    summary.status === "blocked"
+      ? "border-amber-300 bg-amber-50 text-amber-950"
+      : summary.status === "ready"
+        ? "border-cyan-300 bg-cyan-50 text-cyan-950"
+        : "border-slate-300 bg-slate-50 text-slate-900";
+  return (
+    <section className={`border px-3 py-3 text-sm ${tone}`}>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="font-semibold">{summary.title}</div>
+          <div className="mt-1">{summary.detail}</div>
+        </div>
+        <WorkflowBadge tone={summary.status === "blocked" ? "warning" : "muted"}>
+          {summary.blocker}
+        </WorkflowBadge>
+      </div>
+      <div className="mt-2 border border-current/20 bg-white/60 px-2 py-2 text-xs font-medium">
+        Next safe action: {summary.nextSafeAction}
+      </div>
+    </section>
+  );
+}
+
 function ApprovalStateChecklist({ items }: { items: ApprovalStateChecklistItem[] }) {
   return (
     <section className="border border-slate-300 bg-white px-3 py-3 text-sm">
@@ -9649,13 +10898,6 @@ export function ApprovalGatePanel({
     (gate.action === "needs_coder_diff" ||
       gate.preview?.decision === "needs_coder_diff" ||
       gate.preview?.reason_codes?.includes("needs_coder_diff") === true);
-  const diffPreviewBlocked = diffVerification.preview?.status === "blocked";
-  const applyCheckOk = diffVerification.preview?.git_apply_check_ok !== false;
-  const limits = diffVerification.preview?.limits;
-  const fileWritesAllowed =
-    typeof limits === "object" &&
-    limits !== null &&
-    (limits as Record<string, unknown>).file_writes_allowed === true;
   const hasDiffPayload =
     gate.proposedDiff.trim().length > 0 || diffVerification.unifiedDiff.trim().length > 0;
   const hasContentPayload = gate.content.trim().length > 0;
@@ -9669,15 +10911,16 @@ export function ApprovalGatePanel({
     gate,
     resolvedTargetPath,
   }).every((check) => !check.required || check.status === "pass");
-  const canApprove =
-    Boolean(gate.preview) &&
-    !isBlocked &&
-    !diffPreviewBlocked &&
-    applyCheckOk &&
-    qualityRequiredPasses &&
-    (gate.preview?.requires_human_approval === true ||
-      (fileWritesAllowed && coderAgentLocalDiff && hasDiffPayload)) &&
-    (!fileMutationIntent || canExecuteApprovedAction);
+  const approvalButtonGuard = deriveApprovalButtonGuard({
+    coderAgentLocalDiff,
+    diffVerification,
+    fileMutationIntent,
+    gate,
+    hasExecutableApprovalPayload: canExecuteApprovedAction,
+    qualityRequiredPasses,
+    resolvedTargetPath,
+  });
+  const canApprove = approvalButtonGuard.canApprove;
   const hasProposedAction = gate.action.trim().length > 0 || gate.target.trim().length > 0;
   const hasExecutableApprovalPayload = canExecuteApprovedAction || alreadySatisfied;
   const showCheckAction = gate.action.trim().length > 0 || hasExecutableApprovalPayload;
@@ -9710,6 +10953,12 @@ export function ApprovalGatePanel({
     diffVerification,
     gate,
     resolvedTargetPath,
+  });
+  const blockerSummary = deriveBlockerNextSafeActionSummary({
+    canApprove,
+    diffVerification,
+    gate,
+    task,
   });
 
   if (alreadySatisfied) {
@@ -9756,6 +11005,7 @@ export function ApprovalGatePanel({
           />
           <ApprovalCoderMiniSummary diffVerification={diffVerification} gate={gate} />
           <ReviewerAgentPanel checks={reviewerAgentChecks} />
+          <BlockerNextSafeActionPanel summary={blockerSummary} />
           <ApprovalStateChecklist items={approvalStateItems} />
         </div>
 
@@ -9811,6 +11061,7 @@ export function ApprovalGatePanel({
           />
           <ApprovalCoderMiniSummary diffVerification={diffVerification} gate={gate} />
           <ReviewerAgentPanel checks={reviewerAgentChecks} />
+          <BlockerNextSafeActionPanel summary={blockerSummary} />
           <ApprovalStateChecklist items={approvalStateItems} />
         </div>
 
@@ -9920,11 +11171,12 @@ export function ApprovalGatePanel({
         <ApprovalArchitectMiniSummary
           plan={architectPlan}
           resolvedTargetPath={resolvedTargetPath}
-        />
-        <ApprovalCoderMiniSummary diffVerification={diffVerification} gate={gate} />
-        <ReviewerAgentPanel checks={reviewerAgentChecks} />
-        <ApprovalStateChecklist items={approvalStateItems} />
-      </div>
+          />
+          <ApprovalCoderMiniSummary diffVerification={diffVerification} gate={gate} />
+          <ReviewerAgentPanel checks={reviewerAgentChecks} />
+          <BlockerNextSafeActionPanel summary={blockerSummary} />
+          <ApprovalStateChecklist items={approvalStateItems} />
+        </div>
 
       {needsCoderDiff ? (
         <div className="mt-3 border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-950">
@@ -10042,6 +11294,13 @@ export function ApprovalGatePanel({
           Approval controls are unavailable until the backend provides a diff or an explicit verified action.
         </div>
       )}
+
+      {!canApprove && approvalButtonGuard.reasons.length > 0 ? (
+        <div className="mt-3 border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-950">
+          <div className="font-semibold">Approval guard blocked</div>
+          <div className="mt-1">{approvalButtonGuard.reasons.join(", ")}</div>
+        </div>
+      ) : null}
 
       <RejectReasonPicker
         disabled={!gate.preview || gate.isChecking}
@@ -10873,6 +12132,17 @@ async function callLongRunningTaskStatus(
   });
 
   return parseLongRunningTaskResponse(response, "Long-running task status");
+}
+
+async function callTaskQueue(): Promise<TaskQueueResponse> {
+  const response = await fetch("/v1/tasks/long-running?include_completed=true&limit=25", {
+    method: "GET",
+  });
+  const payload = await readJsonResponse(response, "Long-running task queue");
+  if (!response.ok) {
+    throw new Error(`Long-running task queue failed with status ${response.status}.`);
+  }
+  return payload as TaskQueueResponse;
 }
 
 async function callLongRunningTaskAdvance(
@@ -12172,7 +13442,9 @@ function loadWorkflowMemory(): WorkflowMemorySnapshot {
     }
 
     const parsed: unknown = JSON.parse(rawMemory);
-    return isWorkflowMemorySnapshot(parsed) ? parsed : emptyWorkflowMemorySnapshot;
+    return isWorkflowMemorySnapshot(parsed)
+      ? normalizeWorkflowMemorySnapshot(parsed)
+      : emptyWorkflowMemorySnapshot;
   } catch {
     return emptyWorkflowMemorySnapshot;
   }
@@ -12230,6 +13502,7 @@ function isWorkflowMemorySnapshot(value: unknown): value is WorkflowMemorySnapsh
   const candidate = value as Partial<WorkflowMemorySnapshot>;
   return (
     Array.isArray(candidate.approvals) &&
+    (Array.isArray(candidate.artifactIds) || candidate.artifactIds === undefined) &&
     Array.isArray(candidate.blockers) &&
     Array.isArray(candidate.knownGoodExamples) &&
     typeof candidate.lastKnownStatus === "string" &&
@@ -12238,6 +13511,24 @@ function isWorkflowMemorySnapshot(value: unknown): value is WorkflowMemorySnapsh
     Array.isArray(candidate.testReports) &&
     (typeof candidate.updatedAt === "string" || candidate.updatedAt === null)
   );
+}
+
+function normalizeWorkflowMemorySnapshot(
+  snapshot: Partial<WorkflowMemorySnapshot>,
+): WorkflowMemorySnapshot {
+  return {
+    approvals: snapshot.approvals ?? [],
+    approvalState: snapshot.approvalState ?? "none",
+    artifactIds: snapshot.artifactIds ?? [],
+    blockers: snapshot.blockers ?? [],
+    knownGoodExamples: snapshot.knownGoodExamples ?? [],
+    lastKnownStatus: snapshot.lastKnownStatus ?? "No workflow story persisted yet.",
+    rejections: snapshot.rejections ?? [],
+    rejectionState: snapshot.rejectionState ?? "none",
+    taskIds: snapshot.taskIds ?? [],
+    testReports: snapshot.testReports ?? [],
+    updatedAt: snapshot.updatedAt ?? null,
+  };
 }
 
 function normalizeMemoryTask(task: string) {

@@ -19,6 +19,8 @@ import { DashboardDemoV4FloatingNav } from "@/components/dashboard/demo-v4/Dashb
 import { DashboardDemoV4OracleHero } from "@/components/dashboard/demo-v4/DashboardDemoV4OracleHero";
 import { DashboardDemoV4Storage } from "@/components/dashboard/demo-v4/DashboardDemoV4Storage";
 import { DashboardDemoV4SystemStats } from "@/components/dashboard/demo-v4/DashboardDemoV4SystemStats";
+import type { ClusterTelemetryResponse } from "@/lib/server/telemetry/types";
+import type { ScoutOverview } from "@/lib/scout-overview";
 
 import "@/styles/dashboard-demo-v4.css";
 
@@ -73,8 +75,14 @@ function deriveLiveStatus(
   };
 }
 
-export function DashboardDemoV4() {
-  const telemetry = useClusterTelemetry();
+export function DashboardDemoV4({
+  initialTelemetry = null,
+  initialScoutOverview = null,
+}: {
+  initialTelemetry?: ClusterTelemetryResponse | null;
+  initialScoutOverview?: ScoutOverview | null;
+}) {
+  const telemetry = useClusterTelemetry(15_000, initialTelemetry);
   const { data, state, error } = telemetry;
 
   const status = useMemo(() => deriveLiveStatus(state), [state]);
@@ -180,7 +188,7 @@ export function DashboardDemoV4() {
           </div>
           <div className="flex flex-col gap-4 xl:col-span-4 xl:self-start xl:gap-5">
             <DashboardDemoV4Briefing />
-            <HomelabScoutIntelligenceWidget />
+            <HomelabScoutIntelligenceWidget initialOverview={initialScoutOverview} />
             <HomelabTestRunnerWidget />
             <HomelabCartographerWidget />
             <HomelabBlueprintReviewWidget />

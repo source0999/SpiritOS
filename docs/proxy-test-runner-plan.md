@@ -44,6 +44,17 @@ cd ~/SpiritOS
 PYTHONPATH=. python3 -m source_proxy.testing.runner --profile proxy-closeout
 ```
 
+Expected closeout shape:
+
+```text
+Closeout status: PASS
+Blockers:
+- none
+Next safe action: continue to the next increment
+```
+
+The closeout report must include safety seed results, proxy regression tests, Codex adapter tests, dashboard smoke tests, live route validation, Cartographer project health, file-change verdict, exact blockers, and one concrete next safe action. A warning or blocked state must name the failing check instead of reporting vague success.
+
 ## Current Scout Smoke Command
 
 ```bash
@@ -137,7 +148,7 @@ Current expected seeded cases:
 
 - `manual-check-7`: protected or secret-shaped path stays blocked.
 - `manual-check-8`: path traversal manual diff stays blocked.
-- `manual-check-9`: safe-old-path / normalized unsafe-new-path target mismatch stays blocked.
+- `manual-check-9`: safe-old-path / dot-segment new-path diff normalizes to one wrong target and stays blocked by target/allowed-file mismatch, not by accidental protected-path classification.
 
 ## Allowed Runner Actions
 

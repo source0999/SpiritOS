@@ -11,6 +11,8 @@ ProposalStatus = Literal[
     "pending_review",
     "approved",
     "rejected",
+    "deferred",
+    "stale",
     "applied",
     "commit_pending",
     "commit_approved",
@@ -49,6 +51,8 @@ class ProjectCandidate:
     name: str
     root: str
     markers: list[str] = field(default_factory=list)
+    confidence: str = "medium"
+    reason: str = ""
     status: Literal["new_project_candidate"] = "new_project_candidate"
     approval_status: Literal["needs_approval"] = "needs_approval"
     source_root: str | None = None
@@ -94,6 +98,71 @@ class UnmappedPath:
 
 
 @dataclass(frozen=True)
+class ClutterCandidate:
+    path: str
+    risk: Literal["low", "medium", "high", "blocked"]
+    reason: str
+    confidence: Literal["low", "medium", "high"] = "medium"
+    category: str = "unknown"
+    deletion_allowed: bool = False
+    action_taken: bool = False
+
+
+@dataclass(frozen=True)
+class ClutterDeletionProposal:
+    proposal_id: str
+    status: Literal["drafted"] = "drafted"
+    proposal_type: str = "low_risk_deletion"
+    files: list[str] = field(default_factory=list)
+    file_count: int = 0
+    risk: Literal["low"] = "low"
+    reason: str = ""
+    confidence: Literal["low", "medium", "high"] = "medium"
+    rollback_instructions: list[str] = field(default_factory=list)
+    requires_approval: bool = True
+    deletion_enabled: bool = False
+    action_taken: bool = False
+
+
+@dataclass(frozen=True)
+class TrustScoreSignal:
+    code: str
+    label: str
+    score_delta: int
+    evidence: list[str] = field(default_factory=list)
+    passed: bool = True
+
+
+@dataclass(frozen=True)
+class V1EvidenceArtifact:
+    path: str
+    profile: str
+    result: str
+    generated_at: str | None = None
+    clean: bool = False
+    evidence: list[str] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class V1EvidenceProof:
+    code: str
+    required_count: int
+    observed_count: int
+    passed: bool
+    evidence: list[str] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class V1ProofGateRecord:
+    code: str
+    path: str
+    check_id: str
+    status: str
+    passed: bool
+    evidence: list[str] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
 class RepoMapFile:
     path: str
     component_id: str | None = None
@@ -131,6 +200,7 @@ class GitStatus:
     available: bool = False
     dirty: bool = False
     branch: str | None = None
+    head_sha: str | None = None
     changed_files: list[str] = field(default_factory=list)
     staged_files: list[str] = field(default_factory=list)
     unstaged_files: list[str] = field(default_factory=list)
@@ -138,6 +208,8 @@ class GitStatus:
     ahead: int = 0
     behind: int = 0
     upstream: str | None = None
+    no_upstream_reason: str | None = None
+    generated_at: str | None = None
     is_primary_branch: bool = False
     needs_branch_recommendation: bool = False
     needs_commit: bool = False
@@ -157,6 +229,11 @@ class DriftFinding:
     affected_blueprints: list[str] = field(default_factory=list)
     changed_files: list[str] = field(default_factory=list)
     message: str = ""
+    stale_targets: list[str] = field(default_factory=list)
+    why_matters: str = ""
+    safe_to_ignore: bool = False
+    proposed_next_action: str = ""
+    proposal_ids: list[str] = field(default_factory=list)
     evidence: list[str] = field(default_factory=list)
     severity: Literal["info", "review_suggested", "action_recommended"] = "review_suggested"
     status: Literal["open"] = "open"
@@ -181,6 +258,14 @@ class CartographerReminder:
 
 
 @dataclass(frozen=True)
+class ChangeScribeFileExplanation:
+    path: str
+    category: str
+    explanation: str
+    review_required: bool = False
+
+
+@dataclass(frozen=True)
 class ChangeScribeSummary:
     project_id: str
     summary: str
@@ -189,6 +274,7 @@ class ChangeScribeSummary:
     commit_state: str = "unknown"
     components: list[str] = field(default_factory=list)
     changed_files: list[str] = field(default_factory=list)
+    file_explanations: list[ChangeScribeFileExplanation] = field(default_factory=list)
     evidence: list[str] = field(default_factory=list)
     recommended_actions: list[str] = field(default_factory=list)
     uncertain_claims: list[str] = field(default_factory=list)
@@ -230,6 +316,10 @@ class BlueprintScribeDraft:
     avoids_overclaiming: list[str] = field(default_factory=list)
     editable: bool = True
     rejectable: bool = True
+    proposal_only: bool = True
+    direct_write_enabled: bool = False
+    max_authority: str = "proposal_only"
+    review_required: bool = True
     requires_apply_approval: bool = True
     action_taken: bool = False
 
@@ -257,7 +347,18 @@ class SubCartographerRole:
     responsibility: str
     consumes: list[str] = field(default_factory=list)
     produces: list[str] = field(default_factory=list)
+    allowed_inputs: list[str] = field(default_factory=list)
+    allowed_outputs: list[str] = field(default_factory=list)
+    max_authority: str = "read_only"
+    forbidden_actions: list[str] = field(
+        default_factory=lambda: ["approve", "apply", "commit", "push", "delete"]
+    )
     can_write_files: bool = False
+    can_approve: bool = False
+    can_apply: bool = False
+    can_commit: bool = False
+    can_push: bool = False
+    can_delete: bool = False
     failure_policy: str = "stop_at_proposal_queue"
 
 
@@ -274,6 +375,32 @@ class SubCartographerRoute:
 
 
 @dataclass(frozen=True)
+class SubCartographerOutput:
+    role_id: str
+    summary: str
+    evidence: list[str] = field(default_factory=list)
+    recommendation: str = ""
+    risk: str = "low"
+    required_approval: bool = False
+    forbidden_actions_respected: bool = True
+    next_manual_check: str = ""
+    action_taken: bool = False
+
+
+@dataclass(frozen=True)
+class SubCartographerControlRoute:
+    route_id: str
+    situation: str
+    selected_roles: list[str] = field(default_factory=list)
+    reason: str = ""
+    evidence: list[str] = field(default_factory=list)
+    parent_control_plane_required: bool = True
+    approval_gate_required: bool = True
+    mutation_allowed: bool = False
+    action_taken: bool = False
+
+
+@dataclass(frozen=True)
 class ProjectHealth:
     project_id: str
     name: str
@@ -285,11 +412,34 @@ class ProjectHealth:
     pending_proposals: int = 0
     dirty: bool = False
     branch: str | None = None
+    changed_files: list[str] = field(default_factory=list)
+    staged_files: list[str] = field(default_factory=list)
+    unstaged_files: list[str] = field(default_factory=list)
+    untracked_files: list[str] = field(default_factory=list)
+    dirty_file_count: int = 0
+    expected_evidence_files: list[str] = field(default_factory=list)
+    unsafe_dirty_files: list[str] = field(default_factory=list)
+    dirty_summary: str = "clean"
+    ahead: int = 0
+    behind: int = 0
+    upstream: str | None = None
+    no_upstream_reason: str | None = None
     merge_ready: bool = False
     merge_blockers: list[str] = field(default_factory=list)
     recommended_next_step: str = "no action needed"
     merge_target: str | None = None
     pushed: bool = False
+    head_sha: str | None = None
+    commit_audit_status: str = "not_needed"
+    unaudited_head_change: bool = False
+    push_audit_status: str = "missing"
+    push_audit_explanation: str = ""
+    push_warning_policy: str = "none"
+    bootstrap_push_warning: bool = False
+    push_approval_status: str = "not_required"
+    push_enabled: bool = False
+    push_reason_codes: list[str] = field(default_factory=list)
+    commits_to_push: list[str] = field(default_factory=list)
     checks_passed: bool = False
     markers: list[str] = field(default_factory=list)
     filters: list[str] = field(default_factory=list)
@@ -304,6 +454,16 @@ class BranchRecommendation:
     suggested_branch: str
     reason: str
     changed_file_count: int = 0
+    source_head: str | None = None
+    dirty_state_requirement: str = "dirty_worktree_required"
+    rollback_command: str = ""
+    branch_exists: bool = False
+    preview_generated: bool = True
+    confidence: Literal["low", "medium", "high"] = "medium"
+    recommendation: str = "create_branch"
+    unsafe_to_create_branch: bool = False
+    blockers: list[str] = field(default_factory=list)
+    merge_readiness: str = "blocked"
     related_files: list[str] = field(default_factory=list)
     status: Literal["pending_approval"] = "pending_approval"
     requires_approval: bool = True
@@ -318,10 +478,24 @@ class CommitProposal:
     source_proposal_id: str
     status: Literal["commit_pending"] = "commit_pending"
     suggested_message: str = ""
+    story: str = ""
+    group_key: str = ""
+    group_reason: str = ""
     files: list[str] = field(default_factory=list)
+    included_files: list[str] = field(default_factory=list)
+    excluded_files: list[str] = field(default_factory=list)
     reason: str = ""
     component: str = "unknown"
     risk: str = "unknown"
+    diff_summary: str = ""
+    required_checks: list[str] = field(default_factory=list)
+    verification_status: str = "unknown"
+    verification_checks: list[dict[str, Any]] = field(default_factory=list)
+    audit_state: str = "not_recorded"
+    rollback_command: str = ""
+    stronger_confirmation_required: bool = False
+    commit_blocked: bool = False
+    commit_blockers: list[str] = field(default_factory=list)
     generated: bool = False
     staged_files: list[str] = field(default_factory=list)
     unstaged_files: list[str] = field(default_factory=list)
@@ -339,8 +513,23 @@ class PushQueueItem:
     remote: str
     branch: str
     upstream: str | None = None
+    ahead: int = 0
+    behind: int = 0
     commits_ahead: int = 0
+    commits_to_push: list[str] = field(default_factory=list)
     files: list[str] = field(default_factory=list)
+    audit_status: str = "missing"
+    commit_audit_status: str = "missing"
+    test_status: str = "unknown"
+    dirty: bool = False
+    drift_status: str = "unknown"
+    push_command_preview: str = ""
+    rollback_guidance: str = ""
+    approval_status: str = "approval_required"
+    reason_codes: list[str] = field(default_factory=list)
+    push_blockers: list[str] = field(default_factory=list)
+    branch_protection_warnings: list[str] = field(default_factory=list)
+    remote_status: dict[str, Any] = field(default_factory=dict)
     status: Literal["push_pending"] = "push_pending"
     requires_approval: bool = True
     push_enabled: bool = False
@@ -363,8 +552,14 @@ class AuditTrailEvent:
     files: list[str] = field(default_factory=list)
     changed_files: list[str] = field(default_factory=list)
     branch: str | None = None
+    previous_branch: str | None = None
     remote: str | None = None
     commit_sha: str | None = None
+    parent_sha: str | None = None
+    approved_files: list[str] = field(default_factory=list)
+    excluded_files: list[str] = field(default_factory=list)
+    source_head: str | None = None
+    rollback_command: str | None = None
     rollback_hint: str | None = None
     source: str = "cartographer"
 
@@ -392,6 +587,16 @@ class ProposalRecord:
     diff_preview: str | None = None
     confidence: str | None = None
     rationale: str | None = None
+    source_drift_id: str | None = None
+    review_note: str | None = None
+    repo_purpose: str | None = None
+    stack_guess: str | None = None
+    scripts: list[str] = field(default_factory=list)
+    components: list[str] = field(default_factory=list)
+    risk_areas: list[str] = field(default_factory=list)
+    suggested_docs: list[str] = field(default_factory=list)
+    suggested_tests: list[str] = field(default_factory=list)
+    suggested_runbook: list[str] = field(default_factory=list)
     generated: bool = False
     persisted: bool = True
     rejection_reason: str | None = None
@@ -401,6 +606,7 @@ class ProposalRecord:
     fingerprint: str | None = None
     deduped: bool = True
     warnings: list[str] = field(default_factory=list)
+    post_apply_verification: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)

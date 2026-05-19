@@ -169,7 +169,7 @@ function formatFileAccess(input: FormatCapabilityAnswerInput): string {
       : "Windows folder access is disabled. Enable `SPIRIT_WINDOWS_FS_ENABLED` and configure `SPIRIT_WINDOWS_FS_BASE_URL`, `SPIRIT_WINDOWS_FS_TOKEN`, and `SPIRIT_WINDOWS_FS_ALLOWLIST`.",
   );
   lines.push(
-    "I cannot browse arbitrary drives like `C:\\` or `C:\\Users`; concrete folder questions must pass either workspace safety or the Windows allowlist.",
+    "Arbitrary drive browsing is not wired; I cannot browse drives like `C:\\` or `C:\\Users`. Concrete folder questions must pass either workspace safety or the Windows allowlist.",
   );
   lines.push(
     "Drive telemetry can still show aggregate volume usage, but telemetry is not the same thing as enumerating folders.",

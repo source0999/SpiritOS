@@ -2,6 +2,11 @@
 
 **Sovereign cybernetic extension of the Source** - Next.js 16 App Router frontend (`src/`) + local GPU backend (Ollama, Whisper, Piper TTS).
 
+## Active Plan
+
+The active Source Proxy plan is `docs/source-proxy-production-hardening-plan.md`.
+`proxyCLI.md` is retired and intentionally deleted. Phase 11, AionUi bridge, and Spirit Cowork Console language is historical or deferred unless a later active plan explicitly reopens it.
+
 ## Quick Start (Recommended)
 
 ```bash
@@ -44,6 +49,231 @@ curl -k -sS https://localhost:3000/api/spirit/health
 ```bash
 curl -k -sS https://localhost:8787/healthcheck
 ```
+
+### Local HTTPS LAN Dev Servers
+
+SpiritOS uses two local HTTPS LAN dev servers during normal development.
+
+Frontend UI:
+
+- Purpose: SpiritOS UI, dashboard, `/coding`, `/chat`, `/scout`, `/oracle`
+- Session: `spiritos-lan`
+- Script: `npm run dev:https:lan`
+- Port: `3000`
+- Log: `~/spiritos-dev-lan.log`
+- URL: `https://10.0.0.186:3000/coding`
+
+Source Proxy:
+
+- Purpose: backend source proxy used by `/coding` workflows
+- Session: `source-proxy-lan`
+- Script: `npm run proxy:https:lan`
+- Port: `8787`
+- Log: `~/source-proxy-https-lan.log`
+
+Use detached tmux sessions so the servers survive Cursor Remote or SSH disconnects. Normal code edits usually hot reload and do not require restarting either server. Restart mainly after `.env.local`, config, certificates, server scripts, dependency/package changes, or when compile/cache state gets stuck.
+
+RustDesk is currently intentionally left off during stability testing. Sleep/suspend has been disabled on the server.
+
+Start both servers:
+
+```bash
+cd ~/SpiritOS
+
+tmux kill-session -t spiritos-lan 2>/dev/null || true
+tmux kill-session -t source-proxy-lan 2>/dev/null || true
+
+tmux new -d -s source-proxy-lan 'cd ~/SpiritOS && npm run proxy:https:lan 2>&1 | tee -a ~/source-proxy-https-lan.log'
+tmux new -d -s spiritos-lan 'cd ~/SpiritOS && npm run dev:https:lan 2>&1 | tee -a ~/spiritos-dev-lan.log'
+
+sleep 25
+
+tmux ls || true
+ss -ltnp | grep -E ':3000|:8787|:22|:11434' || true
+curl -k -I --max-time 10 https://localhost:3000/coding || true
+```
+
+Stop both servers:
+
+```bash
+cd ~/SpiritOS
+
+tmux kill-session -t spiritos-lan 2>/dev/null || true
+tmux kill-session -t source-proxy-lan 2>/dev/null || true
+
+lsof -ti tcp:3000 2>/dev/null | xargs -r kill -TERM
+lsof -ti tcp:8787 2>/dev/null | xargs -r kill -TERM
+
+sleep 3
+
+lsof -ti tcp:3000 2>/dev/null | xargs -r kill -KILL
+lsof -ti tcp:8787 2>/dev/null | xargs -r kill -KILL
+
+tmux ls || true
+ss -ltnp | grep -E ':3000|:8787' || true
+```
+
+Clean restart both servers:
+
+```bash
+cd ~/SpiritOS
+
+tmux kill-session -t spiritos-lan 2>/dev/null || true
+tmux kill-session -t source-proxy-lan 2>/dev/null || true
+
+lsof -ti tcp:3000 2>/dev/null | xargs -r kill -TERM
+lsof -ti tcp:8787 2>/dev/null | xargs -r kill -TERM
+
+sleep 3
+
+lsof -ti tcp:3000 2>/dev/null | xargs -r kill -KILL
+lsof -ti tcp:8787 2>/dev/null | xargs -r kill -KILL
+
+rm -rf .next
+
+tmux new -d -s source-proxy-lan 'cd ~/SpiritOS && npm run proxy:https:lan 2>&1 | tee -a ~/source-proxy-https-lan.log'
+tmux new -d -s spiritos-lan 'cd ~/SpiritOS && npm run dev:https:lan 2>&1 | tee -a ~/spiritos-dev-lan.log'
+
+sleep 30
+
+tmux ls || true
+ss -ltnp | grep -E ':3000|:8787|:22|:11434' || true
+curl -k -I --max-time 10 https://localhost:3000/coding || true
+```
+
+Clean restart kills tmux sessions and any orphan processes on ports `3000` and `8787` before starting fresh tmux sessions. Plain `tmux kill-session` is not always enough because the frontend can leave orphan Next processes on port `3000`.
+
+Restart frontend only:
+
+```bash
+cd ~/SpiritOS
+
+tmux kill-session -t spiritos-lan 2>/dev/null || true
+
+lsof -ti tcp:3000 2>/dev/null | xargs -r kill -TERM
+sleep 3
+lsof -ti tcp:3000 2>/dev/null | xargs -r kill -KILL
+
+rm -rf .next
+
+tmux new -d -s spiritos-lan 'cd ~/SpiritOS && npm run dev:https:lan 2>&1 | tee -a ~/spiritos-dev-lan.log'
+
+sleep 25
+
+tmux ls || true
+ss -ltnp | grep -E ':3000|:8787|:22|:11434' || true
+curl -k -I --max-time 10 https://localhost:3000/coding || true
+```
+
+Restart proxy only:
+
+```bash
+cd ~/SpiritOS
+
+tmux kill-session -t source-proxy-lan 2>/dev/null || true
+
+lsof -ti tcp:8787 2>/dev/null | xargs -r kill -TERM
+sleep 3
+lsof -ti tcp:8787 2>/dev/null | xargs -r kill -KILL
+
+tmux new -d -s source-proxy-lan 'cd ~/SpiritOS && npm run proxy:https:lan 2>&1 | tee -a ~/source-proxy-https-lan.log'
+
+sleep 8
+
+tmux ls || true
+ss -ltnp | grep -E ':8787|:22|:11434' || true
+curl -k --max-time 10 https://localhost:8787/v1/self/status | head -c 800
+echo
+```
+
+Verify both servers:
+
+```bash
+cd ~/SpiritOS
+
+echo "== tmux =="
+tmux ls || true
+
+echo
+echo "== ports =="
+ss -ltnp | grep -E ':3000|:8787|:22|:11434' || true
+
+echo
+echo "== frontend =="
+curl -k -I --max-time 10 https://localhost:3000/ || true
+curl -k -I --max-time 10 https://localhost:3000/coding || true
+
+echo
+echo "== frontend self status route =="
+curl -k -s --max-time 10 https://localhost:3000/v1/self/status | head -c 800
+echo
+
+echo
+echo "== proxy self status =="
+curl -k -s --max-time 10 https://localhost:8787/v1/self/status | head -c 800
+echo
+```
+
+Watch frontend logs:
+
+```bash
+tail -f ~/spiritos-dev-lan.log
+```
+
+Watch proxy logs:
+
+```bash
+tail -f ~/source-proxy-https-lan.log
+```
+
+Attach to frontend tmux session:
+
+```bash
+tmux attach -t spiritos-lan
+```
+
+Attach to proxy tmux session:
+
+```bash
+tmux attach -t source-proxy-lan
+```
+
+Detach from tmux without killing the server:
+
+```text
+Ctrl+b then d
+```
+
+Open in browser:
+
+```text
+https://10.0.0.186:3000/
+https://10.0.0.186:3000/coding
+```
+
+If the browser shows a white page after restart, hard refresh:
+
+```text
+Ctrl+Shift+R
+```
+
+Windows PowerShell verification:
+
+```powershell
+ssh spirit "tmux ls || true"
+ssh spirit "ss -ltnp | grep -E ':3000|:8787|:22|:11434' || true"
+curl.exe -k -I https://10.0.0.186:3000/coding
+Test-NetConnection 10.0.0.186 -Port 3000
+Test-NetConnection 10.0.0.186 -Port 8787
+```
+
+Expected good output:
+
+- `tmux` shows `spiritos-lan` and `source-proxy-lan`.
+- `ss` shows `0.0.0.0:3000` for the frontend.
+- `ss` shows `0.0.0.0:8787` for the proxy.
+- `curl` to `https://localhost:3000/coding` returns `HTTP/1.1 200 OK`.
+- The browser opens `https://10.0.0.186:3000/coding` after a hard refresh if needed.
 
 **Brain vs TTS (do not conflate them):** `/api/spirit` uses `OLLAMA_MODEL` for `/chat` text generation. `/oracle` can use `ORACLE_OLLAMA_MODEL` when set. Voice is synthesized via same-origin **`/api/tts`** (`TTS_PROVIDER=piper` or `elevenlabs`); the browser never sees `ELEVENLABS_API_KEY`. Optional `ELEVENLABS_VOICE_SPEED` (default 1.12, clamped 0.7–1.2) sets ElevenLabs cadence; Voice settings can send a per-request `speed` override. **`GET /api/tts/voices`** feeds the Voice picker. **`ELEVENLABS_VOICE_ALLOWLIST`** supports **`Clarice:voice_id`** (recommended, no catalog read) or comma-separated **names only** (needs catalog + `voices_read`; if the catalog fails, switch to `Name:voice_id`). When any allowlist is set, the API returns **only** those voices - never the full catalog. Defaults prefer **`ELEVENLABS_DEFAULT_VOICE_ID`**, then **Clarice** by name, then **`ELEVENLABS_VOICE_ID`**. Response **`X-Spirit-TTS-Voice-Name-Encoded`** keeps display names ASCII-safe for Tailscale.
 

@@ -1,0 +1,142 @@
+{
+  "autonomy_escalation": {
+    "checks": {
+      "approval_bypasses_locked": true,
+      "autonomous_apply_disabled": true,
+      "autonomous_commit_disabled": true,
+      "autonomous_push_disabled": true,
+      "docs_autopilot_disabled_or_explicit": true
+    },
+    "failures": [],
+    "passed": true
+  },
+  "expected_outcomes": [
+    "cartographer-soak-snapshot: pass",
+    "mutation boundary: snapshot log only",
+    "autonomous apply/commit/push disabled",
+    "docs-only autopilot disabled unless explicitly configured",
+    "recommendation: ready for next increment"
+  ],
+  "log_size_bytes": {
+    "error": null,
+    "file_count": 17,
+    "path": "source_proxy/cartographer/soak-logs",
+    "size_bytes": 207321
+  },
+  "mutated": true,
+  "mutation_boundary": {
+    "after": "M README.md\n M chatDesign/components/chat/__tests__/ChatThreadSidebar.test.tsx\n M docs/codex-real-task-trial.md\n D proxyCLI.md\n M source_proxy/api/cartographer.py\n M source_proxy/api/codex_adapter.py\n M source_proxy/api/long_running_tasks.py\n M source_proxy/approval/gate.py\n M source_proxy/cartographer/apply.py\n M source_proxy/cartographer/audit_trail.py\n M source_proxy/cartographer/branch_recommendations.py\n M source_proxy/cartographer/change_scribe.py\n M source_proxy/cartographer/commit_proposals.py\n M source_proxy/cartographer/component_mapper.py\n M source_proxy/cartographer/drift.py\n M source_proxy/cartographer/git_approvals.py\n M source_proxy/cartographer/git_status.py\n M source_proxy/cartographer/models.py\n M source_proxy/cartographer/project_discovery.py\n M source_proxy/cartographer/project_health.py\n M source_proxy/cartographer/proposal_previews.py\n M source_proxy/cartographer/proposal_reviews.py\n M source_proxy/cartographer/proposals.py\n M source_proxy/cartographer/push_queue.py\n M source_proxy/cartographer/safety.py\n M source_proxy/cartographer/service.py\n M source_proxy/cartographer/starter_blueprints.py\n M source_proxy/cartographer/sub_cartographers.py\n M source_proxy/codex/__init__.py\n M source_proxy/codex/evidence.py\n M source_proxy/tasks/long_running.py\n M source_proxy/testing/runner.py\n M source_proxy/tests/test_cartographer_api.py\n M source_proxy/tests/test_codex_cli_adapter.py\n M source_proxy/tests/test_coding_regression_pack.py\n M source_proxy/tests/test_long_running_tasks.py\n M source_proxy/tests/test_proxy_runner.py\n M src/app/(dashboard)/page.tsx\n M src/app/api/scout/overview/route.ts\n M src/app/intelligence/page.tsx\n M src/app/v1/actions/execute-approved/__tests__/route.test.ts\n M src/app/v1/actions/execute-approved/route.ts\n M src/app/v1/cartographer/push-queue/route.ts\n M src/app/v1/coding/codex/route.ts\n M src/app/v1/tasks/long-running/route.ts\n M src/components/chat/__tests__/spirit-chat-oracle-contract.test.ts\n M src/components/coding/CodingAgentInterface.tsx\n M src/components/coding/__tests__/coding-workflow-step.test.ts\n M src/components/dashboard/HomelabScoutIntelligenceWidget.tsx\n M src/components/dashboard/ScoutIntelligenceCenter.tsx\n M src/components/dashboard/SpiritDashboardHome.tsx\n M src/components/dashboard/__tests__/SpiritDashboardHome.test.tsx\n M src/components/dashboard/demo-v4/DashboardDemoV4.tsx\n M src/hooks/useClusterTelemetry.ts\n M src/hooks/useScoutOverview.ts\n M src/lib/server/capabilities/format-capability-answer.ts\n?? docs/agent-wrapper-reference-study.md\n?? docs/aionui-reference-study.md\n?? docs/plan-index.md\n?? docs/source-proxy-production-hardening-plan.md\n?? docs/source-proxy-remote-manual-checks.md\n?? docs/spirit-cowork-gap-report.md\n?? productionProxy.md\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T022851Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T041707Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T042305Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T042542Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T110315Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T110546Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T110712Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T185656Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T185757Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T190127Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T192908Z.json\n?? source_proxy/cartographer/autopilot_apply.py\n?? source_proxy/cartographer/autopilot_config.py\n?? source_proxy/cartographer/autopilot_dry_run.py\n?? source_proxy/cartographer/autopilot_soak.py\n?? source_proxy/cartographer/clutter_inventory.py\n?? source_proxy/cartographer/clutter_proposals.py\n?? source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-2026-05-18T022743Z.json\n?? source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-2026-05-18T205159Z.json\n?? src/app/v1/cartographer/clutter-inventory/\n?? src/app/v1/cartographer/clutter-proposals/\n?? src/app/v1/cartographer/docs-autopilot/\n?? src/app/v1/cartographer/starter-blueprints/\n?? src/app/v1/coding/codex/__tests__/",
+    "allowed_writes": [
+      "source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-2026-05-18T205159Z.json"
+    ],
+    "background_status_delta": [],
+    "before": "M README.md\n M chatDesign/components/chat/__tests__/ChatThreadSidebar.test.tsx\n M docs/codex-real-task-trial.md\n D proxyCLI.md\n M source_proxy/api/cartographer.py\n M source_proxy/api/codex_adapter.py\n M source_proxy/api/long_running_tasks.py\n M source_proxy/approval/gate.py\n M source_proxy/cartographer/apply.py\n M source_proxy/cartographer/audit_trail.py\n M source_proxy/cartographer/branch_recommendations.py\n M source_proxy/cartographer/change_scribe.py\n M source_proxy/cartographer/commit_proposals.py\n M source_proxy/cartographer/component_mapper.py\n M source_proxy/cartographer/drift.py\n M source_proxy/cartographer/git_approvals.py\n M source_proxy/cartographer/git_status.py\n M source_proxy/cartographer/models.py\n M source_proxy/cartographer/project_discovery.py\n M source_proxy/cartographer/project_health.py\n M source_proxy/cartographer/proposal_previews.py\n M source_proxy/cartographer/proposal_reviews.py\n M source_proxy/cartographer/proposals.py\n M source_proxy/cartographer/push_queue.py\n M source_proxy/cartographer/safety.py\n M source_proxy/cartographer/service.py\n M source_proxy/cartographer/starter_blueprints.py\n M source_proxy/cartographer/sub_cartographers.py\n M source_proxy/codex/__init__.py\n M source_proxy/codex/evidence.py\n M source_proxy/tasks/long_running.py\n M source_proxy/testing/runner.py\n M source_proxy/tests/test_cartographer_api.py\n M source_proxy/tests/test_codex_cli_adapter.py\n M source_proxy/tests/test_coding_regression_pack.py\n M source_proxy/tests/test_long_running_tasks.py\n M source_proxy/tests/test_proxy_runner.py\n M src/app/(dashboard)/page.tsx\n M src/app/api/scout/overview/route.ts\n M src/app/intelligence/page.tsx\n M src/app/v1/actions/execute-approved/__tests__/route.test.ts\n M src/app/v1/actions/execute-approved/route.ts\n M src/app/v1/cartographer/push-queue/route.ts\n M src/app/v1/coding/codex/route.ts\n M src/app/v1/tasks/long-running/route.ts\n M src/components/chat/__tests__/spirit-chat-oracle-contract.test.ts\n M src/components/coding/CodingAgentInterface.tsx\n M src/components/coding/__tests__/coding-workflow-step.test.ts\n M src/components/dashboard/HomelabScoutIntelligenceWidget.tsx\n M src/components/dashboard/ScoutIntelligenceCenter.tsx\n M src/components/dashboard/SpiritDashboardHome.tsx\n M src/components/dashboard/__tests__/SpiritDashboardHome.test.tsx\n M src/components/dashboard/demo-v4/DashboardDemoV4.tsx\n M src/hooks/useClusterTelemetry.ts\n M src/hooks/useScoutOverview.ts\n M src/lib/server/capabilities/format-capability-answer.ts\n?? docs/agent-wrapper-reference-study.md\n?? docs/aionui-reference-study.md\n?? docs/plan-index.md\n?? docs/source-proxy-production-hardening-plan.md\n?? docs/source-proxy-remote-manual-checks.md\n?? docs/spirit-cowork-gap-report.md\n?? productionProxy.md\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T022851Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T041707Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T042305Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T042542Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T110315Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T110546Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T110712Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T185656Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T185757Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T190127Z.json\n?? scout/soak-logs/scout-soak-snapshot-2026-05-18T192908Z.json\n?? source_proxy/cartographer/autopilot_apply.py\n?? source_proxy/cartographer/autopilot_config.py\n?? source_proxy/cartographer/autopilot_dry_run.py\n?? source_proxy/cartographer/autopilot_soak.py\n?? source_proxy/cartographer/clutter_inventory.py\n?? source_proxy/cartographer/clutter_proposals.py\n?? source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-2026-05-18T022743Z.json\n?? src/app/v1/cartographer/clutter-inventory/\n?? src/app/v1/cartographer/clutter-proposals/\n?? src/app/v1/cartographer/docs-autopilot/\n?? src/app/v1/cartographer/starter-blueprints/\n?? src/app/v1/coding/codex/__tests__/",
+    "head_after": "683793732031b6d9471de7995931310065df84a5",
+    "head_before": "683793732031b6d9471de7995931310065df84a5",
+    "head_changed": false,
+    "snapshot_log_only": true,
+    "status_delta": [
+      "?? source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-2026-05-18T205159Z.json"
+    ],
+    "unexpected_status_delta": []
+  },
+  "next_actions": [
+    "Review commit proposal commit-prop-62d33f2b07ae (cartographer, high risk, 6 files) with curl -k -s http://localhost:3000/v1/cartographer/commit-proposals | jq '.commit_proposals[] | select(.commit_proposal_id==\"commit-prop-62d33f2b07ae\")'; do not approve until proposal/drift review is complete."
+  ],
+  "profile": "cartographer-soak-snapshot",
+  "read_only": false,
+  "recommendation": "ready for next increment",
+  "reliability": {
+    "grade": "boring",
+    "penalties": [
+      "working tree is dirty"
+    ],
+    "score": 95
+  },
+  "result": "pass",
+  "snapshot_path": "source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-2026-05-18T205159Z.json",
+  "summary": {
+    "audit_event_count": 22,
+    "audit_event_counts": {
+      "commit_pending": 22
+    },
+    "blueprint_count": 0,
+    "branch": "main",
+    "changed_file_count": 88,
+    "commit_enabled": false,
+    "commit_proposal_count": 22,
+    "commit_proposal_examples": [
+      {
+        "commit_proposal_id": "commit-prop-62d33f2b07ae",
+        "component": "cartographer",
+        "file_count": 6,
+        "risk": "high",
+        "suggested_message": "chore(cartographer): isolate high-risk changes"
+      },
+      {
+        "commit_proposal_id": "commit-prop-7a6efd2906d0",
+        "component": "cartographer",
+        "file_count": 1,
+        "risk": "low",
+        "suggested_message": "chore(cartographer): record soak snapshot"
+      },
+      {
+        "commit_proposal_id": "commit-prop-35bf4bf0d6f3",
+        "component": "cartographer",
+        "file_count": 20,
+        "risk": "medium",
+        "suggested_message": "feat(cartographer): update cartographer"
+      },
+      {
+        "commit_proposal_id": "commit-prop-8350091ebfc4",
+        "component": "cartographer-api-bridge",
+        "file_count": 2,
+        "risk": "high",
+        "suggested_message": "chore(cartographer): isolate high-risk changes"
+      },
+      {
+        "commit_proposal_id": "commit-prop-bf957ddece2a",
+        "component": "cartographer-api-bridge",
+        "file_count": 5,
+        "risk": "medium",
+        "suggested_message": "feat(cartographer): update cartographer api bridge"
+      }
+    ],
+    "deduped": true,
+    "dirty": true,
+    "drift_count": 0,
+    "drift_examples": [],
+    "duplicate_proposals_present": 0,
+    "merge_blockers": [
+      "work is not on a review branch",
+      "working tree has uncommitted changes"
+    ],
+    "merge_ready_count": 0,
+    "pending_proposal_examples": [],
+    "pending_proposals": 0,
+    "project_count": 0,
+    "proposal_count": 0,
+    "push_enabled": false,
+    "push_queue_count": 0,
+    "safety": {
+      "approval_required_for_commits": true,
+      "approval_required_for_file_writes": true,
+      "approval_required_for_pushes": true,
+      "autopilot_action_available": false,
+      "autopilot_kill_switch": true,
+      "docs_autopilot_daily_cap": 0,
+      "docs_autopilot_enabled": false,
+      "scout_bypass_allowed": false,
+      "source_proxy_approval_bypass_allowed": false,
+      "write_policy": "read_only"
+    },
+    "staged": null,
+    "status": "observing",
+    "unstaged": null,
+    "untracked": null,
+    "write_actions_enabled": false
+  },
+  "timestamp": "2026-05-18T20:51:59+00:00",
+  "warnings": [],
+  "wrote_snapshot": true
+}

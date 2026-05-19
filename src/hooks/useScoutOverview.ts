@@ -19,9 +19,14 @@ function isScoutOverviewRouteError(
   return "ok" in value && value.ok === false;
 }
 
-export function useScoutOverview(pollMs = 30_000): UseScoutOverviewResult {
-  const [data, setData] = useState<ScoutOverview | null>(null);
-  const [state, setState] = useState<ScoutOverviewFetchState>("loading");
+export function useScoutOverview(
+  pollMs = 30_000,
+  initialData: ScoutOverview | null = null,
+): UseScoutOverviewResult {
+  const [data, setData] = useState<ScoutOverview | null>(initialData);
+  const [state, setState] = useState<ScoutOverviewFetchState>(
+    initialData ? "loaded" : "loading",
+  );
   const [error, setError] = useState<string | null>(null);
 
   const fetchScoutOverview = useCallback(async (signal?: AbortSignal): Promise<ScoutOverview> => {

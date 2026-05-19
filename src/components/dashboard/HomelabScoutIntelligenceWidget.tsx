@@ -308,8 +308,12 @@ function ScoutPriorityCard({
   );
 }
 
-export function HomelabScoutIntelligenceWidget() {
-  const { data, state } = useScoutOverview();
+export function HomelabScoutIntelligenceWidget({
+  initialOverview = null,
+}: {
+  initialOverview?: ScoutOverview | null;
+}) {
+  const { data, state } = useScoutOverview(30_000, initialOverview);
   const model = data ? buildScoutHumanReadModel(data) : null;
   const badge = scoutSummaryBadge(
     state,
@@ -1475,8 +1479,12 @@ function ScoutFeed({
   );
 }
 
-export function ScoutIntelligenceCenterPanel() {
-  const { data, state, refresh } = useScoutOverview();
+export function ScoutIntelligenceCenterPanel({
+  initialOverview = null,
+}: {
+  initialOverview?: ScoutOverview | null;
+}) {
+  const { data, state, refresh } = useScoutOverview(30_000, initialOverview);
   const [selectedTab, setSelectedTab] = useState<ScoutFeedTab>("useful");
   const [busyPacketId, setBusyPacketId] = useState<string | null>(null);
   const [busyPromotionId, setBusyPromotionId] = useState<string | null>(null);

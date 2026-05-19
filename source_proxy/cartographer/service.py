@@ -1,17 +1,33 @@
 from __future__ import annotations
 
+from dataclasses import replace
+from pathlib import Path
 from typing import Any
 
 from source_proxy.cartographer.audit_trail import build_audit_trail
+from source_proxy.cartographer.autopilot_config import docs_autopilot_config
+from source_proxy.cartographer.autopilot_apply import run_docs_autopilot_apply
+from source_proxy.cartographer.autopilot_dry_run import build_docs_autopilot_dry_run_proposals
+from source_proxy.cartographer.autopilot_soak import build_docs_autopilot_soak_report
+from source_proxy.cartographer.autonomy_promotion import build_autonomy_promotion_recommendation
 from source_proxy.cartographer.blueprint_registry import count_blueprint_documents, list_blueprints
 from source_proxy.cartographer.blueprint_scribe import draft_blueprint_updates
 from source_proxy.cartographer.branch_recommendations import recommend_branches
 from source_proxy.cartographer.change_scribe import summarize_changes
+from source_proxy.cartographer.clutter_inventory import build_clutter_inventory
+from source_proxy.cartographer.clutter_proposals import (
+    apply_approved_low_risk_deletion_proposal,
+    build_low_risk_deletion_proposals,
+)
 from source_proxy.cartographer.codex_evidence import build_codex_evidence_rollup
 from source_proxy.cartographer.commit_proposals import build_commit_proposals
 from source_proxy.cartographer.component_mapper import build_component_map
 from source_proxy.cartographer.drift import detect_blueprint_drift
-from source_proxy.cartographer.git_status import read_git_status, read_git_statuses
+from source_proxy.cartographer.git_status import (
+    read_git_status,
+    read_git_status_for_project,
+    read_git_statuses,
+)
 from source_proxy.cartographer.models import CartographerStatus, to_jsonable
 from source_proxy.cartographer.project_discovery import (
     blocked_project_roots,
@@ -23,6 +39,7 @@ from source_proxy.cartographer.project_health import build_project_health
 from source_proxy.cartographer.proposals import (
     list_proposals,
     pending_proposal_count,
+    proposal_visibility_summary,
     proposal_states,
 )
 from source_proxy.cartographer.push_queue import build_push_queue
@@ -30,7 +47,26 @@ from source_proxy.cartographer.reminders import build_reminders
 from source_proxy.cartographer.repo_map import build_repo_maps
 from source_proxy.cartographer.runbook_scribe import suggest_runbook_updates
 from source_proxy.cartographer.safety import cartographer_safety_manifest
-from source_proxy.cartographer.sub_cartographers import route_sub_cartographers, sub_cartographer_roles
+from source_proxy.cartographer.starter_blueprints import write_approved_starter_blueprints
+from source_proxy.cartographer.sub_cartographers import (
+    route_control_plane_situations,
+    route_sub_cartographers,
+    sub_cartographer_outputs,
+    sub_cartographer_roles,
+)
+from source_proxy.cartographer.trust_score import build_trust_score
+from source_proxy.cartographer.v1_evidence import (
+    build_v1_diagnostic_import_dry_run,
+    build_v1_combined_readiness_dry_run,
+    build_v1_evidence_inventory,
+    build_v1_evidence_gap_report,
+    build_v1_freeze_marker_validation,
+    build_v1_proof_artifact_contract,
+    build_v1_proof_artifact_validation,
+    build_v1_proof_import_dry_run,
+    build_v1_proof_recording_proposal,
+)
+from source_proxy.cartographer.v1_readiness import build_v1_closeout_checklist, build_v1_readiness
 
 
 def build_cartographer_status() -> dict[str, Any]:
@@ -45,6 +81,16 @@ def build_cartographer_status() -> dict[str, Any]:
         pending_proposals=pending_proposal_count(),
     )
     payload = to_jsonable(status)
+    autopilot = docs_autopilot_config()
+    payload.update(
+        {
+            "docs_autopilot_enabled": autopilot["docs_autopilot_enabled"],
+            "docs_autopilot_daily_cap": autopilot["docs_autopilot_daily_cap"],
+            "autopilot_kill_switch": autopilot["autopilot_kill_switch"],
+            "autopilot_action_available": autopilot["autopilot_action_available"],
+            "autopilot": autopilot,
+        }
+    )
     payload["safety"] = cartographer_safety_manifest()
     return payload
 
@@ -99,6 +145,562 @@ def build_cartographer_codex_evidence() -> dict[str, Any]:
         "actions_taken": False,
         "safety": cartographer_safety_manifest(),
     }
+
+
+def build_cartographer_docs_autopilot_dry_run() -> dict[str, Any]:
+    payload = build_docs_autopilot_dry_run_proposals()
+    payload["safety_manifest"] = cartographer_safety_manifest()
+    return payload
+
+
+def run_cartographer_docs_autopilot_apply() -> dict[str, Any]:
+    return run_docs_autopilot_apply()
+
+
+def build_cartographer_docs_autopilot_soak() -> dict[str, Any]:
+    return build_docs_autopilot_soak_report()
+
+
+def build_cartographer_trust_score() -> dict[str, Any]:
+    payload = build_trust_score()
+    payload["signals"] = to_jsonable(payload["signals"])
+    payload["safety"] = cartographer_safety_manifest()
+    return payload
+
+
+def build_cartographer_autonomy_promotion() -> dict[str, Any]:
+    payload = build_autonomy_promotion_recommendation()
+    payload["safety"] = cartographer_safety_manifest()
+    return payload
+
+
+def build_cartographer_v1_readiness() -> dict[str, Any]:
+    payload = build_v1_readiness()
+    payload["safety"] = cartographer_safety_manifest()
+    return payload
+
+
+def build_cartographer_v1_closeout_checklist() -> dict[str, Any]:
+    payload = build_v1_closeout_checklist()
+    payload["safety"] = cartographer_safety_manifest()
+    return payload
+
+
+def build_cartographer_v1_evidence() -> dict[str, Any]:
+    payload = build_v1_evidence_inventory()
+    payload["safety"] = cartographer_safety_manifest()
+    return payload
+
+
+def build_cartographer_v1_proof_contract() -> dict[str, Any]:
+    payload = build_v1_proof_artifact_contract()
+    payload["safety"] = cartographer_safety_manifest()
+    return payload
+
+
+def build_cartographer_v1_proof_validation() -> dict[str, Any]:
+    payload = build_v1_proof_artifact_validation()
+    payload["safety"] = cartographer_safety_manifest()
+    return payload
+
+
+def build_cartographer_v1_proof_recording_proposal() -> dict[str, Any]:
+    payload = build_v1_proof_recording_proposal()
+    payload["safety"] = cartographer_safety_manifest()
+    return payload
+
+
+def build_cartographer_v1_proof_import_dry_run() -> dict[str, Any]:
+    payload = build_v1_proof_import_dry_run()
+    payload["safety"] = cartographer_safety_manifest()
+    return payload
+
+
+def build_cartographer_v1_diagnostic_import_dry_run() -> dict[str, Any]:
+    payload = build_v1_diagnostic_import_dry_run()
+    payload["safety"] = cartographer_safety_manifest()
+    return payload
+
+
+def build_cartographer_v1_combined_readiness_dry_run() -> dict[str, Any]:
+    payload = build_v1_combined_readiness_dry_run()
+    payload["safety"] = cartographer_safety_manifest()
+    return payload
+
+
+def build_cartographer_v1_evidence_gap_report() -> dict[str, Any]:
+    payload = build_v1_evidence_gap_report()
+    payload["safety"] = cartographer_safety_manifest()
+    return payload
+
+
+def build_cartographer_v1_freeze_marker_validation() -> dict[str, Any]:
+    payload = build_v1_freeze_marker_validation()
+    payload["safety"] = cartographer_safety_manifest()
+    return payload
+
+
+def build_cartographer_v1_closeout_status() -> dict[str, Any]:
+    readiness = build_v1_readiness()
+    handoff = build_cartographer_v1_closeout_handoff()
+    freeze_proposal = build_cartographer_v1_freeze_marker_proposal()
+    freeze_validation = build_v1_freeze_marker_validation()
+    checklist = build_v1_closeout_checklist()
+    next_blocked_item = checklist["next_blocked_item"]
+    freeze_marker_valid = freeze_validation["validation_status"] == "valid"
+    closeout_status = (
+        "ready_with_valid_freeze_marker"
+        if readiness["v1_ready"] and freeze_marker_valid
+        else "ready_missing_freeze_marker"
+        if readiness["v1_ready"]
+        else "blocked_missing_evidence"
+    )
+    return {
+        "status": "observing",
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "rollup_mode": "read_only_closeout_status",
+        "v1_ready": readiness["v1_ready"],
+        "readiness": readiness["readiness"],
+        "blocker_count": readiness["blocker_count"],
+        "closeout_status": closeout_status,
+        "freeze_marker_status": freeze_validation["validation_status"],
+        "freeze_marker_valid": freeze_marker_valid,
+        "freeze_marker_path": freeze_validation["marker_path"],
+        "freeze_marker_proposal_ready": freeze_proposal["proposal_only"],
+        "current_missing_count": handoff["current_missing_count"],
+        "remaining_after_dry_run": handoff["remaining_after_dry_run"],
+        "readiness_would_be_ready": handoff["readiness_would_be_ready"],
+        "authority_would_remain_locked": True,
+        "passing_tests_grant_authority": False,
+        "next_blocked_item": next_blocked_item,
+        "summary": (
+            "Cartographer v1 closeout is blocked by missing real evidence."
+            if not readiness["v1_ready"]
+            else "Cartographer v1 evidence is ready; freeze marker validation remains separate."
+            if not freeze_marker_valid
+            else "Cartographer v1 evidence and freeze marker validate as ready."
+        ),
+        "source_endpoints": [
+            "/v1/cartographer/v1-readiness",
+            "/v1/cartographer/v1-closeout-handoff",
+            "/v1/cartographer/v1-freeze-marker-proposal",
+            "/v1/cartographer/v1-freeze-marker-validation",
+        ],
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_v1_closeout_dashboard() -> dict[str, Any]:
+    closeout = build_cartographer_v1_closeout_status()
+    docs_path = "docs/cartographer-v1-evidence-artifacts.md"
+    return {
+        "status": "observing",
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "dashboard_mode": "read_only_v1_closeout_surface",
+        "docs_path": docs_path,
+        "docs_label": "Cartographer v1 evidence artifact contract",
+        "primary_status": closeout["closeout_status"],
+        "primary_label": _v1_closeout_dashboard_label(closeout["closeout_status"]),
+        "v1_ready": closeout["v1_ready"],
+        "readiness": closeout["readiness"],
+        "blocker_count": closeout["blocker_count"],
+        "freeze_marker_status": closeout["freeze_marker_status"],
+        "next_action": closeout["next_blocked_item"]["next_action"]
+        if closeout["next_blocked_item"]
+        else "No action required.",
+        "dashboard_cards": [
+            {
+                "card_id": "v1-readiness",
+                "label": "V1 readiness",
+                "status": closeout["readiness"],
+                "value": "ready" if closeout["v1_ready"] else "blocked",
+                "detail": f"{closeout['blocker_count']} blockers",
+                "endpoint": "/v1/cartographer/v1-readiness",
+            },
+            {
+                "card_id": "v1-evidence",
+                "label": "Evidence",
+                "status": "blocked" if closeout["current_missing_count"] else "green",
+                "value": closeout["current_missing_count"],
+                "detail": "missing real proof artifacts",
+                "endpoint": "/v1/cartographer/v1-evidence",
+            },
+            {
+                "card_id": "v1-freeze-marker",
+                "label": "Freeze marker",
+                "status": closeout["freeze_marker_status"],
+                "value": closeout["freeze_marker_path"],
+                "detail": "external marker validation",
+                "endpoint": "/v1/cartographer/v1-freeze-marker-validation",
+            },
+            {
+                "card_id": "v1-authority",
+                "label": "Authority",
+                "status": "locked",
+                "value": "locked",
+                "detail": "passing checks do not grant authority",
+                "endpoint": "/v1/cartographer/v1-closeout-status",
+            },
+            {
+                "card_id": "v1-docs",
+                "label": "Evidence contract",
+                "status": "read_only",
+                "value": docs_path,
+                "detail": "human-recorded artifact shapes",
+                "endpoint": "/v1/cartographer/v1-closeout-dashboard",
+            },
+        ],
+        "manual_check": (
+            "curl -k -s https://localhost:3000/v1/cartographer/v1-closeout-dashboard | jq ."
+        ),
+        "expected_outcome": [
+            "write_actions_enabled remains false",
+            "authority_granted remains false",
+            "actions_taken remains false",
+            "dashboard_cards contains readiness, evidence, freeze marker, authority, and docs",
+        ],
+        "source_endpoint": "/v1/cartographer/v1-closeout-status",
+        "source_status": closeout,
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_v1_closeout_audit_summary() -> dict[str, Any]:
+    closeout = build_cartographer_v1_closeout_status()
+    dashboard = build_cartographer_v1_closeout_dashboard()
+    validation = build_v1_freeze_marker_validation()
+    return {
+        "status": "observing",
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "audit_mode": "read_only_v1_closeout_final_summary",
+        "closeout_status": closeout["closeout_status"],
+        "readiness": closeout["readiness"],
+        "v1_ready": closeout["v1_ready"],
+        "blocker_count": closeout["blocker_count"],
+        "current_missing_count": closeout["current_missing_count"],
+        "remaining_after_dry_run": closeout["remaining_after_dry_run"],
+        "freeze_marker_status": closeout["freeze_marker_status"],
+        "freeze_marker_valid": closeout["freeze_marker_valid"],
+        "freeze_marker_path": closeout["freeze_marker_path"],
+        "docs_path": dashboard["docs_path"],
+        "docs_label": dashboard["docs_label"],
+        "surfaces": [
+            {
+                "surface_id": "readiness",
+                "endpoint": "/v1/cartographer/v1-readiness",
+                "status": closeout["readiness"],
+            },
+            {
+                "surface_id": "evidence",
+                "endpoint": "/v1/cartographer/v1-evidence",
+                "status": "blocked" if closeout["current_missing_count"] else "green",
+            },
+            {
+                "surface_id": "closeout_status",
+                "endpoint": "/v1/cartographer/v1-closeout-status",
+                "status": closeout["closeout_status"],
+            },
+            {
+                "surface_id": "dashboard",
+                "endpoint": "/v1/cartographer/v1-closeout-dashboard",
+                "status": dashboard["dashboard_mode"],
+            },
+            {
+                "surface_id": "freeze_marker_validation",
+                "endpoint": "/v1/cartographer/v1-freeze-marker-validation",
+                "status": validation["validation_status"],
+            },
+        ],
+        "remaining_blockers": [
+            closeout["next_blocked_item"]
+        ] if closeout["next_blocked_item"] else [],
+        "safety_invariants": [
+            "write_actions_enabled remains false",
+            "authority_granted remains false",
+            "actions_taken remains false",
+            "passing_tests_grant_authority remains false",
+            "apply, commit, push, cleanup, and promotion remain separate approvals",
+        ],
+        "manual_check": (
+            "curl -k -s https://localhost:3000/v1/cartographer/v1-closeout-audit-summary | jq ."
+        ),
+        "expected_outcome": [
+            "audit_mode is read_only_v1_closeout_final_summary",
+            "surfaces list all v1 closeout read-only endpoints",
+            "docs_path points to the evidence artifact contract",
+            "no authority or action flag is enabled",
+        ],
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_v1_closeout_endpoint_index() -> dict[str, Any]:
+    audit = build_cartographer_v1_closeout_audit_summary()
+    endpoints = [
+        {
+            "endpoint": "/v1/cartographer/v1-readiness",
+            "purpose": "Report v1 readiness gates and current blockers.",
+            "surface_id": "readiness",
+            "read_only": True,
+        },
+        {
+            "endpoint": "/v1/cartographer/v1-evidence",
+            "purpose": "Inventory existing proof and soak artifacts.",
+            "surface_id": "evidence",
+            "read_only": True,
+        },
+        {
+            "endpoint": "/v1/cartographer/v1-proof-contract",
+            "purpose": "Describe accepted proof artifact shape.",
+            "surface_id": "proof_contract",
+            "read_only": True,
+        },
+        {
+            "endpoint": "/v1/cartographer/v1-proof-validation",
+            "purpose": "Validate existing proof artifacts without recording them.",
+            "surface_id": "proof_validation",
+            "read_only": True,
+        },
+        {
+            "endpoint": "/v1/cartographer/v1-freeze-marker-validation",
+            "purpose": "Validate an existing external freeze marker.",
+            "surface_id": "freeze_marker_validation",
+            "read_only": True,
+        },
+        {
+            "endpoint": "/v1/cartographer/v1-closeout-status",
+            "purpose": "Roll readiness, evidence, and freeze marker status into closeout state.",
+            "surface_id": "closeout_status",
+            "read_only": True,
+        },
+        {
+            "endpoint": "/v1/cartographer/v1-closeout-dashboard",
+            "purpose": "Provide a compact dashboard surface for humans and UI.",
+            "surface_id": "dashboard",
+            "read_only": True,
+        },
+        {
+            "endpoint": "/v1/cartographer/v1-closeout-audit-summary",
+            "purpose": "Summarize closeout surfaces, docs, blockers, and safety invariants.",
+            "surface_id": "audit_summary",
+            "read_only": True,
+        },
+    ]
+    return {
+        "status": "observing",
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "index_mode": "read_only_v1_closeout_endpoint_index",
+        "endpoint_count": len(endpoints),
+        "endpoints": endpoints,
+        "docs_path": audit["docs_path"],
+        "audit_endpoint": "/v1/cartographer/v1-closeout-audit-summary",
+        "dashboard_endpoint": "/v1/cartographer/v1-closeout-dashboard",
+        "remaining_blocker_count": len(audit["remaining_blockers"]),
+        "safety_invariants": audit["safety_invariants"],
+        "manual_check": (
+            "curl -k -s https://localhost:3000/v1/cartographer/v1-closeout-endpoints | jq ."
+        ),
+        "expected_outcome": [
+            "index_mode is read_only_v1_closeout_endpoint_index",
+            "every endpoint entry is read_only",
+            "no authority or action flag is enabled",
+        ],
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_v1_closeout_finalization_marker() -> dict[str, Any]:
+    audit = build_cartographer_v1_closeout_audit_summary()
+    endpoint_index = build_cartographer_v1_closeout_endpoint_index()
+    return {
+        "status": "observing",
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "marker_mode": "read_only_v1_closeout_surface_complete",
+        "surface_set_complete": True,
+        "readiness_blocked": not audit["v1_ready"],
+        "real_external_evidence_required": True,
+        "closeout_status": audit["closeout_status"],
+        "readiness": audit["readiness"],
+        "remaining_blocker_count": len(audit["remaining_blockers"]),
+        "remaining_blockers": audit["remaining_blockers"],
+        "endpoint_count": endpoint_index["endpoint_count"],
+        "endpoint_index": "/v1/cartographer/v1-closeout-endpoints",
+        "audit_endpoint": endpoint_index["audit_endpoint"],
+        "dashboard_endpoint": endpoint_index["dashboard_endpoint"],
+        "docs_path": audit["docs_path"],
+        "finalization_summary": (
+            "Cartographer v1 closeout surfaces are complete and read-only; "
+            "v1 readiness remains blocked until real external proof and freeze-marker evidence is recorded."
+        ),
+        "safety_invariants": audit["safety_invariants"],
+        "manual_check": (
+            "curl -k -s https://localhost:3000/v1/cartographer/v1-closeout-finalization | jq ."
+        ),
+        "expected_outcome": [
+            "marker_mode is read_only_v1_closeout_surface_complete",
+            "surface_set_complete is true",
+            "readiness_blocked remains true until real external evidence exists",
+            "no authority or action flag is enabled",
+        ],
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def _v1_closeout_dashboard_label(closeout_status: str) -> str:
+    if closeout_status == "ready_with_valid_freeze_marker":
+        return "Ready with freeze marker"
+    if closeout_status == "ready_missing_freeze_marker":
+        return "Ready, freeze marker missing"
+    return "Blocked by missing evidence"
+
+
+def build_cartographer_v1_closeout_handoff() -> dict[str, Any]:
+    readiness = build_v1_readiness()
+    checklist = build_v1_closeout_checklist()
+    gap_report = build_v1_evidence_gap_report()
+    return {
+        "status": "observing",
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "handoff_mode": "read_only_human_review_summary",
+        "v1_ready": readiness["v1_ready"],
+        "readiness": readiness["readiness"],
+        "blocker_count": readiness["blocker_count"],
+        "current_missing_count": gap_report["current_missing_count"],
+        "current_missing_evidence": gap_report["current_missing_evidence"],
+        "dry_run_would_satisfy_count": gap_report["dry_run_would_satisfy_count"],
+        "dry_run_would_satisfy": gap_report["dry_run_would_satisfy"],
+        "remaining_after_dry_run": gap_report["remaining_after_dry_run"],
+        "readiness_would_be_ready": gap_report["readiness_would_be_ready"],
+        "authority_would_remain_locked": True,
+        "passing_tests_grant_authority": False,
+        "next_blocked_item": checklist["next_blocked_item"],
+        "checklist": checklist["checklist"],
+        "handoff_summary": (
+            "Cartographer v1 is not ready because real proof artifacts are missing; "
+            "dry-run previews show the evidence shape that would clear blockers, "
+            "but authority remains locked until separate human approval."
+        ),
+        "human_review_notes": [
+            "Review and record real proof artifacts outside Cartographer if appropriate.",
+            "Validate recorded artifacts before relying on readiness.",
+            "Do not treat dry-run readiness as approval to apply, commit, push, delete, or promote authority.",
+            "Passing tests or recorded artifacts do not grant authority.",
+        ],
+        "source_endpoints": [
+            "/v1/cartographer/v1-readiness",
+            "/v1/cartographer/v1-closeout-checklist",
+            "/v1/cartographer/v1-evidence-gap-report",
+            "/v1/cartographer/v1-combined-readiness-dry-run",
+        ],
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_v1_freeze_marker_proposal() -> dict[str, Any]:
+    handoff = build_cartographer_v1_closeout_handoff()
+    marker_path = "data/cartographer-v1-freeze/freeze-marker.json"
+    return {
+        "status": "observing",
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "proposal_only": True,
+        "freeze_marker_enabled": False,
+        "freeze_actions_enabled": False,
+        "marker_path": marker_path,
+        "proposal_policy": "human_or_external_tool_may_record_after_review",
+        "proposal": {
+            "proposal_id": "v1-freeze-marker-proposal",
+            "proposal_type": "manual_v1_freeze_marker_recording",
+            "status": "drafted",
+            "requires_human_action": True,
+            "requires_approval": True,
+            "action_taken": False,
+            "target_file": marker_path,
+            "reason": (
+                "Record a reviewed v1 closeout freeze marker after real proof artifacts "
+                "are present and validated."
+            ),
+        },
+        "marker_schema": {
+            "marker_version": "cartographer.v1.freeze_marker.v1",
+            "required_fields": [
+                "marker_version",
+                "created_at",
+                "head_sha",
+                "branch",
+                "readiness",
+                "v1_ready",
+                "evidence_summary",
+                "authority_boundary",
+            ],
+            "authority_boundary_required_values": {
+                "write_actions_enabled": False,
+                "authority_granted": False,
+                "actions_taken": False,
+                "passing_tests_grant_authority": False,
+            },
+        },
+        "example_marker": {
+            "marker_version": "cartographer.v1.freeze_marker.v1",
+            "created_at": "2026-05-18T00:00:00Z",
+            "head_sha": "example-head-sha",
+            "branch": "main",
+            "readiness": handoff["readiness"],
+            "v1_ready": handoff["v1_ready"],
+            "evidence_summary": {
+                "current_missing_count": handoff["current_missing_count"],
+                "current_missing_evidence": handoff["current_missing_evidence"],
+                "dry_run_would_satisfy_count": handoff["dry_run_would_satisfy_count"],
+                "remaining_after_dry_run": handoff["remaining_after_dry_run"],
+            },
+            "authority_boundary": {
+                "write_actions_enabled": False,
+                "authority_granted": False,
+                "actions_taken": False,
+                "passing_tests_grant_authority": False,
+            },
+            "human_review_notes": handoff["human_review_notes"],
+        },
+        "source_endpoints": [
+            "/v1/cartographer/v1-closeout-handoff",
+            "/v1/cartographer/v1-evidence-gap-report",
+            "/v1/cartographer/v1-proof-validation",
+            "/v1/cartographer/v1-readiness",
+        ],
+        "safety_notes": [
+            "Cartographer is not writing this freeze marker.",
+            "The proposal is informational and does not grant authority.",
+            "A freeze marker does not approve apply, commit, push, cleanup, or promotion.",
+            "Validate real proof artifacts before recording any freeze marker.",
+        ],
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def write_cartographer_starter_blueprints(
+    *,
+    proposal_id: str,
+    approved: bool,
+    approved_by: str,
+) -> dict[str, Any]:
+    return write_approved_starter_blueprints(
+        proposal_id=proposal_id,
+        approved=approved,
+        approved_by=approved_by,
+    )
 
 
 def build_cartographer_branch_recommendations() -> dict[str, Any]:
@@ -184,6 +786,99 @@ def build_cartographer_blueprints() -> dict[str, Any]:
     }
 
 
+def build_cartographer_clutter_inventory() -> dict[str, Any]:
+    candidates = build_clutter_inventory()
+    by_risk = {
+        risk: [candidate for candidate in candidates if candidate.risk == risk]
+        for risk in ("low", "medium", "high", "blocked")
+    }
+    return {
+        "status": "observing",
+        "write_actions_enabled": False,
+        "deletion_enabled": False,
+        "cleanup_actions_enabled": False,
+        "actions_taken": False,
+        "candidate_count": len(candidates),
+        "risk_counts": {risk: len(items) for risk, items in by_risk.items()},
+        "candidates": to_jsonable(candidates),
+        "candidates_by_risk": to_jsonable(by_risk),
+        "inventory_policy": "read_only_no_deletion",
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_clutter_proposals() -> dict[str, Any]:
+    payload = build_low_risk_deletion_proposals()
+    payload["proposals"] = to_jsonable(payload["proposals"])
+    payload["review_required"] = to_jsonable(payload["review_required"])
+    payload["safety"] = cartographer_safety_manifest()
+    return payload
+
+
+def build_cartographer_clutter_review() -> dict[str, Any]:
+    inventory = build_cartographer_clutter_inventory()
+    proposals = build_cartographer_clutter_proposals()
+    risk_counts = inventory["risk_counts"]
+    proposal_items = proposals["proposals"]
+    return {
+        "status": "observing",
+        "write_actions_enabled": False,
+        "deletion_enabled": False,
+        "cleanup_actions_enabled": False,
+        "actions_taken": False,
+        "review_mode": "read_only_cleanup_review",
+        "candidate_count": inventory["candidate_count"],
+        "risk_counts": risk_counts,
+        "proposal_count": proposals["proposal_count"],
+        "low_risk_candidate_count": proposals["low_risk_candidate_count"],
+        "review_required_count": proposals["review_required_count"],
+        "deletion_candidate_count": 0,
+        "cleanup_decision_required": bool(proposal_items),
+        "review_summary": (
+            f"{proposals['low_risk_candidate_count']} low-risk candidates are proposal-only; "
+            f"{proposals['review_required_count']} candidates require manual review. "
+            "No cleanup or deletion is enabled."
+        ),
+        "low_risk_sample": inventory["candidates_by_risk"]["low"][:10],
+        "review_required_sample": (
+            inventory["candidates_by_risk"]["blocked"][:5]
+            + inventory["candidates_by_risk"]["high"][:5]
+            + inventory["candidates_by_risk"]["medium"][:5]
+        ),
+        "proposal_ids": [proposal["proposal_id"] for proposal in proposal_items],
+        "source_endpoints": [
+            "/v1/cartographer/clutter-inventory",
+            "/v1/cartographer/clutter-proposals",
+        ],
+        "manual_check": (
+            "curl -k -s https://localhost:3000/v1/cartographer/clutter-review | jq ."
+        ),
+        "expected_outcome": [
+            "review_mode is read_only_cleanup_review",
+            "deletion_enabled remains false",
+            "cleanup_actions_enabled remains false",
+            "actions_taken remains false",
+            "low-risk candidates remain proposal-only",
+        ],
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def apply_cartographer_clutter_proposal(
+    *,
+    proposal_id: str,
+    approved: bool,
+    approved_by: str,
+) -> dict[str, Any]:
+    payload = apply_approved_low_risk_deletion_proposal(
+        proposal_id=proposal_id,
+        approved=approved,
+        approved_by=approved_by,
+    )
+    payload["safety"] = cartographer_safety_manifest()
+    return payload
+
+
 def build_cartographer_observation() -> dict[str, Any]:
     proposals = list_proposals()
     return {
@@ -197,12 +892,34 @@ def build_cartographer_observation() -> dict[str, Any]:
 
 def build_cartographer_components() -> dict[str, Any]:
     component_map = build_component_map()
+    statuses = read_git_statuses()
+    if not statuses:
+        cwd = Path.cwd()
+        if (cwd / ".git").exists():
+            statuses = [
+                read_git_status_for_project(
+                    project_id=cwd.name.lower(),
+                    root=cwd,
+                )
+            ]
+    changed_files = [
+        path
+        for status in statuses
+        if status.available
+        for path in status.changed_files
+    ]
+    changed_map = build_component_map(changed_files)
     return {
         "status": "observing",
         "write_actions_enabled": False,
         "components": to_jsonable(component_map["components"]),
         "unmapped_paths": to_jsonable(component_map["unmapped_paths"]),
+        "changed_components": to_jsonable(changed_map["components"]),
+        "changed_unmapped_paths": to_jsonable(changed_map["unmapped_paths"]),
+        "changed_file_count": len(changed_files),
         "mapping_mode": component_map["mapping_mode"],
+        "changed_mapping_mode": changed_map["mapping_mode"],
+        "actions_taken": False,
         "safety": cartographer_safety_manifest(),
     }
 
@@ -220,6 +937,15 @@ def build_cartographer_repo_map() -> dict[str, Any]:
 
 def build_cartographer_git() -> dict[str, Any]:
     statuses = read_git_statuses()
+    if not statuses:
+        cwd = Path.cwd()
+        if (cwd / ".git").exists():
+            statuses = [
+                read_git_status_for_project(
+                    project_id=cwd.name.lower(),
+                    root=cwd,
+                )
+            ]
     return {
         "status": "observing",
         "write_actions_enabled": False,
@@ -233,6 +959,14 @@ def build_cartographer_git() -> dict[str, Any]:
 
 def build_cartographer_drift() -> dict[str, Any]:
     drift = detect_blueprint_drift()
+    proposals_by_drift: dict[str, list[str]] = {}
+    for proposal in list_proposals():
+        if proposal.source_drift_id:
+            proposals_by_drift.setdefault(proposal.source_drift_id, []).append(proposal.proposal_id)
+    drift = [
+        replace(finding, proposal_ids=sorted(proposals_by_drift.get(finding.drift_id, [])))
+        for finding in drift
+    ]
     return {
         "status": "observing",
         "write_actions_enabled": False,
@@ -258,6 +992,7 @@ def build_cartographer_reminders() -> dict[str, Any]:
 def build_cartographer_proposals() -> dict[str, Any]:
     proposals = list_proposals()
     lifecycle = proposal_states()
+    visibility = proposal_visibility_summary()
     fingerprints = [
         proposal.fingerprint
         for proposal in proposals
@@ -271,11 +1006,18 @@ def build_cartographer_proposals() -> dict[str, Any]:
         "proposal_count": len(proposals),
         "pending_proposals": pending_proposal_count(),
         "deduped": duplicate_proposals == 0,
-        "duplicate_proposals_suppressed": 0,
+        "duplicate_proposals_suppressed": visibility["duplicate_proposals_suppressed"],
+        "suppressed_duplicate_proposals": visibility["suppressed_duplicate_proposals"],
         "duplicate_proposals_present": duplicate_proposals,
+        "stale_cleanup_candidates": visibility["stale_cleanup_candidates"],
+        "stale_cleanup_candidate_count": visibility["stale_cleanup_candidate_count"],
+        "cleanup_actions_enabled": visibility["cleanup_actions_enabled"],
         "proposal_states": lifecycle,
         "proposal_lifecycle": lifecycle,
         "lifecycle": lifecycle,
+        "review_decisions": ["approve", "reject", "request_edit", "defer", "mark_stale"],
+        "review_actions_apply_files": False,
+        "proposal_only_contract": _proposal_only_contract(),
         "transition_audit_complete": all(
             transition.actor and transition.timestamp
             for proposal in proposals
@@ -305,6 +1047,9 @@ def build_cartographer_blueprint_scribe() -> dict[str, Any]:
         "write_actions_enabled": False,
         "drafts": to_jsonable(drafts),
         "draft_count": len(drafts),
+        "proposal_only_contract": _proposal_only_contract(),
+        "direct_writes_enabled": False,
+        "apply_requires_approval": True,
         "actions_taken": False,
         "safety": cartographer_safety_manifest(),
     }
@@ -322,16 +1067,78 @@ def build_cartographer_runbook_scribe() -> dict[str, Any]:
     }
 
 
+def _proposal_only_contract() -> dict[str, Any]:
+    return {
+        "max_authority": "proposal_only",
+        "blueprinter_can_write_source_of_truth_docs": False,
+        "review_required": True,
+        "apply_requires_approval": True,
+        "commit_requires_separate_approval": True,
+        "push_requires_separate_approval": True,
+        "generated_items_must_include_target_files": True,
+        "generated_items_must_include_diff_preview": True,
+    }
+
+
 def build_cartographer_sub_cartographers() -> dict[str, Any]:
     roles = sub_cartographer_roles()
+    outputs = sub_cartographer_outputs()
     routes = route_sub_cartographers()
+    control_routes = route_control_plane_situations()
+    forbidden_actions = ["approve", "apply", "commit", "push", "delete"]
     return {
         "status": "observing",
         "write_actions_enabled": False,
         "roles": to_jsonable(roles),
         "role_count": len(roles),
+        "outputs": to_jsonable(outputs),
+        "output_count": len(outputs),
+        "output_contract_fields": [
+            "summary",
+            "evidence",
+            "recommendation",
+            "risk",
+            "required_approval",
+            "forbidden_actions_respected",
+            "next_manual_check",
+        ],
+        "output_contract_enforced": all(
+            output.summary
+            and output.evidence
+            and output.recommendation
+            and output.recommendation.lower() != "looks good"
+            and output.next_manual_check
+            and output.forbidden_actions_respected
+            and not output.action_taken
+            for output in outputs
+        ),
+        "max_authority": "proposal_only",
+        "forbidden_actions": forbidden_actions,
+        "forbidden_actions_enforced": all(
+            all(action in role.forbidden_actions for action in forbidden_actions)
+            and not role.can_approve
+            and not role.can_apply
+            and not role.can_commit
+            and not role.can_push
+            and not role.can_delete
+            for role in roles
+        ),
         "routes": to_jsonable(routes),
         "route_count": len(routes),
+        "control_plane_routes": to_jsonable(control_routes),
+        "control_plane_route_count": len(control_routes),
+        "control_plane_routing_enabled": True,
+        "control_plane_actions_enabled": False,
+        "control_plane_contract_enforced": all(
+            route.selected_roles
+            and route.reason
+            and route.evidence
+            and route.parent_control_plane_required
+            and route.approval_gate_required
+            and not route.mutation_allowed
+            and not route.action_taken
+            for route in control_routes
+        ),
         "actions_taken": False,
         "failures_stop_at": "proposal_queue",
         "safety": cartographer_safety_manifest(),

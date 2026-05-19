@@ -18,6 +18,8 @@ PROPOSAL_STATES = (
     "pending_review",
     "approved",
     "rejected",
+    "deferred",
+    "stale",
     "applied",
     "commit_pending",
     "commit_approved",
@@ -32,7 +34,35 @@ FALLBACK_TRANSITION_ACTOR = "unknown"
 
 
 def list_proposals() -> list[ProposalRecord]:
+    proposals, _suppressed = _collect_proposals()
+    return proposals
+
+
+def proposal_visibility_summary() -> dict[str, object]:
+    proposals, suppressed = _collect_proposals()
+    stale_cleanup_candidates = [
+        {
+            "proposal_id": proposal.proposal_id,
+            "status": proposal.status,
+            "component": proposal.component,
+            "cleanup_allowed": False,
+            "reason": _cleanup_reason(proposal),
+        }
+        for proposal in proposals
+        if proposal.status in {"rejected", "deferred", "stale"}
+    ]
+    return {
+        "duplicate_proposals_suppressed": len(suppressed),
+        "suppressed_duplicate_proposals": suppressed,
+        "stale_cleanup_candidates": stale_cleanup_candidates,
+        "stale_cleanup_candidate_count": len(stale_cleanup_candidates),
+        "cleanup_actions_enabled": False,
+    }
+
+
+def _collect_proposals() -> tuple[list[ProposalRecord], list[dict[str, str]]]:
     proposals: list[ProposalRecord] = []
+    suppressed: list[dict[str, str]] = []
     for project in discover_projects():
         proposal_dir = Path(project.root) / "_blueprints" / "proposals"
         if not proposal_dir.exists() or not proposal_dir.is_dir():
@@ -55,17 +85,40 @@ def list_proposals() -> list[ProposalRecord]:
     for draft in draft_proposals_from_drift():
         if draft.proposal_id not in persisted_ids and draft.fingerprint not in persisted_fingerprints:
             proposals.append(draft)
+        else:
+            suppressed.append(_suppressed_duplicate(draft))
     for starter_pack in draft_starter_blueprint_pack_proposals():
         if starter_pack.proposal_id not in persisted_ids:
             proposals.append(starter_pack)
+        else:
+            suppressed.append(_suppressed_duplicate(starter_pack))
     for codex_summary in _draft_codex_summary_proposals():
         if (
             codex_summary.proposal_id not in persisted_ids
             and codex_summary.fingerprint not in persisted_fingerprints
         ):
             proposals.append(codex_summary)
+        else:
+            suppressed.append(_suppressed_duplicate(codex_summary))
 
-    return sorted(proposals, key=lambda proposal: proposal.proposal_id)
+    return sorted(proposals, key=lambda proposal: proposal.proposal_id), suppressed
+
+
+def _suppressed_duplicate(proposal: ProposalRecord) -> dict[str, str]:
+    return {
+        "proposal_id": proposal.proposal_id,
+        "component": proposal.component,
+        "fingerprint": proposal.fingerprint or "",
+        "reason": "matching_persisted_proposal_or_fingerprint",
+    }
+
+
+def _cleanup_reason(proposal: ProposalRecord) -> str:
+    if proposal.status == "stale":
+        return "Marked stale; safe cleanup requires explicit future archive/delete approval."
+    if proposal.status == "deferred":
+        return "Deferred proposal remains visible; cleanup is not allowed automatically."
+    return "Rejected proposal suppresses duplicate previews; cleanup is not allowed automatically."
 
 
 def _draft_codex_summary_proposals() -> list[ProposalRecord]:
@@ -207,6 +260,12 @@ def _proposal_from_file(
         diff_preview=str(payload["diff_preview"]) if payload.get("diff_preview") is not None else None,
         confidence=str(payload["confidence"]) if payload.get("confidence") is not None else None,
         rationale=str(payload["rationale"]) if payload.get("rationale") is not None else None,
+        source_drift_id=(
+            str(payload["source_drift_id"])
+            if payload.get("source_drift_id") is not None
+            else None
+        ),
+        review_note=str(payload["review_note"]) if payload.get("review_note") is not None else None,
         generated=False,
         persisted=True,
         rejection_reason=(
@@ -220,6 +279,11 @@ def _proposal_from_file(
         fingerprint=fingerprint,
         deduped=True,
         warnings=warnings,
+        post_apply_verification=(
+            payload.get("post_apply_verification")
+            if isinstance(payload.get("post_apply_verification"), dict)
+            else None
+        ),
     )
 
 

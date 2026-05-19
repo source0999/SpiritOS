@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from hashlib import sha256
+from pathlib import Path
+import subprocess
 
 from source_proxy.cartographer.component_mapper import map_paths
-from source_proxy.cartographer.git_status import read_git_statuses
+from source_proxy.cartographer.git_status import read_git_status_for_project, read_git_statuses
 from source_proxy.cartographer.models import BranchRecommendation, GitStatus
 from source_proxy.cartographer.proposals import list_proposals
 
@@ -14,7 +16,12 @@ MANY_CHANGED_FILES_THRESHOLD = 8
 
 def recommend_branches() -> list[BranchRecommendation]:
     recommendations: list[BranchRecommendation] = []
-    for git_status in read_git_statuses():
+    statuses = read_git_statuses()
+    if not statuses:
+        cwd = Path.cwd()
+        if (cwd / ".git").exists():
+            statuses = [read_git_status_for_project(project_id=cwd.name.lower(), root=cwd)]
+    for git_status in statuses:
         recommendation = _recommendation_for_status(git_status)
         if recommendation:
             recommendations.append(recommendation)
@@ -37,6 +44,7 @@ def _recommendation_for_status(git_status: GitStatus) -> BranchRecommendation | 
     if not on_primary and not many_changes and not applied_proposal_commit_needed:
         return None
 
+    blockers = _blockers(git_status=git_status)
     suggested_branch = _suggested_branch(changed_files, fallback_component=applied_proposal_component)
     reason = _reason(
         current_branch=current_branch,
@@ -52,6 +60,21 @@ def _recommendation_for_status(git_status: GitStatus) -> BranchRecommendation | 
         suggested_branch=suggested_branch,
         reason=reason,
         changed_file_count=changed_count,
+        source_head=git_status.head_sha,
+        dirty_state_requirement="dirty_worktree_required",
+        rollback_command=_rollback_command(current_branch, suggested_branch),
+        branch_exists=_branch_exists(git_status.root, suggested_branch),
+        preview_generated=True,
+        confidence=_confidence(
+            on_primary=on_primary,
+            many_changes=many_changes,
+            applied_proposal_commit_needed=applied_proposal_commit_needed,
+            blockers=blockers,
+        ),
+        recommendation="create_branch_after_approval",
+        unsafe_to_create_branch=bool(blockers),
+        blockers=blockers,
+        merge_readiness="blocked",
         related_files=changed_files[:12],
         status="pending_approval",
         requires_approval=True,
@@ -78,6 +101,32 @@ def _reason(
     if on_primary:
         return f"Working tree dirty on {branch}; branch creation requires approval."
     return f"Working tree has {changed_count} changed files; checkpoint branch requires approval."
+
+
+def _blockers(*, git_status: GitStatus) -> list[str]:
+    blockers: list[str] = []
+    if git_status.ahead > 0:
+        blockers.append("branch has unpushed commits")
+    if git_status.behind > 0:
+        blockers.append("branch is behind upstream")
+    if not git_status.upstream:
+        reason = git_status.no_upstream_reason or "no_upstream_configured"
+        blockers.append(f"upstream unavailable: {reason}")
+    return blockers
+
+
+def _confidence(
+    *,
+    on_primary: bool,
+    many_changes: bool,
+    applied_proposal_commit_needed: bool,
+    blockers: list[str],
+) -> str:
+    if blockers:
+        return "low"
+    if applied_proposal_commit_needed or many_changes or on_primary:
+        return "high"
+    return "medium"
 
 
 def _suggested_branch(changed_files: list[str], *, fallback_component: str | None = None) -> str:
@@ -117,3 +166,22 @@ def _slug(value: str) -> str:
 
 def _normalize_repo_path(path: str) -> str:
     return path.strip().replace("\\", "/").lstrip("./")
+
+
+def _branch_exists(root: str, branch: str) -> bool:
+    if not root or not branch:
+        return False
+    result = subprocess.run(
+        ["git", "show-ref", "--verify", "--quiet", f"refs/heads/{branch}"],
+        cwd=root,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    return result.returncode == 0
+
+
+def _rollback_command(current_branch: str | None, suggested_branch: str) -> str:
+    previous = current_branch or "-"
+    return f"git switch {previous} && git branch -D {suggested_branch}"

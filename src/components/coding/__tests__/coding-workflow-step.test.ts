@@ -11,11 +11,17 @@ import {
   CodexEvidencePanel,
   CodingStabilityCard,
   CodingTaskStateCard,
+  deriveApprovalButtonGuard,
   deriveApprovalStateChecklist,
   deriveArtifactShelfItems,
   deriveCheckpointRestorePlan,
+  deriveCodexEvidenceArtifactItems,
+  deriveBlockerNextSafeActionSummary,
   deriveCodingStabilitySummary,
   deriveCodingTaskStateSummary,
+  deriveDiffPreviewIntegrationSummary,
+  deriveProposalDraft,
+  deriveVerifierReviewerResultCards,
   documenterBlueprintProposals,
   deriveReviewerAgentChecks,
   deriveReviewerAgentRecommendation,
@@ -23,6 +29,8 @@ import {
   deriveTaskHistorySummary,
   deriveTaskTranscript,
   deriveTerminalLongTaskStateForApproval,
+  deriveUnifiedTaskQueueItems,
+  deriveWorkerEvidenceLanes,
   deriveVerificationDashboardRollup,
   deriveWorkflowMemorySnapshot,
   latestLongTaskEvidenceLines,
@@ -218,6 +226,53 @@ describe("documenterBlueprintProposals", () => {
   });
 });
 
+describe("deriveUnifiedTaskQueueItems", () => {
+  it("merges backend queue items with the active long-running task without action authority", () => {
+    const items = deriveUnifiedTaskQueueItems({
+      longRunningTask: {
+        description: "",
+        error: null,
+        isChecking: false,
+        response: {
+          task: {
+            created_at: "2026-05-18T00:00:00Z",
+            current_agent_role: "coder",
+            description: "Active task",
+            id: "task_active",
+            next_action: "Review the plan.",
+            open_diffs: [{ changed_files: [{ path: "src/app/page.tsx" }] }],
+            status: "running",
+            updated_at: "2026-05-18T00:01:00Z",
+          },
+        },
+      },
+      taskQueue: {
+        error: null,
+        isLoading: false,
+        response: {
+          tasks: [
+            {
+              allowed_files: ["docs/source-proxy.md"],
+              mode: "read_only_status_tracking",
+              next_safe_action: "Poll again.",
+              status: "queued",
+              task_id: "task_queued",
+              title: "Queued task",
+              updated_at: "2026-05-18T00:00:30Z",
+              worker: "architect",
+            },
+          ],
+        },
+      },
+    });
+
+    expect(items.map((item) => item.task_id)).toEqual(["task_active", "task_queued"]);
+    expect(items[0]?.mode).toBe("read_only_status_tracking");
+    expect(items[0]?.target_file).toBe("src/app/page.tsx");
+    expect(JSON.stringify(items)).not.toMatch(/apply|commit|push/i);
+  });
+});
+
 describe("CodexEvidencePanel", () => {
   const evidence = {
     apply_authority: false,
@@ -239,9 +294,30 @@ describe("CodexEvidencePanel", () => {
     rollback_hint: "No rollback needed.",
     safety_verdict: "passed",
     sandbox: "read-only",
+    stderr_excerpt: "",
+    stdout_excerpt: "2 passed",
     task_id: "phase-10.9.2-smoke",
     worker: "codex_cli",
   };
+
+  it("derives packet, output, final message, and rollback artifacts", () => {
+    const artifacts = deriveCodexEvidenceArtifactItems(evidence);
+
+    expect(artifacts.map((item) => item.source)).toEqual([
+      "evidence",
+      "diff",
+      "test",
+      "evidence",
+      "rollback",
+    ]);
+    expect(artifacts.find((item) => item.id === "codex-test-output")?.detail).toBe(
+      "2 passed",
+    );
+    expect(artifacts.find((item) => item.id === "codex-rollback-hint")?.detail).toBe(
+      "No rollback needed.",
+    );
+    expect(JSON.stringify(artifacts)).not.toMatch(/apply now|commit now|push now/i);
+  });
 
   it("shows loaded Codex evidence without apply commit or push controls", () => {
     render(createElement(CodexEvidencePanel, { initialEvidence: evidence }));
@@ -281,7 +357,7 @@ describe("CodexEvidencePanel", () => {
     fireEvent.click(screen.getByRole("button", { name: /load evidence/i }));
 
     expect(screen.getByText("phase-10.9.2-smoke")).toBeInTheDocument();
-    expect(screen.getByText("Safety boundaries listed.")).toBeInTheDocument();
+    expect(screen.getAllByText("Safety boundaries listed.").length).toBeGreaterThanOrEqual(1);
   });
 });
 
@@ -369,7 +445,11 @@ describe("deriveWorkflowMemorySnapshot", () => {
     expect(snapshot.blockers).toContain("task_spec_allowed_file_violation");
     expect(snapshot.testReports.join(" ")).toContain("phase-4e-safety-seed");
     expect(snapshot.approvals.join(" ")).toContain("Human approved");
+    expect(snapshot.approvalState).toBe("human_approved");
+    expect(snapshot.artifactIds).toContain("diff-preview");
+    expect(snapshot.artifactIds).toContain("proxy-safety-smoke");
     expect(snapshot.rejections.join(" ")).toContain("Human rejected");
+    expect(snapshot.rejectionState).toBe("human_rejected");
     expect(snapshot.knownGoodExamples).toContain("Safe docs append");
     expect(snapshot.knownGoodExamples).toContain("Manual Check 10");
   });
@@ -378,20 +458,26 @@ describe("deriveWorkflowMemorySnapshot", () => {
     const merged = mergeWorkflowMemorySnapshots(
       {
         approvals: ["Human approved 11:00:00 AM."],
+        approvalState: "human_approved",
+        artifactIds: ["diff-preview"],
         blockers: ["old blocker"],
         knownGoodExamples: ["Safe docs append"],
         lastKnownStatus: "running",
         rejections: [],
+        rejectionState: "none",
         taskIds: ["task_previous"],
         testReports: ["phase-4e-safety-seed: 3 passed"],
         updatedAt: "2026-05-16T15:00:00.000Z",
       },
       {
         approvals: [],
+        approvalState: "none",
+        artifactIds: ["proxy-safety-smoke"],
         blockers: ["new blocker"],
         knownGoodExamples: ["Manual Check 10"],
         lastKnownStatus: "No active workflow status.",
         rejections: [],
+        rejectionState: "none",
         taskIds: [],
         testReports: [],
         updatedAt: "2026-05-16T15:05:00.000Z",
@@ -400,6 +486,8 @@ describe("deriveWorkflowMemorySnapshot", () => {
 
     expect(merged.taskIds).toContain("task_previous");
     expect(merged.lastKnownStatus).toBe("running");
+    expect(merged.approvalState).toBe("human_approved");
+    expect(merged.artifactIds).toEqual(["proxy-safety-smoke", "diff-preview"]);
     expect(merged.blockers).toEqual(["new blocker", "old blocker"]);
     expect(merged.testReports).toContain("phase-4e-safety-seed: 3 passed");
     expect(merged.knownGoodExamples).toEqual(["Manual Check 10", "Safe docs append"]);
@@ -431,10 +519,13 @@ describe("deriveTaskHistorySummary", () => {
       },
       workflowMemory: {
         approvals: [],
+        approvalState: "none",
+        artifactIds: [],
         blockers: [],
         knownGoodExamples: [],
         lastKnownStatus: "completed",
         rejections: [],
+        rejectionState: "none",
         taskIds: ["task-current", "task-previous"],
         testReports: ["Docs verification passed."],
         updatedAt: "2026-05-16T20:00:00.000Z",
@@ -452,6 +543,392 @@ describe("deriveTaskHistorySummary", () => {
       status: "completed",
     });
     expect(lanes.find((lane) => lane.id === "active")?.items).toEqual([]);
+  });
+});
+
+describe("deriveWorkerEvidenceLanes", () => {
+  it("shows multi-worker lanes as read-only evidence without action authority", () => {
+    const lanes = deriveWorkerEvidenceLanes({
+      ...baseArgs().longRunningTask,
+      response: {
+        task: {
+          description: "Review worker evidence.",
+          id: "task-workers",
+          status: "running",
+          worker_lanes: [
+            {
+              id: "codex_cli",
+              label: "Codex CLI",
+              status: "evidence",
+              mode: "read_only_evidence",
+              evidence_type: "readonly/proposal evidence",
+              approval_authority: true,
+              apply_authority: true,
+              commit_authority: true,
+              push_authority: true,
+            },
+            {
+              id: "cartographer",
+              label: "Cartographer",
+              status: "waiting",
+              mode: "read_only_evidence",
+              evidence_type: "repo-state evidence",
+            },
+          ],
+        },
+      },
+    });
+
+    expect(lanes.map((lane) => lane.id)).toEqual(["codex_cli", "cartographer"]);
+    expect(lanes[0]).toMatchObject({
+      approval_authority: false,
+      apply_authority: false,
+      commit_authority: false,
+      push_authority: false,
+    });
+    expect(lanes[1].mode).toBe("read_only_evidence");
+  });
+});
+
+describe("deriveProposalDraft", () => {
+  it("requires target and allowed files for proposal mode", () => {
+    const draft = deriveProposalDraft({
+      allowedFilesText: "",
+      expectedChecksText: "git diff --check",
+      forbiddenFilesText: "",
+      mode: "proposal",
+      rollbackHint: "git restore docs/example.md",
+      targetFile: "",
+      task: "Update docs.",
+    });
+
+    expect(draft.blocked).toBe(true);
+    expect(draft.reasonCodes).toContain("missing_target_file");
+    expect(draft.reasonCodes).toContain("missing_allowed_files");
+  });
+
+  it("blocks protected proposal targets", () => {
+    const draft = deriveProposalDraft({
+      allowedFilesText: ".env.local",
+      expectedChecksText: "git diff --check",
+      forbiddenFilesText: "",
+      mode: "proposal",
+      rollbackHint: "git restore .env.local",
+      targetFile: ".env.local",
+      task: "Update env.",
+    });
+
+    expect(draft.blocked).toBe(true);
+    expect(draft.reasonCodes).toContain("protected_target");
+    expect(draft.text).toContain("proposal draft only");
+  });
+
+  it("builds a bounded proposal task without action authority", () => {
+    const draft = deriveProposalDraft({
+      allowedFilesText: "docs/example.md",
+      expectedChecksText: "git diff --check, npm run typecheck",
+      forbiddenFilesText: "docs/secret.md",
+      mode: "proposal",
+      rollbackHint: "git restore docs/example.md",
+      targetFile: "docs/example.md",
+      task: "Update docs.",
+    });
+
+    expect(draft.blocked).toBe(false);
+    expect(draft.allowedFiles).toEqual(["docs/example.md"]);
+    expect(draft.expectedChecks).toEqual(["git diff --check", "npm run typecheck"]);
+    expect(draft.text).toContain('"mode": "proposal"');
+    expect(draft.text).toContain('"target_file": "docs/example.md"');
+    expect(draft.text).not.toMatch(/apply now|commit now|push now/i);
+  });
+});
+
+describe("deriveDiffPreviewIntegrationSummary", () => {
+  it("surfaces changed paths, target match, and allowed-file match for a passing preview", () => {
+    const args = baseArgs({
+      approvalGate: {
+        ...baseArgs().approvalGate,
+        proposedDiff: DOCS_APPEND_STANDARD_UNIFIED_DIFF,
+        target: "docs/phase-8-manual-check.md",
+      },
+      diffVerification: {
+        error: null,
+        isChecking: false,
+        preview: {
+          changed_files: [{ path: "docs/phase-8-manual-check.md" }],
+          git_apply_check_ok: true,
+          status: "preview_ready",
+          task_spec_check: {
+            allowed_files: ["docs/phase-8-manual-check.md"],
+            changed_files: ["docs/phase-8-manual-check.md"],
+            ok: true,
+            target: "docs/phase-8-manual-check.md",
+          },
+        },
+        unifiedDiff: DOCS_APPEND_STANDARD_UNIFIED_DIFF,
+      },
+    });
+
+    const summary = deriveDiffPreviewIntegrationSummary({
+      diffVerification: args.diffVerification,
+      gate: args.approvalGate,
+      resolvedTargetPath: "docs/phase-8-manual-check.md",
+    });
+
+    expect(summary.changedPaths).toEqual(["docs/phase-8-manual-check.md"]);
+    expect(summary.targetMatch).toBe("passed");
+    expect(summary.allowedFilesMatch).toBe("passed");
+    expect(summary.protectedPathStatus).toBe("clear");
+    expect(summary.approvalAvailable).toBe(true);
+  });
+
+  it("keeps approval unavailable when target or allowed files fail", () => {
+    const args = baseArgs({
+      approvalGate: {
+        ...baseArgs().approvalGate,
+        proposedDiff: SOURCE_PROXY_DECISION_DIFF,
+        target: "docs/phase-8-manual-check.md",
+      },
+      diffVerification: {
+        error: null,
+        isChecking: false,
+        preview: {
+          changed_files: [{ path: "source_proxy/api/decision.py" }],
+          git_apply_check_ok: true,
+          status: "blocked",
+          task_spec_check: {
+            allowed_files: ["docs/phase-8-manual-check.md"],
+            changed_files: ["source_proxy/api/decision.py"],
+            ok: false,
+            reason_codes: ["task_spec_allowed_file_violation", "task_spec_target_mismatch"],
+            target: "docs/phase-8-manual-check.md",
+          },
+        },
+        unifiedDiff: SOURCE_PROXY_DECISION_DIFF,
+      },
+    });
+
+    const summary = deriveDiffPreviewIntegrationSummary({
+      diffVerification: args.diffVerification,
+      gate: args.approvalGate,
+      resolvedTargetPath: "docs/phase-8-manual-check.md",
+    });
+
+    expect(summary.changedPaths).toEqual(["source_proxy/api/decision.py"]);
+    expect(summary.targetMatch).toBe("failed");
+    expect(summary.allowedFilesMatch).toBe("failed");
+    expect(summary.approvalAvailable).toBe(false);
+  });
+
+  it("shows protected-path status and blocks approval", () => {
+    const args = baseArgs({
+      approvalGate: {
+        ...baseArgs().approvalGate,
+        proposedDiff: "--- a/.env.local\n+++ b/.env.local\n@@ -1 +1 @@\n-old\n+new\n",
+        target: ".env.local",
+      },
+      diffVerification: {
+        error: null,
+        isChecking: false,
+        preview: {
+          blocked_reasons: [{ path: ".env.local", reason_code: "protected_path" }],
+          changed_files: [{ path: ".env.local" }],
+          git_apply_check_ok: true,
+          status: "blocked",
+          task_spec_check: {
+            allowed_files: [".env.local"],
+            changed_files: [".env.local"],
+            ok: true,
+            target: ".env.local",
+          },
+        },
+        unifiedDiff: "--- a/.env.local\n+++ b/.env.local\n@@ -1 +1 @@\n-old\n+new\n",
+      },
+    });
+
+    const summary = deriveDiffPreviewIntegrationSummary({
+      diffVerification: args.diffVerification,
+      gate: args.approvalGate,
+      resolvedTargetPath: ".env.local",
+    });
+
+    expect(summary.protectedPathStatus).toBe("blocked");
+    expect(summary.protectedPathReasons).toEqual(["protected_path"]);
+    expect(summary.approvalAvailable).toBe(false);
+  });
+});
+
+describe("deriveVerifierReviewerResultCards", () => {
+  it("shows deterministic verifier pass/fail and advisory reviewer states", () => {
+    const cards = deriveVerifierReviewerResultCards({
+      deterministic_checks: [
+        {
+          blocking: true,
+          id: "git_apply_check",
+          output: "Patch shape applies cleanly.",
+          status: "passed",
+        },
+        {
+          blocking: true,
+          id: "typescript_syntax",
+          output: "TS parse failed.",
+          status: "failed",
+        },
+      ],
+      llm_review_report: {
+        findings: [{ details: "Consider clearer copy.", id: "copy_advisory" }],
+        passed: false,
+      },
+      review_report: {
+        findings: [{ details: "Target changed.", id: "target_review", path: "docs/a.md" }],
+        passed: false,
+      },
+      status: "blocked",
+    });
+
+    expect(cards).toContainEqual(
+      expect.objectContaining({
+        id: "deterministic-git_apply_check",
+        required: true,
+        status: "passed",
+      }),
+    );
+    expect(cards).toContainEqual(
+      expect.objectContaining({
+        id: "deterministic-typescript_syntax",
+        required: true,
+        status: "failed",
+      }),
+    );
+    expect(cards).toContainEqual(
+      expect.objectContaining({
+        id: "deterministic-reviewer",
+        required: false,
+        status: "advisory",
+      }),
+    );
+    expect(cards.find((card) => card.id === "llm-reviewer")?.status).toBe("advisory");
+  });
+
+  it("does not treat an unavailable LLM reviewer as a strong pass", () => {
+    const cards = deriveVerifierReviewerResultCards({
+      deterministic_checks: [],
+      llm_review_report: {
+        reason: "LLM reviewer is not configured.",
+        skipped: true,
+      },
+      review_report: {
+        passed: true,
+      },
+      status: "preview_ready",
+    });
+
+    expect(cards.find((card) => card.id === "deterministic-reviewer")?.status).toBe("passed");
+    expect(cards.find((card) => card.id === "llm-reviewer")).toMatchObject({
+      required: false,
+      status: "unavailable",
+    });
+  });
+});
+
+describe("deriveApprovalButtonGuard", () => {
+  it("allows approval only when target, allowed files, preview, and required gates pass", () => {
+    const guard = deriveApprovalButtonGuard({
+      coderAgentLocalDiff: true,
+      diffVerification: {
+        error: null,
+        isChecking: false,
+        preview: {
+          changed_files: [{ path: "docs/phase-8-manual-check.md" }],
+          git_apply_check_ok: true,
+          limits: { file_writes_allowed: true },
+          requirement_coverage: { ok: true, missing: [] },
+          status: "preview_ready",
+          task_spec_check: {
+            allowed_files: ["docs/phase-8-manual-check.md"],
+            changed_files: ["docs/phase-8-manual-check.md"],
+            ok: true,
+            reason_codes: [],
+            target: "docs/phase-8-manual-check.md",
+          },
+          typescript_check: {
+            ok: true,
+            skipped: true,
+            summary: "No TS/TSX files changed.",
+          },
+        },
+        unifiedDiff: DOCS_APPEND_STANDARD_UNIFIED_DIFF,
+      },
+      fileMutationIntent: true,
+      gate: {
+        ...baseArgs().approvalGate,
+        action: "modify file",
+        preview: {
+          decision: "requires_human_approval",
+          reason_codes: [],
+          requires_human_approval: true,
+        },
+        proposedDiff: DOCS_APPEND_STANDARD_UNIFIED_DIFF,
+        target: "docs/phase-8-manual-check.md",
+      },
+      hasExecutableApprovalPayload: true,
+      qualityRequiredPasses: true,
+      resolvedTargetPath: "docs/phase-8-manual-check.md",
+    });
+
+    expect(guard).toEqual({ canApprove: true, reasons: [] });
+  });
+
+  it("blocks approval for unknown allowed files, protected paths, failed preview, or escalation verbs", () => {
+    const guard = deriveApprovalButtonGuard({
+      coderAgentLocalDiff: true,
+      diffVerification: {
+        error: null,
+        isChecking: false,
+        preview: {
+          blocked_reasons: [{ path: ".env.local", reason_code: "protected_path" }],
+          changed_files: [{ path: ".env.local" }],
+          git_apply_check_ok: false,
+          status: "blocked",
+          task_spec_check: {
+            allowed_files: [],
+            changed_files: [".env.local"],
+            ok: false,
+            reason_codes: ["task_spec_missing_allowed_files"],
+            target: ".env.local",
+          },
+        },
+        unifiedDiff: "--- a/.env.local\n+++ b/.env.local\n@@ -1 +1 @@\n-old\n+new\n",
+      },
+      fileMutationIntent: true,
+      gate: {
+        ...baseArgs().approvalGate,
+        action: "commit and push",
+        preview: {
+          decision: "requires_human_approval",
+          reason_codes: [],
+          requires_human_approval: true,
+        },
+        proposedDiff: "--- a/.env.local\n+++ b/.env.local\n@@ -1 +1 @@\n-old\n+new\n",
+        target: ".env.local",
+      },
+      hasExecutableApprovalPayload: true,
+      qualityRequiredPasses: false,
+      resolvedTargetPath: ".env.local",
+    });
+
+    expect(guard.canApprove).toBe(false);
+    expect(guard.reasons).toEqual(
+      expect.arrayContaining([
+        "diff_preview_blocked",
+        "allowed_files_unknown",
+        "task_spec_failed",
+        "git_apply_not_passed",
+        "required_gates_not_passed",
+        "protected_path",
+        "action_mode_escalation",
+      ]),
+    );
   });
 });
 
@@ -488,10 +965,13 @@ describe("deriveReplayableLogBundle", () => {
       },
       workflowMemory: {
         approvals: [],
+        approvalState: "none",
+        artifactIds: [],
         blockers: [],
         knownGoodExamples: [],
         lastKnownStatus: "running",
         rejections: [],
+        rejectionState: "none",
         taskIds: ["task-replay"],
         testReports: [],
         updatedAt: "2026-05-16T20:25:00.000Z",
@@ -535,10 +1015,13 @@ describe("deriveCheckpointRestorePlan", () => {
       longRunningTask: baseArgs().longRunningTask,
       workflowMemory: {
         approvals: [],
+        approvalState: "none",
+        artifactIds: [],
         blockers: [],
         knownGoodExamples: [],
         lastKnownStatus: "completed",
         rejections: [],
+        rejectionState: "none",
         taskIds: ["task-checkpoint"],
         testReports: [],
         updatedAt: "2026-05-16T20:30:00.000Z",
@@ -593,10 +1076,13 @@ describe("deriveArtifactShelfItems", () => {
       longRunningTask: baseArgs().longRunningTask,
       workflowMemory: {
         approvals: [],
+        approvalState: "none",
+        artifactIds: [],
         blockers: [],
         knownGoodExamples: [],
         lastKnownStatus: "preview_ready",
         rejections: [],
+        rejectionState: "none",
         taskIds: ["task-artifacts"],
         testReports: [],
         updatedAt: "2026-05-16T20:45:00.000Z",
@@ -1802,7 +2288,20 @@ describe("workflowStep", () => {
               changed_files: [{ path: "docs/phase-8-manual-check.md" }],
               git_apply_check_ok: true,
               limits: { file_writes_allowed: true },
+              requirement_coverage: { ok: true, missing: [] },
               status: "preview_ready",
+              task_spec_check: {
+                allowed_files: ["docs/phase-8-manual-check.md"],
+                changed_files: ["docs/phase-8-manual-check.md"],
+                ok: true,
+                reason_codes: [],
+                target: "docs/phase-8-manual-check.md",
+              },
+              typescript_check: {
+                ok: true,
+                skipped: true,
+                summary: "No TS/TSX files changed.",
+              },
             },
             unifiedDiff: DOCS_APPEND_STANDARD_UNIFIED_DIFF,
           },
@@ -2178,6 +2677,45 @@ describe("workflowStep", () => {
     expect(items.find((item) => item.label === "Post-apply verification passed")?.status).toBe("waiting");
   });
 
+  it("derives concrete blocker and next safe action copy", () => {
+    const protectedPath = deriveBlockerNextSafeActionSummary({
+      canApprove: false,
+      diffVerification: baseArgs().diffVerification,
+      gate: {
+        ...baseArgs().approvalGate,
+        preview: {
+          decision: "blocked",
+          reason_codes: ["protected_path"],
+          requires_human_approval: false,
+        },
+        target: ".env.local",
+      },
+      task: null,
+    });
+
+    expect(protectedPath.blocker).toBe("protected_path");
+    expect(protectedPath.title).toBe("Protected path blocked");
+    expect(protectedPath.nextSafeAction).toContain("non-secret repo-relative target");
+
+    const approvalRequired = deriveBlockerNextSafeActionSummary({
+      canApprove: true,
+      diffVerification: baseArgs().diffVerification,
+      gate: {
+        ...baseArgs().approvalGate,
+        preview: {
+          decision: "requires_human_approval",
+          reason_codes: [],
+          requires_human_approval: true,
+        },
+      },
+      task: null,
+    });
+
+    expect(approvalRequired.blocker).toBe("approval_required");
+    expect(approvalRequired.nextSafeAction).toContain("approve or reject explicitly");
+    expect(JSON.stringify([protectedPath, approvalRequired])).not.toMatch(/auto-fix|push now/i);
+  });
+
   it("uses readable rejection reasons and preserves reason codes", () => {
     const onDeny = vi.fn();
     render(
@@ -2368,6 +2906,8 @@ describe("workflowStep", () => {
               post_apply_verification: {
                 docs_only: false,
                 changed_files: [{ path: "src/lib/coding/example.test.ts" }],
+                commit_blockers: ["post_apply_verification_incomplete"],
+                commit_proposal_blocked: true,
                 checks: [
                   {
                     command: ["npm", "run", "test:coding-frontend-regression"],
@@ -2383,6 +2923,8 @@ describe("workflowStep", () => {
                   },
                 ],
                 required: true,
+                push_blockers: ["push_requires_separate_approval"],
+                push_path_available: false,
                 status: "verification_ready",
               },
               status: "applied_needs_verification",
@@ -2395,6 +2937,10 @@ describe("workflowStep", () => {
     );
 
     expect(screen.getByText("Code verification required")).toBeTruthy();
+    expect(screen.getByText("blocked until post-apply verification passes")).toBeTruthy();
+    expect(screen.getByText("post_apply_verification_incomplete")).toBeTruthy();
+    expect(screen.getByText("not available from post-apply verification")).toBeTruthy();
+    expect(screen.getByText("push_requires_separate_approval")).toBeTruthy();
     expect(screen.getByText("src/lib/coding/example.test.ts")).toBeTruthy();
     expect(screen.getByText("npm run test:coding-frontend-regression")).toBeTruthy();
     expect(screen.getByText("npx tsc --noEmit -p tsconfig.json")).toBeTruthy();
@@ -2511,7 +3057,11 @@ describe("workflowStep", () => {
             summary: "TypeScript or JavaScript files changed.",
           },
         ],
+        commit_blockers: ["post_apply_verification_failed"],
+        commit_proposal_blocked: true,
         required: true,
+        push_blockers: ["push_requires_separate_approval"],
+        push_path_available: false,
         status: "verification_failed",
       },
       status: "verification_failed",
@@ -2534,6 +3084,8 @@ describe("workflowStep", () => {
     );
 
     expect(screen.getByText("Verification failed")).toBeTruthy();
+    expect(screen.getByText("blocked until post-apply verification passes")).toBeTruthy();
+    expect(screen.getByText("post_apply_verification_failed")).toBeTruthy();
     expect(screen.getAllByText("npx tsc --noEmit -p tsconfig.json").length).toBeGreaterThan(0);
     expect(screen.getByText("TypeScript failed near the end")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Run code verification" })).toBeNull();

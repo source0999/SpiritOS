@@ -85,7 +85,7 @@ def normalize_repo_path_candidate(raw_path: str, *, strip_diff_prefix: bool = Fa
         path = path[2:]
     while path.startswith("./"):
         path = path[2:]
-    return strip_repo_path_sentence_punctuation(path)
+    return _remove_current_directory_segments(strip_repo_path_sentence_punctuation(path))
 
 
 def explicit_target_file_lines(task: str) -> list[str]:
@@ -184,3 +184,17 @@ def _dedupe_paths(values: list[str]) -> list[str]:
         seen.add(path)
         result.append(path)
     return result
+
+
+def _remove_current_directory_segments(path: str) -> str:
+    if not path:
+        return ""
+    absolute = path.startswith("/")
+    trailing_slash = path.endswith("/") and path != "/"
+    parts = [part for part in path.split("/") if part and part != "."]
+    normalized = "/".join(parts)
+    if absolute:
+        normalized = f"/{normalized}"
+    if trailing_slash and normalized and not normalized.endswith("/"):
+        normalized = f"{normalized}/"
+    return normalized

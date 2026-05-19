@@ -175,6 +175,8 @@ def discover_project_candidates() -> list[ProjectCandidate]:
                     name=name,
                     root=resolved,
                     markers=markers,
+                    confidence=_candidate_confidence(markers),
+                    reason=_candidate_reason(markers),
                     source_root=configured_root.path,
                     action_taken=False,
                 )
@@ -264,6 +266,20 @@ def _detect_project_markers(candidate: Path) -> list[str]:
         except OSError:
             continue
     return markers
+
+
+def _candidate_confidence(markers: list[str]) -> str:
+    marker_set = set(markers)
+    if ".git" in marker_set and any(marker in marker_set for marker in ("package.json", "pyproject.toml", "requirements.txt")):
+        return "high"
+    if ".git" in marker_set or any(marker in marker_set for marker in ("package.json", "pyproject.toml", "requirements.txt")):
+        return "medium"
+    return "low"
+
+
+def _candidate_reason(markers: list[str]) -> str:
+    marker_list = ", ".join(markers) if markers else "no project markers"
+    return f"Detected project-shaped child directory from markers: {marker_list}."
 
 
 def _blueprint_root(candidate: Path) -> str | None:

@@ -22,27 +22,67 @@ describe("HomelabCartographerWidget", () => {
     expect(screen.getByText("Loading Cartographer state.")).toBeInTheDocument();
   });
 
-  it("renders read-only project, blueprint, proposal, and lock metrics", async () => {
+  it("renders read-only v1 closeout dashboard cards", async () => {
     globalThis.fetch = vi.fn(() =>
       Promise.resolve(
         new Response(
           JSON.stringify({
             status: "observing",
             write_actions_enabled: false,
-            configured_roots: [{ path: "/home/source/SpiritOS" }],
-            blocked_roots: [],
-            projects: [
+            authority_granted: false,
+            actions_taken: false,
+            dashboard_mode: "read_only_v1_closeout_surface",
+            docs_path: "docs/cartographer-v1-evidence-artifacts.md",
+            docs_label: "Cartographer v1 evidence artifact contract",
+            primary_status: "blocked_missing_evidence",
+            primary_label: "Blocked by missing evidence",
+            v1_ready: false,
+            readiness: "not_ready",
+            blocker_count: 8,
+            freeze_marker_status: "missing",
+            next_action: "Record three clean diagnostic or closeout proof artifacts with passing results.",
+            dashboard_cards: [
               {
-                project_id: "spiritos",
-                name: "SpiritOS",
-                root: "/home/source/SpiritOS",
-                markers: [".git", "package.json", "README.md", "_blueprints"],
-                status: "detected",
-                write_policy: "read_only",
+                card_id: "v1-readiness",
+                label: "V1 readiness",
+                status: "not_ready",
+                value: "blocked",
+                detail: "8 blockers",
+                endpoint: "/v1/cartographer/v1-readiness",
+              },
+              {
+                card_id: "v1-evidence",
+                label: "Evidence",
+                status: "blocked",
+                value: 8,
+                detail: "missing real proof artifacts",
+                endpoint: "/v1/cartographer/v1-evidence",
+              },
+              {
+                card_id: "v1-freeze-marker",
+                label: "Freeze marker",
+                status: "missing",
+                value: "data/cartographer-v1-freeze/freeze-marker.json",
+                detail: "external marker validation",
+                endpoint: "/v1/cartographer/v1-freeze-marker-validation",
+              },
+              {
+                card_id: "v1-authority",
+                label: "Authority",
+                status: "locked",
+                value: "locked",
+                detail: "passing checks do not grant authority",
+                endpoint: "/v1/cartographer/v1-closeout-status",
+              },
+              {
+                card_id: "v1-docs",
+                label: "Evidence contract",
+                status: "read_only",
+                value: "docs/cartographer-v1-evidence-artifacts.md",
+                detail: "human-recorded artifact shapes",
+                endpoint: "/v1/cartographer/v1-closeout-dashboard",
               },
             ],
-            blueprint_count: 15,
-            pending_proposals: 0,
           }),
           { status: 200 },
         ),
@@ -52,16 +92,28 @@ describe("HomelabCartographerWidget", () => {
     render(<HomelabCartographerWidget />);
 
     await waitFor(() => {
-      expect(screen.getByText("Observing")).toBeInTheDocument();
+      expect(screen.getByText("Blocked by missing evidence")).toBeInTheDocument();
     });
 
-    expect(screen.getByText("Projects Detected")).toBeInTheDocument();
-    expect(screen.getByText("Blueprints Indexed")).toBeInTheDocument();
-    expect(screen.getByText("Pending Proposals")).toBeInTheDocument();
-    expect(screen.getByText("Write Mode")).toBeInTheDocument();
-    expect(screen.getByText("Locked")).toBeInTheDocument();
+    expect(globalThis.fetch).toHaveBeenCalledWith("/v1/cartographer/v1-closeout-dashboard", {
+      cache: "no-store",
+    });
+    expect(screen.getByText("V1 readiness")).toBeInTheDocument();
+    expect(screen.getByText("Evidence")).toBeInTheDocument();
+    expect(screen.getByText("Freeze marker")).toBeInTheDocument();
+    expect(screen.getByText("Authority")).toBeInTheDocument();
+    expect(screen.getByText("Evidence contract")).toBeInTheDocument();
+    expect(screen.getByText("locked")).toBeInTheDocument();
+    expect(screen.getByText("docs/cartographer-v1-evidence-artifacts.md")).toHaveAttribute(
+      "title",
+      "docs/cartographer-v1-evidence-artifacts.md",
+    );
+    expect(screen.getByText("data/cartographer-v1-freeze/freeze-marker.json")).toHaveAttribute(
+      "title",
+      "data/cartographer-v1-freeze/freeze-marker.json",
+    );
     expect(
-      screen.getByText("SpiritOS is detected from .git, package.json, README.md, _blueprints."),
+      screen.getByText("Record three clean diagnostic or closeout proof artifacts with passing results."),
     ).toBeInTheDocument();
   });
 
@@ -73,6 +125,7 @@ describe("HomelabCartographerWidget", () => {
             status: "unavailable",
             write_actions_enabled: false,
             error: "The dashboard could not reach the Source Proxy Cartographer endpoint.",
+            dashboard_cards: [],
           }),
           { status: 200 },
         ),

@@ -11,7 +11,7 @@ from source_proxy.cartographer.commit_proposals import build_commit_proposals
 from source_proxy.cartographer.component_mapper import map_paths
 from source_proxy.cartographer.git_approvals import read_git_approval_records
 from source_proxy.cartographer.models import AuditTrailEvent, CartographerProject, ProposalRecord
-from source_proxy.cartographer.project_discovery import discover_projects
+from source_proxy.cartographer.project_discovery import discover_project_candidates, discover_projects
 from source_proxy.cartographer.proposals import list_proposals
 from source_proxy.cartographer.push_queue import build_push_queue
 
@@ -26,6 +26,11 @@ def build_audit_trail() -> list[AuditTrailEvent]:
         events.extend(_events_from_proposal(proposal))
     for project in projects.values():
         events.extend(_events_from_approved_action_log(project))
+    project_roots = {project.root for project in projects.values()}
+    for candidate in discover_project_candidates():
+        if candidate.root in project_roots:
+            continue
+        events.extend(_events_from_approved_action_log(candidate))
     events.extend(_events_from_codex_evidence(_codex_project_id(projects)))
     events.extend(_events_from_git_approval_records())
     for proposal in build_commit_proposals():
@@ -118,8 +123,18 @@ def _events_from_git_approval_records() -> list[AuditTrailEvent]:
                 files=_string_list(payload.get("changed_files")),
                 changed_files=_string_list(payload.get("changed_files")),
                 branch=str(payload["branch"]) if payload.get("branch") is not None else None,
+                previous_branch=(
+                    str(payload["previous_branch"]) if payload.get("previous_branch") is not None else None
+                ),
                 remote=str(payload["remote"]) if payload.get("remote") is not None else None,
                 commit_sha=str(payload["commit_sha"]) if payload.get("commit_sha") is not None else None,
+                parent_sha=str(payload["parent_sha"]) if payload.get("parent_sha") is not None else None,
+                approved_files=_string_list(payload.get("approved_files")),
+                excluded_files=_string_list(payload.get("excluded_files")),
+                source_head=str(payload["source_head"]) if payload.get("source_head") is not None else None,
+                rollback_command=(
+                    str(payload["rollback_command"]) if payload.get("rollback_command") is not None else None
+                ),
                 rollback_hint=_rollback_hint_for_git_event(event),
                 source="git_approval_record",
             )
@@ -135,6 +150,7 @@ def _action_for_git_event(event: str) -> str:
         "commit_created": "create_commit",
         "commit_approved": "record_commit_approval",
         "push_approved": "push_branch",
+        "push_completed": "push_completed",
     }.get(event, event)
 
 
@@ -145,7 +161,7 @@ def _rollback_hint_for_git_event(event: str) -> str:
         return "No rollback needed; rejected branch recommendation left Git untouched."
     if event == "commit_created":
         return "Commit is local only; inspect the commit and use a normal revert/reset workflow before any push."
-    if event == "push_approved":
+    if event in {"push_approved", "push_completed"}:
         return "Push already reached the remote; use a normal revert or reviewed remote-branch cleanup workflow."
     return "Approval metadata only; no branch, commit, or push ran."
 

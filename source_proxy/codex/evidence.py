@@ -51,7 +51,14 @@ def build_codex_evidence_packet(
         head_before=head_before,
         head_after=head_after,
     )
-    return {
+    excerpts = {
+        "final_message": _excerpt(final_message, excerpt_chars),
+        "stdout": _excerpt(stdout, excerpt_chars),
+        "stderr": _excerpt(stderr, excerpt_chars),
+        "diff_stat": _excerpt(diff_stat, excerpt_chars),
+        "diff": _excerpt(diff, excerpt_chars),
+    }
+    packet = {
         "artifact_version": "codex_evidence.v1",
         "task_id": task_id,
         "worker": "codex_cli",
@@ -60,23 +67,70 @@ def build_codex_evidence_packet(
         "started_at": started_at,
         "finished_at": finished_at,
         "exit_code": exit_code,
-        "final_message_excerpt": _excerpt(final_message, excerpt_chars),
-        "stdout_excerpt": _excerpt(stdout, excerpt_chars),
-        "stderr_excerpt": _excerpt(stderr, excerpt_chars),
+        "final_message_excerpt": excerpts["final_message"],
+        "stdout_excerpt": excerpts["stdout"],
+        "stderr_excerpt": excerpts["stderr"],
         "json_event_count": _json_event_count(stdout),
         "changed_files_before": before,
         "changed_files_after": after,
-        "diff_stat": _excerpt(diff_stat, excerpt_chars),
-        "diff_excerpt": _excerpt(diff, excerpt_chars),
+        "diff_stat": excerpts["diff_stat"],
+        "diff_excerpt": excerpts["diff"],
         "head_before": head_before,
         "head_after": head_after,
         "safety_verdict": safety_verdict,
         "recommendation": recommendation or _default_recommendation(safety_verdict),
         "rollback_hint": rollback_hint or _default_rollback_hint(safety_verdict, after),
+        "truncation": {
+            "excerpt_chars": excerpt_chars,
+            "final_message": _was_truncated(final_message, excerpt_chars),
+            "stdout": _was_truncated(stdout, excerpt_chars),
+            "stderr": _was_truncated(stderr, excerpt_chars),
+            "diff_stat": _was_truncated(diff_stat, excerpt_chars),
+            "diff": _was_truncated(diff, excerpt_chars),
+        },
         "approval_authority": False,
         "apply_authority": False,
         "commit_authority": False,
         "push_authority": False,
+    }
+    packet["replay_summary"] = summarize_codex_evidence(packet)
+    return packet
+
+
+def summarize_codex_evidence(packet: dict[str, Any]) -> dict[str, Any]:
+    changed_files_before = _safe_file_list(_list_value(packet.get("changed_files_before")))
+    changed_files_after = _safe_file_list(_list_value(packet.get("changed_files_after")))
+    head_before = _optional_str(packet.get("head_before"))
+    head_after = _optional_str(packet.get("head_after"))
+    command = _list_value(packet.get("command"))
+    sandbox = str(packet.get("sandbox") or "")
+    return {
+        "task_id": str(packet.get("task_id") or ""),
+        "worker": str(packet.get("worker") or "codex_cli"),
+        "mode": "readonly" if sandbox == "read-only" else "proposal",
+        "command_summary": _excerpt(" ".join(str(part) for part in command), 500),
+        "sandbox": sandbox,
+        "started_at": str(packet.get("started_at") or ""),
+        "finished_at": str(packet.get("finished_at") or ""),
+        "exit_code": packet.get("exit_code"),
+        "final_message_excerpt": str(packet.get("final_message_excerpt") or ""),
+        "stdout_excerpt": str(packet.get("stdout_excerpt") or ""),
+        "stderr_excerpt": str(packet.get("stderr_excerpt") or ""),
+        "diff_stat": str(packet.get("diff_stat") or ""),
+        "changed_files_before": list(changed_files_before),
+        "changed_files_after": list(changed_files_after),
+        "changed_files_delta": changed_files_before != changed_files_after,
+        "head_before": head_before,
+        "head_after": head_after,
+        "head_changed": bool(head_before and head_after and head_before != head_after),
+        "safety_verdict": str(packet.get("safety_verdict") or "unknown"),
+        "recommendation": str(packet.get("recommendation") or "unknown"),
+        "rollback_hint": str(packet.get("rollback_hint") or ""),
+        "truncation": _truncation_summary(packet.get("truncation")),
+        "approval_authority": bool(packet.get("approval_authority")),
+        "apply_authority": bool(packet.get("apply_authority")),
+        "commit_authority": bool(packet.get("commit_authority")),
+        "push_authority": bool(packet.get("push_authority")),
     }
 
 
@@ -152,6 +206,10 @@ def _excerpt(value: str, max_chars: int) -> str:
     return text[:max_chars] + "\n[truncated]"
 
 
+def _was_truncated(value: str, max_chars: int) -> bool:
+    return len(_redact_text(value or "", max_chars)) > max_chars
+
+
 def _redact_text(value: str, max_chars: int) -> str:
     lines = []
     for line in value.splitlines():
@@ -185,3 +243,31 @@ def _json_event_count(stdout: str) -> int:
 
 def _safe_artifact_name(task_id: str) -> str:
     return "".join(char if char.isalnum() or char in {"-", "_"} else "-" for char in task_id)[:120]
+
+
+def _list_value(value: Any) -> list[Any]:
+    return list(value) if isinstance(value, (list, tuple)) else []
+
+
+def _optional_str(value: Any) -> str | None:
+    return str(value) if value is not None else None
+
+
+def _truncation_summary(value: Any) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        return {
+            "excerpt_chars": DEFAULT_EXCERPT_CHARS,
+            "final_message": False,
+            "stdout": False,
+            "stderr": False,
+            "diff_stat": False,
+            "diff": False,
+        }
+    return {
+        "excerpt_chars": value.get("excerpt_chars", DEFAULT_EXCERPT_CHARS),
+        "final_message": bool(value.get("final_message")),
+        "stdout": bool(value.get("stdout")),
+        "stderr": bool(value.get("stderr")),
+        "diff_stat": bool(value.get("diff_stat")),
+        "diff": bool(value.get("diff")),
+    }

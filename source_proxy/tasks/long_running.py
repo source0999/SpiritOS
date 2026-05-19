@@ -598,6 +598,7 @@ class LongRunningTask:
             "architect_reason": self.architect_reason,
             "would_execute": _has_approved_execution(self.open_diffs),
             "writes_allowed": _has_approved_execution(self.open_diffs),
+            "worker_lanes": _worker_lanes_for_task(self),
             "next_action": self.next_action,
         }
 
@@ -724,6 +725,24 @@ def get_long_running_task_snapshot(task_id: str) -> dict[str, Any]:
     return _task_envelope(task)
 
 
+def list_long_running_tasks(
+    *,
+    include_completed: bool = True,
+    limit: int = 25,
+) -> dict[str, Any]:
+    bounded_limit = min(max(limit, 1), 100)
+    tasks = _load_recent_tasks(limit=bounded_limit)
+    if not include_completed:
+        terminal = _terminal_or_waiting_statuses()
+        tasks = [task for task in tasks if task.status not in terminal]
+    return {
+        "access_scope": "read_only_task_queue",
+        "count": len(tasks),
+        "tasks": [_task_queue_item(task) for task in tasks],
+        "tool": "long_running_task_tracker",
+    }
+
+
 def advance_long_running_task(
     task_id: str,
     *,
@@ -752,6 +771,7 @@ def execute_approved_long_running_task(
     *,
     approved_diff: str,
     action: str,
+    approval_id: str,
     target: str | None = None,
     approved_by: str = "human",
     test_command: list[str] | None = None,
@@ -763,6 +783,16 @@ def execute_approved_long_running_task(
     paths before any workspace write occurs.
     """
     task = _lookup_task(task_id)
+    expected_approval_id = approval_id_for_approved_diff(
+        task_id=task_id,
+        approved_diff=approved_diff,
+        target=target,
+    )
+    if approval_id != expected_approval_id:
+        raise LongRunningTaskError(
+            "Approved diff approval_id does not match the task, target, and diff.",
+            "approval_id_mismatch",
+        )
     from source_proxy.planning.plan import load_plan
 
     architect_plan = load_plan(task_id)
@@ -813,6 +843,7 @@ def execute_approved_long_running_task(
 
     audit_record = {
         "action": action,
+        "approval_id": approval_id,
         "approved_at": _now_iso(),
         "approved_by": approved_by,
         "approved_diff_sha256": hashlib.sha256(approved_diff.encode("utf-8")).hexdigest(),
@@ -876,6 +907,7 @@ def execute_approved_long_running_task(
     payload["execution"] = {
         "ok": True,
         "action": action,
+        "approval_id": approval_id,
         "applied_at": audit_record["approved_at"],
         "audit": audit_record,
         "backup_root": apply_result["backup_root"],
@@ -886,8 +918,26 @@ def execute_approved_long_running_task(
         "status": task.status,
         "target": target,
         "verification_plan": verification["verification_plan"],
+        "commit_created": False,
+        "push_ran": False,
     }
     return payload
+
+
+def approval_id_for_approved_diff(
+    *,
+    task_id: str,
+    approved_diff: str,
+    target: str | None,
+) -> str:
+    key = "|".join(
+        [
+            task_id.strip(),
+            (target or "").strip(),
+            hashlib.sha256(approved_diff.encode("utf-8")).hexdigest(),
+        ]
+    )
+    return f"approval-{hashlib.sha256(key.encode('utf-8')).hexdigest()[:16]}"
 
 
 PLAN_REJECTION_REASON_CODES = {
@@ -1109,8 +1159,12 @@ def record_post_apply_verification(
     if any_failed:
         verification["status"] = "verification_failed"
         task.status = "verification_failed"
+        verification["commit_proposal_blocked"] = True
+        verification["commit_blockers"] = ["post_apply_verification_failed"]
     elif all_required_done and (not browser_required or browser_done):
         verification["status"] = "verified"
+        verification["commit_proposal_blocked"] = False
+        verification["commit_blockers"] = []
         task.status = "completed"
         task.steps = _append_unique_steps(
             task.steps,
@@ -1118,7 +1172,12 @@ def record_post_apply_verification(
         )
     else:
         verification["status"] = "verification_ready"
+        verification["commit_proposal_blocked"] = True
+        verification["commit_blockers"] = ["post_apply_verification_incomplete"]
         task.status = "applied_needs_verification"
+
+    verification["push_path_available"] = False
+    verification["push_blockers"] = ["push_requires_separate_approval"]
 
     for diff in task.open_diffs:
         if str(diff.get("status") or "").startswith("applied"):
@@ -1446,6 +1505,8 @@ def _initial_post_apply_verification(verification: dict[str, Any]) -> dict[str, 
     return {
         "checks": checks,
         "changed_files": changed_files,
+        "commit_proposal_blocked": True,
+        "commit_blockers": ["post_apply_verification_incomplete"],
         "docs_only": docs_only,
         "docs_only_confirmations": {
             "backup_audit_present": False,
@@ -1468,6 +1529,8 @@ def _initial_post_apply_verification(verification: dict[str, Any]) -> dict[str, 
         ),
         "updated_at": _now_iso(),
         "verification_note": "",
+        "push_path_available": False,
+        "push_blockers": ["push_requires_separate_approval"],
     }
 
 
@@ -2068,6 +2131,204 @@ def _load_task(task_id: str) -> LongRunningTask | None:
         architect_status=row["architect_status"] or "idle",
         architect_reason=row["architect_reason"] or "",
     )
+
+
+def _load_recent_tasks(*, limit: int) -> list[LongRunningTask]:
+    with closing(_connect()) as connection:
+        _initialize_store(connection)
+        rows = connection.execute(
+            """
+            SELECT
+                id,
+                description,
+                status,
+                created_at,
+                updated_at,
+                cancelled_at,
+                steps_json,
+                poll_count,
+                ast_snapshot_json,
+                open_diffs_json,
+                truncated_test_results,
+                current_agent_role,
+                cycle_count,
+                architect_status,
+                architect_reason
+            FROM long_running_tasks
+            ORDER BY updated_at DESC, created_at DESC
+            LIMIT ?
+            """,
+            (limit,),
+        ).fetchall()
+    return [_task_from_row(row) for row in rows]
+
+
+def _task_from_row(row: sqlite3.Row) -> LongRunningTask:
+    return LongRunningTask(
+        id=row["id"],
+        description=row["description"],
+        status=row["status"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+        cancelled_at=row["cancelled_at"],
+        steps=_json_value(row["steps_json"], list(DEFAULT_STEPS)),
+        poll_count=row["poll_count"],
+        ast_snapshot=_json_value(row["ast_snapshot_json"], None),
+        open_diffs=_json_value(row["open_diffs_json"], []),
+        truncated_test_results=row["truncated_test_results"] or "",
+        current_agent_role=_normalize_agent_role(row["current_agent_role"]),
+        cycle_count=row["cycle_count"],
+        architect_status=row["architect_status"] or "idle",
+        architect_reason=row["architect_reason"] or "",
+    )
+
+
+def _task_queue_item(task: LongRunningTask) -> dict[str, Any]:
+    allowed_files = _task_allowed_files(task)
+    blocker = _task_queue_blocker(task)
+    return {
+        "task_id": task.id,
+        "title": _task_queue_title(task.description),
+        "worker": task.current_agent_role,
+        "mode": "read_only_status_tracking",
+        "status": task.status,
+        "target_file": allowed_files[0] if allowed_files else None,
+        "allowed_files": allowed_files,
+        "created_at": task.created_at,
+        "updated_at": task.updated_at,
+        "blocker": blocker,
+        "worker_lanes": _worker_lanes_for_task(task),
+        "next_safe_action": task.next_action,
+    }
+
+
+def _worker_lanes_for_task(task: LongRunningTask) -> list[dict[str, Any]]:
+    active_role = str(task.current_agent_role or "architect")
+    has_diff = any(
+        isinstance(diff, dict) and str(diff.get("diff") or "").strip()
+        for diff in task.open_diffs
+    )
+    verification = _current_post_apply_verification(task)
+    verifier_status = (
+        "evidence"
+        if isinstance(verification, dict) and verification.get("status")
+        else "waiting"
+    )
+    return [
+        _worker_lane(
+            "codex_cli",
+            "Codex CLI",
+            "evidence" if active_role in {"coder", "debugger"} or has_diff else "waiting",
+            "readonly/proposal evidence",
+            "Codex output is evidence only; Source Proxy approval gates remain final.",
+        ),
+        _worker_lane(
+            "deterministic_verifier",
+            "Deterministic verifier",
+            verifier_status,
+            "diff and post-apply verification evidence",
+            "Verifier output cannot apply, commit, or push.",
+        ),
+        _worker_lane(
+            "reviewer",
+            "Reviewer",
+            "evidence" if has_diff else "waiting",
+            "review findings",
+            "Reviewer findings are advisory until a separate approval gate passes.",
+        ),
+        _worker_lane(
+            "cartographer",
+            "Cartographer",
+            "waiting",
+            "repo-state evidence",
+            "Cartographer lane is read-only and cannot write project files.",
+        ),
+        _worker_lane(
+            "scout_intake",
+            "Scout intake",
+            "waiting",
+            "source intake evidence",
+            "Scout intake is read-only and cannot mutate Source Proxy tasks.",
+        ),
+        _worker_lane(
+            "local_model_reviewer",
+            "Local model reviewer",
+            "config_blocked",
+            "future review evidence",
+            "Local model reviewer is not wired into task execution.",
+        ),
+    ]
+
+
+def _worker_lane(
+    lane_id: str,
+    label: str,
+    status: str,
+    evidence_type: str,
+    note: str,
+) -> dict[str, Any]:
+    return {
+        "id": lane_id,
+        "label": label,
+        "status": status,
+        "mode": "read_only_evidence",
+        "evidence_type": evidence_type,
+        "approval_authority": False,
+        "apply_authority": False,
+        "commit_authority": False,
+        "push_authority": False,
+        "note": note,
+    }
+
+
+def _task_allowed_files(task: LongRunningTask) -> list[str]:
+    files: list[str] = []
+    for diff in task.open_diffs:
+        if not isinstance(diff, dict):
+            continue
+        for changed_file in diff.get("changed_files", []):
+            if isinstance(changed_file, dict):
+                path = str(changed_file.get("path") or "").strip()
+                if path and path not in files:
+                    files.append(path)
+    return files
+
+
+def _task_queue_blocker(task: LongRunningTask) -> str | None:
+    if task.status in {
+        "blocked",
+        "blocked_after_retries",
+        "blocked_by_review",
+        "coder_config_blocked",
+        "failed_needs_human",
+        "verification_failed",
+        "applied_verification_failed",
+    }:
+        return (
+            _task_blocker_reason_code(task.truncated_test_results)
+            or task.architect_reason
+            or task.status
+        )
+    return None
+
+
+def _task_blocker_reason_code(value: str) -> str | None:
+    text = value.strip()
+    if not text:
+        return None
+    for pattern in (
+        r"reason_code[:=]\s*([A-Za-z0-9_-]+)",
+        r"^([A-Za-z0-9_-]+):",
+    ):
+        match = re.search(pattern, text)
+        if match:
+            return match.group(1)
+    return None
+
+
+def _task_queue_title(description: str) -> str:
+    first_line = next((line.strip() for line in description.splitlines() if line.strip()), "")
+    return first_line[:120] if first_line else "Untitled task"
 
 
 def _run_architect_handoff(task: LongRunningTask) -> None:

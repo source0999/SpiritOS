@@ -1,0 +1,167 @@
+{
+  "base_url": "http://localhost:8077",
+  "checks": {
+    "discovery_jobs": {
+      "body": {
+        "budget": {
+          "blocked_reason": null,
+          "can_create_job": true,
+          "completed_jobs": 0,
+          "daily_limit": 3,
+          "failed_jobs": 0,
+          "next_reset_hint": "next UTC day",
+          "queued_jobs": 0,
+          "remaining_today": 3,
+          "running_jobs": 0,
+          "used_today": 0
+        },
+        "count": 0,
+        "execution": {
+          "advance_actions": [
+            "search-preview",
+            "extract-candidates"
+          ],
+          "automatic_execution": false,
+          "explanation": "Discovery jobs are saved controlled search plans. Scout does not run them in the background; use Preview Search or Extract Candidates to advance one.",
+          "mode": "manual_controlled",
+          "queued_job_meaning": "saved_search_plan",
+          "worker_registered": false
+        },
+        "jobs": []
+      },
+      "error": null,
+      "ok": true,
+      "status": 200,
+      "url": "http://localhost:8077/v1/scout/discovery-jobs?limit=50"
+    },
+    "health": {
+      "body": {
+        "status": "observing",
+        "version": "v0.1"
+      },
+      "error": null,
+      "ok": true,
+      "status": 200,
+      "url": "http://localhost:8077/health"
+    },
+    "source_candidates": {
+      "body": {
+        "candidates": [],
+        "counts": {
+          "approved": 0,
+          "blocked": 0,
+          "needs_review": 0,
+          "recommended": 0,
+          "rejected": 0,
+          "stored": 0
+        },
+        "review_bundles": []
+      },
+      "error": null,
+      "ok": true,
+      "status": 200,
+      "url": "http://localhost:8077/v1/scout/source-candidates?limit=200"
+    },
+    "sources": {
+      "body": {
+        "count": 3,
+        "sources": [
+          {
+            "canonical_uri": "github://anthropics/anthropic-sdk-python",
+            "display_uri": "github://anthropics/anthropic-sdk-python",
+            "poll_interval_minutes": 60,
+            "poller_supported": true,
+            "source_kind": "github_repo",
+            "source_origin": "static_config",
+            "source_uri": "github://anthropics/anthropic-sdk-python/commits",
+            "status": "active"
+          },
+          {
+            "canonical_uri": "github://fastapi/fastapi",
+            "display_uri": "github://fastapi/fastapi",
+            "poll_interval_minutes": 60,
+            "poller_supported": true,
+            "source_kind": "github_repo",
+            "source_origin": "static_config",
+            "source_uri": "github://fastapi/fastapi/commits",
+            "status": "active"
+          },
+          {
+            "canonical_uri": "https://blog.python.org/feeds/posts/default",
+            "display_uri": "https://blog.python.org/feeds/posts/default",
+            "poll_interval_minutes": 60,
+            "poller_supported": true,
+            "source_kind": "rss_feed",
+            "source_origin": "static_config",
+            "source_uri": "https://blog.python.org/feeds/posts/default",
+            "status": "active"
+          }
+        ]
+      },
+      "error": null,
+      "ok": true,
+      "status": 200,
+      "url": "http://localhost:8077/v1/scout/sources"
+    }
+  },
+  "mutated": false,
+  "profile": "scout-soak-snapshot",
+  "read_only": false,
+  "recommendation": "ready for next increment",
+  "result": "pass",
+  "snapshot_path": "scout/soak-logs/scout-soak-snapshot-2026-05-18T110315Z.json",
+  "summary": {
+    "active_source_count": 3,
+    "active_sources": [
+      {
+        "canonical_uri": "github://anthropics/anthropic-sdk-python",
+        "display_uri": "github://anthropics/anthropic-sdk-python",
+        "poll_interval_minutes": 60,
+        "poller_supported": true,
+        "source_kind": "github_repo",
+        "source_origin": "static_config",
+        "source_uri": "github://anthropics/anthropic-sdk-python/commits",
+        "status": "active"
+      },
+      {
+        "canonical_uri": "github://fastapi/fastapi",
+        "display_uri": "github://fastapi/fastapi",
+        "poll_interval_minutes": 60,
+        "poller_supported": true,
+        "source_kind": "github_repo",
+        "source_origin": "static_config",
+        "source_uri": "github://fastapi/fastapi/commits",
+        "status": "active"
+      },
+      {
+        "canonical_uri": "https://blog.python.org/feeds/posts/default",
+        "display_uri": "https://blog.python.org/feeds/posts/default",
+        "poll_interval_minutes": 60,
+        "poller_supported": true,
+        "source_kind": "rss_feed",
+        "source_origin": "static_config",
+        "source_uri": "https://blog.python.org/feeds/posts/default",
+        "status": "active"
+      }
+    ],
+    "candidate_counts": {
+      "approved": 0,
+      "blocked": 0,
+      "needs_review": 0,
+      "recommended": 0,
+      "rejected": 0,
+      "stored": 0
+    },
+    "db_size_bytes": 282624,
+    "db_size_error": null,
+    "discovery_job_count": 0,
+    "discovery_jobs": [],
+    "docker_logs_available": true,
+    "docker_logs_error": null,
+    "docker_logs_tail": "INFO:     172.19.0.1:36772 - \"GET /health HTTP/1.1\" 200 OK\nINFO:     172.19.0.1:36780 - \"GET /v1/scout/source-candidates?limit=200 HTTP/1.1\" 200 OK\nINFO:     172.19.0.1:36788 - \"GET /v1/scout/sources HTTP/1.1\" 200 OK\nINFO:     172.19.0.1:36794 - \"GET /v1/scout/discovery-jobs?limit=50 HTTP/1.1\" 200 OK\n",
+    "health_status": 200,
+    "warnings": []
+  },
+  "timestamp": "2026-05-18T11:03:15+00:00",
+  "wrote_snapshot": true
+}

@@ -68,7 +68,7 @@ describe("SpiritDashboardHome", () => {
     render(<SpiritDashboardHome />);
 
     const nav = screen.getByRole("navigation", {
-      name: /dashboard navigation/i,
+      name: /dashboard mobile navigation/i,
     });
     const hrefs = Array.from(nav.querySelectorAll("a")).map((a) =>
       a.getAttribute("href"),
@@ -83,7 +83,7 @@ describe("SpiritDashboardHome", () => {
     render(<SpiritDashboardHome />);
 
     expect(
-      screen.getByRole("region", { name: /oracle hero placeholder/i }),
+      screen.getByRole("region", { name: /oracle hero/i }),
     ).toBeInTheDocument();
   });
 });

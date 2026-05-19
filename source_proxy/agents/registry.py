@@ -26,6 +26,16 @@ BASE_FORBIDDEN_ACTIONS = (
     "write_without_approval",
 )
 
+ProviderCapability = Literal[
+    "planning",
+    "review",
+    "diff_drafting",
+    "tool_calling",
+    "current_research",
+]
+
+ProviderStatus = Literal["available", "config_blocked", "future_optional"]
+
 
 @dataclass(frozen=True)
 class AgentRegistryEntry:
@@ -38,6 +48,24 @@ class AgentRegistryEntry:
     output_type: str
     required_approval_gates: tuple[str, ...]
     system_prompt: str
+
+    def as_payload(self) -> dict[str, object]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class ProviderCapabilityEntry:
+    provider_id: str
+    display_name: str
+    status: ProviderStatus
+    capabilities: tuple[ProviderCapability, ...]
+    missing_reason: str | None
+    recommendation_only: bool
+    approval_authority: bool
+    apply_authority: bool
+    commit_authority: bool
+    push_authority: bool
+    notes: str
 
     def as_payload(self) -> dict[str, object]:
         return asdict(self)
@@ -157,12 +185,83 @@ AGENT_REGISTRY: dict[SwarmAgentRole, AgentRegistryEntry] = {
 }
 
 
+PROVIDER_CAPABILITY_REGISTRY: dict[str, ProviderCapabilityEntry] = {
+    "codex_cli": ProviderCapabilityEntry(
+        provider_id="codex_cli",
+        display_name="Codex CLI",
+        status="available",
+        capabilities=("planning", "review", "diff_drafting"),
+        missing_reason=None,
+        recommendation_only=True,
+        approval_authority=False,
+        apply_authority=False,
+        commit_authority=False,
+        push_authority=False,
+        notes="Experimental worker for readonly/proposal evidence only; Source Proxy gates remain final.",
+    ),
+    "local_ollama": ProviderCapabilityEntry(
+        provider_id="local_ollama",
+        display_name="Local Ollama",
+        status="config_blocked",
+        capabilities=("planning", "review"),
+        missing_reason="not_probed_in_phase_9_1",
+        recommendation_only=True,
+        approval_authority=False,
+        apply_authority=False,
+        commit_authority=False,
+        push_authority=False,
+        notes="May be studied for local planning/review later; no file or tool authority is assumed.",
+    ),
+    "gemini_cli": ProviderCapabilityEntry(
+        provider_id="gemini_cli",
+        display_name="Gemini CLI",
+        status="future_optional",
+        capabilities=("planning", "review", "current_research"),
+        missing_reason="not_configured",
+        recommendation_only=True,
+        approval_authority=False,
+        apply_authority=False,
+        commit_authority=False,
+        push_authority=False,
+        notes="Future optional reference only; no routing authority is enabled.",
+    ),
+    "api_adapter": ProviderCapabilityEntry(
+        provider_id="api_adapter",
+        display_name="Optional API Adapter",
+        status="future_optional",
+        capabilities=("planning", "review"),
+        missing_reason="not_configured",
+        recommendation_only=True,
+        approval_authority=False,
+        apply_authority=False,
+        commit_authority=False,
+        push_authority=False,
+        notes="Paid or external API routes require separate spend and action approval before any use.",
+    ),
+}
+
+
 def get_agent_registry() -> dict[SwarmAgentRole, AgentRegistryEntry]:
     return dict(AGENT_REGISTRY)
 
 
 def get_agent_registry_payload() -> dict[str, dict[str, object]]:
     return {role: entry.as_payload() for role, entry in AGENT_REGISTRY.items()}
+
+
+def get_provider_capability_registry() -> dict[str, ProviderCapabilityEntry]:
+    return dict(PROVIDER_CAPABILITY_REGISTRY)
+
+
+def get_provider_capability_payload() -> dict[str, dict[str, object]]:
+    return {
+        provider_id: entry.as_payload()
+        for provider_id, entry in PROVIDER_CAPABILITY_REGISTRY.items()
+    }
+
+
+def provider_capability(provider_id: str) -> ProviderCapabilityEntry | None:
+    return PROVIDER_CAPABILITY_REGISTRY.get(str(provider_id or "").strip().lower())
 
 
 def normalize_agent_role(value: object) -> SwarmAgentRole | None:
@@ -188,4 +287,15 @@ def validate_registry_authority() -> list[str]:
         for action in BASE_FORBIDDEN_ACTIONS:
             if action not in entry.forbidden_actions:
                 violations.append(f"{role}: missing_forbidden_action:{action}")
+    for provider_id, entry in PROVIDER_CAPABILITY_REGISTRY.items():
+        if not entry.recommendation_only:
+            violations.append(f"{provider_id}: provider_not_recommendation_only")
+        if entry.approval_authority:
+            violations.append(f"{provider_id}: provider_has_approval_authority")
+        if entry.apply_authority:
+            violations.append(f"{provider_id}: provider_has_apply_authority")
+        if entry.commit_authority:
+            violations.append(f"{provider_id}: provider_has_commit_authority")
+        if entry.push_authority:
+            violations.append(f"{provider_id}: provider_has_push_authority")
     return violations

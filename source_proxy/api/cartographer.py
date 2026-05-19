@@ -7,6 +7,7 @@ from fastapi import HTTPException
 from pydantic import BaseModel, Field
 
 from source_proxy.cartographer.apply import CartographerApplyError, apply_approved_doc_proposal
+from source_proxy.cartographer.clutter_proposals import ClutterCleanupError
 from source_proxy.cartographer.git_approvals import (
     CartographerGitApprovalError,
     approve_git_queue_item,
@@ -15,15 +16,22 @@ from source_proxy.cartographer.proposal_reviews import (
     CartographerProposalReviewError,
     review_blueprint_proposal,
 )
+from source_proxy.cartographer.starter_blueprints import StarterBlueprintWriteError
 from source_proxy.cartographer.service import (
     build_cartographer_audit_trail,
+    build_cartographer_autonomy_promotion,
     build_cartographer_blueprints,
     build_cartographer_blueprint_scribe,
     build_cartographer_branch_recommendations,
     build_cartographer_change_scribe,
+    build_cartographer_clutter_inventory,
+    build_cartographer_clutter_proposals,
+    build_cartographer_clutter_review,
     build_cartographer_codex_evidence,
     build_cartographer_commit_proposals,
     build_cartographer_components,
+    build_cartographer_docs_autopilot_dry_run,
+    build_cartographer_docs_autopilot_soak,
     build_cartographer_drift,
     build_cartographer_git,
     build_cartographer_projects,
@@ -36,6 +44,28 @@ from source_proxy.cartographer.service import (
     build_cartographer_runbook_scribe,
     build_cartographer_status,
     build_cartographer_sub_cartographers,
+    build_cartographer_trust_score,
+    build_cartographer_v1_closeout_handoff,
+    build_cartographer_v1_closeout_audit_summary,
+    build_cartographer_v1_closeout_dashboard,
+    build_cartographer_v1_closeout_endpoint_index,
+    build_cartographer_v1_closeout_finalization_marker,
+    build_cartographer_v1_closeout_status,
+    build_cartographer_v1_closeout_checklist,
+    build_cartographer_v1_combined_readiness_dry_run,
+    build_cartographer_v1_diagnostic_import_dry_run,
+    build_cartographer_v1_evidence,
+    build_cartographer_v1_evidence_gap_report,
+    build_cartographer_v1_freeze_marker_proposal,
+    build_cartographer_v1_freeze_marker_validation,
+    build_cartographer_v1_proof_contract,
+    build_cartographer_v1_proof_import_dry_run,
+    build_cartographer_v1_proof_recording_proposal,
+    build_cartographer_v1_proof_validation,
+    build_cartographer_v1_readiness,
+    apply_cartographer_clutter_proposal,
+    run_cartographer_docs_autopilot_apply,
+    write_cartographer_starter_blueprints,
 )
 
 router = APIRouter(prefix="/v1/cartographer")
@@ -54,6 +84,16 @@ class CartographerProposalReviewRequest(BaseModel):
 
 
 class CartographerGitApprovalRequest(BaseModel):
+    approved: bool
+    approved_by: str = Field(default="cartographer-ui", max_length=120)
+
+
+class CartographerStarterBlueprintWriteRequest(BaseModel):
+    approved: bool
+    approved_by: str = Field(default="cartographer-ui", max_length=120)
+
+
+class CartographerClutterCleanupRequest(BaseModel):
     approved: bool
     approved_by: str = Field(default="cartographer-ui", max_length=120)
 
@@ -83,6 +123,121 @@ async def cartographer_codex_evidence() -> dict[str, Any]:
     return build_cartographer_codex_evidence()
 
 
+@router.get("/docs-autopilot/dry-run")
+async def cartographer_docs_autopilot_dry_run() -> dict[str, Any]:
+    return build_cartographer_docs_autopilot_dry_run()
+
+
+@router.post("/docs-autopilot/apply")
+async def cartographer_docs_autopilot_apply() -> dict[str, Any]:
+    return run_cartographer_docs_autopilot_apply()
+
+
+@router.get("/docs-autopilot/soak")
+async def cartographer_docs_autopilot_soak() -> dict[str, Any]:
+    return build_cartographer_docs_autopilot_soak()
+
+
+@router.get("/trust-score")
+async def cartographer_trust_score() -> dict[str, Any]:
+    return build_cartographer_trust_score()
+
+
+@router.get("/autonomy-promotion")
+async def cartographer_autonomy_promotion() -> dict[str, Any]:
+    return build_cartographer_autonomy_promotion()
+
+
+@router.get("/v1-readiness")
+async def cartographer_v1_readiness() -> dict[str, Any]:
+    return build_cartographer_v1_readiness()
+
+
+@router.get("/v1-closeout-checklist")
+async def cartographer_v1_closeout_checklist() -> dict[str, Any]:
+    return build_cartographer_v1_closeout_checklist()
+
+
+@router.get("/v1-evidence")
+async def cartographer_v1_evidence() -> dict[str, Any]:
+    return build_cartographer_v1_evidence()
+
+
+@router.get("/v1-proof-contract")
+async def cartographer_v1_proof_contract() -> dict[str, Any]:
+    return build_cartographer_v1_proof_contract()
+
+
+@router.get("/v1-proof-validation")
+async def cartographer_v1_proof_validation() -> dict[str, Any]:
+    return build_cartographer_v1_proof_validation()
+
+
+@router.get("/v1-proof-recording-proposal")
+async def cartographer_v1_proof_recording_proposal() -> dict[str, Any]:
+    return build_cartographer_v1_proof_recording_proposal()
+
+
+@router.get("/v1-proof-import-dry-run")
+async def cartographer_v1_proof_import_dry_run() -> dict[str, Any]:
+    return build_cartographer_v1_proof_import_dry_run()
+
+
+@router.get("/v1-diagnostic-import-dry-run")
+async def cartographer_v1_diagnostic_import_dry_run() -> dict[str, Any]:
+    return build_cartographer_v1_diagnostic_import_dry_run()
+
+
+@router.get("/v1-combined-readiness-dry-run")
+async def cartographer_v1_combined_readiness_dry_run() -> dict[str, Any]:
+    return build_cartographer_v1_combined_readiness_dry_run()
+
+
+@router.get("/v1-evidence-gap-report")
+async def cartographer_v1_evidence_gap_report() -> dict[str, Any]:
+    return build_cartographer_v1_evidence_gap_report()
+
+
+@router.get("/v1-closeout-handoff")
+async def cartographer_v1_closeout_handoff() -> dict[str, Any]:
+    return build_cartographer_v1_closeout_handoff()
+
+
+@router.get("/v1-closeout-audit-summary")
+async def cartographer_v1_closeout_audit_summary() -> dict[str, Any]:
+    return build_cartographer_v1_closeout_audit_summary()
+
+
+@router.get("/v1-closeout-endpoints")
+async def cartographer_v1_closeout_endpoints() -> dict[str, Any]:
+    return build_cartographer_v1_closeout_endpoint_index()
+
+
+@router.get("/v1-closeout-finalization")
+async def cartographer_v1_closeout_finalization() -> dict[str, Any]:
+    return build_cartographer_v1_closeout_finalization_marker()
+
+
+@router.get("/v1-closeout-dashboard")
+async def cartographer_v1_closeout_dashboard() -> dict[str, Any]:
+    return build_cartographer_v1_closeout_dashboard()
+
+
+@router.get("/v1-closeout-status")
+async def cartographer_v1_closeout_status() -> dict[str, Any]:
+    return build_cartographer_v1_closeout_status()
+
+
+@router.get("/v1-freeze-marker-proposal")
+async def cartographer_v1_freeze_marker_proposal() -> dict[str, Any]:
+    return build_cartographer_v1_freeze_marker_proposal()
+
+
+@router.get("/v1-freeze-marker-validation")
+async def cartographer_v1_freeze_marker_validation() -> dict[str, Any]:
+    return build_cartographer_v1_freeze_marker_validation()
+
+
 @router.get("/branch-recommendations")
 async def cartographer_branch_recommendations() -> dict[str, Any]:
     return build_cartographer_branch_recommendations()
@@ -110,6 +265,39 @@ async def cartographer_approve_branch_recommendation(
 @router.get("/commit-proposals")
 async def cartographer_commit_proposals() -> dict[str, Any]:
     return build_cartographer_commit_proposals()
+
+
+@router.get("/clutter-inventory")
+async def cartographer_clutter_inventory() -> dict[str, Any]:
+    return build_cartographer_clutter_inventory()
+
+
+@router.get("/clutter-proposals")
+async def cartographer_clutter_proposals() -> dict[str, Any]:
+    return build_cartographer_clutter_proposals()
+
+
+@router.get("/clutter-review")
+async def cartographer_clutter_review() -> dict[str, Any]:
+    return build_cartographer_clutter_review()
+
+
+@router.post("/clutter-proposals/{proposal_id}/approve")
+async def cartographer_approve_clutter_proposal(
+    proposal_id: str,
+    request: CartographerClutterCleanupRequest,
+) -> dict[str, Any]:
+    try:
+        return apply_cartographer_clutter_proposal(
+            proposal_id=proposal_id,
+            approved=request.approved,
+            approved_by=request.approved_by,
+        )
+    except ClutterCleanupError as error:
+        raise HTTPException(
+            status_code=422,
+            detail={"message": str(error), "reason_code": error.reason_code},
+        ) from error
 
 
 @router.post("/commit-proposals/{commit_proposal_id}/approve")
@@ -193,6 +381,24 @@ async def cartographer_reminders() -> dict[str, Any]:
 @router.get("/proposals")
 async def cartographer_proposals() -> dict[str, Any]:
     return build_cartographer_proposals()
+
+
+@router.post("/starter-blueprints/{proposal_id}/approve")
+async def cartographer_approve_starter_blueprints(
+    proposal_id: str,
+    request: CartographerStarterBlueprintWriteRequest,
+) -> dict[str, Any]:
+    try:
+        return write_cartographer_starter_blueprints(
+            proposal_id=proposal_id,
+            approved=request.approved,
+            approved_by=request.approved_by,
+        )
+    except StarterBlueprintWriteError as error:
+        raise HTTPException(
+            status_code=422,
+            detail={"message": str(error), "reason_code": error.reason_code},
+        ) from error
 
 
 @router.post("/proposals/{proposal_id}/review")

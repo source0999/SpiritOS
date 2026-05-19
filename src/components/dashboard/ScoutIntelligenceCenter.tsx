@@ -867,15 +867,19 @@ function HealthChecks({ overview }: { overview: ScoutOverview }) {
           Raw packet and gate controls remain available here, but the command center above is the primary review surface.
         </p>
         <div className="scout-center-advanced-panel">
-          <ScoutIntelligenceCenterPanel />
+          <ScoutIntelligenceCenterPanel initialOverview={overview} />
         </div>
       </details>
     </Section>
   );
 }
 
-export function ScoutIntelligenceCenter() {
-  const { data, state, error, refresh } = useScoutOverview();
+export function ScoutIntelligenceCenter({
+  initialOverview = null,
+}: {
+  initialOverview?: ScoutOverview | null;
+}) {
+  const { data, state, error, refresh } = useScoutOverview(30_000, initialOverview);
 
   return (
     <main className="dashboard-demo-v4-root scout-center-root">

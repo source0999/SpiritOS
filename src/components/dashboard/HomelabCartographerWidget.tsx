@@ -1,74 +1,83 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { FileText, FolderGit2, LockKeyhole, Map, RadioTower } from "lucide-react";
+import { FileText, Flag, LockKeyhole, Map, RadioTower } from "lucide-react";
 
-type CartographerProject = {
-  project_id: string;
-  name: string;
-  root: string;
-  markers: string[];
-  has_blueprints?: boolean;
-  blueprint_root?: string | null;
+type CartographerDashboardCard = {
+  card_id: string;
+  label: string;
   status: string;
-  write_policy: string;
+  value: string | number | boolean | null;
+  detail?: string;
+  endpoint: string;
 };
 
-type CartographerStatus = {
+type CartographerDashboard = {
   status: "observing" | "unavailable" | string;
   write_actions_enabled: boolean;
-  configured_roots: unknown[];
-  blocked_roots: unknown[];
-  projects: CartographerProject[];
-  blueprint_count: number;
-  pending_proposals: number;
+  authority_granted?: boolean;
+  actions_taken?: boolean;
+  dashboard_mode?: string;
+  primary_status?: string;
+  primary_label?: string;
+  v1_ready?: boolean;
+  readiness?: string;
+  blocker_count?: number;
+  freeze_marker_status?: string;
+  next_action?: string;
+  dashboard_cards: CartographerDashboardCard[];
   error?: string;
 };
 
 type FetchState = "loading" | "ready" | "error";
 
-const emptyStatus: CartographerStatus = {
+const emptyStatus: CartographerDashboard = {
   status: "unavailable",
   write_actions_enabled: false,
-  configured_roots: [],
-  blocked_roots: [],
-  projects: [],
-  blueprint_count: 0,
-  pending_proposals: 0,
+  authority_granted: false,
+  actions_taken: false,
+  dashboard_cards: [],
 };
 
-function formatNumber(value: number | undefined): string {
-  return typeof value === "number" ? value.toLocaleString() : "0";
+function formatValue(value: CartographerDashboardCard["value"]): string {
+  if (typeof value === "number") return value.toLocaleString();
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  return value ? String(value) : "None";
 }
 
-function statusLabel(state: FetchState, status: CartographerStatus): string {
+function statusLabel(state: FetchState, status: CartographerDashboard): string {
   if (state === "loading") return "Loading";
   if (state === "error" || status.status === "unavailable") return "Unavailable";
-  return "Observing";
+  return status.primary_label ?? "Observing";
+}
+
+function cardIcon(cardId: string) {
+  if (cardId.includes("readiness")) return RadioTower;
+  if (cardId.includes("evidence")) return FileText;
+  if (cardId.includes("freeze")) return Flag;
+  return LockKeyhole;
 }
 
 export function HomelabCartographerWidget() {
   const [state, setState] = useState<FetchState>("loading");
-  const [status, setStatus] = useState<CartographerStatus>(emptyStatus);
+  const [status, setStatus] = useState<CartographerDashboard>(emptyStatus);
 
   useEffect(() => {
     let cancelled = false;
 
     async function loadStatus() {
       try {
-        const response = await fetch("/v1/cartographer/status", {
+        const response = await fetch("/v1/cartographer/v1-closeout-dashboard", {
           cache: "no-store",
         });
-        const payload = (await response.json()) as CartographerStatus;
+        const payload = (await response.json()) as CartographerDashboard;
         if (cancelled) return;
         setStatus({
           ...emptyStatus,
           ...payload,
-          projects: Array.isArray(payload.projects) ? payload.projects : [],
-          configured_roots: Array.isArray(payload.configured_roots)
-            ? payload.configured_roots
+          dashboard_cards: Array.isArray(payload.dashboard_cards)
+            ? payload.dashboard_cards
             : [],
-          blocked_roots: Array.isArray(payload.blocked_roots) ? payload.blocked_roots : [],
         });
         setState(response.ok && payload.status !== "unavailable" ? "ready" : "error");
       } catch {
@@ -86,32 +95,16 @@ export function HomelabCartographerWidget() {
   }, []);
 
   const metrics = useMemo(
-    () => [
-      {
-        label: "Projects Detected",
-        value: formatNumber(status.projects.length),
-        icon: FolderGit2,
-      },
-      {
-        label: "Blueprints Indexed",
-        value: formatNumber(status.blueprint_count),
-        icon: FileText,
-      },
-      {
-        label: "Pending Proposals",
-        value: formatNumber(status.pending_proposals),
-        icon: RadioTower,
-      },
-      {
-        label: "Write Mode",
-        value: status.write_actions_enabled ? "Open" : "Locked",
-        icon: LockKeyhole,
-      },
-    ],
+    () =>
+      status.dashboard_cards.map((card) => ({
+        label: card.label,
+        value: formatValue(card.value),
+        detail: card.detail,
+        icon: cardIcon(card.card_id),
+        rawValue: card.value,
+      })),
     [status],
   );
-
-  const primaryProject = status.projects[0];
 
   return (
     <section
@@ -139,8 +132,15 @@ export function HomelabCartographerWidget() {
           return (
             <div key={metric.label} className="dashboard-demo-v4-cartographer-metric">
               <Icon className="h-4 w-4" aria-hidden />
-              <strong>{metric.value}</strong>
-              <span>{metric.label}</span>
+              <strong title={typeof metric.rawValue === "string" ? metric.rawValue : undefined}>
+                {metric.value}
+              </strong>
+              <span className="dashboard-demo-v4-cartographer-metric-label">{metric.label}</span>
+              {metric.detail ? (
+                <span className="dashboard-demo-v4-cartographer-metric-detail">
+                  {metric.detail}
+                </span>
+              ) : null}
             </div>
           );
         })}
@@ -149,16 +149,13 @@ export function HomelabCartographerWidget() {
       <div className="dashboard-demo-v4-cartographer-summary">
         {state === "loading" ? (
           <p>Loading Cartographer state.</p>
-        ) : primaryProject ? (
-          <p>
-            {primaryProject.name} is detected from{" "}
-            {primaryProject.markers.slice(0, 4).join(", ")}.
-          </p>
+        ) : state === "ready" ? (
+          <p>{status.next_action ?? status.primary_label ?? "Cartographer is observing v1 closeout."}</p>
         ) : (
-          <p>{status.error ?? "No allowlisted projects detected yet."}</p>
+          <p>{status.error ?? "The Cartographer dashboard rollup is unavailable."}</p>
         )}
         <p className="dashboard-demo-v4-empty-copy">
-          Reads only from allowlisted roots. Approve, apply, commit, and push controls stay hidden.
+          Reads the v1 closeout rollup only. Approve, apply, commit, and push controls stay hidden.
         </p>
       </div>
     </section>

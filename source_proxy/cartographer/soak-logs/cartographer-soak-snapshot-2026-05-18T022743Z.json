@@ -1,0 +1,80 @@
+{
+  "expected_outcomes": [
+    "cartographer-soak-snapshot: pass",
+    "mutation boundary: snapshot log only",
+    "recommendation: ready for next increment"
+  ],
+  "log_size_bytes": {
+    "error": null,
+    "file_count": 16,
+    "path": "source_proxy/cartographer/soak-logs",
+    "size_bytes": 202374
+  },
+  "mutated": true,
+  "mutation_boundary": {
+    "after": "D proxyCLI.md\n?? docs/agent-wrapper-reference-study.md\n?? docs/aionui-reference-study.md\n?? docs/spirit-cowork-gap-report.md\n?? source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-2026-05-18T022743Z.json",
+    "allowed_writes": [
+      "source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-2026-05-18T022743Z.json"
+    ],
+    "background_status_delta": [],
+    "before": "D proxyCLI.md\n?? docs/agent-wrapper-reference-study.md\n?? docs/aionui-reference-study.md\n?? docs/spirit-cowork-gap-report.md",
+    "head_after": "683793732031b6d9471de7995931310065df84a5",
+    "head_before": "683793732031b6d9471de7995931310065df84a5",
+    "head_changed": false,
+    "snapshot_log_only": true,
+    "status_delta": [
+      "?? source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-2026-05-18T022743Z.json"
+    ],
+    "unexpected_status_delta": []
+  },
+  "next_actions": [
+    "Run two more cartographer-soak-snapshot checks before considering 6.21."
+  ],
+  "profile": "cartographer-soak-snapshot",
+  "read_only": false,
+  "recommendation": "ready for next increment",
+  "reliability": {
+    "grade": "boring",
+    "penalties": [],
+    "score": 100
+  },
+  "result": "pass",
+  "snapshot_path": "source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-2026-05-18T022743Z.json",
+  "summary": {
+    "audit_event_count": 0,
+    "audit_event_counts": {},
+    "blueprint_count": 0,
+    "branch": null,
+    "changed_file_count": 0,
+    "commit_proposal_count": 0,
+    "commit_proposal_examples": [],
+    "deduped": true,
+    "dirty": false,
+    "drift_count": 0,
+    "drift_examples": [],
+    "duplicate_proposals_present": 0,
+    "merge_blockers": [],
+    "merge_ready_count": 0,
+    "pending_proposal_examples": [],
+    "pending_proposals": 0,
+    "project_count": 0,
+    "proposal_count": 0,
+    "push_queue_count": 0,
+    "safety": {
+      "approval_required_for_commits": true,
+      "approval_required_for_file_writes": true,
+      "approval_required_for_pushes": true,
+      "scout_bypass_allowed": false,
+      "source_proxy_approval_bypass_allowed": false,
+      "write_policy": "read_only"
+    },
+    "staged": null,
+    "status": "observing",
+    "unstaged": null,
+    "untracked": null,
+    "write_actions_enabled": false
+  },
+  "timestamp": "2026-05-18T02:27:43+00:00",
+  "warnings": [],
+  "wrote_snapshot": true
+}

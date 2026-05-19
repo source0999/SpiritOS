@@ -12,9 +12,12 @@ export type UseClusterTelemetryResult = {
   refetch: () => void;
 };
 
-export function useClusterTelemetry(pollMs = 15_000): UseClusterTelemetryResult {
-  const [state, setState] = useState<ClusterFetchState>("checking");
-  const [data, setData] = useState<ClusterTelemetryResponse | null>(null);
+export function useClusterTelemetry(
+  pollMs = 15_000,
+  initialData: ClusterTelemetryResponse | null = null,
+): UseClusterTelemetryResult {
+  const [state, setState] = useState<ClusterFetchState>(initialData ? "loaded" : "checking");
+  const [data, setData] = useState<ClusterTelemetryResponse | null>(initialData);
   const [error, setError] = useState<string | null>(null);
   const refetchRef = useRef<(() => void) | null>(null);
 

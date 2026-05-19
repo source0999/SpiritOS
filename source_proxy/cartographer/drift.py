@@ -434,6 +434,10 @@ def _finding(
         affected_blueprints=normalized_blueprints,
         changed_files=normalized_files,
         message=_message_for_reason(reason),
+        stale_targets=[f"blueprint:{blueprint}" for blueprint in normalized_blueprints],
+        why_matters=_why_matters_for_reason(reason),
+        safe_to_ignore=severity == "info",
+        proposed_next_action=_proposed_next_action(reason),
         evidence=_evidence_for_finding(
             reason=reason,
             affected_blueprints=normalized_blueprints,
@@ -463,6 +467,36 @@ def _message_for_reason(reason: str) -> str:
     if reason == "scout_doc_drift":
         return "Scout changed. Scout documentation or system blueprints may need review."
     return "Repository state changed. Blueprint review may be needed."
+
+
+def _why_matters_for_reason(reason: str) -> str:
+    if reason == "component_code_changed":
+        return "Implementation moved without a matching blueprint update, so the documented source of truth may mislead reviewers."
+    if reason == "readme_changed":
+        return "README changes often describe project behavior or setup and can diverge from current-state blueprints."
+    if reason == "todo_changed":
+        return "Planning notes changed and roadmap blueprints may no longer describe the intended direction."
+    if reason == "route_changed":
+        return "Route changes can affect API architecture, dashboard contracts, and manual verification paths."
+    if reason == "api_changed_without_manual_checklist_update":
+        return "API route behavior changed without evidence that the manual QA checklist was refreshed."
+    if reason == "runbook_gap":
+        return "Cartographer operating routes changed and the runbook may no longer guide manual checks correctly."
+    if reason == "qa_gap":
+        return "Dashboard UI changed without a matching manual QA note, so mobile or interaction regressions may be missed."
+    if reason == "safety_gap":
+        return "Safety-sensitive code changed without a matching safety test update, increasing governance risk."
+    if reason == "scout_doc_drift":
+        return "Scout behavior changed and related docs or system blueprints may now be stale."
+    return "The changed files may have made Cartographer's project documentation stale."
+
+
+def _proposed_next_action(reason: str) -> str:
+    if reason in {"api_changed_without_manual_checklist_update", "runbook_gap", "qa_gap"}:
+        return "Review the affected runbook and draft a doc-only update if the checklist is stale."
+    if reason == "safety_gap":
+        return "Review safety tests before approving any related commit proposal."
+    return "Review affected blueprints and draft a doc-only update if the documentation is stale."
 
 
 def _evidence_for_finding(

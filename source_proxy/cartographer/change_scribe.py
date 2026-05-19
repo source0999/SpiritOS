@@ -4,8 +4,14 @@ from pathlib import Path
 
 from source_proxy.cartographer.component_mapper import map_paths
 from source_proxy.cartographer.drift import detect_blueprint_drift
-from source_proxy.cartographer.git_status import read_git_statuses
-from source_proxy.cartographer.models import ChangeScribeSummary, GitStatus
+from source_proxy.cartographer.git_status import read_git_status_for_project, read_git_statuses
+from source_proxy.cartographer.models import (
+    ChangeScribeFileExplanation,
+    ChangeScribeSummary,
+    ComponentMapping,
+    GitStatus,
+    UnmappedPath,
+)
 
 
 def summarize_changes() -> list[ChangeScribeSummary]:
@@ -13,12 +19,18 @@ def summarize_changes() -> list[ChangeScribeSummary]:
     for finding in detect_blueprint_drift():
         drift_by_project[finding.project_id] = True
 
+    statuses = read_git_statuses()
+    if not statuses:
+        cwd = Path.cwd()
+        if (cwd / ".git").exists():
+            statuses = [read_git_status_for_project(project_id=cwd.name.lower(), root=cwd)]
+
     return [
         _summary_for_status(
             git_status,
             drift_detected=drift_by_project.get(git_status.project_id or "unknown", False),
         )
-        for git_status in read_git_statuses()
+        for git_status in statuses
         if git_status.available
     ]
 
@@ -32,7 +44,13 @@ def _summary_for_status(
     changed_files = [_normalize_repo_path(path) for path in git_status.changed_files]
     code_files = [path for path in changed_files if _is_code_file(path)]
     blueprint_files = [path for path in changed_files if path.startswith("_blueprints/")]
-    components = [component.component_id for component in map_paths(changed_files)[0]]
+    mapped_components, unmapped_paths = map_paths(changed_files)
+    components = [component.component_id for component in mapped_components]
+    file_explanations = _file_explanations(
+        changed_files=changed_files,
+        mapped_components=mapped_components,
+        unmapped_paths=unmapped_paths,
+    )
     component_label = _component_label(components)
     blueprint_update_detected = bool(blueprint_files)
 
@@ -62,6 +80,7 @@ def _summary_for_status(
         commit_state="dirty" if git_status.dirty else "clean",
         components=components,
         changed_files=changed_files,
+        file_explanations=file_explanations,
         evidence=evidence,
         recommended_actions=recommended_actions,
         uncertain_claims=[
@@ -126,6 +145,62 @@ def _recommended_actions(
     if not actions:
         actions.append("no action needed")
     return actions
+
+
+def _file_explanations(
+    *,
+    changed_files: list[str],
+    mapped_components: list[ComponentMapping],
+    unmapped_paths: list[UnmappedPath],
+) -> list[ChangeScribeFileExplanation]:
+    component_by_path: dict[str, ComponentMapping] = {}
+    for component in mapped_components:
+        for path in component.matched_paths:
+            component_by_path[path] = component
+    unmapped_by_path = {item.path: item for item in unmapped_paths}
+
+    explanations: list[ChangeScribeFileExplanation] = []
+    for path in changed_files:
+        component = component_by_path.get(path)
+        if component:
+            category = component.component_id
+            explanation = _mapped_file_explanation(path=path, component=component)
+            review_required = component.risk in {"high", "blocked", "unknown"}
+        else:
+            unmapped = unmapped_by_path.get(path)
+            category = "unknown"
+            explanation = (
+                "Unknown file changed; manual review required before treating it as safe."
+            )
+            review_required = True
+            if unmapped and unmapped.risk == "blocked":
+                category = "blocked"
+                explanation = "Blocked or sensitive-shaped path changed; manual safety review required."
+        explanations.append(
+            ChangeScribeFileExplanation(
+                path=path,
+                category=category,
+                explanation=explanation,
+                review_required=review_required,
+            )
+        )
+    return explanations
+
+
+def _mapped_file_explanation(*, path: str, component: ComponentMapping) -> str:
+    if path.startswith("scout/soak-logs/"):
+        return "Scout soak log snapshot changed, likely from a Scout soak or closeout run."
+    if path.startswith("source_proxy/cartographer/soak-logs/"):
+        return "Cartographer soak log snapshot changed, likely from a Cartographer verification run."
+    if path.startswith("source_proxy/cartographer/"):
+        return "Cartographer code changed, likely affecting autonomy or reporting logic."
+    if path.startswith("source_proxy/tests/") or "/__tests__/" in path or path.endswith(".test.ts"):
+        return f"{component.label} test changed."
+    if path.startswith("_blueprints/"):
+        return "Blueprint documentation changed."
+    if path.startswith("docs/") or path.lower().endswith(".md"):
+        return f"{component.label} documentation changed."
+    return f"{component.label} file changed."
 
 
 def _component_label(components: list[str]) -> str:
