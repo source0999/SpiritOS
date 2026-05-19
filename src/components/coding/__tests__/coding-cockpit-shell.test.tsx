@@ -90,10 +90,12 @@ describe("CodingCockpitShell", () => {
     expect(screen.getByText(/No files will be changed during preview/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Preview safely" }));
     expect(await screen.findByText(/Preview ready. No files changed yet/)).toBeInTheDocument();
-    expect(screen.getByText(/Human approval is required before apply/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Approval is required before apply/).length).toBeGreaterThan(0);
     expect(screen.getByText("approval available")).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: "Approve" }).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/No files changed yet/).length).toBeGreaterThan(0);
+    expect(screen.queryByRole("button", { name: "Approve" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /apply/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /verify/i })).not.toBeInTheDocument();
     expect(screen.getAllByText("docs/phase-8-manual-check.md").length).toBeGreaterThan(0);
     await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(2));
     expect(globalThis.fetch).toHaveBeenCalledWith(
@@ -106,7 +108,7 @@ describe("CodingCockpitShell", () => {
     );
   });
 
-  it("separates approve from apply and executes approved diff through the protected route", async () => {
+  it("stops at preview wiring without approve, apply, or verify controls", async () => {
     vi.spyOn(globalThis, "fetch")
       .mockResolvedValueOnce(
         new Response(
@@ -139,29 +141,6 @@ describe("CodingCockpitShell", () => {
           }),
           { status: 200 },
         ),
-      )
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ task: { id: "task-123" } }), { status: 200 }),
-      )
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({
-            changed_files: [{ path: "docs/phase-8-manual-check.md" }],
-            ok: true,
-            status: "applied",
-          }),
-          { status: 200 },
-        ),
-      )
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({
-            message: "Verification complete.",
-            status: "verified",
-            task: { id: "task-123", status: "verified" },
-          }),
-          { status: 200 },
-        ),
       );
 
     render(<CodingCockpitShell />);
@@ -178,46 +157,13 @@ describe("CodingCockpitShell", () => {
     fireEvent.click(screen.getByRole("button", { name: "Preview safely" }));
 
     expect(await screen.findByText(/Preview ready. No files changed yet/)).toBeInTheDocument();
-    fireEvent.click(screen.getAllByRole("button", { name: "Approve" })[0]);
-    expect(screen.getByText(/Approved, not applied/)).toBeInTheDocument();
+    expect(screen.getByText(/approval available/)).toBeInTheDocument();
+    expect(screen.getByText(/Apply controls are intentionally unavailable/)).toBeInTheDocument();
     expect(globalThis.fetch).toHaveBeenCalledTimes(2);
-
-    fireEvent.click(screen.getByRole("button", { name: "Apply approved diff" }));
-    expect((await screen.findAllByText(/Applied. Verification required/)).length).toBeGreaterThan(0);
-    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(4));
-    expect(globalThis.fetch).toHaveBeenNthCalledWith(
-      3,
-      "/v1/tasks/long-running",
-      expect.objectContaining({ method: "POST" }),
-    );
-    expect(globalThis.fetch).toHaveBeenNthCalledWith(
-      4,
-      "/v1/actions/execute-approved",
-      expect.objectContaining({
-        body: expect.stringContaining('"approved":true'),
-        method: "POST",
-      }),
-    );
-
-    fireEvent.click(screen.getByRole("button", { name: "Mark verification complete" }));
-    expect((await screen.findAllByText(/Verification complete/)).length).toBeGreaterThan(0);
-    expect(screen.getByText("verified")).toBeInTheDocument();
-    expect(screen.getByText("Task Receipt")).toBeInTheDocument();
-    expect(screen.getByText(/Nothing has been committed or pushed/)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Task evidence" })).toHaveAttribute(
-      "href",
-      "/proxy-backend",
-    );
-    expect(screen.getByText(/Commit and push require separate approval/)).toBeInTheDocument();
-    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(5));
-    expect(globalThis.fetch).toHaveBeenNthCalledWith(
-      5,
-      "/v1/tasks/long-running/task-123/verify",
-      expect.objectContaining({
-        body: expect.stringContaining("confirm_no_unintended_files"),
-        method: "POST",
-      }),
-    );
+    expect(screen.queryByRole("button", { name: "Approve" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /apply/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /verify/i })).not.toBeInTheDocument();
+    expect(screen.queryByText("Task Receipt")).not.toBeInTheDocument();
   });
 
   it("blocks protected targets in the composer UI", () => {
