@@ -738,8 +738,8 @@ Manual Playwright commands for desktop/iPhone/Android/tablet.
 
 Files likely changed:
 
-- `playwright.config.ts` if existing
-- `tests/e2e/coding-ui.spec.ts`
+- `playwright.config.mjs` if no config exists
+- `tests/e2e/coding-ui.spec.mjs`
 - do not add heavy dependency if Playwright is not installed unless approved
 
 What to implement:
@@ -772,10 +772,10 @@ git diff --check
 Manual Playwright commands:
 
 ```bash
-npx playwright test tests/e2e/coding-ui.spec.ts --project=chromium
-npx playwright test tests/e2e/coding-ui.spec.ts --project="Mobile Safari"
-npx playwright test tests/e2e/coding-ui.spec.ts --project="Pixel 5"
-npx playwright test tests/e2e/coding-ui.spec.ts --project="iPad"
+npx playwright test tests/e2e/coding-ui.spec.mjs --project=chromium
+npx playwright test tests/e2e/coding-ui.spec.mjs --project="Mobile Safari"
+npx playwright test tests/e2e/coding-ui.spec.mjs --project="Pixel 5"
+npx playwright test tests/e2e/coding-ui.spec.mjs --project="iPad"
 ```
 
 Expected Playwright output:
@@ -785,6 +785,7 @@ Expected Playwright output:
 - Pixel emulation passes
 - iPad/tablet emulation passes
 - failures include screenshot/trace path if enabled
+- if Playwright is not installed locally, `npx --no-install playwright test tests/e2e/coding-ui.spec.mjs --project=chromium` reports the missing package and no browser validation has run yet
 
 Manual browser checks:
 
