@@ -854,15 +854,15 @@ function importReceiptPreviewRows(
   receipt: ScoutImportReceiptPreview,
 ): Array<[string, string]> {
   const rows: Array<[string, string | null | undefined]> = [
-    ["Receipt Event", receipt.event],
-    ["Imported", boolLabel(receipt.imported)],
-    ["Applied", boolLabel(receipt.applied)],
+    ["Receipt Preview Event", receipt.event],
+    ["Imported In Dry Run", boolLabel(receipt.imported)],
+    ["Applied In Dry Run", boolLabel(receipt.applied)],
     ["Approved Proxy Action", boolLabel(receipt.approved_proxy_action)],
-    ["Append-Only Evidence", boolLabel(receipt.writes?.append_only_evidence)],
+    ["Append-Only Evidence Write", boolLabel(receipt.writes?.append_only_evidence)],
     ["Proxy Memory Write", boolLabel(receipt.writes?.proxy_memory)],
     ["Coding Context Write", boolLabel(receipt.writes?.coding_context)],
     ["Active Context Write", boolLabel(receipt.writes?.active_context)],
-    ["Rollback Tombstone", receipt.rollback?.tombstone_event],
+    ["Rollback Tombstone Preview", receipt.rollback?.tombstone_event],
     ["Delete Allowed", boolLabel(receipt.rollback?.delete_allowed)],
   ];
   return rows.filter((row): row is [string, string] => Boolean(row[1]));
@@ -1058,7 +1058,6 @@ function ScoutSourceCandidateCards({
   selectedCandidateIds,
   onApprove,
   onReject,
-  onImportDryRun,
   onBlock,
   onToggleBatchCandidate,
 }: {
@@ -1751,7 +1750,10 @@ export function ScoutIntelligenceCenterPanel({
           body && typeof body === "object" && "detail" in body && typeof body.detail === "string"
             ? body.detail
             : "dry-run blocked";
-        setActionMessage(`Import dry run blocked: ${detail}. No proxy memory or coding context was written.`);
+        setActionMessage(
+          `Import dry run blocked: ${detail}. Scout remains dry-run-only. ` +
+            `No proxy intake call, proxy memory write, coding context write, or promotion finalization occurred.`,
+        );
         return;
       }
       const receipt = receiptPreviewFromBody(body);

@@ -1730,6 +1730,26 @@ def _run_scout_v0_5_closeout_profile(
         "head_unchanged": not head_changed,
     }
     result = "pass" if all(checks.values()) else "fail"
+    closeout_summary = {
+        "version": "scout_v0_6",
+        "mode": "dry_run_only",
+        "manual_controlled": True,
+        "ready_for_next_increment": result == "pass",
+        "parked_dry_run_blocked": checks["parked_dry_run_blocked"],
+        "blocked_reason": parked_body.get("detail") or parked_dry_run["error"],
+        "dry_run_endpoint_status": parked_dry_run["status"],
+        "receipt_preview_emitted": bool(parked_body.get("receipt_preview")),
+        "frontend_passed": checks["frontend_passed"],
+        "receipt_harness_passed": checks["receipt_harness_passed"],
+        "level_1_soak_passed": checks["level_1_soak_passed"],
+        "would_call_proxy_intake": False,
+        "would_write_proxy_memory": False,
+        "would_write_coding_context": False,
+        "would_finalize_promotion": False,
+        "proxy_memory_write_allowed": False,
+        "coding_context_write_allowed": False,
+        "promotion_finalization_allowed": False,
+    }
     return {
         "profile": PROFILE_SCOUT_V0_5_CLOSEOUT,
         "result": result,
@@ -1737,6 +1757,7 @@ def _run_scout_v0_5_closeout_profile(
         "read_only": True,
         "mutated": False,
         "checks": checks,
+        "closeout_summary": closeout_summary,
         "docs": docs,
         "frontend": {
             "command": frontend["command"],
