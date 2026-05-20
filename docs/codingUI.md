@@ -39,6 +39,44 @@ The cockpit should use readable states:
 
 Every state should make clear what happened, whether files changed, what evidence exists, and what the next safe action is.
 
+## Simplification-First Direction
+
+Default `/coding` must show one simple operator flow, not a wall of process evidence.
+
+The default screen should contain:
+
+- Task composer
+- One current state card
+- One safe next action bar
+- Diff/review summary when available
+- Collapsed evidence and receipts
+
+Each screen should answer:
+
+- What task is being worked on?
+- What state is it in?
+- What changed?
+- What can I safely do next?
+- What evidence exists if inspection is needed?
+
+Keep the Source Proxy process visible as:
+
+```text
+Draft -> Preview -> Approval -> Apply -> Verify
+```
+
+Do not add new major UI sections unless they replace or simplify an existing section. UI polish should remove competition for attention before it adds new visible structure.
+
+Collapse or hide by default:
+
+- raw Architect/Coder/Reviewer/Verifier role timeline
+- terminal/test evidence unless failed or explicitly opened
+- receipts and verbose evidence packets
+- backend route details
+- raw task internals
+
+Deep diagnostics belong in `/proxy-backend`. `/coding` may link there, but should not reproduce the diagnostic console.
+
 ## Phase UI-0: Green Baseline And Route Separation
 
 Intent:
@@ -112,14 +150,14 @@ Expected output:
 - No source files are changed by viewing or composing.
 
 Next increment title:
-UI-2: Timeline and evidence.
+UI-2: Collapsed evidence trail.
 
 ## Phase UI-2: Timeline And Evidence
 
-Status: complete in `b2cd3e0`.
+Status: superseded by simplification direction.
 
 Intent:
-Show the task lifecycle and evidence in a readable way without overwhelming the operator.
+Keep evidence available without making role/process cards compete with the main operator flow.
 
 Allowed files or likely files:
 
@@ -138,26 +176,26 @@ Forbidden actions:
 
 Manual checks:
 
-- Confirm the timeline can show Architect, Coder, Reviewer, Verifier, Approval Gate, and Apply Result.
-- Confirm the readable states render: Draft, Preview ready, Needs approval, Approved, not applied, Applied, verification required, Verified, and Blocked.
-- Confirm terminal/test evidence is summarized first with a path to full diagnostics.
-- Confirm mobile cards remain readable and do not overflow.
+- Confirm raw role timeline is collapsed under `Evidence trail`.
+- Confirm terminal/test evidence is collapsed unless failed or explicitly opened.
+- Confirm the readable state renders in one current state card.
+- Confirm a path to full diagnostics in `/proxy-backend` remains visible.
 
 Expected output:
 
-- The operator can understand task progress at a glance.
-- Evidence is visible but compressed.
-- Blocked states explain what is blocked and what safe action comes next.
+- The operator sees one main flow, not several competing process panels.
+- Evidence exists but is collapsed by default.
+- Failed evidence can surface enough detail to explain the blocker.
 
 Next increment title:
-UI-3: Diff and review pane.
+UI-3: Diff/review summary.
 
 ## Phase UI-3: Diff And Review Pane
 
-Status: in progress.
+Status: superseded by simplification direction.
 
 Intent:
-Expose the review facts that make approval safe, with a clear route to deeper diagnostics.
+Expose the review facts that make approval safe as a compact summary, not as another always-visible diagnostic pane.
 
 Allowed files or likely files:
 
@@ -175,26 +213,23 @@ Forbidden actions:
 
 Manual checks:
 
-- Confirm changed files are listed.
-- Confirm allowed files result is visible.
-- Confirm protected path result is visible.
-- Confirm target match is visible.
-- Confirm reviewer verdict and verification result are visible.
+- Confirm changed files, allowed-file result, protected-path result, target match, reviewer verdict, and verification result appear in one compact diff/review summary when preview exists.
+- Confirm raw diff and role evidence are collapsed unless explicitly opened or failed.
 - Confirm an `Open diagnostics in /proxy-backend` link is present.
 
 Expected output:
 
 - The operator can tell whether the preview is bounded and reviewable.
 - Mismatches and protected-path blocks are obvious.
-- Full diagnostic detail remains one click away.
+- Full diagnostic detail remains one click away instead of always visible.
 
 Next increment title:
-UI-4: Approval/action bar.
+UI-4: Simplify default cockpit flow.
 
 ## Phase UI-4: Approval/Action Bar
 
 Intent:
-Make legal actions visible at the right time and keep preview, approval, apply, and verification visually separate.
+Replace competing visible panels with one default operator flow: task composer, current state card, safe next action bar, compact diff/review summary, and collapsed evidence trail.
 
 Allowed files or likely files:
 
@@ -215,6 +250,8 @@ Forbidden actions:
 
 Manual checks:
 
+- Confirm the default `/coding` view does not show role cards, terminal evidence, receipts, or raw backend details as always-visible panels.
+- Confirm the Source Proxy process remains clear: Draft -> Preview -> Approval -> Apply -> Verify.
 - Confirm Preview appears for draft work only when required fields are valid.
 - Confirm Approve appears only when preview gates pass and approval is legal.
 - Confirm Apply appears only after approval and uses existing approval binding.
@@ -223,12 +260,13 @@ Manual checks:
 
 Expected output:
 
+- `/coding` is simpler than before this increment.
 - Preview, approve, apply, and verify are distinct.
 - Illegal actions are absent or disabled with an explanation.
 - Apply never implies commit; verify never implies push.
 
 Next increment title:
-UI-5: Mobile/manual remote checks.
+UI-5: Mobile/manual remote checks after simplification.
 
 ## Phase UI-5: Mobile/Manual Remote Checks
 
