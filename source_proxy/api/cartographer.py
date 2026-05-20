@@ -79,6 +79,7 @@ from source_proxy.cartographer.service import (
     build_cartographer_v1_readiness,
     apply_cartographer_clutter_proposal,
     block_cartographer_level_3_commit_execution,
+    block_cartographer_level_4_push_execution,
     run_cartographer_docs_autopilot_apply,
     run_cartographer_level_2_docs_apply,
     write_cartographer_starter_blueprints,
@@ -152,6 +153,11 @@ class CartographerLevel4PushQueueApprovalPreviewRequest(BaseModel):
     branch: str | None = Field(default=None, max_length=240)
     upstream: str | None = Field(default=None, max_length=240)
     checks: list[dict[str, Any]] = Field(default_factory=list, max_length=50)
+
+
+class CartographerLevel4PushExecutionRequest(BaseModel):
+    approval_id: str | None = Field(default=None, max_length=160)
+    approved_by: str | None = Field(default=None, max_length=120)
 
 
 @router.get("/status")
@@ -503,6 +509,18 @@ async def cartographer_level_4_push_queue_approval_preview(
         branch=request.branch,
         upstream=request.upstream,
         checks=request.checks,
+    )
+
+
+@router.post("/level-4-push-queue-proposals/{proposal_id}/push")
+async def cartographer_level_4_push_execution_hard_block(
+    proposal_id: str,
+    request: CartographerLevel4PushExecutionRequest,
+) -> dict[str, Any]:
+    return block_cartographer_level_4_push_execution(
+        proposal_id=proposal_id,
+        approval_id=request.approval_id,
+        approved_by=request.approved_by,
     )
 
 
