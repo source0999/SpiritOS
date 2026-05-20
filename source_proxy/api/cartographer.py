@@ -67,6 +67,9 @@ from source_proxy.cartographer.service import (
     build_cartographer_level_9_stale_worker_closeout_packet,
     build_cartographer_level_9_coordination_dashboard,
     build_cartographer_level_10_project_health_timeline,
+    build_cartographer_level_10_closeout_packet_generator,
+    build_cartographer_level_10_run_history_evidence_browser,
+    build_cartographer_level_10_scout_blueprint_handoff_preview,
     build_cartographer_level_8_receipt_journal,
     build_cartographer_level_8_step_approval_preview,
     build_cartographer_level_8_workflow_run_card,
@@ -361,6 +364,21 @@ async def cartographer_level_9_coordination_dashboard() -> dict[str, Any]:
 @router.get("/level-10-project-health-timeline")
 async def cartographer_level_10_project_health_timeline() -> dict[str, Any]:
     return build_cartographer_level_10_project_health_timeline()
+
+
+@router.get("/level-10-closeout-packets")
+async def cartographer_level_10_closeout_packets() -> dict[str, Any]:
+    return build_cartographer_level_10_closeout_packet_generator()
+
+
+@router.get("/level-10-run-history-evidence")
+async def cartographer_level_10_run_history_evidence() -> dict[str, Any]:
+    return build_cartographer_level_10_run_history_evidence_browser()
+
+
+@router.get("/level-10-scout-blueprint-handoff")
+async def cartographer_level_10_scout_blueprint_handoff() -> dict[str, Any]:
+    return build_cartographer_level_10_scout_blueprint_handoff_preview()
 
 
 @router.get("/project-health")
