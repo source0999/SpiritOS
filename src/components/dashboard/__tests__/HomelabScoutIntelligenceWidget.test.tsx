@@ -12,6 +12,11 @@ import type {
   ScoutSourceCandidates,
 } from "@/lib/scout-overview";
 
+type ImportDryRunMock = {
+  status?: number;
+  body?: unknown;
+};
+
 const origFetch = globalThis.fetch;
 
 afterEach(() => {
@@ -186,39 +191,43 @@ function mockScoutFetch(
       },
     ],
   },
+  importDryRun: ImportDryRunMock = {},
 ) {
   globalThis.fetch = vi.fn((input: RequestInfo | URL) => {
     const url = String(input);
     if (url.includes("/api/scout/promotions/import-dry-run")) {
+      const status = importDryRun.status ?? 200;
       return Promise.resolve(
         new Response(
-          JSON.stringify({
-            dry_run: true,
-            import_ready: true,
-            read_only: true,
-            mutation_allowed: false,
-            would_call_proxy_intake: false,
-            would_write_proxy_memory: false,
-            would_write_coding_context: false,
-            would_finalize_promotion: false,
-            receipt_preview: {
-              event: "scout_manual_import_receipt_preview",
-              imported: false,
-              applied: false,
-              approved_proxy_action: false,
-              writes: {
-                append_only_evidence: false,
-                proxy_memory: false,
-                coding_context: false,
-                active_context: false,
-              },
-              rollback: {
-                tombstone_event: "scout_manual_import_tombstone",
-                delete_allowed: false,
+          JSON.stringify(
+            importDryRun.body ?? {
+              dry_run: true,
+              import_ready: true,
+              read_only: true,
+              mutation_allowed: false,
+              would_call_proxy_intake: false,
+              would_write_proxy_memory: false,
+              would_write_coding_context: false,
+              would_finalize_promotion: false,
+              receipt_preview: {
+                event: "scout_manual_import_receipt_preview",
+                imported: false,
+                applied: false,
+                approved_proxy_action: false,
+                writes: {
+                  append_only_evidence: false,
+                  proxy_memory: false,
+                  coding_context: false,
+                  active_context: false,
+                },
+                rollback: {
+                  tombstone_event: "scout_manual_import_tombstone",
+                  delete_allowed: false,
+                },
               },
             },
-          }),
-          { status: 200 },
+          ),
+          { status },
         ),
       );
     }
@@ -566,12 +575,38 @@ describe("HomelabScoutIntelligenceWidget", () => {
     expect(await screen.findByText(/Import dry run passed/)).toBeInTheDocument();
     expect(screen.getByText(/Proxy memory write: false/)).toBeInTheDocument();
     const receipt = within(screen.getByLabelText("Scout import receipt preview"));
-    expect(receipt.getByText("Receipt Event")).toBeInTheDocument();
+    expect(receipt.getByText("Receipt Preview Event")).toBeInTheDocument();
     expect(receipt.getByText("scout_manual_import_receipt_preview")).toBeInTheDocument();
+    expect(receipt.getByText("Imported In Dry Run")).toBeInTheDocument();
+    expect(receipt.getByText("Applied In Dry Run")).toBeInTheDocument();
     expect(receipt.getByText("Proxy Memory Write")).toBeInTheDocument();
+    expect(receipt.getByText("Coding Context Write")).toBeInTheDocument();
     expect(receipt.getAllByText("false").length).toBeGreaterThan(0);
-    expect(receipt.getByText("Rollback Tombstone")).toBeInTheDocument();
+    expect(receipt.getByText("Rollback Tombstone Preview")).toBeInTheDocument();
     expect(receipt.getByText("scout_manual_import_tombstone")).toBeInTheDocument();
+    expect(globalThis.fetch).not.toHaveBeenCalledWith(
+      "/api/scout/promotions/finalize",
+      expect.anything(),
+    );
+  });
+
+  it("explains blocked import dry run without overclaiming writes", async () => {
+    mockScoutFetch(overview, undefined, undefined, undefined, {
+      status: 409,
+      body: { detail: "SCOUT_PROMOTION_SIGNING_KEY is required" },
+    });
+
+    render(<ScoutIntelligenceCenter />);
+
+    fireEvent.click(await screen.findByRole("tab", { name: "Promoted" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Dry Run Import" }));
+
+    expect(
+      await screen.findByText(
+        /Scout remains dry-run-only\. No proxy intake call, proxy memory write, coding context write, or promotion finalization occurred\./,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByLabelText("Scout import receipt preview")).not.toBeInTheDocument();
     expect(globalThis.fetch).not.toHaveBeenCalledWith(
       "/api/scout/promotions/finalize",
       expect.anything(),

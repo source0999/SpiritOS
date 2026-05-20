@@ -1041,6 +1041,21 @@ class ProxyRunnerTests(unittest.TestCase):
         self.assertTrue(payload["checks"]["no_promotion_finalization"])
         self.assertTrue(payload["checks"]["no_unexpected_file_changes"])
         self.assertFalse(payload["file_change_verdict"]["head_changed"])
+        summary = payload["closeout_summary"]
+        self.assertEqual(summary["mode"], "dry_run_only")
+        self.assertTrue(summary["manual_controlled"])
+        self.assertTrue(summary["ready_for_next_increment"])
+        self.assertTrue(summary["parked_dry_run_blocked"])
+        self.assertEqual(summary["blocked_reason"], "SCOUT_PROMOTION_SIGNING_KEY is required")
+        self.assertEqual(summary["dry_run_endpoint_status"], 409)
+        self.assertFalse(summary["receipt_preview_emitted"])
+        self.assertFalse(summary["would_call_proxy_intake"])
+        self.assertFalse(summary["would_write_proxy_memory"])
+        self.assertFalse(summary["would_write_coding_context"])
+        self.assertFalse(summary["would_finalize_promotion"])
+        self.assertFalse(summary["proxy_memory_write_allowed"])
+        self.assertFalse(summary["coding_context_write_allowed"])
+        self.assertFalse(summary["promotion_finalization_allowed"])
 
     def test_dependency_environment_checks_report_required_baseline(self) -> None:
         dependency_payload = {"result": "pass", "blockers": [], "warnings": []}
