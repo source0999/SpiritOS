@@ -135,6 +135,67 @@ def build_cartographer_project_candidates() -> dict[str, Any]:
     }
 
 
+def build_cartographer_level_6_project_registry_hardening() -> dict[str, Any]:
+    configured = [to_jsonable(root) for root in configured_project_roots()]
+    blocked = [to_jsonable(root) for root in blocked_project_roots()]
+    projects = [to_jsonable(project) for project in discover_projects()]
+    candidates = [to_jsonable(candidate) for candidate in discover_project_candidates()]
+    configured_root_checks = [_level_6_configured_root_check(root) for root in configured]
+    registry_entries = [
+        _level_6_project_registry_entry(project)
+        for project in projects
+    ]
+    registry_blockers = _level_6_registry_blockers(
+        configured_root_checks=configured_root_checks,
+        registry_entries=registry_entries,
+        blocked_roots=blocked,
+    )
+    return {
+        "status": "observing",
+        "level": 6,
+        "mode": "project_registry_hardening",
+        "contract_version": "cartographer.level_6.project_registry_hardening.v1",
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "cross_repo_mutation_allowed": False,
+        "project_enrollment_allowed": False,
+        "auto_enrollment_allowed": False,
+        "commit_allowed": False,
+        "push_allowed": False,
+        "branch_creation_allowed": False,
+        "worktree_creation_allowed": False,
+        "cleanup_allowed": False,
+        "merge_allowed": False,
+        "stash_allowed": False,
+        "configured_roots": configured_root_checks,
+        "blocked_roots": blocked,
+        "registry_entries": registry_entries,
+        "project_candidates": candidates,
+        "project_count": len(registry_entries),
+        "candidate_count": len(candidates),
+        "blockers": registry_blockers,
+        "forbidden_actions": [
+            "cross-repo mutation",
+            "commits",
+            "pushes",
+            "branch creation",
+            "worktree creation",
+            "cleanup",
+            "merge",
+            "stash",
+            "automatic project enrollment",
+            "promotion beyond Level 6.1",
+        ],
+        "manual_checks": [
+            "git status -sb",
+            'PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -k "level_6_project_registry"',
+        ],
+        "next_step": "Level 6.2 may add a cross-project status board only after Britton approves it.",
+        "safety": cartographer_safety_manifest(),
+    }
+
+
 def build_cartographer_project_health() -> dict[str, Any]:
     projects = build_project_health()
     codex_evidence = build_codex_evidence_rollup()
@@ -842,6 +903,266 @@ def build_cartographer_level_5_parallel_work_risk_model() -> dict[str, Any]:
             'PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -k "level_5_parallel_work_risk"',
         ],
         "next_step": "Level 5.2 may refresh branch recommendations only after Britton approves it.",
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_level_5_branch_recommendation_refresh() -> dict[str, Any]:
+    risk_model = build_cartographer_level_5_parallel_work_risk_model()
+    base_payload = build_cartographer_branch_recommendations()
+    recommendations = [
+        _level_5_branch_recommendation(
+            recommendation,
+            risk_model=risk_model,
+        )
+        for recommendation in base_payload["recommendations"]
+    ]
+    return {
+        "status": "observing",
+        "level": 5,
+        "mode": "branch_recommendation_refresh",
+        "contract_version": "cartographer.level_5.branch_recommendation_refresh.v1",
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "branch_creation_allowed": False,
+        "worktree_creation_allowed": False,
+        "checkout_allowed": False,
+        "merge_allowed": False,
+        "cleanup_allowed": False,
+        "stash_allowed": False,
+        "push_allowed": False,
+        "recommendation_count": len(recommendations),
+        "recommendations": recommendations,
+        "risk_model": risk_model,
+        "required_approval_fields": [
+            "recommendation_id",
+            "approval_id",
+            "approved_by",
+            "exact_branch_name",
+            "base_branch",
+            "base_head",
+            "owner",
+            "purpose",
+            "command_preview",
+        ],
+        "forbidden_actions": [
+            "branch creation",
+            "checkout",
+            "merge",
+            "push",
+            "cleanup",
+            "stash",
+            "executor behavior",
+            "promotion beyond Level 5.2",
+        ],
+        "manual_checks": [
+            "git status -sb",
+            "git branch --show-current",
+            'PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -k "level_5_branch_recommendation"',
+        ],
+        "next_step": "Level 5.3 may recommend worktrees only after Britton approves it.",
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_level_5_worktree_recommendation_contract() -> dict[str, Any]:
+    branch_payload = build_cartographer_level_5_branch_recommendation_refresh()
+    recommendations = [
+        _level_5_worktree_recommendation(recommendation)
+        for recommendation in branch_payload["recommendations"]
+    ]
+    return {
+        "status": "observing",
+        "level": 5,
+        "mode": "worktree_recommendation_contract",
+        "contract_version": "cartographer.level_5.worktree_recommendation_contract.v1",
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "worktree_creation_allowed": False,
+        "branch_creation_allowed": False,
+        "checkout_allowed": False,
+        "merge_allowed": False,
+        "cleanup_allowed": False,
+        "stash_allowed": False,
+        "push_allowed": False,
+        "recommendation_count": len(recommendations),
+        "recommendations": recommendations,
+        "branch_recommendation_refresh": branch_payload,
+        "required_approval_fields": [
+            "recommendation_id",
+            "approval_id",
+            "approved_by",
+            "exact_worktree_path",
+            "exact_branch_name",
+            "base_head",
+            "owner",
+            "purpose",
+            "command_preview",
+        ],
+        "forbidden_actions": [
+            "worktree creation",
+            "branch creation",
+            "checkout",
+            "cleanup",
+            "stash",
+            "merge",
+            "push",
+            "executor behavior",
+            "promotion beyond Level 5.3",
+        ],
+        "manual_checks": [
+            "git status -sb",
+            "git worktree list",
+            'PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -k "level_5_worktree_recommendation"',
+        ],
+        "next_step": "Level 5.4 may add an approval preview gate only after Britton approves it.",
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_level_5_branch_worktree_approval_preview(
+    *,
+    recommendation_id: str,
+    approval_id: str | None,
+    approved_by: str | None,
+    exact_worktree_path: str | None,
+    exact_branch_name: str | None,
+    base_head: str | None,
+    owner: str | None,
+    purpose: str | None,
+    command_preview: str | None,
+) -> dict[str, Any]:
+    recommendations_payload = build_cartographer_level_5_worktree_recommendation_contract()
+    recommendation = next(
+        (
+            item
+            for item in recommendations_payload["recommendations"]
+            if item["recommendation_id"] == recommendation_id
+        ),
+        None,
+    )
+    blockers: list[str] = []
+    if recommendation is None:
+        blockers.append("recommendation_not_found")
+    if not approval_id:
+        blockers.append("approval_id_required")
+    if not approved_by:
+        blockers.append("approved_by_required")
+    if str(approved_by or "").strip().lower() == "cartographer":
+        blockers.append("cartographer_self_approval_blocked")
+    if not owner:
+        blockers.append("owner_required")
+    if not purpose:
+        blockers.append("purpose_required")
+    if recommendation is not None and exact_worktree_path != recommendation.get("target_path"):
+        blockers.append("exact_worktree_path_mismatch")
+    if recommendation is not None and exact_branch_name != recommendation.get("branch_proposal"):
+        blockers.append("exact_branch_name_mismatch")
+    if recommendation is not None and base_head != recommendation.get("base_head"):
+        blockers.append("base_head_mismatch")
+    if recommendation is not None and command_preview != recommendation.get("command_preview"):
+        blockers.append("command_preview_mismatch")
+    unique_blockers = list(dict.fromkeys(blockers))
+    approval_validated = recommendation is not None and not unique_blockers
+    return {
+        "status": "approval_preview",
+        "level": 5,
+        "mode": "branch_worktree_approval_gate_preview",
+        "approval_version": "cartographer.level_5.branch_worktree_approval_preview.v1",
+        "recommendation_id": recommendation_id,
+        "recommendation_found": recommendation is not None,
+        "approval_required": True,
+        "approval_id": approval_id,
+        "approved_by": approved_by,
+        "owner": owner,
+        "purpose": purpose,
+        "approval_validated": approval_validated,
+        "exact_worktree_path": exact_worktree_path,
+        "expected_worktree_path": recommendation.get("target_path") if recommendation else None,
+        "exact_branch_name": exact_branch_name,
+        "expected_branch_name": recommendation.get("branch_proposal") if recommendation else None,
+        "base_head": base_head,
+        "expected_base_head": recommendation.get("base_head") if recommendation else None,
+        "command_preview": command_preview,
+        "expected_command_preview": recommendation.get("command_preview") if recommendation else None,
+        "blockers": unique_blockers,
+        "execution_blockers": ["branch_worktree_creation_not_implemented"],
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "worktree_creation_allowed": False,
+        "worktree_created": False,
+        "branch_creation_allowed": False,
+        "branch_created": False,
+        "checkout_allowed": False,
+        "checkout_performed": False,
+        "merge_allowed": False,
+        "cleanup_allowed": False,
+        "stash_allowed": False,
+        "push_allowed": False,
+        "recommendation": recommendation,
+        "next_step": (
+            "Approval metadata validates, but branch and worktree creation remain disabled."
+            if approval_validated
+            else "Resolve approval preview blockers before requesting future branch or worktree creation."
+        ),
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_level_5_multi_worker_safety_smoke() -> dict[str, Any]:
+    risk_model = build_cartographer_level_5_parallel_work_risk_model()
+    branch_payload = build_cartographer_level_5_branch_recommendation_refresh()
+    worktree_payload = build_cartographer_level_5_worktree_recommendation_contract()
+    worker_previews = _level_5_worker_assignment_previews(
+        risk_model=risk_model,
+        worktree_payload=worktree_payload,
+    )
+    collision_count = sum(
+        1
+        for preview in worker_previews
+        if preview["collision_status"] != "clear"
+    )
+    return {
+        "status": "observing",
+        "level": 5,
+        "mode": "multi_codex_worker_safety_smoke",
+        "smoke_version": "cartographer.level_5.multi_worker_safety_smoke.v1",
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "branch_creation_allowed": False,
+        "worktree_creation_allowed": False,
+        "checkout_allowed": False,
+        "merge_allowed": False,
+        "cleanup_allowed": False,
+        "stash_allowed": False,
+        "push_allowed": False,
+        "worker_assignment_count": len(worker_previews),
+        "collision_count": collision_count,
+        "worker_assignments": worker_previews,
+        "risk_model": risk_model,
+        "branch_recommendation_refresh": branch_payload,
+        "worktree_recommendation_contract": worktree_payload,
+        "forbidden_actions": [
+            "branch creation",
+            "worktree creation",
+            "checkout",
+            "merge",
+            "cleanup",
+            "stash",
+            "push",
+            "autonomous task reassignment",
+            "promotion beyond Level 5.5",
+        ],
+        "manual_checks": [
+            "git status -sb",
+            "git worktree list",
+            'PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -k "level_5_multi_worker_safety"',
+        ],
+        "next_step": "Level 6.1 may harden the project registry only after Britton approves it.",
         "safety": cartographer_safety_manifest(),
     }
 
@@ -1613,6 +1934,268 @@ def _level_5_project_risk(status: Any) -> dict[str, Any]:
         ),
         "actions_taken": False,
     }
+
+
+def _level_6_configured_root_check(root: dict[str, Any]) -> dict[str, Any]:
+    path = str(root.get("path") or "")
+    exists = Path(path).exists() if path else False
+    is_dir = Path(path).is_dir() if path else False
+    blockers: list[str] = []
+    if not path:
+        blockers.append("configured_root_path_missing")
+    elif not exists:
+        blockers.append("configured_root_missing")
+    elif not is_dir:
+        blockers.append("configured_root_not_directory")
+    return {
+        "path": path,
+        "status": root.get("status"),
+        "source": root.get("source"),
+        "reason": root.get("reason"),
+        "exists": exists,
+        "is_directory": is_dir,
+        "observation_allowed": exists and is_dir,
+        "mutation_allowed": False,
+        "blockers": blockers,
+    }
+
+
+def _level_6_project_registry_entry(project: dict[str, Any]) -> dict[str, Any]:
+    markers = list(project.get("markers", []))
+    repo_type = "git" if ".git" in markers else "filesystem"
+    root = str(project.get("root") or "")
+    path_exists = Path(root).exists() if root else False
+    return {
+        "project_id": project.get("project_id"),
+        "name": project.get("name"),
+        "root": root,
+        "owner": None,
+        "agent": None,
+        "repo_type": repo_type,
+        "markers": markers,
+        "has_blueprints": project.get("has_blueprints", False),
+        "blueprint_root": project.get("blueprint_root"),
+        "source_root": project.get("source_root"),
+        "path_exists": path_exists,
+        "observation_mode": "read_only",
+        "allowed_observation_mode": "read_only",
+        "write_policy": project.get("write_policy", "read_only"),
+        "mutation_disabled": True,
+        "cross_repo_mutation_allowed": False,
+        "commit_allowed": False,
+        "push_allowed": False,
+        "branch_creation_allowed": False,
+        "worktree_creation_allowed": False,
+        "cleanup_allowed": False,
+        "merge_allowed": False,
+        "stash_allowed": False,
+        "auto_enrollment_allowed": False,
+        "actions_taken": False,
+        "blockers": [] if path_exists else ["project_path_missing"],
+    }
+
+
+def _level_6_registry_blockers(
+    *,
+    configured_root_checks: list[dict[str, Any]],
+    registry_entries: list[dict[str, Any]],
+    blocked_roots: list[dict[str, Any]],
+) -> list[str]:
+    blockers: list[str] = []
+    if blocked_roots:
+        blockers.append("blocked_roots_present")
+    if any(root["blockers"] for root in configured_root_checks):
+        blockers.append("configured_root_blockers_present")
+    if any(entry["blockers"] for entry in registry_entries):
+        blockers.append("project_entry_blockers_present")
+    if _level_6_duplicate_values(entry.get("project_id") for entry in registry_entries):
+        blockers.append("duplicate_project_ids")
+    if _level_6_duplicate_values(entry.get("root") for entry in registry_entries):
+        blockers.append("duplicate_project_roots")
+    if any(not entry["mutation_disabled"] for entry in registry_entries):
+        blockers.append("unsafe_mutation_flag_enabled")
+    return blockers
+
+
+def _level_6_duplicate_values(values: Any) -> list[str]:
+    seen: set[str] = set()
+    duplicates: set[str] = set()
+    for value in values:
+        normalized = str(value or "")
+        if not normalized:
+            continue
+        if normalized in seen:
+            duplicates.add(normalized)
+        seen.add(normalized)
+    return sorted(duplicates)
+
+
+def _level_5_branch_recommendation(
+    recommendation: dict[str, Any],
+    *,
+    risk_model: dict[str, Any],
+) -> dict[str, Any]:
+    project = _level_5_project_for_recommendation(recommendation, risk_model)
+    risks = project.get("risks", []) if project else []
+    collision_notes = [
+        {
+            "risk_id": risk["risk_id"],
+            "severity": risk["severity"],
+            "message": risk["message"],
+            "related_files": risk.get("related_files", []),
+        }
+        for risk in risks
+    ]
+    suggested_branch = recommendation.get("suggested_branch")
+    current_branch = recommendation.get("current_branch")
+    source_head = recommendation.get("source_head")
+    return {
+        "level": 5,
+        "recommendation_version": "cartographer.level_5.branch_recommendation_refresh.v1",
+        "recommendation_id": recommendation.get("recommendation_id"),
+        "project_id": recommendation.get("project_id"),
+        "current_branch": current_branch,
+        "base_branch": current_branch,
+        "base_head": source_head,
+        "suggested_branch": suggested_branch,
+        "owner_required": True,
+        "proposed_owner": None,
+        "purpose": _level_5_branch_purpose(recommendation),
+        "reason": recommendation.get("reason"),
+        "changed_file_count": recommendation.get("changed_file_count", 0),
+        "related_files": recommendation.get("related_files", []),
+        "collision_notes": collision_notes,
+        "risk_level": project.get("risk_level", "none") if project else "unknown",
+        "approval_required": True,
+        "status": "preview_only",
+        "command_preview": f"git switch -c {suggested_branch}" if suggested_branch else "",
+        "rollback_preview": recommendation.get("rollback_command"),
+        "branch_exists": recommendation.get("branch_exists", False),
+        "branch_creation_allowed": False,
+        "worktree_creation_allowed": False,
+        "checkout_allowed": False,
+        "merge_allowed": False,
+        "push_allowed": False,
+        "cleanup_allowed": False,
+        "stash_allowed": False,
+        "actions_taken": False,
+        "forbidden_actions": [
+            "branch creation",
+            "checkout",
+            "merge",
+            "push",
+            "cleanup",
+            "stash",
+        ],
+    }
+
+
+def _level_5_project_for_recommendation(
+    recommendation: dict[str, Any],
+    risk_model: dict[str, Any],
+) -> dict[str, Any] | None:
+    project_id = recommendation.get("project_id")
+    for project in risk_model.get("projects", []):
+        if project.get("project_id") == project_id:
+            return project
+    return None
+
+
+def _level_5_branch_purpose(recommendation: dict[str, Any]) -> str:
+    branch = recommendation.get("suggested_branch") or "recommended branch"
+    changed_count = recommendation.get("changed_file_count", 0)
+    return (
+        f"Isolate {changed_count} changed file"
+        f"{'' if changed_count == 1 else 's'} on {branch} for reviewed parallel work."
+    )
+
+
+def _level_5_worktree_recommendation(recommendation: dict[str, Any]) -> dict[str, Any]:
+    branch = recommendation.get("suggested_branch") or "cartographer/work"
+    target_path = _level_5_worktree_path(recommendation)
+    base_head = recommendation.get("base_head")
+    return {
+        "level": 5,
+        "recommendation_version": "cartographer.level_5.worktree_recommendation_contract.v1",
+        "recommendation_id": f"worktree-{recommendation.get('recommendation_id')}",
+        "source_branch_recommendation_id": recommendation.get("recommendation_id"),
+        "project_id": recommendation.get("project_id"),
+        "target_path": target_path,
+        "branch_proposal": branch,
+        "base_branch": recommendation.get("base_branch"),
+        "base_head": base_head,
+        "owner_required": True,
+        "proposed_owner": None,
+        "purpose": (
+            "Isolate parallel Codex work in a separate worktree after explicit approval."
+        ),
+        "conflicting_dirty_files": recommendation.get("related_files", []),
+        "collision_notes": recommendation.get("collision_notes", []),
+        "approval_required": True,
+        "status": "preview_only",
+        "command_preview": f"git worktree add {target_path} -b {branch} {base_head or 'HEAD'}",
+        "rollback_preview": f"git worktree remove {target_path}",
+        "worktree_creation_allowed": False,
+        "branch_creation_allowed": False,
+        "checkout_allowed": False,
+        "merge_allowed": False,
+        "push_allowed": False,
+        "cleanup_allowed": False,
+        "stash_allowed": False,
+        "actions_taken": False,
+        "forbidden_actions": [
+            "worktree creation",
+            "branch creation",
+            "checkout",
+            "cleanup",
+            "stash",
+            "merge",
+            "push",
+        ],
+    }
+
+
+def _level_5_worktree_path(recommendation: dict[str, Any]) -> str:
+    project = str(recommendation.get("project_id") or "project")
+    branch = str(recommendation.get("suggested_branch") or "cartographer/work")
+    suffix = branch.replace("/", "-").replace("_", "-")
+    return f"../{project}-{suffix}"
+
+
+def _level_5_worker_assignment_previews(
+    *,
+    risk_model: dict[str, Any],
+    worktree_payload: dict[str, Any],
+) -> list[dict[str, Any]]:
+    recommendations_by_project = {
+        recommendation.get("project_id"): recommendation
+        for recommendation in worktree_payload.get("recommendations", [])
+    }
+    previews: list[dict[str, Any]] = []
+    for index, project in enumerate(risk_model.get("projects", []), start=1):
+        recommendation = recommendations_by_project.get(project.get("project_id"))
+        related_files = project.get("changed_files", [])
+        collision_status = "blocked_until_isolated" if project.get("risk_level") != "none" else "clear"
+        previews.append(
+            {
+                "worker_id": f"codex-worker-{index}",
+                "project_id": project.get("project_id"),
+                "branch": project.get("branch"),
+                "risk_level": project.get("risk_level"),
+                "collision_status": collision_status,
+                "related_files": related_files,
+                "recommended_isolation": project.get("recommended_isolation"),
+                "recommended_worktree_path": recommendation.get("target_path") if recommendation else None,
+                "recommended_branch": recommendation.get("branch_proposal") if recommendation else None,
+                "assignment_allowed_without_approval": collision_status == "clear",
+                "owner_assignment_required": project.get("owner_assignment_required", False),
+                "actions_taken": False,
+                "branch_creation_allowed": False,
+                "worktree_creation_allowed": False,
+                "checkout_allowed": False,
+            }
+        )
+    return previews
 
 
 def _level_5_risk_level(risks: list[dict[str, Any]]) -> str:

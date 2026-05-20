@@ -48,7 +48,12 @@ from source_proxy.cartographer.service import (
     build_cartographer_level_4_push_readiness_contract,
     build_cartographer_level_4_push_queue_approval_preview,
     build_cartographer_level_4_push_queue_proposal_preview,
+    build_cartographer_level_6_project_registry_hardening,
+    build_cartographer_level_5_branch_worktree_approval_preview,
+    build_cartographer_level_5_branch_recommendation_refresh,
+    build_cartographer_level_5_multi_worker_safety_smoke,
     build_cartographer_level_5_parallel_work_risk_model,
+    build_cartographer_level_5_worktree_recommendation_contract,
     build_cartographer_projects,
     build_cartographer_project_candidates,
     build_cartographer_project_health,
@@ -161,6 +166,17 @@ class CartographerLevel4PushExecutionRequest(BaseModel):
     approved_by: str | None = Field(default=None, max_length=120)
 
 
+class CartographerLevel5BranchWorktreeApprovalPreviewRequest(BaseModel):
+    approval_id: str | None = Field(default=None, max_length=160)
+    approved_by: str | None = Field(default=None, max_length=120)
+    exact_worktree_path: str | None = Field(default=None, max_length=500)
+    exact_branch_name: str | None = Field(default=None, max_length=240)
+    base_head: str | None = Field(default=None, max_length=80)
+    owner: str | None = Field(default=None, max_length=120)
+    purpose: str | None = Field(default=None, max_length=500)
+    command_preview: str | None = Field(default=None, max_length=1000)
+
+
 @router.get("/status")
 async def cartographer_status() -> dict[str, Any]:
     return build_cartographer_status()
@@ -174,6 +190,11 @@ async def cartographer_projects() -> dict[str, Any]:
 @router.get("/project-candidates")
 async def cartographer_project_candidates() -> dict[str, Any]:
     return build_cartographer_project_candidates()
+
+
+@router.get("/level-6-project-registry")
+async def cartographer_level_6_project_registry() -> dict[str, Any]:
+    return build_cartographer_level_6_project_registry_hardening()
 
 
 @router.get("/project-health")
@@ -408,6 +429,39 @@ async def cartographer_branch_recommendations() -> dict[str, Any]:
 @router.get("/level-5-parallel-work-risk")
 async def cartographer_level_5_parallel_work_risk() -> dict[str, Any]:
     return build_cartographer_level_5_parallel_work_risk_model()
+
+
+@router.get("/level-5-branch-recommendations")
+async def cartographer_level_5_branch_recommendations() -> dict[str, Any]:
+    return build_cartographer_level_5_branch_recommendation_refresh()
+
+
+@router.get("/level-5-worktree-recommendations")
+async def cartographer_level_5_worktree_recommendations() -> dict[str, Any]:
+    return build_cartographer_level_5_worktree_recommendation_contract()
+
+
+@router.post("/level-5-worktree-recommendations/{recommendation_id}/approval-preview")
+async def cartographer_level_5_branch_worktree_approval_preview(
+    recommendation_id: str,
+    request: CartographerLevel5BranchWorktreeApprovalPreviewRequest,
+) -> dict[str, Any]:
+    return build_cartographer_level_5_branch_worktree_approval_preview(
+        recommendation_id=recommendation_id,
+        approval_id=request.approval_id,
+        approved_by=request.approved_by,
+        exact_worktree_path=request.exact_worktree_path,
+        exact_branch_name=request.exact_branch_name,
+        base_head=request.base_head,
+        owner=request.owner,
+        purpose=request.purpose,
+        command_preview=request.command_preview,
+    )
+
+
+@router.get("/level-5-multi-worker-safety-smoke")
+async def cartographer_level_5_multi_worker_safety_smoke() -> dict[str, Any]:
+    return build_cartographer_level_5_multi_worker_safety_smoke()
 
 
 @router.post("/branch-recommendations/{recommendation_id}/approve")
