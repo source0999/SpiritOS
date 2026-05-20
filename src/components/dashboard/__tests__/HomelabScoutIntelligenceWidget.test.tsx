@@ -114,6 +114,9 @@ function mockScoutFetch(
         confidence_score: 0.91,
         trust_label: "Official",
         reason_codes: ["official_project_blog"],
+        recommended_review_order: 1,
+        why_this_first: "Recommended source with official trust signals should be reviewed first.",
+        risk_reason: "Stored-only source kind may not have poller support.",
       },
       {
         candidate_id: "candidate-python-blog-2",
@@ -433,6 +436,9 @@ describe("HomelabScoutIntelligenceWidget", () => {
             confidence_label: "high",
             source_quality_score: 0.75,
             evaluated_at: "2026-05-14T00:00:00+00:00",
+            recommended_review_order: 1,
+            why_this_first: "Surfaced packet is likely useful for manual packet review.",
+            risk_reason: "No automatic packet promotion is allowed.",
             provenance: {
               source_uri: "https://example.com/releases",
               extracted_artifact_path: "extracted/example/packet.md",
@@ -458,11 +464,33 @@ describe("HomelabScoutIntelligenceWidget", () => {
 
     expect(await screen.findByText("FastAPI release packet")).toBeInTheDocument();
     expect(screen.getByText("Source Trust")).toBeInTheDocument();
+    expect(screen.getAllByText("Recommended Review Order").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("#1").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Why This First").length).toBeGreaterThan(0);
+    expect(screen.getByText("Surfaced packet is likely useful for manual packet review.")).toBeInTheDocument();
+    expect(screen.getAllByText("Risk Reason").length).toBeGreaterThan(0);
+    expect(screen.getByText("No automatic packet promotion is allowed.")).toBeInTheDocument();
     expect(screen.getByText("Quality")).toBeInTheDocument();
     expect(screen.getByText("75%")).toBeInTheDocument();
     expect(screen.getByText("Artifact")).toBeInTheDocument();
     expect(screen.getByText("extracted/example/packet.md")).toBeInTheDocument();
     expect(screen.getByText("schema completeness: passed")).toBeInTheDocument();
+  });
+
+  it("shows source auto-rank labels as passive review evidence", async () => {
+    mockScoutFetch(overview);
+
+    render(<ScoutIntelligenceCenter />);
+
+    expect((await screen.findAllByText("Recommended Review Order")).length).toBeGreaterThan(0);
+    expect(screen.getAllByText("#1").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Why This First").length).toBeGreaterThan(0);
+    expect(
+      screen.getAllByText("Recommended source with official trust signals should be reviewed first.").length,
+    ).toBeGreaterThan(0);
+    expect(screen.getAllByText("Risk Reason").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Stored-only source kind may not have poller support.").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Auto Approve")).not.toBeInTheDocument();
   });
 
   it("wires Manual Search Plan preview controls to the discovery preview endpoint", async () => {

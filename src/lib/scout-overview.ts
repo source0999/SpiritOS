@@ -54,6 +54,16 @@ export type ScoutStatusExplanation = Partial<{
   help: string | null;
 }>;
 
+export type ScoutAutoRank = Partial<{
+  level: number;
+  mode: "auto_rank_only" | string;
+  read_only: boolean;
+  mutation_allowed: boolean;
+  recommended_review_order: number;
+  why_this_first: string | null;
+  risk_reason: string | null;
+}>;
+
 export type ScoutPacket = {
   packet_id?: string | null;
   id?: string | null;
@@ -86,6 +96,10 @@ export type ScoutPacket = {
   promotion_label?: string | null;
   promotion_reason?: string | null;
   promotion_requested_at?: string | null;
+  auto_rank?: ScoutAutoRank | null;
+  recommended_review_order?: number | null;
+  why_this_first?: string | null;
+  risk_reason?: string | null;
   source_url?: string | null;
   uri?: string | null;
   provenance?: {
@@ -243,6 +257,10 @@ export type ScoutSourceCandidate = {
   metadata?: Record<string, unknown> | null;
   review_history?: ScoutSourceReviewEvent[] | null;
   poller_supported?: boolean | null;
+  auto_rank?: ScoutAutoRank | null;
+  recommended_review_order?: number | null;
+  why_this_first?: string | null;
+  risk_reason?: string | null;
 };
 
 export type ScoutSourceActionResult = {
