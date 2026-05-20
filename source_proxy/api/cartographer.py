@@ -46,6 +46,7 @@ from source_proxy.cartographer.service import (
     build_cartographer_level_3_finalization_marker,
     build_cartographer_level_3_commit_proposals,
     build_cartographer_level_4_push_readiness_contract,
+    build_cartographer_level_4_push_queue_approval_preview,
     build_cartographer_level_4_push_queue_proposal_preview,
     build_cartographer_projects,
     build_cartographer_project_candidates,
@@ -141,6 +142,16 @@ class CartographerLevel3CommitExecutionRequest(BaseModel):
     dirty_tree_fingerprint: str | None = Field(default=None, max_length=80)
     check_results: list[dict[str, Any]] = Field(default_factory=list, max_length=50)
     approved_deleted_files: list[str] = Field(default_factory=list, max_length=200)
+
+
+class CartographerLevel4PushQueueApprovalPreviewRequest(BaseModel):
+    approval_id: str | None = Field(default=None, max_length=160)
+    approved_by: str | None = Field(default=None, max_length=120)
+    exact_commits: list[str] = Field(default_factory=list, max_length=100)
+    remote: str | None = Field(default=None, max_length=120)
+    branch: str | None = Field(default=None, max_length=240)
+    upstream: str | None = Field(default=None, max_length=240)
+    checks: list[dict[str, Any]] = Field(default_factory=list, max_length=50)
 
 
 @router.get("/status")
@@ -476,6 +487,23 @@ async def cartographer_level_4_push_readiness() -> dict[str, Any]:
 @router.get("/level-4-push-queue-proposals")
 async def cartographer_level_4_push_queue_proposals() -> dict[str, Any]:
     return build_cartographer_level_4_push_queue_proposal_preview()
+
+
+@router.post("/level-4-push-queue-proposals/{proposal_id}/approval-preview")
+async def cartographer_level_4_push_queue_approval_preview(
+    proposal_id: str,
+    request: CartographerLevel4PushQueueApprovalPreviewRequest,
+) -> dict[str, Any]:
+    return build_cartographer_level_4_push_queue_approval_preview(
+        proposal_id=proposal_id,
+        approval_id=request.approval_id,
+        approved_by=request.approved_by,
+        exact_commits=request.exact_commits,
+        remote=request.remote,
+        branch=request.branch,
+        upstream=request.upstream,
+        checks=request.checks,
+    )
 
 
 @router.post("/push-queue/{push_id}/approve")
