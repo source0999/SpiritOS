@@ -1739,6 +1739,56 @@ class CartographerApiTests(unittest.TestCase):
         self.assertTrue(checks["source_apply_blocked"]["passed"])
         self.assertTrue(checks["self_promotion_blocked"]["passed"])
 
+    def test_level_2_readiness_accepts_durable_level_1_review_gate_marker(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            (root / "package.json").write_text("{}", encoding="utf-8")
+            docs = root / "docs"
+            docs.mkdir()
+            (docs / "cartographer-level-1-review-gate.md").write_text(
+                "\n".join(
+                    [
+                        "# Cartographer Level 1 Review Gate",
+                        "",
+                        "level_1_review_gate: accepted_by_britton",
+                        "- commit_allowed: false",
+                        "- push_allowed: false",
+                        "- self_promotion_allowed: false",
+                        "",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+
+            previous_cwd = Path.cwd()
+            try:
+                os.chdir(root)
+                with patch.dict(
+                    os.environ,
+                    {
+                        "SPIRIT_PROJECT_PATH": str(root),
+                        "CARTOGRAPHER_LEVEL_1_ACCEPTED_BY_BRITTON": "",
+                    },
+                    clear=False,
+                ):
+                    payload = build_cartographer_level_2_readiness()
+            finally:
+                os.chdir(previous_cwd)
+
+        self.assertTrue(payload["level_1_accepted_by_britton"])
+        self.assertTrue(payload["docs_apply_enabled"])
+        checks = {check["code"]: check for check in payload["checks"]}
+        self.assertTrue(checks["level_1_review_gate"]["passed"])
+        self.assertFalse(payload["commit_allowed"])
+        self.assertFalse(payload["push_allowed"])
+        self.assertFalse(payload["self_promotion_allowed"])
+        self.assertFalse(payload["actions_taken"])
+
     def test_level_2_readiness_blocks_unclassified_dirty_tree(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
