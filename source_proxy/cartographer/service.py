@@ -1187,6 +1187,82 @@ def build_cartographer_push_queue() -> dict[str, Any]:
     }
 
 
+def build_cartographer_level_4_push_readiness_contract() -> dict[str, Any]:
+    items = [to_jsonable(item) for item in build_push_queue()]
+    ready_items = [
+        item
+        for item in items
+        if not item.get("dirty")
+        and item.get("test_status") == "passed"
+        and item.get("commit_audit_status") == "recorded"
+        and item.get("behind") == 0
+        and item.get("drift_status") == "clear"
+    ]
+    blockers = sorted(
+        {
+            str(blocker)
+            for item in items
+            for blocker in item.get("push_blockers", [])
+            if blocker
+        }
+    )
+    return {
+        "status": "observing",
+        "level": 4,
+        "mode": "push_readiness_contract",
+        "contract_version": "cartographer.level_4.push_readiness_contract.v1",
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "push_allowed": False,
+        "push_enabled": False,
+        "auto_push_allowed": False,
+        "merge_allowed": False,
+        "branch_creation_allowed": False,
+        "cleanup_allowed": False,
+        "stash_allowed": False,
+        "push_queue_creation_allowed": False,
+        "push_queue_item_created": False,
+        "push_queue_preview_count": len(items),
+        "ready_preview_count": len(ready_items),
+        "blocked_preview_count": len(items) - len(ready_items),
+        "push_previews": items,
+        "ready_push_previews": ready_items,
+        "blockers": blockers,
+        "required_inputs": [
+            "local commit receipt",
+            "clean working tree",
+            "branch and upstream identity",
+            "recorded passing checks",
+            "commit audit record",
+            "no blueprint drift",
+            "explicit future push approval",
+        ],
+        "forbidden_actions": [
+            "push",
+            "auto-push",
+            "push queue item creation",
+            "merge",
+            "branch creation",
+            "stash",
+            "cleanup",
+            "self-approval",
+            "promotion beyond Level 4.1",
+        ],
+        "manual_checks": [
+            "git status -sb",
+            "git log --oneline @{u}..HEAD",
+            'PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -k "push_readiness or push_queue"',
+        ],
+        "next_step": (
+            "Review push readiness previews; push remains disabled until a separate approved increment."
+            if items
+            else "No push readiness previews are available."
+        ),
+        "safety": cartographer_safety_manifest(),
+    }
+
+
 def build_cartographer_audit_trail() -> dict[str, Any]:
     events = build_audit_trail()
     return {

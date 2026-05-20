@@ -45,6 +45,7 @@ from source_proxy.cartographer.service import (
     build_cartographer_level_3_endpoint_index,
     build_cartographer_level_3_finalization_marker,
     build_cartographer_level_3_commit_proposals,
+    build_cartographer_level_4_push_readiness_contract,
     build_cartographer_projects,
     build_cartographer_project_candidates,
     build_cartographer_project_health,
@@ -464,6 +465,11 @@ async def cartographer_approve_commit_proposal(
 @router.get("/push-queue")
 async def cartographer_push_queue() -> dict[str, Any]:
     return build_cartographer_push_queue()
+
+
+@router.get("/level-4-push-readiness")
+async def cartographer_level_4_push_readiness() -> dict[str, Any]:
+    return build_cartographer_level_4_push_readiness_contract()
 
 
 @router.post("/push-queue/{push_id}/approve")

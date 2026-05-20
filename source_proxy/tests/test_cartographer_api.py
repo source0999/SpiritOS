@@ -45,6 +45,7 @@ from source_proxy.cartographer.service import (
     build_cartographer_level_3_endpoint_index,
     build_cartographer_level_3_finalization_marker,
     build_cartographer_level_3_commit_proposals,
+    build_cartographer_level_4_push_readiness_contract,
     build_cartographer_project_candidates,
     build_cartographer_project_health,
     build_cartographer_projects,
@@ -4983,6 +4984,88 @@ class CartographerApiTests(unittest.TestCase):
         self.assertEqual(item["push_blockers"], ["push_requires_separate_approval"])
         self.assertFalse(item["push_enabled"])
         self.assertNotIn("commit_audit_missing", item["reason_codes"])
+
+    def test_level_4_push_readiness_contract_reports_preview_without_push_or_queue_creation(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_root = Path(temp_dir)
+            remote = temp_root / "remote.git"
+            root = temp_root / "work"
+            _git(temp_root, "init", "--bare", str(remote))
+            root.mkdir()
+            _write_minimal_blueprints(root)
+            (root / ".gitignore").write_text("data/\n", encoding="utf-8")
+            _git(root, "init")
+            _git(root, "config", "core.autocrlf", "false")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "checkout", "-b", "cartographer/level-4-readiness")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            _git(root, "remote", "add", "origin", str(remote))
+            _git(root, "push", "-u", "origin", "cartographer/level-4-readiness")
+            (root / "docs" / "level-4-readiness.md").parent.mkdir(exist_ok=True)
+            (root / "docs" / "level-4-readiness.md").write_text("readiness\n", encoding="utf-8")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "docs(cartographer): level 4 readiness")
+            commit_sha = _git_stdout(root, "rev-parse", "HEAD").strip()
+            _write_git_approval_record(
+                root,
+                {
+                    "event": "commit_created",
+                    "project_id": "work",
+                    "branch": "cartographer/level-4-readiness",
+                    "commit_sha": commit_sha,
+                    "checks": [
+                        {"id": "git_diff_check", "status": "passed"},
+                        {"id": "blueprint_metadata_validation", "status": "passed"},
+                        {"id": "cartographer_pytest", "status": "passed"},
+                    ],
+                },
+            )
+
+            remote_before = _git_stdout(
+                remote,
+                "rev-parse",
+                "refs/heads/cartographer/level-4-readiness",
+            ).strip()
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = build_cartographer_level_4_push_readiness_contract()
+                response = TestClient(_test_app()).get("/v1/cartographer/level-4-push-readiness")
+            remote_after = _git_stdout(
+                remote,
+                "rev-parse",
+                "refs/heads/cartographer/level-4-readiness",
+            ).strip()
+
+        self.assertEqual(remote_before, remote_after)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["contract_version"], "cartographer.level_4.push_readiness_contract.v1")
+        self.assertEqual(payload["level"], 4)
+        self.assertEqual(payload["mode"], "push_readiness_contract")
+        self.assertFalse(payload["write_actions_enabled"])
+        self.assertFalse(payload["authority_granted"])
+        self.assertFalse(payload["actions_taken"])
+        self.assertFalse(payload["push_allowed"])
+        self.assertFalse(payload["push_enabled"])
+        self.assertFalse(payload["auto_push_allowed"])
+        self.assertFalse(payload["merge_allowed"])
+        self.assertFalse(payload["branch_creation_allowed"])
+        self.assertFalse(payload["cleanup_allowed"])
+        self.assertFalse(payload["stash_allowed"])
+        self.assertFalse(payload["push_queue_creation_allowed"])
+        self.assertFalse(payload["push_queue_item_created"])
+        self.assertEqual(payload["push_queue_preview_count"], 1)
+        self.assertEqual(payload["ready_preview_count"], 1)
+        self.assertEqual(payload["blocked_preview_count"], 0)
+        self.assertIn("explicit future push approval", payload["required_inputs"])
+        self.assertIn("push queue item creation", payload["forbidden_actions"])
+        self.assertIn("git status -sb", payload["manual_checks"])
+        preview = payload["ready_push_previews"][0]
+        self.assertEqual(preview["branch"], "cartographer/level-4-readiness")
+        self.assertEqual(preview["commits_to_push"], [commit_sha])
+        self.assertEqual(preview["push_blockers"], ["push_requires_separate_approval"])
+        self.assertFalse(preview["push_enabled"])
+        self.assertFalse(preview["action_taken"])
 
     def test_branch_approval_creates_recommended_branch_without_commit_or_push(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
