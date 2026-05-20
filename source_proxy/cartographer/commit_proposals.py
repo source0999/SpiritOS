@@ -518,7 +518,17 @@ def _level_3_commit_execution_receipt(
     command_error: str | None = None,
 ) -> dict[str, Any]:
     commit_created = status == "committed" and bool(commit_sha)
+    head_before_value = head_before or (git_status.head_sha if git_status else None)
+    receipt_id = _level_3_execution_receipt_id(
+        proposal_id=proposal_id,
+        approval_id=approval_id,
+        head_before=head_before_value,
+        head_after=commit_sha,
+        blockers=blockers,
+    )
     return {
+        "receipt_version": "cartographer.level_3.local_commit_receipt.v1",
+        "receipt_id": receipt_id,
         "status": status,
         "level": 3,
         "mode": "approved_local_commit_executor",
@@ -526,14 +536,29 @@ def _level_3_commit_execution_receipt(
         "proposal_found": proposal is not None,
         "approval_id": approval_id,
         "approved_by": approved_by,
+        "approved_at": None,
+        "executed_by": "cartographer",
         "approval_validated": approval_preview["approval_validated"],
         "blockers": list(dict.fromkeys(blockers)),
+        "validation_summary": {
+            "approval_validated": approval_preview["approval_validated"],
+            "checks_validated": approval_preview["checks_validated"],
+            "deletions_validated": approval_preview["deletions_validated"],
+            "head_validated": "git_head_mismatch" not in blockers and bool(head_before_value),
+            "dirty_tree_fingerprint_validated": (
+                "dirty_tree_fingerprint_mismatch" not in blockers
+                and bool(approval_preview["dirty_tree_fingerprint"])
+            ),
+            "forbidden_paths_blocked": "forbidden_files_detected" not in blockers,
+            "sensitive_paths_blocked": "sensitive_files_detected" not in blockers,
+            "unclassified_files_blocked": "unknown_or_mixed_files_block_approval" not in blockers,
+        },
         "commit_allowed": commit_created,
         "commit_enabled": commit_created,
         "commit_execution_enabled": False,
         "commit_created": commit_created,
         "commit_sha": commit_sha,
-        "head_before": head_before or (git_status.head_sha if git_status else None),
+        "head_before": head_before_value,
         "head_after": commit_sha,
         "current_branch": git_status.branch if git_status else None,
         "committed_files": committed_files,
@@ -550,8 +575,23 @@ def _level_3_commit_execution_receipt(
         "merge_allowed": False,
         "stash_allowed": False,
         "cleanup_allowed": False,
+        "branch_created": False,
+        "merge_created": False,
+        "stash_created": False,
+        "cleanup_performed": False,
         "actions_taken": commit_created,
         "rollback_command": _rollback_command(),
+        "rollback_requires_human_approval": True,
+        "rollback_performed": False,
+        "command_summary": {
+            "stage": "git add -- <approved-files>" if commit_created else None,
+            "commit": "git commit -m <title> -m <body> -- <approved-files>" if commit_created else None,
+            "push": None,
+            "branch": None,
+            "merge": None,
+            "stash": None,
+            "cleanup": None,
+        },
         "command_error": command_error,
         "next_step": (
             "Local commit created; push remains disabled."
@@ -559,6 +599,26 @@ def _level_3_commit_execution_receipt(
             else "Resolve blockers before requesting Level 3 local commit execution."
         ),
     }
+
+
+def _level_3_execution_receipt_id(
+    *,
+    proposal_id: str,
+    approval_id: str | None,
+    head_before: str | None,
+    head_after: str | None,
+    blockers: list[str],
+) -> str:
+    key = "|".join(
+        [
+            proposal_id,
+            approval_id or "",
+            head_before or "",
+            head_after or "",
+            ",".join(sorted(blockers)),
+        ]
+    )
+    return f"level-3-local-commit-receipt-{sha256(key.encode('utf-8')).hexdigest()[:12]}"
 
 
 def _find_level_3_proposal_with_status(
