@@ -66,6 +66,7 @@ from source_proxy.cartographer.service import (
     build_cartographer_level_9_branch_worktree_proposal_queue,
     build_cartographer_level_9_stale_worker_closeout_packet,
     build_cartographer_level_9_coordination_dashboard,
+    build_cartographer_level_10_project_health_timeline,
     build_cartographer_level_8_receipt_journal,
     build_cartographer_level_8_step_approval_preview,
     build_cartographer_level_8_workflow_run_card,
@@ -355,6 +356,11 @@ async def cartographer_level_9_stale_worker_closeout() -> dict[str, Any]:
 @router.get("/level-9-coordination-dashboard")
 async def cartographer_level_9_coordination_dashboard() -> dict[str, Any]:
     return build_cartographer_level_9_coordination_dashboard()
+
+
+@router.get("/level-10-project-health-timeline")
+async def cartographer_level_10_project_health_timeline() -> dict[str, Any]:
+    return build_cartographer_level_10_project_health_timeline()
 
 
 @router.get("/project-health")

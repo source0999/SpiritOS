@@ -1769,6 +1769,102 @@ def build_cartographer_level_9_coordination_dashboard() -> dict[str, Any]:
     }
 
 
+def build_cartographer_level_10_project_health_timeline() -> dict[str, Any]:
+    health_payload = build_cartographer_project_health()
+    coordination = build_cartographer_level_9_coordination_dashboard()
+    timeline_items = [
+        {
+            "project_id": project.get("project_id"),
+            "name": project.get("name"),
+            "root": project.get("root"),
+            "status": project.get("status"),
+            "branch": project.get("branch"),
+            "dirty": bool(project.get("dirty")),
+            "ahead": project.get("ahead", 0),
+            "behind": project.get("behind", 0),
+            "merge_ready": bool(project.get("merge_ready")),
+            "blockers": list(project.get("merge_blockers", [])),
+            "blueprint_health": project.get("blueprint_health"),
+            "evidence_refs": [
+                "project_health_probe",
+                "level_9_coordination_dashboard",
+                "manual_check_history",
+            ],
+            "timeline_state": "blocked"
+            if project.get("merge_blockers") or project.get("dirty")
+            else "ready_for_review",
+            "recommended_next_action": project.get("recommended_next_step"),
+            "mutation_allowed": False,
+            "actions_taken": False,
+        }
+        for project in health_payload["projects"]
+    ]
+    closeout_history = [
+        {
+            "level": item.get("level"),
+            "title": item.get("title"),
+            "closeout_status": item.get("closeout_status"),
+            "blockers": list(item.get("blockers", [])),
+            "evidence_refs": list(item.get("evidence_refs", [])),
+        }
+        for item in coordination["closeout_items"]
+    ]
+    blockers = sorted(
+        {
+            blocker
+            for item in [*timeline_items, *closeout_history]
+            for blocker in item["blockers"]
+        }
+    )
+    return {
+        "status": "observing",
+        "level": 10,
+        "mode": "project_health_timeline",
+        "contract_version": "cartographer.level_10.project_health_timeline.v1",
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "timeline_available": True,
+        "read_only": True,
+        "background_mutation_allowed": False,
+        "hidden_writes_allowed": False,
+        "cleanup_allowed": False,
+        "push_allowed": False,
+        "merge_allowed": False,
+        "automatic_execution_allowed": False,
+        "automatic_promotion_allowed": False,
+        "evidence_mutation_allowed": False,
+        "project_count": len(timeline_items),
+        "blocked_project_count": sum(1 for item in timeline_items if item["blockers"]),
+        "dirty_project_count": sum(1 for item in timeline_items if item["dirty"]),
+        "timeline_items": timeline_items,
+        "closeout_history": closeout_history,
+        "blockers": blockers,
+        "recommended_next_action": (
+            "Review blocked timeline entries before generating closeout packets."
+            if blockers
+            else "Level 10.3 closeout packet previews may be planned after approval."
+        ),
+        "forbidden_actions": [
+            "background mutation",
+            "hidden writes",
+            "cleanup",
+            "push",
+            "merge",
+            "automatic execution",
+            "automatic promotion",
+            "evidence mutation",
+            "promotion beyond Level 10.2",
+        ],
+        "manual_checks": [
+            "git status -sb",
+            'PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -k "level_10_project_health_timeline or level_10_operator_dashboard_polish"',
+        ],
+        "next_step": "Level 10.3 may generate closeout packet previews only after Britton approves it.",
+        "safety": cartographer_safety_manifest(),
+    }
+
+
 def build_cartographer_project_health() -> dict[str, Any]:
     projects = build_project_health()
     codex_evidence = build_codex_evidence_rollup()
