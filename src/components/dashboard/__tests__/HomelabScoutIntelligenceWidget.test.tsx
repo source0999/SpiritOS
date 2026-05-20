@@ -294,6 +294,7 @@ describe("HomelabScoutIntelligenceWidget", () => {
     expect(
       screen.getByText("Watches trusted sources and brings useful intelligence for review."),
     ).toBeInTheDocument();
+    expect(screen.getByText(/Live Scout API refresh every 30 seconds/)).toBeInTheDocument();
     expect(screen.getByText(/Scout is online\. 1 promoted briefing ready\./)).toBeInTheDocument();
     const prioritySummary = within(screen.getByLabelText("Scout priority summary"));
     expect(prioritySummary.getByText("Review Inbox")).toBeInTheDocument();
@@ -447,6 +448,15 @@ describe("HomelabScoutIntelligenceWidget", () => {
       "Stored Only",
       "Safety State",
     ]);
+  });
+
+  it("labels the Intelligence Center as a live Scout API view", async () => {
+    mockScoutFetch(overview);
+
+    render(<ScoutIntelligenceCenter />);
+
+    expect(await screen.findByText(/Live Scout API view/)).toBeInTheDocument();
+    expect(screen.getByText(/Refreshes every 30 seconds/)).toBeInTheDocument();
   });
 
   it("keeps pipeline counts secondary behind details", async () => {

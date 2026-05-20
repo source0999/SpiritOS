@@ -398,6 +398,9 @@ export function HomelabScoutIntelligenceWidget({
             <p className="dashboard-demo-v4-empty-copy">
               {model?.queueSentence ?? "Queued searches are saved manual plans, not active forever."}
             </p>
+            <p className="dashboard-demo-v4-empty-copy">
+              Live Scout API refresh every 30 seconds; sources, candidates, and search plans use no-store reads.
+            </p>
           </div>
 
           {model ? (
