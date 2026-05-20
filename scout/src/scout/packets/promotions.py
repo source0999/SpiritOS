@@ -435,18 +435,10 @@ def _sign_payload(secret: str, body: bytes) -> str:
     return hmac.new(secret.encode("utf-8"), body, hashlib.sha256).hexdigest()
 
 
-def _audit_path(settings: ScoutSettings) -> Path:
-    path = settings.data_dir / "audit" / "promotions_applied.jsonl"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    return path
-
-
-def _append_audit(settings: ScoutSettings, record: dict) -> None:
-    with _audit_path(settings).open("a", encoding="utf-8") as handle:
-        handle.write(json.dumps(record, sort_keys=True) + "\n")
-
-
-async def finalize_approved_promotion(settings: ScoutSettings, promotion_id: str) -> dict:
+def _load_approved_promotion_payload(
+    settings: ScoutSettings,
+    promotion_id: str,
+) -> tuple[dict, IntelligencePacket, DebuggerVerdict, bytes, str]:
     if not settings.promotion_signing_key:
         raise PromotionError("SCOUT_PROMOTION_SIGNING_KEY is required")
     conn = open_connection(settings.database_path)
@@ -464,11 +456,15 @@ async def finalize_approved_promotion(settings: ScoutSettings, promotion_id: str
     if not row:
         raise PromotionError("promotion not found")
     if row["status"] != "approved":
-        raise PromotionError("promotion must be approved before finalization")
+        raise PromotionError("promotion must be approved before import dry run")
 
     packet, verdict = load_packet_and_verdict(settings, row["packet_id"])
     if verdict.decision != "promote":
         raise PromotionError("verdict must still be promote")
+    payload_sha = _payload_sha(packet)
+    if row["payload_sha256"] != payload_sha:
+        raise PromotionError("promotion payload hash no longer matches packet")
+
     payload = {
         "promotion_id": promotion_id,
         "approved": True,
@@ -480,6 +476,65 @@ async def finalize_approved_promotion(settings: ScoutSettings, promotion_id: str
     }
     body = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
     signature = _sign_payload(settings.promotion_signing_key, body)
+    return dict(row), packet, verdict, body, signature
+
+
+def dry_run_proxy_import(settings: ScoutSettings, promotion_id: str) -> dict:
+    row, packet, verdict, body, signature = _load_approved_promotion_payload(
+        settings,
+        promotion_id,
+    )
+    return {
+        "dry_run": True,
+        "import_ready": True,
+        "read_only": True,
+        "mutation_allowed": False,
+        "promotion_id": promotion_id,
+        "packet_id": packet.packet_id,
+        "approved_at": row["approved_at"],
+        "approved_by": row["approved_by"],
+        "verdict_decision": verdict.decision,
+        "payload_sha256": row["payload_sha256"],
+        "signed_payload_sha256": hashlib.sha256(body).hexdigest(),
+        "signature_preview": f"sha256={signature[:12]}...",
+        "proxy_intake_url": settings.promotion_proxy_intake_url,
+        "would_call_proxy_intake": False,
+        "would_write_proxy_memory": False,
+        "would_write_coding_context": False,
+        "would_finalize_promotion": False,
+        "approval_required_before": [
+            "proxy-intake-call",
+            "proxy-memory-write",
+            "coding-context-write",
+        ],
+        "forbidden_actions": [
+            "automatic packet promotion",
+            "proxy intake call",
+            "proxy memory writes",
+            "coding context writes",
+            "promotion finalization",
+            "hidden background workers",
+            "scheduled writes",
+        ],
+    }
+
+
+def _audit_path(settings: ScoutSettings) -> Path:
+    path = settings.data_dir / "audit" / "promotions_applied.jsonl"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def _append_audit(settings: ScoutSettings, record: dict) -> None:
+    with _audit_path(settings).open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(record, sort_keys=True) + "\n")
+
+
+async def finalize_approved_promotion(settings: ScoutSettings, promotion_id: str) -> dict:
+    row, packet, verdict, body, signature = _load_approved_promotion_payload(
+        settings,
+        promotion_id,
+    )
 
     async with httpx.AsyncClient(timeout=10.0) as client:
         response = await client.post(
