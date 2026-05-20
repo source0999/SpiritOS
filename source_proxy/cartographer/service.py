@@ -1404,6 +1404,80 @@ def build_cartographer_level_4_push_queue_approval_preview(
     }
 
 
+def block_cartographer_level_4_push_execution(
+    *,
+    proposal_id: str,
+    approval_id: str | None,
+    approved_by: str | None,
+) -> dict[str, Any]:
+    proposals_payload = build_cartographer_level_4_push_queue_proposal_preview()
+    proposal = next(
+        (
+            item
+            for item in proposals_payload["push_queue_proposals"]
+            if item["proposal_id"] == proposal_id
+        ),
+        None,
+    )
+    blockers = ["level_4_push_execution_not_implemented"]
+    if proposal is None:
+        blockers.append("proposal_not_found")
+    if not approval_id:
+        blockers.append("approval_id_required")
+    if not approved_by:
+        blockers.append("approved_by_required")
+    if str(approved_by or "").strip().lower() == "cartographer":
+        blockers.append("cartographer_self_approval_blocked")
+    unique_blockers = list(dict.fromkeys(blockers))
+    return {
+        "status": "blocked",
+        "level": 4,
+        "mode": "push_execution_hard_block",
+        "block_version": "cartographer.level_4.push_execution_hard_block.v1",
+        "proposal_id": proposal_id,
+        "proposal_found": proposal is not None,
+        "approval_id": approval_id,
+        "approved_by": approved_by,
+        "blockers": unique_blockers,
+        "execution_blockers": ["push_execution_not_implemented"],
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "push_allowed": False,
+        "push_enabled": False,
+        "auto_push_allowed": False,
+        "push_created": False,
+        "push_queue_creation_allowed": False,
+        "push_queue_item_created": False,
+        "creates_push_queue_item": False,
+        "merge_allowed": False,
+        "branch_creation_allowed": False,
+        "cleanup_allowed": False,
+        "stash_allowed": False,
+        "proposal": proposal,
+        "forbidden_actions": [
+            "push",
+            "auto-push",
+            "push queue item creation",
+            "merge",
+            "branch creation",
+            "stash",
+            "cleanup",
+            "self-approval",
+            "promotion beyond Level 4.4",
+        ],
+        "manual_checks": [
+            "git status -sb",
+            "git diff --check -- source_proxy/cartographer/service.py source_proxy/api/cartographer.py source_proxy/tests/test_cartographer_api.py",
+            'PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -k "level_4_push_execution or push_queue"',
+        ],
+        "next_step": (
+            "Push execution is hard-blocked; continue to future Level 4.5 planning only after approval."
+        ),
+        "safety": cartographer_safety_manifest(),
+    }
+
+
 def _level_4_push_check_blockers(
     proposal: dict[str, Any] | None,
     checks: list[dict[str, Any]],
