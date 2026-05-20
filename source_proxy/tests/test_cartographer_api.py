@@ -39,6 +39,12 @@ from source_proxy.cartographer.service import (
     build_cartographer_level_2_dirty_tree,
     build_cartographer_level_2_dirty_tree_resolution,
     build_cartographer_level_2_readiness,
+    build_cartographer_level_3_commit_approval_preview,
+    build_cartographer_level_3_blocker_handoff,
+    build_cartographer_level_3_closeout_readiness,
+    build_cartographer_level_3_endpoint_index,
+    build_cartographer_level_3_finalization_marker,
+    build_cartographer_level_3_commit_proposals,
     build_cartographer_project_candidates,
     build_cartographer_project_health,
     build_cartographer_projects,
@@ -68,6 +74,7 @@ from source_proxy.cartographer.service import (
     build_cartographer_v1_proof_recording_proposal,
     build_cartographer_v1_proof_validation,
     build_cartographer_v1_readiness,
+    block_cartographer_level_3_commit_execution,
     run_cartographer_level_2_docs_apply,
     run_cartographer_docs_autopilot_apply,
     write_cartographer_starter_blueprints,
@@ -3801,6 +3808,714 @@ class CartographerApiTests(unittest.TestCase):
         self.assertEqual(payload["commit_proposals"], [])
         self.assertEqual(payload["commit_proposal_count"], 0)
         self.assertFalse(payload["actions_taken"])
+
+    def test_level_3_commit_proposals_are_read_only_and_block_commit_execution(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "checkout", "-b", "main")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+
+            plan = root / "docs" / "cartographer-level-3-autonomy-plan.md"
+            plan.parent.mkdir(parents=True, exist_ok=True)
+            plan.write_text("# Cartographer Level 3 Autonomy Plan\n", encoding="utf-8")
+            implementation = root / "source_proxy" / "cartographer" / "commit_proposals.py"
+            implementation.parent.mkdir(parents=True, exist_ok=True)
+            implementation.write_text("def preview():\n    return 'level 3'\n", encoding="utf-8")
+
+            before_head = _git_stdout(root, "rev-parse", "HEAD").strip()
+            before_status = _git_stdout(root, "status", "--short")
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = build_cartographer_level_3_commit_proposals()
+            after_head = _git_stdout(root, "rev-parse", "HEAD").strip()
+            after_status = _git_stdout(root, "status", "--short")
+
+        self.assertEqual(before_head, after_head)
+        self.assertEqual(before_status, after_status)
+        self.assertEqual(payload["level"], 3)
+        self.assertEqual(payload["proposal_version"], "cartographer.level_3.commit_proposal.v1")
+        self.assertEqual(payload["mode"], "human_approved_local_commit_proposals")
+        self.assertFalse(payload["write_actions_enabled"])
+        self.assertFalse(payload["authority_granted"])
+        self.assertFalse(payload["actions_taken"])
+        self.assertFalse(payload["commit_allowed"])
+        self.assertFalse(payload["push_allowed"])
+        self.assertFalse(payload["merge_allowed"])
+        self.assertFalse(payload["branch_creation_allowed"])
+        self.assertFalse(payload["branch_delete_allowed"])
+        self.assertFalse(payload["stash_allowed"])
+        self.assertFalse(payload["cleanup_allowed"])
+        self.assertFalse(payload["self_approval_allowed"])
+        self.assertFalse(payload["self_promotion_allowed"])
+        self.assertFalse(payload["creates_push_queue_item"])
+        self.assertIn("level_2_apply_blocked", payload["activation_blockers"])
+        self.assertGreaterEqual(payload["proposal_count"], 2)
+
+        receipts_by_file = {
+            file: receipt
+            for receipt in payload["commit_proposals"]
+            for file in receipt["included_files"]
+        }
+        plan_receipt = receipts_by_file["docs/cartographer-level-3-autonomy-plan.md"]
+        self.assertEqual(plan_receipt["file_bundle"], "cartographer_level_3_plan")
+        self.assertEqual(plan_receipt["created_by"], "cartographer")
+        self.assertEqual(plan_receipt["current_branch"], "main")
+        self.assertEqual(plan_receipt["git_head_at_creation"], before_head)
+        self.assertTrue(plan_receipt["approval_required"])
+        self.assertIsNone(plan_receipt["approval_id"])
+        self.assertIsNone(plan_receipt["approved_by"])
+        self.assertFalse(plan_receipt["commit_allowed"])
+        self.assertFalse(plan_receipt["push_allowed"])
+        self.assertFalse(plan_receipt["creates_push_queue_item"])
+        self.assertIn("git diff --check", plan_receipt["related_test_commands"])
+        self.assertIn("git status -sb", plan_receipt["manual_check_commands"])
+
+        implementation_receipt = receipts_by_file["source_proxy/cartographer/commit_proposals.py"]
+        self.assertEqual(implementation_receipt["file_bundle"], "cartographer_level_3")
+        self.assertIn(
+            "source_proxy/cartographer/commit_proposals.py",
+            implementation_receipt["rationale_by_file"],
+        )
+        self.assertFalse(implementation_receipt["commit_allowed"])
+        self.assertFalse(implementation_receipt["action_taken"])
+
+    def test_level_3_commit_proposals_block_forbidden_sensitive_files(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            (root / ".env.local").write_text("TOKEN=do-not-read\n", encoding="utf-8")
+            (root / "package-lock.json").write_text("{}\n", encoding="utf-8")
+
+            before_status = _git_stdout(root, "status", "--short")
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = build_cartographer_level_3_commit_proposals()
+            after_status = _git_stdout(root, "status", "--short")
+
+        self.assertEqual(before_status, after_status)
+        self.assertFalse(payload["actions_taken"])
+        self.assertFalse(payload["commit_allowed"])
+        self.assertFalse(payload["push_allowed"])
+        self.assertIn("forbidden_files_detected", payload["activation_blockers"])
+        self.assertIn(".env.local", payload["forbidden_files"])
+        self.assertIn("package-lock.json", payload["forbidden_files"])
+        blocked_files = {
+            file: receipt
+            for receipt in payload["blocked_bundles"]
+            for file in receipt["included_files"]
+        }
+        self.assertIn(".env.local", blocked_files)
+        self.assertIn("forbidden_files_detected", blocked_files[".env.local"]["blockers"])
+        self.assertIn("sensitive_files_detected", blocked_files[".env.local"]["blockers"])
+        self.assertFalse(blocked_files[".env.local"]["commit_allowed"])
+        self.assertFalse(blocked_files[".env.local"]["push_allowed"])
+
+    def test_level_3_commit_proposals_endpoint_contract(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            plan = root / "docs" / "cartographer-level-3-autonomy-plan.md"
+            plan.parent.mkdir(parents=True, exist_ok=True)
+            plan.write_text("# Plan\n", encoding="utf-8")
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                response = TestClient(_test_app()).get("/v1/cartographer/level-3-commit-proposals")
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["endpoint"], "/v1/cartographer/level-3-commit-proposals")
+        self.assertFalse(payload["commit_allowed"])
+        self.assertFalse(payload["push_allowed"])
+        self.assertFalse(payload["actions_taken"])
+        self.assertEqual(payload["commit_proposals"][0]["level"], 3)
+
+    def test_level_3_approval_preview_validates_exact_bundle_without_committing(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "checkout", "-b", "main")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            plan = root / "docs" / "cartographer-level-3-autonomy-plan.md"
+            plan.parent.mkdir(parents=True, exist_ok=True)
+            plan.write_text("# Plan\n", encoding="utf-8")
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                proposals = build_cartographer_level_3_commit_proposals()
+                proposal = next(
+                    item
+                    for item in proposals["commit_proposals"]
+                    if item["file_bundle"] == "cartographer_level_3_plan"
+                )
+                before_head = _git_stdout(root, "rev-parse", "HEAD").strip()
+                before_status = _git_stdout(root, "status", "--short")
+                payload = build_cartographer_level_3_commit_approval_preview(
+                    proposal_id=proposal["proposal_id"],
+                    approval_id="approval-level-3-preview",
+                    approved_by="Britton",
+                    exact_file_list=proposal["included_files"],
+                    proposed_commit_title=proposal["proposed_commit_title"],
+                    proposed_commit_body=proposal["proposed_commit_body"],
+                    git_head_at_creation=proposal["git_head_at_creation"],
+                    dirty_tree_fingerprint=proposal["dirty_tree_fingerprint"],
+                    check_results=[
+                        {"command": command, "status": "passed"}
+                        for command in proposal["related_test_commands"]
+                    ],
+                )
+                after_head = _git_stdout(root, "rev-parse", "HEAD").strip()
+                after_status = _git_stdout(root, "status", "--short")
+
+        self.assertEqual(before_head, after_head)
+        self.assertEqual(before_status, after_status)
+        self.assertEqual(payload["level"], 3)
+        self.assertEqual(payload["mode"], "human_approval_gate_preview")
+        self.assertTrue(payload["approval_validated"])
+        self.assertEqual(payload["approval_id"], "approval-level-3-preview")
+        self.assertEqual(payload["approved_by"], "Britton")
+        self.assertEqual(payload["git_head_at_creation"], before_head)
+        self.assertEqual(payload["supplied_git_head_at_creation"], before_head)
+        self.assertEqual(payload["dirty_tree_fingerprint"], proposal["dirty_tree_fingerprint"])
+        self.assertEqual(
+            payload["supplied_dirty_tree_fingerprint"],
+            proposal["dirty_tree_fingerprint"],
+        )
+        self.assertTrue(payload["checks_validated"])
+        self.assertEqual(
+            payload["required_check_commands"],
+            proposal["related_test_commands"],
+        )
+        self.assertFalse(payload["proposal_stale"])
+        self.assertEqual(payload["blockers"], [])
+        self.assertFalse(payload["commit_allowed"])
+        self.assertFalse(payload["commit_enabled"])
+        self.assertFalse(payload["commit_execution_enabled"])
+        self.assertFalse(payload["push_allowed"])
+        self.assertFalse(payload["creates_push_queue_item"])
+        self.assertFalse(payload["actions_taken"])
+
+    def test_level_3_approval_preview_blocks_self_approval_and_file_mismatch(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            plan = root / "docs" / "cartographer-level-3-autonomy-plan.md"
+            plan.parent.mkdir(parents=True, exist_ok=True)
+            plan.write_text("# Plan\n", encoding="utf-8")
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                proposals = build_cartographer_level_3_commit_proposals()
+                proposal = next(
+                    item
+                    for item in proposals["commit_proposals"]
+                    if item["file_bundle"] == "cartographer_level_3_plan"
+                )
+                before_status = _git_stdout(root, "status", "--short")
+                payload = build_cartographer_level_3_commit_approval_preview(
+                    proposal_id=proposal["proposal_id"],
+                    approval_id="approval-level-3-self",
+                    approved_by="cartographer",
+                    exact_file_list=["README.md"],
+                    proposed_commit_title=proposal["proposed_commit_title"],
+                    proposed_commit_body=proposal["proposed_commit_body"],
+                )
+                after_status = _git_stdout(root, "status", "--short")
+
+        self.assertEqual(before_status, after_status)
+        self.assertFalse(payload["approval_validated"])
+        self.assertIn("cartographer_self_approval_blocked", payload["blockers"])
+        self.assertIn("exact_file_list_mismatch", payload["blockers"])
+        self.assertFalse(payload["commit_allowed"])
+        self.assertFalse(payload["actions_taken"])
+
+    def test_level_3_approval_preview_blocks_stale_head_and_dirty_tree(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            plan = root / "docs" / "cartographer-level-3-autonomy-plan.md"
+            plan.parent.mkdir(parents=True, exist_ok=True)
+            plan.write_text("# Plan\n", encoding="utf-8")
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                proposals = build_cartographer_level_3_commit_proposals()
+                proposal = next(
+                    item
+                    for item in proposals["commit_proposals"]
+                    if item["file_bundle"] == "cartographer_level_3_plan"
+                )
+                before_status = _git_stdout(root, "status", "--short")
+                payload = build_cartographer_level_3_commit_approval_preview(
+                    proposal_id=proposal["proposal_id"],
+                    approval_id="approval-level-3-stale",
+                    approved_by="Britton",
+                    exact_file_list=proposal["included_files"],
+                    proposed_commit_title=proposal["proposed_commit_title"],
+                    proposed_commit_body=proposal["proposed_commit_body"],
+                    git_head_at_creation="stale-head",
+                    dirty_tree_fingerprint="stale-fingerprint",
+                    check_results=[
+                        {"command": command, "status": "passed"}
+                        for command in proposal["related_test_commands"]
+                    ],
+                )
+                after_status = _git_stdout(root, "status", "--short")
+
+        self.assertEqual(before_status, after_status)
+        self.assertFalse(payload["approval_validated"])
+        self.assertTrue(payload["proposal_stale"])
+        self.assertIn("git_head_mismatch", payload["blockers"])
+        self.assertIn("dirty_tree_fingerprint_mismatch", payload["blockers"])
+        self.assertFalse(payload["commit_allowed"])
+        self.assertFalse(payload["commit_execution_enabled"])
+        self.assertFalse(payload["actions_taken"])
+
+    def test_level_3_approval_preview_blocks_missing_or_failed_checks(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            plan = root / "docs" / "cartographer-level-3-autonomy-plan.md"
+            plan.parent.mkdir(parents=True, exist_ok=True)
+            plan.write_text("# Plan\n", encoding="utf-8")
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                proposals = build_cartographer_level_3_commit_proposals()
+                proposal = next(
+                    item
+                    for item in proposals["commit_proposals"]
+                    if item["file_bundle"] == "cartographer_level_3_plan"
+                )
+                missing = build_cartographer_level_3_commit_approval_preview(
+                    proposal_id=proposal["proposal_id"],
+                    approval_id="approval-level-3-missing-checks",
+                    approved_by="Britton",
+                    exact_file_list=proposal["included_files"],
+                    proposed_commit_title=proposal["proposed_commit_title"],
+                    proposed_commit_body=proposal["proposed_commit_body"],
+                    git_head_at_creation=proposal["git_head_at_creation"],
+                    dirty_tree_fingerprint=proposal["dirty_tree_fingerprint"],
+                    check_results=[],
+                )
+                failed = build_cartographer_level_3_commit_approval_preview(
+                    proposal_id=proposal["proposal_id"],
+                    approval_id="approval-level-3-failed-checks",
+                    approved_by="Britton",
+                    exact_file_list=proposal["included_files"],
+                    proposed_commit_title=proposal["proposed_commit_title"],
+                    proposed_commit_body=proposal["proposed_commit_body"],
+                    git_head_at_creation=proposal["git_head_at_creation"],
+                    dirty_tree_fingerprint=proposal["dirty_tree_fingerprint"],
+                    check_results=[
+                        {"command": command, "status": "failed"}
+                        for command in proposal["related_test_commands"]
+                    ],
+                )
+
+        self.assertFalse(missing["approval_validated"])
+        self.assertFalse(missing["checks_validated"])
+        self.assertIn("required_checks_missing", missing["blockers"])
+        self.assertFalse(missing["commit_allowed"])
+        self.assertFalse(missing["actions_taken"])
+        self.assertFalse(failed["approval_validated"])
+        self.assertFalse(failed["checks_validated"])
+        self.assertIn("required_checks_failed", failed["blockers"])
+        self.assertFalse(failed["commit_allowed"])
+        self.assertFalse(failed["actions_taken"])
+
+    def test_level_3_approval_preview_requires_exact_deleted_file_approval(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            tracked_doc = root / "docs" / "old-plan.md"
+            tracked_doc.parent.mkdir(parents=True, exist_ok=True)
+            tracked_doc.write_text("old plan\n", encoding="utf-8")
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            tracked_doc.unlink()
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                proposals = build_cartographer_level_3_commit_proposals()
+                proposal = next(
+                    item
+                    for item in proposals["commit_proposals"]
+                    if item["included_files"] == ["docs/old-plan.md"]
+                )
+                check_results = [
+                    {"command": command, "status": "passed"}
+                    for command in proposal["related_test_commands"]
+                ]
+                missing_deletion_approval = build_cartographer_level_3_commit_approval_preview(
+                    proposal_id=proposal["proposal_id"],
+                    approval_id="approval-level-3-delete-missing",
+                    approved_by="Britton",
+                    exact_file_list=proposal["included_files"],
+                    proposed_commit_title=proposal["proposed_commit_title"],
+                    proposed_commit_body=proposal["proposed_commit_body"],
+                    git_head_at_creation=proposal["git_head_at_creation"],
+                    dirty_tree_fingerprint=proposal["dirty_tree_fingerprint"],
+                    check_results=check_results,
+                )
+                approved_deletion = build_cartographer_level_3_commit_approval_preview(
+                    proposal_id=proposal["proposal_id"],
+                    approval_id="approval-level-3-delete-approved",
+                    approved_by="Britton",
+                    exact_file_list=proposal["included_files"],
+                    proposed_commit_title=proposal["proposed_commit_title"],
+                    proposed_commit_body=proposal["proposed_commit_body"],
+                    git_head_at_creation=proposal["git_head_at_creation"],
+                    dirty_tree_fingerprint=proposal["dirty_tree_fingerprint"],
+                    check_results=check_results,
+                    approved_deleted_files=["docs/old-plan.md"],
+                )
+
+        self.assertEqual(proposal["deleted_files"], ["docs/old-plan.md"])
+        self.assertFalse(missing_deletion_approval["approval_validated"])
+        self.assertFalse(missing_deletion_approval["deletions_validated"])
+        self.assertIn(
+            "explicit_deletion_approval_required",
+            missing_deletion_approval["blockers"],
+        )
+        self.assertFalse(missing_deletion_approval["commit_allowed"])
+        self.assertTrue(approved_deletion["approval_validated"])
+        self.assertTrue(approved_deletion["deletions_validated"])
+        self.assertEqual(approved_deletion["approved_deleted_files"], ["docs/old-plan.md"])
+        self.assertFalse(approved_deletion["commit_allowed"])
+        self.assertFalse(approved_deletion["actions_taken"])
+
+    def test_level_3_approval_preview_endpoint_contract(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            plan = root / "docs" / "cartographer-level-3-autonomy-plan.md"
+            plan.parent.mkdir(parents=True, exist_ok=True)
+            plan.write_text("# Plan\n", encoding="utf-8")
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                proposal_payload = build_cartographer_level_3_commit_proposals()
+                proposal = proposal_payload["commit_proposals"][0]
+                response = TestClient(_test_app()).post(
+                    f"/v1/cartographer/level-3-commit-proposals/{proposal['proposal_id']}/approval-preview",
+                    json={
+                        "approval_id": "approval-level-3-endpoint",
+                        "approved_by": "Britton",
+                        "exact_file_list": proposal["included_files"],
+                        "proposed_commit_title": proposal["proposed_commit_title"],
+                        "proposed_commit_body": proposal["proposed_commit_body"],
+                        "git_head_at_creation": proposal["git_head_at_creation"],
+                        "dirty_tree_fingerprint": proposal["dirty_tree_fingerprint"],
+                        "check_results": [
+                            {"command": command, "status": "passed"}
+                            for command in proposal["related_test_commands"]
+                        ],
+                    },
+                )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["level"], 3)
+        self.assertTrue(payload["approval_validated"])
+        self.assertTrue(payload["checks_validated"])
+        self.assertFalse(payload["commit_allowed"])
+        self.assertFalse(payload["push_allowed"])
+        self.assertFalse(payload["actions_taken"])
+
+    def test_level_3_commit_execution_endpoint_is_hard_blocked(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            plan = root / "docs" / "cartographer-level-3-autonomy-plan.md"
+            plan.parent.mkdir(parents=True, exist_ok=True)
+            plan.write_text("# Plan\n", encoding="utf-8")
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                proposal = build_cartographer_level_3_commit_proposals()["commit_proposals"][0]
+                before_head = _git_stdout(root, "rev-parse", "HEAD").strip()
+                before_status = _git_stdout(root, "status", "--short")
+                payload = block_cartographer_level_3_commit_execution(
+                    proposal_id=proposal["proposal_id"],
+                    approval_id="approval-level-3-execute",
+                    approved_by="Britton",
+                )
+                response = TestClient(_test_app()).post(
+                    f"/v1/cartographer/level-3-commit-proposals/{proposal['proposal_id']}/commit",
+                    json={
+                        "approval_id": "approval-level-3-execute",
+                        "approved_by": "Britton",
+                    },
+                )
+                after_head = _git_stdout(root, "rev-parse", "HEAD").strip()
+                after_status = _git_stdout(root, "status", "--short")
+
+        self.assertEqual(before_head, after_head)
+        self.assertEqual(before_status, after_status)
+        self.assertEqual(response.status_code, 200)
+        for result in (payload, response.json()):
+            self.assertEqual(result["status"], "blocked")
+            self.assertEqual(result["mode"], "commit_execution_hard_block")
+            self.assertIn("level_3_commit_execution_not_implemented", result["blockers"])
+            self.assertFalse(result["commit_allowed"])
+            self.assertFalse(result["commit_enabled"])
+            self.assertFalse(result["commit_execution_enabled"])
+            self.assertFalse(result["commit_created"])
+            self.assertFalse(result["push_allowed"])
+            self.assertFalse(result["push_created"])
+            self.assertFalse(result["creates_push_queue_item"])
+            self.assertFalse(result["branch_creation_allowed"])
+            self.assertFalse(result["actions_taken"])
+
+    def test_level_3_commit_execution_hard_block_negative_matrix(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            plan = root / "docs" / "cartographer-level-3-autonomy-plan.md"
+            plan.parent.mkdir(parents=True, exist_ok=True)
+            plan.write_text("# Plan\n", encoding="utf-8")
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                proposal = build_cartographer_level_3_commit_proposals()["commit_proposals"][0]
+                before_head = _git_stdout(root, "rev-parse", "HEAD").strip()
+                before_status = _git_stdout(root, "status", "--short")
+                missing_approval = block_cartographer_level_3_commit_execution(
+                    proposal_id=proposal["proposal_id"],
+                    approval_id=None,
+                    approved_by="Britton",
+                )
+                self_approval = block_cartographer_level_3_commit_execution(
+                    proposal_id=proposal["proposal_id"],
+                    approval_id="approval-self",
+                    approved_by="cartographer",
+                )
+                unknown_proposal = block_cartographer_level_3_commit_execution(
+                    proposal_id="missing-level-3-proposal",
+                    approval_id="approval-missing-proposal",
+                    approved_by="Britton",
+                )
+                after_head = _git_stdout(root, "rev-parse", "HEAD").strip()
+                after_status = _git_stdout(root, "status", "--short")
+
+        self.assertEqual(before_head, after_head)
+        self.assertEqual(before_status, after_status)
+        cases = [
+            (missing_approval, "approval_id_required"),
+            (self_approval, "cartographer_self_approval_blocked"),
+            (unknown_proposal, "proposal_not_found"),
+        ]
+        for payload, blocker in cases:
+            self.assertEqual(payload["status"], "blocked")
+            self.assertIn("level_3_commit_execution_not_implemented", payload["blockers"])
+            self.assertIn(blocker, payload["blockers"])
+            self.assertFalse(payload["commit_allowed"])
+            self.assertFalse(payload["commit_enabled"])
+            self.assertFalse(payload["commit_execution_enabled"])
+            self.assertFalse(payload["commit_created"])
+            self.assertFalse(payload["push_allowed"])
+            self.assertFalse(payload["push_enabled"])
+            self.assertFalse(payload["push_created"])
+            self.assertFalse(payload["creates_push_queue_item"])
+            self.assertFalse(payload["branch_creation_allowed"])
+            self.assertFalse(payload["stash_allowed"])
+            self.assertFalse(payload["cleanup_allowed"])
+            self.assertFalse(payload["actions_taken"])
+
+    def test_level_3_closeout_readiness_packet_keeps_commit_blocked(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            plan = root / "docs" / "cartographer-level-3-autonomy-plan.md"
+            plan.parent.mkdir(parents=True, exist_ok=True)
+            plan.write_text("# Plan\n", encoding="utf-8")
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = build_cartographer_level_3_closeout_readiness()
+                response = TestClient(_test_app()).get("/v1/cartographer/level-3-closeout-readiness")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["readiness_version"], "cartographer.level_3.closeout_readiness.v1")
+        self.assertEqual(payload["level"], 3)
+        self.assertEqual(payload["mode"], "closeout_readiness_packet")
+        self.assertTrue(payload["proposal_preview_ready"])
+        self.assertFalse(payload["local_commit_ready"])
+        self.assertFalse(payload["write_actions_enabled"])
+        self.assertFalse(payload["authority_granted"])
+        self.assertFalse(payload["actions_taken"])
+        self.assertFalse(payload["commit_allowed"])
+        self.assertFalse(payload["commit_execution_enabled"])
+        self.assertFalse(payload["push_allowed"])
+        self.assertFalse(payload["branch_creation_allowed"])
+        self.assertFalse(payload["creates_push_queue_item"])
+        self.assertFalse(payload["level_2_docs_apply_enabled"])
+        self.assertIn("level_2_apply_blocked", payload["activation_blockers"])
+        gates = {gate["code"]: gate for gate in payload["gates"]}
+        self.assertTrue(gates["proposal_schema_available"]["passed"])
+        self.assertTrue(gates["commit_proposal_preview_endpoint_available"]["passed"])
+        self.assertTrue(gates["approval_preview_gate_available"]["passed"])
+        self.assertTrue(gates["commit_execution_hard_blocked"]["passed"])
+        self.assertTrue(gates["commit_push_branch_locked"]["passed"])
+        self.assertFalse(gates["level_2_safe_dependency"]["passed"])
+        self.assertIn("/v1/cartographer/level-3-closeout-readiness", payload["endpoints"])
+        self.assertIn("git status -sb", payload["manual_checks"])
+
+    def test_level_3_endpoint_index_and_finalization_marker_are_read_only(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            plan = root / "docs" / "cartographer-level-3-autonomy-plan.md"
+            plan.parent.mkdir(parents=True, exist_ok=True)
+            plan.write_text("# Plan\n", encoding="utf-8")
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                index = build_cartographer_level_3_endpoint_index()
+                marker = build_cartographer_level_3_finalization_marker()
+                index_response = TestClient(_test_app()).get("/v1/cartographer/level-3-endpoints")
+                marker_response = TestClient(_test_app()).get("/v1/cartographer/level-3-finalization")
+
+        self.assertEqual(index_response.status_code, 200)
+        self.assertEqual(marker_response.status_code, 200)
+        self.assertEqual(index["index_version"], "cartographer.level_3.endpoint_index.v1")
+        self.assertEqual(marker["marker_version"], "cartographer.level_3.finalization_marker.v1")
+        self.assertEqual(index_response.json()["endpoint_count"], index["endpoint_count"])
+        self.assertEqual(marker_response.json()["marker_version"], marker["marker_version"])
+        endpoints = {item["endpoint"]: item for item in index["endpoints"]}
+        self.assertIn("/v1/cartographer/level-3-commit-proposals", endpoints)
+        self.assertIn(
+            "/v1/cartographer/level-3-commit-proposals/{proposal_id}/approval-preview",
+            endpoints,
+        )
+        self.assertIn(
+            "/v1/cartographer/level-3-commit-proposals/{proposal_id}/commit",
+            endpoints,
+        )
+        self.assertIn("/v1/cartographer/level-3-closeout-readiness", endpoints)
+        self.assertIn("/v1/cartographer/level-3-endpoints", endpoints)
+        self.assertIn("/v1/cartographer/level-3-finalization", endpoints)
+        self.assertTrue(all(not item["write_actions_enabled"] for item in endpoints.values()))
+        self.assertTrue(all(not item["commit_allowed"] for item in endpoints.values()))
+        self.assertTrue(all(not item["push_allowed"] for item in endpoints.values()))
+        self.assertFalse(index["write_actions_enabled"])
+        self.assertFalse(index["authority_granted"])
+        self.assertFalse(index["actions_taken"])
+        self.assertFalse(index["commit_allowed"])
+        self.assertFalse(index["push_allowed"])
+        self.assertFalse(index["creates_push_queue_item"])
+        self.assertTrue(marker["proposal_preview_complete"])
+        self.assertFalse(marker["local_commit_ready"])
+        self.assertTrue(marker["level_3_complete_for_proposal_preview"])
+        self.assertFalse(marker["level_3_complete_for_commit_execution"])
+        self.assertFalse(marker["commit_allowed"])
+        self.assertFalse(marker["commit_execution_enabled"])
+        self.assertFalse(marker["push_allowed"])
+        self.assertFalse(marker["branch_creation_allowed"])
+        self.assertFalse(marker["creates_push_queue_item"])
+        self.assertFalse(marker["actions_taken"])
+
+    def test_level_3_blocker_handoff_is_read_only_and_lists_dirty_groups(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            plan = root / "docs" / "cartographer-level-3-autonomy-plan.md"
+            plan.parent.mkdir(parents=True, exist_ok=True)
+            plan.write_text("# Plan\n", encoding="utf-8")
+            scout_file = root / "scout" / "src" / "scout" / "api" / "sources.py"
+            scout_file.parent.mkdir(parents=True, exist_ok=True)
+            scout_file.write_text("def scout_source():\n    return True\n", encoding="utf-8")
+
+            before_head = _git_stdout(root, "rev-parse", "HEAD").strip()
+            before_status = _git_stdout(root, "status", "--short")
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = build_cartographer_level_3_blocker_handoff()
+                response = TestClient(_test_app()).get("/v1/cartographer/level-3-blocker-handoff")
+            after_head = _git_stdout(root, "rev-parse", "HEAD").strip()
+            after_status = _git_stdout(root, "status", "--short")
+
+        self.assertEqual(before_head, after_head)
+        self.assertEqual(before_status, after_status)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["handoff_version"], "cartographer.level_3.blocker_handoff.v1")
+        self.assertEqual(payload["level"], 3)
+        self.assertEqual(payload["mode"], "read_only_level_3_blocker_handoff")
+        self.assertFalse(payload["write_actions_enabled"])
+        self.assertFalse(payload["authority_granted"])
+        self.assertFalse(payload["actions_taken"])
+        self.assertTrue(payload["proposal_preview_ready"])
+        self.assertFalse(payload["local_commit_ready"])
+        self.assertFalse(payload["commit_allowed"])
+        self.assertFalse(payload["commit_execution_enabled"])
+        self.assertFalse(payload["push_allowed"])
+        self.assertFalse(payload["branch_creation_allowed"])
+        self.assertFalse(payload["stash_allowed"])
+        self.assertFalse(payload["cleanup_allowed"])
+        self.assertFalse(payload["creates_push_queue_item"])
+        self.assertFalse(payload["level_2_docs_apply_enabled"])
+        self.assertTrue(payload["dirty_tree_block"])
+        groups = {group["group_id"]: group for group in payload["blocking_groups"]}
+        self.assertIn("scout_work", groups)
+        self.assertIn("unclassified_docs_and_markdown", groups)
+        self.assertFalse(groups["scout_work"]["cartographer_may_resolve"])
+        self.assertFalse(groups["unclassified_docs_and_markdown"]["cartographer_may_resolve"])
+        self.assertIn("git status -sb", payload["manual_checks"])
+        self.assertIn("auto commit", payload["forbidden_resolution_actions"])
 
     def test_push_queue_reports_ahead_commit_without_pushing(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

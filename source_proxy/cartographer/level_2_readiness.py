@@ -11,8 +11,12 @@ from source_proxy.cartographer.project_discovery import discover_projects
 
 def build_level_2_readiness() -> dict[str, Any]:
     promotion = build_autonomy_promotion_recommendation()
-    level_1 = promotion["level_1_readiness"]  # type: ignore[index]
-    level_1_label = str(level_1["label"])  # type: ignore[index]
+    level_1 = promotion.get("level_1_readiness")
+    level_1_label = (
+        str(level_1.get("label"))
+        if isinstance(level_1, dict) and level_1.get("label")
+        else "unknown"
+    )
     britton_override = _level_1_accepted_by_britton()
     project = _first_project()
     git_status = (

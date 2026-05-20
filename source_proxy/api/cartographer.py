@@ -39,6 +39,12 @@ from source_proxy.cartographer.service import (
     build_cartographer_level_2_dirty_tree,
     build_cartographer_level_2_dirty_tree_resolution,
     build_cartographer_level_2_readiness,
+    build_cartographer_level_3_commit_approval_preview,
+    build_cartographer_level_3_blocker_handoff,
+    build_cartographer_level_3_closeout_readiness,
+    build_cartographer_level_3_endpoint_index,
+    build_cartographer_level_3_finalization_marker,
+    build_cartographer_level_3_commit_proposals,
     build_cartographer_projects,
     build_cartographer_project_candidates,
     build_cartographer_project_health,
@@ -69,6 +75,7 @@ from source_proxy.cartographer.service import (
     build_cartographer_v1_proof_validation,
     build_cartographer_v1_readiness,
     apply_cartographer_clutter_proposal,
+    block_cartographer_level_3_commit_execution,
     run_cartographer_docs_autopilot_apply,
     run_cartographer_level_2_docs_apply,
     write_cartographer_starter_blueprints,
@@ -108,6 +115,23 @@ class CartographerLevel2ApplyRequest(BaseModel):
     proposal_id: str = Field(max_length=160)
     approval_id: str | None = Field(default=None, max_length=160)
     approval_actor: str | None = Field(default=None, max_length=120)
+
+
+class CartographerLevel3CommitApprovalPreviewRequest(BaseModel):
+    approval_id: str | None = Field(default=None, max_length=160)
+    approved_by: str | None = Field(default=None, max_length=120)
+    exact_file_list: list[str] = Field(default_factory=list, max_length=200)
+    proposed_commit_title: str = Field(default="", max_length=240)
+    proposed_commit_body: str = Field(default="", max_length=5000)
+    git_head_at_creation: str | None = Field(default=None, max_length=80)
+    dirty_tree_fingerprint: str | None = Field(default=None, max_length=80)
+    check_results: list[dict[str, Any]] = Field(default_factory=list, max_length=50)
+    approved_deleted_files: list[str] = Field(default_factory=list, max_length=200)
+
+
+class CartographerLevel3CommitExecutionRequest(BaseModel):
+    approval_id: str | None = Field(default=None, max_length=160)
+    approved_by: str | None = Field(default=None, max_length=120)
 
 
 @router.get("/status")
@@ -194,6 +218,62 @@ async def cartographer_level_2_api_contract() -> dict[str, Any]:
 @router.get("/level-2-closeout")
 async def cartographer_level_2_closeout() -> dict[str, Any]:
     return build_cartographer_level_2_closeout()
+
+
+@router.get("/level-3-commit-proposals")
+async def cartographer_level_3_commit_proposals() -> dict[str, Any]:
+    return build_cartographer_level_3_commit_proposals()
+
+
+@router.post("/level-3-commit-proposals/{proposal_id}/approval-preview")
+async def cartographer_level_3_commit_approval_preview(
+    proposal_id: str,
+    request: CartographerLevel3CommitApprovalPreviewRequest,
+) -> dict[str, Any]:
+    return build_cartographer_level_3_commit_approval_preview(
+        proposal_id=proposal_id,
+        approval_id=request.approval_id,
+        approved_by=request.approved_by,
+        exact_file_list=request.exact_file_list,
+        proposed_commit_title=request.proposed_commit_title,
+        proposed_commit_body=request.proposed_commit_body,
+        git_head_at_creation=request.git_head_at_creation,
+        dirty_tree_fingerprint=request.dirty_tree_fingerprint,
+        check_results=request.check_results,
+        approved_deleted_files=request.approved_deleted_files,
+    )
+
+
+@router.post("/level-3-commit-proposals/{proposal_id}/commit")
+async def cartographer_level_3_commit_execution_block(
+    proposal_id: str,
+    request: CartographerLevel3CommitExecutionRequest,
+) -> dict[str, Any]:
+    return block_cartographer_level_3_commit_execution(
+        proposal_id=proposal_id,
+        approval_id=request.approval_id,
+        approved_by=request.approved_by,
+    )
+
+
+@router.get("/level-3-closeout-readiness")
+async def cartographer_level_3_closeout_readiness() -> dict[str, Any]:
+    return build_cartographer_level_3_closeout_readiness()
+
+
+@router.get("/level-3-endpoints")
+async def cartographer_level_3_endpoints() -> dict[str, Any]:
+    return build_cartographer_level_3_endpoint_index()
+
+
+@router.get("/level-3-finalization")
+async def cartographer_level_3_finalization() -> dict[str, Any]:
+    return build_cartographer_level_3_finalization_marker()
+
+
+@router.get("/level-3-blocker-handoff")
+async def cartographer_level_3_blocker_handoff() -> dict[str, Any]:
+    return build_cartographer_level_3_blocker_handoff()
 
 
 @router.get("/v1-readiness")

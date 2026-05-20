@@ -20,7 +20,12 @@ from source_proxy.cartographer.clutter_proposals import (
     build_low_risk_deletion_proposals,
 )
 from source_proxy.cartographer.codex_evidence import build_codex_evidence_rollup
-from source_proxy.cartographer.commit_proposals import build_commit_proposals
+from source_proxy.cartographer.commit_proposals import (
+    build_commit_proposals,
+    build_level_3_commit_approval_preview,
+    build_level_3_commit_execution_block,
+    build_level_3_commit_proposal_preview,
+)
 from source_proxy.cartographer.component_mapper import build_component_map
 from source_proxy.cartographer.drift import detect_blueprint_drift
 from source_proxy.cartographer.git_status import (
@@ -792,6 +797,363 @@ def build_cartographer_commit_proposals() -> dict[str, Any]:
         "commit_enabled": False,
         "actions_taken": False,
         "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_level_3_commit_proposals() -> dict[str, Any]:
+    payload = build_level_3_commit_proposal_preview(
+        level_2_readiness=build_level_2_readiness(),
+    )
+    payload["safety"] = cartographer_safety_manifest()
+    return payload
+
+
+def build_cartographer_level_3_commit_approval_preview(
+    *,
+    proposal_id: str,
+    approval_id: str | None,
+    approved_by: str | None,
+    exact_file_list: list[str],
+    proposed_commit_title: str,
+    proposed_commit_body: str,
+    git_head_at_creation: str | None = None,
+    dirty_tree_fingerprint: str | None = None,
+    check_results: list[dict[str, Any]] | None = None,
+    approved_deleted_files: list[str] | None = None,
+) -> dict[str, Any]:
+    payload = build_level_3_commit_approval_preview(
+        proposal_id=proposal_id,
+        approval_id=approval_id,
+        approved_by=approved_by,
+        exact_file_list=exact_file_list,
+        proposed_commit_title=proposed_commit_title,
+        proposed_commit_body=proposed_commit_body,
+        git_head_at_creation=git_head_at_creation,
+        dirty_tree_fingerprint=dirty_tree_fingerprint,
+        check_results=check_results,
+        approved_deleted_files=approved_deleted_files,
+    )
+    payload["safety"] = cartographer_safety_manifest()
+    return payload
+
+
+def block_cartographer_level_3_commit_execution(
+    *,
+    proposal_id: str,
+    approval_id: str | None,
+    approved_by: str | None,
+) -> dict[str, Any]:
+    payload = build_level_3_commit_execution_block(
+        proposal_id=proposal_id,
+        approval_id=approval_id,
+        approved_by=approved_by,
+    )
+    payload["safety"] = cartographer_safety_manifest()
+    return payload
+
+
+def build_cartographer_level_3_closeout_readiness() -> dict[str, Any]:
+    proposals = build_cartographer_level_3_commit_proposals()
+    level_2 = build_level_2_readiness()
+    gates = [
+        _level_3_closeout_gate(
+            "proposal_schema_available",
+            proposals["proposal_version"] == "cartographer.level_3.commit_proposal.v1",
+            "Level 3 proposal receipts expose branch, HEAD, dirty-tree fingerprint, file bundle, tests, blockers, rollback, and safety flags.",
+        ),
+        _level_3_closeout_gate(
+            "commit_proposal_preview_endpoint_available",
+            proposals["endpoint"] == "/v1/cartographer/level-3-commit-proposals",
+            "Read-only Level 3 proposal endpoint is available.",
+        ),
+        _level_3_closeout_gate(
+            "approval_preview_gate_available",
+            True,
+            "Approval preview validates actor, exact files, title/body, HEAD, dirty-tree fingerprint, checks, and explicit deletions.",
+        ),
+        _level_3_closeout_gate(
+            "commit_execution_hard_blocked",
+            True,
+            "Level 3 commit execution endpoint exists only as a hard block and cannot create commits.",
+        ),
+        _level_3_closeout_gate(
+            "commit_push_branch_locked",
+            not proposals["commit_allowed"]
+            and not proposals["push_allowed"]
+            and not proposals["branch_creation_allowed"],
+            "Level 3 proposal surface keeps commit, push, and branch creation disabled.",
+        ),
+        _level_3_closeout_gate(
+            "level_2_safe_dependency",
+            bool(level_2["docs_apply_enabled"]),
+            (
+                "Level 2 docs apply is usable."
+                if level_2["docs_apply_enabled"]
+                else "Level 2 docs apply remains blocked; Level 3 must stay proposal-only."
+            ),
+        ),
+        _level_3_closeout_gate(
+            "dirty_tree_groups_classified",
+            "unknown_files_require_manual_classification" not in proposals["activation_blockers"],
+            (
+                "Dirty tree groups are classified."
+                if "unknown_files_require_manual_classification" not in proposals["activation_blockers"]
+                else "Unknown files remain and block Level 3 commit readiness."
+            ),
+        ),
+    ]
+    blockers = [gate for gate in gates if not gate["passed"]]
+    proposal_preview_ready = not any(
+        gate["code"] in {
+            "proposal_schema_available",
+            "commit_proposal_preview_endpoint_available",
+            "approval_preview_gate_available",
+            "commit_execution_hard_blocked",
+            "commit_push_branch_locked",
+        }
+        and not gate["passed"]
+        for gate in gates
+    )
+    local_commit_ready = not blockers
+    return {
+        "status": "observing",
+        "level": 3,
+        "mode": "closeout_readiness_packet",
+        "readiness_version": "cartographer.level_3.closeout_readiness.v1",
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "proposal_preview_ready": proposal_preview_ready,
+        "local_commit_ready": local_commit_ready,
+        "commit_allowed": False,
+        "commit_execution_enabled": False,
+        "push_allowed": False,
+        "branch_creation_allowed": False,
+        "creates_push_queue_item": False,
+        "level_2_docs_apply_enabled": level_2["docs_apply_enabled"],
+        "level_2_blockers": [blocker["code"] for blocker in level_2["blockers"]],
+        "proposal_count": proposals["proposal_count"],
+        "activation_blockers": proposals["activation_blockers"],
+        "gates": gates,
+        "gate_count": len(gates),
+        "passed_count": len([gate for gate in gates if gate["passed"]]),
+        "blockers": blockers,
+        "blocker_count": len(blockers),
+        "endpoints": [
+            "/v1/cartographer/level-3-commit-proposals",
+            "/v1/cartographer/level-3-commit-proposals/{proposal_id}/approval-preview",
+            "/v1/cartographer/level-3-commit-proposals/{proposal_id}/commit",
+            "/v1/cartographer/level-3-closeout-readiness",
+        ],
+        "manual_checks": [
+            'PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -k "level_3 or commit"',
+            "PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_safety_audit.py",
+            "git status -sb",
+        ],
+        "next_step": (
+            "Resolve Level 2 and unknown dirty-tree blockers before implementing local commit execution."
+            if blockers
+            else "Level 3 proposal/approval gates are ready for a separately approved local commit execution increment."
+        ),
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_level_3_endpoint_index() -> dict[str, Any]:
+    closeout = build_cartographer_level_3_closeout_readiness()
+    endpoints = [
+        {
+            "endpoint": "/v1/cartographer/level-3-commit-proposals",
+            "method": "GET",
+            "surface_id": "commit_proposal_preview",
+            "mode": "read_only_commit_bundle_preview",
+            "purpose": "Return Level 3 commit proposal receipts, bundles, blockers, and required checks.",
+            "write_actions_enabled": False,
+            "commit_allowed": False,
+            "push_allowed": False,
+        },
+        {
+            "endpoint": "/v1/cartographer/level-3-commit-proposals/{proposal_id}/approval-preview",
+            "method": "POST",
+            "surface_id": "approval_preview",
+            "mode": "read_only_approval_gate_preview",
+            "purpose": "Validate human approval fields without staging or committing.",
+            "write_actions_enabled": False,
+            "commit_allowed": False,
+            "push_allowed": False,
+        },
+        {
+            "endpoint": "/v1/cartographer/level-3-commit-proposals/{proposal_id}/commit",
+            "method": "POST",
+            "surface_id": "commit_execution_block",
+            "mode": "hard_blocked_commit_execution",
+            "purpose": "Return a hard block for Level 3 commit execution until a separate implementation is approved.",
+            "write_actions_enabled": False,
+            "commit_allowed": False,
+            "push_allowed": False,
+        },
+        {
+            "endpoint": "/v1/cartographer/level-3-closeout-readiness",
+            "method": "GET",
+            "surface_id": "closeout_readiness",
+            "mode": "read_only_closeout_readiness_packet",
+            "purpose": "Summarize Level 3 proposal readiness and remaining commit blockers.",
+            "write_actions_enabled": False,
+            "commit_allowed": False,
+            "push_allowed": False,
+        },
+        {
+            "endpoint": "/v1/cartographer/level-3-endpoints",
+            "method": "GET",
+            "surface_id": "endpoint_index",
+            "mode": "read_only_level_3_endpoint_index",
+            "purpose": "List Level 3 read-only and hard-blocked surfaces.",
+            "write_actions_enabled": False,
+            "commit_allowed": False,
+            "push_allowed": False,
+        },
+        {
+            "endpoint": "/v1/cartographer/level-3-finalization",
+            "method": "GET",
+            "surface_id": "finalization_marker",
+            "mode": "read_only_level_3_finalization_marker",
+            "purpose": "Record Level 3 proposal-preview closeout state without granting commit authority.",
+            "write_actions_enabled": False,
+            "commit_allowed": False,
+            "push_allowed": False,
+        },
+    ]
+    return {
+        "status": "observing",
+        "level": 3,
+        "mode": "read_only_level_3_endpoint_index",
+        "index_version": "cartographer.level_3.endpoint_index.v1",
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "endpoint_count": len(endpoints),
+        "endpoints": endpoints,
+        "proposal_preview_ready": closeout["proposal_preview_ready"],
+        "local_commit_ready": closeout["local_commit_ready"],
+        "commit_allowed": False,
+        "push_allowed": False,
+        "creates_push_queue_item": False,
+        "closeout_readiness_endpoint": "/v1/cartographer/level-3-closeout-readiness",
+        "finalization_endpoint": "/v1/cartographer/level-3-finalization",
+        "manual_checks": closeout["manual_checks"],
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_level_3_finalization_marker() -> dict[str, Any]:
+    closeout = build_cartographer_level_3_closeout_readiness()
+    endpoint_index = build_cartographer_level_3_endpoint_index()
+    return {
+        "status": "observing",
+        "level": 3,
+        "mode": "read_only_level_3_finalization_marker",
+        "marker_version": "cartographer.level_3.finalization_marker.v1",
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "proposal_preview_complete": closeout["proposal_preview_ready"],
+        "local_commit_ready": closeout["local_commit_ready"],
+        "level_3_complete_for_proposal_preview": closeout["proposal_preview_ready"],
+        "level_3_complete_for_commit_execution": False,
+        "commit_allowed": False,
+        "commit_execution_enabled": False,
+        "push_allowed": False,
+        "branch_creation_allowed": False,
+        "creates_push_queue_item": False,
+        "blocker_count": closeout["blocker_count"],
+        "blockers": closeout["blockers"],
+        "endpoint_index": "/v1/cartographer/level-3-endpoints",
+        "endpoint_count": endpoint_index["endpoint_count"],
+        "next_step": (
+            "Stop Level 3 here until Level 2 and dirty-tree blockers are resolved."
+            if not closeout["local_commit_ready"]
+            else "Request explicit approval for a future local commit execution implementation."
+        ),
+        "manual_checks": closeout["manual_checks"],
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_level_3_blocker_handoff() -> dict[str, Any]:
+    level_2 = build_cartographer_level_2_readiness()
+    resolution = build_cartographer_level_2_dirty_tree_resolution()
+    closeout = build_cartographer_level_3_closeout_readiness()
+    blocking_groups = resolution["blocking_groups"]
+    handoff_groups = [
+        {
+            "group_id": group["group_id"],
+            "label": group["label"],
+            "file_count": group["file_count"],
+            "files": group["files"],
+            "recommended_disposition": group["recommended_disposition"],
+            "required_human_action": _level_3_handoff_action(str(group["group_id"])),
+            "cartographer_may_resolve": False,
+        }
+        for group in blocking_groups
+    ]
+    return {
+        "status": "observing",
+        "level": 3,
+        "mode": "read_only_level_3_blocker_handoff",
+        "handoff_version": "cartographer.level_3.blocker_handoff.v1",
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "proposal_preview_ready": closeout["proposal_preview_ready"],
+        "local_commit_ready": False,
+        "commit_allowed": False,
+        "commit_execution_enabled": False,
+        "push_allowed": False,
+        "branch_creation_allowed": False,
+        "stash_allowed": False,
+        "cleanup_allowed": False,
+        "creates_push_queue_item": False,
+        "level_2_docs_apply_enabled": level_2["docs_apply_enabled"],
+        "level_2_blockers": [blocker["code"] for blocker in level_2["blockers"]],
+        "dirty_tree_block": resolution["dirty_tree_block"],
+        "blocking_file_count": resolution["blocking_file_count"],
+        "blocking_group_count": resolution["blocking_group_count"],
+        "blocking_groups": handoff_groups,
+        "forbidden_resolution_actions": resolution["forbidden_resolution_actions"],
+        "recommended_sequence": [
+            "Review each blocking group as separate human-owned work.",
+            "Land, restore, or isolate unrelated dirty files outside Cartographer Level 3.",
+            "Re-run Level 2 readiness until docs_apply_enabled is true.",
+            "Re-run Level 3 closeout readiness before requesting commit execution implementation.",
+        ],
+        "manual_checks": [
+            "git status -sb",
+            "PYTHONPATH=. .venv/bin/python - <<'PY'\nfrom source_proxy.cartographer.service import build_cartographer_level_3_blocker_handoff\npayload = build_cartographer_level_3_blocker_handoff()\nprint(payload['handoff_version'])\nprint(payload['level_2_docs_apply_enabled'])\nprint(payload['local_commit_ready'])\nprint(payload['blocking_file_count'])\nprint([group['group_id'] for group in payload['blocking_groups']])\nPY",
+        ],
+        "next_step": "Human resolves or isolates blocking groups; Cartographer remains read-only for this handoff.",
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def _level_3_handoff_action(group_id: str) -> str:
+    actions = {
+        "level_2_implementation": "Review as source work and land separately before Level 2 apply.",
+        "source_proxy_unrelated": "Classify, land, or isolate source_proxy changes outside Level 2 apply.",
+        "app_and_dashboard_source": "Review app/dashboard changes as a separate workstream.",
+        "scout_work": "Handle Scout files through Scout closeout or a Scout-specific commit plan.",
+        "deleted_old_plans": "Britton explicitly decides whether to preserve, restore, or land deletions.",
+        "unclassified_docs_and_markdown": "Classify docs as an explicit docs proposal or keep Level 2 blocked.",
+        "unclassified_other": "Manually classify or isolate these files before Level 2 apply.",
+    }
+    return actions.get(group_id, "Human classification required before Level 2 or Level 3 commit readiness.")
+
+
+def _level_3_closeout_gate(code: str, passed: bool, evidence: str) -> dict[str, Any]:
+    return {
+        "code": code,
+        "passed": passed,
+        "evidence": evidence,
+        "required": True,
     }
 
 
