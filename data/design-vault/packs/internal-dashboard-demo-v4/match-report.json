@@ -1,0 +1,22 @@
+{
+  "version": "0.1",
+  "pack_id": "internal-dashboard-demo-v4",
+  "source_card": "data/design-vault/source-cards/internal-dashboard-demo-v4.json",
+  "status": "not-run",
+  "capture_date": null,
+  "playwright_config_detected": true,
+  "playwright_package_detected": false,
+  "reference_screenshots": [],
+  "generated_screenshots": [],
+  "compared_pairs": [],
+  "threshold_policy": {
+    "mode": "informational-draft",
+    "blocking": false,
+    "notes": "Phase 5.1 records visual verification shape only. No screenshots were captured and no visual gate was enforced."
+  },
+  "known_deviations": [],
+  "reviewer_notes": [
+    "Created as a scaffold for later approved Playwright capture and comparison work.",
+    "No app UI, route, Scout runtime, Source Proxy behavior, or Cartographer authority changed."
+  ]
+}

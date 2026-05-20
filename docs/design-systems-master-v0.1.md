@@ -1,6 +1,6 @@
 # SpiritOS Design Systems Master Plan v0.1
 
-Status: manual-first, planning complete, Phase 4.1 normalized token draft complete, runtime implementation not started
+Status: manual-first, planning complete, Phase 5.1 visual verification scaffold complete, runtime implementation not started
 
 Status date: 2026-05-19
 
@@ -10,7 +10,7 @@ SpiritOS should build this as a Design Intelligence Stack, not as one mega-agent
 
 The system should start from owned and internal references. The first extraction target should be the existing `src/components/dashboard/demo-v4/` demo and `src/styles/dashboard-demo-v4.css`, with `src/styles/spirit-demo.tokens.css` and `src/theme/spiritPalettes.ts` as related token and palette references. Public websites, random inspiration links, and later Scout discoveries should not enter coding context automatically.
 
-The v0.1 goal is to define the lanes, metadata, safety rules, and small implementation increments. It does not add crawler behavior, autonomous discovery, app UI writes, Scout runtime behavior, Source Proxy behavior, or Cartographer authority. After approval, Phase 1.1 added only the local Design Vault documentation and empty registry scaffold. Phase 2.1 added only the manual source-card template and approval checklist. Phase 3.1 added only an internal dashboard-demo-v4 source card, notes, and raw token inventory. Phase 4.1 added only normalized Design Vault token artifacts and a preview-only theme file.
+The v0.1 goal is to define the lanes, metadata, safety rules, and small implementation increments. It does not add crawler behavior, autonomous discovery, app UI writes, Scout runtime behavior, Source Proxy behavior, or Cartographer authority. After approval, Phase 1.1 added only the local Design Vault documentation and empty registry scaffold. Phase 2.1 added only the manual source-card template and approval checklist. Phase 3.1 added only an internal dashboard-demo-v4 source card, notes, and raw token inventory. Phase 4.1 added only normalized Design Vault token artifacts and a preview-only theme file. Phase 5.1 added only visual verification planning, empty screenshot folders, and a not-run match report.
 
 ## Current Repo Fit
 
@@ -367,8 +367,10 @@ cd /home/source/SpiritOS
 git status --short
 test -f docs/design-visual-verification-v0.1.md && echo "visual verification doc exists"
 grep -n "Playwright\\|screenshot\\|match-report" docs/design-visual-verification-v0.1.md
-if ls playwright.config.* >/dev/null 2>&1; then
+if ls playwright.config.* >/dev/null 2>&1 && node -e "require.resolve('@playwright/test/package.json')" >/dev/null 2>&1; then
   npx playwright test --list
+elif ls playwright.config.* >/dev/null 2>&1; then
+  echo "Playwright config found, but @playwright/test is not installed locally. Skipping Playwright check for this increment."
 else
   echo "Playwright config not found, skipping Playwright check for this increment."
 fi
@@ -628,6 +630,7 @@ Rollback notes:
 - Phase 2.1 source-card template and approval checklist exist after approval.
 - Phase 3.1 internal dashboard-demo-v4 source card, notes, and raw token inventory exist after approval.
 - Phase 4.1 normalized token model, tokens, and preview-only theme CSS exist after approval.
+- Phase 5.1 visual verification plan, screenshot placeholders, and not-run match report exist after approval.
 - All required phases are present.
 - All phases have increments.
 - Every increment has a manual check block.
@@ -641,8 +644,8 @@ Rollback notes:
 - No Cartographer authority is changed.
 - Proposed Design Vault paths are clearly marked proposed until implemented later.
 
-## Recommended Next Implementation Increment After Phase 4.1
+## Recommended Next Implementation Increment After Phase 5.1
 
-Phase 5.1: Add Playwright visual capture plan and optional smoke check
+Phase 6.1: Create design pack preview documentation
 
 Implementation permission is required before starting that increment.
