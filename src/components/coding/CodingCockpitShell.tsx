@@ -173,6 +173,18 @@ export default function CodingCockpitShell() {
   }, [allowedFileList.length, targetFile, task]);
   const canPreview = validationMessages.length === 0;
   const activeStepIndex = statusStepIndex(previewState);
+  const currentTaskTitle = task.trim() || "No active task";
+  const currentTaskTarget = normalizeRepoPath(targetFile) || "No target selected";
+  const currentTaskState =
+    previewState.status === "applied"
+      ? "Applied, verification required"
+      : previewState.status === "approved"
+        ? "Approved, not applied"
+        : previewState.approvalAvailable
+          ? "Preview ready"
+          : draftReady
+            ? "Draft ready"
+            : "Draft";
   const nextSafeAction = nextSafeActionText({
     draftReady,
     previewState,
@@ -878,7 +890,30 @@ export default function CodingCockpitShell() {
 
           </section>
 
-          <aside className="min-w-0" aria-label="Task actions">
+          <aside className="min-w-0 space-y-5" aria-label="Task actions">
+            <section className="rounded-md border border-white/10 bg-slate-900/70 p-4">
+              <h2 className="text-base font-semibold text-white">Current Task</h2>
+              <div className="mt-3 space-y-3 text-sm">
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                    State
+                  </div>
+                  <div className="mt-1 text-slate-100">{currentTaskState}</div>
+                </div>
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                    Task
+                  </div>
+                  <div className="mt-1 break-words text-slate-100">{currentTaskTitle}</div>
+                </div>
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                    Target
+                  </div>
+                  <div className="mt-1 break-words text-slate-100">{currentTaskTarget}</div>
+                </div>
+              </div>
+            </section>
             <section className="rounded-md border border-white/10 bg-slate-900/70 p-4">
               <h2 className="text-base font-semibold text-white">Next Safe Action</h2>
               <p className="mt-2 text-sm leading-6 text-slate-400">{nextSafeAction}</p>

@@ -29,6 +29,12 @@ describe("CodingCockpitShell", () => {
     expect(screen.getByLabelText("Coding status")).toHaveTextContent("Apply");
     expect(screen.getByLabelText("Coding status")).toHaveTextContent("Verify");
     expect(screen.getByRole("complementary", { name: "Task actions" })).toHaveTextContent(
+      "Current Task",
+    );
+    expect(screen.getByRole("complementary", { name: "Task actions" })).toHaveTextContent(
+      "No active task",
+    );
+    expect(screen.getByRole("complementary", { name: "Task actions" })).toHaveTextContent(
       "Next Safe Action",
     );
 
