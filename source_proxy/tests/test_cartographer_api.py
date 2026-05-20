@@ -66,6 +66,7 @@ from source_proxy.cartographer.service import (
     build_cartographer_level_9_branch_worktree_proposal_queue,
     build_cartographer_level_9_stale_worker_closeout_packet,
     build_cartographer_level_9_coordination_dashboard,
+    build_cartographer_level_10_project_health_timeline,
     build_cartographer_level_8_stop_failure_handling,
     build_cartographer_level_8_step_approval_preview,
     build_cartographer_level_8_workflow_run_card,
@@ -3179,6 +3180,88 @@ class CartographerApiTests(unittest.TestCase):
         self.assertFalse(payload["automatic_execution_allowed"])
         self.assertFalse(payload["automatic_promotion_allowed"])
         self.assertFalse(payload["cross_project_mutation_allowed"])
+
+    def test_level_10_project_health_timeline_reports_read_only_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir) / "SpiritOS"
+            root.mkdir()
+            _write_minimal_blueprints(root)
+            dashboard_file = root / "src" / "components" / "dashboard" / "Widget.tsx"
+            dashboard_file.parent.mkdir(parents=True)
+            dashboard_file.write_text("export function Widget() { return null; }\n", encoding="utf-8")
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "checkout", "-b", "main")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            dashboard_file.write_text("export function Widget() { return 'changed'; }\n", encoding="utf-8")
+
+            before_status = _git_stdout(root, "status", "--short")
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = build_cartographer_level_10_project_health_timeline()
+                response = TestClient(_test_app()).get("/v1/cartographer/level-10-project-health-timeline")
+            after_status = _git_stdout(root, "status", "--short")
+
+        self.assertEqual(before_status, after_status)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json()["contract_version"],
+            "cartographer.level_10.project_health_timeline.v1",
+        )
+        self.assertEqual(payload["status"], "observing")
+        self.assertEqual(payload["level"], 10)
+        self.assertEqual(payload["mode"], "project_health_timeline")
+        self.assertTrue(payload["timeline_available"])
+        self.assertTrue(payload["read_only"])
+        self.assertFalse(payload["write_actions_enabled"])
+        self.assertFalse(payload["authority_granted"])
+        self.assertFalse(payload["actions_taken"])
+        self.assertFalse(payload["background_mutation_allowed"])
+        self.assertFalse(payload["hidden_writes_allowed"])
+        self.assertFalse(payload["cleanup_allowed"])
+        self.assertFalse(payload["push_allowed"])
+        self.assertFalse(payload["merge_allowed"])
+        self.assertFalse(payload["automatic_execution_allowed"])
+        self.assertFalse(payload["automatic_promotion_allowed"])
+        self.assertFalse(payload["evidence_mutation_allowed"])
+        self.assertEqual(payload["project_count"], 1)
+        self.assertEqual(payload["dirty_project_count"], 1)
+        self.assertGreaterEqual(payload["blocked_project_count"], 1)
+        item = payload["timeline_items"][0]
+        self.assertEqual(item["project_id"], "spiritos")
+        self.assertTrue(item["dirty"])
+        self.assertEqual(item["timeline_state"], "blocked")
+        self.assertIn("project_health_probe", item["evidence_refs"])
+        self.assertFalse(item["mutation_allowed"])
+        self.assertTrue(payload["closeout_history"])
+        self.assertIn("Level 10.3", payload["next_step"])
+
+    def test_level_10_project_health_timeline_clean_state_is_locked(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir) / "SpiritOS"
+            root.mkdir()
+            _write_minimal_blueprints(root)
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "checkout", "-b", "main")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = build_cartographer_level_10_project_health_timeline()
+
+        self.assertEqual(payload["level"], 10)
+        self.assertEqual(payload["project_count"], 1)
+        self.assertEqual(payload["dirty_project_count"], 0)
+        self.assertEqual(payload["timeline_items"][0]["project_id"], "spiritos")
+        self.assertFalse(payload["timeline_items"][0]["dirty"])
+        self.assertTrue(payload["closeout_history"])
+        self.assertFalse(payload["background_mutation_allowed"])
+        self.assertFalse(payload["hidden_writes_allowed"])
+        self.assertFalse(payload["evidence_mutation_allowed"])
+        self.assertFalse(payload["actions_taken"])
 
     def test_starter_blueprint_pack_proposal_is_preview_only_for_new_project_candidate(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
