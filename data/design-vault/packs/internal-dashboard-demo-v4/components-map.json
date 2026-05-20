@@ -1,0 +1,160 @@
+{
+  "version": "0.1",
+  "pack_id": "internal-dashboard-demo-v4",
+  "status": "conceptual-map",
+  "source_card": "data/design-vault/source-cards/internal-dashboard-demo-v4.json",
+  "runtime_import_allowed": false,
+  "components": [
+    {
+      "source": "DashboardDemoV4",
+      "concept": "dashboard root surface",
+      "design_roles": [
+        "page shell",
+        "layout orchestration",
+        "live status state",
+        "responsive dashboard grid"
+      ],
+      "token_links": [
+        "component.shell",
+        "semantic.background",
+        "responsive.layoutPatterns"
+      ],
+      "future_reuse_notes": "Use as a reference for dense operational dashboards, not as an automatic production import."
+    },
+    {
+      "source": "DashboardDemoV4Atmosphere",
+      "concept": "ambient atmosphere layer",
+      "design_roles": [
+        "background depth",
+        "soft gradient atmosphere",
+        "subtle glow"
+      ],
+      "token_links": [
+        "primitive.color.background",
+        "component.oracleHero.ambientGlow",
+        "motion.ambientLoops"
+      ],
+      "future_reuse_notes": "Keep atmosphere subordinate to operational content."
+    },
+    {
+      "source": "DashboardDemoV4Header",
+      "concept": "status header",
+      "design_roles": [
+        "system identity",
+        "telemetry summary",
+        "live/error/loading state"
+      ],
+      "token_links": [
+        "semantic.text",
+        "semantic.textMuted",
+        "accessibility.requirements.stateVisibility"
+      ],
+      "future_reuse_notes": "Preserve readable state labels and avoid ornamental status-only signals."
+    },
+    {
+      "source": "DashboardDemoV4OracleHero",
+      "concept": "primary assistant hero panel",
+      "design_roles": [
+        "primary action zone",
+        "voice capability state",
+        "ambient visualization"
+      ],
+      "token_links": [
+        "component.card",
+        "component.oracleHero",
+        "motion.feedback"
+      ],
+      "future_reuse_notes": "Useful as a hero pattern inside an app surface, not as a marketing landing page."
+    },
+    {
+      "source": "DashboardDemoV4SystemStats",
+      "concept": "operational metric card",
+      "design_roles": [
+        "node health",
+        "resource metrics",
+        "status badge"
+      ],
+      "token_links": [
+        "component.widget",
+        "component.badge",
+        "semantic.success",
+        "semantic.warning",
+        "semantic.danger"
+      ],
+      "future_reuse_notes": "Use for compact repeated operational telemetry panels."
+    },
+    {
+      "source": "DashboardDemoV4Storage",
+      "concept": "storage health card",
+      "design_roles": [
+        "capacity summary",
+        "drive status list",
+        "error and offline visibility"
+      ],
+      "token_links": [
+        "component.widget",
+        "semantic.surfaceMuted",
+        "accessibility.requirements.stateVisibility"
+      ],
+      "future_reuse_notes": "Carry forward clear state treatment before decorative surface effects."
+    },
+    {
+      "source": "DashboardDemoV4Briefing",
+      "concept": "briefing feed",
+      "design_roles": [
+        "task and signal list",
+        "category badge",
+        "scan-friendly rhythm"
+      ],
+      "token_links": [
+        "component.badge",
+        "primitive.spacing",
+        "semantic.divider"
+      ],
+      "future_reuse_notes": "Good pattern for compact daily operational summaries."
+    },
+    {
+      "source": "DashboardDemoV4FloatingNav",
+      "concept": "desktop rail and mobile nav",
+      "design_roles": [
+        "primary navigation",
+        "active route signal",
+        "theme picker access",
+        "responsive navigation"
+      ],
+      "token_links": [
+        "component.navigation",
+        "component.themePicker",
+        "responsive.railWidth",
+        "accessibility.sourceSignals"
+      ],
+      "future_reuse_notes": "Keep route semantics and aria-current behavior in any later implementation."
+    },
+    {
+      "source": "DashboardDemoV4ThemePicker",
+      "concept": "palette switcher",
+      "design_roles": [
+        "theme selection",
+        "palette swatches",
+        "dialog interaction"
+      ],
+      "token_links": [
+        "component.themePicker",
+        "spirit_theme_variables",
+        "accessibility.requirements.focusVisible"
+      ],
+      "future_reuse_notes": "Any future preview should test keyboard access and focus behavior."
+    }
+  ],
+  "external_components_referenced_by_demo": [
+    "HomelabBlueprintReviewWidget",
+    "HomelabCartographerWidget",
+    "HomelabScoutIntelligenceWidget",
+    "HomelabTestRunnerWidget"
+  ],
+  "notes": [
+    "This map is conceptual and does not import or execute app components.",
+    "Use it to discuss future reuse and Source Proxy proposal scope.",
+    "Runtime implementation remains approval-gated."
+  ]
+}
