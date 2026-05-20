@@ -27,10 +27,13 @@ Use this checklist before any source is extracted, normalized, blended, or used 
 ## Approval Rules
 
 - Human approval is required before extraction.
+- Reverse Designer analysis requires an approved source card before it runs.
 - Exact replica mode is allowed only for owned, licensed, client-approved, or open-source permitted designs.
 - Public websites and random references default to `inspired-language-only`.
 - Do not copy logos, proprietary copy, brand assets, paid assets, protected images, or distinctive trade dress from unapproved sources.
 - Do not add automated web crawling.
+- Approved URLs mean single human-approved references, not crawl targets.
+- Figma analysis is deferred until a later approved implementation increment.
 - Do not allow Scout to auto-promote a design source into coding context.
 - Do not write to app UI without Source Proxy approval.
 

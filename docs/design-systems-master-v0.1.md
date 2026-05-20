@@ -1,6 +1,6 @@
 # SpiritOS Design Systems Master Plan v0.1
 
-Status: manual-first, planning complete, Phase 5.1 visual verification scaffold complete, runtime implementation not started
+Status: manual-first, planning complete, Phase 10.1 Source Proxy design apply lane complete, runtime implementation not started
 
 Status date: 2026-05-19
 
@@ -10,7 +10,7 @@ SpiritOS should build this as a Design Intelligence Stack, not as one mega-agent
 
 The system should start from owned and internal references. The first extraction target should be the existing `src/components/dashboard/demo-v4/` demo and `src/styles/dashboard-demo-v4.css`, with `src/styles/spirit-demo.tokens.css` and `src/theme/spiritPalettes.ts` as related token and palette references. Public websites, random inspiration links, and later Scout discoveries should not enter coding context automatically.
 
-The v0.1 goal is to define the lanes, metadata, safety rules, and small implementation increments. It does not add crawler behavior, autonomous discovery, app UI writes, Scout runtime behavior, Source Proxy behavior, or Cartographer authority. After approval, Phase 1.1 added only the local Design Vault documentation and empty registry scaffold. Phase 2.1 added only the manual source-card template and approval checklist. Phase 3.1 added only an internal dashboard-demo-v4 source card, notes, and raw token inventory. Phase 4.1 added only normalized Design Vault token artifacts and a preview-only theme file. Phase 5.1 added only visual verification planning, empty screenshot folders, and a not-run match report.
+The v0.1 goal is to define the lanes, metadata, safety rules, and small implementation increments. It does not add crawler behavior, autonomous discovery, app UI writes, Scout runtime behavior, Source Proxy behavior, or Cartographer authority. After approval, Phase 1.1 added only the local Design Vault documentation and empty registry scaffold. Phase 2.1 added only the manual source-card template and approval checklist. Phase 3.1 added only an internal dashboard-demo-v4 source card, notes, and raw token inventory. Phase 4.1 added only normalized Design Vault token artifacts and a preview-only theme file. Phase 5.1 added only visual verification planning, empty screenshot folders, and a not-run match report. Phase 6.1 added only design pack preview documentation and a conceptual component map. Phase 7.1 added only a Reverse Designer approved-input contract. Phase 8.1 added only Design Blender originality and attribution rules. Phase 9.1 added only a Scout manual-gated design intake bridge plan. Phase 10.1 added only a Source Proxy design apply approval-lane contract.
 
 ## Current Repo Fit
 
@@ -631,6 +631,11 @@ Rollback notes:
 - Phase 3.1 internal dashboard-demo-v4 source card, notes, and raw token inventory exist after approval.
 - Phase 4.1 normalized token model, tokens, and preview-only theme CSS exist after approval.
 - Phase 5.1 visual verification plan, screenshot placeholders, and not-run match report exist after approval.
+- Phase 6.1 design pack README, component map, and authoring guide exist after approval.
+- Phase 7.1 Reverse Designer approved-input contract exists after approval.
+- Phase 8.1 Design Blender originality and attribution rules exist after approval.
+- Phase 9.1 Scout manual-gated design intake bridge plan exists after approval.
+- Phase 10.1 Source Proxy design apply approval-lane contract exists after approval.
 - All required phases are present.
 - All phases have increments.
 - Every increment has a manual check block.
@@ -644,8 +649,8 @@ Rollback notes:
 - No Cartographer authority is changed.
 - Proposed Design Vault paths are clearly marked proposed until implemented later.
 
-## Recommended Next Implementation Increment After Phase 5.1
+## Recommended Next Implementation Increment After Phase 10.1
 
-Phase 6.1: Create design pack preview documentation
+v0.1 planning sequence complete. Recommended next work is review, stage, and commit the Design Vault planning/docs set deliberately.
 
-Implementation permission is required before starting that increment.
+Implementation permission is required before any runtime, app UI, Scout, Source Proxy, or Cartographer work.

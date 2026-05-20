@@ -39,4 +39,10 @@ No source files were modified during this extraction increment.
 
 ## Next Step
 
-Phase 4.1 should normalize `tokens.raw.json` into primitive, semantic, component, motion, responsive, and accessibility token groups.
+Phase 4.1 normalized `tokens.raw.json` into primitive, semantic, component, motion, responsive, and accessibility token groups.
+
+Future Style Alchemist use:
+
+- This pack may be used as an internal-approved blend source.
+- Influence notes must reference `internal-dashboard-demo-v4`.
+- Any blended output should remain clearly SpiritOS-owned and should not introduce external protected assets.
