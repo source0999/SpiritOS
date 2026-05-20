@@ -2,9 +2,30 @@
 
 status: active
 
-Status date: 2026-05-18
+Status date: 2026-05-20
 Owner: Britton
 Status: active Source Proxy plan
+
+## Current Status / Green Gate Update
+
+The green closeout gate has passed based on user-provided evidence from 2026-05-20:
+
+- global safety regression: PASS
+- Source Proxy tests: PASS
+- Scout backend tests: PASS
+- Cartographer safety: PASS
+- dashboard smoke: PASS
+- no unexpected mutation
+- no unexpected Level 2 evidence
+- no commit during run
+- HEAD stable before and after at `3e55bdc`
+- `main` and `origin/main` aligned at `3e55bdc`
+
+The Source Proxy backend safety baseline is green enough to move into `/coding` UI polish from clean `main`. Backend authority should remain frozen unless UI work reveals a real missing contract. The next approved track is `/coding` UI polish, not new autonomy.
+
+`/proxy-backend` remains the advanced diagnostic console. `/coding` becomes the everyday operator cockpit using the existing approval, preview, apply, and verification gates.
+
+This phase does not activate commit/push automation, autopilot, provider marketplace work, AionUi bridge work, Cowork console work, scheduled provider tasks, native mobile app work, or default Codex promotion.
 
 ## Source Of Truth
 
