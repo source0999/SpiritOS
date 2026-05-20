@@ -82,6 +82,19 @@ class VerificationContractTests(unittest.TestCase):
         self.assertIn("missing exact text: Built with SpiritOS", result["missing"])
         self.assertTrue(result["typescript_check"]["skipped"])
 
+    def test_validate_replacement_content_ignores_trailing_slash_on_file_targets(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            result = validate_replacement_content(
+                workspace_root=Path(tmp),
+                target_path="docs/phase-8-manual-check.md/",
+                content="append smoke\n",
+                task_text=(
+                    "Append a line.\n\nTarget file: docs/phase-8-manual-check.md"
+                ),
+            )
+
+        self.assertTrue(result["ok"], result)
+
 
 if __name__ == "__main__":
     unittest.main()

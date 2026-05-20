@@ -2760,7 +2760,9 @@ def _normalize_replacement_target(workspace_root: Path, target_path: str) -> str
     resolved = (workspace_root / normalized).resolve()
     if not _is_relative_to(resolved, workspace_root):
         raise ValueError("target path resolves outside the workspace")
-    return normalized
+    from source_proxy.safety.paths import normalize_repo_path_candidate
+
+    return normalize_repo_path_candidate(normalized)
 
 
 def _normalize_replacement_content(content: str) -> str:
