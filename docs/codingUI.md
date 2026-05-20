@@ -116,6 +116,8 @@ UI-2: Timeline and evidence.
 
 ## Phase UI-2: Timeline And Evidence
 
+Status: complete in `b2cd3e0`.
+
 Intent:
 Show the task lifecycle and evidence in a readable way without overwhelming the operator.
 
@@ -151,6 +153,8 @@ Next increment title:
 UI-3: Diff and review pane.
 
 ## Phase UI-3: Diff And Review Pane
+
+Status: in progress.
 
 Intent:
 Expose the review facts that make approval safe, with a clear route to deeper diagnostics.

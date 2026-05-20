@@ -780,7 +780,7 @@ export default function CodingCockpitShell() {
                     className="inline-flex min-h-11 items-center justify-center rounded-md border border-white/15 px-3 text-sm font-medium text-slate-200"
                     href="/proxy-backend"
                   >
-                    Full diagnostics
+                    Open diagnostics in /proxy-backend
                   </Link>
                 </div>
 
