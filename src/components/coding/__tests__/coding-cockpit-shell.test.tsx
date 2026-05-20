@@ -112,6 +112,10 @@ describe("CodingCockpitShell", () => {
     expect(screen.getByText("approval available")).toBeInTheDocument();
     expect(screen.getByText(/Approval is separate from apply/)).toBeInTheDocument();
     expect(screen.getAllByText(/Commit and push are not available here/).length).toBeGreaterThan(0);
+    expect(screen.getByRole("link", { name: "Open diagnostics in /proxy-backend" })).toHaveAttribute(
+      "href",
+      "/proxy-backend",
+    );
     expect(screen.getAllByText(/No files changed yet/).length).toBeGreaterThan(0);
     expect(screen.getAllByRole("button", { name: "Approve" }).length).toBeGreaterThan(0);
     expect(screen.queryByRole("button", { name: /apply/i })).not.toBeInTheDocument();
