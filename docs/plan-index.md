@@ -40,6 +40,7 @@ The green Source Proxy safety gate passed on 2026-05-20 based on user-provided e
 | --- | --- |
 | `docs/scout-v0-6-dry-run-closeout-index-and-stop-point.md` | Scout v0.6 dry-run-only lane is parked/manual-controlled. It does not authorize proxy intake, proxy memory writes, coding context writes, promotion finalization, background workers, scheduled writes, commits, or pushes. |
 | `docs/scout-v0-7-reopen-decision-record.md` | Scout v0.7 decision keeps Scout-to-Proxy import parked. It authorizes planning for read-only review ergonomics only and does not reopen proxy intake, proxy memory writes, coding context writes, promotion finalization, background workers, scheduled writes, commits, or pushes. |
+| `docs/scout-v0-7-manual-controlled-review-ergonomics-plan.md` | Scout v0.7 review ergonomics plan is planning/manual-controlled. It only plans read-only review clarity and does not authorize source automation, discovery execution, packet promotion, proxy intake, proxy memory writes, coding context writes, background workers, scheduled writes, commits, or pushes. |
 
 ### Historical Or Reference Only
 
