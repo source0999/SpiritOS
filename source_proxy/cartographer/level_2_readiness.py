@@ -96,7 +96,7 @@ def build_level_2_readiness() -> dict[str, Any]:
         "level_1_recommendation": level_1_label,
         "level_1_accepted_by_britton": britton_override,
         "authority_granted": False,
-        "write_actions_enabled": ready,
+        "write_actions_enabled": False,
         "apply_requires_human_approval": True,
         "docs_apply_enabled": ready,
         "commit_allowed": False,
