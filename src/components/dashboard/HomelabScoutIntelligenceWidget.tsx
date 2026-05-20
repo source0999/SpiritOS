@@ -702,12 +702,14 @@ function ScoutPromotionCards({
   busyPromotionId,
   onApprove,
   onReject,
+  onImportDryRun,
 }: {
   promotions: ScoutPromotionItem[];
   emptyLabel: string;
   busyPromotionId: string | null;
   onApprove: (promotion: ScoutPromotionItem) => void;
   onReject: (promotion: ScoutPromotionItem) => void;
+  onImportDryRun: (promotion: ScoutPromotionItem) => void;
 }) {
   if (promotions.length === 0) {
     return <p className="dashboard-demo-v4-scout-empty">{emptyLabel}</p>;
@@ -730,6 +732,7 @@ function ScoutPromotionCards({
         const title = packetTitle(packet);
         const tags = (packet.entity_tags ?? packet.tags)?.filter(Boolean).slice(0, 3) ?? [];
         const isQueued = promotion.status === "queued";
+        const isApproved = promotion.status === "approved";
         const busy = busyPromotionId === promotion.promotion_id;
         const promotionEvidence = promotionEvidenceRows(promotion);
         return (
@@ -788,6 +791,14 @@ function ScoutPromotionCards({
                 <button type="button" onClick={() => onReject(promotion)} disabled={busy}>
                   <X className="h-3.5 w-3.5" aria-hidden />
                   Reject Packet
+                </button>
+              </div>
+            ) : null}
+            {isApproved ? (
+              <div className="dashboard-demo-v4-scout-actions">
+                <button type="button" onClick={() => onImportDryRun(promotion)} disabled={busy}>
+                  <BrainCircuit className="h-3.5 w-3.5" aria-hidden />
+                  {busy ? "Checking Import" : "Dry Run Import"}
                 </button>
               </div>
             ) : null}
@@ -995,6 +1006,7 @@ function ScoutSourceCandidateCards({
   selectedCandidateIds,
   onApprove,
   onReject,
+  onImportDryRun,
   onBlock,
   onToggleBatchCandidate,
 }: {
@@ -1401,6 +1413,7 @@ function ScoutFeed({
   onRecheck,
   onApprove,
   onReject,
+  onImportDryRun,
   onApproveSourceCandidate,
   onRejectSourceCandidate,
   onBlockSourceCandidate,
@@ -1429,6 +1442,7 @@ function ScoutFeed({
   onRecheck: (packet: ScoutPacket) => void;
   onApprove: (promotion: ScoutPromotionItem) => void;
   onReject: (promotion: ScoutPromotionItem) => void;
+  onImportDryRun: (promotion: ScoutPromotionItem) => void;
   onApproveSourceCandidate: (candidate: ScoutSourceCandidate) => void;
   onRejectSourceCandidate: (candidate: ScoutSourceCandidate) => void;
   onBlockSourceCandidate: (candidate: ScoutSourceCandidate) => void;
@@ -1530,6 +1544,7 @@ function ScoutFeed({
             busyPromotionId={busyPromotionId}
             onApprove={onApprove}
             onReject={onReject}
+            onImportDryRun={onImportDryRun}
           />
         ) : selectedTab === "promoted" ? (
           <ScoutPromotionCards
@@ -1538,6 +1553,7 @@ function ScoutFeed({
             busyPromotionId={busyPromotionId}
             onApprove={onApprove}
             onReject={onReject}
+            onImportDryRun={onImportDryRun}
           />
         ) : (
           <ScoutPackets
@@ -1655,6 +1671,45 @@ export function ScoutIntelligenceCenterPanel({
       await refresh();
     } catch {
       setActionError("Could not finalize promotion.");
+    } finally {
+      setBusyPromotionId(null);
+    }
+  }
+
+  async function dryRunPromotionImport(promotion: ScoutPromotionItem) {
+    setBusyPromotionId(promotion.promotion_id);
+    setActionError(null);
+    try {
+      const res = await fetch("/api/scout/promotions/import-dry-run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          promotion_id: promotion.promotion_id,
+          requested_by: "manual-review",
+        }),
+      });
+      const body = await res.json().catch(() => null);
+      if (!res.ok) {
+        const detail =
+          body && typeof body === "object" && "detail" in body && typeof body.detail === "string"
+            ? body.detail
+            : "dry-run blocked";
+        setActionMessage(`Import dry run blocked: ${detail}. No proxy memory or coding context was written.`);
+        return;
+      }
+      const wouldWriteProxyMemory =
+        body && typeof body === "object" && "would_write_proxy_memory" in body
+          ? String(body.would_write_proxy_memory)
+          : "unknown";
+      const wouldFinalize =
+        body && typeof body === "object" && "would_finalize_promotion" in body
+          ? String(body.would_finalize_promotion)
+          : "unknown";
+      setActionMessage(
+        `Import dry run passed. Proxy memory write: ${wouldWriteProxyMemory}. Promotion finalization: ${wouldFinalize}.`,
+      );
+    } catch {
+      setActionError("Could not dry-run promotion import.");
     } finally {
       setBusyPromotionId(null);
     }
@@ -1923,6 +1978,7 @@ export function ScoutIntelligenceCenterPanel({
             }
             onApprove={(promotion) => void finalizePromotion(promotion, "approve")}
             onReject={(promotion) => void finalizePromotion(promotion, "reject")}
+            onImportDryRun={(promotion) => void dryRunPromotionImport(promotion)}
             onApproveSourceCandidate={(candidate) =>
               void reviewSourceCandidate(candidate, "approve")
             }

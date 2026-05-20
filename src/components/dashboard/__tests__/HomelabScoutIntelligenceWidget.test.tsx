@@ -189,6 +189,23 @@ function mockScoutFetch(
 ) {
   globalThis.fetch = vi.fn((input: RequestInfo | URL) => {
     const url = String(input);
+    if (url.includes("/api/scout/promotions/import-dry-run")) {
+      return Promise.resolve(
+        new Response(
+          JSON.stringify({
+            dry_run: true,
+            import_ready: true,
+            read_only: true,
+            mutation_allowed: false,
+            would_call_proxy_intake: false,
+            would_write_proxy_memory: false,
+            would_write_coding_context: false,
+            would_finalize_promotion: false,
+          }),
+          { status: 200 },
+        ),
+      );
+    }
     if (url.includes("/api/scout/promotions")) {
       return Promise.resolve(new Response(JSON.stringify(promotions), { status: 200 }));
     }
@@ -508,5 +525,33 @@ describe("HomelabScoutIntelligenceWidget", () => {
       );
     });
     expect(await screen.findByText(/No source was approved or activated\./)).toBeInTheDocument();
+  });
+
+  it("wires approved promotion import dry run without finalizing promotion", async () => {
+    mockScoutFetch(overview);
+
+    render(<ScoutIntelligenceCenter />);
+
+    fireEvent.click(await screen.findByRole("tab", { name: "Promoted" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Dry Run Import" }));
+
+    await waitFor(() => {
+      expect(globalThis.fetch).toHaveBeenCalledWith(
+        "/api/scout/promotions/import-dry-run",
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({
+            promotion_id: "promotion-1",
+            requested_by: "manual-review",
+          }),
+        }),
+      );
+    });
+    expect(await screen.findByText(/Import dry run passed/)).toBeInTheDocument();
+    expect(screen.getByText(/Proxy memory write: false/)).toBeInTheDocument();
+    expect(globalThis.fetch).not.toHaveBeenCalledWith(
+      "/api/scout/promotions/finalize",
+      expect.anything(),
+    );
   });
 });
