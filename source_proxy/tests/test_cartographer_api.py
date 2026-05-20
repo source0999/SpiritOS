@@ -46,6 +46,7 @@ from source_proxy.cartographer.service import (
     build_cartographer_level_3_finalization_marker,
     build_cartographer_level_3_commit_proposals,
     build_cartographer_level_4_push_readiness_contract,
+    build_cartographer_level_4_push_queue_proposal_preview,
     build_cartographer_project_candidates,
     build_cartographer_project_health,
     build_cartographer_projects,
@@ -5066,6 +5067,90 @@ class CartographerApiTests(unittest.TestCase):
         self.assertEqual(preview["push_blockers"], ["push_requires_separate_approval"])
         self.assertFalse(preview["push_enabled"])
         self.assertFalse(preview["action_taken"])
+
+    def test_level_4_push_queue_proposal_preview_does_not_create_queue_item_or_push(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_root = Path(temp_dir)
+            remote = temp_root / "remote.git"
+            root = temp_root / "work"
+            _git(temp_root, "init", "--bare", str(remote))
+            root.mkdir()
+            _write_minimal_blueprints(root)
+            (root / ".gitignore").write_text("data/\n", encoding="utf-8")
+            _git(root, "init")
+            _git(root, "config", "core.autocrlf", "false")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "checkout", "-b", "cartographer/level-4-proposal")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            _git(root, "remote", "add", "origin", str(remote))
+            _git(root, "push", "-u", "origin", "cartographer/level-4-proposal")
+            (root / "docs" / "level-4-proposal.md").parent.mkdir(exist_ok=True)
+            (root / "docs" / "level-4-proposal.md").write_text("proposal\n", encoding="utf-8")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "docs(cartographer): level 4 proposal")
+            commit_sha = _git_stdout(root, "rev-parse", "HEAD").strip()
+            _write_git_approval_record(
+                root,
+                {
+                    "event": "commit_created",
+                    "project_id": "work",
+                    "branch": "cartographer/level-4-proposal",
+                    "commit_sha": commit_sha,
+                    "checks": [
+                        {"id": "git_diff_check", "status": "passed"},
+                        {"id": "blueprint_metadata_validation", "status": "passed"},
+                        {"id": "cartographer_pytest", "status": "passed"},
+                    ],
+                },
+            )
+
+            remote_before = _git_stdout(
+                remote,
+                "rev-parse",
+                "refs/heads/cartographer/level-4-proposal",
+            ).strip()
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = build_cartographer_level_4_push_queue_proposal_preview()
+                response = TestClient(_test_app()).get("/v1/cartographer/level-4-push-queue-proposals")
+            remote_after = _git_stdout(
+                remote,
+                "rev-parse",
+                "refs/heads/cartographer/level-4-proposal",
+            ).strip()
+
+        self.assertEqual(remote_before, remote_after)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["proposal_version"], "cartographer.level_4.push_queue_proposal_preview.v1")
+        self.assertEqual(payload["level"], 4)
+        self.assertEqual(payload["mode"], "push_queue_proposal_preview")
+        self.assertFalse(payload["write_actions_enabled"])
+        self.assertFalse(payload["authority_granted"])
+        self.assertFalse(payload["actions_taken"])
+        self.assertFalse(payload["push_allowed"])
+        self.assertFalse(payload["push_enabled"])
+        self.assertFalse(payload["auto_push_allowed"])
+        self.assertFalse(payload["push_queue_creation_allowed"])
+        self.assertFalse(payload["push_queue_item_created"])
+        self.assertFalse(payload["merge_allowed"])
+        self.assertEqual(payload["proposal_count"], 1)
+        self.assertIn("exact_commits", payload["required_approval_fields"])
+        proposal = payload["push_queue_proposals"][0]
+        self.assertTrue(proposal["proposal_id"].startswith("level-4-push-proposal-push-"))
+        self.assertEqual(proposal["commits_to_push"], [commit_sha])
+        self.assertEqual(proposal["files"], ["docs/level-4-proposal.md"])
+        self.assertEqual(proposal["remote"], "origin")
+        self.assertEqual(proposal["branch"], "cartographer/level-4-proposal")
+        self.assertEqual(proposal["blockers"], ["push_requires_separate_approval"])
+        self.assertTrue(proposal["approval_required"])
+        self.assertIsNone(proposal["approval_id"])
+        self.assertFalse(proposal["push_allowed"])
+        self.assertFalse(proposal["push_enabled"])
+        self.assertFalse(proposal["push_created"])
+        self.assertFalse(proposal["creates_push_queue_item"])
+        self.assertFalse(proposal["push_queue_item_created"])
+        self.assertFalse(proposal["actions_taken"])
 
     def test_branch_approval_creates_recommended_branch_without_commit_or_push(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
