@@ -1313,6 +1313,127 @@ def build_cartographer_level_4_push_queue_proposal_preview() -> dict[str, Any]:
     }
 
 
+def build_cartographer_level_4_push_queue_approval_preview(
+    *,
+    proposal_id: str,
+    approval_id: str | None,
+    approved_by: str | None,
+    exact_commits: list[str],
+    remote: str | None,
+    branch: str | None,
+    upstream: str | None,
+    checks: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    proposals_payload = build_cartographer_level_4_push_queue_proposal_preview()
+    proposal = next(
+        (
+            item
+            for item in proposals_payload["push_queue_proposals"]
+            if item["proposal_id"] == proposal_id
+        ),
+        None,
+    )
+    blockers: list[str] = []
+    if proposal is None:
+        blockers.append("proposal_not_found")
+    if not approval_id:
+        blockers.append("approval_id_required")
+    if not approved_by:
+        blockers.append("approved_by_required")
+    if str(approved_by or "").strip().lower() == "cartographer":
+        blockers.append("cartographer_self_approval_blocked")
+    normalized_commits = [str(commit).strip() for commit in exact_commits if str(commit).strip()]
+    expected_commits = list(proposal.get("commits_to_push", [])) if proposal else []
+    if proposal is not None and normalized_commits != expected_commits:
+        blockers.append("exact_commits_mismatch")
+    if proposal is not None and remote != proposal.get("remote"):
+        blockers.append("remote_mismatch")
+    if proposal is not None and branch != proposal.get("branch"):
+        blockers.append("branch_mismatch")
+    if proposal is not None and upstream != proposal.get("upstream"):
+        blockers.append("upstream_mismatch")
+    check_blockers = _level_4_push_check_blockers(proposal, checks or [])
+    blockers.extend(check_blockers)
+    unique_blockers = list(dict.fromkeys(blockers))
+    approval_validated = proposal is not None and not unique_blockers
+    return {
+        "status": "approval_preview",
+        "level": 4,
+        "mode": "push_queue_approval_gate_preview",
+        "approval_version": "cartographer.level_4.push_queue_approval_preview.v1",
+        "proposal_id": proposal_id,
+        "proposal_found": proposal is not None,
+        "approval_required": True,
+        "approval_id": approval_id,
+        "approved_by": approved_by,
+        "approved_at": None,
+        "approval_validated": approval_validated,
+        "exact_commits": normalized_commits,
+        "expected_commits": expected_commits,
+        "remote": remote,
+        "expected_remote": proposal.get("remote") if proposal else None,
+        "branch": branch,
+        "expected_branch": proposal.get("branch") if proposal else None,
+        "upstream": upstream,
+        "expected_upstream": proposal.get("upstream") if proposal else None,
+        "required_checks": proposal.get("required_checks", []) if proposal else [],
+        "checks": checks or [],
+        "checks_validated": not check_blockers,
+        "blockers": unique_blockers,
+        "execution_blockers": ["push_execution_not_implemented"],
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "push_allowed": False,
+        "push_enabled": False,
+        "auto_push_allowed": False,
+        "push_created": False,
+        "push_queue_creation_allowed": False,
+        "push_queue_item_created": False,
+        "creates_push_queue_item": False,
+        "merge_allowed": False,
+        "branch_creation_allowed": False,
+        "cleanup_allowed": False,
+        "stash_allowed": False,
+        "next_step": (
+            "Approval metadata validates, but push execution remains disabled."
+            if approval_validated
+            else "Resolve approval preview blockers before requesting future push execution."
+        ),
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def _level_4_push_check_blockers(
+    proposal: dict[str, Any] | None,
+    checks: list[dict[str, Any]],
+) -> list[str]:
+    if proposal is None:
+        return []
+    required = list(proposal.get("required_checks", []))
+    if not required:
+        return []
+    if not checks:
+        return ["required_checks_missing"]
+    by_id = {
+        str(check.get("id") or check.get("command")): str(check.get("status")).lower()
+        for check in checks
+        if isinstance(check, dict) and (check.get("id") or check.get("command"))
+    }
+    missing = [check_id for check_id in required if check_id not in by_id]
+    failed = [
+        check_id
+        for check_id in required
+        if by_id.get(check_id) not in {"passed", "ok", "success"}
+    ]
+    blockers: list[str] = []
+    if missing:
+        blockers.append("required_checks_missing")
+    if failed:
+        blockers.append("required_checks_failed")
+    return blockers
+
+
 def _level_4_push_queue_proposal(item: dict[str, Any]) -> dict[str, Any]:
     proposal_id = f"level-4-push-proposal-{item['push_id']}"
     blockers = list(dict.fromkeys(item.get("push_blockers", [])))
