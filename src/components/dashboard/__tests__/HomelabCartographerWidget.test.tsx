@@ -151,6 +151,57 @@ describe("HomelabCartographerWidget", () => {
           }),
           { status: 200 },
         ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            level: 3,
+            mode: "human_approved_local_commit_proposals",
+            proposal_count: 2,
+            proposed_bundle_count: 1,
+            blocked_bundle_count: 1,
+            commit_allowed: false,
+            push_allowed: false,
+            branch_creation_allowed: false,
+            creates_push_queue_item: false,
+            activation_blockers: ["level_2_apply_blocked"],
+            commit_proposals: [
+              {
+                proposal_id: "commit-prop-level-3-plan",
+                file_bundle: "cartographer_level_3_plan",
+                included_files: ["docs/cartographer-level-3-autonomy-plan.md"],
+                excluded_files: ["src/components/coding/CodingCockpitShell.tsx"],
+                proposed_commit_title: "docs(cartographer): refresh level 3 plan",
+                related_test_commands: ["git diff --check", "PYTHONPATH=. .venv/bin/python -m pytest"],
+                blockers: [],
+                approval_required: true,
+                commit_allowed: false,
+                push_allowed: false,
+                creates_push_queue_item: false,
+                rollback_command: "git reset --soft HEAD~1",
+              },
+            ],
+          }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            proposal_preview_ready: true,
+            local_commit_ready: false,
+            commit_allowed: false,
+            commit_execution_enabled: false,
+            push_allowed: false,
+            creates_push_queue_item: false,
+            blockers: [{ code: "level_2_safe_dependency" }],
+            manual_checks: [
+              'PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -k "level_3 or commit"',
+            ],
+            next_step: "Resolve Level 2 and unknown dirty-tree blockers before implementing local commit execution.",
+          }),
+          { status: 200 },
+        ),
       ) as typeof fetch;
 
     render(<HomelabCartographerWidget />);
@@ -166,6 +217,12 @@ describe("HomelabCartographerWidget", () => {
       cache: "no-store",
     });
     expect(globalThis.fetch).toHaveBeenCalledWith("/v1/cartographer/level-2-api-contract", {
+      cache: "no-store",
+    });
+    expect(globalThis.fetch).toHaveBeenCalledWith("/v1/cartographer/level-3-commit-proposals", {
+      cache: "no-store",
+    });
+    expect(globalThis.fetch).toHaveBeenCalledWith("/v1/cartographer/level-3-closeout-readiness", {
       cache: "no-store",
     });
     expect(screen.getByText("Autonomy level")).toBeInTheDocument();
@@ -222,6 +279,26 @@ describe("HomelabCartographerWidget", () => {
     ).toBeInTheDocument();
     expect(
       levelTwoReview.getByText("Blocker: level_1_review_gate. No Level 2 execution control is exposed here."),
+    ).toBeInTheDocument();
+    const levelThreeReview = within(screen.getByLabelText("Level 3 local commit preview"));
+    expect(levelThreeReview.getByText("Approved local commit preview")).toBeInTheDocument();
+    expect(levelThreeReview.getByText("Proposals")).toBeInTheDocument();
+    expect(levelThreeReview.getByText("Ready bundles")).toBeInTheDocument();
+    expect(levelThreeReview.getByText("Blocked bundles")).toBeInTheDocument();
+    expect(levelThreeReview.getAllByText("2")).toHaveLength(2);
+    expect(levelThreeReview.getAllByText("1")).toHaveLength(2);
+    expect(levelThreeReview.getByText("Bundle: cartographer_level_3_plan with 1 files.")).toBeInTheDocument();
+    expect(
+      levelThreeReview.getByText("Commit execution is not exposed in this UI. Push and queue controls stay hidden."),
+    ).toBeInTheDocument();
+    expect(levelThreeReview.getByText("Rollback preview: git reset --soft HEAD~1")).toBeInTheDocument();
+    expect(
+      levelThreeReview.getByText(
+        'Manual check: PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -k "level_3 or commit"',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      levelThreeReview.getByText("Blocker: level_2_safe_dependency. Approval preview is not execution approval."),
     ).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /approve|apply|push|commit/i })).toBeNull();
   });
