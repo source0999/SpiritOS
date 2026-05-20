@@ -1,0 +1,321 @@
+{
+  "version": "0.1",
+  "status": "raw-unnormalized-inventory",
+  "source_card": "data/design-vault/source-cards/internal-dashboard-demo-v4.json",
+  "source_paths": {
+    "components": "src/components/dashboard/demo-v4/",
+    "dashboard_css": "src/styles/dashboard-demo-v4.css",
+    "legacy_demo_tokens": "src/styles/spirit-demo.tokens.css",
+    "palette_registry": "src/theme/spiritPalettes.ts"
+  },
+  "extraction": {
+    "mode": "manual",
+    "date": "2026-05-20",
+    "normalized": false,
+    "screenshots_captured": false,
+    "source_files_modified": false
+  },
+  "component_inventory": [
+    "DashboardDemoV4",
+    "DashboardDemoV4Atmosphere",
+    "DashboardDemoV4Briefing",
+    "DashboardDemoV4FloatingNav",
+    "DashboardDemoV4Header",
+    "DashboardDemoV4OracleHero",
+    "DashboardDemoV4Storage",
+    "DashboardDemoV4SystemStats",
+    "DashboardDemoV4ThemePicker"
+  ],
+  "component_patterns": [
+    "root dashboard surface",
+    "atmosphere layer",
+    "glass shell",
+    "status header",
+    "oracle hero",
+    "project tracker",
+    "system stats card",
+    "storage card",
+    "briefing feed",
+    "Scout intelligence card",
+    "Cartographer card",
+    "blueprint review card",
+    "test runner card",
+    "desktop rail navigation",
+    "mobile floating navigation",
+    "theme picker"
+  ],
+  "dashboard_demo_v4_css_variables": [
+    "--ddv4-app-rail-width",
+    "--ddv4-atmos-blob-blend",
+    "--ddv4-atmos-blob-opacity",
+    "--ddv4-atmos-foundation",
+    "--ddv4-atmos-glow-opacity",
+    "--ddv4-atmos-veil",
+    "--ddv4-atmos-wash",
+    "--ddv4-badge-stack-base",
+    "--ddv4-fg",
+    "--ddv4-fg-faint",
+    "--ddv4-fg-muted",
+    "--ddv4-glass-bg",
+    "--ddv4-glass-border",
+    "--ddv4-glass-shadow",
+    "--ddv4-glass-shadow-drop",
+    "--ddv4-nav-active-bg",
+    "--ddv4-nav-active-fg",
+    "--ddv4-nav-bg",
+    "--ddv4-nav-border",
+    "--ddv4-nav-divider",
+    "--ddv4-nav-fg",
+    "--ddv4-nav-shadow",
+    "--ddv4-nav-shadow-drop",
+    "--ddv4-pill-bg",
+    "--ddv4-pill-border",
+    "--ddv4-primary-action-fg",
+    "--ddv4-shell-bg",
+    "--ddv4-shell-blur",
+    "--ddv4-shell-border",
+    "--ddv4-shell-drop",
+    "--ddv4-shell-inset",
+    "--ddv4-shell-saturate",
+    "--ddv4-surface-border-crisp",
+    "--ddv4-surface-border-soft",
+    "--ddv4-surface-fill",
+    "--ddv4-surface-light-bg",
+    "--ddv4-surface-light-border",
+    "--ddv4-surface-light-faint",
+    "--ddv4-surface-light-fg",
+    "--ddv4-surface-light-fill",
+    "--ddv4-surface-light-muted",
+    "--ddv4-surface-light-shadow",
+    "--ddv4-surface-smoke-bg",
+    "--ddv4-surface-smoke-border",
+    "--ddv4-surface-smoke-faint",
+    "--ddv4-surface-smoke-fg",
+    "--ddv4-surface-smoke-fill",
+    "--ddv4-surface-smoke-muted",
+    "--ddv4-surface-smoke-shadow",
+    "--ddv4-widget-bg",
+    "--ddv4-widget-border",
+    "--ddv4-widget-shadow"
+  ],
+  "legacy_demo_token_variables": {
+    "color_and_surface": [
+      "--demo-bg",
+      "--demo-bg-deep",
+      "--demo-glass",
+      "--demo-glass-strong",
+      "--demo-glass-soft",
+      "--demo-border",
+      "--demo-border-strong",
+      "--demo-text",
+      "--demo-text-muted",
+      "--demo-text-faint",
+      "--demo-text-ghost"
+    ],
+    "accent_and_semantic": [
+      "--demo-cyan",
+      "--demo-cyan-strong",
+      "--demo-cyan-deep",
+      "--demo-violet",
+      "--demo-violet-strong",
+      "--demo-violet-deep",
+      "--demo-rose",
+      "--demo-rose-strong",
+      "--demo-emerald",
+      "--demo-emerald-strong",
+      "--demo-amber",
+      "--demo-amber-strong",
+      "--demo-accent",
+      "--demo-accent-strong",
+      "--demo-oracle",
+      "--demo-quarantine",
+      "--demo-online",
+      "--demo-warn"
+    ],
+    "effect": [
+      "--demo-glow-cyan",
+      "--demo-glow-violet",
+      "--demo-glow-rose",
+      "--demo-glow-emerald",
+      "--demo-glow-soft",
+      "--demo-inset-shine",
+      "--demo-inset-shine-strong"
+    ],
+    "radius": [
+      "--demo-radius-xs",
+      "--demo-radius-sm",
+      "--demo-radius-md",
+      "--demo-radius-lg",
+      "--demo-radius-xl",
+      "--demo-radius-pill"
+    ],
+    "blur": [
+      "--demo-blur-sm",
+      "--demo-blur-md",
+      "--demo-blur-lg"
+    ],
+    "spacing": [
+      "--demo-space-xs",
+      "--demo-space-sm",
+      "--demo-space-md",
+      "--demo-space-lg",
+      "--demo-space-xl",
+      "--demo-space-2xl"
+    ],
+    "typography": [
+      "--demo-text-eyebrow",
+      "--demo-text-micro",
+      "--demo-text-caption",
+      "--demo-text-body",
+      "--demo-text-lead",
+      "--demo-text-h3",
+      "--demo-text-h2",
+      "--demo-text-h1",
+      "--demo-tracking-rail",
+      "--demo-tracking-mono"
+    ],
+    "z_index": [
+      "--demo-z-bg",
+      "--demo-z-aurora",
+      "--demo-z-grid",
+      "--demo-z-noise",
+      "--demo-z-content",
+      "--demo-z-rail",
+      "--demo-z-dock",
+      "--demo-z-overlay"
+    ],
+    "motion": [
+      "--demo-dur-fast",
+      "--demo-dur-mid",
+      "--demo-dur-slow",
+      "--demo-dur-breath",
+      "--demo-dur-aurora",
+      "--demo-dur-shimmer",
+      "--demo-ease-out",
+      "--demo-ease-in-out"
+    ]
+  },
+  "spirit_theme_variables": [
+    "--spirit-bg",
+    "--spirit-bg-soft",
+    "--spirit-panel",
+    "--spirit-panel-strong",
+    "--spirit-accent",
+    "--spirit-accent-strong",
+    "--spirit-glow",
+    "--spirit-border",
+    "--spirit-secondary-mix",
+    "--spirit-atmosphere-base",
+    "--spirit-atmosphere-a",
+    "--spirit-atmosphere-b",
+    "--spirit-glass-surface",
+    "--spirit-glass-border",
+    "--spirit-panel-glow",
+    "--spirit-nav-glow",
+    "--spirit-fairy-halo",
+    "--spirit-progress-track",
+    "--spirit-theme-chip-active-bg",
+    "--spirit-theme-chip-active-glow"
+  ],
+  "theme_palette_inventory": [
+    {
+      "id": "frozen-water",
+      "label": "Smoked Pearl",
+      "family": "light"
+    },
+    {
+      "id": "frost-linen",
+      "label": "Frost Linen",
+      "family": "light"
+    },
+    {
+      "id": "ivory-mist",
+      "label": "Ivory Mist",
+      "family": "light"
+    },
+    {
+      "id": "lunar-chalk",
+      "label": "Lunar Chalk",
+      "family": "light"
+    },
+    {
+      "id": "soft-ash",
+      "label": "Soft Ash",
+      "family": "light"
+    },
+    {
+      "id": "alice-seagrass",
+      "label": "Dark Node",
+      "family": "dark"
+    },
+    {
+      "id": "ember-circuit",
+      "label": "Ember Circuit",
+      "family": "dark"
+    },
+    {
+      "id": "violet-twilight",
+      "label": "Violet Graphite",
+      "family": "dark"
+    },
+    {
+      "id": "obsidian-plum",
+      "label": "Obsidian Plum",
+      "family": "dark"
+    },
+    {
+      "id": "night-signal",
+      "label": "Night Signal",
+      "family": "dark"
+    },
+    {
+      "id": "deep-sky",
+      "label": "Neural Cyan",
+      "family": "hybrid"
+    },
+    {
+      "id": "solar-ember",
+      "label": "Solar Ember",
+      "family": "hybrid"
+    },
+    {
+      "id": "orchid-smoke",
+      "label": "Orchid Smoke",
+      "family": "hybrid"
+    },
+    {
+      "id": "aurora-slate",
+      "label": "Aurora Slate",
+      "family": "hybrid"
+    }
+  ],
+  "motion_inventory": [
+    "ddv4-drift-a",
+    "ddv4-drift-b",
+    "ddv4-glow-breathe",
+    "ddv4-pill-pulse",
+    "ddv4-badge-outer-glow",
+    "ddv4-badge-sheen",
+    "ddv4-accent-pill-breathe",
+    "ddv4-smart-text-glow",
+    "ddv4-oracle-viz-standby",
+    "ddv4-widget-float",
+    "ddv4-widget-aura"
+  ],
+  "raw_design_language_notes": [
+    "Internal glass dashboard with pearl and smoke surface variants.",
+    "Atmosphere uses layered gradients, soft-light blending, veils, and subtle glow.",
+    "Navigation combines a desktop rail, mobile floating nav, icons, active states, and palette swatches.",
+    "Theme picker uses Spirit palette colors as generated swatch gradients.",
+    "Components lean on compact operational cards rather than marketing sections.",
+    "Motion is ambient and restrained, with reduced emphasis on hard transitions."
+  ],
+  "normalization_todo": [
+    "Map ddv4 local variables into primitive tokens.",
+    "Map surface, text, accent, status, and navigation roles into semantic tokens.",
+    "Map dashboard card, shell, nav, badge, and widget variables into component tokens.",
+    "Map keyframes and duration/easing values into motion tokens.",
+    "Map responsive rail, shell, and mobile nav behavior into responsive tokens.",
+    "Capture accessibility notes for contrast, focus, reduced motion, and touch targets."
+  ]
+}

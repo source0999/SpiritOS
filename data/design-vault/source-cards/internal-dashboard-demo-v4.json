@@ -1,0 +1,53 @@
+{
+  "version": "0.1",
+  "id": "internal-dashboard-demo-v4",
+  "title": "SpiritOS Dashboard Demo v4",
+  "source_type": "internal-demo",
+  "source_uri": null,
+  "local_path": "src/components/dashboard/demo-v4/",
+  "related_paths": [
+    "src/styles/dashboard-demo-v4.css",
+    "src/styles/spirit-demo.tokens.css",
+    "src/theme/spiritPalettes.ts"
+  ],
+  "owner": "SpiritOS",
+  "rights_basis": {
+    "category": "owned-internal",
+    "license": null,
+    "approval_reference": "User-approved Phase 3.1 instruction on 2026-05-20",
+    "notes": "Internal SpiritOS dashboard demo and local theme/token files. Exact extraction is permitted for SpiritOS design-system planning."
+  },
+  "approval": {
+    "status": "approved",
+    "approved_use_mode": "internal-exact",
+    "reviewer": "Britton",
+    "reviewed_date": "2026-05-20",
+    "approval_notes": "Approved to create an internal source card and raw token inventory. No app UI or runtime files were changed."
+  },
+  "permitted_use_modes": [
+    "internal-exact"
+  ],
+  "disallowed_assets": [
+    "external logos",
+    "external proprietary copy",
+    "external brand assets",
+    "paid assets",
+    "protected images"
+  ],
+  "capture": {
+    "screenshots": [],
+    "notes": [
+      "data/design-vault/packs/internal-dashboard-demo-v4/notes.md"
+    ],
+    "token_files": [
+      "data/design-vault/packs/internal-dashboard-demo-v4/tokens.raw.json"
+    ]
+  },
+  "safety": {
+    "manual_intake_only": true,
+    "human_approved": true,
+    "crawler_allowed": false,
+    "auto_promote_to_coding_context": false,
+    "app_ui_write_allowed": false
+  }
+}
