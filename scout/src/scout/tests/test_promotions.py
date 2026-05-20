@@ -209,6 +209,27 @@ def test_dry_run_proxy_import_validates_without_mutation(tmp_path):
     assert result["would_write_proxy_memory"] is False
     assert result["would_write_coding_context"] is False
     assert result["would_finalize_promotion"] is False
+    receipt = result["receipt_preview"]
+    assert receipt["event"] == "scout_manual_import_receipt_preview"
+    assert receipt["imported"] is False
+    assert receipt["dry_run"] is True
+    assert receipt["manual_controlled"] is True
+    assert receipt["promotion_id"] == promotion_id
+    assert receipt["packet_id"] == "pkt_import_dry_run"
+    assert receipt["authority"] == "append_only_evidence"
+    assert receipt["applied"] is False
+    assert receipt["approved_proxy_action"] is False
+    assert receipt["writes"] == {
+        "append_only_evidence": False,
+        "proxy_memory": False,
+        "coding_context": False,
+        "active_context": False,
+    }
+    assert receipt["rollback"]["tombstone_event"] == "scout_manual_import_tombstone"
+    assert receipt["rollback"]["delete_allowed"] is False
+    assert receipt["safety"]["proxy_memory_write"] is False
+    assert receipt["safety"]["coding_context_write"] is False
+    assert receipt["safety"]["hidden_background_worker"] is False
     assert "proxy memory writes" in result["forbidden_actions"]
     assert "promotion finalization" in result["forbidden_actions"]
     assert _promotion_statuses(settings) == before
