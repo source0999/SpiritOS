@@ -1,0 +1,49 @@
+{
+  "version": "0.1",
+  "id": "replace-with-stable-source-id",
+  "title": "Replace with source title",
+  "source_type": "internal-demo",
+  "source_uri": null,
+  "local_path": null,
+  "owner": "SpiritOS",
+  "rights_basis": {
+    "category": "owned-internal",
+    "license": null,
+    "approval_reference": null,
+    "notes": "Replace with ownership, license, client approval, or open-source permission notes."
+  },
+  "approval": {
+    "status": "draft",
+    "approved_use_mode": "rejected",
+    "reviewer": null,
+    "reviewed_date": null,
+    "approval_notes": null
+  },
+  "permitted_use_modes": [
+    "internal-exact",
+    "licensed-exact",
+    "client-approved-exact",
+    "open-source-permitted",
+    "inspired-language-only",
+    "rejected"
+  ],
+  "disallowed_assets": [
+    "logos",
+    "proprietary copy",
+    "brand assets",
+    "paid assets",
+    "protected images"
+  ],
+  "capture": {
+    "screenshots": [],
+    "notes": [],
+    "token_files": []
+  },
+  "safety": {
+    "manual_intake_only": true,
+    "human_approved": false,
+    "crawler_allowed": false,
+    "auto_promote_to_coding_context": false,
+    "app_ui_write_allowed": false
+  }
+}

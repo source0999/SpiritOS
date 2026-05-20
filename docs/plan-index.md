@@ -9,6 +9,7 @@ Status date: 2026-05-18
 | Plan | Status | Role | Authority |
 | --- | --- | --- | --- |
 | `docs/source-proxy-production-hardening-plan.md` | status: active | Current Source Proxy production plan | Authorizes the next Source Proxy hardening increment |
+| `docs/design-systems-master-v0.1.md` | status: planning complete | Manual-first Design Intelligence Stack plan | Does not authorize implementation; next increment requires explicit approval |
 | `productionProxy.md` | status: historical | Uploaded staging copy | Historical only; follow the durable repo copy instead |
 
 ## Retired Or Historical Plans
