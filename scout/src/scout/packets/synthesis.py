@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 import json
 from pathlib import Path
+import re
 import time
 import uuid
 
@@ -29,7 +30,14 @@ _MODEL_AUTHORED_KEYS: frozenset[str] = frozenset(
     }
 )
 
+_REQUIRED_MODEL_PACKET_KEYS: frozenset[str] = frozenset(
+    {"summary", "impact_analysis", "confidence_score"}
+)
+
 _LOG_SNIP_LEN = 1500
+
+_JSON_ELLIPSIS_LINE_RE = re.compile(r"^\s*\.\.\.\s*,?\s*$")
+_JSON_TRAILING_COMMA_RE = re.compile(r",(\s*[\]}])")
 
 
 class PacketSynthesisFatalModelError(RuntimeError):
@@ -81,7 +89,17 @@ def _normalize_llm_message_content(content: object) -> str:
     return str(content)
 
 
-def _extract_first_json_object(content: str) -> str:
+def _strip_json_ellipsis_placeholders(content: str) -> str:
+    lines = [
+        line for line in content.splitlines() if not _JSON_ELLIPSIS_LINE_RE.match(line)
+    ]
+    without_ellipsis = "\n".join(lines)
+    return _JSON_TRAILING_COMMA_RE.sub(r"\1", without_ellipsis)
+
+
+def _extract_first_json_object(
+    content: str, *, required_keys: frozenset[str] | None = None
+) -> str:
     stripped = content.strip()
     if stripped.startswith("```"):
         lines = stripped.splitlines()
@@ -91,15 +109,31 @@ def _extract_first_json_object(content: str) -> str:
             lines = lines[:-1]
         stripped = "\n".join(lines).strip()
 
+    candidates = [stripped]
+    stripped_without_placeholders = _strip_json_ellipsis_placeholders(stripped).strip()
+    if stripped_without_placeholders != stripped:
+        candidates.append(stripped_without_placeholders)
+
     decoder = json.JSONDecoder()
-    for index, char in enumerate(stripped):
-        if char != "{":
-            continue
-        try:
-            _obj, end = decoder.raw_decode(stripped[index:])
-        except json.JSONDecodeError:
-            continue
-        return stripped[index : index + end]
+    decoded_any_object = False
+    for candidate in candidates:
+        for index, char in enumerate(candidate):
+            if char != "{":
+                continue
+            try:
+                obj, end = decoder.raw_decode(candidate[index:])
+            except json.JSONDecodeError:
+                continue
+            decoded_any_object = True
+            if required_keys and (
+                not isinstance(obj, dict) or not required_keys.issubset(obj.keys())
+            ):
+                continue
+            return candidate[index : index + end]
+    if decoded_any_object and required_keys:
+        raise PacketSynthesisJsonInvalid(
+            "model response did not contain an IntelligencePacket JSON object"
+        )
     raise PacketSynthesisJsonInvalid("model response did not contain a JSON object")
 
 
@@ -183,9 +217,10 @@ def _ollama_json_instruction_preamble() -> str:
         "Include these keys: entity_tags (array of strings, topical tags only such as "
         "python, fastapi, security, docker), summary (string, at least 80 characters), "
         "impact_analysis (string, at least 80 characters), confidence_score "
-        "(number from 0.0 to 1.0), graph_relations (array of objects with source_entity, "
-        "target_entity, relation_label). Never include reserved safety labels like "
-        "injection_signal in entity_tags.\n\n"
+        "(number from 0.0 to 1.0), graph_relations (array of at most 5 objects with "
+        "source_entity, target_entity, relation_label). Do not use ellipses, trailing "
+        "comments, omitted items, or placeholders. Never include reserved safety labels "
+        "like injection_signal in entity_tags.\n\n"
     )
 
 
@@ -196,7 +231,8 @@ def _repair_user_message_parse(human_err: str) -> str:
         f"Parse/schema issue: {human_err}\n"
         "Required keys: entity_tags (topical tags only, never injection_signal), "
         "summary (>=80 chars), impact_analysis (>=80 chars), "
-        "confidence_score (0.0-1.0), graph_relations (array, may be empty)."
+        "confidence_score (0.0-1.0), graph_relations (array of at most 5 complete "
+        "objects, may be empty)."
     )
 
 
@@ -206,7 +242,8 @@ def _repair_user_message_validation(exc: ValidationError) -> str:
         "Return exactly one corrected JSON object with the same output rules as before.\n"
         f"Validation errors:\n{exc}\n"
         "Ensure summary and impact_analysis are each at least 80 characters, "
-        "confidence_score is a number between 0 and 1, and all required keys are present."
+        "confidence_score is a number between 0 and 1, graph_relations contains at "
+        "most 5 complete relation objects, and all required keys are present."
     )
 
 
@@ -221,7 +258,9 @@ def _ollama_attempt_parse_merge_validate(
     settings: ScoutSettings,
     latency_ms: int,
 ) -> IntelligencePacket:
-    packet_json = _extract_first_json_object(raw_text)
+    packet_json = _extract_first_json_object(
+        raw_text, required_keys=_REQUIRED_MODEL_PACKET_KEYS
+    )
     parsed = json.loads(packet_json)
     if not isinstance(parsed, dict):
         raise PacketSynthesisJsonInvalid("model JSON was not an object")
@@ -265,7 +304,7 @@ def _synthesize_ollama_with_repairs(
             "messages": messages,
             "temperature": 0.1,
             "timeout": settings.litellm_timeout_seconds,
-            "max_tokens": 900,
+            "max_tokens": 1400,
         }
         if settings.litellm_api_base:
             completion_kwargs["api_base"] = settings.litellm_api_base

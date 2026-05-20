@@ -9,6 +9,7 @@ import { DashboardDemoV4FloatingNav } from "@/components/dashboard/demo-v4/Dashb
 import { HomelabStatusBadge } from "@/components/dashboard/HomelabStatusBadge";
 import { useScoutOverview } from "@/hooks/useScoutOverview";
 import {
+  buildScoutDiagnosticsCopy,
   buildScoutHumanReadModel,
   type ScoutActionInboxCard,
   type ScoutSourceCandidateGroup,
@@ -888,6 +889,7 @@ function SourceCards({ sources, stored }: { sources: ScoutSourceSummary[]; store
 function HealthChecks({ overview }: { overview: ScoutOverview }) {
   const scheduler = overview.scheduler ?? {};
   const model = buildScoutHumanReadModel(overview);
+  const diagnostics = buildScoutDiagnosticsCopy(overview);
 
   return (
     <Section
@@ -906,6 +908,21 @@ function HealthChecks({ overview }: { overview: ScoutOverview }) {
           label="Memory writes"
           value={model.memoryWritesOff ? "Off" : "Review"}
           help="Scout is not changing proxy memory or coding context when off."
+        />
+        <Metric
+          label="Packet backlog"
+          value={diagnostics.packetBacklogLabel}
+          help={diagnostics.packetBacklogHelp}
+        />
+        <Metric
+          label="Packet synthesis"
+          value={diagnostics.packetSynthesisLabel}
+          help={diagnostics.packetSynthesisHelp}
+        />
+        <Metric
+          label="Discovery execution"
+          value={diagnostics.discoveryExecutionLabel}
+          help={diagnostics.discoveryExecutionHelp}
         />
       </div>
       <details className="scout-center-advanced">

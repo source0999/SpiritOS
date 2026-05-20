@@ -605,6 +605,26 @@ export default function CodingCockpitShell() {
               {currentTaskState}
             </span>
           </div>
+          <div className="mt-4 grid gap-3 text-sm md:grid-cols-3">
+            <div className="rounded-md border border-white/10 bg-white/[0.03] p-3">
+              <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                Task
+              </div>
+              <div className="mt-1 break-words text-slate-100">{currentTaskTitle}</div>
+            </div>
+            <div className="rounded-md border border-white/10 bg-white/[0.03] p-3">
+              <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                Target
+              </div>
+              <div className="mt-1 break-words text-slate-100">{currentTaskTarget}</div>
+            </div>
+            <div className="rounded-md border border-white/10 bg-white/[0.03] p-3">
+              <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                Safe next action
+              </div>
+              <div className="mt-1 text-slate-100">{nextSafeAction}</div>
+            </div>
+          </div>
           <details className="mt-4 rounded-md border border-white/10 bg-slate-900/70">
             <summary className="min-h-12 cursor-pointer px-3 py-3 text-sm font-semibold text-slate-100">
               Evidence trail
@@ -640,7 +660,7 @@ export default function CodingCockpitShell() {
           </details>
         </section>
 
-        <div className="grid flex-1 gap-5 py-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="flex flex-1 py-5">
           <section className="min-w-0 space-y-5" aria-labelledby="task-composer-heading">
             <div className="rounded-md border border-white/10 bg-slate-900/70 p-4 sm:p-6">
               <div className="mb-4 flex items-center gap-3">
@@ -840,17 +860,9 @@ export default function CodingCockpitShell() {
               <section className="rounded-md border border-white/10 bg-slate-900/70 p-4 sm:p-5">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
-                    <h2 className="text-base font-semibold text-white">Approval State</h2>
+                    <h2 className="text-base font-semibold text-white">Safe Next Action</h2>
                     <p className="mt-1 text-sm text-slate-400">
-                      {previewState.status === "applied"
-                        ? "Applied. Verification required before this task is done."
-                        : previewState.status === "approved"
-                          ? "Approved, not applied. Files are still unchanged."
-                          : previewState.status === "satisfied"
-                            ? "Already satisfied. The target file already matches the task, so there is no diff to approve or apply."
-                            : previewState.approvalAvailable
-                              ? "Preview ready. Approval is available. Approval is separate from apply."
-                              : "Approval unavailable until preview gates pass. No files changed yet."}
+                      {nextSafeAction}
                     </p>
                   </div>
                   <span
@@ -869,67 +881,6 @@ export default function CodingCockpitShell() {
                         : "approval unavailable"}
                   </span>
                 </div>
-
-                <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
-                  <GateStatus
-                    label="Target match"
-                    ok={previewState.targetMatch}
-                    value={
-                      previewState.targetMatch
-                        ? "Diff targets the requested file."
-                        : "Diff target has not matched yet."
-                    }
-                  />
-                  <GateStatus
-                    label="Allowed files"
-                    ok={previewState.taskSpecAllowed}
-                    value={
-                      previewState.taskSpecAllowed
-                        ? "Changed files are inside allowed files."
-                        : "Allowed-files gate has not passed."
-                    }
-                  />
-                  <GateStatus
-                    label="Protected path"
-                    ok={!previewState.blocker?.toLowerCase().includes("protected")}
-                    value={previewState.blocker ?? "No protected-path blocker reported."}
-                  />
-                  <GateStatus
-                    label="Requirement coverage"
-                    ok={previewState.requirementSummary.toLowerCase().includes("passed")}
-                    value={previewState.requirementSummary}
-                  />
-                  <GateStatus
-                    label="Verifier"
-                    ok={previewState.verifierSummary.toLowerCase().includes("passed")}
-                    value={previewState.verifierSummary}
-                  />
-                  <GateStatus
-                    label="Reviewer"
-                    ok={!previewState.reviewerSummary.toLowerCase().includes("blocked")}
-                    value={previewState.reviewerSummary}
-                  />
-                  <GateStatus
-                    label="Apply"
-                    ok={previewState.status === "applied"}
-                    value={
-                      previewState.status === "applied"
-                        ? "Approved diff was applied through Source Proxy."
-                        : previewState.status === "approved"
-                          ? "Ready to apply approved diff through Source Proxy."
-                          : "Locked until human approval is recorded."
-                    }
-                  />
-                  <GateStatus
-                    label="Verification"
-                    ok={false}
-                    value={
-                      previewState.status === "applied"
-                        ? "Verification required. Run checks before treating this task as done."
-                        : "Runs after a separately approved apply flow."
-                    }
-                  />
-                </dl>
 
                 {previewState.error ? (
                   <div className="mt-4 rounded-md border border-red-300/40 bg-red-300/10 px-3 py-3 text-sm text-red-100">
@@ -1000,40 +951,76 @@ export default function CodingCockpitShell() {
                     <p className="mt-3 text-sm text-slate-300">{previewState.applySummary}</p>
                   ) : null}
                 </div>
+
+                <details className="mt-4 rounded-md border border-white/10 bg-slate-950/60">
+                  <summary className="min-h-12 cursor-pointer px-3 py-3 text-sm font-semibold text-slate-100">
+                    Review gates
+                  </summary>
+                  <dl className="grid gap-3 border-t border-white/10 p-3 text-sm sm:grid-cols-2">
+                    <GateStatus
+                      label="Target match"
+                      ok={previewState.targetMatch}
+                      value={
+                        previewState.targetMatch
+                          ? "Diff targets the requested file."
+                          : "Diff target has not matched yet."
+                      }
+                    />
+                    <GateStatus
+                      label="Allowed files"
+                      ok={previewState.taskSpecAllowed}
+                      value={
+                        previewState.taskSpecAllowed
+                          ? "Changed files are inside allowed files."
+                          : "Allowed-files gate has not passed."
+                      }
+                    />
+                    <GateStatus
+                      label="Protected path"
+                      ok={!previewState.blocker?.toLowerCase().includes("protected")}
+                      value={previewState.blocker ?? "No protected-path blocker reported."}
+                    />
+                    <GateStatus
+                      label="Requirement coverage"
+                      ok={previewState.requirementSummary.toLowerCase().includes("passed")}
+                      value={previewState.requirementSummary}
+                    />
+                    <GateStatus
+                      label="Verifier"
+                      ok={previewState.verifierSummary.toLowerCase().includes("passed")}
+                      value={previewState.verifierSummary}
+                    />
+                    <GateStatus
+                      label="Reviewer"
+                      ok={!previewState.reviewerSummary.toLowerCase().includes("blocked")}
+                      value={previewState.reviewerSummary}
+                    />
+                    <GateStatus
+                      label="Apply"
+                      ok={previewState.status === "applied"}
+                      value={
+                        previewState.status === "applied"
+                          ? "Approved diff was applied through Source Proxy."
+                          : previewState.status === "approved"
+                            ? "Ready to apply approved diff through Source Proxy."
+                            : "Locked until human approval is recorded."
+                      }
+                    />
+                    <GateStatus
+                      label="Verification"
+                      ok={false}
+                      value={
+                        previewState.status === "applied"
+                          ? "Verification required. Run checks before treating this task as done."
+                          : "Runs after a separately approved apply flow."
+                      }
+                    />
+                  </dl>
+                </details>
               </section>
             ) : null}
 
           </section>
-
-          <aside className="min-w-0 space-y-5" aria-label="Task actions">
-            <section className="rounded-md border border-white/10 bg-slate-900/70 p-4">
-              <h2 className="text-base font-semibold text-white">Current Task</h2>
-              <div className="mt-3 space-y-3 text-sm">
-                <div>
-                  <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                    State
-                  </div>
-                  <div className="mt-1 text-slate-100">{currentTaskState}</div>
-                </div>
-                <div>
-                  <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                    Task
-                  </div>
-                  <div className="mt-1 break-words text-slate-100">{currentTaskTitle}</div>
-                </div>
-                <div>
-                  <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                    Target
-                  </div>
-                  <div className="mt-1 break-words text-slate-100">{currentTaskTarget}</div>
-                </div>
-              </div>
-            </section>
-            <section className="rounded-md border border-white/10 bg-slate-900/70 p-4">
-              <h2 className="text-base font-semibold text-white">Next Safe Action</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-400">{nextSafeAction}</p>
-            </section>
-          </aside>
         </div>
       </div>
       <div

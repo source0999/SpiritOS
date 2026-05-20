@@ -40,6 +40,23 @@ def docs_autopilot_config() -> dict[str, object]:
     }
 
 
+def level_7_autopilot_config() -> dict[str, object]:
+    requested = _env_bool("CARTOGRAPHER_LEVEL_7_AUTOPILOT_ENABLED", default=False)
+    kill_switch = _env_bool("CARTOGRAPHER_LEVEL_7_AUTOPILOT_KILL_SWITCH", default=True)
+    enabled = requested and not kill_switch
+    return {
+        "level_7_autopilot_enabled": enabled,
+        "level_7_autopilot_requested": requested,
+        "level_7_autopilot_kill_switch": kill_switch,
+        "level_7_autopilot_mode": (
+            "disabled" if not enabled else "configured_but_actions_unavailable"
+        ),
+        "level_7_autopilot_action_available": False,
+        "write_actions_enabled": False,
+        "actions_taken": False,
+    }
+
+
 def _env_bool(name: str, *, default: bool) -> bool:
     raw = os.getenv(name)
     if raw is None:

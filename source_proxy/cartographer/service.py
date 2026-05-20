@@ -6,7 +6,7 @@ import subprocess
 from typing import Any
 
 from source_proxy.cartographer.audit_trail import build_audit_trail
-from source_proxy.cartographer.autopilot_config import docs_autopilot_config
+from source_proxy.cartographer.autopilot_config import docs_autopilot_config, level_7_autopilot_config
 from source_proxy.cartographer.autopilot_apply import run_docs_autopilot_apply
 from source_proxy.cartographer.autopilot_dry_run import build_docs_autopilot_dry_run_proposals
 from source_proxy.cartographer.autopilot_soak import build_docs_autopilot_soak_report
@@ -27,7 +27,7 @@ from source_proxy.cartographer.commit_proposals import (
     build_level_3_commit_execution_block,
     build_level_3_commit_proposal_preview,
 )
-from source_proxy.cartographer.component_mapper import build_component_map
+from source_proxy.cartographer.component_mapper import build_component_map, map_paths
 from source_proxy.cartographer.drift import detect_blueprint_drift
 from source_proxy.cartographer.git_status import (
     read_git_status,
@@ -192,6 +192,1579 @@ def build_cartographer_level_6_project_registry_hardening() -> dict[str, Any]:
             'PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -k "level_6_project_registry"',
         ],
         "next_step": "Level 6.2 may add a cross-project status board only after Britton approves it.",
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_level_6_cross_project_status_board() -> dict[str, Any]:
+    registry = build_cartographer_level_6_project_registry_hardening()
+    health_payload = build_cartographer_project_health()
+    health_by_project = {
+        project["project_id"]: project
+        for project in health_payload["projects"]
+    }
+    board_items = [
+        _level_6_status_board_item(entry, health_by_project.get(entry["project_id"]))
+        for entry in registry["registry_entries"]
+    ]
+    candidate_items = [
+        _level_6_candidate_board_item(candidate)
+        for candidate in registry["project_candidates"]
+    ]
+    blockers = sorted(
+        {
+            blocker
+            for item in [*board_items, *candidate_items]
+            for blocker in item["blockers"]
+        }
+    )
+    return {
+        "status": "observing",
+        "level": 6,
+        "mode": "cross_project_status_board",
+        "contract_version": "cartographer.level_6.cross_project_status_board.v1",
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "cross_repo_mutation_allowed": False,
+        "commit_allowed": False,
+        "push_allowed": False,
+        "push_queue_creation_allowed": False,
+        "branch_creation_allowed": False,
+        "worktree_creation_allowed": False,
+        "cleanup_allowed": False,
+        "merge_allowed": False,
+        "stash_allowed": False,
+        "automatic_fixes_allowed": False,
+        "registry": registry,
+        "project_count": len(board_items),
+        "candidate_count": len(candidate_items),
+        "dirty_project_count": sum(1 for item in board_items if item["dirty"]),
+        "blocked_project_count": sum(1 for item in board_items if item["blockers"]),
+        "board_items": board_items,
+        "candidate_items": candidate_items,
+        "blockers": blockers,
+        "recommended_next_action": (
+            "Review blocked or dirty projects before sequencing cross-project work."
+            if blockers
+            else "No cross-project blockers detected."
+        ),
+        "forbidden_actions": [
+            "commits",
+            "pushes",
+            "push queue creation",
+            "branch creation",
+            "worktree creation",
+            "cleanup",
+            "merge",
+            "stash",
+            "automatic fixes",
+            "promotion beyond Level 6.2",
+        ],
+        "manual_checks": [
+            "git status -sb",
+            'PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -k "level_6_cross_project_status_board"',
+        ],
+        "next_step": "Level 6.3 may add component ownership only after Britton approves it.",
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_level_6_component_ownership_assignment() -> dict[str, Any]:
+    status_board = build_cartographer_level_6_cross_project_status_board()
+    components_payload = build_cartographer_components()
+    changed_by_component = {
+        component["component_id"]: component
+        for component in components_payload["changed_components"]
+    }
+    ownership_items = [
+        _level_6_component_ownership_item(
+            component,
+            changed_component=changed_by_component.get(component["component_id"]),
+            status_board=status_board,
+        )
+        for component in components_payload["components"]
+    ]
+    conflict_items = [
+        item
+        for item in ownership_items
+        if item["changed"] and item["owner"] is None
+    ]
+    return {
+        "status": "observing",
+        "level": 6,
+        "mode": "component_ownership_agent_assignment",
+        "contract_version": "cartographer.level_6.component_ownership_agent_assignment.v1",
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "assignment_write_allowed": False,
+        "automatic_reassignment_allowed": False,
+        "cross_repo_mutation_allowed": False,
+        "repo_mutation_allowed": False,
+        "branch_creation_allowed": False,
+        "worktree_creation_allowed": False,
+        "push_allowed": False,
+        "merge_allowed": False,
+        "cleanup_allowed": False,
+        "component_count": len(ownership_items),
+        "unassigned_component_count": sum(1 for item in ownership_items if item["owner"] is None),
+        "changed_component_count": len(changed_by_component),
+        "conflict_count": len(conflict_items),
+        "ownership_items": ownership_items,
+        "conflicts": conflict_items,
+        "status_board": status_board,
+        "forbidden_actions": [
+            "repo mutation",
+            "branch creation",
+            "worktree creation",
+            "push",
+            "merge",
+            "cleanup",
+            "autonomous reassignment",
+            "promotion beyond Level 6.3",
+        ],
+        "manual_checks": [
+            "git status -sb",
+            'PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -k "level_6_component_ownership"',
+        ],
+        "next_step": "Level 6.4 may classify cross-repo dirty trees only after Britton approves it.",
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_level_6_cross_repo_dirty_tree_classifier() -> dict[str, Any]:
+    registry = build_cartographer_level_6_project_registry_hardening()
+    statuses = read_git_statuses()
+    if not statuses:
+        cwd = Path.cwd()
+        if (cwd / ".git").exists():
+            statuses = [read_git_status_for_project(project_id=cwd.name.lower(), root=cwd)]
+    status_by_project = {
+        status.project_id: status
+        for status in statuses
+        if status.project_id
+    }
+    classifications = [
+        _level_6_project_dirty_classification(
+            entry,
+            status_by_project.get(entry["project_id"]),
+        )
+        for entry in registry["registry_entries"]
+    ]
+    dirty_projects = [item for item in classifications if item["dirty"]]
+    blocking_projects = [item for item in classifications if item["blocks_cross_repo_sequence"]]
+    forbidden_files = [
+        file
+        for item in classifications
+        for file in item["forbidden_files"]
+    ]
+    unclassified_files = [
+        file
+        for item in classifications
+        for file in item["unclassified_files"]
+    ]
+    return {
+        "status": "observing",
+        "level": 6,
+        "mode": "cross_repo_dirty_tree_classifier",
+        "contract_version": "cartographer.level_6.cross_repo_dirty_tree_classifier.v1",
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "staging_allowed": False,
+        "commit_allowed": False,
+        "push_allowed": False,
+        "branch_creation_allowed": False,
+        "worktree_creation_allowed": False,
+        "cleanup_allowed": False,
+        "merge_allowed": False,
+        "stash_allowed": False,
+        "cross_repo_fixes_allowed": False,
+        "registry": registry,
+        "project_count": len(classifications),
+        "dirty_project_count": len(dirty_projects),
+        "blocking_project_count": len(blocking_projects),
+        "forbidden_file_count": len(forbidden_files),
+        "unclassified_file_count": len(unclassified_files),
+        "classifications": classifications,
+        "forbidden_files": forbidden_files,
+        "unclassified_files": unclassified_files,
+        "recommended_sequence": [
+            {
+                "project_id": item["project_id"],
+                "recommended_next_action": item["recommended_next_action"],
+                "sequencing_status": item["sequencing_status"],
+            }
+            for item in classifications
+        ],
+        "forbidden_actions": [
+            "staging",
+            "committing",
+            "pushing",
+            "branch creation",
+            "worktree creation",
+            "cleanup",
+            "merge",
+            "stash",
+            "cross-repo fixes",
+            "promotion beyond Level 6.4",
+        ],
+        "manual_checks": [
+            "git status -sb",
+            'PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -k "level_6_cross_repo_dirty_tree"',
+        ],
+        "next_step": "Level 6.5 may add a multi-project closeout dashboard only after Britton approves it.",
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_level_6_multi_project_closeout_dashboard() -> dict[str, Any]:
+    status_board = build_cartographer_level_6_cross_project_status_board()
+    ownership = build_cartographer_level_6_component_ownership_assignment()
+    dirty_classifier = build_cartographer_level_6_cross_repo_dirty_tree_classifier()
+    closeout_items = [
+        _level_6_closeout_item(
+            board_item,
+            ownership=ownership,
+            dirty_classifier=dirty_classifier,
+        )
+        for board_item in status_board["board_items"]
+    ]
+    dashboard_blockers = sorted(
+        {
+            blocker
+            for item in closeout_items
+            for blocker in item["blockers"]
+        }
+    )
+    ready_count = sum(1 for item in closeout_items if item["closeout_status"] == "ready_for_review")
+    blocked_count = len(closeout_items) - ready_count
+    return {
+        "status": "observing",
+        "level": 6,
+        "mode": "multi_project_closeout_dashboard",
+        "contract_version": "cartographer.level_6.multi_project_closeout_dashboard.v1",
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "commit_allowed": False,
+        "push_allowed": False,
+        "push_queue_creation_allowed": False,
+        "branch_creation_allowed": False,
+        "worktree_creation_allowed": False,
+        "cleanup_allowed": False,
+        "merge_allowed": False,
+        "stash_allowed": False,
+        "automatic_promotion_allowed": False,
+        "automatic_execution_allowed": False,
+        "project_count": len(closeout_items),
+        "ready_project_count": ready_count,
+        "blocked_project_count": blocked_count,
+        "dashboard_blockers": dashboard_blockers,
+        "closeout_items": closeout_items,
+        "status_board": status_board,
+        "ownership": ownership,
+        "dirty_classifier": dirty_classifier,
+        "next_approved_increment": "Level 7+: Future Limited Autopilot, disabled by default",
+        "recommended_next_action": (
+            "Resolve closeout blockers before any future Level 7 autopilot discussion."
+            if dashboard_blockers
+            else "Level 6 closeout is ready for human review; Level 7 remains disabled by default."
+        ),
+        "forbidden_actions": [
+            "commits",
+            "pushes",
+            "queue creation",
+            "branch creation",
+            "worktree creation",
+            "cleanup",
+            "merge",
+            "stash",
+            "automatic promotion",
+            "automatic execution",
+        ],
+        "manual_checks": [
+            "git status -sb",
+            'PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -k "level_6_multi_project_closeout"',
+        ],
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_level_7_disabled_by_default() -> dict[str, Any]:
+    config = level_7_autopilot_config()
+    return {
+        "status": "observing",
+        "level": 7,
+        "mode": "disabled_by_default_feature_flag",
+        "contract_version": "cartographer.level_7.disabled_by_default_feature_flag.v1",
+        "feature_flag": {
+            "name": "CARTOGRAPHER_LEVEL_7_AUTOPILOT_ENABLED",
+            "default": False,
+            "requested": config["level_7_autopilot_requested"],
+            "enabled": config["level_7_autopilot_enabled"],
+            "kill_switch_name": "CARTOGRAPHER_LEVEL_7_AUTOPILOT_KILL_SWITCH",
+            "kill_switch_default": True,
+            "kill_switch_active": config["level_7_autopilot_kill_switch"],
+            "mode": config["level_7_autopilot_mode"],
+        },
+        "level_7_autopilot_enabled": config["level_7_autopilot_enabled"],
+        "level_7_autopilot_requested": config["level_7_autopilot_requested"],
+        "level_7_autopilot_kill_switch": config["level_7_autopilot_kill_switch"],
+        "level_7_autopilot_action_available": False,
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "recommendation_contract_available": False,
+        "dry_run_action_packet_builder_available": False,
+        "exact_approval_handshake_available": False,
+        "automatic_execution_allowed": False,
+        "automatic_promotion_allowed": False,
+        "self_approval_allowed": False,
+        "commit_allowed": False,
+        "push_allowed": False,
+        "push_queue_creation_allowed": False,
+        "branch_creation_allowed": False,
+        "worktree_creation_allowed": False,
+        "cleanup_allowed": False,
+        "merge_allowed": False,
+        "stash_allowed": False,
+        "forbidden_actions": [
+            "push",
+            "push queue creation",
+            "branch creation",
+            "worktree creation",
+            "cleanup",
+            "stash",
+            "merge",
+            "automatic commit",
+            "automatic execution",
+            "automatic promotion",
+            "self-approval",
+            "Level 7.2 recommendations",
+            "Level 7.3 dry-run action packets",
+        ],
+        "manual_checks": [
+            "git status -sb",
+            'PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -k "level_7_disabled_by_default or level_6_multi_project_closeout or level_6_cross_repo_dirty_tree or level_6_component_ownership or level_6_cross_project_status_board or level_6_project_registry"',
+        ],
+        "next_step": "Level 7.2 may define recommendations only after Level 7.1 is closed out and explicitly approved.",
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_level_7_next_safe_action() -> dict[str, Any]:
+    disabled_state = build_cartographer_level_7_disabled_by_default()
+    closeout = build_cartographer_level_6_multi_project_closeout_dashboard()
+    blockers = _level_7_next_safe_action_blockers(
+        disabled_state=disabled_state,
+        closeout=closeout,
+    )
+    return {
+        "status": "observing",
+        "level": 7,
+        "mode": "next_safe_action_recommendation",
+        "contract_version": "cartographer.level_7.next_safe_action_recommendation.v1",
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "recommendation_only": True,
+        "recommendation_contract_available": True,
+        "dry_run_action_packet_builder_available": False,
+        "exact_approval_handshake_available": False,
+        "level_7_autopilot_enabled": disabled_state["level_7_autopilot_enabled"],
+        "level_7_autopilot_action_available": False,
+        "automatic_execution_allowed": False,
+        "automatic_promotion_allowed": False,
+        "self_approval_allowed": False,
+        "commit_allowed": False,
+        "push_allowed": False,
+        "push_queue_creation_allowed": False,
+        "branch_creation_allowed": False,
+        "worktree_creation_allowed": False,
+        "cleanup_allowed": False,
+        "merge_allowed": False,
+        "stash_allowed": False,
+        "blockers": blockers,
+        "next_safe_action": _level_7_next_safe_action_title(blockers),
+        "next_safe_action_status": "blocked" if blockers else "available_for_human_review",
+        "recommendation": {
+            "action_id": "level_7_next_safe_action_review",
+            "title": _level_7_next_safe_action_title(blockers),
+            "status": "blocked" if blockers else "available_for_human_review",
+            "operator_action_required": True,
+            "cartographer_may_execute": False,
+            "cartographer_may_create_dry_run_packet": False,
+            "evidence": [
+                "docs/cartographer-level-7-autopilot-boundary-contract.md",
+                "docs/cartographer-level-7-disabled-by-default-feature-flag.md",
+                "source_proxy/tests/test_cartographer_api.py",
+            ],
+            "reason": _level_7_next_safe_action_reason(blockers),
+        },
+        "forbidden_actions": [
+            "push",
+            "push queue creation",
+            "branch creation",
+            "worktree creation",
+            "cleanup",
+            "stash",
+            "merge",
+            "automatic commit",
+            "automatic execution",
+            "automatic promotion",
+            "self-approval",
+            "dry-run action packet creation",
+        ],
+        "manual_checks": [
+            "git status -sb",
+            'PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -k "level_7_next_safe_action or level_7_disabled_by_default or level_6_multi_project_closeout or level_6_cross_repo_dirty_tree or level_6_component_ownership or level_6_cross_project_status_board or level_6_project_registry"',
+        ],
+        "next_step": "Level 7.3 may build dry-run action packets only after Level 7.2 is closed out and explicitly approved.",
+        "disabled_state": disabled_state,
+        "level_6_closeout": closeout,
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_level_7_dry_run_action_packet() -> dict[str, Any]:
+    recommendation = build_cartographer_level_7_next_safe_action()
+    packet = _level_7_dry_run_action_packet(recommendation)
+    return {
+        "status": "observing",
+        "level": 7,
+        "mode": "dry_run_action_packet_builder",
+        "contract_version": "cartographer.level_7.dry_run_action_packet_builder.v1",
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "recommendation_contract_available": True,
+        "dry_run_action_packet_builder_available": True,
+        "exact_approval_handshake_available": False,
+        "level_7_autopilot_enabled": recommendation["level_7_autopilot_enabled"],
+        "level_7_autopilot_action_available": False,
+        "automatic_execution_allowed": False,
+        "automatic_promotion_allowed": False,
+        "self_approval_allowed": False,
+        "commit_allowed": False,
+        "push_allowed": False,
+        "push_queue_creation_allowed": False,
+        "branch_creation_allowed": False,
+        "worktree_creation_allowed": False,
+        "cleanup_allowed": False,
+        "merge_allowed": False,
+        "stash_allowed": False,
+        "packet_count": 1,
+        "packets": [packet],
+        "packet": packet,
+        "blockers": packet["blockers"],
+        "forbidden_actions": packet["forbidden_actions"],
+        "manual_checks": [
+            "git status -sb",
+            'PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -k "level_7_dry_run_action_packet or level_7_next_safe_action or level_7_disabled_by_default or level_6_multi_project_closeout or level_6_cross_repo_dirty_tree or level_6_component_ownership or level_6_cross_project_status_board or level_6_project_registry"',
+        ],
+        "next_step": "Level 7.4 may define an exact approval handshake only after Level 7.3 is closed out and explicitly approved.",
+        "recommendation": recommendation,
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_level_7_exact_approval_handshake(
+    *,
+    packet_id: str,
+    approval_id: str | None,
+    approved_by: str | None,
+    exact_allowed_files: list[str],
+    exact_forbidden_actions: list[str],
+    exact_manual_check_commands: list[str],
+    approved_at: str | None,
+) -> dict[str, Any]:
+    packet_payload = build_cartographer_level_7_dry_run_action_packet()
+    packet = packet_payload["packet"]
+    blockers = _level_7_exact_approval_blockers(
+        packet=packet,
+        packet_id=packet_id,
+        approval_id=approval_id,
+        approved_by=approved_by,
+        exact_allowed_files=exact_allowed_files,
+        exact_forbidden_actions=exact_forbidden_actions,
+        exact_manual_check_commands=exact_manual_check_commands,
+        approved_at=approved_at,
+    )
+    return {
+        "status": "approval_preview",
+        "level": 7,
+        "mode": "exact_approval_handshake_preview",
+        "approval_version": "cartographer.level_7.exact_approval_handshake_preview.v1",
+        "packet_id": packet_id,
+        "packet_found": packet_id == packet["packet_id"],
+        "approval_id": approval_id,
+        "approved_by": approved_by,
+        "approved_at": approved_at,
+        "blockers": blockers,
+        "execution_blockers": ["level_7_execution_not_implemented"],
+        "approval_preview_valid": not blockers,
+        "approval_handshake_available": True,
+        "execution_available": False,
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "automatic_execution_allowed": False,
+        "automatic_promotion_allowed": False,
+        "self_approval_allowed": False,
+        "commit_allowed": False,
+        "push_allowed": False,
+        "push_queue_creation_allowed": False,
+        "branch_creation_allowed": False,
+        "worktree_creation_allowed": False,
+        "cleanup_allowed": False,
+        "merge_allowed": False,
+        "stash_allowed": False,
+        "validated_fields": {
+            "exact_packet_id": packet_id == packet["packet_id"],
+            "approval_id_present": bool(approval_id),
+            "approved_by_present": bool(approved_by),
+            "approved_at_present": bool(approved_at),
+            "allowed_files_exact": exact_allowed_files == packet["allowed_files"],
+            "forbidden_actions_exact": exact_forbidden_actions == packet["forbidden_actions"],
+            "manual_check_commands_exact": (
+                exact_manual_check_commands == packet["manual_check_commands"]
+            ),
+            "self_approval_blocked": _level_7_is_self_approval(approved_by),
+        },
+        "forbidden_actions": [
+            "execution",
+            "push",
+            "push queue creation",
+            "branch creation",
+            "worktree creation",
+            "cleanup",
+            "stash",
+            "merge",
+            "automatic commit",
+            "automatic execution",
+            "automatic promotion",
+            "self-approval",
+        ],
+        "packet": packet,
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_level_7_closeout_dashboard() -> dict[str, Any]:
+    disabled_state = build_cartographer_level_7_disabled_by_default()
+    recommendation = build_cartographer_level_7_next_safe_action()
+    dry_run = build_cartographer_level_7_dry_run_action_packet()
+    packet = dry_run["packet"]
+    approval_preview = build_cartographer_level_7_exact_approval_handshake(
+        packet_id=packet["packet_id"],
+        approval_id="level-7-closeout-preview",
+        approved_by="human-operator",
+        exact_allowed_files=packet["allowed_files"],
+        exact_forbidden_actions=packet["forbidden_actions"],
+        exact_manual_check_commands=packet["manual_check_commands"],
+        approved_at="2026-05-20T00:00:00Z",
+    )
+    closeout_items = [
+        _level_7_closeout_item(
+            "Level 7.1",
+            "Disabled-By-Default Feature Flag",
+            disabled_state,
+            "feature_flag_locked",
+        ),
+        _level_7_closeout_item(
+            "Level 7.2",
+            "Next Safe Action Recommendation Contract",
+            recommendation,
+            "recommendation_only",
+        ),
+        _level_7_closeout_item(
+            "Level 7.3",
+            "Dry-Run Action Packet Builder",
+            dry_run,
+            "dry_run_only",
+        ),
+        _level_7_closeout_item(
+            "Level 7.4",
+            "Exact Approval Handshake Contract",
+            approval_preview,
+            "approval_preview_only",
+        ),
+    ]
+    closeout_blockers = sorted(
+        {
+            blocker
+            for item in closeout_items
+            for blocker in item["blockers"]
+        }
+    )
+    return {
+        "status": "observing",
+        "level": 7,
+        "mode": "level_7_closeout_dashboard",
+        "contract_version": "cartographer.level_7.closeout_dashboard.v1",
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "level_7_closed_out": not closeout_blockers,
+        "level_8_gated": True,
+        "level_8_may_begin": False,
+        "operator_approval_required_for_level_8": True,
+        "automatic_execution_allowed": False,
+        "automatic_promotion_allowed": False,
+        "self_approval_allowed": False,
+        "commit_allowed": False,
+        "push_allowed": False,
+        "push_queue_creation_allowed": False,
+        "branch_creation_allowed": False,
+        "worktree_creation_allowed": False,
+        "cleanup_allowed": False,
+        "merge_allowed": False,
+        "stash_allowed": False,
+        "closeout_items": closeout_items,
+        "closeout_blockers": closeout_blockers,
+        "disabled_state": disabled_state,
+        "recommendation": recommendation,
+        "dry_run": dry_run,
+        "approval_preview": approval_preview,
+        "recommended_next_action": (
+            "Request explicit human approval before starting Level 8.0."
+            if not closeout_blockers
+            else "Resolve Level 7 closeout blockers before any Level 8 discussion."
+        ),
+        "forbidden_actions": [
+            "push",
+            "push queue creation",
+            "branch creation",
+            "worktree creation",
+            "cleanup",
+            "stash",
+            "merge",
+            "automatic commit",
+            "automatic execution",
+            "automatic promotion",
+            "self-approval",
+            "Level 8 work without explicit approval",
+        ],
+        "manual_checks": [
+            "git status -sb",
+            'PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -k "level_7_closeout_dashboard or level_7_exact_approval_handshake or level_7_dry_run_action_packet or level_7_next_safe_action or level_7_disabled_by_default or level_6_multi_project_closeout or level_6_cross_repo_dirty_tree or level_6_component_ownership or level_6_cross_project_status_board or level_6_project_registry"',
+        ],
+        "next_step": "Level 8.0 may begin only after explicit human approval.",
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_level_8_workflow_run_card() -> dict[str, Any]:
+    level_7_closeout = build_cartographer_level_7_closeout_dashboard()
+    steps = [
+        _level_8_workflow_step_card(
+            step_id="level-8-step-1-review-level-7-closeout",
+            title="Review Level 7 closeout dashboard",
+            source="cartographer.level_7.closeout_dashboard.v1",
+            blockers=[] if level_7_closeout["level_7_closed_out"] else ["level_7_not_closed_out"],
+        ),
+        _level_8_workflow_step_card(
+            step_id="level-8-step-2-confirm-workflow-boundary",
+            title="Confirm Level 8 workflow runner boundary",
+            source="docs/cartographer-level-8-workflow-runner-boundary-contract.md",
+            blockers=[],
+        ),
+        _level_8_workflow_step_card(
+            step_id="level-8-step-3-plan-step-approval-contract",
+            title="Plan Step Approval UI/API Contract",
+            source="Level 8.2 future increment",
+            blockers=["level_8_2_not_approved"],
+        ),
+    ]
+    workflow_blockers = sorted(
+        {
+            blocker
+            for step in steps
+            for blocker in step["blockers"]
+        }
+    )
+    return {
+        "status": "observing",
+        "level": 8,
+        "mode": "workflow_run_card_model",
+        "contract_version": "cartographer.level_8.workflow_run_card_model.v1",
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "workflow_run_card_available": True,
+        "step_approval_contract_available": False,
+        "receipt_journal_available": False,
+        "background_execution_allowed": False,
+        "autonomous_retry_allowed": False,
+        "cross_project_mutation_allowed": False,
+        "automatic_execution_allowed": False,
+        "automatic_promotion_allowed": False,
+        "self_approval_allowed": False,
+        "commit_allowed": False,
+        "push_allowed": False,
+        "merge_allowed": False,
+        "branch_creation_allowed": False,
+        "worktree_creation_allowed": False,
+        "cleanup_allowed": False,
+        "stash_allowed": False,
+        "workflow": {
+            "workflow_id": "cartographer.level_8.workflow_run_card.v1",
+            "title": "Level 8 controlled workflow preview",
+            "status": "blocked" if workflow_blockers else "ready_for_human_review",
+            "human_approval_required_per_step": True,
+            "cartographer_may_execute_steps": False,
+            "background_execution_allowed": False,
+            "autonomous_retry_allowed": False,
+            "receipt_journal_required_before_execution": True,
+            "steps": steps,
+            "blockers": workflow_blockers,
+        },
+        "step_count": len(steps),
+        "blocked_step_count": sum(1 for step in steps if step["blockers"]),
+        "blockers": workflow_blockers,
+        "forbidden_actions": [
+            "execution",
+            "background execution",
+            "autonomous retry loops",
+            "hidden receipt writes",
+            "cross-project mutation",
+            "push",
+            "merge",
+            "branch creation",
+            "worktree creation",
+            "cleanup",
+            "stash",
+            "automatic commit",
+            "automatic promotion",
+            "self-approval",
+        ],
+        "manual_checks": [
+            "git status -sb",
+            'PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -k "level_8_workflow_run_card or level_7_closeout_dashboard or level_6_multi_project_closeout"',
+        ],
+        "next_step": "Level 8.2 may define step approval UI/API only after Level 8.1 is closed out and explicitly approved.",
+        "level_7_closeout": level_7_closeout,
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_level_8_step_approval_preview(
+    *,
+    workflow_id: str,
+    step_id: str,
+    approval_id: str | None,
+    approved_by: str | None,
+    exact_step_title: str,
+    exact_manual_check_commands: list[str],
+    approved_at: str | None,
+) -> dict[str, Any]:
+    workflow_payload = build_cartographer_level_8_workflow_run_card()
+    workflow = workflow_payload["workflow"]
+    step = next((item for item in workflow["steps"] if item["step_id"] == step_id), None)
+    blockers = _level_8_step_approval_blockers(
+        workflow=workflow,
+        step=step,
+        workflow_id=workflow_id,
+        approval_id=approval_id,
+        approved_by=approved_by,
+        exact_step_title=exact_step_title,
+        exact_manual_check_commands=exact_manual_check_commands,
+        approved_at=approved_at,
+    )
+    return {
+        "status": "approval_preview",
+        "level": 8,
+        "mode": "step_approval_contract_preview",
+        "approval_version": "cartographer.level_8.step_approval_contract_preview.v1",
+        "workflow_id": workflow_id,
+        "workflow_found": workflow_id == workflow["workflow_id"],
+        "step_id": step_id,
+        "step_found": step is not None,
+        "approval_id": approval_id,
+        "approved_by": approved_by,
+        "approved_at": approved_at,
+        "blockers": blockers,
+        "approval_preview_valid": not blockers,
+        "step_approval_contract_available": True,
+        "receipt_journal_available": False,
+        "execution_available": False,
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "background_execution_allowed": False,
+        "autonomous_retry_allowed": False,
+        "cross_project_mutation_allowed": False,
+        "automatic_execution_allowed": False,
+        "automatic_promotion_allowed": False,
+        "self_approval_allowed": False,
+        "commit_allowed": False,
+        "push_allowed": False,
+        "merge_allowed": False,
+        "branch_creation_allowed": False,
+        "worktree_creation_allowed": False,
+        "cleanup_allowed": False,
+        "stash_allowed": False,
+        "validated_fields": {
+            "exact_workflow_id": workflow_id == workflow["workflow_id"],
+            "exact_step_id": step is not None,
+            "approval_id_present": bool(approval_id),
+            "approved_by_present": bool(approved_by),
+            "approved_at_present": bool(approved_at),
+            "step_title_exact": bool(step and exact_step_title == step["title"]),
+            "manual_check_commands_exact": (
+                exact_manual_check_commands == workflow_payload["manual_checks"]
+            ),
+            "self_approval_blocked": _level_7_is_self_approval(approved_by),
+        },
+        "execution_blockers": ["level_8_step_execution_not_implemented"],
+        "forbidden_actions": [
+            "step execution",
+            "background execution",
+            "autonomous retry loops",
+            "receipt journal writes",
+            "cross-project mutation",
+            "push",
+            "merge",
+            "branch creation",
+            "worktree creation",
+            "cleanup",
+            "stash",
+            "automatic commit",
+            "automatic promotion",
+            "self-approval",
+        ],
+        "workflow": workflow,
+        "step": step,
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_level_8_receipt_journal() -> dict[str, Any]:
+    workflow_payload = build_cartographer_level_8_workflow_run_card()
+    workflow = workflow_payload["workflow"]
+    first_step = workflow["steps"][0]
+    approval_preview = build_cartographer_level_8_step_approval_preview(
+        workflow_id=workflow["workflow_id"],
+        step_id=first_step["step_id"],
+        approval_id="level-8-receipt-preview",
+        approved_by="human-operator",
+        exact_step_title=first_step["title"],
+        exact_manual_check_commands=workflow_payload["manual_checks"],
+        approved_at="2026-05-20T00:00:00Z",
+    )
+    entries = [
+        _level_8_receipt_journal_entry(
+            event_id="level-8-receipt-001",
+            event_type="workflow_proposed",
+            status="recorded_preview",
+            source_id=workflow["workflow_id"],
+            evidence=[
+                "docs/cartographer-level-8-workflow-run-card-model.md",
+                "source_proxy/tests/test_cartographer_api.py",
+            ],
+        ),
+        _level_8_receipt_journal_entry(
+            event_id="level-8-receipt-002",
+            event_type="step_approval_previewed",
+            status="recorded_preview",
+            source_id=first_step["step_id"],
+            evidence=[
+                "docs/cartographer-level-8-step-approval-contract.md",
+                "source_proxy/tests/test_cartographer_api.py",
+            ],
+        ),
+    ]
+    return {
+        "status": "observing",
+        "level": 8,
+        "mode": "receipt_journal_evidence_trail",
+        "contract_version": "cartographer.level_8.receipt_journal_evidence_trail.v1",
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "receipt_journal_available": True,
+        "receipt_journal_write_allowed": False,
+        "hidden_receipt_writes_allowed": False,
+        "step_approval_contract_available": True,
+        "execution_available": False,
+        "background_execution_allowed": False,
+        "autonomous_retry_allowed": False,
+        "cross_project_mutation_allowed": False,
+        "automatic_execution_allowed": False,
+        "automatic_promotion_allowed": False,
+        "self_approval_allowed": False,
+        "commit_allowed": False,
+        "push_allowed": False,
+        "merge_allowed": False,
+        "branch_creation_allowed": False,
+        "worktree_creation_allowed": False,
+        "cleanup_allowed": False,
+        "stash_allowed": False,
+        "journal": {
+            "journal_id": "cartographer.level_8.receipt_journal.preview.v1",
+            "status": "preview_only",
+            "visible_to_operator": True,
+            "persisted": False,
+            "hidden_writes_allowed": False,
+            "entry_count": len(entries),
+            "entries": entries,
+        },
+        "entry_count": len(entries),
+        "entries": entries,
+        "workflow": workflow,
+        "approval_preview": approval_preview,
+        "forbidden_actions": [
+            "receipt journal writes",
+            "hidden receipt writes",
+            "step execution",
+            "background execution",
+            "autonomous retry loops",
+            "cross-project mutation",
+            "push",
+            "merge",
+            "branch creation",
+            "worktree creation",
+            "cleanup",
+            "stash",
+            "automatic commit",
+            "automatic promotion",
+            "self-approval",
+        ],
+        "manual_checks": [
+            "git status -sb",
+            'PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -k "level_8_receipt_journal or level_8_step_approval or level_8_workflow_run_card"',
+        ],
+        "next_step": "Level 8.4 may define cancel, stop, and failed-step handling only after Level 8.3 is closed out and explicitly approved.",
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_level_8_stop_failure_handling() -> dict[str, Any]:
+    journal_payload = build_cartographer_level_8_receipt_journal()
+    workflow = journal_payload["workflow"]
+    first_step = workflow["steps"][0]
+    stopped_states = [
+        _level_8_stopped_state(
+            state_id="level-8-canceled-step",
+            status="canceled",
+            step_id=first_step["step_id"],
+            reason="Human canceled the step before execution.",
+        ),
+        _level_8_stopped_state(
+            state_id="level-8-failed-step",
+            status="failed",
+            step_id=first_step["step_id"],
+            reason="Manual check failed or blocker appeared.",
+        ),
+        _level_8_stopped_state(
+            state_id="level-8-blocked-step",
+            status="blocked",
+            step_id=workflow["steps"][-1]["step_id"],
+            reason="Future Level 8.5 closeout is not approved.",
+        ),
+    ]
+    return {
+        "status": "observing",
+        "level": 8,
+        "mode": "cancel_stop_failed_step_handling",
+        "contract_version": "cartographer.level_8.cancel_stop_failed_step_handling.v1",
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "stop_handling_available": True,
+        "receipt_journal_available": True,
+        "execution_available": False,
+        "workflow_continuation_allowed": False,
+        "human_review_required_to_continue": True,
+        "background_execution_allowed": False,
+        "autonomous_retry_allowed": False,
+        "cross_project_mutation_allowed": False,
+        "automatic_execution_allowed": False,
+        "automatic_promotion_allowed": False,
+        "self_approval_allowed": False,
+        "commit_allowed": False,
+        "push_allowed": False,
+        "merge_allowed": False,
+        "branch_creation_allowed": False,
+        "worktree_creation_allowed": False,
+        "cleanup_allowed": False,
+        "stash_allowed": False,
+        "stopped_state_count": len(stopped_states),
+        "stopped_states": stopped_states,
+        "journal": journal_payload["journal"],
+        "workflow": workflow,
+        "forbidden_actions": [
+            "workflow continuation without human review",
+            "step execution",
+            "background execution",
+            "autonomous retry loops",
+            "receipt journal writes",
+            "cross-project mutation",
+            "push",
+            "merge",
+            "branch creation",
+            "worktree creation",
+            "cleanup",
+            "stash",
+            "automatic commit",
+            "automatic promotion",
+            "self-approval",
+        ],
+        "manual_checks": [
+            "git status -sb",
+            'PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -k "level_8_cancel_stop_failed_step or level_8_receipt_journal or level_8_step_approval"',
+        ],
+        "next_step": "Level 8.5 may add closeout smoke only after Level 8.4 is closed out and explicitly approved.",
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_level_8_closeout_smoke() -> dict[str, Any]:
+    workflow = build_cartographer_level_8_workflow_run_card()
+    approval = build_cartographer_level_8_step_approval_preview(
+        workflow_id=workflow["workflow"]["workflow_id"],
+        step_id=workflow["workflow"]["steps"][0]["step_id"],
+        approval_id="level-8-closeout-preview",
+        approved_by="human-operator",
+        exact_step_title=workflow["workflow"]["steps"][0]["title"],
+        exact_manual_check_commands=workflow["manual_checks"],
+        approved_at="2026-05-20T00:00:00Z",
+    )
+    journal = build_cartographer_level_8_receipt_journal()
+    stop_failure = build_cartographer_level_8_stop_failure_handling()
+    closeout_items = [
+        _level_8_closeout_item("Level 8.1", "Workflow Run Card Model", workflow),
+        _level_8_closeout_item("Level 8.2", "Step Approval UI/API Contract", approval),
+        _level_8_closeout_item("Level 8.3", "Receipt Journal And Evidence Trail", journal),
+        _level_8_closeout_item("Level 8.4", "Cancel, Stop, And Failed-Step Handling", stop_failure),
+    ]
+    blockers = sorted({blocker for item in closeout_items for blocker in item["blockers"]})
+    return {
+        "status": "observing",
+        "level": 8,
+        "mode": "level_8_closeout_smoke",
+        "contract_version": "cartographer.level_8.closeout_smoke.v1",
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "level_8_closed_out": not blockers,
+        "level_9_gated": True,
+        "level_9_may_begin": False,
+        "operator_approval_required_for_level_9": True,
+        "execution_available": False,
+        "background_execution_allowed": False,
+        "autonomous_retry_allowed": False,
+        "cross_project_mutation_allowed": False,
+        "automatic_execution_allowed": False,
+        "automatic_promotion_allowed": False,
+        "self_approval_allowed": False,
+        "commit_allowed": False,
+        "push_allowed": False,
+        "merge_allowed": False,
+        "branch_creation_allowed": False,
+        "worktree_creation_allowed": False,
+        "cleanup_allowed": False,
+        "stash_allowed": False,
+        "closeout_items": closeout_items,
+        "closeout_blockers": blockers,
+        "workflow": workflow,
+        "approval_preview": approval,
+        "journal": journal,
+        "stop_failure": stop_failure,
+        "recommended_next_action": (
+            "Request explicit human approval before starting Level 9.0."
+            if not blockers
+            else "Resolve Level 8 closeout blockers before any Level 9 discussion."
+        ),
+        "forbidden_actions": [
+            "Level 9 work without explicit approval",
+            "step execution",
+            "background execution",
+            "autonomous retry loops",
+            "receipt journal writes",
+            "cross-project mutation",
+            "push",
+            "merge",
+            "branch creation",
+            "worktree creation",
+            "cleanup",
+            "stash",
+            "automatic commit",
+            "automatic promotion",
+            "self-approval",
+        ],
+        "manual_checks": [
+            "git status -sb",
+            'PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -k "level_8_closeout_smoke or level_8_cancel_stop_failed_step or level_8_receipt_journal or level_8_step_approval or level_8_workflow_run_card"',
+        ],
+        "next_step": "Level 9.0 may begin only after explicit human approval.",
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_level_9_worker_registry() -> dict[str, Any]:
+    level_8_closeout = build_cartographer_level_8_closeout_smoke()
+    workers = [
+        _level_9_worker_registry_entry(
+            worker_id="codex-primary",
+            task_id="cartographer-level-9-worker-registry",
+            branch="main",
+            allowed_files=[
+                "docs/cartographer-level-9-worker-registry-assignment-model.md",
+                "source_proxy/cartographer/service.py",
+                "source_proxy/api/cartographer.py",
+                "source_proxy/tests/test_cartographer_api.py",
+            ],
+            owner="human-operator",
+        )
+    ]
+    assignment_blockers = sorted(
+        {
+            blocker
+            for worker in workers
+            for blocker in worker["blockers"]
+        }
+    )
+    return {
+        "status": "observing",
+        "level": 9,
+        "mode": "worker_registry_assignment_model",
+        "contract_version": "cartographer.level_9.worker_registry_assignment_model.v1",
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "worker_registry_available": True,
+        "assignment_model_available": True,
+        "assignment_write_allowed": False,
+        "automatic_reassignment_allowed": False,
+        "force_overwrite_allowed": False,
+        "branch_creation_allowed": False,
+        "worktree_creation_allowed": False,
+        "commit_allowed": False,
+        "push_allowed": False,
+        "merge_allowed": False,
+        "cleanup_allowed": False,
+        "stash_allowed": False,
+        "automatic_execution_allowed": False,
+        "automatic_promotion_allowed": False,
+        "self_approval_allowed": False,
+        "cross_project_mutation_allowed": False,
+        "worker_count": len(workers),
+        "assignment_count": len([worker for worker in workers if worker["task_id"]]),
+        "blocked_worker_count": len([worker for worker in workers if worker["blockers"]]),
+        "workers": workers,
+        "assignments": [
+            {
+                "worker_id": worker["worker_id"],
+                "task_id": worker["task_id"],
+                "branch": worker["branch"],
+                "allowed_files": worker["allowed_files"],
+                "assignment_status": worker["assignment_status"],
+                "actions_taken": False,
+            }
+            for worker in workers
+        ],
+        "blockers": assignment_blockers,
+        "forbidden_actions": [
+            "assignment writes",
+            "automatic reassignment",
+            "force overwrite",
+            "branch creation",
+            "worktree creation",
+            "commit",
+            "push",
+            "merge",
+            "cleanup",
+            "stash",
+            "automatic execution",
+            "automatic promotion",
+            "self-approval",
+        ],
+        "manual_checks": [
+            "git status -sb",
+            'PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -k "level_9_worker_registry or level_8_closeout_smoke"',
+        ],
+        "next_step": "Level 9.2 may define one worker, one task, one branch rules only after Level 9.1 is closed out and explicitly approved.",
+        "level_8_closeout": level_8_closeout,
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_level_9_one_worker_rule() -> dict[str, Any]:
+    registry = build_cartographer_level_9_worker_registry()
+    rule_items = [_level_9_one_worker_rule_item(worker) for worker in registry["workers"]]
+    blockers = sorted({blocker for item in rule_items for blocker in item["blockers"]})
+    return {
+        "status": "observing",
+        "level": 9,
+        "mode": "one_worker_one_task_one_branch_rule",
+        "contract_version": "cartographer.level_9.one_worker_one_task_one_branch_rule.v1",
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "rule_model_available": True,
+        "recommendation_only": True,
+        "assignment_write_allowed": False,
+        "automatic_reassignment_allowed": False,
+        "force_overwrite_allowed": False,
+        "branch_creation_allowed": False,
+        "worktree_creation_allowed": False,
+        "checkout_allowed": False,
+        "commit_allowed": False,
+        "push_allowed": False,
+        "merge_allowed": False,
+        "cleanup_allowed": False,
+        "stash_allowed": False,
+        "automatic_execution_allowed": False,
+        "automatic_promotion_allowed": False,
+        "self_approval_allowed": False,
+        "cross_project_mutation_allowed": False,
+        "worker_count": len(rule_items),
+        "rule_violation_count": sum(1 for item in rule_items if item["blockers"]),
+        "rule_items": rule_items,
+        "blockers": blockers,
+        "forbidden_actions": [
+            "branch creation",
+            "branch checkout",
+            "worktree creation",
+            "assignment writes",
+            "automatic reassignment",
+            "force overwrite",
+            "commit",
+            "push",
+            "merge",
+            "cleanup",
+            "stash",
+            "automatic execution",
+            "automatic promotion",
+            "self-approval",
+        ],
+        "manual_checks": [
+            "git status -sb",
+            'PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -k "level_9_one_worker_one_task_one_branch or level_9_worker_registry"',
+        ],
+        "next_step": "Level 9.3 may define allowed-file conflict checking only after Level 9.2 is closed out and explicitly approved.",
+        "registry": registry,
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_level_9_allowed_file_conflict_checker() -> dict[str, Any]:
+    rule_payload = build_cartographer_level_9_one_worker_rule()
+    workers = [
+        *rule_payload["registry"]["workers"],
+        _level_9_worker_registry_entry(
+            worker_id="codex-sidecar",
+            task_id="cartographer-level-9-conflict-review",
+            branch="main",
+            allowed_files=[
+                "source_proxy/cartographer/service.py",
+                "docs/cartographer-level-9-allowed-file-conflict-checker.md",
+            ],
+            owner="human-operator",
+        ),
+    ]
+    conflicts = _level_9_allowed_file_conflicts(workers)
+    blockers = ["allowed_file_conflicts_present"] if conflicts else []
+    return {
+        "status": "observing",
+        "level": 9,
+        "mode": "allowed_file_conflict_checker",
+        "contract_version": "cartographer.level_9.allowed_file_conflict_checker.v1",
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "conflict_checker_available": True,
+        "recommendation_only": True,
+        "parallel_work_suggestion_allowed": not conflicts,
+        "assignment_write_allowed": False,
+        "automatic_reassignment_allowed": False,
+        "force_overwrite_allowed": False,
+        "branch_creation_allowed": False,
+        "worktree_creation_allowed": False,
+        "checkout_allowed": False,
+        "commit_allowed": False,
+        "push_allowed": False,
+        "merge_allowed": False,
+        "cleanup_allowed": False,
+        "stash_allowed": False,
+        "automatic_execution_allowed": False,
+        "automatic_promotion_allowed": False,
+        "self_approval_allowed": False,
+        "cross_project_mutation_allowed": False,
+        "worker_count": len(workers),
+        "conflict_count": len(conflicts),
+        "conflicts": conflicts,
+        "blockers": blockers,
+        "workers": workers,
+        "forbidden_actions": [
+            "force overwrite",
+            "automatic reassignment",
+            "branch creation",
+            "worktree creation",
+            "checkout",
+            "commit",
+            "push",
+            "merge",
+            "cleanup",
+            "stash",
+            "automatic execution",
+            "automatic promotion",
+            "self-approval",
+        ],
+        "manual_checks": [
+            "git status -sb",
+            'PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -k "level_9_allowed_file_conflict_checker or level_9_one_worker_one_task_one_branch"',
+        ],
+        "next_step": "Level 9.4 may define branch/worktree proposal queues only after Level 9.3 is closed out and explicitly approved.",
+        "rule_payload": rule_payload,
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_level_9_branch_worktree_proposal_queue() -> dict[str, Any]:
+    conflict_payload = build_cartographer_level_9_allowed_file_conflict_checker()
+    proposals = [
+        _level_9_branch_worktree_proposal(
+            proposal_id="cartographer-level-9-branch-worktree-proposal-001",
+            worker_id="codex-primary",
+            task_id="cartographer-level-9-worker-registry",
+            proposed_branch="cartographer/level-9-worker-registry",
+            proposed_worktree="../SpiritOS-cartographer-level-9-worker-registry",
+            blockers=conflict_payload["blockers"],
+        )
+    ]
+    blockers = sorted({blocker for proposal in proposals for blocker in proposal["blockers"]})
+    return {
+        "status": "observing",
+        "level": 9,
+        "mode": "branch_worktree_proposal_queue",
+        "contract_version": "cartographer.level_9.branch_worktree_proposal_queue.v1",
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "proposal_queue_available": True,
+        "recommendation_only": True,
+        "branch_creation_allowed": False,
+        "worktree_creation_allowed": False,
+        "checkout_allowed": False,
+        "branch_created": False,
+        "worktree_created": False,
+        "assignment_write_allowed": False,
+        "automatic_reassignment_allowed": False,
+        "force_overwrite_allowed": False,
+        "commit_allowed": False,
+        "push_allowed": False,
+        "merge_allowed": False,
+        "cleanup_allowed": False,
+        "stash_allowed": False,
+        "automatic_execution_allowed": False,
+        "automatic_promotion_allowed": False,
+        "self_approval_allowed": False,
+        "cross_project_mutation_allowed": False,
+        "proposal_count": len(proposals),
+        "blocked_proposal_count": sum(1 for proposal in proposals if proposal["blockers"]),
+        "proposals": proposals,
+        "blockers": blockers,
+        "conflict_payload": conflict_payload,
+        "forbidden_actions": [
+            "automatic branch creation",
+            "automatic worktree creation",
+            "checkout",
+            "cleanup",
+            "stash",
+            "commit",
+            "push",
+            "merge",
+            "force overwrite",
+            "automatic reassignment",
+            "automatic execution",
+            "automatic promotion",
+            "self-approval",
+        ],
+        "manual_checks": [
+            "git status -sb",
+            'PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -k "level_9_branch_worktree_proposal_queue or level_9_allowed_file_conflict_checker"',
+        ],
+        "next_step": "Level 9.5 may define stale worker detection only after Level 9.4 is closed out and explicitly approved.",
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_level_9_stale_worker_closeout_packet() -> dict[str, Any]:
+    proposal_queue = build_cartographer_level_9_branch_worktree_proposal_queue()
+    stale_workers = [
+        _level_9_stale_worker_packet(
+            worker_id="codex-sidecar",
+            task_id="cartographer-level-9-conflict-review",
+            stale_reason="allowed_file_conflict_blocks_parallel_work",
+            recommended_action="human_review_before_closeout",
+        )
+    ]
+    return {
+        "status": "observing",
+        "level": 9,
+        "mode": "stale_worker_detection_closeout_packet",
+        "contract_version": "cartographer.level_9.stale_worker_detection_closeout_packet.v1",
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "stale_worker_detection_available": True,
+        "closeout_packet_available": True,
+        "closeout_execution_allowed": False,
+        "automatic_reassignment_allowed": False,
+        "automatic_closeout_allowed": False,
+        "branch_deletion_allowed": False,
+        "worktree_deletion_allowed": False,
+        "cleanup_allowed": False,
+        "stash_allowed": False,
+        "commit_allowed": False,
+        "push_allowed": False,
+        "merge_allowed": False,
+        "force_overwrite_allowed": False,
+        "branch_creation_allowed": False,
+        "worktree_creation_allowed": False,
+        "automatic_execution_allowed": False,
+        "automatic_promotion_allowed": False,
+        "self_approval_allowed": False,
+        "stale_worker_count": len(stale_workers),
+        "closeout_packet_count": len(stale_workers),
+        "stale_workers": stale_workers,
+        "closeout_packets": stale_workers,
+        "proposal_queue": proposal_queue,
+        "forbidden_actions": [
+            "automatic reassignment",
+            "automatic closeout",
+            "branch deletion",
+            "worktree deletion",
+            "cleanup",
+            "stash",
+            "commit",
+            "push",
+            "merge",
+            "force overwrite",
+            "branch creation",
+            "worktree creation",
+            "automatic execution",
+            "automatic promotion",
+            "self-approval",
+        ],
+        "manual_checks": [
+            "git status -sb",
+            'PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -k "level_9_stale_worker_closeout_packet or level_9_branch_worktree_proposal_queue"',
+        ],
+        "next_step": "Level 9.6 may add the coordination dashboard only after Level 9.5 is closed out and explicitly approved.",
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_level_9_coordination_dashboard() -> dict[str, Any]:
+    registry = build_cartographer_level_9_worker_registry()
+    one_worker_rule = build_cartographer_level_9_one_worker_rule()
+    conflict_checker = build_cartographer_level_9_allowed_file_conflict_checker()
+    proposal_queue = build_cartographer_level_9_branch_worktree_proposal_queue()
+    stale_worker = build_cartographer_level_9_stale_worker_closeout_packet()
+    closeout_items = [
+        _level_9_coordination_dashboard_item(
+            "Level 9.1",
+            "Worker Registry And Assignment Model",
+            registry,
+        ),
+        _level_9_coordination_dashboard_item(
+            "Level 9.2",
+            "One Worker One Task One Branch Rule",
+            one_worker_rule,
+        ),
+        _level_9_coordination_dashboard_item(
+            "Level 9.3",
+            "Allowed-File Conflict Checker",
+            conflict_checker,
+        ),
+        _level_9_coordination_dashboard_item(
+            "Level 9.4",
+            "Branch And Worktree Proposal Queue",
+            proposal_queue,
+        ),
+        _level_9_coordination_dashboard_item(
+            "Level 9.5",
+            "Stale Worker Detection And Closeout Packet",
+            stale_worker,
+        ),
+    ]
+    blockers = sorted({blocker for item in closeout_items for blocker in item["blockers"]})
+    return {
+        "status": "observing",
+        "level": 9,
+        "mode": "coordination_dashboard",
+        "contract_version": "cartographer.level_9.coordination_dashboard.v1",
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "coordination_dashboard_available": True,
+        "recommendation_only": True,
+        "level_9_closed_out": not blockers,
+        "level_10_gated": True,
+        "level_10_may_begin": False,
+        "operator_approval_required_for_level_10": True,
+        "assignment_write_allowed": False,
+        "automatic_reassignment_allowed": False,
+        "force_overwrite_allowed": False,
+        "branch_creation_allowed": False,
+        "worktree_creation_allowed": False,
+        "checkout_allowed": False,
+        "branch_deletion_allowed": False,
+        "worktree_deletion_allowed": False,
+        "cleanup_allowed": False,
+        "stash_allowed": False,
+        "commit_allowed": False,
+        "push_allowed": False,
+        "merge_allowed": False,
+        "automatic_execution_allowed": False,
+        "automatic_promotion_allowed": False,
+        "self_approval_allowed": False,
+        "cross_project_mutation_allowed": False,
+        "worker_count": registry["worker_count"],
+        "conflict_count": conflict_checker["conflict_count"],
+        "proposal_count": proposal_queue["proposal_count"],
+        "stale_worker_count": stale_worker["stale_worker_count"],
+        "closeout_items": closeout_items,
+        "closeout_blockers": blockers,
+        "registry": registry,
+        "one_worker_rule": one_worker_rule,
+        "conflict_checker": conflict_checker,
+        "proposal_queue": proposal_queue,
+        "stale_worker": stale_worker,
+        "recommended_next_action": (
+            "Resolve coordination blockers before any Level 10 discussion."
+            if blockers
+            else "Request explicit human approval before starting Level 10.0."
+        ),
+        "forbidden_actions": [
+            "Level 10 work without explicit approval",
+            "assignment writes",
+            "automatic reassignment",
+            "force overwrite",
+            "branch creation",
+            "worktree creation",
+            "checkout",
+            "branch deletion",
+            "worktree deletion",
+            "cleanup",
+            "stash",
+            "commit",
+            "push",
+            "merge",
+            "automatic execution",
+            "automatic promotion",
+            "self-approval",
+        ],
+        "manual_checks": [
+            "git status -sb",
+            'PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -k "level_9_coordination_dashboard or level_9_stale_worker_closeout_packet or level_9_allowed_file_conflict_checker"',
+        ],
+        "next_step": "Level 10.0 may begin only after explicit human approval.",
         "safety": cartographer_safety_manifest(),
     }
 
@@ -1936,6 +3509,514 @@ def _level_5_project_risk(status: Any) -> dict[str, Any]:
     }
 
 
+def _level_7_next_safe_action_blockers(
+    *,
+    disabled_state: dict[str, Any],
+    closeout: dict[str, Any],
+) -> list[str]:
+    blockers: list[str] = []
+    if not disabled_state["level_7_autopilot_enabled"]:
+        blockers.append("level_7_autopilot_disabled_by_default")
+    if not disabled_state["level_7_autopilot_action_available"]:
+        blockers.append("level_7_action_authority_unavailable")
+    if closeout["dashboard_blockers"]:
+        blockers.append("level_6_closeout_blockers_present")
+    if closeout["blocked_project_count"]:
+        blockers.append("blocked_projects_present")
+    return sorted(set(blockers))
+
+
+def _level_7_next_safe_action_title(blockers: list[str]) -> str:
+    if "level_7_autopilot_disabled_by_default" in blockers:
+        return "Keep Level 7 disabled and review the Level 7.2 recommendation contract."
+    if blockers:
+        return "Resolve blockers before considering any Level 7 recommendation."
+    return "Review the proposed next human action; Cartographer cannot execute it."
+
+
+def _level_7_next_safe_action_reason(blockers: list[str]) -> str:
+    if "level_7_autopilot_disabled_by_default" in blockers:
+        return "Level 7 is disabled by default, so the only safe action is human review."
+    if blockers:
+        return "Cartographer found blockers that prevent a safe recommendation from advancing."
+    return "No blockers were detected, but the contract remains recommendation-only."
+
+
+def _level_7_dry_run_action_packet(recommendation: dict[str, Any]) -> dict[str, Any]:
+    blockers = sorted(set(recommendation["blockers"]))
+    return {
+        "packet_id": "cartographer.level_7.dry_run.next_safe_action_review.v1",
+        "packet_type": "dry_run_action_packet",
+        "title": "Review the Level 7 next safe action recommendation.",
+        "purpose": (
+            "Describe the human review step that could follow the Level 7.2 "
+            "recommendation without executing it."
+        ),
+        "status": "blocked" if blockers else "ready_for_human_review",
+        "actions_taken": False,
+        "cartographer_may_execute": False,
+        "cartographer_may_self_approve": False,
+        "approval_handshake_available": False,
+        "execution_available": False,
+        "allowed_files": [
+            "docs/cartographer-level-7-dry-run-action-packet-builder.md",
+            "source_proxy/cartographer/service.py",
+            "source_proxy/api/cartographer.py",
+            "source_proxy/tests/test_cartographer_api.py",
+        ],
+        "forbidden_actions": [
+            "push",
+            "push queue creation",
+            "branch creation",
+            "worktree creation",
+            "cleanup",
+            "stash",
+            "merge",
+            "automatic commit",
+            "automatic execution",
+            "automatic promotion",
+            "self-approval",
+            "approval handshake execution",
+        ],
+        "required_approvals": [
+            "explicit human approval for Level 7.4 before approval handshake work",
+            "explicit human approval before any future execution gate",
+        ],
+        "expected_output": "A human-readable dry-run packet with actions_taken false.",
+        "manual_check_commands": [
+            "git status -sb",
+            'PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -k "level_7_dry_run_action_packet"',
+        ],
+        "expected_manual_check_result": (
+            "Focused tests pass and all mutation, promotion, execution, and "
+            "self-approval flags remain false."
+        ),
+        "rollback_notes": (
+            "Remove the Level 7.3 doc and revert the Level 7.3 service, API, "
+            "and test additions. No branch, worktree, stash, push queue, commit, "
+            "or generated evidence cleanup should be needed."
+        ),
+        "blockers": blockers,
+        "evidence_references": recommendation["recommendation"]["evidence"],
+        "source_recommendation": {
+            "action_id": recommendation["recommendation"]["action_id"],
+            "status": recommendation["recommendation"]["status"],
+            "reason": recommendation["recommendation"]["reason"],
+        },
+    }
+
+
+def _level_7_exact_approval_blockers(
+    *,
+    packet: dict[str, Any],
+    packet_id: str,
+    approval_id: str | None,
+    approved_by: str | None,
+    exact_allowed_files: list[str],
+    exact_forbidden_actions: list[str],
+    exact_manual_check_commands: list[str],
+    approved_at: str | None,
+) -> list[str]:
+    blockers: list[str] = []
+    if packet_id != packet["packet_id"]:
+        blockers.append("packet_id_mismatch")
+    if not approval_id:
+        blockers.append("approval_id_required")
+    if not approved_by:
+        blockers.append("approved_by_required")
+    if _level_7_is_self_approval(approved_by):
+        blockers.append("self_approval_blocked")
+    if not approved_at:
+        blockers.append("approved_at_required")
+    if exact_allowed_files != packet["allowed_files"]:
+        blockers.append("exact_allowed_files_mismatch")
+    if exact_forbidden_actions != packet["forbidden_actions"]:
+        blockers.append("exact_forbidden_actions_mismatch")
+    if exact_manual_check_commands != packet["manual_check_commands"]:
+        blockers.append("exact_manual_check_commands_mismatch")
+    return list(dict.fromkeys(blockers))
+
+
+def _level_7_is_self_approval(approved_by: str | None) -> bool:
+    actor = str(approved_by or "").strip().lower()
+    return actor in {"cartographer", "codex", "cartographer-ui"}
+
+
+def _level_7_closeout_item(
+    increment: str,
+    title: str,
+    payload: dict[str, Any],
+    expected_mode: str,
+) -> dict[str, Any]:
+    blockers: list[str] = []
+    if payload["write_actions_enabled"]:
+        blockers.append("write_actions_enabled")
+    if payload["authority_granted"]:
+        blockers.append("authority_granted")
+    if payload["actions_taken"]:
+        blockers.append("actions_taken")
+    for flag in (
+        "automatic_execution_allowed",
+        "automatic_promotion_allowed",
+        "self_approval_allowed",
+        "commit_allowed",
+        "push_allowed",
+        "branch_creation_allowed",
+        "worktree_creation_allowed",
+        "cleanup_allowed",
+        "merge_allowed",
+        "stash_allowed",
+    ):
+        if payload.get(flag):
+            blockers.append(flag)
+    if expected_mode == "feature_flag_locked" and payload["level_7_autopilot_action_available"]:
+        blockers.append("level_7_action_available")
+    if expected_mode == "recommendation_only" and not payload["recommendation_only"]:
+        blockers.append("recommendation_not_marked_preview_only")
+    if expected_mode == "dry_run_only" and payload["packet"]["actions_taken"]:
+        blockers.append("dry_run_packet_actions_taken")
+    if expected_mode == "approval_preview_only" and payload["execution_available"]:
+        blockers.append("approval_preview_execution_available")
+    return {
+        "increment": increment,
+        "title": title,
+        "mode": expected_mode,
+        "closeout_status": "ready_for_review" if not blockers else "blocked",
+        "blockers": blockers,
+        "write_actions_enabled": payload["write_actions_enabled"],
+        "authority_granted": payload["authority_granted"],
+        "actions_taken": payload["actions_taken"],
+        "automatic_execution_allowed": payload.get("automatic_execution_allowed", False),
+        "automatic_promotion_allowed": payload.get("automatic_promotion_allowed", False),
+        "self_approval_allowed": payload.get("self_approval_allowed", False),
+    }
+
+
+def _level_8_workflow_step_card(
+    *,
+    step_id: str,
+    title: str,
+    source: str,
+    blockers: list[str],
+) -> dict[str, Any]:
+    return {
+        "step_id": step_id,
+        "title": title,
+        "source": source,
+        "status": "blocked" if blockers else "pending_human_approval",
+        "human_approval_required": True,
+        "approved": False,
+        "cartographer_may_execute": False,
+        "actions_taken": False,
+        "receipt_required": True,
+        "retry_allowed": False,
+        "blockers": blockers,
+    }
+
+
+def _level_8_step_approval_blockers(
+    *,
+    workflow: dict[str, Any],
+    step: dict[str, Any] | None,
+    workflow_id: str,
+    approval_id: str | None,
+    approved_by: str | None,
+    exact_step_title: str,
+    exact_manual_check_commands: list[str],
+    approved_at: str | None,
+) -> list[str]:
+    blockers: list[str] = []
+    if workflow_id != workflow["workflow_id"]:
+        blockers.append("workflow_id_mismatch")
+    if step is None:
+        blockers.append("step_id_not_found")
+    if not approval_id:
+        blockers.append("approval_id_required")
+    if not approved_by:
+        blockers.append("approved_by_required")
+    if _level_7_is_self_approval(approved_by):
+        blockers.append("self_approval_blocked")
+    if not approved_at:
+        blockers.append("approved_at_required")
+    if step is not None and exact_step_title != step["title"]:
+        blockers.append("exact_step_title_mismatch")
+    if exact_manual_check_commands != [
+        "git status -sb",
+        'PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -k "level_8_workflow_run_card or level_7_closeout_dashboard or level_6_multi_project_closeout"',
+    ]:
+        blockers.append("exact_manual_check_commands_mismatch")
+    return list(dict.fromkeys(blockers))
+
+
+def _level_8_receipt_journal_entry(
+    *,
+    event_id: str,
+    event_type: str,
+    status: str,
+    source_id: str,
+    evidence: list[str],
+) -> dict[str, Any]:
+    return {
+        "event_id": event_id,
+        "event_type": event_type,
+        "status": status,
+        "source_id": source_id,
+        "visible_to_operator": True,
+        "persisted": False,
+        "hidden_write": False,
+        "actions_taken": False,
+        "execution_available": False,
+        "evidence": evidence,
+    }
+
+
+def _level_8_stopped_state(
+    *,
+    state_id: str,
+    status: str,
+    step_id: str,
+    reason: str,
+) -> dict[str, Any]:
+    return {
+        "state_id": state_id,
+        "status": status,
+        "step_id": step_id,
+        "reason": reason,
+        "workflow_stopped": True,
+        "later_steps_unapproved": True,
+        "human_review_required": True,
+        "continuation_allowed": False,
+        "retry_allowed": False,
+        "autonomous_retry_allowed": False,
+        "background_execution_allowed": False,
+        "actions_taken": False,
+    }
+
+
+def _level_8_closeout_item(increment: str, title: str, payload: dict[str, Any]) -> dict[str, Any]:
+    blockers: list[str] = []
+    for flag in (
+        "write_actions_enabled",
+        "authority_granted",
+        "actions_taken",
+        "execution_available",
+        "background_execution_allowed",
+        "autonomous_retry_allowed",
+        "cross_project_mutation_allowed",
+        "automatic_execution_allowed",
+        "automatic_promotion_allowed",
+        "self_approval_allowed",
+        "commit_allowed",
+        "push_allowed",
+        "merge_allowed",
+        "branch_creation_allowed",
+        "worktree_creation_allowed",
+        "cleanup_allowed",
+        "stash_allowed",
+    ):
+        if payload.get(flag):
+            blockers.append(flag)
+    if payload.get("journal", {}).get("persisted"):
+        blockers.append("receipt_journal_persisted")
+    if payload.get("journal", {}).get("hidden_writes_allowed"):
+        blockers.append("hidden_receipt_writes_allowed")
+    if payload.get("workflow_continuation_allowed"):
+        blockers.append("workflow_continuation_allowed")
+    return {
+        "increment": increment,
+        "title": title,
+        "closeout_status": "ready_for_review" if not blockers else "blocked",
+        "blockers": blockers,
+        "write_actions_enabled": payload.get("write_actions_enabled", False),
+        "authority_granted": payload.get("authority_granted", False),
+        "actions_taken": payload.get("actions_taken", False),
+        "execution_available": payload.get("execution_available", False),
+        "background_execution_allowed": payload.get("background_execution_allowed", False),
+        "autonomous_retry_allowed": payload.get("autonomous_retry_allowed", False),
+    }
+
+
+def _level_9_worker_registry_entry(
+    *,
+    worker_id: str,
+    task_id: str,
+    branch: str,
+    allowed_files: list[str],
+    owner: str,
+) -> dict[str, Any]:
+    blockers: list[str] = []
+    if not worker_id:
+        blockers.append("worker_id_required")
+    if not task_id:
+        blockers.append("task_id_required")
+    if not branch:
+        blockers.append("branch_required")
+    if not allowed_files:
+        blockers.append("allowed_files_required")
+    return {
+        "worker_id": worker_id,
+        "task_id": task_id,
+        "owner": owner,
+        "branch": branch,
+        "allowed_files": allowed_files,
+        "assignment_status": "observed" if not blockers else "blocked",
+        "recommendation_only": True,
+        "assignment_write_allowed": False,
+        "automatic_reassignment_allowed": False,
+        "force_overwrite_allowed": False,
+        "branch_creation_allowed": False,
+        "worktree_creation_allowed": False,
+        "commit_allowed": False,
+        "push_allowed": False,
+        "merge_allowed": False,
+        "actions_taken": False,
+        "blockers": blockers,
+    }
+
+
+def _level_9_one_worker_rule_item(worker: dict[str, Any]) -> dict[str, Any]:
+    blockers: list[str] = []
+    if not worker["worker_id"]:
+        blockers.append("worker_id_required")
+    if not worker["task_id"]:
+        blockers.append("one_task_required")
+    if not worker["branch"]:
+        blockers.append("one_branch_required")
+    if len(worker["allowed_files"]) == 0:
+        blockers.append("allowed_files_required")
+    return {
+        "worker_id": worker["worker_id"],
+        "task_id": worker["task_id"],
+        "branch": worker["branch"],
+        "rule_status": "ready_for_review" if not blockers else "blocked",
+        "one_worker": bool(worker["worker_id"]),
+        "one_task": bool(worker["task_id"]),
+        "one_branch": bool(worker["branch"]),
+        "branch_creation_allowed": False,
+        "checkout_allowed": False,
+        "worktree_creation_allowed": False,
+        "automatic_reassignment_allowed": False,
+        "force_overwrite_allowed": False,
+        "actions_taken": False,
+        "blockers": blockers,
+    }
+
+
+def _level_9_allowed_file_conflicts(workers: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    by_file: dict[str, list[str]] = {}
+    for worker in workers:
+        for file_path in worker["allowed_files"]:
+            by_file.setdefault(file_path, []).append(worker["worker_id"])
+    return [
+        {
+            "file": file_path,
+            "worker_ids": worker_ids,
+            "conflict_type": "allowed_file_overlap",
+            "blocks_parallel_work": True,
+            "force_overwrite_allowed": False,
+            "automatic_reassignment_allowed": False,
+            "actions_taken": False,
+        }
+        for file_path, worker_ids in sorted(by_file.items())
+        if len(worker_ids) > 1
+    ]
+
+
+def _level_9_branch_worktree_proposal(
+    *,
+    proposal_id: str,
+    worker_id: str,
+    task_id: str,
+    proposed_branch: str,
+    proposed_worktree: str,
+    blockers: list[str],
+) -> dict[str, Any]:
+    return {
+        "proposal_id": proposal_id,
+        "worker_id": worker_id,
+        "task_id": task_id,
+        "proposed_branch": proposed_branch,
+        "proposed_worktree": proposed_worktree,
+        "proposal_status": "blocked" if blockers else "ready_for_human_review",
+        "requires_approval": True,
+        "branch_creation_allowed": False,
+        "worktree_creation_allowed": False,
+        "checkout_allowed": False,
+        "branch_created": False,
+        "worktree_created": False,
+        "actions_taken": False,
+        "blockers": blockers,
+    }
+
+
+def _level_9_stale_worker_packet(
+    *,
+    worker_id: str,
+    task_id: str,
+    stale_reason: str,
+    recommended_action: str,
+) -> dict[str, Any]:
+    return {
+        "packet_id": f"cartographer.level_9.stale_worker.{worker_id}.v1",
+        "worker_id": worker_id,
+        "task_id": task_id,
+        "stale": True,
+        "stale_reason": stale_reason,
+        "recommended_action": recommended_action,
+        "requires_human_review": True,
+        "closeout_execution_allowed": False,
+        "automatic_reassignment_allowed": False,
+        "automatic_closeout_allowed": False,
+        "branch_deletion_allowed": False,
+        "worktree_deletion_allowed": False,
+        "cleanup_allowed": False,
+        "actions_taken": False,
+        "blockers": ["human_review_required"],
+    }
+
+
+def _level_9_coordination_dashboard_item(
+    increment: str,
+    title: str,
+    payload: dict[str, Any],
+) -> dict[str, Any]:
+    blockers: list[str] = []
+    for flag in (
+        "write_actions_enabled",
+        "authority_granted",
+        "actions_taken",
+        "assignment_write_allowed",
+        "automatic_reassignment_allowed",
+        "force_overwrite_allowed",
+        "branch_creation_allowed",
+        "worktree_creation_allowed",
+        "checkout_allowed",
+        "branch_deletion_allowed",
+        "worktree_deletion_allowed",
+        "cleanup_allowed",
+        "stash_allowed",
+        "commit_allowed",
+        "push_allowed",
+        "merge_allowed",
+        "automatic_execution_allowed",
+        "automatic_promotion_allowed",
+        "self_approval_allowed",
+        "cross_project_mutation_allowed",
+    ):
+        if payload.get(flag):
+            blockers.append(flag)
+    return {
+        "increment": increment,
+        "title": title,
+        "closeout_status": "ready_for_review" if not blockers else "blocked",
+        "blockers": blockers,
+        "write_actions_enabled": payload.get("write_actions_enabled", False),
+        "authority_granted": payload.get("authority_granted", False),
+        "actions_taken": payload.get("actions_taken", False),
+        "recommendation_only": payload.get("recommendation_only", True),
+    }
+
+
 def _level_6_configured_root_check(root: dict[str, Any]) -> dict[str, Any]:
     path = str(root.get("path") or "")
     exists = Path(path).exists() if path else False
@@ -2015,6 +4096,303 @@ def _level_6_registry_blockers(
     if any(not entry["mutation_disabled"] for entry in registry_entries):
         blockers.append("unsafe_mutation_flag_enabled")
     return blockers
+
+
+def _level_6_status_board_item(
+    registry_entry: dict[str, Any],
+    health: dict[str, Any] | None,
+) -> dict[str, Any]:
+    blockers = list(registry_entry.get("blockers", []))
+    if health is None:
+        blockers.append("project_health_missing")
+    else:
+        blockers.extend(str(blocker) for blocker in health.get("merge_blockers", []))
+        if health.get("dirty"):
+            blockers.append("dirty_tree")
+        if health.get("pending_drift", 0) > 0:
+            blockers.append("pending_drift")
+        if health.get("pending_proposals", 0) > 0:
+            blockers.append("pending_proposals")
+    unique_blockers = list(dict.fromkeys(blockers))
+    return {
+        "project_id": registry_entry.get("project_id"),
+        "name": registry_entry.get("name"),
+        "root": registry_entry.get("root"),
+        "owner": registry_entry.get("owner"),
+        "agent": registry_entry.get("agent"),
+        "current_level": 6,
+        "registry_status": "registered",
+        "status": health.get("status") if health else "unknown",
+        "blueprint_health": health.get("blueprint_health") if health else "unknown",
+        "dirty": bool(health and health.get("dirty")),
+        "branch": health.get("branch") if health else None,
+        "ahead": health.get("ahead", 0) if health else 0,
+        "behind": health.get("behind", 0) if health else 0,
+        "merge_ready": bool(health and health.get("merge_ready")),
+        "blockers": unique_blockers,
+        "recommended_next_action": (
+            health.get("recommended_next_step")
+            if health
+            else "Inspect project health probe failure before assigning work."
+        ),
+        "safe_sequencing": "blocked" if unique_blockers else "ready_for_review",
+        "write_actions_enabled": False,
+        "actions_taken": False,
+        "commit_allowed": False,
+        "push_allowed": False,
+        "branch_creation_allowed": False,
+        "worktree_creation_allowed": False,
+        "cleanup_allowed": False,
+        "merge_allowed": False,
+        "stash_allowed": False,
+    }
+
+
+def _level_6_candidate_board_item(candidate: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "candidate_id": candidate.get("candidate_id"),
+        "project_id": candidate.get("project_id"),
+        "name": candidate.get("name"),
+        "root": candidate.get("root"),
+        "owner": None,
+        "agent": None,
+        "current_level": 6,
+        "registry_status": "candidate",
+        "status": candidate.get("status"),
+        "approval_status": candidate.get("approval_status"),
+        "blockers": ["project_enrollment_requires_approval"],
+        "recommended_next_action": "Review project candidate before enrollment.",
+        "safe_sequencing": "blocked",
+        "write_actions_enabled": False,
+        "actions_taken": False,
+        "project_enrollment_allowed": False,
+        "auto_enrollment_allowed": False,
+        "commit_allowed": False,
+        "push_allowed": False,
+        "branch_creation_allowed": False,
+        "worktree_creation_allowed": False,
+    }
+
+
+def _level_6_component_ownership_item(
+    component: dict[str, Any],
+    *,
+    changed_component: dict[str, Any] | None,
+    status_board: dict[str, Any],
+) -> dict[str, Any]:
+    component_id = component.get("component_id")
+    related_projects = [
+        item["project_id"]
+        for item in status_board.get("board_items", [])
+        if item.get("project_id")
+    ]
+    matched_paths = list((changed_component or {}).get("matched_paths", []))
+    changed = changed_component is not None
+    owner = None
+    assigned_agent = None
+    conflicts: list[str] = []
+    if changed and owner is None:
+        conflicts.append("changed_component_without_owner")
+    return {
+        "component_id": component_id,
+        "label": component.get("label"),
+        "blueprint_id": component.get("blueprint_id"),
+        "risk": component.get("risk"),
+        "sandbox": component.get("sandbox", False),
+        "owner": owner,
+        "assigned_agent": assigned_agent,
+        "owner_required": changed,
+        "assignment_status": "unassigned",
+        "assignment_source": "preview_only",
+        "related_projects": related_projects,
+        "matched_paths": matched_paths,
+        "changed": changed,
+        "conflicts": conflicts,
+        "recommended_next_action": (
+            "Assign an explicit owner before parallel work continues."
+            if conflicts
+            else "No ownership action required."
+        ),
+        "assignment_write_allowed": False,
+        "automatic_reassignment_allowed": False,
+        "repo_mutation_allowed": False,
+        "branch_creation_allowed": False,
+        "worktree_creation_allowed": False,
+        "push_allowed": False,
+        "merge_allowed": False,
+        "cleanup_allowed": False,
+        "actions_taken": False,
+    }
+
+
+def _level_6_project_dirty_classification(
+    registry_entry: dict[str, Any],
+    git_status: Any | None,
+) -> dict[str, Any]:
+    changed_files = list(git_status.changed_files) if git_status is not None else []
+    records = [_level_6_dirty_file_record(path) for path in changed_files]
+    forbidden_files = [
+        record["path"]
+        for record in records
+        if record["classification"] == "forbidden_path"
+    ]
+    sensitive_files = [
+        record["path"]
+        for record in records
+        if record["classification"] == "sensitive_path"
+    ]
+    unclassified_files = [
+        record["path"]
+        for record in records
+        if record["classification"] == "unclassified"
+    ]
+    buckets: dict[str, list[str]] = {}
+    for record in records:
+        buckets.setdefault(record["classification"], []).append(record["path"])
+    blocks = bool(forbidden_files or sensitive_files or unclassified_files or (git_status is None))
+    return {
+        "project_id": registry_entry.get("project_id"),
+        "name": registry_entry.get("name"),
+        "root": registry_entry.get("root"),
+        "git_available": bool(git_status and git_status.available),
+        "branch": git_status.branch if git_status is not None else None,
+        "dirty": bool(changed_files),
+        "dirty_files": changed_files,
+        "dirty_file_count": len(changed_files),
+        "files": records,
+        "buckets": buckets,
+        "forbidden_files": forbidden_files,
+        "sensitive_files": sensitive_files,
+        "unclassified_files": unclassified_files,
+        "blocks_cross_repo_sequence": blocks,
+        "sequencing_status": "blocked" if blocks else "classified",
+        "recommended_next_action": (
+            "Inspect project git status before sequencing cross-repo work."
+            if git_status is None
+            else "Human must classify or clear blocked dirty files before cross-repo sequencing."
+            if blocks
+            else "Dirty tree is clean or classified for read-only sequencing."
+        ),
+        "staging_allowed": False,
+        "commit_allowed": False,
+        "push_allowed": False,
+        "branch_creation_allowed": False,
+        "worktree_creation_allowed": False,
+        "cleanup_allowed": False,
+        "merge_allowed": False,
+        "stash_allowed": False,
+        "actions_taken": False,
+    }
+
+
+def _level_6_closeout_item(
+    board_item: dict[str, Any],
+    *,
+    ownership: dict[str, Any],
+    dirty_classifier: dict[str, Any],
+) -> dict[str, Any]:
+    project_id = board_item.get("project_id")
+    dirty_item = next(
+        (
+            item
+            for item in dirty_classifier.get("classifications", [])
+            if item.get("project_id") == project_id
+        ),
+        None,
+    )
+    ownership_conflicts = [
+        conflict
+        for conflict in ownership.get("conflicts", [])
+        if project_id in conflict.get("related_projects", [])
+    ]
+    blockers = list(board_item.get("blockers", []))
+    if dirty_item and dirty_item.get("blocks_cross_repo_sequence"):
+        blockers.append("dirty_tree_blocks_cross_repo_sequence")
+    if ownership_conflicts:
+        blockers.append("ownership_conflicts_present")
+    unique_blockers = list(dict.fromkeys(blockers))
+    return {
+        "project_id": project_id,
+        "name": board_item.get("name"),
+        "root": board_item.get("root"),
+        "current_level": 6,
+        "allowed_authority": "read_only_closeout_dashboard",
+        "owner": board_item.get("owner"),
+        "agent": board_item.get("agent"),
+        "dirty": board_item.get("dirty", False),
+        "branch": board_item.get("branch"),
+        "closeout_status": "blocked" if unique_blockers else "ready_for_review",
+        "blockers": unique_blockers,
+        "ownership_conflict_count": len(ownership_conflicts),
+        "dirty_tree_status": dirty_item.get("sequencing_status") if dirty_item else "unknown",
+        "next_safe_action": (
+            "Resolve blockers before closeout."
+            if unique_blockers
+            else "Ready for human closeout review."
+        ),
+        "mutation_disabled": True,
+        "commit_allowed": False,
+        "push_allowed": False,
+        "push_queue_creation_allowed": False,
+        "branch_creation_allowed": False,
+        "worktree_creation_allowed": False,
+        "cleanup_allowed": False,
+        "merge_allowed": False,
+        "stash_allowed": False,
+        "automatic_promotion_allowed": False,
+        "automatic_execution_allowed": False,
+        "actions_taken": False,
+    }
+
+
+def _level_6_dirty_file_record(path: str) -> dict[str, Any]:
+    components, unmapped = map_paths([path])
+    sensitive = _level_6_sensitive_path(path)
+    forbidden = _level_6_forbidden_path(path)
+    if sensitive:
+        classification = "sensitive_path"
+        component_id = None
+        reason = "sensitive path marker blocks cross-repo sequencing"
+    elif forbidden:
+        classification = "forbidden_path"
+        component_id = None
+        reason = "forbidden path shape blocks cross-repo sequencing"
+    elif components:
+        classification = "classified_component"
+        component_id = components[0].component_id
+        reason = f"mapped to component {component_id}"
+    else:
+        classification = "unclassified"
+        component_id = None
+        reason = unmapped[0].reason if unmapped else "no_component_mapping_rule"
+    return {
+        "path": path,
+        "classification": classification,
+        "component_id": component_id,
+        "reason": reason,
+        "blocks_cross_repo_sequence": classification != "classified_component",
+    }
+
+
+def _level_6_forbidden_path(path: str) -> bool:
+    normalized = path.strip().replace("\\", "/").lstrip("./")
+    lowered = normalized.lower()
+    if (
+        not normalized
+        or normalized.startswith("/")
+        or normalized.startswith("~")
+        or any(segment == ".." for segment in normalized.split("/"))
+    ):
+        return True
+    return lowered.endswith((".png", ".jpg", ".jpeg", ".gif", ".webp", ".pdf", ".zip"))
+
+
+def _level_6_sensitive_path(path: str) -> bool:
+    lowered = path.strip().replace("\\", "/").lower()
+    return any(
+        marker in lowered
+        for marker in ("secret", "token", "credential", "password", ".env", "private-key")
+    )
 
 
 def _level_6_duplicate_values(values: Any) -> list[str]:

@@ -296,6 +296,8 @@ describe("HomelabScoutIntelligenceWidget", () => {
     ).toBeInTheDocument();
     expect(screen.getByText(/Live Scout API refresh every 30 seconds/)).toBeInTheDocument();
     expect(screen.getByText(/Scout is online\. 1 promoted briefing ready\./)).toBeInTheDocument();
+    expect(screen.getByText(/1 item open/)).toBeInTheDocument();
+    expect(screen.getByText(/Manual-Controlled/)).toBeInTheDocument();
     const prioritySummary = within(screen.getByLabelText("Scout priority summary"));
     expect(prioritySummary.getByText("Review Inbox")).toBeInTheDocument();
     expect(prioritySummary.getByText("Promoted Briefings")).toBeInTheDocument();
@@ -597,6 +599,23 @@ describe("HomelabScoutIntelligenceWidget", () => {
     expect(await screen.findByRole("button", { name: "Manual Promote Packet" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Manual Reject Packet" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Promote Packet" })).not.toBeInTheDocument();
+  });
+
+  it("shows mobile-scannable diagnostics summary copy on the Scout page", async () => {
+    mockScoutFetch(overview);
+
+    render(<ScoutIntelligenceCenter />);
+
+    const diagnosticsSection = (await screen.findByRole("heading", {
+      name: "Safety and Diagnostics",
+    })).closest("section");
+    expect(diagnosticsSection).not.toBeNull();
+    const diagnostics = within(diagnosticsSection as HTMLElement);
+    expect(diagnostics.getByText("Packet backlog")).toBeInTheDocument();
+    expect(diagnostics.getByText("1 item open")).toBeInTheDocument();
+    expect(diagnostics.getByText("Discovery execution")).toBeInTheDocument();
+    expect(diagnostics.getByText("Manual-Controlled")).toBeInTheDocument();
+    expect(diagnostics.getAllByText("Memory writes").length).toBeGreaterThan(0);
   });
 
   it("wires approved promotion import dry run without finalizing promotion", async () => {
