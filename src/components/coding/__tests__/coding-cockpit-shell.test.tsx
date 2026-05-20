@@ -28,6 +28,14 @@ describe("CodingCockpitShell", () => {
     expect(screen.getByLabelText("Coding status")).toHaveTextContent("Draft");
     expect(screen.getByLabelText("Coding status")).toHaveTextContent("Apply");
     expect(screen.getByLabelText("Coding status")).toHaveTextContent("Verify");
+    expect(screen.getByRole("heading", { name: "Task Timeline" })).toBeInTheDocument();
+    expect(screen.getByText("Architect")).toBeInTheDocument();
+    expect(screen.getByText("Coder")).toBeInTheDocument();
+    expect(screen.getByText("Reviewer")).toBeInTheDocument();
+    expect(screen.getByText("Verifier")).toBeInTheDocument();
+    expect(screen.getByText("Approval Gate")).toBeInTheDocument();
+    expect(screen.getByText("Apply Result")).toBeInTheDocument();
+    expect(screen.getByText("Terminal/Test Evidence")).toBeInTheDocument();
     expect(screen.getByRole("complementary", { name: "Task actions" })).toHaveTextContent(
       "Current Task",
     );
@@ -98,6 +106,8 @@ describe("CodingCockpitShell", () => {
     expect(screen.getByText(/No files will be changed during preview/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Preview safely" }));
     expect(await screen.findByText(/Preview ready. No files changed yet/)).toBeInTheDocument();
+    expect(screen.getAllByText("Needs approval").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Evidence available").length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Approval is required before apply/).length).toBeGreaterThan(0);
     expect(screen.getByText("approval available")).toBeInTheDocument();
     expect(screen.getByText(/Approval is separate from apply/)).toBeInTheDocument();
@@ -291,7 +301,7 @@ describe("CodingCockpitShell", () => {
     fireEvent.click(screen.getByRole("button", { name: "Preview safely" }));
 
     expect(await screen.findByText(/Preview blocked. No files changed/)).toBeInTheDocument();
-    expect(screen.getByText(/cannot verify the target content without a diff/)).toBeInTheDocument();
+    expect(screen.getAllByText(/cannot verify the target content without a diff/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/coder_no_changes_needed_unverified/).length).toBeGreaterThan(0);
     expect(globalThis.fetch).toHaveBeenCalledTimes(1);
     expect(globalThis.fetch).toHaveBeenCalledWith(
