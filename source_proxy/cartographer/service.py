@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 from pathlib import Path
+import subprocess
 from typing import Any
 
 from source_proxy.cartographer.audit_trail import build_audit_trail
@@ -785,6 +786,66 @@ def build_cartographer_branch_recommendations() -> dict[str, Any]:
     }
 
 
+def build_cartographer_level_5_parallel_work_risk_model() -> dict[str, Any]:
+    statuses = read_git_statuses()
+    if not statuses:
+        cwd = Path.cwd()
+        if (cwd / ".git").exists():
+            statuses = [read_git_status_for_project(project_id=cwd.name.lower(), root=cwd)]
+    project_risks = [_level_5_project_risk(status) for status in statuses]
+    active_risks = [
+        risk
+        for project in project_risks
+        for risk in project["risks"]
+    ]
+    high_risks = [risk for risk in active_risks if risk["severity"] == "high"]
+    medium_risks = [risk for risk in active_risks if risk["severity"] == "medium"]
+    return {
+        "status": "observing",
+        "level": 5,
+        "mode": "parallel_work_risk_model",
+        "contract_version": "cartographer.level_5.parallel_work_risk_model.v1",
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "branch_creation_allowed": False,
+        "worktree_creation_allowed": False,
+        "checkout_allowed": False,
+        "merge_allowed": False,
+        "cleanup_allowed": False,
+        "stash_allowed": False,
+        "push_allowed": False,
+        "project_count": len(project_risks),
+        "risk_count": len(active_risks),
+        "high_risk_count": len(high_risks),
+        "medium_risk_count": len(medium_risks),
+        "projects": project_risks,
+        "recommended_next_action": (
+            "Review dirty files and worktree ownership before assigning parallel Codex work."
+            if active_risks
+            else "No parallel work collision risks detected."
+        ),
+        "forbidden_actions": [
+            "branch creation",
+            "worktree creation",
+            "checkout",
+            "merge",
+            "cleanup",
+            "stash",
+            "push",
+            "autonomous worker reassignment",
+            "promotion beyond Level 5.1",
+        ],
+        "manual_checks": [
+            "git status -sb",
+            "git worktree list",
+            'PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -k "level_5_parallel_work_risk"',
+        ],
+        "next_step": "Level 5.2 may refresh branch recommendations only after Britton approves it.",
+        "safety": cartographer_safety_manifest(),
+    }
+
+
 def build_cartographer_commit_proposals() -> dict[str, Any]:
     proposals = build_commit_proposals()
     return {
@@ -1476,6 +1537,143 @@ def block_cartographer_level_4_push_execution(
         ),
         "safety": cartographer_safety_manifest(),
     }
+
+
+def _level_5_project_risk(status: Any) -> dict[str, Any]:
+    root = Path(status.root) if status.root else None
+    worktrees = _level_5_worktrees(root)
+    changed_files = list(getattr(status, "changed_files", []) or [])
+    risks: list[dict[str, Any]] = []
+    if not getattr(status, "available", False):
+        risks.append(
+            {
+                "risk_id": "git_status_unavailable",
+                "severity": "medium",
+                "message": "Git status is unavailable; parallel work cannot be safely assigned.",
+                "related_files": [],
+            }
+        )
+    if getattr(status, "dirty", False):
+        risks.append(
+            {
+                "risk_id": "dirty_tree_collision_risk",
+                "severity": "high",
+                "message": "Dirty files may collide with another Codex worker on the same branch.",
+                "related_files": changed_files[:20],
+            }
+        )
+    if getattr(status, "is_primary_branch", False) and getattr(status, "dirty", False):
+        risks.append(
+            {
+                "risk_id": "primary_branch_dirty_risk",
+                "severity": "high",
+                "message": "Dirty work on a primary branch should be isolated before parallel work.",
+                "related_files": changed_files[:20],
+            }
+        )
+    if getattr(status, "ahead", 0) > 0:
+        risks.append(
+            {
+                "risk_id": "unpushed_commit_collision_risk",
+                "severity": "medium",
+                "message": "Unpushed commits may confuse branch or worktree assignment.",
+                "related_files": [],
+            }
+        )
+    if len(worktrees) > 1:
+        risks.append(
+            {
+                "risk_id": "multiple_worktrees_detected",
+                "severity": "medium",
+                "message": "Existing worktrees require ownership checks before assigning parallel work.",
+                "related_files": [],
+            }
+        )
+    return {
+        "project_id": getattr(status, "project_id", None),
+        "root": getattr(status, "root", None),
+        "available": getattr(status, "available", False),
+        "branch": getattr(status, "branch", None),
+        "head_sha": getattr(status, "head_sha", None),
+        "upstream": getattr(status, "upstream", None),
+        "dirty": getattr(status, "dirty", False),
+        "changed_file_count": len(changed_files),
+        "changed_files": changed_files[:20],
+        "ahead": getattr(status, "ahead", 0),
+        "behind": getattr(status, "behind", 0),
+        "worktree_count": len(worktrees),
+        "worktrees": worktrees,
+        "risks": risks,
+        "risk_level": _level_5_risk_level(risks),
+        "owner_assignment_required": bool(risks),
+        "recommended_isolation": (
+            "recommend_separate_branch_or_worktree_after_approval"
+            if risks
+            else "none"
+        ),
+        "actions_taken": False,
+    }
+
+
+def _level_5_risk_level(risks: list[dict[str, Any]]) -> str:
+    severities = {risk["severity"] for risk in risks}
+    if "high" in severities:
+        return "high"
+    if "medium" in severities:
+        return "medium"
+    return "none"
+
+
+def _level_5_worktrees(root: Path | None) -> list[dict[str, Any]]:
+    if root is None or not (root / ".git").exists():
+        return []
+    try:
+        result = subprocess.run(
+            ["git", "worktree", "list", "--porcelain"],
+            cwd=root,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except subprocess.TimeoutExpired:
+        return [
+            {
+                "path": str(root),
+                "head": None,
+                "branch": None,
+                "error": "git_worktree_list_timeout",
+            }
+        ]
+    if result.returncode != 0:
+        return [
+            {
+                "path": str(root),
+                "head": None,
+                "branch": None,
+                "error": result.stderr.strip() or "git_worktree_list_failed",
+            }
+        ]
+    worktrees: list[dict[str, Any]] = []
+    current: dict[str, Any] = {}
+    for line in result.stdout.splitlines():
+        if not line:
+            if current:
+                worktrees.append(current)
+                current = {}
+            continue
+        key, _, value = line.partition(" ")
+        if key == "worktree":
+            current["path"] = value
+        elif key == "HEAD":
+            current["head"] = value
+        elif key == "branch":
+            current["branch"] = value.removeprefix("refs/heads/")
+        elif key == "detached":
+            current["detached"] = True
+    if current:
+        worktrees.append(current)
+    return worktrees
 
 
 def _level_4_push_check_blockers(

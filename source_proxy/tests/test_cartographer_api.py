@@ -48,6 +48,7 @@ from source_proxy.cartographer.service import (
     build_cartographer_level_4_push_readiness_contract,
     build_cartographer_level_4_push_queue_approval_preview,
     build_cartographer_level_4_push_queue_proposal_preview,
+    build_cartographer_level_5_parallel_work_risk_model,
     build_cartographer_project_candidates,
     build_cartographer_project_health,
     build_cartographer_projects,
@@ -3540,6 +3541,99 @@ class CartographerApiTests(unittest.TestCase):
         self.assertEqual(dirty_payload["recommendations"], [])
         self.assertEqual(dirty_payload["recommendation_count"], 0)
         self.assertFalse(dirty_payload["recommended"])
+
+    def test_level_5_parallel_work_risk_model_reports_dirty_primary_without_mutation(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            dashboard_file = root / "src" / "components" / "dashboard" / "Widget.tsx"
+            dashboard_file.parent.mkdir(parents=True)
+            dashboard_file.write_text("export function Widget() { return null; }\n", encoding="utf-8")
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "checkout", "-b", "main")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            dashboard_file.write_text("export function Widget() { return 'changed'; }\n", encoding="utf-8")
+
+            before_branch = _git_stdout(root, "branch", "--show-current").strip()
+            before_worktrees = _git_stdout(root, "worktree", "list", "--porcelain")
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = build_cartographer_level_5_parallel_work_risk_model()
+                response = TestClient(_test_app()).get("/v1/cartographer/level-5-parallel-work-risk")
+            after_branch = _git_stdout(root, "branch", "--show-current").strip()
+            after_worktrees = _git_stdout(root, "worktree", "list", "--porcelain")
+            branches = _git_stdout(root, "branch", "--format=%(refname:short)").splitlines()
+
+        self.assertEqual(before_branch, "main")
+        self.assertEqual(after_branch, "main")
+        self.assertEqual(before_worktrees, after_worktrees)
+        self.assertEqual(branches, ["main"])
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["contract_version"], "cartographer.level_5.parallel_work_risk_model.v1")
+        self.assertEqual(payload["status"], "observing")
+        self.assertEqual(payload["level"], 5)
+        self.assertEqual(payload["mode"], "parallel_work_risk_model")
+        self.assertFalse(payload["write_actions_enabled"])
+        self.assertFalse(payload["authority_granted"])
+        self.assertFalse(payload["actions_taken"])
+        self.assertFalse(payload["branch_creation_allowed"])
+        self.assertFalse(payload["worktree_creation_allowed"])
+        self.assertFalse(payload["checkout_allowed"])
+        self.assertFalse(payload["merge_allowed"])
+        self.assertFalse(payload["cleanup_allowed"])
+        self.assertFalse(payload["stash_allowed"])
+        self.assertFalse(payload["push_allowed"])
+        self.assertEqual(payload["project_count"], 1)
+        self.assertEqual(payload["risk_count"], 2)
+        self.assertEqual(payload["high_risk_count"], 2)
+        project = payload["projects"][0]
+        self.assertEqual(project["branch"], "main")
+        self.assertTrue(project["dirty"])
+        self.assertEqual(project["changed_files"], ["src/components/dashboard/Widget.tsx"])
+        self.assertEqual(project["risk_level"], "high")
+        self.assertTrue(project["owner_assignment_required"])
+        self.assertEqual(
+            project["recommended_isolation"],
+            "recommend_separate_branch_or_worktree_after_approval",
+        )
+        risk_ids = [risk["risk_id"] for risk in project["risks"]]
+        self.assertEqual(risk_ids, ["dirty_tree_collision_risk", "primary_branch_dirty_risk"])
+        self.assertIn("branch creation", payload["forbidden_actions"])
+        self.assertIn("worktree creation", payload["forbidden_actions"])
+
+    def test_level_5_parallel_work_risk_model_reports_clean_feature_branch_as_read_only(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "checkout", "-b", "feature/cartographer")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+
+            before_worktrees = _git_stdout(root, "worktree", "list", "--porcelain")
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = build_cartographer_level_5_parallel_work_risk_model()
+            after_worktrees = _git_stdout(root, "worktree", "list", "--porcelain")
+
+        self.assertEqual(before_worktrees, after_worktrees)
+        self.assertEqual(payload["level"], 5)
+        self.assertEqual(payload["risk_count"], 0)
+        self.assertEqual(payload["high_risk_count"], 0)
+        self.assertEqual(payload["medium_risk_count"], 0)
+        self.assertEqual(payload["recommended_next_action"], "No parallel work collision risks detected.")
+        project = payload["projects"][0]
+        self.assertEqual(project["branch"], "feature/cartographer")
+        self.assertFalse(project["dirty"])
+        self.assertEqual(project["risk_level"], "none")
+        self.assertFalse(project["owner_assignment_required"])
+        self.assertEqual(project["recommended_isolation"], "none")
+        self.assertEqual(project["actions_taken"], False)
+        self.assertFalse(payload["branch_creation_allowed"])
+        self.assertFalse(payload["worktree_creation_allowed"])
 
     def test_commit_proposal_packages_applied_blueprint_files_without_committing(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
