@@ -28,7 +28,9 @@ describe("CodingCockpitShell", () => {
     expect(screen.getByLabelText("Coding status")).toHaveTextContent("Draft");
     expect(screen.getByLabelText("Coding status")).toHaveTextContent("Apply");
     expect(screen.getByLabelText("Coding status")).toHaveTextContent("Verify");
-    expect(screen.getByRole("heading", { name: "Task Timeline" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Current State" })).toBeInTheDocument();
+    expect(screen.getByText(/Draft, Preview, Approval, Apply, then Verify/)).toBeInTheDocument();
+    expect(screen.getByText("Evidence trail")).toBeInTheDocument();
     expect(screen.getByText("Architect")).toBeInTheDocument();
     expect(screen.getByText("Coder")).toBeInTheDocument();
     expect(screen.getByText("Reviewer")).toBeInTheDocument();

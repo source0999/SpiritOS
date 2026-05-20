@@ -228,6 +228,8 @@ UI-4: Simplify default cockpit flow.
 
 ## Phase UI-4: Approval/Action Bar
 
+Status: in progress.
+
 Intent:
 Replace competing visible panels with one default operator flow: task composer, current state card, safe next action bar, compact diff/review summary, and collapsed evidence trail.
 

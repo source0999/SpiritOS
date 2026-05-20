@@ -590,47 +590,54 @@ export default function CodingCockpitShell() {
           </div>
         </section>
 
-        <section aria-labelledby="task-timeline-heading" className="border-b border-white/10 py-4">
+        <section aria-labelledby="current-state-heading" className="border-b border-white/10 py-4">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h2 id="task-timeline-heading" className="text-base font-semibold text-white">
-                Task Timeline
+              <h2 id="current-state-heading" className="text-base font-semibold text-white">
+                Current State
               </h2>
               <p className="mt-1 text-sm text-slate-400">
-                {currentTaskState}. Evidence is summarized here; full diagnostics stay in
-                `/proxy-backend`.
+                {currentTaskState}. Keep moving through Draft, Preview, Approval, Apply, then
+                Verify. Full diagnostics stay in `/proxy-backend`.
               </p>
             </div>
             <span className="inline-flex min-h-9 items-center rounded-md border border-white/15 px-3 text-xs font-semibold text-slate-200">
               {currentTaskState}
             </span>
           </div>
-          <ol className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {timelineItems.map((item) => (
-              <li
-                className={`rounded-md border p-3 ${
-                  item.active
-                    ? "border-emerald-300/40 bg-emerald-300/10"
-                    : "border-white/10 bg-white/[0.03]"
-                }`}
-                key={item.label}
-              >
-                <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                  {item.label}
-                </div>
-                <div className="mt-1 text-sm font-semibold text-slate-100">{item.status}</div>
-                <p className="mt-2 text-sm leading-6 text-slate-400">{item.detail}</p>
-              </li>
-            ))}
-          </ol>
-          <div className="mt-4 rounded-md border border-white/10 bg-slate-900/70 p-3 text-sm">
-            <div className="font-semibold text-white">Terminal/Test Evidence</div>
-            <p className="mt-2 leading-6 text-slate-400">
-              {previewState.status === "idle"
-                ? `Expected checks: ${expectedChecks.trim() || "none listed"}. Evidence appears after preview and verification.`
-                : `${previewState.requirementSummary} ${previewState.verifierSummary}`}
-            </p>
-          </div>
+          <details className="mt-4 rounded-md border border-white/10 bg-slate-900/70">
+            <summary className="min-h-12 cursor-pointer px-3 py-3 text-sm font-semibold text-slate-100">
+              Evidence trail
+            </summary>
+            <div className="space-y-4 border-t border-white/10 p-3">
+              <ol className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {timelineItems.map((item) => (
+                  <li
+                    className={`rounded-md border p-3 ${
+                      item.active
+                        ? "border-emerald-300/40 bg-emerald-300/10"
+                        : "border-white/10 bg-white/[0.03]"
+                    }`}
+                    key={item.label}
+                  >
+                    <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                      {item.label}
+                    </div>
+                    <div className="mt-1 text-sm font-semibold text-slate-100">{item.status}</div>
+                    <p className="mt-2 text-sm leading-6 text-slate-400">{item.detail}</p>
+                  </li>
+                ))}
+              </ol>
+              <div className="rounded-md border border-white/10 bg-slate-950/60 p-3 text-sm">
+                <div className="font-semibold text-white">Terminal/Test Evidence</div>
+                <p className="mt-2 leading-6 text-slate-400">
+                  {previewState.status === "idle"
+                    ? `Expected checks: ${expectedChecks.trim() || "none listed"}. Evidence appears after preview and verification.`
+                    : `${previewState.requirementSummary} ${previewState.verifierSummary}`}
+                </p>
+              </div>
+            </div>
+          </details>
         </section>
 
         <div className="grid flex-1 gap-5 py-5 lg:grid-cols-[minmax(0,1fr)_320px]">
