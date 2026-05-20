@@ -201,6 +201,22 @@ function mockScoutFetch(
             would_write_proxy_memory: false,
             would_write_coding_context: false,
             would_finalize_promotion: false,
+            receipt_preview: {
+              event: "scout_manual_import_receipt_preview",
+              imported: false,
+              applied: false,
+              approved_proxy_action: false,
+              writes: {
+                append_only_evidence: false,
+                proxy_memory: false,
+                coding_context: false,
+                active_context: false,
+              },
+              rollback: {
+                tombstone_event: "scout_manual_import_tombstone",
+                delete_allowed: false,
+              },
+            },
           }),
           { status: 200 },
         ),
@@ -549,6 +565,13 @@ describe("HomelabScoutIntelligenceWidget", () => {
     });
     expect(await screen.findByText(/Import dry run passed/)).toBeInTheDocument();
     expect(screen.getByText(/Proxy memory write: false/)).toBeInTheDocument();
+    const receipt = within(screen.getByLabelText("Scout import receipt preview"));
+    expect(receipt.getByText("Receipt Event")).toBeInTheDocument();
+    expect(receipt.getByText("scout_manual_import_receipt_preview")).toBeInTheDocument();
+    expect(receipt.getByText("Proxy Memory Write")).toBeInTheDocument();
+    expect(receipt.getAllByText("false").length).toBeGreaterThan(0);
+    expect(receipt.getByText("Rollback Tombstone")).toBeInTheDocument();
+    expect(receipt.getByText("scout_manual_import_tombstone")).toBeInTheDocument();
     expect(globalThis.fetch).not.toHaveBeenCalledWith(
       "/api/scout/promotions/finalize",
       expect.anything(),
