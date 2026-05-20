@@ -132,6 +132,13 @@ class CartographerLevel3CommitApprovalPreviewRequest(BaseModel):
 class CartographerLevel3CommitExecutionRequest(BaseModel):
     approval_id: str | None = Field(default=None, max_length=160)
     approved_by: str | None = Field(default=None, max_length=120)
+    exact_file_list: list[str] = Field(default_factory=list, max_length=200)
+    proposed_commit_title: str = Field(default="", max_length=240)
+    proposed_commit_body: str = Field(default="", max_length=5000)
+    git_head_at_creation: str | None = Field(default=None, max_length=80)
+    dirty_tree_fingerprint: str | None = Field(default=None, max_length=80)
+    check_results: list[dict[str, Any]] = Field(default_factory=list, max_length=50)
+    approved_deleted_files: list[str] = Field(default_factory=list, max_length=200)
 
 
 @router.get("/status")
@@ -253,6 +260,13 @@ async def cartographer_level_3_commit_execution_block(
         proposal_id=proposal_id,
         approval_id=request.approval_id,
         approved_by=request.approved_by,
+        exact_file_list=request.exact_file_list,
+        proposed_commit_title=request.proposed_commit_title,
+        proposed_commit_body=request.proposed_commit_body,
+        git_head_at_creation=request.git_head_at_creation,
+        dirty_tree_fingerprint=request.dirty_tree_fingerprint,
+        check_results=request.check_results,
+        approved_deleted_files=request.approved_deleted_files,
     )
 
 

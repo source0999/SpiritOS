@@ -342,49 +342,270 @@ def build_level_3_commit_execution_block(
     proposal_id: str,
     approval_id: str | None,
     approved_by: str | None,
+    exact_file_list: list[str] | None = None,
+    proposed_commit_title: str = "",
+    proposed_commit_body: str = "",
+    git_head_at_creation: str | None = None,
+    dirty_tree_fingerprint: str | None = None,
+    check_results: list[dict[str, Any]] | None = None,
+    approved_deleted_files: list[str] | None = None,
+    level_2_readiness: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    proposals_payload = build_level_3_commit_proposal_preview(level_2_readiness=None)
-    proposal = next(
-        (
-            item
-            for item in proposals_payload["commit_proposals"]
-            if item["proposal_id"] == proposal_id
-        ),
-        None,
-    )
-    blockers = ["level_3_commit_execution_not_implemented"]
-    if proposal is None:
-        blockers.append("proposal_not_found")
-    if not approval_id:
-        blockers.append("approval_id_required")
-    if not approved_by:
-        blockers.append("approved_by_required")
-    if str(approved_by or "").strip().lower() == "cartographer":
-        blockers.append("cartographer_self_approval_blocked")
+    proposal, git_status = _find_level_3_proposal_with_status(proposal_id)
+    blockers: list[str] = []
+    if not bool((level_2_readiness or {}).get("docs_apply_enabled")):
+        blockers.append("level_2_safe_dependency")
 
+    approval_preview = build_level_3_commit_approval_preview(
+        proposal_id=proposal_id,
+        approval_id=approval_id,
+        approved_by=approved_by,
+        exact_file_list=exact_file_list or [],
+        proposed_commit_title=proposed_commit_title,
+        proposed_commit_body=proposed_commit_body,
+        git_head_at_creation=git_head_at_creation,
+        dirty_tree_fingerprint=dirty_tree_fingerprint,
+        check_results=check_results or [],
+        approved_deleted_files=approved_deleted_files or [],
+    )
+    blockers.extend(str(blocker) for blocker in approval_preview["blockers"])
+    if not git_head_at_creation:
+        blockers.append("git_head_at_creation_required")
+    if not dirty_tree_fingerprint:
+        blockers.append("dirty_tree_fingerprint_required")
+    if proposal is not None and git_status is None:
+        blockers.append("git_status_unavailable")
+
+    normalized_files = [_normalize_repo_path(path) for path in (exact_file_list or [])]
+    if any(_is_forbidden_level_3_path(path) for path in normalized_files):
+        blockers.append("forbidden_files_detected")
+    if any(_is_sensitive_path(path) for path in normalized_files):
+        blockers.append("sensitive_files_detected")
+    if proposal is not None and proposal["file_bundle"] == "unknown_or_mixed":
+        blockers.append("unknown_or_mixed_files_block_approval")
+    if git_status is not None:
+        staged = {_normalize_repo_path(path) for path in git_status.staged_files}
+        unapproved_staged = sorted(staged.difference(normalized_files))
+        if unapproved_staged:
+            blockers.append("unrelated_staged_files_block_commit")
+    else:
+        unapproved_staged = []
+
+    unique_blockers = list(dict.fromkeys(blockers))
+    if unique_blockers:
+        return _level_3_commit_execution_receipt(
+            status="blocked",
+            proposal_id=proposal_id,
+            approval_id=approval_id,
+            approved_by=approved_by,
+            proposal=proposal,
+            git_status=git_status,
+            blockers=unique_blockers,
+            approval_preview=approval_preview,
+            committed_files=[],
+            commit_sha=None,
+        )
+
+    assert proposal is not None
+    assert git_status is not None
+    root = Path(str(git_status.root))
+    head_before = _git_stdout_or_blocker(root, "rev-parse", "HEAD")
+    if head_before["blocker"]:
+        return _level_3_commit_execution_receipt(
+            status="blocked",
+            proposal_id=proposal_id,
+            approval_id=approval_id,
+            approved_by=approved_by,
+            proposal=proposal,
+            git_status=git_status,
+            blockers=[head_before["blocker"]],
+            approval_preview=approval_preview,
+            committed_files=[],
+            commit_sha=None,
+        )
+    add_result = _git(root, "add", "--", *normalized_files)
+    if add_result.returncode != 0:
+        return _level_3_commit_execution_receipt(
+            status="blocked",
+            proposal_id=proposal_id,
+            approval_id=approval_id,
+            approved_by=approved_by,
+            proposal=proposal,
+            git_status=git_status,
+            blockers=["explicit_file_staging_failed"],
+            approval_preview=approval_preview,
+            committed_files=[],
+            commit_sha=None,
+            command_error=add_result.stderr.strip() or add_result.stdout.strip(),
+        )
+    staged_after = _git_stdout_or_blocker(root, "diff", "--cached", "--name-only")
+    staged_files_after = sorted(
+        _normalize_repo_path(path)
+        for path in staged_after["stdout"].splitlines()
+        if path.strip()
+    )
+    if staged_after["blocker"] or staged_files_after != sorted(normalized_files):
+        return _level_3_commit_execution_receipt(
+            status="blocked",
+            proposal_id=proposal_id,
+            approval_id=approval_id,
+            approved_by=approved_by,
+            proposal=proposal,
+            git_status=git_status,
+            blockers=[staged_after["blocker"] or "staged_file_bundle_mismatch"],
+            approval_preview=approval_preview,
+            committed_files=[],
+            commit_sha=None,
+        )
+    command = [
+        "commit",
+        "-m",
+        proposed_commit_title,
+        "-m",
+        proposed_commit_body or "Approved by Cartographer Level 3.",
+        "--",
+        *normalized_files,
+    ]
+    commit_result = _git(root, *command)
+    if commit_result.returncode != 0:
+        return _level_3_commit_execution_receipt(
+            status="blocked",
+            proposal_id=proposal_id,
+            approval_id=approval_id,
+            approved_by=approved_by,
+            proposal=proposal,
+            git_status=git_status,
+            blockers=["git_commit_failed"],
+            approval_preview=approval_preview,
+            committed_files=[],
+            commit_sha=None,
+            command_error=commit_result.stderr.strip() or commit_result.stdout.strip(),
+        )
+    commit_sha = _git_stdout_or_blocker(root, "rev-parse", "HEAD")
+    committed_files = _git_stdout_or_blocker(root, "show", "--name-only", "--format=", "HEAD")
+    return _level_3_commit_execution_receipt(
+        status="committed",
+        proposal_id=proposal_id,
+        approval_id=approval_id,
+        approved_by=approved_by,
+        proposal=proposal,
+        git_status=git_status,
+        blockers=[],
+        approval_preview=approval_preview,
+        committed_files=[
+            _normalize_repo_path(path)
+            for path in committed_files["stdout"].splitlines()
+            if path.strip()
+        ],
+        commit_sha=commit_sha["stdout"].strip() or None,
+        head_before=head_before["stdout"].strip(),
+    )
+
+
+def _level_3_commit_execution_receipt(
+    *,
+    status: str,
+    proposal_id: str,
+    approval_id: str | None,
+    approved_by: str | None,
+    proposal: dict[str, Any] | None,
+    git_status: GitStatus | None,
+    blockers: list[str],
+    approval_preview: dict[str, Any],
+    committed_files: list[str],
+    commit_sha: str | None,
+    head_before: str | None = None,
+    command_error: str | None = None,
+) -> dict[str, Any]:
+    commit_created = status == "committed" and bool(commit_sha)
     return {
-        "status": "blocked",
+        "status": status,
         "level": 3,
-        "mode": "commit_execution_hard_block",
+        "mode": "approved_local_commit_executor",
         "proposal_id": proposal_id,
         "proposal_found": proposal is not None,
         "approval_id": approval_id,
         "approved_by": approved_by,
+        "approval_validated": approval_preview["approval_validated"],
         "blockers": list(dict.fromkeys(blockers)),
-        "commit_allowed": False,
-        "commit_enabled": False,
+        "commit_allowed": commit_created,
+        "commit_enabled": commit_created,
         "commit_execution_enabled": False,
-        "commit_created": False,
+        "commit_created": commit_created,
+        "commit_sha": commit_sha,
+        "head_before": head_before or (git_status.head_sha if git_status else None),
+        "head_after": commit_sha,
+        "current_branch": git_status.branch if git_status else None,
+        "committed_files": committed_files,
+        "approved_files": proposal["included_files"] if proposal else [],
+        "approved_deleted_files": approval_preview["approved_deleted_files"],
+        "excluded_dirty_files": proposal["excluded_files"] if proposal else [],
+        "required_checks": approval_preview["required_check_commands"],
+        "check_results": approval_preview["check_results"],
         "push_allowed": False,
         "push_enabled": False,
         "push_created": False,
         "creates_push_queue_item": False,
         "branch_creation_allowed": False,
+        "merge_allowed": False,
         "stash_allowed": False,
         "cleanup_allowed": False,
-        "actions_taken": False,
-        "next_step": "Use approval-preview only; Level 3 local commit execution requires a separately approved implementation increment.",
+        "actions_taken": commit_created,
+        "rollback_command": _rollback_command(),
+        "command_error": command_error,
+        "next_step": (
+            "Local commit created; push remains disabled."
+            if commit_created
+            else "Resolve blockers before requesting Level 3 local commit execution."
+        ),
     }
+
+
+def _find_level_3_proposal_with_status(
+    proposal_id: str,
+) -> tuple[dict[str, Any] | None, GitStatus | None]:
+    statuses = read_git_statuses()
+    if not statuses:
+        cwd = Path.cwd()
+        if (cwd / ".git").exists():
+            statuses = [read_git_status_for_project(project_id=cwd.name.lower(), root=cwd)]
+    status_by_project = {
+        status.project_id or "unknown": status
+        for status in statuses
+        if status.project_id and status.available
+    }
+    for proposal in build_commit_proposals():
+        status = status_by_project.get(proposal.project_id)
+        receipt = _level_3_receipt(proposal, status)
+        if receipt["proposal_id"] == proposal_id:
+            return receipt, status
+    return None, None
+
+
+def _git(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
+    try:
+        return subprocess.run(
+            ["git", *args],
+            cwd=root,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except subprocess.TimeoutExpired as error:
+        return subprocess.CompletedProcess(
+            ["git", *args],
+            returncode=124,
+            stdout="",
+            stderr=str(error),
+        )
+
+
+def _git_stdout_or_blocker(root: Path, *args: str) -> dict[str, str | None]:
+    result = _git(root, *args)
+    if result.returncode != 0:
+        return {"stdout": result.stdout, "blocker": "git_command_failed"}
+    return {"stdout": result.stdout, "blocker": None}
 
 
 def _level_3_deletion_blockers(

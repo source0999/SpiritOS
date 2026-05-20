@@ -842,11 +842,26 @@ def block_cartographer_level_3_commit_execution(
     proposal_id: str,
     approval_id: str | None,
     approved_by: str | None,
+    exact_file_list: list[str] | None = None,
+    proposed_commit_title: str = "",
+    proposed_commit_body: str = "",
+    git_head_at_creation: str | None = None,
+    dirty_tree_fingerprint: str | None = None,
+    check_results: list[dict[str, Any]] | None = None,
+    approved_deleted_files: list[str] | None = None,
 ) -> dict[str, Any]:
     payload = build_level_3_commit_execution_block(
         proposal_id=proposal_id,
         approval_id=approval_id,
         approved_by=approved_by,
+        exact_file_list=exact_file_list,
+        proposed_commit_title=proposed_commit_title,
+        proposed_commit_body=proposed_commit_body,
+        git_head_at_creation=git_head_at_creation,
+        dirty_tree_fingerprint=dirty_tree_fingerprint,
+        check_results=check_results,
+        approved_deleted_files=approved_deleted_files,
+        level_2_readiness=build_level_2_readiness(),
     )
     payload["safety"] = cartographer_safety_manifest()
     return payload
