@@ -48,6 +48,7 @@ from source_proxy.cartographer.service import (
     build_cartographer_level_4_push_readiness_contract,
     build_cartographer_level_4_push_queue_approval_preview,
     build_cartographer_level_4_push_queue_proposal_preview,
+    build_cartographer_level_5_parallel_work_risk_model,
     build_cartographer_projects,
     build_cartographer_project_candidates,
     build_cartographer_project_health,
@@ -402,6 +403,11 @@ async def cartographer_v1_freeze_marker_validation() -> dict[str, Any]:
 @router.get("/branch-recommendations")
 async def cartographer_branch_recommendations() -> dict[str, Any]:
     return build_cartographer_branch_recommendations()
+
+
+@router.get("/level-5-parallel-work-risk")
+async def cartographer_level_5_parallel_work_risk() -> dict[str, Any]:
+    return build_cartographer_level_5_parallel_work_risk_model()
 
 
 @router.post("/branch-recommendations/{recommendation_id}/approve")
