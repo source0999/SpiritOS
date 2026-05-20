@@ -1,0 +1,35 @@
+/*
+ * SpiritOS Design Vault: internal-dashboard-demo-v4
+ * Status: preview-only normalized token draft.
+ * Do not import this file into production UI without Source Proxy approval.
+ */
+
+:root {
+  --design-vault-ddv4-background: var(--ddv4-atmos-foundation);
+  --design-vault-ddv4-surface: var(--ddv4-glass-bg);
+  --design-vault-ddv4-surface-strong: var(--ddv4-shell-bg);
+  --design-vault-ddv4-surface-muted: var(--ddv4-widget-bg);
+  --design-vault-ddv4-text: var(--ddv4-fg);
+  --design-vault-ddv4-text-muted: var(--ddv4-fg-muted);
+  --design-vault-ddv4-text-faint: var(--ddv4-fg-faint);
+  --design-vault-ddv4-accent: var(--spirit-accent);
+  --design-vault-ddv4-accent-strong: var(--spirit-accent-strong);
+  --design-vault-ddv4-success: var(--demo-online);
+  --design-vault-ddv4-warning: var(--demo-warn);
+  --design-vault-ddv4-danger: var(--demo-quarantine);
+  --design-vault-ddv4-focus: var(--spirit-accent-strong);
+  --design-vault-ddv4-divider: var(--ddv4-nav-divider);
+  --design-vault-ddv4-radius-card: var(--demo-radius-lg);
+  --design-vault-ddv4-radius-pill: var(--demo-radius-pill);
+  --design-vault-ddv4-space-sm: var(--demo-space-sm);
+  --design-vault-ddv4-space-md: var(--demo-space-md);
+  --design-vault-ddv4-space-lg: var(--demo-space-lg);
+  --design-vault-ddv4-shadow-card: var(--ddv4-glass-shadow);
+  --design-vault-ddv4-shadow-widget: var(--ddv4-widget-shadow);
+  --design-vault-ddv4-rail-width: var(--ddv4-app-rail-width);
+  --design-vault-ddv4-motion-fast: var(--demo-dur-fast);
+  --design-vault-ddv4-motion-mid: var(--demo-dur-mid);
+  --design-vault-ddv4-motion-slow: var(--demo-dur-slow);
+  --design-vault-ddv4-ease-out: var(--demo-ease-out);
+  --design-vault-ddv4-ease-in-out: var(--demo-ease-in-out);
+}
