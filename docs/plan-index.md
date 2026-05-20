@@ -10,6 +10,7 @@ Status date: 2026-05-20
 | --- | --- | --- | --- |
 | `docs/source-proxy-production-hardening-plan.md` | status: active | Current Source Proxy production plan | Records green safety gate and constrains next work |
 | `docs/codingUI.md` | status: active | Active `/coding` UI polish plan | Authorizes planning for UI polish only; implementation still requires approval |
+| `docs/design-system-overhaul-master-v0.2.md` | status: planning active | Active SpiritOS design-system overhaul planning spine | Does not authorize implementation; keeps future design work Source Proxy gated |
 | `docs/design-systems-master-v0.1.md` | status: planning complete | Manual-first Design Intelligence Stack plan | Does not authorize implementation; next increment requires explicit approval |
 | `productionProxy.md` | status: historical | Uploaded staging copy | Historical only; follow the durable repo copy instead |
 
