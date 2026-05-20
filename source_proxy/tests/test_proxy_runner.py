@@ -17,6 +17,7 @@ from source_proxy.testing.runner import (
     PROFILE_PROXY_REGRESSION,
     PROFILE_PROXY_SMOKE,
     PROFILE_PHASE_4F_CLOSEOUT,
+    PROFILE_SCOUT_IMPORT_RECEIPT_HARNESS,
     PROFILE_SCOUT_SEARCH_DIAGNOSTICS,
     PROFILE_SCOUT_SEARCH_SMOKE,
     PROFILE_SCOUT_SOAK_SNAPSHOT,
@@ -931,6 +932,49 @@ class ProxyRunnerTests(unittest.TestCase):
         report = format_runner_report(payload)
         self.assertIn("unexpected Level 2 evidence", report)
         self.assertIn("concurrent/manual Level 2 evidence run", report)
+
+    def test_scout_import_receipt_harness_profile_stays_read_only(self) -> None:
+        command_result = {
+            "command": "docker run scout-scout-api",
+            "returncode": 0,
+            "stdout": json.dumps(
+                {
+                    "result": "pass",
+                    "read_only": True,
+                    "mutated": False,
+                    "checks": {
+                        "receipt_preview_present": True,
+                        "proxy_memory_false": True,
+                        "coding_context_false": True,
+                    },
+                }
+            ),
+            "stderr": "",
+            "error": None,
+        }
+
+        with mock.patch(
+            "source_proxy.testing.runner._git_status_short",
+            side_effect=["clean", "clean"],
+        ), mock.patch(
+            "source_proxy.testing.runner._git_head",
+            side_effect=["abc123", "abc123"],
+        ), mock.patch(
+            "source_proxy.testing.runner._run_command",
+            return_value=command_result,
+        ) as run_command:
+            payload = run_runner_profile(profile=PROFILE_SCOUT_IMPORT_RECEIPT_HARNESS)
+
+        self.assertEqual(payload["result"], "pass")
+        self.assertTrue(payload["read_only"])
+        self.assertFalse(payload["mutated"])
+        self.assertTrue(payload["checks"]["command_ok"])
+        self.assertTrue(payload["checks"]["harness_passed"])
+        self.assertTrue(payload["checks"]["no_unexpected_file_changes"])
+        self.assertFalse(payload["file_change_verdict"]["head_changed"])
+        command = " ".join(str(part) for part in run_command.call_args.args[0])
+        self.assertIn("receipt_preview_harness.py", command)
+        self.assertEqual(run_command.call_args.kwargs["timeout_seconds"], 60)
 
     def test_dependency_environment_checks_report_required_baseline(self) -> None:
         dependency_payload = {"result": "pass", "blockers": [], "warnings": []}
