@@ -29,6 +29,7 @@ PROFILE_SCOUT_SEARCH_SMOKE = "scout-search-smoke"
 PROFILE_SCOUT_SOAK_SNAPSHOT = "scout-soak-snapshot"
 PROFILE_SCOUT_LEVEL_1_SOAK = "scout-level-1-soak"
 PROFILE_SCOUT_LEVEL_2_EVIDENCE_SNAPSHOT = "scout-level-2-evidence-snapshot"
+PROFILE_SCOUT_IMPORT_RECEIPT_HARNESS = "scout-import-receipt-harness"
 PROFILE_PHASE_4F_CLOSEOUT = "phase-4f-closeout"
 PROFILE_CARTOGRAPHER_SAFETY = "cartographer-safety"
 PROFILE_CARTOGRAPHER_SOAK_SNAPSHOT = "cartographer-soak-snapshot"
@@ -119,6 +120,8 @@ def run_runner_profile(*, profile: str) -> dict[str, Any]:
         return _run_scout_level_1_soak_profile()
     if profile == PROFILE_SCOUT_LEVEL_2_EVIDENCE_SNAPSHOT:
         return _run_scout_level_2_evidence_snapshot_profile()
+    if profile == PROFILE_SCOUT_IMPORT_RECEIPT_HARNESS:
+        return _run_scout_import_receipt_harness_profile()
     if profile == PROFILE_PHASE_4F_CLOSEOUT:
         return _run_phase_4f_closeout_profile()
     if profile == PROFILE_CARTOGRAPHER_SAFETY:
@@ -1620,6 +1623,66 @@ def _run_scout_level_2_evidence_snapshot_profile(
     evidence["recommendation"] = "ready for next increment" if result == "pass" else "fix needed"
     path.write_text(json.dumps(evidence, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return evidence
+
+
+def _run_scout_import_receipt_harness_profile() -> dict[str, Any]:
+    before = _git_status_short()
+    before_head = _git_head()
+    command = [
+        "docker",
+        "run",
+        "--rm",
+        "-v",
+        f"{Path.cwd() / 'scout'}:/tmp/scout:ro",
+        "scout-scout-api",
+        "sh",
+        "-lc",
+        "PYTHONPATH=/tmp/scout/src python /tmp/scout/scripts/receipt_preview_harness.py",
+    ]
+    completed = _run_command(command, timeout_seconds=60)
+    after = _git_status_short()
+    after_head = _git_head()
+    status_delta = _git_status_delta(before, after)
+    unexpected_status_delta = _unexpected_status_delta(status_delta)
+    head_changed = bool(before_head and after_head and before_head != after_head)
+    try:
+        harness = json.loads(completed["stdout"])
+    except json.JSONDecodeError:
+        harness = {
+            "result": "fail",
+            "error": "harness output was not JSON",
+            "stdout": completed["stdout"],
+            "stderr": completed["stderr"],
+        }
+    checks_passed = {
+        "command_ok": completed["returncode"] == 0,
+        "harness_passed": harness.get("result") == "pass",
+        "read_only": harness.get("read_only") is True,
+        "mutated_false": harness.get("mutated") is False,
+        "no_unexpected_file_changes": not unexpected_status_delta,
+        "head_unchanged": not head_changed,
+    }
+    result = "pass" if all(checks_passed.values()) else "fail"
+    return {
+        "profile": PROFILE_SCOUT_IMPORT_RECEIPT_HARNESS,
+        "result": result,
+        "read_only": True,
+        "mutated": False,
+        "checks": checks_passed,
+        "harness": harness,
+        "command": completed["command"],
+        "stderr": completed["stderr"],
+        "file_change_verdict": {
+            "before": before,
+            "after": after,
+            "status_delta": status_delta,
+            "unexpected_status_delta": unexpected_status_delta,
+            "head_before": before_head,
+            "head_after": after_head,
+            "head_changed": head_changed,
+        },
+        "recommendation": "ready for next increment" if result == "pass" else "fix needed",
+    }
 
 
 def _scout_level_1_soak_sample_summary(checks: dict[str, dict[str, Any]]) -> dict[str, Any]:
