@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 import json
 import os
 import subprocess
@@ -9,11 +10,16 @@ from pathlib import Path
 from unittest.mock import patch
 
 from source_proxy.cartographer.apply import CartographerApplyError, apply_approved_doc_proposal
+from source_proxy.api import cartographer as cartographer_api
+from source_proxy.cartographer import commit_proposals as level_3_commit_proposals
 from source_proxy.cartographer.service import (
+    block_cartographer_level_3_commit_execution,
     build_cartographer_audit_trail,
     build_cartographer_branch_recommendations,
     build_cartographer_change_scribe,
     build_cartographer_commit_proposals,
+    build_cartographer_level_3_commit_approval_preview,
+    build_cartographer_level_3_commit_proposals,
     build_cartographer_project_health,
     build_cartographer_projects,
     build_cartographer_proposals,
@@ -196,6 +202,107 @@ class CartographerSafetyAuditTests(unittest.TestCase):
         self.assertTrue(safety["approval_required_for_pushes"])
         self.assertFalse(safety["scout_bypass_allowed"])
         self.assertFalse(safety["source_proxy_approval_bypass_allowed"])
+
+    def test_level_3_git_command_surface_has_no_execution_commands(self) -> None:
+        sources = "\n".join(
+            [
+                inspect.getsource(level_3_commit_proposals.build_level_3_commit_proposal_preview),
+                inspect.getsource(level_3_commit_proposals.build_level_3_commit_approval_preview),
+                inspect.getsource(level_3_commit_proposals.build_level_3_commit_execution_block),
+                inspect.getsource(build_cartographer_level_3_commit_proposals),
+                inspect.getsource(build_cartographer_level_3_commit_approval_preview),
+                inspect.getsource(block_cartographer_level_3_commit_execution),
+                inspect.getsource(cartographer_api.cartographer_level_3_commit_proposals),
+                inspect.getsource(cartographer_api.cartographer_level_3_commit_approval_preview),
+                inspect.getsource(cartographer_api.cartographer_level_3_commit_execution_block),
+            ]
+        )
+
+        forbidden_fragments = [
+            '"add", "."',
+            "'add', '.'",
+            "git add .",
+            '"commit", "-a"',
+            "'commit', '-a'",
+            "git commit -a",
+            '"commit"',
+            "'commit'",
+            '"push"',
+            "'push'",
+            '"switch"',
+            "'switch'",
+            '"checkout"',
+            "'checkout'",
+            '"branch"',
+            "'branch'",
+            '"merge"',
+            "'merge'",
+            '"stash"',
+            "'stash'",
+            "approve_git_queue_item",
+            "build_push_queue",
+        ]
+        for fragment in forbidden_fragments:
+            self.assertNotIn(fragment, sources)
+
+    def test_level_3_surfaces_keep_execution_flags_locked(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            plan = root / "docs" / "cartographer-level-3-autonomy-plan.md"
+            plan.parent.mkdir(parents=True, exist_ok=True)
+            plan.write_text("# Plan\n", encoding="utf-8")
+
+            before_head = _git_stdout(root, "rev-parse", "HEAD").strip()
+            before_status = _git_stdout(root, "status", "--short")
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                proposals = build_cartographer_level_3_commit_proposals()
+                proposal = proposals["commit_proposals"][0]
+                approval = build_cartographer_level_3_commit_approval_preview(
+                    proposal_id=proposal["proposal_id"],
+                    approval_id="approval-level-3-safety-audit",
+                    approved_by="Britton",
+                    exact_file_list=proposal["included_files"],
+                    proposed_commit_title=proposal["proposed_commit_title"],
+                    proposed_commit_body=proposal["proposed_commit_body"],
+                    git_head_at_creation=proposal["git_head_at_creation"],
+                    dirty_tree_fingerprint=proposal["dirty_tree_fingerprint"],
+                    check_results=[
+                        {"command": command, "status": "passed"}
+                        for command in proposal["related_test_commands"]
+                    ],
+                    approved_deleted_files=proposal["deleted_files"],
+                )
+                execution = block_cartographer_level_3_commit_execution(
+                    proposal_id=proposal["proposal_id"],
+                    approval_id="approval-level-3-safety-audit",
+                    approved_by="Britton",
+                )
+            after_head = _git_stdout(root, "rev-parse", "HEAD").strip()
+            after_status = _git_stdout(root, "status", "--short")
+
+        self.assertEqual(before_head, after_head)
+        self.assertEqual(before_status, after_status)
+        self.assertFalse(proposals["commit_allowed"])
+        self.assertFalse(proposals["push_allowed"])
+        self.assertFalse(proposals["actions_taken"])
+        self.assertFalse(approval["commit_allowed"])
+        self.assertFalse(approval["commit_execution_enabled"])
+        self.assertFalse(approval["push_allowed"])
+        self.assertFalse(approval["creates_push_queue_item"])
+        self.assertFalse(approval["actions_taken"])
+        self.assertFalse(execution["commit_allowed"])
+        self.assertFalse(execution["commit_execution_enabled"])
+        self.assertFalse(execution["commit_created"])
+        self.assertFalse(execution["push_allowed"])
+        self.assertFalse(execution["push_created"])
+        self.assertFalse(execution["creates_push_queue_item"])
+        self.assertFalse(execution["actions_taken"])
 
 
 def _git(root: Path, *args: str) -> None:

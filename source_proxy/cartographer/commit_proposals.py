@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
+from fnmatch import fnmatchcase
 from hashlib import sha256
 from pathlib import Path
 import subprocess
+from typing import Any
 
 from source_proxy.cartographer.component_mapper import map_paths
 from source_proxy.cartographer.git_status import read_git_status_for_project, read_git_statuses
@@ -17,6 +20,75 @@ REQUIRED_COMMIT_CHECKS = [
     "blueprint_metadata_validation",
     "cartographer_pytest",
 ]
+LEVEL_3_PROPOSAL_VERSION = "cartographer.level_3.commit_proposal.v1"
+LEVEL_3_ENDPOINT = "/v1/cartographer/level-3-commit-proposals"
+FORBIDDEN_FILE_PATTERNS = (
+    ".env*",
+    "**/.env*",
+    "certificates/**",
+    "**/certificates/**",
+    "**/*secret*",
+    "**/*token*",
+    "**/*credential*",
+    "**/*password*",
+    "**/*private-key*",
+    "**/*.pem",
+    "**/*.key",
+    "**/*.p12",
+    "**/*.pfx",
+    "node_modules/**",
+    "**/node_modules/**",
+    ".next/**",
+    "**/.next/**",
+    "dist/**",
+    "**/dist/**",
+    "build/**",
+    "**/build/**",
+    "coverage/**",
+    "**/coverage/**",
+    ".pytest_cache/**",
+    "**/.pytest_cache/**",
+    "__pycache__/**",
+    "**/__pycache__/**",
+    "*.sqlite",
+    "*.sqlite3",
+    "*.db",
+    "*.db-shm",
+    "*.db-wal",
+    "package-lock.json",
+    "npm-shrinkwrap.json",
+    "yarn.lock",
+    "pnpm-lock.yaml",
+    "bun.lockb",
+)
+CONFIG_FILE_PATTERNS = (
+    "package.json",
+    "tsconfig*.json",
+    "next.config.*",
+    "vite.config.*",
+    "vitest.config.*",
+    "eslint.config.*",
+    ".eslintrc*",
+)
+BINARY_FILE_SUFFIXES = (
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".gif",
+    ".webp",
+    ".ico",
+    ".pdf",
+    ".zip",
+    ".tar",
+    ".gz",
+    ".tgz",
+    ".7z",
+    ".mp4",
+    ".mov",
+    ".woff",
+    ".woff2",
+    ".ttf",
+)
 
 
 def build_commit_proposals() -> list[CommitProposal]:
@@ -54,6 +126,311 @@ def build_commit_proposals() -> list[CommitProposal]:
         proposals.extend(_dirty_tree_commit_proposals(git_status, remaining_files))
 
     return proposals
+
+
+def build_level_3_commit_proposal_preview(
+    *,
+    level_2_readiness: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    statuses = read_git_statuses()
+    if not statuses:
+        cwd = Path.cwd()
+        if (cwd / ".git").exists():
+            statuses = [read_git_status_for_project(project_id=cwd.name.lower(), root=cwd)]
+
+    base_proposals = build_commit_proposals()
+    status_by_project = {
+        status.project_id or "unknown": status
+        for status in statuses
+        if status.project_id and status.available
+    }
+    receipts = [
+        _level_3_receipt(proposal, status_by_project.get(proposal.project_id))
+        for proposal in base_proposals
+    ]
+    forbidden_files = sorted(
+        {
+            path
+            for receipt in receipts
+            for path in receipt["forbidden_files_detected"]
+        }
+    )
+    unknown_files = sorted(
+        {
+            path
+            for receipt in receipts
+            if receipt["file_bundle"] == "unknown_or_mixed"
+            for path in receipt["included_files"]
+        }
+    )
+    proposed_bundles = [
+        receipt
+        for receipt in receipts
+        if not receipt["blockers"]
+    ]
+    blocked_bundles = [
+        receipt
+        for receipt in receipts
+        if receipt["blockers"]
+    ]
+    docs_apply_enabled = (
+        bool(level_2_readiness.get("docs_apply_enabled"))
+        if isinstance(level_2_readiness, dict)
+        else False
+    )
+    level_2_blockers = [
+        str(blocker.get("code"))
+        for blocker in (level_2_readiness or {}).get("blockers", [])
+        if isinstance(blocker, dict) and blocker.get("code")
+    ]
+    readiness_blockers = [
+        "level_2_apply_blocked"
+        for _ in [None]
+        if not docs_apply_enabled
+    ]
+    if forbidden_files:
+        readiness_blockers.append("forbidden_files_detected")
+    if unknown_files:
+        readiness_blockers.append("unknown_files_require_manual_classification")
+    return {
+        "status": "observing",
+        "level": 3,
+        "mode": "human_approved_local_commit_proposals",
+        "proposal_version": LEVEL_3_PROPOSAL_VERSION,
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "endpoint": LEVEL_3_ENDPOINT,
+        "level_2_docs_apply_enabled": docs_apply_enabled,
+        "level_2_blockers": level_2_blockers,
+        "level_3_activation_blocked": bool(readiness_blockers),
+        "activation_blockers": readiness_blockers,
+        "commit_allowed": False,
+        "push_allowed": False,
+        "merge_allowed": False,
+        "branch_creation_allowed": False,
+        "branch_delete_allowed": False,
+        "stash_allowed": False,
+        "cleanup_allowed": False,
+        "self_approval_allowed": False,
+        "self_promotion_allowed": False,
+        "creates_push_queue_item": False,
+        "proposal_count": len(receipts),
+        "proposed_bundle_count": len(proposed_bundles),
+        "blocked_bundle_count": len(blocked_bundles),
+        "forbidden_files": forbidden_files,
+        "unknown_files": unknown_files,
+        "proposed_bundles": proposed_bundles,
+        "blocked_bundles": blocked_bundles,
+        "commit_proposals": receipts,
+        "recommended_next_action": (
+            "resolve Level 2 readiness blockers before Level 3 commit execution"
+            if not docs_apply_enabled
+            else "review proposed bundles; commit execution remains disabled until a later approved implementation"
+        ),
+    }
+
+
+def build_level_3_commit_approval_preview(
+    *,
+    proposal_id: str,
+    approval_id: str | None,
+    approved_by: str | None,
+    exact_file_list: list[str],
+    proposed_commit_title: str,
+    proposed_commit_body: str,
+    git_head_at_creation: str | None = None,
+    dirty_tree_fingerprint: str | None = None,
+    check_results: list[dict[str, Any]] | None = None,
+    approved_deleted_files: list[str] | None = None,
+) -> dict[str, Any]:
+    proposals_payload = build_level_3_commit_proposal_preview(level_2_readiness=None)
+    proposals = [
+        proposal
+        for proposal in proposals_payload["commit_proposals"]
+        if proposal["proposal_id"] == proposal_id
+    ]
+    proposal = proposals[0] if proposals else None
+    blockers: list[str] = []
+    if proposal is None:
+        blockers.append("proposal_not_found")
+    if not approval_id:
+        blockers.append("approval_id_required")
+    if not approved_by:
+        blockers.append("approved_by_required")
+    if str(approved_by or "").strip().lower() == "cartographer":
+        blockers.append("cartographer_self_approval_blocked")
+
+    normalized_files = sorted(dict.fromkeys(_normalize_repo_path(path) for path in exact_file_list))
+    expected_files = sorted(proposal["included_files"]) if proposal else []
+    if proposal is not None and normalized_files != expected_files:
+        blockers.append("exact_file_list_mismatch")
+    if proposal is not None and proposed_commit_title != proposal["proposed_commit_title"]:
+        blockers.append("commit_title_mismatch")
+    if proposal is not None and proposed_commit_body != proposal["proposed_commit_body"]:
+        blockers.append("commit_body_mismatch")
+    current_head = str(proposal["git_head_at_creation"] or "") if proposal else ""
+    supplied_head = str(git_head_at_creation or "").strip()
+    if proposal is not None and supplied_head and supplied_head != current_head:
+        blockers.append("git_head_mismatch")
+    current_fingerprint = str(proposal["dirty_tree_fingerprint"]) if proposal else ""
+    supplied_fingerprint = str(dirty_tree_fingerprint or "").strip()
+    if proposal is not None and supplied_fingerprint and supplied_fingerprint != current_fingerprint:
+        blockers.append("dirty_tree_fingerprint_mismatch")
+    if proposal is not None and proposal["blockers"]:
+        blockers.extend(str(blocker) for blocker in proposal["blockers"])
+    if proposal is not None and proposal["forbidden_files_detected"]:
+        blockers.append("forbidden_files_detected")
+    if proposal is not None and proposal["sensitive_files_detected"]:
+        blockers.append("sensitive_files_detected")
+    check_blockers = _level_3_check_blockers(proposal, check_results or [])
+    blockers.extend(check_blockers)
+    deletion_blockers = _level_3_deletion_blockers(proposal, approved_deleted_files or [])
+    blockers.extend(deletion_blockers)
+
+    unique_blockers = list(dict.fromkeys(blockers))
+    approval_validated = proposal is not None and not unique_blockers
+    return {
+        "status": "approval_preview",
+        "level": 3,
+        "mode": "human_approval_gate_preview",
+        "proposal_id": proposal_id,
+        "proposal_found": proposal is not None,
+        "approval_required": True,
+        "approval_id": approval_id,
+        "approved_by": approved_by,
+        "approval_validated": approval_validated,
+        "approved_at": None,
+        "exact_file_list": normalized_files,
+        "expected_file_list": expected_files,
+        "git_head_at_creation": proposal["git_head_at_creation"] if proposal else None,
+        "supplied_git_head_at_creation": git_head_at_creation,
+        "dirty_tree_fingerprint": proposal["dirty_tree_fingerprint"] if proposal else None,
+        "supplied_dirty_tree_fingerprint": dirty_tree_fingerprint,
+        "current_branch": proposal["current_branch"] if proposal else None,
+        "proposed_commit_title": proposed_commit_title,
+        "proposed_commit_body": proposed_commit_body,
+        "required_check_commands": proposal["related_test_commands"] if proposal else [],
+        "check_results": check_results or [],
+        "checks_validated": not check_blockers,
+        "deleted_files": proposal["deleted_files"] if proposal else [],
+        "approved_deleted_files": [
+            _normalize_repo_path(path) for path in (approved_deleted_files or [])
+        ],
+        "deletions_validated": not deletion_blockers,
+        "blockers": unique_blockers,
+        "commit_allowed": False,
+        "commit_enabled": False,
+        "commit_execution_enabled": False,
+        "push_allowed": False,
+        "creates_push_queue_item": False,
+        "proposal_stale": any(
+            blocker in unique_blockers
+            for blocker in ("git_head_mismatch", "dirty_tree_fingerprint_mismatch")
+        ),
+        "actions_taken": False,
+        "next_step": (
+            "approval fields validate, but commit execution is not implemented for Level 3 yet"
+            if approval_validated
+            else "resolve approval preview blockers before requesting Level 3 commit execution"
+        ),
+    }
+
+
+def build_level_3_commit_execution_block(
+    *,
+    proposal_id: str,
+    approval_id: str | None,
+    approved_by: str | None,
+) -> dict[str, Any]:
+    proposals_payload = build_level_3_commit_proposal_preview(level_2_readiness=None)
+    proposal = next(
+        (
+            item
+            for item in proposals_payload["commit_proposals"]
+            if item["proposal_id"] == proposal_id
+        ),
+        None,
+    )
+    blockers = ["level_3_commit_execution_not_implemented"]
+    if proposal is None:
+        blockers.append("proposal_not_found")
+    if not approval_id:
+        blockers.append("approval_id_required")
+    if not approved_by:
+        blockers.append("approved_by_required")
+    if str(approved_by or "").strip().lower() == "cartographer":
+        blockers.append("cartographer_self_approval_blocked")
+
+    return {
+        "status": "blocked",
+        "level": 3,
+        "mode": "commit_execution_hard_block",
+        "proposal_id": proposal_id,
+        "proposal_found": proposal is not None,
+        "approval_id": approval_id,
+        "approved_by": approved_by,
+        "blockers": list(dict.fromkeys(blockers)),
+        "commit_allowed": False,
+        "commit_enabled": False,
+        "commit_execution_enabled": False,
+        "commit_created": False,
+        "push_allowed": False,
+        "push_enabled": False,
+        "push_created": False,
+        "creates_push_queue_item": False,
+        "branch_creation_allowed": False,
+        "stash_allowed": False,
+        "cleanup_allowed": False,
+        "actions_taken": False,
+        "next_step": "Use approval-preview only; Level 3 local commit execution requires a separately approved implementation increment.",
+    }
+
+
+def _level_3_deletion_blockers(
+    proposal: dict[str, Any] | None,
+    approved_deleted_files: list[str],
+) -> list[str]:
+    if proposal is None:
+        return []
+    deleted = sorted(_normalize_repo_path(path) for path in proposal["deleted_files"])
+    if not deleted:
+        return []
+    approved = sorted(_normalize_repo_path(path) for path in approved_deleted_files)
+    if approved != deleted:
+        return ["explicit_deletion_approval_required"]
+    return []
+
+
+def _level_3_check_blockers(
+    proposal: dict[str, Any] | None,
+    check_results: list[dict[str, Any]],
+) -> list[str]:
+    if proposal is None:
+        return []
+    required = [str(command) for command in proposal["related_test_commands"]]
+    if not required:
+        return []
+    if not check_results:
+        return ["required_checks_missing"]
+
+    by_command = {
+        str(result.get("command")): str(result.get("status")).lower()
+        for result in check_results
+        if isinstance(result, dict) and result.get("command")
+    }
+    missing = [command for command in required if command not in by_command]
+    failed = [
+        command
+        for command in required
+        if by_command.get(command) not in {"passed", "ok", "success"}
+    ]
+    blockers: list[str] = []
+    if missing:
+        blockers.append("required_checks_missing")
+    if failed:
+        blockers.append("required_checks_failed")
+    return blockers
 
 
 def _commit_files(proposal: ProposalRecord, git_status: GitStatus) -> list[str]:
@@ -173,6 +550,262 @@ def _dirty_tree_commit_proposals(
             )
         )
     return proposals
+
+
+def _level_3_receipt(
+    proposal: CommitProposal,
+    git_status: GitStatus | None,
+) -> dict[str, Any]:
+    included_files = [_normalize_repo_path(path) for path in proposal.included_files]
+    excluded_files = [_normalize_repo_path(path) for path in proposal.excluded_files]
+    deleted_files = _deleted_files(git_status, included_files)
+    sensitive_files = [
+        path for path in included_files if _is_sensitive_path(path)
+    ]
+    forbidden_files = [
+        path for path in included_files if _is_forbidden_level_3_path(path)
+    ]
+    file_bundle = _level_3_bundle_for_files(included_files)
+    blockers = list(dict.fromkeys([
+        *proposal.commit_blockers,
+        *(["unknown_or_mixed_files_block_approval"] if file_bundle == "unknown_or_mixed" else []),
+        *(["forbidden_files_detected"] if forbidden_files else []),
+        *(["sensitive_files_detected"] if sensitive_files else []),
+    ]))
+    title = proposal.suggested_message or "chore(cartographer): review local commit bundle"
+    return {
+        "level": 3,
+        "proposal_id": proposal.commit_proposal_id,
+        "proposal_version": LEVEL_3_PROPOSAL_VERSION,
+        "created_at": _generated_at(),
+        "created_by": "cartographer",
+        "current_branch": git_status.branch if git_status else None,
+        "git_head_at_creation": git_status.head_sha if git_status else None,
+        "dirty_tree_summary": _level_3_dirty_tree_summary(git_status),
+        "dirty_tree_fingerprint": _dirty_tree_fingerprint(git_status),
+        "proposed_commit_title": title,
+        "proposed_commit_body": _level_3_commit_body(proposal, file_bundle, blockers),
+        "file_bundle": file_bundle,
+        "included_files": included_files,
+        "excluded_files": excluded_files,
+        "deleted_files": deleted_files,
+        "sensitive_files_detected": sensitive_files,
+        "forbidden_files_detected": forbidden_files,
+        "rationale_by_file": {
+            path: _rationale_for_file(path, file_bundle, proposal)
+            for path in included_files
+        },
+        "related_test_commands": _related_test_commands(file_bundle, included_files),
+        "manual_check_commands": [
+            "git status -sb",
+            "git diff --name-status",
+            "git diff --check",
+        ],
+        "risk_level": proposal.risk,
+        "blockers": blockers,
+        "approval_required": True,
+        "approval_id": None,
+        "approved_by": None,
+        "approved_at": None,
+        "commit_allowed": False,
+        "push_allowed": False,
+        "merge_allowed": False,
+        "branch_creation_allowed": False,
+        "stash_allowed": False,
+        "cleanup_allowed": False,
+        "creates_push_queue_item": False,
+        "rollback_command": proposal.rollback_command or _rollback_command(),
+        "expected_status_after_commit": "approved files committed locally; unrelated dirty files remain untouched",
+        "source_proposal_id": proposal.source_proposal_id,
+        "group_key": proposal.group_key,
+        "group_reason": proposal.group_reason,
+        "diff_summary": proposal.diff_summary,
+        "required_checks": proposal.required_checks,
+        "commit_enabled": False,
+        "action_taken": False,
+    }
+
+
+def _level_3_dirty_tree_summary(git_status: GitStatus | None) -> dict[str, Any]:
+    if git_status is None:
+        return {
+            "available": False,
+            "dirty": False,
+            "changed_file_count": 0,
+            "staged_file_count": 0,
+            "unstaged_file_count": 0,
+            "untracked_file_count": 0,
+        }
+    return {
+        "available": git_status.available,
+        "dirty": git_status.dirty,
+        "changed_file_count": len(git_status.changed_files),
+        "staged_file_count": len(git_status.staged_files),
+        "unstaged_file_count": len(git_status.unstaged_files),
+        "untracked_file_count": len(git_status.untracked_files),
+        "changed_files": [_normalize_repo_path(path) for path in git_status.changed_files],
+    }
+
+
+def _dirty_tree_fingerprint(git_status: GitStatus | None) -> str | None:
+    if git_status is None:
+        return None
+    parts = [
+        git_status.project_id or "",
+        git_status.branch or "",
+        git_status.head_sha or "",
+        ",".join(sorted(_normalize_repo_path(path) for path in git_status.changed_files)),
+        ",".join(sorted(_normalize_repo_path(path) for path in git_status.staged_files)),
+        ",".join(sorted(_normalize_repo_path(path) for path in git_status.unstaged_files)),
+        ",".join(sorted(_normalize_repo_path(path) for path in git_status.untracked_files)),
+    ]
+    return sha256("|".join(parts).encode("utf-8")).hexdigest()
+
+
+def _level_3_bundle_for_files(files: list[str]) -> str:
+    bundles = {_level_3_bundle_for_file(path) for path in files}
+    if not bundles:
+        return "unknown_or_mixed"
+    if "forbidden_or_sensitive" in bundles:
+        return "forbidden_or_sensitive"
+    if len(bundles) == 1:
+        return next(iter(bundles))
+    if bundles <= {"cartographer_level_3", "cartographer_level_3_plan"}:
+        return "cartographer_level_3"
+    return "unknown_or_mixed"
+
+
+def _level_3_bundle_for_file(path: str) -> str:
+    normalized = _normalize_repo_path(path)
+    lowered = normalized.lower()
+    if _is_forbidden_level_3_path(normalized):
+        return "forbidden_or_sensitive"
+    if normalized == "docs/cartographer-level-1-autonomy-plan.md":
+        return "cartographer_level_1"
+    if normalized == "docs/cartographer-level-2-autonomy-plan.md":
+        return "cartographer_level_2"
+    if normalized == "docs/cartographer-level-3-autonomy-plan.md":
+        return "cartographer_level_3_plan"
+    if (
+        lowered.startswith("source_proxy/cartographer/")
+        or lowered == "source_proxy/api/cartographer.py"
+        or lowered.startswith("source_proxy/tests/test_cartographer")
+    ):
+        return "cartographer_level_3"
+    if lowered.startswith("scout/src/scout/"):
+        return "scout_backend"
+    if (
+        lowered.startswith("src/components/dashboard/")
+        or lowered.startswith("src/lib/scout")
+        or lowered.startswith("src/app/api/scout/")
+    ):
+        return "scout_dashboard"
+    if lowered.startswith("src/components/coding/"):
+        return "coding_cockpit"
+    if lowered.endswith(".md") or lowered.startswith("docs/"):
+        return "docs_only"
+    if lowered in {
+        "cartographerbeta.md",
+        "cartogrpaherplanauto.md",
+        "codingagentoverhaul.md",
+        "masteroverhual.md",
+        "post-v1-diag.md",
+        "productionproxy.md",
+        "spiritblueprinter.md",
+        "scoutrefinemint.md",
+    }:
+        return "old_plan_cleanup"
+    return "unknown_or_mixed"
+
+
+def _is_forbidden_level_3_path(path: str) -> bool:
+    normalized = _normalize_repo_path(path)
+    lowered = normalized.lower()
+    if (
+        not normalized
+        or normalized.startswith("/")
+        or normalized.startswith("~")
+        or any(segment == ".." for segment in normalized.split("/"))
+    ):
+        return True
+    if any(fnmatchcase(lowered, pattern.lower()) for pattern in FORBIDDEN_FILE_PATTERNS):
+        return True
+    if any(fnmatchcase(lowered, pattern.lower()) for pattern in CONFIG_FILE_PATTERNS):
+        return True
+    return lowered.endswith(BINARY_FILE_SUFFIXES)
+
+
+def _is_sensitive_path(path: str) -> bool:
+    lowered = _normalize_repo_path(path).lower()
+    return any(
+        marker in lowered
+        for marker in ("secret", "token", "credential", "password", ".env", "private-key")
+    )
+
+
+def _deleted_files(git_status: GitStatus | None, files: list[str]) -> list[str]:
+    if git_status is None or not git_status.root:
+        return []
+    result = subprocess.run(
+        ["git", "diff", "--name-status", "--", *files],
+        cwd=git_status.root,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    deleted: list[str] = []
+    for line in result.stdout.splitlines():
+        status, _separator, path = line.partition("\t")
+        if status.startswith("D") and path:
+            deleted.append(_normalize_repo_path(path))
+    return sorted(dict.fromkeys(deleted))
+
+
+def _level_3_commit_body(
+    proposal: CommitProposal,
+    file_bundle: str,
+    blockers: list[str],
+) -> str:
+    lines = [
+        proposal.story or "Cartographer Level 3 commit proposal.",
+        "",
+        f"Bundle: {file_bundle}",
+        f"Risk: {proposal.risk}",
+        f"Files: {len(proposal.included_files)}",
+    ]
+    if blockers:
+        lines.append(f"Blocked until: {', '.join(blockers)}")
+    return "\n".join(lines)
+
+
+def _rationale_for_file(path: str, file_bundle: str, proposal: CommitProposal) -> str:
+    return (
+        f"{path} is grouped in {file_bundle} because it shares the "
+        f"{proposal.component} component and {proposal.risk} risk profile for this review bundle."
+    )
+
+
+def _related_test_commands(file_bundle: str, files: list[str]) -> list[str]:
+    commands = ["git diff --check"]
+    if file_bundle.startswith("cartographer_level_"):
+        commands.extend(
+            [
+                'PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -k "level_3 or commit"',
+                "PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_safety_audit.py",
+            ]
+        )
+    elif file_bundle == "scout_backend":
+        commands.append("PYTHONPATH=. .venv/bin/python -m pytest scout/src/scout/tests")
+    elif file_bundle in {"scout_dashboard", "coding_cockpit"}:
+        commands.append("npm test")
+    elif any(path.endswith(".py") for path in files):
+        commands.append("PYTHONPATH=. .venv/bin/python -m pytest")
+    return list(dict.fromkeys(commands))
+
+
+def _generated_at() -> str:
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 def _suggested_message(proposal: ProposalRecord) -> str:
