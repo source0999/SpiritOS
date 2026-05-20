@@ -8,6 +8,7 @@ from scout.debugger.verdict import DebuggerVerdict
 from scout.packets.promotions import (
     PromotionError,
     approve_promotion,
+    dry_run_proxy_import,
     finalize_approved_promotion,
     list_promotions,
     list_queued_promotions,
@@ -185,6 +186,49 @@ def test_queue_promotion_after_rejection_creates_new_pending_request(tmp_path):
     assert second["status"] == "queued"
 
 
+def test_dry_run_proxy_import_validates_without_mutation(tmp_path):
+    settings = _settings(tmp_path)
+    insert_packet(settings, make_packet("pkt_import_dry_run"))
+    _insert_verdict(settings, "pkt_import_dry_run", "promote")
+    promotion_id = queue_promotion(settings, "pkt_import_dry_run", force=True)[
+        "promotion_id"
+    ]
+    approve_promotion(settings, promotion_id, approved_by="tester")
+    before = _promotion_statuses(settings)
+
+    result = dry_run_proxy_import(settings, promotion_id)
+
+    assert result["dry_run"] is True
+    assert result["import_ready"] is True
+    assert result["read_only"] is True
+    assert result["mutation_allowed"] is False
+    assert result["promotion_id"] == promotion_id
+    assert result["packet_id"] == "pkt_import_dry_run"
+    assert result["verdict_decision"] == "promote"
+    assert result["would_call_proxy_intake"] is False
+    assert result["would_write_proxy_memory"] is False
+    assert result["would_write_coding_context"] is False
+    assert result["would_finalize_promotion"] is False
+    assert "proxy memory writes" in result["forbidden_actions"]
+    assert "promotion finalization" in result["forbidden_actions"]
+    assert _promotion_statuses(settings) == before
+    assert not (settings.data_dir / "audit" / "promotions_applied.jsonl").exists()
+
+
+def test_dry_run_proxy_import_requires_approved_promote_verdict(tmp_path):
+    settings = _settings(tmp_path)
+    insert_packet(settings, make_packet("pkt_dry_run_surface"))
+    _insert_verdict(settings, "pkt_dry_run_surface", "surface")
+    promotion_id = queue_promotion(settings, "pkt_dry_run_surface")["promotion_id"]
+
+    with pytest.raises(PromotionError, match="approved"):
+        dry_run_proxy_import(settings, promotion_id)
+
+    approve_promotion(settings, promotion_id, approved_by="tester")
+    with pytest.raises(PromotionError, match="promote"):
+        dry_run_proxy_import(settings, promotion_id)
+
+
 @pytest.mark.anyio
 async def test_finalize_approved_promotion_posts_signed_payload(tmp_path, monkeypatch):
     settings = _settings(tmp_path)
@@ -224,3 +268,14 @@ async def test_finalize_approved_promotion_posts_signed_payload(tmp_path, monkey
     assert captured["headers"]["X-Scout-Signature"].startswith("sha256=")
     assert payload["approved"] is True
     assert audit["promotion_id"] == promotion_id
+
+
+def _promotion_statuses(settings: ScoutSettings) -> dict[str, str]:
+    conn = open_connection(settings.database_path)
+    try:
+        return {
+            row["promotion_id"]: row["status"]
+            for row in conn.execute("SELECT promotion_id, status FROM promotion_queue")
+        }
+    finally:
+        conn.close()
