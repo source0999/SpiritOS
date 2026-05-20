@@ -786,11 +786,11 @@ function ScoutPromotionCards({
               <div className="dashboard-demo-v4-scout-actions">
                 <button type="button" onClick={() => onApprove(promotion)} disabled={busy}>
                   <Check className="h-3.5 w-3.5" aria-hidden />
-                  Promote Packet
+                  Manual Promote Packet
                 </button>
                 <button type="button" onClick={() => onReject(promotion)} disabled={busy}>
                   <X className="h-3.5 w-3.5" aria-hidden />
-                  Reject Packet
+                  Manual Reject Packet
                 </button>
               </div>
             ) : null}
@@ -1158,15 +1158,15 @@ function ScoutSourceCandidateCards({
               <div className="dashboard-demo-v4-scout-actions">
                 <button type="button" onClick={() => onApprove(candidate)} disabled={busy}>
                   <Check className="h-3.5 w-3.5" aria-hidden />
-                  Approve Source
+                  Manual Approve Source
                 </button>
                 <button type="button" onClick={() => onReject(candidate)} disabled={busy}>
                   <X className="h-3.5 w-3.5" aria-hidden />
-                  Reject Source
+                  Manual Reject Source
                 </button>
                 <button type="button" onClick={() => onBlock(candidate)} disabled={busy}>
                   <Ban className="h-3.5 w-3.5" aria-hidden />
-                  Block Source
+                  Manual Block Source
                 </button>
               </div>
             ) : null}
@@ -1261,7 +1261,7 @@ function ScoutBatchApprovalPanel({
       <div className="dashboard-demo-v4-scout-actions">
         <button type="button" onClick={onApproveSelected} disabled={busy}>
           <Check className="h-3.5 w-3.5" aria-hidden />
-          Approve Selected Sources
+          Manual Approve Selected Sources
         </button>
       </div>
     </div>
@@ -1363,22 +1363,22 @@ function ScoutDiscoveryJobs({
               {canPause ? (
                 <button type="button" onClick={() => onPause(job)} disabled={busy}>
                   <Pause className="h-3.5 w-3.5" aria-hidden />
-                  Pause
+                  Manual Pause Plan
                 </button>
               ) : null}
               {canResume ? (
                 <button type="button" onClick={() => onResume(job)} disabled={busy}>
                   <Play className="h-3.5 w-3.5" aria-hidden />
-                  Resume
+                  Manual Resume Plan
                 </button>
               ) : null}
               <button type="button" onClick={() => onPreview(job)} disabled={!canRun || busy}>
                 <Search className="h-3.5 w-3.5" aria-hidden />
-                Preview Search
+                Manual Preview Search
               </button>
               <button type="button" onClick={() => onExtract(job)} disabled={!canRun || busy}>
                 <Plus className="h-3.5 w-3.5" aria-hidden />
-                Extract Candidates
+                Manual Extract Candidates
               </button>
             </div>
           </li>
@@ -1435,7 +1435,7 @@ function ScoutDiscoveryPanel({
         />
         <button type="button" onClick={onCreate} disabled={!query.trim()}>
           <Plus className="h-3.5 w-3.5" aria-hidden />
-          Create
+          Save Manual Plan
         </button>
       </div>
       <ScoutDiscoveryJobs
