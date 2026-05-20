@@ -479,6 +479,66 @@ def _load_approved_promotion_payload(
     return dict(row), packet, verdict, body, signature
 
 
+def _manual_import_receipt_preview(
+    row: dict,
+    packet: IntelligencePacket,
+    verdict: DebuggerVerdict,
+    body: bytes,
+) -> dict:
+    trust = classify_source(packet.source_uri)
+    return {
+        "receipt_version": 1,
+        "event": "scout_manual_import_receipt_preview",
+        "imported": False,
+        "dry_run": True,
+        "manual_controlled": True,
+        "operator_required": True,
+        "promotion_id": row["promotion_id"],
+        "packet_id": packet.packet_id,
+        "approved_by": row["approved_by"],
+        "approved_at": row["approved_at"],
+        "written_at": None,
+        "intake_log_path": None,
+        "payload_sha256": row["payload_sha256"],
+        "signed_payload_sha256": hashlib.sha256(body).hexdigest(),
+        "signature_key_hint": "configured",
+        "verdict_decision": verdict.decision,
+        "source_uri": packet.source_uri,
+        "source_trust_label": trust.trust_label,
+        "authority": "append_only_evidence",
+        "applied": False,
+        "approved_proxy_action": False,
+        "writes": {
+            "append_only_evidence": False,
+            "proxy_memory": False,
+            "coding_context": False,
+            "active_context": False,
+        },
+        "rollback": {
+            "promotion_id": row["promotion_id"],
+            "intake_log_path": None,
+            "rollback_action": "none_needed_for_dry_run",
+            "tombstone_event": "scout_manual_import_tombstone",
+            "delete_allowed": False,
+        },
+        "safety": {
+            "automatic_packet_promotion": False,
+            "proxy_memory_write": False,
+            "coding_context_write": False,
+            "active_context_changed": False,
+            "source_activation": False,
+            "discovery_job_created": False,
+            "search_preview_ran": False,
+            "candidate_extraction_ran": False,
+            "apply_action": False,
+            "commit": False,
+            "push": False,
+            "hidden_background_worker": False,
+            "scheduled_write": False,
+        },
+    }
+
+
 def dry_run_proxy_import(settings: ScoutSettings, promotion_id: str) -> dict:
     row, packet, verdict, body, signature = _load_approved_promotion_payload(
         settings,
@@ -498,6 +558,7 @@ def dry_run_proxy_import(settings: ScoutSettings, promotion_id: str) -> dict:
         "signed_payload_sha256": hashlib.sha256(body).hexdigest(),
         "signature_preview": f"sha256={signature[:12]}...",
         "proxy_intake_url": settings.promotion_proxy_intake_url,
+        "receipt_preview": _manual_import_receipt_preview(row, packet, verdict, body),
         "would_call_proxy_intake": False,
         "would_write_proxy_memory": False,
         "would_write_coding_context": False,
