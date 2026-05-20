@@ -22,6 +22,10 @@ from source_proxy.testing.runner import (
     PROFILE_SCOUT_SOAK_SNAPSHOT,
     PROFILE_SCOUT_SOURCE_GATE,
     PROFILE_SCOUT_SMOKE,
+    _global_safety_mutation_notes,
+    _unexpected_level_2_evidence_delta,
+    _unexpected_level_2_evidence_in_global_safety,
+    _unexpected_status_delta,
     format_runner_report,
     main,
     run_runner_profile,
@@ -112,6 +116,29 @@ class ProxyRunnerTests(unittest.TestCase):
             payload["file_change_verdict"]["background_status_delta"],
             [after_status.strip()],
         )
+
+    def test_mutation_policy_allows_level_2_evidence_only_in_explicit_profile(self) -> None:
+        level_2_status = "?? scout/soak-logs/scout-level-2-evidence-2026-05-20T015829Z.json"
+        scout_soak_status = "?? scout/soak-logs/scout-soak-snapshot-2026-05-20T015829Z.json"
+
+        self.assertEqual(_unexpected_level_2_evidence_delta([level_2_status]), [])
+        self.assertEqual(_unexpected_status_delta([scout_soak_status]), [])
+        self.assertEqual(_unexpected_status_delta([level_2_status]), [level_2_status])
+        self.assertEqual(
+            _unexpected_level_2_evidence_in_global_safety([level_2_status]),
+            [level_2_status],
+        )
+        self.assertEqual(_unexpected_level_2_evidence_in_global_safety([scout_soak_status]), [])
+
+    def test_global_safety_level_2_evidence_note_explains_concurrent_snapshot_risk(self) -> None:
+        level_2_status = "?? scout/soak-logs/scout-level-2-evidence-2026-05-20T015829Z.json"
+
+        notes = _global_safety_mutation_notes([level_2_status])
+
+        self.assertEqual(len(notes), 1)
+        self.assertIn("expected only during the explicit scout-level-2-evidence-snapshot profile", notes[0])
+        self.assertIn("concurrent/manual Level 2 evidence run", notes[0])
+        self.assertIn("another wrapper invoked that profile nearby", notes[0])
 
     def test_cartographer_soak_snapshot_writes_reliability_report(self) -> None:
         from source_proxy.testing.runner import _run_cartographer_soak_snapshot_profile
@@ -862,6 +889,48 @@ class ProxyRunnerTests(unittest.TestCase):
         self.assertEqual(payload["result"], "fail")
         self.assertTrue(payload["file_change_verdict"]["changed_by_test_run"])
         self.assertEqual(payload["recommendation"], "fix needed")
+
+    def test_global_safety_regression_explains_unexpected_level_2_evidence(self) -> None:
+        proxy_smoke = {"profile": PROFILE_PROXY_SMOKE, "result": "pass"}
+        cartographer = {"profile": PROFILE_CARTOGRAPHER_SAFETY, "result": "pass"}
+        command_result = {
+            "command": "python -m pytest test_file.py",
+            "returncode": 0,
+            "stdout": "passed\n",
+            "stderr": "",
+            "error": None,
+        }
+        level_2_status = "?? scout/soak-logs/scout-level-2-evidence-2026-05-20T015829Z.json"
+
+        with mock.patch(
+            "source_proxy.testing.runner._git_status_short",
+            side_effect=["clean", level_2_status],
+        ), mock.patch(
+            "source_proxy.testing.runner._git_head",
+            side_effect=["abc123", "abc123"],
+        ), mock.patch(
+            "source_proxy.testing.runner._run_proxy_smoke_profile",
+            return_value=proxy_smoke,
+        ), mock.patch(
+            "source_proxy.testing.runner._run_cartographer_safety_profile",
+            return_value=cartographer,
+        ), mock.patch(
+            "source_proxy.testing.runner._run_command",
+            side_effect=[command_result, command_result, command_result],
+        ):
+            payload = run_runner_profile(profile=PROFILE_GLOBAL_SAFETY_REGRESSION)
+
+        self.assertEqual(payload["result"], "fail")
+        self.assertEqual(payload["file_change_verdict"]["unexpected_status_delta"], [level_2_status])
+        self.assertEqual(
+            payload["file_change_verdict"]["unexpected_level_2_evidence_files"],
+            [level_2_status],
+        )
+        self.assertIn("global-safety-regression allows scout-soak-snapshot-*", payload["file_change_verdict"]["mutation_policy"])
+        self.assertTrue(payload["file_change_verdict"]["mutation_notes"])
+        report = format_runner_report(payload)
+        self.assertIn("unexpected Level 2 evidence", report)
+        self.assertIn("concurrent/manual Level 2 evidence run", report)
 
     def test_dependency_environment_checks_report_required_baseline(self) -> None:
         dependency_payload = {"result": "pass", "blockers": [], "warnings": []}

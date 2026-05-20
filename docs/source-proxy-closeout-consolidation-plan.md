@@ -694,6 +694,13 @@ Expected final state:
 
 This plan does not authorize automatic rollback or cleanup.
 
+Increment 2.1 result note:
+
+- `scout-level-2-evidence-*` is expected generated evidence only inside the explicit `scout-level-2-evidence-snapshot` runner profile.
+- `global-safety-regression` remains strict: it still allows the existing `scout-soak-snapshot-*` background evidence pattern, but it does not globally allowlist `scout-level-2-evidence-*`.
+- If `scout-level-2-evidence-*` appears during `global-safety-regression`, the runner now reports it as unexpected and explains the likely causes: a concurrent/manual Level 2 evidence snapshot run, another wrapper invoking that profile nearby, or a real unexpected mutation.
+- No automatic cleanup or deletion is part of this policy.
+
 Manual rollback review procedure:
 
 1. Capture `git status --short` and `git diff --name-status`.
