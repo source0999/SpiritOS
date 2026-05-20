@@ -1,0 +1,32 @@
+{
+  "approval_id": "approval-level-2-docs-apply-smoke-2026-05-20",
+  "approved_at": "2026-05-20T02:40:00Z",
+  "approved_by": "Britton",
+  "approved_diff": "diff --git a/docs/cartographer-level-2-apply-smoke.md b/docs/cartographer-level-2-apply-smoke.md\nnew file mode 100644\nindex 0000000..c432321\n--- /dev/null\n+++ b/docs/cartographer-level-2-apply-smoke.md\n@@ -0,0 +1,17 @@\n+# Cartographer Level 2 Apply Smoke\n+\n+status: applied-by-level-2\n+\n+Status date: 2026-05-20\n+\n+This document records a human-approved Level 2 docs-only apply smoke.\n+\n+The smoke verifies that Cartographer Level 2 can apply an explicitly approved documentation patch while preserving these boundaries:\n+\n+- no source files are touched\n+- no tests are edited\n+- no files are staged\n+- no commit is created by the apply action\n+- no push is created by the apply action\n+- a Level 2 apply receipt is written\n+- rollback remains a normal human git operation\n",
+  "component": "cartographer",
+  "created_at": "2026-05-20T02:39:00Z",
+  "git_head_at_creation": "73b3daf6b72391a83513a60782a30db693f5869e",
+  "manual_check_command": "git diff --check -- docs/cartographer-level-2-apply-smoke.md docs/cartographer-level-2-apply-receipts/level-2-docs-apply-smoke-2026-05-20.md",
+  "proposal_id": "level-2-docs-apply-smoke-2026-05-20",
+  "proposed_files": [
+    "docs/cartographer-level-2-apply-smoke.md"
+  ],
+  "rollback_hint": "git restore docs/cartographer-level-2-apply-smoke.md docs/cartographer-level-2-apply-receipts/level-2-docs-apply-smoke-2026-05-20.md",
+  "status": "approved",
+  "target_paths": [
+    "docs/cartographer-level-2-apply-smoke.md"
+  ],
+  "transitions": [
+    {
+      "actor": "cartographer",
+      "status": "pending_human_approval",
+      "timestamp": "2026-05-20T02:39:00Z"
+    },
+    {
+      "actor": "Britton",
+      "status": "approved",
+      "timestamp": "2026-05-20T02:40:00Z"
+    }
+  ],
+  "type": "level_2_docs_apply"
+}
