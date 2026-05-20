@@ -936,7 +936,9 @@ export function ScoutIntelligenceCenter({
           <div>
             <p>Scout Intelligence</p>
             <h1>Intelligence Center</h1>
-            <span>Readable review space for Scout briefings, source approvals, and safe search plans.</span>
+            <span>
+              Live Scout API view for briefings, source approvals, and safe search plans. Refreshes every 30 seconds.
+            </span>
           </div>
           <div className="scout-center-header-actions">
             <HomelabStatusBadge variant={state === "error" ? "offline" : state === "loading" ? "pending" : "live"}>
