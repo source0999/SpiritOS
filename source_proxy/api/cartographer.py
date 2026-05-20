@@ -48,7 +48,27 @@ from source_proxy.cartographer.service import (
     build_cartographer_level_4_push_readiness_contract,
     build_cartographer_level_4_push_queue_approval_preview,
     build_cartographer_level_4_push_queue_proposal_preview,
+    build_cartographer_level_6_component_ownership_assignment,
+    build_cartographer_level_6_cross_project_status_board,
+    build_cartographer_level_6_cross_repo_dirty_tree_classifier,
+    build_cartographer_level_6_multi_project_closeout_dashboard,
     build_cartographer_level_6_project_registry_hardening,
+    build_cartographer_level_7_closeout_dashboard,
+    build_cartographer_level_7_disabled_by_default,
+    build_cartographer_level_7_dry_run_action_packet,
+    build_cartographer_level_7_exact_approval_handshake,
+    build_cartographer_level_7_next_safe_action,
+    build_cartographer_level_8_stop_failure_handling,
+    build_cartographer_level_8_closeout_smoke,
+    build_cartographer_level_9_worker_registry,
+    build_cartographer_level_9_one_worker_rule,
+    build_cartographer_level_9_allowed_file_conflict_checker,
+    build_cartographer_level_9_branch_worktree_proposal_queue,
+    build_cartographer_level_9_stale_worker_closeout_packet,
+    build_cartographer_level_9_coordination_dashboard,
+    build_cartographer_level_8_receipt_journal,
+    build_cartographer_level_8_step_approval_preview,
+    build_cartographer_level_8_workflow_run_card,
     build_cartographer_level_5_branch_worktree_approval_preview,
     build_cartographer_level_5_branch_recommendation_refresh,
     build_cartographer_level_5_multi_worker_safety_smoke,
@@ -177,6 +197,23 @@ class CartographerLevel5BranchWorktreeApprovalPreviewRequest(BaseModel):
     command_preview: str | None = Field(default=None, max_length=1000)
 
 
+class CartographerLevel7ExactApprovalHandshakeRequest(BaseModel):
+    approval_id: str | None = Field(default=None, max_length=160)
+    approved_by: str | None = Field(default=None, max_length=120)
+    exact_allowed_files: list[str] = Field(default_factory=list, max_length=200)
+    exact_forbidden_actions: list[str] = Field(default_factory=list, max_length=200)
+    exact_manual_check_commands: list[str] = Field(default_factory=list, max_length=50)
+    approved_at: str | None = Field(default=None, max_length=80)
+
+
+class CartographerLevel8StepApprovalPreviewRequest(BaseModel):
+    approval_id: str | None = Field(default=None, max_length=160)
+    approved_by: str | None = Field(default=None, max_length=120)
+    exact_step_title: str = Field(default="", max_length=240)
+    exact_manual_check_commands: list[str] = Field(default_factory=list, max_length=50)
+    approved_at: str | None = Field(default=None, max_length=80)
+
+
 @router.get("/status")
 async def cartographer_status() -> dict[str, Any]:
     return build_cartographer_status()
@@ -195,6 +232,129 @@ async def cartographer_project_candidates() -> dict[str, Any]:
 @router.get("/level-6-project-registry")
 async def cartographer_level_6_project_registry() -> dict[str, Any]:
     return build_cartographer_level_6_project_registry_hardening()
+
+
+@router.get("/level-6-cross-project-status-board")
+async def cartographer_level_6_cross_project_status_board() -> dict[str, Any]:
+    return build_cartographer_level_6_cross_project_status_board()
+
+
+@router.get("/level-6-component-ownership")
+async def cartographer_level_6_component_ownership() -> dict[str, Any]:
+    return build_cartographer_level_6_component_ownership_assignment()
+
+
+@router.get("/level-6-cross-repo-dirty-tree")
+async def cartographer_level_6_cross_repo_dirty_tree() -> dict[str, Any]:
+    return build_cartographer_level_6_cross_repo_dirty_tree_classifier()
+
+
+@router.get("/level-6-multi-project-closeout")
+async def cartographer_level_6_multi_project_closeout() -> dict[str, Any]:
+    return build_cartographer_level_6_multi_project_closeout_dashboard()
+
+
+@router.get("/level-7-disabled-by-default")
+async def cartographer_level_7_disabled_by_default() -> dict[str, Any]:
+    return build_cartographer_level_7_disabled_by_default()
+
+
+@router.get("/level-7-next-safe-action")
+async def cartographer_level_7_next_safe_action() -> dict[str, Any]:
+    return build_cartographer_level_7_next_safe_action()
+
+
+@router.get("/level-7-dry-run-action-packet")
+async def cartographer_level_7_dry_run_action_packet() -> dict[str, Any]:
+    return build_cartographer_level_7_dry_run_action_packet()
+
+
+@router.post("/level-7-dry-run-action-packet/{packet_id}/approval-preview")
+async def cartographer_level_7_exact_approval_handshake(
+    packet_id: str,
+    request: CartographerLevel7ExactApprovalHandshakeRequest,
+) -> dict[str, Any]:
+    return build_cartographer_level_7_exact_approval_handshake(
+        packet_id=packet_id,
+        approval_id=request.approval_id,
+        approved_by=request.approved_by,
+        exact_allowed_files=request.exact_allowed_files,
+        exact_forbidden_actions=request.exact_forbidden_actions,
+        exact_manual_check_commands=request.exact_manual_check_commands,
+        approved_at=request.approved_at,
+    )
+
+
+@router.get("/level-7-closeout-dashboard")
+async def cartographer_level_7_closeout_dashboard() -> dict[str, Any]:
+    return build_cartographer_level_7_closeout_dashboard()
+
+
+@router.get("/level-8-workflow-run-card")
+async def cartographer_level_8_workflow_run_card() -> dict[str, Any]:
+    return build_cartographer_level_8_workflow_run_card()
+
+
+@router.post("/level-8-workflow-run-card/{workflow_id}/steps/{step_id}/approval-preview")
+async def cartographer_level_8_step_approval_preview(
+    workflow_id: str,
+    step_id: str,
+    request: CartographerLevel8StepApprovalPreviewRequest,
+) -> dict[str, Any]:
+    return build_cartographer_level_8_step_approval_preview(
+        workflow_id=workflow_id,
+        step_id=step_id,
+        approval_id=request.approval_id,
+        approved_by=request.approved_by,
+        exact_step_title=request.exact_step_title,
+        exact_manual_check_commands=request.exact_manual_check_commands,
+        approved_at=request.approved_at,
+    )
+
+
+@router.get("/level-8-receipt-journal")
+async def cartographer_level_8_receipt_journal() -> dict[str, Any]:
+    return build_cartographer_level_8_receipt_journal()
+
+
+@router.get("/level-8-stop-failure-handling")
+async def cartographer_level_8_stop_failure_handling() -> dict[str, Any]:
+    return build_cartographer_level_8_stop_failure_handling()
+
+
+@router.get("/level-8-closeout-smoke")
+async def cartographer_level_8_closeout_smoke() -> dict[str, Any]:
+    return build_cartographer_level_8_closeout_smoke()
+
+
+@router.get("/level-9-worker-registry")
+async def cartographer_level_9_worker_registry() -> dict[str, Any]:
+    return build_cartographer_level_9_worker_registry()
+
+
+@router.get("/level-9-one-worker-rule")
+async def cartographer_level_9_one_worker_rule() -> dict[str, Any]:
+    return build_cartographer_level_9_one_worker_rule()
+
+
+@router.get("/level-9-allowed-file-conflicts")
+async def cartographer_level_9_allowed_file_conflicts() -> dict[str, Any]:
+    return build_cartographer_level_9_allowed_file_conflict_checker()
+
+
+@router.get("/level-9-branch-worktree-proposals")
+async def cartographer_level_9_branch_worktree_proposals() -> dict[str, Any]:
+    return build_cartographer_level_9_branch_worktree_proposal_queue()
+
+
+@router.get("/level-9-stale-worker-closeout")
+async def cartographer_level_9_stale_worker_closeout() -> dict[str, Any]:
+    return build_cartographer_level_9_stale_worker_closeout_packet()
+
+
+@router.get("/level-9-coordination-dashboard")
+async def cartographer_level_9_coordination_dashboard() -> dict[str, Any]:
+    return build_cartographer_level_9_coordination_dashboard()
 
 
 @router.get("/project-health")

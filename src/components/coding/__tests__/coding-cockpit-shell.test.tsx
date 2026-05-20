@@ -42,15 +42,9 @@ describe("CodingCockpitShell", () => {
     expect(screen.getByText("Approval Gate")).toBeInTheDocument();
     expect(screen.getByText("Apply Result")).toBeInTheDocument();
     expect(screen.getByText("Terminal/Test Evidence")).toBeInTheDocument();
-    expect(screen.getByRole("complementary", { name: "Task actions" })).toHaveTextContent(
-      "Current Task",
-    );
-    expect(screen.getByRole("complementary", { name: "Task actions" })).toHaveTextContent(
-      "No active task",
-    );
-    expect(screen.getByRole("complementary", { name: "Task actions" })).toHaveTextContent(
-      "Next Safe Action",
-    );
+    expect(screen.getByText("No active task")).toBeInTheDocument();
+    expect(screen.getByText("Safe next action")).toBeInTheDocument();
+    expect(screen.queryByRole("complementary", { name: "Task actions" })).not.toBeInTheDocument();
 
     expect(screen.queryByText(/raw debug json/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/replayable logs/i)).not.toBeInTheDocument();
@@ -116,7 +110,7 @@ describe("CodingCockpitShell", () => {
     expect(screen.getAllByText("Evidence available").length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Approval is required before apply/).length).toBeGreaterThan(0);
     expect(screen.getByText("approval available")).toBeInTheDocument();
-    expect(screen.getByText(/Approval is separate from apply/)).toBeInTheDocument();
+    expect(screen.getByText("Review gates")).toBeInTheDocument();
     expect(screen.getAllByText(/Commit and push are not available here/).length).toBeGreaterThan(0);
     expect(screen.getByRole("link", { name: "Open diagnostics in /proxy-backend" })).toHaveAttribute(
       "href",

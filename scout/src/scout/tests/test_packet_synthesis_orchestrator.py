@@ -248,7 +248,61 @@ def test_ollama_synthesis_does_not_pass_response_format(tmp_path, monkeypatch):
     )
 
     assert "response_format" not in seen_kwargs
-    assert seen_kwargs["max_tokens"] == 900
+    assert seen_kwargs["max_tokens"] == 1400
+
+
+def test_ollama_json_extractor_skips_non_packet_objects_when_required():
+    inner_relation = json.dumps(
+        {
+            "source_entity": "pydantic",
+            "target_entity": "release notes",
+            "relation_label": "mentions",
+        }
+    )
+    packet = _model_packet_json()
+
+    extracted = synthesis._extract_first_json_object(
+        f"truncated relation first {inner_relation}\npacket follows {packet}",
+        required_keys=synthesis._REQUIRED_MODEL_PACKET_KEYS,
+    )
+
+    assert json.loads(extracted)["summary"].startswith("This is a sufficiently long")
+
+
+def test_ollama_json_extractor_tolerates_ellipsis_placeholders_when_required():
+    packet = json.loads(_model_packet_json())
+    packet["graph_relations"] = [
+        {
+            "source_entity": "pydantic",
+            "target_entity": "first",
+            "relation_label": "commit",
+        },
+        {
+            "source_entity": "pydantic",
+            "target_entity": "second",
+            "relation_label": "commit",
+        },
+    ]
+    raw = json.dumps(packet, indent=2)
+    raw = raw.replace(
+        '    {\n      "source_entity": "pydantic",\n      "target_entity": "second",\n      "relation_label": "commit"\n    }',
+        "    ...",
+    )
+
+    extracted = synthesis._extract_first_json_object(
+        raw,
+        required_keys=synthesis._REQUIRED_MODEL_PACKET_KEYS,
+    )
+
+    parsed = json.loads(extracted)
+    assert parsed["summary"].startswith("This is a sufficiently long")
+    assert parsed["graph_relations"] == [
+        {
+            "source_entity": "pydantic",
+            "target_entity": "first",
+            "relation_label": "commit",
+        }
+    ]
 
 
 def test_non_ollama_synthesis_keeps_structured_response_format(tmp_path, monkeypatch):

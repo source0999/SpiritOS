@@ -88,12 +88,32 @@ export type ScoutHumanReadModel = {
   queueSentence: string;
 };
 
+export type ScoutDiagnosticsCopy = {
+  packetBacklogLabel: string;
+  packetBacklogHelp: string;
+  packetSynthesisLabel: string;
+  packetSynthesisHelp: string;
+  discoveryExecutionLabel: string;
+  discoveryExecutionHelp: string;
+  memorySafetyLabel: string;
+  memorySafetyHelp: string;
+};
+
 function valueOrZero(value: number | null | undefined): number {
   return typeof value === "number" ? value : 0;
 }
 
 function plural(count: number, singular: string, pluralLabel = `${singular}s`): string {
   return `${count.toLocaleString()} ${count === 1 ? singular : pluralLabel}`;
+}
+
+function manualModeLabel(mode: string | null | undefined): string {
+  if (!mode) return "Manual-controlled";
+  return mode
+    .split(/[_\s-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join("-");
 }
 
 function jobMatches(job: ScoutDiscoveryJob, needle: string): boolean {
@@ -436,5 +456,42 @@ export function buildScoutHumanReadModel(overview: ScoutOverview): ScoutHumanRea
     budgetLeft: typeof budget?.remaining_today === "number" ? budget.remaining_today : null,
     summarySentence,
     queueSentence,
+  };
+}
+
+export function buildScoutDiagnosticsCopy(overview: ScoutOverview): ScoutDiagnosticsCopy {
+  const backlog = overview.backlog ?? {};
+  const unsynthesized = valueOrZero(backlog.unsynthesized_artifacts ?? backlog.pending_artifacts);
+  const debuggerPending = valueOrZero(
+    backlog.debugger_pending_without_verdict ?? backlog.debugger_pending_packets,
+  );
+  const totalBacklog = unsynthesized + debuggerPending;
+  const synthesis = overview.packet_synthesis ?? overview.human_summary?.packet_synthesis_status;
+  const execution = overview.discovery_jobs?.execution ?? {};
+  const automaticExecution = execution.automatic_execution === true;
+  const workerRegistered = execution.worker_registered === true;
+  const memory = overview.human_summary?.memory_status;
+
+  return {
+    packetBacklogLabel: totalBacklog === 0 ? "Backlog clear" : `${plural(totalBacklog, "item")} open`,
+    packetBacklogHelp:
+      totalBacklog === 0
+        ? "No packet synthesis or debugger backlog is reported by the live Scout API."
+        : `${plural(unsynthesized, "artifact")} waiting for synthesis; ${plural(debuggerPending, "packet")} waiting for debugger verdict.`,
+    packetSynthesisLabel: synthesis?.label ?? "Packet synthesis unknown",
+    packetSynthesisHelp:
+      synthesis?.state === "ready"
+        ? "Model route is configured and no extracted artifacts are waiting."
+        : (synthesis?.help ?? "Packet synthesis status was not reported."),
+    discoveryExecutionLabel:
+      automaticExecution || workerRegistered ? "Review discovery execution" : manualModeLabel(execution.mode),
+    discoveryExecutionHelp:
+      automaticExecution || workerRegistered
+        ? "Scout reported automatic discovery execution or a registered worker."
+        : "Discovery jobs remain saved manual search plans. No automatic execution worker is registered.",
+    memorySafetyLabel: memory?.write_enabled ? "Review memory writes" : "Memory writes off",
+    memorySafetyHelp:
+      memory?.reason ??
+      "Scout is not writing into proxy memory or coding context automatically.",
   };
 }

@@ -6,7 +6,7 @@ import Link from "next/link";
 
 import { HomelabStatusBadge } from "@/components/dashboard/HomelabStatusBadge";
 import { useScoutOverview, type ScoutOverviewFetchState } from "@/hooks/useScoutOverview";
-import { buildScoutHumanReadModel } from "@/lib/scout-human-readable";
+import { buildScoutDiagnosticsCopy, buildScoutHumanReadModel } from "@/lib/scout-human-readable";
 import type {
   ScoutOverview,
   ScoutDiscoveryJob,
@@ -350,6 +350,7 @@ export function HomelabScoutIntelligenceWidget({
 }) {
   const { data, state } = useScoutOverview(30_000, initialOverview);
   const model = data ? buildScoutHumanReadModel(data) : null;
+  const diagnostics = data ? buildScoutDiagnosticsCopy(data) : null;
   const badge = scoutSummaryBadge(
     state,
     model?.needsReview ?? 0,
@@ -398,6 +399,12 @@ export function HomelabScoutIntelligenceWidget({
             <p className="dashboard-demo-v4-empty-copy">
               {model?.queueSentence ?? "Queued searches are saved manual plans, not active forever."}
             </p>
+            {diagnostics ? (
+              <p className="dashboard-demo-v4-empty-copy">
+                {diagnostics.packetBacklogLabel} {"\u00b7"} {diagnostics.discoveryExecutionLabel} {"\u00b7"}{" "}
+                {diagnostics.memorySafetyLabel}
+              </p>
+            ) : null}
             <p className="dashboard-demo-v4-empty-copy">
               Live Scout API refresh every 30 seconds; sources, candidates, and search plans use no-store reads.
             </p>
@@ -546,12 +553,17 @@ function ScoutNotes({ overview }: { overview: ScoutOverview }) {
   const promotion = overview.human_summary?.promotion_status;
   const promotedCount = countValue(promotion?.promoted_count);
   const synthesis = overview.packet_synthesis ?? overview.human_summary?.packet_synthesis_status;
+  const diagnostics = buildScoutDiagnosticsCopy(overview);
 
   return (
     <div className="dashboard-demo-v4-scout-summary" aria-label="Scout status summary">
       <p>{headline ?? "Scout is running in read-only inspection mode."}</p>
       <p className="dashboard-demo-v4-empty-copy">
         Unique scans are counted once. Idle runs after backlog drain are normal.
+      </p>
+      <p className="dashboard-demo-v4-empty-copy">
+        {diagnostics.packetBacklogLabel} {"\u00b7"} {diagnostics.discoveryExecutionLabel} {"\u00b7"}{" "}
+        {diagnostics.memorySafetyLabel}
       </p>
       {synthesis ? (
         <p className="dashboard-demo-v4-empty-copy">
