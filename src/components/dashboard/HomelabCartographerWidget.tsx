@@ -78,6 +78,47 @@ type CartographerLevelTwoContract = {
   next_increment?: string;
 };
 
+type CartographerLevelThreeProposal = {
+  proposal_id: string;
+  file_bundle?: string;
+  included_files?: string[];
+  excluded_files?: string[];
+  proposed_commit_title?: string;
+  related_test_commands?: string[];
+  blockers?: string[];
+  approval_required?: boolean;
+  commit_allowed?: boolean;
+  push_allowed?: boolean;
+  creates_push_queue_item?: boolean;
+  rollback_command?: string;
+};
+
+type CartographerLevelThreeProposals = {
+  level?: number;
+  mode?: string;
+  proposal_count?: number;
+  proposed_bundle_count?: number;
+  blocked_bundle_count?: number;
+  commit_allowed?: boolean;
+  push_allowed?: boolean;
+  branch_creation_allowed?: boolean;
+  creates_push_queue_item?: boolean;
+  activation_blockers?: string[];
+  commit_proposals?: CartographerLevelThreeProposal[];
+};
+
+type CartographerLevelThreeCloseout = {
+  proposal_preview_ready?: boolean;
+  local_commit_ready?: boolean;
+  commit_allowed?: boolean;
+  commit_execution_enabled?: boolean;
+  push_allowed?: boolean;
+  creates_push_queue_item?: boolean;
+  blockers?: { code?: string }[];
+  manual_checks?: string[];
+  next_step?: string;
+};
+
 type FetchState = "loading" | "ready" | "error";
 
 const emptyStatus: CartographerDashboard = {
@@ -120,6 +161,31 @@ const emptyLevelTwoContract: CartographerLevelTwoContract = {
   forbidden_actions: [],
   manual_checks: [],
   expected_output: [],
+};
+
+const emptyLevelThreeProposals: CartographerLevelThreeProposals = {
+  level: 3,
+  mode: "human_approved_local_commit_proposals",
+  proposal_count: 0,
+  proposed_bundle_count: 0,
+  blocked_bundle_count: 0,
+  commit_allowed: false,
+  push_allowed: false,
+  branch_creation_allowed: false,
+  creates_push_queue_item: false,
+  activation_blockers: [],
+  commit_proposals: [],
+};
+
+const emptyLevelThreeCloseout: CartographerLevelThreeCloseout = {
+  proposal_preview_ready: false,
+  local_commit_ready: false,
+  commit_allowed: false,
+  commit_execution_enabled: false,
+  push_allowed: false,
+  creates_push_queue_item: false,
+  blockers: [],
+  manual_checks: [],
 };
 
 function formatValue(value: CartographerDashboardCard["value"]): string {
@@ -178,6 +244,10 @@ function enabledLabel(value: boolean | undefined): string {
   return value ? "Enabled" : "Disabled";
 }
 
+function readyLabel(value: boolean | undefined): string {
+  return value ? "Ready" : "Blocked";
+}
+
 export function HomelabCartographerWidget() {
   const [state, setState] = useState<FetchState>("loading");
   const [status, setStatus] = useState<CartographerDashboard>(emptyStatus);
@@ -187,13 +257,25 @@ export function HomelabCartographerWidget() {
   const [levelTwoContract, setLevelTwoContract] = useState<CartographerLevelTwoContract>(
     emptyLevelTwoContract,
   );
+  const [levelThreeProposals, setLevelThreeProposals] = useState<CartographerLevelThreeProposals>(
+    emptyLevelThreeProposals,
+  );
+  const [levelThreeCloseout, setLevelThreeCloseout] = useState<CartographerLevelThreeCloseout>(
+    emptyLevelThreeCloseout,
+  );
 
   useEffect(() => {
     let cancelled = false;
 
     async function loadStatus() {
       try {
-        const [response, levelOneResponse, levelTwoResponse] = await Promise.all([
+        const [
+          response,
+          levelOneResponse,
+          levelTwoResponse,
+          levelThreeProposalResponse,
+          levelThreeCloseoutResponse,
+        ] = await Promise.all([
           fetch("/v1/cartographer/v1-closeout-dashboard", {
             cache: "no-store",
           }),
@@ -203,10 +285,20 @@ export function HomelabCartographerWidget() {
           fetch("/v1/cartographer/level-2-api-contract", {
             cache: "no-store",
           }),
+          fetch("/v1/cartographer/level-3-commit-proposals", {
+            cache: "no-store",
+          }),
+          fetch("/v1/cartographer/level-3-closeout-readiness", {
+            cache: "no-store",
+          }),
         ]);
         const payload = (await response.json()) as CartographerDashboard;
         const levelOnePayload = (await levelOneResponse.json()) as CartographerLevelOneEvidence;
         const levelTwoPayload = (await levelTwoResponse.json()) as CartographerLevelTwoContract;
+        const levelThreeProposalPayload =
+          (await levelThreeProposalResponse.json()) as CartographerLevelThreeProposals;
+        const levelThreeCloseoutPayload =
+          (await levelThreeCloseoutResponse.json()) as CartographerLevelThreeCloseout;
         if (cancelled) return;
         setStatus({
           ...emptyStatus,
@@ -253,12 +345,34 @@ export function HomelabCartographerWidget() {
             ? levelTwoPayload.expected_output
             : [],
         });
+        setLevelThreeProposals({
+          ...emptyLevelThreeProposals,
+          ...levelThreeProposalPayload,
+          activation_blockers: Array.isArray(levelThreeProposalPayload.activation_blockers)
+            ? levelThreeProposalPayload.activation_blockers
+            : [],
+          commit_proposals: Array.isArray(levelThreeProposalPayload.commit_proposals)
+            ? levelThreeProposalPayload.commit_proposals
+            : [],
+        });
+        setLevelThreeCloseout({
+          ...emptyLevelThreeCloseout,
+          ...levelThreeCloseoutPayload,
+          blockers: Array.isArray(levelThreeCloseoutPayload.blockers)
+            ? levelThreeCloseoutPayload.blockers
+            : [],
+          manual_checks: Array.isArray(levelThreeCloseoutPayload.manual_checks)
+            ? levelThreeCloseoutPayload.manual_checks
+            : [],
+        });
         setState(response.ok && payload.status !== "unavailable" ? "ready" : "error");
       } catch {
         if (cancelled) return;
         setStatus(emptyStatus);
         setLevelOneEvidence(emptyLevelOneEvidence);
         setLevelTwoContract(emptyLevelTwoContract);
+        setLevelThreeProposals(emptyLevelThreeProposals);
+        setLevelThreeCloseout(emptyLevelThreeCloseout);
         setState("error");
       }
     }
@@ -323,6 +437,12 @@ export function HomelabCartographerWidget() {
   const dirtyBlockerCount = levelTwoContract.dirty_tree_summary?.unclassified_blocker_count ?? 0;
   const manualCheck = levelTwoContract.manual_checks?.[0] ?? "git status -sb";
   const receiptFieldCount = levelTwoContract.required_receipt_fields?.length ?? 0;
+  const firstLevelThreeProposal = levelThreeProposals.commit_proposals?.[0];
+  const levelThreeBlocker =
+    levelThreeCloseout.blockers?.[0]?.code ?? levelThreeProposals.activation_blockers?.[0];
+  const levelThreeManualCheck = levelThreeCloseout.manual_checks?.[0] ?? "git status -sb";
+  const levelThreeIncludedCount = firstLevelThreeProposal?.included_files?.length ?? 0;
+  const levelThreeCheckCount = firstLevelThreeProposal?.related_test_commands?.length ?? 0;
 
   return (
     <section
@@ -425,6 +545,61 @@ export function HomelabCartographerWidget() {
         </div>
         <p className="dashboard-demo-v4-empty-copy">
           Blocker: {blockerLabel(levelTwoBlocker)}. No Level 2 execution control is exposed here.
+        </p>
+      </div>
+
+      <div
+        className="dashboard-demo-v4-cartographer-level-two"
+        aria-label="Level 3 local commit preview"
+      >
+        <div className="dashboard-demo-v4-cartographer-level-two-heading">
+          <span className="dashboard-demo-v4-icon-tile" aria-hidden>
+            <LockKeyhole className="h-4 w-4" />
+          </span>
+          <div>
+            <p className="dashboard-demo-v4-eyebrow">Level 3</p>
+            <h3>Approved local commit preview</h3>
+          </div>
+          <strong>{readyLabel(levelThreeCloseout.local_commit_ready)}</strong>
+        </div>
+        <div className="dashboard-demo-v4-cartographer-level-two-grid">
+          <div>
+            <span>Proposals</span>
+            <strong>{levelThreeProposals.proposal_count ?? 0}</strong>
+          </div>
+          <div>
+            <span>Ready bundles</span>
+            <strong>{levelThreeProposals.proposed_bundle_count ?? 0}</strong>
+          </div>
+          <div>
+            <span>Blocked bundles</span>
+            <strong>{levelThreeProposals.blocked_bundle_count ?? 0}</strong>
+          </div>
+          <div>
+            <span>Checks</span>
+            <strong>{levelThreeCheckCount}</strong>
+          </div>
+        </div>
+        <div className="dashboard-demo-v4-cartographer-level-two-lines">
+          <p>
+            <FileText className="h-4 w-4" aria-hidden />
+            Bundle: {firstLevelThreeProposal?.file_bundle ?? "None"} with {levelThreeIncludedCount} files.
+          </p>
+          <p>
+            <LockKeyhole className="h-4 w-4" aria-hidden />
+            Commit execution is not exposed in this UI. Push and queue controls stay hidden.
+          </p>
+          <p>
+            <RotateCcw className="h-4 w-4" aria-hidden />
+            Rollback preview: {firstLevelThreeProposal?.rollback_command ?? "git reset --soft HEAD~1"}
+          </p>
+          <p>
+            <FileText className="h-4 w-4" aria-hidden />
+            Manual check: {levelThreeManualCheck}
+          </p>
+        </div>
+        <p className="dashboard-demo-v4-empty-copy">
+          Blocker: {blockerLabel(levelThreeBlocker)}. Approval preview is not execution approval.
         </p>
       </div>
 
