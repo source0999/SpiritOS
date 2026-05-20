@@ -23,6 +23,7 @@ from source_proxy.testing.runner import (
     PROFILE_SCOUT_SOAK_SNAPSHOT,
     PROFILE_SCOUT_SOURCE_GATE,
     PROFILE_SCOUT_SMOKE,
+    PROFILE_SCOUT_V0_5_CLOSEOUT,
     _global_safety_mutation_notes,
     _unexpected_level_2_evidence_delta,
     _unexpected_level_2_evidence_in_global_safety,
@@ -975,6 +976,71 @@ class ProxyRunnerTests(unittest.TestCase):
         command = " ".join(str(part) for part in run_command.call_args.args[0])
         self.assertIn("receipt_preview_harness.py", command)
         self.assertEqual(run_command.call_args.kwargs["timeout_seconds"], 60)
+
+    def test_scout_v0_5_closeout_profile_requires_manual_import_safety(self) -> None:
+        frontend = {
+            "command": "npm test",
+            "returncode": 0,
+            "stdout": "9 passed\n",
+            "stderr": "",
+            "error": None,
+        }
+        receipt_harness = {
+            "result": "pass",
+            "checks": {"harness_passed": True},
+        }
+        level_1_soak = {
+            "result": "pass",
+            "checks": {"head_unchanged": True},
+            "summary": {
+                "rank_fields": {"rank_fields_visible": True},
+                "warnings": [],
+            },
+        }
+        parked = {
+            "ok": False,
+            "status": 409,
+            "body": {
+                "detail": "SCOUT_PROMOTION_SIGNING_KEY is required",
+                "would_write_proxy_memory": False,
+                "would_write_coding_context": False,
+                "would_finalize_promotion": False,
+            },
+            "error": None,
+        }
+
+        with mock.patch(
+            "source_proxy.testing.runner._git_status_short",
+            side_effect=["clean", "clean"],
+        ), mock.patch(
+            "source_proxy.testing.runner._git_head",
+            side_effect=["abc123", "abc123"],
+        ), mock.patch(
+            "source_proxy.testing.runner._run_command",
+            return_value=frontend,
+        ), mock.patch(
+            "source_proxy.testing.runner._run_scout_import_receipt_harness_profile",
+            return_value=receipt_harness,
+        ), mock.patch(
+            "source_proxy.testing.runner._run_scout_level_1_soak_profile",
+            return_value=level_1_soak,
+        ), mock.patch(
+            "source_proxy.testing.runner._http_post_json",
+            return_value=parked,
+        ):
+            payload = run_runner_profile(profile=PROFILE_SCOUT_V0_5_CLOSEOUT)
+
+        self.assertEqual(payload["result"], "pass")
+        self.assertTrue(payload["read_only"])
+        self.assertFalse(payload["mutated"])
+        self.assertTrue(payload["checks"]["docs_present"])
+        self.assertTrue(payload["checks"]["docs_have_safety_terms"])
+        self.assertTrue(payload["checks"]["parked_dry_run_blocked"])
+        self.assertTrue(payload["checks"]["no_proxy_memory_write"])
+        self.assertTrue(payload["checks"]["no_coding_context_write"])
+        self.assertTrue(payload["checks"]["no_promotion_finalization"])
+        self.assertTrue(payload["checks"]["no_unexpected_file_changes"])
+        self.assertFalse(payload["file_change_verdict"]["head_changed"])
 
     def test_dependency_environment_checks_report_required_baseline(self) -> None:
         dependency_payload = {"result": "pass", "blockers": [], "warnings": []}

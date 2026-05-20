@@ -30,6 +30,7 @@ PROFILE_SCOUT_SOAK_SNAPSHOT = "scout-soak-snapshot"
 PROFILE_SCOUT_LEVEL_1_SOAK = "scout-level-1-soak"
 PROFILE_SCOUT_LEVEL_2_EVIDENCE_SNAPSHOT = "scout-level-2-evidence-snapshot"
 PROFILE_SCOUT_IMPORT_RECEIPT_HARNESS = "scout-import-receipt-harness"
+PROFILE_SCOUT_V0_5_CLOSEOUT = "scout-v0-5-closeout"
 PROFILE_PHASE_4F_CLOSEOUT = "phase-4f-closeout"
 PROFILE_CARTOGRAPHER_SAFETY = "cartographer-safety"
 PROFILE_CARTOGRAPHER_SOAK_SNAPSHOT = "cartographer-soak-snapshot"
@@ -122,6 +123,8 @@ def run_runner_profile(*, profile: str) -> dict[str, Any]:
         return _run_scout_level_2_evidence_snapshot_profile()
     if profile == PROFILE_SCOUT_IMPORT_RECEIPT_HARNESS:
         return _run_scout_import_receipt_harness_profile()
+    if profile == PROFILE_SCOUT_V0_5_CLOSEOUT:
+        return _run_scout_v0_5_closeout_profile()
     if profile == PROFILE_PHASE_4F_CLOSEOUT:
         return _run_phase_4f_closeout_profile()
     if profile == PROFILE_CARTOGRAPHER_SAFETY:
@@ -1683,6 +1686,126 @@ def _run_scout_import_receipt_harness_profile() -> dict[str, Any]:
         },
         "recommendation": "ready for next increment" if result == "pass" else "fix needed",
     }
+
+
+def _run_scout_v0_5_closeout_profile(
+    *,
+    base_url: str = DEFAULT_SCOUT_BASE_URL,
+) -> dict[str, Any]:
+    base_url = base_url.rstrip("/")
+    before = _git_status_short()
+    before_head = _git_head()
+    docs = _scout_v0_5_closeout_docs()
+    frontend = _run_command(
+        ["npm", "run", "test", "--", "HomelabScoutIntelligenceWidget", "--run"],
+        timeout_seconds=120,
+    )
+    receipt_harness = _run_scout_import_receipt_harness_profile()
+    level_1_soak = _run_scout_level_1_soak_profile(base_url=base_url)
+    parked_dry_run = _http_post_json(
+        f"{base_url}/v1/scout/promotions/import-dry-run",
+        {
+            "promotion_id": "00000000-0000-0000-0000-000000000000",
+            "requested_by": "scout-v0-5-closeout",
+        },
+    )
+    parked_body = _body_dict(parked_dry_run)
+    after = _git_status_short()
+    after_head = _git_head()
+    status_delta = _git_status_delta(before, after)
+    unexpected_status_delta = _unexpected_status_delta(status_delta)
+    head_changed = bool(before_head and after_head and before_head != after_head)
+    checks = {
+        "docs_present": all(item["present"] for item in docs.values()),
+        "docs_have_safety_terms": all(item["safety_terms_present"] for item in docs.values()),
+        "frontend_passed": frontend["returncode"] == 0,
+        "receipt_harness_passed": receipt_harness["result"] == "pass",
+        "level_1_soak_passed": level_1_soak["result"] == "pass",
+        "parked_dry_run_blocked": parked_dry_run["status"] == 409
+        and parked_body.get("detail") == "SCOUT_PROMOTION_SIGNING_KEY is required",
+        "no_proxy_memory_write": parked_body.get("would_write_proxy_memory") in {None, False},
+        "no_coding_context_write": parked_body.get("would_write_coding_context") in {None, False},
+        "no_promotion_finalization": parked_body.get("would_finalize_promotion") in {None, False},
+        "no_unexpected_file_changes": not unexpected_status_delta,
+        "head_unchanged": not head_changed,
+    }
+    result = "pass" if all(checks.values()) else "fail"
+    return {
+        "profile": PROFILE_SCOUT_V0_5_CLOSEOUT,
+        "result": result,
+        "base_url": base_url,
+        "read_only": True,
+        "mutated": False,
+        "checks": checks,
+        "docs": docs,
+        "frontend": {
+            "command": frontend["command"],
+            "returncode": frontend["returncode"],
+            "stdout_tail": _output_tail(frontend["stdout"], max_lines=20),
+            "stderr_tail": _output_tail(frontend["stderr"], max_lines=20),
+            "error": frontend["error"],
+        },
+        "receipt_harness": {
+            "result": receipt_harness["result"],
+            "checks": receipt_harness["checks"],
+        },
+        "level_1_soak": {
+            "result": level_1_soak["result"],
+            "checks": level_1_soak["checks"],
+            "rank_fields": level_1_soak["summary"]["rank_fields"],
+            "warnings": level_1_soak["summary"]["warnings"],
+        },
+        "parked_dry_run": {
+            "status": parked_dry_run["status"],
+            "body": parked_body,
+            "error": parked_dry_run["error"],
+        },
+        "file_change_verdict": {
+            "before": before,
+            "after": after,
+            "status_delta": status_delta,
+            "unexpected_status_delta": unexpected_status_delta,
+            "head_before": before_head,
+            "head_after": after_head,
+            "head_changed": head_changed,
+        },
+        "recommendation": "ready for v0.5 closeout" if result == "pass" else "fix needed",
+    }
+
+
+def _scout_v0_5_closeout_docs() -> dict[str, dict[str, Any]]:
+    required = {
+        "docs/scout-v0-5-manual-import-ui-dry-run-button.md": [
+            "Dry Run Import",
+            "would_write_proxy_memory: false",
+            "would_finalize_promotion: false",
+        ],
+        "docs/scout-v0-5-manual-import-receipt-dry-run-schema.md": [
+            "receipt_preview",
+            "scout_manual_import_receipt_preview",
+            "approved_proxy_action: false",
+        ],
+        "docs/scout-v0-5-manual-import-receipt-test-harness.md": [
+            "scout-import-receipt-harness",
+            "imported: false",
+            "proxy_memory: false",
+        ],
+        "docs/scout-v0-5-manual-import-receipt-ui-preview.md": [
+            "Manual Import Receipt UI Preview",
+            "proxy_memory: false",
+            "coding_context: false",
+        ],
+    }
+    docs: dict[str, dict[str, Any]] = {}
+    for path_text, terms in required.items():
+        path = Path(path_text)
+        text = path.read_text(encoding="utf-8") if path.exists() else ""
+        docs[path_text] = {
+            "present": path.exists(),
+            "safety_terms_present": all(term in text for term in terms),
+            "terms": terms,
+        }
+    return docs
 
 
 def _scout_level_1_soak_sample_summary(checks: dict[str, dict[str, Any]]) -> dict[str, Any]:
