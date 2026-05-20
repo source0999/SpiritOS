@@ -829,6 +829,58 @@ function promotionEvidenceRows(promotion: ScoutPromotionItem): Array<[string, st
   return rows.filter((row): row is [string, string] => Boolean(row[1]));
 }
 
+type ScoutImportReceiptPreview = {
+  event?: string | null;
+  imported?: boolean | null;
+  applied?: boolean | null;
+  approved_proxy_action?: boolean | null;
+  writes?: {
+    append_only_evidence?: boolean | null;
+    proxy_memory?: boolean | null;
+    coding_context?: boolean | null;
+    active_context?: boolean | null;
+  } | null;
+  rollback?: {
+    tombstone_event?: string | null;
+    delete_allowed?: boolean | null;
+  } | null;
+};
+
+function boolLabel(value: boolean | null | undefined): string {
+  return typeof value === "boolean" ? String(value) : "unknown";
+}
+
+function importReceiptPreviewRows(
+  receipt: ScoutImportReceiptPreview,
+): Array<[string, string]> {
+  const rows: Array<[string, string | null | undefined]> = [
+    ["Receipt Event", receipt.event],
+    ["Imported", boolLabel(receipt.imported)],
+    ["Applied", boolLabel(receipt.applied)],
+    ["Approved Proxy Action", boolLabel(receipt.approved_proxy_action)],
+    ["Append-Only Evidence", boolLabel(receipt.writes?.append_only_evidence)],
+    ["Proxy Memory Write", boolLabel(receipt.writes?.proxy_memory)],
+    ["Coding Context Write", boolLabel(receipt.writes?.coding_context)],
+    ["Active Context Write", boolLabel(receipt.writes?.active_context)],
+    ["Rollback Tombstone", receipt.rollback?.tombstone_event],
+    ["Delete Allowed", boolLabel(receipt.rollback?.delete_allowed)],
+  ];
+  return rows.filter((row): row is [string, string] => Boolean(row[1]));
+}
+
+function receiptPreviewFromBody(body: unknown): ScoutImportReceiptPreview | null {
+  if (
+    body &&
+    typeof body === "object" &&
+    "receipt_preview" in body &&
+    body.receipt_preview &&
+    typeof body.receipt_preview === "object"
+  ) {
+    return body.receipt_preview as ScoutImportReceiptPreview;
+  }
+  return null;
+}
+
 function ScoutSourceCards({ sources }: { sources: ScoutSourceSummary[] }) {
   if (sources.length === 0) {
     return <p className="dashboard-demo-v4-scout-empty">No source data available yet.</p>;
@@ -1589,6 +1641,8 @@ export function ScoutIntelligenceCenterPanel({
   const [discoveryTopicAnchor, setDiscoveryTopicAnchor] = useState("FastAPI");
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [importReceiptPreview, setImportReceiptPreview] =
+    useState<ScoutImportReceiptPreview | null>(null);
   const badge = badgeForState(state);
 
   async function runPacketAction(
@@ -1609,6 +1663,7 @@ export function ScoutIntelligenceCenterPanel({
     if (!confirmed) return;
     setBusyPacketId(id);
     setActionError(null);
+    setImportReceiptPreview(null);
     try {
       const beforeSnapshot = action === "recheck" ? await readScoutSafetySnapshot(data ?? {}) : null;
       const res = await fetch(`/api/scout/packets/${encodeURIComponent(id)}/${action}`, {
@@ -1655,6 +1710,7 @@ export function ScoutIntelligenceCenterPanel({
     if (!confirmed) return;
     setBusyPromotionId(promotion.promotion_id);
     setActionError(null);
+    setImportReceiptPreview(null);
     try {
       const res = await fetch("/api/scout/promotions/finalize", {
         method: "POST",
@@ -1679,6 +1735,7 @@ export function ScoutIntelligenceCenterPanel({
   async function dryRunPromotionImport(promotion: ScoutPromotionItem) {
     setBusyPromotionId(promotion.promotion_id);
     setActionError(null);
+    setImportReceiptPreview(null);
     try {
       const res = await fetch("/api/scout/promotions/import-dry-run", {
         method: "POST",
@@ -1697,6 +1754,7 @@ export function ScoutIntelligenceCenterPanel({
         setActionMessage(`Import dry run blocked: ${detail}. No proxy memory or coding context was written.`);
         return;
       }
+      const receipt = receiptPreviewFromBody(body);
       const wouldWriteProxyMemory =
         body && typeof body === "object" && "would_write_proxy_memory" in body
           ? String(body.would_write_proxy_memory)
@@ -1708,6 +1766,7 @@ export function ScoutIntelligenceCenterPanel({
       setActionMessage(
         `Import dry run passed. Proxy memory write: ${wouldWriteProxyMemory}. Promotion finalization: ${wouldFinalize}.`,
       );
+      setImportReceiptPreview(receipt);
     } catch {
       setActionError("Could not dry-run promotion import.");
     } finally {
@@ -1947,6 +2006,19 @@ export function ScoutIntelligenceCenterPanel({
           <ScoutCounts overview={data} />
           {actionMessage ? (
             <p className="dashboard-demo-v4-scout-action-message">{actionMessage}</p>
+          ) : null}
+          {importReceiptPreview ? (
+            <dl
+              className="dashboard-demo-v4-scout-evidence-grid"
+              aria-label="Scout import receipt preview"
+            >
+              {importReceiptPreviewRows(importReceiptPreview).map(([label, value]) => (
+                <div key={label}>
+                  <dt>{label}</dt>
+                  <dd>{value}</dd>
+                </div>
+              ))}
+            </dl>
           ) : null}
           {actionError ? (
             <p className="dashboard-demo-v4-scout-action-error">{actionError}</p>
