@@ -14,6 +14,18 @@ Status date: 2026-05-20
 | `docs/design-systems-master-v0.1.md` | status: planning complete | Manual-first Design Intelligence Stack plan | Does not authorize implementation; next increment requires explicit approval |
 | `productionProxy.md` | status: historical | Uploaded staging copy | Historical only; follow the durable repo copy instead |
 
+## Design System Status Summary
+
+`docs/design-system-overhaul-master-v0.2.md` is the active planning spine for the SpiritOS design-system overhaul. It keeps future design-system work manual-controlled and Source Proxy gated.
+
+Current handling:
+
+- v0.2 is planning-only and does not authorize implementation.
+- v0.1 design intelligence docs remain supporting references and history.
+- Design Vault artifacts are proposal evidence, not runtime or apply authority.
+- Reverse Designer, Design Blender, Scout design intake, visual verification, and design apply lane work remain contract/scaffold level until later approved increments.
+- No production UI, route, package, Scout runtime, Source Proxy runtime, or Cartographer authority change is authorized by the design-system plan.
+
 ## Source Proxy Plan Authority Map
 
 The green Source Proxy safety gate passed on 2026-05-20 based on user-provided evidence: global safety regression passed, Source Proxy tests passed, Scout backend tests passed, Cartographer safety passed, dashboard smoke passed, no unexpected mutation occurred, no unexpected Level 2 evidence appeared, no commit occurred during the run, HEAD stayed stable at `3e55bdc`, and `main` matched `origin/main` at `3e55bdc`.
