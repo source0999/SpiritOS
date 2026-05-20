@@ -24,6 +24,10 @@ describe("CodingCockpitShell", () => {
     expect(screen.getByText(/Preview does not write files/)).toBeInTheDocument();
     expect(screen.getByText("Preview safely")).toBeDisabled();
     expect(screen.getByTestId("mobile-action-bar")).toHaveTextContent("No files changed");
+    expect(screen.getByRole("link", { name: "Open mobile diagnostics in /proxy-backend" })).toHaveAttribute(
+      "href",
+      "/proxy-backend",
+    );
     expect(screen.getByRole("button", { name: "Preview" })).toBeDisabled();
     expect(screen.getByLabelText("Coding status")).toHaveTextContent("Draft");
     expect(screen.getByLabelText("Coding status")).toHaveTextContent("Apply");

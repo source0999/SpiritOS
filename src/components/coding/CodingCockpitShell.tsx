@@ -1044,18 +1044,21 @@ export default function CodingCockpitShell() {
         <div className="mx-auto flex max-w-6xl items-center gap-3">
           <div className="min-w-0 flex-1">
             <div className="truncate text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-              {previewState.status === "applied"
-                ? "Verification required"
-                : previewState.status === "approved"
-                  ? "Approved, not applied"
-                  : previewState.approvalAvailable
-                    ? "Preview ready"
-                    : "Draft"}
+              {currentTaskState}
             </div>
             <div className="truncate text-sm font-medium text-slate-200">
-              {previewState.status === "applied" ? "Files applied" : "No files changed"}
+              {previewState.status === "applied"
+                ? "Files applied. Verify next."
+                : "No files changed"}
             </div>
           </div>
+          <Link
+            aria-label="Open mobile diagnostics in /proxy-backend"
+            className="inline-flex min-h-12 shrink-0 items-center justify-center rounded-md border border-white/15 px-3 text-sm font-medium text-slate-200"
+            href="/proxy-backend"
+          >
+            Diag
+          </Link>
           {previewState.status === "ready" && previewState.approvalAvailable ? (
             <>
               <button
