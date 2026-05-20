@@ -540,7 +540,8 @@ describe("HomelabScoutIntelligenceWidget", () => {
 
     render(<ScoutIntelligenceCenter />);
 
-    const previewButtons = await screen.findAllByRole("button", { name: /Preview Search/i });
+    fireEvent.click(await screen.findByRole("tab", { name: "Discovery Gate" }));
+    const previewButtons = await screen.findAllByRole("button", { name: /Manual Preview Search/i });
     fireEvent.click(previewButtons[0]);
 
     await waitFor(() => {
@@ -549,7 +550,43 @@ describe("HomelabScoutIntelligenceWidget", () => {
         expect.objectContaining({ method: "POST" }),
       );
     });
-    expect(await screen.findByText(/No source was approved or activated\./)).toBeInTheDocument();
+    expect(await screen.findByText(/Discovery preview returned/)).toBeInTheDocument();
+    expect(screen.getByText(/Approved delta \+0/)).toBeInTheDocument();
+  });
+
+  it("labels mutation-capable Scout gates as manual operator actions", async () => {
+    mockScoutFetch(overview, {
+      queued: [
+        {
+          promotion_id: "promotion-queued-1",
+          packet_id: "packet-queued-1",
+          requested_at: "2026-05-16T12:00:00Z",
+          status: "queued",
+          summary: "Queued briefing.",
+        },
+      ],
+      approved: [],
+      rejected: [],
+      counts: { pending: 0, queued: 1, approved: 0, rejected: 0, total: 1 },
+    });
+
+    render(<ScoutIntelligenceCenter />);
+
+    fireEvent.click(await screen.findByRole("tab", { name: "Source Gate" }));
+    expect((await screen.findAllByRole("button", { name: "Manual Approve Source" })).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: "Manual Reject Source" }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: "Manual Block Source" }).length).toBeGreaterThan(0);
+    expect(screen.queryByRole("button", { name: "Approve Source" })).not.toBeInTheDocument();
+
+    fireEvent.click(await screen.findByRole("tab", { name: "Discovery Gate" }));
+    expect(await screen.findByRole("button", { name: "Save Manual Plan" })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Manual Preview Search" }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: "Manual Extract Candidates" }).length).toBeGreaterThan(0);
+
+    fireEvent.click(await screen.findByRole("tab", { name: "Packet Gate" }));
+    expect(await screen.findByRole("button", { name: "Manual Promote Packet" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Manual Reject Packet" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Promote Packet" })).not.toBeInTheDocument();
   });
 
   it("wires approved promotion import dry run without finalizing promotion", async () => {
