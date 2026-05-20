@@ -272,7 +272,7 @@ UI-5: Mobile/manual remote checks after simplification.
 
 ## Phase UI-5: Mobile/Manual Remote Checks
 
-Status: in progress.
+Status: complete in `c868a8d`.
 
 Intent:
 Make `/coding` usable for Codex mobile and remote workflows without requiring a full desktop visual session for basic review.
@@ -311,6 +311,8 @@ Next increment title:
 UI-6: Closeout.
 
 ## Phase UI-6: Closeout
+
+Status: complete in closeout pass after `c868a8d`.
 
 Intent:
 Verify the UI polish did not weaken Source Proxy safety and record the finished state.
