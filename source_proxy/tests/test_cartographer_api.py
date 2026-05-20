@@ -67,6 +67,9 @@ from source_proxy.cartographer.service import (
     build_cartographer_level_9_stale_worker_closeout_packet,
     build_cartographer_level_9_coordination_dashboard,
     build_cartographer_level_10_project_health_timeline,
+    build_cartographer_level_10_closeout_packet_generator,
+    build_cartographer_level_10_run_history_evidence_browser,
+    build_cartographer_level_10_scout_blueprint_handoff_preview,
     build_cartographer_level_8_stop_failure_handling,
     build_cartographer_level_8_step_approval_preview,
     build_cartographer_level_8_workflow_run_card,
@@ -3261,6 +3264,305 @@ class CartographerApiTests(unittest.TestCase):
         self.assertFalse(payload["background_mutation_allowed"])
         self.assertFalse(payload["hidden_writes_allowed"])
         self.assertFalse(payload["evidence_mutation_allowed"])
+        self.assertFalse(payload["actions_taken"])
+
+    def test_level_10_closeout_packet_generator_creates_previews_without_mutation(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir) / "SpiritOS"
+            root.mkdir()
+            _write_minimal_blueprints(root)
+            dashboard_file = root / "src" / "components" / "dashboard" / "Widget.tsx"
+            dashboard_file.parent.mkdir(parents=True)
+            dashboard_file.write_text("export function Widget() { return null; }\n", encoding="utf-8")
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "checkout", "-b", "main")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            dashboard_file.write_text("export function Widget() { return 'changed'; }\n", encoding="utf-8")
+
+            before_status = _git_stdout(root, "status", "--short")
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = build_cartographer_level_10_closeout_packet_generator()
+                response = TestClient(_test_app()).get("/v1/cartographer/level-10-closeout-packets")
+            after_status = _git_stdout(root, "status", "--short")
+
+        self.assertEqual(before_status, after_status)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json()["contract_version"],
+            "cartographer.level_10.closeout_packet_generator.v1",
+        )
+        self.assertEqual(payload["status"], "observing")
+        self.assertEqual(payload["level"], 10)
+        self.assertEqual(payload["mode"], "closeout_packet_generator")
+        self.assertTrue(payload["closeout_packet_generator_available"])
+        self.assertTrue(payload["preview_only"])
+        self.assertFalse(payload["write_actions_enabled"])
+        self.assertFalse(payload["authority_granted"])
+        self.assertFalse(payload["actions_taken"])
+        self.assertFalse(payload["packet_finalization_allowed"])
+        self.assertFalse(payload["automatic_closeout_allowed"])
+        self.assertFalse(payload["automatic_promotion_allowed"])
+        self.assertFalse(payload["hidden_evidence_writes_allowed"])
+        self.assertFalse(payload["evidence_mutation_allowed"])
+        self.assertFalse(payload["background_mutation_allowed"])
+        self.assertFalse(payload["cleanup_allowed"])
+        self.assertFalse(payload["push_allowed"])
+        self.assertFalse(payload["merge_allowed"])
+        self.assertEqual(payload["packet_count"], 1)
+        packet = payload["packets"][0]
+        self.assertEqual(packet["source"], "project_health_timeline")
+        self.assertEqual(packet["project_id"], "spiritos")
+        self.assertEqual(packet["preview_status"], "blocked")
+        self.assertFalse(packet["finalized"])
+        self.assertFalse(packet["persisted"])
+        self.assertFalse(packet["promoted"])
+        self.assertFalse(packet["evidence_written"])
+        self.assertFalse(packet["actions_taken"])
+        self.assertIn("dirty_tree_requires_review", packet["blockers"])
+
+    def test_level_10_closeout_packet_generator_clean_state_still_does_not_finalize(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir) / "SpiritOS"
+            root.mkdir()
+            _write_minimal_blueprints(root)
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "checkout", "-b", "main")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                payload = build_cartographer_level_10_closeout_packet_generator()
+
+        self.assertEqual(payload["level"], 10)
+        self.assertEqual(payload["packet_count"], 1)
+        self.assertIn(payload["packets"][0]["preview_status"], {"blocked", "ready_for_review"})
+        self.assertFalse(payload["packets"][0]["finalized"])
+        self.assertFalse(payload["packets"][0]["persisted"])
+        self.assertFalse(payload["packets"][0]["promoted"])
+        self.assertFalse(payload["packets"][0]["evidence_written"])
+        self.assertTrue(payload["closeout_history_packets"])
+        self.assertFalse(payload["packet_finalization_allowed"])
+        self.assertFalse(payload["automatic_closeout_allowed"])
+        self.assertFalse(payload["automatic_promotion_allowed"])
+        self.assertFalse(payload["hidden_evidence_writes_allowed"])
+        self.assertFalse(payload["actions_taken"])
+
+    def test_level_10_run_history_evidence_browser_reads_without_mutation(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir) / "SpiritOS"
+            evidence_dir = Path(temp_dir) / "evidence"
+            root.mkdir()
+            evidence_dir.mkdir()
+            _write_minimal_blueprints(root)
+            evidence_file = evidence_dir / "codex-task-1.json"
+            evidence_file.write_text(
+                json.dumps(
+                    {
+                        "artifact_version": "codex_evidence.v1",
+                        "task_id": "task-1",
+                        "safety_verdict": "passed",
+                        "recommendation": "ready_for_review",
+                        "changed_files_after": ["docs/example.md"],
+                        "approval_authority": False,
+                        "apply_authority": False,
+                        "commit_authority": False,
+                        "push_authority": False,
+                    }
+                ),
+                encoding="utf-8",
+            )
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "checkout", "-b", "main")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+
+            evidence_before = evidence_file.read_text(encoding="utf-8")
+            status_before = _git_stdout(root, "status", "--short")
+            with patch.dict(
+                os.environ,
+                {
+                    "SPIRIT_PROJECT_PATH": str(root),
+                    "SPIRIT_CODEX_EVIDENCE_PATHS": str(evidence_dir),
+                },
+                clear=False,
+            ):
+                payload = build_cartographer_level_10_run_history_evidence_browser()
+                response = TestClient(_test_app()).get("/v1/cartographer/level-10-run-history-evidence")
+            evidence_after = evidence_file.read_text(encoding="utf-8")
+            status_after = _git_stdout(root, "status", "--short")
+
+        self.assertEqual(evidence_before, evidence_after)
+        self.assertEqual(status_before, status_after)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json()["contract_version"],
+            "cartographer.level_10.run_history_evidence_browser.v1",
+        )
+        self.assertEqual(payload["status"], "observing")
+        self.assertEqual(payload["level"], 10)
+        self.assertEqual(payload["mode"], "run_history_evidence_browser")
+        self.assertTrue(payload["browser_available"])
+        self.assertTrue(payload["read_only"])
+        self.assertFalse(payload["write_actions_enabled"])
+        self.assertFalse(payload["authority_granted"])
+        self.assertFalse(payload["actions_taken"])
+        self.assertFalse(payload["run_history_mutation_allowed"])
+        self.assertFalse(payload["receipt_creation_allowed"])
+        self.assertFalse(payload["evidence_mutation_allowed"])
+        self.assertFalse(payload["hidden_writes_allowed"])
+        self.assertFalse(payload["background_mutation_allowed"])
+        self.assertFalse(payload["cleanup_allowed"])
+        self.assertFalse(payload["push_allowed"])
+        self.assertFalse(payload["merge_allowed"])
+        self.assertFalse(payload["automatic_execution_allowed"])
+        self.assertFalse(payload["automatic_promotion_allowed"])
+        self.assertEqual(payload["run_count"], 2)
+        self.assertEqual(payload["evidence_count"], 1)
+        self.assertEqual(payload["evidence_links"][0]["task_id"], "task-1")
+        self.assertFalse(payload["run_history"][0]["receipts_created"])
+        self.assertFalse(payload["run_history"][0]["history_mutated"])
+
+    def test_level_10_run_history_evidence_browser_handles_empty_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir) / "SpiritOS"
+            evidence_dir = Path(temp_dir) / "empty-evidence"
+            root.mkdir()
+            evidence_dir.mkdir()
+            _write_minimal_blueprints(root)
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "checkout", "-b", "main")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+
+            with patch.dict(
+                os.environ,
+                {
+                    "SPIRIT_PROJECT_PATH": str(root),
+                    "SPIRIT_CODEX_EVIDENCE_PATHS": str(evidence_dir),
+                },
+                clear=False,
+            ):
+                payload = build_cartographer_level_10_run_history_evidence_browser()
+
+        self.assertEqual(payload["level"], 10)
+        self.assertEqual(payload["evidence_count"], 0)
+        self.assertEqual(payload["evidence_links"], [])
+        self.assertTrue(payload["closeout_packet_previews"])
+        self.assertIn("build_cartographer_codex_evidence", payload["provenance"])
+        self.assertFalse(payload["receipt_creation_allowed"])
+        self.assertFalse(payload["run_history_mutation_allowed"])
+        self.assertFalse(payload["evidence_mutation_allowed"])
+        self.assertFalse(payload["actions_taken"])
+
+    def test_level_10_scout_blueprint_handoff_preview_does_not_write_context(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir) / "SpiritOS"
+            evidence_dir = Path(temp_dir) / "evidence"
+            root.mkdir()
+            evidence_dir.mkdir()
+            _write_minimal_blueprints(root)
+            scout_file = root / "scout" / "src" / "scout" / "packets" / "synthesis.py"
+            scout_file.parent.mkdir(parents=True)
+            scout_file.write_text("SCOUT_CONTEXT = 'before'\n", encoding="utf-8")
+            evidence_file = evidence_dir / "codex-scout-task.json"
+            evidence_file.write_text(
+                json.dumps(
+                    {
+                        "artifact_version": "codex_evidence.v1",
+                        "task_id": "scout-task",
+                        "safety_verdict": "passed",
+                        "recommendation": "ready_for_review",
+                        "changed_files_after": [
+                            "scout/src/scout/packets/synthesis.py",
+                            "_blueprints/current/dashboard_state.md",
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            blueprint_file = root / "_blueprints" / "current" / "dashboard_state.md"
+            scout_before = scout_file.read_text(encoding="utf-8")
+            blueprint_before = blueprint_file.read_text(encoding="utf-8")
+            evidence_before = evidence_file.read_text(encoding="utf-8")
+            with patch.dict(
+                os.environ,
+                {
+                    "SPIRIT_PROJECT_PATH": str(root),
+                    "SPIRIT_CODEX_EVIDENCE_PATHS": str(evidence_dir),
+                },
+                clear=False,
+            ):
+                payload = build_cartographer_level_10_scout_blueprint_handoff_preview()
+                response = TestClient(_test_app()).get("/v1/cartographer/level-10-scout-blueprint-handoff")
+            scout_after = scout_file.read_text(encoding="utf-8")
+            blueprint_after = blueprint_file.read_text(encoding="utf-8")
+            evidence_after = evidence_file.read_text(encoding="utf-8")
+
+        self.assertEqual(scout_before, scout_after)
+        self.assertEqual(blueprint_before, blueprint_after)
+        self.assertEqual(evidence_before, evidence_after)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json()["contract_version"],
+            "cartographer.level_10.scout_blueprint_handoff_preview.v1",
+        )
+        self.assertEqual(payload["status"], "observing")
+        self.assertEqual(payload["level"], 10)
+        self.assertEqual(payload["mode"], "scout_blueprint_handoff_preview")
+        self.assertTrue(payload["handoff_preview_available"])
+        self.assertTrue(payload["preview_only"])
+        self.assertFalse(payload["write_actions_enabled"])
+        self.assertFalse(payload["authority_granted"])
+        self.assertFalse(payload["actions_taken"])
+        self.assertFalse(payload["scout_write_allowed"])
+        self.assertFalse(payload["proxy_memory_write_allowed"])
+        self.assertFalse(payload["coding_context_write_allowed"])
+        self.assertFalse(payload["blueprint_write_allowed"])
+        self.assertFalse(payload["background_mutation_allowed"])
+        self.assertFalse(payload["cleanup_allowed"])
+        self.assertFalse(payload["push_allowed"])
+        self.assertFalse(payload["merge_allowed"])
+        self.assertFalse(payload["automatic_execution_allowed"])
+        self.assertFalse(payload["automatic_promotion_allowed"])
+        self.assertEqual(payload["handoff_count"], 2)
+        scout_preview = payload["handoff_previews"][0]
+        self.assertEqual(scout_preview["target"], "scout")
+        self.assertIn("scout/src/scout/packets/synthesis.py", scout_preview["source_refs"])
+        self.assertFalse(scout_preview["writes_allowed"])
+
+    def test_level_10_scout_blueprint_handoff_preview_blocks_empty_sources_without_writes(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir) / "SpiritOS"
+            evidence_dir = Path(temp_dir) / "empty-evidence"
+            root.mkdir()
+            evidence_dir.mkdir()
+            with patch.dict(
+                os.environ,
+                {
+                    "SPIRIT_PROJECT_PATH": str(root),
+                    "SPIRIT_CODEX_EVIDENCE_PATHS": str(evidence_dir),
+                },
+                clear=False,
+            ):
+                payload = build_cartographer_level_10_scout_blueprint_handoff_preview()
+
+        self.assertEqual(payload["level"], 10)
+        self.assertEqual(payload["handoff_count"], 2)
+        self.assertIn("no_scout_evidence_refs_observed", payload["blockers"])
+        self.assertIn("no_blueprints_observed", payload["blockers"])
+        self.assertFalse(payload["scout_write_allowed"])
+        self.assertFalse(payload["proxy_memory_write_allowed"])
+        self.assertFalse(payload["coding_context_write_allowed"])
+        self.assertFalse(payload["blueprint_write_allowed"])
         self.assertFalse(payload["actions_taken"])
 
     def test_starter_blueprint_pack_proposal_is_preview_only_for_new_project_candidate(self) -> None:

@@ -1865,6 +1865,271 @@ def build_cartographer_level_10_project_health_timeline() -> dict[str, Any]:
     }
 
 
+def build_cartographer_level_10_closeout_packet_generator() -> dict[str, Any]:
+    timeline = build_cartographer_level_10_project_health_timeline()
+    packets = [
+        _level_10_closeout_packet_preview(item)
+        for item in timeline["timeline_items"]
+    ]
+    closeout_history_packets = [
+        {
+            "packet_id": f"closeout-history-{item['level']}".lower().replace(" ", "-"),
+            "source": "level_9_closeout_history",
+            "level": item["level"],
+            "title": item["title"],
+            "preview_status": "ready_for_review"
+            if item["closeout_status"] == "ready_for_review"
+            else "blocked",
+            "blockers": item["blockers"],
+            "evidence_refs": item["evidence_refs"],
+            "finalized": False,
+            "persisted": False,
+            "promoted": False,
+            "evidence_written": False,
+            "actions_taken": False,
+        }
+        for item in timeline["closeout_history"]
+    ]
+    blockers = sorted(
+        {
+            blocker
+            for packet in [*packets, *closeout_history_packets]
+            for blocker in packet["blockers"]
+        }
+    )
+    return {
+        "status": "observing",
+        "level": 10,
+        "mode": "closeout_packet_generator",
+        "contract_version": "cartographer.level_10.closeout_packet_generator.v1",
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "closeout_packet_generator_available": True,
+        "preview_only": True,
+        "packet_finalization_allowed": False,
+        "automatic_closeout_allowed": False,
+        "automatic_promotion_allowed": False,
+        "hidden_evidence_writes_allowed": False,
+        "evidence_mutation_allowed": False,
+        "background_mutation_allowed": False,
+        "cleanup_allowed": False,
+        "push_allowed": False,
+        "merge_allowed": False,
+        "packet_count": len(packets),
+        "history_packet_count": len(closeout_history_packets),
+        "packets": packets,
+        "closeout_history_packets": closeout_history_packets,
+        "blockers": blockers,
+        "recommended_next_action": (
+            "Review blocked closeout packet previews before finalization is discussed."
+            if blockers
+            else "Level 10.4 run history and evidence browser may be planned after approval."
+        ),
+        "forbidden_actions": [
+            "automatic closeout",
+            "automatic promotion",
+            "hidden evidence writes",
+            "evidence mutation",
+            "cleanup",
+            "push",
+            "merge",
+            "background mutation",
+            "packet finalization",
+        ],
+        "manual_checks": [
+            "git status -sb",
+            'PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -k "level_10_closeout_packet_generator or level_10_project_health_timeline"',
+        ],
+        "next_step": "Level 10.4 may browse run history and evidence only after explicit approval.",
+        "timeline": timeline,
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_level_10_run_history_evidence_browser() -> dict[str, Any]:
+    closeout_packets = build_cartographer_level_10_closeout_packet_generator()
+    codex_evidence = build_cartographer_codex_evidence()["codex_evidence"]
+    evidence_records = to_jsonable(codex_evidence.get("records", []))
+    run_history = [
+        {
+            "run_id": "level_10_3_closeout_packet_generator",
+            "source": "closeout_packet_generator",
+            "status": closeout_packets["status"],
+            "manual_checks": closeout_packets["manual_checks"],
+            "packet_count": closeout_packets["packet_count"],
+            "actions_taken": closeout_packets["actions_taken"],
+            "receipts_created": False,
+            "history_mutated": False,
+        },
+        {
+            "run_id": "level_10_2_project_health_timeline",
+            "source": "project_health_timeline",
+            "status": closeout_packets["timeline"]["status"],
+            "manual_checks": closeout_packets["timeline"]["manual_checks"],
+            "project_count": closeout_packets["timeline"]["project_count"],
+            "actions_taken": closeout_packets["timeline"]["actions_taken"],
+            "receipts_created": False,
+            "history_mutated": False,
+        },
+    ]
+    evidence_links = [
+        {
+            "task_id": record.get("task_id"),
+            "artifact_path": record.get("artifact_path"),
+            "safety_verdict": record.get("safety_verdict"),
+            "recommendation": record.get("recommendation"),
+            "changed_files": record.get("changed_files", []),
+            "components": record.get("components", []),
+            "risk": record.get("risk"),
+            "action_taken": record.get("action_taken", False),
+        }
+        for record in evidence_records
+    ]
+    return {
+        "status": "observing",
+        "level": 10,
+        "mode": "run_history_evidence_browser",
+        "contract_version": "cartographer.level_10.run_history_evidence_browser.v1",
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "browser_available": True,
+        "read_only": True,
+        "run_history_mutation_allowed": False,
+        "receipt_creation_allowed": False,
+        "evidence_mutation_allowed": False,
+        "hidden_writes_allowed": False,
+        "background_mutation_allowed": False,
+        "cleanup_allowed": False,
+        "push_allowed": False,
+        "merge_allowed": False,
+        "automatic_execution_allowed": False,
+        "automatic_promotion_allowed": False,
+        "run_count": len(run_history),
+        "evidence_count": codex_evidence.get("evidence_count", 0),
+        "closeout_packet_count": closeout_packets["packet_count"],
+        "run_history": run_history,
+        "evidence_links": evidence_links,
+        "closeout_packet_previews": closeout_packets["packets"],
+        "provenance": [
+            "build_cartographer_level_10_closeout_packet_generator",
+            "build_cartographer_level_10_project_health_timeline",
+            "build_cartographer_codex_evidence",
+        ],
+        "forbidden_actions": [
+            "evidence mutation",
+            "hidden writes",
+            "receipt creation",
+            "run history mutation",
+            "cleanup",
+            "push",
+            "merge",
+            "background mutation",
+            "automatic execution",
+            "automatic promotion",
+        ],
+        "manual_checks": [
+            "git status -sb",
+            'PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -k "level_10_run_history_evidence_browser or level_10_closeout_packet_generator"',
+        ],
+        "next_step": "Level 10.5 may preview Scout and Blueprint handoff only after explicit approval.",
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_level_10_scout_blueprint_handoff_preview() -> dict[str, Any]:
+    browser = build_cartographer_level_10_run_history_evidence_browser()
+    blueprints = build_cartographer_blueprints()
+    scout_refs = sorted(
+        {
+            path
+            for evidence in browser["evidence_links"]
+            for path in evidence.get("changed_files", [])
+            if str(path).startswith("scout/")
+        }
+    )
+    handoff_previews = [
+        {
+            "handoff_id": "scout-context-preview",
+            "target": "scout",
+            "source_refs": scout_refs,
+            "source_count": len(scout_refs),
+            "blockers": [] if scout_refs else ["no_scout_evidence_refs_observed"],
+            "preview_only": True,
+            "writes_allowed": False,
+            "scout_write_allowed": False,
+            "proxy_memory_write_allowed": False,
+            "coding_context_write_allowed": False,
+            "blueprint_write_allowed": False,
+            "actions_taken": False,
+        },
+        {
+            "handoff_id": "blueprint-context-preview",
+            "target": "blueprints",
+            "source_refs": [item.get("path") for item in blueprints["blueprints"]],
+            "source_count": blueprints["blueprint_count"],
+            "blockers": [] if blueprints["blueprint_count"] else ["no_blueprints_observed"],
+            "preview_only": True,
+            "writes_allowed": False,
+            "scout_write_allowed": False,
+            "proxy_memory_write_allowed": False,
+            "coding_context_write_allowed": False,
+            "blueprint_write_allowed": False,
+            "actions_taken": False,
+        },
+    ]
+    blockers = sorted({blocker for item in handoff_previews for blocker in item["blockers"]})
+    return {
+        "status": "observing",
+        "level": 10,
+        "mode": "scout_blueprint_handoff_preview",
+        "contract_version": "cartographer.level_10.scout_blueprint_handoff_preview.v1",
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "handoff_preview_available": True,
+        "preview_only": True,
+        "scout_write_allowed": False,
+        "proxy_memory_write_allowed": False,
+        "coding_context_write_allowed": False,
+        "blueprint_write_allowed": False,
+        "background_mutation_allowed": False,
+        "cleanup_allowed": False,
+        "push_allowed": False,
+        "merge_allowed": False,
+        "automatic_execution_allowed": False,
+        "automatic_promotion_allowed": False,
+        "handoff_previews": handoff_previews,
+        "handoff_count": len(handoff_previews),
+        "blockers": blockers,
+        "source_provenance": [
+            "build_cartographer_level_10_run_history_evidence_browser",
+            "build_cartographer_blueprints",
+        ],
+        "forbidden_actions": [
+            "Scout writes",
+            "proxy memory writes",
+            "coding context writes",
+            "blueprint writes",
+            "background mutation",
+            "cleanup",
+            "push",
+            "merge",
+            "automatic execution",
+            "automatic promotion",
+        ],
+        "manual_checks": [
+            "git status -sb",
+            'PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -k "level_10_scout_blueprint_handoff_preview or level_10_run_history_evidence_browser"',
+        ],
+        "next_step": "Level 10.6 may add the production readiness checklist only after explicit approval.",
+        "browser": browser,
+        "blueprints": blueprints,
+        "safety": cartographer_safety_manifest(),
+    }
+
+
 def build_cartographer_project_health() -> dict[str, Any]:
     projects = build_project_health()
     codex_evidence = build_codex_evidence_rollup()
@@ -4110,6 +4375,35 @@ def _level_9_coordination_dashboard_item(
         "authority_granted": payload.get("authority_granted", False),
         "actions_taken": payload.get("actions_taken", False),
         "recommendation_only": payload.get("recommendation_only", True),
+    }
+
+
+def _level_10_closeout_packet_preview(item: dict[str, Any]) -> dict[str, Any]:
+    blockers = list(item["blockers"])
+    if item["dirty"]:
+        blockers.append("dirty_tree_requires_review")
+    return {
+        "packet_id": f"closeout-{item['project_id']}",
+        "source": "project_health_timeline",
+        "project_id": item["project_id"],
+        "name": item["name"],
+        "root": item["root"],
+        "branch": item["branch"],
+        "timeline_state": item["timeline_state"],
+        "preview_status": "blocked" if blockers else "ready_for_review",
+        "blockers": sorted(set(blockers)),
+        "evidence_refs": item["evidence_refs"],
+        "recommended_next_action": item["recommended_next_action"],
+        "finalized": False,
+        "persisted": False,
+        "promoted": False,
+        "evidence_written": False,
+        "cleanup_allowed": False,
+        "push_allowed": False,
+        "merge_allowed": False,
+        "automatic_execution_allowed": False,
+        "automatic_promotion_allowed": False,
+        "actions_taken": False,
     }
 
 
