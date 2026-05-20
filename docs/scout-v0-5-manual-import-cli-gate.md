@@ -4,12 +4,18 @@ status: implemented/manual-controlled
 
 Status date: 2026-05-20
 
-This document records the Phase 5.3 manual import CLI gate. The increment adds a dry-run-only operator command for one approved Scout promotion. It does not call proxy intake, does not finalize promotions, does not write proxy memory, does not write coding context, does not register workers, does not schedule writes, does not apply code, does not commit, and does not push.
+This document records the Phase 5.3 manual import CLI gate. The increment adds a dry-run-only operator command for one approved Scout promotion. The command is a standard-library HTTP client for Scout's dry-run endpoint, so it can run from the host without importing Scout internals. It does not call proxy intake, does not finalize promotions, does not write proxy memory, does not write coding context, does not register workers, does not schedule writes, does not apply code, does not commit, and does not push.
 
 ## Operator Command
 
 ```bash
 python3 scout/scripts/import_promotion_dry_run.py --promotion-id PROMOTION_ID --requested-by Britton --json
+```
+
+Optional remote base URL:
+
+```bash
+python3 scout/scripts/import_promotion_dry_run.py --base-url http://localhost:8077 --promotion-id PROMOTION_ID --requested-by Britton --json
 ```
 
 For parked-state checks where the live service intentionally has no signing key:
