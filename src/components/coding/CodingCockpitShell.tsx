@@ -41,7 +41,7 @@ type PreviewState = {
   isLoading: boolean;
   requirementSummary: string;
   reviewerSummary: string;
-  status: "idle" | "ready" | "approved" | "applied" | "blocked" | "error";
+  status: "idle" | "ready" | "approved" | "applied" | "blocked" | "error" | "satisfied";
   targetMatch: boolean;
   taskId: string;
   taskSpecAllowed: boolean;
@@ -73,8 +73,16 @@ function idlePreviewState(): PreviewState {
 function splitFiles(value: string): string[] {
   return value
     .split(/[\n,]/)
-    .map((item) => item.trim())
+    .map((item) => normalizeRepoPath(item))
     .filter(Boolean);
+}
+
+function normalizeRepoPath(path: string): string {
+  const trimmed = path.trim().replace(/\\/g, "/");
+  if (trimmed.endsWith("/") && /\.[A-Za-z0-9]+$/.test(trimmed.slice(0, -1))) {
+    return trimmed.slice(0, -1);
+  }
+  return trimmed;
 }
 
 function isProtectedTarget(value: string): boolean {
@@ -101,6 +109,9 @@ function statusStepIndex(previewState: PreviewState): number {
   if (previewState.approvalAvailable) {
     return 2;
   }
+  if (previewState.status === "satisfied") {
+    return 1;
+  }
   if (previewState.status !== "idle" || previewState.isLoading) {
     return 1;
   }
@@ -125,6 +136,9 @@ function nextSafeActionText({
   }
   if (previewState.status === "ready" && previewState.approvalAvailable) {
     return "Review the approval gates, then approve. Approval is required before apply.";
+  }
+  if (previewState.status === "satisfied") {
+    return "No diff is required. Change the task to request a new unique line, or use /proxy-backend for a bounded proposal.";
   }
   return "Resolve any preview blocker, then retry safe preview. No files have been changed.";
 }
@@ -195,24 +209,26 @@ export default function CodingCockpitShell() {
       verifierSummary: "Waiting for preview.",
     });
     try {
+      const trimmedTarget = normalizeRepoPath(targetFile);
       const taskSpec = {
         allowed_files: allowedFileList,
         forbidden_files: [],
         risk_tier: "low",
         schema_version: 1,
         source: "coding_cockpit_ui",
-        target: targetFile.trim(),
+        target: trimmedTarget,
         task_type: "modify_existing_file",
         verification: splitFiles(expectedChecks),
       };
-      const proposalResponse = await fetch("/v1/coding/codex", {
+      const promptTask = taskTextForPromptPacket(task, trimmedTarget);
+      const proposalResponse = await fetch("/v1/decisions/prompt-packet", {
         body: JSON.stringify({
-          allowed_files: allowedFileList,
-          expected_checks: splitFiles(expectedChecks),
-          mode: "proposal",
-          route_model: routeModel,
-          target_file: targetFile.trim(),
-          task: task.trim(),
+          needs_codebase_context: true,
+          prefer_free: true,
+          target_files: allowedFileList,
+          targeted_files: allowedFileList,
+          task: promptTask,
+          wants_implementation: true,
         }),
         headers: { "content-type": "application/json" },
         method: "POST",
@@ -224,18 +240,46 @@ export default function CodingCockpitShell() {
 
       const proposedDiff = diffFromPayload(proposalPayload);
       if (!proposedDiff) {
+        if (isCoderAlreadySatisfied(proposalPayload)) {
+          const alreadySatisfiedBlocker = "coder_no_changes_needed_unverified";
+          setPreviewState({
+            approvalAvailable: false,
+            approvedAt: null,
+            appliedAt: null,
+            applySummary: "",
+            blocker: alreadySatisfiedBlocker,
+            changedFiles: [],
+            diff: "",
+            error: null,
+            isApplying: false,
+            isLoading: false,
+            requirementSummary:
+              "Source Proxy reported already satisfied, but /coding cannot verify the target content without a diff. No approval or apply is available.",
+            reviewerSummary: "No reviewer evidence available for an empty diff.",
+            status: "blocked",
+            targetMatch: false,
+            taskId: taskIdFromPayload(proposalPayload),
+            taskSpecAllowed: false,
+            verifierSummary: "No verifier evidence available for an empty diff.",
+          });
+          return;
+        }
+        const noDiffBlocker = noDiffBlockerFromPayload(proposalPayload);
         setPreviewState({
           approvalAvailable: false,
           approvedAt: null,
           appliedAt: null,
           applySummary: "",
-          blocker: messageFromPayload(proposalPayload, proposalResponse.status),
+          blocker: noDiffBlocker,
           changedFiles: [],
           diff: "",
           error: null,
           isApplying: false,
           isLoading: false,
-          requirementSummary: "No diff returned for requirement review.",
+          requirementSummary: coderSummaryFromPayload(
+            proposalPayload,
+            "No diff returned for requirement review.",
+          ),
           reviewerSummary: "No reviewer evidence available.",
           status: "blocked",
           targetMatch: false,
@@ -262,7 +306,7 @@ export default function CodingCockpitShell() {
       }
       const changedFiles = changedFilesFromPayload(diffPayload);
       const blocked = statusFromPayload(diffPayload) === "blocked";
-      const gate = approvalGateFromPreview(diffPayload, targetFile.trim(), allowedFileList);
+      const gate = approvalGateFromPreview(diffPayload, trimmedTarget, allowedFileList);
       setPreviewState({
         approvalAvailable: !blocked && gate.approvalAvailable,
         approvedAt: null,
@@ -605,9 +649,11 @@ export default function CodingCockpitShell() {
                     <p className="mt-1 text-sm text-slate-400">
                       {previewState.isLoading
                         ? "Requesting a safe preview. No files have been changed."
-                        : previewState.status === "ready"
-                          ? "Preview ready. No files changed yet."
-                          : "Preview blocked. No files changed."}
+                        : previewState.status === "satisfied"
+                          ? "Already satisfied. No diff was produced."
+                          : previewState.status === "ready"
+                            ? "Preview ready. No files changed yet."
+                            : "Preview blocked. No files changed."}
                     </p>
                   </div>
                   <Link
@@ -673,19 +719,27 @@ export default function CodingCockpitShell() {
                         ? "Applied. Verification required before this task is done."
                         : previewState.status === "approved"
                           ? "Approved, not applied. Files are still unchanged."
-                          : previewState.approvalAvailable
-                            ? "Preview ready. Approval is available. Approval is separate from apply."
-                            : "Approval unavailable until preview gates pass. No files changed yet."}
+                          : previewState.status === "satisfied"
+                            ? "Already satisfied. The target file already matches the task, so there is no diff to approve or apply."
+                            : previewState.approvalAvailable
+                              ? "Preview ready. Approval is available. Approval is separate from apply."
+                              : "Approval unavailable until preview gates pass. No files changed yet."}
                     </p>
                   </div>
                   <span
                     className={`inline-flex min-h-9 items-center rounded-md border px-3 text-xs font-semibold ${
                       previewState.approvalAvailable
                         ? "border-emerald-300/40 bg-emerald-300/10 text-emerald-100"
-                        : "border-amber-300/40 bg-amber-300/10 text-amber-100"
+                        : previewState.status === "satisfied"
+                          ? "border-cyan-300/40 bg-cyan-300/10 text-cyan-100"
+                          : "border-amber-300/40 bg-amber-300/10 text-amber-100"
                     }`}
                   >
-                    {previewState.approvalAvailable ? "approval available" : "approval unavailable"}
+                    {previewState.approvalAvailable
+                      ? "approval available"
+                      : previewState.status === "satisfied"
+                        ? "already satisfied"
+                        : "approval unavailable"}
                   </span>
                 </div>
 
@@ -761,7 +815,9 @@ export default function CodingCockpitShell() {
                     ? "Applied, verification required. Commit and push are not available here."
                     : previewState.status === "approved"
                       ? "Approved, not applied. Files are still unchanged until you apply the approved diff."
-                      : "No files changed yet. Approval is required before apply. Commit and push are not available here."}
+                      : previewState.status === "satisfied"
+                        ? "No files changed. Coder reported the target already matches the task. Use a new unique append sentence in the task if you still need a docs smoke diff."
+                        : "No files changed yet. Approval is required before apply. Commit and push are not available here."}
                 </div>
 
                 <div className="mt-4 rounded-md border border-white/10 bg-slate-950/60 p-3">
@@ -770,7 +826,9 @@ export default function CodingCockpitShell() {
                       ? "Last action: approved diff applied. Verification is required next."
                       : previewState.status === "approved"
                         ? "Last action: human approval recorded. No files changed yet."
-                        : "Next legal action appears after preview gates pass."}
+                        : previewState.status === "satisfied"
+                          ? "No apply step. Revise the task or use /proxy-backend for a bounded proposal with a fresh literal."
+                          : "Next legal action appears after preview gates pass."}
                   </div>
                   <div className="flex flex-col gap-2 sm:flex-row">
                     {previewState.status === "ready" && previewState.approvalAvailable ? (
@@ -927,15 +985,69 @@ function messageFromPayload(payload: unknown, status: number): string {
   return message ?? `Preview request returned status ${status}.`;
 }
 
+function taskTextForPromptPacket(task: string, targetFile: string): string {
+  const trimmedTask = task.trim();
+  const targetLine = `Target file: ${targetFile}`;
+  if (/(^|\n)\s*target\s+file\s*:/i.test(trimmedTask)) {
+    return trimmedTask;
+  }
+  return `${targetLine}\n\n${trimmedTask}`;
+}
+
 function diffFromPayload(payload: unknown): string {
   const record = asRecord(payload);
+  const nestedPacket = asRecord(record.prompt_packet ?? record.promptPacket);
   return (
     stringValue(record.proposed_diff) ??
     stringValue(record.proposedDiff) ??
+    stringValue(nestedPacket.proposed_diff) ??
+    stringValue(nestedPacket.proposedDiff) ??
     stringValue(record.unified_diff) ??
     stringValue(record.diff) ??
     ""
   );
+}
+
+function isCoderAlreadySatisfied(payload: unknown): boolean {
+  const record = asRecord(payload);
+  const reasonCode = stringValue(record.reason_code) ?? stringValue(record.reasonCode);
+  const status = stringValue(record.status);
+  return (
+    record.already_satisfied === true ||
+    record.alreadySatisfied === true ||
+    reasonCode === "coder_no_changes_needed" ||
+    status === "already_satisfied"
+  );
+}
+
+function noDiffBlockerFromPayload(payload: unknown): string {
+  const record = asRecord(payload);
+  return (
+    stringValue(record.blocked_reason) ??
+    stringValue(record.blockedReason) ??
+    stringValue(record.reason_code) ??
+    stringValue(record.reasonCode) ??
+    stringValue(record.message) ??
+    messageFromPayload(payload, 200)
+  );
+}
+
+function coderSummaryFromPayload(payload: unknown, fallback: string): string {
+  const record = asRecord(payload);
+  const reasonCode = stringValue(record.reason_code) ?? stringValue(record.reasonCode);
+  if (stringValue(record.blocked_reason) ?? stringValue(record.blockedReason)) {
+    return stringValue(record.blocked_reason) ?? stringValue(record.blockedReason) ?? fallback;
+  }
+  if (reasonCode === "coder_model_not_configured" || reasonCode === "local_model_unavailable") {
+    return "Coder route unavailable. Check SOURCE_PROXY_CODER_MODEL_ALIAS and Ollama.";
+  }
+  if (reasonCode === "coder_sync_timeout") {
+    return "Coder timed out before returning a diff. Narrow scope or raise the sync deadline.";
+  }
+  if (reasonCode === "coder_no_changes_needed") {
+    return "Target already satisfies this task. No diff to approve or apply.";
+  }
+  return reasonCode ? `No diff returned (${reasonCode}).` : fallback;
 }
 
 function changedFilesFromPayload(payload: unknown): string[] {

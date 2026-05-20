@@ -103,8 +103,11 @@ describe("CodingCockpitShell", () => {
     expect(screen.getAllByText("docs/phase-8-manual-check.md").length).toBeGreaterThan(0);
     await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(2));
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      "/v1/coding/codex",
-      expect.objectContaining({ method: "POST" }),
+      "/v1/decisions/prompt-packet",
+      expect.objectContaining({
+        body: expect.stringContaining("Target file: docs/phase-8-manual-check.md\\n\\nAppend"),
+        method: "POST",
+      }),
     );
     expect(globalThis.fetch).toHaveBeenCalledWith(
       "/v1/verification/diff-preview",
@@ -250,5 +253,51 @@ describe("CodingCockpitShell", () => {
     expect(await screen.findByText(/Preview blocked. No files changed/)).toBeInTheDocument();
     expect(screen.getAllByText(/Codex route is config blocked/).length).toBeGreaterThan(0);
     expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("blocks unverified already-satisfied responses without approval or apply controls", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          already_satisfied: true,
+          proposed_diff: "",
+          reason_code: "coder_no_changes_needed",
+          status: "already_satisfied",
+          target: "docs/phase-8-manual-check.md",
+        }),
+        { status: 200 },
+      ),
+    );
+    render(<CodingCockpitShell />);
+
+    fireEvent.change(screen.getByLabelText("Task"), {
+      target: {
+        value:
+          "Append this exact sentence to the end of the target file: Coding cockpit wired preview smoke test passed.",
+      },
+    });
+    fireEvent.change(screen.getByLabelText("Target file"), {
+      target: { value: "docs/phase-8-manual-check.md" },
+    });
+    fireEvent.change(screen.getByLabelText("Allowed files"), {
+      target: { value: "docs/phase-8-manual-check.md" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Preview safely" }));
+
+    expect(await screen.findByText(/Preview blocked. No files changed/)).toBeInTheDocument();
+    expect(screen.getByText(/cannot verify the target content without a diff/)).toBeInTheDocument();
+    expect(screen.getAllByText(/coder_no_changes_needed_unverified/).length).toBeGreaterThan(0);
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      "/v1/decisions/prompt-packet",
+      expect.objectContaining({
+        body: expect.stringContaining(
+          "Target file: docs/phase-8-manual-check.md\\n\\nAppend this exact sentence",
+        ),
+        method: "POST",
+      }),
+    );
+    expect(screen.queryByRole("button", { name: "Approve" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /apply/i })).not.toBeInTheDocument();
   });
 });
