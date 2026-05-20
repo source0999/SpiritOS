@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from collections.abc import Callable
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 
 SECRET_NAME_MARKERS = (
@@ -206,6 +206,16 @@ def _dedupe_paths(values: list[str]) -> list[str]:
     return result
 
 
+def strip_trailing_slash_for_repo_files(path: str) -> str:
+    """`docs/foo.md/` and `docs/foo.md` must compare equal; keep directory trailing slashes."""
+    if not path or path == "/" or not path.endswith("/"):
+        return path
+    trimmed = path.rstrip("/")
+    if PurePosixPath(trimmed).suffix:
+        return trimmed
+    return path
+
+
 def _remove_current_directory_segments(path: str) -> str:
     if not path:
         return ""
@@ -217,4 +227,4 @@ def _remove_current_directory_segments(path: str) -> str:
         normalized = f"/{normalized}"
     if trailing_slash and normalized and not normalized.endswith("/"):
         normalized = f"{normalized}/"
-    return normalized
+    return strip_trailing_slash_for_repo_files(normalized)

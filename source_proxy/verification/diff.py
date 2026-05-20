@@ -926,10 +926,16 @@ def _requirement_coverage(
 
     added = _added_diff_text(unified_diff)
     diff_text = unified_diff.replace("\\", "/")
-    changed_paths = {str(file.get("path") or "").replace("\\", "/") for file in files}
+    changed_paths = {
+        _normalize_task_spec_path(str(file.get("path") or ""))
+        for file in files
+        if _normalize_task_spec_path(str(file.get("path") or ""))
+    }
     missing: list[str] = []
 
     target = explicit_target or _extract_explicit_target(task)
+    if target:
+        target = _normalize_task_spec_path(target)
     route = _extract_route_path(task)
     route_target = _route_to_app_router_page(route) if route else None
     if changed_paths and all(path.endswith(".md") for path in changed_paths if path):
@@ -1507,6 +1513,8 @@ def _clean_repo_path(raw_path: str, *, strip_diff_prefix: bool) -> str:
 
 
 def _remove_current_directory_segments(path: str) -> str:
+    from source_proxy.safety.paths import strip_trailing_slash_for_repo_files
+
     if not path:
         return ""
     absolute = path.startswith("/")
@@ -1517,7 +1525,7 @@ def _remove_current_directory_segments(path: str) -> str:
         normalized = f"/{normalized}"
     if trailing_slash and normalized and not normalized.endswith("/"):
         normalized = f"{normalized}/"
-    return normalized
+    return strip_trailing_slash_for_repo_files(normalized)
 
 
 def _normalize_task_spec_path(raw_path: str) -> str:

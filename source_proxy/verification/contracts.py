@@ -181,7 +181,9 @@ def validate_replacement_content(
         _run_typescript_parse_check,
     )
 
-    normalized_target = target_path.replace("\\", "/").lstrip("./")
+    from source_proxy.safety.paths import normalize_repo_path_candidate
+
+    normalized_target = normalize_repo_path_candidate(target_path)
     missing: list[str] = []
     task = _requirement_source_text(task_text or "")
 
@@ -198,6 +200,8 @@ def validate_replacement_content(
             missing.append(f"raw prompt text detected: {marker}")
 
     target = _extract_explicit_target(task)
+    if target:
+        target = normalize_repo_path_candidate(target)
     if target and target != normalized_target:
         missing.append(f"target mismatch: {normalized_target} != {target}")
 
