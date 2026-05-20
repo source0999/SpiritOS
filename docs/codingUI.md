@@ -272,6 +272,8 @@ UI-5: Mobile/manual remote checks after simplification.
 
 ## Phase UI-5: Mobile/Manual Remote Checks
 
+Status: in progress.
+
 Intent:
 Make `/coding` usable for Codex mobile and remote workflows without requiring a full desktop visual session for basic review.
 
