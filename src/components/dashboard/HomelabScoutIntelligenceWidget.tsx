@@ -139,6 +139,9 @@ function packetSynthesizedAt(packet: ScoutPacket): string | null {
 
 function packetEvidenceRows(packet: ScoutPacket, sources: ScoutSourceSummary[]): Array<[string, string]> {
   const rows: Array<[string, string | null | undefined]> = [
+    ["Recommended Review Order", reviewOrderLabel(packet.recommended_review_order ?? packet.auto_rank?.recommended_review_order)],
+    ["Why This First", packet.why_this_first ?? packet.auto_rank?.why_this_first],
+    ["Risk Reason", packet.risk_reason ?? packet.auto_rank?.risk_reason],
     ["Source Trust", sourceTrustLabel(packet, sources)],
     ["Confidence", packet.confidence_label ?? percentScore(packet.confidence_score)],
     ["Quality", percentScore(packet.source_quality_score)],
@@ -148,6 +151,10 @@ function packetEvidenceRows(packet: ScoutPacket, sources: ScoutSourceSummary[]):
   ];
 
   return rows.filter((row): row is [string, string] => Boolean(row[1]));
+}
+
+function reviewOrderLabel(value: number | null | undefined): string | null {
+  return typeof value === "number" ? `#${value}` : null;
 }
 
 function packetFindingLabel(finding: NonNullable<ScoutPacket["findings"]>[number]): string {
@@ -886,6 +893,12 @@ function candidateEvidenceRows(
   latestReview: ScoutSourceReviewEvent | null,
 ): Array<[string, string]> {
   const rows: Array<[string, string | null | undefined]> = [
+    [
+      "Recommended Review Order",
+      reviewOrderLabel(candidate.recommended_review_order ?? candidate.auto_rank?.recommended_review_order),
+    ],
+    ["Why This First", candidate.why_this_first ?? candidate.auto_rank?.why_this_first],
+    ["Risk Reason", candidate.risk_reason ?? candidate.auto_rank?.risk_reason],
     ["Trust Tier", candidate.trust_tier ? humanizeScoutLabel(candidate.trust_tier) : null],
     ["Confidence", percentScore(candidate.confidence_score)],
     ["Auto Rank", candidate.automation_label ?? humanizeScoutLabel(candidate.automation_tier)],

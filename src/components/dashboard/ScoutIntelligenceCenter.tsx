@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type ReactNode } from "react";
+import { Fragment, useState, type ReactNode } from "react";
 import { ArrowUp, ListPlus, Search } from "lucide-react";
 
 import { DashboardDemoV4Atmosphere } from "@/components/dashboard/demo-v4/DashboardDemoV4Atmosphere";
@@ -147,6 +147,31 @@ function candidateGroupStatusSummary(group: ScoutSourceCandidateGroup): string {
     .join(", ");
 }
 
+function reviewOrderLabel(value: number | null | undefined): string | null {
+  return typeof value === "number" ? `#${value}` : null;
+}
+
+function packetAutoRankRows(packet: ScoutPacket): Array<[string, string]> {
+  const rows: Array<[string, string | null | undefined]> = [
+    ["Recommended Review Order", reviewOrderLabel(packet.recommended_review_order ?? packet.auto_rank?.recommended_review_order)],
+    ["Why This First", packet.why_this_first ?? packet.auto_rank?.why_this_first],
+    ["Risk Reason", packet.risk_reason ?? packet.auto_rank?.risk_reason],
+  ];
+  return rows.filter((row): row is [string, string] => Boolean(row[1]));
+}
+
+function candidateAutoRankRows(candidate: ScoutSourceCandidate): Array<[string, string]> {
+  const rows: Array<[string, string | null | undefined]> = [
+    [
+      "Recommended Review Order",
+      reviewOrderLabel(candidate.recommended_review_order ?? candidate.auto_rank?.recommended_review_order),
+    ],
+    ["Why This First", candidate.why_this_first ?? candidate.auto_rank?.why_this_first],
+    ["Risk Reason", candidate.risk_reason ?? candidate.auto_rank?.risk_reason],
+  ];
+  return rows.filter((row): row is [string, string] => Boolean(row[1]));
+}
+
 function searchPlanLabel(job: ScoutDiscoveryJob): string {
   const haystack = [
     job.computed_status,
@@ -246,6 +271,12 @@ function SourceCandidateGroups({ groups }: { groups: ScoutSourceCandidateGroup[]
                     <dd>{latestReviewLabel(candidate) ?? "No review history"}</dd>
                     <dt>Poller support</dt>
                     <dd>{candidate.poller_supported === false ? "Needs poller support" : "Supported or unknown"}</dd>
+                    {candidateAutoRankRows(candidate).map(([label, value]) => (
+                      <Fragment key={label}>
+                        <dt>{label}</dt>
+                        <dd>{value}</dd>
+                      </Fragment>
+                    ))}
                   </dl>
                 </li>
               ))}
@@ -528,6 +559,16 @@ function Findings({ overview }: { overview: ScoutOverview }) {
                 <strong>{packetTitle(packet)}</strong>
                 <span>{packetSource(packet)}</span>
                 <p>{packet.summary ?? "Saved packet."}</p>
+                {packetAutoRankRows(packet).length > 0 ? (
+                  <dl>
+                    {packetAutoRankRows(packet).map(([label, value]) => (
+                      <Fragment key={label}>
+                        <dt>{label}</dt>
+                        <dd>{value}</dd>
+                      </Fragment>
+                    ))}
+                  </dl>
+                ) : null}
               </li>
             ))
           : null}
@@ -571,6 +612,12 @@ function SourceApprovals({ overview }: { overview: ScoutOverview }) {
                 <dd>{candidate.reason_codes?.join(", ") || "None provided"}</dd>
                 <dt>Poller support</dt>
                 <dd>{candidate.poller_supported === false ? "Needs poller support" : "Supported or unknown"}</dd>
+                {candidateAutoRankRows(candidate).map(([label, value]) => (
+                  <Fragment key={label}>
+                    <dt>{label}</dt>
+                    <dd>{value}</dd>
+                  </Fragment>
+                ))}
               </dl>
             </details>
           </li>
