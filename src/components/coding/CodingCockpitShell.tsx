@@ -48,6 +48,13 @@ type PreviewState = {
   verifierSummary: string;
 };
 
+type TimelineItem = {
+  label: string;
+  status: string;
+  detail: string;
+  active: boolean;
+};
+
 function idlePreviewState(): PreviewState {
   return {
     approvalAvailable: false,
@@ -143,6 +150,72 @@ function nextSafeActionText({
   return "Resolve any preview blocker, then retry safe preview. No files have been changed.";
 }
 
+function readableTaskState(previewState: PreviewState, draftReady: boolean): string {
+  if (previewState.status === "applied") return "Applied, verification required";
+  if (previewState.status === "approved") return "Approved, not applied";
+  if (previewState.status === "ready" && previewState.approvalAvailable) return "Needs approval";
+  if (previewState.status === "ready") return "Preview ready";
+  if (previewState.status === "blocked" || previewState.status === "error") return "Blocked";
+  if (draftReady || previewState.isLoading) return "Preview ready";
+  return "Draft";
+}
+
+function buildTimelineItems(previewState: PreviewState, draftReady: boolean): TimelineItem[] {
+  const hasPreview = previewState.status !== "idle" || previewState.isLoading || draftReady;
+  const reviewed = previewState.status !== "idle" && !previewState.isLoading;
+  const approvalActive = previewState.approvalAvailable || previewState.status === "approved";
+  const applied = previewState.status === "applied";
+  return [
+    {
+      label: "Architect",
+      status: draftReady ? "Task scoped" : "Draft",
+      detail: draftReady
+        ? "Task, target, allowed files, and checks are staged for preview."
+        : "Waiting for a scoped task.",
+      active: draftReady,
+    },
+    {
+      label: "Coder",
+      status: previewState.isLoading ? "Previewing" : hasPreview ? "Preview ready" : "Waiting",
+      detail: hasPreview ? "Proposal evidence is captured without applying files." : "No proposal yet.",
+      active: hasPreview,
+    },
+    {
+      label: "Reviewer",
+      status: reviewed ? "Evidence available" : "Waiting",
+      detail: reviewed ? previewState.reviewerSummary : "Reviewer evidence appears after preview.",
+      active: reviewed,
+    },
+    {
+      label: "Verifier",
+      status: reviewed ? "Evidence available" : "Waiting",
+      detail: reviewed ? previewState.verifierSummary : "Verifier evidence appears after preview.",
+      active: reviewed,
+    },
+    {
+      label: "Approval Gate",
+      status:
+        previewState.status === "approved"
+          ? "Approved, not applied"
+          : previewState.approvalAvailable
+            ? "Needs approval"
+            : "Locked",
+      detail: previewState.approvalAvailable
+        ? "Human approval is required before apply."
+        : "Approval remains locked until preview gates pass.",
+      active: approvalActive,
+    },
+    {
+      label: "Apply Result",
+      status: applied ? "Applied, verification required" : "Not applied",
+      detail: applied
+        ? previewState.applySummary || "Approved diff was applied. Verification is required."
+        : "No files have been applied from this cockpit state.",
+      active: applied,
+    },
+  ];
+}
+
 export default function CodingCockpitShell() {
   const [task, setTask] = useState("");
   const [targetFile, setTargetFile] = useState("");
@@ -175,16 +248,8 @@ export default function CodingCockpitShell() {
   const activeStepIndex = statusStepIndex(previewState);
   const currentTaskTitle = task.trim() || "No active task";
   const currentTaskTarget = normalizeRepoPath(targetFile) || "No target selected";
-  const currentTaskState =
-    previewState.status === "applied"
-      ? "Applied, verification required"
-      : previewState.status === "approved"
-        ? "Approved, not applied"
-        : previewState.approvalAvailable
-          ? "Preview ready"
-          : draftReady
-            ? "Draft ready"
-            : "Draft";
+  const currentTaskState = readableTaskState(previewState, draftReady);
+  const timelineItems = buildTimelineItems(previewState, draftReady);
   const nextSafeAction = nextSafeActionText({
     draftReady,
     previewState,
@@ -522,6 +587,49 @@ export default function CodingCockpitShell() {
                 <span className={item.tone}>{item.value}</span>
               </span>
             ))}
+          </div>
+        </section>
+
+        <section aria-labelledby="task-timeline-heading" className="border-b border-white/10 py-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 id="task-timeline-heading" className="text-base font-semibold text-white">
+                Task Timeline
+              </h2>
+              <p className="mt-1 text-sm text-slate-400">
+                {currentTaskState}. Evidence is summarized here; full diagnostics stay in
+                `/proxy-backend`.
+              </p>
+            </div>
+            <span className="inline-flex min-h-9 items-center rounded-md border border-white/15 px-3 text-xs font-semibold text-slate-200">
+              {currentTaskState}
+            </span>
+          </div>
+          <ol className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {timelineItems.map((item) => (
+              <li
+                className={`rounded-md border p-3 ${
+                  item.active
+                    ? "border-emerald-300/40 bg-emerald-300/10"
+                    : "border-white/10 bg-white/[0.03]"
+                }`}
+                key={item.label}
+              >
+                <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                  {item.label}
+                </div>
+                <div className="mt-1 text-sm font-semibold text-slate-100">{item.status}</div>
+                <p className="mt-2 text-sm leading-6 text-slate-400">{item.detail}</p>
+              </li>
+            ))}
+          </ol>
+          <div className="mt-4 rounded-md border border-white/10 bg-slate-900/70 p-3 text-sm">
+            <div className="font-semibold text-white">Terminal/Test Evidence</div>
+            <p className="mt-2 leading-6 text-slate-400">
+              {previewState.status === "idle"
+                ? `Expected checks: ${expectedChecks.trim() || "none listed"}. Evidence appears after preview and verification.`
+                : `${previewState.requirementSummary} ${previewState.verifierSummary}`}
+            </p>
           </div>
         </section>
 
