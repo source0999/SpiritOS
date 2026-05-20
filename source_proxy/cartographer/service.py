@@ -1263,6 +1263,110 @@ def build_cartographer_level_4_push_readiness_contract() -> dict[str, Any]:
     }
 
 
+def build_cartographer_level_4_push_queue_proposal_preview() -> dict[str, Any]:
+    readiness = build_cartographer_level_4_push_readiness_contract()
+    proposals = [
+        _level_4_push_queue_proposal(item)
+        for item in readiness["push_previews"]
+    ]
+    return {
+        "status": "observing",
+        "level": 4,
+        "mode": "push_queue_proposal_preview",
+        "proposal_version": "cartographer.level_4.push_queue_proposal_preview.v1",
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "push_allowed": False,
+        "push_enabled": False,
+        "auto_push_allowed": False,
+        "merge_allowed": False,
+        "branch_creation_allowed": False,
+        "cleanup_allowed": False,
+        "stash_allowed": False,
+        "push_queue_creation_allowed": False,
+        "push_queue_item_created": False,
+        "proposal_count": len(proposals),
+        "push_queue_proposals": proposals,
+        "required_approval_fields": [
+            "proposal_id",
+            "approval_id",
+            "approved_by",
+            "exact_commits",
+            "remote",
+            "branch",
+            "upstream",
+            "checks",
+        ],
+        "forbidden_actions": readiness["forbidden_actions"],
+        "manual_checks": [
+            "git status -sb",
+            "git log --oneline @{u}..HEAD",
+            'PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -k "level_4_push_queue_proposal or push_queue"',
+        ],
+        "next_step": (
+            "Review proposal preview; approval gate remains separate and push execution is disabled."
+            if proposals
+            else "No push queue proposal previews are available."
+        ),
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def _level_4_push_queue_proposal(item: dict[str, Any]) -> dict[str, Any]:
+    proposal_id = f"level-4-push-proposal-{item['push_id']}"
+    blockers = list(dict.fromkeys(item.get("push_blockers", [])))
+    return {
+        "level": 4,
+        "proposal_id": proposal_id,
+        "proposal_version": "cartographer.level_4.push_queue_proposal_preview.v1",
+        "source_push_id": item["push_id"],
+        "remote": item["remote"],
+        "branch": item["branch"],
+        "upstream": item.get("upstream"),
+        "ahead": item.get("ahead", 0),
+        "behind": item.get("behind", 0),
+        "commits_to_push": item.get("commits_to_push", []),
+        "files": item.get("files", []),
+        "push_command_preview": item.get("push_command_preview", ""),
+        "rollback_guidance": item.get("rollback_guidance", ""),
+        "risk_notes": [
+            *item.get("branch_protection_warnings", []),
+            *item.get("reason_codes", []),
+        ],
+        "required_checks": [
+            "commit_audit_status_recorded",
+            "test_status_passed",
+            "dirty_tree_clean",
+            "drift_clear",
+            "branch_not_behind",
+        ],
+        "check_status": {
+            "commit_audit_status": item.get("commit_audit_status"),
+            "test_status": item.get("test_status"),
+            "dirty": item.get("dirty"),
+            "drift_status": item.get("drift_status"),
+            "behind": item.get("behind", 0),
+        },
+        "blockers": blockers,
+        "approval_required": True,
+        "approval_id": None,
+        "approved_by": None,
+        "approved_at": None,
+        "push_allowed": False,
+        "push_enabled": False,
+        "push_created": False,
+        "creates_push_queue_item": False,
+        "push_queue_item_created": False,
+        "merge_allowed": False,
+        "branch_creation_allowed": False,
+        "cleanup_allowed": False,
+        "stash_allowed": False,
+        "actions_taken": False,
+        "expected_output": "human-reviewable push queue proposal preview only",
+    }
+
+
 def build_cartographer_audit_trail() -> dict[str, Any]:
     events = build_audit_trail()
     return {
