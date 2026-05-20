@@ -9,6 +9,10 @@ from source_proxy.cartographer.git_status import read_git_status_for_project
 from source_proxy.cartographer.project_discovery import discover_projects
 
 
+LEVEL_1_REVIEW_GATE_MARKER = Path("docs/cartographer-level-1-review-gate.md")
+LEVEL_1_REVIEW_GATE_TOKEN = "level_1_review_gate: accepted_by_britton"
+
+
 def build_level_2_readiness() -> dict[str, Any]:
     promotion = build_autonomy_promotion_recommendation()
     level_1 = promotion.get("level_1_readiness")
@@ -17,10 +21,11 @@ def build_level_2_readiness() -> dict[str, Any]:
         if isinstance(level_1, dict) and level_1.get("label")
         else "unknown"
     )
-    britton_override = _level_1_accepted_by_britton()
     project = _first_project()
+    project_root = Path(project.root) if project is not None else None
+    britton_override = _level_1_accepted_by_britton(project_root)
     git_status = (
-        read_git_status_for_project(project_id=project.project_id, root=Path(project.root))
+        read_git_status_for_project(project_id=project.project_id, root=project_root)
         if project is not None
         else None
     )
@@ -567,8 +572,27 @@ def _only_level_1_blocked(blockers: list[dict[str, Any]]) -> bool:
     return bool(blockers) and all(blocker["code"] == "level_1_review_gate" for blocker in blockers)
 
 
-def _level_1_accepted_by_britton() -> bool:
-    return os.environ.get("CARTOGRAPHER_LEVEL_1_ACCEPTED_BY_BRITTON", "").lower() in {"1", "true", "yes"}
+def _level_1_accepted_by_britton(project_root: Path | None) -> bool:
+    return (
+        os.environ.get("CARTOGRAPHER_LEVEL_1_ACCEPTED_BY_BRITTON", "").lower() in {"1", "true", "yes"}
+        or _level_1_review_gate_marker_accepted(project_root)
+    )
+
+
+def _level_1_review_gate_marker_accepted(project_root: Path | None) -> bool:
+    if project_root is None:
+        return False
+    marker = project_root / LEVEL_1_REVIEW_GATE_MARKER
+    try:
+        text = marker.read_text(encoding="utf-8")
+    except OSError:
+        return False
+    return (
+        LEVEL_1_REVIEW_GATE_TOKEN in text
+        and "commit_allowed: false" in text
+        and "push_allowed: false" in text
+        and "self_promotion_allowed: false" in text
+    )
 
 
 def _first_project() -> Any | None:
