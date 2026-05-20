@@ -27,6 +27,8 @@ PROFILE_SCOUT_SOURCE_GATE = "scout-source-gate"
 PROFILE_SCOUT_SEARCH_DIAGNOSTICS = "scout-search-diagnostics"
 PROFILE_SCOUT_SEARCH_SMOKE = "scout-search-smoke"
 PROFILE_SCOUT_SOAK_SNAPSHOT = "scout-soak-snapshot"
+PROFILE_SCOUT_LEVEL_1_SOAK = "scout-level-1-soak"
+PROFILE_SCOUT_LEVEL_2_EVIDENCE_SNAPSHOT = "scout-level-2-evidence-snapshot"
 PROFILE_PHASE_4F_CLOSEOUT = "phase-4f-closeout"
 PROFILE_CARTOGRAPHER_SAFETY = "cartographer-safety"
 PROFILE_CARTOGRAPHER_SOAK_SNAPSHOT = "cartographer-soak-snapshot"
@@ -113,6 +115,10 @@ def run_runner_profile(*, profile: str) -> dict[str, Any]:
         return _run_scout_search_smoke_profile()
     if profile == PROFILE_SCOUT_SOAK_SNAPSHOT:
         return _run_scout_soak_snapshot_profile()
+    if profile == PROFILE_SCOUT_LEVEL_1_SOAK:
+        return _run_scout_level_1_soak_profile()
+    if profile == PROFILE_SCOUT_LEVEL_2_EVIDENCE_SNAPSHOT:
+        return _run_scout_level_2_evidence_snapshot_profile()
     if profile == PROFILE_PHASE_4F_CLOSEOUT:
         return _run_phase_4f_closeout_profile()
     if profile == PROFILE_CARTOGRAPHER_SAFETY:
@@ -591,6 +597,14 @@ def _unexpected_cartographer_soak_delta(delta: list[str]) -> list[str]:
         if "source_proxy/cartographer/soak-logs/cartographer-soak-snapshot-" not in line
         and "source_proxy/cartographer/soak-logs/" not in line
         and "scout/soak-logs/scout-soak-snapshot-" not in line
+    ]
+
+
+def _unexpected_level_2_evidence_delta(delta: list[str]) -> list[str]:
+    return [
+        line
+        for line in delta
+        if "scout/soak-logs/scout-level-2-evidence-" not in line
     ]
 
 
@@ -1405,6 +1419,271 @@ def _run_scout_soak_snapshot_profile(
     return snapshot
 
 
+def _run_scout_level_1_soak_profile(
+    *,
+    base_url: str = DEFAULT_SCOUT_BASE_URL,
+    iterations: int = 3,
+) -> dict[str, Any]:
+    base_url = base_url.rstrip("/")
+    before = _git_status_short()
+    before_head = _git_head()
+    samples = []
+    for index in range(iterations):
+        checks = {
+            "overview": _http_get_json(f"{base_url}/v1/scout/overview?limit=5"),
+            "source_candidates": _http_get_json(f"{base_url}/v1/scout/source-candidates?limit=200"),
+            "sources": _http_get_json(f"{base_url}/v1/scout/sources"),
+            "discovery_jobs": _http_get_json(f"{base_url}/v1/scout/discovery-jobs?limit=50"),
+            "packet_explorer": _http_get_json(f"{base_url}/v1/scout/packets/explorer?limit=100"),
+        }
+        samples.append(
+            {
+                "iteration": index + 1,
+                "checks": checks,
+                "summary": _scout_level_1_soak_sample_summary(checks),
+            }
+        )
+    after = _git_status_short()
+    after_head = _git_head()
+    status_delta = _git_status_delta(before, after)
+    unexpected_status_delta = _unexpected_status_delta(status_delta)
+    summaries = [sample["summary"] for sample in samples]
+    endpoints_ok = all(
+        check["ok"]
+        for sample in samples
+        for check in sample["checks"].values()
+    )
+    invariants = _scout_level_1_soak_invariants(summaries)
+    warnings = _scout_level_1_soak_warnings(summaries)
+    head_changed = bool(before_head and after_head and before_head != after_head)
+    checks_passed = {
+        "endpoints_ok": endpoints_ok,
+        **invariants,
+        "no_unexpected_file_changes": not unexpected_status_delta,
+        "head_unchanged": not head_changed,
+    }
+    result = "pass" if all(checks_passed.values()) else "fail"
+    return {
+        "profile": PROFILE_SCOUT_LEVEL_1_SOAK,
+        "result": result,
+        "base_url": base_url,
+        "read_only": True,
+        "mutated": False,
+        "iterations": iterations,
+        "samples": samples,
+        "summary": {
+            "first": summaries[0] if summaries else {},
+            "last": summaries[-1] if summaries else {},
+            "rank_fields": _scout_level_1_rank_field_summary(summaries),
+            "warnings": warnings,
+        },
+        "checks": checks_passed,
+        "file_change_verdict": {
+            "before": before,
+            "after": after,
+            "status_delta": status_delta,
+            "unexpected_status_delta": unexpected_status_delta,
+            "head_before": before_head,
+            "head_after": after_head,
+            "head_changed": head_changed,
+        },
+        "recommendation": "ready for next increment" if result == "pass" else "fix needed",
+    }
+
+
+def _run_scout_level_2_evidence_snapshot_profile(
+    *,
+    base_url: str = DEFAULT_SCOUT_BASE_URL,
+    output_dir: Path = Path("scout/soak-logs"),
+) -> dict[str, Any]:
+    base_url = base_url.rstrip("/")
+    timestamp = dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
+    before = _git_status_short()
+    before_head = _git_head()
+    checks = {
+        "health": _http_get_json(f"{base_url}/health"),
+        "overview": _http_get_json(f"{base_url}/v1/scout/overview?limit=5"),
+        "sources": _http_get_json(f"{base_url}/v1/scout/sources"),
+        "source_candidates": _http_get_json(f"{base_url}/v1/scout/source-candidates?limit=200"),
+        "discovery_jobs": _http_get_json(f"{base_url}/v1/scout/discovery-jobs?limit=50"),
+        "packet_explorer": _http_get_json(f"{base_url}/v1/scout/packets/explorer?limit=100"),
+    }
+    sample_summary = _scout_level_1_soak_sample_summary(
+        {
+            "overview": checks["overview"],
+            "source_candidates": checks["source_candidates"],
+            "sources": checks["sources"],
+            "discovery_jobs": checks["discovery_jobs"],
+            "packet_explorer": checks["packet_explorer"],
+        }
+    )
+    rank_fields = _scout_level_1_rank_field_summary([sample_summary])
+    invariants = _scout_level_1_soak_invariants([sample_summary])
+    endpoints_ok = all(check["ok"] for check in checks.values())
+    evidence = {
+        "profile": PROFILE_SCOUT_LEVEL_2_EVIDENCE_SNAPSHOT,
+        "timestamp": timestamp,
+        "base_url": base_url,
+        "endpoint_read_only": True,
+        "wrote_snapshot": True,
+        "checks": checks,
+        "summary": {
+            **sample_summary,
+            "rank_fields": rank_fields,
+            "warnings": [],
+        },
+        "invariants": invariants,
+        "forbidden_actions": [
+            "automatic discovery execution",
+            "candidate extraction",
+            "source activation",
+            "source approval",
+            "source rejection",
+            "source blocking",
+            "packet promotion",
+            "proxy memory writes",
+            "coding context writes",
+            "apply",
+            "commit",
+            "push",
+            "service changes",
+            "worker registration",
+        ],
+    }
+    path = _write_level_2_evidence_snapshot(snapshot=evidence, output_dir=output_dir)
+    after = _git_status_short()
+    after_head = _git_head()
+    status_delta = _git_status_delta(before, after)
+    unexpected_status_delta = _unexpected_level_2_evidence_delta(status_delta)
+    head_changed = bool(before_head and after_head and before_head != after_head)
+    checks_passed = {
+        "endpoints_ok": endpoints_ok,
+        "rank_fields_visible": rank_fields["rank_fields_visible"],
+        **invariants,
+        "snapshot_log_only": not unexpected_status_delta,
+        "head_unchanged": not head_changed,
+    }
+    result = "pass" if all(checks_passed.values()) else "fail"
+    evidence["result"] = result
+    evidence["mutated"] = False
+    evidence["snapshot_path"] = str(path)
+    evidence["checks_passed"] = checks_passed
+    evidence["file_change_verdict"] = {
+        "allowed_writes": [str(path)],
+        "before": before,
+        "after": after,
+        "status_delta": status_delta,
+        "unexpected_status_delta": unexpected_status_delta,
+        "head_before": before_head,
+        "head_after": after_head,
+        "head_changed": head_changed,
+        "snapshot_log_only": not unexpected_status_delta,
+    }
+    evidence["recommendation"] = "ready for next increment" if result == "pass" else "fix needed"
+    path.write_text(json.dumps(evidence, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return evidence
+
+
+def _scout_level_1_soak_sample_summary(checks: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    overview = _body_dict(checks["overview"])
+    candidates = _body_dict(checks["source_candidates"])
+    sources = _body_dict(checks["sources"])
+    discovery = _body_dict(checks["discovery_jobs"])
+    packets = _body_dict(checks["packet_explorer"])
+    overview_counts = overview.get("counts") if isinstance(overview.get("counts"), dict) else {}
+    backlog = overview.get("backlog") if isinstance(overview.get("backlog"), dict) else {}
+    packet_synthesis = (
+        overview.get("packet_synthesis")
+        if isinstance(overview.get("packet_synthesis"), dict)
+        else {}
+    )
+    discovery_execution = (
+        discovery.get("execution") if isinstance(discovery.get("execution"), dict) else {}
+    )
+    candidate_items = _dict_list(candidates.get("candidates"))
+    packet_items = _dict_list(packets.get("packets"))
+    return {
+        "health_ok": checks["overview"]["ok"],
+        "packet_synthesis_state": packet_synthesis.get("state"),
+        "backlog": backlog,
+        "promotion_queue": overview_counts.get("promotion_queue"),
+        "source_count": sources.get("count", len(_dict_list(sources.get("sources")))),
+        "candidate_counts": candidates.get("counts", {}),
+        "candidate_total": _candidate_total(checks["source_candidates"]),
+        "discovery_count": _discovery_job_count(checks["discovery_jobs"]),
+        "discovery_execution": discovery_execution,
+        "packet_count": overview_counts.get("packets"),
+        "verdict_count": overview_counts.get("verdicts"),
+        "packet_explorer_count": packets.get("count", len(packet_items)),
+        "candidate_rank_field_count": sum(1 for item in candidate_items if _has_auto_rank_fields(item)),
+        "packet_rank_field_count": sum(1 for item in packet_items if _has_auto_rank_fields(item)),
+    }
+
+
+def _scout_level_1_soak_invariants(summaries: list[dict[str, Any]]) -> dict[str, bool]:
+    first = summaries[0] if summaries else {}
+    return {
+        "source_count_stable": all(
+            summary.get("source_count") == first.get("source_count") for summary in summaries
+        ),
+        "candidate_counts_stable": all(
+            summary.get("candidate_counts") == first.get("candidate_counts") for summary in summaries
+        ),
+        "promotion_queue_stable": all(
+            summary.get("promotion_queue") == first.get("promotion_queue") for summary in summaries
+        ),
+        "discovery_count_stable": all(
+            summary.get("discovery_count") == first.get("discovery_count") for summary in summaries
+        ),
+        "discovery_manual_controlled": all(
+            (summary.get("discovery_execution") or {}).get("mode") == "manual_controlled"
+            and (summary.get("discovery_execution") or {}).get("automatic_execution") is False
+            and (summary.get("discovery_execution") or {}).get("worker_registered") is False
+            for summary in summaries
+        ),
+        "backlog_zero": all(
+            (summary.get("backlog") or {}).get("unsynthesized_artifacts") == 0
+            and (summary.get("backlog") or {}).get("debugger_pending_packets") == 0
+            and (summary.get("backlog") or {}).get("debugger_pending_without_verdict") == 0
+            for summary in summaries
+        ),
+    }
+
+
+def _scout_level_1_rank_field_summary(summaries: list[dict[str, Any]]) -> dict[str, Any]:
+    candidate_counts = [summary.get("candidate_rank_field_count", 0) for summary in summaries]
+    packet_counts = [summary.get("packet_rank_field_count", 0) for summary in summaries]
+    return {
+        "candidate_rank_field_counts": candidate_counts,
+        "packet_rank_field_counts": packet_counts,
+        "rank_fields_visible": any(count > 0 for count in candidate_counts + packet_counts),
+    }
+
+
+def _scout_level_1_soak_warnings(summaries: list[dict[str, Any]]) -> list[str]:
+    warnings: list[str] = []
+    rank_fields = _scout_level_1_rank_field_summary(summaries)
+    if not rank_fields["rank_fields_visible"]:
+        warnings.append("auto-rank fields are not visible on the live Scout service yet")
+    first = summaries[0] if summaries else {}
+    if any(summary.get("packet_count") != first.get("packet_count") for summary in summaries):
+        warnings.append("packet count changed during soak; verify this was normal observer polling")
+    return warnings
+
+
+def _has_auto_rank_fields(item: dict[str, Any]) -> bool:
+    auto_rank = item.get("auto_rank")
+    return (
+        isinstance(auto_rank, dict)
+        and auto_rank.get("mode") == "auto_rank_only"
+        and auto_rank.get("read_only") is True
+        and auto_rank.get("mutation_allowed") is False
+        and isinstance(item.get("recommended_review_order"), int)
+        and isinstance(item.get("why_this_first"), str)
+        and isinstance(item.get("risk_reason"), str)
+    )
+
+
 def _inspect_scout_compose(path: Path = Path("scout/docker-compose.scout.yml")) -> dict[str, Any]:
     if not path.is_file():
         return {
@@ -2104,6 +2383,12 @@ def _write_soak_snapshot(*, snapshot: dict[str, Any], output_dir: Path) -> Path:
     return output_dir / f"scout-soak-snapshot-{stamp}.json"
 
 
+def _write_level_2_evidence_snapshot(*, snapshot: dict[str, Any], output_dir: Path) -> Path:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    stamp = str(snapshot["timestamp"]).replace(":", "").replace("+0000", "Z").replace("+00:00", "Z")
+    return output_dir / f"scout-level-2-evidence-{stamp}.json"
+
+
 def _write_cartographer_soak_snapshot(*, snapshot: dict[str, Any], output_dir: Path) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
     stamp = str(snapshot["timestamp"]).replace(":", "").replace("+0000", "Z").replace("+00:00", "Z")
@@ -2523,6 +2808,10 @@ def format_runner_report(payload: dict[str, Any]) -> str:
         return _format_scout_search_smoke_report(payload)
     if payload["profile"] == PROFILE_SCOUT_SOAK_SNAPSHOT:
         return _format_scout_soak_snapshot_report(payload)
+    if payload["profile"] == PROFILE_SCOUT_LEVEL_1_SOAK:
+        return _format_scout_level_1_soak_report(payload)
+    if payload["profile"] == PROFILE_SCOUT_LEVEL_2_EVIDENCE_SNAPSHOT:
+        return _format_scout_level_2_evidence_snapshot_report(payload)
     return _format_smoke_report(payload)
 
 
@@ -3263,6 +3552,68 @@ def _format_scout_soak_snapshot_report(payload: dict[str, Any]) -> str:
         f"- db size bytes: {summary['db_size_bytes']}",
         f"- docker logs available: {_bool_text(summary['docker_logs_available'])}",
         f"- warnings: {_plain_list(summary['warnings'])}",
+        "",
+        f"Recommendation: {payload['recommendation']}",
+    ]
+    return "\n".join(lines)
+
+
+def _format_scout_level_1_soak_report(payload: dict[str, Any]) -> str:
+    summary = payload["summary"]
+    first = summary["first"]
+    last = summary["last"]
+    file_change = payload["file_change_verdict"]
+    lines = [
+        "SCOUT LEVEL 1 SOAK",
+        "",
+        f"Profile: {payload['profile']}",
+        f"Result: {payload['result'].upper()}",
+        f"Iterations: {payload['iterations']}",
+        "",
+        "Checks:",
+        *[f"- {name}: {_pass_fail(passed)}" for name, passed in payload["checks"].items()],
+        "",
+        "State:",
+        f"- source count: {first.get('source_count')} -> {last.get('source_count')}",
+        f"- candidate counts: {json.dumps(first.get('candidate_counts', {}), sort_keys=True)}",
+        f"- promotion queue: {first.get('promotion_queue')} -> {last.get('promotion_queue')}",
+        f"- discovery count: {first.get('discovery_count')} -> {last.get('discovery_count')}",
+        f"- rank fields visible: {_bool_text(summary['rank_fields']['rank_fields_visible'])}",
+        f"- warnings: {_plain_list(summary['warnings'])}",
+        "",
+        "File-change verdict:",
+        f"- unexpected status delta: {_plain_list(file_change['unexpected_status_delta'])}",
+        f"- head changed: {_bool_text(file_change['head_changed'])}",
+        "",
+        f"Recommendation: {payload['recommendation']}",
+    ]
+    return "\n".join(lines)
+
+
+def _format_scout_level_2_evidence_snapshot_report(payload: dict[str, Any]) -> str:
+    summary = payload["summary"]
+    file_change = payload["file_change_verdict"]
+    lines = [
+        "SCOUT LEVEL 2 EVIDENCE SNAPSHOT",
+        "",
+        f"Profile: {payload['profile']}",
+        f"Result: {payload['result'].upper()}",
+        f"Snapshot: {payload['snapshot_path']}",
+        "",
+        "Checks:",
+        *[f"- {name}: {_pass_fail(passed)}" for name, passed in payload["checks_passed"].items()],
+        "",
+        "State:",
+        f"- source count: {summary.get('source_count')}",
+        f"- candidate counts: {json.dumps(summary.get('candidate_counts', {}), sort_keys=True)}",
+        f"- promotion queue: {summary.get('promotion_queue')}",
+        f"- discovery mode: {(summary.get('discovery_execution') or {}).get('mode')}",
+        f"- rank fields visible: {_bool_text(summary['rank_fields']['rank_fields_visible'])}",
+        "",
+        "Mutation boundary:",
+        f"- snapshot log only: {_bool_text(file_change['snapshot_log_only'])}",
+        f"- unexpected status delta: {_plain_list(file_change['unexpected_status_delta'])}",
+        f"- head changed: {_bool_text(file_change['head_changed'])}",
         "",
         f"Recommendation: {payload['recommendation']}",
     ]

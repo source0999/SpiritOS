@@ -18,7 +18,7 @@ from scout.sources.discovery_jobs import (
     pause_discovery_job,
     resume_discovery_job,
 )
-from scout.sources.storage import candidate_counts
+from scout.sources.storage import candidate_counts, upsert_candidate
 from scout.storage.db import init_database
 from scout.storage.db import open_connection
 from scout.storage.migrations import apply_migrations
@@ -315,6 +315,61 @@ def test_discovery_jobs_api_rejects_invalid_status_filter(tmp_path, monkeypatch)
     assert response.status_code == 422
 
 
+def test_discovery_proposals_are_read_only_and_require_manual_approval(
+    tmp_path,
+    monkeypatch,
+):
+    client, settings = _client(tmp_path, monkeypatch)
+    recommended = upsert_candidate(
+        settings.database_path,
+        display_uri="https://github.com/fastapi/fastapi",
+        source_kind="github_repo",
+        status="recommended",
+        confidence_score=0.98,
+        trust_tier="official",
+        reason_codes=["official_repo_pattern", "metadata_sufficient"],
+    )
+    upsert_candidate(
+        settings.database_path,
+        display_uri="https://casino.example.com/feed",
+        source_kind="blog",
+        status="stored",
+        confidence_score=0.2,
+        reason_codes=["spam_pattern_detected"],
+    )
+    before_counts = candidate_counts(settings.database_path)
+    before_jobs = list_discovery_jobs(settings.database_path)
+    before_active_sources = _active_source_count(settings)
+
+    first = client.get("/v1/scout/discovery-proposals").json()
+    second = client.get("/v1/scout/discovery-proposals").json()
+
+    assert first["mode"] == "manual_approved_proposals"
+    assert first["read_only"] is True
+    assert first["mutation_allowed"] is False
+    assert first["approval_required_before"] == [
+        "create_discovery_job",
+        "search-preview",
+        "extract-candidates",
+    ]
+    assert "automatic_candidate_extraction" in first["forbidden_actions"]
+    assert first["count"] == 1
+    assert first["proposals"] == second["proposals"]
+    proposal = first["proposals"][0]
+    assert proposal["source_candidate_id"] == recommended.candidate_id
+    assert proposal["query"] == "official fastapi fastapi release notes changelog"
+    assert proposal["safe_next_action"] == "operator_may_create_discovery_job"
+    assert proposal["mutation_effect"] == "none"
+    assert proposal["approval_required_before"] == [
+        "create_discovery_job",
+        "search-preview",
+        "extract-candidates",
+    ]
+    assert candidate_counts(settings.database_path) == before_counts
+    assert list_discovery_jobs(settings.database_path) == before_jobs
+    assert _active_source_count(settings) == before_active_sources
+
+
 def test_discovery_job_search_preview_is_disabled_by_default(tmp_path, monkeypatch):
     client, settings = _client(tmp_path, monkeypatch)
     job = create_discovery_job(settings.database_path, query="official FastAPI docs")
@@ -506,3 +561,13 @@ def test_discovery_job_extract_candidates_requires_queued_job(tmp_path, monkeypa
 
     assert response.status_code == 409
     assert "not queued" in response.json()["detail"]
+
+
+def _active_source_count(settings):
+    conn = open_connection(settings.database_path)
+    try:
+        return conn.execute(
+            "SELECT COUNT(*) AS count FROM source_registry WHERE status = 'active'"
+        ).fetchone()["count"]
+    finally:
+        conn.close()

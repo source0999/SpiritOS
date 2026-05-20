@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from scout.config import get_settings
+from scout.sources.storage import list_candidates
 from scout.sources.discovery_jobs import (
     DiscoveryJob,
     DiscoveryJobBudget,
@@ -34,6 +35,39 @@ class DiscoveryJobCreateRequest(BaseModel):
     max_results: int = Field(default=10, ge=1, le=50)
     budget: int = Field(default=10, ge=1, le=50)
     metadata: dict[str, Any] | None = None
+
+
+@router.get("/discovery-proposals")
+def get_discovery_proposals(
+    limit: int = Query(default=10, ge=1, le=50),
+) -> dict[str, Any]:
+    settings = get_settings()
+    candidates = list_candidates(settings.database_path, limit=200)
+    budget = get_discovery_job_budget(
+        settings.database_path,
+        max_jobs_per_day=settings.discovery_jobs_per_day,
+    )
+    proposals = _build_discovery_proposals(candidates, limit=limit)
+    return {
+        "count": len(proposals),
+        "mode": "manual_approved_proposals",
+        "read_only": True,
+        "mutation_allowed": False,
+        "approval_required_before": ["create_discovery_job", "search-preview", "extract-candidates"],
+        "forbidden_actions": [
+            "automatic_discovery_execution",
+            "automatic_candidate_extraction",
+            "source_activation",
+            "source_approval",
+            "source_rejection",
+            "source_blocking",
+            "packet_promotion",
+            "proxy_memory_write",
+            "coding_context_write",
+        ],
+        "budget": _budget_to_dict(budget),
+        "proposals": proposals,
+    }
 
 
 @router.get("/discovery-jobs")
@@ -223,6 +257,72 @@ def _execution_to_dict() -> dict[str, Any]:
             "them in the background; use Preview Search or Extract Candidates to advance one."
         ),
     }
+
+
+def _build_discovery_proposals(candidates: list[Any], *, limit: int) -> list[dict[str, Any]]:
+    proposals: list[dict[str, Any]] = []
+    seen_queries: set[str] = set()
+    for candidate in candidates:
+        if candidate.status not in {"recommended", "needs_review"}:
+            continue
+        label = _proposal_topic_label(candidate)
+        if not label:
+            continue
+        query = f"official {label} release notes changelog"
+        normalized_query = " ".join(query.lower().split())
+        if normalized_query in seen_queries:
+            continue
+        seen_queries.add(normalized_query)
+        proposals.append(
+            {
+                "proposal_id": f"proposal:{candidate.candidate_id}",
+                "query": query,
+                "topic_anchor": _proposal_topic_anchor(candidate),
+                "max_results": 5,
+                "budget": 5,
+                "source_candidate_id": candidate.candidate_id,
+                "source_candidate_status": candidate.status,
+                "source_candidate_uri": candidate.canonical_uri,
+                "reason": _proposal_reason(candidate),
+                "risk_reason": "Proposal only; operator approval is required before creating a discovery job.",
+                "safe_next_action": "operator_may_create_discovery_job",
+                "mutation_effect": "none",
+                "approval_required_before": ["create_discovery_job", "search-preview", "extract-candidates"],
+            }
+        )
+        if len(proposals) >= limit:
+            break
+    return proposals
+
+
+def _proposal_topic_label(candidate: Any) -> str:
+    uri = str(candidate.canonical_uri or candidate.display_uri or "").strip()
+    if uri.startswith("github://"):
+        return uri.removeprefix("github://").replace("/", " ")
+    if "://" in uri:
+        without_scheme = uri.split("://", 1)[1]
+        return without_scheme.split("/", 1)[0].replace("www.", "")
+    return uri.replace("_", " ").replace("-", " ")
+
+
+def _proposal_topic_anchor(candidate: Any) -> str:
+    uri = str(candidate.canonical_uri or candidate.display_uri or "").lower()
+    if uri.startswith("github://"):
+        parts = uri.removeprefix("github://").split("/")
+        return parts[0] if parts and parts[0] else "source"
+    if "python" in uri:
+        return "python"
+    if "fastapi" in uri:
+        return "fastapi"
+    if "pydantic" in uri:
+        return "pydantic"
+    return "source"
+
+
+def _proposal_reason(candidate: Any) -> str:
+    if candidate.status == "recommended":
+        return "Recommended Source Gate evidence suggests a bounded manual discovery job may be useful."
+    return "Needs-review Source Gate evidence may benefit from a bounded manual discovery job."
 
 
 def _effective_result_limit(settings: Any, job: DiscoveryJob) -> int:
