@@ -1,6 +1,6 @@
 # SpiritOS Design Systems Master Plan v0.1
 
-Status: manual-first, planning complete, Phase 2.1 manual intake docs complete, runtime implementation not started
+Status: manual-first, planning complete, Phase 3.1 internal raw inventory complete, runtime implementation not started
 
 Status date: 2026-05-19
 
@@ -10,7 +10,7 @@ SpiritOS should build this as a Design Intelligence Stack, not as one mega-agent
 
 The system should start from owned and internal references. The first extraction target should be the existing `src/components/dashboard/demo-v4/` demo and `src/styles/dashboard-demo-v4.css`, with `src/styles/spirit-demo.tokens.css` and `src/theme/spiritPalettes.ts` as related token and palette references. Public websites, random inspiration links, and later Scout discoveries should not enter coding context automatically.
 
-The v0.1 goal is to define the lanes, metadata, safety rules, and small implementation increments. It does not add crawler behavior, autonomous discovery, app UI writes, Scout runtime behavior, Source Proxy behavior, or Cartographer authority. After approval, Phase 1.1 added only the local Design Vault documentation and empty registry scaffold. Phase 2.1 added only the manual source-card template and approval checklist.
+The v0.1 goal is to define the lanes, metadata, safety rules, and small implementation increments. It does not add crawler behavior, autonomous discovery, app UI writes, Scout runtime behavior, Source Proxy behavior, or Cartographer authority. After approval, Phase 1.1 added only the local Design Vault documentation and empty registry scaffold. Phase 2.1 added only the manual source-card template and approval checklist. Phase 3.1 added only an internal dashboard-demo-v4 source card, notes, and raw token inventory.
 
 ## Current Repo Fit
 
@@ -626,6 +626,7 @@ Rollback notes:
 - Plan doc exists at `docs/design-systems-master-v0.1.md`.
 - Phase 1.1 scaffold exists under proposed `data/design-vault/` paths after approval.
 - Phase 2.1 source-card template and approval checklist exist after approval.
+- Phase 3.1 internal dashboard-demo-v4 source card, notes, and raw token inventory exist after approval.
 - All required phases are present.
 - All phases have increments.
 - Every increment has a manual check block.
@@ -639,8 +640,8 @@ Rollback notes:
 - No Cartographer authority is changed.
 - Proposed Design Vault paths are clearly marked proposed until implemented later.
 
-## Recommended Next Implementation Increment After Phase 2.1
+## Recommended Next Implementation Increment After Phase 3.1
 
-Phase 3.1: Extract dashboard demo v4 source card and token inventory manually
+Phase 4.1: Normalize raw internal tokens into token model v0.1
 
 Implementation permission is required before starting that increment.

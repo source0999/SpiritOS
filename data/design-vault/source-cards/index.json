@@ -1,5 +1,16 @@
 {
   "version": "0.1",
-  "status": "empty-manual-registry",
-  "sources": []
+  "status": "manual-registry",
+  "sources": [
+    {
+      "id": "internal-dashboard-demo-v4",
+      "title": "SpiritOS Dashboard Demo v4",
+      "source_type": "internal-demo",
+      "local_path": "src/components/dashboard/demo-v4/",
+      "source_card": "data/design-vault/source-cards/internal-dashboard-demo-v4.json",
+      "pack_path": "data/design-vault/packs/internal-dashboard-demo-v4/",
+      "approved_use_mode": "internal-exact",
+      "approval_status": "approved"
+    }
+  ]
 }
