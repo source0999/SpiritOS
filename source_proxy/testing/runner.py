@@ -590,6 +590,29 @@ def _unexpected_status_delta(delta: list[str]) -> list[str]:
     ]
 
 
+def _unexpected_level_2_evidence_in_global_safety(delta: list[str]) -> list[str]:
+    return [
+        line
+        for line in delta
+        if "scout/soak-logs/scout-level-2-evidence-" in line
+    ]
+
+
+def _global_safety_mutation_notes(unexpected_status_delta: list[str]) -> list[str]:
+    level_2_evidence = _unexpected_level_2_evidence_in_global_safety(unexpected_status_delta)
+    if not level_2_evidence:
+        return []
+    return [
+        (
+            "scout-level-2-evidence-* is expected only during the explicit "
+            "scout-level-2-evidence-snapshot profile; seeing it during "
+            "global-safety-regression usually means a concurrent/manual Level 2 "
+            "evidence run, another wrapper invoked that profile nearby, or a real "
+            "unexpected mutation."
+        )
+    ]
+
+
 def _unexpected_cartographer_soak_delta(delta: list[str]) -> list[str]:
     return [
         line
@@ -973,6 +996,7 @@ def _run_global_safety_regression_profile() -> dict[str, Any]:
     after_head = _git_head()
     status_delta = _git_status_delta(before, after)
     unexpected_status_delta = _unexpected_status_delta(status_delta)
+    mutation_notes = _global_safety_mutation_notes(unexpected_status_delta)
     head_changed = bool(before_head and after_head and before_head != after_head)
     checks = {
         "proxy_safety_harness": proxy_safety_harness["result"] == "pass",
@@ -1011,6 +1035,15 @@ def _run_global_safety_regression_profile() -> dict[str, Any]:
             "changed_by_test_run": bool(unexpected_status_delta),
             "status_delta": status_delta,
             "unexpected_status_delta": unexpected_status_delta,
+            "unexpected_level_2_evidence_files": _unexpected_level_2_evidence_in_global_safety(
+                unexpected_status_delta
+            ),
+            "mutation_policy": (
+                "global-safety-regression allows scout-soak-snapshot-* background evidence only; "
+                "scout-level-2-evidence-* remains unexpected unless the explicit "
+                "scout-level-2-evidence-snapshot profile is running."
+            ),
+            "mutation_notes": mutation_notes,
             "head_before": before_head,
             "head_after": after_head,
             "head_changed": head_changed,
@@ -1570,6 +1603,11 @@ def _run_scout_level_2_evidence_snapshot_profile(
     evidence["checks_passed"] = checks_passed
     evidence["file_change_verdict"] = {
         "allowed_writes": [str(path)],
+        "expected_writes": ["scout/soak-logs/scout-level-2-evidence-*.json"],
+        "evidence_policy": (
+            "scout-level-2-evidence-* is expected only inside the explicit "
+            "scout-level-2-evidence-snapshot profile."
+        ),
         "before": before,
         "after": after,
         "status_delta": status_delta,
@@ -2990,7 +3028,13 @@ def _format_global_safety_regression_report(payload: dict[str, Any]) -> str:
         "",
         "Mutation verdict:",
         f"- changed by test run: {_bool_text(file_change['changed_by_test_run'])}",
+        f"- policy: {file_change.get('mutation_policy', 'global safety mutation policy unavailable')}",
         f"- unexpected status delta: {_plain_list(file_change['unexpected_status_delta'])}",
+        (
+            "- unexpected Level 2 evidence: "
+            f"{_plain_list(file_change.get('unexpected_level_2_evidence_files', []))}"
+        ),
+        f"- notes: {_plain_list(file_change.get('mutation_notes', []))}",
         f"- head before: {file_change.get('head_before') or 'unknown'}",
         f"- head after: {file_change.get('head_after') or 'unknown'}",
         f"- head changed: {_bool_text(file_change['head_changed'])}",
@@ -3611,6 +3655,8 @@ def _format_scout_level_2_evidence_snapshot_report(payload: dict[str, Any]) -> s
         f"- rank fields visible: {_bool_text(summary['rank_fields']['rank_fields_visible'])}",
         "",
         "Mutation boundary:",
+        f"- policy: {file_change.get('evidence_policy', 'profile-local evidence policy unavailable')}",
+        f"- expected writes: {_plain_list(file_change.get('expected_writes', []))}",
         f"- snapshot log only: {_bool_text(file_change['snapshot_log_only'])}",
         f"- unexpected status delta: {_plain_list(file_change['unexpected_status_delta'])}",
         f"- head changed: {_bool_text(file_change['head_changed'])}",
