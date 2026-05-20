@@ -539,6 +539,104 @@ def test_packet_explorer_exposes_promotion_state(tmp_path, monkeypatch):
     assert item["promotion_requested_at"]
 
 
+def test_packet_auto_rank_is_deterministic_and_read_only(tmp_path, monkeypatch):
+    settings = ScoutSettings(data_dir=tmp_path, database_path=tmp_path / "scout.db")
+    init_database(settings.database_path)
+    apply_migrations(settings.database_path)
+    surfaced = make_packet("pkt_rank_surfaced")
+    stored = make_packet("pkt_rank_stored")
+    ignored = make_packet("pkt_rank_ignored")
+    insert_packet(settings, surfaced)
+    insert_packet(settings, stored)
+    insert_packet(settings, ignored)
+    _insert_verdict(settings, "pkt_rank_surfaced", "surface")
+    _insert_verdict(settings, "pkt_rank_stored", "store")
+    _insert_verdict(settings, "pkt_rank_ignored", "ignore")
+    _set_packet_status(settings, "pkt_rank_stored", "stored")
+    _set_packet_status(settings, "pkt_rank_ignored", "ignored")
+    before_counts = _packet_state_counts(settings)
+    monkeypatch.setattr(packets_api, "get_settings", lambda: settings)
+
+    app = FastAPI()
+    app.include_router(router)
+    client = TestClient(app)
+
+    first = client.get("/v1/scout/packets/explorer").json()
+    second = client.get("/v1/scout/packets/explorer").json()
+
+    first_ranks = {
+        item["packet_id"]: item["recommended_review_order"]
+        for item in first["packets"]
+    }
+    second_ranks = {
+        item["packet_id"]: item["recommended_review_order"]
+        for item in second["packets"]
+    }
+    assert first_ranks == second_ranks
+    assert first_ranks["pkt_rank_surfaced"] == 1
+    assert first_ranks["pkt_rank_stored"] == 2
+    assert first_ranks["pkt_rank_ignored"] == 3
+    top = next(item for item in first["packets"] if item["packet_id"] == "pkt_rank_surfaced")
+    assert top["auto_rank"] == {
+        "level": 1,
+        "mode": "auto_rank_only",
+        "read_only": True,
+        "mutation_allowed": False,
+        "recommended_review_order": 1,
+        "why_this_first": "Surfaced packet is likely useful for manual packet review.",
+        "risk_reason": "No automatic packet promotion is allowed.",
+    }
+    assert _packet_state_counts(settings) == before_counts
+
+
+def test_packet_promotion_recommendations_are_read_only(tmp_path, monkeypatch):
+    settings = ScoutSettings(data_dir=tmp_path, database_path=tmp_path / "scout.db")
+    init_database(settings.database_path)
+    apply_migrations(settings.database_path)
+    insert_packet(settings, make_packet("pkt_recommend_promote"))
+    insert_packet(settings, make_packet("pkt_recommend_surface"))
+    insert_packet(settings, make_packet("pkt_recommend_store"))
+    insert_packet(settings, make_packet("pkt_recommend_ignore"))
+    _insert_verdict(settings, "pkt_recommend_promote", "promote")
+    _insert_verdict(settings, "pkt_recommend_surface", "surface")
+    _insert_verdict(settings, "pkt_recommend_store", "store")
+    _insert_verdict(settings, "pkt_recommend_ignore", "ignore")
+    before_counts = _packet_state_counts(settings)
+    monkeypatch.setattr(packets_api, "get_settings", lambda: settings)
+
+    app = FastAPI()
+    app.include_router(router)
+    client = TestClient(app)
+
+    body = client.get("/v1/scout/packets/promotion-recommendations").json()
+
+    assert body["mode"] == "manual_packet_promotion_recommendations"
+    assert body["read_only"] is True
+    assert body["mutation_allowed"] is False
+    assert body["approval_required_before"] == [
+        "queue_promotion",
+        "approve_promotion",
+        "proxy-memory-write",
+    ]
+    assert "automatic packet promotion" in body["forbidden_actions"]
+    assert "proxy memory writes" in body["forbidden_actions"]
+    assert body["count"] == 3
+    assert [
+        item["packet_id"] for item in body["recommendations"]
+    ] == [
+        "pkt_recommend_promote",
+        "pkt_recommend_surface",
+        "pkt_recommend_store",
+    ]
+    top = body["recommendations"][0]
+    assert top["recommended_review_order"] == 1
+    assert top["safe_next_action"] == "operator_may_queue_promotion"
+    assert top["mutation_effect"] == "none"
+    assert top["why_this_first"].startswith("Debugger verdict suggests")
+    assert top["risk_reason"] == "No automatic packet promotion or proxy memory write is allowed."
+    assert _packet_state_counts(settings) == before_counts
+
+
 def test_queue_promotion_api_accepts_surfaced_packet_body(tmp_path, monkeypatch):
     settings = ScoutSettings(data_dir=tmp_path, database_path=tmp_path / "scout.db")
     init_database(settings.database_path)
@@ -578,3 +676,21 @@ def test_scout_overview_promotion_counts_use_manual_queue_states(tmp_path, monke
     assert promotion_status["promoted_count"] == 1
     assert promotion_status["pending_review_count"] == 0
     assert promotion_status["rejected_count"] == 1
+
+
+def _packet_state_counts(settings):
+    conn = open_connection(settings.database_path)
+    try:
+        return {
+            "packets": {
+                row["status"]: row["count"]
+                for row in conn.execute(
+                    "SELECT status, COUNT(*) AS count FROM packets GROUP BY status"
+                ).fetchall()
+            },
+            "promotion_queue": conn.execute(
+                "SELECT COUNT(*) AS count FROM promotion_queue"
+            ).fetchone()["count"],
+        }
+    finally:
+        conn.close()

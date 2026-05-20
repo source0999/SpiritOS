@@ -5,6 +5,7 @@ from dataclasses import asdict
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
+from scout.api.auto_rank import apply_candidate_auto_rank
 from scout.config import get_settings
 from scout.pollers.registry import load_merged_registry
 from scout.sources.discovery import run_artifact_discovery
@@ -270,6 +271,7 @@ async def get_source_candidates(
             limit=limit,
         )
     ]
+    apply_candidate_auto_rank(candidates)
     return {
         "counts": candidate_counts(settings.database_path),
         "review_bundles": source_review_bundles(candidates),

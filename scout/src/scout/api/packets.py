@@ -4,6 +4,7 @@ import structlog
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
+from scout.api.auto_rank import apply_packet_auto_rank
 from scout.api.human import (
     finding_summaries,
     status_explanation,
@@ -217,6 +218,73 @@ def _packet_explorer_item(conn, row) -> dict:
     }
 
 
+def _promotion_recommendation_reason(packet: dict) -> str:
+    decision = packet.get("verdict_decision")
+    status = packet.get("effective_status")
+    if decision == "promote":
+        return "Debugger verdict suggests memory promotion, but operator approval is still required."
+    if status == "surfaced":
+        return "Surfaced packet looks useful enough for manual promotion review."
+    if status == "stored":
+        return "Stored packet may be useful later, so review after surfaced packets."
+    return "Packet is listed for manual review only."
+
+
+def _promotion_recommendation_risk(packet: dict) -> str:
+    if packet.get("promotion_status") in {"queued", "approved"}:
+        return "Promotion state already exists; do not queue automatically."
+    if packet.get("effective_status") == "ignored":
+        return "Ignored packet should not be promoted without explicit operator override."
+    return "No automatic packet promotion or proxy memory write is allowed."
+
+
+def _promotion_recommendation_item(packet: dict, order: int) -> dict:
+    return {
+        "recommendation_id": f"packet-promotion:{packet.get('packet_id')}",
+        "packet_id": packet.get("packet_id"),
+        "recommended_review_order": order,
+        "title": packet.get("title"),
+        "source_uri": packet.get("source_uri"),
+        "source_label": packet.get("source_label"),
+        "trust_label": packet.get("trust_label"),
+        "effective_status": packet.get("effective_status"),
+        "verdict_decision": packet.get("verdict_decision"),
+        "confidence_score": packet.get("confidence_score"),
+        "entity_tags": packet.get("entity_tags") or [],
+        "reason_codes": packet.get("reason_codes") or [],
+        "promotion_status": packet.get("promotion_status"),
+        "promotion_id": packet.get("promotion_id"),
+        "why_this_first": _promotion_recommendation_reason(packet),
+        "risk_reason": _promotion_recommendation_risk(packet),
+        "safe_next_action": "operator_may_queue_promotion",
+        "mutation_effect": "none",
+        "approval_required_before": [
+            "queue_promotion",
+            "approve_promotion",
+            "proxy-memory-write",
+        ],
+    }
+
+
+def _promotion_recommendation_sort_key(packet: dict) -> tuple[int, float, str]:
+    if packet.get("promotion_status") in {"queued", "approved"}:
+        state_rank = 50
+    elif packet.get("verdict_decision") == "promote":
+        state_rank = 0
+    elif packet.get("effective_status") == "surfaced":
+        state_rank = 10
+    elif packet.get("effective_status") == "stored":
+        state_rank = 20
+    else:
+        state_rank = 40
+    confidence = packet.get("confidence_score")
+    try:
+        confidence_rank = -float(confidence)
+    except (TypeError, ValueError):
+        confidence_rank = 0.0
+    return (state_rank, confidence_rank, str(packet.get("packet_id") or ""))
+
+
 @router.get("/recent")
 async def recent_packets(
     limit: int = Query(50, ge=1, le=200),
@@ -232,6 +300,7 @@ async def recent_packets(
             (limit,),
         ).fetchall()
         packets = [_row_to_packet_dict(conn, row, with_verdict) for row in rows]
+        apply_packet_auto_rank(packets)
         return {"packets": packets, "count": len(rows)}
     finally:
         conn.close()
@@ -255,8 +324,10 @@ async def packets_by_decision(
             """,
             (decision, limit),
         ).fetchall()
+        packets = [_row_to_packet_dict(conn, row, True) for row in rows]
+        apply_packet_auto_rank(packets)
         return {
-            "packets": [_row_to_packet_dict(conn, row, True) for row in rows],
+            "packets": packets,
             "count": len(rows),
         }
     finally:
@@ -284,6 +355,7 @@ async def search_packets(
         params.append(limit)
         rows = conn.execute(sql, params).fetchall()
         packets = [_row_to_packet_dict(conn, row, with_verdict) for row in rows]
+        apply_packet_auto_rank(packets)
         return {"packets": packets, "count": len(rows)}
     finally:
         conn.close()
@@ -323,7 +395,56 @@ async def packet_explorer(
         params.append(limit)
         rows = conn.execute(sql, params).fetchall()
         packets = [_packet_explorer_item(conn, row) for row in rows]
+        apply_packet_auto_rank(packets)
         return {"packets": packets, "count": len(packets)}
+    finally:
+        conn.close()
+
+
+@router.get("/promotion-recommendations")
+async def packet_promotion_recommendations(
+    limit: int = Query(20, ge=1, le=100),
+) -> dict:
+    conn = open_connection(get_settings().database_path)
+    try:
+        rows = conn.execute(
+            """
+            SELECT p.packet_json, p.status
+            FROM packets p
+            LEFT JOIN verdicts v ON v.packet_id = p.packet_id
+            WHERE COALESCE(v.decision, p.status) IN (
+                'promote', 'surface', 'store', 'surfaced', 'stored'
+            )
+            ORDER BY COALESCE(v.evaluated_at, p.synthesized_at) DESC
+            LIMIT ?
+            """,
+            (limit,),
+        ).fetchall()
+        packets = [_packet_explorer_item(conn, row) for row in rows]
+        packets.sort(key=_promotion_recommendation_sort_key)
+        recommendations = [
+            _promotion_recommendation_item(packet, index)
+            for index, packet in enumerate(packets, start=1)
+        ]
+        return {
+            "mode": "manual_packet_promotion_recommendations",
+            "read_only": True,
+            "mutation_allowed": False,
+            "count": len(recommendations),
+            "approval_required_before": [
+                "queue_promotion",
+                "approve_promotion",
+                "proxy-memory-write",
+            ],
+            "forbidden_actions": [
+                "automatic packet promotion",
+                "proxy memory writes",
+                "coding context writes",
+                "hidden background workers",
+                "scheduled writes",
+            ],
+            "recommendations": recommendations,
+        }
     finally:
         conn.close()
 
@@ -414,6 +535,8 @@ async def get_packet(packet_id: str) -> dict:
         ).fetchone()
         if not row:
             raise HTTPException(status_code=404)
-        return {"packet": _row_to_packet_dict(conn, row, True)}
+        packets = [_row_to_packet_dict(conn, row, True)]
+        apply_packet_auto_rank(packets)
+        return {"packet": packets[0]}
     finally:
         conn.close()

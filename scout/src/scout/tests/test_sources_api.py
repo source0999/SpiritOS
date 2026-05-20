@@ -7,8 +7,8 @@ from scout.api.overview import router as overview_router
 from scout.api.sources import router
 from scout.config import ScoutSettings
 from scout.sources.storage import block_candidate, upsert_candidate
-from scout.sources.storage import approve_candidate
-from scout.storage.db import init_database
+from scout.sources.storage import approve_candidate, candidate_counts
+from scout.storage.db import init_database, open_connection
 from scout.storage.migrations import apply_migrations
 
 
@@ -371,3 +371,78 @@ def test_source_candidates_api_includes_review_history(tmp_path, monkeypatch):
     assert reviewed["review_history"][0]["previous_status"] == "needs_review"
     assert reviewed["review_history"][0]["new_status"] == "rejected"
     assert reviewed["review_history"][0]["reviewed_by"] == "tester"
+
+
+def test_source_candidates_auto_rank_is_deterministic_and_read_only(
+    tmp_path,
+    monkeypatch,
+):
+    client, settings = _client(tmp_path, monkeypatch)
+    recommended = upsert_candidate(
+        settings.database_path,
+        display_uri="https://github.com/fastapi/fastapi",
+        source_kind="github_repo",
+        status="recommended",
+        confidence_score=0.98,
+        trust_tier="official",
+        reason_codes=["official_repo_pattern", "metadata_sufficient"],
+    )
+    needs_review = upsert_candidate(
+        settings.database_path,
+        display_uri="https://docs.python.org/3/whatsnew/3.13.html",
+        source_kind="docs_page",
+        status="needs_review",
+        confidence_score=0.74,
+        trust_tier="official",
+        reason_codes=["official_docs_pattern"],
+    )
+    noisy = upsert_candidate(
+        settings.database_path,
+        display_uri="https://casino.example.com/feed",
+        source_kind="blog",
+        status="stored",
+        confidence_score=0.2,
+        reason_codes=["spam_pattern_detected"],
+    )
+    before_counts = candidate_counts(settings.database_path)
+    before_registry_count = _table_count(settings.database_path, "source_registry")
+
+    first = client.get("/v1/scout/source-candidates").json()
+    second = client.get("/v1/scout/source-candidates").json()
+
+    first_ranks = {
+        item["candidate_id"]: item["recommended_review_order"]
+        for item in first["candidates"]
+    }
+    second_ranks = {
+        item["candidate_id"]: item["recommended_review_order"]
+        for item in second["candidates"]
+    }
+    assert first_ranks == second_ranks
+    assert first_ranks[recommended.candidate_id] == 1
+    assert first_ranks[needs_review.candidate_id] == 2
+    assert first_ranks[noisy.candidate_id] == 3
+    top = first["candidates"][0]
+    assert top["auto_rank"] == {
+        "level": 1,
+        "mode": "auto_rank_only",
+        "read_only": True,
+        "mutation_allowed": False,
+        "recommended_review_order": 1,
+        "why_this_first": "Recommended source with official trust signals should be reviewed first.",
+        "risk_reason": "Eligible for dry-run label only; auto-approval remains forbidden.",
+    }
+    assert first["candidates"][2]["risk_reason"] == (
+        "Noisy or spam-like signal requires rejection or block review."
+    )
+    assert candidate_counts(settings.database_path) == before_counts
+    assert _table_count(settings.database_path, "source_registry") == before_registry_count
+
+
+def _table_count(db_path, table_name):
+    conn = open_connection(db_path)
+    try:
+        row = conn.execute(f"SELECT COUNT(*) AS count FROM {table_name}").fetchone()
+        return row["count"]
+    finally:
+        conn.close()
