@@ -15,8 +15,15 @@ export function isPlanUnavailableEnvelope(payload: unknown): boolean {
 }
 
 export type RoutePayloadParse =
-  | { ok: true; decision: Record<string, unknown> }
+  | { ok: true; decision: RouteDecisionPayload }
   | { ok: false; error: string };
+
+export type RouteDecisionPayload = Record<string, unknown> & {
+  reason_code?: string;
+  recommended_route?: string;
+  status?: string;
+  task_classification?: string;
+};
 
 /** Minimal shape check after JSON.parse so downstream UI never assumes fields exist. */
 export function parseRouteDecisionPayload(payload: unknown): RoutePayloadParse {
@@ -33,7 +40,7 @@ export function parseRouteDecisionPayload(payload: unknown): RoutePayloadParse {
         "Route payload missing both recommended_route and task_classification (malformed proxy or BFF merge).",
     };
   }
-  return { ok: true, decision: p };
+  return { ok: true, decision: p as RouteDecisionPayload };
 }
 
 export async function fetchJsonWithTimeout(

@@ -45,6 +45,8 @@ _UNSAFE_PATH_TOKEN_RE = re.compile(
     re.IGNORECASE,
 )
 
+_PERCENT_ENCODED_PATH_RE = re.compile(r"%[0-9A-Fa-f]{2}")
+
 
 @dataclass(frozen=True)
 class UnsafeTargetFinding:
@@ -149,6 +151,12 @@ def unsafe_target_finding(
     path = normalize_repo_path_candidate(raw_path)
     if not path:
         return None
+    if has_percent_encoded_path_syntax(path):
+        return UnsafeTargetFinding(
+            path=path,
+            reason_code="encoded_path_not_allowed",
+            message="Percent-encoded path syntax is not allowed for write-capable targets.",
+        )
     if path_escapes_workspace(path, workspace_root=workspace_root):
         return UnsafeTargetFinding(
             path=path,
@@ -162,6 +170,10 @@ def unsafe_target_finding(
             message="Target path is protected or secret-shaped.",
         )
     return None
+
+
+def has_percent_encoded_path_syntax(path: str) -> bool:
+    return bool(_PERCENT_ENCODED_PATH_RE.search(path or ""))
 
 
 def path_escapes_workspace(path: str, *, workspace_root: Path | None = None) -> bool:

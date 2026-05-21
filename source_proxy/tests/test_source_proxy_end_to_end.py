@@ -49,6 +49,7 @@ class SourceProxyEndToEndTests(unittest.TestCase):
             ):
                 client = TestClient(app)
 
+                root = client.get("/").json()
                 health = client.get("/healthcheck").json()
                 status = client.get("/v1/self/status").json()
                 tools = client.get("/v1/tools/manifest").json()
@@ -120,6 +121,17 @@ class SourceProxyEndToEndTests(unittest.TestCase):
                             "needs_codebase_context": False,
                         },
                     ).json()
+
+        self.assertEqual(root["service"], "source-proxy")
+        self.assertEqual(root["status"], "bootstrapped")
+        self.assertEqual(
+            root["write_policy"],
+            {
+                "apply_requires_approval": True,
+                "commit_requires_separate_approval": True,
+                "push_requires_separate_approval": True,
+            },
+        )
 
         self.assertEqual(health["vram_total"], "12 GB")
         self.assertEqual(health["budget_remaining"], "$3.75")

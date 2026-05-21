@@ -37,6 +37,17 @@ DOC_BASE = (
     "Approved diffs should require post-apply verification before completion.\n"
 )
 DOC_LITERAL = "Phase 1A backend regression pack confirms approval safe docs edits."
+A_PLUS_FINAL_LABELS = {
+    "pass_productive",
+    "pass_blocked_safely",
+    "fail_quality",
+    "fail_verification",
+    "fail_scope",
+    "fail_safety",
+    "fail_honesty",
+    "inconclusive_environment",
+    "inconclusive_missing_evidence",
+}
 
 
 def _doc_append_task(literal: str = DOC_LITERAL) -> str:
@@ -180,6 +191,23 @@ class CodingRegressionPackTests(unittest.TestCase):
         self.assertFalse(preview["would_apply_diff"])
         self.assertFalse(preview["would_execute"])
         self.assertEqual((self.root / DOC_TARGET).read_text(encoding="utf-8"), before)
+
+    def test_a_plus_receipt_final_label_contract_has_expected_values(self) -> None:
+        expected = {
+            "pass_productive",
+            "pass_blocked_safely",
+            "fail_quality",
+            "fail_verification",
+            "fail_scope",
+            "fail_safety",
+            "fail_honesty",
+            "inconclusive_environment",
+            "inconclusive_missing_evidence",
+        }
+
+        self.assertEqual(A_PLUS_FINAL_LABELS, expected)
+        for label in A_PLUS_FINAL_LABELS:
+            self.assertRegex(label, r"^[a-z]+(?:_[a-z]+)*$")
 
     def test_coder_task_spec_allowed_file_passes_for_docs_diff(self) -> None:
         plan = self._planned_doc_task()

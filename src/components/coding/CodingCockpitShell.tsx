@@ -2,32 +2,29 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import {
-  ArrowRight,
-  BrainCircuit,
-  Code2,
-  FileText,
-  LayoutDashboard,
-  MessageSquare,
-  ShieldCheck,
-  Sparkles,
-} from "lucide-react";
+import { FileText, ShieldCheck } from "lucide-react";
+
+import { DashboardDemoV4FloatingNav } from "@/components/dashboard/demo-v4/DashboardDemoV4FloatingNav";
+import "@/styles/dashboard-demo-v4.css";
 
 const statusItems = [
-  { label: "Proxy", value: "Ready for safe preview", tone: "text-emerald-200" },
-  { label: "Route", value: "Select during preview", tone: "text-sky-200" },
-  { label: "Workspace", value: "SpiritOS", tone: "text-slate-100" },
+  { label: "Proxy", value: "Ready for safe preview" },
+  { label: "Route", value: "Select during preview" },
+  { label: "Workspace", value: "SpiritOS" },
 ];
 
 const statusStripItems = ["Draft", "Preview", "Approval", "Apply", "Verify"];
-const navItems = [
-  { href: "/", icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/chat", icon: MessageSquare, label: "Chat" },
-  { href: "/coding", icon: Code2, label: "Source" },
-  { href: "/intelligence", icon: BrainCircuit, label: "Scout" },
-  { href: "/oracle", icon: Sparkles, label: "Oracle" },
-];
-
+const commandPanelClass =
+  "rounded-md border border-[var(--ddv4-surface-border-soft)] bg-[var(--ddv4-pill-bg)] shadow-[var(--ddv4-glass-shadow-drop)] backdrop-blur-xl";
+const commandInsetClass =
+  "rounded-md border border-[var(--ddv4-surface-border-soft)] bg-[var(--ddv4-surface-fill)]";
+const commandLabelClass =
+  "text-xs font-semibold uppercase tracking-[0.14em] text-[var(--ddv4-fg-faint)]";
+const commandTextClass = "text-[var(--ddv4-fg)]";
+const commandMutedClass = "text-[var(--ddv4-fg-muted)]";
+const commandFocusClass =
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spirit-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent";
+const commandControlClass = `${commandFocusClass} transition-colors duration-150`;
 type PreviewState = {
   approvalAvailable: boolean;
   approvedAt: string | null;
@@ -245,6 +242,19 @@ export default function CodingCockpitShell() {
     return messages;
   }, [allowedFileList.length, targetFile, task]);
   const canPreview = validationMessages.length === 0;
+  const approvalControlsAvailable =
+    previewState.status === "ready" &&
+    previewState.approvalAvailable &&
+    !previewState.blocker &&
+    !previewState.error &&
+    !previewState.isLoading;
+  const applyControlsVisible =
+    previewState.status === "approved" &&
+    Boolean(previewState.approvedAt) &&
+    Boolean(previewState.diff);
+  const canApplyApprovedDiff = applyControlsVisible && !previewState.isApplying;
+  const showWorkspaceEmpty =
+    previewState.status === "idle" && !previewState.isLoading && !task.trim();
   const activeStepIndex = statusStepIndex(previewState);
   const currentTaskTitle = task.trim() || "No active task";
   const currentTaskTarget = normalizeRepoPath(targetFile) || "No target selected";
@@ -254,6 +264,73 @@ export default function CodingCockpitShell() {
     draftReady,
     previewState,
   });
+  const railTaskItems = [
+    {
+      label: "Active task",
+      value: task.trim() ? currentTaskState : "Ready to draft",
+      active: true,
+    },
+    {
+      label: "Waiting approval",
+      value: previewState.approvalAvailable ? "1 task" : "None",
+      active: previewState.approvalAvailable,
+    },
+    {
+      label: "Blocked",
+      value:
+        previewState.status === "blocked" || previewState.status === "error" ? "1 task" : "None",
+      active: previewState.status === "blocked" || previewState.status === "error",
+    },
+    {
+      label: "Verified/done",
+      value: previewState.status === "applied" ? "Verify next" : "None",
+      active: previewState.status === "applied",
+    },
+    {
+      label: "Recent tasks",
+      value: draftReady ? "Current draft" : "Empty",
+      active: draftReady,
+    },
+  ];
+  const railScopeItems = [
+    { label: "Target", value: currentTaskTarget },
+    {
+      label: "Allowed",
+      value:
+        allowedFileList.length > 0
+          ? `${allowedFileList.length} file${allowedFileList.length === 1 ? "" : "s"}`
+          : "None selected",
+    },
+    { label: "Checks", value: expectedChecks.trim() || "None listed" },
+  ];
+  const workspaceEmptyItems = [
+    {
+      label: "No active task",
+      value: "Draft a task here or pick one from the rail.",
+    },
+    {
+      label: "Select or create a task",
+      value: "Use the composer as the active workspace.",
+    },
+    {
+      label: "Preview safely before writes",
+      value: "Preview produces review evidence before approval is available.",
+    },
+    {
+      label: "Review changes before approval",
+      value: "Diffs and gates stay separate from apply.",
+    },
+  ];
+  const reviewPaneStatus =
+    previewState.error ??
+    previewState.blocker ??
+    (previewState.isLoading
+      ? "Previewing"
+      : previewState.status === "idle"
+        ? "No preview yet"
+        : currentTaskState);
+  const showMobileActionBar =
+    Boolean(task.trim()) || draftReady || previewState.status !== "idle" || previewState.isLoading;
 
   function resetPreviewForEdit() {
     setDraftReady(false);
@@ -511,175 +588,160 @@ export default function CodingCockpitShell() {
   }
 
   return (
-    <main className="min-h-dvh overflow-x-hidden bg-slate-950 pb-28 text-slate-100 lg:pb-0">
-      <div className="mx-auto flex min-h-dvh w-full max-w-6xl flex-col px-4 py-5 sm:px-6 lg:px-8">
-        <nav
-          aria-label="Spirit workspace navigation"
-          className="mb-5 overflow-x-auto rounded-md border border-white/10 bg-white/[0.03] p-1"
-        >
-          <div className="flex min-w-max items-center gap-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const active = item.href === "/coding";
-              return (
-                <Link
-                  aria-current={active ? "page" : undefined}
-                  className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-3 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-emerald-300 ${
-                    active
-                      ? "bg-emerald-300 text-slate-950"
-                      : "text-slate-300 hover:bg-white/10 hover:text-white"
-                  }`}
-                  href={item.href}
-                  key={item.href}
-                >
-                  <Icon aria-hidden="true" size={17} />
-                  {item.label}
-                </Link>
-              );
-            })}
-          </div>
-        </nav>
-        <header className="flex flex-col gap-4 border-b border-white/10 pb-5 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0 space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-200">
-              Source Proxy cockpit
-            </p>
-            <h1 className="text-3xl font-semibold tracking-normal text-white">Coding</h1>
-            <p className="max-w-2xl text-sm leading-6 text-slate-300">
-              Draft a scoped task, preview the diff safely, then approve and apply only when
-              Source Proxy gates allow it.
-            </p>
-          </div>
-          <Link
-            className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md border border-white/15 bg-white/5 px-4 text-sm font-medium text-slate-100 transition hover:border-emerald-300/50 hover:bg-emerald-300/10 focus:outline-none focus:ring-2 focus:ring-emerald-300 sm:w-auto"
-            href="/proxy-backend"
-          >
-            Advanced diagnostics
-            <ArrowRight aria-hidden="true" size={16} />
-          </Link>
-        </header>
+    <div className="dashboard-demo-v4-route-shell dashboard-demo-v4-root">
+      <main
+        className={`dashboard-demo-v4-route-main min-h-dvh overflow-x-hidden text-[var(--ddv4-fg)] lg:pb-0 ${
+          showMobileActionBar ? "pb-44" : "pb-28"
+        }`}
+      >
+      <div className="mx-auto flex min-h-dvh w-full max-w-[min(1500px,100%)] flex-col px-4 py-4 sm:px-6 lg:px-8 lg:py-6">
+        <h1 className="sr-only">Coding</h1>
 
-        <section aria-label="Coding status" className="border-b border-white/10 py-4">
-          <div className="flex flex-wrap items-center gap-2">
+        <div className="grid flex-1 items-start gap-5 xl:grid-cols-[248px_minmax(0,1fr)_328px]">
+          <aside
+            aria-label="Project task rail"
+            className={`${commandPanelClass} space-y-4 p-4 xl:sticky xl:top-6 xl:max-h-[calc(100dvh-3rem)] xl:overflow-auto`}
+          >
+            <div>
+              <p className={commandLabelClass}>
+                Workspace
+              </p>
+              <div className={`${commandInsetClass} mt-2 p-3`}>
+                <div className={`text-sm font-semibold ${commandTextClass}`}>SpiritOS</div>
+                <div className={`mt-1 text-xs ${commandMutedClass}`}>Source Proxy command center</div>
+              </div>
+            </div>
+            <div>
+              <p className={commandLabelClass}>Current task</p>
+              <div className={`${commandInsetClass} mt-2 space-y-3 p-3`}>
+                <div>
+                  <div className={`break-words text-sm font-semibold ${commandTextClass}`}>
+                    {currentTaskTitle}
+                  </div>
+                  <div className={`mt-1 text-xs ${commandMutedClass}`}>{currentTaskState}</div>
+                </div>
+                <dl className="space-y-2 text-xs">
+                  {railScopeItems.map((item) => (
+                    <div className="grid grid-cols-[4.75rem_minmax(0,1fr)] gap-2" key={item.label}>
+                      <dt className="uppercase tracking-[0.12em] text-[var(--ddv4-fg-faint)]">
+                        {item.label}
+                      </dt>
+                      <dd className={`truncate ${commandMutedClass}`} title={item.value}>
+                        {item.value}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+                <div className="rounded-md border border-[var(--ddv4-surface-border-soft)] px-2 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--ddv4-fg-faint)]">
+                  Local state only
+                </div>
+              </div>
+            </div>
+            <nav aria-label="Task queues" className="space-y-2">
+              <p className={commandLabelClass}>
+                Tasks
+              </p>
+              {railTaskItems.map((item) => (
+                <div
+                  className={`flex min-h-11 items-center justify-between gap-3 rounded-md border px-3 text-sm transition-colors ${
+                    item.active
+                      ? "border-[var(--spirit-accent)] bg-[var(--ddv4-nav-active-bg)] text-[var(--ddv4-nav-active-fg)]"
+                      : "border-[var(--ddv4-surface-border-soft)] bg-[var(--ddv4-surface-fill)] text-[var(--ddv4-fg-muted)]"
+                  }`}
+                  key={item.label}
+                >
+                  <span>{item.label}</span>
+                  <span className="shrink-0 text-xs opacity-75">{item.value}</span>
+                </div>
+              ))}
+            </nav>
+          </aside>
+
+          <div className="flex min-w-0 flex-col gap-5">
+        <section aria-labelledby="current-state-heading" className={`${commandPanelClass} order-2 p-4 sm:p-5`}>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 id="current-state-heading" className="text-base font-semibold text-[var(--ddv4-fg)]">
+                Task status
+              </h2>
+              <p className="mt-1 text-sm text-[var(--ddv4-fg-muted)]">
+                {currentTaskState}. Keep moving through Draft, Preview, Approval, Apply, then
+                Verify. Full diagnostics stay in `/proxy-backend`.
+              </p>
+            </div>
+            <span className="inline-flex min-h-9 items-center rounded-md border border-[var(--ddv4-pill-border)] px-3 text-xs font-semibold text-[var(--ddv4-fg)]">
+              {currentTaskState}
+            </span>
+          </div>
+          <div aria-label="Coding status" className="mt-4 flex flex-wrap items-center gap-2">
             {statusStripItems.map((item, index) => (
               <div className="flex items-center gap-2" key={item}>
                 <span
-                  className={`inline-flex min-h-9 items-center rounded-full border px-3 text-xs font-semibold ${
+                  className={`inline-flex min-h-8 items-center rounded-full border px-2.5 text-[11px] font-semibold transition-colors ${
                     index <= activeStepIndex
-                      ? "border-emerald-300 bg-emerald-300 text-slate-950"
-                      : "border-white/15 text-slate-500"
+                      ? "border-[var(--spirit-accent)] bg-[var(--ddv4-nav-active-bg)] text-[var(--ddv4-nav-active-fg)]"
+                      : "border-[var(--ddv4-pill-border)] text-[var(--ddv4-fg-faint)]"
                   }`}
                 >
                   {item}
                 </span>
                 {index < statusStripItems.length - 1 ? (
-                  <span className="text-slate-600" aria-hidden="true">
+                  <span className="text-[var(--ddv4-fg-faint)]" aria-hidden="true">
                     -
                   </span>
                 ) : null}
               </div>
             ))}
           </div>
-          <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-xs text-slate-400">
+          <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 border-t border-[var(--ddv4-surface-border-soft)] pt-3 text-xs text-[var(--ddv4-fg-muted)]">
             {statusItems.map((item) => (
               <span className="inline-flex gap-2" key={item.label}>
-                <span className="uppercase tracking-[0.14em] text-slate-600">{item.label}</span>
-                <span className={item.tone}>{item.value}</span>
+                <span className="uppercase tracking-[0.14em] text-[var(--ddv4-fg-faint)]">{item.label}</span>
+                <span className="text-[var(--ddv4-fg)]">{item.value}</span>
               </span>
             ))}
           </div>
-        </section>
-
-        <section aria-labelledby="current-state-heading" className="border-b border-white/10 py-4">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h2 id="current-state-heading" className="text-base font-semibold text-white">
-                Current State
-              </h2>
-              <p className="mt-1 text-sm text-slate-400">
-                {currentTaskState}. Keep moving through Draft, Preview, Approval, Apply, then
-                Verify. Full diagnostics stay in `/proxy-backend`.
-              </p>
-            </div>
-            <span className="inline-flex min-h-9 items-center rounded-md border border-white/15 px-3 text-xs font-semibold text-slate-200">
-              {currentTaskState}
-            </span>
-          </div>
-          <div className="mt-4 grid gap-3 text-sm md:grid-cols-3">
-            <div className="rounded-md border border-white/10 bg-white/[0.03] p-3">
-              <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+          <div className="mt-4 grid gap-3 text-sm md:grid-cols-2">
+            <div className={`${commandInsetClass} p-3`}>
+              <div className={commandLabelClass}>
                 Task
               </div>
-              <div className="mt-1 break-words text-slate-100">{currentTaskTitle}</div>
+              <div className={`mt-1 break-words ${commandTextClass}`}>{currentTaskTitle}</div>
             </div>
-            <div className="rounded-md border border-white/10 bg-white/[0.03] p-3">
-              <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+            <div className={`${commandInsetClass} p-3`}>
+              <div className={commandLabelClass}>
                 Target
               </div>
-              <div className="mt-1 break-words text-slate-100">{currentTaskTarget}</div>
-            </div>
-            <div className="rounded-md border border-white/10 bg-white/[0.03] p-3">
-              <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                Safe next action
-              </div>
-              <div className="mt-1 text-slate-100">{nextSafeAction}</div>
+              <div className={`mt-1 break-words ${commandTextClass}`}>{currentTaskTarget}</div>
             </div>
           </div>
-          <details className="mt-4 rounded-md border border-white/10 bg-slate-900/70">
-            <summary className="min-h-12 cursor-pointer px-3 py-3 text-sm font-semibold text-slate-100">
-              Evidence trail
-            </summary>
-            <div className="space-y-4 border-t border-white/10 p-3">
-              <ol className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                {timelineItems.map((item) => (
-                  <li
-                    className={`rounded-md border p-3 ${
-                      item.active
-                        ? "border-emerald-300/40 bg-emerald-300/10"
-                        : "border-white/10 bg-white/[0.03]"
-                    }`}
-                    key={item.label}
-                  >
-                    <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                      {item.label}
-                    </div>
-                    <div className="mt-1 text-sm font-semibold text-slate-100">{item.status}</div>
-                    <p className="mt-2 text-sm leading-6 text-slate-400">{item.detail}</p>
-                  </li>
-                ))}
-              </ol>
-              <div className="rounded-md border border-white/10 bg-slate-950/60 p-3 text-sm">
-                <div className="font-semibold text-white">Terminal/Test Evidence</div>
-                <p className="mt-2 leading-6 text-slate-400">
-                  {previewState.status === "idle"
-                    ? `Expected checks: ${expectedChecks.trim() || "none listed"}. Evidence appears after preview and verification.`
-                    : `${previewState.requirementSummary} ${previewState.verifierSummary}`}
-                </p>
-              </div>
-            </div>
-          </details>
         </section>
 
-        <div className="flex flex-1 py-5">
+        <div className="order-1">
           <section className="min-w-0 space-y-5" aria-labelledby="task-composer-heading">
-            <div className="rounded-md border border-white/10 bg-slate-900/70 p-4 sm:p-6">
-              <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-emerald-300/10 text-emerald-200">
+            <div className={`${commandPanelClass} p-4 sm:p-6`}>
+              <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-[var(--ddv4-pill-border)] bg-[var(--ddv4-pill-bg)] text-[var(--ddv4-fg)]">
                   <FileText aria-hidden="true" size={20} />
                 </div>
                 <div className="min-w-0">
-                  <h2 id="task-composer-heading" className="text-lg font-semibold text-white">
+                  <h2 id="task-composer-heading" className={`text-xl font-semibold ${commandTextClass}`}>
                     Task Composer
                   </h2>
-                  <p className="text-sm text-slate-400">Preview safely before anything writes.</p>
+                  <p className={`text-sm ${commandMutedClass}`}>Preview safely before anything writes.</p>
                 </div>
+                </div>
+                <span className="inline-flex min-h-9 items-center rounded-md border border-[var(--ddv4-pill-border)] px-3 text-xs font-semibold text-[var(--ddv4-fg)]">
+                  {currentTaskState}
+                </span>
               </div>
 
               <div className="space-y-4">
                 <label className="block">
-                  <span className="mb-2 block text-sm font-medium text-slate-200">Task</span>
+                  <span className={`mb-2 block text-sm font-medium ${commandTextClass}`}>Task</span>
                   <textarea
-                    className="min-h-56 w-full resize-y rounded-md border border-white/10 bg-slate-950/80 px-4 py-4 text-base leading-7 text-slate-200 placeholder:text-slate-600 sm:text-base"
+                    className={`min-h-72 w-full resize-y rounded-md border border-[var(--ddv4-surface-border-soft)] bg-[var(--ddv4-surface-fill)] px-4 py-4 text-base leading-7 text-[var(--ddv4-fg)] placeholder:text-[var(--ddv4-fg-faint)] sm:text-base ${commandControlClass}`}
                     onChange={(event) => {
                       setTask(event.target.value);
                       resetPreviewForEdit();
@@ -689,18 +751,18 @@ export default function CodingCockpitShell() {
                   />
                 </label>
 
-                <details className="rounded-md border border-white/10 bg-white/[0.02]">
-                  <summary className="min-h-12 cursor-pointer px-3 py-3 text-sm font-semibold text-slate-100">
+                <details className={`${commandInsetClass} overflow-hidden`}>
+                  <summary className={`min-h-12 cursor-pointer px-3 py-3 text-sm font-semibold ${commandTextClass} ${commandControlClass}`}>
                     Advanced options
                   </summary>
-                  <div className="space-y-4 border-t border-white/10 p-3">
+                  <div className="space-y-4 border-t border-[var(--ddv4-surface-border-soft)] p-3">
                     <div className="grid gap-4 sm:grid-cols-2">
                       <label className="block">
-                        <span className="mb-2 block text-sm font-medium text-slate-200">
+                        <span className={`mb-2 block text-sm font-medium ${commandTextClass}`}>
                           Target file
                         </span>
                         <input
-                          className="min-h-12 w-full rounded-md border border-white/10 bg-slate-950/80 px-3 text-base text-slate-200 placeholder:text-slate-600 sm:text-sm"
+                          className={`min-h-12 w-full rounded-md border border-[var(--ddv4-surface-border-soft)] bg-[var(--ddv4-surface-fill)] px-3 text-base text-[var(--ddv4-fg)] placeholder:text-[var(--ddv4-fg-faint)] sm:text-sm ${commandControlClass}`}
                           onChange={(event) => {
                             setTargetFile(event.target.value);
                             resetPreviewForEdit();
@@ -710,11 +772,11 @@ export default function CodingCockpitShell() {
                         />
                       </label>
                       <label className="block">
-                        <span className="mb-2 block text-sm font-medium text-slate-200">
+                        <span className={`mb-2 block text-sm font-medium ${commandTextClass}`}>
                           Allowed files
                         </span>
                         <input
-                          className="min-h-12 w-full rounded-md border border-white/10 bg-slate-950/80 px-3 text-base text-slate-200 placeholder:text-slate-600 sm:text-sm"
+                          className={`min-h-12 w-full rounded-md border border-[var(--ddv4-surface-border-soft)] bg-[var(--ddv4-surface-fill)] px-3 text-base text-[var(--ddv4-fg)] placeholder:text-[var(--ddv4-fg-faint)] sm:text-sm ${commandControlClass}`}
                           onChange={(event) => {
                             setAllowedFiles(event.target.value);
                             resetPreviewForEdit();
@@ -727,11 +789,11 @@ export default function CodingCockpitShell() {
 
                     <div className="grid gap-4 sm:grid-cols-2">
                       <label className="block">
-                        <span className="mb-2 block text-sm font-medium text-slate-200">
+                        <span className={`mb-2 block text-sm font-medium ${commandTextClass}`}>
                           Expected checks
                         </span>
                         <textarea
-                          className="min-h-24 w-full resize-y rounded-md border border-white/10 bg-slate-950/80 px-3 py-3 text-base text-slate-200 placeholder:text-slate-600 sm:text-sm"
+                          className={`min-h-24 w-full resize-y rounded-md border border-[var(--ddv4-surface-border-soft)] bg-[var(--ddv4-surface-fill)] px-3 py-3 text-base text-[var(--ddv4-fg)] placeholder:text-[var(--ddv4-fg-faint)] sm:text-sm ${commandControlClass}`}
                           onChange={(event) => {
                             setExpectedChecks(event.target.value);
                             resetPreviewForEdit();
@@ -741,11 +803,11 @@ export default function CodingCockpitShell() {
                         />
                       </label>
                       <label className="block">
-                        <span className="mb-2 block text-sm font-medium text-slate-200">
+                        <span className={`mb-2 block text-sm font-medium ${commandTextClass}`}>
                           Route / model
                         </span>
                         <select
-                          className="min-h-12 w-full rounded-md border border-white/10 bg-slate-950/80 px-3 text-base text-slate-200 sm:text-sm"
+                          className={`min-h-12 w-full rounded-md border border-[var(--ddv4-surface-border-soft)] bg-[var(--ddv4-surface-fill)] px-3 text-base text-[var(--ddv4-fg)] sm:text-sm ${commandControlClass}`}
                           onChange={(event) => {
                             setRouteModel(event.target.value);
                             resetPreviewForEdit();
@@ -762,6 +824,7 @@ export default function CodingCockpitShell() {
                 </details>
 
                 <div
+                  aria-live="polite"
                   className={`rounded-md border px-3 py-3 text-sm ${
                     canPreview
                       ? "border-emerald-300/30 bg-emerald-300/10 text-emerald-100"
@@ -775,7 +838,7 @@ export default function CodingCockpitShell() {
                 </div>
 
                 <button
-                  className={`inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-emerald-300 px-4 text-sm font-semibold text-slate-950 sm:w-auto ${
+                  className={`inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-emerald-300 px-4 text-sm font-semibold text-slate-950 shadow-sm transition-colors hover:bg-emerald-200 ${commandFocusClass} ${
                     canPreview ? "" : "opacity-60"
                   }`}
                   disabled={!canPreview || previewState.isLoading}
@@ -788,12 +851,44 @@ export default function CodingCockpitShell() {
               </div>
             </div>
 
+            {showWorkspaceEmpty ? (
+              <section
+                aria-labelledby="workspace-empty-heading"
+                className={`${commandPanelClass} p-4 sm:p-5`}
+              >
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <p className={commandLabelClass}>Workspace</p>
+                    <h2
+                      id="workspace-empty-heading"
+                      className={`mt-2 text-base font-semibold ${commandTextClass}`}
+                    >
+                      No active task
+                    </h2>
+                  </div>
+                  <span className="inline-flex min-h-9 items-center rounded-md border border-[var(--ddv4-pill-border)] px-3 text-xs font-semibold text-[var(--ddv4-fg)]">
+                    Draft
+                  </span>
+                </div>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {workspaceEmptyItems.map((item) => (
+                    <div className={`${commandInsetClass} min-h-28 p-3`} key={item.label}>
+                      <div className={`text-sm font-semibold ${commandTextClass}`}>
+                        {item.label}
+                      </div>
+                      <p className={`mt-2 text-sm leading-6 ${commandMutedClass}`}>{item.value}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
             {previewState.status !== "idle" || previewState.isLoading ? (
-              <section className="rounded-md border border-white/10 bg-slate-900/70 p-4 sm:p-5">
+              <section className={`${commandPanelClass} p-4 sm:p-5`}>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
-                    <h2 className="text-base font-semibold text-white">Diff Review</h2>
-                    <p className="mt-1 text-sm text-slate-400">
+                    <h2 className={`text-base font-semibold ${commandTextClass}`}>Diff Review</h2>
+                    <p className={`mt-1 text-sm ${commandMutedClass}`}>
                       {previewState.isLoading
                         ? "Requesting a safe preview. No files have been changed."
                         : previewState.status === "satisfied"
@@ -804,7 +899,7 @@ export default function CodingCockpitShell() {
                     </p>
                   </div>
                   <Link
-                    className="inline-flex min-h-11 items-center justify-center rounded-md border border-white/15 px-3 text-sm font-medium text-slate-200"
+                    className={`inline-flex min-h-11 items-center justify-center rounded-md border border-[var(--ddv4-pill-border)] px-3 text-sm font-medium text-[var(--ddv4-fg)] transition-colors hover:bg-[var(--ddv4-surface-fill)] ${commandFocusClass}`}
                     href="/proxy-backend"
                   >
                     Open diagnostics in /proxy-backend
@@ -812,35 +907,35 @@ export default function CodingCockpitShell() {
                 </div>
 
                 <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
-                  <div className="rounded-md border border-white/10 bg-white/[0.03] p-3">
-                    <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                  <div className={`${commandInsetClass} p-3`}>
+                    <dt className={commandLabelClass}>
                       Target
                     </dt>
-                    <dd className="mt-1 break-words text-slate-100">{targetFile.trim()}</dd>
+                    <dd className={`mt-1 break-words ${commandTextClass}`}>{targetFile.trim()}</dd>
                   </div>
-                  <div className="rounded-md border border-white/10 bg-white/[0.03] p-3">
-                    <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                  <div className={`${commandInsetClass} p-3`}>
+                    <dt className={commandLabelClass}>
                       Changed files
                     </dt>
-                    <dd className="mt-1 break-words text-slate-100">
+                    <dd className={`mt-1 break-words ${commandTextClass}`}>
                       {previewState.changedFiles.length > 0
                         ? previewState.changedFiles.join(", ")
                         : "None reported"}
                     </dd>
                   </div>
-                  <div className="rounded-md border border-white/10 bg-white/[0.03] p-3">
-                    <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                  <div className={`${commandInsetClass} p-3`}>
+                    <dt className={commandLabelClass}>
                       Allowed files
                     </dt>
-                    <dd className="mt-1 break-words text-slate-100">
+                    <dd className={`mt-1 break-words ${commandTextClass}`}>
                       {allowedFileList.join(", ")}
                     </dd>
                   </div>
-                  <div className="rounded-md border border-white/10 bg-white/[0.03] p-3">
-                    <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                  <div className={`${commandInsetClass} p-3`}>
+                    <dt className={commandLabelClass}>
                       Preview status
                     </dt>
-                    <dd className="mt-1 break-words text-slate-100">
+                    <dd className={`mt-1 break-words ${commandTextClass}`}>
                       {previewState.error ??
                         previewState.blocker ??
                         (previewState.isLoading ? "Previewing" : "Preview ready")}
@@ -849,7 +944,7 @@ export default function CodingCockpitShell() {
                 </dl>
 
                 {previewState.diff ? (
-                  <pre className="mt-4 max-h-72 overflow-auto rounded-md border border-white/10 bg-slate-950 p-3 text-xs leading-5 text-slate-200">
+                  <pre className="mt-4 max-h-72 overflow-auto rounded-md border border-[var(--ddv4-surface-border-soft)] bg-[var(--ddv4-surface-fill)] p-3 text-xs leading-5 text-[var(--ddv4-fg)]">
                     {previewState.diff}
                   </pre>
                 ) : null}
@@ -857,24 +952,24 @@ export default function CodingCockpitShell() {
             ) : null}
 
             {previewState.status !== "idle" || previewState.isLoading ? (
-              <section className="rounded-md border border-white/10 bg-slate-900/70 p-4 sm:p-5">
+              <section className={`${commandPanelClass} p-4 sm:p-5`}>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
-                    <h2 className="text-base font-semibold text-white">Safe Next Action</h2>
-                    <p className="mt-1 text-sm text-slate-400">
+                    <h2 className={`text-base font-semibold ${commandTextClass}`}>Safe Next Action</h2>
+                    <p className={`mt-1 text-sm ${commandMutedClass}`}>
                       {nextSafeAction}
                     </p>
                   </div>
                   <span
                     className={`inline-flex min-h-9 items-center rounded-md border px-3 text-xs font-semibold ${
-                      previewState.approvalAvailable
+                      approvalControlsAvailable
                         ? "border-emerald-300/40 bg-emerald-300/10 text-emerald-100"
                         : previewState.status === "satisfied"
                           ? "border-cyan-300/40 bg-cyan-300/10 text-cyan-100"
                           : "border-amber-300/40 bg-amber-300/10 text-amber-100"
                     }`}
                   >
-                    {previewState.approvalAvailable
+                    {approvalControlsAvailable
                       ? "approval available"
                       : previewState.status === "satisfied"
                         ? "already satisfied"
@@ -898,8 +993,8 @@ export default function CodingCockpitShell() {
                         : "No files changed yet. Approval is required before apply. Commit and push are not available here."}
                 </div>
 
-                <div className="mt-4 rounded-md border border-white/10 bg-slate-950/60 p-3">
-                  <div className="mb-3 text-sm font-medium text-slate-200">
+                <div className={`${commandInsetClass} mt-4 p-3`}>
+                  <div className={`mb-3 text-sm font-medium ${commandTextClass}`}>
                     {previewState.status === "applied"
                       ? "Last action: approved diff applied. Verification is required next."
                       : previewState.status === "approved"
@@ -909,17 +1004,17 @@ export default function CodingCockpitShell() {
                           : "Next legal action appears after preview gates pass."}
                   </div>
                   <div className="flex flex-col gap-2 sm:flex-row">
-                    {previewState.status === "ready" && previewState.approvalAvailable ? (
+                    {approvalControlsAvailable ? (
                       <>
                         <button
-                          className="inline-flex min-h-11 items-center justify-center rounded-md border border-white/15 px-3 text-sm font-medium text-slate-200"
+                          className={`inline-flex min-h-11 items-center justify-center rounded-md border border-[var(--ddv4-pill-border)] px-3 text-sm font-medium text-[var(--ddv4-fg)] transition-colors hover:bg-[var(--ddv4-surface-fill)] ${commandFocusClass}`}
                           onClick={handleRejectPreview}
                           type="button"
                         >
                           Reject
                         </button>
                         <button
-                          className="inline-flex min-h-11 items-center justify-center rounded-md bg-emerald-300 px-3 text-sm font-semibold text-slate-950"
+                          className={`inline-flex min-h-11 items-center justify-center rounded-md bg-emerald-300 px-3 text-sm font-semibold text-slate-950 shadow-sm transition-colors hover:bg-emerald-200 ${commandFocusClass}`}
                           onClick={handleApprovePreview}
                           type="button"
                         >
@@ -927,18 +1022,18 @@ export default function CodingCockpitShell() {
                         </button>
                       </>
                     ) : null}
-                    {previewState.status === "approved" ? (
+                    {applyControlsVisible ? (
                       <>
                         <button
-                          className="inline-flex min-h-11 items-center justify-center rounded-md border border-white/15 px-3 text-sm font-medium text-slate-200"
+                          className={`inline-flex min-h-11 items-center justify-center rounded-md border border-[var(--ddv4-pill-border)] px-3 text-sm font-medium text-[var(--ddv4-fg)] transition-colors hover:bg-[var(--ddv4-surface-fill)] ${commandFocusClass}`}
                           onClick={handleRejectPreview}
                           type="button"
                         >
                           Reject
                         </button>
                         <button
-                          className="inline-flex min-h-11 items-center justify-center rounded-md bg-emerald-300 px-3 text-sm font-semibold text-slate-950"
-                          disabled={previewState.isApplying}
+                          className={`inline-flex min-h-11 items-center justify-center rounded-md bg-emerald-300 px-3 text-sm font-semibold text-slate-950 shadow-sm transition-colors hover:bg-emerald-200 disabled:cursor-not-allowed disabled:opacity-60 ${commandFocusClass}`}
+                          disabled={!canApplyApprovedDiff}
                           onClick={handleApplyApprovedDiff}
                           type="button"
                         >
@@ -948,15 +1043,15 @@ export default function CodingCockpitShell() {
                     ) : null}
                   </div>
                   {previewState.applySummary ? (
-                    <p className="mt-3 text-sm text-slate-300">{previewState.applySummary}</p>
+                    <p className={`mt-3 text-sm ${commandMutedClass}`}>{previewState.applySummary}</p>
                   ) : null}
                 </div>
 
-                <details className="mt-4 rounded-md border border-white/10 bg-slate-950/60">
-                  <summary className="min-h-12 cursor-pointer px-3 py-3 text-sm font-semibold text-slate-100">
+                <details className={`${commandInsetClass} mt-4 overflow-hidden`}>
+                  <summary className={`min-h-12 cursor-pointer px-3 py-3 text-sm font-semibold ${commandTextClass} ${commandControlClass}`}>
                     Review gates
                   </summary>
-                  <dl className="grid gap-3 border-t border-white/10 p-3 text-sm sm:grid-cols-2">
+                  <dl className="grid gap-3 border-t border-[var(--ddv4-surface-border-soft)] p-3 text-sm sm:grid-cols-2">
                     <GateStatus
                       label="Target match"
                       ok={previewState.targetMatch}
@@ -1022,18 +1117,119 @@ export default function CodingCockpitShell() {
 
           </section>
         </div>
+          </div>
+
+          <aside
+            aria-label="Review pane"
+            className={`${commandPanelClass} space-y-4 p-4 xl:sticky xl:top-6 xl:max-h-[calc(100dvh-3rem)] xl:overflow-auto`}
+          >
+            <div>
+              <p className={commandLabelClass}>
+                Review
+              </p>
+              <h2 className="mt-2 text-lg font-semibold text-[var(--ddv4-fg)]">Review pane</h2>
+              <p className="mt-1 text-sm leading-6 text-[var(--ddv4-fg-muted)]">
+                Diff, gates, and artifacts stay here while the task workspace remains focused.
+              </p>
+            </div>
+
+            <dl className="space-y-3 text-sm">
+              <div className={`${commandInsetClass} p-3`}>
+                <dt className={commandLabelClass}>
+                  Changed files
+                </dt>
+                <dd className={`mt-1 break-words ${commandTextClass}`}>
+                  {previewState.changedFiles.length > 0
+                    ? previewState.changedFiles.join(", ")
+                    : "None reported"}
+                </dd>
+              </div>
+              <div className={`${commandInsetClass} p-3`}>
+                <dt className={commandLabelClass}>
+                  Preview status
+                </dt>
+                <dd className={`mt-1 break-words ${commandTextClass}`}>{reviewPaneStatus}</dd>
+              </div>
+              <div className={`${commandInsetClass} p-3`}>
+                <dt className={commandLabelClass}>
+                  Verifier
+                </dt>
+                <dd className={`mt-1 break-words ${commandTextClass}`}>{previewState.verifierSummary}</dd>
+              </div>
+              <div className={`${commandInsetClass} p-3`}>
+                <dt className={commandLabelClass}>
+                  Reviewer
+                </dt>
+                <dd className={`mt-1 break-words ${commandTextClass}`}>{previewState.reviewerSummary}</dd>
+              </div>
+              <div className="rounded-md border border-[var(--spirit-accent)] bg-[var(--ddv4-pill-bg)] p-3">
+                <dt className={commandLabelClass}>
+                  Next safe move
+                </dt>
+                <dd className={`mt-1 ${commandTextClass}`}>
+                  {previewState.status === "idle" && !draftReady
+                    ? "Preview becomes available after task, target, and allowed files are set."
+                    : nextSafeAction}
+                </dd>
+              </div>
+            </dl>
+
+            <details className={`${commandInsetClass} overflow-hidden`}>
+              <summary className={`min-h-12 cursor-pointer px-3 py-3 text-sm font-semibold ${commandTextClass} ${commandControlClass}`}>
+                Evidence trail and logs
+              </summary>
+              <div className="space-y-3 border-t border-[var(--ddv4-surface-border-soft)] p-3">
+                <ol className="space-y-2">
+                  {timelineItems.map((item) => (
+                    <li
+                      className={`rounded-md border p-3 ${
+                        item.active
+                          ? "border-[var(--spirit-accent)] bg-[var(--ddv4-pill-bg)]"
+                          : "border-[var(--ddv4-surface-border-soft)] bg-[var(--ddv4-surface-fill)]"
+                      }`}
+                      key={item.label}
+                    >
+                      <div className={commandLabelClass}>{item.label}</div>
+                      <div className={`mt-1 text-sm font-semibold ${commandTextClass}`}>
+                        {item.status}
+                      </div>
+                      <p className={`mt-2 text-sm leading-6 ${commandMutedClass}`}>{item.detail}</p>
+                    </li>
+                  ))}
+                </ol>
+                <div className={`${commandInsetClass} p-3 text-sm`}>
+                  <div className={`font-semibold ${commandTextClass}`}>Terminal/Test Evidence</div>
+                  <p className={`mt-2 leading-6 ${commandMutedClass}`}>
+                    {previewState.status === "idle"
+                      ? `Expected checks: ${expectedChecks.trim() || "none listed"}. Evidence appears after preview and verification.`
+                      : `${previewState.requirementSummary} ${previewState.verifierSummary}`}
+                  </p>
+                </div>
+              </div>
+            </details>
+
+            <Link
+              className={`inline-flex min-h-11 w-full items-center justify-center rounded-md border border-[var(--ddv4-pill-border)] px-3 text-sm font-medium text-[var(--ddv4-fg)] transition-colors hover:bg-[var(--ddv4-surface-fill)] ${commandFocusClass}`}
+              href="/proxy-backend"
+            >
+              Backend diagnostics
+            </Link>
+          </aside>
+        </div>
       </div>
       <div
         aria-label="Mobile action bar"
-        className="fixed inset-x-0 bottom-0 z-20 border-t border-white/10 bg-slate-950/95 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-3 shadow-2xl shadow-black/50 backdrop-blur lg:hidden"
+        className={`fixed inset-x-0 bottom-24 z-20 border-t border-[var(--ddv4-surface-border-soft)] bg-[var(--ddv4-nav-bg)] px-4 pb-3 pt-3 shadow-2xl shadow-black/30 backdrop-blur lg:hidden ${
+          showMobileActionBar ? "" : "hidden"
+        }`}
         data-testid="mobile-action-bar"
       >
         <div className="mx-auto flex max-w-6xl items-center gap-3">
           <div className="min-w-0 flex-1">
-            <div className="truncate text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+            <div className="truncate text-xs font-semibold uppercase tracking-[0.14em] text-[var(--ddv4-fg-faint)]">
               {currentTaskState}
             </div>
-            <div className="truncate text-sm font-medium text-slate-200">
+            <div className="truncate text-sm font-medium text-[var(--ddv4-fg)]">
               {previewState.status === "applied"
                 ? "Files applied. Verify next."
                 : "No files changed"}
@@ -1041,12 +1237,12 @@ export default function CodingCockpitShell() {
           </div>
           <Link
             aria-label="Open mobile diagnostics in /proxy-backend"
-            className="inline-flex min-h-12 shrink-0 items-center justify-center rounded-md border border-white/15 px-3 text-sm font-medium text-slate-200"
+            className={`inline-flex min-h-12 shrink-0 items-center justify-center rounded-md border border-[var(--ddv4-pill-border)] px-3 text-sm font-medium text-[var(--ddv4-fg)] ${commandFocusClass}`}
             href="/proxy-backend"
           >
             Diag
           </Link>
-          {previewState.status === "ready" && previewState.approvalAvailable ? (
+          {approvalControlsAvailable ? (
             <>
               <button
                 className="inline-flex min-h-12 shrink-0 items-center justify-center rounded-md border border-white/15 px-3 text-sm font-medium text-slate-200"
@@ -1063,7 +1259,7 @@ export default function CodingCockpitShell() {
                 Approve
               </button>
             </>
-          ) : previewState.status === "approved" ? (
+          ) : applyControlsVisible ? (
             <>
               <button
                 className="inline-flex min-h-12 shrink-0 items-center justify-center rounded-md border border-white/15 px-3 text-sm font-medium text-slate-200"
@@ -1074,7 +1270,7 @@ export default function CodingCockpitShell() {
               </button>
               <button
                 className="inline-flex min-h-12 shrink-0 items-center justify-center rounded-md bg-emerald-300 px-4 text-sm font-semibold text-slate-950"
-                disabled={previewState.isApplying}
+                disabled={!canApplyApprovedDiff}
                 onClick={handleApplyApprovedDiff}
                 type="button"
               >
@@ -1096,7 +1292,9 @@ export default function CodingCockpitShell() {
           )}
         </div>
       </div>
-    </main>
+      </main>
+      <DashboardDemoV4FloatingNav desktopVariant="full-height" />
+    </div>
   );
 }
 

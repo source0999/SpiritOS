@@ -1309,6 +1309,76 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
         finally:
             os.chdir(previous_cwd)
 
+    def test_code_verify_keeps_route_change_pending_until_browser_review(self) -> None:
+        previous_cwd = os.getcwd()
+        try:
+            os.chdir(self._tempdir.name)
+            os.makedirs("src/app/demo", exist_ok=True)
+            with open("src/app/demo/page.tsx", "w", encoding="utf-8") as handle:
+                handle.write("export const value = 'old';\n")
+
+            created = create_long_running_task("Apply route change requiring browser review")
+            task_id = created["task"]["id"]
+            diff = "\n".join(
+                [
+                    "diff --git a/src/app/demo/page.tsx b/src/app/demo/page.tsx",
+                    "--- a/src/app/demo/page.tsx",
+                    "+++ b/src/app/demo/page.tsx",
+                    "@@ -1 +1 @@",
+                    "-export const value = 'old';",
+                    "+export const value = 'new';",
+                    "",
+                ]
+            )
+            applied = execute_approved_long_running_task(
+                task_id,
+                action="modify route file",
+                approval_id=_approval_id(task_id, diff, "src/app/demo/page.tsx"),
+                approved_diff=diff,
+                target="src/app/demo/page.tsx",
+            )
+            self.assertEqual(applied["task"]["status"], "applied_needs_verification")
+            self.assertTrue(
+                applied["task"]["post_apply_verification"][
+                    "manual_browser_check_required"
+                ]
+            )
+
+            completed_process = mock.Mock()
+            completed_process.returncode = 0
+            completed_process.stdout = "ok"
+            completed_process.stderr = ""
+            with mock.patch(
+                "source_proxy.tasks.long_running.subprocess.run",
+                return_value=completed_process,
+            ):
+                pending = record_post_apply_verification(
+                    task_id,
+                    run_code_verification=True,
+                )
+
+            verification = pending["task"]["post_apply_verification"]
+            self.assertEqual(pending["task"]["status"], "applied_needs_verification")
+            self.assertEqual(verification["status"], "verification_ready")
+            self.assertTrue(verification["commit_proposal_blocked"])
+            self.assertEqual(
+                verification["commit_blockers"],
+                ["post_apply_verification_incomplete"],
+            )
+            self.assertTrue(verification["manual_browser_check_required"])
+            self.assertFalse(verification["manual_browser_check_done"])
+            self.assertFalse(verification["push_path_available"])
+            self.assertEqual(
+                verification["push_blockers"],
+                ["push_requires_separate_approval"],
+            )
+            self.assertEqual(
+                pending["task"]["open_diffs"][0]["status"],
+                "applied_needs_verification",
+            )
+        finally:
+            os.chdir(previous_cwd)
+
     def test_router_code_verify_rejects_docs_only_task(self) -> None:
         previous_cwd = os.getcwd()
         try:

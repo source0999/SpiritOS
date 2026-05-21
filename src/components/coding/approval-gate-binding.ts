@@ -11,6 +11,13 @@ const HARD_TARGET_BLOCK_REASON_CODES = new Set([
   "path_escape",
   "outside_workspace",
   "absolute_path",
+  "encoded_path_not_allowed",
+]);
+const ROUTE_CONFIG_BLOCK_REASON_CODES = new Set([
+  "codex_binary_not_found",
+  "codex_route_live_execution_not_enabled",
+  "coder_model_not_configured",
+  "local_model_unavailable",
 ]);
 
 export type ApprovalGateBindingDecision = {
@@ -79,10 +86,8 @@ export function deriveApprovalGateProposal(
     return null;
   }
   if (
-    promptPacket.reason_code === "coder_model_not_configured" ||
-    promptPacket.reasonCode === "coder_model_not_configured" ||
-    promptPacket.reason_code === "local_model_unavailable" ||
-    promptPacket.reasonCode === "local_model_unavailable"
+    ROUTE_CONFIG_BLOCK_REASON_CODES.has(promptPacket.reason_code ?? "") ||
+    ROUTE_CONFIG_BLOCK_REASON_CODES.has(promptPacket.reasonCode ?? "")
   ) {
     return null;
   }

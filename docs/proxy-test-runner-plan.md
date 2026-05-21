@@ -41,6 +41,7 @@ PYTHONPATH=. python3 -m source_proxy.testing.runner --profile proxy-regression
 
 ```bash
 cd ~/SpiritOS
+# Docs-only A+ gauntlet use: record this command result in the trial receipt.
 PYTHONPATH=. python3 -m source_proxy.testing.runner --profile proxy-closeout
 ```
 
@@ -54,6 +55,10 @@ Next safe action: continue to the next increment
 ```
 
 The closeout report must include safety seed results, proxy regression tests, Codex adapter tests, dashboard smoke tests, live route validation, Cartographer project health, file-change verdict, exact blockers, and one concrete next safe action. A warning or blocked state must name the failing check instead of reporting vague success.
+
+## A+ Trial Receipt Runbook Note
+
+When a Source Proxy A+ coding-agent trial uses the runner as evidence, record the trial id, baseline HEAD, baseline git status, command, result, changed files, safety verdict, usefulness verdict, hidden mutation check, and next corrective action in the trial receipt. Runner output is evidence, not approval to apply, execute-approved, commit, push, or clean the worktree.
 
 ## Current Scout Smoke Command
 

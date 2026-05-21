@@ -143,6 +143,50 @@ class DiffVerificationPreviewTests(unittest.TestCase):
         self.assertEqual(payload["status"], "blocked")
         self.assertIn("secret_shaped_path", reason_codes)
 
+    def test_certificate_key_path_is_blocked(self) -> None:
+        payload = preview_diff_verification(
+            "\n".join(
+                [
+                    "diff --git a/certificates/spirit-dev-key.pem b/certificates/spirit-dev-key.pem",
+                    "--- a/certificates/spirit-dev-key.pem",
+                    "+++ b/certificates/spirit-dev-key.pem",
+                    "@@ -1 +1 @@",
+                    "-OLD",
+                    "+NEW",
+                ]
+            )
+        )
+
+        reason_codes = {item["reason_code"] for item in payload["blocked_reasons"]}
+        self.assertEqual(payload["status"], "blocked")
+        self.assertEqual(payload["risk"], "blocked")
+        self.assertFalse(payload["limits"]["file_writes_allowed"])
+        self.assertIn("secret_shaped_path", reason_codes)
+        self.assertIn("protected_path", reason_codes)
+
+    def test_ssh_private_key_path_is_blocked(self) -> None:
+        payload = preview_diff_verification(
+            "\n".join(
+                [
+                    "diff --git a/.ssh/id_rsa b/.ssh/id_rsa",
+                    "--- a/.ssh/id_rsa",
+                    "+++ b/.ssh/id_rsa",
+                    "@@ -1 +1 @@",
+                    "-OLD",
+                    "+NEW",
+                ]
+            )
+        )
+
+        reason_codes = {item["reason_code"] for item in payload["blocked_reasons"]}
+        self.assertEqual(payload["status"], "blocked")
+        self.assertEqual(payload["risk"], "blocked")
+        self.assertFalse(payload["limits"]["file_writes_allowed"])
+        self.assertFalse(payload["would_apply_diff"])
+        self.assertFalse(payload["would_execute"])
+        self.assertIn("secret_shaped_path", reason_codes)
+        self.assertIn("protected_path", reason_codes)
+
     def test_path_escape_is_blocked(self) -> None:
         payload = preview_diff_verification(
             "\n".join(
@@ -160,6 +204,30 @@ class DiffVerificationPreviewTests(unittest.TestCase):
         reason_codes = {item["reason_code"] for item in payload["blocked_reasons"]}
         self.assertIn("path_escape", reason_codes)
         self.assertEqual(payload["status"], "blocked")
+
+    def test_percent_encoded_traversal_paths_are_blocked_by_policy(self) -> None:
+        for path in ("%2e%2e/outside.md", "%252e%252e%252foutside.md"):
+            with self.subTest(path=path):
+                payload = preview_diff_verification(
+                    "\n".join(
+                        [
+                            f"diff --git a/{path} b/{path}",
+                            f"--- a/{path}",
+                            f"+++ b/{path}",
+                            "@@ -1 +1 @@",
+                            "-old",
+                            "+new",
+                        ]
+                    )
+                )
+
+                reason_codes = {
+                    item["reason_code"] for item in payload["blocked_reasons"]
+                }
+                self.assertEqual(payload["status"], "blocked")
+                self.assertFalse(payload["limits"]["file_writes_allowed"])
+                self.assertFalse(payload["would_apply_diff"])
+                self.assertIn("encoded_path_not_allowed", reason_codes)
 
     def test_windows_slash_path_escape_is_blocked(self) -> None:
         payload = preview_diff_verification(

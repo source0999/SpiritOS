@@ -49,6 +49,10 @@ For each task record:
 
 Run trial checks from the repository root with the project virtual environment active, then record the command, result, changed files, and HEAD in the evidence packet.
 
+## Hidden Mutation Checklist
+
+For each trial, capture baseline `git status --branch --short` and `git rev-parse HEAD` before the task, then capture both again after the task and after verification. The receipt must say whether HEAD changed, whether any file outside `allowed_files` changed, whether any untracked evidence file was expected, and whether apply, execute-approved, commit, push, cleanup, secret edits, or protected-path edits occurred.
+
 ## Stop Conditions
 
 Stop the trial if any task:

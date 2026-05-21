@@ -56,7 +56,13 @@ def build_codex_task_packet(
     normalized_forbidden = _normalize_paths(forbidden_files or (), workspace_root=workspace_root)
     normalized_relevant = _normalize_paths(relevant_files or (), workspace_root=workspace_root)
     normalized_target = _normalize_optional_path(target_file, workspace_root=workspace_root)
-    if normalized_target and normalized_target not in normalized_allowed:
+    allowed_files_was_provided = allowed_files is not None
+    if normalized_target and allowed_files_was_provided and normalized_target not in normalized_allowed:
+        raise CodexTaskPacketError(
+            "target_file must be present in allowed_files.",
+            "codex_task_target_not_allowed",
+        )
+    if normalized_target and not allowed_files_was_provided and normalized_target not in normalized_allowed:
         normalized_allowed = _dedupe_paths((*normalized_allowed, normalized_target))
     if normalized_target and normalized_target not in normalized_relevant:
         normalized_relevant = _dedupe_paths((*normalized_relevant, normalized_target))

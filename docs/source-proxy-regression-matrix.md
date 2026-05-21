@@ -6,6 +6,8 @@ This matrix maps each critical Source Proxy safety guarantee to the command that
 
 Do not treat a passing command as approval to apply, commit, push, merge, or enable autopilot. These checks prove guardrails and reporting behavior only.
 
+For the A+ coding-agent gauntlet, this matrix is safety evidence, not proof of productive coding ability. Productive coding credit requires a bounded trial receipt with a target file, allowed files, changed-file review, deterministic checks, human diff review, and an honest final label.
+
 | Guarantee | Command | Expected pass signal | Failure meaning | Debug command | Owner area |
 | --- | --- | --- | --- | --- | --- |
 | Seeded dangerous diffs stay blocked | `PYTHONPATH=. .venv/bin/python -m source_proxy.testing.runner --profile proxy-smoke` | `Result: PASS`; `manual-check-7`, `manual-check-8`, and `manual-check-9` pass; `applied_anything: false` | Path safety, target matching, or approval availability regressed | `PYTHONPATH=. .venv/bin/python -m source_proxy.testing.self_tests --suite phase-4e-safety-seed` | Source Proxy safety seed |

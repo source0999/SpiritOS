@@ -38,13 +38,13 @@ async def codex_adapter(request: CodexAdapterRequest) -> dict[str, Any]:
     except CodexEnvelopeError as error:
         raise HTTPException(
             status_code=400,
-            detail={"error": str(error), "reason_code": error.reason_code},
+            detail=_blocked_error_detail(str(error), error.reason_code),
         ) from error
     except ValueError as error:
         reason_code = getattr(error, "reason_code", "codex_request_invalid")
         raise HTTPException(
             status_code=400,
-            detail={"error": str(error), "reason_code": reason_code},
+            detail=_blocked_error_detail(str(error), reason_code),
         ) from error
 
 
@@ -84,6 +84,7 @@ def build_codex_adapter_preview(request: CodexAdapterRequest) -> dict[str, Any]:
 
     command_preview = build_codex_command(envelope)
     codex_status = build_codex_cli_status()
+    authority = _no_authority_payload()
     return {
         "service": "source-proxy",
         "route": "codex_adapter",
@@ -110,14 +111,15 @@ def build_codex_adapter_preview(request: CodexAdapterRequest) -> dict[str, Any]:
         "command_preview": command_preview,
         "envelope_validation": envelope_validation,
         "codex_cli_status": codex_status,
+        "authority": authority,
         "would_run_task": False,
         "changed_files": [],
         "proposal_ready": mode == "proposal",
         "preview_ready": mode == "readonly",
-        "approval_authority": False,
-        "apply_authority": False,
-        "commit_authority": False,
-        "push_authority": False,
+        "approval_authority": authority["approval_authority"],
+        "apply_authority": authority["apply_authority"],
+        "commit_authority": authority["commit_authority"],
+        "push_authority": authority["push_authority"],
     }
 
 
@@ -141,3 +143,21 @@ def _request_error(message: str, reason_code: str) -> ValueError:
     error = ValueError(message)
     error.reason_code = reason_code  # type: ignore[attr-defined]
     return error
+
+
+def _no_authority_payload() -> dict[str, bool]:
+    return {
+        "approval_authority": False,
+        "apply_authority": False,
+        "commit_authority": False,
+        "push_authority": False,
+    }
+
+
+def _blocked_error_detail(message: str, reason_code: str) -> dict[str, Any]:
+    return {
+        "status": "blocked",
+        "error": message,
+        "reason_code": reason_code,
+        **_no_authority_payload(),
+    }

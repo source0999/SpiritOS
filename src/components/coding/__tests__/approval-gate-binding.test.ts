@@ -85,6 +85,28 @@ describe("approval gate binding", () => {
     expect(proposal).toBeNull();
   });
 
+  it("does not arm the approval gate for encoded path blockers", () => {
+    const proposal = deriveApprovalGateProposal(
+      {
+        reason_codes: ["encoded_path_not_allowed"],
+        task_classification: "implementation",
+      },
+      {
+        prompt_text: [
+          "proposed_action: update encoded target",
+          "target: %2e%2e/outside.md",
+          "```md",
+          "blocked",
+          "```",
+        ].join("\n"),
+        reason_code: "encoded_path_not_allowed",
+        target: "%2e%2e/outside.md",
+      },
+    );
+
+    expect(proposal).toBeNull();
+  });
+
   it("binds proposed_diff from the packet when prompt_text is a coder stub", () => {
     const patch = [
       "--- a/src/components/coding/CodingAgentInterface.tsx",
@@ -343,6 +365,50 @@ describe("approval gate binding", () => {
         coder_blocked: true,
         proposed_diff: "",
         prompt_text: "```diff\n@@ -1 +1 @@\n-old\n+new\n```",
+        target: "docs/phase-8-manual-check.md",
+      },
+      {
+        currentTaskText: "Target file: docs/phase-8-manual-check.md",
+        resolvedTargetPath: "docs/phase-8-manual-check.md",
+      },
+    );
+
+    expect(proposal).toBeNull();
+  });
+
+  it("does not arm approval for config-blocked route failure packets", () => {
+    const proposal = deriveApprovalGateProposal(
+      {
+        recommended_route: "codex_cli",
+        reason_codes: ["implementation_requested"],
+        task_classification: "implementation",
+      },
+      {
+        coder_blocked: true,
+        prompt_text: "Codex CLI route is config-blocked and cannot produce an approvable diff.",
+        reason_code: "codex_binary_not_found",
+        target: "docs/phase-8-manual-check.md",
+      },
+      {
+        currentTaskText: "Target file: docs/phase-8-manual-check.md",
+        resolvedTargetPath: "docs/phase-8-manual-check.md",
+      },
+    );
+
+    expect(proposal).toBeNull();
+  });
+
+  it("does not arm approval when Codex route live execution is disabled", () => {
+    const proposal = deriveApprovalGateProposal(
+      {
+        recommended_route: "codex_cli",
+        reason_codes: ["implementation_requested"],
+        task_classification: "implementation",
+      },
+      {
+        prompt_text: "Codex route live execution is disabled.",
+        proposed_diff: DOCS_APPEND_STANDARD_UNIFIED_DIFF,
+        reason_code: "codex_route_live_execution_not_enabled",
         target: "docs/phase-8-manual-check.md",
       },
       {

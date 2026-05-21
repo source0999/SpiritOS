@@ -174,7 +174,7 @@ class CodexCliAdapterTests(unittest.TestCase):
             prompt_file=root / "tmp" / "task.md",
             output_file=root / "tmp" / "final.md",
             output_dir=root / "tmp",
-            allowed_files=("../outside.py", ".env.local"),
+            allowed_files=("../outside.py", ".env.local", "%2e%2e/outside.md"),
         )
 
         validation = validate_codex_envelope(envelope)
@@ -183,6 +183,7 @@ class CodexCliAdapterTests(unittest.TestCase):
         self.assertFalse(validation["ok"])
         self.assertIn("allowed_file_path_escape", reason_codes)
         self.assertIn("allowed_file_protected_path", reason_codes)
+        self.assertIn("allowed_file_encoded_path_not_allowed", reason_codes)
 
     def test_env_allowlist_drops_secret_values(self) -> None:
         env = codex_subprocess_env(
@@ -222,6 +223,15 @@ class CodexCliAdapterTests(unittest.TestCase):
         self.assertEqual(payload["live_execution"]["blocked_modes"], ["apply", "commit", "push"])
         self.assertEqual(payload["changed_files"], [])
         self.assertTrue(payload["preview_ready"])
+        self.assertEqual(
+            payload["authority"],
+            {
+                "approval_authority": False,
+                "apply_authority": False,
+                "commit_authority": False,
+                "push_authority": False,
+            },
+        )
         self.assertFalse(payload["would_run_task"])
         self.assertFalse(payload["approval_authority"])
         self.assertFalse(payload["apply_authority"])
@@ -285,7 +295,85 @@ class CodexCliAdapterTests(unittest.TestCase):
         )
 
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json()["detail"]["reason_code"], "codex_proposal_missing_allowed_files")
+        detail = response.json()["detail"]
+        self.assertEqual(detail["status"], "blocked")
+        self.assertEqual(detail["reason_code"], "codex_proposal_missing_allowed_files")
+        self.assertFalse(detail["approval_authority"])
+        self.assertFalse(detail["apply_authority"])
+        self.assertFalse(detail["commit_authority"])
+        self.assertFalse(detail["push_authority"])
+
+    def test_codex_route_proposal_config_blocked_has_no_authority(self) -> None:
+        client = TestClient(app)
+        response = client.post(
+            "/v1/coding/codex",
+            json={
+                "mode": "proposal",
+                "task": "Append one docs sentence.",
+                "target_file": "docs/phase-8-manual-check.md",
+                "allowed_files": ["docs/phase-8-manual-check.md"],
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["status"], "config_blocked")
+        self.assertEqual(payload["execution_state"], "config_blocked")
+        self.assertEqual(payload["reason_code"], "codex_route_live_execution_not_enabled")
+        self.assertEqual(
+            payload["authority"],
+            {
+                "approval_authority": False,
+                "apply_authority": False,
+                "commit_authority": False,
+                "push_authority": False,
+            },
+        )
+        self.assertFalse(payload["would_run_task"])
+        self.assertFalse(payload["approval_authority"])
+        self.assertFalse(payload["apply_authority"])
+        self.assertFalse(payload["commit_authority"])
+        self.assertFalse(payload["push_authority"])
+
+    def test_codex_route_proposal_exposes_honest_config_block_state(self) -> None:
+        client = TestClient(app)
+        response = client.post(
+            "/v1/coding/codex",
+            json={
+                "mode": "proposal",
+                "task": "Append one docs sentence.",
+                "target_file": "docs/phase-8-manual-check.md",
+                "allowed_files": ["docs/phase-8-manual-check.md"],
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["status"], "config_blocked")
+        self.assertEqual(payload["execution_state"], "config_blocked")
+        self.assertEqual(payload["reason_code"], "codex_route_live_execution_not_enabled")
+        self.assertTrue(payload["proposal_ready"])
+        self.assertFalse(payload["preview_ready"])
+        self.assertFalse(payload["live_execution"]["enabled"])
+        self.assertEqual(
+            payload["live_execution"]["reason_code"],
+            "codex_route_live_execution_not_enabled",
+        )
+        self.assertEqual(payload["command_preview"][:2], ["codex", "exec"])
+        self.assertEqual(
+            payload["authority"],
+            {
+                "approval_authority": False,
+                "apply_authority": False,
+                "commit_authority": False,
+                "push_authority": False,
+            },
+        )
+        self.assertFalse(payload["would_run_task"])
+        self.assertFalse(payload["approval_authority"])
+        self.assertFalse(payload["apply_authority"])
+        self.assertFalse(payload["commit_authority"])
+        self.assertFalse(payload["push_authority"])
 
     def test_codex_route_rejects_apply_commit_push_modes(self) -> None:
         client = TestClient(app)
@@ -358,6 +446,33 @@ class CodexCliAdapterTests(unittest.TestCase):
                     "allowed_files": ["../outside.md"],
                 },
                 "codex_path_escape",
+            ),
+            (
+                {
+                    "mode": "proposal",
+                    "task": "Update encoded outside file.",
+                    "target_file": "%2e%2e/outside.md",
+                    "allowed_files": ["%2e%2e/outside.md"],
+                },
+                "codex_encoded_path_not_allowed",
+            ),
+            (
+                {
+                    "mode": "proposal",
+                    "task": "Update encoded outside file.",
+                    "target_file": "%2e%2e%2foutside.md",
+                    "allowed_files": ["%2e%2e%2foutside.md"],
+                },
+                "codex_encoded_path_not_allowed",
+            ),
+            (
+                {
+                    "mode": "proposal",
+                    "task": "Update double encoded outside file.",
+                    "target_file": "%252e%252e%252foutside.md",
+                    "allowed_files": ["%252e%252e%252foutside.md"],
+                },
+                "codex_encoded_path_not_allowed",
             ),
             (
                 {
@@ -470,9 +585,29 @@ class CodexCliAdapterTests(unittest.TestCase):
             build_codex_task_packet(task="Read secrets", target_file=".env", allowed_files=[".env"])
         with self.assertRaises(CodexTaskPacketError) as escape:
             build_codex_task_packet(task="Edit outside", target_file="../outside.md", allowed_files=["../outside.md"])
+        with self.assertRaises(CodexTaskPacketError) as encoded:
+            build_codex_task_packet(
+                task="Edit encoded outside",
+                target_file="%2e%2e/outside.md",
+                allowed_files=["%2e%2e/outside.md"],
+            )
 
         self.assertEqual(secret.exception.reason_code, "codex_task_protected_path")
         self.assertEqual(escape.exception.reason_code, "codex_task_path_escape")
+        self.assertEqual(
+            encoded.exception.reason_code,
+            "codex_task_encoded_path_not_allowed",
+        )
+
+    def test_task_packet_rejects_target_not_in_explicit_allowed_files(self) -> None:
+        with self.assertRaises(CodexTaskPacketError) as blocked:
+            build_codex_task_packet(
+                task="Append docs note",
+                target_file="docs/phase-8-manual-check.md",
+                allowed_files=["docs/proxy-test-runner-plan.md"],
+            )
+
+        self.assertEqual(blocked.exception.reason_code, "codex_task_target_not_allowed")
 
     def test_evidence_packet_captures_run_summary_and_safety_verdict(self) -> None:
         packet = build_codex_evidence_packet(

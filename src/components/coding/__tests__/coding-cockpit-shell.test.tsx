@@ -1,7 +1,13 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import CodingCockpitShell from "@/components/coding/CodingCockpitShell";
+
+const navMock = vi.hoisted(() => ({ path: "/coding" }));
+
+vi.mock("next/navigation", () => ({
+  usePathname: () => navMock.path,
+}));
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -12,18 +18,49 @@ describe("CodingCockpitShell", () => {
     render(<CodingCockpitShell />);
 
     expect(screen.getByRole("heading", { level: 1, name: "Coding" })).toBeInTheDocument();
-    expect(screen.getByRole("navigation", { name: "Spirit workspace navigation" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Source" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("link", { name: "Dashboard" })).toHaveAttribute("href", "/");
-    expect(screen.getByRole("link", { name: /advanced diagnostics/i })).toHaveAttribute(
+    const desktopNav = screen.getByRole("navigation", {
+      name: "Spirit app desktop navigation",
+    });
+    expect(screen.getByRole("navigation", { name: "Dashboard mobile navigation" })).toBeInTheDocument();
+    expect(within(desktopNav).getByRole("link", { name: "Source" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    expect(within(desktopNav).getByRole("link", { name: "Dashboard" })).toHaveAttribute("href", "/");
+    expect(screen.queryByText("Source Proxy cockpit")).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /advanced diagnostics/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Backend diagnostics" })).toHaveAttribute(
       "href",
       "/proxy-backend",
     );
+    expect(screen.getByRole("complementary", { name: "Project task rail" })).toBeInTheDocument();
+    expect(screen.getByRole("complementary", { name: "Review pane" })).toBeInTheDocument();
+    expect(screen.getByRole("complementary", { name: "Project task rail" })).toHaveTextContent(
+      "Ready to draft",
+    );
+    expect(screen.getByRole("navigation", { name: "Task queues" })).toHaveTextContent(
+      "Waiting approval",
+    );
+    expect(screen.getByRole("navigation", { name: "Task queues" })).toHaveTextContent("Blocked");
+    expect(screen.getByText("Current task")).toBeInTheDocument();
+    expect(screen.getByText("Local state only")).toBeInTheDocument();
+    expect(screen.getAllByText("No target selected").length).toBeGreaterThan(0);
+    expect(screen.getByText("None selected")).toBeInTheDocument();
+    expect(screen.getByText("Evidence trail and logs")).toBeInTheDocument();
     expect(screen.getByText("Task Composer")).toBeInTheDocument();
     expect(screen.getByText("Advanced options")).toBeInTheDocument();
-    expect(screen.getByText(/Preview does not write files/)).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveAttribute("aria-live", "polite");
+    expect(screen.getByLabelText("Route / model")).toHaveValue("source-proxy-default");
+    expect(screen.getByRole("option", { name: "Source Proxy default" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Local planning only" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Codex proposal route" })).toBeInTheDocument();
+    expect(screen.getByText(/Preview safely before anything writes/)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "No active task" })).toBeInTheDocument();
+    expect(screen.getByText("Select or create a task")).toBeInTheDocument();
+    expect(screen.getByText("Preview safely before writes")).toBeInTheDocument();
+    expect(screen.getByText("Review changes before approval")).toBeInTheDocument();
     expect(screen.getByText("Preview safely")).toBeDisabled();
-    expect(screen.getByTestId("mobile-action-bar")).toHaveTextContent("No files changed");
+    expect(screen.getByTestId("mobile-action-bar")).toHaveClass("hidden");
     expect(screen.getByRole("link", { name: "Open mobile diagnostics in /proxy-backend" })).toHaveAttribute(
       "href",
       "/proxy-backend",
@@ -32,18 +69,32 @@ describe("CodingCockpitShell", () => {
     expect(screen.getByLabelText("Coding status")).toHaveTextContent("Draft");
     expect(screen.getByLabelText("Coding status")).toHaveTextContent("Apply");
     expect(screen.getByLabelText("Coding status")).toHaveTextContent("Verify");
-    expect(screen.getByRole("heading", { name: "Current State" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Task status" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Task status" }).closest("section")).toHaveTextContent(
+      "Draft",
+    );
+    expect(screen.getByRole("heading", { name: "Task status" }).closest("section")).toHaveTextContent(
+      "ProxyReady for safe preview",
+    );
+    expect(screen.getByRole("heading", { name: "Task status" }).closest("section")).toHaveTextContent(
+      "RouteSelect during preview",
+    );
+    expect(screen.getByRole("heading", { name: "Task status" }).closest("section")).toHaveTextContent(
+      "WorkspaceSpiritOS",
+    );
     expect(screen.getByText(/Draft, Preview, Approval, Apply, then Verify/)).toBeInTheDocument();
-    expect(screen.getByText("Evidence trail")).toBeInTheDocument();
+    const evidenceDrawer = screen.getByText("Evidence trail and logs").closest("details");
+    expect(evidenceDrawer).not.toBeNull();
+    expect(evidenceDrawer).not.toHaveAttribute("open");
     expect(screen.getByText("Architect")).toBeInTheDocument();
     expect(screen.getByText("Coder")).toBeInTheDocument();
-    expect(screen.getByText("Reviewer")).toBeInTheDocument();
-    expect(screen.getByText("Verifier")).toBeInTheDocument();
+    expect(screen.getAllByText("Reviewer").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Verifier").length).toBeGreaterThan(0);
     expect(screen.getByText("Approval Gate")).toBeInTheDocument();
     expect(screen.getByText("Apply Result")).toBeInTheDocument();
-    expect(screen.getByText("Terminal/Test Evidence")).toBeInTheDocument();
-    expect(screen.getByText("No active task")).toBeInTheDocument();
-    expect(screen.getByText("Safe next action")).toBeInTheDocument();
+    expect(within(evidenceDrawer as HTMLElement).getByText("Terminal/Test Evidence")).toBeInTheDocument();
+    expect(screen.getAllByText("No active task").length).toBeGreaterThan(0);
+    expect(screen.getByText("Next safe move")).toBeInTheDocument();
     expect(screen.queryByRole("complementary", { name: "Task actions" })).not.toBeInTheDocument();
 
     expect(screen.queryByText(/raw debug json/i)).not.toBeInTheDocument();
@@ -96,16 +147,27 @@ describe("CodingCockpitShell", () => {
     fireEvent.change(screen.getByLabelText("Task"), {
       target: { value: "Append a docs-only smoke sentence." },
     });
+    expect(screen.getByTestId("mobile-action-bar")).not.toHaveClass("hidden");
+    expect(screen.getByTestId("mobile-action-bar")).toHaveTextContent("No files changed");
+    expect(screen.queryByRole("heading", { name: "No active task" })).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Target file"), {
       target: { value: "docs/phase-8-manual-check.md" },
     });
     fireEvent.change(screen.getByLabelText("Allowed files"), {
       target: { value: "docs/phase-8-manual-check.md" },
     });
+    fireEvent.change(screen.getByLabelText("Route / model"), {
+      target: { value: "codex-proposal" },
+    });
 
     expect(screen.getByText(/No files will be changed during preview/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Preview safely" }));
     expect(await screen.findByText(/Preview ready. No files changed yet/)).toBeInTheDocument();
+    expect(screen.getByLabelText("Coding status")).toHaveTextContent("Preview");
+    expect(screen.getByRole("heading", { name: "Task status" }).closest("section")).toHaveTextContent(
+      "Needs approval",
+    );
+    expect(screen.getByRole("navigation", { name: "Task queues" })).toHaveTextContent("1 task");
     expect(screen.getAllByText("Needs approval").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Evidence available").length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Approval is required before apply/).length).toBeGreaterThan(0);
@@ -131,8 +193,23 @@ describe("CodingCockpitShell", () => {
     );
     expect(globalThis.fetch).toHaveBeenCalledWith(
       "/v1/verification/diff-preview",
-      expect.objectContaining({ method: "POST" }),
+      expect.objectContaining({
+        body: expect.stringContaining('"route_type":"codex-proposal"'),
+        method: "POST",
+      }),
     );
+
+    fireEvent.click(screen.getAllByRole("button", { name: "Reject" })[0]);
+    expect(screen.getAllByText(/Rejected by human reviewer/).length).toBeGreaterThan(0);
+    expect(screen.getByLabelText("Coding status")).toHaveTextContent("Draft");
+    expect(screen.getByRole("heading", { name: "Task status" }).closest("section")).toHaveTextContent(
+      "Blocked",
+    );
+    expect(screen.getByRole("navigation", { name: "Task queues" })).toHaveTextContent("Blocked");
+    expect(screen.getByRole("navigation", { name: "Task queues" })).toHaveTextContent("1 task");
+    expect(screen.getByText("approval unavailable")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Approve" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /apply/i })).not.toBeInTheDocument();
   });
 
   it("separates approval from apply and executes approved diff through Source Proxy route", async () => {
@@ -200,18 +277,38 @@ describe("CodingCockpitShell", () => {
     expect(await screen.findByText(/Preview ready. No files changed yet/)).toBeInTheDocument();
     expect(screen.getByText(/approval available/)).toBeInTheDocument();
     expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+    expect(globalThis.fetch).not.toHaveBeenCalledWith(
+      "/v1/actions/execute-approved",
+      expect.anything(),
+    );
     expect(screen.queryByRole("button", { name: /apply/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /verify/i })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getAllByRole("button", { name: "Approve" })[0]);
     expect(screen.getAllByText(/Approved, not applied/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Files are still unchanged/).length).toBeGreaterThan(0);
+    expect(screen.getByLabelText("Coding status")).toHaveTextContent("Approval");
+    expect(screen.getByRole("heading", { name: "Task status" }).closest("section")).toHaveTextContent(
+      "Approved, not applied",
+    );
+    expect(screen.getByRole("navigation", { name: "Task queues" })).toHaveTextContent("Waiting approval");
+    expect(screen.getByRole("button", { name: "Apply approved diff" })).toBeInTheDocument();
     expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+    expect(globalThis.fetch).not.toHaveBeenCalledWith(
+      "/v1/actions/execute-approved",
+      expect.anything(),
+    );
 
     fireEvent.click(screen.getByRole("button", { name: "Apply approved diff" }));
     await waitFor(() =>
       expect(screen.getAllByText(/Applied, verification required/).length).toBeGreaterThan(0),
     );
+    expect(screen.getByLabelText("Coding status")).toHaveTextContent("Verify");
+    expect(screen.getByRole("heading", { name: "Task status" }).closest("section")).toHaveTextContent(
+      "Applied, verification required",
+    );
+    expect(screen.getByRole("navigation", { name: "Task queues" })).toHaveTextContent("Verify next");
+    expect(screen.getAllByText(/Verification required/).length).toBeGreaterThan(0);
     await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(4));
     expect(globalThis.fetch).toHaveBeenNthCalledWith(
       3,
@@ -272,6 +369,14 @@ describe("CodingCockpitShell", () => {
 
     expect(await screen.findByText(/Preview blocked. No files changed/)).toBeInTheDocument();
     expect(screen.getAllByText(/Codex route is config blocked/).length).toBeGreaterThan(0);
+    expect(screen.getByRole("heading", { name: "Task status" }).closest("section")).toHaveTextContent(
+      "Blocked",
+    );
+    expect(screen.getByRole("navigation", { name: "Task queues" })).toHaveTextContent("Blocked");
+    expect(screen.getByRole("navigation", { name: "Task queues" })).toHaveTextContent("1 task");
+    expect(screen.getByText("approval unavailable")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Approve" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /apply/i })).not.toBeInTheDocument();
     expect(globalThis.fetch).toHaveBeenCalledTimes(1);
   });
 
