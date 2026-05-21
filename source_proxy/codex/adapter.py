@@ -8,7 +8,11 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from source_proxy.safety.paths import is_secret_shaped_path, path_escapes_workspace
+from source_proxy.safety.paths import (
+    has_percent_encoded_path_syntax,
+    is_secret_shaped_path,
+    path_escapes_workspace,
+)
 
 SAFE_CODEX_SANDBOXES = ("read-only", "workspace-write")
 BLOCKED_CODEX_SANDBOXES = ("danger-full-access",)
@@ -286,6 +290,8 @@ def _run_version_probe(
 
 
 def _repo_path_block_reason(path: str, *, workspace: Path) -> str | None:
+    if has_percent_encoded_path_syntax(path):
+        return "encoded_path_not_allowed"
     if path_escapes_workspace(path, workspace_root=workspace):
         return "path_escape"
     if is_secret_shaped_path(path):

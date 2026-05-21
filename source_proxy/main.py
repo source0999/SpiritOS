@@ -54,5 +54,13 @@ async def startup() -> None:
 
 
 @app.get("/")
-async def root() -> dict[str, str]:
-    return {"service": "source-proxy", "status": "bootstrapped"}
+async def root() -> dict[str, object]:
+    return {
+        "service": "source-proxy",
+        "status": "bootstrapped",
+        "write_policy": {
+            "apply_requires_approval": True,
+            "commit_requires_separate_approval": True,
+            "push_requires_separate_approval": True,
+        },
+    }

@@ -82,6 +82,20 @@ class VerificationContractTests(unittest.TestCase):
         self.assertIn("missing exact text: Built with SpiritOS", result["missing"])
         self.assertTrue(result["typescript_check"]["skipped"])
 
+    def test_validate_replacement_content_passes_when_exact_text_is_present(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            result = validate_replacement_content(
+                workspace_root=root,
+                target_path="docs/demo.md",
+                content="hello\nBuilt with SpiritOS\n",
+                task_text='Target file: docs/demo.md\nAdd exact text "Built with SpiritOS"',
+            )
+
+        self.assertTrue(result["ok"], result)
+        self.assertEqual(result["missing"], [])
+        self.assertTrue(result["typescript_check"]["skipped"])
+
     def test_validate_replacement_content_ignores_trailing_slash_on_file_targets(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             result = validate_replacement_content(

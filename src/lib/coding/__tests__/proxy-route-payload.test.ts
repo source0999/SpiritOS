@@ -23,6 +23,24 @@ describe("parseRouteDecisionPayload", () => {
     expect(r.ok).toBe(true);
   });
 
+  it("preserves config-blocked route metadata for honest UI display", () => {
+    const payload = {
+      recommended_route: "codex_cli",
+      task_classification: "implementation",
+      status: "config_blocked",
+      reason_code: "codex_binary_not_found",
+    };
+
+    const r = parseRouteDecisionPayload(payload);
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.decision).toBe(payload);
+      const reasonCode: string | undefined = r.decision.reason_code;
+      expect(r.decision.status).toBe("config_blocked");
+      expect(reasonCode).toBe("codex_binary_not_found");
+    }
+  });
+
   it("rejects empty object", () => {
     const r = parseRouteDecisionPayload({});
     expect(r.ok).toBe(false);

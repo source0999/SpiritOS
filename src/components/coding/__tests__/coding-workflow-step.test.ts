@@ -1,7 +1,7 @@
 /// <reference types="vitest/globals" />
 
 import { createElement } from "react";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 
 import { ROUTE_RESPONSE_INVALID_PREFIX } from "@/lib/coding/proxy-route-payload";
 import CodingAgentInterface, {
@@ -917,7 +917,9 @@ describe("ProposalCreationPanel", () => {
     targetInput.value = "src/app/proxy-backend/page.tsx";
     allowedFilesInput.value = "src/app/proxy-backend/page.tsx";
 
-    await vi.advanceTimersByTimeAsync(300);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(300);
+    });
 
     expect(proposalDraftButton()).toBeEnabled();
     vi.useRealTimers();
@@ -1689,6 +1691,49 @@ describe("deriveCodingStabilitySummary", () => {
     expect(summary.primaryState).toBe("Blocked");
     expect(summary.lastBlocker).toBe("path_escape");
     expect(summary.target).toBe("../outside.txt");
+    expect(summary.target).not.toBe("public/next.svg");
+  });
+
+  it("prioritizes encoded path blockers over inferred targets", () => {
+    const summary = stabilitySummary({
+      approvalGate: {
+        ...baseArgs().approvalGate,
+        action: "needs_coder_diff",
+        preview: {
+          decision: "blocked",
+          reason_codes: ["encoded_path_not_allowed"],
+          requires_human_approval: false,
+        },
+        target: "%2e%2e/outside.md",
+      },
+      finalOutput: {
+        attachedFiles: [],
+        completedAt: "t",
+        contextTurnCount: 0,
+        decision: {
+          reason_codes: ["encoded_path_not_allowed"],
+          resolved_target: { path: "%2e%2e/outside.md" },
+        },
+        decisionPayload: "{}",
+        promptText: "",
+        researchSources: [],
+        requests: [],
+        runId: 1,
+        selfCorrection: {
+          checks: [],
+          confidence: 0,
+          reasons: [],
+          refinedInstruction: "",
+          triggered: false,
+        },
+        summary: "Route ok",
+      },
+    });
+
+    expect(summary.primaryState).toBe("Blocked");
+    expect(summary.approvalState).toBe("unavailable");
+    expect(summary.lastBlocker).toBe("encoded_path_not_allowed");
+    expect(summary.target).toBe("%2e%2e/outside.md");
     expect(summary.target).not.toBe("public/next.svg");
   });
 
@@ -3195,6 +3240,33 @@ describe("workflowStep", () => {
     expect(
       screen.getByText(
         "Use a repo-relative path inside the workspace. Traversal, absolute, and drive paths are blocked.",
+      ),
+    ).toBeTruthy();
+  });
+
+  it("shows encoded path approval blockers honestly", () => {
+    render(
+      createElement(
+        ApprovalGatePanel,
+        approvalPanelProps({
+          gate: {
+            ...baseArgs().approvalGate,
+            action: "needs_coder_diff",
+            preview: {
+              decision: "blocked",
+              reason_codes: ["encoded_path_not_allowed"],
+              requires_human_approval: false,
+            },
+            target: "%2e%2e/outside.md",
+          },
+        }),
+      ),
+    );
+
+    expect(screen.getByText("Blocked: encoded path syntax")).toBeTruthy();
+    expect(
+      screen.getByText(
+        "Use plain repo-relative paths. Percent-encoded path syntax is blocked for approval-capable changes.",
       ),
     ).toBeTruthy();
   });

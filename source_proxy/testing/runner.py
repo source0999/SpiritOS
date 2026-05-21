@@ -152,6 +152,7 @@ def _run_proxy_smoke_profile() -> dict[str, Any]:
         "result": result,
         "smoke_harness": smoke,
         "safety_verdict": safety,
+        "trial_receipt_contract": _trial_receipt_contract(),
         "recommendation": "ready for next increment" if result == "pass" else "fix needed",
     }
 
@@ -3023,6 +3024,19 @@ def _safety_verdict(smoke: dict[str, Any]) -> dict[str, bool]:
             for case in blocked_cases
         ),
         "applied_anything_false": smoke.get("applied_anything") is False,
+    }
+
+
+def _trial_receipt_contract() -> dict[str, Any]:
+    return {
+        "receipt_required": True,
+        "source_of_truth": "trial_receipt",
+        "records_baseline_head": True,
+        "records_baseline_status": True,
+        "approval_authority": False,
+        "apply_authority": False,
+        "commit_authority": False,
+        "push_authority": False,
     }
 
 

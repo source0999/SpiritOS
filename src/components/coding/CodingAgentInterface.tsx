@@ -37,7 +37,6 @@ import {
   formatWorkflowBlockerTitle,
   isApprovalPendingGateReason,
   type WorkflowApplyChecklistItem,
-  type WorkflowProgressCopy,
 } from "@/lib/coding/workflow-progress-copy";
 import "@/styles/dashboard-demo-v4.css";
 
@@ -67,6 +66,7 @@ const PATH_ESCAPE_REASON_CODES = new Set([
   "outside_workspace",
   "absolute_path",
 ]);
+const ENCODED_PATH_REASON_CODES = new Set(["encoded_path_not_allowed"]);
 
 // ── Unified diff hygiene ─────────────────────────────────────────────────────
 // `git apply` wants a trailing newline on the patch text. `String.trim()` on the
@@ -3332,7 +3332,7 @@ export default function CodingAgentInterface({
       }));
     }
     applyDiscoveryWorkspaceForTask(restoredTask, { clearProposal: !restoredPlan });
-    setLongRunningTask((current) => ({
+    setLongRunningTask(() => ({
       description: restoredTask,
       error: null,
       isChecking: false,
@@ -4680,6 +4680,7 @@ function firstStabilityBlocker(reasonCodes: string[]): string | null {
     "protected_path",
     "secret_path",
     "secret_shaped_path",
+    "encoded_path_not_allowed",
     "path_escape",
     "outside_workspace",
     "absolute_path",
@@ -4705,6 +4706,13 @@ function safetyReasonCopy(reasonCodes: string[]): { detail: string; title: strin
     return {
       detail: "Protected and secret-shaped paths cannot be edited through the approval flow.",
       title: "Blocked: protected/secret path",
+    };
+  }
+  if (reasonCodes.some((reason) => ENCODED_PATH_REASON_CODES.has(reason))) {
+    return {
+      detail:
+        "Use plain repo-relative paths. Percent-encoded path syntax is blocked for approval-capable changes.",
+      title: "Blocked: encoded path syntax",
     };
   }
   if (reasonCodes.some((reason) => PATH_ESCAPE_REASON_CODES.has(reason))) {
@@ -7699,7 +7707,6 @@ function OutputWindow({
   onFilesAdded,
   onPreviewApprovalGate,
   onPreviewDiffVerification,
-  onPreviewManualResult,
   onCopyHistoryRecoveryPrompt,
   onRestoreHistoryEntry,
   onRunProxyFlow,
@@ -12086,6 +12093,12 @@ function blockerCopy(reasonCode: string): {
         detail: "Protected or secret-shaped paths cannot be edited through this approval flow.",
         nextSafeAction: "Choose a non-secret repo-relative target or stop for a separate protected-path procedure.",
         title: "Protected path blocked",
+      };
+    case "encoded_path_not_allowed":
+      return {
+        detail: "Percent-encoded path syntax is not allowed for approval-capable changes.",
+        nextSafeAction: "Use a plain repo-relative target path, then rerun preview before approval.",
+        title: "Encoded path syntax blocked",
       };
     case "target_mismatch":
     case "target_mismatch_stale_diff":

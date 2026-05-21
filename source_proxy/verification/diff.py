@@ -16,6 +16,7 @@ from source_proxy.planning.reviewer import (
     review_diff_with_llm,
     reviewer_llm_is_configured,
 )
+from source_proxy.safety.paths import has_percent_encoded_path_syntax
 from source_proxy.verification.deterministic import deterministic_checks_from_preview
 from source_proxy.verification.contracts import validate_replacement_content
 
@@ -1572,6 +1573,8 @@ def _blocked_reasons(files: list[dict[str, Any]]) -> list[dict[str, str]]:
             reasons.append({"path": path, "reason_code": "absolute_path"})
             reasons.append({"path": path, "reason_code": "path_escape"})
             reasons.append({"path": path, "reason_code": "outside_workspace"})
+        if "encoded_path_not_allowed" in flags:
+            reasons.append({"path": path, "reason_code": "encoded_path_not_allowed"})
         if "secret_shaped_path" in flags:
             reasons.append({"path": path, "reason_code": "secret_shaped_path"})
             reasons.append({"path": path, "reason_code": "protected_path"})
@@ -1585,6 +1588,8 @@ def _file_risk_flags(path: str) -> list[str]:
 
     if path.startswith("/") or (len(path) >= 3 and path[1:3] == ":/"):
         flags.append("absolute_path")
+    if has_percent_encoded_path_syntax(path):
+        flags.append("encoded_path_not_allowed")
     if ".." in parts:
         flags.append("path_escape")
     if any(part.startswith(".") or any(marker in part for marker in SECRET_NAME_MARKERS) for part in parts):
