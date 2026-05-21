@@ -2,7 +2,7 @@
 
 status: implemented-preview-only
 
-Status date: 2026-05-20
+Status date: 2026-05-21
 
 ## Purpose
 
@@ -16,7 +16,7 @@ The handoff is preview-only. It may summarize source references, blockers, bluep
 - Level 10.0 boundary: `docs/cartographer-level-10-production-operator-boundary-contract.md`.
 - Level 10.4 run history and evidence browser: `docs/cartographer-level-10-run-history-evidence-browser.md`.
 - Service surface: `build_cartographer_level_10_scout_blueprint_handoff_preview` in `source_proxy/cartographer/service.py`.
-- API surface: `GET /v1/cartographer/level-10-scout-blueprint-handoff` in `source_proxy/api/cartographer.py`.
+- API surface: `GET /v1/cartographer/level-10-scout-blueprint-handoff-preview` in `source_proxy/api/cartographer.py`.
 - Tests: `test_level_10_scout_blueprint_handoff_preview_does_not_write_context` and `test_level_10_scout_blueprint_handoff_preview_blocks_empty_sources_without_writes` in `source_proxy/tests/test_cartographer_api.py`.
 
 ## Contract
@@ -32,18 +32,27 @@ The Level 10.5 payload reports:
 - `write_actions_enabled: false`.
 - `authority_granted: false`.
 - `actions_taken: false`.
-- `scout_write_allowed: false`.
-- `proxy_memory_write_allowed: false`.
-- `coding_context_write_allowed: false`.
-- `blueprint_write_allowed: false`.
+- `scout_writes_allowed: false`.
+- `proxy_memory_writes_allowed: false`.
+- `coding_context_writes_allowed: false`.
+- `blueprint_writes_allowed: false`.
+- `evidence_writes_allowed: false`.
+- `receipt_creation_allowed: false`.
+- `run_history_mutation_allowed: false`.
 - `background_mutation_allowed: false`.
 - `cleanup_allowed: false`.
 - `push_allowed: false`.
 - `merge_allowed: false`.
+- `stash_allowed: false`.
+- `branch_creation_allowed: false`.
+- `worktree_creation_allowed: false`.
 - `automatic_execution_allowed: false`.
 - `automatic_promotion_allowed: false`.
+- `self_approval_allowed: false`.
 
-Handoff previews may include:
+## Handoff Preview Shape
+
+Handoff preview entries may include:
 
 - handoff id and target.
 - source references.
@@ -84,7 +93,7 @@ PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_api
 git status -sb
 ```
 
-Expected outcome:
+## Expected Outcome
 
 - diff check has no output.
 - focused Level 10.5 and Level 10.4 tests pass.

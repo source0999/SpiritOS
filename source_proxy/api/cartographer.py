@@ -70,6 +70,8 @@ from source_proxy.cartographer.service import (
     build_cartographer_level_10_closeout_packet_generator,
     build_cartographer_level_10_run_history_evidence_browser,
     build_cartographer_level_10_scout_blueprint_handoff_preview,
+    build_cartographer_level_10_production_readiness_checklist,
+    build_cartographer_level_10_closeout_next_roadmap_gate,
     build_cartographer_level_8_receipt_journal,
     build_cartographer_level_8_step_approval_preview,
     build_cartographer_level_8_workflow_run_card,
@@ -376,9 +378,19 @@ async def cartographer_level_10_run_history_evidence() -> dict[str, Any]:
     return build_cartographer_level_10_run_history_evidence_browser()
 
 
-@router.get("/level-10-scout-blueprint-handoff")
-async def cartographer_level_10_scout_blueprint_handoff() -> dict[str, Any]:
+@router.get("/level-10-scout-blueprint-handoff-preview")
+async def cartographer_level_10_scout_blueprint_handoff_preview() -> dict[str, Any]:
     return build_cartographer_level_10_scout_blueprint_handoff_preview()
+
+
+@router.get("/level-10-production-readiness-checklist")
+async def cartographer_level_10_production_readiness_checklist() -> dict[str, Any]:
+    return build_cartographer_level_10_production_readiness_checklist()
+
+
+@router.get("/level-10-closeout-next-roadmap-gate")
+async def cartographer_level_10_closeout_next_roadmap_gate() -> dict[str, Any]:
+    return build_cartographer_level_10_closeout_next_roadmap_gate()
 
 
 @router.get("/project-health")
