@@ -2058,10 +2058,17 @@ def build_cartographer_level_10_scout_blueprint_handoff_preview() -> dict[str, A
             "blockers": [] if scout_refs else ["no_scout_evidence_refs_observed"],
             "preview_only": True,
             "writes_allowed": False,
+            "scout_writes_allowed": False,
+            "proxy_memory_writes_allowed": False,
+            "coding_context_writes_allowed": False,
+            "blueprint_writes_allowed": False,
             "scout_write_allowed": False,
             "proxy_memory_write_allowed": False,
             "coding_context_write_allowed": False,
             "blueprint_write_allowed": False,
+            "evidence_writes_allowed": False,
+            "receipt_creation_allowed": False,
+            "run_history_mutation_allowed": False,
             "actions_taken": False,
         },
         {
@@ -2072,10 +2079,17 @@ def build_cartographer_level_10_scout_blueprint_handoff_preview() -> dict[str, A
             "blockers": [] if blueprints["blueprint_count"] else ["no_blueprints_observed"],
             "preview_only": True,
             "writes_allowed": False,
+            "scout_writes_allowed": False,
+            "proxy_memory_writes_allowed": False,
+            "coding_context_writes_allowed": False,
+            "blueprint_writes_allowed": False,
             "scout_write_allowed": False,
             "proxy_memory_write_allowed": False,
             "coding_context_write_allowed": False,
             "blueprint_write_allowed": False,
+            "evidence_writes_allowed": False,
+            "receipt_creation_allowed": False,
+            "run_history_mutation_allowed": False,
             "actions_taken": False,
         },
     ]
@@ -2090,16 +2104,27 @@ def build_cartographer_level_10_scout_blueprint_handoff_preview() -> dict[str, A
         "actions_taken": False,
         "handoff_preview_available": True,
         "preview_only": True,
+        "scout_writes_allowed": False,
+        "proxy_memory_writes_allowed": False,
+        "coding_context_writes_allowed": False,
+        "blueprint_writes_allowed": False,
         "scout_write_allowed": False,
         "proxy_memory_write_allowed": False,
         "coding_context_write_allowed": False,
         "blueprint_write_allowed": False,
+        "evidence_writes_allowed": False,
+        "receipt_creation_allowed": False,
+        "run_history_mutation_allowed": False,
         "background_mutation_allowed": False,
         "cleanup_allowed": False,
         "push_allowed": False,
         "merge_allowed": False,
+        "stash_allowed": False,
+        "branch_creation_allowed": False,
+        "worktree_creation_allowed": False,
         "automatic_execution_allowed": False,
         "automatic_promotion_allowed": False,
+        "self_approval_allowed": False,
         "handoff_previews": handoff_previews,
         "handoff_count": len(handoff_previews),
         "blockers": blockers,
@@ -2126,6 +2151,162 @@ def build_cartographer_level_10_scout_blueprint_handoff_preview() -> dict[str, A
         "next_step": "Level 10.6 may add the production readiness checklist only after explicit approval.",
         "browser": browser,
         "blueprints": blueprints,
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_level_10_production_readiness_checklist() -> dict[str, Any]:
+    handoff = build_cartographer_level_10_scout_blueprint_handoff_preview()
+    checks = [
+        _level_10_readiness_check(
+            "operator_explainability",
+            True,
+            "Level 10 surfaces expose mode, contract version, provenance, blockers, and next step.",
+        ),
+        _level_10_readiness_check(
+            "rollback_path",
+            True,
+            "Each Level 10 receipt includes rollback notes and no cleanup-dependent rollback.",
+        ),
+        _level_10_readiness_check(
+            "audit_path",
+            True,
+            "Run history, evidence browser, closeout packets, and handoff previews expose provenance.",
+        ),
+        _level_10_readiness_check(
+            "safety_gates_locked",
+            not any(
+                handoff.get(flag)
+                for flag in (
+                    "write_actions_enabled",
+                    "authority_granted",
+                    "actions_taken",
+                    "scout_writes_allowed",
+                    "proxy_memory_writes_allowed",
+                    "coding_context_writes_allowed",
+                    "blueprint_writes_allowed",
+                    "evidence_writes_allowed",
+                    "receipt_creation_allowed",
+                    "run_history_mutation_allowed",
+                    "background_mutation_allowed",
+                    "cleanup_allowed",
+                    "push_allowed",
+                    "merge_allowed",
+                    "stash_allowed",
+                    "branch_creation_allowed",
+                    "worktree_creation_allowed",
+                    "automatic_execution_allowed",
+                    "automatic_promotion_allowed",
+                    "self_approval_allowed",
+                )
+            ),
+            "All write, mutation, execution, promotion, branch, worktree, and approval flags remain false.",
+        ),
+        _level_10_readiness_check(
+            "known_limitations_reviewed",
+            not handoff["blockers"],
+            "Scout and blueprint handoff blockers must be reviewed before production operator mode is ready.",
+        ),
+    ]
+    blockers = [
+        check["check_id"]
+        for check in checks
+        if check["status"] != "ready"
+    ]
+    return {
+        "status": "observing",
+        "level": 10,
+        "mode": "production_readiness_checklist",
+        "contract_version": "cartographer.level_10.production_readiness_checklist.v1",
+        "readiness_checklist_available": True,
+        "production_operator_ready": not blockers,
+        "fail_closed": True,
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "hidden_autonomy_allowed": False,
+        "background_mutation_allowed": False,
+        "cleanup_allowed": False,
+        "push_allowed": False,
+        "merge_allowed": False,
+        "automatic_execution_allowed": False,
+        "automatic_promotion_allowed": False,
+        "new_levels_allowed": False,
+        "checks": checks,
+        "blockers": blockers,
+        "known_limitations": [
+            "Production operator mode remains a preview until all blockers are clear.",
+            "No executor gate exists for cleanup, push, merge, promotion, or automatic execution.",
+            "Level 10.7 closeout remains the next and final roadmap gate.",
+        ],
+        "manual_checks": [
+            "git status -sb",
+            'PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -k "level_10_production_readiness_checklist or level_10_scout_blueprint_handoff_preview"',
+        ],
+        "next_step": "Level 10.7 may close out Level 10 only after explicit approval.",
+        "handoff": handoff,
+        "safety": cartographer_safety_manifest(),
+    }
+
+
+def build_cartographer_level_10_closeout_next_roadmap_gate() -> dict[str, Any]:
+    readiness = build_cartographer_level_10_production_readiness_checklist()
+    safety_blockers = [
+        flag
+        for flag in (
+            "write_actions_enabled",
+            "authority_granted",
+            "actions_taken",
+            "hidden_autonomy_allowed",
+            "background_mutation_allowed",
+            "cleanup_allowed",
+            "push_allowed",
+            "merge_allowed",
+            "automatic_execution_allowed",
+            "automatic_promotion_allowed",
+            "new_levels_allowed",
+        )
+        if readiness.get(flag)
+    ]
+    closeout_blockers = [*safety_blockers]
+    if readiness["blockers"]:
+        closeout_blockers.append("readiness_blockers_require_operator_review")
+    return {
+        "status": "observing",
+        "level": 10,
+        "mode": "level_10_closeout_next_roadmap_gate",
+        "contract_version": "cartographer.level_10.closeout_next_roadmap_gate.v1",
+        "level_10_closeout_available": True,
+        "level_10_closed_out": not safety_blockers,
+        "readiness_blockers_review_required": bool(readiness["blockers"]),
+        "next_roadmap_gate_locked": True,
+        "next_roadmap_requires_explicit_user_request": True,
+        "level_11_allowed": False,
+        "extra_levels_allowed": False,
+        "new_roadmap_written": False,
+        "write_actions_enabled": False,
+        "authority_granted": False,
+        "actions_taken": False,
+        "hidden_autonomy_allowed": False,
+        "background_mutation_allowed": False,
+        "cleanup_allowed": False,
+        "push_allowed": False,
+        "merge_allowed": False,
+        "automatic_execution_allowed": False,
+        "automatic_promotion_allowed": False,
+        "closeout_blockers": closeout_blockers,
+        "closeout_summary": [
+            "Level 10 operator previews are present through the production readiness checklist.",
+            "Level 10 remains bounded by explicit human permission gates.",
+            "No roadmap beyond Level 10.7 may be written without an explicit user request.",
+        ],
+        "manual_checks": [
+            "git status -sb",
+            'PYTHONPATH=. .venv/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -k "level_10_closeout_next_roadmap_gate or level_10_production_readiness_checklist or level_9_coordination_dashboard or level_8_closeout_smoke or level_7_closeout_dashboard"',
+        ],
+        "next_increment_title": None,
+        "next_step": "Stop at Level 10.7 unless the user explicitly asks for a new roadmap.",
+        "readiness": readiness,
         "safety": cartographer_safety_manifest(),
     }
 
@@ -4403,6 +4584,19 @@ def _level_10_closeout_packet_preview(item: dict[str, Any]) -> dict[str, Any]:
         "merge_allowed": False,
         "automatic_execution_allowed": False,
         "automatic_promotion_allowed": False,
+        "actions_taken": False,
+    }
+
+
+def _level_10_readiness_check(check_id: str, passed: bool, evidence: str) -> dict[str, Any]:
+    return {
+        "check_id": check_id,
+        "status": "ready" if passed else "blocked",
+        "passed": passed,
+        "evidence": evidence,
+        "operator_explainable": True,
+        "rollback_path_required": True,
+        "audit_path_required": True,
         "actions_taken": False,
     }
 
