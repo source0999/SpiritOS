@@ -36,10 +36,18 @@ def build_codex_evidence_packet(
     head_after: str | None = None,
     recommendation: str | None = None,
     rollback_hint: str | None = None,
+    source_task_id: str | None = None,
+    source_thread_id: str | None = None,
     excerpt_chars: int = DEFAULT_EXCERPT_CHARS,
 ) -> dict[str, Any]:
-    if not task_id.strip():
+    normalized_task_id = task_id.strip()
+    if not normalized_task_id:
         raise CodexEvidenceError("task_id is required.", "codex_evidence_missing_task_id")
+    source_labels = _source_labels(
+        task_id=normalized_task_id,
+        source_task_id=source_task_id,
+        source_thread_id=source_thread_id,
+    )
     if sandbox not in {"read-only", "workspace-write"}:
         raise CodexEvidenceError("Unsupported Codex sandbox.", "codex_evidence_unsafe_sandbox")
     before = _safe_file_list(changed_files_before or ())
@@ -60,8 +68,16 @@ def build_codex_evidence_packet(
     }
     packet = {
         "artifact_version": "codex_evidence.v1",
-        "task_id": task_id,
+        "task_id": normalized_task_id,
         "worker": "codex_cli",
+        "source_task_id": source_labels["source_task_id"],
+        "source_thread_id": source_labels["source_thread_id"],
+        "approval_request_label": {
+            "worker": "codex_cli",
+            "source_task_id": source_labels["source_task_id"],
+            "source_thread_id": source_labels["source_thread_id"],
+            "scope": ",".join(after),
+        },
         "command": _redact_command(command),
         "sandbox": sandbox,
         "started_at": started_at,
@@ -107,6 +123,8 @@ def summarize_codex_evidence(packet: dict[str, Any]) -> dict[str, Any]:
     return {
         "task_id": str(packet.get("task_id") or ""),
         "worker": str(packet.get("worker") or "codex_cli"),
+        "source_task_id": str(packet.get("source_task_id") or ""),
+        "source_thread_id": str(packet.get("source_thread_id") or ""),
         "mode": "readonly" if sandbox == "read-only" else "proposal",
         "command_summary": _excerpt(" ".join(str(part) for part in command), 500),
         "sandbox": sandbox,
@@ -131,6 +149,32 @@ def summarize_codex_evidence(packet: dict[str, Any]) -> dict[str, Any]:
         "apply_authority": bool(packet.get("apply_authority")),
         "commit_authority": bool(packet.get("commit_authority")),
         "push_authority": bool(packet.get("push_authority")),
+    }
+
+
+def _source_labels(
+    *,
+    task_id: str,
+    source_task_id: str | None,
+    source_thread_id: str | None,
+) -> dict[str, str]:
+    resolved_source_task_id = task_id if source_task_id is None else source_task_id.strip()
+    resolved_source_thread_id = (
+        f"thread-{task_id}" if source_thread_id is None else source_thread_id.strip()
+    )
+    if not resolved_source_task_id:
+        raise CodexEvidenceError(
+            "source_task_id is required for worker approval labels.",
+            "codex_evidence_source_task_missing",
+        )
+    if not resolved_source_thread_id:
+        raise CodexEvidenceError(
+            "source_thread_id is required for worker approval labels.",
+            "codex_evidence_source_thread_missing",
+        )
+    return {
+        "source_task_id": resolved_source_task_id,
+        "source_thread_id": resolved_source_thread_id,
     }
 
 

@@ -2317,6 +2317,9 @@ def build_cartographer_project_health() -> dict[str, Any]:
     return {
         "status": "observing",
         "write_actions_enabled": False,
+        "worktree_creation_allowed": False,
+        "worktree_created": False,
+        "worktree_policy": "proposal_only_until_separate_explicit_approval",
         "projects": to_jsonable(projects),
         "project_count": len(projects),
         "filters": sorted({filter_name for project in projects for filter_name in project.filters}),

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter
@@ -12,9 +14,33 @@ from source_proxy.cartographer.git_approvals import (
     CartographerGitApprovalError,
     approve_git_queue_item,
 )
+from source_proxy.cartographer.approval_token_runtime import (
+    APPROVAL_TOKEN_SCHEMA_VERSION,
+    build_approval_token_runtime_status,
+    validate_approval_token_payload,
+)
+from source_proxy.cartographer.approval_token_consumption import (
+    build_approval_token_consumption_status,
+    preview_approval_token_consumption,
+)
+from source_proxy.cartographer.live_state import collect_live_repo_state
+from source_proxy.cartographer.project_discovery import parse_project_roots
 from source_proxy.cartographer.proposal_reviews import (
     CartographerProposalReviewError,
     review_blueprint_proposal,
+)
+from source_proxy.cartographer.safe_write import (
+    build_safe_write_status,
+    execute_safe_write_request,
+)
+from source_proxy.cartographer.safe_task_queue import (
+    build_safe_task_queue_model_status,
+    run_first_auto_selected_safe_task,
+    select_next_safe_task,
+)
+from source_proxy.cartographer.verification_runner import (
+    build_verification_runner_status,
+    run_verification_command,
 )
 from source_proxy.cartographer.starter_blueprints import StarterBlueprintWriteError
 from source_proxy.cartographer.service import (
@@ -220,9 +246,302 @@ class CartographerLevel8StepApprovalPreviewRequest(BaseModel):
     approved_at: str | None = Field(default=None, max_length=80)
 
 
+class CartographerApprovalTokenValidateRequest(BaseModel):
+    token: dict[str, Any] | None = None
+    requested_actor: str = Field(default="cartographer-runtime", max_length=120)
+    requested_scope: dict[str, str] = Field(
+        default_factory=lambda: {
+            "type": "phase",
+            "value": "cartographer-daily-driver-plan-2-phase-1",
+        },
+    )
+
+
+class CartographerApprovalTokenConsumePreviewRequest(BaseModel):
+    token: dict[str, Any] | None = None
+    requested_actor: str = Field(default="cartographer-runtime", max_length=120)
+    requested_scope: dict[str, str] = Field(
+        default_factory=lambda: {
+            "type": "phase",
+            "value": "cartographer-daily-driver-plan-2-phase-2",
+        },
+    )
+    requested_action_class: str = Field(default="", max_length=120)
+    requested_files: list[str] = Field(default_factory=list, max_length=200)
+    consumption_context: dict[str, Any] | None = None
+    current_head: str | None = Field(default=None, max_length=80)
+    kill_switch_active: bool = False
+
+
+class CartographerSafeWriteRequest(BaseModel):
+    token: dict[str, Any] | None = None
+    requested_actor: str = Field(default="cartographer-runtime", max_length=120)
+    requested_scope: dict[str, str] = Field(
+        default_factory=lambda: {
+            "type": "phase",
+            "value": "cartographer-daily-driver-plan-3-phase-3",
+        },
+    )
+    target_file: str = Field(default="", max_length=500)
+    content: str = Field(default="", max_length=20000)
+    consumption_context: dict[str, Any] | None = None
+    current_head: str | None = Field(default=None, max_length=80)
+    dirty_tree_matches_expected: bool = True
+    kill_switch_active: bool = False
+
+
+class CartographerVerificationRunRequest(BaseModel):
+    argv: list[str] = Field(default_factory=list, max_length=20)
+    approved_test_files: list[str] = Field(default_factory=list, max_length=50)
+    cwd_relative: str = Field(default=".", max_length=300)
+    timeout_seconds: int = Field(default=10, ge=1, le=30)
+
+
+class CartographerQueueRunNextRequest(BaseModel):
+    queue_records: list[dict[str, Any]] = Field(default_factory=list, max_length=50)
+    expected_trust_tier: str = Field(default="tier-1", max_length=40)
+    expected_approval_token_id: str = Field(default="", max_length=160)
+    kill_switch_active: bool = False
+    run_selected_task: bool = False
+
+
 @router.get("/status")
 async def cartographer_status() -> dict[str, Any]:
     return build_cartographer_status()
+
+
+@router.get("/live-state")
+async def cartographer_live_state() -> dict[str, Any]:
+    return collect_live_repo_state()
+
+
+@router.get("/approval-token/validate")
+async def cartographer_approval_token_validate_preview() -> dict[str, Any]:
+    validation = validate_approval_token_payload(
+        _self_approval_demo_token(),
+        requested_actor="cartographer-runtime",
+        requested_scope={
+            "type": "phase",
+            "value": "cartographer-daily-driver-plan-2-phase-1",
+        },
+    )
+    return {
+        "runtime": build_approval_token_runtime_status(),
+        "validation": validation.to_dict(),
+    }
+
+
+@router.post("/approval-token/validate")
+async def cartographer_approval_token_validate(
+    request: CartographerApprovalTokenValidateRequest,
+) -> dict[str, Any]:
+    validation = validate_approval_token_payload(
+        request.token,
+        requested_actor=request.requested_actor,
+        requested_scope=request.requested_scope,
+    )
+    return {
+        "runtime": build_approval_token_runtime_status(),
+        "validation": validation.to_dict(),
+    }
+
+
+@router.get("/approval-token/consume-preview")
+async def cartographer_approval_token_consume_preview_demo() -> dict[str, Any]:
+    preview = preview_approval_token_consumption(
+        _self_approval_demo_token(
+            scope_value="cartographer-daily-driver-plan-2-phase-2",
+        ),
+        requested_actor="cartographer-runtime",
+        requested_scope={
+            "type": "phase",
+            "value": "cartographer-daily-driver-plan-2-phase-2",
+        },
+        requested_action_class="docs_receipt_preview",
+        requested_files=["docs/cartographer-example.md"],
+        consumption_context=_demo_consumption_context(),
+        current_head="demo-head",
+        kill_switch_active=True,
+    )
+    return {
+        "runtime": build_approval_token_consumption_status(),
+        "preview": preview.to_dict(),
+    }
+
+
+@router.post("/approval-token/consume-preview")
+async def cartographer_approval_token_consume_preview(
+    request: CartographerApprovalTokenConsumePreviewRequest,
+) -> dict[str, Any]:
+    preview = preview_approval_token_consumption(
+        request.token,
+        requested_actor=request.requested_actor,
+        requested_scope=request.requested_scope,
+        requested_action_class=request.requested_action_class,
+        requested_files=request.requested_files,
+        consumption_context=request.consumption_context,
+        current_head=request.current_head,
+        kill_switch_active=request.kill_switch_active,
+    )
+    return {
+        "runtime": build_approval_token_consumption_status(),
+        "preview": preview.to_dict(),
+    }
+
+
+@router.get("/safe-write")
+async def cartographer_safe_write_status() -> dict[str, Any]:
+    return build_safe_write_status()
+
+
+@router.post("/safe-write")
+async def cartographer_safe_write(
+    request: CartographerSafeWriteRequest,
+) -> dict[str, Any]:
+    workspace_root = _safe_write_workspace_root()
+    if workspace_root is None:
+        return {
+            "status": "blocked",
+            "written": False,
+            "blocked": True,
+            "reasons": ["missing_configured_workspace_root"],
+            "target_file": request.target_file,
+            "bytes_written": 0,
+            "safe_write": build_safe_write_status(),
+        }
+    result = execute_safe_write_request(
+        request.token,
+        requested_actor=request.requested_actor,
+        requested_scope=request.requested_scope,
+        target_file=request.target_file,
+        content=request.content,
+        consumption_context=request.consumption_context,
+        workspace_root=workspace_root,
+        current_head=request.current_head,
+        dirty_tree_matches_expected=request.dirty_tree_matches_expected,
+        kill_switch_active=request.kill_switch_active,
+    )
+    return {
+        "safe_write": build_safe_write_status(),
+        "result": result.to_dict(),
+    }
+
+
+@router.get("/verification/run")
+async def cartographer_verification_run_status() -> dict[str, Any]:
+    return build_verification_runner_status()
+
+
+@router.post("/verification/run")
+async def cartographer_verification_run(
+    request: CartographerVerificationRunRequest,
+) -> dict[str, Any]:
+    workspace_root = _safe_write_workspace_root()
+    if workspace_root is None:
+        return {
+            "status": "blocked",
+            "executed": False,
+            "blocked": True,
+            "reasons": ["missing_configured_workspace_root"],
+            "verification": build_verification_runner_status(),
+        }
+    result = run_verification_command(
+        request.argv,
+        workspace_root=workspace_root,
+        approved_test_files=request.approved_test_files,
+        cwd_relative=request.cwd_relative,
+        timeout_seconds=request.timeout_seconds,
+    )
+    return {
+        "verification": build_verification_runner_status(),
+        "result": result.to_dict(),
+    }
+
+
+@router.get("/queue/run-next")
+async def cartographer_queue_run_next_status() -> dict[str, Any]:
+    return {
+        "queue": build_safe_task_queue_model_status(),
+        "run_next": {
+            "status": "available",
+            "method": "POST",
+            "selection_available": True,
+            "execution_available": False,
+            "durable_storage_available": False,
+            "queue_worker_available": False,
+            "background_loop_available": False,
+            "run_selected_task_available": True,
+            "receipt_available": True,
+            "safe_next_action": "POST queue_records with an exact approval token to select or run at most one eligible task.",
+        },
+    }
+
+
+@router.post("/queue/run-next")
+async def cartographer_queue_run_next(
+    request: CartographerQueueRunNextRequest,
+) -> dict[str, Any]:
+    if request.run_selected_task:
+        run = run_first_auto_selected_safe_task(
+            request.queue_records,
+            expected_trust_tier=request.expected_trust_tier,
+            expected_approval_token_id=request.expected_approval_token_id,
+            kill_switch_active=request.kill_switch_active,
+        )
+        return {
+            "queue": build_safe_task_queue_model_status(),
+            "run": run.to_dict(),
+        }
+    selection = select_next_safe_task(
+        request.queue_records,
+        expected_trust_tier=request.expected_trust_tier,
+        expected_approval_token_id=request.expected_approval_token_id,
+        kill_switch_active=request.kill_switch_active,
+    )
+    return {
+        "queue": build_safe_task_queue_model_status(),
+        "selection": selection.to_dict(),
+    }
+
+
+def _safe_write_workspace_root() -> Path | None:
+    configured, blocked = parse_project_roots()
+    if blocked or len(configured) != 1:
+        return None
+    return Path(configured[0].path)
+
+
+def _self_approval_demo_token(
+    scope_value: str = "cartographer-daily-driver-plan-2-phase-1",
+) -> dict[str, Any]:
+    issued_at = datetime.now(UTC) - timedelta(minutes=5)
+    expires_at = datetime.now(UTC) + timedelta(minutes=55)
+    return {
+        "schema_version": APPROVAL_TOKEN_SCHEMA_VERSION,
+        "token_id": "validation-preview-self-approval",
+        "issued_at": issued_at.isoformat().replace("+00:00", "Z"),
+        "expires_at": expires_at.isoformat().replace("+00:00", "Z"),
+        "approved_by": "cartographer-runtime",
+        "approved_for_actor": "cartographer-runtime",
+        "scope": {
+            "type": "phase",
+            "value": scope_value,
+        },
+        "reason": "Demonstrate fail-closed self-approval rejection.",
+    }
+
+
+def _demo_consumption_context() -> dict[str, Any]:
+    return {
+        "action_class": "docs_receipt_preview",
+        "trust_tier": "tier-1",
+        "requested_trust_tier": "tier-1",
+        "exact_allowed_files": ["docs/cartographer-example.md"],
+        "exact_forbidden_files": ["source_proxy/cartographer/apply.py"],
+        "expected_head": "demo-head",
+        "rollback": "Manual review only; no runtime write is available.",
+        "verification": "Run focused approval-token consumption tests.",
+    }
 
 
 @router.get("/projects")

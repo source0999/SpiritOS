@@ -173,6 +173,8 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
         self.assertEqual(item["task_id"], task_id)
         self.assertEqual(item["worker"], "coder")
         self.assertEqual(item["mode"], "read_only_status_tracking")
+        self.assertEqual(item["scope_key"], "source_proxy/main.py")
+        self.assertTrue(item["write_capable"])
         self.assertEqual(item["target_file"], "source_proxy/main.py")
         self.assertEqual(
             item["allowed_files"],
@@ -191,6 +193,40 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
             self.assertFalse(lane["apply_authority"])
             self.assertFalse(lane["commit_authority"])
             self.assertFalse(lane["push_authority"])
+
+    def test_create_blocks_second_live_write_task_on_same_scope(self) -> None:
+        first = create_long_running_task(
+            "Target file: source_proxy/main.py\nUpdate implementation."
+        )
+        second = create_long_running_task(
+            "Target file: source_proxy/main.py\nFix the same implementation."
+        )
+
+        self.assertEqual(first["task"]["status"], "queued")
+        self.assertEqual(first["task"]["scope_key"], "source_proxy/main.py")
+        self.assertTrue(first["task"]["write_capable"])
+        self.assertEqual(second["task"]["status"], "blocked")
+        self.assertEqual(second["task"]["architect_reason"], "write_scope_conflict")
+        self.assertEqual(second["task"]["scope_key"], "source_proxy/main.py")
+        self.assertTrue(second["task"]["write_capable"])
+        self.assertIn("write_scope_conflict", second["task"]["truncated_test_results"])
+        self.assertEqual(
+            second["task"]["ast_snapshot"]["queue_policy"],
+            "one_write_capable_task_per_scope",
+        )
+
+    def test_create_allows_read_only_parallel_review_on_same_scope(self) -> None:
+        first = create_long_running_task(
+            "Target file: source_proxy/main.py\nUpdate implementation."
+        )
+        review = create_long_running_task(
+            "Read-only review only. Target file: source_proxy/main.py."
+        )
+
+        self.assertEqual(first["task"]["status"], "queued")
+        self.assertEqual(review["task"]["status"], "queued")
+        self.assertEqual(review["task"]["scope_key"], "source_proxy/main.py")
+        self.assertFalse(review["task"]["write_capable"])
 
     def test_task_payload_lists_multi_worker_lanes_as_evidence_only(self) -> None:
         created = create_long_running_task("Target file: source_proxy/main.py\nUpdate docs.")

@@ -6,7 +6,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { BrainCircuit, Code2, LayoutDashboard, MessageSquare, Palette, Sparkles } from "lucide-react";
+import { BrainCircuit, Code2, LayoutDashboard, Map, MessageSquare, Palette, Sparkles } from "lucide-react";
 
 import { DashboardDemoV4ThemePicker } from "@/components/dashboard/demo-v4/DashboardDemoV4ThemePicker";
 import { cn } from "@/lib/cn";
@@ -40,6 +40,12 @@ const NAV: readonly NavSpec[] = [
     match: (p) => p === "/coding" || p.startsWith("/coding/"),
   },
   {
+    href: "/map",
+    label: "Map",
+    icon: Map,
+    match: (p) => p === "/map" || p.startsWith("/map/"),
+  },
+  {
     href: "/intelligence",
     label: "Scout",
     icon: BrainCircuit,
@@ -55,10 +61,12 @@ const NAV: readonly NavSpec[] = [
 
 export type DashboardDemoV4FloatingNavProps = {
   desktopVariant?: "floating" | "full-height";
+  showMobile?: boolean;
 };
 
 export function DashboardDemoV4FloatingNav({
   desktopVariant = "full-height",
+  showMobile = true,
 }: DashboardDemoV4FloatingNavProps) {
   const pathname = usePathname() ?? "";
   const { theme } = useSpiritTheme();
@@ -145,38 +153,40 @@ export function DashboardDemoV4FloatingNav({
         </div>
       </nav>
 
-      <nav
-        className="dashboard-demo-v4-nav dashboard-demo-v4-mobile-pill-nav"
-        aria-label="Dashboard mobile navigation"
-      >
-        <div className="dashboard-demo-v4-nav-shell">
-          {NAV.map((item) => {
-            const active = item.match(pathname);
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-label={item.label}
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "dashboard-demo-v4-nav-item",
-                  active && "dashboard-demo-v4-nav-item-active",
-                )}
-              >
-                <Icon className="h-[1.1rem] w-[1.1rem]" strokeWidth={2} />
-                <span className="hidden sm:inline">{item.label}</span>
-              </Link>
-            );
-          })}
+      {showMobile ? (
+        <nav
+          className="dashboard-demo-v4-nav dashboard-demo-v4-mobile-pill-nav"
+          aria-label="Dashboard mobile navigation"
+        >
+          <div className="dashboard-demo-v4-nav-shell">
+            {NAV.map((item) => {
+              const active = item.match(pathname);
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-label={item.label}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "dashboard-demo-v4-nav-item",
+                    active && "dashboard-demo-v4-nav-item-active",
+                  )}
+                >
+                  <Icon className="h-[1.1rem] w-[1.1rem]" strokeWidth={2} />
+                  <span className="hidden sm:inline">{item.label}</span>
+                </Link>
+              );
+            })}
 
-          <div className="dashboard-demo-v4-nav-divider" aria-hidden />
+            <div className="dashboard-demo-v4-nav-divider" aria-hidden />
 
-          <div className="dashboard-demo-v4-theme-picker-wrap">
-            {renderPaletteButton("mobile")}
+            <div className="dashboard-demo-v4-theme-picker-wrap">
+              {renderPaletteButton("mobile")}
+            </div>
           </div>
-        </div>
-      </nav>
+        </nav>
+      ) : null}
 
       <DashboardDemoV4ThemePicker
         open={paletteOpen}

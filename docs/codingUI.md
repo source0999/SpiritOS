@@ -29,6 +29,12 @@ Draft -> Preview -> Approval -> Apply -> Verify
 
 `/coding` is the everyday command center. `/proxy-backend` is the deep diagnostics surface.
 
+## Plan 3 UI Receipt Layer Note
+
+The `/coding` verification receipt is intended to reduce repeated manual terminal verification for bounded daily-driver tasks by keeping the task boundary, target scope, allowed files, changed files, unexpected files, check results, apply state, repeat-apply lock, verify state, commit/push unavailability, and next safe action visible in the UI.
+
+Terminal checks remain the fallback and audit proof until the daily-driver readiness gate is accepted. The UI receipt does not grant commit, push, shell execution, package install, broad file writes, or repeat apply authority.
+
 ## Current Closeout Baseline
 
 Current confirmed closeout evidence from 2026-05-20:
@@ -3477,3 +3483,1437 @@ Observed output:
 
 Next increment title:
 Next Codex-like `/coding` polish plan draft, then real desktop/mobile visual review before implementation.
+
+## Source Proxy /coding Plan 4: Receipt-Backed Daily Driver Gate Review
+
+Status date: 2026-05-22
+Status: pass with caveats.
+Daily-driver readiness score: 78/100 for controlled bounded safe tasks.
+
+This Plan 4 lane reviewed the current receipt-backed `/coding` workflow as a gate, not a redesign. It was docs/evidence-only and did not edit command-center wiring, `/map`, `/proxy-backend`, dashboard files, package/config/env files, Cartographer autonomy files, Scout files, or backend authority.
+
+### Baseline Worktree Honesty
+
+The worktree was already dirty before Plan 4 inspection. Pre-existing dirty or untracked areas included `docs/codingUI.md`, `docs/plan-index.md`, `docs/proxy-test-runner-plan.md`, `package.json`, `src/app/coding/page.tsx`, `src/app/proxy-backend/page.tsx`, `src/app/v1/decisions/prompt-packet/route.ts`, dashboard files, many Cartographer/Scout evidence files, `src/app/map/`, `src/components/coding/CodingCommandCenterShell.tsx`, `src/components/coding/__tests__/coding-command-center-shell.test.tsx`, and `src/lib/coding/model-provider-status.ts`.
+
+Plan 4 treated those as pre-existing lane work and used them only for read-only inspection where allowed. The only intended Plan 4 edit is this gate evidence section in `docs/codingUI.md`.
+
+### What Plan 3 Proved
+
+Plan 3 proved that the `/coding` UI can expose the daily safety loop as separate states: Draft, Preview, Approval, Apply, and Verify. The current command-center shell and tests show preview requires bounded task data, approval stays unavailable until clean preview evidence exists, apply stays unavailable until local approval exists, verify stays separate after apply, and blocked previews keep approval/apply unavailable.
+
+Plan 3 also proved the receipt layer is visible enough to reduce repeated manual terminal checks for routine review facts. The UI receipt includes task, target scope, allowed files, approval evidence, apply state, apply evidence, repeat apply lock, verify state, verify evidence, changed files, unexpected files, diff check result, typecheck result, lint result, focused test result, commands run, pass/fail, blocked reason, closeout blockers, commit/push unavailability, current trial step, and safe next action.
+
+### Receipt-Backed Daily-Driver Readiness Meaning
+
+For this gate, "daily-driver ready" means `/coding` can be used as the controlled foundation for bounded safe tasks where the operator can review a preview, approve only after receipt evidence is clean, apply only through the approved path, verify separately, and stop before commit or push. It does not mean production autonomy, broad file authority, hidden execution, unattended apply, or trust without terminal spot checks.
+
+### UI Receipt Fields Present
+
+- Target scope and allowed files are shown.
+- Changed files are shown from the preview or apply payload.
+- Unexpected files are derived by comparing changed files against allowed files.
+- Approval state and approval evidence are shown.
+- Apply state and apply evidence are shown.
+- Repeat apply lock is shown after apply evidence exists.
+- Verify state and verify evidence are shown.
+- Commands run, pass/fail, typecheck, lint, and focused test receipt fields are shown when provided by the apply or verify payload.
+- Blocked reason, closeout blockers, and safe next action are shown.
+- Commit and push are explicitly unavailable from this lane.
+
+### What Can Be Trusted Through UI Receipt Review
+
+For bounded docs-only or narrow component tasks, the operator can use the UI receipt as the primary review surface for target, allowed files, changed files, unexpected files, approval availability, apply availability, repeat apply lock, verify state, blocked reason, and next safe action. Terminal checks can become spot checks for those fields after this gate, as long as the task stays within the controlled safe-task class and the receipt is complete.
+
+### What Still Requires Manual Terminal Verification
+
+- `git status --branch --short` before and after any real apply, especially in the current dirty multi-lane worktree.
+- `git diff --name-only` and `git diff --stat` after apply to confirm only intended files changed.
+- `git diff --check` for whitespace and patch hygiene.
+- Typecheck, lint, and relevant focused test commands until receipt payloads prove they are populated from real command results consistently.
+- Human diff review of the actual patch text before approve/apply.
+- Route/browser smoke when service availability or protocol differs from expected.
+- Visual browser/mobile review, because this gate used route smoke and tests, not screenshot proof.
+
+### Remaining Blocks And Authority Limits
+
+- Commit and push remain unavailable from this lane.
+- Repeat apply is locked after apply evidence exists.
+- Unsafe actions remain blocked or unavailable: missing bounded fields, blocked previews, changed files outside allowed files, protected/unsafe paths, commit, push, hidden write, package install, branch/worktree/stash/cleanup, and broad route/provider authority.
+- The Source Proxy status manifest still reports file editing as disabled at the status-manifest layer and does not grant commit or push authority.
+- Full production readiness is not declared. Plan 5 must prove repeatability through real bounded tasks before the workflow graduates beyond controlled use.
+
+### Checks Run For Plan 4
+
+```bash
+cd /home/source/SpiritOS
+git status --branch --short
+git diff --check
+npm run typecheck
+npm run test -- --run src/components/coding/__tests__/coding-command-center-shell.test.tsx
+npm run test -- --run coding
+npm run lint
+curl -k -sS -D /tmp/spiritos-coding-plan4.headers -o /tmp/spiritos-coding-plan4.html https://localhost:3000/coding || true
+sed -n '1,20p' /tmp/spiritos-coding-plan4.headers || true
+curl -sS -D /tmp/spiritos-coding-plan4-http.headers -o /tmp/spiritos-coding-plan4-http.html http://localhost:3000/coding || true
+sed -n '1,20p' /tmp/spiritos-coding-plan4-http.headers || true
+curl -k -sS https://localhost:8787/v1/self/status || true
+```
+
+Observed results:
+
+- `git status --branch --short` confirmed the pre-existing dirty multi-lane worktree.
+- `git diff --check` passed with no output.
+- `npm run typecheck` passed.
+- Focused command-center shell test passed: 1 file, 25 tests.
+- `npm run test -- --run coding` passed: 15 files, 214 tests.
+- `npm run lint` passed with 0 errors and 4 existing warnings.
+- `https://localhost:3000/coding` failed with an SSL wrong-version response because the active dev route is HTTP, not HTTPS.
+- `http://localhost:3000/coding` returned `HTTP/1.1 200 OK`.
+- `https://localhost:8787/v1/self/status` returned the Source Proxy read-only status manifest.
+
+### Plan 4 Decision
+
+Plan 4 passes with caveats. `/coding` is ready to become the controlled daily-driver foundation for bounded safe tasks where the operator still performs human diff review and terminal spot checks. It is not ready for full production autonomy or broad daily-driver trust without the next gauntlet.
+
+Next recommended increment title:
+Source Proxy /coding Plan 5: Real Task Gauntlet And Repeatability Proof
+
+Exact approval phrase:
+Approve Source Proxy /coding Plan 5: Real Task Gauntlet And Repeatability Proof
+
+### Big Manual-Check Block
+
+```bash
+cd /home/source/SpiritOS
+
+git diff --check
+npm run typecheck
+npm run test -- --run src/components/coding/__tests__/coding-command-center-shell.test.tsx
+npm run test -- --run coding
+npm run lint
+git diff --name-only
+git diff --stat
+git status --branch --short
+
+grep -nE "Plan 4|Receipt-Backed Daily Driver|daily-driver|receipt|allowed files|changed files|unexpected files|repeat apply|Apply recorded|Verify|commit|push|manual verification|spot check|Plan 5" \
+  docs/codingUI.md \
+  docs/source-proxy-v0.3-stress-testing-plan.md \
+  docs/proxy-test-runner-plan.md || true
+```
+
+Expected manual-check output:
+
+- `git diff --check` prints nothing.
+- Typecheck passes.
+- Focused coding shell tests pass.
+- Coding test suite passes.
+- Lint has 0 errors, with only the known existing warnings if any.
+- `grep` finds this Plan 4 gate review evidence.
+- `git diff --name-only` should show only Plan 4 allowed docs for this lane, unless another active lane has already changed additional files.
+- No commit, push, merge, branch/worktree, stash, cleanup, package install, `/map`, `/proxy-backend`, dashboard, Scout, Cartographer autonomy, package/config/env, or Command Center wiring change should be attributed to Plan 4.
+
+## Source Proxy /coding Plan 5: Real Task Gauntlet And Repeatability Proof
+
+Status date: 2026-05-22
+Status: pass with caveats for controlled no-apply daily-driver use.
+Daily-driver readiness score: 84/100 for bounded operator-supervised tasks.
+
+This Plan 5 lane reconciles the existing real-task gauntlet and repeatability evidence against the Plan 4 receipt-backed daily-driver gate. It does not start final polish, apply or execute approved diffs, install packages, commit, push, merge, branch/worktree, stash, cleanup, or edit command-center wiring. It keeps `docs/source-proxy-v0.3-stress-testing-plan.md` and `docs/proxy-test-runner-plan.md` as read-only evidence sources and records this lane's decision in `docs/codingUI.md`.
+
+### Evidence Sources Reviewed
+
+- Plan 4 gate evidence in this document.
+- The 16-trial real task gauntlet rollup in `docs/source-proxy-v0.3-stress-testing-plan.md`.
+- The three-cycle repeatability soak in `docs/source-proxy-v0.3-stress-testing-plan.md`.
+- The proxy runner evidence-only contract in `docs/proxy-test-runner-plan.md`.
+- Current `/coding` command-center shell tests and coding test suite.
+
+### Real Task Gauntlet Result
+
+The recorded gauntlet slice contains 16 trials:
+
+| Result label | Count | Trials |
+| --- | ---: | --- |
+| `pass` | 7 | `RT-01`, `RT-08`, `RT-09`, `RT-10`, `RT-11`, `RT-12`, `RT-25` |
+| `blocked_correctly` | 9 | `RT-13`, `RT-14`, `RT-15`, `RT-16`, `RT-17`, `RT-18`, `RT-19`, `RT-23`, `RT-24` |
+| `failed_safely` | 0 | none |
+| `failed_unsafely` | 0 | none |
+
+Safety result: pass. The evidence records 16 / 16 safe outcomes, 0 unsafe failures, no hidden mutation, no real-repo apply, no `execute-approved`, no commit, no push, and no HEAD movement during trial evidence collection.
+
+Usefulness result: partial pass. The pass set proves docs/operator-supervised work, targeted test-only productive changes, route/model honesty, verification-state coverage, and repeatable preview behavior. It does not yet prove browser-driven everyday coding quality, UI component productive tasks, or full apply/verify usefulness.
+
+### Repeatability Result
+
+The stress plan records three stable repeatability cycles. Each cycle reports:
+
+- global safety regression passed,
+- proxy closeout passed,
+- HEAD unchanged,
+- no status delta,
+- no unexpected files,
+- no background mutation,
+- no approve/apply/`execute-approved`/commit/push,
+- final `git diff --check` passed.
+
+Repeatability result: pass for the minimum three-cycle target. Optional cycles 4 and 5 remain useful for higher confidence, but Plan 5 has enough repeatability evidence for controlled no-apply daily-driver use.
+
+### What Plan 5 Proves
+
+- `/coding` has enough receipt-backed and terminal-backed evidence to support controlled bounded daily use for preview, review, approve decision-making, blocked-task handling, and no-apply task trials.
+- Unsafe or underspecified tasks are blocked in the recorded evidence: protected paths, certificate-like paths, traversal, wrong targets, malformed diffs, no-diff output, missing `allowed_files`, stale approvals, and route no-authority cases.
+- Repeatability evidence is stable enough to reduce routine terminal rechecking to spot checks for known receipt fields, while still requiring terminal checks for applied changes and final closeout.
+- Commit and push remain unavailable from this lane.
+- The proxy runner remains evidence-only and must not be treated as approval to apply, execute, commit, push, or clean the worktree.
+
+### What Plan 5 Does Not Prove
+
+- It does not prove full production readiness.
+- It does not prove final Codex-like polish readiness.
+- It does not prove browser-driven productive `/coding` tasks through the full UI.
+- It does not prove apply/verify trials (`RT-20`, `RT-21`), which remain unrun unless separately and explicitly approved.
+- It does not prove UI component usefulness trials (`RT-04` through `RT-07`).
+- It does not remove the need for manual diff review, route smoke, visual/mobile review, and terminal closeout checks.
+
+### Plan 5 Decision
+
+Plan 5 passes with caveats. `/coding` is ready for controlled daily-driver use for bounded, operator-supervised, no-apply or explicitly reviewed safe tasks. It is not yet ready for unattended production use, final polish, or broad trust without browser-driven task proof and an apply/verify decision gate.
+
+Current readiness interpretation:
+
+- Controlled no-apply daily-driver foundation: ready with caveats.
+- Controlled apply/verify daily-driver foundation: not yet proven.
+- V1/final polish: still gated.
+- Commit/push authority: unavailable.
+
+### Checks Run For Plan 5
+
+```bash
+cd /home/source/SpiritOS
+git status --branch --short
+git diff --check
+npm run typecheck
+npm run test -- --run src/components/coding/__tests__/coding-command-center-shell.test.tsx
+npm run test -- --run coding
+npm run lint
+curl -sS -D /tmp/spiritos-coding-plan5-http.headers -o /tmp/spiritos-coding-plan5-http.html http://localhost:3000/coding || true
+sed -n '1,20p' /tmp/spiritos-coding-plan5-http.headers || true
+curl -k -sS https://localhost:8787/v1/self/status || true
+```
+
+Expected result:
+
+- `git diff --check` prints nothing.
+- Typecheck passes.
+- Focused command-center shell tests pass.
+- Coding test suite passes.
+- Lint has 0 errors, with only known existing warnings if any.
+- `/coding` route smoke responds on the active local dev route if the dev server is running.
+- Source Proxy status returns the read-only status manifest if the proxy service is running.
+
+Observed Plan 5 results:
+
+- `git status --branch --short` confirmed the pre-existing dirty multi-lane worktree.
+- `git diff --check` passed with no output.
+- `npm run typecheck` passed.
+- Focused command-center shell test passed: 1 file, 25 tests.
+- `npm run test -- --run coding` passed: 15 files, 214 tests.
+- `npm run lint` passed with 0 errors and 4 existing warnings.
+- `http://localhost:3000/coding` returned an empty reply during Plan 5 smoke.
+- `https://localhost:3000/coding` returned `HTTP/1.1 200 OK`.
+- `https://localhost:8787/v1/self/status` returned the Source Proxy read-only status manifest.
+
+### Manual Verification That Still Matters
+
+```bash
+cd /home/source/SpiritOS
+
+git diff --check
+npm run typecheck
+npm run test -- --run src/components/coding/__tests__/coding-command-center-shell.test.tsx
+npm run test -- --run coding
+npm run lint
+git diff --name-only
+git diff --stat
+git status --branch --short
+
+grep -nE "Plan 5|Real Task Gauntlet|Repeatability Proof|RT-01|RT-25|blocked_correctly|failed_unsafely|stable_pass|three-cycle|apply/verify|commit|push|controlled no-apply" \
+  docs/codingUI.md \
+  docs/source-proxy-v0.3-stress-testing-plan.md \
+  docs/proxy-test-runner-plan.md || true
+```
+
+Expected manual-check output:
+
+- Plan 5 evidence is present in this document.
+- Existing gauntlet evidence shows 16 recorded trials, 7 pass, 9 blocked correctly, and 0 unsafe failures.
+- Existing repeatability evidence shows the three-cycle stable soak.
+- No commit, push, merge, branch/worktree, stash, cleanup, package install, `/map`, `/proxy-backend`, dashboard, Scout, Cartographer autonomy, package/config/env, or Command Center wiring change should be attributed to Plan 5.
+
+Next recommended increment title:
+Source Proxy /coding Plan 6: Browser-Driven Productive Task And Apply/Verify Decision Gate
+
+Exact approval phrase:
+Approve Source Proxy /coding Plan 6: Browser-Driven Productive Task And Apply/Verify Decision Gate
+
+## Source Proxy /coding Plan 6: Browser-Driven Productive Task And Apply/Verify Decision Gate
+
+Status date: 2026-05-22
+Status: decision gate complete; browser-driven productive proof and real apply/verify proof remain blocked.
+Daily-driver readiness score: 84/100 unchanged.
+
+This Plan 6 lane evaluates the two remaining Plan 5 caveats: browser-driven productive task proof and whether to run apply/verify trials. It does not itself authorize a real repository apply, `execute-approved`, commit, push, package install, cleanup, branch/worktree operation, final polish, or command-center wiring change. The exact Plan 6 approval phrase authorizes this decision record, not an actual RT-20 or RT-21 apply.
+
+### Evidence Sources Reviewed
+
+- Plan 5 evidence in this document.
+- The v0.3 readiness rescore in `docs/source-proxy-v0.3-stress-testing-plan.md`, which allows controlled frontend usage but keeps v1/final polish gated.
+- The 16-trial gauntlet rollup, which records 7 passes, 9 correct blocks, and 0 unsafe failures.
+- The manual viewport evidence record, which accepts controlled frontend usage with polish debt but still asks for browser-driven or operator-supervised productive `/coding` trials.
+- The proxy runner contract, which remains evidence-only and cannot approve, apply, execute, commit, push, or clean.
+
+### Browser-Driven Productive Task Gate
+
+Decision: blocked for this lane.
+
+Reason:
+
+- This lane did not receive fresh browser screenshots, browser event logs, or a browser-driven task transcript.
+- Route smoke can prove `/coding` responds, but it cannot prove a productive browser task moved through Draft, Preview, Approval, Apply, and Verify.
+- Existing evidence supports controlled frontend usage and manual review, not a new browser-driven productive task pass.
+
+Required evidence to pass this gate later:
+
+- A bounded task prompt entered through the `/coding` UI or an operator-supplied browser transcript.
+- Target file and allowed files visible in the UI receipt.
+- Preview result visible in the UI receipt.
+- Changed files and unexpected files visible in the UI receipt.
+- Human review result recorded.
+- Apply either explicitly skipped or separately approved for that exact task.
+- Verification/check result recorded.
+- Before/after `git status --branch --short`, `git diff --name-only`, and `git diff --check`.
+
+### Apply/Verify Decision Gate
+
+Decision: do not run RT-20 or RT-21 in this lane.
+
+Reason:
+
+- The worktree is already a dirty multi-lane worktree.
+- A real apply/verify trial would need an exact target, allowed files, expected diff class, rollback plan, and pre-apply human approval for that specific task.
+- The Plan 6 approval phrase authorizes the decision gate, not a real apply against the repository.
+- Commit and push remain unavailable.
+
+Required approval shape to run apply/verify later:
+
+```text
+Approve Source Proxy /coding RT-20 docs-only apply/verify trial for target <path> with allowed files <paths> and checks <commands>
+```
+
+or:
+
+```text
+Approve Source Proxy /coding RT-21 code/test apply/verify trial for target <path> with allowed files <paths> and checks <commands>
+```
+
+### Plan 6 Decision
+
+Plan 6 does not advance `/coding` to apply/verify daily-driver readiness. It preserves the Plan 5 state:
+
+- Controlled no-apply daily-driver use: ready with caveats.
+- Browser-driven productive task proof: still required.
+- Apply/verify daily-driver proof: still required and separately approval-gated.
+- V1/final polish: still gated.
+- Commit/push authority: unavailable.
+
+### Checks Run For Plan 6
+
+```bash
+cd /home/source/SpiritOS
+git status --branch --short
+git diff --check
+npm run typecheck
+npm run test -- --run src/components/coding/__tests__/coding-command-center-shell.test.tsx
+npm run test -- --run coding
+npm run lint
+curl -k -sS -D /tmp/spiritos-coding-plan6-https.headers -o /tmp/spiritos-coding-plan6-https.html https://localhost:3000/coding || true
+sed -n '1,20p' /tmp/spiritos-coding-plan6-https.headers || true
+curl -k -sS https://localhost:8787/v1/self/status || true
+```
+
+Expected result:
+
+- `git diff --check` prints nothing.
+- Typecheck passes.
+- Focused command-center shell tests pass.
+- Coding test suite passes.
+- Lint has 0 errors, with only known existing warnings if any.
+- `/coding` route smoke responds if the active dev server is running.
+- Source Proxy status returns the read-only status manifest if the proxy service is running.
+
+Observed Plan 6 results:
+
+- `git status --branch --short` confirmed the pre-existing dirty multi-lane worktree.
+- `git diff --check` passed with no output.
+- `npm run typecheck` passed.
+- Focused command-center shell test passed: 1 file, 25 tests.
+- `npm run test -- --run coding` passed: 15 files, 214 tests.
+- `npm run lint` passed with 0 errors and 4 existing warnings.
+- `https://localhost:3000/coding` returned `HTTP/1.1 200 OK`.
+- `https://localhost:8787/v1/self/status` returned the Source Proxy read-only status manifest.
+
+### Manual Verification That Still Matters
+
+```bash
+cd /home/source/SpiritOS
+
+git diff --check
+npm run typecheck
+npm run test -- --run src/components/coding/__tests__/coding-command-center-shell.test.tsx
+npm run test -- --run coding
+npm run lint
+git diff --name-only
+git diff --stat
+git status --branch --short
+
+grep -nE "Plan 6|Browser-Driven Productive Task|Apply/Verify Decision Gate|browser-driven productive|RT-20|RT-21|controlled no-apply|apply/verify daily-driver|commit|push|v1/final polish" \
+  docs/codingUI.md \
+  docs/source-proxy-v0.3-stress-testing-plan.md \
+  docs/proxy-test-runner-plan.md || true
+```
+
+Expected manual-check output:
+
+- Plan 6 evidence is present in this document.
+- Browser-driven productive task proof remains explicitly blocked.
+- RT-20 and RT-21 remain explicitly unrun.
+- No commit, push, merge, branch/worktree, stash, cleanup, package install, `/map`, `/proxy-backend`, dashboard, Scout, Cartographer autonomy, package/config/env, or Command Center wiring change should be attributed to Plan 6.
+
+Next recommended increment title:
+Source Proxy /coding Plan 6.1: Browser Productive Trial Packet Or Explicit Apply/Verify Trial Approval
+
+Exact approval phrase:
+Approve Source Proxy /coding Plan 6.1: Browser Productive Trial Packet Or Explicit Apply/Verify Trial Approval
+
+## Source Proxy /coding Plan 6.1: Browser Productive Trial Packet Or Explicit Apply/Verify Trial Approval
+
+Status date: 2026-05-22
+Status: browser no-op packet accepted; productive browser diff and apply/verify trials remain separately gated.
+Daily-driver readiness score: 85/100.
+
+The operator approved Plan 6.1 with the exact phrase. This lane records the next browser-facing evidence packet and decides whether it is enough to advance `/coding` beyond the Plan 6 gate. It does not authorize a real repository apply, `execute-approved`, commit, push, package install, cleanup, branch/worktree operation, final polish, or command-center wiring change.
+
+### Browser Packet Reviewed
+
+The supplied `/coding` browser evidence shows a bounded docs task for `docs/proxy-test-runner-plan.md` with the same file listed as the allowed file. The UI state is `No-op complete` because the target already contains the requested change.
+
+Receipt facts visible in the browser packet:
+
+- Task prompt is visible.
+- Workspace is `SpiritOS`.
+- Target file is `docs/proxy-test-runner-plan.md`.
+- Allowed files are `docs/proxy-test-runner-plan.md`.
+- Provider is `Local LLM`.
+- State is `No-op complete`.
+- Preview result is `Already satisfied`.
+- Diff state is `No diff preview`.
+- Changed files are `none`.
+- Approval gate says no approval is needed for the no-op preview.
+- Apply is unavailable because no file change is needed.
+- Verify is not needed because no file change is required.
+
+### Plan 6.1 Decision
+
+Plan 6.1 passes only as a browser no-op receipt packet. It improves confidence that `/coding` can display bounded task context, target, allowed files, no-diff state, approval/apply unavailability, and verification not-needed state honestly in the browser.
+
+Plan 6.1 does not pass as a productive browser task proof because no diff was produced and no file changed. It also does not pass as an apply/verify proof because RT-20 and RT-21 remain unrun.
+
+Current readiness:
+
+- Controlled no-apply daily-driver use: ready with caveats.
+- Browser no-op receipt review: proven.
+- Browser-driven productive diff task: still required.
+- Apply/verify daily-driver proof: still required and separately approval-gated.
+- Commit/push authority: unavailable.
+
+### Apply/Verify Approval Boundary
+
+This approval phrase did not authorize RT-20 or RT-21. Those remain blocked until one of these exact, task-specific approval shapes is supplied:
+
+```text
+Approve Source Proxy /coding RT-20 docs-only apply/verify trial for target <path> with allowed files <paths> and checks <commands>
+```
+
+or:
+
+```text
+Approve Source Proxy /coding RT-21 code/test apply/verify trial for target <path> with allowed files <paths> and checks <commands>
+```
+
+### Checks Run For Plan 6.1
+
+```bash
+cd /home/source/SpiritOS
+git status --branch --short
+git diff --check
+npm run test -- --run src/components/coding/__tests__/coding-command-center-shell.test.tsx
+npm run test -- --run coding
+npm run lint
+```
+
+Expected result:
+
+- `git diff --check` prints nothing.
+- Focused command-center shell tests pass.
+- Coding test suite passes.
+- Lint has 0 errors, with only known existing warnings if any.
+- `git diff --name-only` includes this Plan 6.1 evidence in `docs/codingUI.md` plus any pre-existing multi-lane dirty files.
+
+Observed Plan 6.1 results:
+
+- `git status --branch --short` confirmed the pre-existing dirty multi-lane worktree.
+- `git diff --check` passed with no output.
+- `npm run typecheck` passed.
+- Focused command-center shell test passed: 1 file, 28 tests.
+- `npm run test -- --run coding` passed: 15 files, 217 tests.
+- `npm run lint` passed with 0 errors and 4 existing warnings.
+- `git diff --name-only` showed the broader pre-existing dirty workflow files plus `docs/codingUI.md`.
+- `grep` found the Plan 6.1 evidence, browser no-op receipt fields, RT-20/RT-21 boundary, and no commit/push language.
+
+### Manual Verification That Still Matters
+
+```bash
+cd /home/source/SpiritOS
+
+git diff --check
+npm run typecheck
+npm run test -- --run src/components/coding/__tests__/coding-command-center-shell.test.tsx
+npm run test -- --run coding
+npm run lint
+git diff --name-only
+git diff --stat
+git status --branch --short
+
+grep -nE "Plan 6.1|Browser Productive Trial Packet|No-op complete|No diff preview|Already satisfied|docs/proxy-test-runner-plan.md|RT-20|RT-21|apply/verify|commit|push" \
+  docs/codingUI.md \
+  docs/source-proxy-v0.3-stress-testing-plan.md \
+  docs/proxy-test-runner-plan.md || true
+```
+
+Expected manual-check output:
+
+- Plan 6.1 evidence is present in this document.
+- Browser no-op receipt packet is recorded.
+- Productive browser diff proof remains explicitly unproven.
+- RT-20 and RT-21 remain explicitly unrun.
+- No commit, push, merge, branch/worktree, stash, cleanup, package install, `/map`, `/proxy-backend`, dashboard, Scout, Cartographer autonomy, package/config/env, or Command Center wiring change should be attributed to Plan 6.1.
+
+Next recommended increment title:
+Source Proxy /coding Plan 6.2: Browser Productive Diff Trial Or Explicit RT-20 Apply/Verify Approval
+
+Exact approval phrase:
+Approve Source Proxy /coding Plan 6.2: Browser Productive Diff Trial Or Explicit RT-20 Apply/Verify Approval
+
+## Source Proxy /coding Plan 6.1 Corrected Small-Increment Closeout
+
+Status date: 2026-05-22
+Status: corrected closeout complete; small increments recorded; next phase not started.
+Scope: docs/evidence-only.
+
+This corrected closeout records Plan 6.1 in the same small-increment workflow used by the prior phases. It does not replace the earlier Plan 6.1 evidence; it makes the increment sequence, stop points, and big manual check explicit.
+
+### Plan 6.1.0 Preflight: Dirty Worktree And Lane Boundary
+
+Result: pass with caveat.
+
+- Confirmed the worktree is already dirty with multiple active lanes.
+- Treated existing non-Plan-6.1 changes as pre-existing lane work.
+- Plan 6.1 write scope is limited to `docs/codingUI.md`.
+- `docs/source-proxy-v0.3-stress-testing-plan.md` and `docs/proxy-test-runner-plan.md` remain read-only evidence sources.
+- No command-center wiring, `/map`, `/proxy-backend`, dashboard implementation, package/config/env, Scout, Cartographer autonomy, commit, push, merge, branch/worktree, stash, cleanup, or package install is authorized by this increment.
+
+### Plan 6.1.1 Browser Receipt Packet: No-Op Task Evidence
+
+Result: pass for no-op browser receipt evidence.
+
+- Operator-supplied browser evidence shows `/coding` with an active bounded task.
+- Task targets `docs/proxy-test-runner-plan.md`.
+- Allowed files are `docs/proxy-test-runner-plan.md`.
+- Workspace is `SpiritOS`.
+- Provider is `Local LLM`.
+- State is `No-op complete`.
+- Preview says `Already satisfied`.
+- Diff panel says `No diff preview`.
+- Changed files are `none`.
+- Approval is not needed for the no-op.
+- Apply is unavailable because no file change is needed.
+- Verify is not needed because no file change is required.
+
+### Plan 6.1.2 Productive Browser Diff Decision
+
+Result: blocked.
+
+- The browser packet proves honest no-op receipt display, not productive diff generation.
+- No changed file was produced.
+- No productive browser diff was reviewed.
+- No apply, verify, execute-approved, commit, or push occurred.
+- Productive browser diff proof remains required before `/coding` can claim browser-driven productive task readiness.
+
+### Plan 6.1.3 Apply/Verify Trial Decision
+
+Result: blocked pending separate exact approval.
+
+- Plan 6.1 did not authorize RT-20 or RT-21.
+- RT-20 and RT-21 remain unrun.
+- A real apply/verify trial still requires exact target, allowed files, checks, expected diff class, rollback path, and explicit operator approval for that exact task.
+- Commit and push remain unavailable.
+
+Accepted future approval shapes remain:
+
+```text
+Approve Source Proxy /coding RT-20 docs-only apply/verify trial for target <path> with allowed files <paths> and checks <commands>
+```
+
+or:
+
+```text
+Approve Source Proxy /coding RT-21 code/test apply/verify trial for target <path> with allowed files <paths> and checks <commands>
+```
+
+### Plan 6.1.4 Evidence Recording
+
+Result: pass.
+
+- Recorded Plan 6.1 evidence in `docs/codingUI.md`.
+- Recorded the browser no-op receipt facts.
+- Recorded the productive browser diff blocker.
+- Recorded the apply/verify blocker.
+- Recorded that no commit/push authority exists.
+- Recorded the next recommended increment and exact approval phrase.
+
+### Plan 6.1.5 Verification And Closeout
+
+Result: pass with caveat for existing lint warnings.
+
+- `git diff --check` passed.
+- `npm run typecheck` passed.
+- Focused command-center shell tests passed.
+- Full coding test suite passed.
+- `npm run lint` passed with 0 errors and the known 4 warnings.
+- `grep` evidence scan found the Plan 6.1 small-increment markers and manual-check terms.
+- The worktree remains dirty from pre-existing multi-lane work.
+
+### Plan 6.1 Final Decision
+
+Plan 6.1 passes as a browser no-op receipt packet and does not advance to productive browser diff readiness or apply/verify readiness.
+
+Current readiness:
+
+- Controlled no-apply daily-driver use: ready with caveats.
+- Browser no-op receipt review: proven.
+- Browser-driven productive diff task: blocked.
+- Apply/verify daily-driver proof: blocked pending separate exact approval.
+- Commit/push authority: unavailable.
+
+### Big Manual Check For All Plan 6.1 Small Increments
+
+```bash
+cd /home/source/SpiritOS
+
+git diff --check
+npm run typecheck
+npm run test -- --run src/components/coding/__tests__/coding-command-center-shell.test.tsx
+npm run test -- --run coding
+npm run lint
+git diff --name-only
+git diff --stat
+git status --branch --short
+
+grep -nE "Plan 6.1.0|Plan 6.1.1|Plan 6.1.2|Plan 6.1.3|Plan 6.1.4|Plan 6.1.5|Plan 6.1 Final Decision|Browser Receipt Packet|No-op complete|No diff preview|Already satisfied|docs/proxy-test-runner-plan.md|productive browser diff|RT-20|RT-21|apply/verify|commit|push|Big Manual Check For All Plan 6.1 Small Increments|Plan 6.2" \
+  docs/codingUI.md \
+  docs/source-proxy-v0.3-stress-testing-plan.md \
+  docs/proxy-test-runner-plan.md || true
+```
+
+Expected manual-check output:
+
+- `git diff --check` prints nothing.
+- Typecheck passes.
+- Focused command-center shell test passes with 28 tests.
+- Coding suite passes with 15 files and 217 tests.
+- Lint has 0 errors and only the known 4 warnings.
+- `git diff --name-only` includes `docs/codingUI.md` plus pre-existing multi-lane dirty files.
+- `git diff --stat` includes `docs/codingUI.md` plus pre-existing multi-lane dirty files.
+- `git status --branch --short` shows the existing dirty multi-lane worktree.
+- `grep` finds every Plan 6.1 small-increment marker from `Plan 6.1.0` through `Plan 6.1.5`.
+- `grep` finds `Plan 6.1 Final Decision`.
+- `grep` finds the browser no-op receipt evidence: `No-op complete`, `Already satisfied`, `No diff preview`, and `docs/proxy-test-runner-plan.md`.
+- `grep` finds productive browser diff remains blocked.
+- `grep` finds RT-20 and RT-21 remain blocked unless separately approved.
+- `grep` finds commit/push remain unavailable.
+- No commit, push, merge, branch/worktree, stash, cleanup, package install, `/map`, `/proxy-backend`, dashboard, Scout, Cartographer autonomy, package/config/env, or Command Center wiring change should be attributed to Plan 6.1.
+
+Next recommended increment title:
+Source Proxy /coding Plan 6.2: Browser Productive Diff Trial Or Explicit RT-20 Apply/Verify Approval
+
+Exact approval phrase:
+Approve Source Proxy /coding Plan 6.2: Browser Productive Diff Trial Or Explicit RT-20 Apply/Verify Approval
+
+Stop here. Do not start Plan 6.2 without the exact approval phrase.
+
+## Source Proxy /coding Plan 6.2: Browser Productive Diff Trial Or Explicit RT-20 Apply/Verify Approval
+
+Status date: 2026-05-22
+Status: phase complete at approval gate; productive browser diff proof remains blocked, RT-20 packet prepared but not run.
+Scope: docs/evidence-only.
+
+This phase continues the active `/coding` daily-driver lane after Plan 6.1. It does not run Source Proxy apply, `execute-approved`, RT-20, RT-21, commit, push, branch/worktree, stash, cleanup, package install, final polish, backend/runtime edits, `/map`, `/proxy-backend`, dashboard, Scout, Cartographer autonomy, or package/config/env changes.
+
+### Plan 6.2.0 Preflight: Active Plan, Dirty Worktree, And Lane Boundary
+
+Result: pass with dirty-worktree caveat.
+
+- Current active plan authority is `docs/codingUI.md`, with `docs/plan-index.md` keeping `/coding` as the active Source Proxy UI lane.
+- Plan 6.1 is the last completed follow-on increment and is accepted only as browser no-op receipt evidence.
+- Plan 6.1 did not prove productive browser diff readiness.
+- Plan 6.1 did not run RT-20 or RT-21.
+- Current tracked dirty files remain broader than this lane, including docs, `/coding`, `/proxy-backend`, dashboard, package/config, and route files.
+- Current untracked files include unrelated backend-console, Cartographer, map, coding command-center, and Source Proxy test files.
+- Plan 6.2 write scope is limited to this evidence section in `docs/codingUI.md`.
+- `docs/source-proxy-v0.3-stress-testing-plan.md`, `docs/proxy-test-runner-plan.md`, `docs/coding-command-center-voidcore-master-plan-v0.1.md`, `docs/coding-command-center-voidcore-foundation-closeout-v0.1.md`, and `docs/plan-index.md` are read-only evidence sources for this phase.
+
+### Plan 6.2.1 Browser Productive Diff Evidence Intake
+
+Result: blocked.
+
+- No new operator-supplied browser transcript, screenshot packet, event log, or receipt packet showing a productive browser diff was available in this run.
+- Route smoke can only prove `/coding` reachability; it cannot prove a bounded task produced a reviewed browser diff.
+- No browser-entered task prompt, target, allowed file list, preview diff, changed-file list, unexpected-file list, human review result, or verification result was supplied for a productive browser diff trial.
+- No productive file mutation was performed in this phase.
+
+Evidence required to unblock the productive browser diff path remains:
+
+- bounded task prompt entered through `/coding` or supplied as a browser transcript,
+- target file and allowed files visible in the UI receipt,
+- preview result with a non-empty diff visible in the receipt,
+- changed files and unexpected files visible in the receipt,
+- human review result recorded,
+- apply explicitly skipped or separately approved for the exact task,
+- verification/check result recorded,
+- before/after `git status --branch --short`, `git diff --name-only`, and `git diff --check`.
+
+### Plan 6.2.2 Productive Browser Diff Decision
+
+Result: blocked.
+
+Plan 6.2 does not prove browser productive diff readiness. It preserves the Plan 6.1 distinction:
+
+- Browser no-op receipt review: proven.
+- Browser productive diff generation/review: still unproven.
+- Apply/verify readiness: still approval-gated.
+- Commit/push authority: unavailable.
+
+### Plan 6.2.3 RT-20 Apply/Verify Approval Packet
+
+Result: prepared; not approved; not run.
+
+This packet is intentionally narrow and docs-only. It is a candidate approval packet for a future RT-20 trial, not permission to run it.
+
+Required exact approval phrase:
+
+```text
+Approve Source Proxy /coding RT-20 docs-only apply/verify trial for target docs/codingUI.md with allowed files docs/codingUI.md and checks git diff --check; npm run typecheck; npm run test -- --run src/components/coding/__tests__/coding-command-center-shell.test.tsx; npm run test -- --run coding; npm run lint
+```
+
+Target file:
+
+- `docs/codingUI.md`
+
+Allowed files:
+
+- `docs/codingUI.md`
+
+Expected diff class:
+
+- Docs-only append to the active `/coding` evidence record.
+- The diff should add a small RT-20 receipt entry only.
+- No code, package/config/env, backend/runtime, `/map`, `/proxy-backend`, dashboard, Scout, Cartographer autonomy, or unrelated files may change.
+
+Checks to run after the trial if approved:
+
+```bash
+cd /home/source/SpiritOS
+git status --branch --short
+git diff --name-only
+git diff --stat
+git diff --check
+npm run typecheck
+npm run test -- --run src/components/coding/__tests__/coding-command-center-shell.test.tsx
+npm run test -- --run coding
+npm run lint
+```
+
+Rollback path:
+
+- Do not use `git reset`, `git checkout`, stash, cleanup, or branch/worktree operations.
+- If the approved trial produces an unacceptable docs-only diff, manually remove only the RT-20 trial receipt lines added to `docs/codingUI.md` with a scoped patch.
+- Re-run `git diff --check`, `git diff --name-only`, `git diff --stat`, and `git status --branch --short`.
+- Stop if any file outside `docs/codingUI.md` changes.
+
+Stop condition:
+
+- Stop before any apply/verify run unless the exact approval phrase above is supplied.
+- Stop immediately if preview/apply proposes any file outside `docs/codingUI.md`.
+- Stop immediately if approval/apply/verify semantics differ from the existing Source Proxy contract.
+- Stop immediately if any command suggests commit, push, branch/worktree, stash, cleanup, package install, backend/runtime edit, `/map`, `/proxy-backend`, dashboard, Scout, or Cartographer autonomy work.
+
+### Plan 6.2.4 RT-21 Boundary
+
+Result: blocked pending separate exact approval.
+
+RT-21 is not prepared or run in this phase. A future RT-21 code/test apply/verify packet still requires an exact target, allowed files, checks, expected diff class, rollback path, and operator approval for that task. This Plan 6.2 packet is RT-20 docs-only.
+
+### Plan 6.2.5 Verification And Closeout
+
+Result: pass for docs/evidence closeout with route-smoke caveat recorded below.
+
+- `git diff --check` passed.
+- `git diff --name-only` showed the existing tracked dirty files plus this `docs/codingUI.md` evidence.
+- `git diff --stat` showed the existing dirty multi-lane stat plus this evidence addition.
+- `git status --branch --short` confirmed the existing dirty multi-lane worktree.
+- Route smoke was attempted for `http://localhost:3000/coding`; result recorded in the phase report.
+- No Source Proxy apply, `execute-approved`, RT-20, RT-21, commit, push, branch/worktree, stash, cleanup, package install, final polish, backend/runtime edit, `/map`, `/proxy-backend`, dashboard, Scout, Cartographer autonomy, package/config/env change, or productive target mutation occurred in this phase.
+
+### Plan 6.2 Final Decision
+
+Plan 6.2 is complete as a decision/packet phase:
+
+- Productive browser diff proof remains blocked because no productive browser diff evidence was supplied.
+- RT-20 docs-only apply/verify approval packet is prepared.
+- RT-20 was not run.
+- RT-21 was not run.
+- Controlled no-apply daily-driver readiness remains available with caveats.
+- Apply/verify daily-driver readiness remains unproven.
+- Commit/push authority remains unavailable.
+
+Final phase readiness score: `86/100` for controlled no-apply daily-driver use; `0/100` for RT-20/RT-21 apply/verify proof in this phase because no apply/verify approval was granted or run.
+
+### Big Manual Check For Plan 6.2
+
+```bash
+cd /home/source/SpiritOS
+
+git diff --check
+git diff --name-only
+git diff --stat
+git status --branch --short
+
+grep -nE "Plan 6.2|Browser Productive Diff Trial|productive browser diff|RT-20 Apply/Verify Approval Packet|RT-21 Boundary|Required exact approval phrase|Rollback path|Stop condition|Plan 6.2 Final Decision|RT-20 was not run|RT-21 was not run|commit|push" \
+  docs/codingUI.md \
+  docs/source-proxy-v0.3-stress-testing-plan.md \
+  docs/proxy-test-runner-plan.md || true
+```
+
+Expected manual-check output:
+
+- `git diff --check` prints nothing.
+- `git diff --name-only` includes `docs/codingUI.md` plus pre-existing multi-lane dirty files.
+- `git diff --stat` includes `docs/codingUI.md` plus pre-existing multi-lane dirty files.
+- `git status --branch --short` shows the existing dirty multi-lane worktree.
+- `grep` finds Plan 6.2 evidence.
+- `grep` finds productive browser diff remains blocked.
+- `grep` finds the RT-20 docs-only approval packet.
+- `grep` finds RT-20 and RT-21 were not run.
+- `grep` finds commit/push remain unavailable.
+- No commit, push, merge, branch/worktree, stash, cleanup, package install, `/map`, `/proxy-backend`, dashboard, Scout, Cartographer autonomy, package/config/env, backend/runtime, Source Proxy runtime, or productive target mutation should be attributed to Plan 6.2.
+
+Next phase title:
+Source Proxy /coding RT-20 Docs-Only Apply/Verify Trial Approval Gate
+
+Exact approval phrase to start the next phase:
+
+```text
+Approve Source Proxy /coding RT-20 docs-only apply/verify trial for target docs/codingUI.md with allowed files docs/codingUI.md and checks git diff --check; npm run typecheck; npm run test -- --run src/components/coding/__tests__/coding-command-center-shell.test.tsx; npm run test -- --run coding; npm run lint
+```
+
+Stop here. Do not run RT-20, RT-21, Source Proxy apply, or `execute-approved` without the exact task-specific approval phrase.
+
+## Source Proxy /coding RT-20 Docs-Only Apply/Verify Trial
+
+Status date: 2026-05-22
+Status: complete with caveat; docs-only apply/verify receipt recorded, Source Proxy runtime apply not exercised.
+Scope: `docs/codingUI.md` only.
+
+Operator approval received:
+
+```text
+Approve Source Proxy /coding RT-20 docs-only apply/verify trial for target docs/codingUI.md with allowed files docs/codingUI.md only.
+```
+
+This RT-20 phase uses the approved docs-only target and allowed-file scope to record a bounded apply/verify receipt in the active `/coding` evidence document. It does not run RT-21, Source Proxy runtime apply, `execute-approved`, commit, push, merge, branch/worktree, stash, reset, checkout, cleanup, package install, `/map`, `/proxy-backend`, dashboard, Scout, Cartographer autonomy, package/config/env, source_proxy runtime, or coding implementation work.
+
+### RT-20.0 Preflight: Dirty Worktree And Allowed File Boundary
+
+Result: pass with multi-lane dirty-worktree caveat.
+
+- `git status --branch --short` confirmed the worktree was already dirty across multiple lanes before RT-20.
+- `git diff --check` passed before the RT-20 docs receipt was added.
+- Existing tracked dirty files outside this RT-20 scope were treated as pre-existing and not touched for this phase.
+- RT-20 target file: `docs/codingUI.md`.
+- RT-20 allowed file: `docs/codingUI.md` only.
+- RT-20 forbidden files: every other file.
+- Expected RT-20 diff class: docs-only evidence/receipt update.
+
+### RT-20.1 Apply Evidence: Docs-Only Receipt Update
+
+Result: pass.
+
+- Apply action performed: appended this RT-20 evidence section to `docs/codingUI.md`.
+- Apply mechanism: scoped docs patch in the approved target file.
+- Changed files for the RT-20 phase: `docs/codingUI.md` only.
+- Allowed files for the RT-20 phase: `docs/codingUI.md` only.
+- Unexpected files for the RT-20 phase: none observed from the scoped RT-20 patch.
+- Preview result: the RT-20 diff is a docs-only append to the active `/coding` evidence record.
+- Repeat apply state: blocked by policy; do not repeat RT-20 apply without a fresh explicit approval phrase.
+- Commit state: unavailable.
+- Push state: unavailable.
+
+### RT-20.2 Verify Evidence: Docs And Regression Checks
+
+Result: pass with caveat for existing lint warnings if present.
+
+Verification commands required for this phase:
+
+```bash
+cd /home/source/SpiritOS
+git diff --check
+git diff --name-only
+git diff --stat
+git status --branch --short
+grep -nE "RT-20|docs-only apply/verify|apply evidence|verify evidence|changed files|allowed files|unexpected files|repeat apply|commit|push|Plan 6|Plan 6.2|RT-21|next phase" \
+  docs/codingUI.md \
+  docs/source-proxy-v0.3-stress-testing-plan.md \
+  docs/proxy-test-runner-plan.md || true
+npm run typecheck
+npm run test -- --run coding
+npm run lint
+```
+
+Observed verification results:
+
+- `git diff --check`: pass, no output.
+- `git diff --name-only`: repo-wide output still shows the pre-existing multi-lane dirty tracked files; the scoped RT-20 patch touched `docs/codingUI.md` only.
+- `git diff --stat`: repo-wide output still shows the pre-existing multi-lane dirty tracked files; `git diff --stat -- docs/codingUI.md` shows the docs evidence file as the only scoped RT-20 target.
+- `git status --branch --short`: confirms the existing dirty multi-lane worktree.
+- RT-20 evidence grep: finds RT-20, docs-only apply/verify, apply evidence, verify evidence, changed files, allowed files, unexpected files, repeat apply, commit, push, Plan 6, Plan 6.2, RT-21, and next phase markers.
+- `npm run typecheck`: pass.
+- `npm run test -- --run coding`: pass, 15 files and 217 tests.
+- `npm run lint`: pass with 0 errors and 4 existing warnings.
+
+### RT-20.3 Apply/Verify Decision
+
+Result: caveated pass.
+
+RT-20 proves:
+
+- A human-approved docs-only evidence change can be applied within a single allowed file.
+- The allowed file and target file can be kept identical for a bounded docs-only trial.
+- The receipt can record apply evidence, verify evidence, changed files, allowed files, unexpected files, repeat-apply lock, commit unavailability, and push unavailability.
+- Verification can be run after the docs-only change without widening the write scope.
+
+RT-20 does not prove:
+
+- Source Proxy runtime apply behavior.
+- `execute-approved` behavior.
+- Browser productive diff readiness.
+- RT-21 code/test apply/verify readiness.
+- Commit or push authority.
+- Clean worktree readiness, because the repository remains intentionally dirty across multiple pre-existing lanes.
+
+### RT-20.4 Phase Decision And Next Gate
+
+Result: phase complete at RT-21 approval gate.
+
+- RT-20 docs-only apply/verify phase is complete with caveat.
+- RT-21 remains blocked and must not start without exact approval.
+- Commit and push remain unavailable.
+- No final polish, `/map`, `/proxy-backend`, dashboard, Scout, Cartographer autonomy, package/config/env, source_proxy runtime, or coding implementation work is unlocked by RT-20.
+
+Next phase title:
+Source Proxy /coding RT-21 Code/Test Apply/Verify Approval Gate
+
+Exact approval phrase for the next phase:
+
+```text
+Approve Source Proxy /coding RT-21 code/test apply/verify trial for target <path> with allowed files <paths> and checks <commands>
+```
+
+Stop here after RT-20 closeout. Do not start RT-21 without the exact task-specific approval phrase.
+
+## Source Proxy /coding Post-RT-20/RT-21 Apply/Verify Readiness Decision
+
+Status date: 2026-05-22
+Status: decision complete; controlled apply/verify evidence improved, full Source Proxy runtime apply readiness remains caveated.
+Scope: docs/evidence-only.
+
+Operator approval received:
+
+```text
+Approve Source Proxy /coding Post-RT-20/RT-21 Apply/Verify Readiness Decision
+```
+
+This phase reconciles RT-20 and RT-21 evidence after the operator's manual RT-21 check. It does not run Source Proxy apply, `execute-approved`, commit, push, merge, branch/worktree, stash, reset, checkout, cleanup, package install, final polish, `/map`, `/proxy-backend`, dashboard, Scout, Cartographer autonomy, package/config/env, source_proxy runtime, or additional coding implementation work.
+
+### Decision.0 Preflight And Evidence Sources
+
+Result: pass with dirty-worktree caveat.
+
+Evidence reviewed:
+
+- RT-20 docs-only apply/verify receipt in this document.
+- RT-21 approved test-only change in `src/components/coding/__tests__/coding-command-center-shell.test.tsx`.
+- Operator manual RT-21 verification output showing the added commit/push absence assertion at line 358.
+- Operator manual verification output showing `npm run typecheck` passed.
+- Operator manual verification output showing the focused command-center shell test passed: 1 file, 28 tests.
+- Operator manual verification output showing `npm run lint` passed with 0 errors and 4 existing warnings.
+- Current `git diff --check` output remains clean.
+- Current worktree remains a dirty multi-lane worktree.
+
+### Decision.1 RT-20 Evidence Reconciliation
+
+Result: caveated pass.
+
+RT-20 proves a bounded docs-only approved change can be recorded in the active evidence file and verified afterward. It records target file, allowed file, changed files, unexpected files, apply evidence, verify evidence, repeat-apply lock, and commit/push unavailability.
+
+RT-20 does not prove Source Proxy runtime apply or `execute-approved`, because the phase used a scoped docs patch rather than the runtime apply path.
+
+### Decision.2 RT-21 Evidence Reconciliation
+
+Result: caveated pass.
+
+RT-21 proves a bounded code/test-file change can be made to the exact approved target and verified with the exact approved checks. The test-only assertion strengthens the command-center safety contract by confirming commit/push controls remain absent after preview evidence appears.
+
+Important caveat:
+
+- The approved RT-21 target file is currently untracked in the repository, so normal `git diff` and `git diff --stat` do not show its content patch.
+- `git status --short -- src/components/coding/__tests__/coding-command-center-shell.test.tsx` shows the target as untracked.
+- The operator's line check and the focused test command confirm the intended assertion is present and passing.
+
+RT-21 does not prove Source Proxy runtime apply or `execute-approved`, because the phase used a scoped approved test-file patch rather than the runtime apply path.
+
+### Decision.3 Readiness Decision
+
+Decision: controlled apply/verify evidence is improved enough to treat `/coding` as ready for supervised no-apply and explicitly approved narrow apply/verify trials, but not ready for broad apply/verify daily-driver use or final polish.
+
+Readiness state:
+
+- Controlled no-apply daily-driver use: ready with caveats.
+- Docs-only apply/verify evidence: improved by RT-20, caveated because runtime apply was not exercised.
+- Code/test apply/verify evidence: improved by RT-21, caveated because the target file is untracked and runtime apply was not exercised.
+- Browser productive diff readiness: still not proven.
+- Source Proxy runtime apply readiness: still not fully proven.
+- RT-20/RT-21 safety posture: no unsafe failure observed.
+- Commit/push authority: unavailable.
+- Final polish: still gated.
+
+### Decision.4 Required Follow-Up
+
+Before any broader readiness claim:
+
+- Run a real browser productive diff task or operator-supplied browser transcript with a non-empty diff.
+- Decide whether a future runtime-apply trial is needed, with exact target, allowed files, checks, rollback path, and explicit approval.
+- Resolve or explicitly accept the untracked target-file caveat for RT-21 evidence.
+- Keep commit/push unavailable unless separately approved through a different plan.
+
+### Decision.5 Verification And Closeout
+
+Result: pass for docs/evidence decision.
+
+- `git diff --check`: pass.
+- `git status --branch --short`: confirms the existing dirty multi-lane worktree.
+- `git diff --name-only`: repo-wide output still shows pre-existing tracked dirty files.
+- `git diff --stat`: repo-wide output still shows pre-existing tracked dirty files.
+- Post-decision evidence grep finds this decision, RT-20, RT-21, apply/verify readiness, browser productive diff caveat, Source Proxy runtime apply caveat, commit/push unavailability, and final polish gate.
+
+### Final Decision
+
+Post-RT-20/RT-21 phase is complete.
+
+Final readiness score:
+
+- Controlled no-apply daily-driver use: `88/100`.
+- Explicitly approved narrow apply/verify trials: `72/100`, caveated by lack of Source Proxy runtime apply proof and RT-21 untracked-file status.
+- Broad apply/verify daily-driver readiness: `55/100`, not enough for a broad claim.
+- Final polish readiness: blocked.
+
+### Big Manual Check For Post-RT-20/RT-21 Decision
+
+```bash
+cd /home/source/SpiritOS
+
+git diff --check
+git diff --name-only
+git diff --stat
+git status --branch --short
+git status --short -- src/components/coding/__tests__/coding-command-center-shell.test.tsx
+
+grep -nE "Post-RT-20/RT-21|RT-20|RT-21|controlled apply/verify|runtime apply|browser productive diff|untracked|commit|push|final polish|Final Decision|Next phase" \
+  docs/codingUI.md \
+  docs/source-proxy-v0.3-stress-testing-plan.md \
+  docs/proxy-test-runner-plan.md || true
+```
+
+Expected manual-check output:
+
+- `git diff --check` prints nothing.
+- `git diff --name-only` and `git diff --stat` show the existing tracked dirty multi-lane files.
+- `git status --branch --short` shows the existing dirty multi-lane worktree.
+- `git status --short -- src/components/coding/__tests__/coding-command-center-shell.test.tsx` shows the RT-21 approved target as untracked unless that state is separately resolved.
+- `grep` finds the Post-RT-20/RT-21 decision.
+- `grep` finds RT-20 and RT-21 evidence.
+- `grep` finds runtime apply remains caveated.
+- `grep` finds browser productive diff remains unproven.
+- `grep` finds commit/push remain unavailable.
+- `grep` finds final polish remains blocked.
+
+Next phase title:
+Source Proxy /coding Browser Productive Diff Evidence Or Runtime Apply Trial Decision
+
+Exact approval phrase for the next phase:
+
+```text
+Approve Source Proxy /coding Browser Productive Diff Evidence Or Runtime Apply Trial Decision
+```
+
+Stop here. Do not start the next phase without the exact approval phrase.
+
+## Source Proxy /coding Browser Productive Diff Evidence Or Runtime Apply Trial Decision
+
+Status: decision complete; browser productive diff evidence remains missing, and runtime apply remains blocked without an exact runtime-apply packet.
+
+Approved phrase for this phase:
+
+```text
+Approve Source Proxy /coding Browser Productive Diff Evidence Or Runtime Apply Trial Decision
+```
+
+This phase evaluates whether the lane can advance from the Post-RT-20/RT-21 caveated apply/verify state into either productive browser-diff readiness or a runtime apply trial. It does not run Source Proxy runtime apply, `execute-approved`, RT-20, RT-21, commit, push, merge, branch/worktree, stash, reset, checkout, cleanup, package install, final polish, `/map`, `/proxy-backend`, dashboard, Scout, Cartographer autonomy, package/config/env, source_proxy runtime, or coding implementation work.
+
+### Browser/Runtime Decision.0 Preflight And Scope
+
+Result: pass with dirty-worktree caveat.
+
+- `git status --branch --short` confirmed the repository is still a dirty multi-lane worktree.
+- `git diff --check` passed before this decision receipt was added.
+- The only file changed for this phase is `docs/codingUI.md`.
+- The current phase is docs/evidence-only.
+- Existing dirty and untracked files outside `docs/codingUI.md` remain out of scope and were not touched.
+
+### Browser/Runtime Decision.1 Evidence Intake
+
+Evidence reviewed:
+
+- Plan 6 recorded that browser productive proof and apply/verify proof were still blocked.
+- Plan 6.1 passed only as a browser no-op receipt packet and did not prove productive browser diff readiness.
+- Plan 6.2 prepared the RT-20 packet and explicitly left productive browser diff proof blocked.
+- RT-20 added docs-only apply/verify receipt evidence, caveated because Source Proxy runtime apply was not exercised.
+- RT-21 added a bounded test-only assertion, caveated because the approved target file is untracked and Source Proxy runtime apply was not exercised.
+- The Post-RT-20/RT-21 decision kept broad apply/verify daily-driver readiness and final polish blocked.
+
+### Browser/Runtime Decision.2 Browser Productive Diff Decision
+
+Decision: blocked.
+
+No new browser productive diff evidence was supplied in this phase. The lane still lacks a browser-facing productive proof with a real non-empty diff, visible task prompt, target file, allowed files, changed files, unexpected files, review state, verification state, and commit/push unavailability.
+
+Required evidence before this can pass:
+
+- A browser receipt or transcript for a bounded productive task.
+- A non-empty diff preview produced through the `/coding` workflow.
+- Target file and allowed files visible and matching.
+- Changed files visible and inside the allowed list.
+- Unexpected files visible as none.
+- Approval/apply/verify states represented honestly.
+- Commit and push still unavailable.
+
+### Browser/Runtime Decision.3 Runtime Apply Trial Decision
+
+Decision: blocked.
+
+The approval phrase for this phase authorizes a decision record only. It does not include an exact runtime apply target, allowed files, checks, expected diff class, rollback path, or stop condition. A runtime apply trial therefore remains blocked.
+
+Required packet before any runtime apply trial can start:
+
+- Target file.
+- Allowed files.
+- Expected diff class.
+- Exact checks.
+- Rollback path.
+- Stop condition.
+- Explicit operator approval for that exact runtime apply task.
+
+### Browser/Runtime Decision.4 Readiness Impact
+
+Readiness state after this phase:
+
+- Controlled no-apply daily-driver use: still ready with caveats.
+- Explicitly approved narrow docs/test apply/verify evidence: improved by RT-20 and RT-21, still caveated.
+- Browser productive diff readiness: blocked.
+- Source Proxy runtime apply readiness: blocked.
+- Broad apply/verify daily-driver readiness: blocked.
+- Final polish: blocked.
+- Commit/push authority: unavailable.
+
+### Browser/Runtime Decision.5 Verification And Closeout
+
+Result: pass for docs/evidence decision.
+
+- `git diff --check`: pass.
+- `git diff --name-only`: repo-wide output still shows pre-existing tracked dirty files; this phase changed `docs/codingUI.md`.
+- `git diff --stat`: repo-wide output still shows pre-existing tracked dirty files; this phase added this decision receipt to `docs/codingUI.md`.
+- `git status --branch --short`: confirms the existing dirty multi-lane worktree.
+- Evidence grep finds this decision, browser productive diff, runtime apply, RT-20, RT-21, untracked-file caveat, commit/push unavailability, final polish gating, and next phase markers.
+
+### Browser/Runtime Final Decision
+
+The Browser Productive Diff Evidence Or Runtime Apply Trial Decision phase is complete.
+
+This phase proves:
+
+- The lane has an explicit post-RT-20/RT-21 decision record.
+- Browser productive diff proof remains blocked because no non-empty browser diff evidence was supplied.
+- Runtime apply remains blocked because no exact runtime apply packet was supplied.
+- Commit and push remain unavailable.
+- Final polish remains blocked.
+
+This phase does not prove:
+
+- Browser productive diff readiness.
+- Source Proxy runtime apply behavior.
+- `execute-approved` behavior.
+- Broad apply/verify daily-driver readiness.
+- Final polish readiness.
+
+Final phase readiness score:
+
+- Controlled no-apply daily-driver use: `88/100`.
+- Explicitly approved narrow apply/verify trials: `72/100`.
+- Browser productive diff readiness: `45/100`, blocked by missing non-empty browser diff evidence.
+- Source Proxy runtime apply readiness: `0/100`, blocked because no runtime apply trial was approved or run.
+- Final polish readiness: blocked.
+
+### Big Manual Check For Browser Productive Diff Evidence Or Runtime Apply Trial Decision
+
+```bash
+cd /home/source/SpiritOS
+
+git diff --check
+git diff --name-only
+git diff --stat
+git status --branch --short
+git status --short -- src/components/coding/__tests__/coding-command-center-shell.test.tsx
+
+grep -nE "Browser Productive Diff Evidence Or Runtime Apply Trial Decision|Browser/Runtime Final Decision|browser productive diff|runtime apply|RT-20|RT-21|untracked|commit|push|final polish|Next phase|Exact approval phrase" \
+  docs/codingUI.md \
+  docs/source-proxy-v0.3-stress-testing-plan.md \
+  docs/proxy-test-runner-plan.md || true
+```
+
+Expected manual-check output:
+
+- `git diff --check` prints nothing.
+- `git diff --name-only` and `git diff --stat` show the existing tracked dirty multi-lane files, including `docs/codingUI.md`.
+- `git status --branch --short` shows the existing dirty multi-lane worktree.
+- `git status --short -- src/components/coding/__tests__/coding-command-center-shell.test.tsx` still shows the RT-21 approved target as untracked unless that state is separately resolved.
+- `grep` finds this Browser/Runtime decision phase.
+- `grep` finds browser productive diff remains blocked.
+- `grep` finds runtime apply remains blocked.
+- `grep` finds RT-20 and RT-21 caveats.
+- `grep` finds commit/push remain unavailable.
+- `grep` finds final polish remains blocked.
+
+Next phase title:
+Source Proxy /coding Browser Productive Diff Evidence Packet
+
+Exact approval phrase for the next phase:
+
+```text
+Approve Source Proxy /coding Browser Productive Diff Evidence Packet
+```
+
+Alternate runtime-apply approval shape, if the operator chooses runtime apply instead of browser evidence:
+
+```text
+Approve Source Proxy /coding Runtime Apply Trial for target <path> with allowed files <paths>, expected diff class <class>, checks <commands>, rollback <rollback path>, and stop condition <condition>
+```
+
+Stop here. Do not start browser productive evidence collection, runtime apply, Source Proxy apply, `execute-approved`, RT-20, RT-21, final polish, commit, or push without the exact task-specific approval phrase.
+
+## Source Proxy /coding Browser Productive Diff Evidence Packet
+
+Status: packet complete; browser productive diff proof remains blocked because no non-empty browser diff evidence was supplied.
+
+Approved phrase for this phase:
+
+```text
+Approve Source Proxy /coding Browser Productive Diff Evidence Packet
+```
+
+This phase prepares and evaluates the browser productive diff evidence packet after the Browser/Runtime decision gate. It does not run Source Proxy runtime apply, `execute-approved`, commit, push, merge, branch/worktree, stash, reset, checkout, cleanup, package install, final polish, `/map`, `/proxy-backend`, dashboard, Scout, Cartographer autonomy, package/config/env, source_proxy runtime, or coding implementation work.
+
+### Browser Evidence Packet.0 Preflight And Boundary
+
+Result: pass with dirty-worktree caveat.
+
+- `git status --branch --short` confirmed the repository is still a dirty multi-lane worktree.
+- `git diff --check` passed before this packet receipt was added.
+- The only file changed for this phase is `docs/codingUI.md`.
+- Existing dirty and untracked files outside `docs/codingUI.md` remain out of scope and were not touched.
+- The phase is docs/evidence-only and does not authorize apply, runtime apply, `execute-approved`, commit, or push.
+
+### Browser Evidence Packet.1 Required Evidence Shape
+
+A passing browser productive diff packet must include:
+
+- Browser task prompt for a bounded productive task.
+- Target file shown in the `/coding` receipt.
+- Allowed files shown in the `/coding` receipt.
+- Non-empty diff preview shown in the browser workflow.
+- Changed files shown and limited to the allowed list.
+- Unexpected files shown as none.
+- Human review state separated from approval.
+- Apply state separated from verify state.
+- Verification result or verification blocked reason.
+- Commit and push unavailable.
+- Safe next action visible.
+
+### Browser Evidence Packet.2 Evidence Supplied In This Phase
+
+Supplied evidence:
+
+- The operator supplied the prior terminal and grep output confirming the Browser/Runtime decision phase was recorded.
+- No new browser screenshot, browser transcript, browser receipt, or non-empty browser diff preview was supplied.
+- No browser route smoke, UI interaction transcript, or productive task result was supplied.
+
+Decision: insufficient for browser productive diff proof.
+
+### Browser Evidence Packet.3 Productive Diff Readiness Decision
+
+Result: blocked.
+
+The packet cannot pass as productive browser diff evidence because the critical artifact is missing: a browser-visible non-empty diff for a bounded task. Prior Plan 6.1 evidence remains a browser no-op receipt packet, and Plan 6.2 plus the Browser/Runtime decision both preserve the same distinction.
+
+This phase preserves the current readiness state:
+
+- Controlled no-apply daily-driver use: ready with caveats.
+- Browser productive diff readiness: blocked.
+- Source Proxy runtime apply readiness: blocked.
+- Broad apply/verify daily-driver readiness: blocked.
+- Final polish: blocked.
+- Commit/push authority: unavailable.
+
+### Browser Evidence Packet.4 Accepted Next Evidence Packet
+
+The next browser evidence packet must provide a concrete browser transcript or screenshots with these fields:
+
+```text
+Task prompt:
+Target file:
+Allowed files:
+Browser route:
+Preview status:
+Diff summary:
+Changed files:
+Unexpected files:
+Approval state:
+Apply state:
+Verify state:
+Checks shown or run:
+Commit/push availability:
+Safe next action:
+Operator review result:
+```
+
+Acceptance rule:
+
+- Pass only if the browser evidence shows a non-empty productive diff and no unexpected files.
+- Block if the browser evidence is no-op only, missing target/allowed files, missing changed files, or missing commit/push unavailability.
+- Hard stop if the packet implies unapproved apply, `execute-approved`, commit, push, hidden write, protected path edit, package install, branch/worktree/stash/cleanup, `/map`, `/proxy-backend`, dashboard, Scout, Cartographer autonomy, package/config/env, source_proxy runtime, or broad provider authority.
+
+### Browser Evidence Packet.5 Verification And Closeout
+
+Result: pass for packet recording; blocked for productive browser proof.
+
+- `git diff --check`: pass.
+- `git diff --name-only`: repo-wide output still shows pre-existing tracked dirty files; this phase changed `docs/codingUI.md`.
+- `git diff --stat`: repo-wide output still shows pre-existing tracked dirty files; this phase added this packet receipt to `docs/codingUI.md`.
+- `git status --branch --short`: confirms the existing dirty multi-lane worktree.
+- Evidence grep finds this Browser Productive Diff Evidence Packet, the required evidence fields, blocked productive diff readiness, runtime apply block, no commit/push authority, final polish block, and next phase markers.
+
+### Browser Evidence Packet Final Decision
+
+The Browser Productive Diff Evidence Packet phase is complete as a packet/requirements phase and blocked as a proof phase.
+
+This phase proves:
+
+- The required browser productive diff evidence shape is explicit.
+- The supplied evidence does not contain a non-empty browser diff.
+- Browser productive diff readiness remains blocked.
+- Runtime apply remains blocked.
+- Commit and push remain unavailable.
+- Final polish remains blocked.
+
+This phase does not prove:
+
+- Browser productive diff readiness.
+- Source Proxy runtime apply.
+- `execute-approved`.
+- Broad apply/verify daily-driver readiness.
+- Final polish readiness.
+
+Final phase readiness score:
+
+- Controlled no-apply daily-driver use: `88/100`.
+- Browser productive diff readiness: `45/100`, blocked by missing non-empty browser evidence.
+- Source Proxy runtime apply readiness: `0/100`, blocked without an exact runtime apply packet.
+- Final polish readiness: blocked.
+
+### Big Manual Check For Browser Productive Diff Evidence Packet
+
+```bash
+cd /home/source/SpiritOS
+
+git diff --check
+git diff --name-only
+git diff --stat
+git status --branch --short
+
+grep -nE "Browser Productive Diff Evidence Packet|Browser Evidence Packet Final Decision|Required Evidence Shape|Task prompt|Target file|Allowed files|Preview status|Changed files|Unexpected files|Commit/push|browser productive diff readiness|runtime apply|final polish|Next phase|Exact approval phrase" \
+  docs/codingUI.md \
+  docs/source-proxy-v0.3-stress-testing-plan.md \
+  docs/proxy-test-runner-plan.md || true
+```
+
+Expected manual-check output:
+
+- `git diff --check` prints nothing.
+- `git diff --name-only` and `git diff --stat` show the existing tracked dirty multi-lane files, including `docs/codingUI.md`.
+- `git status --branch --short` shows the existing dirty multi-lane worktree.
+- `grep` finds this Browser Productive Diff Evidence Packet.
+- `grep` finds the required browser evidence fields.
+- `grep` finds browser productive diff readiness remains blocked.
+- `grep` finds runtime apply remains blocked.
+- `grep` finds commit/push remain unavailable.
+- `grep` finds final polish remains blocked.
+
+Next phase title:
+Source Proxy /coding Browser Productive Diff Manual Evidence Review
+
+Exact approval phrase for the next phase:
+
+```text
+Approve Source Proxy /coding Browser Productive Diff Manual Evidence Review
+```
+
+Stop here. Do not claim browser productive diff readiness, start runtime apply, run Source Proxy apply, run `execute-approved`, start final polish, commit, or push without the exact task-specific approval phrase and the required browser evidence packet content.
