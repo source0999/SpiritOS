@@ -3743,6 +3743,22 @@ html[data-theme="solar-ember"] .dashboard-demo-v4-root {
   }
 }
 
+.dashboard-demo-v4-route-shell-coding button {
+  touch-action: manipulation;
+}
+
+@media (max-width: 1279px) {
+  .dashboard-demo-v4-route-shell-coding [aria-label="Mobile command composer"] {
+    left: var(--ddv4-app-rail-width, 12.5rem);
+  }
+}
+
+@media (max-width: 1023px) {
+  .dashboard-demo-v4-route-shell-coding [aria-label="Mobile command composer"] {
+    left: 0;
+  }
+}
+
 .dashboard-demo-v4-interface-layer {
   position: fixed;
   inset: 0;

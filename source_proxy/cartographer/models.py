@@ -441,6 +441,11 @@ class ProjectHealth:
     push_reason_codes: list[str] = field(default_factory=list)
     commits_to_push: list[str] = field(default_factory=list)
     checks_passed: bool = False
+    read_only: bool = True
+    write_policy: str = "read_only_observation"
+    write_actions_enabled: bool = False
+    workspace_classification: str = "clean_read_only_project"
+    authority_blockers: list[str] = field(default_factory=list)
     markers: list[str] = field(default_factory=list)
     filters: list[str] = field(default_factory=list)
     action_taken: bool = False

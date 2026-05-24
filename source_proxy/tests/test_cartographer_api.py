@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
 import json
 import os
 import subprocess
@@ -13,6 +14,7 @@ from fastapi.testclient import TestClient
 
 from source_proxy.api.cartographer import router as cartographer_router
 from source_proxy.cartographer.apply import apply_approved_doc_proposal
+from source_proxy.cartographer.approval_token_runtime import APPROVAL_TOKEN_SCHEMA_VERSION
 from source_proxy.cartographer.blueprint_registry import load_blueprints
 from source_proxy.cartographer.component_mapper import map_paths
 from source_proxy.cartographer.git_approvals import approve_git_queue_item
@@ -1002,6 +1004,189 @@ class CartographerApiTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["status"], "observing")
 
+    def test_safe_write_status_endpoint_exposes_no_git_or_command_authority(self) -> None:
+        client = TestClient(_test_app())
+
+        response = client.get("/v1/cartographer/safe-write")
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["status"], "safe-write-service-available")
+        self.assertTrue(payload["safe_write_available"])
+        self.assertFalse(payload["authority_granted"])
+        self.assertFalse(payload["write_authority_granted"])
+        self.assertFalse(payload["command_authority_granted"])
+        self.assertFalse(payload["workflow_authority_granted"])
+        self.assertFalse(payload["queue_authority_granted"])
+        self.assertFalse(payload["git_authority_granted"])
+
+    def test_safe_write_endpoint_writes_one_exact_approved_docs_file(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            client = TestClient(_test_app())
+            request = self._safe_write_request(
+                target_file="docs/approved-api-safe-write.md",
+                content="approved api safe write\n",
+            )
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                response = client.post("/v1/cartographer/safe-write", json=request)
+
+            written_file = root / "docs/approved-api-safe-write.md"
+            written_exists = written_file.exists()
+            written_text = written_file.read_text(encoding="utf-8") if written_exists else ""
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["result"]["status"], "written")
+        self.assertTrue(payload["result"]["written"])
+        self.assertFalse(payload["result"]["blocked"])
+        self.assertEqual(payload["result"]["target_file"], "docs/approved-api-safe-write.md")
+        self.assertEqual(payload["result"]["bytes_written"], len("approved api safe write\n"))
+        self.assertTrue(written_exists)
+        self.assertEqual(written_text, "approved api safe write\n")
+        self.assertFalse(payload["result"]["command_authority_granted"])
+        self.assertFalse(payload["result"]["workflow_authority_granted"])
+        self.assertFalse(payload["result"]["queue_authority_granted"])
+        self.assertFalse(payload["result"]["git_authority_granted"])
+
+    def test_safe_write_endpoint_blocks_invalid_token_without_modifying_file(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            target = root / "docs/approved-api-safe-write.md"
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text("original\n", encoding="utf-8")
+            client = TestClient(_test_app())
+            request = self._safe_write_request(
+                target_file="docs/approved-api-safe-write.md",
+                content="replacement\n",
+            )
+            request["token"]["approved_by"] = "cartographer-runtime"
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                response = client.post("/v1/cartographer/safe-write", json=request)
+
+            after = target.read_text(encoding="utf-8")
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["result"]["status"], "blocked")
+        self.assertFalse(payload["result"]["written"])
+        self.assertTrue(payload["result"]["blocked"])
+        self.assertIn(
+            "approval:token_validation:self_approval_rejected",
+            payload["result"]["reasons"],
+        )
+        self.assertEqual(after, "original\n")
+
+    def test_safe_write_endpoint_blocks_without_configured_workspace_root(self) -> None:
+        client = TestClient(_test_app())
+
+        with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": ""}, clear=False):
+            response = client.post(
+                "/v1/cartographer/safe-write",
+                json=self._safe_write_request(
+                    target_file="docs/approved-api-safe-write.md",
+                    content="blocked\n",
+                ),
+            )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["status"], "blocked")
+        self.assertFalse(payload["written"])
+        self.assertTrue(payload["blocked"])
+        self.assertEqual(payload["reasons"], ["missing_configured_workspace_root"])
+
+    def test_verification_status_endpoint_exposes_controlled_runner(self) -> None:
+        client = TestClient(_test_app())
+
+        response = client.get("/v1/cartographer/verification/run")
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["status"], "verification-api-available")
+        self.assertTrue(payload["argv_only"])
+        self.assertFalse(payload["shell_allowed"])
+        self.assertTrue(payload["execution_available"])
+        self.assertFalse(payload["command_authority_granted"])
+        self.assertFalse(payload["workflow_authority_granted"])
+        self.assertFalse(payload["queue_authority_granted"])
+        self.assertFalse(payload["git_mutation_authority_granted"])
+
+    def test_verification_run_endpoint_executes_exact_allowlisted_argv(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _git(root, "init")
+            client = TestClient(_test_app())
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+                response = client.post(
+                    "/v1/cartographer/verification/run",
+                    json={
+                        "argv": ["git", "diff", "--check"],
+                        "approved_test_files": [],
+                        "cwd_relative": ".",
+                        "timeout_seconds": 5,
+                    },
+                )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["result"]["status"], "passed")
+        self.assertTrue(payload["result"]["executed"])
+        self.assertFalse(payload["result"]["blocked"])
+        self.assertEqual(payload["result"]["exit_code"], 0)
+        self.assertEqual(payload["result"]["argv"], ["git", "diff", "--check"])
+        self.assertFalse(payload["result"]["shell_allowed"])
+        self.assertFalse(payload["result"]["command_authority_granted"])
+        self.assertFalse(payload["result"]["workflow_authority_granted"])
+        self.assertFalse(payload["result"]["queue_authority_granted"])
+        self.assertFalse(payload["result"]["git_mutation_authority_granted"])
+
+    def test_verification_run_endpoint_blocks_forbidden_argv_without_execution(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            client = TestClient(_test_app())
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": temp_dir}, clear=False):
+                response = client.post(
+                    "/v1/cartographer/verification/run",
+                    json={
+                        "argv": ["git", "reset", "--hard"],
+                        "approved_test_files": [],
+                        "cwd_relative": ".",
+                        "timeout_seconds": 5,
+                    },
+                )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["result"]["status"], "blocked")
+        self.assertFalse(payload["result"]["executed"])
+        self.assertTrue(payload["result"]["blocked"])
+        self.assertIn("destructive_git_command_blocked", payload["result"]["reasons"])
+
+    def test_verification_run_endpoint_blocks_without_configured_workspace_root(self) -> None:
+        client = TestClient(_test_app())
+
+        with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": ""}, clear=False):
+            response = client.post(
+                "/v1/cartographer/verification/run",
+                json={
+                    "argv": ["git", "diff", "--check"],
+                    "approved_test_files": [],
+                    "cwd_relative": ".",
+                    "timeout_seconds": 5,
+                },
+            )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["status"], "blocked")
+        self.assertFalse(payload["executed"])
+        self.assertTrue(payload["blocked"])
+        self.assertEqual(payload["reasons"], ["missing_configured_workspace_root"])
+
     def test_spirit_project_path_reports_explicit_allowlisted_roots(self) -> None:
         with tempfile.TemporaryDirectory() as first, tempfile.TemporaryDirectory() as second:
             configured, blocked = parse_project_roots(f"{first},{second},C:\\Projects")
@@ -1017,6 +1202,42 @@ class CartographerApiTests(unittest.TestCase):
         )
         self.assertEqual({item.status for item in configured}, {"configured"})
         self.assertEqual({item.reason for item in configured}, {"explicitly_allowlisted"})
+
+    def _safe_write_request(self, *, target_file: str, content: str) -> dict[str, object]:
+        now = datetime.now(UTC)
+        scope = {
+            "type": "phase",
+            "value": "cartographer-daily-driver-plan-3-phase-3",
+        }
+        return {
+            "token": {
+                "schema_version": APPROVAL_TOKEN_SCHEMA_VERSION,
+                "token_id": "approval-token-plan-3-phase-3-api",
+                "issued_at": (now - timedelta(minutes=5)).isoformat().replace("+00:00", "Z"),
+                "expires_at": (now + timedelta(minutes=55)).isoformat().replace("+00:00", "Z"),
+                "approved_by": "Britton",
+                "approved_for_actor": "cartographer-runtime",
+                "scope": scope,
+                "reason": "Approve one exact safe write API endpoint request.",
+            },
+            "requested_actor": "cartographer-runtime",
+            "requested_scope": scope,
+            "target_file": target_file,
+            "content": content,
+            "consumption_context": {
+                "action_class": "safe_write",
+                "trust_tier": "tier-1",
+                "requested_trust_tier": "tier-1",
+                "exact_allowed_files": [target_file],
+                "exact_forbidden_files": ["source_proxy/api/cartographer.py"],
+                "expected_head": "abc123",
+                "rollback": "Manually restore the exact target file content.",
+                "verification": "Run focused safe-write API tests.",
+            },
+            "current_head": "abc123",
+            "dirty_tree_matches_expected": True,
+            "kill_switch_active": False,
+        }
 
     def test_spirit_project_path_empty_env_is_safe_empty_output(self) -> None:
         configured, blocked = parse_project_roots("")
@@ -5477,6 +5698,12 @@ class CartographerApiTests(unittest.TestCase):
 
         self.assertEqual(payload["status"], "observing")
         self.assertFalse(payload["write_actions_enabled"])
+        self.assertFalse(payload["worktree_creation_allowed"])
+        self.assertFalse(payload["worktree_created"])
+        self.assertEqual(
+            payload["worktree_policy"],
+            "proposal_only_until_separate_explicit_approval",
+        )
         self.assertFalse(payload["actions_taken"])
         projects = {project["name"]: project for project in payload["projects"]}
         self.assertEqual(payload["project_count"], 2)
@@ -5489,6 +5716,18 @@ class CartographerApiTests(unittest.TestCase):
         self.assertEqual(projects["SpiritOS"]["branch"], "cartographer-health")
         self.assertEqual(projects["SpiritOS"]["dirty_file_count"], 1)
         self.assertEqual(projects["SpiritOS"]["unstaged_files"], ["src/components/dashboard/Widget.tsx"])
+        self.assertTrue(projects["SpiritOS"]["read_only"])
+        self.assertFalse(projects["SpiritOS"]["write_actions_enabled"])
+        self.assertEqual(projects["SpiritOS"]["write_policy"], "read_only_observation")
+        self.assertEqual(projects["SpiritOS"]["workspace_classification"], "dirty_worktree")
+        self.assertIn(
+            "dirty_worktree_requires_scope_review",
+            projects["SpiritOS"]["authority_blockers"],
+        )
+        self.assertIn(
+            "worktree_creation_proposal_only",
+            projects["SpiritOS"]["authority_blockers"],
+        )
         self.assertEqual(projects["SpiritOS"]["ahead"], 0)
         self.assertEqual(projects["SpiritOS"]["behind"], 0)
         self.assertIn("dirty", projects["SpiritOS"]["filters"])
@@ -5501,6 +5740,16 @@ class CartographerApiTests(unittest.TestCase):
             "missing_starter_blueprints",
         )
         self.assertEqual(projects["ClientDashboard"]["pending_proposals"], 1)
+        self.assertTrue(projects["ClientDashboard"]["read_only"])
+        self.assertFalse(projects["ClientDashboard"]["write_actions_enabled"])
+        self.assertEqual(
+            projects["ClientDashboard"]["workspace_classification"],
+            "candidate_read_only_project",
+        )
+        self.assertIn(
+            "starter_blueprint_approval_required",
+            projects["ClientDashboard"]["authority_blockers"],
+        )
         self.assertIn("candidate", projects["ClientDashboard"]["filters"])
         self.assertIn("needs_approval", projects["ClientDashboard"]["filters"])
         self.assertIn("dirty", payload["filters"])
@@ -5527,6 +5776,12 @@ class CartographerApiTests(unittest.TestCase):
         self.assertEqual(project["pending_drift"], 0)
         self.assertEqual(project["pending_proposals"], 0)
         self.assertFalse(project["dirty"])
+        self.assertTrue(project["read_only"])
+        self.assertFalse(project["write_actions_enabled"])
+        self.assertEqual(project["write_policy"], "read_only_observation")
+        self.assertEqual(project["workspace_classification"], "clean_read_only_project")
+        self.assertNotIn("dirty_worktree_requires_scope_review", project["authority_blockers"])
+        self.assertIn("worktree_creation_proposal_only", project["authority_blockers"])
         self.assertIn("active", project["filters"])
 
     def test_project_health_fallback_counts_current_repo_blueprints(self) -> None:
@@ -5680,6 +5935,9 @@ class CartographerApiTests(unittest.TestCase):
             project["dirty_summary"],
             "code/config changes plus expected evidence files changed",
         )
+        self.assertEqual(project["workspace_classification"], "dirty_worktree")
+        self.assertIn("dirty_worktree_requires_scope_review", project["authority_blockers"])
+        self.assertFalse(project["write_actions_enabled"])
         self.assertIn("working tree has uncommitted changes", project["merge_blockers"])
         self.assertNotIn("required checks not recorded as passed", project["merge_blockers"])
 

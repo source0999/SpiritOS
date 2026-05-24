@@ -688,6 +688,19 @@ def create_long_running_task(
             DEFAULT_STEPS
         )
     _reset_task_focus(task)
+    conflict = _write_scope_conflict_for_task(task)
+    if conflict is not None:
+        task.status = "blocked"
+        task.architect_status = "blocked"
+        task.architect_reason = "write_scope_conflict"
+        task.truncated_test_results = (
+            f"reason_code: write_scope_conflict; scope={conflict['scope_key']}; "
+            f"existing_task={conflict['task_id']}"
+        )
+        task.ast_snapshot = {
+            "queue_conflict": conflict,
+            "queue_policy": "one_write_capable_task_per_scope",
+        }
     _tasks[task.id] = task
     _save_task(task)
     _prune_old_tasks()
@@ -1597,6 +1610,8 @@ def _lookup_task(task_id: str) -> LongRunningTask:
 def _task_envelope(task: LongRunningTask) -> dict[str, Any]:
     payload = task.to_payload()
     payload["post_apply_verification"] = _current_post_apply_verification(task)
+    payload["scope_key"] = _task_scope_key(task)
+    payload["write_capable"] = _task_is_write_capable(task)
     return {
         "tool": "long_running_task_tracker",
         "access_scope": "read_only_task_status_tracking",
@@ -2190,12 +2205,15 @@ def _task_from_row(row: sqlite3.Row) -> LongRunningTask:
 def _task_queue_item(task: LongRunningTask) -> dict[str, Any]:
     allowed_files = _task_allowed_files(task)
     blocker = _task_queue_blocker(task)
+    scope_key = _task_scope_key(task)
     return {
         "task_id": task.id,
         "title": _task_queue_title(task.description),
         "worker": task.current_agent_role,
         "mode": "read_only_status_tracking",
         "status": task.status,
+        "scope_key": scope_key,
+        "write_capable": _task_is_write_capable(task),
         "target_file": allowed_files[0] if allowed_files else None,
         "allowed_files": allowed_files,
         "created_at": task.created_at,
@@ -2296,6 +2314,76 @@ def _task_allowed_files(task: LongRunningTask) -> list[str]:
                 if path and path not in files:
                     files.append(path)
     return files
+
+
+def _task_scope_key(task: LongRunningTask) -> str:
+    allowed_files = _task_allowed_files(task)
+    if allowed_files:
+        return _normalize_scope_key(allowed_files[0])
+    target = _target_file_from_task_text(task.description)
+    if target:
+        return _normalize_scope_key(target)
+    return ""
+
+
+def _target_file_from_task_text(description: str) -> str:
+    for pattern in (
+        r"(?im)^target file:\s*([^\n,;]+)",
+        r"(?im)\btarget file:\s*([^\n,;]+)",
+        r"(?im)^allowed files:\s*([^\n,;]+)",
+        r"(?im)\ballowed files:\s*([^\n,;]+)",
+    ):
+        match = re.search(pattern, description)
+        if match:
+            return match.group(1).strip().strip("`'\".,;")
+    return ""
+
+
+def _normalize_scope_key(scope_key: str) -> str:
+    return scope_key.strip().replace("\\", "/").lower()
+
+
+def _task_is_write_capable(task: LongRunningTask) -> bool:
+    lowered = task.description.lower()
+    read_only_markers = (
+        "read-only",
+        "read only",
+        "review only",
+        "review-only",
+        "analysis only",
+        "verification only",
+    )
+    if any(marker in lowered for marker in read_only_markers):
+        return False
+    return bool(_task_scope_key(task))
+
+
+def _write_scope_conflict_for_task(task: LongRunningTask) -> dict[str, str] | None:
+    candidate_scope = _task_scope_key(task)
+    if not candidate_scope or not _task_is_write_capable(task):
+        return None
+    for existing in _live_long_running_tasks():
+        if existing.id == task.id or not _task_is_write_capable(existing):
+            continue
+        if _task_scope_key(existing) == candidate_scope:
+            return {
+                "task_id": existing.id,
+                "scope_key": candidate_scope,
+            }
+    return None
+
+
+def _live_long_running_tasks() -> list[LongRunningTask]:
+    terminal = _terminal_or_waiting_statuses()
+    combined: dict[str, LongRunningTask] = {
+        task.id: task
+        for task in _load_recent_tasks(limit=MAX_LONG_TASKS)
+        if task.status not in terminal
+    }
+    for task in _tasks.values():
+        if task.status not in terminal:
+            combined[task.id] = task
+    return list(combined.values())
 
 
 def _task_queue_blocker(task: LongRunningTask) -> str | None:

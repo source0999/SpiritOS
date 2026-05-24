@@ -9,6 +9,9 @@ Status date: 2026-05-20
 | Plan | Status | Role | Authority |
 | --- | --- | --- | --- |
 | `docs/source-proxy-production-hardening-plan.md` | status: active | Current Source Proxy production plan | Records green safety gate and constrains next work |
+| `docs/source-proxy-codex-class-production-master-plan-v1.0.md` | status: active roadmap | Current Source Proxy `/coding` Codex-class production roadmap | Supersedes stale Plan 6.2 labels and sequences `/coding` work by Britton's phase/increment workflow |
+| `docs/source-proxy-codex-class-new-chat-handoff-v1.0.md` | status: active handoff | New-chat continuation handoff for the current Source Proxy `/coding` roadmap | Tells future Codex chats how to start the active phase without jumping into feature work |
+| `docs/backend-console-usability-reset-plan-v0.1.md` | status: planning-only | `/proxy-backend` usability reset plan | Plans a plain backend operator page only; does not authorize implementation, autonomy, or execution controls |
 | `docs/codingUI.md` | status: active | Active `/coding` UI polish plan | Authorizes planning for UI polish only; implementation still requires approval |
 | `docs/design-system-overhaul-master-v0.2.md` | status: planning active | Active SpiritOS design-system overhaul planning spine | Does not authorize implementation; keeps future design work Source Proxy gated |
 | `docs/design-systems-master-v0.1.md` | status: planning complete | Manual-first Design Intelligence Stack plan | Does not authorize implementation; next increment requires explicit approval |
@@ -30,6 +33,13 @@ Current handling:
 ## Source Proxy Plan Authority Map
 
 The green Source Proxy safety gate passed on 2026-05-20 based on user-provided evidence: global safety regression passed, Source Proxy tests passed, Scout backend tests passed, Cartographer safety passed, dashboard smoke passed, no unexpected mutation occurred, no unexpected Level 2 evidence appeared, no commit occurred during the run, HEAD stayed stable at `3e55bdc`, and `main` matched `origin/main` at `3e55bdc`.
+
+### Current Source Proxy Production Roadmap
+
+| Plan | Handling |
+| --- | --- |
+| `docs/source-proxy-codex-class-production-master-plan-v1.0.md` | Active `/coding` Codex-class production roadmap. Follow this for Phase 0 through Phase 11 sequencing. |
+| `docs/source-proxy-codex-class-new-chat-handoff-v1.0.md` | Active handoff for starting a new Codex chat in the correct phase/increment workflow. |
 
 ### Active Source Of Truth
 

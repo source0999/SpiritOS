@@ -59,6 +59,12 @@ def build_project_health() -> list[ProjectHealth]:
                 pending_drift=0,
                 pending_proposals=proposals_by_project[candidate.project_id],
                 markers=candidate.markers,
+                workspace_classification="candidate_read_only_project",
+                authority_blockers=[
+                    "starter_blueprint_approval_required",
+                    "writes_require_explicit_approval_boundary",
+                    "worktree_creation_proposal_only",
+                ],
                 filters=["candidate", "needs_approval"],
                 action_taken=False,
             )
@@ -72,6 +78,7 @@ def build_project_health() -> list[ProjectHealth]:
         pending_drift = drift_by_project[project.project_id]
         pending_proposals = proposals_by_project[project.project_id]
         dirty_summary = _dirty_summary(git_status)
+        authority = _workspace_authority(git_status)
         readiness = _merge_readiness(
             project_id=project.project_id,
             git_status=git_status,
@@ -126,6 +133,11 @@ def build_project_health() -> list[ProjectHealth]:
                 push_reason_codes=list(readiness["push_reason_codes"]),
                 commits_to_push=list(readiness["commits_to_push"]),
                 checks_passed=readiness["checks_passed"],
+                read_only=True,
+                write_policy="read_only_observation",
+                write_actions_enabled=False,
+                workspace_classification=str(authority["workspace_classification"]),
+                authority_blockers=list(authority["authority_blockers"]),
                 markers=project.markers,
                 filters=_filters(
                     blueprint_count=blueprint_count,
@@ -406,6 +418,29 @@ def _dirty_summary(git_status: GitStatus | None) -> dict[str, object]:
         "expected_evidence_files": expected,
         "unsafe_dirty_files": unsafe,
         "dirty_summary": summary,
+    }
+
+
+def _workspace_authority(git_status: GitStatus | None) -> dict[str, object]:
+    blockers = [
+        "writes_require_explicit_approval_boundary",
+        "worktree_creation_proposal_only",
+    ]
+    if git_status is None or not git_status.available:
+        blockers.insert(0, "git_status_unavailable")
+        return {
+            "workspace_classification": "read_only_project_status_unknown",
+            "authority_blockers": blockers,
+        }
+    if git_status.dirty:
+        blockers.insert(0, "dirty_worktree_requires_scope_review")
+        return {
+            "workspace_classification": "dirty_worktree",
+            "authority_blockers": blockers,
+        }
+    return {
+        "workspace_classification": "clean_read_only_project",
+        "authority_blockers": blockers,
     }
 
 
