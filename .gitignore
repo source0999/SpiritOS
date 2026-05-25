@@ -53,6 +53,21 @@ spirit-os@*
 repomix-output*.xml
 repomix-output*.ast*
 
+# Heavy local media and archives. Keep source assets outside git unless a
+# future commit explicitly uses Git LFS or another reviewed storage path.
+*.mp4
+*.mov
+*.m4v
+*.avi
+*.mkv
+*.webm
+*.zip
+*.7z
+*.rar
+*.tar
+*.tar.gz
+*.tgz
+
 # Common temp
 *.log
 *.tmp
