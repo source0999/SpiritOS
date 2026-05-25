@@ -3413,9 +3413,9 @@ html[data-theme="solar-ember"] .dashboard-demo-v4-root {
   top: 50%;
   bottom: auto;
   left: clamp(1rem, 2vw, 1.5rem);
-  z-index: 50;
+  z-index: var(--shell-z-nav, 50);
   display: none;
-  width: 12.5rem;
+  width: var(--shell-nav-expanded-width, 12.5rem);
   height: min(33rem, calc(100dvh - clamp(2rem, 4vw, 3rem)));
   pointer-events: none;
   transform: translateY(-50%);
@@ -3431,7 +3431,7 @@ html[data-theme="solar-ember"] .dashboard-demo-v4-root {
   gap: 1rem;
   padding: 0.85rem;
   border: 1px solid color-mix(in oklab, var(--ddv4-nav-border) 68%, transparent);
-  border-radius: 1.35rem;
+  border-radius: var(--spirit-radius-panel, 1.35rem);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.13), transparent 36%),
     color-mix(in oklab, var(--ddv4-nav-bg) 86%, rgba(0, 0, 0, 0.22));
@@ -3461,6 +3461,16 @@ html[data-theme="solar-ember"] .dashboard-demo-v4-root {
     14px 0 46px -34px rgba(15, 23, 42, 0.44),
     inset -1px 0 0 rgba(255, 255, 255, 0.18),
     inset 1px 0 0 rgba(255, 255, 255, 0.16);
+}
+
+.dashboard-demo-v4-desktop-rail-collapsed {
+  width: var(--shell-nav-collapsed-width, 4.75rem);
+}
+
+.dashboard-demo-v4-desktop-rail-collapsed .dashboard-demo-v4-desktop-rail-shell {
+  align-items: stretch;
+  gap: 0.75rem;
+  padding-inline: 0.65rem;
 }
 
 .dashboard-demo-v4-desktop-brand {
@@ -3501,6 +3511,34 @@ html[data-theme="solar-ember"] .dashboard-demo-v4-root {
   opacity: 0.98;
 }
 
+.dashboard-demo-v4-desktop-collapse-button {
+  display: inline-flex;
+  min-height: 2.35rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border: 1px solid color-mix(in oklab, var(--ddv4-nav-border) 70%, transparent);
+  border-radius: 0.75rem;
+  background: color-mix(in oklab, var(--ddv4-nav-bg) 72%, rgba(255, 255, 255, 0.08));
+  color: var(--ddv4-nav-fg);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.68rem;
+  font-weight: 760;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.86;
+  transition: opacity 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.dashboard-demo-v4-desktop-collapse-button:hover,
+.dashboard-demo-v4-desktop-collapse-button:focus-visible {
+  opacity: 1;
+  border-color: color-mix(in oklab, var(--spirit-accent-focus, var(--spirit-accent, #8fb8de)) 42%, transparent);
+  background: color-mix(in oklab, var(--spirit-accent-focus, var(--spirit-accent, #8fb8de)) 12%, transparent);
+  outline: 2px solid var(--spirit-focus-ring, transparent);
+  outline-offset: var(--spirit-focus-ring-offset, 2px);
+}
+
 .dashboard-demo-v4-desktop-nav-list {
   display: flex;
   flex-direction: column;
@@ -3513,7 +3551,7 @@ html[data-theme="solar-ember"] .dashboard-demo-v4-root {
   gap: 0.7rem;
   min-height: 2.95rem;
   padding: 0.72rem 0.78rem;
-  border-radius: 0.85rem;
+  border-radius: var(--spirit-radius-control, 0.85rem);
   color: var(--ddv4-nav-fg);
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 0.72rem;
@@ -3526,7 +3564,7 @@ html[data-theme="solar-ember"] .dashboard-demo-v4-root {
 
 .dashboard-demo-v4-desktop-nav-item:hover {
   opacity: 0.98;
-  background: color-mix(in oklab, var(--spirit-accent, #8fb8de) 12%, transparent);
+  background: color-mix(in oklab, var(--spirit-accent-focus, var(--spirit-accent, #8fb8de)) 12%, transparent);
 }
 
 .dashboard-demo-v4-desktop-nav-item-active {
@@ -3574,6 +3612,32 @@ html[data-theme="solar-ember"] .dashboard-demo-v4-root {
   text-transform: uppercase;
 }
 
+.dashboard-demo-v4-desktop-rail-collapsed .dashboard-demo-v4-desktop-brand {
+  justify-content: center;
+  padding-inline: 0;
+}
+
+.dashboard-demo-v4-desktop-rail-collapsed .dashboard-demo-v4-desktop-brand-text,
+.dashboard-demo-v4-desktop-rail-collapsed .dashboard-demo-v4-desktop-nav-item span,
+.dashboard-demo-v4-desktop-rail-collapsed .dashboard-demo-v4-desktop-collapse-button span,
+.dashboard-demo-v4-desktop-rail-collapsed .dashboard-demo-v4-desktop-theme-picker::after {
+  display: none;
+}
+
+.dashboard-demo-v4-desktop-rail-collapsed .dashboard-demo-v4-desktop-nav-item,
+.dashboard-demo-v4-desktop-rail-collapsed .dashboard-demo-v4-desktop-theme-picker {
+  justify-content: center;
+  padding-inline: 0;
+}
+
+.dashboard-demo-v4-desktop-rail-collapsed .dashboard-demo-v4-desktop-nav-item {
+  min-height: 2.75rem;
+}
+
+.dashboard-demo-v4-desktop-rail-collapsed .dashboard-demo-v4-desktop-theme-picker {
+  width: 100%;
+}
+
 .dashboard-demo-v4-desktop-theme-picker .dashboard-demo-v4-theme-picker-swatch {
   position: relative;
   inset: auto;
@@ -3589,11 +3653,18 @@ html[data-theme="solar-ember"] .dashboard-demo-v4-root {
   opacity: 0.72;
 }
 
+.dashboard-demo-v4-nav-viewport-vars {
+  display: contents;
+}
+
 .dashboard-demo-v4-mobile-pill-nav {
   position: fixed;
   inset-inline: 0;
-  bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
-  z-index: 50;
+  bottom: max(
+    calc(var(--shell-mobile-nav-gap, 1.25rem) + var(--shell-keyboard-inset, 0px)),
+    var(--shell-safe-area-bottom, env(safe-area-inset-bottom, 0px))
+  );
+  z-index: var(--shell-z-nav, 50);
   display: flex;
   justify-content: center;
   pointer-events: none;
@@ -3605,7 +3676,8 @@ html[data-theme="solar-ember"] .dashboard-demo-v4-root {
   align-items: center;
   gap: 0.15rem;
   padding: 0.38rem;
-  border-radius: 9999px;
+  min-height: var(--shell-mobile-nav-height, 4.85rem);
+  border-radius: var(--spirit-radius-pill, 9999px);
   background: var(--ddv4-nav-bg);
   border: 1px solid var(--ddv4-nav-border);
   box-shadow: var(--ddv4-nav-shadow);
@@ -3619,7 +3691,7 @@ html[data-theme="solar-ember"] .dashboard-demo-v4-root {
   justify-content: center;
   gap: 0.45rem;
   padding: 0.55rem 0.92rem;
-  border-radius: 9999px;
+  border-radius: var(--spirit-radius-pill, 9999px);
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 0.6875rem;
   font-weight: 600;
@@ -3636,7 +3708,7 @@ html[data-theme="solar-ember"] .dashboard-demo-v4-root {
 
 .dashboard-demo-v4-nav-item:hover {
   opacity: 0.92;
-  background: color-mix(in oklab, var(--spirit-accent, #8fb8de) 12%, transparent);
+  background: color-mix(in oklab, var(--spirit-accent-focus, var(--spirit-accent, #8fb8de)) 12%, transparent);
 }
 
 .dashboard-demo-v4-nav-item-active {
@@ -3728,9 +3800,23 @@ html[data-theme="solar-ember"] .dashboard-demo-v4-root {
 }
 
 .dashboard-demo-v4-route-shell {
-  --ddv4-app-rail-width: 12.5rem;
+  --ddv4-app-rail-width: var(--shell-nav-expanded-width, 12.5rem);
+  --ddv4-nav-bg: rgba(15, 23, 42, 0.88);
+  --ddv4-nav-border: rgba(148, 163, 184, 0.42);
+  --ddv4-nav-shadow:
+    0 20px 60px -24px rgba(15, 23, 42, 0.86),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  --ddv4-nav-shadow-drop: 0 20px 60px -24px rgba(15, 23, 42, 0.86);
+  --ddv4-nav-fg: rgba(248, 250, 252, 0.94);
+  --ddv4-nav-active-bg: rgba(207, 250, 254, 0.94);
+  --ddv4-nav-active-fg: #0f172a;
+  --ddv4-nav-divider: rgba(226, 232, 240, 0.22);
   position: relative;
   min-height: 100dvh;
+}
+
+.dashboard-demo-v4-route-shell:has(.dashboard-demo-v4-desktop-rail-collapsed) {
+  --ddv4-app-rail-width: var(--shell-nav-collapsed-width, 4.75rem);
 }
 
 .dashboard-demo-v4-route-main {
@@ -3740,6 +3826,34 @@ html[data-theme="solar-ember"] .dashboard-demo-v4-root {
 @media (min-width: 1024px) {
   .dashboard-demo-v4-route-main {
     padding-left: var(--ddv4-app-rail-width, 12.5rem);
+  }
+}
+
+.dashboard-demo-v4-route-shell-coding button {
+  touch-action: manipulation;
+}
+
+.dashboard-demo-v4-route-shell-media {
+  background: #10141c;
+}
+
+.dashboard-demo-v4-route-shell-map {
+  background: #e5d8c5;
+}
+
+.dashboard-demo-v4-route-shell-media .media-page {
+  min-height: 100dvh;
+}
+
+@media (max-width: 1023px) {
+  .dashboard-demo-v4-route-shell-media .media-page {
+    padding-bottom: calc(28px + var(--shell-mobile-bottom-reserved-height, 6.1rem));
+  }
+}
+
+@media (max-width: 1279px) {
+  .dashboard-demo-v4-route-shell-coding .dashboard-demo-v4-mobile-pill-nav {
+    z-index: var(--shell-z-toast, 180);
   }
 }
 
@@ -3775,7 +3889,10 @@ html[data-theme="solar-ember"] .dashboard-demo-v4-root {
   flex-direction: column;
   overflow: hidden;
   border: 1px solid color-mix(in oklab, var(--ddv4-glass-border) 72%, transparent);
-  border-radius: 2rem 2rem max(1.6rem, env(safe-area-inset-bottom, 0px)) max(1.6rem, env(safe-area-inset-bottom, 0px));
+  border-radius:
+    2rem 2rem
+    max(1.6rem, var(--shell-safe-area-bottom, env(safe-area-inset-bottom, 0px)))
+    max(1.6rem, var(--shell-safe-area-bottom, env(safe-area-inset-bottom, 0px)));
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.24), transparent 42%),
     color-mix(in oklab, var(--ddv4-nav-bg) 82%, rgba(255, 255, 255, 0.14));
@@ -3841,7 +3958,9 @@ html[data-theme="solar-ember"] .dashboard-demo-v4-root {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.7rem;
   overflow-y: auto;
-  padding: 0.35rem 1.15rem max(1.15rem, calc(1.15rem + env(safe-area-inset-bottom, 0px)));
+  padding:
+    0.35rem 1.15rem
+    max(1.15rem, calc(1.15rem + var(--shell-safe-area-bottom, env(safe-area-inset-bottom, 0px))));
   scrollbar-width: thin;
   scrollbar-color: color-mix(in oklab, var(--ddv4-glass-border) 70%, transparent) transparent;
 }

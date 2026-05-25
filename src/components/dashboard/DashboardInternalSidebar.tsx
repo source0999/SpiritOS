@@ -97,9 +97,9 @@ export function DashboardInternalSidebar() {
         aria-label="Dashboard navigation"
         className={cn(
           "pointer-events-none fixed inset-x-0 z-40 lg:hidden",
-          "bottom-[var(--spirit-keyboard-inset,0px)]",
+          "bottom-[var(--shell-keyboard-inset,var(--spirit-keyboard-inset,0px))]",
           "flex items-end justify-center",
-          "pb-[max(1.125rem,env(safe-area-inset-bottom,0px))]",
+          "pb-[max(1.125rem,var(--shell-safe-area-bottom,env(safe-area-inset-bottom,0px)))]",
         )}
       >
         <div

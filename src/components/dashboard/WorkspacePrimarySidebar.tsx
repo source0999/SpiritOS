@@ -4,7 +4,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { useSpiritWorkspaceMobileChrome } from "@/components/dashboard/SpiritWorkspaceMobileChromeContext";
-import { Code2, LayoutDashboard, MessageCircle, Sparkles, Zap } from "lucide-react";
+import {
+  Code2,
+  Film,
+  LayoutDashboard,
+  MessageCircle,
+  Sparkles,
+  Zap,
+} from "lucide-react";
 import { cn } from "@/lib/cn";
 
 const railBtn =
@@ -26,6 +33,7 @@ export function WorkspacePrimarySidebar() {
   const homeActive = pathname === "/";
   const chatActive = pathname === "/chat" || pathname.startsWith("/chat/");
   const codingActive = pathname === "/coding" || pathname.startsWith("/coding/");
+  const mediaActive = pathname === "/media" || pathname.startsWith("/media/");
   const oracleActive = pathname.startsWith("/oracle");
 
   const desktopRailNav = (
@@ -56,6 +64,15 @@ export function WorkspacePrimarySidebar() {
         title="Source coding (/coding)"
       >
         <Code2 className="h-5 w-5" aria-hidden strokeWidth={2} />
+      </Link>
+      <Link
+        href="/media"
+        className={cn(railBtn, mediaActive && activeRail)}
+        aria-current={mediaActive ? "page" : undefined}
+        aria-label="Media"
+        title="Media (/media)"
+      >
+        <Film className="h-5 w-5" aria-hidden strokeWidth={2} />
       </Link>
       <Link
         href="/oracle"
@@ -110,11 +127,11 @@ export function WorkspacePrimarySidebar() {
         aria-label="Workspace navigation"
         className={cn(
           "pointer-events-none fixed inset-x-0 z-40 lg:hidden",
-          "bottom-[var(--spirit-keyboard-inset,0px)]",
+          "bottom-[var(--shell-keyboard-inset,var(--spirit-keyboard-inset,0px))]",
           chatActive && "max-lg:hidden",
           !chatActive && hideMobileDockForComposer && "max-lg:hidden",
           "flex items-end justify-center",
-          "pb-[max(1.125rem,env(safe-area-inset-bottom,0px))]",
+          "pb-[max(1.125rem,var(--shell-safe-area-bottom,env(safe-area-inset-bottom,0px)))]",
         )}
       >
         <div
@@ -154,6 +171,15 @@ export function WorkspacePrimarySidebar() {
           >
             <Code2 className="h-5 w-5 shrink-0" aria-hidden strokeWidth={2} />
             <span className="hidden sm:inline">Source</span>
+          </Link>
+          <Link
+            href="/media"
+            className={cn(pillItem, mediaActive && activePillItem)}
+            aria-current={mediaActive ? "page" : undefined}
+            aria-label="Media"
+          >
+            <Film className="h-5 w-5 shrink-0" aria-hidden strokeWidth={2} />
+            <span className="hidden sm:inline">Media</span>
           </Link>
           <Link
             href="/oracle"
