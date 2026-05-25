@@ -8,6 +8,7 @@ node_modules
 __pycache__/
 *.py[cod]
 .next
+.next.backup-*/
 out
 *.tsbuildinfo
 .env.local
