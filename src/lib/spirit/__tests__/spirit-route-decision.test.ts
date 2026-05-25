@@ -78,6 +78,17 @@ describe("decideSpiritRoute", () => {
     expect(d.shouldShowVisualizer).toBe(false);
   });
 
+  it("peer + fresh/source-backed prompt → local-web-search", () => {
+    const d = decideSpiritRoute({
+      ...base,
+      modelProfileId: "normal-peer",
+      lastUserText: "look up the latest Vite release notes",
+    });
+    expect(d.lane).toBe("local-web-search");
+    expect(d.shouldSearchWeb).toBe(true);
+    expect(d.shouldDraftResearchPlan).toBe(false);
+  });
+
   it("researcher + depth → local-web-search lane when prefetch triggers", () => {
     const d = decideSpiritRoute({
       ...base,

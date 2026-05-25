@@ -509,6 +509,56 @@ describe("POST /api/spirit teacher web aids", () => {
   });
 });
 
+describe("POST /api/spirit peer opportunistic web", () => {
+  beforeEach(() => {
+    vi.stubEnv("WEB_SEARCH_ENABLED", "true");
+    runWebSearchSpy.mockResolvedValue({
+      ok: true,
+      searched: true,
+      provider: "searxng",
+      query: "look up the latest Vite release notes",
+      sources: [{ title: "Vite release", url: "https://vite.dev/blog", snippet: "Latest release notes" }],
+      elapsedMs: 7,
+      providerTrace: [{ provider: "searxng", status: "used", sourceCount: 1 }],
+    });
+    vi.mocked(streamText).mockClear();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.clearAllMocks();
+  });
+
+  it("attaches web context for Peer when the prompt asks to look up current info", async () => {
+    const req = new Request("http://localhost/api/spirit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(
+        jsonBody({
+          modelProfileId: "normal-peer",
+          messages: [
+            {
+              role: "user",
+              id: "u-peer-web",
+              parts: [{ type: "text", text: "look up the latest Vite release notes" }],
+            },
+          ],
+        }),
+      ),
+    });
+
+    await POST(req);
+
+    expect(runWebSearchSpy).toHaveBeenCalledWith({
+      query: "look up the latest Vite release notes",
+    });
+    const opts = vi.mocked(streamText).mock.calls[0]?.[0] as { system?: string };
+    expect(opts.system).toContain("## Web research digest");
+    expect(opts.system).toContain("Provider: SearXNG");
+    expect(opts.system).toContain("https://vite.dev/blog");
+  });
+});
+
 describe("POST /api/spirit streamText tools wiring", () => {
   beforeEach(async () => {
     vi.stubEnv("WEB_SEARCH_ENABLED", "false");

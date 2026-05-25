@@ -132,7 +132,7 @@ export type SpiritChatTransport = {
   lastSearchProvider: string | null;
   lastSearchQuery: string | null;
   lastSearchElapsedMs: number | null;
-  lastSearchKind: "researcher" | "teacher" | "none";
+  lastSearchKind: "researcher" | "teacher" | "peer" | "none";
   lastSearchSkipReason: string | null;
   lastHeaderSourceCount: number | null;
   lastWebSourcesPayload: SpiritWebSourcesHeaderPayload | null;
@@ -183,6 +183,7 @@ export function useSpiritChatTransport(
 
   const modelProfileIdRef = modeRuntime.modelProfileIdRef;
   const runtimeSurfaceRef = modeRuntime.runtimeSurfaceRef;
+  const abliteratedModeEnabledRef = modeRuntime.abliteratedModeEnabledRef;
 
   const assistantOutcomeThreadRef = useRef<string | null>(null);
   const persistAssistantToThreadRef = useRef(persistent.persistAssistantMessageToThread);
@@ -308,7 +309,7 @@ export function useSpiritChatTransport(
   const [lastSearchProvider, setLastSearchProvider] = useState<string | null>(null);
   const [lastSearchQuery, setLastSearchQuery] = useState<string | null>(null);
   const [lastSearchElapsedMs, setLastSearchElapsedMs] = useState<number | null>(null);
-  const [lastSearchKind, setLastSearchKind] = useState<"researcher" | "teacher" | "none">(
+  const [lastSearchKind, setLastSearchKind] = useState<"researcher" | "teacher" | "peer" | "none">(
     "none",
   );
   const [lastSearchSkipReason, setLastSearchSkipReason] = useState<string | null>(null);
@@ -605,6 +606,7 @@ export function useSpiritChatTransport(
             modelProfileId: modelProfileIdRef.current,
             runtimeSurface: runtimeSurfaceRef.current,
             deepThinkEnabled: x.deepThinkEnabled,
+            abliteratedModeEnabled: abliteratedModeEnabledRef.current,
             webSearchOptOut: x.webSearchOptOut,
             teacherWebSearchEnabled: x.teacherWebSearchEnabled,
             ...(rPlan ? { researchPlanSummary: rPlan } : {}),
@@ -614,7 +616,13 @@ export function useSpiritChatTransport(
         };
       },
     });
-  }, [api, attachSpiritBody, modelProfileIdRef, runtimeSurfaceRef]);
+  }, [
+    api,
+    attachSpiritBody,
+    modelProfileIdRef,
+    runtimeSurfaceRef,
+    abliteratedModeEnabledRef,
+  ]);
 
   const { messages, sendMessage, regenerate, stop, status, error, setMessages } = useChat({
     transport,
