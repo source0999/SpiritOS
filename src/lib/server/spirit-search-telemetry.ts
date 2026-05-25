@@ -14,7 +14,7 @@ export type SpiritSearchLogRoute =
 export type SpiritSearchLogEvent = {
   route: SpiritSearchLogRoute;
   status: "starting" | "used" | "failed" | "skipped" | "disabled";
-  mode: "researcher" | "teacher" | "other";
+  mode: "researcher" | "teacher" | "peer" | "other";
   queryTrimmed: string;
   provider?: string;
   sources?: number;
@@ -86,7 +86,7 @@ export type SpiritSearchHeaderInput = {
   sourceCount: number;
   queryTrimmed: string;
   elapsedMs: number | null;
-  searchKind: "researcher" | "teacher" | "none";
+  searchKind: "researcher" | "teacher" | "peer" | "none";
   skipReason?: string | null;
   webSourcesJson: string | null;
 };

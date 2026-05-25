@@ -22,7 +22,7 @@ export type SpiritWorkflowVisualizerProps = {
   provider?: string;
   /** From x-spirit-search-status (normalized); preferred over raw web header. */
   searchStatus?: SpiritSearchStatusUi;
-  searchKind?: "researcher" | "teacher" | "none";
+  searchKind?: "researcher" | "teacher" | "peer" | "none";
   searchQuery?: string;
   searchElapsedMs?: number;
   skipReason?: string;

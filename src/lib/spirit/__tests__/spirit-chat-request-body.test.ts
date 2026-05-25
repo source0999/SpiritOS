@@ -104,6 +104,7 @@ describe("parseSpiritChatRequestBody", () => {
       messages: [minimalUserMessage],
     });
     expect(out.deepThinkEnabled).toBe(false);
+    expect(out.abliteratedModeEnabled).toBe(false);
     expect(out.webSearchOptOut).toBe(false);
     expect(out.teacherWebSearchEnabled).toBe(true);
   });
@@ -134,6 +135,14 @@ describe("parseSpiritChatRequestBody", () => {
     expect(out.webSearchOptOut).toBe(true);
   });
 
+  it("accepts abliteratedModeEnabled boolean", () => {
+    const out = parseSpiritChatRequestBody({
+      messages: [minimalUserMessage],
+      abliteratedModeEnabled: true,
+    });
+    expect(out.abliteratedModeEnabled).toBe(true);
+  });
+
   it("maps legacy webSearchRequested true → webSearchOptOut false", () => {
     const out = parseSpiritChatRequestBody({
       messages: [minimalUserMessage],
@@ -155,6 +164,15 @@ describe("parseSpiritChatRequestBody", () => {
       parseSpiritChatRequestBody({
         messages: [minimalUserMessage],
         deepThinkEnabled: "yes",
+      } as unknown),
+    ).toThrow(SpiritRequestValidationError);
+  });
+
+  it("rejects non-boolean abliteratedModeEnabled", () => {
+    expect(() =>
+      parseSpiritChatRequestBody({
+        messages: [minimalUserMessage],
+        abliteratedModeEnabled: "yes",
       } as unknown),
     ).toThrow(SpiritRequestValidationError);
   });

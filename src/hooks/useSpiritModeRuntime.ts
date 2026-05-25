@@ -40,6 +40,11 @@ export type SpiritModeRuntime = {
   setActiveModelProfile: (id: ModelProfileId) => void | Promise<void>;
   /** Same id as state - transport reads mid-flight without rerunning effects too late */
   modelProfileIdRef: MutableRefObject<ModelProfileId>;
+  abliteratedModeEnabled: boolean;
+  setAbliteratedModeEnabled: (value: boolean) => void;
+  toggleAbliteratedMode: () => void;
+  /** Send-time snapshot for per-chat model routing; never mutates global model config. */
+  abliteratedModeEnabledRef: MutableRefObject<boolean>;
 
   personalizationSummary: string;
   personalizationEnabled: boolean;
@@ -52,6 +57,7 @@ export type SpiritModeRuntime = {
     modelProfileId: ModelProfileId;
     runtimeSurface: SpiritRuntimeSurface;
     personalizationSummary?: string;
+    abliteratedModeEnabled: boolean;
   };
 };
 
@@ -78,6 +84,8 @@ export function useSpiritModeRuntime(
 
   const modelProfileIdRef = useRef(activeModelProfileId);
   const runtimeSurfaceRef = useRef(input.runtimeSurface);
+  const [abliteratedModeEnabled, setAbliteratedModeEnabled] = useState(false);
+  const abliteratedModeEnabledRef = useRef(abliteratedModeEnabled);
   /** Bumps when profile JSON changes so personalization preview recomputes */
   const [profileEpoch, setProfileEpoch] = useState(0);
   useEffect(() => {
@@ -86,8 +94,14 @@ export function useSpiritModeRuntime(
   useEffect(() => {
     runtimeSurfaceRef.current = input.runtimeSurface;
   }, [input.runtimeSurface]);
+  useEffect(() => {
+    abliteratedModeEnabledRef.current = abliteratedModeEnabled;
+  }, [abliteratedModeEnabled]);
   const refreshPersonalizationPreview = useCallback(() => {
     setProfileEpoch((n: number) => n + 1);
+  }, []);
+  const toggleAbliteratedMode = useCallback(() => {
+    setAbliteratedModeEnabled((v) => !v);
   }, []);
 
   const personalizationPack = useMemo(
@@ -116,11 +130,17 @@ export function useSpiritModeRuntime(
     const base = {
       modelProfileId: activeModelProfileId,
       runtimeSurface: input.runtimeSurface,
+      abliteratedModeEnabled,
     };
     const s = personalizationPack.summary;
     if (!s) return base;
     return { ...base, personalizationSummary: s };
-  }, [activeModelProfileId, input.runtimeSurface, personalizationPack.summary]);
+  }, [
+    activeModelProfileId,
+    input.runtimeSurface,
+    personalizationPack.summary,
+    abliteratedModeEnabled,
+  ]);
 
   return useMemo(
     (): SpiritModeRuntime => ({
@@ -130,6 +150,10 @@ export function useSpiritModeRuntime(
       activeModelProfile,
       setActiveModelProfile,
       modelProfileIdRef,
+      abliteratedModeEnabled,
+      setAbliteratedModeEnabled,
+      toggleAbliteratedMode,
+      abliteratedModeEnabledRef,
 
       personalizationSummary: personalizationPack.summary,
       personalizationEnabled,
@@ -145,6 +169,8 @@ export function useSpiritModeRuntime(
       activeModelProfileId,
       activeModelProfile,
       setActiveModelProfile,
+      abliteratedModeEnabled,
+      toggleAbliteratedMode,
       personalizationPack.summary,
       personalizationEnabled,
       refreshPersonalizationPreview,
