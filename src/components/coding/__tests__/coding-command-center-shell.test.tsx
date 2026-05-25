@@ -2084,6 +2084,35 @@ describe("CodingCommandCenterShell", () => {
       .not.toBeInTheDocument();
   });
 
+  it("converts shared target-unresolved unknown failures into a specific safe blocker", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch");
+    const spb100Index = PROXY_TRIAL_PROMPTS.findIndex((trial) => trial.id === "SPB-100");
+    expect(spb100Index).toBeGreaterThan(0);
+    for (const trial of PROXY_TRIAL_PROMPTS.slice(0, spb100Index + 1)) {
+      fetchMock.mockResolvedValueOnce(taskCreateResponse(`task-${trial.id.toLowerCase()}`));
+      fetchMock.mockResolvedValueOnce(
+        trial.id === "SPB-100"
+          ? new Response(JSON.stringify({ error: "unknown_blocker" }), { status: 500 })
+          : new Response(JSON.stringify({ reason_code: "blocked_after_retries", status: "blocked" }), {
+              status: 200,
+            }),
+      );
+    }
+
+    render(<CodingCommandCenterShell />);
+    openProxyDetails();
+    openProxyAdvancedControls();
+
+    fireEvent.click(screen.getByRole("button", { name: "Run 100 previews" }));
+
+    expect(await screen.findByText(/SPB-100: blocked; reason_code: target_unresolved/))
+      .toBeInTheDocument();
+    expect(screen.queryByText(/SPB-100: unsafe_failure; reason_code: unknown_blocker/))
+      .not.toBeInTheDocument();
+    expect(screen.queryByText(/100_preview_browser_run stopped on unsafe failure/))
+      .not.toBeInTheDocument();
+  });
+
   it("converts blocked-after-retries trial outcomes into specific blocker families", async () => {
     vi.spyOn(globalThis, "fetch")
       .mockResolvedValueOnce(taskCreateResponse("task-hb-01"))

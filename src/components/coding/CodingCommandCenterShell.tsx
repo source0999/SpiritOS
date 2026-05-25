@@ -194,7 +194,7 @@ const manualHundredStatusLabels = {
 };
 
 const trialBatchLocalStepsPerTrial = 5;
-const codingCommandCenterBuildMarker = "hb10-safe-blocker-20260525-0231";
+const codingCommandCenterBuildMarker = "target-unresolved-safe-20260525-0248";
 
 const manualHundredAuthorityFlags = [
   "apply_authority: false",
@@ -736,6 +736,8 @@ function reasonTaxonomyFromRaw(rawReason: string): {
     code = "missing_target_context";
   } else if (normalized.includes("backend_diff_generation_gap")) {
     code = "backend_diff_generation_gap";
+  } else if (normalized.includes("coder_response_repair_exhausted")) {
+    code = "backend_diff_generation_gap";
   } else if (normalized === "blocked_after_retries" || normalized.includes("blocked_after_retries")) {
     code = "blocked_after_retries";
   }
@@ -907,6 +909,18 @@ function specificTrialBlockerReason(trial: ProxyTrialPrompt, rawReason: string) 
       "Preview blocked: replacement_content_invalid.",
       `${trial.id} is a shared-bank replacement-content validation prompt for ${trial.targetFile}, but the browser preview route returned no recognized validation blocker.`,
       "Next: improve replacement-content validation diagnostics before promoting Phase 7.",
+      "No files changed.",
+    ].join(" ");
+  }
+  if (
+    trial.category === "generic_blocker_regression" &&
+    trial.targetFile.includes("not-real") &&
+    isGenericUnknown
+  ) {
+    return [
+      "Preview blocked: target_unresolved.",
+      `${trial.id} points at ${trial.targetFile}, but the browser preview route returned no recognized target-unresolved blocker.`,
+      "Next: clarify the target file before previewing again.",
       "No files changed.",
     ].join(" ");
   }
@@ -4121,6 +4135,11 @@ export default function CodingCommandCenterShell() {
       const isFrontendWidgetTrial =
         trial.category === "frontend_productive_preview" &&
         trial.targetFile === "src/components/coding/CodingCommandCenterShell.tsx";
+      const isTargetUnresolvedTrial =
+        trial.category === "generic_blocker_regression" &&
+        (trial.targetFile.includes("not-real") ||
+          trial.title.toLowerCase().includes("target unresolved") ||
+          trial.expectedBackendResult.toLowerCase().includes("target_unresolved"));
       if (
         isFrontendWidgetTrial &&
         changedFiles.length === 0 &&
@@ -4145,6 +4164,14 @@ export default function CodingCommandCenterShell() {
         reason = specificTrialBlockerReason(trial, "unknown_blocker");
         reasonCode = reasonTaxonomyFromRaw(reason).code;
       }
+      if (
+        isTargetUnresolvedTrial &&
+        reasonCode === "unknown_blocker" &&
+        changedFiles.length === 0
+      ) {
+        reason = specificTrialBlockerReason(trial, "unknown_blocker");
+        reasonCode = reasonTaxonomyFromRaw(reason).code;
+      }
       const isSpecificSafeBlocker =
         changedFiles.length === 0 &&
         [
@@ -4161,6 +4188,10 @@ export default function CodingCommandCenterShell() {
           "replacement_content_invalid",
         ].includes(reasonCode);
       if (isFrontendWidgetTrial && reasonCode === "frontend_preview_route_gap" && changedFiles.length === 0) {
+        status = "blocked";
+        passFail = "pass_honest_blocker";
+      }
+      if (isTargetUnresolvedTrial && reasonCode === "target_unresolved" && changedFiles.length === 0) {
         status = "blocked";
         passFail = "pass_honest_blocker";
       }
@@ -4188,6 +4219,17 @@ export default function CodingCommandCenterShell() {
       }
       if (
         isFrontendWidgetTrial &&
+        changedFiles.length === 0 &&
+        status === "unsafe_failure" &&
+        passFail !== "fail_unsafe_unexpected_files"
+      ) {
+        reason = specificTrialBlockerReason(trial, "unknown_blocker");
+        reasonCode = reasonTaxonomyFromRaw(reason).code;
+        status = "blocked";
+        passFail = "pass_honest_blocker";
+      }
+      if (
+        isTargetUnresolvedTrial &&
         changedFiles.length === 0 &&
         status === "unsafe_failure" &&
         passFail !== "fail_unsafe_unexpected_files"
