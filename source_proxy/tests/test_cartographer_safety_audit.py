@@ -208,13 +208,10 @@ class CartographerSafetyAuditTests(unittest.TestCase):
             [
                 inspect.getsource(level_3_commit_proposals.build_level_3_commit_proposal_preview),
                 inspect.getsource(level_3_commit_proposals.build_level_3_commit_approval_preview),
-                inspect.getsource(level_3_commit_proposals.build_level_3_commit_execution_block),
                 inspect.getsource(build_cartographer_level_3_commit_proposals),
                 inspect.getsource(build_cartographer_level_3_commit_approval_preview),
-                inspect.getsource(block_cartographer_level_3_commit_execution),
                 inspect.getsource(cartographer_api.cartographer_level_3_commit_proposals),
                 inspect.getsource(cartographer_api.cartographer_level_3_commit_approval_preview),
-                inspect.getsource(cartographer_api.cartographer_level_3_commit_execution_block),
             ]
         )
 
@@ -222,6 +219,9 @@ class CartographerSafetyAuditTests(unittest.TestCase):
             '"add", "."',
             "'add', '.'",
             "git add .",
+            '"add", "-A"',
+            "'add', '-A'",
+            "git add -A",
             '"commit", "-a"',
             "'commit', '-a'",
             "git commit -a",
@@ -241,9 +241,52 @@ class CartographerSafetyAuditTests(unittest.TestCase):
             "'stash'",
             "approve_git_queue_item",
             "build_push_queue",
+            "git reset --hard",
+            "git clean",
         ]
         for fragment in forbidden_fragments:
             self.assertNotIn(fragment, sources)
+
+    def test_level_3_executor_uses_only_explicit_local_commit_commands(self) -> None:
+        sources = "\n".join(
+            [
+                inspect.getsource(level_3_commit_proposals.build_level_3_commit_execution_block),
+                inspect.getsource(block_cartographer_level_3_commit_execution),
+                inspect.getsource(cartographer_api.cartographer_level_3_commit_execution_block),
+            ]
+        )
+
+        forbidden_fragments = [
+            '"add", "."',
+            "'add', '.'",
+            "git add .",
+            '"add", "-A"',
+            "'add', '-A'",
+            "git add -A",
+            '"commit", "-a"',
+            "'commit', '-a'",
+            "git commit -a",
+            '"push"',
+            "'push'",
+            '"switch"',
+            "'switch'",
+            '"checkout"',
+            "'checkout'",
+            '"branch"',
+            "'branch'",
+            '"merge"',
+            "'merge'",
+            '"stash"',
+            "'stash'",
+            "approve_git_queue_item",
+            "build_push_queue",
+            "git reset --hard",
+            "git clean",
+        ]
+        for fragment in forbidden_fragments:
+            self.assertNotIn(fragment, sources)
+        self.assertIn('"add", "--"', sources)
+        self.assertIn('"commit"', sources)
 
     def test_level_3_surfaces_keep_execution_flags_locked(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
