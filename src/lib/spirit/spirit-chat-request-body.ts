@@ -32,6 +32,8 @@ export type SpiritChatRequestBody = {
   personalizationSummary?: string;
   /** Prompt 10B - extra deliberation + modest token bump */
   deepThinkEnabled: boolean;
+  /** Per-chat local Ollama model lane override for the 8B abliterated Hermes model. */
+  abliteratedModeEnabled: boolean;
   /**
    * Researcher only: when true, skip provider-router web prefetch. Default false (web ON).
    * Legacy clients sent `webSearchRequested`; we map `webSearchRequested: false` → opt-out true.
@@ -191,6 +193,11 @@ export function parseSpiritChatRequestBody(body: unknown): SpiritChatRequestBody
     record.personalizationSummary,
   );
   const deepThinkEnabled = normalizeBool(record.deepThinkEnabled, "deepThinkEnabled", false);
+  const abliteratedModeEnabled = normalizeBool(
+    record.abliteratedModeEnabled,
+    "abliteratedModeEnabled",
+    false,
+  );
   const webSearchOptOut = normalizeWebSearchOptOut(record);
   const teacherWebSearchEnabled = normalizeBool(
     record.teacherWebSearchEnabled,
@@ -207,6 +214,7 @@ export function parseSpiritChatRequestBody(body: unknown): SpiritChatRequestBody
     runtimeSurface,
     personalizationSummary,
     deepThinkEnabled,
+    abliteratedModeEnabled,
     webSearchOptOut,
     teacherWebSearchEnabled,
     researchPlanSummary,

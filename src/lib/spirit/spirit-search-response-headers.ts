@@ -12,7 +12,7 @@ export type ParsedSpiritSearchHeaders = {
   sourceCount: number | null;
   searchQuery: string | null;
   searchElapsedMs: number | null;
-  searchKind: "researcher" | "teacher" | "none";
+  searchKind: "researcher" | "teacher" | "peer" | "none";
   skipReason: string | null;
   webSourcesJson: string | null;
 };
@@ -40,8 +40,8 @@ export function parseSpiritSearchHeaders(res: Response): ParsedSpiritSearchHeade
   const searchElapsedMs =
     el != null && el.trim() !== "" && Number.isFinite(Number(el)) ? Math.round(Number(el)) : null;
   const sk = res.headers.get("x-spirit-search-kind");
-  const searchKind: "researcher" | "teacher" | "none" =
-    sk === "researcher" || sk === "teacher" ? sk : "none";
+  const searchKind: "researcher" | "teacher" | "peer" | "none" =
+    sk === "researcher" || sk === "teacher" || sk === "peer" ? sk : "none";
   const skipReason = res.headers.get("x-spirit-search-skip-reason");
   const webSourcesJson = res.headers.get("x-spirit-web-sources");
 

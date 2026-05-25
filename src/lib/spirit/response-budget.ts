@@ -5,7 +5,7 @@ import type { SpiritRuntimeSurface } from "@/lib/spirit/spirit-runtime-surface";
 
 const CASUAL_MAX_CHARS = 140;
 const RESEARCH_HINT =
-  /\b(research|report|sources?|citations?|peer[- ]review|study|meta[- ]analysis|literature|systematic|verify|current events|news|today|latest|202[0-9])\b/i;
+  /\b(research|report|sources?|citations?|peer[- ]review|study|meta[- ]analysis|literature|systematic|verify|search|look\s*up|web|online|current events|news|today|latest|202[0-9])\b/i;
 const TEACH_HINT =
   /\b(teach|lesson|explain|tutorial|quiz|exam|homework|course|learn|understand|step by step)\b/i;
 /** Teacher web aids - educational / clinical phrasing (Prompt 10C-D, still client+server heuristic). */

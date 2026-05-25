@@ -259,7 +259,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
           ? transport.teacherWebSearchEnabled
             ? "Teacher web aids: on (auto for educational prompts)"
             : "Teacher web aids: off for this thread"
-          : "Web search applies in Researcher / Teacher modes";
+          : "Peer web search: auto when the prompt asks for fresh/source-backed info";
     if (transport.lastSearchStatus === "none" && !transport.lastWebSearchHeader) {
       return `${base}. No /api/spirit response in this thread yet.`;
     }
@@ -505,6 +505,7 @@ const SpiritChatInner = memo(function SpiritChatInner({
     workspaceChrome &&
     (tc.isBusy ||
       tc.deepThinkEnabled ||
+      modeRt.abliteratedModeEnabled ||
       (researcherWebActive &&
         (tc.isBusy || hasSources || tc.lastWebSearchHeader != null)) ||
       tc.lastRouteLane === "local-web-search" ||
@@ -1233,13 +1234,30 @@ const SpiritChatInner = memo(function SpiritChatInner({
                 aria-pressed={deepThinkEnabled}
                 onClick={() => setDeepThinkEnabled((v) => !v)}
                 className={cn(
-                  "touch-manipulation rounded-full border px-2.5 py-1.5 sm:py-1",
+                  "min-h-[44px] touch-manipulation rounded-full border px-2.5 py-1.5 sm:min-h-0 sm:py-1",
                   deepThinkEnabled
                     ? "border-[color:color-mix(in_oklab,var(--spirit-accent)_38%,transparent)] text-[color:color-mix(in_oklab,var(--spirit-accent-strong)_92%,transparent)]"
                     : "border-[color:color-mix(in_oklab,var(--spirit-border)_55%,transparent)] text-chalk/70",
                 )}
               >
                 Deep think
+              </button>
+            ) : null}
+            {!oracleVoiceSurface ? (
+              <button
+                type="button"
+                aria-pressed={modeRt.abliteratedModeEnabled}
+                aria-label="Toggle Abliterated Mode"
+                title="Abliterated Mode routes this chat to hermes3:8b-abliterated"
+                onClick={modeRt.toggleAbliteratedMode}
+                className={cn(
+                  "min-h-[44px] touch-manipulation rounded-full border px-2.5 py-1.5 sm:min-h-0 sm:py-1",
+                  modeRt.abliteratedModeEnabled
+                    ? "border-[color:color-mix(in_oklab,var(--spirit-accent)_42%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-accent)_10%,transparent)] text-[color:color-mix(in_oklab,var(--spirit-accent-strong)_94%,transparent)] shadow-[0_0_18px_-8px_var(--spirit-glow)]"
+                    : "border-[color:color-mix(in_oklab,var(--spirit-border)_55%,transparent)] text-chalk/70",
+                )}
+              >
+                Abliterated {modeRt.abliteratedModeEnabled ? "on" : "off"}
               </button>
             ) : null}
             {chromeVariant === "trinity" ? (

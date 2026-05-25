@@ -110,12 +110,18 @@ export function decideSpiritRoute(input: SpiritRouteDecisionInput): SpiritRouteD
     reasons.push("casual_chat");
   }
 
-  const shouldSearchWeb = shouldPrefetchOpenAiWebForResearcher({
+  const shouldSearchResearcherWeb = shouldPrefetchOpenAiWebForResearcher({
     modelProfileId: input.modelProfileId,
     lastUserText: input.lastUserText,
     webSearchOptOut: input.webSearchOptOut,
     webSearchGloballyEnabled: input.webSearchGloballyEnabled,
   });
+  const shouldSearchPeerWeb =
+    input.modelProfileId === "normal-peer" &&
+    input.webSearchGloballyEnabled &&
+    !webOptOut &&
+    wantsResearchDepth(last);
+  const shouldSearchWeb = shouldSearchResearcherWeb || shouldSearchPeerWeb;
 
   const teacherWebAidsAllowed = input.teacherWebSearchEnabled !== false;
   const shouldSearchTeacherWeb =

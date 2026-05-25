@@ -38,6 +38,7 @@ import {
 } from "@/lib/server/spirit-web-research-guard";
 import { buildModelRuntime } from "@/lib/spirit/model-runtime";
 import type { ModelProfileId } from "@/lib/spirit/model-profile.types";
+import type { SpiritChatRequestBody } from "@/lib/spirit/spirit-chat-request-body";
 import { getModelProfile } from "@/lib/spirit/model-profiles";
 import { resolveSpiritSystemState } from "@/lib/spirit/system-state";
 import { resolveSpiritToolsForOllamaModel } from "@/lib/spirit/tools/tool-registry";
@@ -99,19 +100,25 @@ export async function POST(req: Request) {
       runtimeSurface,
       personalizationSummary,
       deepThinkEnabled,
+      abliteratedModeEnabled,
       webSearchOptOut,
       teacherWebSearchEnabled,
       researchPlanSummary,
       oracleMemoryContext,
       swarmAgentRole,
-    } = await readSpiritRequest(req);
+    } = (await readSpiritRequest(req)) as SpiritChatRequestBody;
 
     const lastUser = lastUserTextFromMessages(uiMessages);
     const qLog = trimSearchQueryForLog(lastUser);
 
     const surface: SpiritRuntimeSurface =
       runtimeSurface === "oracle" ? "oracle" : "chat";
-    const ollamaModelId = resolveOllamaModelId(surface);
+    const ollamaModelId = resolveOllamaModelId(surface, {
+      abliteratedModeEnabled,
+    });
+    console.log(
+      `[spirit-api] model-routing surface=${surface} abliterated=${abliteratedModeEnabled} modelId=${ollamaModelId}`,
+    );
     const spiritTools = await resolveSpiritToolsForOllamaModel(ollamaModelId, {
       swarmAgentRole,
     });
@@ -342,13 +349,61 @@ export async function POST(req: Request) {
     let spiritSourceCount = 0;
     let spiritSearchProvider: string | null = null;
     let searchElapsedMs: number | null = null;
-    let searchKind: "researcher" | "teacher" | "none" = "none";
+    let searchKind: "researcher" | "teacher" | "peer" | "none" = "none";
     let skipReason: string | null = null;
     let webVerifiedUrlCount: number | undefined;
 
     const freshSourceAsk = userRequestedFreshExternalSources(lastUser);
 
-    if (modelProfileId === "researcher") {
+    if (modelProfileId === "normal-peer" && routeDecision.shouldSearchWeb) {
+      searchKind = "peer";
+      logSpiritSearchEvent({
+        route: "local-web-search",
+        status: "starting",
+        mode: "peer",
+        queryTrimmed: qLog,
+      });
+      const t0 = Date.now();
+      const r = await runWebSearch({ query: lastUser.slice(0, 2000) });
+      searchElapsedMs = Date.now() - t0;
+      const verified = verifiedHttpSourcesFromSearch(r);
+      webVerifiedUrlCount = verified.length;
+      spiritSourceCount = verified.length;
+      spiritSearchProvider = r.provider;
+      researchWebContext = formatResearchContextForHermes(lastUser, r);
+      webSearchHeader = r.ok && r.searched ? "used" : "failed";
+      webSourcesHeader = buildWebSearchSourcesHeader(r);
+      researchWebContext = appendSourcePolicyBlock(researchWebContext, {
+        searchStatus: r.ok && r.searched ? "used" : "failed",
+        sources: verified,
+        requestedFreshSources: freshSourceAsk,
+        modelProfileId: "normal-peer",
+      });
+      if (!(r.ok && r.searched)) {
+        skipReason = logReasonFromSearchFailure(r);
+      }
+      if (r.ok && r.searched && verified.length > 0) {
+        logSpiritSearchEvent({
+          route: "local-web-search",
+          status: "used",
+          mode: "peer",
+          queryTrimmed: qLog,
+          provider: r.provider,
+          sources: verified.length,
+          elapsedMs: searchElapsedMs,
+        });
+      } else {
+        logSpiritSearchEvent({
+          route: "local-web-search",
+          status: "failed",
+          mode: "peer",
+          queryTrimmed: qLog,
+          provider: r.provider,
+          elapsedMs: searchElapsedMs,
+          reason: r.ok && r.searched ? "no_verified_urls" : logReasonFromSearchFailure(r),
+        });
+      }
+    } else if (modelProfileId === "researcher") {
       searchKind = "researcher";
       let verified: Array<{ url?: string }> = [];
       let policyStatus: SpiritSearchStatus = "none";
