@@ -77,13 +77,13 @@ describe("DashboardDemoV4", () => {
     expect(container.querySelector(".spirit-dashboard-route")).toBeNull();
   });
 
-  it("nav contains links to /, /chat, and /oracle", () => {
+  it("nav contains app route links", () => {
     render(<DashboardDemoV4 />);
     const desktopNav = screen.getByRole("navigation", {
       name: /spirit app desktop navigation/i,
     });
     const mobileNav = screen.getByRole("navigation", {
-      name: /dashboard mobile navigation/i,
+      name: /spirit app mobile navigation/i,
     });
 
     for (const nav of [desktopNav, mobileNav]) {
@@ -92,7 +92,12 @@ describe("DashboardDemoV4", () => {
       );
       expect(hrefs).toContain("/");
       expect(hrefs).toContain("/chat");
+      expect(hrefs).toContain("/coding");
+      expect(hrefs).toContain("/map");
+      expect(hrefs).toContain("/intelligence");
       expect(hrefs).toContain("/oracle");
+      expect(hrefs).toContain("/media");
+      expect(hrefs).toContain("/proxy-backend");
     }
   });
 
@@ -103,7 +108,7 @@ describe("DashboardDemoV4", () => {
       name: /spirit app desktop navigation/i,
     });
     const mobileNav = screen.getByRole("navigation", {
-      name: /dashboard mobile navigation/i,
+      name: /spirit app mobile navigation/i,
     });
 
     expect(

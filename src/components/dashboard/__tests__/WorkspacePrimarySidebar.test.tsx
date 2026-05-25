@@ -66,6 +66,13 @@ describe("WorkspacePrimarySidebar", () => {
     );
   });
 
+  it("keeps media route on the rail and mobile dock", () => {
+    render(<WorkspacePrimarySidebar />);
+    const mediaLinks = screen.getAllByRole("link", { name: /^media$/i });
+    expect(mediaLinks.length).toBeGreaterThanOrEqual(2);
+    expect(mediaLinks.every((el) => el.getAttribute("href") === "/media")).toBe(true);
+  });
+
   it("does not link to /quarantine", () => {
     render(<WorkspacePrimarySidebar />);
     const quarantineLinks = screen.queryAllByRole("link", { name: /quarantine/i });

@@ -5,11 +5,24 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
-import { BrainCircuit, Code2, LayoutDashboard, MessageSquare, Palette, Sparkles } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import {
+  BrainCircuit,
+  Code2,
+  Film,
+  LayoutDashboard,
+  Map,
+  MessageSquare,
+  Palette,
+  PanelLeftClose,
+  PanelLeftOpen,
+  ServerCog,
+  Sparkles,
+} from "lucide-react";
 
 import { DashboardDemoV4ThemePicker } from "@/components/dashboard/demo-v4/DashboardDemoV4ThemePicker";
 import { cn } from "@/lib/cn";
+import { useSpiritVisualViewportVars } from "@/lib/hooks/useSpiritVisualViewportVars";
 import { SPIRIT_PALETTES } from "@/theme/spiritPalettes";
 import { useSpiritTheme } from "@/theme/useSpiritTheme";
 
@@ -40,6 +53,12 @@ const NAV: readonly NavSpec[] = [
     match: (p) => p === "/coding" || p.startsWith("/coding/"),
   },
   {
+    href: "/map",
+    label: "Map",
+    icon: Map,
+    match: (p) => p === "/map" || p.startsWith("/map/"),
+  },
+  {
     href: "/intelligence",
     label: "Scout",
     icon: BrainCircuit,
@@ -51,24 +70,64 @@ const NAV: readonly NavSpec[] = [
     icon: Sparkles,
     match: (p) => p === "/oracle" || p.startsWith("/oracle/"),
   },
+  {
+    href: "/media",
+    label: "Media",
+    icon: Film,
+    match: (p) => p === "/media" || p.startsWith("/media/"),
+  },
+  {
+    href: "/proxy-backend",
+    label: "Console",
+    icon: ServerCog,
+    match: (p) => p === "/proxy-backend" || p.startsWith("/proxy-backend/"),
+  },
 ];
+
+const DESKTOP_NAV_COLLAPSED_KEY = "spiritos:desktop-nav-collapsed";
 
 export type DashboardDemoV4FloatingNavProps = {
   desktopVariant?: "floating" | "full-height";
+  showMobile?: boolean;
 };
 
 export function DashboardDemoV4FloatingNav({
   desktopVariant = "full-height",
+  showMobile = true,
 }: DashboardDemoV4FloatingNavProps) {
   const pathname = usePathname() ?? "";
   const { theme } = useSpiritTheme();
+  const navViewportVarsRef = useRef<HTMLDivElement>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [desktopCollapsed, setDesktopCollapsed] = useState(false);
+  useSpiritVisualViewportVars(navViewportVarsRef);
   const activePaletteIndex = Math.max(
     0,
     SPIRIT_PALETTES.findIndex((palette) => palette.id === theme),
   );
   const activePalette = SPIRIT_PALETTES[activePaletteIndex] ?? SPIRIT_PALETTES[0];
   const activeGradient = activePalette.colors.map((color) => color.hex).join(", ");
+
+  useEffect(() => {
+    try {
+      const storedCollapsed = localStorage.getItem(DESKTOP_NAV_COLLAPSED_KEY) === "true";
+      queueMicrotask(() => setDesktopCollapsed(storedCollapsed));
+    } catch {
+      queueMicrotask(() => setDesktopCollapsed(false));
+    }
+  }, []);
+
+  function toggleDesktopNavCollapsed() {
+    setDesktopCollapsed((collapsed) => {
+      const next = !collapsed;
+      try {
+        localStorage.setItem(DESKTOP_NAV_COLLAPSED_KEY, String(next));
+      } catch {
+        // Ignore storage failures; the control should still work for this session.
+      }
+      return next;
+    });
+  }
 
   const renderPaletteButton = (surface: "desktop" | "mobile") => (
     <button
@@ -94,13 +153,15 @@ export function DashboardDemoV4FloatingNav({
   );
 
   return (
-    <>
+    <div ref={navViewportVarsRef} className="dashboard-demo-v4-nav-viewport-vars">
       <nav
         className={cn(
           "dashboard-demo-v4-desktop-rail",
           desktopVariant === "full-height" &&
             "dashboard-demo-v4-desktop-rail-full-height",
+          desktopCollapsed && "dashboard-demo-v4-desktop-rail-collapsed",
         )}
+        data-collapsed={desktopCollapsed ? "true" : "false"}
         aria-label={
           desktopVariant === "full-height"
             ? "Spirit app desktop navigation"
@@ -115,6 +176,22 @@ export function DashboardDemoV4FloatingNav({
             <span className="dashboard-demo-v4-desktop-brand-text">SpiritOS</span>
           </div>
 
+          <button
+            type="button"
+            className="dashboard-demo-v4-desktop-collapse-button"
+            onClick={toggleDesktopNavCollapsed}
+            aria-expanded={!desktopCollapsed}
+            aria-label={desktopCollapsed ? "Expand desktop navigation" : "Collapse desktop navigation"}
+            title={desktopCollapsed ? "Expand navigation" : "Collapse navigation"}
+          >
+            {desktopCollapsed ? (
+              <PanelLeftOpen className="h-[1.05rem] w-[1.05rem]" aria-hidden />
+            ) : (
+              <PanelLeftClose className="h-[1.05rem] w-[1.05rem]" aria-hidden />
+            )}
+            <span>Collapse</span>
+          </button>
+
           <div className="dashboard-demo-v4-desktop-nav-list">
             {NAV.map((item) => {
               const active = item.match(pathname);
@@ -125,6 +202,7 @@ export function DashboardDemoV4FloatingNav({
                   href={item.href}
                   aria-label={item.label}
                   aria-current={active ? "page" : undefined}
+                  title={item.label}
                   className={cn(
                     "dashboard-demo-v4-desktop-nav-item",
                     active && "dashboard-demo-v4-desktop-nav-item-active",
@@ -145,43 +223,45 @@ export function DashboardDemoV4FloatingNav({
         </div>
       </nav>
 
-      <nav
-        className="dashboard-demo-v4-nav dashboard-demo-v4-mobile-pill-nav"
-        aria-label="Dashboard mobile navigation"
-      >
-        <div className="dashboard-demo-v4-nav-shell">
-          {NAV.map((item) => {
-            const active = item.match(pathname);
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-label={item.label}
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "dashboard-demo-v4-nav-item",
-                  active && "dashboard-demo-v4-nav-item-active",
-                )}
-              >
-                <Icon className="h-[1.1rem] w-[1.1rem]" strokeWidth={2} />
-                <span className="hidden sm:inline">{item.label}</span>
-              </Link>
-            );
-          })}
+      {showMobile ? (
+        <nav
+          className="dashboard-demo-v4-nav dashboard-demo-v4-mobile-pill-nav"
+          aria-label="Spirit app mobile navigation"
+        >
+          <div className="dashboard-demo-v4-nav-shell">
+            {NAV.map((item) => {
+              const active = item.match(pathname);
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-label={item.label}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "dashboard-demo-v4-nav-item",
+                    active && "dashboard-demo-v4-nav-item-active",
+                  )}
+                >
+                  <Icon className="h-[1.1rem] w-[1.1rem]" strokeWidth={2} />
+                  <span className="hidden sm:inline">{item.label}</span>
+                </Link>
+              );
+            })}
 
-          <div className="dashboard-demo-v4-nav-divider" aria-hidden />
+            <div className="dashboard-demo-v4-nav-divider" aria-hidden />
 
-          <div className="dashboard-demo-v4-theme-picker-wrap">
-            {renderPaletteButton("mobile")}
+            <div className="dashboard-demo-v4-theme-picker-wrap">
+              {renderPaletteButton("mobile")}
+            </div>
           </div>
-        </div>
-      </nav>
+        </nav>
+      ) : null}
 
       <DashboardDemoV4ThemePicker
         open={paletteOpen}
         onClose={() => setPaletteOpen(false)}
       />
-    </>
+    </div>
   );
 }
