@@ -1,9 +1,11 @@
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
+  getAbliteratedChatModelId,
   getOracleModelId,
   getSpiritChatModelId,
   resolveOllamaModelId,
+  SPIRIT_ABLITERATED_CHAT_MODEL_ID,
 } from "@/lib/server/model-routing";
 
 describe("model-routing", () => {
@@ -34,5 +36,17 @@ describe("model-routing", () => {
     process.env.ORACLE_OLLAMA_MODEL = "b";
     expect(resolveOllamaModelId("chat")).toBe("a");
     expect(resolveOllamaModelId("oracle")).toBe("b");
+  });
+
+  it("resolveOllamaModelId picks the fixed 8B abliterated chat lane per request", () => {
+    process.env.OLLAMA_MODEL = "a";
+    process.env.ORACLE_OLLAMA_MODEL = "b";
+    expect(getAbliteratedChatModelId()).toBe(SPIRIT_ABLITERATED_CHAT_MODEL_ID);
+    expect(resolveOllamaModelId("chat", { abliteratedModeEnabled: true })).toBe(
+      "hermes3:8b-abliterated",
+    );
+    expect(resolveOllamaModelId("oracle", { abliteratedModeEnabled: true })).toBe(
+      "b",
+    );
   });
 });

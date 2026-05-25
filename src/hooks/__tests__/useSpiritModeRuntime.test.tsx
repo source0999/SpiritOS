@@ -29,6 +29,8 @@ describe("useSpiritModeRuntime (Prompt 10D)", () => {
     expect(result.current.requestBodyModeFields.modelProfileId).toBe(
       DEFAULT_MODEL_PROFILE_ID,
     );
+    expect(result.current.abliteratedModeEnabled).toBe(false);
+    expect(result.current.requestBodyModeFields.abliteratedModeEnabled).toBe(false);
   });
 
   it("updates ephemeral profile when persistence is off", () => {
@@ -47,5 +49,26 @@ describe("useSpiritModeRuntime (Prompt 10D)", () => {
     });
     expect(result.current.activeModelProfileId).toBe("teacher");
     expect(result.current.requestBodyModeFields.modelProfileId).toBe("teacher");
+  });
+
+  it("toggles abliterated mode as per-session request state", () => {
+    const { result } = renderHook(() =>
+      useSpiritModeRuntime({
+        runtimeSurface: "chat",
+        persistenceEnabled: false,
+        threadRuntime: {
+          activeModelProfileId: "normal-peer",
+          setActiveModelProfile: async () => {},
+        },
+      }),
+    );
+
+    act(() => {
+      result.current.toggleAbliteratedMode();
+    });
+
+    expect(result.current.abliteratedModeEnabled).toBe(true);
+    expect(result.current.abliteratedModeEnabledRef.current).toBe(true);
+    expect(result.current.requestBodyModeFields.abliteratedModeEnabled).toBe(true);
   });
 });
