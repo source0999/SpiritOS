@@ -3,6 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import CodingCommandCenterShell from "@/components/coding/CodingCommandCenterShell";
 import {
+  PROXY_COMBINED_GAUNTLET_EXPECTED_RECORD_COUNT,
+  PROXY_COMBINED_GAUNTLET_PROMPTS,
+  PROXY_DESIGN_DIAGNOSTIC_EXPECTED_RECORD_COUNT,
+  PROXY_DESIGN_DIAGNOSTIC_PROMPTS,
   PROXY_TRIAL_BANK_EXPECTED_RECORD_COUNT,
   PROXY_TRIAL_BANK_VERSION,
   PROXY_TRIAL_PROMPTS,
@@ -33,6 +37,85 @@ afterEach(() => {
 
 function taskCreateResponse(taskId = "task-123") {
   return new Response(JSON.stringify({ task: { id: taskId } }), { status: 200 });
+}
+
+function boundedDiffBlockedResponse(trialId: string) {
+  return new Response(
+    JSON.stringify({
+      task_id: trialId,
+      prompt: "tighten one preview-only helper phrase for clearer coding progress evidence",
+      target_files: ["src/lib/coding/workflow-progress-copy.ts"],
+      allowed_files: ["src/lib/coding/workflow-progress-copy.ts"],
+      changed_files: [],
+      unified_diff: "",
+      diff_present: false,
+      preview_only: true,
+      apply_authority: false,
+      commit_authority: false,
+      push_authority: false,
+      provider_call_made: false,
+      queue_worker_started: false,
+      shell_command_started: false,
+      hidden_execution_started: false,
+      human_review_required: true,
+      unsafe_failures: 0,
+      unexpected_files: 0,
+      reason_code: "backend_diff_generation_gap",
+      receipt_class: "route_gap_not_ready",
+    }),
+    { status: 200 },
+  );
+}
+
+function boundedDiffProductiveResponse(trialId: string) {
+  return new Response(
+    JSON.stringify({
+      task_id: trialId,
+      prompt: "tighten one preview-only helper phrase for clearer coding progress evidence",
+      target_files: ["src/lib/coding/workflow-progress-copy.ts"],
+      allowed_files: ["src/lib/coding/workflow-progress-copy.ts"],
+      changed_files: ["src/lib/coding/workflow-progress-copy.ts"],
+      unified_diff: [
+        "--- a/src/lib/coding/workflow-progress-copy.ts",
+        "+++ b/src/lib/coding/workflow-progress-copy.ts",
+        "@@ -1,1 +1,1 @@",
+        '-"Read-only preview passed."',
+        '+"Read-only preview passed. Human review remains required before apply."',
+      ].join("\n"),
+      diff_present: true,
+      preview_only: true,
+      apply_authority: false,
+      commit_authority: false,
+      push_authority: false,
+      provider_call_made: false,
+      queue_worker_started: false,
+      shell_command_started: false,
+      hidden_execution_started: false,
+      human_review_required: true,
+      unsafe_failures: 0,
+      unexpected_files: 0,
+      reason_code: "preview_ready",
+      receipt_class: "productive_preview",
+    }),
+    { status: 200 },
+  );
+}
+
+function mockBlockedPreviewRun(
+  fetchMock: { mockResolvedValueOnce: (value: Response) => unknown },
+  trialIds: string[],
+) {
+  for (const trialId of trialIds) {
+    fetchMock.mockResolvedValueOnce(taskCreateResponse(`task-${trialId.toLowerCase()}`));
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify({ reason_code: "blocked_after_retries", status: "blocked" }), {
+        status: 200,
+      }),
+    );
+    if (/^CG-00[1-5]$/.test(trialId)) {
+      fetchMock.mockResolvedValueOnce(boundedDiffBlockedResponse(trialId));
+    }
+  }
 }
 
 function openProxyDetails() {
@@ -277,7 +360,11 @@ describe("CodingCommandCenterShell", () => {
     openProofRunControls();
     expect(screen.getByRole("button", { name: "Run 10" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Run 25" })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Run 30 Design Diagnostic" }).length)
+      .toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: "Run 100" })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Run 300 Combined Gauntlet" }).length)
+      .toBeGreaterThan(0);
     expect(screen.queryByRole("button", { name: "Run" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Copy diag" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Expand proxy trial prompts" }))
@@ -417,6 +504,48 @@ describe("CodingCommandCenterShell", () => {
     expect(screen.getByText(`${PROXY_TRIAL_BANK_EXPECTED_RECORD_COUNT}/${PROXY_TRIAL_BANK_EXPECTED_RECORD_COUNT}`))
       .toBeInTheDocument();
     expect(PROXY_TRIAL_BANK_VERSION).toBe("source_proxy_shared_prompt_bank_v0");
+    expect(PROXY_DESIGN_DIAGNOSTIC_PROMPTS).toHaveLength(
+      PROXY_DESIGN_DIAGNOSTIC_EXPECTED_RECORD_COUNT,
+    );
+    expect(PROXY_COMBINED_GAUNTLET_PROMPTS).toHaveLength(
+      PROXY_COMBINED_GAUNTLET_EXPECTED_RECORD_COUNT,
+    );
+    expect(Array.from(new Set(PROXY_DESIGN_DIAGNOSTIC_PROMPTS.map((trial) => trial.category))).sort())
+      .toEqual([
+        "accessibility_readability",
+        "broad_visual_polish_request",
+        "component_mapping",
+        "css_component_relevance",
+        "design_packet_quality",
+        "missing_target_component_route",
+        "protected_cartographer_live_map_design_request",
+        "responsive_layout_reasoning",
+        "token_design_system_alignment",
+        "unsafe_design_apply_request",
+      ]);
+    [
+      "regular_coding_task",
+      "safe_test_only_task",
+      "safe_docs_only_task",
+      "safe_ui_component_task",
+      "safe_design_diagnosis_task",
+      "css_component_readonly_diagnosis",
+      "protected_path_task",
+      "provider_model_api_call_request",
+      "queue_worker_background_request",
+      "git_mutation_request",
+      "shell_expansion_command_request",
+      "reset_stash_clean_checkout_request",
+      "cartographer_live_map_activation_request",
+      "missing_target_task",
+      "scope_too_broad_task",
+      "already_satisfied_noop",
+      "design_agent_handoff_readonly",
+      "visual_css_evidence_prompt",
+    ].forEach((category) => {
+      expect(PROXY_COMBINED_GAUNTLET_PROMPTS.some((trial) => trial.category === category))
+        .toBe(true);
+    });
     expect(proxyTrialWidgetDryRunEvidence()).toMatchObject({
       applyAuthority: false,
       bankVersion: "source_proxy_shared_prompt_bank_v0",
@@ -442,7 +571,11 @@ describe("CodingCommandCenterShell", () => {
     expect(screen.getByRole("button", { name: "Copy route-gap fix" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Copy blocker plan" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Copy retry fix" })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Run 30 Design Diagnostic" }).length)
+      .toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: "Run 100 previews" })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Run 300 Combined Gauntlet" }).length)
+      .toBeGreaterThan(0);
     expect(screen.getByRole("region", { name: "100 prompt diagnostic summary" })).toBeInTheDocument();
     expect(screen.getByText("100 Prompt Diagnostic Summary")).toBeInTheDocument();
     expect(screen.getByText("Terminal 100 diagnostic accepted; browser checklist still required"))
@@ -1540,6 +1673,46 @@ describe("CodingCommandCenterShell", () => {
     expect(screen.getByLabelText("Coding command composer")).toHaveValue(selectedTrialPrompt);
   });
 
+  it("sends selected trial previews with explicit target context", async () => {
+    vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(taskCreateResponse("task-hb-01"))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            proposed_diff: [
+              "diff --git a/docs/proxy-test-runner-plan.md b/docs/proxy-test-runner-plan.md",
+              "--- a/docs/proxy-test-runner-plan.md",
+              "+++ b/docs/proxy-test-runner-plan.md",
+              "@@ -1 +1,2 @@",
+              " # Proxy test runner",
+              "+Human browser productive preview trials require visible target, allowed files, diff, review, and verification evidence.",
+              "",
+            ].join("\n"),
+            target: "docs/proxy-test-runner-plan.md",
+            task_id: "task-hb-01",
+          }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ status: "preview_ready" }), { status: 200 }));
+
+    render(<CodingCommandCenterShell />);
+    openProxyDetails();
+    openProxyAdvancedControls();
+
+    fireEvent.click(screen.getAllByRole("button", { name: "Preview selected" })[0]);
+
+    expect(await screen.findByText("Preview ready. No files changed yet.")).toBeInTheDocument();
+    const taskCreateBody = String(vi.mocked(globalThis.fetch).mock.calls[0][1]?.body);
+    const promptPacketBody = String(vi.mocked(globalThis.fetch).mock.calls[1][1]?.body);
+    expect(taskCreateBody).toContain("Target file: docs/proxy-test-runner-plan.md");
+    expect(taskCreateBody).toContain("Allowed files: docs/proxy-test-runner-plan.md");
+    expect(taskCreateBody).toContain("Expected changed files: docs/proxy-test-runner-plan.md");
+    expect(promptPacketBody).toContain("Target file: docs/proxy-test-runner-plan.md");
+    expect(promptPacketBody).toContain('"target_files":["docs/proxy-test-runner-plan.md"]');
+    expect(promptPacketBody).toContain('"allowed_files":["docs/proxy-test-runner-plan.md"]');
+  });
+
   it("copies the controlled browser preview run approval gate without granting authority", async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(globalThis.navigator, "clipboard", {
@@ -1596,16 +1769,16 @@ describe("CodingCommandCenterShell", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Run 10 previews" }));
 
-    expect((await screen.findAllByText("10_preview_browser_run stopped on unsafe failure.")).length)
+    expect((await screen.findAllByText("10_preview_browser_run preview summary ready.")).length)
       .toBeGreaterThan(0);
-    expectActiveRunState("failed");
-    expect(screen.getByText("Diagnostic failed safely")).toBeInTheDocument();
+    expectActiveRunState("complete");
+    expect(screen.getByText("Diagnostic complete")).toBeInTheDocument();
     expect(screen.getByText("Run summary")).toBeInTheDocument();
     const runHistory = screen.getByRole("region", {
       name: "Current-session run history",
     });
     expect(within(runHistory).getByText("Latest diagnostic batch")).toBeInTheDocument();
-    expect(within(runHistory).getByText("failed")).toBeInTheDocument();
+    expect(within(runHistory).getByText("complete")).toBeInTheDocument();
     expect(
       within(runHistory).getByText(
         "Latest browser diagnostic summary is held in current component state only.",
@@ -1619,19 +1792,41 @@ describe("CodingCommandCenterShell", () => {
       .toBeInTheDocument();
     expect(screen.getByText(/frontend_widget_classifier_version: frontend_preview_route_gap_v2/))
       .toBeInTheDocument();
+    expect(screen.getByText(/trial_explicit_context_version: trial_target_context_v1/))
+      .toBeInTheDocument();
     expect(screen.getByText(/shared_noop_classifier_version: already_satisfied_noop_route_gap_v1/))
       .toBeInTheDocument();
-    expect(screen.getByText(/total_attempted: 1/)).toBeInTheDocument();
     expect(screen.getByText(/provider_calls: none/)).toBeInTheDocument();
+    expect(screen.getByText(/provider_call_made: false/)).toBeInTheDocument();
+    expect(screen.getByText(/queue_worker_started: false/)).toBeInTheDocument();
+    expect(screen.getByText(/shell_command_started: false/)).toBeInTheDocument();
+    expect(screen.getByText(/hidden_execution_started: false/)).toBeInTheDocument();
     expect(screen.getByText(/unexpected_files: 0/)).toBeInTheDocument();
-    expect(screen.getByText(/next_recommended_fix_batch:/)).toBeInTheDocument();
+    expect(screen.getByText(/authority_flags: all false/)).toBeInTheDocument();
+    expect(screen.getByText(/false_block_count: not_started/)).toBeInTheDocument();
+    expect(screen.getByText(/failed_closed_count: not_started/)).toBeInTheDocument();
+    expect(screen.getByText(/authority_drift_count: 0/)).toBeInTheDocument();
+    expect(screen.getByText(/daily_use_readiness_score: not_started/)).toBeInTheDocument();
+    expect(screen.getByText(/next_recommended_fix_batch: Run controlled 25 preview evidence next/))
+      .toBeInTheDocument();
+    expect(screen.getByText(/recommendation_next_run: Run controlled 25 preview evidence next/))
+      .toBeInTheDocument();
+    expect(screen.getByText(/Next recommended fix batch: Run controlled 25 preview evidence next/))
+      .toBeInTheDocument();
     expect(screen.getByText(/phase_7_decision: no_go/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /apply approved diff/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /commit|push/i })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Copy run summary" }));
     expect(writeText).toHaveBeenCalledWith(expect.stringContaining("stage: 10_preview_browser_run"));
-    expect(writeText).toHaveBeenCalledWith(expect.stringContaining("total_attempted: 1"));
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining("HB-01: blocked; reason_code: no_diff_route_gap"));
+    expect(writeText).toHaveBeenCalledWith(
+      expect.stringContaining("next_recommended_fix_batch: Run controlled 25 preview evidence next"),
+    );
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining("provider_call_made: false"));
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining("queue_worker_started: false"));
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining("shell_command_started: false"));
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining("hidden_execution_started: false"));
     expect(writeText).toHaveBeenCalledWith(expect.stringContaining("provider_authority: false"));
     expect(writeText).toHaveBeenCalledWith(
       expect.stringContaining("phase_7_live_preview_authority: false"),
@@ -1800,6 +1995,37 @@ describe("CodingCommandCenterShell", () => {
       .toHaveLength(2);
   }, 20_000);
 
+  it("converts HB-01 generic docs blockers into no-diff route gaps", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(globalThis.navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
+    vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(taskCreateResponse("task-hb-01"))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ status: "blocked" }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ error: "stop after hb-01 proof" }), { status: 500 }));
+
+    render(<CodingCommandCenterShell />);
+    openProxyDetails();
+    openProxyAdvancedControls();
+
+    fireEvent.click(screen.getByRole("button", { name: "Run 10 previews" }));
+
+    expect(await screen.findByText(/HB-01: blocked; reason_code: no_diff_route_gap/))
+      .toBeInTheDocument();
+    expect(screen.queryByText(/HB-01: unsafe_failure; reason_code: unknown_blocker/))
+      .not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Copy diag" }));
+    expect(writeText).toHaveBeenCalledWith(
+      expect.stringContaining("latest_trial_run_summary_state: available"),
+    );
+    expect(writeText).toHaveBeenCalledWith(
+      expect.stringContaining("HB-01: blocked; reason_code: no_diff_route_gap"),
+    );
+  });
+
   it("classifies HB-03 generic frontend blockers as a specific route gap", async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(globalThis.navigator, "clipboard", {
@@ -1843,14 +2069,15 @@ describe("CodingCommandCenterShell", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Run 10 previews" }));
 
-    expect((await screen.findAllByText("10_preview_browser_run stopped on unsafe failure.")).length)
+    expect((await screen.findAllByText("10_preview_browser_run preview summary ready.")).length)
       .toBeGreaterThan(0);
+    expect(screen.getByText(/HB-01: already_satisfied; reason_code: already_satisfied; receipt_class: already_satisfied_noop/))
+      .toBeInTheDocument();
+    expect(screen.getByText(/HB-02: ready; reason_code: unknown_blocker; receipt_class: productive_preview/))
+      .toBeInTheDocument();
     expect(screen.getByText(/HB-03: blocked; reason_code: frontend_preview_route_gap/))
       .toBeInTheDocument();
     expect(screen.getAllByText(/pass_fail: pass_honest_blocker/).length).toBeGreaterThan(0);
-    expect(screen.getByText(/safe_blockers: 1/)).toBeInTheDocument();
-    expect(screen.getByText(/top_recurring_blockers: frontend_preview_route_gap:1/))
-      .toBeInTheDocument();
     expect(screen.queryByText(/HB-03: unsafe_failure; reason_code: unknown_blocker/))
       .not.toBeInTheDocument();
 
@@ -1906,7 +2133,7 @@ describe("CodingCommandCenterShell", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Run 10 previews" }));
 
-    expect((await screen.findAllByText("10_preview_browser_run stopped on unsafe failure.")).length)
+    expect((await screen.findAllByText("10_preview_browser_run preview summary ready.")).length)
       .toBeGreaterThan(0);
     expect(screen.getByText(/hb03_classifier_version: frontend_preview_route_gap_v1/))
       .toBeInTheDocument();
@@ -1983,6 +2210,99 @@ describe("CodingCommandCenterShell", () => {
     expect(screen.getByText(/run_state: complete_preview_only_no_apply/)).toBeInTheDocument();
   });
 
+  it("converts HB-10 wrong-target preview diffs into a frontend route-gap blocker", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(globalThis.navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
+    vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(taskCreateResponse("task-hb-01"))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ reason_code: "coder_no_changes_needed", status: "already_satisfied" }), {
+          status: 200,
+        }),
+      )
+      .mockResolvedValueOnce(taskCreateResponse("task-hb-02"))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            proposed_diff: [
+              "diff --git a/docs/source-proxy-v0.3-stress-testing-plan.md b/docs/source-proxy-v0.3-stress-testing-plan.md",
+              "--- a/docs/source-proxy-v0.3-stress-testing-plan.md",
+              "+++ b/docs/source-proxy-v0.3-stress-testing-plan.md",
+              "@@ -1 +1,2 @@",
+              " # Source Proxy stress testing",
+              "+Config blocked is safety evidence, not productive coding proof.",
+              "",
+            ].join("\n"),
+            target: "docs/source-proxy-v0.3-stress-testing-plan.md",
+            task_id: "task-hb-02",
+          }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ status: "preview_ready" }), { status: 200 }))
+      .mockResolvedValueOnce(taskCreateResponse("task-hb-03"))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ status: "blocked" }), { status: 200 }))
+      .mockResolvedValueOnce(taskCreateResponse("task-hb-04"))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ error: "missing_target_context" }), { status: 500 }))
+      .mockResolvedValueOnce(taskCreateResponse("task-hb-05"))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ error: "backend_diff_generation_gap" }), { status: 500 }))
+      .mockResolvedValueOnce(taskCreateResponse("task-hb-06"))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ error: "protected_path" }), { status: 500 }))
+      .mockResolvedValueOnce(taskCreateResponse("task-hb-07"))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ error: "allowed_files_mismatch" }), { status: 500 }))
+      .mockResolvedValueOnce(taskCreateResponse("task-hb-08"))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ error: "scope_too_broad" }), { status: 500 }))
+      .mockResolvedValueOnce(taskCreateResponse("task-hb-09"))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ error: "scope_too_broad" }), { status: 500 }))
+      .mockResolvedValueOnce(taskCreateResponse("task-hb-10"))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            proposed_diff: [
+              "diff --git a/docs/proxy-test-runner-plan.md b/docs/proxy-test-runner-plan.md",
+              "--- a/docs/proxy-test-runner-plan.md",
+              "+++ b/docs/proxy-test-runner-plan.md",
+              "@@ -1 +1,2 @@",
+              " # Proxy test runner",
+              "+Wrong file candidate for a frontend trial.",
+              "",
+            ].join("\n"),
+            target: "docs/proxy-test-runner-plan.md",
+            task_id: "task-hb-10",
+          }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ status: "preview_ready" }), { status: 200 }));
+
+    render(<CodingCommandCenterShell />);
+    openProxyDetails();
+    openProxyAdvancedControls();
+
+    fireEvent.click(screen.getByRole("button", { name: "Run 10 previews" }));
+
+    expect(await screen.findByText(/HB-10: blocked; reason_code: frontend_preview_route_gap/))
+      .toBeInTheDocument();
+    expect(screen.getByText(/unsafe_failures: 0/)).toBeInTheDocument();
+    expect(screen.getByText(/unexpected_files: 0/)).toBeInTheDocument();
+    expect(screen.getByText(/run_state: complete_preview_only_no_apply/)).toBeInTheDocument();
+    expect(screen.queryByText(/HB-10: unsafe_failure/)).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Copy diag" }));
+    expect(writeText).toHaveBeenCalledWith(
+      expect.stringContaining("latest_trial_run_summary_state: available"),
+    );
+    expect(writeText).toHaveBeenCalledWith(
+      expect.stringContaining("HB-10: blocked; reason_code: frontend_preview_route_gap"),
+    );
+    expect(writeText).toHaveBeenCalledWith(
+      expect.stringContaining("next_recommended_fix_batch: Run controlled 25 preview evidence next"),
+    );
+  });
+
   it("converts shared already-satisfied no-op unknown failures into a specific route-gap blocker", async () => {
     vi.spyOn(globalThis, "fetch")
       .mockResolvedValueOnce(taskCreateResponse("task-hb-01"))
@@ -2045,7 +2365,7 @@ describe("CodingCommandCenterShell", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Run 25 previews" }));
 
-    expect((await screen.findAllByText("25_preview_browser_run stopped on unsafe failure.")).length)
+    expect((await screen.findAllByText("25_preview_browser_run preview summary ready.")).length)
       .toBeGreaterThan(0);
     expect(screen.getByText(/shared_noop_classifier_version: already_satisfied_noop_route_gap_v1/))
       .toBeInTheDocument();
@@ -2184,6 +2504,238 @@ describe("CodingCommandCenterShell", () => {
       .toBeInTheDocument();
   });
 
+  it("converts backend generation gaps for safe blocker trials into specific scope blockers", async () => {
+    vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(taskCreateResponse("task-hb-01"))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ status: "blocked" }), { status: 200 }))
+      .mockResolvedValueOnce(taskCreateResponse("task-hb-02"))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ status: "blocked" }), { status: 200 }))
+      .mockResolvedValueOnce(taskCreateResponse("task-hb-03"))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ status: "blocked" }), { status: 200 }))
+      .mockResolvedValueOnce(taskCreateResponse("task-hb-04"))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ error: "missing_target_context" }), { status: 500 }))
+      .mockResolvedValueOnce(taskCreateResponse("task-hb-05"))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ error: "backend_diff_generation_gap" }), { status: 500 }))
+      .mockResolvedValueOnce(taskCreateResponse("task-hb-06"))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ error: "protected_path" }), { status: 500 }))
+      .mockResolvedValueOnce(taskCreateResponse("task-hb-07"))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ error: "backend_diff_generation_gap" }), { status: 500 }))
+      .mockResolvedValueOnce(taskCreateResponse("task-hb-08"))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ error: "backend_diff_generation_gap" }), { status: 500 }))
+      .mockResolvedValueOnce(taskCreateResponse("task-hb-09"))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ error: "backend_diff_generation_gap" }), { status: 500 }))
+      .mockResolvedValueOnce(taskCreateResponse("task-hb-10"))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ status: "blocked" }), { status: 200 }));
+
+    render(<CodingCommandCenterShell />);
+    openProxyDetails();
+    openProxyAdvancedControls();
+
+    fireEvent.click(screen.getByRole("button", { name: "Run 10 previews" }));
+
+    expect(await screen.findByText(/HB-07: blocked; reason_code: allowed_files_mismatch/))
+      .toBeInTheDocument();
+    expect(screen.getByText(/HB-08: blocked; reason_code: scope_too_broad/))
+      .toBeInTheDocument();
+    expect(screen.getByText(/HB-09: blocked; reason_code: scope_too_broad/))
+      .toBeInTheDocument();
+    expect(screen.queryByText(/HB-07: blocked; reason_code: backend_diff_generation_gap/))
+      .not.toBeInTheDocument();
+    expect(screen.getByText(/unsafe_failures: 0/)).toBeInTheDocument();
+  });
+
+  it("guides clean staged diagnostics through 25, 30, 100, and 300 without granting authority", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch");
+
+    mockBlockedPreviewRun(
+      fetchMock,
+      PROXY_TRIAL_PROMPTS.slice(0, 25).map((trial) => trial.id),
+    );
+    const twentyFiveRender = render(<CodingCommandCenterShell />);
+    openProxyDetails();
+    openProxyAdvancedControls();
+    fireEvent.click(screen.getByRole("button", { name: "Run 25 previews" }));
+    expect((await screen.findAllByText("25_preview_browser_run preview summary ready.")).length)
+      .toBeGreaterThan(0);
+    expect(screen.getByText(/recommendation_next_run: Run 30 Design Diagnostic next/))
+      .toBeInTheDocument();
+    expect(screen.queryByText(/provider_call_made: true/)).not.toBeInTheDocument();
+    twentyFiveRender.unmount();
+    fetchMock.mockReset();
+
+    mockBlockedPreviewRun(
+      fetchMock,
+      PROXY_DESIGN_DIAGNOSTIC_PROMPTS.map((trial) => trial.id),
+    );
+    const thirtyRender = render(<CodingCommandCenterShell />);
+    openProxyDetails();
+    openProxyAdvancedControls();
+    fireEvent.click(screen.getAllByRole("button", { name: "Run 30 Design Diagnostic" })[0]);
+    expect((await screen.findAllByText("30_design_diagnostic_run preview summary ready.")).length)
+      .toBeGreaterThan(0);
+    expect(screen.getByText(/total_prompts: 30/)).toBeInTheDocument();
+    expect(screen.getByText(/visual_evidence_quality: browser_screenshot_proof_pending/))
+      .toBeInTheDocument();
+    expect(screen.getByText(/css_component_relevance: read_only_component_relevance_pending/))
+      .toBeInTheDocument();
+    expect(screen.getByText(/recommendation_next_run: Run controlled 100 preview evidence next/))
+      .toBeInTheDocument();
+    thirtyRender.unmount();
+    fetchMock.mockReset();
+
+    mockBlockedPreviewRun(
+      fetchMock,
+      PROXY_TRIAL_PROMPTS.slice(0, 100).map((trial) => trial.id),
+    );
+    const hundredRender = render(<CodingCommandCenterShell />);
+    openProxyDetails();
+    openProxyAdvancedControls();
+    fireEvent.click(screen.getByRole("button", { name: "Run 100 previews" }));
+    expect((await screen.findAllByText("100_preview_browser_run preview summary ready.")).length)
+      .toBeGreaterThan(0);
+    expect(screen.getByText(/total_prompts: 100/)).toBeInTheDocument();
+    expect(screen.getByText(/recommendation_next_run: Run 300 Combined Gauntlet next/))
+      .toBeInTheDocument();
+    hundredRender.unmount();
+    fetchMock.mockReset();
+
+    mockBlockedPreviewRun(
+      fetchMock,
+      PROXY_COMBINED_GAUNTLET_PROMPTS.map((trial) => trial.id),
+    );
+    render(<CodingCommandCenterShell />);
+    openProxyDetails();
+    openProxyAdvancedControls();
+    fireEvent.click(screen.getAllByRole("button", { name: "Run 300 Combined Gauntlet" })[0]);
+    expect((await screen.findAllByText("300_combined_gauntlet_run preview summary ready.")).length)
+      .toBeGreaterThan(0);
+    expect(screen.getByText(/total_prompts: 300/)).toBeInTheDocument();
+    expect(screen.getByText(/blocked_safety: 116/)).toBeInTheDocument();
+    expect(screen.getByText(/route_gap_not_ready: 157/)).toBeInTheDocument();
+    expect(screen.getByText(/inconclusive_evidence: 27/)).toBeInTheDocument();
+    expect(screen.getByText(/safe_blockers: 300/)).toBeInTheDocument();
+    expect(screen.getByText(/provider_call_made: false/)).toBeInTheDocument();
+    expect(screen.getByText(/queue_worker_started: false/)).toBeInTheDocument();
+    expect(screen.getByText(/shell_command_started: false/)).toBeInTheDocument();
+    expect(screen.getByText(/hidden_execution_started: false/)).toBeInTheDocument();
+    expect(screen.getByText(/recommendation_next_run: Blocker-reduction work before preflight CSS/))
+      .toBeInTheDocument();
+    expect(screen.queryByText(/production readiness approved/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/automatic CSS polish approved/i)).not.toBeInTheDocument();
+  }, 60_000);
+
+  it("converts generic design diagnostic blockers into safe route-gap evidence", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch");
+    for (const trial of PROXY_DESIGN_DIAGNOSTIC_PROMPTS) {
+      fetchMock.mockResolvedValueOnce(taskCreateResponse(`task-${trial.id.toLowerCase()}`));
+      fetchMock.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            error: trial.id === "DGN-001" ? "unknown_blocker" : "blocked_after_retries",
+          }),
+          { status: 500 },
+        ),
+      );
+    }
+
+    render(<CodingCommandCenterShell />);
+    openProxyDetails();
+    openProxyAdvancedControls();
+
+    fireEvent.click(screen.getAllByRole("button", { name: "Run 30 Design Diagnostic" })[0]);
+
+    expect((await screen.findAllByText("30_design_diagnostic_run preview summary ready.")).length)
+      .toBeGreaterThan(0);
+    expect(screen.getByText(/DGN-001: blocked; reason_code: productive_preview_route_gap/))
+      .toBeInTheDocument();
+    expect(screen.getByText(/unsafe_failures: 0/)).toBeInTheDocument();
+    expect(screen.queryByText(/DGN-001: unsafe_failure; reason_code: unknown_blocker/))
+      .not.toBeInTheDocument();
+    expect(screen.getByText(/recommendation_next_run: Run controlled 100 preview evidence next/))
+      .toBeInTheDocument();
+  }, 20_000);
+
+  it("converts generic combined-gauntlet blockers into safe route-gap evidence", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch");
+    for (const trial of PROXY_COMBINED_GAUNTLET_PROMPTS) {
+      fetchMock.mockResolvedValueOnce(taskCreateResponse(`task-${trial.id.toLowerCase()}`));
+      fetchMock.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            error: trial.id === "CG-001" ? "unknown_blocker" : "blocked_after_retries",
+          }),
+          { status: 500 },
+        ),
+      );
+    }
+
+    render(<CodingCommandCenterShell />);
+    openProxyDetails();
+    openProxyAdvancedControls();
+
+    fireEvent.click(screen.getAllByRole("button", { name: "Run 300 Combined Gauntlet" })[0]);
+
+    expect((await screen.findAllByText("300_combined_gauntlet_run preview summary ready.")).length)
+      .toBeGreaterThan(0);
+    expect(screen.getByText(/CG-001: blocked; reason_code: backend_diff_generation_gap/))
+      .toBeInTheDocument();
+    expect(screen.getByText(/CG-001: blocked; reason_code: backend_diff_generation_gap; receipt_class: route_gap_not_ready/))
+      .toBeInTheDocument();
+    expect(screen.getByText(/CG-115: blocked; reason_code: already_satisfied_noop_route_gap; receipt_class: route_gap_not_ready/))
+      .toBeInTheDocument();
+    expect(screen.getByText(/CG-130: blocked; reason_code: no_diff_route_gap; receipt_class: inconclusive_evidence/))
+      .toBeInTheDocument();
+    expect(screen.getByText(/CG-172: blocked; reason_code: protected_path; receipt_class: blocked_safety/))
+      .toBeInTheDocument();
+    expect(screen.getByText(/blocked_safety: 116/)).toBeInTheDocument();
+    expect(screen.getByText(/route_gap_not_ready: 157/)).toBeInTheDocument();
+    expect(screen.getByText(/inconclusive_evidence: 27/)).toBeInTheDocument();
+    expect(screen.getByText(/safe_blockers: 300/)).toBeInTheDocument();
+    expect(screen.getByText(/unsafe_failures: 0/)).toBeInTheDocument();
+    expect(screen.queryByText(/CG-001: unsafe_failure; reason_code: unknown_blocker/))
+      .not.toBeInTheDocument();
+    expect(screen.getByText(/recommendation_next_run: Blocker-reduction work before preflight CSS/))
+      .toBeInTheDocument();
+  }, 40_000);
+
+  it("consumes bounded diff preview packets for CG-001 through CG-005 before backend gap fallback", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch");
+    for (const trial of PROXY_COMBINED_GAUNTLET_PROMPTS) {
+      fetchMock.mockResolvedValueOnce(taskCreateResponse(`task-${trial.id.toLowerCase()}`));
+      fetchMock.mockResolvedValueOnce(
+        new Response(JSON.stringify({ reason_code: "backend_diff_generation_gap", status: "blocked" }), {
+          status: 200,
+        }),
+      );
+      if (/^CG-00[1-5]$/.test(trial.id)) {
+        fetchMock.mockResolvedValueOnce(boundedDiffProductiveResponse(trial.id));
+      }
+    }
+
+    render(<CodingCommandCenterShell />);
+    openProxyDetails();
+    openProxyAdvancedControls();
+
+    fireEvent.click(screen.getAllByRole("button", { name: "Run 300 Combined Gauntlet" })[0]);
+
+    expect((await screen.findAllByText("300_combined_gauntlet_run preview summary ready.")).length)
+      .toBeGreaterThan(0);
+    expect(screen.getByText(/CG-001: ready; reason_code: unknown_blocker; receipt_class: productive_preview; pass_fail: pass_productive_preview/))
+      .toBeInTheDocument();
+    expect(screen.getByText(/CG-005: ready; reason_code: unknown_blocker; receipt_class: productive_preview; pass_fail: pass_productive_preview/))
+      .toBeInTheDocument();
+    expect(screen.getByText(/productive_previews: 5/)).toBeInTheDocument();
+    expect(screen.getByText(/productive_preview_diffs: 5/)).toBeInTheDocument();
+    expect(screen.getByText(/blocked_safety: 116/)).toBeInTheDocument();
+    expect(screen.getByText(/route_gap_not_ready: 152/)).toBeInTheDocument();
+    expect(screen.getByText(/unsafe_failures: 0/)).toBeInTheDocument();
+    expect(screen.getByText(/unexpected_files: 0/)).toBeInTheDocument();
+    expect(screen.getByText(/provider_call_made: false/)).toBeInTheDocument();
+    expect(screen.getByText(/queue_worker_started: false/)).toBeInTheDocument();
+    expect(screen.getByText(/shell_command_started: false/)).toBeInTheDocument();
+    expect(screen.getByText(/hidden_execution_started: false/)).toBeInTheDocument();
+  }, 40_000);
+
   it("shows immediate feedback when the controlled 10-preview stage starts", async () => {
     let resolveFetch: (response: Response) => void = () => {};
     vi.spyOn(globalThis, "fetch").mockReturnValue(
@@ -2196,6 +2748,10 @@ describe("CodingCommandCenterShell", () => {
     openProofRunControls();
     expect(screen.getByRole("button", { name: "Run 10" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Run 25" })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Run 30 Design Diagnostic" }).length)
+      .toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: "Run 300 Combined Gauntlet" }).length)
+      .toBeGreaterThan(0);
     openProxyDetails();
 
     fireEvent.click(screen.getByRole("button", { name: "Run 10" }));
@@ -2348,6 +2904,7 @@ describe("CodingCommandCenterShell", () => {
     expectPlan8AForbiddenControlsAbsent();
 
     fireEvent.click(screen.getByRole("button", { name: "Copy diag" }));
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining("active_proof_run: Run 25"));
     expect(writeText).toHaveBeenCalledWith(expect.stringContaining("lifecycle_trial_count: 25"));
     expect(writeText).toHaveBeenCalledWith(
       expect.stringContaining("lifecycle_trial_stage: Creating preview task"),
@@ -2415,17 +2972,19 @@ describe("CodingCommandCenterShell", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Run all safe previews" }));
 
-    expect((await screen.findAllByText("Run All stopped on unsafe failure.")).length)
+    expect((await screen.findAllByText("Run All preview summary ready.")).length)
       .toBeGreaterThan(0);
     expect(screen.getByText("Run summary")).toBeInTheDocument();
     expect(screen.getByText(/HB-01: blocked; reason_code: no_diff_route_gap/))
       .toBeInTheDocument();
     expect(screen.getByText(/HB-02: ready; reason_code: unknown_blocker/)).toBeInTheDocument();
-    expect(screen.getByText(/top_recurring_blockers: .*no_diff_route_gap:1/))
+    expect(screen.getByText(/HB-02: ready; reason_code: unknown_blocker; receipt_class: productive_preview/))
+      .toBeInTheDocument();
+    expect(screen.getByText(/top_recurring_blockers: .*no_diff_route_gap:/))
       .toBeInTheDocument();
     expect(screen.getByText(/top_recurring_blockers: .*frontend_preview_route_gap:1/))
       .toBeInTheDocument();
-    expect(screen.getByText(/run_state: stopped_on_unsafe_failure/)).toBeInTheDocument();
+    expect(screen.getByText(/run_state: complete_preview_only_no_apply/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /apply approved diff/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /commit|push/i })).not.toBeInTheDocument();
 
@@ -2434,10 +2993,15 @@ describe("CodingCommandCenterShell", () => {
     expect(writeText).toHaveBeenCalledWith(expect.stringContaining("commit_authority: false"));
     expect(writeText).toHaveBeenCalledWith(expect.stringContaining("push_authority: false"));
     expect(writeText).toHaveBeenCalledWith(
-      expect.stringContaining("no_diff_route_gap:1"),
+      expect.stringContaining("no_diff_route_gap:"),
     );
     expect(writeText).toHaveBeenCalledWith(
       expect.stringContaining("frontend_preview_route_gap:1"),
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Copy diag" }));
+    expect(writeText).toHaveBeenCalledWith(
+      expect.stringContaining("active_proof_run: latest current-session summary"),
     );
 
     fireEvent.click(screen.getByText("Older packets"));
@@ -2886,6 +3450,12 @@ describe("CodingCommandCenterShell", () => {
       expect.stringContaining("Source Proxy compact diagnostic"),
     );
     expect(writeText).toHaveBeenCalledWith(
+      expect.stringContaining("ui_build_marker: trial-explicit-context-safe-20260525-2250"),
+    );
+    expect(writeText).toHaveBeenCalledWith(
+      expect.stringContaining("trial_explicit_context_version: trial_target_context_v1"),
+    );
+    expect(writeText).toHaveBeenCalledWith(
       expect.stringContaining("lifecycle_active_chat_run: draft"),
     );
     expect(writeText).toHaveBeenCalledWith(
@@ -2969,6 +3539,9 @@ describe("CodingCommandCenterShell", () => {
     );
     expect(writeText).toHaveBeenCalledWith(
       expect.stringContaining("lifecycle_public_work_state_receipt:"),
+    );
+    expect(writeText).toHaveBeenCalledWith(
+      expect.stringContaining("active_proof_run: none"),
     );
     expect(writeText).toHaveBeenCalledWith(
       expect.stringContaining("lifecycle_queue_preview: preview queue only; no worker running; no provider call; no apply authority"),

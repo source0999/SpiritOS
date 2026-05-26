@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
 export const sectionLabelClasses =
-  "font-mono text-[10px] font-semibold uppercase tracking-widest text-chalk/45";
+  "font-mono text-[10px] font-semibold uppercase tracking-normal text-chalk/45";
 
 type SectionLabelProps = {
   as?: "p" | "span" | "dt";
