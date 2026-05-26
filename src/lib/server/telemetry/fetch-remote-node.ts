@@ -1,4 +1,4 @@
-import type { ClusterNodeTelemetry } from "./types";
+import type { ClusterNodeTelemetry, DriveType, NodeDrive, NodeStorage, SmartStatus } from "./types";
 
 /** Remote Windows agent runs synchronous PowerShell (multi-drive); sub-3s fetch timeouts falsely mark nodes offline. */
 const REMOTE_TIMEOUT_MS = 12_000;
@@ -42,6 +42,145 @@ function getRemoteTelemetryValidationError(data: unknown): string | null {
   return null;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+function nullableNumber(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function nullableString(value: unknown): string | null {
+  return typeof value === "string" ? value : null;
+}
+
+function normalizeDriveType(value: unknown): DriveType {
+  return value === "SSD" || value === "HDD" || value === "NVME" || value === "UNKNOWN"
+    ? value
+    : "UNKNOWN";
+}
+
+function inferRemoteDriveType(
+  value: unknown,
+  platform: string | null,
+  drive: Record<string, unknown>,
+): DriveType {
+  const explicit = normalizeDriveType(value);
+  if (explicit !== "UNKNOWN") return explicit;
+
+  const id = nullableString(drive.id);
+  const mount = nullableString(drive.mount) ?? nullableString(drive.mountPoint);
+  if (platform === "darwin" && id === "mac-root" && mount === "/") {
+    return "SSD";
+  }
+
+  return "UNKNOWN";
+}
+
+function normalizeSmartStatus(value: unknown): SmartStatus {
+  return value === "Healthy" || value === "Warning" || value === "Critical" || value === "Unknown"
+    ? value
+    : "Unknown";
+}
+
+function clampPct(value: number): number {
+  return Math.min(100, Math.max(0, Math.round(value * 10) / 10));
+}
+
+function usagePctFromLoadAvg(loadAvg: number[] | null, cores: number | null): number | null {
+  if (!loadAvg || loadAvg.length === 0 || cores === null || cores <= 0) return null;
+  return clampPct((loadAvg[0]! / cores) * 100);
+}
+
+function normalizeRemoteCpu(cpu: unknown): ClusterNodeTelemetry["cpu"] {
+  const c = isRecord(cpu) ? cpu : {};
+  const cores = nullableNumber(c.cores);
+  const loadAvg = Array.isArray(c.loadAvg) ? c.loadAvg.filter((v): v is number => typeof v === "number") : null;
+  const usagePct = nullableNumber(c.usagePct) ?? usagePctFromLoadAvg(loadAvg, cores);
+
+  return {
+    ...c,
+    model: nullableString(c.model),
+    cores,
+    usagePct,
+    loadAvg,
+  };
+}
+
+function normalizeRemoteMemory(memory: unknown): ClusterNodeTelemetry["memory"] {
+  const m = isRecord(memory) ? memory : {};
+  return {
+    ...m,
+    totalBytes: nullableNumber(m.totalBytes),
+    freeBytes: nullableNumber(m.freeBytes),
+    usedBytes: nullableNumber(m.usedBytes),
+    usedPct: nullableNumber(m.usedPct),
+  };
+}
+
+function normalizeRemoteDrive(rawDrive: unknown, platform: string | null): NodeDrive {
+  const drive = isRecord(rawDrive) ? rawDrive : {};
+  const id = nullableString(drive.id) ?? nullableString(drive.name) ?? "unknown-drive";
+  const name = nullableString(drive.name) ?? id;
+
+  return {
+    ...drive,
+    id,
+    name,
+    mount: nullableString(drive.mount) ?? nullableString(drive.mountPoint),
+    fsType: nullableString(drive.fsType) ?? nullableString(drive.filesystem),
+    type: inferRemoteDriveType(drive.type, platform, drive),
+    totalBytes: nullableNumber(drive.totalBytes),
+    usedBytes: nullableNumber(drive.usedBytes),
+    freeBytes: nullableNumber(drive.freeBytes),
+    usedPct: nullableNumber(drive.usedPct),
+    tempC: nullableNumber(drive.tempC),
+    smart: normalizeSmartStatus(drive.smart),
+  };
+}
+
+function normalizeRemoteStorage(
+  storage: unknown,
+  collectedAt: string,
+  platform: string | null,
+): NodeStorage | undefined {
+  if (!isRecord(storage)) return undefined;
+  const drives = Array.isArray(storage.drives)
+    ? storage.drives.map((drive) => normalizeRemoteDrive(drive, platform))
+    : [];
+
+  return {
+    ...storage,
+    drives,
+    collectedAt: nullableString(storage.collectedAt) ?? collectedAt,
+    error: nullableString(storage.error) ?? undefined,
+  };
+}
+
+function normalizeRemoteNodeTelemetry(
+  data: ClusterNodeTelemetry,
+  id: string,
+  label: string,
+  telemetryUrl: string,
+): ClusterNodeTelemetry {
+  const platform = data.platform ?? null;
+
+  return {
+    ...data,
+    id: data.id || id,
+    label: data.label || label,
+    hostname: data.hostname ?? null,
+    source: "remote",
+    telemetryUrl,
+    platform,
+    arch: data.arch ?? null,
+    cpu: normalizeRemoteCpu(data.cpu),
+    memory: normalizeRemoteMemory(data.memory),
+    storage: normalizeRemoteStorage(data.storage, data.collectedAt, platform),
+    uptimeSec: data.uptimeSec ?? null,
+  };
+}
+
 export async function fetchRemoteNodeTelemetry(
   id: string,
   label: string,
@@ -77,15 +216,7 @@ export async function fetchRemoteNodeTelemetry(
     }
 
     const node = data as ClusterNodeTelemetry;
-    // Preserve optional fields (e.g. storage) - do not hand-rebuild the node without them.
-    return {
-      ...node,
-      id: node.id || id,
-      label: node.label || label,
-      telemetryUrl,
-      source: "remote",
-      storage: node.storage,
-    };
+    return normalizeRemoteNodeTelemetry(node, id, label, telemetryUrl);
   } catch (err) {
     clearTimeout(timer);
     const name = err instanceof Error ? err.name : "";

@@ -177,6 +177,125 @@ describe("fetchRemoteNodeTelemetry", () => {
     expect(result.storage?.drives?.[0]?.id).toBe("C:");
   });
 
+  it("normalizes Mac-style storage payload to NodeDrive shape", async () => {
+    const collectedAt = new Date().toISOString();
+    const macLike = {
+      id: "spirit-mac-mini",
+      label: "Mac Mini",
+      hostname: "spirit-mac-mini.local",
+      status: "online",
+      source: "remote",
+      platform: "darwin",
+      arch: "x86_64",
+      cpu: {
+        model: "Intel(R) Core(TM) i7-8700B CPU @ 3.20GHz",
+        cores: 12,
+        loadAvg: [3.6, 6.0, 3.1],
+      },
+      memory: {
+        totalBytes: 17_179_869_184,
+        freeBytes: 10_310_422_528,
+        usedBytes: 6_869_446_656,
+        usedPct: 40,
+      },
+      storage: {
+        drives: [
+          {
+            id: "mac-root",
+            letter: "/",
+            name: "Macintosh HD",
+            mountPoint: "/",
+            filesystem: "/dev/disk1s4s1",
+            totalBytes: 499_963_174_912,
+            usedBytes: 11_262_382_080,
+            freeBytes: 472_294_998_016,
+            usedPct: 2.3,
+          },
+        ],
+        collectedAt,
+      },
+      uptimeSec: 296,
+      collectedAt,
+      capabilities: ["macos", "telemetry"],
+    };
+    globalThis.fetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify(macLike), { status: 200 }),
+    );
+
+    const result = await fetchRemoteNodeTelemetry(
+      "spirit-mac-mini",
+      "Spirit Mac Mini",
+      "http://10.0.0.147:3187/api/telemetry/self",
+    );
+
+    expect(result.cpu.usagePct).toBe(30);
+    expect(result.cpu.loadAvg).toEqual([3.6, 6.0, 3.1]);
+    expect(result.memory.usedPct).toBe(40);
+    expect(result.storage?.drives?.[0]).toMatchObject({
+      id: "mac-root",
+      letter: "/",
+      name: "Macintosh HD",
+      mount: "/",
+      fsType: "/dev/disk1s4s1",
+      type: "SSD",
+      totalBytes: 499_963_174_912,
+      usedBytes: 11_262_382_080,
+      freeBytes: 472_294_998_016,
+      usedPct: 2.3,
+      tempC: null,
+      smart: "Unknown",
+    });
+  });
+
+  it("keeps existing Windows-style storage fields unchanged", async () => {
+    const windowsDrive = {
+      id: "C:",
+      name: "C:",
+      mount: "C:",
+      fsType: "NTFS",
+      type: "UNKNOWN" as const,
+      totalBytes: 500e9,
+      usedBytes: 200e9,
+      freeBytes: 300e9,
+      usedPct: 40,
+      tempC: null,
+      smart: "Unknown" as const,
+    };
+    const windowsLike = {
+      id: "spiritdesktop",
+      label: "spiritdesktop",
+      hostname: "DESKTOP-ABC",
+      status: "online",
+      source: "remote",
+      platform: "win32",
+      arch: "x64",
+      cpu: { model: "Intel Something", cores: 8, usagePct: 12.3, loadAvg: null },
+      memory: {
+        totalBytes: 16_000_000_000,
+        freeBytes: 8_000_000_000,
+        usedBytes: 8_000_000_000,
+        usedPct: 50,
+      },
+      storage: {
+        drives: [windowsDrive],
+        collectedAt: new Date().toISOString(),
+      },
+      uptimeSec: 3600,
+      collectedAt: new Date().toISOString(),
+    };
+    globalThis.fetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify(windowsLike), { status: 200 }),
+    );
+
+    const result = await fetchRemoteNodeTelemetry(
+      "spiritdesktop",
+      "spiritdesktop",
+      "http://10.0.0.50:3000/api/telemetry/self",
+    );
+
+    expect(result.storage?.drives?.[0]).toEqual(windowsDrive);
+  });
+
   it("accepts Windows-agent-compatible ClusterNodeTelemetry JSON", async () => {
     const windowsLike = {
       id: "spiritdesktop",
@@ -214,6 +333,31 @@ describe("fetchRemoteNodeTelemetry", () => {
     expect(result.telemetryUrl).toBe("http://10.0.0.50:3000/api/telemetry/self");
     expect(result.cpu.cores).toBe(8);
     expect(result.memory.usedPct).toBe(50);
+  });
+
+  it("accepts the minimal valid remote contract", async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          id: "minimal-node",
+          status: "online",
+          collectedAt: new Date().toISOString(),
+        }),
+        { status: 200 },
+      ),
+    );
+
+    const result = await fetchRemoteNodeTelemetry(
+      "minimal-node",
+      "Minimal Node",
+      "http://10.0.0.51:3000/api/telemetry/self",
+    );
+
+    expect(result.status).toBe("online");
+    expect(result.source).toBe("remote");
+    expect(result.label).toBe("Minimal Node");
+    expect(result.cpu.usagePct).toBeNull();
+    expect(result.memory.usedPct).toBeNull();
   });
 
   it("sends default Authorization (3399) when SPIRIT_TELEMETRY_TOKEN is unset", async () => {

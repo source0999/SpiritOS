@@ -68,7 +68,7 @@ describe("SpiritDashboardHome", () => {
     render(<SpiritDashboardHome />);
 
     const nav = screen.getByRole("navigation", {
-      name: /dashboard mobile navigation/i,
+      name: /spirit app mobile navigation/i,
     });
     const hrefs = Array.from(nav.querySelectorAll("a")).map((a) =>
       a.getAttribute("href"),
