@@ -1508,6 +1508,7 @@ export function MediaExperience() {
         }
 
         .media-card {
+          contain: layout paint;
           display: grid;
           grid-template-rows: auto 1fr;
           min-width: 0;
@@ -1550,6 +1551,12 @@ export function MediaExperience() {
           justify-content: space-between;
           gap: 12px;
           padding: 14px;
+        }
+
+        .card-copy h3,
+        .meta,
+        .metadata-line {
+          overflow-wrap: anywhere;
         }
 
         .profile-buttons {

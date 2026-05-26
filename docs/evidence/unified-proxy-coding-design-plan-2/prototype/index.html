@@ -1,0 +1,908 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Spirit OS Unified Proxy Foundation Prototype</title>
+    <style>
+      :root {
+        --bg: #10131a;
+        --panel: #181d27;
+        --panel-strong: #202737;
+        --line: #344055;
+        --text: #f5f7fb;
+        --muted: #a9b3c7;
+        --soft: #d7deea;
+        --accent: #5ed3c7;
+        --warn: #f6c96d;
+        --danger: #f08383;
+        --ok: #8be28b;
+        color-scheme: dark;
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--text);
+      }
+
+      button,
+      textarea {
+        font: inherit;
+      }
+
+      .app {
+        display: grid;
+        grid-template-columns: 220px minmax(0, 1fr);
+        min-height: 100vh;
+      }
+
+      .rail {
+        border-right: 1px solid var(--line);
+        background: #121722;
+        padding: 16px;
+      }
+
+      .brand {
+        margin: 0 0 18px;
+        font-size: 18px;
+        font-weight: 750;
+      }
+
+      .nav {
+        display: grid;
+        gap: 8px;
+      }
+
+      .nav button,
+      .tool button {
+        min-height: 40px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        color: var(--soft);
+        cursor: pointer;
+      }
+
+      .nav button[aria-current="page"] {
+        border-color: var(--accent);
+        color: var(--text);
+      }
+
+      .workspace {
+        margin-top: 18px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .main {
+        display: grid;
+        grid-template-rows: auto auto minmax(0, 1fr) auto;
+        min-width: 0;
+        min-height: 100vh;
+      }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 18px 20px 10px;
+      }
+
+      .title {
+        min-width: 0;
+      }
+
+      .eyebrow {
+        margin: 0 0 4px;
+        color: var(--accent);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 24px;
+        line-height: 1.2;
+        letter-spacing: 0;
+      }
+
+      .tools {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: flex-end;
+      }
+
+      .tool button {
+        padding: 0 12px;
+      }
+
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 0 20px 12px;
+      }
+
+      .chip {
+        display: inline-flex;
+        min-height: 32px;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: var(--panel);
+        padding: 6px 10px;
+        color: var(--soft);
+        font-size: 13px;
+        white-space: normal;
+      }
+
+      .chip strong {
+        color: var(--text);
+      }
+
+      .chip.warn {
+        border-color: color-mix(in srgb, var(--warn) 45%, var(--line));
+      }
+
+      .chip.blocked {
+        border-color: color-mix(in srgb, var(--danger) 45%, var(--line));
+      }
+
+      .content {
+        min-height: 0;
+        overflow: auto;
+        padding: 0 20px 18px;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.85fr);
+        gap: 14px;
+      }
+
+      .panel {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        overflow: hidden;
+      }
+
+      .panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        border-bottom: 1px solid var(--line);
+        padding: 12px 14px;
+      }
+
+      .panel-header h2,
+      .panel-header h3 {
+        margin: 0;
+        font-size: 16px;
+      }
+
+      .state {
+        color: var(--warn);
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .schema-grid,
+      .state-grid {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        padding: 14px;
+      }
+
+      .timeline {
+        display: grid;
+        gap: 10px;
+        padding: 14px;
+      }
+
+      .event {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel-strong);
+        padding: 12px;
+      }
+
+      .event h3 {
+        margin: 0 0 6px;
+        font-size: 14px;
+      }
+
+      .event p,
+      .drawer p,
+      .card p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .event[data-state="approval-required"] {
+        border-color: color-mix(in srgb, var(--warn) 55%, var(--line));
+      }
+
+      .event[data-state="blocked"] {
+        border-color: color-mix(in srgb, var(--danger) 55%, var(--line));
+      }
+
+      .event[data-state="verify-required"] {
+        border-color: color-mix(in srgb, var(--ok) 45%, var(--line));
+      }
+
+      .side {
+        display: grid;
+        align-content: start;
+        gap: 14px;
+      }
+
+      .card {
+        padding: 14px;
+      }
+
+      .card h3 {
+        margin: 0 0 10px;
+        font-size: 15px;
+      }
+
+      .list {
+        display: grid;
+        gap: 8px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .list li {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 9px 10px;
+        color: var(--soft);
+      }
+
+      .badge-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      .badge {
+        display: inline-flex;
+        min-height: 28px;
+        align-items: center;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--soft);
+        padding: 4px 9px;
+        font-size: 12px;
+      }
+
+      .badge.allowed {
+        border-color: color-mix(in srgb, var(--ok) 44%, var(--line));
+      }
+
+      .badge.forbidden {
+        border-color: color-mix(in srgb, var(--danger) 44%, var(--line));
+      }
+
+      .composer {
+        border-top: 1px solid var(--line);
+        background: #121722;
+        padding: 12px 20px;
+      }
+
+      .composer-shell {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 10px;
+      }
+
+      textarea {
+        min-height: 52px;
+        resize: vertical;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        color: var(--text);
+        padding: 10px 12px;
+      }
+
+      .send {
+        min-width: 116px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #263044;
+        color: var(--muted);
+      }
+
+      .composer-note {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .drawer-backdrop {
+        position: fixed;
+        inset: 0;
+        display: none;
+        background: rgba(0, 0, 0, 0.5);
+      }
+
+      .drawer-backdrop[data-open="true"] {
+        display: block;
+      }
+
+      .drawer {
+        position: fixed;
+        inset: 0 0 0 auto;
+        display: none;
+        width: min(440px, 100vw);
+        overflow: auto;
+        border-left: 1px solid var(--line);
+        background: #151b27;
+        padding: 18px;
+      }
+
+      .drawer[data-open="true"] {
+        display: block;
+      }
+
+      .drawer-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+      .drawer h2 {
+        margin: 0;
+        font-size: 20px;
+      }
+
+      .drawer .close {
+        min-width: 40px;
+        min-height: 40px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        color: var(--text);
+      }
+
+      .drawer-section {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        margin-bottom: 12px;
+        padding: 12px;
+      }
+
+      .drawer-section h3 {
+        margin: 0 0 8px;
+        font-size: 15px;
+      }
+
+      .disabled-action {
+        display: inline-flex;
+        min-height: 36px;
+        align-items: center;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #252b38;
+        color: var(--muted);
+        padding: 0 10px;
+      }
+
+      @media (max-width: 900px) {
+        .app {
+          grid-template-columns: 1fr;
+        }
+
+        .rail {
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+        }
+
+        .nav {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+
+        .layout {
+          grid-template-columns: 1fr;
+        }
+
+        .schema-grid,
+        .state-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 560px) {
+        .topbar,
+        .composer-shell {
+          grid-template-columns: 1fr;
+          display: grid;
+        }
+
+        .tools {
+          justify-content: stretch;
+        }
+
+        .tool button,
+        .send {
+          width: 100%;
+        }
+
+        .chips {
+          align-items: stretch;
+          flex-direction: column;
+        }
+
+        .chip {
+          border-radius: 8px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside class="rail" aria-label="Workspace lanes">
+        <p class="brand">Spirit OS</p>
+        <nav class="nav" aria-label="Primary">
+          <button aria-current="page">Coding</button>
+          <button>Projects</button>
+          <button>Chat</button>
+          <button>Media</button>
+        </nav>
+        <div class="workspace">
+          <strong>Workspace</strong><br />
+          SpiritOS, read/list-only context. No project creation, branch,
+          worktree, commit, or push action is exposed.
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div class="title">
+            <p class="eyebrow">/coding command center</p>
+            <h1>Active Task Foundation</h1>
+          </div>
+          <div class="tools" aria-label="Drawers">
+            <span class="tool"><button data-drawer-trigger="settings">Settings</button></span>
+            <span class="tool"><button data-drawer-trigger="diagnostics">Diagnostics</button></span>
+            <span class="tool"><button data-drawer-trigger="evidence">Evidence</button></span>
+            <span class="tool"><button data-drawer-trigger="design">Design Intake</button></span>
+          </div>
+        </header>
+
+        <section class="chips" aria-label="Truth chips">
+          <span class="chip"><strong>Project</strong> SpiritOS read-only</span>
+          <span class="chip blocked"><strong>Provider</strong> unavailable, no call</span>
+          <span class="chip warn"><strong>Safety</strong> Draft -> Preview -> Approval -> Apply disabled -> Verify</span>
+          <span class="chip blocked"><strong>Dirty tree</strong> evidence-only dirty state preserved</span>
+          <span class="chip warn"><strong>Approval</strong> required, not apply</span>
+        </section>
+
+        <section class="content">
+          <div class="layout">
+            <section class="panel" aria-labelledby="transcript-title">
+              <div class="panel-header">
+                <h2 id="transcript-title">Active Task Transcript</h2>
+                <span class="state">Preview/display only</span>
+              </div>
+              <div class="schema-grid" aria-label="Task packet schema">
+                <article class="event">
+                  <h3>Task Packet</h3>
+                  <p>ID: task-fixture-004. Intent: complete active-task display features in the isolated prototype.</p>
+                </article>
+                <article class="event">
+                  <h3>Files</h3>
+                  <p>Allowed: docs/evidence/unified-proxy-coding-design-plan-2/prototype/index.html. Forbidden: production source, runtime, map, and soak state.</p>
+                </article>
+                <article class="event">
+                  <h3>States</h3>
+                  <p>empty, draft, preview display, approval required, verify required, blocked, receipt captured.</p>
+                </article>
+                <article class="event">
+                  <h3>Evidence</h3>
+                  <p>Plan 0 through Plan 3 packets plus this Plan 4 isolated prototype update.</p>
+                </article>
+              </div>
+              <div class="timeline">
+                <article class="event">
+                  <h3>Operator Intent</h3>
+                  <p>Minimum isolated coding/design foundation. No production route edits.</p>
+                </article>
+                <article class="event">
+                  <h3>Plan Preview</h3>
+                  <p>Build transcript, chips, drawers, design packet, token mapping, and blocked states in the isolated evidence prototype.</p>
+                </article>
+                <article class="event">
+                  <h3>Approval Boundary</h3>
+                  <p>Approval is required before any future apply. This prototype cannot call execute-approved.</p>
+                </article>
+                <article class="event">
+                  <h3>Verification State</h3>
+                  <p>Manual inspection and static no-authority checks only. No provider, queue, worker, or Cartographer write.</p>
+                </article>
+                <article class="event" data-state="approval-required">
+                  <h3>Approval Required</h3>
+                  <p>Approval may be discussed, but this prototype does not apply files and has no approval execution path.</p>
+                </article>
+                <article class="event" data-state="verify-required">
+                  <h3>Verify Required</h3>
+                  <p>Future apply would require verification. Current state is display-only, so verification is static evidence review.</p>
+                </article>
+                <article class="event" data-state="blocked">
+                  <h3>Blocked State</h3>
+                  <p>Provider, apply, Cartographer, dirty tree, queue, worker, and design-apply bypasses are blocked.</p>
+                </article>
+              </div>
+            </section>
+
+            <aside class="side">
+              <section class="panel card">
+                <h3>Active Task Empty State</h3>
+                <p>No live task is running. Start remains draft-only until a later approved route exists.</p>
+                <div class="badge-row">
+                  <span class="badge forbidden">No auto-create</span>
+                  <span class="badge forbidden">No hidden worker</span>
+                </div>
+              </section>
+
+              <section class="panel card">
+                <h3>Plan Preview</h3>
+                <p>Proposed plan: update isolated active-task display features, prove no provider/apply/queue paths, record evidence.</p>
+                <div class="badge-row">
+                  <span class="badge allowed">Display-only</span>
+                  <span class="badge forbidden">No preview route call</span>
+                </div>
+              </section>
+
+              <section class="panel card">
+                <h3>Proposed Files</h3>
+                <ul class="list">
+                  <li>Allowed: docs/evidence/unified-proxy-coding-design-plan-2/prototype/index.html</li>
+                  <li>Allowed: docs/evidence/unified-proxy-coding-design-plan-4/</li>
+                  <li>Forbidden: src/app, src/components, source_proxy, data, map, Cartographer soak logs</li>
+                </ul>
+              </section>
+
+              <section class="panel card">
+                <h3>Read-Only Design Packet</h3>
+                <p>
+                  Packet ID: design-packet-fixture-001. Token suggestions,
+                  component mapping, screenshots, and risks are discussion
+                  evidence only. No apply control is available.
+                </p>
+              </section>
+
+              <section class="panel card">
+                <h3>Token Vocabulary</h3>
+                <ul class="list">
+                  <li>Primitive: SpiritButton, GlassPanel, SectionLabel</li>
+                  <li>Token: spirit bg, panel, accent, border, glass</li>
+                  <li>Pattern: chip, drawer, transcript, composer</li>
+                </ul>
+              </section>
+
+              <section class="panel card">
+                <h3>Blocked States</h3>
+                <ul class="list">
+                  <li>Provider unavailable: no probe or network call</li>
+                  <li>Apply disabled: no execute-approved path</li>
+                  <li>Cartographer protected: soak state untouched</li>
+                  <li>Design apply unavailable: proposal-only</li>
+                  <li>Queue blocked: no task advancement or background worker</li>
+                </ul>
+              </section>
+
+              <section class="panel card">
+                <h3>Receipt Browser</h3>
+                <ul class="list">
+                  <li>Plan 0 closeout: lane boundary accepted</li>
+                  <li>Plan 1 closeout: architecture contracts accepted</li>
+                  <li>Plan 2 closeout: isolated prototype complete</li>
+                  <li>Plan 3 closeout: validation checks passed</li>
+                </ul>
+              </section>
+
+              <section class="panel card">
+                <h3>Chat Work Lane</h3>
+                <p>Thread and folder context are fixture-only. Provider transport, persistence writes, drag/drop mutation, voice actions, and outbound sends stay blocked.</p>
+                <div class="badge-row">
+                  <span class="badge allowed">Read-only lane card</span>
+                  <span class="badge forbidden">No provider send</span>
+                  <span class="badge forbidden">No thread write</span>
+                </div>
+              </section>
+
+              <section class="panel card">
+                <h3>Thread/Folder Context</h3>
+                <ul class="list">
+                  <li>Threads: fixture count only, no create/rename/delete</li>
+                  <li>Folders: fixture status only, no reorder or collapse write</li>
+                  <li>Transport: unavailable in this lane, no model call</li>
+                </ul>
+              </section>
+
+              <section class="panel card">
+                <h3>Media Work Lane</h3>
+                <p>Catalog and playback status are display-only. Watchlist, progress, profile state, migration, and browser database writes stay disabled.</p>
+                <div class="badge-row">
+                  <span class="badge allowed">Read-only catalog</span>
+                  <span class="badge forbidden">No storage write</span>
+                  <span class="badge forbidden">No media migration</span>
+                </div>
+              </section>
+
+              <section class="panel card">
+                <h3>Media Catalog Status</h3>
+                <ul class="list">
+                  <li>Catalog source: fixture/manual source reference only</li>
+                  <li>Storage status: unavailable for mutation in Plan 5/14</li>
+                  <li>Recent media: display placeholder, no playback progress write</li>
+                </ul>
+              </section>
+
+              <section class="panel card">
+                <h3>Project Selector</h3>
+                <p>Selected project is a fixture: SpiritOS. Project creation, live discovery, and filesystem scans outside allowlisted roots are unavailable.</p>
+                <div class="badge-row">
+                  <span class="badge allowed">Read-only project</span>
+                  <span class="badge forbidden">No project creation</span>
+                  <span class="badge forbidden">No live scan</span>
+                </div>
+              </section>
+
+              <section class="panel card">
+                <h3>Project Health</h3>
+                <ul class="list">
+                  <li>Status: fixture active, read-only observation</li>
+                  <li>Dirty summary: evidence-only dirty state preserved</li>
+                  <li>Blockers: writes require explicit approval boundary</li>
+                  <li>Stale flags: unknown until live Cartographer gate</li>
+                </ul>
+              </section>
+
+              <section class="panel card">
+                <h3>Component Ownership</h3>
+                <ul class="list">
+                  <li>Route owner: /coding command center fixture</li>
+                  <li>Component owner: isolated prototype display only</li>
+                  <li>Path risk: production src, map, source_proxy, and data paths forbidden</li>
+                  <li>Repo map refresh: disabled until post-soak approval</li>
+                </ul>
+              </section>
+
+              <section class="panel card">
+                <h3>Project-Scoped Task Context</h3>
+                <p>Task context is linked to SpiritOS fixture root in read/list-only mode. No project mutation or task execution is available.</p>
+                <div class="badge-row">
+                  <span class="badge allowed">Workspace root display</span>
+                  <span class="badge forbidden">No task execution</span>
+                </div>
+              </section>
+
+              <section class="panel card">
+                <h3>Design Context Handoff</h3>
+                <p>Design discussion may reference fixture routes, components, and tokens. Design apply and live Cartographer writes stay blocked.</p>
+                <div class="badge-row">
+                  <span class="badge allowed">Discussion context</span>
+                  <span class="badge forbidden">No design apply</span>
+                </div>
+              </section>
+
+              <section class="panel card">
+                <h3>Live Cartographer Gate</h3>
+                <p>Live project integration is unavailable until the Cartographer soak result is accepted and a later exact increment approves it.</p>
+                <div class="badge-row">
+                  <span class="badge forbidden">Soak result required</span>
+                  <span class="badge forbidden">No live Cartographer call</span>
+                </div>
+              </section>
+
+              <section class="panel card">
+                <h3>Cartographer Bridge Simulation</h3>
+                <p>Fixture adapter packets model project health, component ownership, drift, stale state, and receipt references without contacting Cartographer.</p>
+                <ul class="list">
+                  <li>Adapter source: isolated fixture packet only</li>
+                  <li>Write posture: no live evidence, soak log, runtime, map, queue, worker, or apply path</li>
+                  <li>Next gate: CARTOGRAPHER SOAK RESULT REQUIRED BEFORE THIS INCREMENT</li>
+                </ul>
+                <div class="badge-row">
+                  <span class="badge allowed">Fixture bridge</span>
+                  <span class="badge forbidden">Live integration blocked</span>
+                </div>
+              </section>
+
+              <section class="panel card">
+                <h3>Cartographer Event Vocabulary</h3>
+                <ul class="list">
+                  <li>cartographer.unavailable: show offline blocked state</li>
+                  <li>cartographer.stale: show stale timestamp and source</li>
+                  <li>cartographer.drift: show read-only drift summary</li>
+                  <li>cartographer.health: show project health only</li>
+                  <li>cartographer.recommendation: show proposal preview only</li>
+                  <li>cartographer.blocked: show required gate and forbidden action</li>
+                </ul>
+              </section>
+            </aside>
+          </div>
+        </section>
+
+        <footer class="composer" aria-label="Intent composer">
+          <div class="composer-shell">
+            <textarea aria-label="Draft intent" placeholder="Draft intent only. This does not call a provider or submit a queue."></textarea>
+            <button class="send" disabled>Send disabled</button>
+          </div>
+          <p class="composer-note">
+            Composer is local draft-only in this prototype. No provider call, no queue submit, no long-running task advancement.
+          </p>
+        </footer>
+      </main>
+    </div>
+
+    <div class="drawer-backdrop" data-drawer-backdrop></div>
+
+    <section class="drawer" data-drawer="settings" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+      <div class="drawer-header">
+        <h2 id="settings-title">Settings</h2>
+        <button class="close" data-drawer-close>Close</button>
+      </div>
+      <div class="drawer-section">
+        <h3>Provider/model truth</h3>
+        <p>Local default is display-only. Cloud and Codex proposal lanes are gated. No provider call has run.</p>
+        <ul class="list">
+          <li>Local LLM: default intent, no external API cost</li>
+          <li>GPT/cloud: unavailable unless configured and separately approved</li>
+          <li>Codex worker: proposal-only, no apply, commit, push, or provider authority</li>
+          <li>Future providers: visible placeholder, unavailable</li>
+        </ul>
+      </div>
+      <div class="drawer-section">
+        <h3>Workspace/project truth</h3>
+        <p>SpiritOS is selected in read/list-only mode. Branch, worktree, commit, push, project creation, and Windows bridge writes are unavailable.</p>
+      </div>
+      <div class="drawer-section">
+        <h3>Backend truth</h3>
+        <p>Self status, tools manifest, sandbox terminal, long-running task status, Codex adapter, and budget usage are displayed as not-wired or unavailable unless a later read-only route is approved.</p>
+      </div>
+      <div class="drawer-section">
+        <h3>Usage and cost</h3>
+        <p>Current-session timing may be shown as local UI truth. Token usage, actual cost, budget status, and durable usage storage are unavailable without real reports.</p>
+      </div>
+      <div class="drawer-section">
+        <h3>Notification preferences</h3>
+        <p>In-app status only. OS notification prompts, sounds, desktop notifications, and background watchers are gated.</p>
+        <span class="disabled-action">Notifications disabled</span>
+      </div>
+      <div class="drawer-section">
+        <h3>Persistence</h3>
+        <p>Configuration save is disabled until a later explicit plan.</p>
+        <span class="disabled-action">Save disabled</span>
+      </div>
+      <div class="drawer-section">
+        <h3>Config write gate</h3>
+        <p>Settings are display-only: no env, auth, secret, config, provider routing, durable preference, or budget write is available.</p>
+        <span class="disabled-action">Config writes gated</span>
+      </div>
+    </section>
+
+    <section class="drawer" data-drawer="diagnostics" role="dialog" aria-modal="true" aria-labelledby="diagnostics-title">
+      <div class="drawer-header">
+        <h2 id="diagnostics-title">Diagnostics</h2>
+        <button class="close" data-drawer-close>Close</button>
+      </div>
+      <div class="drawer-section">
+        <h3>Safe diagnostics</h3>
+        <p>Diagnostics are display-only. No Run 10, Run 25, Run 100, provider, or soak writer is available.</p>
+        <span class="disabled-action">Run disabled</span>
+      </div>
+      <div class="drawer-section">
+        <h3>Validation summary</h3>
+        <p>Typecheck, lint, targeted Vitest, targeted pytest, no-authority grep, and protected-path checks passed in Plan 3/14.</p>
+      </div>
+      <div class="drawer-section">
+        <h3>Blockers</h3>
+        <p>Provider calls, execute-approved, live diagnostics runners, queue advancement, and Cartographer writes stay blocked.</p>
+      </div>
+    </section>
+
+    <section class="drawer" data-drawer="evidence" role="dialog" aria-modal="true" aria-labelledby="evidence-title">
+      <div class="drawer-header">
+        <h2 id="evidence-title">Evidence</h2>
+        <button class="close" data-drawer-close>Close</button>
+      </div>
+      <div class="drawer-section">
+        <h3>Receipts</h3>
+        <p>Plan 0 and Plan 1 evidence are referenced as isolated docs. Live Cartographer evidence and soak logs are forbidden.</p>
+      </div>
+      <div class="drawer-section">
+        <h3>Receipt list</h3>
+        <p>Plan 0, Plan 1, Plan 2, and Plan 3 closeouts are browsable as isolated evidence references only.</p>
+      </div>
+      <div class="drawer-section">
+        <h3>Chat/media lane evidence</h3>
+        <p>Plan 5/14 records chat and media lane cards as fixture-only evidence. No live chat thread, folder, provider, media catalog, profile, progress, or watchlist write occurs.</p>
+      </div>
+      <div class="drawer-section">
+        <h3>Rollback</h3>
+        <p>Corrections use owned evidence patches only. No stash, reset, clean, or checkout.</p>
+      </div>
+    </section>
+
+    <section class="drawer" data-drawer="design" role="dialog" aria-modal="true" aria-labelledby="design-title">
+      <div class="drawer-header">
+        <h2 id="design-title">Design Intake</h2>
+        <button class="close" data-drawer-close>Close</button>
+      </div>
+      <div class="drawer-section">
+        <h3>Proposal lane</h3>
+        <p>Design packets may be compared, discussed, rejected, or proposed as future intent. They cannot apply code.</p>
+        <span class="disabled-action">Apply disabled</span>
+      </div>
+    </section>
+
+    <script>
+      (() => {
+        const backdrop = document.querySelector("[data-drawer-backdrop]");
+        const drawers = Array.from(document.querySelectorAll("[data-drawer]"));
+        let lastTrigger = null;
+
+        function closeDrawer() {
+          drawers.forEach((drawer) => drawer.setAttribute("data-open", "false"));
+          backdrop.setAttribute("data-open", "false");
+          if (lastTrigger) lastTrigger.focus();
+        }
+
+        function openDrawer(id, trigger) {
+          lastTrigger = trigger;
+          drawers.forEach((drawer) => {
+            const isTarget = drawer.getAttribute("data-drawer") === id;
+            drawer.setAttribute("data-open", isTarget ? "true" : "false");
+            if (isTarget) {
+              const closeButton = drawer.querySelector("[data-drawer-close]");
+              if (closeButton) closeButton.focus();
+            }
+          });
+          backdrop.setAttribute("data-open", "true");
+        }
+
+        document.querySelectorAll("[data-drawer-trigger]").forEach((button) => {
+          button.addEventListener("click", () => openDrawer(button.dataset.drawerTrigger, button));
+        });
+
+        document.querySelectorAll("[data-drawer-close]").forEach((button) => {
+          button.addEventListener("click", closeDrawer);
+        });
+
+        backdrop.addEventListener("click", closeDrawer);
+        document.addEventListener("keydown", (event) => {
+          if (event.key === "Escape") closeDrawer();
+        });
+      })();
+    </script>
+  </body>
+</html>

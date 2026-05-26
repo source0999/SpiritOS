@@ -98,7 +98,7 @@ describe("SpiritTrinityChatShell dashboard v4 visual integration", () => {
       name: /spirit app desktop navigation/i,
     });
     const mobileNav = screen.getByRole("navigation", {
-      name: /dashboard mobile navigation/i,
+      name: /spirit app mobile navigation/i,
     });
 
     for (const nav of [desktopNav, mobileNav]) {

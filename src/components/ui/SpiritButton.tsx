@@ -6,7 +6,7 @@ import { cn } from "@/lib/cn";
 
 /** Use on `next/link` when you need the same pill as SpiritButton without asChild. */
 export const spiritPrimaryCtaClasses =
-  "inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full border border-[color:color-mix(in_oklab,var(--spirit-accent)_40%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-accent)_12%,transparent)] px-6 font-mono text-sm font-semibold text-[color:var(--spirit-accent-strong)] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40";
+  "inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full border border-[color:color-mix(in_oklab,var(--spirit-accent)_40%,transparent)] bg-[color:color-mix(in_oklab,var(--spirit-accent)_12%,transparent)] px-6 font-mono text-sm font-semibold text-[color:var(--spirit-accent-strong)] transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_oklab,var(--spirit-accent)_52%,transparent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--spirit-bg)] disabled:cursor-not-allowed disabled:opacity-40";
 
 export type SpiritButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   children: ReactNode;

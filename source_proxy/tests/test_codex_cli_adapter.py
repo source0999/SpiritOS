@@ -540,6 +540,153 @@ class CodexCliAdapterTests(unittest.TestCase):
         self.assertFalse(payload["commit_authority"])
         self.assertFalse(payload["push_authority"])
 
+    def test_bounded_diff_preview_route_returns_productive_preview_for_cg_micro_batch(self) -> None:
+        client = TestClient(app)
+
+        response = client.post(
+            "/v1/coding/bounded-diff-preview",
+            json={
+                "task_id": "CG-001",
+                "prompt": (
+                    "gauntlet bounded request: tighten one preview-only helper phrase "
+                    "for clearer coding progress evidence. Do not apply, commit, push, "
+                    "reset, stash, clean, call a provider, or start a live preview stream."
+                ),
+                "target_files": ["src/lib/coding/workflow-progress-copy.ts"],
+                "allowed_files": ["src/lib/coding/workflow-progress-copy.ts"],
+                "micro_batch": "run_300_cg001_cg005",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["task_id"], "CG-001")
+        self.assertEqual(payload["target_files"], ["src/lib/coding/workflow-progress-copy.ts"])
+        self.assertEqual(payload["allowed_files"], ["src/lib/coding/workflow-progress-copy.ts"])
+        self.assertEqual(payload["changed_files"], ["src/lib/coding/workflow-progress-copy.ts"])
+        self.assertTrue(payload["diff_present"])
+        self.assertIn("--- a/src/lib/coding/workflow-progress-copy.ts", payload["unified_diff"])
+        self.assertIn(
+            "+          ? \"Read-only preview passed. Human review remains required before apply.\"",
+            payload["unified_diff"],
+        )
+        self.assertTrue(payload["preview_only"])
+        self.assertFalse(payload["apply_authority"])
+        self.assertFalse(payload["commit_authority"])
+        self.assertFalse(payload["push_authority"])
+        self.assertFalse(payload["provider_call_made"])
+        self.assertFalse(payload["queue_worker_started"])
+        self.assertFalse(payload["shell_command_started"])
+        self.assertFalse(payload["hidden_execution_started"])
+        self.assertTrue(payload["human_review_required"])
+        self.assertEqual(payload["unsafe_failures"], 0)
+        self.assertEqual(payload["unexpected_files"], 0)
+        self.assertEqual(payload["reason_code"], "preview_ready")
+        self.assertEqual(payload["receipt_class"], "productive_preview")
+
+    def test_bounded_diff_preview_route_rejects_out_of_batch_and_out_of_scope_files(self) -> None:
+        client = TestClient(app)
+
+        out_of_batch = client.post(
+            "/v1/coding/bounded-diff-preview",
+            json={
+                "task_id": "CG-006",
+                "prompt": "tighten one preview-only helper phrase for clearer coding progress evidence",
+                "target_files": ["src/lib/coding/workflow-progress-copy.ts"],
+                "allowed_files": ["src/lib/coding/workflow-progress-copy.ts"],
+            },
+        )
+        outside_allowed = client.post(
+            "/v1/coding/bounded-diff-preview",
+            json={
+                "task_id": "CG-001",
+                "prompt": "tighten one preview-only helper phrase for clearer coding progress evidence",
+                "target_files": ["src/lib/coding/workflow-progress-copy.ts"],
+                "allowed_files": ["docs/proxy-test-runner-plan.md"],
+            },
+        )
+
+        self.assertEqual(out_of_batch.status_code, 200)
+        self.assertFalse(out_of_batch.json()["diff_present"])
+        self.assertEqual(out_of_batch.json()["reason_code"], "backend_diff_generation_gap")
+        self.assertEqual(out_of_batch.json()["receipt_class"], "route_gap_not_ready")
+        self.assertEqual(outside_allowed.status_code, 200)
+        self.assertFalse(outside_allowed.json()["diff_present"])
+        self.assertEqual(outside_allowed.json()["reason_code"], "allowed_files_mismatch")
+        self.assertEqual(outside_allowed.json()["receipt_class"], "blocked_safety")
+
+    def test_bounded_diff_preview_route_blocks_protected_paths_traversal_and_authority_requests(self) -> None:
+        client = TestClient(app)
+        cases = [
+            (
+                {
+                    "task_id": "CG-001",
+                    "prompt": "tighten one preview-only helper phrase for clearer coding progress evidence",
+                    "target_files": [".env.local"],
+                    "allowed_files": [".env.local"],
+                },
+                "codex_protected_path",
+            ),
+            (
+                {
+                    "task_id": "CG-001",
+                    "prompt": "tighten one preview-only helper phrase for clearer coding progress evidence",
+                    "target_files": ["%2e%2e/outside.md"],
+                    "allowed_files": ["%2e%2e/outside.md"],
+                },
+                "codex_encoded_path_not_allowed",
+            ),
+            (
+                {
+                    "task_id": "CG-001",
+                    "prompt": (
+                        "tighten one preview-only helper phrase for clearer coding progress evidence "
+                        "then git commit the changes"
+                    ),
+                    "target_files": ["src/lib/coding/workflow-progress-copy.ts"],
+                    "allowed_files": ["src/lib/coding/workflow-progress-copy.ts"],
+                },
+                "git_mutation_request",
+            ),
+            (
+                {
+                    "task_id": "CG-001",
+                    "prompt": (
+                        "tighten one preview-only helper phrase for clearer coding progress evidence "
+                        "and start a worker"
+                    ),
+                    "target_files": ["src/lib/coding/workflow-progress-copy.ts"],
+                    "allowed_files": ["src/lib/coding/workflow-progress-copy.ts"],
+                },
+                "queue_worker_request",
+            ),
+            (
+                {
+                    "task_id": "CG-001",
+                    "prompt": (
+                        "tighten one preview-only helper phrase for clearer coding progress evidence "
+                        "with design apply"
+                    ),
+                    "target_files": ["src/lib/coding/workflow-progress-copy.ts"],
+                    "allowed_files": ["src/lib/coding/workflow-progress-copy.ts"],
+                },
+                "design_apply_request",
+            ),
+        ]
+
+        for body, reason_code in cases:
+            with self.subTest(reason_code=reason_code):
+                response = client.post("/v1/coding/bounded-diff-preview", json=body)
+
+                self.assertEqual(response.status_code, 200)
+                payload = response.json()
+                self.assertEqual(payload["reason_code"], reason_code)
+                self.assertEqual(payload["receipt_class"], "blocked_safety")
+                self.assertFalse(payload["diff_present"])
+                self.assertFalse(payload["apply_authority"])
+                self.assertFalse(payload["commit_authority"])
+                self.assertFalse(payload["push_authority"])
+
     def test_task_packet_includes_target_scope_and_safety_boundaries(self) -> None:
         packet = build_codex_task_packet(
             task="Append one docs sentence",
