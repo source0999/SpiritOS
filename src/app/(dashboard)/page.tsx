@@ -1,29 +1,8 @@
 // ── Dashboard route (/) - widget command center (chat lives at /chat) ─────────────
 import SpiritDashboardHome from "@/components/dashboard/SpiritDashboardHome";
-import { collectClusterNodes } from "@/lib/server/telemetry/collect-cluster-nodes";
-import { getClusterConfig } from "@/lib/server/telemetry/cluster-config";
-import type { ClusterTelemetryResponse } from "@/lib/server/telemetry/types";
 import type { ScoutOverview, ScoutOverviewRouteError } from "@/lib/scout-overview";
 
 export const dynamic = "force-dynamic";
-
-async function collectInitialTelemetry(): Promise<ClusterTelemetryResponse> {
-  const nodes = await collectClusterNodes(getClusterConfig());
-  const summary = {
-    total: nodes.length,
-    online: nodes.filter((n) => n.status === "online").length,
-    offline: nodes.filter((n) => n.status === "offline").length,
-    degraded: nodes.filter((n) => n.status === "degraded").length,
-    unknown: nodes.filter((n) => n.status === "unknown").length,
-  };
-
-  return {
-    ok: summary.offline < summary.total,
-    collectedAt: new Date().toISOString(),
-    nodes,
-    summary,
-  };
-}
 
 function scoutBaseUrl(): string {
   const configured = process.env.SCOUT_API_URL?.trim();
@@ -91,13 +70,11 @@ async function collectInitialScoutOverview(): Promise<ScoutOverview | null> {
 }
 
 export default async function DashboardPage() {
-  const [initialTelemetry, initialScoutOverview] = await Promise.all([
-    collectInitialTelemetry(),
-    collectInitialScoutOverview(),
-  ]);
+  const initialScoutOverview = await collectInitialScoutOverview();
+
   return (
     <SpiritDashboardHome
-      initialTelemetry={initialTelemetry}
+      initialTelemetry={null}
       initialScoutOverview={initialScoutOverview}
     />
   );

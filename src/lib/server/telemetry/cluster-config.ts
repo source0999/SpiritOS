@@ -5,6 +5,8 @@ export type ClusterNodeConfig = {
   telemetryUrl?: string;
 };
 
+const DEFAULT_MACMINI_TELEMETRY_URL = "http://10.0.0.147:3187/api/telemetry/self";
+
 /** Strips accidental `< >` from copy-pasted placeholders - `http://<10.0.0.1>:3000` breaks DNS otherwise. */
 export function normalizeTelemetryEnvUrl(raw: string | undefined): string | undefined {
   if (!raw) return undefined;
@@ -18,6 +20,9 @@ export function getClusterConfig(): ClusterNodeConfig[] {
 
   const spiritdesktopUrl = normalizeTelemetryEnvUrl(process.env.SPIRITDESKTOP_TELEMETRY_URL);
   const spiritDellUrl = normalizeTelemetryEnvUrl(process.env.SPIRIT_DELL_TELEMETRY_URL);
+  const spiritMacMiniUrl =
+    normalizeTelemetryEnvUrl(process.env.SPIRIT_MACMINI_TELEMETRY_URL) ??
+    DEFAULT_MACMINI_TELEMETRY_URL;
 
   const nodes: ClusterNodeConfig[] = [];
 
@@ -42,6 +47,13 @@ export function getClusterConfig(): ClusterNodeConfig[] {
       telemetryUrl: spiritDellUrl,
     });
   }
+
+  nodes.push({
+    id: "spirit-mac-mini",
+    label: "Spirit Mac Mini",
+    source: "remote",
+    telemetryUrl: spiritMacMiniUrl,
+  });
 
   return nodes;
 }
