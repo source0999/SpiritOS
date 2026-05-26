@@ -2904,6 +2904,7 @@ describe("CodingCommandCenterShell", () => {
     expectPlan8AForbiddenControlsAbsent();
 
     fireEvent.click(screen.getByRole("button", { name: "Copy diag" }));
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining("active_proof_run: Run 25"));
     expect(writeText).toHaveBeenCalledWith(expect.stringContaining("lifecycle_trial_count: 25"));
     expect(writeText).toHaveBeenCalledWith(
       expect.stringContaining("lifecycle_trial_stage: Creating preview task"),
@@ -2996,6 +2997,11 @@ describe("CodingCommandCenterShell", () => {
     );
     expect(writeText).toHaveBeenCalledWith(
       expect.stringContaining("frontend_preview_route_gap:1"),
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Copy diag" }));
+    expect(writeText).toHaveBeenCalledWith(
+      expect.stringContaining("active_proof_run: latest current-session summary"),
     );
 
     fireEvent.click(screen.getByText("Older packets"));
@@ -3533,6 +3539,9 @@ describe("CodingCommandCenterShell", () => {
     );
     expect(writeText).toHaveBeenCalledWith(
       expect.stringContaining("lifecycle_public_work_state_receipt:"),
+    );
+    expect(writeText).toHaveBeenCalledWith(
+      expect.stringContaining("active_proof_run: none"),
     );
     expect(writeText).toHaveBeenCalledWith(
       expect.stringContaining("lifecycle_queue_preview: preview queue only; no worker running; no provider call; no apply authority"),

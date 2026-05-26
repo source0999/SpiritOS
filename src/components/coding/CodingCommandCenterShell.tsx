@@ -2347,6 +2347,11 @@ export default function CodingCommandCenterShell() {
   const lifecycleTrialPositionText = trialBatchProgress
     ? `trial ${trialBatchProgress.currentTrialIndex} of ${trialBatchProgress.totalTrials}: ${trialBatchProgress.currentTrialId}`
     : "no active trial position";
+  const activeProofRunText = trialBatchRunning && trialBatchProgress
+    ? `Run ${trialBatchProgress.totalTrials}`
+    : trialBatchSummary
+      ? "latest current-session summary"
+      : "none";
   const lifecycleAuthorityStatement =
     "No apply, commit, push, provider, queue, worker, live preview, shell, approval-token, or mutation authority is granted.";
   const lifecyclePromptText = activeDraftText.trim() || "No prompt staged in the active chat.";
@@ -3735,6 +3740,7 @@ export default function CodingCommandCenterShell() {
       `lifecycle_progress_current_step: ${progressCurrentStepText}`,
       `lifecycle_progress_next_step: ${progressNextStepText}`,
       `lifecycle_public_work_state_receipt:\n${publicWorkReceiptText}`,
+      `active_proof_run: ${activeProofRunText}`,
       `lifecycle_trial_count: ${lifecycleTrialCountText}`,
       `lifecycle_trial_stage: ${lifecycleTrialStageText}`,
       `lifecycle_trial_position: ${lifecycleTrialPositionText}`,
