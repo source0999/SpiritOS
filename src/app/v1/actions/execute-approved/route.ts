@@ -35,6 +35,8 @@ export async function POST(request: Request) {
       : typeof record.approvalId === "string"
         ? record.approvalId
         : "";
+  const allowedFiles = stringArrayValue(record.allowed_files ?? record.allowedFiles);
+  const changedFiles = changedFilesFromApprovedDiff(approvedDiff);
 
   if (!approved) {
     return Response.json(
@@ -65,6 +67,55 @@ export async function POST(request: Request) {
           "execute-approved requires approved_diff so Source Proxy can re-run verification before apply.",
       },
       { status: 400 },
+    );
+  }
+  if (allowedFiles.length === 0) {
+    return Response.json(
+      {
+        error:
+          "execute-approved requires allowed_files so Source Proxy can scope-match the approved diff before apply.",
+      },
+      { status: 400 },
+    );
+  }
+  if (changedFiles.length === 0) {
+    return Response.json(
+      {
+        error:
+          "execute-approved requires approved_diff changed files so exact apply scope can be verified.",
+      },
+      { status: 400 },
+    );
+  }
+  if (changedFiles.some((file) => isProtectedApplyPath(file))) {
+    return Response.json(
+      {
+        changed_files: changedFiles,
+        error: "execute-approved rejected protected path in approved_diff.",
+      },
+      { status: 403 },
+    );
+  }
+  if (target.trim() && !changedFiles.includes(target.trim())) {
+    return Response.json(
+      {
+        changed_files: changedFiles,
+        error: "execute-approved target does not match approved_diff changed files.",
+        target,
+      },
+      { status: 409 },
+    );
+  }
+  const unexpectedFiles = changedFiles.filter((file) => !allowedFiles.includes(file));
+  if (unexpectedFiles.length > 0) {
+    return Response.json(
+      {
+        allowed_files: allowedFiles,
+        changed_files: changedFiles,
+        error: "execute-approved approved_diff changed files are outside allowed_files.",
+        unexpected_files: unexpectedFiles,
+      },
+      { status: 409 },
     );
   }
   const expectedApprovalId = approvalIdForApprovedDiff({
@@ -102,6 +153,11 @@ export async function POST(request: Request) {
         approval_id: expectedApprovalId,
         approved_by: "coding-ui",
         approved_diff: approvedDiff,
+        allowed_files: allowedFiles,
+        changed_files: changedFiles,
+        diff_hash: diffHashForApprovedDiff(approvedDiff),
+        commit_authority: false,
+        push_authority: false,
         target,
       }),
       headers: {
@@ -120,6 +176,44 @@ export async function POST(request: Request) {
   });
 }
 
+function stringArrayValue(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+}
+
+function changedFilesFromApprovedDiff(diff: string): string[] {
+  const files = new Set<string>();
+  for (const line of diff.split(/\r?\n/)) {
+    if (!line.startsWith("+++ b/")) {
+      continue;
+    }
+    const file = line.slice("+++ b/".length).trim();
+    if (file && file !== "/dev/null") {
+      files.add(file);
+    }
+  }
+  return [...files];
+}
+
+function isProtectedApplyPath(path: string) {
+  return (
+    path === ".env" ||
+    path.startsWith(".env.") ||
+    path.includes("/.env") ||
+    path.endsWith(".pem") ||
+    path.endsWith(".key") ||
+    path.startsWith("source_proxy/") ||
+    path.startsWith("config/") ||
+    path === "package.json" ||
+    path === "package-lock.json" ||
+    path === "pnpm-lock.yaml" ||
+    path === "yarn.lock"
+  );
+}
+
+function diffHashForApprovedDiff(approvedDiff: string) {
+  return createHash("sha256").update(approvedDiff).digest("hex");
+}
+
 function approvalIdForApprovedDiff({
   approvedDiff,
   target,
@@ -129,7 +223,7 @@ function approvalIdForApprovedDiff({
   target: string;
   taskId: string;
 }) {
-  const diffHash = createHash("sha256").update(approvedDiff).digest("hex");
+  const diffHash = diffHashForApprovedDiff(approvedDiff);
   const key = [taskId.trim(), target.trim(), diffHash].join("|");
   return `approval-${createHash("sha256").update(key).digest("hex").slice(0, 16)}`;
 }

@@ -2,23 +2,43 @@
 
 status: active
 
-Status date: 2026-05-20
+Status date: 2026-05-28
+
+## Source Proxy Agent Integration Preflight Direction
+
+The Source Proxy Agent Integration Preflight Build Roadmap is closed through Plan 12/12 and is ready for manual review:
+
+- `docs/source-proxy-agent-integration-preflight-build-roadmap-v0.1.md`
+- `docs/source-proxy-agent-integration-preflight-plan-12-closeout-v0.1.md`
+
+The build-first roadmap supersedes the failed docs-heavy 24-plan chain and the active direction in `docs/masterKeyProxyProduction.md`. Do not start or continue old Plan 23, start a soak, re-soak, activate Cartographer, run workers, call providers/models, apply changes, or mutate source/runtime/CSS/Cart files from the old chain.
+
+Preflight closeout and next-roadmap boundary:
+
+- Plans 0 through 12 are closed with GO closeouts.
+- Production readiness remains NO-GO until Britton approves the next runtime/soak roadmap.
+- Automatic soak remains NO-GO in the completed preflight chat.
+- Next roadmap title only: `Cartographer Limited Daily-Driver Auto v1`.
 
 ## Active Plans
 
 | Plan | Status | Role | Authority |
 | --- | --- | --- | --- |
-| `docs/source-proxy-production-hardening-plan.md` | status: active | Current Source Proxy production plan | Records green safety gate and constrains next work |
-| `docs/source-proxy-codex-class-production-master-plan-v1.0.md` | status: active roadmap | Current Source Proxy `/coding` Codex-class production roadmap | Supersedes stale Plan 6.2 labels and sequences `/coding` work by Britton's phase/increment workflow |
-| `docs/source-proxy-codex-class-new-chat-handoff-v1.0.md` | status: active handoff | New-chat continuation handoff for the current Source Proxy `/coding` roadmap | Tells future Codex chats how to start the active phase without jumping into feature work |
-| `docs/source-proxy-codex-like-active-task-ui-revamp-plan-v0.1.md` | status: docs-only PIVOT plan | Source Proxy `/coding` active task UI revamp plan | Plans a Codex-like active task default screen and drawer model; does not authorize implementation, Run 10/25/100, real gauntlet, wrapper, final CSS, provider calls, apply, execute-approved, commit, push, or cleanup |
-| `docs/source-proxy-codex-like-active-task-ui-revamp-new-chat-pivot-handoff-v0.1.md` | status: active handoff | New-chat pivot handoff for the active task UI revamp | Starts only Phase 1 active task default screen and requires Britton approval before implementation beyond that first increment |
-| `docs/source-proxy-post-run-300-blocker-reduction-real-task-trial-roadmap-v0.1.md` | status: docs-only PIVOT roadmap | Post Run 300 blocker reduction and real task trial roadmap | Plans blocker overclassification reduction, real task packet schema, preview-only trial widget and runner, Codex-like feature-gap prep, and preflight CSS gate; does not authorize implementation, provider calls, queues, workers, Source Proxy shell actions, apply, commit, push, Cartographer activation, design apply, production CSS, or cleanup |
+| `docs/source-proxy-agent-integration-preflight-build-roadmap-v0.1.md` | status: closed build-first roadmap | Source Proxy agent integration and Preflight Final CSS roadmap completed through Plan 12/12 | Historical/verification authority only; next runtime/soak roadmap requires Britton approval |
+| `docs/source-proxy-agent-integration-preflight-new-chat-handoff-v0.1.md` | status: historical handoff | Fresh-chat handoff used to start the completed preflight roadmap | Do not replay Plan 0 or restart the closed roadmap from this handoff |
+| `docs/source-proxy-agent-integration-preflight-plan-12-closeout-v0.1.md` | status: Plan 12/12 complete | Final preflight review and soak decision closeout | GO for manual review; production readiness NO-GO; automatic soak NO-GO |
+| `docs/source-proxy-agent-integration-preflight-plan-0-closeout-v0.1.md` | status: Plan 0 complete | Plan 0 closeout, old-roadmap classification, and final verification block | Historical closeout only; does not authorize archive/delete execution, source/runtime/CSS edits, Cart activation, workers, provider/model calls, apply, or auto |
+| `docs/source-proxy-production-hardening-plan.md` | status: supporting reference | Source Proxy production safety boundary | Records the green safety gate; active sequencing now comes from the completed preflight closeout and the next approved roadmap |
+| `docs/source-proxy-codex-class-production-master-plan-v1.0.md` | status: historical roadmap | Earlier Source Proxy `/coding` Codex-class roadmap | Superseded for active sequencing by the completed preflight roadmap; keep as reference only |
+| `docs/source-proxy-codex-class-new-chat-handoff-v1.0.md` | status: historical handoff | Earlier `/coding` roadmap handoff | Do not use to start new active work without Britton approval |
+| `docs/source-proxy-codex-like-active-task-ui-revamp-plan-v0.1.md` | status: historical docs-only PIVOT plan | Earlier Source Proxy `/coding` active task UI revamp plan | Superseded by the implemented preflight `/coding` work; keep as reference only |
+| `docs/source-proxy-codex-like-active-task-ui-revamp-new-chat-pivot-handoff-v0.1.md` | status: historical handoff | Earlier active-task UI revamp handoff | Do not use to restart completed work |
+| `docs/source-proxy-post-run-300-blocker-reduction-real-task-trial-roadmap-v0.1.md` | status: historical docs-only PIVOT roadmap | Earlier post Run 300 blocker reduction and real task trial roadmap | Superseded by the completed preflight productive-preview and diagnostic-gauntlet work |
 | `docs/source-proxy-coding-trial-widget-hardening-plan-v0.1.md` | status: planning-only | Source Proxy Phase 6.2R trial widget reliability, revert harness, and productive-diff gauntlet roadmap | Does not authorize implementation, apply, commit, push, provider authority, or Phase 7 live previews |
 | `docs/backend-console-usability-reset-plan-v0.1.md` | status: planning-only | `/proxy-backend` usability reset plan | Plans a plain backend operator page only; does not authorize implementation, autonomy, or execution controls |
 | `docs/cartographer-map-read-only-wiring-kickoff-plan-v0.1.md` | status: planning-only | Current `/map` read-only command-center wiring kickoff | Consolidates older Cartographer map plans for the next read-only adapter hardening step; does not authorize approval tokens, writes, queue execution, commits, pushes, or autonomy |
 | `docs/cartographer-map-preview-controls-plan-v0.1.md` | status: planning-only | Next `/map` preview-only controls and project-card plan | Plans display-only preview controls from GET/read-only data; does not authorize POST, writes, queue/workflow execution, git mutation, project mutation, worker starts, or autonomy |
-| `docs/codingUI.md` | status: active | Active `/coding` UI polish plan | Authorizes planning for UI polish only; implementation still requires approval |
+| `docs/codingUI.md` | status: supporting reference | `/coding` UI polish reference | Supporting context only after Plan 11/12; implementation still requires a new approved roadmap |
 | `docs/design-system-overhaul-master-v0.2.md` | status: planning active | Active SpiritOS design-system overhaul planning spine | Does not authorize implementation; keeps future design work Source Proxy gated |
 | `docs/design-agent-design-system-a-grade-preflight-readiness-master-plan-of-plans-v0.1.md` | status: corrected docs-only master plan complete; current decision NO-GO | Sequential PIVOT master plan for Plans A through J to bring Design Agent, subagents, safety, Source Proxy read-only design packet proof, Visual/CSS evidence, and design-system readiness to A-grade evidence before any preflight design/coding gauntlet. Plan A is already drafted docs-only. Next title only: 2/10 Design Agent + Design System A-Grade Preflight Readiness Plan B: Design System Overhaul Readiness | No implementation authority |
 | `docs/design-agent-design-system-a-grade-preflight-readiness-plan-a-baseline-authority-source-of-truth-recovery-v0.1.md` | status: docs-only Plan A complete; GO for Plan B planning after Britton manual acceptance | 1/10 baseline, authority, and source-of-truth recovery. Records evidence inventory, Plan 0 equivalence decision, active-vs-historical doc map, grade target table, and authority boundary audit. | No implementation authority |
@@ -91,8 +111,12 @@ The green Source Proxy safety gate passed on 2026-05-20 based on user-provided e
 
 | Plan | Handling |
 | --- | --- |
-| `docs/source-proxy-codex-class-production-master-plan-v1.0.md` | Active `/coding` Codex-class production roadmap. Follow this for Phase 0 through Phase 11 sequencing. |
-| `docs/source-proxy-codex-class-new-chat-handoff-v1.0.md` | Active handoff for starting a new Codex chat in the correct phase/increment workflow. |
+| `docs/source-proxy-agent-integration-preflight-build-roadmap-v0.1.md` | Closed build-first Source Proxy agent integration and Preflight Final CSS roadmap. Plans 0 through 12 are complete. |
+| `docs/source-proxy-agent-integration-preflight-new-chat-handoff-v0.1.md` | Historical handoff. Do not use it to restart Plan 0 or replay the completed roadmap. |
+| `docs/source-proxy-agent-integration-preflight-plan-0-closeout-v0.1.md` | Plan 0 closeout and old-roadmap classification. Archive/delete candidates require future Britton approval before action. |
+| `docs/source-proxy-agent-integration-preflight-plan-12-closeout-v0.1.md` | Final preflight review and soak decision. Manual review GO; production readiness NO-GO; automatic soak NO-GO. |
+| `docs/source-proxy-codex-class-production-master-plan-v1.0.md` | Superseded for active Source Proxy agent integration sequencing by the build-first preflight roadmap. Keep as historical/reference context only. |
+| `docs/source-proxy-codex-class-new-chat-handoff-v1.0.md` | Superseded handoff for active Source Proxy agent integration sequencing. Keep as historical/reference context only. |
 | `docs/source-proxy-coding-trial-widget-hardening-plan-v0.1.md` | Planning-only Phase 6.2R hardening lane for trial widget reliability, audit evidence, safe revert design, and productive-diff gauntlet readiness before Phase 7. |
 | `docs/source-proxy-codex-style-ui-reduction-pr-8-3-gauntlet-master-plan-v0.1.md` | Planning-only PIVOT bridge for `/coding` Codex-style UI reduction and fresh PR-8.3 proof gauntlet preparation. It does not authorize implementation, browser proof execution, wrapper work, final CSS, provider calls, apply, execute-approved, commit, push, or cleanup. |
 | `docs/source-proxy-codex-like-active-task-ui-revamp-plan-v0.1.md` | Docs-only PIVOT plan for moving `/coding` from cockpit/dashboard mode to a Codex-like active task window. It does not authorize implementation, browser proof execution, wrapper work, final CSS, provider calls, apply, execute-approved, commit, push, or cleanup. |
@@ -103,8 +127,60 @@ The green Source Proxy safety gate passed on 2026-05-20 based on user-provided e
 
 | Plan | Handling |
 | --- | --- |
-| `docs/source-proxy-production-hardening-plan.md` | Active production authority and safety boundary. It records the green gate and says the next approved track is `/coding` UI polish, not new autonomy. |
-| `docs/codingUI.md` | Active only for `/coding` UI polish after the green gate. It must use existing Source Proxy contracts and gates. |
+| `docs/source-proxy-agent-integration-preflight-build-roadmap-v0.1.md` | Closed source of truth for the completed Source Proxy agent integration preflight. |
+| `docs/source-proxy-agent-integration-preflight-new-chat-handoff-v0.1.md` | Historical fresh-chat handoff for the now-completed build-first roadmap. |
+| `docs/source-proxy-agent-integration-preflight-plan-0-closeout-v0.1.md` | Plan 0 result and exact old-roadmap classification; no archive/delete execution authority. |
+| `docs/source-proxy-agent-integration-preflight-plan-12-closeout-v0.1.md` | Plan 12/12 final review and soak decision; next roadmap title only is `Cartographer Limited Daily-Driver Auto v1`. |
+| `docs/source-proxy-production-hardening-plan.md` | Supporting production authority and safety boundary. It records the green gate, but it no longer supersedes the build-first Source Proxy agent integration roadmap. |
+| `docs/codingUI.md` | Supporting `/coding` UI polish reference only. Future use requires a new approved roadmap and existing Source Proxy contracts/gates. |
+
+### Completed Preflight Closeouts
+
+| Plan | Handling |
+| --- | --- |
+| `docs/source-proxy-agent-integration-preflight-plan-0-closeout-v0.1.md` | Plan 0 roadmap reset and old-roadmap classification. |
+| `docs/source-proxy-agent-integration-preflight-plan-1-closeout-v0.1.md` | Plan 1/12 executable baseline and scope lock. |
+| `docs/source-proxy-agent-integration-preflight-plan-2-closeout-v0.1.md` | Plan 2/12 productive bounded-diff preview verification. |
+| `docs/source-proxy-agent-integration-preflight-plan-3-closeout-v0.1.md` | Plan 3/12 Codex-like coding cockpit. |
+| `docs/source-proxy-agent-integration-preflight-plan-4-closeout-v0.1.md` | Plan 4/12 Mac Mini, web search, and Scout research lane. |
+| `docs/source-proxy-agent-integration-preflight-plan-5-closeout-v0.1.md` | Plan 5/12 subagent integration v1. |
+| `docs/source-proxy-agent-integration-preflight-plan-6-closeout-v0.1.md` | Plan 6/12 Design Agent and Design Vault integration. |
+| `docs/source-proxy-agent-integration-preflight-plan-7-closeout-v0.1.md` | Plan 7/12 Cartographer proxy visibility and controlled preview. |
+| `docs/source-proxy-agent-integration-preflight-plan-8-closeout-v0.1.md` | Plan 8/12 human-controlled apply lane. |
+| `docs/source-proxy-agent-integration-preflight-plan-9-closeout-v0.1.md` | Plan 9/12 combined coding, design, research, and Cart diagnostic gauntlet. |
+| `docs/source-proxy-agent-integration-preflight-plan-10-closeout-v0.1.md` | Plan 10/12 visual proof harness and before screenshots. |
+| `docs/source-proxy-agent-integration-preflight-plan-11-closeout-v0.1.md` | Plan 11/12 final CSS/UI polish using visual proof. |
+| `docs/source-proxy-agent-integration-preflight-plan-12-closeout-v0.1.md` | Plan 12/12 preflight review and soak decision. |
+
+### Superseded 24-Plan Chain Cleanup Classification
+
+These docs are commit-worthy historical evidence and should not be treated as active roadmap authority after the Source Proxy Agent Integration Preflight closeout:
+
+| Plan | Handling |
+| --- | --- |
+| `docs/masterKeyProxyProduction.md` | Superseded traffic-control roadmap. Preserved with an explicit supersession notice. |
+| `docs/cartographer-live-evidence/cartographer-plan-1-24-post-soak-acceptance-promotion-audit-v0.1.md` | Historical Cartographer post-soak audit evidence. |
+| `docs/mac-mini-support-node-plan-2-24-baseline-safety-boundary-v0.1.md` | Historical Mac Mini support-node baseline. |
+| `docs/mac-mini-workload-placement-matrix-plan-3-24-v0.1.md` | Historical Mac workload placement matrix. |
+| `docs/mac-mini-internet-search-scout-intake-node-plan-4-24-v0.1.md` | Historical Mac/search/Scout intake planning packet. |
+| `docs/mac-mini-subagent-host-feasibility-plan-5-24-v0.1.md` | Historical Mac subagent feasibility packet. |
+| `docs/mac-mini-remote-worker-control-telemetry-dashboard-plan-6-24-v0.1.md` | Historical Mac telemetry/control planning packet. |
+| `docs/cartographer-live-evidence/cartographer-plan-7-24-activation-boundary-resoak-decision-v0.1.md` | Historical Cartographer activation boundary and re-soak decision. |
+| `docs/source-proxy-pr-8-3-acceptance-or-nonblocking-decision-plan-8-24-v0.1.md` | Historical Source Proxy PR-8.3 acceptance decision packet. |
+| `docs/source-proxy-run-300-blocker-reduction-plan-9-24-v0.1.md` | Historical Run 300 blocker-reduction packet. |
+| `docs/source-proxy-coding-active-task-cockpit-operator-clarity-plan-10-24-v0.1.md` | Historical `/coding` active task cockpit clarity packet. |
+| `docs/source-proxy-production-hardening-consolidation-plan-11-24-v0.1.md` | Historical Source Proxy production-hardening consolidation packet. |
+| `docs/design-agent-a-grade-dependency-unlock-plan-12-24-v0.1.md` | Historical Design Agent dependency-unlock packet. |
+| `docs/design-agent-ecosystem-remediation-plan-13-24-v0.1.md` | Historical Design Agent remediation packet. |
+| `docs/design-subagent-fleet-preintegration-plan-14-24-v0.1.md` | Historical design subagent fleet preintegration packet. |
+| `docs/scout-manual-controlled-intelligence-lane-plan-15-24-v0.1.md` | Historical Scout manual-controlled intelligence lane packet. |
+| `docs/surface-ownership-chat-oracle-dashboard-plan-16-24-v0.1.md` | Historical surface ownership packet. |
+| `docs/map-cartographer-ui-integration-gate-plan-17-24-v0.1.md` | Historical map and Cartographer UI integration gate. |
+| `docs/controlled-multi-agent-subagent-orchestration-boundary-plan-18-24-v0.1.md` | Historical preview-only orchestration boundary packet. |
+| `docs/controlled-action-authority-approval-token-ladder-plan-19-24-v0.1.md` | Historical authority/token ladder design packet. |
+| `docs/visual-evidence-browser-proof-harness-plan-20-24-v0.1.md` | Historical visual proof harness contract. |
+| `docs/final-css-polish-gate-plan-21-24-v0.1.md` | Historical final CSS gate review. |
+| `docs/preflight-production-readiness-review-plan-22-24-v0.1.md` | Historical production-readiness review with production readiness NO-GO. |
 
 ### Active Supporting References
 
