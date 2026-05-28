@@ -60,6 +60,7 @@ describe("execute-approved route", () => {
     const response = await POST(
       jsonRequest({
         action: "modify file",
+        allowed_files: ["src/demo.ts"],
         approved: true,
         approved_diff: "--- a/src/demo.ts\n+++ b/src/demo.ts\n@@ -1 +1 @@\n-old\n+new\n",
         target: "src/demo.ts",
@@ -79,18 +80,66 @@ describe("execute-approved route", () => {
     const [, init] = mockedSourceProxyFetch.mock.calls[0];
     expect(JSON.parse(String(init?.body))).toEqual({
       action: "modify file",
+      allowed_files: ["src/demo.ts"],
       approved: true,
       approval_id: "approval-54865365133e9340",
       approved_by: "coding-ui",
       approved_diff: "--- a/src/demo.ts\n+++ b/src/demo.ts\n@@ -1 +1 @@\n-old\n+new\n",
+      changed_files: ["src/demo.ts"],
+      commit_authority: false,
+      diff_hash: "fe27d77ea2ed4d425e08fda5fb202b554aff43e0b591c8477efa7ad86d7889fe",
+      push_authority: false,
       target: "src/demo.ts",
     });
+  });
+
+  it("rejects approved diffs outside allowed_files before forwarding", async () => {
+    const response = await POST(
+      jsonRequest({
+        action: "modify file",
+        allowed_files: ["docs/safe.md"],
+        approved: true,
+        approved_diff: "--- a/src/demo.ts\n+++ b/src/demo.ts\n@@ -1 +1 @@\n-old\n+new\n",
+        target: "src/demo.ts",
+        task_id: "task-123",
+      }),
+    );
+
+    await expect(response.json()).resolves.toMatchObject({
+      allowed_files: ["docs/safe.md"],
+      changed_files: ["src/demo.ts"],
+      error: "execute-approved approved_diff changed files are outside allowed_files.",
+      unexpected_files: ["src/demo.ts"],
+    });
+    expect(response.status).toBe(409);
+    expect(mockedSourceProxyFetch).not.toHaveBeenCalled();
+  });
+
+  it("rejects protected paths before forwarding", async () => {
+    const response = await POST(
+      jsonRequest({
+        action: "modify file",
+        allowed_files: [".env.local"],
+        approved: true,
+        approved_diff: "--- a/.env.local\n+++ b/.env.local\n@@ -1 +1 @@\n-old\n+new\n",
+        target: ".env.local",
+        task_id: "task-123",
+      }),
+    );
+
+    await expect(response.json()).resolves.toMatchObject({
+      changed_files: [".env.local"],
+      error: "execute-approved rejected protected path in approved_diff.",
+    });
+    expect(response.status).toBe(403);
+    expect(mockedSourceProxyFetch).not.toHaveBeenCalled();
   });
 
   it("rejects stale approval ids before forwarding", async () => {
     const response = await POST(
       jsonRequest({
         action: "modify file",
+        allowed_files: ["src/demo.ts"],
         approval_id: "approval-stale",
         approved: true,
         approved_diff: "--- a/src/demo.ts\n+++ b/src/demo.ts\n@@ -1 +1 @@\n-old\n+new\n",

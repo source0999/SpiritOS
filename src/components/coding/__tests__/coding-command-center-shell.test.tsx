@@ -244,13 +244,11 @@ describe("CodingCommandCenterShell", () => {
     fireEvent.click(collapseNavButton);
     expect(within(desktopNav).getByRole("button", { name: "Expand desktop navigation" }))
       .toHaveAttribute("aria-expanded", "false");
-    const mobileNav = screen.getByRole("navigation", {
+    const mobileNav = screen.queryByRole("navigation", {
       name: "Spirit app mobile navigation",
     });
-    expect(within(mobileNav).getByRole("link", { name: "Source" })).toHaveAttribute(
-      "aria-current",
-      "page",
-    );
+    expect(mobileNav).not.toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Mobile command composer" })).toBeInTheDocument();
     const startNewChatButton = screen.getByRole("button", { name: "Start new chat" });
     expect(startNewChatButton).toBeInTheDocument();
     expect(startNewChatButton).not.toBeDisabled();
@@ -470,12 +468,33 @@ describe("CodingCommandCenterShell", () => {
       "Commit Scribe",
       "Release Steward",
     ].forEach((helperName) => {
-      expect(within(helperFleet).getByText(helperName)).toBeInTheDocument();
+      expect(within(helperFleet).getAllByText(helperName).length).toBeGreaterThan(0);
     });
     expect(within(helperFleet).getByText(/No helper is running, applying, calling providers/))
       .toBeInTheDocument();
     expect(within(helperFleet).queryByRole("button", { name: /start|run|apply|commit|push|provider|queue|worker|live/i }))
       .not.toBeInTheDocument();
+    const helperRuns = within(helperFleet).getByRole("region", {
+      name: "Helper agent run records",
+    });
+    expect(within(helperRuns).getByText("Component Mapper")).toBeInTheDocument();
+    expect(within(helperRuns).getByText("Safety Reviewer")).toBeInTheDocument();
+    expect(within(helperRuns).getByText("Test Scribe")).toBeInTheDocument();
+    expect(within(helperRuns).getAllByText("advisory_ready").length).toBeGreaterThan(0);
+    expect(within(helperRuns).getByText(/Task packet: read-only component map/))
+      .toBeInTheDocument();
+    expect(within(helperRuns).getByText(/Result packet: focused checks only/))
+      .toBeInTheDocument();
+    expect(within(helperRuns).getByText("timeline: helper packet 1")).toBeInTheDocument();
+    const helperConflicts = within(helperFleet).getByRole("region", {
+      name: "Helper agent conflict review",
+    });
+    expect(within(helperConflicts).getByText("Scope suggestion vs safety boundary"))
+      .toBeInTheDocument();
+    expect(within(helperConflicts).getByText("Verification suggestion vs execution"))
+      .toBeInTheDocument();
+    expect(within(helperConflicts).getByText("visible_disagreement")).toBeInTheDocument();
+    expect(within(helperConflicts).getByText("authority_blocked")).toBeInTheDocument();
     const functionalityLayer = screen.getByRole("region", {
       name: "Codex-like functionality layer",
     });
@@ -1191,6 +1210,81 @@ describe("CodingCommandCenterShell", () => {
     expect(within(scopeReview).getByText("Task type: docs")).toBeInTheDocument();
     expect(within(scopeReview).getByText("Expected checks: git diff --check")).toBeInTheDocument();
     expect(within(scopeReview).getByText("Safe next action: review_scope")).toBeInTheDocument();
+    const taskScopeFiles = screen.getByRole("region", { name: "Task scope files" });
+    expect(within(taskScopeFiles).getByText("Target")).toBeInTheDocument();
+    expect(within(taskScopeFiles).getAllByText("docs/proxy-test-runner-plan.md").length).toBeGreaterThan(0);
+    expect(within(taskScopeFiles).getByText("Allowed files")).toBeInTheDocument();
+    expect(within(taskScopeFiles).getByText("Forbidden files")).toBeInTheDocument();
+    expect(within(taskScopeFiles).getByText(/\.env/)).toBeInTheDocument();
+    const workLanes = screen.getByRole("region", { name: "Coding work lanes" });
+    expect(within(workLanes).getByText("Active lane")).toBeInTheDocument();
+    expect(within(workLanes).getByText("Blocked lane")).toBeInTheDocument();
+    expect(within(workLanes).getByText("Completed lane")).toBeInTheDocument();
+    expect(within(workLanes).getByText("No active blocker")).toBeInTheDocument();
+    const researchLane = screen.getByRole("region", { name: "Research lane" });
+    expect(within(researchLane).getByText("Research packet")).toBeInTheDocument();
+    expect(within(researchLane).getByText("Normalized advisory packet")).toBeInTheDocument();
+    expect(within(researchLane).getByText("Mac support node")).toBeInTheDocument();
+    expect(within(researchLane).getByText("Search capability")).toBeInTheDocument();
+    expect(within(researchLane).getByText("blocked_until_manual_json_health_check"))
+      .toBeInTheDocument();
+    expect(within(researchLane).getByText("Scout bridge")).toBeInTheDocument();
+    expect(within(researchLane).getByText("Manual import/promotion preview")).toBeInTheDocument();
+    expect(within(researchLane).getByText("Research-to-coding handoff")).toBeInTheDocument();
+    expect(within(researchLane).getByText("Context attachment only")).toBeInTheDocument();
+    const designVaultLane = screen.getByRole("region", { name: "Design vault lane" });
+    expect(within(designVaultLane).getByText("Design packet schema")).toBeInTheDocument();
+    expect(within(designVaultLane).getByText("design_packet_preview_v1", { exact: false }))
+      .toBeInTheDocument();
+    expect(within(designVaultLane).getByText("Accept/reject state")).toBeInTheDocument();
+    expect(within(designVaultLane).getByText("accepted false; rejected false"))
+      .toBeInTheDocument();
+    expect(within(designVaultLane).getByText("Route/component/CSS map")).toBeInTheDocument();
+    expect(within(designVaultLane).getByText("CSS mutation authority false")).toBeInTheDocument();
+    expect(within(designVaultLane).getByText("Design-to-code draft")).toBeInTheDocument();
+    expect(within(designVaultLane).getByText("Context draft only")).toBeInTheDocument();
+    expect(within(designVaultLane).getByText("Quality bar")).toBeInTheDocument();
+    expect(within(designVaultLane).getByText("AAA/Codex-like application standard"))
+      .toBeInTheDocument();
+    expect(within(designVaultLane).getByText("Drift map")).toBeInTheDocument();
+    expect(within(designVaultLane).getByText("token drift; component drift")).toBeInTheDocument();
+    const cartLane = screen.getByRole("region", { name: "Cartographer preview lane" });
+    expect(within(cartLane).getByText("Cart status")).toBeInTheDocument();
+    expect(within(cartLane).getByText("activation_started false")).toBeInTheDocument();
+    expect(within(cartLane).getByText("Cart evidence browser")).toBeInTheDocument();
+    expect(within(cartLane).getByText("receipt_writes_enabled false")).toBeInTheDocument();
+    expect(within(cartLane).getByText("Cart route protection")).toBeInTheDocument();
+    expect(within(cartLane).getByText("blocked_preview_only")).toBeInTheDocument();
+    expect(within(cartLane).getByText("Cart action catalog")).toBeInTheDocument();
+    expect(within(cartLane).getByText("queue_workflow_token_preview")).toBeInTheDocument();
+    expect(within(cartLane).getByText("Cart rejection proof")).toBeInTheDocument();
+    expect(within(cartLane).getByText("approval_token_consumed=false")).toBeInTheDocument();
+    expect(within(cartLane).getByText("Cart preflight readiness")).toBeInTheDocument();
+    expect(within(cartLane).getByText("blocked_until_explicit_plan_authority"))
+      .toBeInTheDocument();
+    const applyLane = screen.getByRole("region", { name: "Human-controlled apply lane" });
+    expect(within(applyLane).getByText("Approval record")).toBeInTheDocument();
+    expect(within(applyLane).getByText("human approval required")).toBeInTheDocument();
+    expect(within(applyLane).getByText("Diff hash/scope match")).toBeInTheDocument();
+    expect(within(applyLane).getByText("Exact approved apply")).toBeInTheDocument();
+    expect(within(applyLane).getByText("commit_authority false; push_authority false"))
+      .toBeInTheDocument();
+    expect(within(applyLane).getByText("Post-apply checks")).toBeInTheDocument();
+    expect(within(applyLane).getByText("Rollback preview")).toBeInTheDocument();
+    expect(within(applyLane).getByText("Apply result/audit")).toBeInTheDocument();
+    const gauntletLane = screen.getByRole("region", { name: "Combined diagnostic gauntlet lane" });
+    expect(within(gauntletLane).getByText("Real coding tasks")).toBeInTheDocument();
+    expect(within(gauntletLane).getByText("docs; ui; backend_schema")).toBeInTheDocument();
+    expect(within(gauntletLane).getByText("Design task")).toBeInTheDocument();
+    expect(within(gauntletLane).getByText("design_packet_intake")).toBeInTheDocument();
+    expect(within(gauntletLane).getByText("Research task")).toBeInTheDocument();
+    expect(within(gauntletLane).getByText("search_scout_context")).toBeInTheDocument();
+    expect(within(gauntletLane).getByText("Cart task")).toBeInTheDocument();
+    expect(within(gauntletLane).getByText("cart_context")).toBeInTheDocument();
+    expect(within(gauntletLane).getByText("Safety rejections")).toBeInTheDocument();
+    expect(within(gauntletLane).getByText("protected_path; bad_diff")).toBeInTheDocument();
+    expect(within(gauntletLane).getByText("Hidden authority check")).toBeInTheDocument();
+    expect(within(gauntletLane).getByText("no hidden authority")).toBeInTheDocument();
     expect(screen.getByText(/Bounded task data present/)).toBeInTheDocument();
     await waitFor(() => {
       expect(screen.getByRole("button", { name: "Desktop preview safely" })).toBeEnabled();
@@ -3732,6 +3826,9 @@ describe("CodingCommandCenterShell", () => {
     );
     expect(String(vi.mocked(globalThis.fetch).mock.calls[3][1]?.body)).toContain(
       '"approved":true',
+    );
+    expect(String(vi.mocked(globalThis.fetch).mock.calls[3][1]?.body)).toContain(
+      '"allowed_files":["docs/example.md"]',
     );
   });
 

@@ -1242,6 +1242,15 @@ function targetFromPayloadOrDiff(payload: unknown, diff: string): string {
   return plusLine ? plusLine.slice("+++ b/".length).trim() : "";
 }
 
+function localDiffFingerprint(diff: string) {
+  let hash = 0x811c9dc5;
+  for (let index = 0; index < diff.length; index += 1) {
+    hash ^= diff.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return (hash >>> 0).toString(16).padStart(8, "0");
+}
+
 function deriveTaskPacket(taskText: string) {
   const trimmed = taskText.trim();
   const scopeDraft = derivePlainEnglishScopeDraft(trimmed);
@@ -1268,6 +1277,7 @@ function deriveTaskPacket(taskText: string) {
     allowedFiles,
     blockedFields,
     expectedChecks: scopeDraft.expectedChecks,
+    forbiddenFiles: scopeDraft.forbiddenFiles,
     inspectionSummary: scopeDraft.inspectionSummary,
     reasonCodes: scopeDraft.reasonCodes,
     riskTier: scopeDraft.riskTier,
@@ -1459,6 +1469,7 @@ function taskPacketFromTrial(taskText: string, trial?: ProxyTrialPrompt | null) 
       ? ["git diff --check"]
       : inferred.expectedChecks,
     inspectionSummary: `Trial ${trial.id}: explicit target ${trial.targetFile}; allowed files ${trial.allowedFiles.join(", ")}.`,
+    forbiddenFiles: trial.forbiddenActions,
     reasonCodes: [],
     riskTier: trial.difficulty === "mid" ? "medium" : inferred.riskTier,
     rollbackHint:
@@ -2514,6 +2525,310 @@ export default function CodingCommandCenterShell() {
           : activeRunState === "complete"
             ? `diagnostic complete; task receipt pending: ${receiptReadinessText}`
           : `state: ${activeRunState}; ${receiptReadinessText}`;
+  const cockpitScopeRows = [
+    {
+      detail: receiptTargetScopeText,
+      label: "Target",
+      value: taskPacket.targetFile || "missing",
+    },
+    {
+      detail: receiptAllowedFilesText,
+      label: "Allowed files",
+      value: taskPacket.allowedFiles.length > 0 ? taskPacket.allowedFiles.join(", ") : "missing",
+    },
+    {
+      detail: "Forbidden files stay blocked and are never expanded by preview.",
+      label: "Forbidden files",
+      value:
+        taskPacket.forbiddenFiles.length > 0
+          ? taskPacket.forbiddenFiles.join(", ")
+          : "protected paths, env, credentials, package/config unless explicitly scoped",
+    },
+    {
+      detail: taskBoundaryStateText,
+      label: "Boundary",
+      value: activeBlockedFields.length > 0 ? "blocked" : activeTaskSubmitted ? "staged" : "draft",
+    },
+  ];
+  const cockpitWorkLaneItems = [
+    {
+      detail: activeDraftText.trim()
+        ? `State ${activeRunState}; target ${taskPacket.targetFile || "missing"}; next action stays visible in the progress panel.`
+        : "No active task is staged. Compose a bounded task first.",
+      label: "Active lane",
+      status: activeRunState,
+      title: activeDraftText.trim() ? "Current bounded task" : "No active task",
+    },
+    {
+      detail:
+        previewStatus === "blocked" || previewStatus === "error" || activeBlockedFields.length > 0
+          ? "A blocker is active; inspect the blocker banner and receipt for exact reason."
+          : "No blocker is active for the current task.",
+      label: "Blocked lane",
+      status:
+        previewStatus === "blocked" || previewStatus === "error" || activeBlockedFields.length > 0
+          ? "blocked"
+          : "clear",
+      title:
+        previewStatus === "blocked" || previewStatus === "error" || activeBlockedFields.length > 0
+          ? "Blocked task"
+          : "No active blocker",
+    },
+    {
+      detail:
+        previewAlreadySatisfied || verificationStatus === "passed" || previewStatus === "ready"
+          ? "Completion evidence exists; inspect receipt and output panels for exact details."
+          : "Completed work appears after preview evidence, no-op proof, or verification.",
+      label: "Completed lane",
+      status:
+        previewAlreadySatisfied || verificationStatus === "passed" || previewStatus === "ready"
+          ? "has evidence"
+          : "empty",
+      title:
+        previewAlreadySatisfied || verificationStatus === "passed" || previewStatus === "ready"
+          ? "Latest evidence"
+          : "No completed task",
+    },
+  ];
+  const cockpitResearchRows = [
+    {
+      detail:
+        taskPacket.targetFile && taskPacket.allowedFiles.length > 0
+          ? `Attached to the current bounded task for ${taskPacket.targetFile}.`
+          : "Attach after the task has a target file and allowed files.",
+      label: "Research packet",
+      status: taskPacket.targetFile && taskPacket.allowedFiles.length > 0 ? "ready" : "blocked",
+      value: "Normalized advisory packet",
+    },
+    {
+      detail: "Local roadmap and supplied source snippets only; live search is blocked here.",
+      label: "Research lane",
+      status: "advisory",
+      value: "Sources must stay visible before handoff.",
+    },
+    {
+      detail: "Mac/SearXNG JSON capability has not been verified in this UI session.",
+      label: "Mac support node",
+      status: "blocked",
+      value: "Health unverified",
+    },
+    {
+      detail: "No Mac service control ran. Adapter remains advisory until manual health is proven.",
+      label: "Search capability",
+      status: "blocked",
+      value: "blocked_until_manual_json_health_check",
+    },
+    {
+      detail: "Scout packets can be displayed and imported only as manual preview context.",
+      label: "Scout bridge",
+      status: "preview only",
+      value: "Manual import/promotion preview",
+    },
+    {
+      detail: "Accepted research can become coding context, never approval/apply/commit authority.",
+      label: "Research-to-coding handoff",
+      status: "manual",
+      value: "Context attachment only",
+    },
+  ];
+  const helperAgentRunRows = [
+    {
+      detail: "Task packet: read-only component map. Result packet: likely target zones for review.",
+      label: "Component Mapper",
+      status: "advisory_ready",
+      timeline: "timeline: helper packet 1",
+    },
+    {
+      detail: "Task packet: authority review. Result packet: protected paths and no-write boundary.",
+      label: "Safety Reviewer",
+      status: "advisory_ready",
+      timeline: "timeline: helper packet 2",
+    },
+    {
+      detail: "Task packet: verification suggestions. Result packet: focused checks only, no shell run.",
+      label: "Test Scribe",
+      status: "advisory_ready",
+      timeline: "timeline: helper packet 3",
+    },
+  ];
+  const helperAgentConflictRows = [
+    {
+      detail:
+        "Component Mapper can suggest likely source zones, but Safety Reviewer keeps protected paths blocked.",
+      label: "Scope suggestion vs safety boundary",
+      status: "visible_disagreement",
+    },
+    {
+      detail:
+        "Test Scribe can recommend checks, but command execution remains human-controlled outside helper authority.",
+      label: "Verification suggestion vs execution",
+      status: "authority_blocked",
+    },
+  ];
+  const designVaultRows = [
+    {
+      detail: "Schema: design_packet_preview_v1. Source may be Design Agent or manual vault packet.",
+      label: "Design packet schema",
+      status: "preview_ready",
+      value: "Display only",
+    },
+    {
+      detail: "Accept/reject is a preview state; acceptance can draft context but grants no apply authority.",
+      label: "Accept/reject state",
+      status: "manual",
+      value: "accepted false; rejected false",
+    },
+    {
+      detail: "Route /coding maps to CodingCommandCenterShell and dashboard demo CSS for review only.",
+      label: "Route/component/CSS map",
+      status: "mapped",
+      value: "CSS mutation authority false",
+    },
+    {
+      detail: "Accepted design context can draft an exact bounded coding task tied to named files.",
+      label: "Design-to-code draft",
+      status: "blocked until accepted",
+      value: "Context draft only",
+    },
+    {
+      detail: "No fake A-grade claim; manual browser proof is required before final polish.",
+      label: "Quality bar",
+      status: "ready for review",
+      value: "AAA/Codex-like application standard",
+    },
+    {
+      detail: "Token and component drift require review before CSS or component mutation.",
+      label: "Drift map",
+      status: "review required",
+      value: "token drift; component drift",
+    },
+  ];
+  const cartographerPreviewRows = [
+    {
+      detail: "Cart status is visible as control preview only; no activation or live map mutation starts.",
+      label: "Cart status",
+      status: "control_preview_only",
+      value: "activation_started false",
+    },
+    {
+      detail: "Evidence and receipt locations are listed as a read-only index; no receipt writes are enabled.",
+      label: "Cart evidence browser",
+      status: "read_only_index",
+      value: "receipt_writes_enabled false",
+    },
+    {
+      detail: "GET live-state is read-only; apply and push approval routes stay blocked preview-only.",
+      label: "Cart route protection",
+      status: "protected",
+      value: "blocked_preview_only",
+    },
+    {
+      detail: "Queue, workflow, and token actions are action plans only, with rejection proof visible.",
+      label: "Cart action catalog",
+      status: "preview only",
+      value: "queue_workflow_token_preview",
+    },
+    {
+      detail: "Rejected actions prove approval_token_consumed=false and queue_worker_started=false.",
+      label: "Cart rejection proof",
+      status: "rejected_preview_only",
+      value: "approval_token_consumed=false",
+    },
+    {
+      detail: "Tasks remain blocked until explicit Cart authority exists in a later plan.",
+      label: "Cart preflight readiness",
+      status: "blocked",
+      value: "blocked_until_explicit_plan_authority",
+    },
+  ];
+  const approvalLaneRows = [
+    {
+      detail:
+        activeTaskId && activePreviewTarget && activeProposedDiff
+          ? `Approval record binds task ${activeTaskId}, target ${activePreviewTarget}, and diff fingerprint ${localDiffFingerprint(activeProposedDiff)}.`
+          : "Approval record waits for a task-backed preview diff.",
+      label: "Approval record",
+      status: approvedAt ? "approved locally" : "waiting",
+      value: approvedAt ? "human approval recorded" : "human approval required",
+    },
+    {
+      detail:
+        activeChangedFiles.length > 0
+          ? `Changed files ${activeChangedFiles.join(", ")} must match allowed files ${allowedFilesSummary}.`
+          : "Changed files must be known before apply is available.",
+      label: "Diff hash/scope match",
+      status: changedFilesAreAllowed && activeProposedDiff ? "matched" : "locked",
+      value: activeProposedDiff ? `diff_fingerprint ${localDiffFingerprint(activeProposedDiff)}` : "no diff",
+    },
+    {
+      detail: canApplyApprovedDiff
+        ? "Apply request is limited to the approved diff, target, task_id, and allowed files."
+        : "Exact apply stays locked until clean preview evidence and explicit approval exist.",
+      label: "Exact approved apply",
+      status: canApplyApprovedDiff ? "available" : "locked",
+      value: "commit_authority false; push_authority false",
+    },
+    {
+      detail: canRunVerification
+        ? "Post-apply checks are required before completion."
+        : "Post-apply checks unlock only after apply evidence exists.",
+      label: "Post-apply checks",
+      status: canRunVerification ? "required" : verificationStatus,
+      value: receiptCommandsRunText,
+    },
+    {
+      detail: activeChat?.rollbackHint ?? "keep the task bounded; use git diff before any apply.",
+      label: "Rollback preview",
+      status: appliedAt ? "available" : "preview",
+      value: "receipt-only rollback guidance",
+    },
+    {
+      detail: appliedAt
+        ? "Apply result is recorded in current-session audit evidence."
+        : "Apply audit stays empty until the exact approved route succeeds.",
+      label: "Apply result/audit",
+      status: appliedAt ? "recorded" : "waiting",
+      value: appliedAt ? "local audit log entry ready" : "no local audit entry",
+    },
+  ];
+  const combinedGauntletRows = [
+    {
+      detail: "Tiny docs/code task, UI task, and backend route/schema task are represented as preview diagnostics.",
+      label: "Real coding tasks",
+      status: "preview_ready",
+      value: "docs; ui; backend_schema",
+    },
+    {
+      detail: "Design packet and design-to-code context stay attached without CSS or component mutation.",
+      label: "Design task",
+      status: "context_attached",
+      value: "design_packet_intake",
+    },
+    {
+      detail: "Search/Scout packet is coding context only; provider and live search authority remain blocked.",
+      label: "Research task",
+      status: "context_attached",
+      value: "search_scout_context",
+    },
+    {
+      detail: "Cart context stays read-only; no activation, queue, token, evidence write, or live map mutation.",
+      label: "Cart task",
+      status: "context_attached_read_only",
+      value: "cart_context",
+    },
+    {
+      detail: "Protected paths and bad diffs must reject before apply.",
+      label: "Safety rejections",
+      status: "pass_blocked_safely",
+      value: "protected_path; bad_diff",
+    },
+    {
+      detail: "provider_call_made=false; cart_activation_started=false; hidden_worker_started=false.",
+      label: "Hidden authority check",
+      status: "pass_no_hidden_authority",
+      value: "no hidden authority",
+    },
+  ];
   const progressEvidenceCountItems = [
     {
       detail: progressTimerActive
@@ -5188,6 +5503,7 @@ export default function CodingCommandCenterShell() {
       const response = await fetch("/v1/actions/execute-approved", {
         body: JSON.stringify({
           action: `Modify ${activePreviewTarget}`,
+          allowed_files: taskPacket.allowedFiles,
           approved: true,
           approved_diff: activeProposedDiff,
           target: activePreviewTarget,
@@ -5588,7 +5904,7 @@ export default function CodingCommandCenterShell() {
 
   return (
     <main className="dashboard-demo-v4-route-shell dashboard-demo-v4-route-shell-coding relative min-h-dvh overflow-x-hidden bg-[#090a0f] pb-[calc(9.5rem_+_var(--shell-safe-area-bottom,0px))] text-zinc-100 xl:pb-0">
-      <DashboardDemoV4FloatingNav desktopVariant="full-height" />
+      <DashboardDemoV4FloatingNav desktopVariant="full-height" showMobile={false} />
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(34,211,238,0.12),transparent_34%),linear-gradient(180deg,rgba(15,23,42,0.68),rgba(9,10,15,0.96)_46%,#090a0f)]"
@@ -6289,6 +6605,148 @@ export default function CodingCommandCenterShell() {
                       {taskPacket.reasonCodes.length > 0 ? (
                         <p>Reason codes: {taskPacket.reasonCodes.join(", ")}</p>
                       ) : null}
+                    </div>
+                    <div
+                      aria-label="Task scope files"
+                      className="mt-3 grid gap-2 text-xs leading-5 text-zinc-300 sm:grid-cols-2"
+                      role="region"
+                    >
+                      {cockpitScopeRows.map((row) => (
+                        <div
+                          className="rounded-md border border-white/10 bg-black/25 p-2"
+                          key={row.label}
+                        >
+                          <p className="font-medium text-zinc-100">{row.label}</p>
+                          <p className="mt-1 text-zinc-300">{row.value}</p>
+                          <p className="mt-1 text-zinc-500">{row.detail}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div
+                      aria-label="Coding work lanes"
+                      className="mt-3 grid gap-2 text-xs leading-5 text-zinc-300 lg:grid-cols-3"
+                      role="region"
+                    >
+                      {cockpitWorkLaneItems.map((item) => (
+                        <section
+                          className="rounded-md border border-white/10 bg-black/25 p-2"
+                          key={item.label}
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <h4 className="font-medium text-zinc-100">{item.label}</h4>
+                            <span className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[0.7rem] uppercase tracking-[0.14em] text-zinc-400">
+                              {item.status}
+                            </span>
+                          </div>
+                          <p className="mt-1 font-medium text-zinc-200">{item.title}</p>
+                          <p className="mt-1 text-zinc-500">{item.detail}</p>
+                        </section>
+                      ))}
+                    </div>
+                    <div
+                      aria-label="Research lane"
+                      className="mt-3 grid gap-2 text-xs leading-5 text-zinc-300 lg:grid-cols-3"
+                      role="region"
+                    >
+                      {cockpitResearchRows.map((row) => (
+                        <section
+                          className="rounded-md border border-cyan-300/20 bg-cyan-950/20 p-2"
+                          key={row.label}
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <h4 className="font-medium text-cyan-50">{row.label}</h4>
+                            <span className="rounded-md border border-cyan-200/20 bg-cyan-200/[0.06] px-2 py-0.5 text-[0.7rem] uppercase tracking-[0.14em] text-cyan-200">
+                              {row.status}
+                            </span>
+                          </div>
+                          <p className="mt-1 font-medium text-zinc-100">{row.value}</p>
+                          <p className="mt-1 text-zinc-400">{row.detail}</p>
+                        </section>
+                      ))}
+                    </div>
+                    <div
+                      aria-label="Design vault lane"
+                      className="mt-3 grid gap-2 text-xs leading-5 text-zinc-300 lg:grid-cols-3"
+                      role="region"
+                    >
+                      {designVaultRows.map((row) => (
+                        <section
+                          className="rounded-md border border-fuchsia-300/20 bg-fuchsia-950/20 p-2"
+                          key={row.label}
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <h4 className="font-medium text-fuchsia-50">{row.label}</h4>
+                            <span className="rounded-md border border-fuchsia-200/20 bg-fuchsia-200/[0.06] px-2 py-0.5 text-[0.7rem] uppercase tracking-[0.14em] text-fuchsia-200">
+                              {row.status}
+                            </span>
+                          </div>
+                          <p className="mt-1 font-medium text-zinc-100">{row.value}</p>
+                          <p className="mt-1 text-zinc-400">{row.detail}</p>
+                        </section>
+                      ))}
+                    </div>
+                    <div
+                      aria-label="Cartographer preview lane"
+                      className="mt-3 grid gap-2 text-xs leading-5 text-zinc-300 lg:grid-cols-3"
+                      role="region"
+                    >
+                      {cartographerPreviewRows.map((row) => (
+                        <section
+                          className="rounded-md border border-rose-300/20 bg-rose-950/20 p-2"
+                          key={row.label}
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <h4 className="font-medium text-rose-50">{row.label}</h4>
+                            <span className="rounded-md border border-rose-200/20 bg-rose-200/[0.06] px-2 py-0.5 text-[0.7rem] uppercase tracking-[0.14em] text-rose-200">
+                              {row.status}
+                            </span>
+                          </div>
+                          <p className="mt-1 font-medium text-zinc-100">{row.value}</p>
+                          <p className="mt-1 text-zinc-400">{row.detail}</p>
+                        </section>
+                      ))}
+                    </div>
+                    <div
+                      aria-label="Human-controlled apply lane"
+                      className="mt-3 grid gap-2 text-xs leading-5 text-zinc-300 lg:grid-cols-3"
+                      role="region"
+                    >
+                      {approvalLaneRows.map((row) => (
+                        <section
+                          className="rounded-md border border-emerald-300/20 bg-emerald-950/20 p-2"
+                          key={row.label}
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <h4 className="font-medium text-emerald-50">{row.label}</h4>
+                            <span className="rounded-md border border-emerald-200/20 bg-emerald-200/[0.06] px-2 py-0.5 text-[0.7rem] uppercase tracking-[0.14em] text-emerald-200">
+                              {row.status}
+                            </span>
+                          </div>
+                          <p className="mt-1 font-medium text-zinc-100">{row.value}</p>
+                          <p className="mt-1 text-zinc-400">{row.detail}</p>
+                        </section>
+                      ))}
+                    </div>
+                    <div
+                      aria-label="Combined diagnostic gauntlet lane"
+                      className="mt-3 grid gap-2 text-xs leading-5 text-zinc-300 lg:grid-cols-3"
+                      role="region"
+                    >
+                      {combinedGauntletRows.map((row) => (
+                        <section
+                          className="rounded-md border border-sky-300/20 bg-sky-950/20 p-2"
+                          key={row.label}
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <h4 className="font-medium text-sky-50">{row.label}</h4>
+                            <span className="rounded-md border border-sky-200/20 bg-sky-200/[0.06] px-2 py-0.5 text-[0.7rem] uppercase tracking-[0.14em] text-sky-200">
+                              {row.status}
+                            </span>
+                          </div>
+                          <p className="mt-1 font-medium text-zinc-100">{row.value}</p>
+                          <p className="mt-1 text-zinc-400">{row.detail}</p>
+                        </section>
+                      ))}
                     </div>
                     {activeBlockedFields.length > 0 ? (
                       <p className="mt-2 text-xs text-amber-100">
@@ -7035,6 +7493,47 @@ export default function CodingCommandCenterShell() {
                             <dd className="text-zinc-300">{helper.blockedActions}</dd>
                           </div>
                         </dl>
+                      </article>
+                    ))}
+                  </div>
+                  <div
+                    aria-label="Helper agent run records"
+                    className="mt-3 grid gap-2 lg:grid-cols-3"
+                    role="region"
+                  >
+                    {helperAgentRunRows.map((row) => (
+                      <article
+                        className="rounded-md border border-emerald-300/20 bg-emerald-300/[0.06] p-3 text-xs"
+                        key={row.label}
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <p className="font-semibold text-emerald-50">{row.label}</p>
+                          <span className="rounded-md border border-emerald-300/25 px-2 py-0.5 text-[11px] uppercase tracking-[0.14em] text-emerald-100">
+                            {row.status}
+                          </span>
+                        </div>
+                        <p className="mt-2 text-zinc-300">{row.detail}</p>
+                        <p className="mt-2 text-zinc-500">{row.timeline}</p>
+                      </article>
+                    ))}
+                  </div>
+                  <div
+                    aria-label="Helper agent conflict review"
+                    className="mt-3 grid gap-2 lg:grid-cols-2"
+                    role="region"
+                  >
+                    {helperAgentConflictRows.map((row) => (
+                      <article
+                        className="rounded-md border border-amber-300/20 bg-amber-300/[0.06] p-3 text-xs"
+                        key={row.label}
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <p className="font-semibold text-amber-50">{row.label}</p>
+                          <span className="rounded-md border border-amber-300/25 px-2 py-0.5 text-[11px] uppercase tracking-[0.14em] text-amber-100">
+                            {row.status}
+                          </span>
+                        </div>
+                        <p className="mt-2 text-zinc-300">{row.detail}</p>
                       </article>
                     ))}
                   </div>
