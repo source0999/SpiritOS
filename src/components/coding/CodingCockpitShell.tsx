@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { Copy, FileText, ShieldCheck } from "lucide-react";
+import { Copy, FileText, Plus, ShieldCheck } from "lucide-react";
 
 import { DashboardDemoV4FloatingNav } from "@/components/dashboard/demo-v4/DashboardDemoV4FloatingNav";
 import {
@@ -2962,114 +2962,202 @@ export default function CodingCockpitShell() {
             : "pending");
     return { label, status };
   });
+  const activeSessionItems = [
+    {
+      label: task.trim() ? "Current request" : "New coding chat",
+      meta: currentTaskState,
+      active: true,
+    },
+    {
+      label: "Active task",
+      meta: currentTaskTitle,
+      active: Boolean(task.trim() || previewState.status !== "idle"),
+    },
+    {
+      label: currentAppliedRunReceipt && !currentAppliedRunReceipt.revertedAt
+        ? "Revert ready"
+        : previewState.status === "applied"
+          ? "Live run complete"
+          : "Live run status",
+      meta: currentAppliedRunReceipt && !currentAppliedRunReceipt.revertedAt
+        ? "Reverse diff stored"
+        : liveRunnerState,
+      active: previewState.status !== "idle" || Boolean(currentAppliedRunReceipt),
+    },
+  ].filter((item) => item.active);
+  function handleNewCodingChat() {
+    setTask("");
+    setDraftReady(false);
+    setDiagnosticCopyStatus("");
+    setVerificationCopyStatus("");
+    setReversalStatus("");
+    if (!currentAppliedRunReceipt || currentAppliedRunReceipt.revertedAt) {
+      setPreviewState(idlePreviewState());
+    }
+  }
 
   return (
     <div className="dashboard-demo-v4-route-shell dashboard-demo-v4-root">
       <main className="dashboard-demo-v4-route-main min-h-dvh overflow-x-hidden text-[var(--ddv4-fg)]">
-        <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
+        <div className="mx-auto grid min-h-dvh w-full max-w-[min(1500px,100%)] gap-5 px-4 py-5 sm:px-6 lg:px-8 lg:py-8 xl:grid-cols-[260px_minmax(0,1fr)_340px]">
           <h1 className="sr-only">Coding</h1>
 
-          <section className={`${commandPanelClass} p-4 sm:p-5`} role="status" aria-live="polite">
-            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-              <div>
-                <p className={commandLabelClass}>Status</p>
-                <h2 className={`mt-2 text-lg font-semibold ${commandTextClass}`}>Live coding runner</h2>
-                <p className={`mt-1 text-sm ${commandMutedClass}`}>
-                  {previewState.changedFiles.length > 0
-                    ? "Files changed on disk. Review or revert this run before starting another."
-                    : "No live-run file changes are currently recorded."}
-                </p>
-              </div>
-              <span className="inline-flex min-h-9 items-center rounded-md border border-[var(--ddv4-pill-border)] px-3 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--ddv4-fg)]">
-                {liveRunnerState}
-              </span>
+          <aside
+            aria-label="Coding chats"
+            className={`${commandPanelClass} space-y-4 p-4 xl:sticky xl:top-6 xl:max-h-[calc(100dvh-3rem)] xl:overflow-auto`}
+          >
+            <div>
+              <p className={commandLabelClass}>Workspace</p>
+              <h2 className={`mt-2 text-lg font-semibold ${commandTextClass}`}>Coding sessions</h2>
+              <p className={`mt-1 text-sm ${commandMutedClass}`}>SpiritOS</p>
             </div>
-            <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
-              <div className={`${commandInsetClass} p-3`}>
-                <dt className={commandLabelClass}>Project</dt>
-                <dd className={`mt-1 ${commandTextClass}`}>SpiritOS</dd>
-              </div>
-              <div className={`${commandInsetClass} p-3`}>
-                <dt className={commandLabelClass}>Provider/model</dt>
-                <dd className={`mt-1 break-words ${commandTextClass}`}>
-                  {currentPreviewProviderTruth.providerLabel} / {currentPreviewProviderTruth.modelLabel}
-                </dd>
-              </div>
-              <div className={`${commandInsetClass} p-3`}>
-                <dt className={commandLabelClass}>State</dt>
-                <dd className={`mt-1 ${commandTextClass}`}>{liveRunnerState}</dd>
-              </div>
-            </dl>
-          </section>
-
-          <section className={`${commandPanelClass} p-4 sm:p-5`} aria-labelledby="task-composer-heading">
-            <div className="mb-4">
-              <p className={commandLabelClass}>Prompt composer</p>
-              <h2 id="task-composer-heading" className={`mt-2 text-lg font-semibold ${commandTextClass}`}>
-                What should SpiritOS change?
-              </h2>
-            </div>
-            <label className="block">
-              <span className="sr-only">Coding prompt</span>
-              <textarea
-                className={`min-h-40 w-full resize-y rounded-md border border-[var(--ddv4-surface-border-soft)] bg-[var(--ddv4-surface-fill)] px-4 py-4 text-base leading-7 text-[var(--ddv4-fg)] placeholder:text-[var(--ddv4-fg-faint)] ${commandControlClass}`}
-                onChange={(event) => {
-                  handleTaskChange(event.target.value);
-                }}
-                placeholder="Describe what you want SpiritOS to change."
-                value={task}
-              />
-            </label>
-            <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-              <button
-                className={`inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-md bg-emerald-300 px-4 text-sm font-semibold text-slate-950 shadow-sm transition-colors hover:bg-emerald-200 disabled:cursor-not-allowed disabled:opacity-60 ${commandFocusClass}`}
-                disabled={!canStartTask || previewState.isLoading || previewState.isApplying || isReverting}
-                onClick={handleDraftPreview}
-                type="button"
-              >
-                <ShieldCheck aria-hidden="true" size={18} />
-                {previewState.isLoading || previewState.isApplying ? "Working..." : "Start coding"}
-              </button>
-              {previewState.isLoading || previewState.isApplying || isReverting ? (
+            <button
+              className={`inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-emerald-300 px-3 text-sm font-semibold text-slate-950 shadow-sm transition-colors hover:bg-emerald-200 ${commandFocusClass}`}
+              onClick={handleNewCodingChat}
+              type="button"
+            >
+              <Plus aria-hidden="true" size={16} />
+              New chat
+            </button>
+            <nav aria-label="Coding session list" className="space-y-2">
+              {activeSessionItems.map((item) => (
                 <button
-                  className={`inline-flex min-h-12 items-center justify-center rounded-md border border-[var(--ddv4-pill-border)] px-4 text-sm font-semibold text-[var(--ddv4-fg)] transition-colors hover:bg-[var(--ddv4-surface-fill)] ${commandFocusClass}`}
-                  onClick={handleCancelRun}
+                  aria-current={item.active ? "page" : undefined}
+                  className={`${commandInsetClass} min-h-16 w-full p-3 text-left transition-colors hover:bg-[var(--ddv4-surface-fill)]`}
+                  key={item.label}
                   type="button"
                 >
-                  Cancel
+                  <span className={`block text-sm font-semibold ${commandTextClass}`}>{item.label}</span>
+                  <span className={`mt-1 block truncate text-xs ${commandMutedClass}`}>{item.meta}</span>
                 </button>
-              ) : null}
-            </div>
-          </section>
-
-          <section className={`${commandPanelClass} p-4 sm:p-5`} aria-labelledby="progress-heading">
-            <p className={commandLabelClass}>Progress transcript</p>
-            <h2 id="progress-heading" className={`mt-2 text-lg font-semibold ${commandTextClass}`}>
-              Run progress
-            </h2>
-            <ol className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-              {simpleProgressItems.map((item) => (
-                <li className={`${commandInsetClass} min-h-16 p-3`} key={item.label}>
-                  <div className={`text-sm font-semibold ${commandTextClass}`}>{item.label}</div>
-                  <div className={`mt-1 text-xs uppercase tracking-[0.12em] ${commandMutedClass}`}>
-                    {item.status}
-                  </div>
-                </li>
               ))}
-            </ol>
+            </nav>
+            <section className={`${commandInsetClass} p-3`} aria-label="Active task">
+              <p className={commandLabelClass}>Active task</p>
+              <p className={`mt-2 line-clamp-4 text-sm leading-5 ${commandTextClass}`}>{currentTaskTitle}</p>
+              <p className={`mt-2 text-xs ${commandMutedClass}`}>{currentTaskTarget}</p>
+            </section>
+          </aside>
+
+          <section className="flex min-w-0 flex-col gap-5">
+            <section className={`${commandPanelClass} p-4 sm:p-5`} aria-labelledby="task-transcript-heading">
+              <p className={commandLabelClass}>Task transcript</p>
+              <h2 id="task-transcript-heading" className={`mt-2 text-lg font-semibold ${commandTextClass}`}>
+                Task transcript
+              </h2>
+              <div className="mt-4 space-y-3">
+                <article className={`${commandInsetClass} p-4`}>
+                  <p className={commandLabelClass}>Britton</p>
+                  <p className={`mt-2 whitespace-pre-wrap break-words text-base leading-7 ${commandTextClass}`}>
+                    {task.trim() || "No active task. Start with a natural coding prompt."}
+                  </p>
+                </article>
+                <article className={`${commandInsetClass} p-4`}>
+                  <p className={commandLabelClass}>SpiritOS</p>
+                  <p className={`mt-2 text-sm leading-6 ${commandMutedClass}`}>{liveResultSentence}</p>
+                </article>
+              </div>
+            </section>
+
+            <section className={`${commandPanelClass} p-4 sm:p-5`} aria-labelledby="task-composer-heading">
+              <div className="mb-4">
+                <p className={commandLabelClass}>Prompt composer</p>
+                <h2 id="task-composer-heading" className={`mt-2 text-lg font-semibold ${commandTextClass}`}>
+                  Task Composer
+                </h2>
+              </div>
+              <label className="block">
+                <span className="sr-only">Coding prompt</span>
+                <textarea
+                  className={`min-h-40 w-full resize-y rounded-md border border-[var(--ddv4-surface-border-soft)] bg-[var(--ddv4-surface-fill)] px-4 py-4 text-base leading-7 text-[var(--ddv4-fg)] placeholder:text-[var(--ddv4-fg-faint)] ${commandControlClass}`}
+                  onChange={(event) => {
+                    handleTaskChange(event.target.value);
+                  }}
+                  placeholder="Describe what you want SpiritOS to change."
+                  value={task}
+                />
+              </label>
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                <button
+                  className={`inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-md bg-emerald-300 px-4 text-sm font-semibold text-slate-950 shadow-sm transition-colors hover:bg-emerald-200 disabled:cursor-not-allowed disabled:opacity-60 ${commandFocusClass}`}
+                  disabled={!canStartTask || previewState.isLoading || previewState.isApplying || isReverting}
+                  onClick={handleDraftPreview}
+                  type="button"
+                >
+                  <ShieldCheck aria-hidden="true" size={18} />
+                  {previewState.isLoading || previewState.isApplying ? "Working..." : "Start coding"}
+                </button>
+                {previewState.isLoading || previewState.isApplying || isReverting ? (
+                  <button
+                    className={`inline-flex min-h-12 items-center justify-center rounded-md border border-[var(--ddv4-pill-border)] px-4 text-sm font-semibold text-[var(--ddv4-fg)] transition-colors hover:bg-[var(--ddv4-surface-fill)] ${commandFocusClass}`}
+                    onClick={handleCancelRun}
+                    type="button"
+                  >
+                    Cancel
+                  </button>
+                ) : null}
+              </div>
+            </section>
+
+            <section className={`${commandPanelClass} p-4 sm:p-5`} aria-labelledby="progress-heading">
+              <p className={commandLabelClass}>Progress</p>
+              <h2 id="progress-heading" className={`mt-2 text-lg font-semibold ${commandTextClass}`}>
+                Run progress
+              </h2>
+              <ol className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {simpleProgressItems.map((item) => (
+                  <li className={`${commandInsetClass} min-h-16 p-3`} key={item.label}>
+                    <div className={`text-sm font-semibold ${commandTextClass}`}>{item.label}</div>
+                    <div className={`mt-1 text-xs uppercase tracking-[0.12em] ${commandMutedClass}`}>
+                      {item.status}
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </section>
           </section>
 
-          <section className={`${commandPanelClass} p-4 sm:p-5`} aria-labelledby="result-heading">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <p className={commandLabelClass}>Result</p>
-                <h2 id="result-heading" className={`mt-2 text-lg font-semibold ${commandTextClass}`}>
-                  {liveResultLabel}
-                </h2>
-                <p className={`mt-2 text-sm leading-6 ${commandMutedClass}`}>{liveResultSentence}</p>
-              </div>
+          <aside
+            aria-label="Review pane"
+            className={`${commandPanelClass} space-y-4 p-4 xl:sticky xl:top-6 xl:max-h-[calc(100dvh-3rem)] xl:overflow-auto`}
+          >
+            <section role="status" aria-live="polite">
+              <p className={commandLabelClass}>Status</p>
+              <h2 className={`mt-2 text-lg font-semibold ${commandTextClass}`}>Live coding runner</h2>
+              <p className={`mt-1 text-sm ${commandMutedClass}`}>
+                {previewState.changedFiles.length > 0
+                  ? "Files changed on disk. Review or revert this run before starting another."
+                  : "No live-run file changes are currently recorded."}
+              </p>
+              <dl className="mt-4 grid gap-3 text-sm">
+                <div className={`${commandInsetClass} p-3`}>
+                  <dt className={commandLabelClass}>Project</dt>
+                  <dd className={`mt-1 ${commandTextClass}`}>SpiritOS</dd>
+                </div>
+                <div className={`${commandInsetClass} p-3`}>
+                  <dt className={commandLabelClass}>Provider/model</dt>
+                  <dd className={`mt-1 break-words ${commandTextClass}`}>
+                    {currentPreviewProviderTruth.providerLabel} / {currentPreviewProviderTruth.modelLabel}
+                  </dd>
+                </div>
+                <div className={`${commandInsetClass} p-3`}>
+                  <dt className={commandLabelClass}>State</dt>
+                  <dd className={`mt-1 ${commandTextClass}`}>{liveRunnerState}</dd>
+                </div>
+              </dl>
+            </section>
+
+            <section aria-labelledby="review-pane-heading">
+              <p className={commandLabelClass}>Review pane</p>
+              <h2 id="review-pane-heading" className={`mt-2 text-lg font-semibold ${commandTextClass}`}>
+                Review pane
+              </h2>
+              <h3 className={`mt-4 text-lg font-semibold ${commandTextClass}`}>
+                {liveResultLabel}
+              </h3>
+              <p className={`mt-2 text-sm leading-6 ${commandMutedClass}`}>{liveResultSentence}</p>
               <button
-                className={`inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-[var(--ddv4-pill-border)] px-3 text-sm font-semibold text-[var(--ddv4-fg)] transition-colors hover:bg-[var(--ddv4-surface-fill)] disabled:cursor-not-allowed disabled:opacity-60 ${commandFocusClass}`}
+                className={`mt-4 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-md border border-[var(--ddv4-pill-border)] px-3 text-sm font-semibold text-[var(--ddv4-fg)] transition-colors hover:bg-[var(--ddv4-surface-fill)] disabled:cursor-not-allowed disabled:opacity-60 ${commandFocusClass}`}
                 disabled={!showCopyDiagnostics && !reversalStatus}
                 onClick={() => void copyDiagnostics()}
                 type="button"
@@ -3077,81 +3165,81 @@ export default function CodingCockpitShell() {
                 <Copy aria-hidden="true" size={16} />
                 Copy diagnostics
               </button>
-            </div>
-            <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
-              <div className={`${commandInsetClass} p-3`}>
-                <dt className={commandLabelClass}>Files changed</dt>
-                <dd className={`mt-1 break-words ${commandTextClass}`}>
-                  {formatList(currentChangedFilesDiagnostics.diskChangedFiles, "None")}
-                </dd>
-              </div>
-              <div className={`${commandInsetClass} p-3`}>
-                <dt className={commandLabelClass}>Checks run</dt>
-                <dd className={`mt-1 break-words ${commandTextClass}`}>
-                  {formatList(previewState.checks, "None recorded")}
-                </dd>
-              </div>
-              <div className={`${commandInsetClass} p-3`}>
-                <dt className={commandLabelClass}>Reversal</dt>
-                <dd className={`mt-1 break-words ${commandTextClass}`}>
-                  {currentAppliedRunReceipt && !currentAppliedRunReceipt.revertedAt
-                    ? "Available"
-                    : reversalStatus || "Not available"}
-                </dd>
-              </div>
-            </dl>
-            {currentAppliedRunReceipt && !currentAppliedRunReceipt.revertedAt ? (
-              <button
-                className={`mt-4 inline-flex min-h-11 items-center justify-center rounded-md border border-[var(--ddv4-pill-border)] px-3 text-sm font-semibold text-[var(--ddv4-fg)] transition-colors hover:bg-[var(--ddv4-surface-fill)] disabled:cursor-not-allowed disabled:opacity-60 ${commandFocusClass}`}
-                disabled={isReverting}
-                onClick={() => void handleRevertReceipt(currentAppliedRunReceipt)}
-                type="button"
-              >
-                {isReverting ? "Reverting..." : "Revert this run"}
-              </button>
-            ) : null}
-            {diagnosticCopyStatus ? (
-              <p className={`mt-3 text-sm ${commandMutedClass}`}>{diagnosticCopyStatus}</p>
-            ) : null}
-            {reversalStatus ? (
-              <p className={`mt-3 text-sm ${commandMutedClass}`}>{reversalStatus}</p>
-            ) : null}
-          </section>
+              <dl className="mt-4 grid gap-3 text-sm">
+                <div className={`${commandInsetClass} p-3`}>
+                  <dt className={commandLabelClass}>Files changed</dt>
+                  <dd className={`mt-1 break-words ${commandTextClass}`}>
+                    {formatList(currentChangedFilesDiagnostics.diskChangedFiles, "None")}
+                  </dd>
+                </div>
+                <div className={`${commandInsetClass} p-3`}>
+                  <dt className={commandLabelClass}>Checks run</dt>
+                  <dd className={`mt-1 break-words ${commandTextClass}`}>
+                    {formatList(previewState.checks, "None recorded")}
+                  </dd>
+                </div>
+                <div className={`${commandInsetClass} p-3`}>
+                  <dt className={commandLabelClass}>Reversal</dt>
+                  <dd className={`mt-1 break-words ${commandTextClass}`}>
+                    {currentAppliedRunReceipt && !currentAppliedRunReceipt.revertedAt
+                      ? "Available"
+                      : reversalStatus || "Not available"}
+                  </dd>
+                </div>
+              </dl>
+              {currentAppliedRunReceipt && !currentAppliedRunReceipt.revertedAt ? (
+                <button
+                  className={`mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-md border border-[var(--ddv4-pill-border)] px-3 text-sm font-semibold text-[var(--ddv4-fg)] transition-colors hover:bg-[var(--ddv4-surface-fill)] disabled:cursor-not-allowed disabled:opacity-60 ${commandFocusClass}`}
+                  disabled={isReverting}
+                  onClick={() => void handleRevertReceipt(currentAppliedRunReceipt)}
+                  type="button"
+                >
+                  {isReverting ? "Reverting..." : "Revert this run"}
+                </button>
+              ) : null}
+              {diagnosticCopyStatus ? (
+                <p className={`mt-3 text-sm ${commandMutedClass}`}>{diagnosticCopyStatus}</p>
+              ) : null}
+              {reversalStatus ? (
+                <p className={`mt-3 text-sm ${commandMutedClass}`}>{reversalStatus}</p>
+              ) : null}
+            </section>
 
-          <details className={`${commandPanelClass} p-4 sm:p-5`}>
-            <summary className={`cursor-pointer text-sm font-semibold ${commandTextClass}`}>
-              Advanced details
-            </summary>
-            <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
-              <div className={`${commandInsetClass} p-3`}>
-                <dt className={commandLabelClass}>Provider proof</dt>
-                <dd className={`mt-1 break-words ${commandTextClass}`}>
-                  provider_call_made={String(currentPreviewProviderTruth.providerCallMade)}; model_called_for_generation={modelCalledForGeneration}
-                </dd>
-              </div>
-              <div className={`${commandInsetClass} p-3`}>
-                <dt className={commandLabelClass}>Endpoint responses</dt>
-                <dd className={`mt-1 break-words ${commandTextClass}`}>{previewState.routeCalled ?? "none"}</dd>
-              </div>
-              <div className={`${commandInsetClass} p-3`}>
-                <dt className={commandLabelClass}>Target candidates</dt>
-                <dd className={`mt-1 break-words ${commandTextClass}`}>{formatList(previewState.targetCandidates, "none")}</dd>
-              </div>
-              <div className={`${commandInsetClass} p-3`}>
-                <dt className={commandLabelClass}>Receipts</dt>
-                <dd className={`mt-1 break-words ${commandTextClass}`}>
-                  {currentAppliedRunReceipt
-                    ? `${currentAppliedRunReceipt.id}; reverse diff ${currentAppliedRunReceipt.reverseDiff ? "stored" : "missing"}`
-                    : "none"}
-                </dd>
-              </div>
-            </dl>
-            {generatedDiffPresent ? (
-              <pre className="mt-4 max-h-80 overflow-auto rounded-md border border-[var(--ddv4-surface-border-soft)] bg-[var(--ddv4-surface-fill)] p-3 text-xs leading-5 text-[var(--ddv4-fg)]">
-                {previewState.diff}
-              </pre>
-            ) : null}
-          </details>
+            <details className={`${commandInsetClass} p-3`}>
+              <summary className={`cursor-pointer text-sm font-semibold ${commandTextClass}`}>
+                Advanced details
+              </summary>
+              <dl className="mt-4 grid gap-3 text-sm">
+                <div>
+                  <dt className={commandLabelClass}>Provider proof</dt>
+                  <dd className={`mt-1 break-words ${commandTextClass}`}>
+                    provider_call_made={String(currentPreviewProviderTruth.providerCallMade)}; model_called_for_generation={modelCalledForGeneration}
+                  </dd>
+                </div>
+                <div>
+                  <dt className={commandLabelClass}>Endpoint responses</dt>
+                  <dd className={`mt-1 break-words ${commandTextClass}`}>{previewState.routeCalled ?? "none"}</dd>
+                </div>
+                <div>
+                  <dt className={commandLabelClass}>Target candidates</dt>
+                  <dd className={`mt-1 break-words ${commandTextClass}`}>{formatList(previewState.targetCandidates, "none")}</dd>
+                </div>
+                <div>
+                  <dt className={commandLabelClass}>Receipts</dt>
+                  <dd className={`mt-1 break-words ${commandTextClass}`}>
+                    {currentAppliedRunReceipt
+                      ? `${currentAppliedRunReceipt.id}; reverse diff ${currentAppliedRunReceipt.reverseDiff ? "stored" : "missing"}`
+                      : "none"}
+                  </dd>
+                </div>
+              </dl>
+              {generatedDiffPresent ? (
+                <pre className="mt-4 max-h-80 overflow-auto rounded-md border border-[var(--ddv4-surface-border-soft)] bg-[var(--ddv4-surface-fill)] p-3 text-xs leading-5 text-[var(--ddv4-fg)]">
+                  {previewState.diff}
+                </pre>
+              ) : null}
+            </details>
+          </aside>
         </div>
       </main>
       <DashboardDemoV4FloatingNav desktopVariant="full-height" />
