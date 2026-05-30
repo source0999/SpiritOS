@@ -1,0 +1,144 @@
+{
+  "report_id": "plan-8-codex-like-feature-gap-report",
+  "generated_at_utc": "2026-05-28T02:40:00.000Z",
+  "plan": "Plan 8/8: Post-S+ Codex-Like Feature Readiness Handoff",
+  "scope_note": "Readiness handoff only. No Codex-like feature implementation, final CSS polish, apply execution, commit, push, provider routing, Cartographer activation, or hidden worker work occurred.",
+  "agent_grades": {
+    "source_report": "docs/evidence/agent-runtime-trial-harness/plan-7/final-grade-report.json",
+    "coding_grade": "S+",
+    "design_grade": "S+",
+    "combined_grade": "S+",
+    "harness_grade": "S+",
+    "real_frontend_use_grade": "REMEDIATION REQUIRED",
+    "final_grade": "S+ harness; real frontend UX remediation required",
+    "critical_safety_failures": 0,
+    "hidden_mutation_failures": 0,
+    "protected_path_attempts": 0
+  },
+  "feature_gap_inventory": [
+    {
+      "feature": "active task transcript",
+      "classification": "present but weak",
+      "evidence": "UI trials stage prompts through /coding and capture JSON/trace evidence, but no durable transcript product surface is proven.",
+      "future_bucket": "must-have before final CSS"
+    },
+    {
+      "feature": "multiple running task cards",
+      "classification": "missing",
+      "evidence": "Trial harness did not prove multiple concurrent running task cards.",
+      "future_bucket": "should-have before final CSS"
+    },
+    {
+      "feature": "file targeting UI",
+      "classification": "mocked only",
+      "evidence": "Prompt fixtures and handoff packets contain allowed/recommended/forbidden file targets; no production file-targeting UI was implemented.",
+      "future_bucket": "must-have before final CSS"
+    },
+    {
+      "feature": "Natural prompt to bounded TaskSpec intake parser + scope clarification UI",
+      "classification": "present but weak",
+      "evidence": "Initial intake now extracts natural single-file prompts, forbidden paths, manual checks, and restriction flags, and renders candidate scope guidance when unresolved. This remains remediation before claiming S+ for real frontend use.",
+      "future_bucket": "must-have before final CSS"
+    },
+    {
+      "feature": "diff review panel",
+      "classification": "missing",
+      "evidence": "Trials are preview-only and intentionally avoid apply/diff mutation flows.",
+      "future_bucket": "must-have before final CSS"
+    },
+    {
+      "feature": "test command recommendation",
+      "classification": "present and proven",
+      "evidence": "Coding/design/combined prompts and packets require manual checks and exact next steps; Plan 7 S+ batch proves this behavior at scale.",
+      "future_bucket": "can wait until after CSS"
+    },
+    {
+      "feature": "live preview/progress",
+      "classification": "present but weak",
+      "evidence": "Playwright screenshots and traces prove page state, but no full live progress product surface was built.",
+      "future_bucket": "should-have before final CSS"
+    },
+    {
+      "feature": "trace/evidence viewer",
+      "classification": "mocked only",
+      "evidence": "Evidence files, screenshots, and traces are organized under docs/evidence, but no in-app evidence viewer was implemented.",
+      "future_bucket": "should-have before final CSS"
+    },
+    {
+      "feature": "rollback hints",
+      "classification": "present but weak",
+      "evidence": "Trial outputs record cleanup as not_needed_preview_only and failure/debug hints; no production rollback UI exists.",
+      "future_bucket": "should-have before final CSS"
+    },
+    {
+      "feature": "approval controls",
+      "classification": "blocked by safety",
+      "evidence": "Roadmap forbids apply execution unless explicitly approved and bounded; approval controls need a separate safety design.",
+      "future_bucket": "must-have before final CSS"
+    },
+    {
+      "feature": "safe apply review",
+      "classification": "blocked by safety",
+      "evidence": "No apply execution was allowed in this roadmap. Future safe apply review requires Britton-approved bounded design.",
+      "future_bucket": "unsafe until later"
+    },
+    {
+      "feature": "prompt queue",
+      "classification": "missing",
+      "evidence": "Batch runner queues trials externally, not through an in-app prompt queue.",
+      "future_bucket": "should-have before final CSS"
+    },
+    {
+      "feature": "project/workspace selection",
+      "classification": "missing",
+      "evidence": "Trials run against the current SpiritOS workspace only.",
+      "future_bucket": "can wait until after CSS"
+    },
+    {
+      "feature": "local/cloud model truth",
+      "classification": "present but weak",
+      "evidence": "Safety outputs record providerAuthority false; no user-facing local/cloud model truth surface was implemented.",
+      "future_bucket": "must-have before final CSS"
+    },
+    {
+      "feature": "Mac worker status",
+      "classification": "present and proven",
+      "evidence": "Plan 4 telemetry and SSH evidence prove Mac advisory status and one-shot packet boundary.",
+      "future_bucket": "can wait until after CSS"
+    },
+    {
+      "feature": "failure/debug path",
+      "classification": "present and proven",
+      "evidence": "Trial result JSON includes failure_reason, next/debug hints, traces, screenshots, and remediation-ready summaries.",
+      "future_bucket": "can wait until after CSS"
+    }
+  ],
+  "future_roadmap_split": {
+    "must-have before final CSS": [
+      "active task transcript",
+      "file targeting UI",
+      "Natural prompt to bounded TaskSpec intake parser + scope clarification UI",
+      "diff review panel",
+      "approval controls",
+      "local/cloud model truth"
+    ],
+    "should-have before final CSS": [
+      "multiple running task cards",
+      "live preview/progress",
+      "trace/evidence viewer",
+      "rollback hints",
+      "prompt queue"
+    ],
+    "can wait until after CSS": [
+      "test command recommendation",
+      "project/workspace selection",
+      "Mac worker status",
+      "failure/debug path"
+    ],
+    "unsafe until later": [
+      "safe apply review"
+    ]
+  },
+  "next_roadmap_requires_britton_approval": true,
+  "go": true
+}

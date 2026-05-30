@@ -8,6 +8,7 @@ from source_proxy.api.decision import AVAILABLE_ROUTES
 from source_proxy.agents.registry import get_provider_capability_payload
 from source_proxy.codex.adapter import build_codex_cli_status
 from source_proxy.routing.litellm_router import routing_status
+from source_proxy.routing.ollama_route import ollama_route_status_entry
 
 
 def build_self_status_manifest(project_root: Path | None = None) -> dict[str, Any]:
@@ -28,6 +29,7 @@ def build_self_status_manifest(project_root: Path | None = None) -> dict[str, An
         "disabled_tools": tools_manifest["disabled_tools"],
         "approval_boundaries": tools_manifest["approval_boundaries"],
         "available_routes": tools_manifest["available_routes"],
+        "model_routes": tools_manifest["model_routes"],
         "provider_capabilities": tools_manifest["provider_capabilities"],
         "codex_cli_status": tools_manifest["codex_cli_status"],
         "context_bundle_status": _context_bundle_status(root),
@@ -51,6 +53,7 @@ def build_tools_manifest(
         "disabled_tools": _disabled_tools(),
         "approval_boundaries": _approval_boundaries(),
         "available_routes": _available_routes(route_status),
+        "model_routes": _model_routes(route_status),
         "provider_capabilities": get_provider_capability_payload(),
         "codex_cli_status": codex_cli_status,
         "tool_manifest_notes": [
@@ -447,6 +450,38 @@ def _available_routes(routes: list[dict[str, str | bool | None]]) -> list[dict[s
         }
     )
     return available
+
+
+def _model_routes(routes: list[dict[str, str | bool | None]]) -> list[dict[str, Any]]:
+    enriched: list[dict[str, Any]] = []
+    local_status = ollama_route_status_entry()
+    for route in routes:
+        if not route.get("alias"):
+            continue
+        item: dict[str, Any] = {
+            "alias": str(route.get("alias") or ""),
+            "provider": str(route.get("provider") or ""),
+            "model": str(route.get("model") or ""),
+            "enabled": bool(route.get("enabled")),
+            "reason": route.get("reason"),
+            "source": "config",
+        }
+        if item["alias"] == "local" and item["provider"] == "ollama":
+            item.update(
+                {
+                    "api_base_host": local_status.get("api_base_host"),
+                    "requested_local_default": local_status.get("requested_ollama_model"),
+                    "configured_ollama_model": local_status.get("ollama_model"),
+                    "resolved_model": local_status.get("model"),
+                    "probe_ok": local_status.get("probe_ok"),
+                    "selected_via": local_status.get("selected_via"),
+                    "model_storage_status": local_status.get("model_storage_status"),
+                    "model_storage_path": local_status.get("model_storage_path"),
+                    "model_storage_proof": local_status.get("model_storage_proof"),
+                }
+            )
+        enriched.append(item)
+    return enriched
 
 
 def _context_bundle_status(root: Path) -> dict[str, Any]:

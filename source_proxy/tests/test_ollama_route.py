@@ -8,6 +8,7 @@ from source_proxy.routing.litellm_router import clear_router_cache, route_models
 from source_proxy.routing.ollama_route import (
     clear_ollama_route_cache,
     local_model_unavailable_from_error,
+    ollama_route_status_entry,
     resolve_ollama_model_name,
     resolve_ollama_route,
 )
@@ -34,9 +35,9 @@ class OllamaRouteTests(unittest.TestCase):
             route = resolve_ollama_route(probe=True)
         self.assertTrue(route.probe_ok, route)
         self.assertIn("127.0.0.1", route.api_base)
-        self.assertEqual(route.model, "qwen2.5-coder:7b")
+        self.assertIn("hermes", route.model)
 
-    def test_default_model_is_qwen_coder_when_unconfigured(self) -> None:
+    def test_default_model_is_hermes_when_unconfigured(self) -> None:
         with mock.patch.dict(
             os.environ,
             {
@@ -45,7 +46,50 @@ class OllamaRouteTests(unittest.TestCase):
             },
             clear=False,
         ):
-            self.assertEqual(resolve_ollama_model_name(), "qwen2.5-coder:7b")
+            self.assertEqual(resolve_ollama_model_name(), "hermes4")
+
+    def test_unconfigured_route_prefers_available_hermes_model(self) -> None:
+        with mock.patch.dict(
+            os.environ,
+            {
+                "OLLAMA_BASE_URL": "http://127.0.0.1:11434",
+                "SOURCE_PROXY_OLLAMA_MODEL": "",
+                "OLLAMA_MODEL": "",
+            },
+            clear=False,
+        ), mock.patch(
+            "source_proxy.routing.ollama_route._probe_ollama_tags",
+            return_value=(True, ("qwen2.5-coder:7b", "hermes3:8b-abliterated")),
+        ):
+            clear_ollama_route_cache()
+            route = resolve_ollama_route(probe=True)
+
+        self.assertEqual(route.model, "hermes3:8b-abliterated")
+        self.assertEqual(route.requested_model, "hermes4")
+        self.assertIn("available_hermes", route.selected_via)
+
+    def test_status_exposes_requested_resolved_and_storage_proof(self) -> None:
+        with mock.patch.dict(
+            os.environ,
+            {
+                "OLLAMA_BASE_URL": "http://127.0.0.1:11434",
+                "SOURCE_PROXY_OLLAMA_MODEL": "",
+                "OLLAMA_MODEL": "",
+                "OLLAMA_MODELS": "/mnt/spirit-8tb/ollama-models",
+            },
+            clear=False,
+        ), mock.patch(
+            "source_proxy.routing.ollama_route._probe_ollama_tags",
+            return_value=(True, ("hermes4:latest", "qwen2.5-coder:7b")),
+        ):
+            clear_ollama_route_cache()
+            status = ollama_route_status_entry()
+
+        self.assertEqual(status["requested_ollama_model"], "hermes4")
+        self.assertEqual(status["ollama_model"], "hermes4:latest")
+        self.assertEqual(status["model"], "ollama_chat/hermes4:latest")
+        self.assertEqual(status["model_storage_status"], "proven")
+        self.assertEqual(status["model_storage_proof"], "OLLAMA_MODELS")
 
     def test_local_route_maps_to_ollama_chat_model(self) -> None:
         with mock.patch.dict(

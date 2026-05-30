@@ -201,12 +201,10 @@ function isProtectedApplyPath(path: string) {
     path.includes("/.env") ||
     path.endsWith(".pem") ||
     path.endsWith(".key") ||
-    path.startsWith("source_proxy/") ||
-    path.startsWith("config/") ||
-    path === "package.json" ||
-    path === "package-lock.json" ||
-    path === "pnpm-lock.yaml" ||
-    path === "yarn.lock"
+    path.startsWith("source_proxy/data/") ||
+    path.startsWith("backend/volumes/") ||
+    path.startsWith("backend/searxng_data/") ||
+    path.startsWith(".spirit-backups/")
   );
 }
 

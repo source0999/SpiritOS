@@ -41,6 +41,11 @@ describe("static and fallback route shell adoption", () => {
 
     expectSharedShell(container);
     expect(screen.getByRole("heading", { name: /backend console/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /raw diagnostics home/i })).toBeInTheDocument();
+    expect(screen.getByText("Backend state")).toBeInTheDocument();
+    expect(screen.getByText("Route details")).toBeInTheDocument();
+    expect(screen.getByText("Evidence archive")).toBeInTheDocument();
+    expect(screen.getByText("Environment setup")).toBeInTheDocument();
     expect(screen.getAllByText(/planned, not wired/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/no explicit go means no wiring/i).length).toBeGreaterThan(0);
     expect(container.innerHTML).toContain("--shell-mobile-bottom-reserved-height");

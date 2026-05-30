@@ -50,6 +50,8 @@ curl -k -sS https://localhost:3000/api/spirit/health
 curl -k -sS https://localhost:8787/healthcheck
 ```
 
+Hermes 4 is the default local intelligence model for SpiritOS chat and Source Proxy local routing. The expected local IDs are `hermes4:latest` and `hf.co/bartowski/NousResearch_Hermes-4-14B-GGUF:Q4_K_M`; keep `hermes3:8b-abliterated` available as the fast `/oracle`/voice-friendly fallback and keep `qwen2.5-coder:7b` selectable for explicit coding experiments. If Ollama models are intended to live on the 8TB drive, verify `OLLAMA_MODELS` or the Ollama service/home symlink resolves to `/mnt/spirit-8tb/ollama-models` before calling storage configured.
+
 ### Local HTTPS LAN Dev Servers
 
 SpiritOS uses two local HTTPS LAN dev servers during normal development.
@@ -333,8 +335,11 @@ node .\agent.js
 Matching Dell/Next `.env.local` settings:
 
 ```bash
-SPIRIT_ENABLE_LOCAL_TOOLS=true
-SPIRIT_OLLAMA_SUPPORTS_TOOLS=true
+SPIRIT_ENABLE_LOCAL_TOOLS=false
+# Hermes 4 accepts OpenAI-compatible tool schemas, but the 2026-05-29 probe
+# emitted a noop tool call even when instructed not to. Keep this false unless
+# a fresh operator probe proves the target model/tool policy is safe.
+SPIRIT_OLLAMA_SUPPORTS_TOOLS=false
 SPIRIT_WINDOWS_FS_ENABLED=true
 SPIRIT_WINDOWS_FS_BASE_URL=http://REPLACE_WITH_WINDOWS_LAN_IP:3000
 SPIRIT_WINDOWS_FS_TOKEN=3399

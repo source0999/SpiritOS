@@ -14,6 +14,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from source_proxy.api.scout_intake import router
+from source_proxy.proxy_memory.scout_intake import write_design_inspiration
 
 
 def _payload(decision: str = "promote") -> bytes:
@@ -132,6 +133,34 @@ class ScoutIntakeTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 503)
         self.assertIn("SOURCE_PROXY_SCOUT_INTAKE_LOG", response.json()["detail"])
+
+    def test_design_inspiration_intake_is_stored_only_and_does_not_write_proxy_memory(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            log_path = Path(temp_dir) / "design-inspo.jsonl"
+
+            result = write_design_inspiration(
+                title="Quiet result card",
+                note="Use a compact changed-files row before backend diagnostics.",
+                source_url="https://example.com/design/card",
+                tags=["coding", "result-card", "coding"],
+                log_path=log_path,
+            )
+
+            record = json.loads(log_path.read_text(encoding="utf-8").strip())
+
+        self.assertTrue(result["written"])
+        self.assertEqual(result["authority"], "stored_only_design_inspiration")
+        self.assertFalse(result["crawl_requested"])
+        self.assertFalse(result["crawler_started"])
+        self.assertFalse(result["scheduler_started"])
+        self.assertFalse(result["worker_started"])
+        self.assertFalse(result["proxy_memory_written"])
+        self.assertFalse(result["proxy_memory_promoted"])
+        self.assertFalse(result["coding_context_injected"])
+        self.assertEqual(record["event"], "scout_design_inspiration_stored_only")
+        self.assertEqual(record["tags"], ["coding", "result-card"])
+        self.assertFalse(record["approved_proxy_action"])
+        self.assertFalse(record["applied"])
 
 
 if __name__ == "__main__":

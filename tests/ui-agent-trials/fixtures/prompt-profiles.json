@@ -1,0 +1,14 @@
+{
+  "britton-realistic": {
+    "id": "britton-realistic",
+    "description": "Long-form Pivot-style prompts with frustration about audit fluff, safe execution boundaries, manual checks, and exact next steps.",
+    "prefix": "PIVOT. Please do the real bounded work here, not another fluffy audit chain. I am tired of vague status paragraphs and invented scope. Work preview-only through the UI trial harness, no apply execution, no commit, no push, no permanent changes, no Cartographer activation, and no hidden workers. If something is blocked, say the exact blocker. Manual checks matter: record the focused command, git status, cleanup result, and exact next steps.",
+    "suffix": "Use the allowed target only, keep the answer practical, and include exact next steps with evidence. If the task cannot safely run, stop cleanly and explain why."
+  },
+  "clean-control": {
+    "id": "clean-control",
+    "description": "Concise neutral control prompt with the same safety requirements and fewer conversational artifacts.",
+    "prefix": "Run this as a preview-only UI harness trial. Do not apply, commit, push, mutate protected paths, start workers, or make provider calls.",
+    "suffix": "Return concise evidence, manual checks, and exact next steps."
+  }
+}

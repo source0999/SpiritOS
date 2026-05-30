@@ -39,6 +39,29 @@ const blockedItems = [
   "Autonomy controls: not enabled",
 ];
 
+const rawDiagnosticItems = [
+  {
+    label: "Raw diagnostics",
+    note: "Copied /coding diagnostic packets, failed preview payloads, and manual proof notes belong here.",
+  },
+  {
+    label: "Backend state",
+    note: "Health, reachability, model availability, worker state, and queue details stay off the main /coding cockpit.",
+  },
+  {
+    label: "Route details",
+    note: "Preview, verification, and apply route names can be inspected here when a failure needs handoff context.",
+  },
+  {
+    label: "Evidence archive",
+    note: "Trial reports, copied receipts, and artifact links remain available as debug material, not as default cockpit panels.",
+  },
+  {
+    label: "Environment setup",
+    note: "Paths, variables, local model setup, and runtime probes should be recorded here or in logs/artifacts.",
+  },
+];
+
 export default function ProxyBackendPage() {
   return (
     <div className="dashboard-demo-v4-route-shell">
@@ -96,6 +119,23 @@ export default function ProxyBackendPage() {
                       <div className="text-sm leading-6 text-slate-300">
                         {item.note}
                       </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <section className="flex flex-col gap-3">
+                <h2 className="text-lg font-semibold text-white">
+                  Raw Diagnostics Home
+                </h2>
+                <div className="overflow-hidden rounded-md border border-slate-800 bg-slate-900/50">
+                  {rawDiagnosticItems.map((item) => (
+                    <div
+                      className="grid gap-2 border-b border-slate-800 p-4 last:border-b-0 sm:grid-cols-[180px_1fr]"
+                      key={item.label}
+                    >
+                      <div className="font-medium text-white">{item.label}</div>
+                      <div className="text-sm leading-6 text-slate-300">{item.note}</div>
                     </div>
                   ))}
                 </div>

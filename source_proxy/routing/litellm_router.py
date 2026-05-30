@@ -7,6 +7,7 @@ from typing import Any
 
 from source_proxy.routing.ollama_route import (
     clear_ollama_route_cache,
+    ollama_route_status_entry,
     resolve_ollama_model_name,
     resolve_ollama_route,
 )
@@ -132,16 +133,20 @@ def route_model_for_alias(alias: str) -> str | None:
 
 
 def routing_status() -> list[dict[str, str | bool | None]]:
-    return [
-        {
+    statuses: list[dict[str, str | bool | None]] = []
+    local_status = ollama_route_status_entry()
+    for route_model in route_models():
+        item: dict[str, str | bool | None] = {
             "alias": route_model.alias,
             "provider": route_model.provider,
             "model": route_model.model,
             "enabled": route_model.enabled,
             "reason": route_model.reason,
         }
-        for route_model in route_models()
-    ]
+        if route_model.alias == "local" and route_model.provider == "ollama":
+            item.update(local_status)
+        statuses.append(item)
+    return statuses
 
 
 def clear_router_cache() -> None:

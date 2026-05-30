@@ -9,8 +9,10 @@ from dataclasses import dataclass
 from typing import Any
 from urllib.parse import urlparse
 
-_DEFAULT_OLLAMA_MODEL = "qwen2.5-coder:7b"
+_DEFAULT_OLLAMA_MODEL = "hermes4"
 _DEFAULT_OLLAMA_BASE = "http://127.0.0.1:11434"
+_DEFAULT_OLLAMA_HOME = "/usr/share/ollama/.ollama"
+_SPIRIT_8TB_ROOT = "/mnt/spirit-8tb"
 _PROBE_TIMEOUT_SECONDS = 2.0
 _PROBE_CACHE_SECONDS = 60.0
 
@@ -20,6 +22,7 @@ _probe_cache: tuple[float, str, dict[str, Any]] | None = None
 @dataclass(frozen=True)
 class OllamaRouteResolution:
     api_base: str
+    requested_model: str
     model: str
     litellm_model: str
     configured_candidates: tuple[str, ...]
@@ -73,6 +76,10 @@ def clear_ollama_route_cache() -> None:
 def resolve_ollama_route(*, probe: bool = True) -> OllamaRouteResolution:
     candidates = ollama_base_url_candidates()
     model = resolve_ollama_model_name()
+    explicit_model = bool(
+        os.getenv("SOURCE_PROXY_OLLAMA_MODEL", "").strip()
+        or os.getenv("OLLAMA_MODEL", "").strip()
+    )
     selected_via = "default"
     api_base = candidates[-1]
     probe_ok = False
@@ -84,13 +91,15 @@ def resolve_ollama_route(*, probe: bool = True) -> OllamaRouteResolution:
         api_base = candidates[0]
         selected_via = "env_first"
 
-    if probe_ok and available_models and model not in available_models:
-        if _DEFAULT_OLLAMA_MODEL in available_models:
-            model = _DEFAULT_OLLAMA_MODEL
-            selected_via = f"{selected_via}+default_model_fallback"
+    if probe_ok and available_models and model not in available_models and not explicit_model:
+        available_hermes = _preferred_available_hermes_model(available_models)
+        if available_hermes:
+            model = available_hermes
+            selected_via = f"{selected_via}+available_hermes"
 
     return OllamaRouteResolution(
         api_base=api_base.rstrip("/"),
+        requested_model=resolve_ollama_model_name(),
         model=model,
         litellm_model=f"ollama_chat/{model}",
         configured_candidates=tuple(candidates),
@@ -98,6 +107,20 @@ def resolve_ollama_route(*, probe: bool = True) -> OllamaRouteResolution:
         probe_ok=probe_ok,
         available_models=available_models,
     )
+
+
+def _preferred_available_hermes_model(available_models: tuple[str, ...]) -> str | None:
+    hermes_models = [model for model in available_models if "hermes" in model.lower()]
+    if not hermes_models:
+        return None
+    return sorted(
+        hermes_models,
+        key=lambda model: (
+            0 if "hermes4" in model.lower() else 1,
+            0 if "latest" in model.lower() else 1,
+            model,
+        ),
+    )[0]
 
 
 def local_model_unavailable_from_error(error: BaseException | str) -> bool:
@@ -139,17 +162,47 @@ def local_model_unavailable_payload(
 
 def ollama_route_status_entry() -> dict[str, str | bool | None]:
     route = resolve_ollama_route(probe=True)
+    storage = _ollama_model_storage_proof()
     return {
         "alias": "local",
         "provider": "ollama",
         "model": route.litellm_model,
+        "requested_ollama_model": route.requested_model,
         "ollama_model": route.model,
         "api_base_host": safe_ollama_host_label(route.api_base),
         "api_base": route.api_base,
         "enabled": True,
         "probe_ok": route.probe_ok,
         "selected_via": route.selected_via,
+        "model_storage_status": storage["status"],
+        "model_storage_path": storage["path"],
+        "model_storage_proof": storage["proof"],
         "reason": None if route.probe_ok else "ollama_unreachable",
+    }
+
+
+def _ollama_model_storage_proof() -> dict[str, str]:
+    env_path = os.getenv("OLLAMA_MODELS", "").strip()
+    if env_path:
+        real_env_path = os.path.realpath(env_path)
+        return {
+            "status": "proven" if real_env_path.startswith(_SPIRIT_8TB_ROOT) else "not_proven",
+            "path": real_env_path,
+            "proof": "OLLAMA_MODELS",
+        }
+
+    real_home = os.path.realpath(_DEFAULT_OLLAMA_HOME)
+    if real_home != _DEFAULT_OLLAMA_HOME:
+        return {
+            "status": "proven" if real_home.startswith(_SPIRIT_8TB_ROOT) else "not_proven",
+            "path": real_home,
+            "proof": f"{_DEFAULT_OLLAMA_HOME} symlink",
+        }
+
+    return {
+        "status": "not_proven",
+        "path": real_home,
+        "proof": "default_ollama_home",
     }
 
 

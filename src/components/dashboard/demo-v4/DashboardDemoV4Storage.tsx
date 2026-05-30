@@ -6,6 +6,7 @@ import { HomelabProgressBar } from "@/components/dashboard/HomelabProgressBar";
 import { HomelabStatusBadge } from "@/components/dashboard/HomelabStatusBadge";
 import type { ClusterFetchState } from "@/hooks/useClusterTelemetry";
 import { cn } from "@/lib/cn";
+import { visibleDriveSmartStatus } from "@/lib/storage-health";
 import type {
   ClusterNodeTelemetry,
   ClusterTelemetryResponse,
@@ -142,38 +143,42 @@ export function DashboardDemoV4Storage({ data, state, error }: DashboardDemoV4St
                   </div>
                 ) : (
                   <div className="dashboard-demo-v4-drive-list">
-                    {drives.map((drive) => (
-                      <div key={drive.id} className="dashboard-demo-v4-drive-card">
-                        <div className="dashboard-demo-v4-drive-header">
-                          <div className="dashboard-demo-v4-drive-name">
-                            <span className={driveTagClass(drive.type)}>{drive.type}</span>
-                            <strong>{drive.name}</strong>
+                    {drives.map((drive) => {
+                      const healthStatus = visibleDriveSmartStatus(drive);
+
+                      return (
+                        <div key={drive.id} className="dashboard-demo-v4-drive-card">
+                          <div className="dashboard-demo-v4-drive-header">
+                            <div className="dashboard-demo-v4-drive-name">
+                              <span className={driveTagClass(drive.type)}>{drive.type}</span>
+                              <strong>{drive.name}</strong>
+                            </div>
+                            <span className="dashboard-demo-v4-drive-capacity">
+                              {fmtBytes(drive.usedBytes)} / {fmtBytes(drive.totalBytes)}
+                            </span>
                           </div>
-                          <span className="dashboard-demo-v4-drive-capacity">
-                            {fmtBytes(drive.usedBytes)} / {fmtBytes(drive.totalBytes)}
-                          </span>
+
+                          {(drive.mount || drive.fsType) && (
+                            <p className="dashboard-demo-v4-drive-meta">
+                              {[drive.mount, drive.fsType].filter(Boolean).join(" · ")}
+                            </p>
+                          )}
+
+                          <HomelabProgressBar
+                            pct={drive.usedPct ?? 0}
+                            variant={fillVariant(drive.usedPct)}
+                            label={`${drive.name} usage`}
+                          />
+
+                          <div className="dashboard-demo-v4-drive-footer">
+                            <span className={cn("dashboard-demo-v4-smart", smartTone(healthStatus))}>
+                              {healthStatus}
+                            </span>
+                            {drive.tempC !== null ? <span>{drive.tempC}°C</span> : null}
+                          </div>
                         </div>
-
-                        {(drive.mount || drive.fsType) && (
-                          <p className="dashboard-demo-v4-drive-meta">
-                            {[drive.mount, drive.fsType].filter(Boolean).join(" · ")}
-                          </p>
-                        )}
-
-                        <HomelabProgressBar
-                          pct={drive.usedPct ?? 0}
-                          variant={fillVariant(drive.usedPct)}
-                          label={`${drive.name} usage`}
-                        />
-
-                        <div className="dashboard-demo-v4-drive-footer">
-                          <span className={cn("dashboard-demo-v4-smart", smartTone(drive.smart))}>
-                            {drive.smart}
-                          </span>
-                          {drive.tempC !== null ? <span>{drive.tempC}°C</span> : null}
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                     {node.storage?.error ? (
                       <p className="dashboard-demo-v4-warning-copy">{node.storage.error}</p>
                     ) : null}

@@ -3079,12 +3079,28 @@ html[data-theme="solar-ember"] .dashboard-demo-v4-root {
 .dashboard-demo-v4-storage-node-header > span {
   min-width: 0;
   overflow: hidden;
-  color: var(--spirit-accent-strong, var(--ddv4-fg));
+  color: #0f172a;
   font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: 0.6875rem;
-  font-weight: 800;
+  font-size: 0.76rem;
+  font-weight: 950;
+  letter-spacing: 0;
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.72),
+    0 0 10px rgba(255, 255, 255, 0.36);
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.dashboard-demo-v4-card[aria-label="Storage pool"] .dashboard-demo-v4-eyebrow,
+.dashboard-demo-v4-card[aria-label="Storage pool"] .dashboard-demo-v4-card-subtitle,
+.dashboard-demo-v4-card[aria-label="Storage pool"] .dashboard-demo-v4-drive-meta,
+.dashboard-demo-v4-card[aria-label="Storage pool"] .dashboard-demo-v4-drive-capacity,
+.dashboard-demo-v4-card[aria-label="Storage pool"] .dashboard-demo-v4-drive-footer {
+  color: rgba(15, 23, 42, 0.72);
+}
+
+.dashboard-demo-v4-card[aria-label="Storage pool"] .dashboard-demo-v4-drive-name strong {
+  color: #111827;
 }
 
 .dashboard-demo-v4-drive-card {

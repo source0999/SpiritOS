@@ -6,6 +6,7 @@ import { useClusterTelemetry, type ClusterFetchState } from "@/hooks/useClusterT
 import { HomelabProgressBar } from "@/components/dashboard/HomelabProgressBar";
 import { HomelabStatusBadge } from "@/components/dashboard/HomelabStatusBadge";
 import { cn } from "@/lib/cn";
+import { visibleDriveSmartStatus } from "@/lib/storage-health";
 import type { ClusterNodeTelemetry, ClusterTelemetryResponse, NodeDrive, SmartStatus } from "@/lib/server/telemetry/types";
 
 function fmtBytes(bytes: number | null): string {
@@ -168,52 +169,56 @@ export function HomelabStorageCardView({
                   </div>
                 ) : (
                   <div className="flex flex-col gap-2">
-                    {drives.map((drive) => (
-                      <div
-                        key={drive.id}
-                        className="spirit-dashboard-v2-inner-card border border-[color:color-mix(in_oklab,var(--spirit-glass-border)_48%,transparent)] p-3"
-                      >
-                        <div className="mb-2 flex items-center justify-between gap-2">
-                          <div className="flex min-w-0 items-center gap-2">
-                            <span
-                              className={driveTagClass(drive.type)}
-                              aria-label={drive.type}
-                            >
-                              {drive.type}
-                            </span>
-                            <span className="truncate font-mono text-[12px] text-chalk/80">
-                              {drive.name}
+                    {drives.map((drive) => {
+                      const healthStatus = visibleDriveSmartStatus(drive);
+
+                      return (
+                        <div
+                          key={drive.id}
+                          className="spirit-dashboard-v2-inner-card border border-[color:color-mix(in_oklab,var(--spirit-glass-border)_48%,transparent)] p-3"
+                        >
+                          <div className="mb-2 flex items-center justify-between gap-2">
+                            <div className="flex min-w-0 items-center gap-2">
+                              <span
+                                className={driveTagClass(drive.type)}
+                                aria-label={drive.type}
+                              >
+                                {drive.type}
+                              </span>
+                              <span className="truncate font-mono text-[12px] text-chalk/80">
+                                {drive.name}
+                              </span>
+                            </div>
+                            <span className="shrink-0 font-mono text-[10px] text-chalk/40">
+                              <span className="text-chalk/80">{fmtBytes(drive.usedBytes)}</span>
+                              {" / "}
+                              {fmtBytes(drive.totalBytes)}
                             </span>
                           </div>
-                          <span className="shrink-0 font-mono text-[10px] text-chalk/40">
-                            <span className="text-chalk/80">{fmtBytes(drive.usedBytes)}</span>
-                            {" / "}
-                            {fmtBytes(drive.totalBytes)}
-                          </span>
+
+                          {(drive.mount || drive.fsType) && (
+                            <p className="mb-2 truncate font-mono text-[9px] text-chalk/32">
+                              {[drive.mount, drive.fsType].filter(Boolean).join(" · ")}
+                            </p>
+                          )}
+
+                          <HomelabProgressBar
+                            pct={drive.usedPct ?? 0}
+                            variant={fillVariant(drive.usedPct)}
+                            label={`${drive.name} usage`}
+                          />
+
+                          <div className="mt-2 flex items-center justify-between gap-2">
+                            <span className={cn("font-mono text-[9.5px]", smartTone(healthStatus))}>
+                              ● {healthStatus}
+                            </span>
+                            {drive.tempC !== null ? (
+                              <span className="font-mono text-[9.5px] text-chalk/36">{drive.tempC}°C</span>
+                            ) : null}
+                          </div>
                         </div>
-
-                        {(drive.mount || drive.fsType) && (
-                          <p className="mb-2 truncate font-mono text-[9px] text-chalk/32">
-                            {[drive.mount, drive.fsType].filter(Boolean).join(" · ")}
-                          </p>
-                        )}
-
-                        <HomelabProgressBar
-                          pct={drive.usedPct ?? 0}
-                          variant={fillVariant(drive.usedPct)}
-                          label={`${drive.name} usage`}
-                        />
-
-                        <div className="mt-2 flex items-center justify-between gap-2">
-                          <span className={cn("font-mono text-[9.5px]", smartTone(drive.smart))}>
-                            ● {drive.smart}
-                          </span>
-                          {drive.tempC !== null ? (
-                            <span className="font-mono text-[9.5px] text-chalk/36">{drive.tempC}°C</span>
-                          ) : null}
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                     {node.storage?.error ? (
                       <p className="font-mono text-[9px] text-amber-400/70">{node.storage.error}</p>
                     ) : null}

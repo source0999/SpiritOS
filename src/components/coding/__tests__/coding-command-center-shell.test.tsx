@@ -123,6 +123,10 @@ function openProxyDetails() {
   if (diagnosticsButton?.getAttribute("aria-expanded") !== "true") {
     fireEvent.click(screen.getByRole("button", { name: "Diagnostics" }));
   }
+  const legacyDiagnostics = screen.getByText("Legacy diagnostics").closest("details");
+  if (!legacyDiagnostics?.hasAttribute("open")) {
+    fireEvent.click(screen.getByText("Legacy diagnostics"));
+  }
   fireEvent.click(screen.getByRole("button", { name: "Details" }));
 }
 
@@ -165,6 +169,10 @@ function openProofRunControls() {
   const diagnosticsButton = screen.queryByRole("button", { name: "Diagnostics" });
   if (diagnosticsButton?.getAttribute("aria-expanded") !== "true") {
     fireEvent.click(screen.getByRole("button", { name: "Diagnostics" }));
+  }
+  const legacyDiagnostics = screen.getByText("Legacy diagnostics").closest("details");
+  if (!legacyDiagnostics?.hasAttribute("open")) {
+    fireEvent.click(screen.getByText("Legacy diagnostics"));
   }
   const proofRunControls = screen.getByText("Proof run controls").closest("details");
   if (!proofRunControls?.hasAttribute("open")) {
@@ -298,10 +306,8 @@ describe("CodingCommandCenterShell", () => {
       "Durable chat history remains gated.",
     );
     expect(screen.getAllByText("SpiritOS").length).toBeGreaterThan(0);
-    expect(screen.getByText("Local LLM default")).toBeInTheDocument();
+    expect(screen.getByText("Local / Ollama default")).toBeInTheDocument();
     expect(screen.getByText("GPT/cloud unavailable")).toBeInTheDocument();
-    expect(screen.getByText("Default route where local coding support is available."))
-      .toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Codex worker: proposal-only" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Future providers: future" })).toBeInTheDocument();
     const providerModelSelector = screen.getByRole("region", { name: "Provider model selector" });
@@ -312,7 +318,7 @@ describe("CodingCommandCenterShell", () => {
       name: "GPT/cloud: unavailable · preview blocked",
     })).toHaveAttribute("aria-pressed", "false");
     expect(
-      screen.getByText("Model: Local LLM default. No external API cost; local/default intent only."),
+      screen.getByText("Model: Unknown local model. No external API cost; local/default intent only."),
     ).toBeInTheDocument();
     expect(screen.getByText("Intent: local LLM route. No provider call has run yet."))
       .toBeInTheDocument();
@@ -328,16 +334,21 @@ describe("CodingCommandCenterShell", () => {
       "Ask for a plan, start a coding task, or gather repo context.",
     );
     expect(screen.getByRole("button", { name: "Desktop submit task" })).toBeDisabled();
-    expect(screen.queryByLabelText("Proxy trial prompt widget")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Legacy proxy trial diagnostic")).not.toBeInTheDocument();
     openDiagnosticsDrawer();
-    expect(screen.getAllByText("Proxy Trial Prompts").length).toBeGreaterThan(0);
+    expect(screen.getByText("Legacy diagnostics").closest("details")).not.toHaveAttribute("open");
+    for (const legacyHeading of screen.getAllByText("Legacy diagnostic: Proxy Trial Prompts")) {
+      expect(legacyHeading).not.toBeVisible();
+    }
+    fireEvent.click(screen.getByText("Legacy diagnostics"));
+    expect(screen.getAllByText("Legacy diagnostic: Proxy Trial Prompts").length).toBeGreaterThan(0);
     expect(
       screen.getAllByText("Current step: paste the copy-paste task, click Coding mode, then Submit task."),
     ).toHaveLength(3);
     expect(screen.getAllByText("Preview only. Human review required. No apply, commit, or push from this widget.").length).toBeGreaterThan(0);
     expect(
       screen.getByText(
-        "Preview-only diagnostics. No worker, provider, queue, apply, commit, or push authority is added.",
+        "Legacy diagnostic only. Current prompt tester status lives in the sidebar. No worker, provider, queue, apply, commit, or push authority is added.",
       ),
     ).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "Load prompt" }).length).toBeGreaterThan(0);
@@ -348,8 +359,8 @@ describe("CodingCommandCenterShell", () => {
       name: "Compact proxy diagnostic widget",
     });
     expect(compactDiagnosticWidget).toBeInTheDocument();
-    expect(screen.getByText("Proxy Test")).toBeInTheDocument();
-    expect(screen.getByText("Grade B-")).toBeInTheDocument();
+    expect(screen.getByText("Legacy Proxy Test")).toBeInTheDocument();
+    expect(screen.getByText("Legacy grade B-")).toBeInTheDocument();
     expect(screen.getByText("Useful: 8/100")).toBeInTheDocument();
     expect(screen.getByText("Safely blocked: 91")).toBeInTheDocument();
     expectActiveRunState("idle");
@@ -754,10 +765,10 @@ describe("CodingCommandCenterShell", () => {
     expect(screen.getAllByText("HB-02 selected. Load prompt or preview selected.").length).toBeGreaterThan(0);
     expect(screen.queryByText("HB-02 selected [info]")).not.toBeInTheDocument();
 
-    fireEvent.keyDown(screen.getByLabelText("Proxy trial prompt widget"), { key: "ArrowRight" });
+    fireEvent.keyDown(screen.getByLabelText("Legacy proxy trial diagnostic"), { key: "ArrowRight" });
     expect(desktopTrialSelect).toHaveValue("HB-03");
 
-    fireEvent.keyDown(screen.getByLabelText("Proxy trial prompt widget"), { key: "ArrowLeft" });
+    fireEvent.keyDown(screen.getByLabelText("Legacy proxy trial diagnostic"), { key: "ArrowLeft" });
     expect(desktopTrialSelect).toHaveValue("HB-02");
 
     fireEvent.click(screen.getByRole("button", { name: "Previous proxy trial" }));
@@ -767,14 +778,15 @@ describe("CodingCommandCenterShell", () => {
   it("can toggle trial prompts off without showing advanced audit logs", () => {
     render(<CodingCommandCenterShell />);
     openDiagnosticsDrawer();
+    fireEvent.click(screen.getByText("Legacy diagnostics"));
 
-    const widget = screen.getByLabelText("Proxy trial prompt widget");
-    expect(within(widget).getByRole("button", { name: "Turn trial prompts off" }))
+    const widget = screen.getByLabelText("Legacy proxy trial diagnostic", { selector: "section" });
+    expect(within(widget).getByRole("button", { name: "Turn trial prompts off", hidden: true }))
       .toHaveAttribute("aria-pressed", "true");
 
-    fireEvent.click(within(widget).getByRole("button", { name: "Turn trial prompts off" }));
+    fireEvent.click(within(widget).getByRole("button", { name: "Turn trial prompts off", hidden: true }));
 
-    expect(within(widget).getByRole("button", { name: "Turn trial prompts on" }))
+    expect(within(widget).getByRole("button", { name: "Turn trial prompts on", hidden: true }))
       .toHaveAttribute("aria-pressed", "false");
     expect(
       within(widget).getByText("Trial prompts are hidden. Turn them on to pick, load, or preview HB tasks."),
@@ -795,7 +807,7 @@ describe("CodingCommandCenterShell", () => {
     })).toHaveAttribute("aria-pressed", "false");
     expect(screen.queryByRole("button", { name: /create worktree|switch branch/i }))
       .not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Local LLM: default" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "Local / Ollama: default" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
@@ -864,9 +876,10 @@ describe("CodingCommandCenterShell", () => {
     );
     expect(settingsButton).toHaveAttribute("aria-expanded", "false");
     expect(diagnosticsButton).toHaveAttribute("aria-expanded", "true");
-    expect(screen.getByLabelText("Proxy trial prompt widget")).toBeInTheDocument();
-    expect(screen.getByText("Proof run controls").closest("details"))
+    expect(screen.getByText("Legacy diagnostics").closest("details"))
       .not.toHaveAttribute("open");
+    expect(screen.getByLabelText("Legacy proxy trial diagnostic")).not.toBeVisible();
+    expect(screen.getByText("Proof run controls")).not.toBeVisible();
     expect(within(diagnosticsDrawer).queryByRole("button", { name: "Run 10" }))
       .not.toBeInTheDocument();
 
@@ -889,6 +902,189 @@ describe("CodingCommandCenterShell", () => {
       .not.toBeInTheDocument();
     expect(evidenceButton).toHaveAttribute("aria-expanded", "false");
     expectPlan8AForbiddenControlsAbsent();
+  });
+
+  it("opens the Realistic Prompt Tester with process-focused prompt UI", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, {
+      clipboard: { writeText },
+    });
+    render(<CodingCommandCenterShell />);
+
+    expect(screen.getByRole("button", { name: /Realistic Prompt Tester/ })).toHaveTextContent("Ready");
+    expect(screen.getByRole("button", { name: /Realistic Prompt Tester/ })).toHaveTextContent(
+      "Ready for a real coding ability trial",
+    );
+    expect(screen.getAllByText("Coding ability").length).toBeGreaterThan(0);
+    expect(screen.queryByLabelText("Legacy proxy trial diagnostic")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Realistic Prompt Tester/ }));
+
+    const runner = screen.getByLabelText("Realistic Prompt Tester");
+    expect(within(runner).getByText("Real Coding Ability Trial")).toBeInTheDocument();
+    expect(
+      within(runner).getByText(/Productive previews and target discovery count as coding proof/),
+    ).toBeInTheDocument();
+    expect(within(runner).getByRole("button", { name: "Code" })).toBeInTheDocument();
+    expect(within(runner).getByRole("button", { name: "Design" })).toBeInTheDocument();
+    expect(within(runner).getByRole("button", { name: "Hybrid" })).toBeInTheDocument();
+
+    const runSize = within(runner).getByRole("combobox", { name: "Agent trial run size" });
+    ["10", "25", "50", "100", "300", "500"].forEach((size) => {
+      expect(within(runSize).getByRole("option", { name: size })).toBeInTheDocument();
+    });
+    expect(within(runner).getByText("Prompt process")).toBeInTheDocument();
+    [
+      "Ready",
+      "Typing prompt",
+      "Submitted to /coding",
+      "Parsing task",
+      "Checking scope",
+      "Result recorded",
+      "Moving to next prompt",
+      "Done",
+    ].forEach((step) => {
+      expect(within(runner).getAllByText(step).length).toBeGreaterThan(0);
+    });
+    expect(within(runner).getAllByText("Prompt 1 of 25").length).toBeGreaterThan(0);
+    expect(within(runner).getByText("ai coding 001 scout design inspo")).toBeInTheDocument();
+    expect(within(runner).getByText("Submitted messy prompt:")).toBeInTheDocument();
+    expect(within(runner).getAllByText(/save design inspo/).length).toBeGreaterThan(0);
+    expect(within(runner).getByText(/Expected: productive_preview/)).toBeInTheDocument();
+    expect(within(runner).getByText(/What it tried: stored-only design inspiration intake/)).toBeInTheDocument();
+    expect(within(runner).getAllByText(/Files considered:/).length).toBeGreaterThan(0);
+    expect(within(runner).getByText("Current step: Ready")).toBeInTheDocument();
+    expect(within(runner).getByText("Result: Preview diff produced")).toBeInTheDocument();
+    expect(within(runner).getByText(/Why: Found likely target files/)).toBeInTheDocument();
+    expect(within(runner).getByText(/Discovery: yes .* Preview diff:/)).toBeInTheDocument();
+    expect(within(runner).getByText("Next prompts")).toBeInTheDocument();
+    expect(within(runner).getByText("Prompt 2: ai coding 002 blocker dashboard copy")).toBeInTheDocument();
+    expect(within(runner).getByText("Prompt 3: ai coding 003 api status route gap")).toBeInTheDocument();
+    expect(within(runner).getByText("Show more")).toBeInTheDocument();
+    expect(within(runner).getAllByRole("button", { name: "Copy issue report" }).length).toBeGreaterThan(0);
+    expect(within(runner).queryByRole("button", { name: "Copy run diagnostics" }))
+      .not.toBeInTheDocument();
+    expect(within(runner).getByRole("button", { name: "Start test" })).toBeEnabled();
+
+    [
+      "Generated command",
+      "Show command",
+      "Open latest evidence",
+      "Open diagnostics",
+      "Latest artifact summary",
+      "artifact-only",
+      "Last known path",
+      "grep",
+      "Advanced/debug",
+      "Manual terminal run only",
+      "operator_run_request",
+    ].forEach((forbiddenText) => {
+      expect(within(runner).queryByText(forbiddenText)).not.toBeInTheDocument();
+    });
+
+    fireEvent.click(within(runner).getByRole("button", { name: "Design" }));
+    fireEvent.change(runSize, { target: { value: "100" } });
+    fireEvent.change(within(runner).getByRole("combobox", { name: "Agent trial viewport" }), {
+      target: { value: "both" },
+    });
+    fireEvent.change(within(runner).getByRole("combobox", { name: "Agent trial prompt profile" }), {
+      target: { value: "clean-control" },
+    });
+
+    expect(within(runner).getAllByText("Run from terminal, then refresh results.").length)
+      .toBeGreaterThan(0);
+    expect(within(runner).getByRole("button", { name: "Start from terminal for now" }))
+      .toBeDisabled();
+
+    fireEvent.click(within(runner).getByRole("button", { name: "Copy submitted prompts" }));
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith(
+        expect.stringContaining("Prompt 1: ai-design-001-coding-visual-critique"),
+      );
+    });
+  });
+
+  it("runs explicit Mac advisory context support without write authority", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          ok: true,
+          result: {
+            job_type: "source_proxy_context_discovery",
+            success: true,
+            result: { summary: "Mac searched repo context for task." },
+            candidate_files: ["src/components/coding/CodingCommandCenterShell.tsx"],
+            error: null,
+          },
+          status: {
+            node_id: "spirit-mac-mini",
+            online: true,
+            worker_available: true,
+            repo_present: true,
+            last_job_type: "source_proxy_context_discovery",
+            last_used_at: "2026-05-28T00:00:00.000Z",
+            last_success: true,
+            result_summary: "Mac searched repo context for task.",
+            error: null,
+            last_reason_code: null,
+            blocked_command: null,
+            safe_checks_blocked: false,
+            supported_job_types: ["source_proxy_context_discovery"],
+          },
+        }),
+        { status: 200 },
+      ),
+    );
+
+    render(<CodingCommandCenterShell />);
+    fireEvent.click(screen.getByRole("button", { name: /Realistic Prompt Tester/ }));
+
+    const runner = screen.getByLabelText("Realistic Prompt Tester");
+    fireEvent.click(within(runner).getByRole("button", { name: /Use Mac for context\/check support/ }));
+
+    await waitFor(() => {
+      expect(within(runner).getByText("Run status: succeeded")).toBeInTheDocument();
+    });
+    expect(within(runner).getByText("Advisory only: yes")).toBeInTheDocument();
+    expect(within(runner).getByText("Advisory job: source_proxy_context_discovery")).toBeInTheDocument();
+    const macPanel = within(runner).getByLabelText("Mac Mini worker usage");
+    expect(within(macPanel).getByText(/src\/components\/coding\/CodingCommandCenterShell\.tsx/)).toBeInTheDocument();
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      "/api/coding/mac-worker",
+      expect.objectContaining({
+        method: "POST",
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    expect(String(vi.mocked(globalThis.fetch).mock.calls[0][1]?.body)).toContain(
+      "\"job_type\":\"source_proxy_context_discovery\"",
+    );
+  });
+
+  it("keeps the prompt tester compact and clean before expansion", () => {
+    render(<CodingCommandCenterShell />);
+
+    expect(screen.getByRole("button", { name: /Realistic Prompt Tester/ })).toHaveTextContent("Ready");
+    expect(screen.getAllByText("Ready for a real coding ability trial").length).toBeGreaterThan(0);
+    expect(screen.queryByLabelText("Realistic Prompt Tester")).not.toBeInTheDocument();
+    expect(screen.queryByText("Submitted prompt preview")).not.toBeInTheDocument();
+    expect(screen.queryByText("Operator run request")).not.toBeInTheDocument();
+    expect(screen.queryByText("Generated command")).not.toBeInTheDocument();
+    expect(screen.queryByText("Show command")).not.toBeInTheDocument();
+    expect(screen.queryByText("Open latest evidence")).not.toBeInTheDocument();
+    expect(screen.queryByText("Open diagnostics")).not.toBeInTheDocument();
+    expect(screen.queryByText("Latest artifact summary")).not.toBeInTheDocument();
+    expect(screen.queryByText("artifact-only")).not.toBeInTheDocument();
+    expect(screen.queryByText("Last known path")).not.toBeInTheDocument();
+    expect(screen.queryByText("grep")).not.toBeInTheDocument();
+    expect(screen.queryByText("Advanced/debug")).not.toBeInTheDocument();
+    expect(screen.queryByText("Manual terminal run only")).not.toBeInTheDocument();
+    expect(screen.queryByText("operator_run_request")).not.toBeInTheDocument();
+    expect(screen.queryByText("Legacy Proxy Test")).not.toBeInTheDocument();
+    expect(screen.queryByText("Proof run controls")).not.toBeInTheDocument();
+    expect(screen.queryByText("REALISTIC /coding TRIAL DIAGNOSTIC")).not.toBeInTheDocument();
+    expect(screen.queryByText("trial-explicit-context-safe-20260525-2250")).not.toBeInTheDocument();
+    expect(screen.queryAllByRole("button", { name: /Running\.\.\./ })).toHaveLength(0);
   });
 
   it("shows display-only settings without writable controls", () => {
@@ -1102,7 +1298,10 @@ describe("CodingCommandCenterShell", () => {
     render(<CodingCommandCenterShell />);
 
     expect(screen.getByRole("region", { name: "Mobile command composer" })).toBeInTheDocument();
-    expect(screen.getByRole("region", { name: "Mobile trial task helper" })).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Mobile trial task helper" })).not.toBeInTheDocument();
+    openDiagnosticsDrawer();
+    fireEvent.click(screen.getByText("Legacy diagnostics"));
+    expect(screen.getByRole("region", { name: "Mobile trial task helper", hidden: true })).toBeInTheDocument();
     expect(screen.getByLabelText("Mobile coding command composer")).toHaveAttribute(
       "placeholder",
       "Ask, plan, or draft a coding task.",
@@ -1186,52 +1385,57 @@ describe("CodingCommandCenterShell", () => {
     expect(screen.getByText("Task submitted locally. Preview is ready to request; no files changed."))
       .toBeInTheDocument();
     expectActiveRunState("queued");
-    expect(
-      screen
-        .getAllByText(/Target file:/)
-        .some((element) =>
-          /Target file:\s*docs\/proxy-test-runner-plan\.md/.test(
-            element.parentElement?.textContent ?? "",
-          ),
-        ),
-    ).toBe(true);
-    expect(
-      screen
-        .getAllByText(/Allowed files:/)
-        .some((element) =>
-          /Allowed files:\s*docs\/proxy-test-runner-plan\.md/.test(
-            element.parentElement?.textContent ?? "",
-          ),
-        ),
-    ).toBe(true);
+    expect(screen.getByText("Scope:")).toBeInTheDocument();
+    expect(screen.getByText("Next action:")).toBeInTheDocument();
+    expect(screen.queryAllByText("Preview safely").length).toBeGreaterThan(0);
     const scopeReview = screen.getByRole("region", { name: "Inferred scope review" });
     expect(within(scopeReview).getByText("Scope review")).toBeInTheDocument();
     expect(within(scopeReview).getByText("Status: ready")).toBeInTheDocument();
     expect(within(scopeReview).getByText("Task type: docs")).toBeInTheDocument();
     expect(within(scopeReview).getByText("Expected checks: git diff --check")).toBeInTheDocument();
     expect(within(scopeReview).getByText("Safe next action: review_scope")).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Task scope files" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Research lane" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Design vault lane" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Cartographer preview lane" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Combined diagnostic gauntlet lane" }))
+      .not.toBeInTheDocument();
+
+    openEvidenceDrawer();
     const taskScopeFiles = screen.getByRole("region", { name: "Task scope files" });
     expect(within(taskScopeFiles).getByText("Target")).toBeInTheDocument();
     expect(within(taskScopeFiles).getAllByText("docs/proxy-test-runner-plan.md").length).toBeGreaterThan(0);
     expect(within(taskScopeFiles).getByText("Allowed files")).toBeInTheDocument();
     expect(within(taskScopeFiles).getByText("Forbidden files")).toBeInTheDocument();
     expect(within(taskScopeFiles).getByText(/\.env/)).toBeInTheDocument();
-    const workLanes = screen.getByRole("region", { name: "Coding work lanes" });
-    expect(within(workLanes).getByText("Active lane")).toBeInTheDocument();
-    expect(within(workLanes).getByText("Blocked lane")).toBeInTheDocument();
-    expect(within(workLanes).getByText("Completed lane")).toBeInTheDocument();
-    expect(within(workLanes).getByText("No active blocker")).toBeInTheDocument();
     const researchLane = screen.getByRole("region", { name: "Research lane" });
     expect(within(researchLane).getByText("Research packet")).toBeInTheDocument();
     expect(within(researchLane).getByText("Normalized advisory packet")).toBeInTheDocument();
     expect(within(researchLane).getByText("Mac support node")).toBeInTheDocument();
     expect(within(researchLane).getByText("Search capability")).toBeInTheDocument();
-    expect(within(researchLane).getByText("blocked_until_manual_json_health_check"))
+    expect(within(researchLane).getByText("Mac worker job lane"))
       .toBeInTheDocument();
     expect(within(researchLane).getByText("Scout bridge")).toBeInTheDocument();
     expect(within(researchLane).getByText("Manual import/promotion preview")).toBeInTheDocument();
     expect(within(researchLane).getByText("Research-to-coding handoff")).toBeInTheDocument();
     expect(within(researchLane).getByText("Context attachment only")).toBeInTheDocument();
+    const applyLane = screen.getByRole("region", { name: "Human-controlled apply lane" });
+    expect(within(applyLane).getByText("Approval record")).toBeInTheDocument();
+    expect(within(applyLane).getByText("human approval required")).toBeInTheDocument();
+    expect(within(applyLane).getByText("Diff hash/scope match")).toBeInTheDocument();
+    expect(within(applyLane).getByText("Exact approved apply")).toBeInTheDocument();
+    expect(within(applyLane).getByText("commit_authority false; push_authority false"))
+      .toBeInTheDocument();
+    expect(within(applyLane).getByText("Post-apply checks")).toBeInTheDocument();
+    expect(within(applyLane).getByText("Rollback preview")).toBeInTheDocument();
+    expect(within(applyLane).getByText("Apply result/audit")).toBeInTheDocument();
+
+    openDiagnosticsDrawer();
+    const workLanes = screen.getByRole("region", { name: "Coding work lanes" });
+    expect(within(workLanes).getByText("Active lane")).toBeInTheDocument();
+    expect(within(workLanes).getByText("Blocked lane")).toBeInTheDocument();
+    expect(within(workLanes).getByText("Completed lane")).toBeInTheDocument();
+    expect(within(workLanes).getByText("No active blocker")).toBeInTheDocument();
     const designVaultLane = screen.getByRole("region", { name: "Design vault lane" });
     expect(within(designVaultLane).getByText("Design packet schema")).toBeInTheDocument();
     expect(within(designVaultLane).getByText("design_packet_preview_v1", { exact: false }))
@@ -1262,16 +1466,6 @@ describe("CodingCommandCenterShell", () => {
     expect(within(cartLane).getByText("Cart preflight readiness")).toBeInTheDocument();
     expect(within(cartLane).getByText("blocked_until_explicit_plan_authority"))
       .toBeInTheDocument();
-    const applyLane = screen.getByRole("region", { name: "Human-controlled apply lane" });
-    expect(within(applyLane).getByText("Approval record")).toBeInTheDocument();
-    expect(within(applyLane).getByText("human approval required")).toBeInTheDocument();
-    expect(within(applyLane).getByText("Diff hash/scope match")).toBeInTheDocument();
-    expect(within(applyLane).getByText("Exact approved apply")).toBeInTheDocument();
-    expect(within(applyLane).getByText("commit_authority false; push_authority false"))
-      .toBeInTheDocument();
-    expect(within(applyLane).getByText("Post-apply checks")).toBeInTheDocument();
-    expect(within(applyLane).getByText("Rollback preview")).toBeInTheDocument();
-    expect(within(applyLane).getByText("Apply result/audit")).toBeInTheDocument();
     const gauntletLane = screen.getByRole("region", { name: "Combined diagnostic gauntlet lane" });
     expect(within(gauntletLane).getByText("Real coding tasks")).toBeInTheDocument();
     expect(within(gauntletLane).getByText("docs; ui; backend_schema")).toBeInTheDocument();
@@ -1329,6 +1523,28 @@ describe("CodingCommandCenterShell", () => {
     expect(
       screen.getByText("Task submitted locally. Preview blocked: missing target file, allowed files."),
     ).toBeInTheDocument();
+    const scopeClarification = screen.getByRole("region", { name: "Scope clarification" });
+    expect(
+      within(scopeClarification).getByText(
+        "I can't safely preview yet because I need a target file or allowed-file area.",
+      ),
+    ).toBeInTheDocument();
+    expect(within(scopeClarification).getByText("Missing: a target file, an allowed-file area."))
+      .toBeInTheDocument();
+    expect(within(scopeClarification).getByRole("button", { name: "Choose /coding UI files" }))
+      .toBeInTheDocument();
+    expect(within(scopeClarification).getByRole("button", { name: "Choose dummy fixture" }))
+      .toBeInTheDocument();
+    expect(within(scopeClarification).getByRole("button", { name: "Search possible files" }))
+      .toBeInTheDocument();
+    expect(within(scopeClarification).getByRole("button", { name: "Paste target file manually" }))
+      .toBeInTheDocument();
+    expect(within(scopeClarification).getByRole("button", { name: "Review scope" }))
+      .toBeInTheDocument();
+    const whyBlocked = within(scopeClarification).getByText("Why blocked?").closest("details");
+    expect(whyBlocked).not.toHaveAttribute("open");
+    expect(within(scopeClarification).getByText("Reason codes: target_unresolved"))
+      .toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Desktop preview safely" })).toBeDisabled();
     expect(screen.getByText("Preview: Preview blocked: missing target file, allowed files."))
       .toBeInTheDocument();
@@ -1337,6 +1553,54 @@ describe("CodingCommandCenterShell", () => {
     expect(screen.getByText("Apply: Locked until explicit local approval exists."))
       .toBeInTheDocument();
     expect(screen.getByText("Verify: Locked until apply happens.")).toBeInTheDocument();
+  });
+
+  it("lets Britton approve inferred /coding candidate scope before preview", async () => {
+    render(<CodingCommandCenterShell />);
+
+    fireEvent.change(screen.getByLabelText("Coding command composer"), {
+      target: {
+        value:
+          "Work in PIVOT but do not make permanent changes. I want the coding agent to inspect the current /coding command center UX and tell me what is blocked.",
+      },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Desktop submit task" }));
+
+    const scopeClarification = screen.getByRole("region", { name: "Scope clarification" });
+    expect(
+      within(scopeClarification).getByText(
+        /I can't safely preview yet because I need a target file or allowed-file area/i,
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(scopeClarification).getAllByText(
+        /src\/components\/coding\/CodingCommandCenterShell\.tsx/,
+      ).length,
+    ).toBeGreaterThan(0);
+    expect(screen.getByRole("button", { name: "Desktop preview safely" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: /apply approved diff/i })).not.toBeInTheDocument();
+
+    fireEvent.click(within(scopeClarification).getByRole("button", { name: "Choose /coding UI files" }));
+
+    const scopeReview = screen.getByRole("region", { name: "Inferred scope review" });
+    expect(within(scopeReview).getByText("Status: ready")).toBeInTheDocument();
+    expect(
+      within(scopeReview).getByText(
+        /Scope selected by Britton: target src\/components\/coding\/CodingCommandCenterShell\.tsx/,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText(/src\/components\/coding\/CodingAgentInterface\.tsx/).length)
+      .toBeGreaterThan(0);
+    expect(screen.getAllByText(/src\/lib\/coding\/plain-english-scope\.ts/).length)
+      .toBeGreaterThan(0);
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Desktop preview safely" })).toBeEnabled();
+    });
+    expect(screen.getByText("Approval: Locked until preview evidence exists."))
+      .toBeInTheDocument();
+    expect(screen.getByText("Apply: Locked until explicit local approval exists."))
+      .toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /apply approved diff/i })).not.toBeInTheDocument();
   });
 
   it("shows ambiguous browser scope with concrete next action and no approval", () => {
@@ -1667,7 +1931,7 @@ describe("CodingCommandCenterShell", () => {
       screen.getAllByText(
         "Current step: click Preview safely. A bounded draft will be staged before evidence is requested.",
       ),
-    ).toHaveLength(2);
+    ).toHaveLength(1);
 
     fireEvent.click(screen.getByRole("button", { name: "Desktop preview safely" }));
 
@@ -1925,6 +2189,15 @@ describe("CodingCommandCenterShell", () => {
     expect(writeText).toHaveBeenCalledWith(
       expect.stringContaining("phase_7_live_preview_authority: false"),
     );
+
+    fireEvent.click(screen.getByRole("button", { name: /Realistic Prompt Tester/ }));
+    const promptTester = screen.getByLabelText("Realistic Prompt Tester");
+    expect(within(promptTester).getByText("Run diagnostics ready")).toBeInTheDocument();
+    expect(within(promptTester).getAllByRole("button", { name: "Copy issue report" }).length)
+      .toBeGreaterThan(0);
+    fireEvent.click(within(promptTester).getByRole("button", { name: "Copy run diagnostics" }));
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining("stage: 10_preview_browser_run"));
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining("provider_call_made: false"));
 
     fireEvent.click(screen.getByRole("button", { name: "Copy 10-review" }));
     expect(writeText).toHaveBeenCalledWith(
@@ -2594,7 +2867,7 @@ describe("CodingCommandCenterShell", () => {
       .not.toBeInTheDocument();
     expect(screen.getByText("Diagnostic complete")).toBeInTheDocument();
     expectActiveRunState("complete");
-    expect(screen.getByText(/Grade B- \| Useful: 8\/100 \| Safely blocked: 91/))
+    expect(screen.getByText(/Legacy grade B- \| Useful: 8\/100 \| Safely blocked: 91/))
       .toBeInTheDocument();
   });
 
@@ -3272,14 +3545,15 @@ describe("CodingCommandCenterShell", () => {
     });
 
     render(<CodingCommandCenterShell />);
+    openDiagnosticsDrawer();
 
     fireEvent.touchEnd(screen.getByRole("button", { name: "Mobile copy prompt" }));
 
     expect(writeText).toHaveBeenCalledWith(
       expect.stringContaining("Add a short note explaining"),
     );
-    expect(await screen.findAllByText("HB-01 prompt loaded and copied. Run preview when ready."))
-      .toHaveLength(1);
+    expect((await screen.findAllByText("HB-01 prompt loaded and copied. Run preview when ready.")).length)
+      .toBeGreaterThan(0);
     expect(screen.getByLabelText("Mobile coding command composer")).toHaveValue(selectedTrialPrompt);
   });
 
