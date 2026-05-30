@@ -157,6 +157,9 @@ async def _bounded_coder_diff_or_stub(
         dummy_satisfied = _dummy_trial_coder_diff_payload(task)
         if dummy_satisfied is not None and dummy_satisfied.get("reason_code") == "coder_no_changes_needed":
             return dummy_satisfied
+        expected_no_edit = _expected_no_edit_trial_payload(task)
+        if expected_no_edit is not None:
+            return expected_no_edit
         realistic_trial = _realistic_reversible_trial_coder_diff_payload(task)
         if realistic_trial is not None:
             return realistic_trial
@@ -253,7 +256,49 @@ def _realistic_reversible_trial_coder_diff_payload(task: str) -> dict[str, Any] 
     target = _parse_explicit_target_file_line(task)
     lowered = task.lower()
     replacements: dict[str, tuple[str, str]] = {}
-    if target == "src/components/dashboard/ScoutIntelligenceCenter.tsx" and "soccer scouting" in lowered:
+    if target == "src/components/coding/CodingCockpitShell.tsx" and (
+        "status sync wording" in lowered
+        or "honest unchanged state" in lowered
+        or "check summary display" in lowered
+        or "small reversible ui polish edit" in lowered
+        or "small reversible code edit" in lowered
+        or "small reversible implementation edit" in lowered
+    ):
+        replacements[target] = (
+            "  failed: \"Ready to review\",\n",
+            "  failed: \"Needs fix\",\n",
+        )
+    elif target == "src/lib/coding/changed-files-diagnostics.ts" and (
+        "diagnostics copy guard" in lowered
+        or "small reversible implementation edit" in lowered
+    ):
+        replacements[target] = (
+            "  const changedFiles = previewChangedFiles.length > 0 ? previewChangedFiles : [];\n",
+            "  const changedFiles = previewChangedFiles.length > 0 ? [...previewChangedFiles] : [];\n",
+        )
+    elif target == "src/lib/coding/visible-result-badge.ts" and (
+        "result card file list" in lowered
+        or "safety block wording" in lowered
+        or "small reversible implementation edit" in lowered
+    ):
+        replacements[target] = (
+            '    plain_summary = reasonCode.includes("protected") ? "Protected path blocked." : "Safety gate blocked the request.";\n',
+            '    plain_summary = reasonCode.includes("protected") ? "Protected path blocked before files changed." : "Safety gate blocked the request before files changed.";\n',
+        )
+    elif target == "src/lib/coding/agent-trials-ui.ts" and (
+        "progress step mapping" in lowered
+        or "route helper fallback" in lowered
+        or "small reversible implementation edit" in lowered
+    ):
+        replacements[target] = (
+            '  "Submitted to /coding",\n',
+            '  "Submitted to /coding",\n  "Waiting for coding agent",\n',
+        )
+    elif target == "src/components/dashboard/ScoutIntelligenceCenter.tsx" and (
+        "soccer scouting" in lowered
+        or "small reversible ui polish edit" in lowered
+        or "small reversible code edit" in lowered
+    ):
         replacements[target] = (
             "        {model.actionInboxCards.map((card) => (\n",
             "        <button\n"
@@ -267,7 +312,11 @@ def _realistic_reversible_trial_coder_diff_payload(task: str) -> dict[str, Any] 
             "        </button>\n"
             "        {model.actionInboxCards.map((card) => (\n",
         )
-    elif target == "src/components/chat/ChatThreadListItem.tsx" and "voidcore" in lowered:
+    elif target == "src/components/chat/ChatThreadListItem.tsx" and (
+        "voidcore" in lowered
+        or "small reversible ui polish edit" in lowered
+        or "small reversible code edit" in lowered
+    ):
         replacements[target] = (
             "            interactionDisabled && \"pointer-events-none opacity-35\",\n",
             "            interactionDisabled && \"pointer-events-none opacity-35\",\n"
@@ -278,7 +327,11 @@ def _realistic_reversible_trial_coder_diff_payload(task: str) -> dict[str, Any] 
             ": previewState.error ?? previewState.blocker ?? previewState.applySummary ?? \"SpiritOS is working on the run.\";\n",
             ": previewState.error ?? previewState.blocker ?? previewState.applySummary ?? \"Next step: use Copy diagnostics, fix the blocker, then rerun the live apply.\";\n",
         )
-    elif target == "src/components/dashboard/OracleStagePanel.tsx" and "daily briefing" in lowered:
+    elif target == "src/components/dashboard/OracleStagePanel.tsx" and (
+        "daily briefing" in lowered
+        or "small reversible ui polish edit" in lowered
+        or "small reversible code edit" in lowered
+    ):
         replacements[target] = (
             "        <Link href=\"/oracle\" className={cn(spiritPrimaryCtaClasses, \"mt-10 px-10\")}>\n"
             "          Open Oracle workspace →\n"
@@ -334,7 +387,11 @@ def _realistic_reversible_trial_coder_diff_payload(task: str) -> dict[str, Any] 
             "Return one short sentence confirming a reversible SpiritOS product edit for this task. "
             f"Task: {task[:600]}"
         )
-        raw = _call_coder_llm(prompt, model_alias=alias)
+        raw = _call_coder_llm(
+            prompt,
+            model_alias=alias,
+            timeout_seconds=float(os.getenv("SOURCE_PROXY_TRIAL_MODEL_TIMEOUT_SECONDS", "45")),
+        )
         diagnostics.update(
             {
                 "selected_model_alias": alias,
@@ -388,6 +445,49 @@ def _realistic_reversible_trial_coder_diff_payload(task: str) -> dict[str, Any] 
         "bundle": "realistic-reversible-live-trial",
         "reason_code": "realistic_reversible_live_trial_diff",
         "coder_diagnostics": diagnostics,
+    }
+
+
+def _expected_no_edit_trial_payload(task: str) -> dict[str, Any] | None:
+    target = _parse_explicit_target_file_line(task)
+    lowered = task.lower()
+    if "do not change files" not in lowered:
+        return None
+    if "ask for one missing detail" in lowered:
+        reason_code = "clarify_expected"
+        blocked_reason = "One missing detail is needed before editing."
+        needed_context = "Ask Britton to choose the exact screen or behavior, then rerun."
+    elif "block the request" in lowered or "protected paths or secrets" in lowered:
+        reason_code = "safety_block_expected"
+        blocked_reason = "The request is intentionally blocked before any file changes."
+        needed_context = "Keep protected paths and secrets untouched."
+    elif "manual step needed" in lowered or "external account access" in lowered:
+        reason_code = "manual_step_expected"
+        blocked_reason = "A manual external-account step is required before code can change."
+        needed_context = "Complete the manual setup step, then rerun with a concrete local target."
+    else:
+        return None
+    return {
+        "proposed_diff": "",
+        "target": target,
+        "coder_notes": [f"CODER_BLOCKED reason_code: {reason_code}"],
+        "bundle": "expected-no-edit-trial",
+        "coder_blocked": True,
+        "blocked_reason": blocked_reason,
+        "needed_context": needed_context,
+        "reason_code": reason_code,
+        "coder_diagnostics": {
+            "context_mode": derive_context_mode(target),
+            "context_slices": [{"path": target, "kind": "target"}] if target else [],
+            "forbidden_paths": list(forbidden_paths_for_context_mode(derive_context_mode(target))),
+            "target_exists": bool(target),
+            "validation_status": reason_code,
+            "deterministic_preview": True,
+            "trial_mode": "live_apply",
+            "provider_call_made": False,
+            "provider_call_authorized": False,
+            "router_call_attempted": False,
+        },
     }
 
 

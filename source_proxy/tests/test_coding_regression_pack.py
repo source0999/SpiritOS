@@ -813,6 +813,141 @@ class CodingRegressionPackTests(unittest.TestCase):
                 self.assertTrue(payload["coder_blocked"])
                 self.assertNotEqual(payload["target"], "public/next.svg")
 
+    def test_prompt_packet_current_coder_trial_uses_bounded_live_diff_path(self) -> None:
+        target = "src/components/coding/CodingCockpitShell.tsx"
+        _write(
+            self.root / target,
+            "\n".join(
+                [
+                    "const HUMAN_STATE_LABELS = {",
+                    '  failed: "Ready to review",',
+                    "};",
+                    "",
+                ]
+            ),
+        )
+        task = "\n".join(
+            [
+                (
+                    "Status sync wording: Make a small reversible implementation edit "
+                    "in src/components/coding/CodingCockpitShell.tsx that improves state "
+                    "display, diagnostics, error handling, or route/helper behavior. "
+                    "Quick-find: src/components/coding/CodingCockpitShell.tsx."
+                ),
+                f"Target file: {target}",
+            ]
+        )
+        client = self._decision_client()
+
+        with mock.patch(
+            "source_proxy.tasks.long_running._call_coder_llm",
+            return_value="Confirmed bounded reversible edit.",
+        ) as llm_mock:
+            response = client.post(
+                "/v1/decisions/prompt-packet",
+                json={
+                    "task": task,
+                    "wants_implementation": True,
+                    "needs_codebase_context": True,
+                    "trial_mode": "live_apply",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        self.assertEqual(payload["reason_code"], "realistic_reversible_live_trial_diff")
+        self.assertEqual(payload["target"], target)
+        self.assertTrue(payload["provider_call_made"])
+        self.assertTrue(payload["coder_agent_local_diff"])
+        self.assertIn('failed: "Needs fix"', payload["proposed_diff"])
+        self.assertEqual(payload["coder_diagnostics"]["model_output_mode"], "bounded_trial_generation")
+        self.assertEqual(payload["coder_diagnostics"]["provider_call_made"], True)
+        llm_mock.assert_called_once()
+        self.assertEqual(llm_mock.call_args.kwargs["timeout_seconds"], 45.0)
+
+    def test_prompt_packet_current_designer_trial_uses_bounded_live_diff_path(self) -> None:
+        target = "src/components/chat/ChatThreadListItem.tsx"
+        _write(
+            self.root / target,
+            "\n".join(
+                [
+                    "const classes = cn(",
+                    '            interactionDisabled && "pointer-events-none opacity-35",',
+                    ");",
+                    "",
+                ]
+            ),
+        )
+        task = "\n".join(
+            [
+                (
+                    "Readable running state: Make a small reversible UI polish edit in "
+                    "src/components/chat/ChatThreadListItem.tsx. Improve clarity, spacing, "
+                    "or action hierarchy without changing product scope. "
+                    "Quick-find: src/components/chat/ChatThreadListItem.tsx."
+                ),
+                f"Target file: {target}",
+            ]
+        )
+        client = self._decision_client()
+
+        with mock.patch(
+            "source_proxy.tasks.long_running._call_coder_llm",
+            return_value="Confirmed bounded reversible edit.",
+        ) as llm_mock:
+            response = client.post(
+                "/v1/decisions/prompt-packet",
+                json={
+                    "task": task,
+                    "wants_implementation": True,
+                    "needs_codebase_context": True,
+                    "trial_mode": "live_apply",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        self.assertEqual(payload["reason_code"], "realistic_reversible_live_trial_diff")
+        self.assertEqual(payload["target"], target)
+        self.assertTrue(payload["provider_call_made"])
+        self.assertIn("active &&", payload["proposed_diff"])
+        llm_mock.assert_called_once()
+
+    def test_prompt_packet_current_expected_no_edit_trial_skips_full_coder_path(self) -> None:
+        target = "src/components/coding/CodingCockpitShell.tsx"
+        _write(self.root / target, "export const x = 1;\n")
+        task = "\n".join(
+            [
+                (
+                    "Clarify unsafe scope: Ask for one missing detail before editing because "
+                    "the request names behavior but not the exact screen. Do not change files. "
+                    "Quick-find: src/components/coding/CodingCockpitShell.tsx."
+                ),
+                f"Target file: {target}",
+            ]
+        )
+        client = self._decision_client()
+
+        with mock.patch("source_proxy.tasks.long_running._call_coder_llm") as llm_mock:
+            response = client.post(
+                "/v1/decisions/prompt-packet",
+                json={
+                    "task": task,
+                    "wants_implementation": True,
+                    "needs_codebase_context": True,
+                    "trial_mode": "live_apply",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        self.assertEqual(payload["reason_code"], "clarify_expected")
+        self.assertEqual(payload["target"], target)
+        self.assertEqual(payload["proposed_diff"], "")
+        self.assertFalse(payload["provider_call_made"])
+        self.assertTrue(payload["coder_blocked"])
+        llm_mock.assert_not_called()
+
     def test_fake_prompt_diff_is_not_promoted_to_proposed_diff_or_target(self) -> None:
         task = "\n".join(
             [
