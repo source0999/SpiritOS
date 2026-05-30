@@ -47,6 +47,8 @@ def build_codex_task_packet(
     rollback_instruction: str | None = None,
     max_scope: str = "single_task",
     task_id: str | None = None,
+    source_task_id: str | None = None,
+    source_thread_id: str | None = None,
     workspace: Path | None = None,
     current_branch: str | None = None,
     current_head: str | None = None,
@@ -72,10 +74,24 @@ def build_codex_task_packet(
         raise CodexTaskPacketError("Task summary is required.", "codex_task_missing_summary")
 
     checks = tuple(manual_checks or DEFAULT_CODEX_MANUAL_CHECKS)
+    resolved_task_id = task_id or _stable_task_id(summary, normalized_target, normalized_allowed)
+    source_labels = _source_labels(
+        task_id=resolved_task_id,
+        source_task_id=source_task_id,
+        source_thread_id=source_thread_id,
+    )
     return {
         "packet_version": "codex_task_packet.v1",
         "worker": "codex_cli",
-        "task_id": task_id or _stable_task_id(summary, normalized_target, normalized_allowed),
+        "task_id": resolved_task_id,
+        "source_task_id": source_labels["source_task_id"],
+        "source_thread_id": source_labels["source_thread_id"],
+        "approval_request_label": {
+            "worker": "codex_cli",
+            "source_task_id": source_labels["source_task_id"],
+            "source_thread_id": source_labels["source_thread_id"],
+            "scope": normalized_target or ",".join(normalized_allowed),
+        },
         "task_summary": summary,
         "target_file": normalized_target,
         "allowed_files": list(normalized_allowed),
@@ -93,6 +109,32 @@ def build_codex_task_packet(
         "apply_authority": False,
         "commit_authority": False,
         "push_authority": False,
+    }
+
+
+def _source_labels(
+    *,
+    task_id: str,
+    source_task_id: str | None,
+    source_thread_id: str | None,
+) -> dict[str, str]:
+    resolved_source_task_id = task_id if source_task_id is None else source_task_id.strip()
+    resolved_source_thread_id = (
+        f"thread-{task_id}" if source_thread_id is None else source_thread_id.strip()
+    )
+    if not resolved_source_task_id:
+        raise CodexTaskPacketError(
+            "source_task_id is required for worker approval labels.",
+            "codex_task_source_task_missing",
+        )
+    if not resolved_source_thread_id:
+        raise CodexTaskPacketError(
+            "source_thread_id is required for worker approval labels.",
+            "codex_task_source_thread_missing",
+        )
+    return {
+        "source_task_id": resolved_source_task_id,
+        "source_thread_id": resolved_source_thread_id,
     }
 
 

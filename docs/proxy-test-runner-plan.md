@@ -642,3 +642,4 @@ Required behavior:
 14. `4F-F`: Add dashboard manual-check runner controls for proxy and Scout profiles. Done.
 15. `4F-G`: Add consolidated Phase 4F closeout runner profile and tests. Done.
 16. `4F-H`: Add closeout runbook and evidence docs. Done.
+Verification receipts should include changed files, commands run, and pass/fail results.

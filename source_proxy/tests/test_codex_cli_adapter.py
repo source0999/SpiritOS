@@ -19,6 +19,7 @@ from source_proxy.codex.adapter import (
 )
 from source_proxy.codex.task_packet import CodexTaskPacketError, build_codex_task_packet
 from source_proxy.codex.evidence import (
+    CodexEvidenceError,
     build_codex_evidence_packet,
     summarize_codex_evidence,
     write_codex_evidence_packet,
@@ -334,6 +335,33 @@ class CodexCliAdapterTests(unittest.TestCase):
         self.assertFalse(payload["apply_authority"])
         self.assertFalse(payload["commit_authority"])
         self.assertFalse(payload["push_authority"])
+
+    def test_codex_route_proposal_is_evidence_only_not_apply_receipt(self) -> None:
+        client = TestClient(app)
+        response = client.post(
+            "/v1/coding/codex",
+            json={
+                "mode": "proposal",
+                "task": "Append one docs sentence.",
+                "target_file": "docs/phase-8-manual-check.md",
+                "allowed_files": ["docs/phase-8-manual-check.md"],
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(payload["proposal_ready"])
+        self.assertFalse(payload["preview_ready"])
+        self.assertFalse(payload["would_run_task"])
+        self.assertEqual(payload["changed_files"], [])
+        self.assertEqual(payload["live_execution"]["proposal_contract"], "validate target_file and allowed_files, then return command preview only")
+        self.assertEqual(payload["command_preview"][:2], ["codex", "exec"])
+        self.assertNotIn("apply_receipt", payload)
+        self.assertNotIn("verification_receipt", payload)
+        self.assertFalse(payload["authority"]["approval_authority"])
+        self.assertFalse(payload["authority"]["apply_authority"])
+        self.assertFalse(payload["authority"]["commit_authority"])
+        self.assertFalse(payload["authority"]["push_authority"])
 
     def test_codex_route_proposal_exposes_honest_config_block_state(self) -> None:
         client = TestClient(app)
@@ -777,17 +805,65 @@ class CodexCliAdapterTests(unittest.TestCase):
 
         self.assertEqual(packet["artifact_version"], "codex_evidence.v1")
         self.assertEqual(packet["worker"], "codex_cli")
+        self.assertEqual(packet["source_task_id"], "codex-task-1")
+        self.assertEqual(packet["source_thread_id"], "thread-codex-task-1")
+        self.assertEqual(packet["approval_request_label"]["worker"], "codex_cli")
+        self.assertEqual(packet["approval_request_label"]["source_task_id"], "codex-task-1")
+        self.assertEqual(packet["approval_request_label"]["source_thread_id"], "thread-codex-task-1")
         self.assertEqual(packet["json_event_count"], 2)
         self.assertEqual(packet["safety_verdict"], "passed")
         self.assertEqual(packet["recommendation"], "ready_for_review")
         self.assertFalse(packet["truncation"]["stdout"])
         self.assertEqual(packet["replay_summary"]["task_id"], "codex-task-1")
+        self.assertEqual(packet["replay_summary"]["source_task_id"], "codex-task-1")
+        self.assertEqual(packet["replay_summary"]["source_thread_id"], "thread-codex-task-1")
         self.assertEqual(packet["replay_summary"]["mode"], "readonly")
         self.assertFalse(packet["replay_summary"]["changed_files_delta"])
         self.assertFalse(packet["approval_authority"])
         self.assertFalse(packet["apply_authority"])
         self.assertFalse(packet["commit_authority"])
         self.assertFalse(packet["push_authority"])
+
+    def test_task_and_evidence_packets_require_worker_source_labels_when_explicit(self) -> None:
+        packet = build_codex_task_packet(
+            task="Append docs note",
+            target_file="docs/phase-8-manual-check.md",
+            allowed_files=["docs/phase-8-manual-check.md"],
+            task_id="task-source-label",
+            source_task_id="task-source-label",
+            source_thread_id="thread-source-label",
+        )
+
+        self.assertEqual(packet["source_task_id"], "task-source-label")
+        self.assertEqual(packet["source_thread_id"], "thread-source-label")
+        self.assertEqual(packet["approval_request_label"]["scope"], "docs/phase-8-manual-check.md")
+        self.assertFalse(packet["approval_authority"])
+        self.assertFalse(packet["apply_authority"])
+
+        with self.assertRaises(CodexTaskPacketError) as missing_task:
+            build_codex_task_packet(
+                task="Append docs note",
+                target_file="docs/phase-8-manual-check.md",
+                allowed_files=["docs/phase-8-manual-check.md"],
+                source_task_id=" ",
+                source_thread_id="thread-source-label",
+            )
+        with self.assertRaises(CodexEvidenceError) as missing_thread:
+            build_codex_evidence_packet(
+                task_id="codex-task-label",
+                command=["codex", "exec", "review"],
+                sandbox="read-only",
+                started_at="2026-05-17T20:00:00Z",
+                finished_at="2026-05-17T20:00:05Z",
+                exit_code=0,
+                source_thread_id=" ",
+            )
+
+        self.assertEqual(missing_task.exception.reason_code, "codex_task_source_task_missing")
+        self.assertEqual(
+            missing_thread.exception.reason_code,
+            "codex_evidence_source_thread_missing",
+        )
 
     def test_evidence_summary_is_truncated_replayable_and_authority_free(self) -> None:
         packet = build_codex_evidence_packet(

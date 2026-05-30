@@ -14,6 +14,33 @@ const nextConfig: NextConfig = {
 
   allowedDevOrigins: buildAllowedDevOrigins(),
 
+  async headers() {
+    return [
+      {
+        source: "/_next/static/chunks/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "no-store, max-age=0, must-revalidate",
+          },
+        ],
+      },
+      {
+        source: "/coding",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "no-store, max-age=0, must-revalidate",
+          },
+          {
+            key: "Clear-Site-Data",
+            value: '"cache"',
+          },
+        ],
+      },
+    ];
+  },
+
   webpack: (config, { dev, isServer }) => {
     if (dev) {
       config.watchOptions = {

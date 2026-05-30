@@ -117,7 +117,7 @@ export function deriveApprovalGateProposal(
   if (userExplicitTarget) {
     let proposed =
       (coderBlocked ? packetUnifiedDiff || undefined : packetUnifiedDiff) || undefined;
-    if (proposed && !diffTouchesExplicitTarget(proposed, userExplicitTarget)) {
+    if (proposed && !diffOnlyTouchesExplicitTarget(proposed, userExplicitTarget)) {
       proposed = undefined;
     }
     const content = codeBlockForTarget(promptText, userExplicitTarget);
@@ -171,7 +171,7 @@ export function deriveApprovalGateProposal(
     (coderBlocked ? packetUnifiedDiff || undefined : packetUnifiedDiff) || undefined;
   if (proposed) {
     const touched = collectPathsFromUnifiedDiff(proposed);
-    if (touched.length > 0 && !diffTouchesExplicitTarget(proposed, target)) {
+    if (touched.length > 0 && !diffOnlyTouchesExplicitTarget(proposed, target)) {
       proposed = undefined;
     }
   }
@@ -228,6 +228,15 @@ function isTrustworthyPacketTarget(
     return true;
   }
   return false;
+}
+
+function diffOnlyTouchesExplicitTarget(diff: string, target: string): boolean {
+  const touched = collectPathsFromUnifiedDiff(diff);
+  if (touched.length === 0) {
+    return diffTouchesExplicitTarget(diff, target);
+  }
+  const normalizedTarget = normalizeRepoRelativePath(target);
+  return touched.every((path) => normalizeRepoRelativePath(path) === normalizedTarget);
 }
 
 export function isImplementationRun(decision: ApprovalGateBindingDecision) {
