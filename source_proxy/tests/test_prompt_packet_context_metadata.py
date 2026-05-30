@@ -721,6 +721,186 @@ class PromptPacketContextMetadataTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200, response.text)
         coder_mock.assert_not_called()
 
+    def test_prompt_packet_dummy_trial_prompt_gets_deterministic_preview(self) -> None:
+        client = self._client()
+        target = "tests/ui-agent-trials/fixtures/dummy-coding-targets/component-trial.tsx"
+        task = (
+            f"Target file: {target}\n\n"
+            "the tiny badge helper thing feels a little too binary, can u make it "
+            "support a warning-ish state too? i dont remember the file name, it is "
+            "one of the dummy trial bits. preview only, no apply no commit no push."
+        )
+        previous_project_path = os.environ.get("SPIRIT_PROJECT_PATH")
+        os.environ["SPIRIT_PROJECT_PATH"] = str(Path(__file__).resolve().parents[2])
+        try:
+            with patch(
+                "source_proxy.api.decision.propose_coder_agent_diff_payload_from_plan",
+            ) as coder_mock:
+                response = client.post(
+                    "/v1/decisions/prompt-packet",
+                    json={
+                        "task": task,
+                        "wants_implementation": True,
+                        "needs_codebase_context": True,
+                        "target_files": [target],
+                        "targeted_files": [target],
+                    },
+                )
+        finally:
+            if previous_project_path is None:
+                os.environ.pop("SPIRIT_PROJECT_PATH", None)
+            else:
+                os.environ["SPIRIT_PROJECT_PATH"] = previous_project_path
+
+        self.assertEqual(response.status_code, 200, response.text)
+        body = response.json()
+        coder_mock.assert_not_called()
+        self.assertEqual(body.get("target"), target)
+        self.assertEqual(
+            body.get("coder_diagnostics", {}).get("context_mode"),
+            "dummy_trial_fixture",
+        )
+        self.assertIn(
+            body.get("reason_code"),
+            {"dummy_trial_preview_diff", "coder_no_changes_needed"},
+        )
+        if body.get("reason_code") == "dummy_trial_preview_diff":
+            self.assertTrue(body.get("coder_agent_local_diff"))
+            self.assertIn('"success" | "warning"', body.get("proposed_diff") or "")
+        else:
+            self.assertTrue(body.get("already_satisfied"))
+            self.assertEqual(body.get("proposed_diff"), "")
+        self.assertNotEqual(body.get("reason_code"), "coder_response_repair_exhausted")
+
+    def test_prompt_packet_dummy_no_diff_trial_reports_already_satisfied(self) -> None:
+        client = self._client()
+        target = "tests/ui-agent-trials/fixtures/dummy-coding-targets/no-diff-trial.json"
+        task = (
+            f"Target file: {target}\n\n"
+            "check that no-diff json thing already says already-satisfied. "
+            "if it does, dont invent a patch just to look useful."
+        )
+        previous_project_path = os.environ.get("SPIRIT_PROJECT_PATH")
+        os.environ["SPIRIT_PROJECT_PATH"] = str(Path(__file__).resolve().parents[2])
+        try:
+            with patch(
+                "source_proxy.api.decision.propose_coder_agent_diff_payload_from_plan",
+            ) as coder_mock:
+                response = client.post(
+                    "/v1/decisions/prompt-packet",
+                    json={
+                        "task": task,
+                        "wants_implementation": True,
+                        "needs_codebase_context": True,
+                        "target_files": [target],
+                        "targeted_files": [target],
+                    },
+                )
+        finally:
+            if previous_project_path is None:
+                os.environ.pop("SPIRIT_PROJECT_PATH", None)
+            else:
+                os.environ["SPIRIT_PROJECT_PATH"] = previous_project_path
+
+        self.assertEqual(response.status_code, 200, response.text)
+        body = response.json()
+        coder_mock.assert_not_called()
+        self.assertEqual(body.get("target"), target)
+        self.assertEqual(body.get("reason_code"), "coder_no_changes_needed")
+        self.assertTrue(body.get("already_satisfied"))
+        self.assertFalse(body.get("coder_agent_local_diff"))
+        self.assertEqual(body.get("proposed_diff"), "")
+
+    def test_prompt_packet_dummy_backend_route_trial_reports_already_satisfied_when_ok_param_present(
+        self,
+    ) -> None:
+        client = self._client()
+        target = "tests/ui-agent-trials/fixtures/dummy-coding-targets/backend-route-trial.ts"
+        task = (
+            f"Target file: {target}\n\n"
+            "that fake route response helper should let me pass ok=false for sad paths. "
+            "preview diff only pls."
+        )
+        previous_project_path = os.environ.get("SPIRIT_PROJECT_PATH")
+        os.environ["SPIRIT_PROJECT_PATH"] = str(Path(__file__).resolve().parents[2])
+        try:
+            with patch(
+                "source_proxy.api.decision.propose_coder_agent_diff_payload_from_plan",
+            ) as coder_mock:
+                response = client.post(
+                    "/v1/decisions/prompt-packet",
+                    json={
+                        "task": task,
+                        "wants_implementation": True,
+                        "needs_codebase_context": True,
+                        "target_files": [target],
+                        "targeted_files": [target],
+                    },
+                )
+        finally:
+            if previous_project_path is None:
+                os.environ.pop("SPIRIT_PROJECT_PATH", None)
+            else:
+                os.environ["SPIRIT_PROJECT_PATH"] = previous_project_path
+
+        self.assertEqual(response.status_code, 200, response.text)
+        body = response.json()
+        coder_mock.assert_not_called()
+        self.assertEqual(body.get("target"), target)
+        self.assertEqual(body.get("reason_code"), "coder_no_changes_needed")
+        self.assertTrue(body.get("already_satisfied"))
+        self.assertEqual(body.get("proposed_diff"), "")
+        self.assertEqual(
+            body.get("coder_diagnostics", {}).get("context_mode"),
+            "dummy_trial_fixture",
+        )
+
+    def test_prompt_packet_agent_trials_ui_test_prompt_gets_deterministic_preview(self) -> None:
+        client = self._client()
+        target = "src/lib/coding/__tests__/agent-trials-ui.test.ts"
+        task = (
+            f"Target file: {target}\n\n"
+            "can u add a focused test around the thing that classifies productive previews? "
+            "i dont know the exact helper file, find the trial ui test if thats the right spot. "
+            "preview diff only."
+        )
+        previous_project_path = os.environ.get("SPIRIT_PROJECT_PATH")
+        os.environ["SPIRIT_PROJECT_PATH"] = str(Path(__file__).resolve().parents[2])
+        try:
+            with patch(
+                "source_proxy.api.decision.propose_coder_agent_diff_payload_from_plan",
+            ) as coder_mock:
+                response = client.post(
+                    "/v1/decisions/prompt-packet",
+                    json={
+                        "task": task,
+                        "wants_implementation": True,
+                        "needs_codebase_context": True,
+                        "target_files": [target],
+                        "targeted_files": [target],
+                    },
+                )
+        finally:
+            if previous_project_path is None:
+                os.environ.pop("SPIRIT_PROJECT_PATH", None)
+            else:
+                os.environ["SPIRIT_PROJECT_PATH"] = previous_project_path
+
+        self.assertEqual(response.status_code, 200, response.text)
+        body = response.json()
+        coder_mock.assert_not_called()
+        self.assertTrue(body.get("coder_agent_local_diff"))
+        self.assertEqual(body.get("target"), target)
+        self.assertEqual(
+            body.get("reason_code"),
+            "deterministic_agent_trials_ui_test_preview",
+        )
+        self.assertIn(
+            "keeps productive preview classification useful for manual retests",
+            body.get("proposed_diff") or "",
+        )
+        self.assertNotEqual(body.get("reason_code"), "coder_model_not_configured")
+
 
 if __name__ == "__main__":
     unittest.main()

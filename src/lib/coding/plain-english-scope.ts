@@ -14,14 +14,24 @@ export type PlainEnglishScopeRiskTier = "low" | "medium" | "high";
 
 export type PlainEnglishScopeDraft = {
   allowedFiles: string[];
+  candidateFiles: string[];
+  clarificationPrompt: string;
   expectedChecks: string[];
   forbiddenFiles: string[];
   inspectionSummary: string;
   reasonCodes: string[];
+  restrictions: {
+    apply: boolean;
+    commit: boolean;
+    permanentChanges: boolean;
+    providerCalls: boolean;
+    push: boolean;
+  };
   riskTier: PlainEnglishScopeRiskTier;
   rollbackHint: string;
   safeNextAction: "review_scope";
   status: PlainEnglishScopeStatus;
+  taskGoal: string;
   targetFiles: string[];
   taskType: PlainEnglishTaskType;
 };
@@ -35,6 +45,9 @@ const REPO_PATH_RE =
 
 const EXPLICIT_TARGET_RE = /^\s*target\s+file\s*:\s*(.+?)\s*$/gim;
 const INLINE_TARGET_RE = /\btarget\s+file\s*:\s*([^\s,;]+)/gi;
+const EXPLICIT_ALLOWED_RE = /^\s*allowed\s+files?\s*:\s*(.+?)\s*$/gim;
+const EXPLICIT_FORBIDDEN_RE = /^\s*forbidden(?:\s+(?:files?|scope))?\s*:\s*(.+?)\s*$/gim;
+const MANUAL_CHECK_RE = /^\s*manual\s+checks?\s*:\s*(.+?)\s*$/gim;
 const PROTECTED_TOKEN_RE = /\b(\.env(?:\.[A-Za-z0-9_-]+)?|[A-Za-z0-9._/@()[\]\-]+\.(?:pem|key|crt|p12|pfx))\b/g;
 
 const PROTECTED_PATH_PATTERNS = [
@@ -51,10 +64,20 @@ export function derivePlainEnglishScopeDraft(
   const task = taskText.trim();
   const knownExistingPaths = normalizeUnique(options.knownExistingPaths ?? []);
   const explicitTargets = collectExplicitTargets(task);
+  const explicitAllowedFiles = collectLabeledPaths(task, EXPLICIT_ALLOWED_RE);
+  const explicitForbiddenFiles = normalizeUnique([
+    ...collectLabeledPaths(task, EXPLICIT_FORBIDDEN_RE),
+    ...collectNegatedPaths(task),
+    ...collectProtectedPathMentions(task),
+  ]);
   const mentionedPaths = collectMentionedRepoPaths(task);
-  const protectedMentions = collectProtectedPathMentions(task);
-  const targetCandidates = normalizeUnique([...explicitTargets, ...mentionedPaths, ...protectedMentions]);
+  const targetCandidates = normalizeUnique([
+    ...explicitTargets,
+    ...explicitAllowedFiles,
+    ...mentionedPaths.filter((path) => !explicitForbiddenFiles.includes(path) && !pathIsProtected(path)),
+  ]);
   const protectedCandidates = targetCandidates.filter(pathIsProtected);
+  const candidateFiles = candidateFilesForTask(task);
   const existingTargetCandidates =
     knownExistingPaths.length > 0
       ? targetCandidates.filter((path) => knownExistingPaths.includes(path))
@@ -78,14 +101,26 @@ export function derivePlainEnglishScopeDraft(
 
   const target = protectedCandidates[0] ?? existingTargetCandidates[0] ?? targetCandidates[0] ?? "";
   const taskType = classifyTaskType(task, target);
-  const checks = expectedChecksForTaskType(taskType);
+  const checks = uniqueStrings([...collectManualChecks(task), ...expectedChecksForTaskType(taskType)]);
   const status: PlainEnglishScopeStatus = reasonCodes.length > 0 ? "blocked" : "ready";
-  const allowedFiles = status === "ready" && target ? [target] : [];
+  const allowedFiles =
+    status === "ready" && target
+      ? explicitAllowedFiles.length > 0
+        ? normalizeUnique(explicitAllowedFiles)
+        : [target]
+      : [];
+  const restrictions = restrictionFlags(task);
   return {
     allowedFiles,
+    candidateFiles,
+    clarificationPrompt:
+      status === "blocked"
+        ? clarificationPromptFor({ candidateFiles, reasonCodes, target })
+        : "Scope is ready for preview; review the target and allowed files before requesting evidence.",
     expectedChecks: checks,
-    forbiddenFiles: forbiddenFilesForTaskType(taskType),
+    forbiddenFiles: normalizeUnique([...forbiddenFilesForTaskType(taskType), ...explicitForbiddenFiles]),
     inspectionSummary: inspectionSummary({
+      candidateFiles,
       explicitTargets,
       mentionedPaths,
       status,
@@ -93,10 +128,12 @@ export function derivePlainEnglishScopeDraft(
       taskType,
     }),
     reasonCodes: normalizeUnique(reasonCodes),
+    restrictions,
     riskTier: riskTierForTaskType(taskType, protectedCandidates.length > 0),
     rollbackHint: allowedFiles.length > 0 ? `git restore ${allowedFiles.join(" ")}` : "No rollback command is available until scope is resolved.",
     safeNextAction: "review_scope",
     status,
+    taskGoal: taskGoalFromText(task),
     targetFiles: target ? [target] : [],
     taskType,
   };
@@ -135,6 +172,42 @@ function collectMentionedRepoPaths(task: string): string[] {
   return normalizeUnique(paths);
 }
 
+function collectLabeledPaths(task: string, pattern: RegExp): string[] {
+  pattern.lastIndex = 0;
+  const paths: string[] = [];
+  let match: RegExpExecArray | null;
+  while ((match = pattern.exec(task)) !== null) {
+    paths.push(...splitPathList(match[1] ?? ""));
+  }
+  return normalizeUnique(paths);
+}
+
+function collectManualChecks(task: string): string[] {
+  MANUAL_CHECK_RE.lastIndex = 0;
+  const checks: string[] = [];
+  let match: RegExpExecArray | null;
+  while ((match = MANUAL_CHECK_RE.exec(task)) !== null) {
+    checks.push(
+      ...(match[1] ?? "")
+        .split(/[;\n]+/)
+        .map((value) => value.trim())
+        .filter(Boolean),
+    );
+  }
+  return normalizeUnique(checks);
+}
+
+function collectNegatedPaths(task: string): string[] {
+  const paths: string[] = [];
+  const negatedPattern =
+    /\b(?:do\s+not|don't|never|no)\s+(?:touch|edit|mutate|change|write|inspect)\s+([^.\n]+)/gi;
+  let match: RegExpExecArray | null;
+  while ((match = negatedPattern.exec(task)) !== null) {
+    paths.push(...splitPathList(match[1] ?? ""));
+  }
+  return normalizeUnique(paths);
+}
+
 function collectProtectedPathMentions(task: string): string[] {
   PROTECTED_TOKEN_RE.lastIndex = 0;
   const paths: string[] = [];
@@ -148,10 +221,82 @@ function collectProtectedPathMentions(task: string): string[] {
   return normalizeUnique(paths);
 }
 
+function splitPathList(raw: string): string[] {
+  return raw
+    .split(/[,;\n]+|\s+and\s+/i)
+    .map((value) => normalizeCandidate(value))
+    .filter(looksLikeScopeToken)
+    .filter(Boolean);
+}
+
 function normalizeCandidate(raw: string): string {
   return normalizeRepoRelativePath(raw)
     .replace(/^["'`]+|["'`]+$/g, "")
     .replace(/[.,:;!?]+$/g, "");
+}
+
+function taskGoalFromText(task: string): string {
+  const taskLine = task.match(/^\s*task\s*:\s*(.+?)\s*$/im)?.[1];
+  if (taskLine) return taskLine.trim();
+  return task.split(/\n+/)[0]?.trim().slice(0, 220) || "No task goal supplied.";
+}
+
+function restrictionFlags(task: string) {
+  const normalized = task.toLowerCase();
+  return {
+    apply: /\bno\s+apply|do\s+not[^.\n]*\bapply|without\s+apply/.test(normalized),
+    commit: /\bno\s+commit|do\s+not[^.\n]*\bcommit|without\s+commit/.test(normalized),
+    permanentChanges:
+      /\bno\s+permanent\s+changes|preview[-\s]only|do\s+not[^.\n]*\b(?:mutate|permanent\s+changes|make\s+permanent)/.test(
+        normalized,
+      ),
+    providerCalls:
+      /\bno\s+provider|no\s+model\s+call|do\s+not[^.\n]*\b(?:provider|call\s+providers?|model\s+call)/.test(
+        normalized,
+      ),
+    push: /\bno\s+push|do\s+not[^.\n]*\bpush|without\s+push/.test(normalized),
+  };
+}
+
+function candidateFilesForTask(task: string): string[] {
+  const normalized = task.toLowerCase();
+  const candidates: string[] = [];
+  if (normalized.includes("/coding") || normalized.includes("coding agent") || normalized.includes("command center")) {
+    candidates.push(
+      "src/components/coding/CodingCommandCenterShell.tsx",
+      "src/components/coding/CodingAgentInterface.tsx",
+      "src/lib/coding/plain-english-scope.ts",
+    );
+  }
+  if (normalized.includes("taskspec") || normalized.includes("task spec") || normalized.includes("scope")) {
+    candidates.push("src/lib/coding/plain-english-scope.ts");
+  }
+  if (normalized.includes("trial") || normalized.includes("harness")) {
+    candidates.push(
+      "scripts/agent-trials/run-ui-agent-trials.mjs",
+      "tests/ui-agent-trials/coding-ui-trial.spec.ts",
+    );
+  }
+  if (normalized.includes("design")) {
+    candidates.push("src/app/coding/design-demo/page.tsx");
+  }
+  return normalizeUnique(candidates);
+}
+
+function clarificationPromptFor(input: { candidateFiles: string[]; reasonCodes: string[]; target: string }) {
+  if (input.reasonCodes.includes("protected_path")) {
+    return "That target touches protected scope. Pick one non-secret repo file or approve a safer allowed-file scope before preview.";
+  }
+  if (input.reasonCodes.includes("multiple_targets")) {
+    return "I found more than one possible target. Pick one target file and allowed-file scope before preview.";
+  }
+  if (input.candidateFiles.length > 0) {
+    return `I need one target file or allowed-file scope before preview. Suggested candidates: ${input.candidateFiles.join(", ")}.`;
+  }
+  if (input.target) {
+    return `I inferred ${input.target}, but need Britton to approve or edit the allowed-file scope before preview.`;
+  }
+  return "I need one target file or allowed-file scope before preview.";
 }
 
 function normalizeUnique(values: string[]): string[] {
@@ -166,6 +311,28 @@ function normalizeUnique(values: string[]): string[] {
     out.push(normalized);
   }
   return out;
+}
+
+function uniqueStrings(values: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const value of values) {
+    const normalized = value.trim();
+    if (!normalized || seen.has(normalized)) continue;
+    seen.add(normalized);
+    out.push(normalized);
+  }
+  return out;
+}
+
+function looksLikeScopeToken(value: string): boolean {
+  return (
+    value === ".env" ||
+    value.startsWith(".env.") ||
+    value.includes("/") ||
+    value.includes("*") ||
+    /\.(?:tsx?|jsx?|py|css|html|json|md|xml|ya?ml|toml|pem|key|crt|p12|pfx)$/.test(value)
+  );
 }
 
 function pathIsProtected(path: string): boolean {
@@ -235,6 +402,7 @@ function riskTierForTaskType(
 }
 
 function inspectionSummary(input: {
+  candidateFiles: string[];
   explicitTargets: string[];
   mentionedPaths: string[];
   status: PlainEnglishScopeStatus;
@@ -243,6 +411,9 @@ function inspectionSummary(input: {
 }): string {
   if (input.status === "blocked") {
     if (!input.target) {
+      if (input.candidateFiles.length > 0) {
+        return `No single repo-relative target path was approved yet. Candidate files: ${input.candidateFiles.join(", ")}.`;
+      }
       return "No single repo-relative target path could be inferred from the prompt.";
     }
     return `Scope needs review before preview: inferred ${input.target} as ${input.taskType}.`;

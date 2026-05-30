@@ -76,6 +76,12 @@ OIWWJQ~A
 .DS_Store
 Thumbs.db
 
+# Local Playwright / Codex smoke screenshots (never commit)
+.codex-smoke/
+
+# Rotated local env backups
+.env.local.backup.*
+
 # Fat local runner logs (Codex / probes / source-proxy); keep out of git + repomix
 .codex-next-*.log
 .codex-next-*.err.log

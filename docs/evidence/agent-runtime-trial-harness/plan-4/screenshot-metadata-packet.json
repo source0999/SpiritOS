@@ -1,0 +1,16 @@
+{
+  "job_id": "plan-4-screenshot-metadata-live",
+  "job_type": "screenshot_packet",
+  "input_summary": "Inspect screenshot helper feasibility for /coding/design-demo without writing repo files.",
+  "mac_host": "spirit-mac-mini.local",
+  "started_at": "2026-05-28T02:12:50.817067Z",
+  "completed_at": "2026-05-28T02:12:50.817297Z",
+  "status": "completed",
+  "result": "Mac one-shot screenshot helper contract available as metadata-only proof. No browser daemon or persistent Playwright worker started.",
+  "citations_or_evidence": [
+    "ssh one-shot python3",
+    "target_url=https://localhost:3000/coding/design-demo"
+  ],
+  "safety_boundary": "One-shot metadata helper only. No launch agent, no daemon, no hidden worker, no repo write authority.",
+  "repo_write_authority": false
+}

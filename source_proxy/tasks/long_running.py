@@ -18,10 +18,16 @@ from typing import Any, Callable, Literal
 from uuid import uuid4
 
 from source_proxy.agents.registry import SwarmAgentRole, normalize_agent_role
-from source_proxy.routing.litellm_router import available_model_aliases, get_router
+from source_proxy.routing.litellm_router import (
+    available_model_aliases,
+    get_router,
+    route_model_for_alias,
+    route_provider_for_alias,
+)
 from source_proxy.routing.ollama_route import (
     local_model_unavailable_from_error,
     local_model_unavailable_payload,
+    ollama_route_status_entry,
 )
 from source_proxy.planning.plan import (
     AcceptanceCriterion,
@@ -3416,6 +3422,7 @@ def propose_coder_agent_diff_payload_from_plan(
     llm_call: Callable[[str, str], str] | None = None,
     model_alias: str | None = None,
     reviewer_feedback: list[str] | None = None,
+    force_live_model: bool = False,
     _review_attempt: int = 1,
     _previous_reviewer_signature: str = "",
 ) -> dict[str, Any]:
@@ -3439,6 +3446,7 @@ def propose_coder_agent_diff_payload_from_plan(
     target_path = packet.target_file.path
     notes: list[str] = []
     diagnostics: dict[str, Any] = _base_coder_diagnostics(target_path)
+    diagnostics["trial_mode"] = "live_apply" if force_live_model else "preview_only_or_standard"
     diagnostics["coder_attempt_count"] = _review_attempt
     diagnostics["reviewer_retry_count"] = max(0, _review_attempt - 1)
     diagnostics["retry_reason"] = "reviewer_feedback" if _review_attempt > 1 else ""
@@ -3502,14 +3510,23 @@ def propose_coder_agent_diff_payload_from_plan(
     prompt = _render_coder_prompt_from_packet(packet, source_task=task)
     diagnostics["prompt_size"] = len(prompt)
     selected_alias = model_alias or _configured_coder_model_alias()
-    diagnostics["selected_model_alias"] = selected_alias
+    _record_coder_provider_model_truth(
+        diagnostics,
+        selected_alias=selected_alias,
+        provider_call_made=False,
+    )
 
-    deterministic = _deterministic_markdown_append_response(packet, task)
-    if deterministic is None:
+    deterministic = None if force_live_model else _deterministic_markdown_append_response(packet, task)
+    if deterministic is None and not force_live_model:
         deterministic = _deterministic_bounded_create_response(packet, task, root)
     if deterministic is not None:
         response = deterministic
     else:
+        _record_coder_provider_model_truth(
+            diagnostics,
+            selected_alias=selected_alias,
+            provider_call_made=True,
+        )
         response = propose_coder_agent_implementation_diff(
             packet,
             root,
@@ -3713,6 +3730,7 @@ def propose_coder_agent_diff_payload_from_plan(
                 llm_call=llm_call,
                 model_alias=model_alias,
                 reviewer_feedback=feedback,
+                force_live_model=force_live_model,
                 _review_attempt=_review_attempt + 1,
                 _previous_reviewer_signature=signature,
             )
@@ -3887,6 +3905,15 @@ def _base_coder_diagnostics(target_path: str) -> dict[str, Any]:
     return {
         "selected_model_alias": "",
         "available_model_aliases": sorted(available_model_aliases()),
+        "provider": "",
+        "model": "",
+        "litellm_model": "",
+        "provider_model_source": "unknown",
+        "provider_model_status": "unknown",
+        "provider_call_made": False,
+        "provider_call_authorized": False,
+        "hermes_lane_available": "local" in available_model_aliases(),
+        "hermes_used_for_this_run": None,
         "router_call_attempted": False,
         "raw_response_length": 0,
         "raw_response_excerpt": "",
@@ -3923,6 +3950,78 @@ def _base_coder_diagnostics(target_path: str) -> dict[str, Any]:
         "bundle_snapshot_expected_sha256": "",
         "bundle_snapshot_actual_sha256": "",
         "task_spec": None,
+    }
+
+
+def _record_coder_provider_model_truth(
+    diagnostics: dict[str, Any],
+    *,
+    selected_alias: str,
+    provider_call_made: bool = False,
+) -> None:
+    provider = route_provider_for_alias(selected_alias) or ("ollama" if selected_alias == "local" else "")
+    model = route_model_for_alias(selected_alias) or ""
+    diagnostics["selected_model_alias"] = selected_alias
+    diagnostics["provider"] = provider
+    diagnostics["model"] = model
+    diagnostics["litellm_model"] = model
+    diagnostics["provider_model_source"] = "runtime" if provider_call_made else "config"
+    diagnostics["provider_model_status"] = "available" if provider_call_made else ("configured" if model else "unknown")
+    diagnostics["provider_call_made"] = provider_call_made
+    diagnostics["provider_call_authorized"] = provider_call_made
+    diagnostics["hermes_lane_available"] = "local" in available_model_aliases()
+    configured_model_is_hermes = (
+        True
+        if "hermes" in model.lower()
+        else False
+        if model
+        else None
+    )
+    diagnostics["hermes_used_for_this_run"] = (
+        True
+        if "hermes" in model.lower()
+        else False
+        if provider_call_made and model
+        else None
+    )
+    diagnostics["configured_model_is_hermes"] = configured_model_is_hermes
+    blocked_reason = (
+        "Provider/model was not resolved by Source Proxy."
+        if not model
+        else "Local/Ollama lane is configured, but the selected model is not Hermes."
+        if configured_model_is_hermes is False
+        else ""
+    )
+    local_route_status = ollama_route_status_entry() if provider == "ollama" else {}
+    diagnostics["provider_model_truth"] = {
+        "providerId": "local" if provider == "ollama" else provider or "unknown",
+        "providerLabel": "Local / Ollama" if provider == "ollama" else provider or "unknown",
+        "modelId": model or "unknown",
+        "modelLabel": model.removeprefix("ollama_chat/") if model else "Unknown local model",
+        "family": "local/ollama/hermes" if provider == "ollama" else "unknown",
+        "status": diagnostics["provider_model_status"],
+        "configured": bool(model),
+        "configuredModelIsHermes": configured_model_is_hermes,
+        "previewAvailable": True,
+        "externalCallAvailable": False if provider == "ollama" else bool(provider),
+        "authority": {
+            "canDraft": True,
+            "canPreview": True,
+            "canApply": False,
+            "canVerify": False,
+            "canCommit": False,
+            "canPush": False,
+        },
+        "blockedReason": blocked_reason,
+        "apiBaseHost": local_route_status.get("api_base_host"),
+        "configuredOllamaModel": local_route_status.get("ollama_model"),
+        "probeOk": local_route_status.get("probe_ok"),
+        "selectedVia": local_route_status.get("selected_via"),
+        "source": diagnostics["provider_model_source"],
+        "providerCallMade": provider_call_made,
+        "providerCallAuthorized": provider_call_made,
+        "hermesLaneAvailable": diagnostics["hermes_lane_available"],
+        "hermesUsedForThisRun": diagnostics["hermes_used_for_this_run"],
     }
 
 

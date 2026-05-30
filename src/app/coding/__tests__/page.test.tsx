@@ -10,14 +10,18 @@ vi.mock("next/navigation", () => ({
 }));
 
 describe("CodingPage", () => {
-  it("renders the Source Proxy command-center shell for /coding", () => {
+  it("renders the clean coding cockpit shell for /coding", () => {
     render(<CodingPage />);
 
     expect(screen.getByRole("heading", { level: 1, name: "Coding" })).toBeInTheDocument();
     expect(screen.getByRole("navigation", { name: "Spirit app desktop navigation" }))
       .toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 2, name: "New coding chat" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Diagnostics" })).toBeInTheDocument();
-    expect(screen.getAllByText("Preview safely").length).toBeGreaterThan(0);
+    expect(screen.getByRole("heading", { level: 2, name: "Task Composer" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Diagnostics" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Evidence trail and logs")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Diagnostics" })).toHaveAttribute(
+      "href",
+      "/proxy-backend",
+    );
   });
 });

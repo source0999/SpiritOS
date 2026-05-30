@@ -1,0 +1,12 @@
+[Unit]
+Description=SpiritOS Dell backup dry-run example service
+Documentation=/home/source/SpiritOS/docs/runbooks/spiritos-backup-runbook.md
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/source/SpiritOS
+Environment=SPIRIT_BACKUP_MODE=dry-run
+Environment=SPIRIT_BACKUP_I_UNDERSTAND_REAL_WRITES=false
+ExecStart=/home/source/SpiritOS/scripts/backups/spiritos-backup-dell.sh --dry-run
+
+# APPROVAL REQUIRED before changing this template to real writes.

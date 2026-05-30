@@ -1,0 +1,77 @@
+{
+  "trial_id": "coding-002-frontend-component-task",
+  "agent_type": "coding",
+  "category": "frontend component task",
+  "profile": "britton-realistic",
+  "viewport": {
+    "height": 727,
+    "name": "mobile",
+    "width": 393
+  },
+  "status": "passed",
+  "route": "/coding",
+  "prompt_text": "PIVOT. Please do the real bounded work here, not another fluffy audit chain. I am tired of vague status paragraphs and invented scope. Work preview-only through the UI trial harness, no apply execution, no commit, no push, no permanent changes, no Cartographer activation, and no hidden workers. If something is blocked, say the exact blocker. Manual checks matter: record the focused command, git status, cleanup result, and exact next steps.\n\nPIVOT coding trial 002. Preview only, no permanent mutation. Safe frontend task: propose a bounded change to tests/ui-agent-trials/fixtures/dummy-coding-targets/component-trial.tsx to add a disabled tone, but do not touch real app CSS or production components. Manual checks: typecheck and focused UI trial. Exact next steps: show target selection, allowed-file boundary, proposal, test recommendation, and blocker honesty.\n\nUse the allowed target only, keep the answer practical, and include exact next steps with evidence. If the task cannot safely run, stop cleanly and explain why.",
+  "typed_through_ui": true,
+  "submit_action_available": true,
+  "ui_status": "Real submit task action clicked; prompt staged locally only.",
+  "score": {
+    "profile applied": 1,
+    "safe execution boundary": 1,
+    "ui prompt entry": 1,
+    "submit action available": 1,
+    "no permanent mutation": 1,
+    "fixture identity preserved": 1,
+    "manual checks requested": 1,
+    "passed": 1
+  },
+  "score_total": 8,
+  "score_possible": 8,
+  "mutation_result": {
+    "after_git_status": [
+      " M docs/plan-index.md",
+      " M package-lock.json",
+      " M package.json",
+      " M playwright.config.mjs",
+      "?? basic.js",
+      "?? docs/agent-runtime-trial-harness-mac-subagent-port-master-plan-v0.1.md",
+      "?? docs/agent-runtime-trial-harness-mac-subagent-port-new-chat-handoff-v0.1.md",
+      "?? docs/evidence/agent-runtime-trial-harness/",
+      "?? scripts/agent-trials/",
+      "?? src/app/v1/coding/mac-advisory/",
+      "?? src/lib/mac-advisory/",
+      "?? tests/ui-agent-trials/"
+    ],
+    "before_git_status": [
+      " M docs/plan-index.md",
+      " M package-lock.json",
+      " M package.json",
+      " M playwright.config.mjs",
+      "?? basic.js",
+      "?? docs/agent-runtime-trial-harness-mac-subagent-port-master-plan-v0.1.md",
+      "?? docs/agent-runtime-trial-harness-mac-subagent-port-new-chat-handoff-v0.1.md",
+      "?? docs/evidence/agent-runtime-trial-harness/",
+      "?? scripts/agent-trials/",
+      "?? src/app/v1/coding/mac-advisory/",
+      "?? src/lib/mac-advisory/",
+      "?? tests/ui-agent-trials/"
+    ],
+    "cleanup": "not_needed_preview_only",
+    "unexpected_files": []
+  },
+  "safety_result": {
+    "applyAuthority": false,
+    "cartographerAuthority": false,
+    "commitAuthority": false,
+    "hiddenWorkerAuthority": false,
+    "permanentMutation": false,
+    "providerAuthority": false,
+    "pushAuthority": false,
+    "previewOnly": true
+  },
+  "evidence_paths": [
+    "docs/evidence/agent-runtime-trial-harness/plan-5/artifacts/2026-05-28T02-21-44-598Z-coding-mobile-britton-realistic/coding/coding-coding-002-frontend-component-task/coding-coding-002-frontend-component-task.png",
+    "docs/evidence/agent-runtime-trial-harness/plan-5/artifacts/2026-05-28T02-21-44-598Z-coding-mobile-britton-realistic/coding/coding-coding-002-frontend-component-task/coding-coding-002-frontend-component-task-trace.zip",
+    "docs/evidence/agent-runtime-trial-harness/plan-5/artifacts/2026-05-28T02-21-44-598Z-coding-mobile-britton-realistic/coding/coding-coding-002-frontend-component-task/coding-coding-002-frontend-component-task.json"
+  ],
+  "failure_reason": null
+}

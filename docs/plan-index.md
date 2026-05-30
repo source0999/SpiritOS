@@ -4,6 +4,22 @@ status: active
 
 Status date: 2026-05-28
 
+## Active /coding Readiness Direction
+
+The active SpiritOS `/coding` readiness roadmap is `docs/spiritos-coding-readiness-roadmap-to-codex-like-features.md`.
+
+Fresh chats should follow that roadmap one plan at a time in strict PIVOT workflow. The endpoint is Codex-like feature planning readiness, not Codex-like implementation and not final CSS polish.
+
+Older Source Proxy, Design Agent, trial, PR-8.3, safety, audit, and readiness documents are historical/supporting for this lane unless Plan 0 of the active roadmap explicitly reclassifies a narrow fact.
+
+## Active Agent Runtime Trial Harness Direction
+
+The active roadmap is `docs/agent-runtime-trial-harness-mac-subagent-port-master-plan-v0.1.md`.
+
+Fresh chats should use `docs/agent-runtime-trial-harness-mac-subagent-port-new-chat-handoff-v0.1.md`, read the latest completed closeout for this roadmap, continue only the next uncompleted plan, and do not invent roadmap content.
+
+The old Source Proxy Agent Integration Preflight roadmap is closed through Plan 12/12 and is historical/verification authority only. Do not restart it, do not start final CSS polish, and do not implement Codex-like features outside the active roadmap.
+
 ## Source Proxy Agent Integration Preflight Direction
 
 The Source Proxy Agent Integration Preflight Build Roadmap is closed through Plan 12/12 and is ready for manual review:
@@ -24,6 +40,9 @@ Preflight closeout and next-roadmap boundary:
 
 | Plan | Status | Role | Authority |
 | --- | --- | --- | --- |
+| `docs/spiritos-coding-readiness-roadmap-to-codex-like-features.md` | status: active roadmap | SpiritOS `/coding` readiness to Codex-like feature planning, beginning with Plan 0/7 | Current source of truth for `/coding` readiness; one whole plan per chat; implementation-forward after Plan 0; stops before Codex-like features and final CSS polish |
+| `docs/agent-runtime-trial-harness-mac-subagent-port-master-plan-v0.1.md` | status: active roadmap | Agent Runtime Trial Harness + Mac Advisory Subagent Port v1, beginning with Plan 0/8 | Current source of truth; one approved plan at a time; no invented future scope |
+| `docs/agent-runtime-trial-harness-mac-subagent-port-new-chat-handoff-v0.1.md` | status: active handoff | Fresh-chat continuation guard for the active runtime trial harness roadmap | Read master plan and latest closeout, continue next uncompleted plan only, do not restart old Source Proxy preflight |
 | `docs/source-proxy-agent-integration-preflight-build-roadmap-v0.1.md` | status: closed build-first roadmap | Source Proxy agent integration and Preflight Final CSS roadmap completed through Plan 12/12 | Historical/verification authority only; next runtime/soak roadmap requires Britton approval |
 | `docs/source-proxy-agent-integration-preflight-new-chat-handoff-v0.1.md` | status: historical handoff | Fresh-chat handoff used to start the completed preflight roadmap | Do not replay Plan 0 or restart the closed roadmap from this handoff |
 | `docs/source-proxy-agent-integration-preflight-plan-12-closeout-v0.1.md` | status: Plan 12/12 complete | Final preflight review and soak decision closeout | GO for manual review; production readiness NO-GO; automatic soak NO-GO |
@@ -120,7 +139,7 @@ The green Source Proxy safety gate passed on 2026-05-20 based on user-provided e
 | `docs/source-proxy-coding-trial-widget-hardening-plan-v0.1.md` | Planning-only Phase 6.2R hardening lane for trial widget reliability, audit evidence, safe revert design, and productive-diff gauntlet readiness before Phase 7. |
 | `docs/source-proxy-codex-style-ui-reduction-pr-8-3-gauntlet-master-plan-v0.1.md` | Planning-only PIVOT bridge for `/coding` Codex-style UI reduction and fresh PR-8.3 proof gauntlet preparation. It does not authorize implementation, browser proof execution, wrapper work, final CSS, provider calls, apply, execute-approved, commit, push, or cleanup. |
 | `docs/source-proxy-codex-like-active-task-ui-revamp-plan-v0.1.md` | Docs-only PIVOT plan for moving `/coding` from cockpit/dashboard mode to a Codex-like active task window. It does not authorize implementation, browser proof execution, wrapper work, final CSS, provider calls, apply, execute-approved, commit, push, or cleanup. |
-| `docs/source-proxy-codex-like-active-task-ui-revamp-new-chat-pivot-handoff-v0.1.md` | Active handoff for starting only Phase 1 of the active task UI revamp in a fresh chat. |
+| `docs/source-proxy-codex-like-active-task-ui-revamp-new-chat-pivot-handoff-v0.1.md` | Historical handoff. Do not use it to restart the old active-task UI revamp; current `/coding` readiness sequencing comes from `docs/spiritos-coding-readiness-roadmap-to-codex-like-features.md`. |
 | `docs/source-proxy-post-run-300-blocker-reduction-real-task-trial-roadmap-v0.1.md` | Docs-only PIVOT roadmap after a clean-safety but all-blocked Run 300. It sequences blocker overclassification reduction, real task trial packets, a preview-only real task widget and runner, Codex-like feature-gap prep, and preflight CSS readiness gates. It does not authorize implementation, provider calls, queues, workers, Source Proxy shell actions, apply, commit, push, Cartographer activation, design apply, production CSS, or cleanup. |
 
 ### Active Source Of Truth

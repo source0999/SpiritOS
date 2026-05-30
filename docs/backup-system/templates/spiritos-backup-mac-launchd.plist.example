@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.spiritos.backup.mac.dryrun.example</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/spiritmac/spiritos-worker/SpiritOS/scripts/backups/spiritos-backup-mac.sh</string>
+    <string>--dry-run</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>SPIRIT_BACKUP_MODE</key>
+    <string>dry-run</string>
+    <key>SPIRIT_BACKUP_I_UNDERSTAND_REAL_WRITES</key>
+    <string>false</string>
+  </dict>
+</dict>
+</plist>

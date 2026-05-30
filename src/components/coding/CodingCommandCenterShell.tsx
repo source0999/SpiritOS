@@ -31,6 +31,20 @@ import {
 } from "lucide-react";
 
 import { DashboardDemoV4FloatingNav } from "@/components/dashboard/demo-v4/DashboardDemoV4FloatingNav";
+import {
+  agentTrialProfiles,
+  agentTrialProcessSteps,
+  agentTrialRunSizes,
+  agentTrialViewports,
+  buildAgentTrialUiState,
+  isLongAgentTrialRun,
+  type AgentTrialBank,
+  type AgentTrialMode,
+  type AgentTrialProfile,
+  type AgentTrialPromptPreview,
+  type AgentTrialRunSize,
+  type AgentTrialViewport,
+} from "@/lib/coding/agent-trials-ui";
 import { buildCodingAlertRows, codingAlertsReceiptLines } from "@/lib/coding/alert-surface";
 import { backendTruthReceiptLines, buildBackendTruthRows } from "@/lib/coding/backend-truth-surface";
 import {
@@ -107,6 +121,11 @@ type ShellChat = {
   receiptPassFail: string;
   receiptTypecheckResult: string;
   rollbackHint: string;
+  scopeSelection: {
+    allowedFiles: string[];
+    source: "candidate" | "group";
+    targetFile: string;
+  } | null;
   verificationMessage: string;
   verificationStatus: "not_started" | "required" | "running" | "passed" | "failed" | "unavailable";
   verifiedAt: string | null;
@@ -121,6 +140,32 @@ type DesignProposalIntakeDisplay = {
   packetReady: boolean | null;
   reasonCodes: string[];
   status: string;
+};
+
+type MacWorkerApiStatus = {
+  node_id: string;
+  online: boolean;
+  worker_available: boolean;
+  repo_present: boolean | null;
+  last_job_type: string | null;
+  last_used_at: string | null;
+  last_success: boolean | null;
+  result_summary: string;
+  error: string | null;
+  last_reason_code: string | null;
+  blocked_command: string | null;
+  safe_checks_blocked: boolean;
+  supported_job_types?: string[];
+};
+
+type MacAdvisoryRunState = {
+  advisoryOnly: boolean;
+  candidateFiles: string[];
+  error: string | null;
+  jobType: string;
+  reasonCode: string | null;
+  status: "idle" | "running" | "succeeded" | "failed";
+  summary: string;
 };
 
 type SessionLogEntry = {
@@ -403,6 +448,7 @@ const initialShellChats: ShellChat[] = [
     receiptPassFail: "not run yet",
     receiptTypecheckResult: "not reported by UI",
     rollbackHint: "keep the task bounded; use git diff before any apply.",
+    scopeSelection: null,
     verificationMessage: "Verification has not started.",
     verificationStatus: "not_started",
     verifiedAt: null,
@@ -437,6 +483,7 @@ const initialShellChats: ShellChat[] = [
     receiptPassFail: "not run yet",
     receiptTypecheckResult: "not reported by UI",
     rollbackHint: "keep the task bounded; use git diff before any apply.",
+    scopeSelection: null,
     verificationMessage: "Verification has not started.",
     verificationStatus: "not_started",
     verifiedAt: null,
@@ -465,6 +512,24 @@ const trialInstructions = [
   "Review diff or blocked reason.",
   "Stop before apply.",
 ];
+const agentTrialModeLabels: Record<AgentTrialMode, string> = {
+  code: "Code",
+  design: "Design",
+  hybrid: "Hybrid",
+};
+const agentTrialBankLabels: Record<AgentTrialBank, string> = {
+  "actual-intelligence": "Actual Intelligence Bank",
+  "legacy-fixture-smoke": "Legacy Fixture Smoke",
+};
+const agentTrialViewportLabels: Record<AgentTrialViewport, string> = {
+  both: "Both",
+  desktop: "Desktop",
+  mobile: "Mobile",
+};
+const agentTrialProfileLabels: Record<AgentTrialProfile, string> = {
+  "britton-realistic": "Britton realistic",
+  "clean-control": "Clean control",
+};
 
 function canUseLocalStoryPersistence() {
   return typeof window !== "undefined" && "localStorage" in window;
@@ -1276,15 +1341,19 @@ function deriveTaskPacket(taskText: string) {
   return {
     allowedFiles,
     blockedFields,
+    candidateFiles: scopeDraft.candidateFiles,
+    clarificationPrompt: scopeDraft.clarificationPrompt,
     expectedChecks: scopeDraft.expectedChecks,
     forbiddenFiles: scopeDraft.forbiddenFiles,
     inspectionSummary: scopeDraft.inspectionSummary,
     reasonCodes: scopeDraft.reasonCodes,
+    restrictions: scopeDraft.restrictions,
     riskTier: scopeDraft.riskTier,
     rollbackHint: scopeDraft.rollbackHint,
     safeNextAction: scopeDraft.safeNextAction,
     scopeStatus: scopeDraft.status,
     summary: trimmed ? trimmed.split(/\s+/).slice(0, 18).join(" ") : "No coding task drafted",
+    taskGoal: scopeDraft.taskGoal,
     targetFile,
     taskType: scopeDraft.taskType,
     title: targetFile ? `Patch ${targetFile}` : "Local coding task",
@@ -1636,6 +1705,26 @@ export default function CodingCommandCenterShell() {
   const [trialPromptCopyStatus, setTrialPromptCopyStatus] = useState("");
   const [trialWidgetEnabled, setTrialWidgetEnabled] = useState(true);
   const [proxyDiagnosticOpen, setProxyDiagnosticOpen] = useState(false);
+  const [legacyDiagnosticsOpen, setLegacyDiagnosticsOpen] = useState(false);
+  const [agentTrialsOpen, setAgentTrialsOpen] = useState(false);
+  const [agentTrialCommandCopyStatus, setAgentTrialCommandCopyStatus] = useState("");
+  const [agentTrialBank, setAgentTrialBank] = useState<AgentTrialBank>("actual-intelligence");
+  const [agentTrialMode, setAgentTrialMode] = useState<AgentTrialMode>("code");
+  const [agentTrialRunSize, setAgentTrialRunSize] = useState<AgentTrialRunSize>(25);
+  const [agentTrialViewport, setAgentTrialViewport] = useState<AgentTrialViewport>("desktop");
+  const [agentTrialProfile, setAgentTrialProfile] =
+    useState<AgentTrialProfile>("britton-realistic");
+  const [macWorkerStatus, setMacWorkerStatus] = useState<MacWorkerApiStatus | null>(null);
+  const [macWorkerStatusError, setMacWorkerStatusError] = useState<string | null>(null);
+  const [macAdvisoryRun, setMacAdvisoryRun] = useState<MacAdvisoryRunState>({
+    advisoryOnly: true,
+    candidateFiles: [],
+    error: null,
+    jobType: "source_proxy_context_discovery",
+    reasonCode: null,
+    status: "idle",
+    summary: "Mac advisory support has not been requested for this task.",
+  });
   const [trialSearch, setTrialSearch] = useState("");
   const [selectedTrialId, setSelectedTrialId] = useState(DEFAULT_PROXY_TRIAL_ID);
   const [sessionLogs, setSessionLogs] = useState<SessionLogEntry[]>([]);
@@ -1655,6 +1744,70 @@ export default function CodingCommandCenterShell() {
   const providerModelOptions = useMemo(() => getCodingProviderModelOptions(), []);
   const localProvider = providerStatuses.find((provider) => provider.id === "local");
   const cloudProvider = providerStatuses.find((provider) => provider.id === "cloud");
+  const agentTrialUiState = useMemo(
+    () =>
+      buildAgentTrialUiState({
+        bank: agentTrialBank,
+        mode: agentTrialMode,
+        profile: agentTrialProfile,
+        runSize: agentTrialRunSize,
+        viewport: agentTrialViewport,
+      }),
+    [agentTrialBank, agentTrialMode, agentTrialProfile, agentTrialRunSize, agentTrialViewport],
+  );
+  const agentTrialLongRun = isLongAgentTrialRun(agentTrialRunSize);
+  const agentTrialSafePreviewSupported =
+    agentTrialMode === "code" &&
+    agentTrialViewport === "desktop" &&
+    (agentTrialRunSize === 10 || agentTrialRunSize === 25) &&
+    agentTrialProfile === "britton-realistic";
+  const agentTrialSafePreviewLabel = agentTrialSafePreviewSupported
+    ? "Start test"
+    : agentTrialLongRun
+      ? "Start from terminal for now"
+      : "Start test unavailable";
+  const agentTrialStatusLabel =
+    trialBatchStatus === "running"
+      ? "Running"
+      : trialBatchStatus === "complete"
+        ? "Done"
+        : trialBatchStatus === "blocked"
+          ? "Blocked"
+          : trialBatchStatus === "failed"
+            ? "Failed"
+            : "Ready";
+  const agentTrialRunModeText =
+    trialBatchStatus === "complete"
+      ? "Previewing latest completed run"
+      : agentTrialSafePreviewSupported
+        ? "Ready for a real coding ability trial"
+        : "Run from terminal, then refresh results";
+  const macWorkerUsedThisRun = Boolean(macWorkerStatus?.last_used_at);
+  const macWorkerRepoLabel =
+    macWorkerStatus?.repo_present === true
+      ? "repo present"
+      : macWorkerStatus?.repo_present === false
+        ? "repo missing"
+        : "repo unknown";
+  const macWorkerLastSuccessLabel =
+    macWorkerStatus?.last_success === true
+      ? "last job succeeded"
+      : macWorkerStatus?.last_success === false
+        ? "last job failed"
+        : "no job yet";
+  const macWorkerStateLabel = macWorkerStatus?.safe_checks_blocked
+    ? "safe check blocked"
+    : macWorkerStatus?.repo_present === false
+      ? "repo missing"
+      : macWorkerStatus?.worker_available
+        ? "available"
+        : macWorkerStatusError
+          ? "unavailable"
+          : "checking";
+  const macWorkerDisplaySummary =
+    macWorkerStatus?.result_summary ||
+    macWorkerStatusError ||
+    "Mac worker status has not returned yet.";
 
   const activeChat = useMemo(
     () => chats.find((chat) => chat.id === activeChatId) ?? chats[0],
@@ -1744,10 +1897,79 @@ export default function CodingCommandCenterShell() {
   const loadedTrial = PROXY_TRIAL_PROMPTS.find(
     (trial) => trial.taskPrompt.trim() === activeDraftText.trim(),
   );
-  const taskPacket = useMemo(
-    () => taskPacketFromTrial(activeDraftText, loadedTrial),
-    [activeDraftText, loadedTrial],
-  );
+  const taskPacket = useMemo(() => {
+    const inferred = taskPacketFromTrial(activeDraftText, loadedTrial);
+    const selectedScope = activeChat?.scopeSelection;
+    if (!selectedScope) return inferred;
+
+    return {
+      ...inferred,
+      allowedFiles: selectedScope.allowedFiles,
+      blockedFields: [],
+      inspectionSummary: `Scope selected by Britton: target ${selectedScope.targetFile}; allowed files ${selectedScope.allowedFiles.join(", ")}.`,
+      reasonCodes: [],
+      rollbackHint: `git restore ${selectedScope.allowedFiles.join(" ")}`,
+      scopeStatus: "ready" as const,
+      targetFile: selectedScope.targetFile,
+      title: `Patch ${selectedScope.targetFile}`,
+    };
+  }, [activeChat?.scopeSelection, activeDraftText, loadedTrial]);
+  async function runMacAdvisorySupport() {
+    const prompt = activeDraftText.trim() || selectedTrial.taskPrompt;
+    setMacAdvisoryRun((current) => ({
+      ...current,
+      candidateFiles: [],
+      error: null,
+      reasonCode: null,
+      status: "running",
+      summary: "Requesting Mac advisory context/check support...",
+    }));
+
+    try {
+      const response = await fetch("/api/coding/mac-worker", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          job_type: "source_proxy_context_discovery",
+          input: {
+            repo_path: "/Users/spiritmac/spiritos-worker/SpiritOS",
+            prompt,
+            query: prompt,
+            max_results: 5,
+          },
+        }),
+      });
+      const payload = await response.json();
+      const result = payload.result ?? {};
+      const resultBody = result.result ?? {};
+      setMacWorkerStatus(payload.status ?? null);
+      setMacWorkerStatusError(payload.status?.error ?? null);
+      setMacAdvisoryRun({
+        advisoryOnly: true,
+        candidateFiles: Array.isArray(result.candidate_files) ? result.candidate_files : [],
+        error: typeof result.error === "string" ? result.error : null,
+        jobType: typeof result.job_type === "string" ? result.job_type : "source_proxy_context_discovery",
+        reasonCode: typeof resultBody.reason_code === "string" ? resultBody.reason_code : null,
+        status: result.success ? "succeeded" : "failed",
+        summary:
+          typeof resultBody.summary === "string"
+            ? resultBody.summary
+            : result.success
+              ? "Mac advisory support completed."
+              : "Mac advisory support failed.",
+      });
+    } catch (error) {
+      setMacAdvisoryRun({
+        advisoryOnly: true,
+        candidateFiles: [],
+        error: error instanceof Error ? error.message : "Mac advisory support failed",
+        jobType: "source_proxy_context_discovery",
+        reasonCode: "mac_advisory_transport_failed",
+        status: "failed",
+        summary: "Mac advisory support failed before a worker result returned.",
+      });
+    }
+  }
   const filteredTrials = useMemo(() => {
     const needle = trialSearch.trim().toLowerCase();
     if (!needle) {
@@ -1812,6 +2034,14 @@ export default function CodingCommandCenterShell() {
   const canRunAllTrialPreviews = trialBatchStatus !== "running" && previewStatus !== "loading";
   const trialBatchRunning = trialBatchStatus === "running";
   const trialBatchComplete = trialBatchStatus === "complete";
+  const agentTrialPromptPreviewFirst = agentTrialUiState.actualPromptPreviews[0];
+  const agentTrialPromptPreviewCompactRows = agentTrialUiState.actualPromptPreviews.slice(1, 3);
+  const agentTrialPromptPreviewRemainingRows = agentTrialUiState.actualPromptPreviews.slice(3);
+  const agentTrialCurrentPromptNumber = trialBatchProgress?.currentTrialIndex ?? 1;
+  const agentTrialCurrentPrompt =
+    agentTrialUiState.actualPromptPreviews[
+      (Math.max(1, agentTrialCurrentPromptNumber) - 1) % Math.max(1, agentTrialUiState.actualPromptPreviews.length)
+    ];
   const activeRunState: ActiveRunState =
     trialBatchStatus !== "idle"
       ? trialBatchStatus
@@ -1826,6 +2056,34 @@ export default function CodingCommandCenterShell() {
               : activeTaskSubmitted || activeDraftText.trim()
                 ? "queued"
                 : "idle";
+  const agentTrialShouldShowLatestDiagnostic =
+    activeRunState === "blocked" || activeRunState === "failed";
+  const agentTrialCurrentStep =
+    trialBatchStatus === "running"
+      ? "Checking scope"
+      : trialBatchStatus === "complete"
+        ? "Done"
+        : trialBatchStatus === "blocked" || trialBatchStatus === "failed"
+          ? "Result recorded"
+          : "Ready";
+  const agentTrialCurrentResult =
+    trialBatchStatus === "running"
+      ? "checking"
+      : trialBatchStatus === "complete"
+        ? "Preview diff produced"
+        : agentTrialCurrentPrompt?.result ?? agentTrialPromptPreviewFirst?.result ?? "Asked useful clarification";
+  const agentTrialCurrentReason =
+    agentTrialCurrentPrompt?.reason ?? agentTrialPromptPreviewFirst?.reason ?? "missing target file";
+  const agentTrialHasRunActivity =
+    trialBatchStatus !== "idle" || Boolean(trialBatchSummary || trialBatchProgress);
+  const agentTrialShouldShowRunDiagnostics = Boolean(trialBatchSummary);
+  const agentTrialShouldShowIssueReport =
+    agentTrialHasRunActivity &&
+    !agentTrialShouldShowRunDiagnostics &&
+    (agentTrialShouldShowLatestDiagnostic ||
+      agentTrialCurrentResult === "Blocked safely" ||
+      agentTrialCurrentResult === "False block" ||
+      agentTrialCurrentResult === "Failed");
   const activeRunStateLabel = activeRunState;
   const activeRunStateDetail: Record<ActiveRunState, string> = {
     idle: "No local diagnostic or task preview is active.",
@@ -2294,6 +2552,35 @@ export default function CodingCommandCenterShell() {
       : activeTaskSubmitted
         ? "Bounded task is staged."
         : "Draft is not staged yet.";
+  const scopeClarificationVisible = codingModeActive && activeBlockedFields.length > 0;
+  const scopeClarificationMissingItems = activeBlockedFields.map((field) =>
+    field === "target file"
+      ? "a target file"
+      : field === "allowed files"
+        ? "an allowed-file area"
+        : field === "task text"
+          ? "task text"
+          : field,
+  );
+  const scopeClarificationSummary =
+    activeBlockedFields.includes("target file") || activeBlockedFields.includes("allowed files")
+      ? "I can't safely preview yet because I need a target file or allowed-file area."
+      : "I can't safely preview yet because the task boundary needs one more safety detail.";
+  const scopeClarificationActions = [
+    "Choose /coding UI files",
+    "Choose dummy fixture",
+    "Search possible files",
+    "Paste target file manually",
+    "Review scope",
+  ];
+  const codingUiScopeFiles =
+    taskPacket.candidateFiles.length > 0
+      ? taskPacket.candidateFiles
+      : [
+          "src/components/coding/CodingCommandCenterShell.tsx",
+          "src/components/coding/CodingAgentInterface.tsx",
+          "src/lib/coding/plain-english-scope.ts",
+        ];
   const receiptTargetScopeText = taskPacket.targetFile
     ? `Only this file is targeted: ${taskPacket.targetFile}.`
     : "Target file is missing.";
@@ -2607,16 +2894,28 @@ export default function CodingCommandCenterShell() {
       value: "Sources must stay visible before handoff.",
     },
     {
-      detail: "Mac/SearXNG JSON capability has not been verified in this UI session.",
+      detail: `Used for this run: ${macWorkerUsedThisRun ? "yes" : "no"}. Last job: ${
+        macWorkerStatus?.last_job_type ?? "none"
+      }. Last used: ${macWorkerStatus?.last_used_at ?? "never"}. ${macWorkerRepoLabel}. ${macWorkerLastSuccessLabel}. ${macWorkerDisplaySummary}`,
       label: "Mac support node",
-      status: "blocked",
-      value: "Health unverified",
+      status: macWorkerStateLabel,
+      value: macWorkerStatus?.online ? "Mac Mini online" : "Mac Mini offline",
     },
     {
-      detail: "No Mac service control ran. Adapter remains advisory until manual health is proven.",
+      detail: `Supported jobs: ${macWorkerStatus?.supported_job_types?.join(", ") || "waiting for worker contract"}. ${
+        macWorkerStatus?.safe_checks_blocked && macWorkerStatus.blocked_command
+          ? `Safe check blocked: ${macWorkerStatus.blocked_command}.`
+          : macWorkerStatus?.error
+            ? `Error: ${macWorkerStatus.error}`
+            : "No worker error recorded."
+      }`,
       label: "Search capability",
-      status: "blocked",
-      value: "blocked_until_manual_json_health_check",
+      status: macWorkerStatus?.safe_checks_blocked
+        ? "safe checks blocked"
+        : macWorkerStatus?.worker_available
+          ? "worker ready"
+          : "worker unavailable",
+      value: "Mac worker job lane",
     },
     {
       detail: "Scout packets can be displayed and imported only as manual preview context.",
@@ -4153,6 +4452,48 @@ export default function CodingCommandCenterShell() {
     }
   }
 
+  async function copyAgentTrialIssueReport(preview?: AgentTrialPromptPreview) {
+    const issueReport = preview
+      ? [
+          "Realistic Prompt Tester issue report",
+          "Trial mode: Real Coding Ability Trial",
+          `Prompt: ${preview.fixtureId}`,
+          `Title: ${preview.title}`,
+          `Expected behavior: ${preview.expectedBehavior}`,
+          `Actual behavior: ${preview.actualBehavior}`,
+          `Result: ${preview.simpleResult}`,
+          `Reason: ${preview.simpleReason}`,
+          `Candidate files: ${preview.candidateFiles.join(", ") || "none"}`,
+          `Selected files: ${preview.selectedFiles.join(", ") || "none"}`,
+          `Preview diff produced: ${preview.previewDiffProduced}`,
+          `False block: ${preview.falselyBlocked}`,
+          `Recommended checks: ${preview.recommendedChecks.join("; ") || "none"}`,
+        ].join("\n")
+      : agentTrialUiState.issueReportCopyText;
+
+    if (await writeClipboardText(issueReport)) {
+      setAgentTrialCommandCopyStatus("Issue report copied.");
+    } else {
+      setAgentTrialCommandCopyStatus("Copy failed. Select the issue report manually.");
+    }
+  }
+
+  async function copyAgentTrialRunDiagnostics() {
+    if (await writeClipboardText(trialBatchSummary || sessionLogsText())) {
+      setAgentTrialCommandCopyStatus("Run diagnostics copied.");
+    } else {
+      setAgentTrialCommandCopyStatus("Copy failed. Select the run diagnostics manually.");
+    }
+  }
+
+  async function copyAgentTrialSubmittedPrompts() {
+    if (await writeClipboardText(agentTrialUiState.submittedPromptsCopyText)) {
+      setAgentTrialCommandCopyStatus("Submitted prompts copied.");
+    } else {
+      setAgentTrialCommandCopyStatus("Copy failed. Select the submitted prompts manually.");
+    }
+  }
+
   async function copyPhase7ReadinessGate() {
     if (await writeClipboardText(phase7ReadinessPacketText)) {
       setTrialPromptCopyStatus("Phase 7 readiness gate copied.");
@@ -4447,6 +4788,34 @@ export default function CodingCommandCenterShell() {
   }, []);
 
   useEffect(() => {
+    if (process.env.NODE_ENV === "test") {
+      return;
+    }
+    let cancelled = false;
+    async function loadMacWorkerStatus() {
+      try {
+        const response = await fetch("/api/coding/mac-worker", { cache: "no-store" });
+        const payload = await response.json();
+        if (!cancelled) {
+          setMacWorkerStatus(payload.status ?? null);
+          setMacWorkerStatusError(payload.status?.error ?? null);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setMacWorkerStatusError(error instanceof Error ? error.message : "Mac worker status fetch failed");
+        }
+      }
+    }
+
+    void loadMacWorkerStatus();
+    const intervalId = window.setInterval(() => void loadMacWorkerStatus(), 15_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!activeDrawerShell) {
       return;
     }
@@ -4516,6 +4885,7 @@ export default function CodingCommandCenterShell() {
               receiptPassFail: "not run yet",
               receiptTypecheckResult: "not reported by UI",
               rollbackHint: "keep the task bounded; use git diff before any apply.",
+              scopeSelection: null,
               taskId: "",
               taskSubmitted: false,
               verificationMessage: "Verification has not started.",
@@ -4551,6 +4921,7 @@ export default function CodingCommandCenterShell() {
               receiptPassFail: "not run yet",
               receiptTypecheckResult: "not reported by UI",
               rollbackHint: "keep the task bounded; use git diff before any apply.",
+              scopeSelection: null,
               taskId: "",
               taskSubmitted: false,
               verificationMessage: "Verification has not started.",
@@ -4649,6 +5020,7 @@ export default function CodingCommandCenterShell() {
               receiptPassFail: "not run yet",
               receiptTypecheckResult: "not reported by UI",
               rollbackHint: "keep the task bounded; use git diff before any apply.",
+              scopeSelection: null,
               taskId: "",
               taskSubmitted: true,
               verificationMessage: "Verification has not started.",
@@ -5300,6 +5672,23 @@ export default function CodingCommandCenterShell() {
     );
   }
 
+  function runAgentTrialSafePreviewBatch() {
+    if (!agentTrialSafePreviewSupported || !canRunAllTrialPreviews) {
+      setAgentTrialCommandCopyStatus(
+        agentTrialLongRun
+          ? "Run from terminal, then refresh results."
+          : "Start test is available for Code 10/25 desktop Britton realistic.",
+      );
+      return;
+    }
+    setAgentTrialCommandCopyStatus(`Starting safe preview batch ${agentTrialRunSize}.`);
+    if (agentTrialRunSize === 10) {
+      void runTenTrialPreviews();
+      return;
+    }
+    void runTwentyFiveTrialPreviews();
+  }
+
   async function runAllTrialPreviews() {
     await runTrialPreviewBatch(
       PROXY_TRIAL_PROMPTS.length,
@@ -5345,6 +5734,7 @@ export default function CodingCommandCenterShell() {
               receiptPassFail: "not run yet",
               receiptTypecheckResult: "not reported by UI",
               rollbackHint: "keep the task bounded; use git diff before any apply.",
+              scopeSelection: null,
               taskId: "",
               taskSubmitted: false,
               verificationMessage: "Verification has not started.",
@@ -5353,6 +5743,50 @@ export default function CodingCommandCenterShell() {
             }
           : chat,
       ),
+    );
+  }
+
+  function chooseScopeCandidate(targetFile: string, allowedFiles = [targetFile], source: "candidate" | "group" = "candidate") {
+    const normalizedAllowedFiles = Array.from(new Set(allowedFiles.filter(Boolean)));
+    if (!targetFile || normalizedAllowedFiles.length === 0) return;
+
+    setChats((current) =>
+      current.map((chat) =>
+        chat.id === activeChatId
+          ? {
+              ...chat,
+              allowedFiles: normalizedAllowedFiles,
+              appliedAt: null,
+              approvedAt: null,
+              applyMessage: "",
+              blockedFields: [],
+              changedFiles: [],
+              previewMessage: "Scope selected. Preview safely is available after reviewing the bounded target.",
+              previewStatus: "idle",
+              previewTarget: "",
+              proposedDiff: "",
+              receiptCommandsRun: "not run yet",
+              receiptFocusedTestResult: "not reported by UI",
+              receiptLintResult: "not reported by UI",
+              receiptPassFail: "not run yet",
+              receiptTypecheckResult: "not reported by UI",
+              rollbackHint: `git restore ${normalizedAllowedFiles.join(" ")}`,
+              scopeSelection: {
+                allowedFiles: normalizedAllowedFiles,
+                source,
+                targetFile,
+              },
+              taskId: "",
+              taskSubmitted: true,
+              verificationMessage: "Verification has not started.",
+              verificationStatus: "not_started",
+              verifiedAt: null,
+            }
+          : chat,
+      ),
+    );
+    setPersistenceStatus(
+      `Scope selected for ${targetFile}; preview remains gated and apply/commit/push stay locked.`,
     );
   }
 
@@ -5387,6 +5821,7 @@ export default function CodingCommandCenterShell() {
               receiptPassFail: "not run yet",
               receiptTypecheckResult: "not reported by UI",
               rollbackHint: "keep the task bounded; use git diff before any apply.",
+              scopeSelection: null,
               taskId: "",
               taskSubmitted: false,
               verificationMessage: "Verification has not started.",
@@ -5438,6 +5873,7 @@ export default function CodingCommandCenterShell() {
               receiptPassFail: "not run yet",
               receiptTypecheckResult: "not reported by UI",
               rollbackHint: "keep the task bounded; use git diff before any apply.",
+              scopeSelection: null,
               previewTarget: options?.previewTarget ?? "",
               proposedDiff: options?.proposedDiff ?? "",
               taskId: options?.taskId ?? "",
@@ -5893,6 +6329,7 @@ export default function CodingCommandCenterShell() {
       receiptPassFail: "not run yet",
       receiptTypecheckResult: "not reported by UI",
       rollbackHint: "keep the task bounded; use git diff before any apply.",
+      scopeSelection: null,
       verificationMessage: "Verification has not started.",
       verificationStatus: "not_started",
       verifiedAt: null,
@@ -6044,6 +6481,394 @@ export default function CodingCommandCenterShell() {
               />
             </div>
 
+            <section
+              aria-label="Realistic Prompt Tester sidebar"
+              className="rounded-md border border-emerald-300/20 bg-emerald-300/[0.055] p-2"
+            >
+              <button
+                aria-expanded={agentTrialsOpen}
+                className="flex min-h-12 w-full items-center justify-between gap-3 rounded-md border border-emerald-300/25 bg-black/20 px-3 text-left transition hover:border-emerald-300/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/40"
+                onClick={() => setAgentTrialsOpen((open) => !open)}
+                type="button"
+              >
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-semibold text-emerald-50">
+                    Realistic Prompt Tester
+                  </span>
+                  <span className="block truncate text-xs font-semibold text-emerald-100">
+                    Real Coding Ability Trial
+                  </span>
+                  <span className="block truncate text-xs text-emerald-100/75">
+                    {agentTrialRunModeText}
+                  </span>
+                  <span className="block truncate text-xs text-zinc-500">
+                    {agentTrialRunSize} prompts · {agentTrialViewportLabels[agentTrialViewport]}
+                  </span>
+                </span>
+                <span className="shrink-0 rounded-md border border-emerald-300/30 bg-emerald-300/10 px-2 py-1 text-[11px] font-semibold text-emerald-100">
+                  {agentTrialStatusLabel}
+                </span>
+              </button>
+              <div className="mt-2 flex flex-wrap gap-1.5 text-[11px]">
+                <span className="rounded-md border border-emerald-300/25 bg-black/20 px-2 py-1 font-semibold text-emerald-100">
+                  Coding ability
+                </span>
+              </div>
+              <p className="mt-2 rounded-md border border-white/10 bg-black/20 px-2 py-1.5 text-[11px] leading-4 text-zinc-300">
+                {agentTrialRunModeText}
+              </p>
+
+              {agentTrialsOpen ? (
+                <div
+                  aria-label="Realistic Prompt Tester"
+                  className="mt-3 space-y-3 rounded-md border border-white/10 bg-black/25 p-3 text-xs text-zinc-300"
+                >
+                  <div className="rounded-md border border-emerald-300/20 bg-emerald-300/10 p-2">
+                    <p className="font-semibold text-emerald-50">Real Coding Ability Trial</p>
+                    <p className="mt-1 text-[11px] leading-4 text-emerald-100/75">
+                      Productive previews and target discovery count as coding proof; safe blockers only count for unsafe prompts.
+                    </p>
+                  </div>
+                  <div
+                    aria-label="Mac Mini worker usage"
+                    className="rounded-md border border-cyan-300/20 bg-cyan-950/25 p-2 text-[11px] leading-5 text-cyan-50"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="font-semibold">Mac Mini worker</p>
+                      <span className="rounded-md border border-cyan-200/25 bg-cyan-200/[0.08] px-2 py-0.5 font-semibold">
+                        {macWorkerStateLabel}
+                      </span>
+                    </div>
+                    <p>Mac Mini: {macWorkerStatus?.online ? "online" : "offline"}</p>
+                    <p>Worker: {macWorkerStatus?.worker_available ? "available" : "unavailable"}</p>
+                    <p>Repo: {macWorkerRepoLabel}</p>
+                    <p>Used for this run: {macWorkerUsedThisRun ? "yes" : "no"}</p>
+                    <p>Job type: {macWorkerStatus?.last_job_type ?? "none"}</p>
+                    <p>Last success: {macWorkerStatus?.last_success === null || macWorkerStatus?.last_success === undefined ? "unknown" : macWorkerStatus.last_success ? "yes" : "no"}</p>
+                    <p>Last used: {macWorkerStatus?.last_used_at ?? "never"}</p>
+                    {macWorkerStatus?.safe_checks_blocked ? (
+                      <p>Safe checks blocked: {macWorkerStatus.blocked_command ?? "blocked command unknown"}</p>
+                    ) : null}
+                    <p>Result summary: {macWorkerDisplaySummary}</p>
+                    {macWorkerStatus?.error ? <p>Error: {macWorkerStatus.error}</p> : null}
+                    <button
+                      className="mt-2 inline-flex min-h-8 items-center gap-2 rounded-md border border-cyan-200/25 bg-cyan-200/[0.08] px-2 py-1 font-semibold text-cyan-50 transition hover:border-cyan-200/45 hover:bg-cyan-200/[0.14] disabled:cursor-not-allowed disabled:opacity-60"
+                      disabled={macAdvisoryRun.status === "running"}
+                      onClick={() => void runMacAdvisorySupport()}
+                      type="button"
+                    >
+                      <Search aria-hidden="true" className="size-3.5" />
+                      <span>
+                        {macAdvisoryRun.status === "running"
+                          ? "Mac advisory running"
+                          : "Use Mac for context/check support"}
+                      </span>
+                    </button>
+                    <div className="mt-2 rounded-md border border-cyan-200/15 bg-black/20 p-2">
+                      <p>Advisory only: {macAdvisoryRun.advisoryOnly ? "yes" : "no"}</p>
+                      <p>Run status: {macAdvisoryRun.status}</p>
+                      <p>Advisory job: {macAdvisoryRun.jobType}</p>
+                      <p>Summary: {macAdvisoryRun.summary}</p>
+                      <p>Candidate files: {macAdvisoryRun.candidateFiles.length > 0 ? macAdvisoryRun.candidateFiles.join(", ") : "none"}</p>
+                      {macAdvisoryRun.reasonCode ? <p>Reason code: {macAdvisoryRun.reasonCode}</p> : null}
+                      {macAdvisoryRun.error ? <p>Error: {macAdvisoryRun.error}</p> : null}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-zinc-100">Mode</p>
+                    <div className="mt-2 grid grid-cols-3 gap-1.5" role="group" aria-label="Agent trial mode">
+                      {(["code", "design", "hybrid"] as AgentTrialMode[]).map((mode) => (
+                        <button
+                          aria-pressed={agentTrialMode === mode}
+                          className={`min-h-8 rounded-md border px-2 font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/40 ${
+                            agentTrialMode === mode
+                              ? "border-emerald-300/40 bg-emerald-300/10 text-emerald-50"
+                              : "border-white/10 bg-white/[0.035] text-zinc-400 hover:border-white/20"
+                          }`}
+                          key={mode}
+                          onClick={() => setAgentTrialMode(mode)}
+                          type="button"
+                        >
+                          {agentTrialModeLabels[mode]}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="font-semibold text-zinc-100">Active bank</p>
+                    <div className="mt-2 grid grid-cols-2 gap-1.5" role="group" aria-label="Agent trial bank">
+                      {(["actual-intelligence", "legacy-fixture-smoke"] as AgentTrialBank[]).map((bank) => (
+                        <button
+                          aria-pressed={agentTrialBank === bank}
+                          className={`min-h-8 rounded-md border px-2 font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/40 ${
+                            agentTrialBank === bank
+                              ? "border-emerald-300/40 bg-emerald-300/10 text-emerald-50"
+                              : "border-white/10 bg-white/[0.035] text-zinc-400 hover:border-white/20"
+                          }`}
+                          key={bank}
+                          onClick={() => setAgentTrialBank(bank)}
+                          type="button"
+                        >
+                          {bank === "actual-intelligence" && agentTrialMode === "design"
+                            ? "Designer Actual Intelligence"
+                            : bank === "actual-intelligence" && agentTrialMode === "hybrid"
+                              ? "Combined Actual Intelligence"
+                              : agentTrialBankLabels[bank]}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="mt-2 rounded-md border border-white/10 bg-white/[0.025] p-2 text-[11px] leading-5 text-zinc-400">
+                      {agentTrialUiState.bankLabel}. {agentTrialUiState.liveUsefulnessReason}
+                    </p>
+                  </div>
+
+                  <label className="block">
+                    <span className="font-semibold text-zinc-100">Run size</span>
+                    <select
+                      aria-label="Agent trial run size"
+                      className="mt-2 min-h-9 w-full rounded-md border border-white/10 bg-black/30 px-2 text-sm text-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/40"
+                      onChange={(event) =>
+                        setAgentTrialRunSize(Number.parseInt(event.target.value, 10) as AgentTrialRunSize)
+                      }
+                      value={agentTrialRunSize}
+                    >
+                      {agentTrialRunSizes.map((size) => (
+                        <option key={size} value={size}>
+                          {size}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="block">
+                    <span className="font-semibold text-zinc-100">Viewport</span>
+                    <select
+                      aria-label="Agent trial viewport"
+                      className="mt-2 min-h-9 w-full rounded-md border border-white/10 bg-black/30 px-2 text-sm text-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/40"
+                      onChange={(event) => setAgentTrialViewport(event.target.value as AgentTrialViewport)}
+                      value={agentTrialViewport}
+                    >
+                      {agentTrialViewports.map((viewport) => (
+                        <option key={viewport} value={viewport}>
+                          {agentTrialViewportLabels[viewport]}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="block">
+                    <span className="font-semibold text-zinc-100">Prompt profile</span>
+                    <select
+                      aria-label="Agent trial prompt profile"
+                      className="mt-2 min-h-9 w-full rounded-md border border-white/10 bg-black/30 px-2 text-sm text-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/40"
+                      onChange={(event) => setAgentTrialProfile(event.target.value as AgentTrialProfile)}
+                      value={agentTrialProfile}
+                    >
+                      {agentTrialProfiles.map((profile) => (
+                        <option key={profile} value={profile}>
+                          {agentTrialProfileLabels[profile]}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  {agentTrialLongRun ? (
+                    <p className="rounded-md border border-amber-300/25 bg-amber-300/10 p-2 text-amber-100">
+                      Run from terminal, then refresh results.
+                    </p>
+                  ) : null}
+
+                  <div>
+                    <div className="flex items-center justify-between gap-2">
+                      <div>
+                        <p className="font-semibold text-zinc-100">Prompt process</p>
+                        <p className="mt-0.5 text-[11px] text-zinc-500">
+                          Prompt {agentTrialCurrentPromptNumber} of {agentTrialRunSize}
+                        </p>
+                      </div>
+                      <button
+                        className="inline-flex min-h-8 items-center justify-center gap-1.5 rounded-md border border-white/10 bg-white/[0.04] px-2 font-semibold text-zinc-200 transition hover:border-emerald-300/30 hover:text-emerald-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/40"
+                        onClick={() => void copyAgentTrialSubmittedPrompts()}
+                        type="button"
+                      >
+                        <Copy aria-hidden="true" size={13} />
+                        Copy submitted prompts
+                      </button>
+                    </div>
+                    <div className="mt-2 grid gap-1.5">
+                      {agentTrialProcessSteps.map((step) => (
+                        <div
+                          className={`flex min-h-8 items-center justify-between gap-2 rounded-md border px-2 text-[11px] ${
+                            step === agentTrialCurrentStep
+                              ? "border-emerald-300/35 bg-emerald-300/10 text-emerald-50"
+                              : "border-white/10 bg-white/[0.025] text-zinc-400"
+                          }`}
+                          key={step}
+                        >
+                          <span>{step}</span>
+                          {step === agentTrialCurrentStep ? (
+                            <span className="font-semibold">current step</span>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                    {agentTrialCurrentPrompt ? (
+                      <article className="mt-3 rounded-md border border-emerald-300/20 bg-black/35 p-3 text-[11px] leading-5 text-zinc-300">
+                        <p className="font-semibold text-emerald-50">
+                          Prompt {agentTrialCurrentPromptNumber} of {agentTrialRunSize}
+                        </p>
+                        <p className="mt-0.5 text-zinc-500">{agentTrialCurrentPrompt.title}</p>
+                        <p className="mt-1 text-zinc-300">
+                          Expected: {agentTrialCurrentPrompt.expectedBehavior} · Style: {agentTrialCurrentPrompt.promptStyle}
+                        </p>
+                        <p className="mt-1 text-zinc-300">
+                          Bank: {agentTrialUiState.bankLabel} · provider_call_made: {agentTrialCurrentPrompt.providerCallMade ? "true" : "false"} · S+ eligible: {agentTrialCurrentPrompt.actualIntelligence.sPlusEligible ? "yes" : "no"}
+                        </p>
+                        <div className="mt-2 rounded-md border border-white/10 bg-white/[0.035] p-2 text-zinc-100">
+                          <p className="mb-1 text-zinc-500">Submitted messy prompt:</p>
+                          <p className="whitespace-pre-wrap break-words">
+                            &quot;{agentTrialCurrentPrompt.submittedPrompt}&quot;
+                          </p>
+                        </div>
+                        <div className="mt-2 grid gap-1 text-zinc-300">
+                          <p>What it tried: {agentTrialCurrentPrompt.triedToDo}</p>
+                          <p>
+                            Files considered: {agentTrialCurrentPrompt.candidateFiles.join(", ") || "none"}
+                          </p>
+                          <p>
+                            Selected files: {agentTrialCurrentPrompt.selectedFiles.join(", ") || "none"}
+                          </p>
+                          <p>Current step: {agentTrialCurrentStep}</p>
+                          <p>Result: {agentTrialCurrentPrompt.simpleResult}</p>
+                          <p>Why: {agentTrialCurrentPrompt.simpleReason}</p>
+                          <p>
+                            Discovery: {agentTrialCurrentPrompt.targetDiscoveryHappened ? "yes" : "no"} · Preview diff:{" "}
+                            {agentTrialCurrentPrompt.previewDiffProduced ? "yes" : "no"} · Within allowed files:{" "}
+                            {agentTrialCurrentPrompt.diffWithinAllowedFiles ? "yes" : "no"}
+                          </p>
+                          <p>Recommended checks: {agentTrialCurrentPrompt.recommendedChecks.join("; ") || "none"}</p>
+                          <p>
+                            Changed files: {agentTrialCurrentPrompt.selectedFiles.join(", ") || "none"} · Live usefulness:{" "}
+                            {agentTrialCurrentPrompt.actualIntelligence.countsForCodingUsefulness && agentTrialCurrentPrompt.providerCallMade ? "yes" : "no"}
+                          </p>
+                        </div>
+                        {agentTrialShouldShowRunDiagnostics ? (
+                          <div className="mt-2 rounded-md border border-emerald-300/25 bg-emerald-300/10 p-2 text-emerald-50">
+                            <p className="font-semibold">Run diagnostics ready</p>
+                            <p className="mt-1">What happened? Latest prompt test run recorded results.</p>
+                            <button
+                              className="mt-2 inline-flex min-h-8 items-center justify-center gap-1.5 rounded-md border border-emerald-200/25 bg-black/20 px-2 font-semibold text-emerald-50 transition hover:border-emerald-200/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200/40"
+                              onClick={() => void copyAgentTrialRunDiagnostics()}
+                              type="button"
+                            >
+                              <Copy aria-hidden="true" size={13} />
+                              Copy run diagnostics
+                            </button>
+                          </div>
+                        ) : null}
+                        {agentTrialShouldShowIssueReport ? (
+                          <div className="mt-2 rounded-md border border-amber-300/25 bg-amber-300/10 p-2 text-amber-50">
+                            <p className="font-semibold">
+                              {agentTrialCurrentResult === "Asked useful clarification"
+                                ? "Needs clarification"
+                                : agentTrialStatusLabel}
+                            </p>
+                            <p className="mt-1">What happened? {agentTrialCurrentPrompt?.simpleReason ?? agentTrialCurrentReason}.</p>
+                            <button
+                              className="mt-2 inline-flex min-h-8 items-center justify-center gap-1.5 rounded-md border border-amber-200/25 bg-black/20 px-2 font-semibold text-amber-50 transition hover:border-amber-200/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200/40"
+                              onClick={() => void copyAgentTrialIssueReport(agentTrialCurrentPrompt)}
+                              type="button"
+                            >
+                              <Copy aria-hidden="true" size={13} />
+                              Copy issue report
+                            </button>
+                          </div>
+                        ) : null}
+                      </article>
+                    ) : null}
+                    <p className="mt-3 font-semibold text-zinc-100">Next prompts</p>
+                    <div className="mt-2 space-y-1">
+                      {agentTrialPromptPreviewCompactRows.map((preview, index) => (
+                        <div
+                          className="rounded-md border border-white/10 bg-white/[0.025] p-2 text-[11px] leading-5 text-zinc-300"
+                          key={`${preview.fixtureId}-compact-${index}`}
+                        >
+                          <p className="font-semibold text-zinc-100">
+                            Prompt {index + 2}: {preview.title}
+                          </p>
+                          <p>{preview.simpleResult} · {preview.simpleReason}</p>
+                          <p>Files considered: {preview.candidateFiles.join(", ") || "none"}</p>
+                          {["Blocked safely", "False block", "Failed"].includes(preview.simpleResult) ||
+                          preview.actualIntelligence.disqualifiesLiveClaim ? (
+                            <button
+                              className="mt-1 inline-flex min-h-7 items-center justify-center gap-1 rounded-md border border-amber-200/25 bg-black/20 px-2 font-semibold text-amber-50 transition hover:border-amber-200/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200/40"
+                              onClick={() => void copyAgentTrialIssueReport(preview)}
+                              type="button"
+                            >
+                              <Copy aria-hidden="true" size={12} />
+                              Copy issue report
+                            </button>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                    {agentTrialPromptPreviewRemainingRows.length > 0 ? (
+                      <details className="mt-2 rounded-md border border-white/10 bg-white/[0.025] p-2">
+                        <summary className="cursor-pointer font-semibold text-zinc-300">
+                          Show more
+                        </summary>
+                        <div className="mt-2 space-y-2">
+                          {agentTrialPromptPreviewRemainingRows.map((preview, index) => (
+                            <article
+                              className="rounded-md border border-white/10 bg-white/[0.025] p-2 text-[11px] leading-5 text-zinc-300"
+                              key={`${preview.fixtureId}-remaining-${index}`}
+                            >
+                              <p className="font-semibold text-zinc-100">
+                                Prompt {index + 4}: {preview.title}
+                              </p>
+                              <p>{preview.simpleResult} · {preview.simpleReason}</p>
+                              <p>Files considered: {preview.candidateFiles.join(", ") || "none"}</p>
+                              {["Blocked safely", "False block", "Failed"].includes(preview.simpleResult) ||
+                              preview.actualIntelligence.disqualifiesLiveClaim ? (
+                                <button
+                                  className="mt-1 inline-flex min-h-7 items-center justify-center gap-1 rounded-md border border-amber-200/25 bg-black/20 px-2 font-semibold text-amber-50 transition hover:border-amber-200/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200/40"
+                                  onClick={() => void copyAgentTrialIssueReport(preview)}
+                                  type="button"
+                                >
+                                  <Copy aria-hidden="true" size={12} />
+                                  Copy issue report
+                                </button>
+                              ) : null}
+                            </article>
+                          ))}
+                        </div>
+                      </details>
+                    ) : null}
+                  </div>
+
+                  <div className="grid gap-2">
+                    <button
+                      aria-disabled={!agentTrialSafePreviewSupported || !canRunAllTrialPreviews ? "true" : undefined}
+                      className={`inline-flex min-h-9 items-center justify-center rounded-md border px-2.5 font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/40 ${
+                        agentTrialSafePreviewSupported && canRunAllTrialPreviews
+                          ? "border-emerald-300/30 bg-emerald-300/10 text-emerald-100 hover:bg-emerald-300/15"
+                          : "cursor-not-allowed border-dashed border-white/10 bg-white/[0.025] text-zinc-500"
+                      }`}
+                      disabled={!agentTrialSafePreviewSupported || !canRunAllTrialPreviews}
+                      onClick={runAgentTrialSafePreviewBatch}
+                      type="button"
+                    >
+                      {trialBatchRunning ? "Testing prompts" : agentTrialSafePreviewLabel}
+                    </button>
+                  </div>
+                  {agentTrialCommandCopyStatus ? (
+                    <p className="text-zinc-400">{agentTrialCommandCopyStatus}</p>
+                  ) : null}
+                </div>
+              ) : null}
+            </section>
+
             <nav aria-label="Coding chats" className="space-y-2">
               {chats.map((chat) => (
                 <button
@@ -6114,7 +6939,7 @@ export default function CodingCommandCenterShell() {
                   aria-label="Active run state"
                   className="inline-flex min-h-8 items-center rounded-md border border-cyan-300/25 bg-cyan-300/10 px-2.5 text-xs font-semibold text-cyan-100"
                 >
-                  state: {activeRunStateLabel} | {codingCommandCenterBuildMarker}
+                  state: {activeRunStateLabel}
                 </span>
               </div>
             </div>
@@ -6576,14 +7401,106 @@ export default function CodingCommandCenterShell() {
                         {activeProviderModel.modelLabel}
                       </p>
                       <p>
-                        <span className="font-medium text-zinc-100">Target file:</span>{" "}
-                        {taskPacket.targetFile || "missing"}
+                        <span className="font-medium text-zinc-100">Scope:</span>{" "}
+                        {activeBlockedFields.length > 0
+                          ? "Needs clarification"
+                          : taskPacket.targetFile
+                            ? taskPacket.targetFile
+                            : "Not staged"}
                       </p>
                       <p>
-                        <span className="font-medium text-zinc-100">Allowed files:</span>{" "}
-                        {taskPacket.allowedFiles.length > 0 ? taskPacket.allowedFiles.join(", ") : "missing"}
+                        <span className="font-medium text-zinc-100">Next action:</span>{" "}
+                        {activeBlockedFields.length > 0
+                          ? "Clarify scope"
+                          : canRequestPreview
+                            ? "Preview safely"
+                            : "Stage task"}
                       </p>
                     </div>
+                    {scopeClarificationVisible ? (
+                      <section
+                        aria-label="Scope clarification"
+                        className="mt-3 rounded-md border border-amber-300/25 bg-amber-300/10 p-3 text-xs leading-5 text-amber-50"
+                      >
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                          <div>
+                            <p className="text-sm font-semibold text-amber-50">Scope clarification</p>
+                            <p className="mt-1">{scopeClarificationSummary}</p>
+                          </div>
+                          <span className="inline-flex min-h-7 items-center self-start rounded-md border border-amber-300/30 bg-black/20 px-2 text-[11px] font-semibold text-amber-100">
+                            Preview locked
+                          </span>
+                        </div>
+                        <p className="mt-2">
+                          Missing: {scopeClarificationMissingItems.join(", ")}.
+                        </p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {scopeClarificationActions.map((action) => (
+                            <button
+                              className="inline-flex min-h-8 items-center rounded-md border border-amber-300/25 bg-black/20 px-2.5 text-xs font-semibold text-amber-50 transition hover:bg-amber-300/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/40"
+                              key={action}
+                              onClick={() => {
+                                if (action === "Choose /coding UI files") {
+                                  chooseScopeCandidate(codingUiScopeFiles[0], codingUiScopeFiles, "group");
+                                }
+                                if (action === "Choose dummy fixture") {
+                                  chooseScopeCandidate(
+                                    "tests/ui-agent-trials/fixtures/dummy-coding-targets/readme-trial.md",
+                                  );
+                                }
+                                if (action === "Search possible files") {
+                                  setActiveDrawerShell("diagnostics");
+                                }
+                                if (action === "Paste target file manually") {
+                                  setActiveDrawerShell("settings");
+                                }
+                                if (action === "Review scope") {
+                                  setActiveDrawerShell("settings");
+                                }
+                              }}
+                              type="button"
+                            >
+                              {action}
+                            </button>
+                          ))}
+                        </div>
+                        {taskPacket.candidateFiles.length > 0 ? (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {taskPacket.candidateFiles.map((candidate) => (
+                              <button
+                                className="inline-flex min-h-8 items-center rounded-md border border-cyan-300/25 bg-cyan-300/10 px-2.5 text-xs font-semibold text-cyan-50 transition hover:bg-cyan-300/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/40"
+                                key={candidate}
+                                onClick={() => chooseScopeCandidate(candidate)}
+                                type="button"
+                              >
+                                Select {candidate}
+                              </button>
+                            ))}
+                          </div>
+                        ) : null}
+                        <details className="mt-3 rounded-md border border-amber-300/20 bg-black/20 p-2">
+                          <summary className="cursor-pointer font-semibold text-amber-100">
+                            Why blocked?
+                          </summary>
+                          <div className="mt-2 grid gap-1 text-amber-50/90 sm:grid-cols-2">
+                            <p>Target file: {taskPacket.targetFile || "missing"}</p>
+                            <p>
+                              Allowed files:{" "}
+                              {taskPacket.allowedFiles.length > 0
+                                ? taskPacket.allowedFiles.join(", ")
+                                : "missing"}
+                            </p>
+                            <p>Blocked fields: {activeBlockedFields.join(", ")}</p>
+                            <p>
+                              Reason codes:{" "}
+                              {taskPacket.reasonCodes.length > 0
+                                ? taskPacket.reasonCodes.join(", ")
+                                : "none"}
+                            </p>
+                          </div>
+                        </details>
+                      </section>
+                    ) : null}
                     <div
                       aria-label="Inferred scope review"
                       className="mt-3 rounded-md border border-white/10 bg-black/25 p-3 text-xs leading-5 text-zinc-300"
@@ -6603,9 +7520,15 @@ export default function CodingCommandCenterShell() {
                       <p>Safe next action: {taskPacket.safeNextAction}</p>
                       <p>{taskPacket.inspectionSummary}</p>
                       {taskPacket.reasonCodes.length > 0 ? (
-                        <p>Reason codes: {taskPacket.reasonCodes.join(", ")}</p>
+                        <details className="mt-2 rounded-md border border-white/10 bg-black/20 p-2">
+                          <summary className="cursor-pointer font-semibold text-zinc-300">
+                            Advanced backend details
+                          </summary>
+                          <p className="mt-1">Reason codes: {taskPacket.reasonCodes.join(", ")}</p>
+                        </details>
                       ) : null}
                     </div>
+                    {activeDrawerShell === "evidence" ? (
                     <div
                       aria-label="Task scope files"
                       className="mt-3 grid gap-2 text-xs leading-5 text-zinc-300 sm:grid-cols-2"
@@ -6622,6 +7545,9 @@ export default function CodingCommandCenterShell() {
                         </div>
                       ))}
                     </div>
+                    ) : null}
+                    {activeDrawerShell === "diagnostics" ? (
+                    <>
                     <div
                       aria-label="Coding work lanes"
                       className="mt-3 grid gap-2 text-xs leading-5 text-zinc-300 lg:grid-cols-3"
@@ -6643,6 +7569,10 @@ export default function CodingCommandCenterShell() {
                         </section>
                       ))}
                     </div>
+                    </>
+                    ) : null}
+                    {activeDrawerShell === "evidence" ? (
+                    <>
                     <div
                       aria-label="Research lane"
                       className="mt-3 grid gap-2 text-xs leading-5 text-zinc-300 lg:grid-cols-3"
@@ -6664,6 +7594,10 @@ export default function CodingCommandCenterShell() {
                         </section>
                       ))}
                     </div>
+                    </>
+                    ) : null}
+                    {activeDrawerShell === "diagnostics" ? (
+                    <>
                     <div
                       aria-label="Design vault lane"
                       className="mt-3 grid gap-2 text-xs leading-5 text-zinc-300 lg:grid-cols-3"
@@ -6706,6 +7640,9 @@ export default function CodingCommandCenterShell() {
                         </section>
                       ))}
                     </div>
+                    </>
+                    ) : null}
+                    {activeDrawerShell === "evidence" ? (
                     <div
                       aria-label="Human-controlled apply lane"
                       className="mt-3 grid gap-2 text-xs leading-5 text-zinc-300 lg:grid-cols-3"
@@ -6727,6 +7664,8 @@ export default function CodingCommandCenterShell() {
                         </section>
                       ))}
                     </div>
+                    ) : null}
+                    {activeDrawerShell === "diagnostics" ? (
                     <div
                       aria-label="Combined diagnostic gauntlet lane"
                       className="mt-3 grid gap-2 text-xs leading-5 text-zinc-300 lg:grid-cols-3"
@@ -6748,12 +7687,27 @@ export default function CodingCommandCenterShell() {
                         </section>
                       ))}
                     </div>
+                    ) : null}
                     {activeBlockedFields.length > 0 ? (
-                      <p className="mt-2 text-xs text-amber-100">
-                        {activeTaskSubmitted
-                          ? `Missing bounded fields: ${activeBlockedFields.join(", ")}.`
-                          : emptyTaskPacketText(activeDraftText)}
-                      </p>
+                      <div className="mt-2 rounded-md border border-amber-300/25 bg-amber-300/10 p-2 text-xs leading-5 text-amber-100">
+                        <p>
+                          {activeTaskSubmitted
+                            ? `Missing bounded fields: ${activeBlockedFields.join(", ")}.`
+                            : emptyTaskPacketText(activeDraftText)}
+                        </p>
+                        {activeTaskSubmitted ? (
+                          <>
+                            <p className="mt-1 font-medium">
+                              {taskPacket.clarificationPrompt}
+                            </p>
+                            {taskPacket.candidateFiles.length > 0 ? (
+                              <p className="mt-1 text-amber-100/85">
+                                Suggested scope candidates: {taskPacket.candidateFiles.join(", ")}
+                              </p>
+                            ) : null}
+                          </>
+                        ) : null}
+                      </div>
                     ) : !activeTaskSubmitted ? (
                       <p className="mt-2 text-xs text-emerald-100">
                         Bounded task data present. Preview will stage this draft before requesting
@@ -7028,15 +7982,29 @@ export default function CodingCommandCenterShell() {
                 </button>
               </div>
               {activeDrawerShell === "diagnostics" ? (
-              <section
-                aria-label="Proxy trial prompt widget"
+              <details
                 className="mb-2 rounded-md border border-white/10 bg-black/20 p-3 text-xs leading-5 text-zinc-400"
+                open={legacyDiagnosticsOpen}
+              >
+                <summary
+                  className="cursor-pointer font-semibold text-zinc-200"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    setLegacyDiagnosticsOpen((open) => !open);
+                  }}
+                >
+                  Legacy diagnostics
+                </summary>
+              <section
+                aria-label="Legacy proxy trial diagnostic"
+                className="mt-3 rounded-md border border-white/10 bg-black/20 p-3"
+                hidden={!legacyDiagnosticsOpen}
                 onKeyDown={handleTrialSwitcherKeyDown}
                 tabIndex={0}
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <p className="font-semibold text-zinc-100">Proxy Trial Prompts</p>
+                    <p className="font-semibold text-zinc-100">Legacy diagnostic: Proxy Trial Prompts</p>
                     <p className="mt-1 text-zinc-500">
                       Preview only. Human review required. No apply, commit, or push from this widget.
                     </p>
@@ -7063,9 +8031,9 @@ export default function CodingCommandCenterShell() {
                   className="mt-2 rounded-md border border-emerald-300/20 bg-black/25 p-2 text-zinc-200"
                 >
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="mr-auto font-semibold text-zinc-100">Proxy Test</p>
+                    <p className="mr-auto font-semibold text-zinc-100">Legacy Proxy Test</p>
                     <span className="inline-flex min-h-7 items-center rounded-md border border-amber-300/30 bg-amber-300/10 px-2 text-xs font-semibold text-amber-100">
-                      Grade {manualHundredFrontendDiagnostic.currentGrade}
+                      Legacy grade {manualHundredFrontendDiagnostic.currentGrade}
                     </span>
                     <span className="inline-flex min-h-7 items-center rounded-md border border-emerald-300/30 bg-emerald-300/10 px-2 text-xs font-semibold text-emerald-100">
                       Safe
@@ -7100,7 +8068,7 @@ export default function CodingCommandCenterShell() {
                     </button>
                   </div>
                   <p className="mt-2 text-xs text-zinc-400">
-                    Preview-only diagnostics. No worker, provider, queue, apply, commit, or push authority is added.
+                    Legacy diagnostic only. Current prompt tester status lives in the sidebar. No worker, provider, queue, apply, commit, or push authority is added.
                   </p>
                   <details
                     className={proofRunControlsClassName}
@@ -7195,7 +8163,7 @@ export default function CodingCommandCenterShell() {
                       <div>
                         <p className="font-semibold">Diagnostic complete</p>
                         <p className="mt-0.5 text-emerald-100/80">
-                          Grade {manualHundredFrontendDiagnostic.currentGrade} | Useful: {manualHundredFrontendDiagnostic.productivePreviews}/{manualHundredFrontendDiagnostic.totalPrompts} | Safely blocked: {manualHundredFrontendDiagnostic.safeBlockers}
+                          Legacy grade {manualHundredFrontendDiagnostic.currentGrade} | Useful: {manualHundredFrontendDiagnostic.productivePreviews}/{manualHundredFrontendDiagnostic.totalPrompts} | Safely blocked: {manualHundredFrontendDiagnostic.safeBlockers}
                         </p>
                       </div>
                       <button
@@ -7583,7 +8551,7 @@ export default function CodingCommandCenterShell() {
                       <p className="mt-1 text-zinc-300">{manualHundredFrontendDiagnostic.lastDiagnosticStatus}</p>
                     </div>
                     <span className="inline-flex min-h-7 items-center rounded-md border border-amber-300/30 bg-amber-300/10 px-2 text-xs font-semibold text-amber-100">
-                      Grade {manualHundredFrontendDiagnostic.currentGrade}
+                      Legacy grade {manualHundredFrontendDiagnostic.currentGrade}
                     </span>
                   </div>
                   <dl className="mt-3 grid gap-2 sm:grid-cols-3 lg:grid-cols-6">
@@ -7918,6 +8886,7 @@ export default function CodingCommandCenterShell() {
                 </details>
                 ) : null}
               </section>
+              </details>
               ) : null}
               <label className="sr-only" htmlFor="coding-command-composer">
                 Coding command composer
@@ -8375,6 +9344,8 @@ export default function CodingCommandCenterShell() {
               <Sparkles aria-hidden="true" size={14} />
               Coding mode
             </button>
+            {activeDrawerShell === "diagnostics" ? (
+              <>
             <button
               aria-label="Mobile load prompt"
               className="inline-flex min-h-8 items-center gap-1.5 rounded-md border border-cyan-300/30 bg-cyan-300/10 px-2.5 text-xs font-semibold text-cyan-100 transition hover:bg-cyan-300/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/40"
@@ -8541,6 +9512,8 @@ export default function CodingCommandCenterShell() {
               <Copy aria-hidden="true" size={13} />
               Copy prompt
             </button>
+              </>
+            ) : null}
           </div>
           <details className="mb-2 rounded-md border border-cyan-300/20 bg-black/25 p-2 text-xs leading-5 text-zinc-400">
             <summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-zinc-100">
@@ -8686,17 +9659,18 @@ export default function CodingCommandCenterShell() {
                 available for this no-op preview.
               </p>
             </div>
-          ) : (
+          ) : activeDrawerShell === "diagnostics" ? (
             <div
               aria-label="Mobile trial task helper"
               className="mb-2 max-h-40 overflow-auto rounded-md border border-white/10 bg-black/20 p-2 text-xs leading-5 text-zinc-400"
+              hidden={!legacyDiagnosticsOpen}
               onKeyDown={handleTrialSwitcherKeyDown}
               role="region"
               tabIndex={0}
             >
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
-                  <p className="font-semibold text-zinc-100">Proxy Trial Prompts</p>
+                  <p className="font-semibold text-zinc-100">Legacy diagnostic: Proxy Trial Prompts</p>
                   <p className="mt-1 text-zinc-500">
                     Preview only. Human review required. No apply, commit, or push from this widget.
                   </p>
@@ -8833,7 +9807,7 @@ export default function CodingCommandCenterShell() {
                 Hotkey: Alt+P. Blocked safely still matters, but does not prove productive coding.
               </p>
             </div>
-          )}
+          ) : null}
           <label className="sr-only" htmlFor="coding-command-composer-mobile">
             Mobile coding command composer
           </label>

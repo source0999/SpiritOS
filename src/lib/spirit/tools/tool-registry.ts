@@ -1,6 +1,7 @@
 // ── tool-registry - AI SDK read-only tools gated by SPIRIT_ENABLE_LOCAL_TOOLS ──
-// > Also requires SPIRIT_OLLAMA_SUPPORTS_TOOLS=true: Hermes4 and many registry pulls
-// > reject requests with tools ("does not support tools"); opt in after switching models.
+// > Also requires SPIRIT_OLLAMA_SUPPORTS_TOOLS=true. Schema acceptance only proves
+// > transport compatibility; keep local tools off until an operator probe approves
+// > the exact model/tool policy.
 
 import { tool } from "ai";
 import { z } from "zod";

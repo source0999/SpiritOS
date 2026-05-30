@@ -7,6 +7,7 @@ export default defineConfig({
     timeout: 10_000,
   },
   forbidOnly: Boolean(process.env.CI),
+  outputDir: "tmp/playwright-test-results",
   projects: [
     {
       name: "chromium",
@@ -25,7 +26,7 @@ export default defineConfig({
       use: { ...devices["iPad Pro 11"] },
     },
   ],
-  testDir: "./tests/e2e",
+  testDir: "./tests",
   timeout: 30_000,
   use: {
     baseURL,

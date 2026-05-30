@@ -69,7 +69,8 @@ export async function probeOllamaOpenAICompat(): Promise<OllamaProbeResult> {
 
 /**
  * POST /v1/chat/completions with a minimal tools payload to see if this model
- * accepts OpenAI-style tools. Hermes4 and similar return 400 "does not support tools".
+ * accepts OpenAI-style tools. This proves schema transport only; it does not
+ * prove that a local model should receive file-edit or command tools by default.
  * Cached per process in tool-registry; callers should not spam this.
  */
 export async function probeOllamaChatCompletionsAcceptsToolSchema(modelId: string): Promise<boolean> {

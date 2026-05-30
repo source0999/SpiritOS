@@ -38,3 +38,56 @@ def write(packet: Any, verdict: Any, *, promotion_id: str, approved_by: str) -> 
         "applied": False,
         "approved_proxy_action": False,
     }
+
+
+def write_design_inspiration(
+    *,
+    title: str,
+    note: str,
+    source_url: str | None = None,
+    tags: list[str] | None = None,
+    log_path: str | Path | None = None,
+) -> dict[str, Any]:
+    """Store design inspiration notes without crawl, promotion, or proxy-memory authority."""
+    path_value = log_path or os.environ.get("SOURCE_PROXY_SCOUT_DESIGN_INTAKE_LOG", "").strip()
+    if not path_value:
+        raise ScoutIntakeConfigError("SOURCE_PROXY_SCOUT_DESIGN_INTAKE_LOG or log_path is required")
+    if not title.strip():
+        raise ValueError("title is required")
+    if not note.strip():
+        raise ValueError("note is required")
+
+    path = Path(path_value)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    record = {
+        "event": "scout_design_inspiration_stored_only",
+        "title": title.strip(),
+        "note": note.strip(),
+        "source_url": source_url.strip() if source_url else None,
+        "tags": sorted({tag.strip() for tag in tags or [] if tag.strip()}),
+        "stored_at": datetime.now(timezone.utc).isoformat(),
+        "authority": "stored_only_design_inspiration",
+        "crawl_requested": False,
+        "crawler_started": False,
+        "scheduler_started": False,
+        "worker_started": False,
+        "proxy_memory_written": False,
+        "proxy_memory_promoted": False,
+        "coding_context_injected": False,
+        "approved_proxy_action": False,
+        "applied": False,
+    }
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(record, sort_keys=True) + "\n")
+    return {
+        "written": True,
+        "path": str(path),
+        "authority": record["authority"],
+        "crawl_requested": False,
+        "crawler_started": False,
+        "scheduler_started": False,
+        "worker_started": False,
+        "proxy_memory_written": False,
+        "proxy_memory_promoted": False,
+        "coding_context_injected": False,
+    }

@@ -1,0 +1,12 @@
+[Unit]
+Description=SpiritOS Dell backup dry-run example timer
+
+[Timer]
+OnCalendar=daily
+Persistent=false
+
+[Install]
+WantedBy=timers.target
+
+# example only; not installed by Backup System v0.1.
+# APPROVAL REQUIRED before enabling any timer.

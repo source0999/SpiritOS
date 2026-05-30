@@ -2,6 +2,7 @@ import os from "node:os";
 import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import type { ClusterNodeTelemetry, NodeDrive, NodeStorage } from "./types";
+import { inferSmartStatusFromUsage } from "@/lib/storage-health";
 
 // ── CPU sampling ─────────────────────────────────────────────────────────────
 
@@ -100,7 +101,7 @@ async function collectLocalStorage(): Promise<NodeStorage> {
         freeBytes,
         usedPct,
         tempC: null,
-        smart: "Unknown",
+        smart: inferSmartStatusFromUsage(usedPct),
       });
     }
 
