@@ -89,20 +89,18 @@ describe("CodingCockpitShell", () => {
     expect(screen.getByRole("region", { name: "Active task" })).toBeInTheDocument();
     expect(screen.getByRole("complementary", { name: "Review pane" })).toBeInTheDocument();
     const trialRunner = screen.getByRole("region", { name: "Reversible trial runner" });
-    expect(within(trialRunner).getByText("Reversible trial runner")).toBeInTheDocument();
-    expect(within(trialRunner).getByRole("group", { name: "Trial runner mode" })).toBeInTheDocument();
-    expect(within(trialRunner).getByRole("button", { name: "Coder" })).toBeInTheDocument();
-    expect(within(trialRunner).getByRole("button", { name: "Designer" })).toBeInTheDocument();
-    expect(within(trialRunner).getByRole("button", { name: "Combined" })).toBeInTheDocument();
-    expect(within(trialRunner).getByRole("group", { name: "Prompt count selector" })).toBeInTheDocument();
-    expect(within(trialRunner).getByRole("button", { name: "25" })).toBeInTheDocument();
-    expect(within(trialRunner).getByRole("button", { name: "50" })).toBeInTheDocument();
-    expect(within(trialRunner).getByRole("button", { name: "100" })).toBeInTheDocument();
+    expect(within(trialRunner).getByText("Trial runner")).toBeInTheDocument();
+    expect(within(trialRunner).getByRole("combobox", { name: "Trial category" })).toBeInTheDocument();
+    expect(within(trialRunner).getByRole("combobox", { name: "Trial count" })).toBeInTheDocument();
+    ["Coder", "Designer", "Combined", "10", "25", "50", "100"].forEach((option) => {
+      expect(within(trialRunner).getByRole("option", { name: option })).toBeInTheDocument();
+    });
     expect(within(trialRunner).getByRole("button", { name: "Run reversible trial suite" })).toBeInTheDocument();
+    expect(within(trialRunner).getByRole("button", { name: "Copy prompts" })).toBeInTheDocument();
     expect(within(trialRunner).getByRole("button", { name: "Copy trial diagnostics" })).toBeDisabled();
-    expect(screen.getByRole("heading", { name: "Live coding runner" })).toBeInTheDocument();
-    expect(screen.getByText("Project")).toBeInTheDocument();
-    expect(screen.getByText("Provider/model")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Coding runner" })).toBeInTheDocument();
+    expect(screen.getByText("Current task")).toBeInTheDocument();
+    expect(screen.getByText("Model")).toBeInTheDocument();
     expect(screen.getByText("State")).toBeInTheDocument();
 
     expect(screen.getByRole("heading", { name: "Task transcript" })).toBeInTheDocument();
@@ -116,14 +114,15 @@ describe("CodingCockpitShell", () => {
       "Finding files",
       "Calling model",
       "Editing files",
-      "Running checks",
-      "Ready for review",
+      "Checking",
+      "Undoing trial edit",
+      "Ready to review",
     ].forEach((step) => {
       expect(within(progress).getByText(step)).toBeInTheDocument();
     });
 
-    expect(screen.getByRole("button", { name: "Copy diagnostics" })).toBeDisabled();
-    expect(screen.getAllByText("Advanced details").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByRole("button", { name: "Copy current task diagnostics" })).toBeDisabled();
+    expect(screen.queryByText("Advanced details")).not.toBeInTheDocument();
 
     [
       "Trial Mode",
@@ -191,15 +190,15 @@ describe("CodingCockpitShell", () => {
 
     expect(screen.getAllByText(/Files changed/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(targetFile).length).toBeGreaterThan(0);
-    expect(screen.getByText(/Checks run/)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Copy diagnostics" })).toBeEnabled();
-    expect(screen.getByRole("button", { name: "Revert this run" })).toBeInTheDocument();
+    expect(screen.getByText("Checks")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Copy current task diagnostics" })).toBeEnabled();
+    expect(screen.getAllByRole("button", { name: "Undo last change" }).length).toBeGreaterThan(0);
 
     expect(calls.find((call) => call.url.includes("/v1/decisions/prompt-packet"))?.body)
       .toContain('"trial_mode":"live_apply"');
     expect(calls.some((call) => call.url.includes("/v1/actions/execute-approved"))).toBe(true);
 
-    fireEvent.click(screen.getByRole("button", { name: "Copy diagnostics" }));
+    fireEvent.click(screen.getByRole("button", { name: "Copy current task diagnostics" }));
     await waitFor(() => expect(writeText).toHaveBeenCalled());
     const diagnostics = String(writeText.mock.calls.at(-1)?.[0] ?? "");
     [
@@ -282,7 +281,7 @@ describe("CodingCockpitShell", () => {
     render(<CodingCockpitShell />);
     await startLiveRun();
 
-    fireEvent.click(screen.getByRole("button", { name: "Revert this run" }));
+    fireEvent.click(screen.getAllByRole("button", { name: "Undo last change" })[0]);
     expect(await screen.findByRole("heading", { name: "REVERTED" })).toBeInTheDocument();
     expect(screen.getAllByText(/Reverted this run/).length).toBeGreaterThan(0);
 
