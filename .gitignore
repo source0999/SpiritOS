@@ -4,6 +4,7 @@ node_modules
 .venv-source-proxy
 .venv-source-proxy-windows
 .venv/
+.venv
 **/.venv/
 __pycache__/
 *.py[cod]

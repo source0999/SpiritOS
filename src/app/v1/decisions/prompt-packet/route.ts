@@ -1,6 +1,9 @@
 import { mergeRepoFirstResearchSources } from "@/app/v1/decisions/_repo-research";
 import { sourceProxyFetch } from "@/lib/source-proxy-origin";
 
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+
 export async function POST(request: Request) {
   if (process.env.SPIRIT_CODING_USE_PROXY !== "true") {
     return Response.json(
@@ -10,6 +13,14 @@ export async function POST(request: Request) {
   }
 
   const bodyText = await request.text();
+  const directDocsOnlyPreview = await docsOnlyPreviewPayload(bodyText, {
+    reason_code: "docs_only_bff_direct_preview",
+    status: "preview_ready",
+  });
+  if (directDocsOnlyPreview) {
+    return Response.json(JSON.parse(directDocsOnlyPreview));
+  }
+
   let response;
   try {
     response = await sourceProxyFetch("/v1/decisions/prompt-packet", {
@@ -32,12 +43,15 @@ export async function POST(request: Request) {
 
   const responseText = await response.text();
   const contentType = response.headers.get("content-type") ?? "application/json";
-  const body =
+  let body =
     contentType.includes("application/json") && response.ok
       ? await enrichProviderModelTruthFromStatus(
           mergeRepoFirstResearchSources(bodyText, responseText),
         )
       : responseText;
+  if (contentType.includes("application/json") && response.ok) {
+    body = (await docsOnlyFallbackPreview(bodyText, body)) ?? body;
+  }
 
   return new Response(body, {
     headers: {

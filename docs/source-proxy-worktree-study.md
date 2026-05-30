@@ -35,6 +35,11 @@ Do not introduce worktree automation yet.
 
 Reassess only after the current Source Proxy hardening branch is reviewed, committed, or otherwise reduced to a clean and understandable state.
 
+Phase 8 Codex-class cockpit reaffirmation: worktree creation remains proposal-only until a
+separate explicit approval boundary grants an exact path, branch name, base head, owner, and
+rollback plan. Project-health payloads may describe the recommendation, but must keep
+`worktree_creation_allowed` false and `worktree_created` false.
+
 ## Risks
 
 - Dirty source tree can hide which changes belong to which increment.

@@ -1,5 +1,5 @@
-import CodingCockpitShell from "@/components/coding/CodingCockpitShell";
+import CodingCommandCenterShell from "@/components/coding/CodingCommandCenterShell";
 
 export default function CodingPage() {
-  return <CodingCockpitShell />;
+  return <CodingCommandCenterShell />;
 }

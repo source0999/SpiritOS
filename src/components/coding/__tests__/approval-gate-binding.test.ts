@@ -217,6 +217,47 @@ describe("approval gate binding", () => {
     expect(proposal).toBeNull();
   });
 
+  it("does not bind a backend diff that also touches an extra file", () => {
+    const multiFileDiff = [
+      "diff --git a/docs/phase-8-manual-check.md b/docs/phase-8-manual-check.md",
+      "--- a/docs/phase-8-manual-check.md",
+      "+++ b/docs/phase-8-manual-check.md",
+      "@@ -1 +1,2 @@",
+      " # Phase 8 Manual Check",
+      "+Safe target change.",
+      "diff --git a/docs/other.md b/docs/other.md",
+      "--- a/docs/other.md",
+      "+++ b/docs/other.md",
+      "@@ -1 +1,2 @@",
+      " # Other",
+      "+Wrong-scope change.",
+      "",
+    ].join("\n");
+
+    const proposal = deriveApprovalGateProposal(
+      {
+        reason_codes: ["implementation_requested"],
+        resolved_target: {
+          exists: true,
+          path: "docs/phase-8-manual-check.md",
+          source: "explicit_line",
+        },
+        task_classification: "implementation",
+      },
+      {
+        prompt_text: "Coder Agent produced a backend diff.",
+        proposed_diff: multiFileDiff,
+        target: "docs/phase-8-manual-check.md",
+      },
+      {
+        currentTaskText: "Target file: docs/phase-8-manual-check.md",
+        resolvedTargetPath: "docs/phase-8-manual-check.md",
+      },
+    );
+
+    expect(proposal).toBeNull();
+  });
+
   it("does not arm approval when current task Target file only has a stale packet diff", () => {
     const patch = [
       "diff --git a/src/components/coding/CodingAgentInterface.tsx b/src/components/coding/CodingAgentInterface.tsx",
