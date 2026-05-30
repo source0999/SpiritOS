@@ -181,6 +181,7 @@ const manualTaskPhaseLabels = {
 
 /** Match CodingAgentInterface prompt-packet patience; proxy coder sync deadline defaults to 180s. */
 const MANUAL_PROMPT_PACKET_TIMEOUT_MS = 180_000;
+const TRIAL_PROMPT_PACKET_TIMEOUT_MS = 60_000;
 const PROTECTED_FORBIDDEN_FILES = [
   ".env*",
   "source_proxy/data/**",
@@ -2189,30 +2190,50 @@ export default function CodingCockpitShell() {
     const taskPayload = await readJson(taskResponse);
     endpointStatuses.push(`/v1/tasks/long-running:${taskResponse.status}`);
     if (!taskResponse.ok) {
-      throw new Error(messageFromPayload(taskPayload, taskResponse.status));
+      return baseResult({
+        endpoint_statuses: [...endpointStatuses],
+        failure_reason: messageFromPayload(taskPayload, taskResponse.status),
+      });
     }
     const taskId = taskIdFromPayload(taskPayload);
     if (!taskId) {
-      throw new Error("Long-running task create did not return a task id.");
+      return baseResult({
+        endpoint_statuses: [...endpointStatuses],
+        failure_reason: "Long-running task create did not return a task id.",
+      });
     }
 
     onStep?.("Calling model");
-    const proposalResponse = await fetchWithTimeout("/v1/decisions/prompt-packet", {
-      body: JSON.stringify({
-        active_task_id: taskId,
-        needs_codebase_context: true,
-        prefer_free: true,
-        task: taskText,
-        trial_mode: "live_apply",
-        wants_implementation: true,
-      }),
-      headers: { "content-type": "application/json" },
-      method: "POST",
-    }, MANUAL_PROMPT_PACKET_TIMEOUT_MS);
+    let proposalResponse: Response;
+    try {
+      proposalResponse = await fetchWithTimeout("/v1/decisions/prompt-packet", {
+        body: JSON.stringify({
+          active_task_id: taskId,
+          needs_codebase_context: true,
+          prefer_free: true,
+          task: taskText,
+          trial_mode: "live_apply",
+          wants_implementation: true,
+        }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      }, TRIAL_PROMPT_PACKET_TIMEOUT_MS);
+    } catch (error) {
+      endpointStatuses.push("/v1/decisions/prompt-packet:timeout");
+      return baseResult({
+        endpoint_statuses: [...endpointStatuses],
+        failure_reason: error instanceof Error ? error.message : "Model call timed out.",
+        run_id: taskId,
+      });
+    }
     const proposalPayload = await readJson(proposalResponse);
     endpointStatuses.push(`/v1/decisions/prompt-packet:${proposalResponse.status}`);
     if (!proposalResponse.ok) {
-      throw new Error(messageFromPayload(proposalPayload, proposalResponse.status));
+      return baseResult({
+        endpoint_statuses: [...endpointStatuses],
+        failure_reason: messageFromPayload(proposalPayload, proposalResponse.status),
+        run_id: taskId,
+      });
     }
     const providerTruth = providerModelTruthFromPayload(proposalPayload, selectedProviderTruth);
     const proposedDiff = diffFromPayload(proposalPayload);
@@ -2289,7 +2310,14 @@ export default function CodingCockpitShell() {
     const diffPayload = await readJson(diffResponse);
     endpointStatuses.push(`/v1/verification/diff-preview:${diffResponse.status}`);
     if (!diffResponse.ok) {
-      throw new Error(messageFromPayload(diffPayload, diffResponse.status));
+      return baseResult({
+        endpoint_statuses: [...endpointStatuses],
+        failure_reason: messageFromPayload(diffPayload, diffResponse.status),
+        model_called_for_generation: modelCalledForGeneration,
+        provider: providerTruth.providerLabel,
+        provider_call_made: true,
+        run_id: taskId,
+      });
     }
     const previewChangedFiles = changedFilesFromPayload(diffPayload);
     const protectedTouched = previewChangedFiles.some((path) => isProtectedTarget(path));
@@ -2323,7 +2351,15 @@ export default function CodingCockpitShell() {
     const applyPayload = await readJson(applyResponse);
     endpointStatuses.push(`/v1/actions/execute-approved:${applyResponse.status}`);
     if (!applyResponse.ok) {
-      throw new Error(messageFromPayload(applyPayload, applyResponse.status));
+      return baseResult({
+        endpoint_statuses: [...endpointStatuses],
+        failure_reason: messageFromPayload(applyPayload, applyResponse.status),
+        model_called_for_generation: modelCalledForGeneration,
+        provider: providerTruth.providerLabel,
+        provider_call_made: true,
+        preview_changed_files: previewChangedFiles,
+        run_id: taskId,
+      });
     }
     const appliedChangedFiles = changedFilesFromApplyPayloadOrDiff(applyPayload, proposedDiff);
     const diskChangedFiles = appliedChangedFiles;
@@ -2371,11 +2407,39 @@ export default function CodingCockpitShell() {
     const revertTaskPayload = await readJson(revertTaskResponse);
     endpointStatuses.push(`/v1/tasks/long-running(revert):${revertTaskResponse.status}`);
     if (!revertTaskResponse.ok) {
-      throw new Error(messageFromPayload(revertTaskPayload, revertTaskResponse.status));
+      return baseResult({
+        applied_changed_files: appliedChangedFiles,
+        checks_result: "recorded",
+        disk_changed_files: diskChangedFiles,
+        endpoint_statuses: [...endpointStatuses],
+        failure_reason: messageFromPayload(revertTaskPayload, revertTaskResponse.status),
+        model_called_for_generation: modelCalledForGeneration,
+        provider: providerTruth.providerLabel,
+        provider_call_made: true,
+        preview_changed_files: previewChangedFiles,
+        reverse_diff: reverseDiff,
+        reversal_available: true,
+        run_id: taskId,
+        visible_result_label: "FAIL",
+      });
     }
     const revertTaskId = taskIdFromPayload(revertTaskPayload);
     if (!revertTaskId) {
-      throw new Error("Reverse task create did not return a task id.");
+      return baseResult({
+        applied_changed_files: appliedChangedFiles,
+        checks_result: "recorded",
+        disk_changed_files: diskChangedFiles,
+        endpoint_statuses: [...endpointStatuses],
+        failure_reason: "Reverse task create did not return a task id.",
+        model_called_for_generation: modelCalledForGeneration,
+        provider: providerTruth.providerLabel,
+        provider_call_made: true,
+        preview_changed_files: previewChangedFiles,
+        reverse_diff: reverseDiff,
+        reversal_available: true,
+        run_id: taskId,
+        visible_result_label: "FAIL",
+      });
     }
     const revertResponse = await fetch("/v1/actions/execute-approved", {
       body: JSON.stringify({
@@ -2392,7 +2456,21 @@ export default function CodingCockpitShell() {
     const revertPayload = await readJson(revertResponse);
     endpointStatuses.push(`/v1/actions/execute-approved(revert):${revertResponse.status}`);
     if (!revertResponse.ok) {
-      throw new Error(messageFromPayload(revertPayload, revertResponse.status));
+      return baseResult({
+        applied_changed_files: appliedChangedFiles,
+        checks_result: "recorded",
+        disk_changed_files: diskChangedFiles,
+        endpoint_statuses: [...endpointStatuses],
+        failure_reason: messageFromPayload(revertPayload, revertResponse.status),
+        model_called_for_generation: modelCalledForGeneration,
+        provider: providerTruth.providerLabel,
+        provider_call_made: true,
+        preview_changed_files: previewChangedFiles,
+        reverse_diff: reverseDiff,
+        reversal_available: true,
+        run_id: taskId,
+        visible_result_label: "FAIL",
+      });
     }
     onStep?.("Checking work");
     return baseResult({
@@ -3795,6 +3873,19 @@ export default function CodingCockpitShell() {
                 </button>
               ) : reversibleSuiteState.results.some((result) => result.reversal_available) ? (
                 <p className={`mt-3 text-xs font-semibold ${commandMutedClass}`}>All test edits undone.</p>
+              ) : (
+                <button
+                  className={`mt-3 inline-flex min-h-10 w-full items-center justify-center rounded-md border border-[var(--ddv4-pill-border)] px-3 text-sm font-semibold text-[var(--ddv4-fg)] transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${commandFocusClass}`}
+                  disabled
+                  type="button"
+                >
+                  Reverse trial edits
+                </button>
+              )}
+              {!reversibleSuiteState.results.some((result) => result.reversal_available) ? (
+                <p className={`mt-2 text-xs ${commandMutedClass}`}>
+                  Available when a trial edit remains after a run.
+                </p>
               ) : null}
               {reversiblePromptsCopyStatus || reversibleSuiteCopyStatus ? (
                 <p className={`mt-2 text-xs ${commandMutedClass}`}>{reversiblePromptsCopyStatus || reversibleSuiteCopyStatus}</p>
@@ -3859,17 +3950,29 @@ export default function CodingCockpitShell() {
                     Cancel
                   </button>
                 ) : null}
-                {currentAppliedRunReceipt && !currentAppliedRunReceipt.revertedAt ? (
-                  <button
-                    className={`inline-flex min-h-12 items-center justify-center rounded-md border border-[var(--ddv4-pill-border)] px-4 text-sm font-semibold text-[var(--ddv4-fg)] transition-colors hover:bg-[var(--ddv4-surface-fill)] disabled:cursor-not-allowed disabled:opacity-60 ${commandFocusClass}`}
-                    disabled={isReverting}
-                    onClick={() => void handleRevertReceipt(currentAppliedRunReceipt)}
-                    type="button"
-                  >
-                    {isReverting ? "Undoing..." : "Undo last change"}
-                  </button>
-                ) : null}
+                <button
+                  className={`inline-flex min-h-12 items-center justify-center rounded-md border border-[var(--ddv4-pill-border)] px-4 text-sm font-semibold text-[var(--ddv4-fg)] transition-colors hover:bg-[var(--ddv4-surface-fill)] disabled:cursor-not-allowed disabled:opacity-60 ${commandFocusClass}`}
+                  disabled={!currentAppliedRunReceipt || Boolean(currentAppliedRunReceipt.revertedAt) || isReverting}
+                  onClick={() => {
+                    if (currentAppliedRunReceipt && !currentAppliedRunReceipt.revertedAt) {
+                      void handleRevertReceipt(currentAppliedRunReceipt);
+                    }
+                  }}
+                  title={
+                    currentAppliedRunReceipt && !currentAppliedRunReceipt.revertedAt
+                      ? "Undo the last manual change."
+                      : "Available after a manual change is applied."
+                  }
+                  type="button"
+                >
+                  {isReverting ? "Undoing..." : "Undo last change"}
+                </button>
               </div>
+              {!currentAppliedRunReceipt || currentAppliedRunReceipt.revertedAt ? (
+                <p className={`mt-2 text-xs ${commandMutedClass}`}>
+                  Undo is available after Start coding applies a reversible change.
+                </p>
+              ) : null}
             </section>
 
             <section className={`${commandPanelClass} p-4 sm:p-5`} aria-labelledby="progress-heading">
@@ -3990,7 +4093,15 @@ export default function CodingCockpitShell() {
                 </button>
               ) : reversibleSuiteState.results.some((result) => result.reversal_available) ? (
                 <p className={`mt-3 text-sm ${commandMutedClass}`}>All test edits undone.</p>
-              ) : null}
+              ) : (
+                <button
+                  className={`mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-md border border-[var(--ddv4-pill-border)] px-3 text-sm font-semibold text-[var(--ddv4-fg)] transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${commandFocusClass}`}
+                  disabled
+                  type="button"
+                >
+                  Reverse trial edits
+                </button>
+              )}
               {diagnosticCopyStatus ? (
                 <p className={`mt-3 text-sm ${commandMutedClass}`}>{diagnosticCopyStatus}</p>
               ) : null}
