@@ -88,6 +88,18 @@ describe("CodingCockpitShell", () => {
     expect(screen.getByRole("navigation", { name: "Coding session list" })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Active task" })).toBeInTheDocument();
     expect(screen.getByRole("complementary", { name: "Review pane" })).toBeInTheDocument();
+    const trialRunner = screen.getByRole("region", { name: "Reversible trial runner" });
+    expect(within(trialRunner).getByText("Reversible trial runner")).toBeInTheDocument();
+    expect(within(trialRunner).getByRole("group", { name: "Trial runner mode" })).toBeInTheDocument();
+    expect(within(trialRunner).getByRole("button", { name: "Coder" })).toBeInTheDocument();
+    expect(within(trialRunner).getByRole("button", { name: "Designer" })).toBeInTheDocument();
+    expect(within(trialRunner).getByRole("button", { name: "Combined" })).toBeInTheDocument();
+    expect(within(trialRunner).getByRole("group", { name: "Prompt count selector" })).toBeInTheDocument();
+    expect(within(trialRunner).getByRole("button", { name: "25" })).toBeInTheDocument();
+    expect(within(trialRunner).getByRole("button", { name: "50" })).toBeInTheDocument();
+    expect(within(trialRunner).getByRole("button", { name: "100" })).toBeInTheDocument();
+    expect(within(trialRunner).getByRole("button", { name: "Run reversible trial suite" })).toBeInTheDocument();
+    expect(within(trialRunner).getByRole("button", { name: "Copy trial diagnostics" })).toBeDisabled();
     expect(screen.getByRole("heading", { name: "Live coding runner" })).toBeInTheDocument();
     expect(screen.getByText("Project")).toBeInTheDocument();
     expect(screen.getByText("Provider/model")).toBeInTheDocument();
@@ -111,12 +123,9 @@ describe("CodingCockpitShell", () => {
     });
 
     expect(screen.getByRole("button", { name: "Copy diagnostics" })).toBeDisabled();
-    expect(screen.getByText("Advanced details")).toBeInTheDocument();
+    expect(screen.getAllByText("Advanced details").length).toBeGreaterThanOrEqual(2);
 
     [
-      "Coder",
-      "Designer",
-      "Combined",
       "Trial Mode",
       "Live Apply Bank",
       "Preview-only Diagnostic Bank",

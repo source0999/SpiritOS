@@ -25,6 +25,10 @@ describe("CodingPage", () => {
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Start coding" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Copy diagnostics" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Reversible trial runner" })).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "Trial runner mode" })).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "Prompt count selector" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Run reversible trial suite" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Diagnostics" })).not.toBeInTheDocument();
     expect(screen.queryByText("Evidence trail and logs")).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Diagnostics" })).not.toBeInTheDocument();

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Copy, FileText, Plus, ShieldCheck } from "lucide-react";
 
 import { DashboardDemoV4FloatingNav } from "@/components/dashboard/demo-v4/DashboardDemoV4FloatingNav";
@@ -55,6 +55,12 @@ import {
   type VisibleResultTone,
 } from "@/lib/coding/visible-result-badge";
 import "@/styles/dashboard-demo-v4.css";
+import {
+  reversibleTrialCounts,
+  selectReversibleTrialPrompts,
+  type ReversibleTrialCount,
+  type ReversibleTrialPrompt,
+} from "@/lib/coding/reversible-trial-prompts";
 
 const commandPanelClass =
   "rounded-md border border-[var(--ddv4-surface-border-soft)] bg-[var(--ddv4-pill-bg)] shadow-[var(--ddv4-glass-shadow-drop)] backdrop-blur-xl";
@@ -112,6 +118,41 @@ type PreviewState = {
 };
 
 type TrialRunState = "idle" | "running" | "complete";
+type ReversibleSuiteStatus = "idle" | "running" | "stopping" | "done" | "failed";
+type ReversibleSuitePromptResult = {
+  allowed_files: string[];
+  applied_changed_files: string[];
+  checks_result: string;
+  checks_run: string[];
+  disk_changed_files: string[];
+  endpoint_statuses: string[];
+  failure_reason: string;
+  model_called_for_generation: string;
+  prompt: ReversibleTrialPrompt;
+  provider: string;
+  provider_call_made: boolean;
+  preview_changed_files: string[];
+  reverted: boolean;
+  reversal_available: boolean;
+  run_id: string;
+  selected_target: string;
+  target_candidates: string[];
+  visible_result_label: "PASS" | "FAIL" | "BLOCKED" | "NO-GO";
+};
+type ReversibleSuiteState = {
+  completed: number;
+  count: ReversibleTrialCount;
+  currentPrompt: string;
+  fail: number;
+  pass: number;
+  provider: string;
+  model: string;
+  results: ReversibleSuitePromptResult[];
+  reverted: number;
+  status: ReversibleSuiteStatus;
+  stopped: boolean;
+  suiteId: string;
+};
 type ManualTaskEventStatus = "done" | "running" | "blocked" | "failed";
 type ManualTaskEvent = {
   detail: string;
@@ -271,6 +312,16 @@ function providerTruthPatch(providerTruth: CodingProviderModelTruth) {
 
 function selectedProviderModelTruth(): CodingProviderModelTruth {
   return localHermesProviderModelTruth();
+}
+
+function reversibleTrialPromptForMode(prompt: ReversibleTrialPrompt, mode: AgentTrialMode): string {
+  if (mode === "design") {
+    return `${prompt.prompt} Focus on the visible product UI, hierarchy, and copy clarity while keeping the edit bounded and reversible.`;
+  }
+  if (mode === "hybrid") {
+    return `${prompt.prompt} Treat this as a combined designer/coder check: preserve the intended visual behavior and make the smallest safe implementation edit.`;
+  }
+  return prompt.prompt;
 }
 
 function splitFiles(value: string): string[] {
@@ -913,6 +964,7 @@ function isCombinedTask(task: string) {
 }
 
 export default function CodingCockpitShell() {
+  const stopReversibleSuiteAfterCurrentRef = useRef(false);
   const [task, setTask] = useState("");
   const [targetFile, setTargetFile] = useState("");
   const [allowedFiles, setAllowedFiles] = useState("");
@@ -929,6 +981,22 @@ export default function CodingCockpitShell() {
   const [trialViewport, setTrialViewport] = useState<AgentTrialViewport>("desktop");
   const [trialCopyStatus, setTrialCopyStatus] = useState("");
   const [trialRunState, setTrialRunState] = useState<TrialRunState>("idle");
+  const [reversibleTrialCount, setReversibleTrialCount] = useState<ReversibleTrialCount>(25);
+  const [reversibleSuiteCopyStatus, setReversibleSuiteCopyStatus] = useState("");
+  const [reversibleSuiteState, setReversibleSuiteState] = useState<ReversibleSuiteState>(() => ({
+    completed: 0,
+    count: 25,
+    currentPrompt: "",
+    fail: 0,
+    pass: 0,
+    provider: selectedProviderModelTruth().providerLabel,
+    model: selectedProviderModelTruth().modelLabel,
+    results: [],
+    reverted: 0,
+    status: "idle",
+    stopped: false,
+    suiteId: "",
+  }));
   const [designReportCopyStatus, setDesignReportCopyStatus] = useState("");
   const [combinedCopyStatus, setCombinedCopyStatus] = useState("");
   const [appliedRunReceipts, setAppliedRunReceipts] = useState<AppliedRunReceipt[]>([]);
@@ -1947,6 +2015,430 @@ export default function CodingCockpitShell() {
       ...current,
       currentPhase: manualTaskPhaseLabels[phase],
       events,
+    }));
+  }
+
+  function reversibleSuiteDiagnosticsText(state = reversibleSuiteState): string {
+    const lines = [
+      `suite_id: ${state.suiteId || "none"}`,
+      `count_requested: ${state.count}`,
+      `count_completed: ${state.completed}`,
+      `pass_count: ${state.pass}`,
+      `fail_count: ${state.fail}`,
+      `reverted_count: ${state.reverted}`,
+      `stopped: ${state.stopped ? "yes" : "no"}`,
+      `suite_mode: ${trialModeLabels[trialMode]}`,
+      `branch: browser-run`,
+      `provider/model: ${state.provider || "unknown"} / ${state.model || "unknown"}`,
+      "final_tree_status: verify with git status after suite; trial runner auto-reverts each applied prompt",
+      "next_recommended_action: inspect failures, copy diagnostics, then rerun the bounded suite",
+      "",
+      "per_prompt:",
+    ];
+    for (const result of state.results) {
+      lines.push(
+        `- prompt_id: ${result.prompt.id}`,
+        `  prompt_text: ${reversibleTrialPromptForMode(result.prompt, trialMode)}`,
+        `  run_id: ${result.run_id || "none"}`,
+        `  provider_call_made: ${String(result.provider_call_made)}`,
+        `  model_called_for_generation: ${result.model_called_for_generation || "none"}`,
+        `  target_candidates: ${formatList(result.target_candidates, "none")}`,
+        `  selected_target: ${result.selected_target || "none"}`,
+        `  allowed_files: ${formatList(result.allowed_files, "none")}`,
+        `  preview_changed_files: ${formatList(result.preview_changed_files, "none")}`,
+        `  applied_changed_files: ${formatList(result.applied_changed_files, "none")}`,
+        `  disk_changed_files: ${formatList(result.disk_changed_files, "none")}`,
+        `  checks_run: ${formatList(result.checks_run, "none")}`,
+        `  checks_result: ${result.checks_result || "not recorded"}`,
+        `  reversal_available: ${String(result.reversal_available)}`,
+        `  reverted: ${result.reverted ? "yes" : "no"}`,
+        `  visible_result_label: ${result.visible_result_label}`,
+        `  failure_reason: ${result.failure_reason || "none"}`,
+        `  endpoint_statuses: ${formatList(result.endpoint_statuses, "none")}`,
+      );
+    }
+    return lines.join("\n");
+  }
+
+  async function copyReversibleSuiteDiagnostics() {
+    try {
+      await navigator.clipboard.writeText(reversibleSuiteDiagnosticsText());
+      setReversibleSuiteCopyStatus("Trial diagnostics copied.");
+    } catch {
+      setReversibleSuiteCopyStatus("Trial diagnostics are available in Advanced details.");
+    }
+  }
+
+  async function runOneReversibleTrialPrompt(prompt: ReversibleTrialPrompt): Promise<ReversibleSuitePromptResult> {
+    const endpointStatuses: string[] = [];
+    const effectivePrompt = reversibleTrialPromptForMode(prompt, trialMode);
+    const taskText = `${effectivePrompt}\nTarget file: ${prompt.targetFile}`;
+    const packet = buildManualTaskPacket({
+      allowedFilesText: prompt.expected_scope.join("\n"),
+      expectedChecksText: "git diff --check",
+      prompt: taskText,
+      targetFile: prompt.targetFile,
+    });
+    const taskResponse = await fetch("/v1/tasks/long-running", {
+      body: JSON.stringify({
+        description: effectivePrompt,
+        steps: [
+          "Reading request",
+          "Finding files",
+          "Calling model",
+          "Editing files",
+          "Running checks",
+          "Ready for review",
+        ],
+      }),
+      headers: { "content-type": "application/json" },
+      method: "POST",
+    });
+    const taskPayload = await readJson(taskResponse);
+    endpointStatuses.push(`/v1/tasks/long-running:${taskResponse.status}`);
+    if (!taskResponse.ok) {
+      throw new Error(messageFromPayload(taskPayload, taskResponse.status));
+    }
+    const taskId = taskIdFromPayload(taskPayload);
+    if (!taskId) {
+      throw new Error("Long-running task create did not return a task id.");
+    }
+
+    const proposalResponse = await fetchWithTimeout("/v1/decisions/prompt-packet", {
+      body: JSON.stringify({
+        active_task_id: taskId,
+        needs_codebase_context: true,
+        prefer_free: true,
+        task: taskText,
+        trial_mode: "live_apply",
+        wants_implementation: true,
+      }),
+      headers: { "content-type": "application/json" },
+      method: "POST",
+    }, MANUAL_PROMPT_PACKET_TIMEOUT_MS);
+    const proposalPayload = await readJson(proposalResponse);
+    endpointStatuses.push(`/v1/decisions/prompt-packet:${proposalResponse.status}`);
+    if (!proposalResponse.ok) {
+      throw new Error(messageFromPayload(proposalPayload, proposalResponse.status));
+    }
+    const providerTruth = providerModelTruthFromPayload(proposalPayload, selectedProviderTruth);
+    const proposedDiff = diffFromPayload(proposalPayload);
+    const providerCallMade = providerTruth.providerCallMade === true;
+    const modelCalledForGeneration = providerTruth.modelId || providerTruth.modelLabel || "none";
+    if (!providerCallMade) {
+      return {
+        allowed_files: packet.allowedFiles,
+        applied_changed_files: [],
+        checks_result: "not run",
+        checks_run: packet.checks,
+        disk_changed_files: [],
+        endpoint_statuses: endpointStatuses,
+        failure_reason: "FAIL: No model call",
+        model_called_for_generation: modelCalledForGeneration,
+        prompt,
+        provider: providerTruth.providerLabel,
+        provider_call_made: false,
+        preview_changed_files: [],
+        reverted: false,
+        reversal_available: false,
+        run_id: taskId,
+        selected_target: packet.selectedTarget ?? "",
+        target_candidates: packet.targetCandidates,
+        visible_result_label: "FAIL",
+      };
+    }
+    if (!proposedDiff.trim()) {
+      return {
+        allowed_files: packet.allowedFiles,
+        applied_changed_files: [],
+        checks_result: "not run",
+        checks_run: packet.checks,
+        disk_changed_files: [],
+        endpoint_statuses: endpointStatuses,
+        failure_reason: "NO-GO: Live apply proof missing",
+        model_called_for_generation: modelCalledForGeneration,
+        prompt,
+        provider: providerTruth.providerLabel,
+        provider_call_made: true,
+        preview_changed_files: [],
+        reverted: false,
+        reversal_available: false,
+        run_id: taskId,
+        selected_target: packet.selectedTarget ?? "",
+        target_candidates: packet.targetCandidates,
+        visible_result_label: "NO-GO",
+      };
+    }
+
+    const diffResponse = await fetch("/v1/verification/diff-preview", {
+      body: JSON.stringify({
+        route_type: "live_apply",
+        task_spec: {
+          allowed_files: packet.allowedFiles,
+          forbidden_files: PROTECTED_FORBIDDEN_FILES,
+          risk_tier: prompt.risk,
+          schema_version: 1,
+          source: "coding-reversible-trial-runner-suite",
+          target: packet.selectedTarget,
+          task_type: "modify_existing_file",
+          verification: packet.checks,
+        },
+        task_text: taskText,
+        unified_diff: proposedDiff,
+      }),
+      headers: { "content-type": "application/json" },
+      method: "POST",
+    });
+    const diffPayload = await readJson(diffResponse);
+    endpointStatuses.push(`/v1/verification/diff-preview:${diffResponse.status}`);
+    if (!diffResponse.ok) {
+      throw new Error(messageFromPayload(diffPayload, diffResponse.status));
+    }
+    const previewChangedFiles = changedFilesFromPayload(diffPayload);
+    const protectedTouched = previewChangedFiles.some((path) => isProtectedTarget(path));
+    const outsideAllowed = previewChangedFiles.some((path) => !packet.allowedFiles.includes(path));
+    if (statusFromPayload(diffPayload) === "blocked" || protectedTouched || outsideAllowed) {
+      return {
+        allowed_files: packet.allowedFiles,
+        applied_changed_files: [],
+        checks_result: "blocked",
+        checks_run: packet.checks,
+        disk_changed_files: [],
+        endpoint_statuses: endpointStatuses,
+        failure_reason: protectedTouched ? "BLOCKED: Protected path" : "NO-GO: Live apply proof missing",
+        model_called_for_generation: modelCalledForGeneration,
+        prompt,
+        provider: providerTruth.providerLabel,
+        provider_call_made: true,
+        preview_changed_files: previewChangedFiles,
+        reverted: false,
+        reversal_available: false,
+        run_id: taskId,
+        selected_target: packet.selectedTarget ?? "",
+        target_candidates: packet.targetCandidates,
+        visible_result_label: protectedTouched ? "BLOCKED" : "NO-GO",
+      };
+    }
+
+    const applyResponse = await fetch("/v1/actions/execute-approved", {
+      body: JSON.stringify({
+        action: `Run reversible trial ${prompt.id}`,
+        approved: true,
+        approved_diff: proposedDiff,
+        allowed_files: packet.allowedFiles,
+        target: packet.selectedTarget,
+        task_id: taskId,
+      }),
+      headers: { "content-type": "application/json" },
+      method: "POST",
+    });
+    const applyPayload = await readJson(applyResponse);
+    endpointStatuses.push(`/v1/actions/execute-approved:${applyResponse.status}`);
+    if (!applyResponse.ok) {
+      throw new Error(messageFromPayload(applyPayload, applyResponse.status));
+    }
+    const appliedChangedFiles = changedFilesFromPayload(applyPayload);
+    const diskChangedFiles = appliedChangedFiles.length > 0 ? appliedChangedFiles : previewChangedFiles;
+    const reverseDiff = reverseUnifiedDiff(proposedDiff);
+    const reversalAvailable = reverseDiff.trim().length > 0;
+    if (diskChangedFiles.length === 0) {
+      return {
+        allowed_files: packet.allowedFiles,
+        applied_changed_files: appliedChangedFiles,
+        checks_result: "recorded",
+        checks_run: packet.checks,
+        disk_changed_files: [],
+        endpoint_statuses: endpointStatuses,
+        failure_reason: "FAIL: No disk change",
+        model_called_for_generation: modelCalledForGeneration,
+        prompt,
+        provider: providerTruth.providerLabel,
+        provider_call_made: true,
+        preview_changed_files: previewChangedFiles,
+        reverted: false,
+        reversal_available: reversalAvailable,
+        run_id: taskId,
+        selected_target: packet.selectedTarget ?? "",
+        target_candidates: packet.targetCandidates,
+        visible_result_label: "FAIL",
+      };
+    }
+    if (!reversalAvailable) {
+      return {
+        allowed_files: packet.allowedFiles,
+        applied_changed_files: appliedChangedFiles,
+        checks_result: "recorded",
+        checks_run: packet.checks,
+        disk_changed_files: diskChangedFiles,
+        endpoint_statuses: endpointStatuses,
+        failure_reason: "FAIL: No reversal receipt",
+        model_called_for_generation: modelCalledForGeneration,
+        prompt,
+        provider: providerTruth.providerLabel,
+        provider_call_made: true,
+        preview_changed_files: previewChangedFiles,
+        reverted: false,
+        reversal_available: false,
+        run_id: taskId,
+        selected_target: packet.selectedTarget ?? "",
+        target_candidates: packet.targetCandidates,
+        visible_result_label: "FAIL",
+      };
+    }
+
+    const revertTaskResponse = await fetch("/v1/tasks/long-running", {
+      body: JSON.stringify({ description: `Revert reversible trial ${prompt.id}` }),
+      headers: { "content-type": "application/json" },
+      method: "POST",
+    });
+    const revertTaskPayload = await readJson(revertTaskResponse);
+    endpointStatuses.push(`/v1/tasks/long-running(revert):${revertTaskResponse.status}`);
+    if (!revertTaskResponse.ok) {
+      throw new Error(messageFromPayload(revertTaskPayload, revertTaskResponse.status));
+    }
+    const revertTaskId = taskIdFromPayload(revertTaskPayload);
+    if (!revertTaskId) {
+      throw new Error("Reverse task create did not return a task id.");
+    }
+    const revertResponse = await fetch("/v1/actions/execute-approved", {
+      body: JSON.stringify({
+        action: `Revert reversible trial ${prompt.id}`,
+        approved: true,
+        approved_diff: reverseDiff,
+        allowed_files: packet.allowedFiles,
+        target: packet.selectedTarget,
+        task_id: revertTaskId,
+      }),
+      headers: { "content-type": "application/json" },
+      method: "POST",
+    });
+    const revertPayload = await readJson(revertResponse);
+    endpointStatuses.push(`/v1/actions/execute-approved(revert):${revertResponse.status}`);
+    if (!revertResponse.ok) {
+      throw new Error(messageFromPayload(revertPayload, revertResponse.status));
+    }
+    return {
+      allowed_files: packet.allowedFiles,
+      applied_changed_files: appliedChangedFiles,
+      checks_result: "git diff --check recorded",
+      checks_run: packet.checks,
+      disk_changed_files: diskChangedFiles,
+      endpoint_statuses: endpointStatuses,
+      failure_reason: "",
+      model_called_for_generation: modelCalledForGeneration,
+      prompt,
+      provider: providerTruth.providerLabel,
+      provider_call_made: true,
+      preview_changed_files: previewChangedFiles,
+      reverted: true,
+      reversal_available: true,
+      run_id: taskId,
+      selected_target: packet.selectedTarget ?? "",
+      target_candidates: packet.targetCandidates,
+      visible_result_label: "PASS",
+    };
+  }
+
+  async function handleRunReversibleSuite() {
+    if (reversibleSuiteState.status === "running" || reversibleSuiteState.status === "stopping") return;
+    const suiteId = `suite-${Date.now().toString(36)}`;
+    const prompts = selectReversibleTrialPrompts(reversibleTrialCount);
+    stopReversibleSuiteAfterCurrentRef.current = false;
+    setReversibleSuiteCopyStatus("");
+    setReversibleSuiteState({
+      completed: 0,
+      count: reversibleTrialCount,
+      currentPrompt: prompts[0]?.prompt ?? "",
+      fail: 0,
+      pass: 0,
+      provider: selectedProviderTruth.providerLabel,
+      model: selectedProviderTruth.modelLabel,
+      results: [],
+      reverted: 0,
+      status: "running",
+      stopped: false,
+      suiteId,
+    });
+    let nextState: ReversibleSuiteState = {
+      completed: 0,
+      count: reversibleTrialCount,
+      currentPrompt: "",
+      fail: 0,
+      pass: 0,
+      provider: selectedProviderTruth.providerLabel,
+      model: selectedProviderTruth.modelLabel,
+      results: [],
+      reverted: 0,
+      status: "running",
+      stopped: false,
+      suiteId,
+    };
+    try {
+      for (const [index, prompt] of prompts.entries()) {
+        nextState = {
+          ...nextState,
+          currentPrompt: `${index + 1}/${prompts.length}: ${prompt.prompt}`,
+          status: stopReversibleSuiteAfterCurrentRef.current ? "stopping" : "running",
+        };
+        setReversibleSuiteState(nextState);
+        let result: ReversibleSuitePromptResult;
+        try {
+          result = await runOneReversibleTrialPrompt(prompt);
+        } catch (error) {
+          result = {
+            allowed_files: prompt.expected_scope,
+            applied_changed_files: [],
+            checks_result: "failed before completion",
+            checks_run: ["git diff --check"],
+            disk_changed_files: [],
+            endpoint_statuses: [],
+            failure_reason: error instanceof Error ? error.message : "Trial prompt failed.",
+            model_called_for_generation: "none",
+            prompt,
+            provider: selectedProviderTruth.providerLabel,
+            provider_call_made: false,
+            preview_changed_files: [],
+            reverted: false,
+            reversal_available: false,
+            run_id: "",
+            selected_target: prompt.targetFile,
+            target_candidates: prompt.expected_scope,
+            visible_result_label: "FAIL",
+          };
+        }
+        nextState = {
+          ...nextState,
+          completed: nextState.completed + 1,
+          currentPrompt: `${index + 1}/${prompts.length}: ${prompt.prompt}`,
+          fail: nextState.fail + (result.visible_result_label === "PASS" ? 0 : 1),
+          pass: nextState.pass + (result.visible_result_label === "PASS" ? 1 : 0),
+          provider: result.provider || nextState.provider,
+          model: result.model_called_for_generation || nextState.model,
+          results: [...nextState.results, result],
+          reverted: nextState.reverted + (result.reverted ? 1 : 0),
+          status: stopReversibleSuiteAfterCurrentRef.current ? "stopping" : "running",
+        };
+        setReversibleSuiteState(nextState);
+        if (stopReversibleSuiteAfterCurrentRef.current) break;
+      }
+      const doneState = {
+        ...nextState,
+        currentPrompt: nextState.completed > 0 ? "Suite finished." : "",
+        status: nextState.fail > 0 ? "failed" as const : "done" as const,
+        stopped: stopReversibleSuiteAfterCurrentRef.current,
+      };
+      setReversibleSuiteState(doneState);
+    } catch {
+      setReversibleSuiteState((current) => ({ ...current, status: "failed" }));
+    }
+  }
+
+  function handleStopReversibleSuiteAfterCurrent() {
+    stopReversibleSuiteAfterCurrentRef.current = true;
+    setReversibleSuiteState((current) => ({
+      ...current,
+      status: current.status === "running" ? "stopping" : current.status,
+      stopped: true,
     }));
   }
 
@@ -3036,6 +3528,115 @@ export default function CodingCockpitShell() {
               <p className={commandLabelClass}>Active task</p>
               <p className={`mt-2 line-clamp-4 text-sm leading-5 ${commandTextClass}`}>{currentTaskTitle}</p>
               <p className={`mt-2 text-xs ${commandMutedClass}`}>{currentTaskTarget}</p>
+            </section>
+            <section className={`${commandInsetClass} p-3`} aria-label="Reversible trial runner">
+              <p className={commandLabelClass}>Trial Runner</p>
+              <h3 className={`mt-2 text-base font-semibold ${commandTextClass}`}>Reversible trial runner</h3>
+              <p className={`mt-1 text-xs leading-5 ${commandMutedClass}`}>
+                Runs realistic reversible prompts and reverts each proof edit.
+              </p>
+              <div className="mt-3 grid grid-cols-3 gap-1" role="group" aria-label="Trial runner mode">
+                {(["code", "design", "hybrid"] as AgentTrialMode[]).map((mode) => (
+                  <button
+                    aria-pressed={trialMode === mode}
+                    className={`min-h-9 rounded-md border px-2 text-xs font-semibold transition-colors ${commandFocusClass} ${
+                      trialMode === mode
+                        ? "border-[var(--spirit-accent)] bg-[var(--ddv4-nav-active-bg)] text-[var(--ddv4-nav-active-fg)]"
+                        : "border-[var(--ddv4-surface-border-soft)] text-[var(--ddv4-fg-muted)] hover:bg-[var(--ddv4-surface-fill)]"
+                    }`}
+                    disabled={reversibleSuiteState.status === "running" || reversibleSuiteState.status === "stopping"}
+                    key={mode}
+                    onClick={() => setTrialMode(mode)}
+                    type="button"
+                  >
+                    {trialModeLabels[mode]}
+                  </button>
+                ))}
+              </div>
+              <div className="mt-3 grid grid-cols-3 gap-1" role="group" aria-label="Prompt count selector">
+                {reversibleTrialCounts.map((count) => (
+                  <button
+                    aria-pressed={reversibleTrialCount === count}
+                    className={`min-h-9 rounded-md border px-2 text-xs font-semibold transition-colors ${commandFocusClass} ${
+                      reversibleTrialCount === count
+                        ? "border-[var(--spirit-accent)] bg-[var(--ddv4-nav-active-bg)] text-[var(--ddv4-nav-active-fg)]"
+                        : "border-[var(--ddv4-surface-border-soft)] text-[var(--ddv4-fg-muted)] hover:bg-[var(--ddv4-surface-fill)]"
+                    }`}
+                    disabled={reversibleSuiteState.status === "running" || reversibleSuiteState.status === "stopping"}
+                    key={count}
+                    onClick={() => setReversibleTrialCount(count)}
+                    type="button"
+                  >
+                    {count}
+                  </button>
+                ))}
+              </div>
+              <button
+                className={`mt-3 inline-flex min-h-10 w-full items-center justify-center rounded-md bg-emerald-300 px-3 text-sm font-semibold text-slate-950 transition-colors hover:bg-emerald-200 disabled:cursor-not-allowed disabled:opacity-60 ${commandFocusClass}`}
+                disabled={reversibleSuiteState.status === "running" || reversibleSuiteState.status === "stopping"}
+                onClick={() => void handleRunReversibleSuite()}
+                type="button"
+              >
+                Run reversible trial suite
+              </button>
+              {reversibleSuiteState.status === "running" || reversibleSuiteState.status === "stopping" ? (
+                <button
+                  className={`mt-2 inline-flex min-h-10 w-full items-center justify-center rounded-md border border-[var(--ddv4-pill-border)] px-3 text-sm font-semibold text-[var(--ddv4-fg)] transition-colors hover:bg-[var(--ddv4-surface-fill)] ${commandFocusClass}`}
+                  onClick={handleStopReversibleSuiteAfterCurrent}
+                  type="button"
+                >
+                  Stop after current prompt
+                </button>
+              ) : null}
+              <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                {[
+                  ["Status", reversibleSuiteState.status],
+                  ["Current", `${reversibleSuiteState.completed}/${reversibleSuiteState.count}`],
+                  ["Pass", String(reversibleSuiteState.pass)],
+                  ["Fail", String(reversibleSuiteState.fail)],
+                  ["Reverted", String(reversibleSuiteState.reverted)],
+                  ["Suite", reversibleSuiteState.suiteId || "not run"],
+                ].map(([label, value]) => (
+                  <div className="rounded-md border border-[var(--ddv4-surface-border-soft)] p-2" key={label}>
+                    <dt className={commandLabelClass}>{label}</dt>
+                    <dd className={`mt-1 break-words ${commandTextClass}`}>{value}</dd>
+                  </div>
+                ))}
+              </dl>
+              {reversibleSuiteState.currentPrompt ? (
+                <p className={`mt-3 line-clamp-4 text-xs leading-5 ${commandMutedClass}`}>
+                  {reversibleSuiteState.currentPrompt}
+                </p>
+              ) : null}
+              <button
+                className={`mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-md border border-[var(--ddv4-pill-border)] px-3 text-sm font-semibold text-[var(--ddv4-fg)] transition-colors hover:bg-[var(--ddv4-surface-fill)] disabled:cursor-not-allowed disabled:opacity-60 ${commandFocusClass}`}
+                disabled={reversibleSuiteState.results.length === 0}
+                onClick={() => void copyReversibleSuiteDiagnostics()}
+                type="button"
+              >
+                <Copy aria-hidden="true" size={16} />
+                Copy trial diagnostics
+              </button>
+              {reversibleSuiteCopyStatus ? (
+                <p className={`mt-2 text-xs ${commandMutedClass}`}>{reversibleSuiteCopyStatus}</p>
+              ) : null}
+              <details className="mt-3">
+                <summary className={`cursor-pointer text-xs font-semibold ${commandTextClass}`}>
+                  Advanced details
+                </summary>
+                <ol className="mt-2 max-h-48 space-y-2 overflow-auto text-xs">
+                  {selectReversibleTrialPrompts(reversibleTrialCount).map((prompt) => (
+                    <li className={commandMutedClass} key={prompt.id}>
+                      <span className={commandTextClass}>{prompt.id}</span>: {prompt.prompt}
+                    </li>
+                  ))}
+                </ol>
+                {reversibleSuiteState.results.length > 0 ? (
+                  <pre className="mt-3 max-h-56 overflow-auto rounded-md border border-[var(--ddv4-surface-border-soft)] bg-[var(--ddv4-surface-fill)] p-2 text-[11px] leading-5 text-[var(--ddv4-fg)]">
+                    {reversibleSuiteDiagnosticsText()}
+                  </pre>
+                ) : null}
+              </details>
             </section>
           </aside>
 
