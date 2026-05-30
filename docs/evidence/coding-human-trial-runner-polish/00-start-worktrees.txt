@@ -1,0 +1,4 @@
+worktree /home/source/SpiritOS
+HEAD 7b5add45a62ed3951494b8e4446e925e2b3256ab
+branch refs/heads/lane/coding-human-trial-runner-polish-20260530-112512
+
