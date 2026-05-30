@@ -83,12 +83,18 @@ describe("CodingCockpitShell", () => {
     installCommonFetchMock();
     render(<CodingCockpitShell />);
 
+    expect(screen.getByRole("complementary", { name: "Coding chats" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "New chat" })).toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: "Coding session list" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Active task" })).toBeInTheDocument();
+    expect(screen.getByRole("complementary", { name: "Review pane" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Live coding runner" })).toBeInTheDocument();
     expect(screen.getByText("Project")).toBeInTheDocument();
     expect(screen.getByText("Provider/model")).toBeInTheDocument();
     expect(screen.getByText("State")).toBeInTheDocument();
 
-    expect(screen.getByRole("heading", { name: "What should SpiritOS change?" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Task transcript" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Task Composer" })).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Describe what you want SpiritOS to change.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Start coding" })).toBeInTheDocument();
 
@@ -118,7 +124,6 @@ describe("CodingCockpitShell", () => {
       "Size",
       "View",
       "Actual Intelligence Bank",
-      "Task Composer",
       "Target file",
       "Allowed files",
       "Expected checks",
@@ -222,7 +227,7 @@ describe("CodingCockpitShell", () => {
     fireEvent.click(screen.getByRole("button", { name: "Start coding" }));
 
     expect(await screen.findByRole("heading", { name: "FAIL" })).toBeInTheDocument();
-    expect(screen.getByText(/No model call/)).toBeInTheDocument();
+    expect(screen.getAllByText(/No model call/).length).toBeGreaterThan(0);
     expect(calls.some((call) => call.url.includes("/v1/actions/execute-approved"))).toBe(false);
   });
 
