@@ -1,0 +1,4 @@
+worktree /home/source/SpiritOS
+HEAD f391379e0c350d9f2d76408cf57699f5960ff3da
+branch refs/heads/lane/coding-reversible-trial-runner-suite-20260530-094819
+
