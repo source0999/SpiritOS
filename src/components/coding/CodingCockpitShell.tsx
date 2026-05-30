@@ -120,20 +120,29 @@ type ManualTaskEvent = {
 };
 
 const manualTaskPhaseLabels = {
-  received: "received prompt",
-  analyzing: "analyzing request",
-  discovering: "discovering likely files",
-  packet: "building task packet",
-  preview: "generating preview",
-  checks: "running checks or preparing checks",
-  review: "reviewing result",
-  done: "done",
-  blocked: "blocked",
-  failed: "failed",
+  received: "Reading request",
+  analyzing: "Reading request",
+  discovering: "Finding files",
+  packet: "Finding files",
+  preview: "Calling model",
+  checks: "Running checks",
+  review: "Ready for review",
+  done: "Ready for review",
+  blocked: "Ready for review",
+  failed: "Ready for review",
 } as const;
 
 /** Match CodingAgentInterface prompt-packet patience; proxy coder sync deadline defaults to 180s. */
 const MANUAL_PROMPT_PACKET_TIMEOUT_MS = 180_000;
+const PROTECTED_FORBIDDEN_FILES = [
+  ".env*",
+  "source_proxy/data/**",
+  "backend/volumes/**",
+  "backend/searxng_data/**",
+  ".spirit-backups/**",
+  "secrets",
+  "credentials",
+];
 
 type ManualTaskPhase = keyof typeof manualTaskPhaseLabels;
 
@@ -203,7 +212,7 @@ function idlePreviewState(): PreviewState {
     diff: "",
     error: null,
     events: [],
-    forbiddenFiles: [".env*", "source_proxy/data/**"],
+    forbiddenFiles: PROTECTED_FORBIDDEN_FILES,
     isApplying: false,
     isLoading: false,
     model: providerTruth.modelLabel,
@@ -291,6 +300,14 @@ function isProtectedTarget(value: string): boolean {
     target === ".env" ||
     target.startsWith(".env.") ||
     target.includes("/.env") ||
+    target === "source_proxy/data" ||
+    target.startsWith("source_proxy/data/") ||
+    target === "backend/volumes" ||
+    target.startsWith("backend/volumes/") ||
+    target === "backend/searxng_data" ||
+    target.startsWith("backend/searxng_data/") ||
+    target === ".spirit-backups" ||
+    target.startsWith(".spirit-backups/") ||
     target.includes("secret") ||
     target.includes("certificate") ||
     target.includes("credentials") ||
@@ -309,7 +326,15 @@ function isSafeRepoPath(value: string): boolean {
       lowerTarget !== ".env" &&
       !lowerTarget.startsWith(".env.") &&
       !lowerTarget.startsWith("source_proxy/data/") &&
-      lowerTarget !== "source_proxy/data",
+      lowerTarget !== "source_proxy/data" &&
+      !lowerTarget.startsWith("backend/volumes/") &&
+      lowerTarget !== "backend/volumes" &&
+      !lowerTarget.startsWith("backend/searxng_data/") &&
+      lowerTarget !== "backend/searxng_data" &&
+      !lowerTarget.startsWith(".spirit-backups/") &&
+      lowerTarget !== ".spirit-backups" &&
+      !lowerTarget.includes("secret") &&
+      !lowerTarget.includes("credential"),
   );
 }
 
@@ -605,6 +630,9 @@ function taskMentionsProtectedPath(value: string): boolean {
   return (
     /(^|\s)\.env(\.local)?(\s|$|,|\.|\/)/.test(text) ||
     text.includes("source_proxy/data") ||
+    text.includes("backend/volumes") ||
+    text.includes("backend/searxng_data") ||
+    text.includes(".spirit-backups") ||
     text.includes("secret") ||
     text.includes("credential")
   );
@@ -638,7 +666,7 @@ function buildManualTaskPacket({
   const normalizedTarget = normalizeRepoPath(targetFile);
   const explicitAllowedFiles = splitFiles(allowedFilesText);
   const checks = splitLinesOrCommas(expectedChecksText);
-  const forbiddenFiles = [".env*", "source_proxy/data/**"];
+  const forbiddenFiles = PROTECTED_FORBIDDEN_FILES;
   const targetCandidates = discoverManualTargetCandidates(prompt, normalizedTarget);
   const selectedTarget = normalizedTarget || targetCandidates[0] || null;
   const allowedFiles = explicitAllowedFiles.length > 0
@@ -675,9 +703,21 @@ function discoverManualTargetCandidates(prompt: string, explicitTarget: string):
   }
 
   const text = prompt.toLowerCase();
-  if (/\/coding|coding page|coding screen|coding cockpit|composer|start task|blocked task|backend-looking|backend junk|copy diagnostics|advanced details|task copy|progress|transcript/.test(text)) {
+  if (/\/coding|coding page|coding screen|coding cockpit|composer|start task|blocked task|backend-looking|backend junk|copy diagnostics|advanced details|task copy|progress|transcript|coding result card|result card|live apply run fails|next-step sentence/.test(text)) {
     candidates.add("src/components/coding/CodingCockpitShell.tsx");
     candidates.add("src/components/coding/__tests__/coding-cockpit-shell.test.tsx");
+  }
+  if (/soccer|scouting|scout|agent card|intelligence agent/.test(text)) {
+    candidates.add("src/components/dashboard/ScoutIntelligenceCenter.tsx");
+    candidates.add("src/components/dashboard/HomelabScoutIntelligenceWidget.tsx");
+  }
+  if (/source sidebar|sidebar selected|selected state|voidcore/.test(text)) {
+    candidates.add("src/components/chat/ChatThreadListItem.tsx");
+    candidates.add("src/components/chat/ChatThreadSidebar.tsx");
+  }
+  if (/oracle|daily briefing|quick action|briefing preparation/.test(text)) {
+    candidates.add("src/components/dashboard/OracleStagePanel.tsx");
+    candidates.add("src/components/chat/SpiritChat.tsx");
   }
   if (/trial runner|coder 10|prompt 1|agent trial|manual retest/.test(text)) {
     candidates.add("src/lib/coding/agent-trials-ui.ts");
@@ -1426,7 +1466,12 @@ export default function CodingCockpitShell() {
   const trialResultSummary = useMemo(() => summarizeTrialResult(trialState.actualPromptPreviews), [trialState]);
   const trialStatusLabel =
     trialRunState === "complete" ? "Finished" : trialRunState === "running" ? "Working" : "Ready";
-  const trialGrade = trialState.latestGrades[trialMode === "code" ? "coding" : trialMode] ?? "Not scored";
+  const trialGrade =
+    (trialMode === "code"
+      ? trialState.latestGrades.coding
+      : trialMode === "design"
+        ? trialState.latestGrades.design
+        : trialState.latestGrades.hybrid) ?? "Not scored";
   const trialCategoryLabel =
     trialMode === "code"
       ? "Coder usefulness"
@@ -1679,6 +1724,26 @@ export default function CodingCockpitShell() {
       "diagnostic_version: manual-natural-runner.v1",
       "run_id: not recorded",
       `timestamp: ${new Date().toISOString()}`,
+      `prompt: ${task.trim() || "not drafted"}`,
+      `provider: ${providerTruth.providerLabel}`,
+      `model: ${providerTruth.modelLabel}`,
+      `provider_call_made: ${providerTruth.providerCallMade}`,
+      `model_called_for_generation: ${providerTruth.modelCalledForGeneration ?? "none"}`,
+      `target_candidates: ${formatList(previewState.targetCandidates, "none")}`,
+      `selected_target: ${(previewState.selectedTarget ?? normalizeRepoPath(targetFile)) || "none"}`,
+      `allowed_files: ${formatList(preflight.allowedFiles, "none")}`,
+      `generated_diff_present: ${Boolean(previewState.diff.trim())}`,
+      `preview_changed_files: ${formatList(changedFilesDiagnostics.previewChangedFiles, "none")}`,
+      `applied_changed_files: ${formatList(changedFilesDiagnostics.appliedChangedFiles, "none")}`,
+      `disk_changed_files: ${formatList(changedFilesDiagnostics.diskChangedFiles, "none")}`,
+      `checks_run: ${formatList(previewState.checks, "none")}`,
+      `checks_result: ${previewState.verifierSummary}`,
+      `reversal_available: ${canRevertCurrentRun}`,
+      `reversal_status: ${reversalStatus || currentAppliedRunReceipt?.revertedAt || "none"}`,
+      `visible_result_label: ${codingVisibleResult.primary_label}`,
+      `failure_reason: ${previewState.error ?? previewState.blocker ?? previewState.reasonCode ?? "none"}`,
+      `endpoint_statuses: ${previewState.routeCalled ?? "none"}`,
+      `next_recommended_action: ${nextSafeAction}`,
       `submitted_prompt: ${task.trim() || "not drafted"}`,
       `trial_verdict: ${manualTrialVerdict.verdict}`,
       `trial_fixture_id: ${manualTrialVerdict.fixtureId ?? "none"}`,
@@ -1920,7 +1985,7 @@ export default function CodingCockpitShell() {
       diff: "",
       error: null,
       events: startedEvents,
-      forbiddenFiles: [".env*", "source_proxy/data/**"],
+      forbiddenFiles: PROTECTED_FORBIDDEN_FILES,
       isApplying: false,
       isLoading: true,
       ...providerTruthPatch(selectedTruth),
@@ -2066,7 +2131,7 @@ export default function CodingCockpitShell() {
             target_files: packet.allowedFiles,
             targeted_files: packet.allowedFiles,
             task: promptTask,
-            trial_mode: trialProofMode,
+            trial_mode: "live_apply",
             wants_implementation: true,
           }),
           headers: { "content-type": "application/json" },
@@ -2079,6 +2144,45 @@ export default function CodingCockpitShell() {
         throw new Error(messageFromPayload(proposalPayload, proposalResponse.status));
       }
       const proposalProviderTruth = providerModelTruthFromPayload(proposalPayload, selectedTruth);
+      const modelCalledForGeneration = proposalProviderTruth.modelCalledForGeneration ?? "none";
+      if (!proposalProviderTruth.providerCallMade || modelCalledForGeneration === "none") {
+        setPreviewState({
+          approvalAvailable: false,
+          approvedAt: null,
+          appliedAt: null,
+          applySummary: "",
+          allowedFiles: packet.allowedFiles,
+          blocker: "FAIL: No model call",
+          changedFiles: [],
+          checks: packet.checks,
+          currentPhase: manualTaskPhaseLabels.failed,
+          diff: "",
+          error: "FAIL: No model call",
+          events: [
+            ...packetEvents,
+            manualEvent("preview", "failed", "The route did not record provider_call_made=true and a generation model."),
+            manualEvent("failed", "failed", "Live apply proof is missing; no files were changed."),
+          ],
+          forbiddenFiles: packet.forbiddenFiles,
+          isApplying: false,
+          isLoading: false,
+          ...providerTruthPatch(proposalProviderTruth),
+          previewStatus: "failed no model call",
+          requirementSummary: "NO-GO: Live apply proof missing.",
+          reasonCode: "no_model_call",
+          reviewerSummary: "No disk edit allowed without live model proof.",
+          routeCalled: "/v1/decisions/prompt-packet",
+          selectedTarget: packet.selectedTarget,
+          status: "error",
+          targetCandidates: packet.targetCandidates,
+          targetMatch: false,
+          taskId: taskIdFromPayload(proposalPayload),
+          taskSpecAllowed: false,
+          verifierSummary: "No checks run because no model call was proven.",
+          technicalDetail: "provider_call_made/model_called_for_generation proof missing",
+        });
+        return;
+      }
 
       const proposedDiff = diffFromPayload(proposalPayload);
       if (!proposedDiff) {
@@ -2193,6 +2297,178 @@ export default function CodingCockpitShell() {
         !changedFiles.every((file) => packet.allowedFiles.includes(file));
       const effectivelyBlocked = blocked || changedOutsideAllowed;
       const previewOnlyApplyBlocked = taskRequestsPreviewOnly(task);
+      if (!effectivelyBlocked && previewOnlyApplyBlocked) {
+        setPreviewState({
+          approvalAvailable: false,
+          approvedAt: null,
+          appliedAt: null,
+          applySummary: "NO-GO: Preview-only output cannot pass.",
+          allowedFiles: packet.allowedFiles,
+          blocker: "NO-GO: Live apply proof missing",
+          changedFiles,
+          checks: packet.checks,
+          currentPhase: manualTaskPhaseLabels.blocked,
+          diff: proposedDiff,
+          error: "NO-GO: Live apply proof missing",
+          events: [
+            ...checksEvents,
+            manualEvent("checks", "done", "Diff verification passed, but the prompt requested preview-only behavior."),
+            manualEvent("blocked", "blocked", "Preview-only output cannot show PASS."),
+          ],
+          forbiddenFiles: packet.forbiddenFiles,
+          isApplying: false,
+          isLoading: false,
+          ...providerTruthPatch(proposalProviderTruth),
+          previewStatus: "preview-only blocked",
+          requirementSummary: "Preview-only output cannot pass.",
+          reasonCode: "preview_only_no_apply_requested",
+          reviewerSummary: "No live apply proof because apply was not allowed.",
+          routeCalled: "/v1/decisions/prompt-packet -> /v1/verification/diff-preview",
+          selectedTarget: packet.selectedTarget,
+          status: "blocked",
+          targetCandidates: packet.targetCandidates,
+          targetMatch: gate.targetMatch,
+          taskId: taskIdFromPayload(diffPayload) || taskIdFromPayload(proposalPayload),
+          taskSpecAllowed: gate.taskSpecAllowed,
+          verifierSummary: gate.verifierSummary,
+          technicalDetail: "preview_only_no_apply_requested",
+        });
+        return;
+      }
+      if (!effectivelyBlocked) {
+        const previewReadyEvents = [
+          ...checksEvents,
+          manualEvent("checks", "done", "Diff verification passed for the safety gate."),
+          manualEvent("review", "done", "Changed files are inside allowed_files."),
+          manualEvent("done", "running", "Applying the verified diff through execute-approved."),
+        ];
+        const previewTaskId = taskIdFromPayload(diffPayload) || taskIdFromPayload(proposalPayload);
+        setPreviewState({
+          approvalAvailable: false,
+          approvedAt: new Date().toISOString(),
+          appliedAt: null,
+          applySummary: "Applying verified diff through execute-approved.",
+          allowedFiles: packet.allowedFiles,
+          blocker: null,
+          changedFiles,
+          checks: packet.checks,
+          currentPhase: "editing files",
+          diff: proposedDiff,
+          error: null,
+          events: previewReadyEvents,
+          forbiddenFiles: packet.forbiddenFiles,
+          isApplying: true,
+          isLoading: false,
+          ...providerTruthPatch(proposalProviderTruth),
+          previewStatus: "verified; applying",
+          requirementSummary: gate.requirementSummary,
+          reasonCode: null,
+          reviewerSummary: gate.reviewerSummary,
+          routeCalled: "/v1/decisions/prompt-packet -> /v1/verification/diff-preview -> /v1/actions/execute-approved",
+          selectedTarget: packet.selectedTarget,
+          status: "approved",
+          targetCandidates: packet.targetCandidates,
+          targetMatch: gate.targetMatch,
+          taskId: previewTaskId,
+          taskSpecAllowed: gate.taskSpecAllowed,
+          verifierSummary: gate.verifierSummary,
+          technicalDetail: null,
+        });
+        let taskId = previewTaskId;
+        if (!taskId) {
+          const taskResponse = await fetch("/v1/tasks/long-running", {
+            body: JSON.stringify({ description: task.trim() || "Coding cockpit live apply" }),
+            headers: { "content-type": "application/json" },
+            method: "POST",
+          });
+          const taskPayload = await readJson(taskResponse);
+          if (!taskResponse.ok) {
+            throw new Error(messageFromPayload(taskPayload, taskResponse.status));
+          }
+          taskId = taskIdFromPayload(taskPayload);
+          if (!taskId) {
+            throw new Error("Long-running task create did not return a task id.");
+          }
+        }
+        const applyResponse = await fetch("/v1/actions/execute-approved", {
+          body: JSON.stringify({
+            action: `Modify ${packet.selectedTarget}`,
+            approved: true,
+            approved_diff: proposedDiff,
+            allowed_files: packet.allowedFiles,
+            target: packet.selectedTarget,
+            task_id: taskId,
+          }),
+          headers: { "content-type": "application/json" },
+          method: "POST",
+        });
+        const applyPayload = await readJson(applyResponse);
+        if (!applyResponse.ok) {
+          throw new Error(messageFromPayload(applyPayload, applyResponse.status));
+        }
+        const appliedFiles = changedFilesFromPayload(applyPayload);
+        const appliedAt = new Date().toISOString();
+        const diskChangedFiles = appliedFiles.length > 0 ? appliedFiles : changedFiles;
+        if (diskChangedFiles.length === 0) {
+          throw new Error("FAIL: No disk change");
+        }
+        const receipt: AppliedRunReceipt = {
+          allowedFiles: packet.allowedFiles,
+          appliedAt,
+          changedFiles: diskChangedFiles,
+          diff: proposedDiff,
+          hermesUsedForThisRun: proposalProviderTruth.hermesUsedForRunStatus === "yes",
+          id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          model: proposalProviderTruth.modelLabel,
+          prompt: task.trim(),
+          provider: proposalProviderTruth.providerLabel,
+          providerModelSource: proposalProviderTruth.source,
+          providerModelStatus: proposalProviderTruth.status,
+          revertedAt: null,
+          reversalModel: null,
+          reversalProvider: null,
+          reversalProviderModelSource: null,
+          reverseDiff: reverseUnifiedDiff(proposedDiff),
+          target: packet.selectedTarget,
+          taskId,
+        };
+        updateAppliedRunReceipts((receipts) => appendAppliedRunReceipt(receipts, receipt));
+        setPreviewState({
+          approvalAvailable: false,
+          approvedAt: null,
+          appliedAt,
+          applySummary: messageFromPayload(applyPayload, applyResponse.status),
+          allowedFiles: packet.allowedFiles,
+          blocker: null,
+          changedFiles: diskChangedFiles,
+          checks: packet.checks,
+          currentPhase: manualTaskPhaseLabels.done,
+          diff: proposedDiff,
+          error: null,
+          events: [
+            ...previewReadyEvents.slice(0, -1),
+            manualEvent("done", "done", "Diff applied through execute-approved. Reverse diff receipt is available."),
+          ],
+          forbiddenFiles: packet.forbiddenFiles,
+          isApplying: false,
+          isLoading: false,
+          ...providerTruthPatch(proposalProviderTruth),
+          previewStatus: "live apply complete",
+          requirementSummary: gate.requirementSummary,
+          reasonCode: null,
+          reviewerSummary: gate.reviewerSummary,
+          routeCalled: "/v1/decisions/prompt-packet -> /v1/verification/diff-preview -> /v1/actions/execute-approved",
+          selectedTarget: packet.selectedTarget,
+          status: "applied",
+          targetCandidates: packet.targetCandidates,
+          targetMatch: gate.targetMatch,
+          taskId,
+          taskSpecAllowed: gate.taskSpecAllowed,
+          verifierSummary: `Checks recorded: ${packet.checks.join(", ")}`,
+          technicalDetail: null,
+        });
+        return;
+      }
       setPreviewState({
         approvalAvailable: !effectivelyBlocked && gate.approvalAvailable && !previewOnlyApplyBlocked,
         approvedAt: null,
@@ -2257,7 +2533,7 @@ export default function CodingCockpitShell() {
           manualEvent("received", "done", "Prompt received from the manual composer."),
           manualEvent("failed", "failed", technicalDetail),
         ],
-        forbiddenFiles: [".env*", "source_proxy/data/**"],
+        forbiddenFiles: PROTECTED_FORBIDDEN_FILES,
         isApplying: false,
         isLoading: false,
         ...providerTruthPatch(selectedProviderTruth),
@@ -2605,6 +2881,283 @@ export default function CodingCockpitShell() {
     }
   }
 
+  function handleCancelRun() {
+    if (!previewState.isLoading && !previewState.isApplying && !isReverting) return;
+    setPreviewState((current) => ({
+      ...current,
+      applySummary: "Cancelled in the browser before another UI action was taken.",
+      blocker: "Cancelled",
+      currentPhase: manualTaskPhaseLabels.blocked,
+      error: null,
+      isApplying: false,
+      isLoading: false,
+      reasonCode: "cancelled",
+      status: "blocked",
+      technicalDetail: "cancelled",
+    }));
+  }
+
+  const liveRunnerState =
+    previewState.isLoading
+      ? previewState.currentPhase === manualTaskPhaseLabels.preview
+        ? "running"
+        : "thinking"
+      : previewState.isApplying || isReverting
+        ? "running"
+        : previewState.status === "applied" || previewState.status === "satisfied"
+          ? "done"
+          : previewState.status === "blocked" || previewState.status === "error"
+            ? "failed"
+            : "idle";
+  const generatedDiffPresent = Boolean(previewState.diff.trim());
+  const modelCalledForGeneration = currentPreviewProviderTruth.modelCalledForGeneration ?? "none";
+  const liveProofComplete =
+    previewState.status === "applied" &&
+    currentPreviewProviderTruth.providerCallMade &&
+    modelCalledForGeneration !== "none" &&
+    currentChangedFilesDiagnostics.previewChangedFiles.length > 0 &&
+    currentChangedFilesDiagnostics.appliedChangedFiles.length > 0 &&
+    currentChangedFilesDiagnostics.diskChangedFiles.length > 0 &&
+    previewState.changedFiles.every((file) => previewState.allowedFiles.includes(file)) &&
+    previewState.checks.length > 0 &&
+    Boolean(currentAppliedRunReceipt && !currentAppliedRunReceipt.revertedAt) &&
+    !previewState.changedFiles.some(isProtectedTarget);
+  const liveResultLabel =
+    reversalStatus.toLowerCase().startsWith("reverted")
+      ? "REVERTED"
+      : previewState.reasonCode === "protected_path_request"
+        ? "BLOCKED"
+        : liveRunnerState === "idle" || liveRunnerState === "thinking" || liveRunnerState === "running"
+          ? "RUNNING"
+          : liveProofComplete
+            ? "PASS"
+            : "FAIL";
+  const liveResultSentence =
+    liveResultLabel === "PASS"
+      ? "SpiritOS called the model, applied a bounded disk change, recorded checks, and stored a reverse diff."
+      : liveResultLabel === "BLOCKED"
+        ? "Protected paths were blocked before any edit."
+        : liveResultLabel === "REVERTED"
+          ? "This run was reverted through execute-approved using the stored reverse diff."
+          : liveRunnerState === "idle"
+            ? "Describe a change and start a live coding run."
+            : previewState.error ?? previewState.blocker ?? previewState.applySummary ?? "SpiritOS is working on the run.";
+  const simpleProgressItems = [
+    "Reading request",
+    "Finding files",
+    "Calling model",
+    "Editing files",
+    "Running checks",
+    "Ready for review",
+  ].map((label) => {
+    const event = previewState.events.find((item) => item.label === label);
+    const status =
+      event?.status ??
+      (previewState.status === "idle" && !previewState.isLoading && !previewState.isApplying
+        ? "pending"
+        : previewState.currentPhase === label
+          ? "running"
+          : previewState.events.some((item) => item.label === label)
+            ? "done"
+            : "pending");
+    return { label, status };
+  });
+
+  return (
+    <div className="dashboard-demo-v4-route-shell dashboard-demo-v4-root">
+      <main className="dashboard-demo-v4-route-main min-h-dvh overflow-x-hidden text-[var(--ddv4-fg)]">
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
+          <h1 className="sr-only">Coding</h1>
+
+          <section className={`${commandPanelClass} p-4 sm:p-5`} role="status" aria-live="polite">
+            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+              <div>
+                <p className={commandLabelClass}>Status</p>
+                <h2 className={`mt-2 text-lg font-semibold ${commandTextClass}`}>Live coding runner</h2>
+                <p className={`mt-1 text-sm ${commandMutedClass}`}>
+                  {previewState.changedFiles.length > 0
+                    ? "Files changed on disk. Review or revert this run before starting another."
+                    : "No live-run file changes are currently recorded."}
+                </p>
+              </div>
+              <span className="inline-flex min-h-9 items-center rounded-md border border-[var(--ddv4-pill-border)] px-3 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--ddv4-fg)]">
+                {liveRunnerState}
+              </span>
+            </div>
+            <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
+              <div className={`${commandInsetClass} p-3`}>
+                <dt className={commandLabelClass}>Project</dt>
+                <dd className={`mt-1 ${commandTextClass}`}>SpiritOS</dd>
+              </div>
+              <div className={`${commandInsetClass} p-3`}>
+                <dt className={commandLabelClass}>Provider/model</dt>
+                <dd className={`mt-1 break-words ${commandTextClass}`}>
+                  {currentPreviewProviderTruth.providerLabel} / {currentPreviewProviderTruth.modelLabel}
+                </dd>
+              </div>
+              <div className={`${commandInsetClass} p-3`}>
+                <dt className={commandLabelClass}>State</dt>
+                <dd className={`mt-1 ${commandTextClass}`}>{liveRunnerState}</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section className={`${commandPanelClass} p-4 sm:p-5`} aria-labelledby="task-composer-heading">
+            <div className="mb-4">
+              <p className={commandLabelClass}>Prompt composer</p>
+              <h2 id="task-composer-heading" className={`mt-2 text-lg font-semibold ${commandTextClass}`}>
+                What should SpiritOS change?
+              </h2>
+            </div>
+            <label className="block">
+              <span className="sr-only">Coding prompt</span>
+              <textarea
+                className={`min-h-40 w-full resize-y rounded-md border border-[var(--ddv4-surface-border-soft)] bg-[var(--ddv4-surface-fill)] px-4 py-4 text-base leading-7 text-[var(--ddv4-fg)] placeholder:text-[var(--ddv4-fg-faint)] ${commandControlClass}`}
+                onChange={(event) => {
+                  handleTaskChange(event.target.value);
+                }}
+                placeholder="Describe what you want SpiritOS to change."
+                value={task}
+              />
+            </label>
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+              <button
+                className={`inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-md bg-emerald-300 px-4 text-sm font-semibold text-slate-950 shadow-sm transition-colors hover:bg-emerald-200 disabled:cursor-not-allowed disabled:opacity-60 ${commandFocusClass}`}
+                disabled={!canStartTask || previewState.isLoading || previewState.isApplying || isReverting}
+                onClick={handleDraftPreview}
+                type="button"
+              >
+                <ShieldCheck aria-hidden="true" size={18} />
+                {previewState.isLoading || previewState.isApplying ? "Working..." : "Start coding"}
+              </button>
+              {previewState.isLoading || previewState.isApplying || isReverting ? (
+                <button
+                  className={`inline-flex min-h-12 items-center justify-center rounded-md border border-[var(--ddv4-pill-border)] px-4 text-sm font-semibold text-[var(--ddv4-fg)] transition-colors hover:bg-[var(--ddv4-surface-fill)] ${commandFocusClass}`}
+                  onClick={handleCancelRun}
+                  type="button"
+                >
+                  Cancel
+                </button>
+              ) : null}
+            </div>
+          </section>
+
+          <section className={`${commandPanelClass} p-4 sm:p-5`} aria-labelledby="progress-heading">
+            <p className={commandLabelClass}>Progress transcript</p>
+            <h2 id="progress-heading" className={`mt-2 text-lg font-semibold ${commandTextClass}`}>
+              Run progress
+            </h2>
+            <ol className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {simpleProgressItems.map((item) => (
+                <li className={`${commandInsetClass} min-h-16 p-3`} key={item.label}>
+                  <div className={`text-sm font-semibold ${commandTextClass}`}>{item.label}</div>
+                  <div className={`mt-1 text-xs uppercase tracking-[0.12em] ${commandMutedClass}`}>
+                    {item.status}
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </section>
+
+          <section className={`${commandPanelClass} p-4 sm:p-5`} aria-labelledby="result-heading">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className={commandLabelClass}>Result</p>
+                <h2 id="result-heading" className={`mt-2 text-lg font-semibold ${commandTextClass}`}>
+                  {liveResultLabel}
+                </h2>
+                <p className={`mt-2 text-sm leading-6 ${commandMutedClass}`}>{liveResultSentence}</p>
+              </div>
+              <button
+                className={`inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-[var(--ddv4-pill-border)] px-3 text-sm font-semibold text-[var(--ddv4-fg)] transition-colors hover:bg-[var(--ddv4-surface-fill)] disabled:cursor-not-allowed disabled:opacity-60 ${commandFocusClass}`}
+                disabled={!showCopyDiagnostics && !reversalStatus}
+                onClick={() => void copyDiagnostics()}
+                type="button"
+              >
+                <Copy aria-hidden="true" size={16} />
+                Copy diagnostics
+              </button>
+            </div>
+            <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
+              <div className={`${commandInsetClass} p-3`}>
+                <dt className={commandLabelClass}>Files changed</dt>
+                <dd className={`mt-1 break-words ${commandTextClass}`}>
+                  {formatList(currentChangedFilesDiagnostics.diskChangedFiles, "None")}
+                </dd>
+              </div>
+              <div className={`${commandInsetClass} p-3`}>
+                <dt className={commandLabelClass}>Checks run</dt>
+                <dd className={`mt-1 break-words ${commandTextClass}`}>
+                  {formatList(previewState.checks, "None recorded")}
+                </dd>
+              </div>
+              <div className={`${commandInsetClass} p-3`}>
+                <dt className={commandLabelClass}>Reversal</dt>
+                <dd className={`mt-1 break-words ${commandTextClass}`}>
+                  {currentAppliedRunReceipt && !currentAppliedRunReceipt.revertedAt
+                    ? "Available"
+                    : reversalStatus || "Not available"}
+                </dd>
+              </div>
+            </dl>
+            {currentAppliedRunReceipt && !currentAppliedRunReceipt.revertedAt ? (
+              <button
+                className={`mt-4 inline-flex min-h-11 items-center justify-center rounded-md border border-[var(--ddv4-pill-border)] px-3 text-sm font-semibold text-[var(--ddv4-fg)] transition-colors hover:bg-[var(--ddv4-surface-fill)] disabled:cursor-not-allowed disabled:opacity-60 ${commandFocusClass}`}
+                disabled={isReverting}
+                onClick={() => void handleRevertReceipt(currentAppliedRunReceipt)}
+                type="button"
+              >
+                {isReverting ? "Reverting..." : "Revert this run"}
+              </button>
+            ) : null}
+            {diagnosticCopyStatus ? (
+              <p className={`mt-3 text-sm ${commandMutedClass}`}>{diagnosticCopyStatus}</p>
+            ) : null}
+            {reversalStatus ? (
+              <p className={`mt-3 text-sm ${commandMutedClass}`}>{reversalStatus}</p>
+            ) : null}
+          </section>
+
+          <details className={`${commandPanelClass} p-4 sm:p-5`}>
+            <summary className={`cursor-pointer text-sm font-semibold ${commandTextClass}`}>
+              Advanced details
+            </summary>
+            <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+              <div className={`${commandInsetClass} p-3`}>
+                <dt className={commandLabelClass}>Provider proof</dt>
+                <dd className={`mt-1 break-words ${commandTextClass}`}>
+                  provider_call_made={String(currentPreviewProviderTruth.providerCallMade)}; model_called_for_generation={modelCalledForGeneration}
+                </dd>
+              </div>
+              <div className={`${commandInsetClass} p-3`}>
+                <dt className={commandLabelClass}>Endpoint responses</dt>
+                <dd className={`mt-1 break-words ${commandTextClass}`}>{previewState.routeCalled ?? "none"}</dd>
+              </div>
+              <div className={`${commandInsetClass} p-3`}>
+                <dt className={commandLabelClass}>Target candidates</dt>
+                <dd className={`mt-1 break-words ${commandTextClass}`}>{formatList(previewState.targetCandidates, "none")}</dd>
+              </div>
+              <div className={`${commandInsetClass} p-3`}>
+                <dt className={commandLabelClass}>Receipts</dt>
+                <dd className={`mt-1 break-words ${commandTextClass}`}>
+                  {currentAppliedRunReceipt
+                    ? `${currentAppliedRunReceipt.id}; reverse diff ${currentAppliedRunReceipt.reverseDiff ? "stored" : "missing"}`
+                    : "none"}
+                </dd>
+              </div>
+            </dl>
+            {generatedDiffPresent ? (
+              <pre className="mt-4 max-h-80 overflow-auto rounded-md border border-[var(--ddv4-surface-border-soft)] bg-[var(--ddv4-surface-fill)] p-3 text-xs leading-5 text-[var(--ddv4-fg)]">
+                {previewState.diff}
+              </pre>
+            ) : null}
+          </details>
+        </div>
+      </main>
+      <DashboardDemoV4FloatingNav desktopVariant="full-height" />
+    </div>
+  );
+
   return (
     <div className="dashboard-demo-v4-route-shell dashboard-demo-v4-root">
       <main
@@ -2689,7 +3242,11 @@ export default function CodingCockpitShell() {
               <div className="flex items-center justify-between gap-2">
                 <p className={commandLabelClass}>Runner</p>
                 <span className="rounded-md border border-[var(--ddv4-pill-border)] px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--ddv4-fg-faint)]">
-                  {trialState.latestGrades[trialMode === "code" ? "coding" : trialMode]}
+                  {trialMode === "code"
+                    ? trialState.latestGrades.coding
+                    : trialMode === "design"
+                      ? trialState.latestGrades.design
+                      : trialState.latestGrades.hybrid}
                 </span>
               </div>
               <div className={`${commandInsetClass} space-y-2 p-2 text-sm`}>

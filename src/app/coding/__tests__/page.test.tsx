@@ -16,12 +16,14 @@ describe("CodingPage", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Coding" })).toBeInTheDocument();
     expect(screen.getByRole("navigation", { name: "Spirit app desktop navigation" }))
       .toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 2, name: "Task Composer" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "What should SpiritOS change?" })).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText("Describe what you want SpiritOS to change."),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Start coding" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Copy diagnostics" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Diagnostics" })).not.toBeInTheDocument();
     expect(screen.queryByText("Evidence trail and logs")).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Diagnostics" })).toHaveAttribute(
-      "href",
-      "/proxy-backend",
-    );
+    expect(screen.queryByRole("link", { name: "Diagnostics" })).not.toBeInTheDocument();
   });
 });

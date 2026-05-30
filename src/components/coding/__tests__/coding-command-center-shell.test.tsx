@@ -930,7 +930,7 @@ describe("CodingCommandCenterShell", () => {
     expect(within(runner).getByRole("button", { name: "Hybrid" })).toBeInTheDocument();
 
     const runSize = within(runner).getByRole("combobox", { name: "Agent trial run size" });
-    ["10", "25", "50", "100", "300", "500"].forEach((size) => {
+    ["4"].forEach((size) => {
       expect(within(runSize).getByRole("option", { name: size })).toBeInTheDocument();
     });
     expect(within(runner).getByText("Prompt process")).toBeInTheDocument();
@@ -946,20 +946,30 @@ describe("CodingCommandCenterShell", () => {
     ].forEach((step) => {
       expect(within(runner).getAllByText(step).length).toBeGreaterThan(0);
     });
-    expect(within(runner).getAllByText("Prompt 1 of 25").length).toBeGreaterThan(0);
-    expect(within(runner).getByText("ai coding 001 scout design inspo")).toBeInTheDocument();
+    expect(within(runner).getAllByText("Prompt 1 of 4").length).toBeGreaterThan(0);
+    expect(
+      within(runner).getByText("realistic reversible 001 soccer scouting agent card"),
+    ).toBeInTheDocument();
     expect(within(runner).getByText("Submitted messy prompt:")).toBeInTheDocument();
-    expect(within(runner).getAllByText(/save design inspo/).length).toBeGreaterThan(0);
+    expect(
+      within(runner).getAllByText(/soccer scouting intelligence agent card/).length,
+    ).toBeGreaterThan(0);
     expect(within(runner).getByText(/Expected: productive_preview/)).toBeInTheDocument();
-    expect(within(runner).getByText(/What it tried: stored-only design inspiration intake/)).toBeInTheDocument();
+    expect(
+      within(runner).getByText(/What it tried: a visible soccer scouting intelligence agent card/),
+    ).toBeInTheDocument();
     expect(within(runner).getAllByText(/Files considered:/).length).toBeGreaterThan(0);
     expect(within(runner).getByText("Current step: Ready")).toBeInTheDocument();
     expect(within(runner).getByText("Result: Preview diff produced")).toBeInTheDocument();
     expect(within(runner).getByText(/Why: Found likely target files/)).toBeInTheDocument();
     expect(within(runner).getByText(/Discovery: yes .* Preview diff:/)).toBeInTheDocument();
     expect(within(runner).getByText("Next prompts")).toBeInTheDocument();
-    expect(within(runner).getByText("Prompt 2: ai coding 002 blocker dashboard copy")).toBeInTheDocument();
-    expect(within(runner).getByText("Prompt 3: ai coding 003 api status route gap")).toBeInTheDocument();
+    expect(
+      within(runner).getByText("Prompt 2: realistic reversible 002 source sidebar voidcore selected"),
+    ).toBeInTheDocument();
+    expect(
+      within(runner).getByText("Prompt 3: realistic reversible 003 coding fail result next step"),
+    ).toBeInTheDocument();
     expect(within(runner).getByText("Show more")).toBeInTheDocument();
     expect(within(runner).getAllByRole("button", { name: "Copy issue report" }).length).toBeGreaterThan(0);
     expect(within(runner).queryByRole("button", { name: "Copy run diagnostics" }))
@@ -982,8 +992,7 @@ describe("CodingCommandCenterShell", () => {
       expect(within(runner).queryByText(forbiddenText)).not.toBeInTheDocument();
     });
 
-    fireEvent.click(within(runner).getByRole("button", { name: "Design" }));
-    fireEvent.change(runSize, { target: { value: "100" } });
+    fireEvent.change(runSize, { target: { value: "4" } });
     fireEvent.change(within(runner).getByRole("combobox", { name: "Agent trial viewport" }), {
       target: { value: "both" },
     });
@@ -991,15 +1000,13 @@ describe("CodingCommandCenterShell", () => {
       target: { value: "clean-control" },
     });
 
-    expect(within(runner).getAllByText("Run from terminal, then refresh results.").length)
-      .toBeGreaterThan(0);
-    expect(within(runner).getByRole("button", { name: "Start from terminal for now" }))
+    expect(within(runner).getByRole("button", { name: "Start test unavailable" }))
       .toBeDisabled();
 
     fireEvent.click(within(runner).getByRole("button", { name: "Copy submitted prompts" }));
     await waitFor(() => {
       expect(writeText).toHaveBeenCalledWith(
-        expect.stringContaining("Prompt 1: ai-design-001-coding-visual-critique"),
+        expect.stringContaining("Prompt 1: realistic-reversible-001-soccer-scouting-agent-card"),
       );
     });
   });

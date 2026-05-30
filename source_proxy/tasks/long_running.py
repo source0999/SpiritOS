@@ -819,11 +819,33 @@ def execute_approved_long_running_task(
     from source_proxy.planning.plan import load_plan
 
     architect_plan = load_plan(task_id)
+    is_reversible_live_trial = action.lower().startswith("live trial") or action.lower().startswith("revert live trial")
+    trial_task_spec = (
+        {
+            "schema_version": 1,
+            "task_type": "modify_existing_file",
+            "target": target,
+            "allowed_files": [target] if target else [],
+            "forbidden_files": [
+                ".env*",
+                "source_proxy/data/**",
+                "backend/volumes/**",
+                "backend/searxng_data/**",
+                ".spirit-backups/**",
+            ],
+            "verification": ["git diff --check"],
+            "risk_tier": "low",
+            "source": "coding-live-runner-reversible-trial",
+        }
+        if is_reversible_live_trial
+        else None
+    )
     verification = preview_diff_verification(
         approved_diff,
         test_command=test_command,
-        task_text=task.description,
-        architect_plan=architect_plan,
+        task_text=f"Target file: {target}" if is_reversible_live_trial and target else task.description,
+        architect_plan=None if is_reversible_live_trial else architect_plan,
+        task_spec=trial_task_spec,
     )
     if verification["status"] == "blocked":
         raise LongRunningTaskError(
