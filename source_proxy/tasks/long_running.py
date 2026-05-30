@@ -4418,14 +4418,23 @@ def _coder_model_alias_configuration_error(alias: str) -> tuple[str, str] | None
     return None
 
 
-def _call_coder_llm(prompt: str, *, model_alias: str | None = None) -> str:
+def _call_coder_llm(
+    prompt: str,
+    *,
+    model_alias: str | None = None,
+    timeout_seconds: float | None = None,
+) -> str:
     alias = model_alias or _coder_model_alias()
     completion = get_router().completion(
         model=alias,
         messages=[{"role": "system", "content": prompt}],
         stream=False,
         temperature=0,
-        timeout=float(os.getenv("SOURCE_PROXY_CODER_TIMEOUT_SECONDS", "180")),
+        timeout=(
+            timeout_seconds
+            if timeout_seconds is not None
+            else float(os.getenv("SOURCE_PROXY_CODER_TIMEOUT_SECONDS", "180"))
+        ),
     )
     payload = completion.model_dump() if hasattr(completion, "model_dump") else dict(completion)
     choices = payload.get("choices")
