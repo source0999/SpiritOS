@@ -98,7 +98,7 @@ describe("agent trials UI helpers", () => {
       viewport: "desktop",
     });
     expect(prompt).toContain("hey can you run the 25 agent trial");
-    expect(prompt).toContain("Live Apply Bank");
+    expect(prompt).toContain("realistic reversible live trials");
     expect(prompt).toContain("messy human asks");
     expect(prompt).toContain("real Live Apply Trial");
 
@@ -121,10 +121,16 @@ describe("agent trials UI helpers", () => {
     });
 
     expect(state.manualPrompt).toContain("hey can you run the 10 agent trial");
-    expect(state.bankLabel).toBe("Live Apply Bank");
-    expect(state.actualPromptPreviews[0]?.fixtureId).toBe("ai-coding-001-scout-design-inspo");
-    expect(state.actualPromptPreviews[0]?.submittedPrompt).toContain("save design inspo");
-    expect(state.actualPromptPreviews[0]?.title).toBe("ai coding 001 scout design inspo");
+    expect(state.bankLabel).toBe("Realistic reversible live trials");
+    expect(state.actualPromptPreviews[0]?.fixtureId).toBe(
+      "realistic-reversible-001-soccer-scouting-agent-card",
+    );
+    expect(state.actualPromptPreviews[0]?.submittedPrompt).toContain(
+      "soccer scouting intelligence agent card",
+    );
+    expect(state.actualPromptPreviews[0]?.title).toBe(
+      "realistic reversible 001 soccer scouting agent card",
+    );
     expect(state.actualPromptPreviews[0]?.expectedBehavior).toBe("productive_preview");
     expect(state.actualPromptPreviews[0]?.result).toBe("Preview diff produced");
     expect(state.actualPromptPreviews[0]?.reason).toBe("target discovery succeeded");
@@ -132,7 +138,9 @@ describe("agent trials UI helpers", () => {
     expect(state.actualPromptPreviews[0]?.previewDiffProduced).toBe(true);
     expect(state.actualPromptPreviews[0]?.diffWithinAllowedFiles).toBe(true);
     expect(state.actualPromptPreviews[0]?.submittedPrompt).not.toContain("hey can you run the 10 agent trial");
-    expect(state.submittedPromptsCopyText).toContain("ai-coding-001-scout-design-inspo");
+    expect(state.submittedPromptsCopyText).toContain(
+      "realistic-reversible-001-soccer-scouting-agent-card",
+    );
     expect(state.submittedPromptsCopyText).toContain("Expected behavior: productive_preview");
     expect(state.issueReportCopyText).toContain("Realistic Prompt Tester issue report");
     expect(state.issueReportCopyText).toContain("Trial mode: Real Coding Ability Trial");
@@ -148,18 +156,22 @@ describe("agent trials UI helpers", () => {
     ).toContain("Preview only: find the dummy trial badge helper");
   });
 
-  it("honors selected run size instead of capping the report preview at ten prompts", () => {
+  it("uses the complete realistic reversible trial set", () => {
     const state = buildAgentTrialUiState({
       mode: "code",
       profile: "britton-realistic",
-      runSize: 25,
+      runSize: 4,
       viewport: "desktop",
     });
 
-    expect(state.actualPromptPreviews).toHaveLength(25);
-    expect(state.actualPromptPreviews[0]?.fixtureId).toBe("ai-coding-001-scout-design-inspo");
-    expect(state.actualPromptPreviews[10]?.fixtureId).toBe("ai-coding-011-state-label-behavior");
-    expect(state.submittedPromptsCopyText).toContain("Prompt 25:");
+    expect(state.actualPromptPreviews).toHaveLength(4);
+    expect(state.actualPromptPreviews[0]?.fixtureId).toBe(
+      "realistic-reversible-001-soccer-scouting-agent-card",
+    );
+    expect(state.actualPromptPreviews[3]?.fixtureId).toBe(
+      "realistic-reversible-004-oracle-daily-briefing-action",
+    );
+    expect(state.submittedPromptsCopyText).toContain("Prompt 4:");
   });
 
   it("keeps already-satisfied badge classification honest when warning tone exists on disk", () => {

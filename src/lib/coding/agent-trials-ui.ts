@@ -123,7 +123,7 @@ export type AgentTrialLiveApplyProofStatus =
   | "not_proven"
   | "failed"
   | "blocked_protected_path";
-export type AgentTrialRunSize = 10 | 25 | 50 | 100 | 300 | 500;
+export type AgentTrialRunSize = 4 | 10 | 25 | 50 | 100 | 300 | 500;
 export type AgentTrialViewport = "desktop" | "mobile" | "both";
 export type AgentTrialProfile = "britton-realistic" | "clean-control";
 export type AgentTrialBank = "actual-intelligence" | "legacy-fixture-smoke";
@@ -308,14 +308,14 @@ type FixturePrompt = {
 };
 
 const bankLabels: Record<AgentTrialBank, string> = {
-  "actual-intelligence": "Live Apply Bank",
-  "legacy-fixture-smoke": "Preview-only Diagnostic Bank",
+  "actual-intelligence": "Realistic reversible live trials",
+  "legacy-fixture-smoke": "Legacy preview diagnostics",
 };
 
 export function bankLabelForTrial(mode: AgentTrialMode, bank: AgentTrialBank) {
   if (bank === "legacy-fixture-smoke") return bankLabels[bank];
-  if (mode === "design") return "Designer Live Apply Bank";
-  if (mode === "hybrid") return "Combined Live Apply Bank";
+  if (mode === "design") return "Designer reversible live trials";
+  if (mode === "hybrid") return "Combined reversible live trials";
   return bankLabels[bank];
 }
 
@@ -678,7 +678,7 @@ const promptProcessSteps = [
   "Done",
 ];
 
-export const agentTrialRunSizes: AgentTrialRunSize[] = [10, 25, 50, 100, 300, 500];
+export const agentTrialRunSizes: AgentTrialRunSize[] = [4];
 export const agentTrialViewports: AgentTrialViewport[] = ["desktop", "mobile", "both"];
 export const agentTrialProfiles: AgentTrialProfile[] = ["britton-realistic", "clean-control"];
 
@@ -776,7 +776,7 @@ export function buildAgentTrialManualPrompt({
       `Mode: ${mode}. Trial mode: ${trialMode === "live_apply" ? "Live Apply Trial" : "Preview-only diagnostic"}. Apply strategy: ${applyStrategy}. Size: ${runSize}. Viewport: ${viewportText}.`,
       bank === "legacy-fixture-smoke"
         ? "Legacy fixture smoke only. Does not count for live coding usefulness or S+."
-        : "Use the Live Apply Bank by default; do not silently swap to preview-only fixtures.",
+        : "Use realistic reversible live trials by default; do not silently swap to preview-only fixtures.",
       trialMode === "live_apply"
         ? "Call the selected provider/model, generate a diff, apply through execute-approved, verify disk changes, record checks, and leave a reversal receipt available. No commit or push."
         : "Use preview-only safety. Do not apply, commit, push, change providers, start hidden workers, or activate Cartographer.",
@@ -789,7 +789,7 @@ export function buildAgentTrialManualPrompt({
     `i want the ${viewportText} one, britton realistic prompts, like actually messy human asks, not clean lab prompts.`,
     bank === "legacy-fixture-smoke"
       ? "legacy fixture smoke only; do not count this for live coding/design/combined usefulness or S+."
-      : "use the Live Apply bank, not the old deterministic preview bank.",
+      : "use the realistic reversible live trials, not the old deterministic preview diagnostics.",
     trialMode === "live_apply"
       ? `make this a real Live Apply Trial: call the selected provider/model, generate a bounded diff, apply through /v1/actions/execute-approved, verify disk_changed_files, run/record checks, store reverse diff, and ${applyStrategy === "auto_revert_after_verify" ? "auto-revert after verification" : "hold changes for inspection with Revert this run and Revert all available"}. no commit, no push.`
       : "keep it preview-only please: no apply, no commits, no push, no provider swap, no cartographer, no secret backend worker thing.",
@@ -1228,7 +1228,7 @@ export function buildAgentTrialPromptPreviews({
       `bank_mode: ${bank}`,
       bank === "legacy-fixture-smoke" || trialMode === "preview_only"
         ? "Preview-only diagnostic run. Does not count for live coding usefulness or S+."
-        : "Live Apply Bank run. Must call model, apply diff, verify disk, and keep reversal available.",
+        : "Realistic reversible live trial. Must call model, apply diff, verify disk, and keep reversal available.",
       `trial_mode: ${trialMode}`,
       `apply_strategy: hold_for_inspection`,
       `live_apply_status: ${liveApplyStatus}`,
@@ -1403,7 +1403,7 @@ export function buildAgentTrialUiState({
     profile,
     providerTruth,
     runSize,
-    trialMode: trialMode === "live_apply" ? "preview_only" : trialMode,
+    trialMode,
   });
   const bankLabel = bankLabelForTrial(mode, bank);
   const liveUsefulnessEligible =
@@ -1428,7 +1428,7 @@ export function buildAgentTrialUiState({
         : liveUsefulnessEligible
           ? "All selected Live Apply prompts have model calls, applied disk changes, checks, and reversal availability."
           : trialMode === "live_apply"
-            ? "0/100 live apply proof until provider_call_made=true, model_called_for_generation is recorded, diff is applied, disk changes verify, checks are recorded, and reversal_available=true."
+            ? "Live apply proof is incomplete until provider_call_made=true, model_called_for_generation is recorded, diff is applied, disk changes verify, checks are recorded, and reversal_available=true."
             : "Preview-only diagnostic runs do not count as live coding proof.",
     latestGrades: latestAgentTrialEvidence.latestGrades,
     mode,

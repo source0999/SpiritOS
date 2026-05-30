@@ -64,6 +64,20 @@ export async function POST(request: Request) {
 
 type JsonRecord = Record<string, unknown>;
 
+async function docsOnlyPreviewPayload(
+  _bodyText: string,
+  _overrides: JsonRecord,
+): Promise<string | null> {
+  return null;
+}
+
+async function docsOnlyFallbackPreview(
+  _bodyText: string,
+  _responseBodyText: string,
+): Promise<string | null> {
+  return null;
+}
+
 async function enrichProviderModelTruthFromStatus(responseBodyText: string) {
   let payload: unknown;
   try {

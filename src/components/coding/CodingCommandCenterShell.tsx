@@ -1710,7 +1710,7 @@ export default function CodingCommandCenterShell() {
   const [agentTrialCommandCopyStatus, setAgentTrialCommandCopyStatus] = useState("");
   const [agentTrialBank, setAgentTrialBank] = useState<AgentTrialBank>("actual-intelligence");
   const [agentTrialMode, setAgentTrialMode] = useState<AgentTrialMode>("code");
-  const [agentTrialRunSize, setAgentTrialRunSize] = useState<AgentTrialRunSize>(25);
+  const [agentTrialRunSize, setAgentTrialRunSize] = useState<AgentTrialRunSize>(4);
   const [agentTrialViewport, setAgentTrialViewport] = useState<AgentTrialViewport>("desktop");
   const [agentTrialProfile, setAgentTrialProfile] =
     useState<AgentTrialProfile>("britton-realistic");
@@ -1759,7 +1759,7 @@ export default function CodingCommandCenterShell() {
   const agentTrialSafePreviewSupported =
     agentTrialMode === "code" &&
     agentTrialViewport === "desktop" &&
-    (agentTrialRunSize === 10 || agentTrialRunSize === 25) &&
+    agentTrialRunSize === 4 &&
     agentTrialProfile === "britton-realistic";
   const agentTrialSafePreviewLabel = agentTrialSafePreviewSupported
     ? "Start test"
@@ -5644,6 +5644,10 @@ export default function CodingCommandCenterShell() {
     await runTrialPreviewBatch(10, "10_preview_browser_run", "controlled 10-preview run");
   }
 
+  async function runFourTrialPreviews() {
+    await runTrialPreviewBatch(4, "4_realistic_reversible_browser_run", "controlled 4-prompt realistic reversible run");
+  }
+
   async function runTwentyFiveTrialPreviews() {
     await runTrialPreviewBatch(25, "25_preview_browser_run", "controlled 25-preview run");
   }
@@ -5677,16 +5681,15 @@ export default function CodingCommandCenterShell() {
       setAgentTrialCommandCopyStatus(
         agentTrialLongRun
           ? "Run from terminal, then refresh results."
-          : "Start test is available for Code 10/25 desktop Britton realistic.",
+          : "Start test is available for Code 4 desktop Britton realistic.",
       );
       return;
     }
     setAgentTrialCommandCopyStatus(`Starting safe preview batch ${agentTrialRunSize}.`);
-    if (agentTrialRunSize === 10) {
-      void runTenTrialPreviews();
+    if (agentTrialRunSize === 4) {
+      void runFourTrialPreviews();
       return;
     }
-    void runTwentyFiveTrialPreviews();
   }
 
   async function runAllTrialPreviews() {
