@@ -24,10 +24,11 @@ describe("CodingPage", () => {
       screen.getByPlaceholderText("Describe what you want SpiritOS to change."),
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Start coding" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Copy diagnostics" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Copy current task diagnostics" })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Reversible trial runner" })).toBeInTheDocument();
-    expect(screen.getByRole("group", { name: "Trial runner mode" })).toBeInTheDocument();
-    expect(screen.getByRole("group", { name: "Prompt count selector" })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Trial category" })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Trial count" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "10" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Run reversible trial suite" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Diagnostics" })).not.toBeInTheDocument();
     expect(screen.queryByText("Evidence trail and logs")).not.toBeInTheDocument();
