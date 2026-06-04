@@ -7,7 +7,9 @@ from typing import Any
 
 from source_proxy.routing.ollama_route import (
     clear_ollama_route_cache,
+    ollama_coder_route_status_entry,
     ollama_route_status_entry,
+    resolve_coder_ollama_model_name,
     resolve_ollama_model_name,
     resolve_ollama_route,
 )
@@ -25,6 +27,9 @@ class RouteModel:
 def route_models() -> list[RouteModel]:
     ollama_resolution = resolve_ollama_route(probe=True)
     ollama_model = ollama_resolution.model
+    coder_ollama_model = resolve_coder_ollama_model_name(probe=True)
+    local_status = ollama_route_status_entry()
+    coder_status = ollama_coder_route_status_entry()
     openai_model = os.getenv("SOURCE_PROXY_OPENAI_MODEL", "gpt-4o-mini")
     anthropic_model = os.getenv(
         "SOURCE_PROXY_ANTHROPIC_MODEL", "claude-3-7-sonnet-20250219"
@@ -36,7 +41,15 @@ def route_models() -> list[RouteModel]:
             alias="local",
             provider="ollama",
             model=f"ollama_chat/{ollama_model}",
-            enabled=True,
+            enabled=local_status.get("enabled") is True,
+            reason=str(local_status.get("reason") or "") or None,
+        ),
+        RouteModel(
+            alias="coder",
+            provider="ollama",
+            model=f"ollama_chat/{coder_ollama_model}",
+            enabled=coder_status.get("enabled") is True,
+            reason=str(coder_status.get("reason") or "") or None,
         ),
         RouteModel(
             alias="openai",
@@ -86,7 +99,11 @@ def get_router():
                     os.getenv("OLLAMA_KEEP_ALIVE", "-1"),
                 )
             )
-            litellm_params["timeout"] = _read_timeout_seconds()
+            litellm_params["timeout"] = (
+                _read_coder_timeout_seconds()
+                if route_model.alias == "coder"
+                else _read_timeout_seconds()
+            )
 
         model_list.append(
             {
@@ -145,6 +162,8 @@ def routing_status() -> list[dict[str, str | bool | None]]:
         }
         if route_model.alias == "local" and route_model.provider == "ollama":
             item.update(local_status)
+        if route_model.alias == "coder" and route_model.provider == "ollama":
+            item.update(ollama_coder_route_status_entry())
         statuses.append(item)
     return statuses
 
@@ -181,3 +200,16 @@ def _read_timeout_seconds() -> float:
     if timeout <= 0:
         raise ValueError("SOURCE_PROXY_REQUEST_TIMEOUT_SECONDS must be greater than 0.")
     return timeout
+
+
+def _read_coder_timeout_seconds() -> float:
+    raw_value = os.getenv("SOURCE_PROXY_CODER_TIMEOUT_SECONDS", "180")
+    try:
+        timeout = float(raw_value)
+    except ValueError as error:
+        raise ValueError(
+            f"SOURCE_PROXY_CODER_TIMEOUT_SECONDS must be numeric, got {raw_value!r}."
+        ) from error
+    if timeout <= 0:
+        raise ValueError("SOURCE_PROXY_CODER_TIMEOUT_SECONDS must be greater than 0.")
+    return max(timeout, _read_timeout_seconds())

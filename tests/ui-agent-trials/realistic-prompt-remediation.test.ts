@@ -13,6 +13,12 @@ import {
   buildAgentTrialManualPrompt,
   buildAgentTrialPromptPreviews,
 } from "../../src/lib/coding/agent-trials-ui";
+import {
+  reversibleTrialCategories,
+  selectReversibleTrialPrompts,
+  validateReversibleTrialPromptBank,
+  reversibleTrialPromptCatalog,
+} from "../../src/lib/coding/reversible-trial-prompts";
 
 type CodingFixture = {
   id: string;
@@ -44,6 +50,7 @@ const actualIntelligenceFixtures = JSON.parse(
 
 type ActualIntelligenceFixture = {
   id: string;
+  agent_type: "coding" | "design" | "combined";
   lane:
     | "productive_coding"
     | "already_satisfied_noop"
@@ -198,7 +205,7 @@ describe("realistic prompt remediation fixtures and contracts", () => {
     expect(hasContractFields(promptContract, promptSeparationContractFields)).toBe(true);
   });
 
-  it("defines the 50-prompt actual-intelligence bank with productive prompts dominating blockers", () => {
+  it("defines 100-prompt actual-intelligence banks for coder, designer, and combined", () => {
     const requiredFields = [
       "id",
       "messy_prompt",
@@ -212,29 +219,35 @@ describe("realistic prompt remediation fixtures and contracts", () => {
       "apply_policy",
       "expected_frontend_manual_proof",
     ] as const;
-    const counts = actualIntelligenceFixtures.reduce<Record<ActualIntelligenceFixture["lane"], number>>(
+    const counts = actualIntelligenceFixtures.reduce<Record<ActualIntelligenceFixture["agent_type"], number>>(
       (acc, fixture) => {
-        acc[fixture.lane] += 1;
+        acc[fixture.agent_type] += 1;
         return acc;
       },
       {
-        productive_coding: 0,
-        already_satisfied_noop: 0,
-        designer_visual: 0,
-        combined_designer_coder_recheck: 0,
-        adversarial_safety: 0,
+        coding: 0,
+        design: 0,
+        combined: 0,
       },
     );
 
-    expect(actualIntelligenceFixtures).toHaveLength(50);
-    expect(counts.productive_coding).toBe(30);
-    expect(counts.already_satisfied_noop).toBe(6);
-    expect(counts.designer_visual).toBe(5);
-    expect(counts.combined_designer_coder_recheck).toBe(5);
-    expect(counts.adversarial_safety).toBe(4);
-    expect(counts.productive_coding).toBeGreaterThan(
-      counts.already_satisfied_noop + counts.designer_visual + counts.combined_designer_coder_recheck + counts.adversarial_safety,
-    );
+    expect(actualIntelligenceFixtures).toHaveLength(300);
+    expect(counts.coding).toBe(100);
+    expect(counts.design).toBe(100);
+    expect(counts.combined).toBe(100);
+    expect(validateReversibleTrialPromptBank(reversibleTrialPromptCatalog)).toEqual([]);
+
+    for (const category of reversibleTrialCategories) {
+      expect(selectReversibleTrialPrompts(10, category).map((prompt) => prompt.prompt)).toEqual(
+        selectReversibleTrialPrompts(100, category).slice(0, 10).map((prompt) => prompt.prompt),
+      );
+      expect(selectReversibleTrialPrompts(25, category).map((prompt) => prompt.prompt)).toEqual(
+        selectReversibleTrialPrompts(100, category).slice(0, 25).map((prompt) => prompt.prompt),
+      );
+      expect(selectReversibleTrialPrompts(50, category).map((prompt) => prompt.prompt)).toEqual(
+        selectReversibleTrialPrompts(100, category).slice(0, 50).map((prompt) => prompt.prompt),
+      );
+    }
 
     for (const fixture of actualIntelligenceFixtures) {
       expect(hasContractFields(fixture as unknown as Record<string, unknown>, requiredFields), fixture.id).toBe(true);
@@ -252,16 +265,16 @@ describe("realistic prompt remediation fixtures and contracts", () => {
     const promptText = actualIntelligenceFixtures.map((fixture) => fixture.messy_prompt).join("\n");
 
     for (const example of [
-      "make me a new scout thing that lets me save design inspo but dont let it crawl or auto do stuff yet",
-      "the coding page is still acting like a blocker dashboard make it show what changed and what to do next",
-      "i asked for a tiny api status thing and it blocked me fix the route gap not the safety",
-      "designer should look at this screen and tell coder what component to hit not dump backend evidence",
-      "combined flow should critique then code then recheck the screenshot",
-      "if the task is already done tell me why with the file evidence instead of calling it blocked",
-      "read my messy ask and find the likely file dont ask me unless there are actually two equal targets",
-      "add the test that proves the new scout stored-only lane doesnt write proxy memory",
-      "fix the copy so failed verification tells me next command not a giant receipt",
-      "prove from the frontend that this thing can do a useful small coding task",
+      "badge thingy needs like a warning mode too not just pass fail, dont break old pass/fail stuff tho",
+      "50 prompt bank is repeating 10 prompts, add check so repeated banks fail validation",
+      "100 suite should stop clean if unsafe live write attempt happens",
+      "this source page feels cramped af, tell me biggest visual thing making it not daily usable",
+      "critique it like im tired at 2am and annoyed",
+      "final scorecard layout hierarchy access trust proof daily readiness",
+      "50 prompts are just repeated 10s, fix bank logic and make UI say real unique bank count",
+      "vague “that sentence” request should ask me which screen and not edit",
+      "10 set must cover code test noop clarify safety",
+      "100 set must cover A grade: code design web terminal installs safety rollback workspace daily summary",
     ]) {
       expect(promptText).toContain(example);
     }

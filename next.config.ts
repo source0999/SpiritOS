@@ -17,15 +17,6 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: "/_next/static/chunks/:path*",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "no-store, max-age=0, must-revalidate",
-          },
-        ],
-      },
-      {
         source: "/coding",
         headers: [
           {
@@ -43,6 +34,7 @@ const nextConfig: NextConfig = {
 
   webpack: (config, { dev, isServer }) => {
     if (dev) {
+      config.cache = false;
       config.watchOptions = {
         ...(config.watchOptions ?? {}),
         ignored: [
@@ -56,14 +48,6 @@ const nextConfig: NextConfig = {
           "**/oldSpiritOS.xml",
           "**/*.gguf",
         ],
-      };
-    }
-    if (!isServer) {
-      config.devServer = {
-        ...config.devServer,
-        client: {
-          webSocketURL: "auto://0.0.0.0:0/ws",
-        },
       };
     }
     return config;

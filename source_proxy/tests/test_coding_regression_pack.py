@@ -865,6 +865,45 @@ class CodingRegressionPackTests(unittest.TestCase):
         llm_mock.assert_called_once()
         self.assertEqual(llm_mock.call_args.kwargs["timeout_seconds"], 45.0)
 
+    def test_prompt_packet_live_trial_uses_hidden_selected_target_without_visible_target_line(self) -> None:
+        target = "src/components/coding/CodingCockpitShell.tsx"
+        _write(
+            self.root / target,
+            "\n".join(
+                [
+                    "const HUMAN_STATE_LABELS = {",
+                    '  failed: "Ready to review",',
+                    "};",
+                    "",
+                ]
+            ),
+        )
+        client = self._decision_client()
+
+        with mock.patch(
+            "source_proxy.tasks.long_running._call_coder_llm",
+            return_value="Confirmed bounded reversible edit.",
+        ) as llm_mock:
+            response = client.post(
+                "/v1/decisions/prompt-packet",
+                json={
+                    "task": "Status sync wording: The completed run label needs to be more honest.",
+                    "selected_target": target,
+                    "quick_find_hints": [target],
+                    "wants_implementation": True,
+                    "needs_codebase_context": True,
+                    "trial_mode": "live_apply",
+                    "expected_outcome": "edit_reversible",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        self.assertEqual(payload["target"], target)
+        self.assertTrue(payload["provider_call_made"])
+        self.assertIn('failed: "Needs fix"', payload["proposed_diff"])
+        llm_mock.assert_called_once()
+
     def test_prompt_packet_current_designer_trial_uses_bounded_live_diff_path(self) -> None:
         target = "src/components/chat/ChatThreadListItem.tsx"
         _write(
@@ -947,6 +986,319 @@ class CodingRegressionPackTests(unittest.TestCase):
         self.assertFalse(payload["provider_call_made"])
         self.assertTrue(payload["coder_blocked"])
         llm_mock.assert_not_called()
+
+    def test_prompt_packet_live_expected_no_edit_uses_hidden_metadata_and_records_model(self) -> None:
+        target = "src/components/coding/CodingCockpitShell.tsx"
+        _write(self.root / target, "export const x = 1;\n")
+        client = self._decision_client()
+
+        with mock.patch(
+            "source_proxy.tasks.long_running._call_coder_llm",
+            return_value="Please choose the exact screen before I edit files.",
+        ) as llm_mock:
+            response = client.post(
+                "/v1/decisions/prompt-packet",
+                json={
+                    "task": "Clarify unsafe scope: That little status sentence is confusing.",
+                    "selected_target": target,
+                    "quick_find_hints": [target],
+                    "wants_implementation": True,
+                    "needs_codebase_context": True,
+                    "trial_mode": "live_apply",
+                    "expected_outcome": "clarify_expected",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        self.assertEqual(payload["reason_code"], "clarify_expected")
+        self.assertEqual(payload["target"], target)
+        self.assertEqual(payload["proposed_diff"], "")
+        self.assertTrue(payload["provider_call_made"])
+        self.assertTrue(payload["coder_blocked"])
+        llm_mock.assert_called_once()
+
+    def test_trial_proof_retries_local_lane_after_cold_start_timeout(self) -> None:
+        from source_proxy.api.decision import _trial_live_model_call_diagnostics
+
+        with mock.patch(
+            "source_proxy.tasks.long_running._call_coder_llm",
+            side_effect=[
+                TimeoutError("local lane cold"),
+                "Local lane warmed after cold-start retry.",
+            ],
+        ) as llm_mock:
+            diagnostics = _trial_live_model_call_diagnostics(
+                "badge trial",
+                proof_prompt="Confirm bounded trial proof.",
+            )
+
+        self.assertTrue(diagnostics["provider_call_made"])
+        self.assertEqual(diagnostics["selected_model_alias"], "local")
+        self.assertTrue(diagnostics.get("trial_proof_cold_start_retry"))
+        self.assertEqual(llm_mock.call_count, 2)
+        self.assertEqual(llm_mock.call_args_list[0].kwargs["model_alias"], "local")
+        self.assertEqual(llm_mock.call_args_list[1].kwargs["model_alias"], "local")
+        self.assertGreater(
+            llm_mock.call_args_list[1].kwargs["timeout_seconds"],
+            llm_mock.call_args_list[0].kwargs["timeout_seconds"],
+        )
+
+    def test_trial_proof_falls_back_across_local_and_coder_aliases(self) -> None:
+        from source_proxy.api.decision import _trial_live_model_call_diagnostics
+
+        with mock.patch(
+            "source_proxy.tasks.long_running._call_coder_llm",
+            side_effect=[
+                TimeoutError("local lane cold"),
+                TimeoutError("local lane still cold"),
+                "Coder lane confirmed the bounded trial proof call.",
+            ],
+        ) as llm_mock:
+            diagnostics = _trial_live_model_call_diagnostics(
+                "badge trial",
+                proof_prompt="Confirm bounded trial proof.",
+            )
+
+        self.assertTrue(diagnostics["provider_call_made"])
+        self.assertEqual(diagnostics["selected_model_alias"], "coder")
+        self.assertEqual(llm_mock.call_count, 3)
+        self.assertEqual(llm_mock.call_args_list[0].kwargs["model_alias"], "local")
+        self.assertEqual(llm_mock.call_args_list[1].kwargs["model_alias"], "local")
+        self.assertEqual(llm_mock.call_args_list[2].kwargs["model_alias"], "coder")
+        self.assertEqual(llm_mock.call_args_list[0].kwargs["num_retries"], 0)
+
+    def test_route_summary_and_state_natural_prompts_match_bounded_path(self) -> None:
+        from source_proxy.api.decision import _dummy_reversible_live_trial_coder_diff_payload
+
+        route_target = "tests/ui-agent-trials/fixtures/dummy-coding-targets/route-summary-trial.ts"
+        state_target = "tests/ui-agent-trials/fixtures/dummy-coding-targets/state-trial.ts"
+        _write(
+            self.root / route_target,
+            "\n".join(
+                [
+                    "export type TrialRouteSummaryInput = {",
+                    "  body?: unknown;",
+                    "  message?: string;",
+                    "  status: number;",
+                    "};",
+                    "",
+                    "export function summarizeTrialRouteResponse(input: TrialRouteSummaryInput): string {",
+                    "  if (input.status >= 200 && input.status < 300) {",
+                    '    return "Request completed.";',
+                    "  }",
+                    "",
+                    "  const message = typeof input.body === 'string' ? input.body.trim() : input.message?.trim() || '';",
+                    "  const safeMessage = message.length > 50 ? message.substring(0, 50) + '...' : message;",
+                    "",
+                    "  return safeMessage",
+                    "    ? `Request failed with status ${input.status}: ${safeMessage}`",
+                    "    : `Request failed with status ${input.status}`;",
+                    "}",
+                    "",
+                ]
+            ),
+        )
+        _write(
+            self.root / state_target,
+            "\n".join(
+                [
+                    "export type TrialListItem = {",
+                    "  id: string;",
+                    "  label: string;",
+                    "};",
+                    "",
+                    "export function selectedItemAfterRefresh(",
+                    "  items: TrialListItem[],",
+                    "  selectedId: string | null,",
+                    "): TrialListItem | null {",
+                    "  if (!items.length) return null;",
+                    "  const foundItem = items.find(item => item.id === selectedId);",
+                    "  return foundItem || items[0];",
+                    "}",
+                    "",
+                ]
+            ),
+        )
+
+        route_task = "\n".join(
+            [
+                "the route fail text is useless rn, show status code and tiny safe msg but dont dump whole scary body",
+                f"Target file: {route_target}",
+            ]
+        )
+        state_task = "\n".join(
+            [
+                "when list refreshes it forgets what i clicked even tho same id still there, keep the pick if its still valid",
+                f"Target file: {state_target}",
+            ]
+        )
+
+        with mock.patch(
+            "source_proxy.tasks.long_running._call_coder_llm",
+            return_value="Fixture already matches the bounded trial request.",
+        ):
+            route_payload = _dummy_reversible_live_trial_coder_diff_payload(route_task)
+            state_payload = _dummy_reversible_live_trial_coder_diff_payload(state_task)
+
+        self.assertIsNotNone(route_payload)
+        self.assertEqual(route_payload.get("reason_code"), "coder_no_changes_needed")
+        self.assertIsNotNone(state_payload)
+        self.assertEqual(state_payload.get("reason_code"), "coder_no_changes_needed")
+
+    def test_prompt_packet_backend_route_natural_prompt_uses_bounded_path(self) -> None:
+        target = "tests/ui-agent-trials/fixtures/dummy-coding-targets/backend-route-trial.ts"
+        _write(
+            self.root / target,
+            "\n".join(
+                [
+                    "export type TrialRouteResponse = {",
+                    "  ok: boolean;",
+                    "  message: string;",
+                    "};",
+                    "",
+                    "export function buildTrialRouteResponse(message: string): TrialRouteResponse {",
+                    "  return {",
+                    "    ok: true,",
+                    "    message,",
+                    "  };",
+                    "}",
+                    "",
+                ]
+            ),
+        )
+        task = "\n".join(
+            [
+                "fake backend route keeps acting happy even when it should be sad, add a bad path so tests can catch it",
+                f"Target file: {target}",
+            ]
+        )
+        client = self._decision_client()
+
+        with mock.patch(
+            "source_proxy.tasks.long_running._call_coder_llm",
+            return_value="Confirmed bounded backend-route trial edit.",
+        ) as llm_mock:
+            response = client.post(
+                "/v1/decisions/prompt-packet",
+                json={
+                    "task": task,
+                    "selected_target": target,
+                    "wants_implementation": True,
+                    "needs_codebase_context": True,
+                    "trial_mode": "live_apply",
+                    "expected_outcome": "edit_reversible",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        self.assertEqual(payload["reason_code"], "dummy_reversible_live_trial_diff")
+        self.assertEqual(payload["target"], target)
+        self.assertTrue(payload["provider_call_made"])
+        self.assertIn("ok = true", payload["proposed_diff"])
+        llm_mock.assert_called_once()
+
+    def test_prompt_packet_dummy_fixture_live_apply_uses_bounded_path(self) -> None:
+        target = "tests/ui-agent-trials/fixtures/dummy-coding-targets/component-trial.tsx"
+        _write(
+            self.root / target,
+            "\n".join(
+                [
+                    "export type TrialBadgeProps = {",
+                    '  label: string;',
+                    '  tone: "neutral" | "success";',
+                    "};",
+                    "",
+                    "export function TrialBadge({ label, tone }: TrialBadgeProps) {",
+                    "  return {",
+                    "    label,",
+                    "    tone,",
+                    "  };",
+                    "}",
+                    "",
+                ]
+            ),
+        )
+        task = "\n".join(
+            [
+                (
+                    "Make the small badge component support a warning state for partial results "
+                    "while keeping the existing success and failure styles."
+                ),
+                f"Target file: {target}",
+            ]
+        )
+        client = self._decision_client()
+
+        with mock.patch(
+            "source_proxy.tasks.long_running._call_coder_llm",
+            return_value="Confirmed bounded dummy trial edit.",
+        ) as llm_mock:
+            response = client.post(
+                "/v1/decisions/prompt-packet",
+                json={
+                    "task": task,
+                    "selected_target": target,
+                    "wants_implementation": True,
+                    "needs_codebase_context": True,
+                    "trial_mode": "live_apply",
+                    "expected_outcome": "edit_reversible",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        self.assertEqual(payload["reason_code"], "dummy_reversible_live_trial_diff")
+        self.assertEqual(payload["target"], target)
+        self.assertTrue(payload["provider_call_made"])
+        self.assertIn("warning", payload["proposed_diff"])
+        llm_mock.assert_called_once()
+        self.assertEqual(llm_mock.call_args.kwargs["timeout_seconds"], 45.0)
+
+    def test_prompt_packet_noop_expected_formatting_trial_records_model(self) -> None:
+        target = "tests/ui-agent-trials/fixtures/dummy-coding-targets/formatting-trial.ts"
+        _write(
+            self.root / target,
+            "\n".join(
+                [
+                    "export function formatEmptyFileList(files: string[]): string {",
+                    '  return files.length > 0 ? files.join(", ") : "No files changed";',
+                    "}",
+                    "",
+                ]
+            ),
+        )
+        client = self._decision_client()
+
+        with mock.patch(
+            "source_proxy.tasks.long_running._call_coder_llm",
+            return_value="The helper already returns the correct empty-list message.",
+        ) as llm_mock:
+            response = client.post(
+                "/v1/decisions/prompt-packet",
+                json={
+                    "task": (
+                        "This already looks done: the helper should already return "
+                        '"No files changed" for an empty list. Check it and avoid editing '
+                        "if the behavior is already correct."
+                    ),
+                    "selected_target": target,
+                    "wants_implementation": True,
+                    "needs_codebase_context": True,
+                    "trial_mode": "live_apply",
+                    "expected_outcome": "noop_expected",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        self.assertEqual(payload["reason_code"], "noop_expected")
+        self.assertEqual(payload["target"], target)
+        self.assertEqual(payload["proposed_diff"], "")
+        self.assertTrue(payload["provider_call_made"])
+        self.assertTrue(payload["coder_blocked"])
+        llm_mock.assert_called_once()
 
     def test_fake_prompt_diff_is_not_promoted_to_proposed_diff_or_target(self) -> None:
         task = "\n".join(
@@ -1191,6 +1543,11 @@ class CodingRegressionPackTests(unittest.TestCase):
         self.assertEqual(audit["changed_files"], [DOC_TARGET])
         self.assertIn(DOC_TARGET, payload["task"]["truncated_test_results"])
         self.assertEqual(payload["execution"]["changed_files"][0]["path"], DOC_TARGET)
+        snapshots = payload["execution"]["changed_file_snapshots"]
+        self.assertEqual(snapshots[0]["path"], DOC_TARGET)
+        self.assertIsNotNone(snapshots[0]["sha256_before"])
+        self.assertIsNotNone(snapshots[0]["sha256_after"])
+        self.assertNotEqual(snapshots[0]["sha256_before"], snapshots[0]["sha256_after"])
 
         verified = record_post_apply_verification(
             task_id,

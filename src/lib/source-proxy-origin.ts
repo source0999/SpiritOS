@@ -18,6 +18,13 @@ export const SOURCE_PROXY_STREAM_UNDICI_OPTIONS = {
   bodyTimeout: 0,
 } as const;
 
+/** Options for long JSON calls such as prompt-packet model generation. */
+export const SOURCE_PROXY_LONG_JSON_UNDICI_OPTIONS = {
+  connectTimeout: 0,
+  bodyTimeout: 0,
+  headersTimeout: 0,
+} as const;
+
 const httpsStreamAgent = new Agent({
   ...SOURCE_PROXY_STREAM_UNDICI_OPTIONS,
   connect: { rejectUnauthorized: false },
@@ -27,8 +34,21 @@ const httpStreamAgent = new Agent({
   ...SOURCE_PROXY_STREAM_UNDICI_OPTIONS,
 });
 
+const httpsLongJsonAgent = new Agent({
+  ...SOURCE_PROXY_LONG_JSON_UNDICI_OPTIONS,
+  connect: { rejectUnauthorized: false },
+});
+
+const httpLongJsonAgent = new Agent({
+  ...SOURCE_PROXY_LONG_JSON_UNDICI_OPTIONS,
+});
+
 function streamDispatcherForBase(base: string) {
   return base.startsWith("https://") ? httpsStreamAgent : httpStreamAgent;
+}
+
+function longJsonDispatcherForBase(base: string) {
+  return base.startsWith("https://") ? httpsLongJsonAgent : httpLongJsonAgent;
 }
 
 type UndiciFetchInit = NonNullable<Parameters<typeof fetch>[1]>;
@@ -113,6 +133,33 @@ export async function sourceProxyStreamFetch(
     const url = `${trimTrailingSlash(base)}${pathAndQuery}`;
     try {
       const dispatcher = streamDispatcherForBase(base);
+      return await fetch(url, { ...init, dispatcher });
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError;
+}
+
+/**
+ * Same multi-base fallback as {@link sourceProxyFetch}, but intended for
+ * long-running JSON responses where the browser owns the user-facing timeout.
+ */
+export async function sourceProxyLongJsonFetch(
+  pathAndQuery: string,
+  init: UndiciFetchInit = {},
+): Promise<Awaited<ReturnType<typeof fetch>>> {
+  if (!pathAndQuery.startsWith("/")) {
+    throw new Error(
+      `sourceProxyLongJsonFetch path must start with /, got: ${pathAndQuery.slice(0, 80)}`,
+    );
+  }
+  const bases = getSourceProxyBases();
+  let lastError: unknown;
+  for (const base of bases) {
+    const url = `${trimTrailingSlash(base)}${pathAndQuery}`;
+    try {
+      const dispatcher = longJsonDispatcherForBase(base);
       return await fetch(url, { ...init, dispatcher });
     } catch (error) {
       lastError = error;

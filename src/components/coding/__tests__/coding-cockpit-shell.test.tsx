@@ -1,7 +1,10 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { readFileSync } from "node:fs";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import CodingCockpitShell from "@/components/coding/CodingCockpitShell";
+import CodingCockpitShell, {
+  reversibleSuiteExceptionLabel,
+} from "@/components/coding/CodingCockpitShell";
 
 const navMock = vi.hoisted(() => ({ path: "/coding" }));
 
@@ -73,9 +76,15 @@ async function startLiveRun(prompt = "Make the coding result card easier to unde
   return screen.findByRole("heading", { name: "PASS" });
 }
 
+beforeEach(() => {
+  window.localStorage.clear();
+  window.sessionStorage.clear();
+});
+
 afterEach(() => {
   vi.restoreAllMocks();
   window.localStorage.clear();
+  window.sessionStorage.clear();
 });
 
 describe("CodingCockpitShell", () => {
@@ -103,7 +112,10 @@ describe("CodingCockpitShell", () => {
     expect(screen.getByText("Model")).toBeInTheDocument();
     expect(screen.getByText("State")).toBeInTheDocument();
 
-    expect(screen.getByRole("heading", { name: "Task transcript" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Background trial" })).toBeInTheDocument();
+    expect(screen.getByText("Phone trial")).toBeInTheDocument();
+    expect(screen.getByText("Browser online")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Task transcript" })).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Task Composer" })).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Describe what you want SpiritOS to change.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Start coding" })).toBeInTheDocument();
@@ -214,6 +226,214 @@ describe("CodingCockpitShell", () => {
     });
   });
 
+  it("copies the normal reversible prompt list without hidden grading metadata", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+    installCommonFetchMock();
+
+    render(<CodingCockpitShell />);
+    fireEvent.click(screen.getByRole("button", { name: "Copy prompts" }));
+
+    await waitFor(() => expect(writeText).toHaveBeenCalled());
+    const copied = String(writeText.mock.calls.at(-1)?.[0] ?? "");
+    expect(copied).toContain("category: Coder");
+    expect(copied).toContain("count_requested: 10");
+    expect(copied).toContain(
+      "1. Make the small badge component support a warning state for partial results while keeping the existing success and failure styles.",
+    );
+    expect(copied).toContain(
+      "2. The fake backend route helper always returns a happy response. Add a failure path so tests can cover non-200 responses.",
+    );
+    [
+      "tag:",
+      "expected_outcome",
+      "expectedOutcome",
+      "quick_find_paths",
+      "quick_find",
+      "verify_instruction",
+      "targetFile",
+      "likelyTargets",
+      "selected_target",
+      "allowed_files",
+      "endpoint_statuses",
+      "quick_find_hints",
+      "Target file:",
+    ].forEach((hiddenField) => {
+      expect(copied).not.toContain(hiddenField);
+    });
+    expect(copied).not.toMatch(/\d+\. coder-\d+ - /);
+    expect(copied).not.toMatch(/\nprompt:/);
+  });
+
+  it("keeps trial prompt-packet timeout above the manual backend deadline and reports browser aborts", () => {
+    const source = readFileSync("src/components/coding/CodingCockpitShell.tsx", "utf8");
+
+    expect(source).toContain("const MANUAL_PROMPT_PACKET_TIMEOUT_MS = 180_000;");
+    expect(source).toContain("const TRIAL_PROMPT_PACKET_TIMEOUT_BUFFER_MS = 180_000;");
+    expect(source).toContain("const TRIAL_PROMPT_PACKET_TIMEOUT_MS = MANUAL_PROMPT_PACKET_TIMEOUT_MS + TRIAL_PROMPT_PACKET_TIMEOUT_BUFFER_MS;");
+    expect(source).toContain("timeout_layer: ${timeoutLayer}");
+    expect(source).toContain("browser_abort_timeout");
+  });
+
+  it("runs Coder 10 with strict apply and reverse snapshot proof", async () => {
+    const calls = installCommonFetchMock((url, init) => {
+      const body = typeof init?.body === "string" ? JSON.parse(init.body) as Record<string, unknown> : {};
+      const taskSpec = body.task_spec && typeof body.task_spec === "object" ? body.task_spec as Record<string, unknown> : {};
+      const selectedTarget =
+        typeof body.selected_target === "string"
+          ? body.selected_target
+          : typeof body.target === "string"
+            ? body.target
+            : typeof taskSpec.target === "string"
+              ? taskSpec.target
+              : targetFile;
+      if (url.includes("/v1/decisions/prompt-packet")) {
+        if (body.expected_outcome && body.expected_outcome !== "edit_reversible") {
+          return jsonResponse({
+            coder_diagnostics: {
+              litellm_model: "ollama_chat/hermes4:latest",
+              provider: "ollama",
+              provider_call_made: true,
+              router_call_attempted: true,
+            },
+            model: "ollama_chat/hermes4:latest",
+            proposed_diff: "",
+            provider: "ollama",
+            provider_call_made: true,
+            reason_code: body.expected_outcome,
+            status: "blocked",
+          });
+        }
+        return jsonResponse({
+          coder_diagnostics: {
+            litellm_model: "ollama_chat/hermes4:latest",
+            provider: "ollama",
+            provider_call_made: true,
+            router_call_attempted: true,
+          },
+          model: "ollama_chat/hermes4:latest",
+          proposed_diff: liveDiff.replaceAll(targetFile, selectedTarget),
+          provider: "ollama",
+          provider_call_made: true,
+          status: "proposal_ready",
+        });
+      }
+      if (url.includes("/v1/verification/diff-preview")) {
+        return jsonResponse({
+          changed_files: [{ path: selectedTarget }],
+          git_apply_check_ok: true,
+          status: "preview_ready",
+        });
+      }
+      if (url.includes("/v1/actions/execute-approved")) {
+        const isRevert = String(body.action ?? "").startsWith("Revert live trial");
+        return jsonResponse({
+          execution: {
+            changed_file_snapshots: [
+              {
+                path: selectedTarget,
+                sha256_after: isRevert ? `before-${selectedTarget}` : `after-${selectedTarget}`,
+                sha256_before: isRevert ? `after-${selectedTarget}` : `before-${selectedTarget}`,
+              },
+            ],
+            changed_files: [{ path: selectedTarget }],
+            status: "applied_needs_verification",
+          },
+          changed_files: [{ path: selectedTarget }],
+          disk_changed_files: [selectedTarget],
+          status: "applied_needs_verification",
+        });
+      }
+      return null;
+    });
+
+    render(<CodingCockpitShell />);
+    const runButton = screen.getByRole("button", { name: "Run reversible trial suite" });
+    await waitFor(() => expect(runButton).toBeEnabled());
+    fireEvent.click(runButton);
+
+    await waitFor(() => expect(screen.getByText("10/10")).toBeInTheDocument(), { timeout: 10000 });
+    expect(screen.getAllByText("7").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText("0").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Applied and reversed.").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("PASS").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("NO EDIT EXPECTED").length).toBeGreaterThan(0);
+    expect(calls.some((call) => call.body.includes('"selected_target"'))).toBe(true);
+    expect(calls.some((call) => call.body.includes('"Target file:'))).toBe(false);
+  });
+
+  it("classifies thrown preview route outages as needs-fix infra failures in reversible suites", () => {
+    expect(reversibleSuiteExceptionLabel("Preview request returned status 404.")).toBe("NEEDS FIX");
+    expect(reversibleSuiteExceptionLabel("Failed to fetch")).toBe("NEEDS FIX");
+    expect(reversibleSuiteExceptionLabel("Coder exceeded the Source Proxy sync deadline")).toBe("NEEDS FIX");
+    expect(reversibleSuiteExceptionLabel("Expected copy did not appear in target file.")).toBe("FAIL");
+  });
+
+  it("starts a live run for badge-component coding prompts instead of treating them as design handoff", async () => {
+    const calls = installCommonFetchMock((url) => {
+      if (url.includes("/v1/decisions/prompt-packet")) {
+        return jsonResponse({
+          model: "ollama_chat/qwen2.5-coder:7b",
+          proposed_diff: liveDiff,
+          provider: "ollama",
+          provider_call_made: true,
+          status: "proposal_ready",
+        });
+      }
+      return null;
+    });
+
+    render(<CodingCockpitShell />);
+    fireEvent.change(screen.getByLabelText("Coding prompt"), {
+      target: {
+        value:
+          "Make the small badge component support a warning state for partial results while keeping the existing success and failure styles.",
+      },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Start coding" }));
+
+    await waitFor(
+      () => {
+        expect(calls.some((call) => call.url.includes("/v1/decisions/prompt-packet"))).toBe(true);
+      },
+      { timeout: 8000 },
+    );
+    expect(screen.getByText("Calling model")).toBeInTheDocument();
+  });
+
+  it("accepts deterministic already-satisfied badge responses without a live model call", async () => {
+    installCommonFetchMock((url) => {
+      if (url.includes("/v1/decisions/prompt-packet")) {
+        return jsonResponse({
+          already_satisfied: true,
+          model: "qwen2.5-coder:7b",
+          proposed_diff: "",
+          provider: "ollama",
+          provider_call_made: false,
+          reason_code: "coder_no_changes_needed",
+          status: "already_satisfied",
+        });
+      }
+      return null;
+    });
+
+    render(<CodingCockpitShell />);
+    fireEvent.change(screen.getByLabelText("Coding prompt"), {
+      target: {
+        value:
+          "Make the small badge component support a warning state for partial results while keeping the existing success and failure styles.",
+      },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Start coding" }));
+
+    await waitFor(() => {
+      expect(screen.getAllByText(/ALREADY SATISFIED/i).length).toBeGreaterThan(0);
+    });
+    expect(screen.queryByText("FAIL: No model call")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Copy path to verify" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Reset trial fixture" })).toBeEnabled();
+  });
+
   it("fails without provider generation proof and never applies preview-only output", async () => {
     const calls = installCommonFetchMock((url) => {
       if (url.includes("/v1/decisions/prompt-packet")) {
@@ -289,5 +509,12 @@ describe("CodingCockpitShell", () => {
     expect(executeCalls).toHaveLength(2);
     expect(executeCalls[1]?.body).toContain('"action":"Revert src/components/coding/CodingCockpitShell.tsx"');
     expect(executeCalls[1]?.body).toContain('"allowed_files":["src/components/coding/CodingCockpitShell.tsx"]');
+  });
+
+  it("surfaces backend failure instead of a stuck Calling model spinner", () => {
+    const shellSrc = readFileSync("src/components/coding/CodingCockpitShell.tsx", "utf8");
+    expect(shellSrc).toContain("function previewLoadingPhaseLabel(");
+    expect(shellSrc).toContain("Source Proxy unreachable — backend failure");
+    expect(shellSrc).toContain("previewLoadingSimpleResult(");
   });
 });

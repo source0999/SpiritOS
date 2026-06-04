@@ -59,6 +59,60 @@ def resolve_ollama_model_name() -> str:
     return _DEFAULT_OLLAMA_MODEL
 
 
+_CODER_MODEL_CANDIDATES = (
+    "qwen2.5-coder:7b",
+    "qwen2.5-coder:latest",
+    "deepseek-coder:6.7b",
+    "codellama:7b",
+)
+
+
+def resolve_coder_ollama_model_name(*, probe: bool = True) -> str:
+    """Local coding trials: prefer an installed fast coder model over chat Hermes."""
+    explicit = os.getenv("SOURCE_PROXY_CODER_OLLAMA_MODEL", "").strip()
+    if explicit:
+        return explicit
+    route = resolve_ollama_route(probe=probe)
+    if route.probe_ok and route.available_models:
+        for candidate in _CODER_MODEL_CANDIDATES:
+            if candidate in route.available_models:
+                return candidate
+    return resolve_ollama_model_name()
+
+
+def _ollama_model_available(model: str, available_models: tuple[str, ...]) -> bool | None:
+    if not available_models:
+        return None
+    if model in available_models:
+        return True
+    if not model.endswith(":latest") and f"{model}:latest" in available_models:
+        return True
+    if model.endswith(":latest") and model.removesuffix(":latest") in available_models:
+        return True
+    return False
+
+
+def _first_available_ollama_model(available_models: tuple[str, ...]) -> str | None:
+    for preferred in (
+        "qwen2.5-coder:7b",
+        "qwen2.5-coder:latest",
+        "llama3.1:latest",
+        "Spirit:latest",
+        "dolphin-llama3:latest",
+        "gpt-4o-mini:latest",
+    ):
+        if preferred in available_models:
+            return preferred
+    return available_models[0] if available_models else None
+
+
+def _ollama_missing_model_reason(model: str, available_models: tuple[str, ...]) -> str:
+    if not available_models:
+        return "ollama_models_unavailable"
+    sample = ", ".join(available_models[:5])
+    return f"ollama_model_missing:{model}; available={sample}"
+
+
 def safe_ollama_host_label(api_base: str) -> str:
     parsed = urlparse(api_base)
     host = parsed.hostname or api_base
@@ -160,8 +214,45 @@ def local_model_unavailable_payload(
     }
 
 
+def ollama_coder_route_status_entry() -> dict[str, str | bool | None]:
+    chat_route = resolve_ollama_route(probe=True)
+    coder_model = resolve_coder_ollama_model_name(probe=True)
+    model_available = _ollama_model_available(coder_model, chat_route.available_models)
+    enabled = chat_route.probe_ok and model_available is not False
+    fallback_model = _first_available_ollama_model(chat_route.available_models)
+    storage = _ollama_model_storage_proof()
+    return {
+        "alias": "coder",
+        "provider": "ollama",
+        "model": f"ollama_chat/{coder_model}",
+        "requested_ollama_model": os.getenv("SOURCE_PROXY_CODER_OLLAMA_MODEL", "").strip()
+        or "auto:qwen2.5-coder:7b",
+        "ollama_model": coder_model,
+        "api_base_host": safe_ollama_host_label(chat_route.api_base),
+        "api_base": chat_route.api_base,
+        "enabled": enabled,
+        "probe_ok": chat_route.probe_ok,
+        "model_available": model_available,
+        "available_ollama_model_fallback": fallback_model,
+        "selected_via": "coder_lane",
+        "model_storage_status": storage["status"],
+        "model_storage_path": storage["path"],
+        "model_storage_proof": storage["proof"],
+        "reason": (
+            None
+            if enabled
+            else "ollama_unreachable"
+            if not chat_route.probe_ok
+            else _ollama_missing_model_reason(coder_model, chat_route.available_models)
+        ),
+    }
+
+
 def ollama_route_status_entry() -> dict[str, str | bool | None]:
     route = resolve_ollama_route(probe=True)
+    model_available = _ollama_model_available(route.model, route.available_models)
+    enabled = route.probe_ok and model_available is not False
+    fallback_model = _first_available_ollama_model(route.available_models)
     storage = _ollama_model_storage_proof()
     return {
         "alias": "local",
@@ -171,13 +262,21 @@ def ollama_route_status_entry() -> dict[str, str | bool | None]:
         "ollama_model": route.model,
         "api_base_host": safe_ollama_host_label(route.api_base),
         "api_base": route.api_base,
-        "enabled": True,
+        "enabled": enabled,
         "probe_ok": route.probe_ok,
+        "model_available": model_available,
+        "available_ollama_model_fallback": fallback_model,
         "selected_via": route.selected_via,
         "model_storage_status": storage["status"],
         "model_storage_path": storage["path"],
         "model_storage_proof": storage["proof"],
-        "reason": None if route.probe_ok else "ollama_unreachable",
+        "reason": (
+            None
+            if enabled
+            else "ollama_unreachable"
+            if not route.probe_ok
+            else _ollama_missing_model_reason(route.model, route.available_models)
+        ),
     }
 
 

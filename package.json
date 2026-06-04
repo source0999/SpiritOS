@@ -6,6 +6,7 @@
     "dev": "next dev -H 0.0.0.0 --webpack",
     "dev:https": "next dev -H 0.0.0.0 --webpack --experimental-https -p 3000",
     "dev:https:lan": "next dev -H 0.0.0.0 --webpack -p 3000 --experimental-https --experimental-https-key ./certificates/spirit-dev-key.pem --experimental-https-cert ./certificates/spirit-dev.pem",
+    "dev:https:lan:watch": "bash ./scripts/spiritos-lan-watchdog.sh",
     "dev:turbo": "next dev -H 0.0.0.0",
     "dev:backend": "cd backend && docker compose up -d",
     "dev:all": "npm run dev:backend && npm run dev",
@@ -31,7 +32,9 @@
     "test": "vitest",
     "test:coding-regression": "python -m pytest -q source_proxy/tests/test_coding_regression_pack.py",
     "test:coding-frontend-regression": "vitest run src/app/coding/__tests__/page.test.tsx src/components/coding/__tests__/coding-command-center-shell.test.tsx src/lib/coding/__tests__/model-provider-status.test.ts src/lib/coding/__tests__/unified-diff-paths.test.ts src/components/coding/__tests__/approval-gate-binding.test.ts src/lib/coding/__tests__/proxy-route-payload.test.ts src/app/v1/actions/execute-approved/__tests__/route.test.ts src/components/coding/__tests__/coding-workflow-step.test.ts src/components/coding/__tests__/client-fallback.test.ts src/components/coding/__tests__/proxy-safety-smoke.test.ts src/app/v1/coding/self-tests/run/__tests__/route.test.ts",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "ytmclone:stats:smoke": "node ./scripts/ytmclone-stats-smoke.mjs",
+    "ytmclone:android:build": "cd apps/ytmclone-android && ./gradlew assembleDebug"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.58",

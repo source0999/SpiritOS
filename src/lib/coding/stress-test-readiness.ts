@@ -48,6 +48,23 @@ function hermesConfigured(truth: CodingProviderModelTruth): boolean {
   return truth.configuredModelIsHermes === true || /hermes/i.test(truth.runtimeRouteModel);
 }
 
+function coderLaneConfigured(truth: CodingProviderModelTruth): boolean {
+  const haystack = [
+    truth.runtimeRouteModel,
+    truth.configuredModel,
+    truth.modelCalledForGeneration ?? "",
+    truth.modelLabel,
+  ]
+    .join(" ")
+    .toLowerCase();
+  return /qwen|coder/.test(haystack);
+}
+
+function generationLaneReady(truth: CodingProviderModelTruth): boolean {
+  if (hermesConfigured(truth)) return true;
+  return coderLaneConfigured(truth);
+}
+
 export function buildStressTestReadiness(input: StressTestReadinessInput): StressTestReadiness {
   const manualComposerModelTruth = modelTruthLabel(input.composerProviderTruth);
   const trialRunnerModelTruth = modelTruthLabel(input.trialRunnerProviderTruth);
@@ -65,11 +82,11 @@ export function buildStressTestReadiness(input: StressTestReadinessInput): Stres
   if (!input.sourceProxyReachable) {
     blockers.push("Source Proxy is not reachable on /v1/self/status");
   }
-  if (!hermesConfigured(input.composerProviderTruth)) {
-    blockers.push("Manual composer does not report configured Hermes");
+  if (!generationLaneReady(input.composerProviderTruth)) {
+    blockers.push("Manual composer does not report a live generation lane (Hermes or coder)");
   }
-  if (!hermesConfigured(input.trialRunnerProviderTruth)) {
-    blockers.push("Trial runner does not report configured Hermes");
+  if (!generationLaneReady(input.trialRunnerProviderTruth)) {
+    blockers.push("Trial runner does not report a live generation lane (Hermes or coder)");
   }
   if (input.trialFixturesClean === "no") {
     blockers.push("Trial fixtures still have unreconciled applied changes");
@@ -83,7 +100,7 @@ export function buildStressTestReadiness(input: StressTestReadinessInput): Stres
 
   const readyForTenPromptStressTest = blockers.length === 0;
   const readyReason = readyForTenPromptStressTest
-    ? "Hermes 4 is configured across composer and trial runner; fixtures and receipts look clean enough for a 10-prompt stress run."
+    ? "Live generation lane is configured across composer and trial runner; fixtures and receipts look clean enough for a 10-prompt stress run."
     : blockers[0] ?? "Stress-test readiness is not confirmed yet.";
 
   return {

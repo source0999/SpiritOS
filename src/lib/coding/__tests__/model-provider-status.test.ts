@@ -111,4 +111,30 @@ describe("coding provider/model truth", () => {
     expect(truth.providerModelSelectedVia).toBe("probe:fallback_default");
     expect(truth.configuredModelIsHermes).toBe(true);
   });
+
+  it("reports disabled self-status model routes as unavailable instead of silently falling back", () => {
+    const truth = providerModelTruthFromSelfStatus({
+      model_routes: [
+        {
+          alias: "coder",
+          enabled: false,
+          model: "ollama_chat/qwen2.5-coder:7b",
+          probe_ok: true,
+          provider: "ollama",
+          reason: "ollama_model_missing:qwen2.5-coder:7b; available=llama3.1:latest",
+          selected_via: "coder_lane",
+        },
+        {
+          alias: "local",
+          enabled: true,
+          model: "ollama_chat/llama3.1:latest",
+          provider: "ollama",
+        },
+      ],
+    });
+
+    expect(truth.modelLabel).toBe("qwen2.5-coder:7b");
+    expect(truth.status).toBe("unavailable");
+    expect(truth.blockedReason).toContain("ollama_model_missing:qwen2.5-coder:7b");
+  });
 });

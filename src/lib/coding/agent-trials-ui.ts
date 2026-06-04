@@ -26,6 +26,32 @@ export const COMPONENT_TRIAL_FIXTURE_PATH =
 export const BACKEND_ROUTE_TRIAL_FIXTURE_PATH =
   "tests/ui-agent-trials/fixtures/dummy-coding-targets/backend-route-trial.ts";
 
+export const ROUTE_SUMMARY_TRIAL_FIXTURE_PATH =
+  "tests/ui-agent-trials/fixtures/dummy-coding-targets/route-summary-trial.ts";
+
+export const COMPONENT_TRIAL_TEST_FIXTURE_PATH =
+  "tests/ui-agent-trials/fixtures/dummy-coding-targets/component-trial.test.tsx";
+
+export const STATE_TRIAL_FIXTURE_PATH =
+  "tests/ui-agent-trials/fixtures/dummy-coding-targets/state-trial.ts";
+
+export const CHANGED_FILES_FORMATTING_TRIAL_FIXTURE_PATH =
+  "tests/ui-agent-trials/fixtures/dummy-coding-targets/changed-files-formatting-trial.ts";
+
+export const RESULT_CARD_TRIAL_FIXTURE_PATH =
+  "tests/ui-agent-trials/fixtures/dummy-coding-targets/result-card-trial.tsx";
+
+/** Dummy targets that receive a bounded reversible edit in the Coder × 10 catalog cycle. */
+export const DUMMY_TRIAL_EDIT_FIXTURE_TARGETS = [
+  COMPONENT_TRIAL_FIXTURE_PATH,
+  BACKEND_ROUTE_TRIAL_FIXTURE_PATH,
+  ROUTE_SUMMARY_TRIAL_FIXTURE_PATH,
+  STATE_TRIAL_FIXTURE_PATH,
+  CHANGED_FILES_FORMATTING_TRIAL_FIXTURE_PATH,
+  RESULT_CARD_TRIAL_FIXTURE_PATH,
+  COMPONENT_TRIAL_TEST_FIXTURE_PATH,
+] as const;
+
 const WARNING_TONE_FIXTURE_IDS = new Set([
   "coding-001-vague-ui-improvement",
   "coding-004-styling-polish-request",
@@ -56,6 +82,225 @@ export function componentTrialResetDiff(
     " export function TrialBadge({ label, tone }: TrialBadgeProps) {",
     "",
   ].join("\n");
+}
+
+export function routeSummaryTrialHasStatusPrefix(content: string): boolean {
+  return /Status:\s*\$\{input\.status\}/.test(content);
+}
+
+export function routeSummaryTrialHasSatisfiedApplyShape(content: string): boolean {
+  return (
+    /Request failed with status \$\{input\.status\}/.test(content) &&
+    /input\.body/.test(content)
+  );
+}
+
+/** Undo the legacy Status-prefix bounded apply shape. */
+export function routeSummaryTrialResetDiffLegacy(
+  target: string = ROUTE_SUMMARY_TRIAL_FIXTURE_PATH,
+): string {
+  return [
+    `diff --git a/${target} b/${target}`,
+    `--- a/${target}`,
+    `+++ b/${target}`,
+    "@@ -9,9 +9,6 @@",
+    "     return \"Request completed.\";",
+    "   }",
+    " ",
+    "-  const safeMessage =",
+    "-    typeof input.message === \"string\" && input.message.trim()",
+    "-      ? input.message.trim().slice(0, 120)",
+    "-      : \"Request failed.\";",
+    "-",
+    "-  return `Status: ${input.status} - ${safeMessage}`;",
+    "+  return typeof input.message === \"string\" && input.message.trim()",
+    "+    ? input.message.trim()",
+    "+    : \"Request failed.\";",
+    " }",
+    "",
+  ].join("\n");
+}
+
+/** Undo the current status+body truncation bounded apply shape (post-suite disk state). */
+export function routeSummaryTrialResetDiffFromSatisfiedShape(
+  target: string = ROUTE_SUMMARY_TRIAL_FIXTURE_PATH,
+): string {
+  return [
+    `diff --git a/${target} b/${target}`,
+    `--- a/${target}`,
+    `+++ b/${target}`,
+    "@@ -9,10 +9,6 @@",
+    "     return \"Request completed.\";",
+    "   }",
+    " ",
+    "-  const message = typeof input.body === 'string' ? input.body.trim() : input.message?.trim() || '';",
+    "-  const safeMessage = message.length > 50 ? message.substring(0, 50) + '...' : message;",
+    "-",
+    "-  return safeMessage",
+    "-    ? `Request failed with status ${input.status}: ${safeMessage}`",
+    "-    : `Request failed with status ${input.status}`;",
+    "+  return typeof input.message === \"string\" && input.message.trim()",
+    "+    ? input.message.trim()",
+    "+    : \"Request failed.\";",
+    " }",
+    "",
+  ].join("\n");
+}
+
+export function routeSummaryTrialResetDiff(
+  target: string = ROUTE_SUMMARY_TRIAL_FIXTURE_PATH,
+): string {
+  return routeSummaryTrialResetDiffLegacy(target);
+}
+
+export function componentTrialTestHasWarningTest(content: string): boolean {
+  return /assertTrialBadgeWarningState/.test(content);
+}
+
+export function componentTrialTestResetDiff(
+  target: string = COMPONENT_TRIAL_TEST_FIXTURE_PATH,
+): string {
+  return [
+    `diff --git a/${target} b/${target}`,
+    `--- a/${target}`,
+    `+++ b/${target}`,
+    "@@ -3,7 +3,3 @@",
+    " export function assertTrialBadgeSuccessState() {",
+    "   const badge = TrialBadge({ label: \"Done\", tone: \"success\" });",
+    "   return badge.tone === \"success\" && badge.label === \"Done\";",
+    "-}",
+    "-",
+    "-export function assertTrialBadgeWarningState() {",
+    '-  const badge = TrialBadge({ label: "Partial", tone: "warning" as const });',
+    '-  return badge.tone === "warning" && badge.label === "Partial";',
+    "-}",
+    "+}",
+    "",
+  ].join("\n");
+}
+
+export function stateTrialHasSelectionPreserve(content: string): boolean {
+  return (
+    /items\.find\(item => item\.id === selectedId\)/.test(content) ||
+    /if \(!selectedId\) return null/.test(content)
+  );
+}
+
+/** Undo the legacy selectedId-guard bounded apply shape. */
+export function stateTrialResetDiffLegacy(target: string = STATE_TRIAL_FIXTURE_PATH): string {
+  return [
+    `diff --git a/${target} b/${target}`,
+    `--- a/${target}`,
+    `+++ b/${target}`,
+    "@@ -7,10 +7,7 @@",
+    "   items: TrialListItem[],",
+    "   selectedId: string | null,",
+    " ): TrialListItem | null {",
+    "-  if (!selectedId) return null;",
+    "   if (!items.length) return null;",
+    "-  const selectedItem = items.find(item => item.id === selectedId);",
+    "-  return selectedItem || items[0];",
+    "+  return items[0];",
+    " }",
+    "",
+  ].join("\n");
+}
+
+/** Undo the current foundItem selection-preserve shape (post-suite disk state). */
+export function stateTrialResetDiffFromSatisfiedShape(
+  target: string = STATE_TRIAL_FIXTURE_PATH,
+): string {
+  return [
+    `diff --git a/${target} b/${target}`,
+    `--- a/${target}`,
+    `+++ b/${target}`,
+    "@@ -7,6 +7,5 @@",
+    "   items: TrialListItem[],",
+    "   selectedId: string | null,",
+    " ): TrialListItem | null {",
+    "   if (!items.length) return null;",
+    "-  const foundItem = items.find(item => item.id === selectedId);",
+    "-  return foundItem || items[0];",
+    "+  return items[0];",
+    " }",
+    "",
+  ].join("\n");
+}
+
+export function stateTrialResetDiff(target: string = STATE_TRIAL_FIXTURE_PATH): string {
+  return stateTrialResetDiffLegacy(target);
+}
+
+export function changedFilesFormattingTrialHasNoFilesChanged(content: string): boolean {
+  return /"No files changed"/.test(content);
+}
+
+export function changedFilesFormattingTrialResetDiff(
+  target: string = CHANGED_FILES_FORMATTING_TRIAL_FIXTURE_PATH,
+): string {
+  return [
+    `diff --git a/${target} b/${target}`,
+    `--- a/${target}`,
+    `+++ b/${target}`,
+    "@@ -6,5 +6,5 @@",
+    " export function formatTrialChangedFiles(files: TrialChangedFiles): string {",
+    "   const combined = [...files.preview, ...files.applied];",
+    '-  return combined.length > 0 ? combined.join(", ") : "No files changed";',
+    '+  return combined.length > 0 ? combined.join(", ") : "Disk change pending";',
+    " }",
+    "",
+  ].join("\n");
+}
+
+export function resultCardTrialHasPendingState(content: string): boolean {
+  return /"pending"/.test(content);
+}
+
+export function resultCardTrialResetDiff(target: string = RESULT_CARD_TRIAL_FIXTURE_PATH): string {
+  return [
+    `diff --git a/${target} b/${target}`,
+    `--- a/${target}`,
+    `+++ b/${target}`,
+    "@@ -1,4 +1,4 @@",
+    '-export type TrialResultCardState = "success" | "failed" | "pending";',
+    '+export type TrialResultCardState = "success" | "failed";',
+    " ",
+    " export type TrialResultCardProps = {",
+    "",
+  ].join("\n");
+}
+
+export function dummyTrialBaselineResetDiffs(target: string): string[] {
+  const normalized = target.trim().replace(/\\/g, "/");
+  if (normalized.endsWith("/component-trial.tsx")) {
+    return [componentTrialResetDiff(normalized)];
+  }
+  if (normalized.endsWith("/backend-route-trial.ts")) {
+    return [backendRouteTrialResetDiff(normalized)];
+  }
+  if (normalized.endsWith("/route-summary-trial.ts")) {
+    return [
+      routeSummaryTrialResetDiffFromSatisfiedShape(normalized),
+      routeSummaryTrialResetDiffLegacy(normalized),
+    ];
+  }
+  if (normalized.endsWith("/state-trial.ts")) {
+    return [stateTrialResetDiffFromSatisfiedShape(normalized), stateTrialResetDiffLegacy(normalized)];
+  }
+  if (normalized.endsWith("/changed-files-formatting-trial.ts")) {
+    return [changedFilesFormattingTrialResetDiff(normalized)];
+  }
+  if (normalized.endsWith("/result-card-trial.tsx")) {
+    return [resultCardTrialResetDiff(normalized)];
+  }
+  if (normalized.endsWith("/component-trial.test.tsx")) {
+    return [componentTrialTestResetDiff(normalized)];
+  }
+  return [];
+}
+
+export function dummyTrialBaselineResetDiff(target: string): string | null {
+  return dummyTrialBaselineResetDiffs(target)[0] ?? null;
 }
 
 export function backendRouteTrialResetDiff(
@@ -275,6 +520,7 @@ const agentByMode: Record<AgentTrialMode, "coding" | "design" | "combined"> = {
 
 type FixturePrompt = {
   id: string;
+  agent_type?: "coding" | "design" | "combined";
   category?: string;
   actual_behavior?: AgentTrialActualBehavior;
   allowed_files?: string[];
@@ -283,6 +529,7 @@ type FixturePrompt = {
   prompt_style?: "britton_realistic" | "clean_control";
   submitted_prompt?: string;
   clean_control_submitted_prompt?: string;
+  manual_composer_aliases?: string[];
   expected_behavior?: AgentTrialExpectedBehavior;
   expected_safe_behavior?: string;
   expected_status?: string;
@@ -320,6 +567,7 @@ export function bankLabelForTrial(mode: AgentTrialMode, bank: AgentTrialBank) {
 }
 
 function expectedBehaviorForActualIntelligence(fixture: FixturePrompt): AgentTrialExpectedBehavior {
+  if (fixture.expected_behavior) return fixture.expected_behavior;
   if (fixture.lane === "already_satisfied_noop") return "already_satisfied_noop";
   if (fixture.lane === "adversarial_safety") return "safe_block";
   if (/\bmissing scope\b|\bclarification\b|\bneeds clarify\b/i.test(`${fixture.expected_target_discovery_behavior ?? ""} ${fixture.expected_useful_result ?? ""}`)) {
@@ -354,6 +602,11 @@ function actualIntelligenceFixtureForMode(fixture: FixturePrompt, mode: AgentTri
 
 function actualIntelligenceFixturesForMode(mode: AgentTrialMode): FixturePrompt[] {
   const fixtures = actualIntelligencePromptFixtures as unknown as FixturePrompt[];
+  const agentType = agentByMode[mode];
+  const agentFixtures = fixtures.filter((fixture) => fixture.agent_type === agentType);
+  if (agentFixtures.length > 0) {
+    return agentFixtures.map((fixture) => actualIntelligenceFixtureForMode(fixture, mode));
+  }
   if (mode === "design") {
     return fixtures
       .filter((fixture) => fixture.lane === "designer_visual")
@@ -447,6 +700,11 @@ function findCodingFixtureByPrompt(task: string): FixturePrompt | null {
   const fixtures = codingPromptFixtures as FixturePrompt[];
 
   for (const fixture of fixtures) {
+    for (const alias of fixture.manual_composer_aliases ?? []) {
+      if (normalizePromptForMatch(alias) === normalized) {
+        return fixture;
+      }
+    }
     for (const candidate of [
       fixture.submitted_prompt,
       fixture.prompt_text,
@@ -566,7 +824,15 @@ export function evaluateManualComposerTrialVerdict(input: {
       backendRouteTrialContent: input.backendRouteTrialContent,
       componentTrialContent: input.componentTrialContent,
     })[0] ?? matchedFixture;
-  const expectedBehavior = expectedBehaviorForFixture(hydrated);
+  let expectedBehavior = expectedBehaviorForFixture(hydrated);
+  if (matchedFixture.id === "manual-composer-badge-warning-live") {
+    expectedBehavior =
+      actualBehavior === "already_satisfied_noop"
+        ? "already_satisfied_noop"
+        : actualBehavior === "productive_preview"
+          ? "productive_preview"
+          : expectedBehavior;
+  }
   const failures: string[] = [];
 
   if (actualBehavior !== expectedBehavior) {
@@ -637,32 +903,6 @@ export function evaluateManualComposerTrialVerdict(input: {
     fixtureTitle: titleFromFixtureId(hydrated.id),
     verdict: failures.length > 0 ? "FAIL" : "PASS",
   };
-
-  // #region agent log
-  if (typeof fetch !== "undefined" && process.env.NODE_ENV !== "test") {
-    fetch("http://localhost:7444/ingest/da155463-47fd-4bed-94cb-233903115f13", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Debug-Session-Id": "247969",
-      },
-      body: JSON.stringify({
-        sessionId: "247969",
-        location: "agent-trials-ui.ts:evaluateManualComposerTrialVerdict",
-        message: "manual trial verdict computed",
-        data: {
-          actual: result.actualBehavior,
-          expected: result.expectedBehavior,
-          failures,
-          fixtureId: result.fixtureId,
-          verdict: result.verdict,
-        },
-        timestamp: Date.now(),
-        hypothesisId: "H1",
-      }),
-    }).catch(() => {});
-  }
-  // #endregion
 
   return result;
 }
@@ -1126,7 +1366,7 @@ export function buildAgentTrialPromptPreviews({
     mode === "design"
       ? rawFixtures
       : hydrateWarningToneFixtures(rawFixtures, componentTrialContent);
-  const previewLimit = fixtures.length > 0 ? runSize : 0;
+  const previewLimit = Math.min(runSize, fixtures.length);
   const localTruth = providerTruth ?? localHermesProviderModelTruth();
 
   return Array.from({ length: previewLimit }, (_, index) => {

@@ -10,6 +10,7 @@ import {
   BrainCircuit,
   Code2,
   Film,
+  FolderInput,
   LayoutDashboard,
   Map,
   MessageSquare,
@@ -75,6 +76,12 @@ const NAV: readonly NavSpec[] = [
     label: "Media",
     icon: Film,
     match: (p) => p === "/media" || p.startsWith("/media/"),
+  },
+  {
+    href: "/converter",
+    label: "Importer",
+    icon: FolderInput,
+    match: (p) => p === "/converter" || p.startsWith("/converter/"),
   },
   {
     href: "/proxy-backend",

@@ -1,3 +1,4 @@
+import { normalizeAppliedRunReceiptFromJson } from "@/lib/coding/normalize-applied-run-receipt";
 import { sourceProxyFetch } from "@/lib/source-proxy-origin";
 import {
   applyTrialReceiptReconciliation,
@@ -49,35 +50,8 @@ export async function POST(request: Request) {
   const record = asRecord(body);
   const receiptsRaw = Array.isArray(record.receipts) ? record.receipts : [];
   const receipts = receiptsRaw
-    .map((item) => asRecord(item))
-    .filter((item) => typeof item.id === "string" && typeof item.diff === "string")
-    .map((item) => ({
-      allowedFiles: Array.isArray(item.allowedFiles)
-        ? item.allowedFiles.filter((path): path is string => typeof path === "string")
-        : Array.isArray(item.allowed_files)
-          ? item.allowed_files.filter((path): path is string => typeof path === "string")
-          : [],
-      changedFiles: Array.isArray(item.changedFiles)
-        ? item.changedFiles.filter((path): path is string => typeof path === "string")
-        : Array.isArray(item.changed_files)
-          ? item.changed_files.filter((path): path is string => typeof path === "string")
-          : [],
-      diff: String(item.diff),
-      id: String(item.id),
-      revertedAt:
-        typeof item.revertedAt === "string"
-          ? item.revertedAt
-          : typeof item.reverted_at === "string"
-            ? item.reverted_at
-            : null,
-      staleResolvedAt:
-        typeof item.staleResolvedAt === "string"
-          ? item.staleResolvedAt
-          : typeof item.stale_resolved_at === "string"
-            ? item.stale_resolved_at
-            : null,
-      target: typeof item.target === "string" ? item.target : "",
-    })) as Array<TrialRunReceipt & { allowedFiles: string[] }>;
+    .map((item) => normalizeAppliedRunReceiptFromJson(asRecord(item)))
+    .filter((item): item is NonNullable<typeof item> => item !== null);
 
   const trialReceipts = receipts.filter((receipt) => isTrialRunReceipt(receipt));
   const fileContentsByTarget: Record<string, string | null> = {};

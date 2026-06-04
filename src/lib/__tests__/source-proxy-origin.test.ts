@@ -1,8 +1,10 @@
 /// <reference types="vitest/globals" />
 
 import {
+  SOURCE_PROXY_LONG_JSON_UNDICI_OPTIONS,
   SOURCE_PROXY_STREAM_UNDICI_OPTIONS,
   sourceProxyFetch,
+  sourceProxyLongJsonFetch,
   sourceProxyStreamFetch,
 } from "@/lib/source-proxy-origin";
 
@@ -18,5 +20,12 @@ describe("sourceProxyStreamFetch policy", () => {
   it("is a distinct export from JSON-oriented sourceProxyFetch (guard against accidental merge)", () => {
     expect(typeof sourceProxyStreamFetch).toBe("function");
     expect(sourceProxyStreamFetch).not.toBe(sourceProxyFetch);
+  });
+
+  it("disables undici body and headers timeouts for long prompt-packet JSON hops", () => {
+    expect(SOURCE_PROXY_LONG_JSON_UNDICI_OPTIONS.connectTimeout).toBe(0);
+    expect(SOURCE_PROXY_LONG_JSON_UNDICI_OPTIONS.bodyTimeout).toBe(0);
+    expect(SOURCE_PROXY_LONG_JSON_UNDICI_OPTIONS.headersTimeout).toBe(0);
+    expect(sourceProxyLongJsonFetch).not.toBe(sourceProxyFetch);
   });
 });

@@ -240,6 +240,7 @@ export function providerTruthFromPreviewState(
 
 export function localHermesProviderModelTruth(options?: {
   blockedReason?: string;
+  configuredModel?: string | null;
   modelId?: string | null;
   providerModelApiBaseHost?: string | null;
   providerModelProbeOk?: boolean | null;
@@ -251,7 +252,8 @@ export function localHermesProviderModelTruth(options?: {
 }): CodingProviderModelTruth {
   const modelId = (options?.modelId ?? "").trim();
   const modelLabel = modelId ? displayLocalModel(modelId) : "Unknown local model";
-  const configuredModel = modelId ? displayLocalModel(modelId) : "unknown";
+  const configuredModel =
+    (options?.configuredModel ?? "").trim() || (modelId ? displayLocalModel(modelId) : "unknown");
   const runtimeRouteModel = modelId || "unknown";
   const configuredModelIsHermes =
     modelId && modelId !== "unknown-local-model" ? /hermes/i.test(modelId) : null;
@@ -344,16 +346,25 @@ export function providerModelTruthFromPayload(
     truthSourceFromUnknown(nested.source) ??
     truthSourceFromUnknown(record.provider_model_source) ??
     (provider || model ? "runtime" : fallback.source);
-  const providerCallMade = booleanFromUnknown(nested.providerCallMade) ?? booleanFromUnknown(record.provider_call_made) ?? booleanFromUnknown(diagnostics.router_call_attempted) ?? fallback.providerCallMade;
+  const providerCallMade =
+    booleanFromUnknown(nested.providerCallMade) ??
+    booleanFromUnknown(record.provider_call_made) ??
+    booleanFromUnknown(diagnostics.provider_call_made) ??
+    fallback.providerCallMade;
   const providerCallAuthorized =
     booleanFromUnknown(nested.providerCallAuthorized) ??
     booleanFromUnknown(record.provider_call_authorized) ??
     providerCallMade;
   const normalizedProvider = (provider ?? fallback.providerId).toLowerCase();
+  const resolvedModel = providerCallMade
+    ? (model ?? fallback.modelId)
+    : (model && (booleanFromUnknown(record.provider_call_made) === false || booleanFromUnknown(diagnostics.provider_call_made) === false)
+        ? "none"
+        : model ?? fallback.modelId);
   if (normalizedProvider === "ollama" || normalizedProvider === "local" || normalizedProvider === "local/ollama") {
     return localHermesProviderModelTruth({
       blockedReason: stringFromUnknown(nested.blockedReason) ?? undefined,
-      modelId: model ?? fallback.modelId,
+      modelId: resolvedModel ?? fallback.modelId,
       providerCallAuthorized,
       providerCallMade,
       providerModelApiBaseHost: stringFromUnknown(nested.apiBaseHost),
@@ -393,23 +404,40 @@ export function providerModelTruthFromPayload(
   });
 }
 
+function ollamaRouteFromSelfStatus(
+  routes: unknown[],
+  preferredAliases: string[],
+): Record<string, unknown> | null {
+  const normalized = routes.filter(
+    (route): route is Record<string, unknown> =>
+      Boolean(route && typeof route === "object" && !Array.isArray(route)),
+  );
+  for (const alias of preferredAliases) {
+    const match = normalized.find((route) => route.alias === alias);
+    if (match) return match;
+  }
+  return null;
+}
+
 export function providerModelTruthFromSelfStatus(
   payload: unknown,
   fallback: CodingProviderModelTruth = localHermesProviderModelTruth(),
 ): CodingProviderModelTruth {
   const record = payload && typeof payload === "object" ? payload as Record<string, unknown> : {};
   const routes = Array.isArray(record.model_routes) ? record.model_routes : [];
-  const localRoute = routes
-    .filter((route): route is Record<string, unknown> => Boolean(route && typeof route === "object" && !Array.isArray(route)))
-    .find((route) => route.alias === "local" && route.enabled === true);
-  if (!localRoute) return fallback;
+  const ollamaRoute =
+    ollamaRouteFromSelfStatus(routes, ["coder", "local"]) ??
+    null;
+  if (!ollamaRoute) return fallback;
 
-  const provider = stringFromUnknown(localRoute.provider) ?? "ollama";
+  const provider = stringFromUnknown(ollamaRoute.provider) ?? "ollama";
+  const enabled = booleanFromUnknown(ollamaRoute.enabled);
+  const reason = stringFromUnknown(ollamaRoute.reason);
   const model =
-    stringFromUnknown(localRoute.resolved_model) ??
-    stringFromUnknown(localRoute.model) ??
-    stringFromUnknown(localRoute.litellm_model) ??
-    stringFromUnknown(localRoute.ollama_model) ??
+    stringFromUnknown(ollamaRoute.resolved_model) ??
+    stringFromUnknown(ollamaRoute.model) ??
+    stringFromUnknown(ollamaRoute.litellm_model) ??
+    stringFromUnknown(ollamaRoute.ollama_model) ??
     fallback.modelId;
   const providerIsLocal = provider === "ollama" || provider === "local";
   if (!providerIsLocal) return fallback;
@@ -418,11 +446,20 @@ export function providerModelTruthFromSelfStatus(
     modelId: model,
     providerCallAuthorized: false,
     providerCallMade: false,
-    providerModelApiBaseHost: stringFromUnknown(localRoute.api_base_host),
-    providerModelProbeOk: booleanFromUnknown(localRoute.probe_ok),
-    providerModelSelectedVia: stringFromUnknown(localRoute.selected_via),
+    providerModelApiBaseHost: stringFromUnknown(ollamaRoute.api_base_host),
+    providerModelProbeOk: booleanFromUnknown(ollamaRoute.probe_ok),
+    providerModelSelectedVia: stringFromUnknown(ollamaRoute.selected_via),
     source: "config",
-    status: model && model !== "unknown-local-model" ? "configured" : fallback.status,
+    status:
+      enabled === false
+        ? "unavailable"
+        : model && model !== "unknown-local-model"
+          ? "configured"
+          : fallback.status,
+    blockedReason:
+      enabled === false
+        ? reason || "Local/Ollama lane is configured, but the selected model is unavailable."
+        : undefined,
   });
 }
 

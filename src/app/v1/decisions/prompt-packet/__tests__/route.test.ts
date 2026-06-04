@@ -1,14 +1,16 @@
 /// <reference types="vitest/globals" />
 
-import { sourceProxyFetch } from "@/lib/source-proxy-origin";
+import { sourceProxyFetch, sourceProxyLongJsonFetch } from "@/lib/source-proxy-origin";
 
 import { POST } from "../route";
 
 vi.mock("@/lib/source-proxy-origin", () => ({
   sourceProxyFetch: vi.fn(),
+  sourceProxyLongJsonFetch: vi.fn(),
 }));
 
 const mockedSourceProxyFetch = vi.mocked(sourceProxyFetch);
+const mockedSourceProxyLongJsonFetch = vi.mocked(sourceProxyLongJsonFetch);
 
 function jsonRequest(body: unknown): Request {
   return new Request("http://localhost/v1/decisions/prompt-packet", {
@@ -31,6 +33,7 @@ function proxyJson(body: unknown) {
 describe("prompt-packet route", () => {
   beforeEach(() => {
     mockedSourceProxyFetch.mockReset();
+    mockedSourceProxyLongJsonFetch.mockReset();
     vi.stubEnv("SPIRIT_CODING_USE_PROXY", "true");
   });
 
@@ -39,6 +42,17 @@ describe("prompt-packet route", () => {
   });
 
   it("returns the narrow docs-only preview directly before waiting on Source Proxy", async () => {
+    mockedSourceProxyLongJsonFetch.mockResolvedValueOnce(
+      proxyJson({
+        proposed_diff:
+          "diff --git a/docs/proxy-test-runner-plan.md b/docs/proxy-test-runner-plan.md\n+Direct preview tests should keep unique expected text for stable coverage.",
+        reason_code: "docs_only_bff_direct_preview",
+        status: "preview_ready",
+        target: "docs/proxy-test-runner-plan.md",
+        task_id: "task-123",
+      }),
+    );
+
     const response = await POST(
       jsonRequest({
         active_task_id: "task-123",
@@ -52,7 +66,8 @@ describe("prompt-packet route", () => {
 
     const body = await response.json();
     expect(response.status).toBe(200);
-    expect(mockedSourceProxyFetch).not.toHaveBeenCalled();
+    expect(mockedSourceProxyFetch).toHaveBeenCalledWith("/v1/self/status", { method: "GET" });
+    expect(mockedSourceProxyLongJsonFetch).toHaveBeenCalled();
     expect(body.status).toBe("preview_ready");
     expect(body.reason_code).toBe("docs_only_bff_direct_preview");
     expect(body.task_id).toBe("task-123");
@@ -66,6 +81,16 @@ describe("prompt-packet route", () => {
   });
 
   it("returns direct docs-only preview for the safe trial even without a task id", async () => {
+    mockedSourceProxyLongJsonFetch.mockResolvedValueOnce(
+      proxyJson({
+        proposed_diff:
+          "diff --git a/docs/proxy-test-runner-plan.md b/docs/proxy-test-runner-plan.md\n+Direct preview without task id should keep unique expected text.",
+        reason_code: "docs_only_bff_direct_preview",
+        status: "preview_ready",
+        target: "docs/proxy-test-runner-plan.md",
+      }),
+    );
+
     const response = await POST(
       jsonRequest({
         allowed_files: ["docs/proxy-test-runner-plan.md"],
@@ -78,7 +103,8 @@ describe("prompt-packet route", () => {
 
     const body = await response.json();
     expect(response.status).toBe(200);
-    expect(mockedSourceProxyFetch).not.toHaveBeenCalled();
+    expect(mockedSourceProxyFetch).toHaveBeenCalledWith("/v1/self/status", { method: "GET" });
+    expect(mockedSourceProxyLongJsonFetch).toHaveBeenCalled();
     expect(body.status).toBe("preview_ready");
     expect(body.reason_code).toBe("docs_only_bff_direct_preview");
     expect(body.target).toBe("docs/proxy-test-runner-plan.md");
@@ -91,6 +117,18 @@ describe("prompt-packet route", () => {
   });
 
   it("returns already-satisfied when the requested docs sentence already exists", async () => {
+    mockedSourceProxyLongJsonFetch.mockResolvedValueOnce(
+      proxyJson({
+        already_satisfied: true,
+        alreadySatisfied: true,
+        proposed_diff: "",
+        reason_code: "coder_no_changes_needed",
+        status: "already_satisfied",
+        target: "docs/proxy-test-runner-plan.md",
+        task_id: "task-123",
+      }),
+    );
+
     const response = await POST(
       jsonRequest({
         active_task_id: "task-123",
@@ -104,7 +142,8 @@ describe("prompt-packet route", () => {
 
     const body = await response.json();
     expect(response.status).toBe(200);
-    expect(mockedSourceProxyFetch).not.toHaveBeenCalled();
+    expect(mockedSourceProxyFetch).toHaveBeenCalledWith("/v1/self/status", { method: "GET" });
+    expect(mockedSourceProxyLongJsonFetch).toHaveBeenCalled();
     expect(body.status).toBe("already_satisfied");
     expect(body.reason_code).toBe("coder_no_changes_needed");
     expect(body.already_satisfied).toBe(true);
@@ -115,7 +154,7 @@ describe("prompt-packet route", () => {
   });
 
   it("does not fallback when the docs target is not explicitly allowed", async () => {
-    mockedSourceProxyFetch.mockResolvedValueOnce(
+    mockedSourceProxyLongJsonFetch.mockResolvedValueOnce(
       proxyJson({
         proposed_diff: "",
         reason_code: "coder_packet_missing_context",
@@ -137,5 +176,9 @@ describe("prompt-packet route", () => {
     expect(body.status).toBe("needs_context");
     expect(body.reason_code).toBe("coder_packet_missing_context");
     expect(body.proposed_diff).toBe("");
+    expect(mockedSourceProxyLongJsonFetch).toHaveBeenCalledWith(
+      "/v1/decisions/prompt-packet",
+      expect.objectContaining({ method: "POST" }),
+    );
   });
 });

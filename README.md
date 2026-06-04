@@ -7,6 +7,24 @@
 The active Source Proxy plan is `docs/source-proxy-production-hardening-plan.md`.
 `proxyCLI.md` is retired and intentionally deleted. Phase 11, AionUi bridge, and Spirit Cowork Console language is historical or deferred unless a later active plan explicitly reopens it.
 
+## Authorized Media Importer
+
+SpiritOS includes a dedicated `/converter` route for authorized media imports. It is for Britton-owned content or content where Britton has documented written permission/license rights; it is not a public YouTube downloader.
+
+The converter writes under the Dell output roots:
+
+- `/mnt/spirit-8tb/converter/authorized-imports`
+- `/mnt/spirit-8tb/converter/audio`
+- `/mnt/spirit-8tb/converter/transcripts`
+- `/mnt/spirit-8tb/converter/knowledge`
+- `/mnt/spirit-8tb/converter/logs`
+
+Use `/converter` to paste many YouTube URLs, local file paths, a local media folder path, or a manual transcript. YouTube URL jobs require the ownership/license checkbox before they can be queued, and the job stores the authorization note/proof metadata with the resulting artifacts. Local files do not require the YouTube authorization gate.
+
+The queue validates the batch first and processes one item at a time by default. Pause, resume, cancel, active job details, completed outputs, and redacted diagnostics are available from the page. Local media conversion uses `ffmpeg` when present; authorized YouTube imports use `yt-dlp` when present. If a speech-to-text engine is not configured, audio jobs are left in `pending_transcription_engine` with transcript, summary, chunk, metadata, and knowledge-record paths prepared as far as possible.
+
+This pass intentionally does not merge imported assets into ytmclone playback, the 999Playr local library, SpiritOS tracking, or custom feeds.
+
 ## Quick Start (Recommended)
 
 ```bash
@@ -63,6 +81,7 @@ Frontend UI:
 - Script: `npm run dev:https:lan`
 - Port: `3000`
 - Log: `~/spiritos-dev-lan.log`
+- Watchdog log: `~/spiritos-dev-lan-watchdog.log`
 - URL: `https://10.0.0.186:3000/coding`
 
 Source Proxy:
@@ -86,7 +105,7 @@ tmux kill-session -t spiritos-lan 2>/dev/null || true
 tmux kill-session -t source-proxy-lan 2>/dev/null || true
 
 tmux new -d -s source-proxy-lan 'cd ~/SpiritOS && npm run proxy:https:lan 2>&1 | tee -a ~/source-proxy-https-lan.log'
-tmux new -d -s spiritos-lan 'cd ~/SpiritOS && npm run dev:https:lan 2>&1 | tee -a ~/spiritos-dev-lan.log'
+tmux new -d -s spiritos-lan 'cd ~/SpiritOS && npm run dev:https:lan:watch'
 
 sleep 25
 
@@ -134,7 +153,7 @@ lsof -ti tcp:8787 2>/dev/null | xargs -r kill -KILL
 rm -rf .next
 
 tmux new -d -s source-proxy-lan 'cd ~/SpiritOS && npm run proxy:https:lan 2>&1 | tee -a ~/source-proxy-https-lan.log'
-tmux new -d -s spiritos-lan 'cd ~/SpiritOS && npm run dev:https:lan 2>&1 | tee -a ~/spiritos-dev-lan.log'
+tmux new -d -s spiritos-lan 'cd ~/SpiritOS && npm run dev:https:lan:watch'
 
 sleep 30
 
@@ -158,7 +177,7 @@ lsof -ti tcp:3000 2>/dev/null | xargs -r kill -KILL
 
 rm -rf .next
 
-tmux new -d -s spiritos-lan 'cd ~/SpiritOS && npm run dev:https:lan 2>&1 | tee -a ~/spiritos-dev-lan.log'
+tmux new -d -s spiritos-lan 'cd ~/SpiritOS && npm run dev:https:lan:watch'
 
 sleep 25
 

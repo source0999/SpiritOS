@@ -1,0 +1,35 @@
+services:
+  jellyfin:
+    image: jellyfin/jellyfin:latest
+    container_name: spirit-jellyfin
+    restart: unless-stopped
+    ports:
+      - "8096:8096"
+    devices:
+      - /dev/dri:/dev/dri
+    group_add:
+      - "44"
+      - "993"
+    volumes:
+      - /mnt/spirit-8tb/services/jellyfin/config:/config
+      - /mnt/spirit-8tb/services/jellyfin/cache:/cache
+      - /mnt/spirit-8tb/services/jellyfin/transcodes:/transcodes
+      - /mnt/spirit-8tb/services/jellyfin/web-overrides/index.html:/jellyfin/jellyfin-web/index.html:ro
+      - /mnt/spirit-8tb/services/jellyfin/web-overrides/spirit-player-enhancer.js:/jellyfin/jellyfin-web/spirit-player-enhancer.js:ro
+      - /mnt/spirit-8tb/services/jellyfin/web-overrides/spirit-player-enhancer.css:/jellyfin/jellyfin-web/spirit-player-enhancer.css:ro
+      - /mnt/spirit-8tb/services/jellyfin/web-overrides/spiritos-mobile-swipes.js:/jellyfin/jellyfin-web/spiritos-mobile-swipes.js:ro
+      - /mnt/spirit-8tb/media/movies:/media/movies:ro
+      - /mnt/spirit-8tb/media/tv:/media/tv:ro
+      - /mnt/spirit-8tb/media/music:/media/music:ro
+      - /mnt/spirit-8tb/media/anime:/media/anime:ro
+      - /mnt/spirit-8tb/media/other:/media/other:ro
+      - /mnt/spirit-8tb/media/optimized-test:/media/optimized-test:ro
+      - /DATA/yes:/media/yes:ro
+    environment:
+      - JELLYFIN_PublishedServerUrl=http://127.0.0.1:8096
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8096/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s

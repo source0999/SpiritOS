@@ -1,5 +1,5 @@
 import { mergeRepoFirstResearchSources } from "@/app/v1/decisions/_repo-research";
-import { sourceProxyFetch } from "@/lib/source-proxy-origin";
+import { sourceProxyFetch, sourceProxyLongJsonFetch } from "@/lib/source-proxy-origin";
 
 import { readFile } from "node:fs/promises";
 import path from "node:path";
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
 
   let response;
   try {
-    response = await sourceProxyFetch("/v1/decisions/prompt-packet", {
+    response = await sourceProxyLongJsonFetch("/v1/decisions/prompt-packet", {
       body: bodyText,
       headers: {
         "content-type": request.headers.get("content-type") ?? "application/json",
@@ -115,8 +115,7 @@ function hasProviderModelTruth(payload: JsonRecord) {
   return Boolean(
     payload.provider_model_truth ||
       payload.providerModelTruth ||
-      payload.provider ||
-      payload.model,
+      typeof payload.provider_call_made === "boolean",
   );
 }
 
@@ -127,9 +126,12 @@ async function readConfiguredLocalRoute() {
     const payload = await response.json() as unknown;
     if (!isRecord(payload)) return null;
     const routes = Array.isArray(payload.model_routes) ? payload.model_routes : [];
-    return routes
-      .filter(isRecord)
-      .find((route) => route.alias === "local" && route.enabled === true) ?? null;
+    const normalized = routes.filter(isRecord);
+    return (
+      normalized.find((route) => route.alias === "coder" && route.enabled === true) ??
+      normalized.find((route) => route.alias === "local" && route.enabled === true) ??
+      null
+    );
   } catch {
     return null;
   }

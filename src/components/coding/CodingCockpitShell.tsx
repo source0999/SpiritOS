@@ -14,8 +14,15 @@ import {
   buildAgentTrialUiState,
   classifyDiagnosticSidecar,
   COMPONENT_TRIAL_FIXTURE_PATH,
+  COMPONENT_TRIAL_TEST_FIXTURE_PATH,
   componentTrialHasWarningTone,
   componentTrialResetDiff,
+  componentTrialTestResetDiff,
+  dummyTrialBaselineResetDiff,
+  DUMMY_TRIAL_EDIT_FIXTURE_TARGETS,
+  dummyTrialBaselineResetDiffs,
+  ROUTE_SUMMARY_TRIAL_FIXTURE_PATH,
+  routeSummaryTrialResetDiff,
   evaluateManualComposerTrialVerdict,
   type AgentTrialApplyStrategy,
   type AgentTrialBank,
@@ -48,14 +55,15 @@ import {
   countActiveUnrevertedTrialReceipts,
   isTrialRunReceipt as isTrialRunReceiptRecord,
 } from "@/lib/coding/trial-receipt-reconciliation";
+import { copyTextToClipboard } from "@/lib/clipboard";
 import { taskRequestsPreviewOnly } from "@/lib/coding/preview-only-request";
 import {
   mapVisibleResultBadge,
   type VisibleResultBadge,
   type VisibleResultTone,
 } from "@/lib/coding/visible-result-badge";
-import "@/styles/dashboard-demo-v4.css";
 import {
+  normalizeReversibleTrialCategoryInput,
   reversibleTrialCategories,
   reversibleTrialCounts,
   selectReversibleTrialPrompts,
@@ -128,28 +136,36 @@ type ReversibleSuitePromptResult = {
   checks_run: string[];
   disk_changed_files: string[];
   endpoint_statuses: string[];
+  error_summary: string;
   expected_outcome: ReversibleTrialPrompt["expectedOutcome"];
   failure_reason: string;
   model_called_for_generation: string;
+  next_recommended_action: string;
   prompt: ReversibleTrialPrompt;
   provider: string;
   provider_call_made: boolean;
   preview_changed_files: string[];
   reverse_diff: string;
+  reverse_status_text: string;
   reverted: boolean;
   reversal_available: boolean;
   run_id: string;
   selected_target: string;
   target_candidates: string[];
-  visible_result_label: "PASS" | "FAIL" | "BLOCKED" | "NO-GO" | "EXPECTED_NO_EDIT";
+  visible_result_label: "PASS" | "REVERTED" | "FAIL" | "NEEDS FIX" | "BLOCKED" | "NO EDIT EXPECTED";
+  elapsed_ms: number | null;
 };
 type ReversibleSuiteState = {
   completed: number;
   count: ReversibleTrialCount;
-  currentStep: string;
   currentPrompt: string;
+  currentPromptElapsedMs: number | null;
+  currentStep: string;
+  currentStepStartedAt: number | null;
   expectedNoEdit: number;
   fail: number;
+  interruptionReason: string | null;
+  interruptionSource: "none" | "user_stop" | "browser_refresh_or_dev_reload" | "route_failed" | "provider_timeout";
   pass: number;
   provider: string;
   model: string;
@@ -157,7 +173,67 @@ type ReversibleSuiteState = {
   reverted: number;
   status: ReversibleSuiteStatus;
   stopped: boolean;
+  suiteFinishedAt: number | null;
   suiteId: string;
+  suiteStartedAt: number | null;
+};
+type ReversibleSuiteAbort = {
+  reason: string;
+  source: Extract<ReversibleSuiteState["interruptionSource"], "route_failed" | "provider_timeout">;
+  step: string;
+};
+
+function reversibleSuiteAbortForResult(result: ReversibleSuitePromptResult): ReversibleSuiteAbort | null {
+  const endpointText = result.endpoint_statuses.join(", ");
+  const failureText = `${result.failure_reason} ${result.error_summary}`.toLowerCase();
+  const hasServerError = result.endpoint_statuses.some((status) => /:5\d\d(?:\b|$)/.test(status));
+  const hasTimedOut = result.endpoint_statuses.some((status) => /:timeout(?:\b|$)/.test(status));
+  const fetchFailed = failureText.includes("failed to fetch");
+  const targetMissing = failureText.includes("reason_code=target_missing");
+  const providerTimedOut =
+    hasTimedOut ||
+    failureText.includes("timeout_source: /v1/decisions/prompt-packet") ||
+    failureText.includes("model call timed out");
+
+  if (providerTimedOut) {
+    return {
+      reason: `provider_timeout: ${endpointText || result.failure_reason || "model route timed out"}`,
+      source: "provider_timeout",
+      step: "Stopped after provider timeout",
+    };
+  }
+  if (hasServerError || fetchFailed) {
+    return {
+      reason: hasServerError
+        ? `route_failed: ${endpointText}`
+        : `route_failed: ${result.failure_reason || "Failed to fetch"}`,
+      source: "route_failed",
+      step: "Stopped after route failure",
+    };
+  }
+  return null;
+}
+
+export function reversibleSuiteExceptionLabel(message: string): ReversibleSuitePromptResult["visible_result_label"] {
+  const normalized = message.toLowerCase();
+  if (
+    normalized.includes("preview request returned status") ||
+    normalized.includes("failed to fetch") ||
+    normalized.includes("source proxy") ||
+    normalized.includes("coder_sync_timeout") ||
+    normalized.includes("browser_abort_timeout") ||
+    normalized.includes("route") ||
+    normalized.includes("timeout")
+  ) {
+    return "NEEDS FIX";
+  }
+  return "FAIL";
+}
+type ComposerTimingState = {
+  diffPreviewMs: number | null;
+  promptPacketMs: number | null;
+  runStartedAt: number | null;
+  totalMs: number | null;
 };
 type ManualTaskEventStatus = "done" | "running" | "blocked" | "failed";
 type ManualTaskEvent = {
@@ -181,7 +257,8 @@ const manualTaskPhaseLabels = {
 
 /** Match CodingAgentInterface prompt-packet patience; proxy coder sync deadline defaults to 180s. */
 const MANUAL_PROMPT_PACKET_TIMEOUT_MS = 180_000;
-const TRIAL_PROMPT_PACKET_TIMEOUT_MS = 60_000;
+const TRIAL_PROMPT_PACKET_TIMEOUT_BUFFER_MS = 180_000;
+const TRIAL_PROMPT_PACKET_TIMEOUT_MS = MANUAL_PROMPT_PACKET_TIMEOUT_MS + TRIAL_PROMPT_PACKET_TIMEOUT_BUFFER_MS;
 const PROTECTED_FORBIDDEN_FILES = [
   ".env*",
   "source_proxy/data/**",
@@ -192,7 +269,116 @@ const PROTECTED_FORBIDDEN_FILES = [
   "credentials",
 ];
 
+function formatElapsedMs(startedAt: number | null, endedAt: number = performance.now()): string {
+  if (startedAt == null) return "—";
+  const ms = Math.max(0, endedAt - startedAt);
+  if (ms < 1000) return `${Math.round(ms)}ms`;
+  return `${(ms / 1000).toFixed(1)}s`;
+}
+
+function elapsedMs(startedAt: number | null, endedAt: number = performance.now()): number | null {
+  if (startedAt == null) return null;
+  return Math.max(0, Math.round(endedAt - startedAt));
+}
+
+function trialProviderCallMadeFromPayload(
+  payload: unknown,
+  providerTruth: ReturnType<typeof providerModelTruthFromPayload>,
+): boolean {
+  if (providerTruth.providerCallMade === true) return true;
+  const record =
+    payload && typeof payload === "object" ? (payload as Record<string, unknown>) : null;
+  if (!record) return false;
+  const diagnosticsRaw = record.coder_diagnostics ?? record.coderDiagnostics;
+  const diagnostics =
+    diagnosticsRaw && typeof diagnosticsRaw === "object"
+      ? (diagnosticsRaw as Record<string, unknown>)
+      : null;
+  if (diagnostics?.provider_call_made === true) return true;
+  if (record.provider_call_made === true || record.providerCallMade === true) return true;
+  const alreadySatisfied = record.already_satisfied === true || record.alreadySatisfied === true;
+  return alreadySatisfied && Boolean(diagnostics?.provider_call_made ?? record.provider_call_made);
+}
+
+function trialModelProofFailureSummary(
+  payload: unknown,
+  reasonCode: string,
+  selectedTarget: string,
+): string {
+  const record = asRecord(payload);
+  const diagnostics = asRecord(record.coder_diagnostics ?? record.coderDiagnostics);
+  const attemptedAliases = Array.isArray(diagnostics.trial_proof_aliases_attempted)
+    ? diagnostics.trial_proof_aliases_attempted.map((item) => String(item)).filter(Boolean)
+    : [];
+  const fields = [
+    "phase=model_proof",
+    "server=Source Proxy",
+    "route=POST /v1/decisions/prompt-packet",
+    "url=/v1/decisions/prompt-packet",
+    "failure_type=model_proof",
+    `reason_code=${reasonCode || "provider_call_made_false"}`,
+    `selected_target=${selectedTarget || "none"}`,
+    `attempted_aliases=${attemptedAliases.length > 0 ? attemptedAliases.join("|") : "unknown"}`,
+    `provider=${stringValue(diagnostics.provider) ?? stringValue(record.provider) ?? "unknown"}`,
+    `model=${stringValue(diagnostics.model) ?? stringValue(diagnostics.litellm_model) ?? stringValue(record.model) ?? "none"}`,
+    `exception_type=${stringValue(diagnostics.exception_type) ?? "none"}`,
+    `exception_message=${stringValue(diagnostics.exception_message) ?? "none"}`,
+  ];
+  return fields.join("; ");
+}
+
+function isReversibleSuiteTimingFrozen(state: ReversibleSuiteState): boolean {
+  return state.status === "done" || state.status === "failed";
+}
+
+/** Freeze wall-clock display when the suite is no longer running (avoids live performance.now() drift on re-renders). */
+function reversibleSuiteTimingEndAt(state: ReversibleSuiteState): number {
+  if (state.suiteFinishedAt != null) return state.suiteFinishedAt;
+  if (state.status === "running" || state.status === "stopping") return performance.now();
+  return state.suiteStartedAt ?? performance.now();
+}
+
+function estimateStoredSuiteFinishedAt(
+  suiteStartedAt: number | null,
+  results: ReversibleSuitePromptResult[],
+): number | null {
+  if (suiteStartedAt == null) return null;
+  const promptMs = results.reduce(
+    (sum, row) => sum + (typeof row.elapsed_ms === "number" ? row.elapsed_ms : 0),
+    0,
+  );
+  return suiteStartedAt + Math.max(promptMs, 0);
+}
+
 type ManualTaskPhase = keyof typeof manualTaskPhaseLabels;
+
+/** Spinner label while prompt-packet runs — avoid stuck "Calling model" when Source Proxy is dead. */
+function previewLoadingPhaseLabel(sourceProxyReachable: boolean, phase: ManualTaskPhase): string {
+  if (phase === "preview" && !sourceProxyReachable) {
+    return "Source Proxy unreachable";
+  }
+  return manualTaskPhaseLabels[phase];
+}
+
+function previewLoadingSimpleResult(
+  sourceProxyReachable: boolean,
+  previewState: PreviewState,
+  idleLabel: string,
+): string {
+  if (!previewState.isLoading) {
+    return previewState.error ?? previewState.blocker ?? idleLabel;
+  }
+  if (!sourceProxyReachable) {
+    return "Source Proxy unreachable — backend failure (not stuck on Calling model).";
+  }
+  if (
+    previewState.reasonCode === "coder_sync_timeout" ||
+    previewState.reasonCode === "source_proxy_timeout"
+  ) {
+    return "Backend failed — model sync timed out (transcript preserved).";
+  }
+  return "Previewing";
+}
 
 type ManualTaskPacket = {
   allowedFiles: string[];
@@ -244,6 +430,413 @@ type AppliedRunReceipt = {
 
 const appliedRunReceiptStorageKey = "spiritos:coding:applied-run-receipts:v1";
 const promptHistoryStorageKey = "spiritos:coding:prompt-history:v1";
+const reversibleSuiteStorageKey = "spiritos:coding:reversible-suite-state:v1";
+
+function storedReversibleSuiteSnapshot(): string | null {
+  if (typeof window === "undefined") return null;
+  return (
+    window.sessionStorage.getItem(reversibleSuiteStorageKey) ??
+    window.localStorage.getItem(reversibleSuiteStorageKey)
+  );
+}
+
+function defaultReversibleSuiteState(): ReversibleSuiteState {
+  const providerTruth = selectedProviderModelTruth();
+  return {
+    completed: 0,
+    count: 10,
+    currentPrompt: "",
+    currentPromptElapsedMs: null,
+    currentStep: "Idle",
+    currentStepStartedAt: null,
+    expectedNoEdit: 0,
+    fail: 0,
+    interruptionReason: null,
+    interruptionSource: "none",
+    pass: 0,
+    provider: providerTruth.providerLabel,
+    model: providerTruth.modelLabel,
+    results: [],
+    reverted: 0,
+    status: "idle",
+    stopped: false,
+    suiteFinishedAt: null,
+    suiteId: "",
+    suiteStartedAt: null,
+  };
+}
+
+function loadStoredReversibleSuiteState(): ReversibleSuiteState {
+  if (typeof window === "undefined") return defaultReversibleSuiteState();
+  try {
+    const parsed = JSON.parse(storedReversibleSuiteSnapshot() ?? "null") as Partial<ReversibleSuiteState> | null;
+    if (!parsed || typeof parsed !== "object") return defaultReversibleSuiteState();
+    const base = defaultReversibleSuiteState();
+    const storedStatus =
+      parsed.status === "running" ||
+      parsed.status === "stopping" ||
+      parsed.status === "done" ||
+      parsed.status === "failed"
+        ? parsed.status
+        : "idle";
+    const interrupted = storedStatus === "running" || storedStatus === "stopping";
+    const userStoppedBeforeReload = parsed.stopped === true || parsed.interruptionSource === "user_stop";
+    const interruptionReason = interrupted
+      ? userStoppedBeforeReload
+        ? "user_clicked_stop_after_current_prompt"
+        : "browser_refresh_or_dev_reload"
+      : typeof parsed.interruptionReason === "string"
+        ? parsed.interruptionReason
+        : base.interruptionReason;
+    const interruptionSource = interrupted
+      ? userStoppedBeforeReload
+        ? "user_stop"
+        : "browser_refresh_or_dev_reload"
+      : parsed.interruptionSource ?? base.interruptionSource;
+    const results = Array.isArray(parsed.results) ? parsed.results : [];
+    const suiteStartedAt =
+      typeof parsed.suiteStartedAt === "number" ? parsed.suiteStartedAt : base.suiteStartedAt;
+    const suiteFinishedAt =
+      typeof parsed.suiteFinishedAt === "number"
+        ? parsed.suiteFinishedAt
+        : !interrupted && (storedStatus === "done" || storedStatus === "failed")
+          ? estimateStoredSuiteFinishedAt(suiteStartedAt, results as ReversibleSuitePromptResult[])
+          : base.suiteFinishedAt;
+    return {
+      ...base,
+      ...parsed,
+      count: (parsed.count as ReversibleTrialCount | undefined) ?? base.count,
+      interruptionReason,
+      interruptionSource,
+      currentPrompt: interrupted
+        ? userStoppedBeforeReload
+          ? "Suite paused after user stop. Transcript preserved — reverse pending edits or run again."
+          : "Suite paused after browser refresh/dev reload. Transcript preserved — reverse pending edits or run again."
+        : typeof parsed.currentPrompt === "string"
+          ? parsed.currentPrompt
+          : base.currentPrompt,
+      currentStep: interrupted
+        ? userStoppedBeforeReload
+          ? "Stopped after current prompt"
+          : "Paused after browser refresh/dev reload"
+        : typeof parsed.currentStep === "string"
+          ? parsed.currentStep
+          : base.currentStep,
+      results,
+      suiteFinishedAt,
+      suiteStartedAt,
+      status: interrupted ? "failed" : storedStatus,
+      stopped: userStoppedBeforeReload ? true : Boolean(!interrupted && parsed.stopped),
+    };
+  } catch {
+    return defaultReversibleSuiteState();
+  }
+}
+
+function storeReversibleSuiteState(state: ReversibleSuiteState) {
+  if (typeof window === "undefined") return;
+  const serialized = JSON.stringify(state);
+  window.sessionStorage.setItem(reversibleSuiteStorageKey, serialized);
+  window.localStorage.setItem(reversibleSuiteStorageKey, serialized);
+}
+
+function clearStoredReversibleSuiteState() {
+  if (typeof window === "undefined") return;
+  window.sessionStorage.removeItem(reversibleSuiteStorageKey);
+  window.localStorage.removeItem(reversibleSuiteStorageKey);
+}
+
+function isRecoverableModelLaneBlockedSuite(state: ReversibleSuiteState): boolean {
+  return (
+    state.status === "failed" &&
+    state.results.length === 0 &&
+    state.interruptionSource === "route_failed" &&
+    (state.currentStep === "Blocked before model proof" ||
+      Boolean(state.interruptionReason?.startsWith("model_lane_unavailable:")))
+  );
+}
+
+function suiteReceiptIdForResult(result: Pick<ReversibleSuitePromptResult, "prompt" | "run_id">): string {
+  return `trial-suite:${result.prompt.id}:${result.run_id}`;
+}
+
+function suiteTrialPromptIdFromReceiptId(receiptId: string): string | null {
+  if (!receiptId.startsWith("trial-suite:")) return null;
+  const body = receiptId.slice("trial-suite:".length);
+  const separator = body.lastIndexOf(":");
+  if (separator <= 0) return null;
+  return body.slice(0, separator);
+}
+
+function revertActionForReceipt(receipt: AppliedRunReceipt): string {
+  const suitePromptId = suiteTrialPromptIdFromReceiptId(receipt.id);
+  if (suitePromptId) {
+    return `Revert live trial ${suitePromptId}`;
+  }
+  if (receipt.id.startsWith("trial-reset:")) {
+    const slug =
+      receipt.target
+        .split("/")
+        .pop()
+        ?.replace(/\.[^.]+$/, "") ?? "fixture-reset";
+    return `Revert live trial ${slug}`;
+  }
+  if (receiptIsTrialRun(receipt)) {
+    return `Revert live trial ${receipt.taskId}`;
+  }
+  return `Revert ${receipt.target}`;
+}
+
+function syncSuiteReceiptRevertState(
+  receipts: AppliedRunReceipt[],
+  result: Pick<
+    ReversibleSuitePromptResult,
+    "model_called_for_generation" | "prompt" | "provider" | "reverted" | "reversal_available" | "run_id"
+  >,
+): AppliedRunReceipt[] {
+  if (!result.reversal_available || !result.reverted || !result.run_id) {
+    return receipts;
+  }
+  const receiptId = suiteReceiptIdForResult(result);
+  const revertedAt = new Date().toISOString();
+  return receipts.map((receipt) =>
+    receipt.id === receiptId && !receipt.revertedAt
+      ? {
+          ...receipt,
+          revertedAt,
+          reversalModel: result.model_called_for_generation,
+          reversalProvider: result.provider,
+          reversalProviderModelSource: "trial-suite",
+        }
+      : receipt,
+  );
+}
+
+function forwardDiffForSuiteResult(result: ReversibleSuitePromptResult): string {
+  return reverseUnifiedDiff(result.reverse_diff);
+}
+
+function receiptForSuiteReverseResult(
+  result: ReversibleSuitePromptResult,
+  storedReceipts: AppliedRunReceipt[],
+): AppliedRunReceipt {
+  const receiptId = suiteReceiptIdForResult(result);
+  const stored = storedReceipts.find((item) => item.id === receiptId);
+  if (stored && !stored.revertedAt) {
+    return stored;
+  }
+  const forwardDiff = forwardDiffForSuiteResult(result);
+  return {
+    ...receiptFromSuiteResult(result),
+    changedFiles:
+      result.applied_changed_files.length > 0
+        ? result.applied_changed_files
+        : changedFilesFromDiffPreview(forwardDiff),
+    diff: forwardDiff,
+  };
+}
+
+async function reconcileTrialReceiptsViaApi(
+  receipts: AppliedRunReceipt[],
+): Promise<AppliedRunReceipt[]> {
+  if (process.env.NODE_ENV === "test" || receipts.length === 0) {
+    return receipts;
+  }
+  try {
+    const response = await fetch("/v1/coding/trial-receipt-reconcile", {
+      body: JSON.stringify({ receipts }),
+      headers: { "content-type": "application/json" },
+      method: "POST",
+    });
+    if (!response.ok) {
+      return receipts;
+    }
+    const payload = (await response.json()) as { receipts?: AppliedRunReceipt[] };
+    return Array.isArray(payload.receipts) ? payload.receipts : receipts;
+  } catch {
+    return receipts;
+  }
+}
+
+function receiptFromSuiteResult(result: ReversibleSuitePromptResult): AppliedRunReceipt {
+  return {
+    allowedFiles: result.allowed_files,
+    appliedAt: new Date().toISOString(),
+    changedFiles: result.disk_changed_files,
+    diff: forwardDiffForSuiteResult(result),
+    hermesUsedForThisRun: null,
+    id: suiteReceiptIdForResult(result),
+    model: result.model_called_for_generation,
+    prompt: result.prompt.prompt,
+    provider: result.provider,
+    providerModelSource: "trial-suite",
+    providerModelStatus: "recorded",
+    revertedAt: null,
+    reversalModel: null,
+    reversalProvider: null,
+    reversalProviderModelSource: null,
+    reverseDiff: result.reverse_diff,
+    target: result.selected_target || result.prompt.targetFile,
+    taskId: result.run_id,
+  };
+}
+
+function reversalLooksAlreadyApplied(message: string): boolean {
+  const lower = message.toLowerCase();
+  return (
+    lower.includes("no changed files") ||
+    lower.includes("already reverted") ||
+    lower.includes("snapshot restored") ||
+    lower.includes("nothing to revert") ||
+    lower.includes("target file(s) not found") ||
+    lower.includes("git apply") ||
+    lower.includes("patch does not apply") ||
+    lower.includes("diff_apply_check") ||
+    lower.includes("blocked by safety verification")
+  );
+}
+
+function suiteResultTargetKey(
+  result: Pick<ReversibleSuitePromptResult, "prompt" | "selected_target">,
+): string {
+  return normalizeRepoPath(result.selected_target || result.prompt.targetFile);
+}
+
+function latestUnrevertedSuiteResultsByTarget(
+  results: ReversibleSuitePromptResult[],
+): ReversibleSuitePromptResult[] {
+  const latestByTarget = new Map<string, ReversibleSuitePromptResult>();
+  for (const result of results) {
+    if (!result.reversal_available || result.reverted || !result.reverse_diff.trim()) {
+      continue;
+    }
+    const key = suiteResultTargetKey(result);
+    const existing = latestByTarget.get(key);
+    if (!existing || result.prompt.id.localeCompare(existing.prompt.id) > 0) {
+      latestByTarget.set(key, result);
+    }
+  }
+  return [...latestByTarget.values()];
+}
+
+function syncReversibleSuiteResultsFromReceipts(
+  results: ReversibleSuitePromptResult[],
+  receipts: AppliedRunReceipt[],
+): ReversibleSuitePromptResult[] {
+  const latestPromptIdByTarget = new Map(
+    latestUnrevertedSuiteResultsByTarget(results).map((result) => [
+      suiteResultTargetKey(result),
+      result.prompt.id,
+    ]),
+  );
+  return results.map((result) => {
+    if (!result.reversal_available || result.reverted) {
+      return result;
+    }
+    const latestPromptId = latestPromptIdByTarget.get(suiteResultTargetKey(result));
+    if (latestPromptId && latestPromptId !== result.prompt.id) {
+      return result;
+    }
+    const receipt = receipts.find((item) => item.id === suiteReceiptIdForResult(result));
+    if (!receipt?.revertedAt && !receipt?.staleResolvedAt) {
+      return result;
+    }
+    return {
+      ...result,
+      reverted: true,
+      reverse_status_text: receipt.staleResolvedAt
+        ? "Already at trial baseline on disk."
+        : "Reversed manually through trial runner controls.",
+    };
+  });
+}
+
+function alignSuiteResultsToDiskAndReverts(
+  results: ReversibleSuitePromptResult[],
+  receipts: AppliedRunReceipt[],
+): ReversibleSuitePromptResult[] {
+  const synced = syncReversibleSuiteResultsFromReceipts(results, receipts);
+  const latestStillPending = new Set(
+    latestUnrevertedSuiteResultsByTarget(synced).map((result) => suiteResultTargetKey(result)),
+  );
+  return synced.map((result) => {
+    if (!result.reversal_available || result.reverted) {
+      return result;
+    }
+    if (latestStillPending.has(suiteResultTargetKey(result))) {
+      return result;
+    }
+    return {
+      ...result,
+      reverted: true,
+      reverse_status_text: "Already at trial baseline on disk.",
+    };
+  });
+}
+
+function registerSuiteTargetReverted(
+  target: string,
+  suiteResults: ReversibleSuitePromptResult[],
+  reconciledReceipts: AppliedRunReceipt[],
+  revertedSuiteKeys: Set<string>,
+  revertedReceiptIds: Set<string>,
+) {
+  const normalized = normalizeRepoPath(target);
+  for (const result of suiteResults) {
+    if (!result.reversal_available || result.reverted) {
+      continue;
+    }
+    if (suiteResultTargetKey(result) !== normalized) {
+      continue;
+    }
+    revertedSuiteKeys.add(`${result.prompt.id}:${result.run_id}`);
+    revertedReceiptIds.add(suiteReceiptIdForResult(result));
+  }
+  for (const receipt of reconciledReceipts) {
+    if (!receipt.id.startsWith("trial-suite:")) {
+      continue;
+    }
+    if (normalizeRepoPath(receipt.target) !== normalized) {
+      continue;
+    }
+    revertedReceiptIds.add(receipt.id);
+  }
+}
+
+function buildSuiteTrialReceipt(input: {
+  allowedFiles: string[];
+  appliedAt: string;
+  changedFiles: string[];
+  diff: string;
+  model: string;
+  prompt: ReversibleTrialPrompt;
+  provider: string;
+  reverseDiff: string;
+  revertedAt: string | null;
+  runId: string;
+  target: string;
+}): AppliedRunReceipt {
+  return {
+    allowedFiles: input.allowedFiles,
+    appliedAt: input.appliedAt,
+    changedFiles: input.changedFiles,
+    diff: input.diff,
+    hermesUsedForThisRun: null,
+    id: `trial-suite:${input.prompt.id}:${input.runId}`,
+    model: input.model,
+    prompt: input.prompt.prompt,
+    provider: input.provider,
+    providerModelSource: "trial-suite",
+    providerModelStatus: "recorded",
+    revertedAt: input.revertedAt,
+    reversalModel: input.revertedAt ? input.model : null,
+    reversalProvider: input.revertedAt ? input.provider : null,
+    reversalProviderModelSource: input.revertedAt ? "trial-suite" : null,
+    reverseDiff: input.reverseDiff,
+    target: input.target,
+    taskId: input.runId,
+  };
+}
 
 function idlePreviewState(): PreviewState {
   const providerTruth = selectedProviderModelTruth();
@@ -323,21 +916,29 @@ function selectedProviderModelTruth(): CodingProviderModelTruth {
 
 function reversibleTrialPromptForMode(prompt: ReversibleTrialPrompt, mode: AgentTrialMode): string {
   if (prompt.expectedOutcome === "clarify_expected") {
-    return `${prompt.prompt} Expected outcome: ask for clarification and do not edit files. ${prompt.verifyInstruction}`;
+    return prompt.prompt;
   }
   if (prompt.expectedOutcome === "safety_block_expected") {
-    return `${prompt.prompt} Expected outcome: block safely and do not edit files. ${prompt.verifyInstruction}`;
+    return prompt.prompt;
   }
   if (prompt.expectedOutcome === "manual_step_expected") {
-    return `${prompt.prompt} Expected outcome: explain the manual step and do not edit files. ${prompt.verifyInstruction}`;
+    return prompt.prompt;
   }
   if (mode === "design") {
-    return `${prompt.prompt} Focus on the visible product UI, hierarchy, and copy clarity while keeping the edit bounded and reversible.`;
+    return prompt.prompt;
   }
   if (mode === "hybrid") {
-    return `${prompt.prompt} Treat this as a combined designer/coder check: preserve the intended visual behavior and make the smallest safe implementation edit.`;
+    return prompt.prompt;
   }
   return prompt.prompt;
+}
+
+function visiblePromptExpectationTag(expectedOutcome: ReversibleTrialPrompt["expectedOutcome"]): string {
+  if (expectedOutcome === "noop_expected") return "no edit expected";
+  if (expectedOutcome === "clarify_expected") return "clarification expected";
+  if (expectedOutcome === "safety_block_expected") return "safety block expected";
+  if (expectedOutcome === "manual_step_expected") return "manual step expected";
+  return "edit expected";
 }
 
 function trialCategoryForMode(mode: AgentTrialMode): ReversibleTrialCategory {
@@ -433,8 +1034,10 @@ function reverseUnifiedDiff(diff: string): string {
 }
 
 function reverseDiffForReceipt(receipt: AppliedRunReceipt): string {
-  if (receipt.id.startsWith("trial-reset:")) {
-    return receipt.reverseDiff;
+  if (receipt.id.startsWith("trial-reset:") || receipt.id.startsWith("trial-suite:")) {
+    if (receipt.reverseDiff.trim()) {
+      return receipt.reverseDiff;
+    }
   }
   const rebuiltReverseDiff = reverseUnifiedDiff(receipt.diff);
   return rebuiltReverseDiff.trim() ? rebuiltReverseDiff : receipt.reverseDiff;
@@ -566,7 +1169,7 @@ function buildTrialFixtureResetReceipt(
   const text = prompt.toLowerCase();
   if (
     target === COMPONENT_TRIAL_FIXTURE_PATH &&
-    /warning-ish|warning tone|support warning|warning/.test(text)
+    /warning[- ]?ish|warning tone|warning state|support warning|partial results|warning/.test(text)
   ) {
     return buildTrialFixtureResetReceiptFromDiff(
       target,
@@ -585,7 +1188,7 @@ function buildTrialFixtureResetReceipt(
   }
   if (
     target === BACKEND_ROUTE_TRIAL_FIXTURE_PATH &&
-    /ok=false|failure case|ok true|sad path/.test(text)
+    /failure path|ok=false|failure case|ok true|non-200|happy response|sad path/.test(text)
   ) {
     return buildTrialFixtureResetReceiptFromDiff(
       target,
@@ -603,6 +1206,33 @@ function buildTrialFixtureResetReceipt(
     );
   }
   return null;
+}
+
+function buildDummyTrialBaselineResetReceipt(
+  target: string,
+  sourceReceipt: Pick<
+    AppliedRunReceipt,
+    "appliedAt" | "hermesUsedForThisRun" | "model" | "provider" | "providerModelSource" | "providerModelStatus"
+  >,
+  _baselines: TrialFixtureBaselines,
+): AppliedRunReceipt | null {
+  const normalized = normalizeRepoPath(target);
+  const resetDiff = dummyTrialBaselineResetDiff(normalized);
+  if (!resetDiff) {
+    return null;
+  }
+  const idSuffix = normalized.split("/").pop()?.replace(/\.[^.]+$/, "") ?? "baseline-reset";
+
+  return buildTrialFixtureResetReceiptFromDiff(normalized, resetDiff, {
+    appliedAt: sourceReceipt.appliedAt,
+    hermesUsedForThisRun: sourceReceipt.hermesUsedForThisRun,
+    idSuffix,
+    model: sourceReceipt.model ?? "not recorded",
+    prompt: `Reset dummy trial fixture to baseline for ${target}.`,
+    provider: sourceReceipt.provider ?? "not recorded",
+    providerModelSource: sourceReceipt.providerModelSource,
+    providerModelStatus: sourceReceipt.providerModelStatus,
+  });
 }
 
 function buildKnownTrialFixtureResetReceipts(baselines: TrialFixtureBaselines): AppliedRunReceipt[] {
@@ -643,6 +1273,28 @@ function buildKnownTrialFixtureResetReceipts(baselines: TrialFixtureBaselines): 
         },
       ),
     );
+  }
+  return receipts;
+}
+
+function buildAllDummyTrialBaselineResetReceipts(): AppliedRunReceipt[] {
+  const providerTruth = selectedProviderModelTruth();
+  const receipts: AppliedRunReceipt[] = [];
+  for (const target of DUMMY_TRIAL_EDIT_FIXTURE_TARGETS) {
+    for (const [index, resetDiff] of dummyTrialBaselineResetDiffs(target).entries()) {
+      receipts.push(
+        buildTrialFixtureResetReceiptFromDiff(target, resetDiff, {
+          appliedAt: "known-trial-fixture-reset",
+          hermesUsedForThisRun: providerTruth.hermesUsedForThisRun,
+          idSuffix: `baseline-${index + 1}`,
+          model: providerTruth.modelLabel,
+          prompt: `Reset ${target} to its dummy trial baseline.`,
+          provider: providerTruth.providerLabel,
+          providerModelSource: providerTruth.source,
+          providerModelStatus: providerTruth.status,
+        }),
+      );
+    }
   }
   return receipts;
 }
@@ -802,7 +1454,11 @@ function discoverManualTargetCandidates(prompt: string, explicitTarget: string):
     candidates.add("src/lib/coding/agent-trials-ui.ts");
     candidates.add("src/components/coding/CodingCockpitShell.tsx");
   }
-  if (/tiny badge|badge helper|dummy trial|trial bits|warning-ish|warning tone/.test(text)) {
+  if (
+    /badge component|small badge|warning state|tiny badge|badge helper|dummy trial|trial bits|warning-ish|warning tone/.test(
+      text,
+    )
+  ) {
     candidates.add("tests/ui-agent-trials/fixtures/dummy-coding-targets/component-trial.tsx");
     candidates.add("tests/ui-agent-trials/fixtures/dummy-coding-targets/readme-trial.md");
   }
@@ -917,6 +1573,14 @@ function diagnosticsHandoffTag(
   return { label: "Record", tone: "record" };
 }
 
+function reversibleResultTagClass(label: ReversibleSuitePromptResult["visible_result_label"]): string {
+  if (label === "PASS") return "border-emerald-300/70 bg-emerald-300/15 text-emerald-100";
+  if (label === "REVERTED") return "border-cyan-300/70 bg-cyan-300/15 text-cyan-100";
+  if (label === "NO EDIT EXPECTED") return "border-sky-300/60 bg-sky-300/15 text-sky-100";
+  if (label === "BLOCKED") return "border-amber-300/70 bg-amber-300/15 text-amber-100";
+  return "border-rose-300/70 bg-rose-300/15 text-rose-100";
+}
+
 function readableTaskState(previewState: PreviewState, draftReady: boolean): string {
   if (previewState.isLoading) return "Working";
   if (previewState.status === "applied") return "Finished";
@@ -945,9 +1609,16 @@ function trialVerdictBadgeClass(verdict: "FAIL" | "PASS" | "PENDING" | "UNKNOWN"
 
 function designTaskKind(task: string) {
   const text = task.toLowerCase();
-  if (/dummy|patch|support warning|route helper|no-diff|already-satisfied/.test(text)) return null;
+  if (
+    /dummy|patch|support warning|route helper|no-diff|already-satisfied|badge|warning state|implementation|fix the|change the/.test(
+      text,
+    )
+  ) {
+    return null;
+  }
   if (/responsive|mobile|tablet|viewport/.test(text)) return "responsive";
-  if (/component|handoff|mapping|map/.test(text)) return "handoff";
+  // "component" alone is too broad for coding prompts (e.g. "badge component").
+  if (/\bhandoff\b|component map|component hierarchy|mapping/.test(text)) return "handoff";
   if (/design|visual|critique|layout|screen/.test(text)) return "critique";
   return null;
 }
@@ -991,7 +1662,7 @@ function isCombinedTask(task: string) {
   );
 }
 
-export default function CodingCockpitShell() {
+export function CodingCockpitShell() {
   const stopReversibleSuiteAfterCurrentRef = useRef(false);
   const [task, setTask] = useState("");
   const [targetFile, setTargetFile] = useState("");
@@ -1010,25 +1681,18 @@ export default function CodingCockpitShell() {
   const [trialCopyStatus, setTrialCopyStatus] = useState("");
   const [trialRunState, setTrialRunState] = useState<TrialRunState>("idle");
   const [reversibleTrialCategory, setReversibleTrialCategory] = useState<ReversibleTrialCategory>("Coder");
-  const [reversibleTrialCount, setReversibleTrialCount] = useState<ReversibleTrialCount>(10);
   const [reversiblePromptsCopyStatus, setReversiblePromptsCopyStatus] = useState("");
   const [reversibleSuiteCopyStatus, setReversibleSuiteCopyStatus] = useState("");
-  const [reversibleSuiteState, setReversibleSuiteState] = useState<ReversibleSuiteState>(() => ({
-    completed: 0,
-    count: 10,
-    currentStep: "Idle",
-    currentPrompt: "",
-    expectedNoEdit: 0,
-    fail: 0,
-    pass: 0,
-    provider: selectedProviderModelTruth().providerLabel,
-    model: selectedProviderModelTruth().modelLabel,
-    results: [],
-    reverted: 0,
-    status: "idle",
-    stopped: false,
-    suiteId: "",
-  }));
+  const [reversibleSuiteState, setReversibleSuiteState] = useState<ReversibleSuiteState>(
+    () => defaultReversibleSuiteState(),
+  );
+  const [reversibleTrialCount, setReversibleTrialCount] = useState<ReversibleTrialCount>(10);
+  const [composerTiming, setComposerTiming] = useState<ComposerTimingState>({
+    diffPreviewMs: null,
+    promptPacketMs: null,
+    runStartedAt: null,
+    totalMs: null,
+  });
   const [designReportCopyStatus, setDesignReportCopyStatus] = useState("");
   const [combinedCopyStatus, setCombinedCopyStatus] = useState("");
   const [appliedRunReceipts, setAppliedRunReceipts] = useState<AppliedRunReceipt[]>([]);
@@ -1059,6 +1723,89 @@ export default function CodingCockpitShell() {
     setAppliedRunReceipts(loadStoredAppliedRunReceipts());
     setPromptHistory(loadPromptHistory());
   }, []);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === "test") return;
+    const stored = loadStoredReversibleSuiteState();
+    setReversibleTrialCount(stored.count);
+    setReversibleSuiteState((current) => {
+      if (current.status !== "idle" || current.results.length > 0 || current.suiteId) {
+        return current;
+      }
+      return stored;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === "test") return;
+    if (reversibleSuiteState.status !== "done" && reversibleSuiteState.status !== "failed") {
+      return;
+    }
+    if (!reversibleSuiteState.suiteId || reversibleSuiteState.results.length === 0) {
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      const suiteReceipts = reversibleSuiteState.results
+        .filter((result) => result.reversal_available)
+        .map((result) => receiptForSuiteReverseResult(result, appliedRunReceipts));
+      if (suiteReceipts.length === 0) {
+        return;
+      }
+      const reconciled = await reconcileTrialReceiptsViaApi(suiteReceipts);
+      if (cancelled) {
+        return;
+      }
+      updateAppliedRunReceipts((current) => {
+        const merged = new Map(current.map((receipt) => [receipt.id, receipt]));
+        for (const receipt of reconciled) {
+          merged.set(receipt.id, receipt);
+        }
+        return [...merged.values()];
+      });
+      setReversibleSuiteState((current) => {
+        if (current.suiteId !== reversibleSuiteState.suiteId) {
+          return current;
+        }
+        return {
+          ...current,
+          results: alignSuiteResultsToDiskAndReverts(current.results, reconciled),
+        };
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [appliedRunReceipts, reversibleSuiteState.results.length, reversibleSuiteState.status, reversibleSuiteState.suiteId]);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === "test") return;
+    if (reversibleSuiteState.status === "idle" && reversibleSuiteState.results.length === 0) {
+      return;
+    }
+    storeReversibleSuiteState(reversibleSuiteState);
+  }, [reversibleSuiteState]);
+
+  function clearReversibleSuitePanel() {
+    clearStoredReversibleSuiteState();
+    setReversibleSuiteState(defaultReversibleSuiteState());
+    setReversibleSuiteCopyStatus("Cleared trial suite results. Run again when ready.");
+  }
+
+  async function handleCleanUpTrialRunner() {
+    if (isReverting || reversibleSuiteState.status === "running" || reversibleSuiteState.status === "stopping") {
+      return;
+    }
+    if (suitePendingRevertCount > 0) {
+      await handleReverseRemainingTrialEdits({ clearSuiteAfter: true });
+      return;
+    }
+    if (canRevertTrialRuns) {
+      await handleRevertAllTrialRuns({ clearSuiteAfter: true });
+      return;
+    }
+    clearReversibleSuitePanel();
+  }
 
   useEffect(() => {
     if (process.env.NODE_ENV === "test") return;
@@ -1102,6 +1849,19 @@ export default function CodingCockpitShell() {
 
   useEffect(() => {
     if (process.env.NODE_ENV === "test") return;
+    if (!sourceProxyReachable) return;
+    if (selectedProviderTruth.status === "unavailable" || selectedProviderTruth.providerModelProbeOk === false) {
+      return;
+    }
+    setReversibleSuiteState((current) => {
+      if (!isRecoverableModelLaneBlockedSuite(current)) return current;
+      clearStoredReversibleSuiteState();
+      return defaultReversibleSuiteState();
+    });
+  }, [selectedProviderTruth, sourceProxyReachable]);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === "test") return;
     let cancelled = false;
     async function loadComponentTrialBaseline() {
       try {
@@ -1138,6 +1898,40 @@ export default function CodingCockpitShell() {
       cancelled = true;
     };
   }, []);
+
+  const [hangTimerTick, setHangTimerTick] = useState(0);
+  useEffect(() => {
+    const active =
+      previewState.isLoading ||
+      previewState.isApplying ||
+      reversibleSuiteState.status === "running" ||
+      reversibleSuiteState.status === "stopping";
+    if (!active) return;
+    const id = window.setInterval(() => setHangTimerTick((value) => value + 1), 250);
+    return () => window.clearInterval(id);
+  }, [previewState.isApplying, previewState.isLoading, reversibleSuiteState.status]);
+  void hangTimerTick;
+
+  useEffect(() => {
+    if (!previewState.isLoading || sourceProxyReachable) return;
+    setPreviewState((current) => {
+      if (!current.isLoading) return current;
+      const stuckOnModelSpinner =
+        current.currentPhase === manualTaskPhaseLabels.preview
+        || current.currentPhase === "Calling model";
+      if (!stuckOnModelSpinner) return current;
+      return {
+        ...current,
+        currentPhase: "Source Proxy unreachable",
+        error: current.error ?? "Source Proxy unreachable — backend failure.",
+      };
+    });
+    setReversibleSuiteState((current) => {
+      if (current.status !== "running" && current.status !== "stopping") return current;
+      if (current.currentStep !== "Calling model") return current;
+      return { ...current, currentStep: "Source Proxy unreachable" };
+    });
+  }, [previewState.isLoading, sourceProxyReachable]);
 
   useEffect(() => {
     if (process.env.NODE_ENV === "test") return;
@@ -1247,9 +2041,11 @@ export default function CodingCockpitShell() {
   const currentReversalReceipt = currentAppliedRunReceipt ?? currentTrialFixtureResetReceipt;
   const availableTrialResetReceipts = useMemo(
     () => {
-      const receipts = currentTrialFixtureResetReceipt
-        ? [currentTrialFixtureResetReceipt]
-        : buildKnownTrialFixtureResetReceipts(trialFixtureBaselines);
+      const receipts = [
+        ...(currentTrialFixtureResetReceipt ? [currentTrialFixtureResetReceipt] : []),
+        ...buildKnownTrialFixtureResetReceipts(trialFixtureBaselines),
+        ...buildAllDummyTrialBaselineResetReceipts(),
+      ];
       return Array.from(new Map(receipts.map((receipt) => [receipt.id, receipt])).values());
     },
     [currentTrialFixtureResetReceipt, trialFixtureBaselines],
@@ -1262,8 +2058,152 @@ export default function CodingCockpitShell() {
   const currentReversalButtonLabel = currentTrialFixtureResetReceipt && !currentAppliedRunReceipt
     ? "Reset this trial fixture"
     : "Revert this run";
-  const trialReversalCount = unrevertedTrialRunReceipts.length + availableTrialResetReceipts.length;
+  const unrevertedSuiteResults = useMemo(
+    () => latestUnrevertedSuiteResultsByTarget(reversibleSuiteState.results),
+    [reversibleSuiteState.results],
+  );
+  const suiteAutoRevertedTargetCount = useMemo(() => {
+    const targets = new Set<string>();
+    for (const result of reversibleSuiteState.results) {
+      if (!result.reversal_available || !result.reverted) {
+        continue;
+      }
+      targets.add(suiteResultTargetKey(result));
+    }
+    return targets.size;
+  }, [reversibleSuiteState.results]);
+  const suiteAutoRevertedRowCount = useMemo(
+    () =>
+      reversibleSuiteState.results.filter((result) => result.reversal_available && result.reverted)
+        .length,
+    [reversibleSuiteState.results],
+  );
+  const activeSuitePromptIds = useMemo(
+    () => new Set(reversibleSuiteState.results.map((result) => result.prompt.id)),
+    [reversibleSuiteState.results],
+  );
+  const orphanUnrevertedTrialReceipts = useMemo(
+    () =>
+      unrevertedTrialRunReceipts.filter((receipt) => {
+        if (
+          reversibleSuiteState.results.some(
+            (result) => receipt.id === suiteReceiptIdForResult(result),
+          )
+        ) {
+          return false;
+        }
+        const supersededPromptId = suiteTrialPromptIdFromReceiptId(receipt.id);
+        if (supersededPromptId && activeSuitePromptIds.has(supersededPromptId)) {
+          return false;
+        }
+        return true;
+      }),
+    [activeSuitePromptIds, reversibleSuiteState.results, unrevertedTrialRunReceipts],
+  );
+  useEffect(() => {
+    if (process.env.NODE_ENV === "test") return;
+    if (reversibleSuiteState.results.length === 0) return;
+    const suiteReceiptIds = new Set(
+      reversibleSuiteState.results.map((result) => suiteReceiptIdForResult(result)),
+    );
+    updateAppliedRunReceipts((receipts) => {
+      let changed = false;
+      const next = receipts.map((receipt) => {
+        if (receipt.revertedAt || receipt.staleResolvedAt || !receipt.id.startsWith("trial-suite:")) {
+          return receipt;
+        }
+        if (suiteReceiptIds.has(receipt.id)) {
+          return receipt;
+        }
+        const promptId = suiteTrialPromptIdFromReceiptId(receipt.id);
+        if (!promptId || !activeSuitePromptIds.has(promptId)) {
+          return receipt;
+        }
+        changed = true;
+        return {
+          ...receipt,
+          staleResolvedAt: new Date().toISOString(),
+        };
+      });
+      return changed ? next : receipts;
+    });
+  }, [activeSuitePromptIds, reversibleSuiteState.results.length]);
+
+  const suitePendingRevertReceiptCount =
+    unrevertedSuiteResults.length + orphanUnrevertedTrialReceipts.length;
+  const suitePendingRevertTargetCount = useMemo(() => {
+    const targets = new Set<string>();
+    for (const result of unrevertedSuiteResults) {
+      targets.add(suiteResultTargetKey(result));
+    }
+    for (const receipt of orphanUnrevertedTrialReceipts) {
+      targets.add(normalizeRepoPath(receipt.target));
+    }
+    return targets.size;
+  }, [orphanUnrevertedTrialReceipts, unrevertedSuiteResults]);
+  const suitePendingRevertCount = suitePendingRevertTargetCount;
+  const suitePassReversibleRowCount = useMemo(
+    () =>
+      reversibleSuiteState.results.filter(
+        (result) => result.reversal_available && result.visible_result_label === "PASS",
+      ).length,
+    [reversibleSuiteState.results],
+  );
+  const orphanRevertTargetCount = useMemo(() => {
+    const targets = new Set<string>();
+    for (const receipt of orphanUnrevertedTrialReceipts) {
+      targets.add(normalizeRepoPath(receipt.target));
+    }
+    return targets.size;
+  }, [orphanUnrevertedTrialReceipts]);
+  const trialReversalCount =
+    suitePendingRevertCount > 0
+      ? suitePendingRevertCount + orphanRevertTargetCount
+      : availableTrialResetReceipts.length;
   const canRevertTrialRuns = trialReversalCount > 0 && !isReverting;
+  const reversibleSuiteBusy =
+    reversibleSuiteState.status === "running" || reversibleSuiteState.status === "stopping";
+  const canCleanUpTrialRunner =
+    !isReverting &&
+    !reversibleSuiteBusy &&
+    (reversibleSuiteState.results.length > 0 || canRevertTrialRuns || suitePendingRevertCount > 0);
+  const trialReversalHelpText =
+    suitePendingRevertCount > 0
+      ? suitePassReversibleRowCount > suitePendingRevertTargetCount
+        ? `Current suite made ${suitePendingRevertTargetCount} dummy fixture edit(s). Product-code PASS rows may be no-op checks; this button reverses fixtures and clears results.`
+        : `Current suite made ${suitePendingRevertTargetCount} dummy fixture edit(s). This button reverses fixtures and clears results.`
+      : canRevertTrialRuns
+        ? orphanUnrevertedTrialReceipts.length > 0
+          ? `${orphanUnrevertedTrialReceipts.length} stored trial run(s) can be reversed after refresh, then results will clear.`
+          : `${availableTrialResetReceipts.length} dummy fixture baseline(s) can be reset, then results will clear.`
+        : suiteAutoRevertedTargetCount > 0
+          ? suiteAutoRevertedRowCount > suiteAutoRevertedTargetCount
+            ? `Reversed ${suiteAutoRevertedTargetCount} fixture file(s) (${suiteAutoRevertedRowCount} catalog row(s) updated). Nothing left to undo.`
+            : `${suiteAutoRevertedTargetCount} fixture file(s) reversed. Nothing left to undo.`
+          : reversibleSuiteState.results.length > 0
+            ? "No unreverted trial edits remain. Reset fixtures below if disk still looks edited."
+            : "No applied trial edits to reverse.";
+  const reversibleSuiteFinished =
+    reversibleSuiteState.status === "done" || reversibleSuiteState.status === "failed";
+  const reversibleSuiteCountMismatch =
+    reversibleSuiteState.results.length > 0 && reversibleSuiteState.count !== reversibleTrialCount;
+  const reversibleSuiteReversalPanel = (
+    <>
+      <button
+        className={`mt-3 inline-flex min-h-10 w-full items-center justify-center rounded-md border border-[var(--ddv4-pill-border)] px-3 text-sm font-semibold text-[var(--ddv4-fg)] transition-colors hover:bg-[var(--ddv4-surface-fill)] disabled:cursor-not-allowed disabled:opacity-60 ${commandFocusClass}`}
+        disabled={!canCleanUpTrialRunner}
+        onClick={() => void handleCleanUpTrialRunner()}
+        type="button"
+      >
+        {isReverting
+          ? "Cleaning up trial run..."
+          : canCleanUpTrialRunner
+            ? "Reverse trial edits and clear results"
+            : "Trial cleanup complete"}
+      </button>
+      <p className={`mt-2 text-xs ${commandMutedClass}`}>{trialReversalHelpText}</p>
+    </>
+  );
   const canRewindPrompt = promptHistory.length > 0 && !previewState.isLoading && !previewState.isApplying && !isReverting;
   const verificationTargets = useMemo(
     () => buildVerificationTargets(previewState),
@@ -1498,12 +2438,11 @@ export default function CodingCockpitShell() {
     protected_paths_touched: [],
     provider_call_made: currentPreviewProviderTruth.providerCallMade,
     reason_code: previewState.reasonCode,
-    reversal_available: Boolean(currentAppliedRunReceipt && !currentAppliedRunReceipt.revertedAt),
+    reversal_available: Boolean(currentReversalReceipt && !currentReversalReceipt.revertedAt),
     reverted_at: currentAppliedRunReceipt?.revertedAt ?? null,
     result_category: currentSidecarClassification,
     safety_state: previewState.status === "blocked" ? "blocked" : previewState.appliedAt ? "live apply, no commit, no push" : "preview-only diagnostic, no apply, no commit, no push",
-    simple_result:
-      previewState.error ?? previewState.blocker ?? (previewState.isLoading ? "Previewing" : currentTaskState),
+    simple_result: previewLoadingSimpleResult(sourceProxyReachable, previewState, currentTaskState),
     status: previewState.status,
     trial_mode: previewState.appliedAt ? "live_apply" : "preview_only",
   });
@@ -1534,13 +2473,15 @@ export default function CodingCockpitShell() {
     (Boolean(previewState.selectedTarget) &&
       (previewState.status === "ready" ||
         previewState.status === "approved" ||
-        previewState.status === "applied"));
+        previewState.status === "applied" ||
+        previewState.status === "satisfied"));
   const showVerificationTargets =
     verificationTargets.length > 0 &&
     hasVerificationTargetEvidence &&
     (previewState.status === "ready" ||
       previewState.status === "approved" ||
       previewState.status === "applied" ||
+      previewState.status === "satisfied" ||
       previewState.status === "blocked" ||
       previewState.status === "error");
   const trialState = useMemo(
@@ -1824,6 +2765,15 @@ export default function CodingCockpitShell() {
       "diagnostic_version: manual-natural-runner.v1",
       "run_id: not recorded",
       `timestamp: ${new Date().toISOString()}`,
+      `composer_elapsed: ${formatElapsedMs(
+        composerTiming.runStartedAt,
+        composerTiming.runStartedAt != null && composerTiming.totalMs != null
+          ? composerTiming.runStartedAt + composerTiming.totalMs
+          : performance.now(),
+      )}`,
+      `composer_prompt_packet_ms: ${composerTiming.promptPacketMs ?? "none"}`,
+      `composer_diff_preview_ms: ${composerTiming.diffPreviewMs ?? "none"}`,
+      `composer_total_ms: ${composerTiming.totalMs ?? "none"}`,
       `prompt: ${task.trim() || "not drafted"}`,
       `provider: ${providerTruth.providerLabel}`,
       `model: ${providerTruth.modelLabel}`,
@@ -2037,7 +2987,7 @@ export default function CodingCockpitShell() {
   function manualEvent(phase: ManualTaskPhase, status: ManualTaskEventStatus, detail: string): ManualTaskEvent {
     return {
       detail,
-      label: manualTaskPhaseLabels[phase],
+      label: previewLoadingPhaseLabel(sourceProxyReachable, phase),
       status,
     };
   }
@@ -2045,7 +2995,7 @@ export default function CodingCockpitShell() {
   function setManualProgress(events: ManualTaskEvent[], phase: ManualTaskPhase) {
     setPreviewState((current) => ({
       ...current,
-      currentPhase: manualTaskPhaseLabels[phase],
+      currentPhase: previewLoadingPhaseLabel(sourceProxyReachable, phase),
       events,
     }));
   }
@@ -2061,11 +3011,30 @@ export default function CodingCockpitShell() {
       `needs_fix_count: ${state.fail}`,
       `undone_count: ${state.reverted}`,
       `stopped: ${state.stopped ? "yes" : "no"}`,
+      `suite_interruption_source: ${state.interruptionSource}`,
+      `suite_interruption_reason: ${state.interruptionReason ?? "none"}`,
+      `suite_recovery_state: ${
+        state.interruptionSource === "browser_refresh_or_dev_reload"
+          ? "paused_transcript_preserved_reverse_or_rerun"
+          : state.interruptionSource === "user_stop"
+            ? "user_stop_transcript_preserved"
+            : "normal"
+      }`,
       `current_step: ${state.currentStep}`,
       `suite_mode: ${reversibleTrialCategory}`,
+      `suite_elapsed: ${formatElapsedMs(state.suiteStartedAt)}`,
+      `current_prompt_elapsed: ${state.currentPromptElapsedMs != null ? `${(state.currentPromptElapsedMs / 1000).toFixed(1)}s` : "—"}`,
       `branch: browser-run`,
       `provider/model: ${state.provider || "unknown"} / ${state.model || "unknown"}`,
-      "final_tree_status: verify with git status after suite; trial runner auto-reverts each applied prompt",
+      `health_proxy: ${sourceProxyReachable ? "reachable (/v1/self/status)" : "unreachable"}`,
+      `health_model_lane_configured: ${selectedProviderTruth.modelLabel || "unknown"} (${selectedProviderTruth.status})`,
+      `health_model_lane_runtime_route: ${selectedProviderTruth.runtimeRouteModel || "unknown"}`,
+      `health_model_lane_selected_via: ${selectedProviderTruth.providerModelSelectedVia ?? "unknown"}`,
+      `suite_runtime_model_last_seen: ${state.model || "unknown"}`,
+      `model_truth_note: health_model_lane_configured is /v1/self/status config; provider/model is the runtime model recorded by suite rows`,
+      `health_git: check with git status after suite`,
+      `health_search: use Source Proxy research routes when enabled`,
+      "final_tree_status: verify with git status after suite; use Reverse trial edits to undo applied prompts manually",
       "next_recommended_action: inspect failures, copy diagnostics, then rerun the bounded suite",
       "",
       "per_prompt:",
@@ -2090,23 +3059,50 @@ export default function CodingCockpitShell() {
         `  checks_result: ${result.checks_result || "not recorded"}`,
         `  reversal_available: ${String(result.reversal_available)}`,
         `  reverted: ${result.reverted ? "yes" : "no"}`,
+        `  reverse_status: ${result.reverse_status_text || "No applied trial edits to reverse."}`,
         `  quick_find_path: ${formatList(result.prompt.verifyPathHints, "none")}`,
         `  verify_instruction: ${result.prompt.verifyInstruction}`,
         `  visible_result_label: ${result.visible_result_label}`,
+        `  receipt_model: ${result.model_called_for_generation || "none"}`,
+        `  receipt_prompt_id: ${result.prompt.id}`,
+        `  receipt_final_status: ${result.visible_result_label}`,
+        `  receipt_files_changed: ${formatList(result.applied_changed_files.length > 0 ? result.applied_changed_files : result.preview_changed_files, "none")}`,
+        `  receipt_time_spent_ms: ${result.elapsed_ms ?? "none"}`,
         `  failure_reason: ${result.failure_reason || "none"}`,
+        `  error_summary: ${result.error_summary || "none"}`,
         `  endpoint_statuses: ${formatList(result.endpoint_statuses, "none")}`,
+        `  elapsed_ms: ${result.elapsed_ms ?? "none"}`,
+        `  next_recommended_action: ${result.next_recommended_action || "Continue to the next prompt or inspect failures."}`,
       );
     }
     return lines.join("\n");
   }
 
   async function copyReversibleSuiteDiagnostics() {
+    let text = "";
     try {
-      await navigator.clipboard.writeText(reversibleSuiteDiagnosticsText());
-      setReversibleSuiteCopyStatus("Trial diagnostics copied.");
-    } catch {
-      setReversibleSuiteCopyStatus("Trial diagnostics are available in Advanced details.");
+      text = reversibleSuiteDiagnosticsText();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "diagnostics build failed";
+      setReversibleSuiteCopyStatus(
+        `Could not build trial diagnostics (${message}). Check Advanced details.`,
+      );
+      return;
     }
+    if (!text.trim()) {
+      setReversibleSuiteCopyStatus("No trial diagnostics yet — run or finish a suite first.");
+      return;
+    }
+    const copied = await copyTextToClipboard(text);
+    if (copied.ok) {
+      setReversibleSuiteCopyStatus("Trial diagnostics copied.");
+      return;
+    }
+    setReversibleSuiteCopyStatus(
+      copied.reason === "denied"
+        ? "Clipboard blocked — allow paste for this site or copy from Advanced details."
+        : "Clipboard unavailable — copy from Advanced details manually.",
+    );
   }
 
   function reversibleSuitePromptsText(): string {
@@ -2116,11 +3112,7 @@ export default function CodingCockpitShell() {
       `count_requested: ${reversibleTrialCount}`,
       "",
       ...prompts.flatMap((prompt, index) => [
-        `${index + 1}. ${prompt.id} - ${prompt.quickTitle}`,
-        `expected_outcome: ${prompt.expectedOutcome}`,
-        `prompt: ${reversibleTrialPromptForMode(prompt, modeForTrialCategory(prompt.category))}`,
-        `quick_find_paths: ${formatList(prompt.verifyPathHints, "none")}`,
-        `verify_instruction: ${prompt.verifyInstruction}`,
+        `${index + 1}. ${reversibleTrialPromptForMode(prompt, modeForTrialCategory(prompt.category))}`,
         "",
       ]),
     ].join("\n");
@@ -2139,9 +3131,10 @@ export default function CodingCockpitShell() {
     prompt: ReversibleTrialPrompt,
     onStep?: (step: string) => void,
   ): Promise<ReversibleSuitePromptResult> {
+    const promptStartedAt = performance.now();
     const endpointStatuses: string[] = [];
     const effectivePrompt = reversibleTrialPromptForMode(prompt, modeForTrialCategory(prompt.category));
-    const taskText = `${effectivePrompt}\nTarget file: ${prompt.targetFile}`;
+    const taskText = effectivePrompt;
     const packet = buildManualTaskPacket({
       allowedFilesText: prompt.expected_scope.join("\n"),
       expectedChecksText: "git diff --check",
@@ -2155,20 +3148,24 @@ export default function CodingCockpitShell() {
       checks_run: packet.checks,
       disk_changed_files: [],
       endpoint_statuses: endpointStatuses,
+      error_summary: "",
       expected_outcome: prompt.expectedOutcome,
       failure_reason: "",
       model_called_for_generation: "none",
+      next_recommended_action: "",
       prompt,
       provider: selectedProviderTruth.providerLabel,
       provider_call_made: false,
       preview_changed_files: [],
       reverse_diff: "",
+      reverse_status_text: "No applied trial edits to reverse.",
       reverted: false,
       reversal_available: false,
       run_id: "",
       selected_target: packet.selectedTarget ?? "",
       target_candidates: packet.targetCandidates,
       visible_result_label: "FAIL",
+      elapsed_ms: elapsedMs(promptStartedAt),
       ...patch,
     });
     onStep?.("Reading request");
@@ -2203,42 +3200,172 @@ export default function CodingCockpitShell() {
       });
     }
 
-    onStep?.("Calling model");
+    onStep?.(previewLoadingPhaseLabel(sourceProxyReachable, "preview"));
     let proposalResponse: Response;
     try {
       proposalResponse = await fetchWithTimeout("/v1/decisions/prompt-packet", {
         body: JSON.stringify({
           active_task_id: taskId,
+          allowed_files: packet.allowedFiles,
+          expected_outcome: prompt.expectedOutcome,
           needs_codebase_context: true,
           prefer_free: true,
+          protected_paths_blocked: true,
+          quick_find_hints: prompt.verifyPathHints,
+          selected_target: packet.selectedTarget,
           task: taskText,
           trial_mode: "live_apply",
+          trial_prompt_id: prompt.id,
+          verification: packet.checks,
           wants_implementation: true,
         }),
         headers: { "content-type": "application/json" },
         method: "POST",
       }, TRIAL_PROMPT_PACKET_TIMEOUT_MS);
     } catch (error) {
+      const timeoutLayer = timeoutLayerFromError(error);
       endpointStatuses.push("/v1/decisions/prompt-packet:timeout");
       return baseResult({
         endpoint_statuses: [...endpointStatuses],
+        error_summary: `timeout_source: /v1/decisions/prompt-packet; timeout_layer: ${timeoutLayer}; selected_target: ${packet.selectedTarget || "none"}`,
         failure_reason: error instanceof Error ? error.message : "Model call timed out.",
+        next_recommended_action:
+          timeoutLayer === "browser_abort_timeout"
+            ? "Browser aborted before Source Proxy returned. Inspect Source Proxy prompt-packet logs for coder_sync_timeout, provider timeout, or route hang."
+            : "Inspect the Source Proxy prompt-packet route and provider timeout logs.",
         run_id: taskId,
+        visible_result_label: "NEEDS FIX",
       });
     }
-    const proposalPayload = await readJson(proposalResponse);
+    let proposalPayload = await readJson(proposalResponse);
     endpointStatuses.push(`/v1/decisions/prompt-packet:${proposalResponse.status}`);
     if (!proposalResponse.ok) {
       return baseResult({
         endpoint_statuses: [...endpointStatuses],
+        error_summary: safePayloadSummary(proposalPayload),
         failure_reason: messageFromPayload(proposalPayload, proposalResponse.status),
+        next_recommended_action: "Inspect the prompt-packet response body and Source proxy logs for the failed route.",
         run_id: taskId,
+        visible_result_label: "NEEDS FIX",
       });
     }
-    const providerTruth = providerModelTruthFromPayload(proposalPayload, selectedProviderTruth);
-    const proposedDiff = diffFromPayload(proposalPayload);
-    const providerCallMade = providerTruth.providerCallMade === true;
-    const modelCalledForGeneration = providerTruth.modelId || providerTruth.modelLabel || "none";
+    let providerTruth = providerModelTruthFromPayload(proposalPayload, selectedProviderTruth);
+    let proposedDiff = diffFromPayload(proposalPayload);
+    let providerCallMade = trialProviderCallMadeFromPayload(proposalPayload, providerTruth);
+    let modelCalledForGeneration = providerTruth.modelCalledForGeneration
+      ?? (providerCallMade ? providerTruth.modelId || providerTruth.modelLabel : "none");
+    let promptPacketReasonCode =
+      typeof proposalPayload === "object" && proposalPayload !== null
+        ? String((proposalPayload as Record<string, unknown>).reason_code ?? "").trim()
+        : "";
+    if (
+      prompt.expectedOutcome === "edit_reversible" &&
+      !proposedDiff.trim() &&
+      promptPacketReasonCode === "coder_no_changes_needed" &&
+      !providerCallMade &&
+      (packet.selectedTarget ?? prompt.targetFile).startsWith("src/")
+    ) {
+      onStep?.(previewLoadingPhaseLabel(sourceProxyReachable, "preview"));
+      proposalResponse = await fetchWithTimeout(
+        "/v1/decisions/prompt-packet",
+        {
+          body: JSON.stringify({
+            active_task_id: taskId,
+            allowed_files: packet.allowedFiles,
+            expected_outcome: prompt.expectedOutcome,
+            needs_codebase_context: true,
+            prefer_free: true,
+            protected_paths_blocked: true,
+            quick_find_hints: prompt.verifyPathHints,
+            selected_target: packet.selectedTarget,
+            task: taskText,
+            trial_mode: "live_apply",
+            trial_prompt_id: prompt.id,
+            trial_recover_already_satisfied: true,
+            verification: packet.checks,
+            wants_implementation: true,
+          }),
+          headers: { "content-type": "application/json" },
+          method: "POST",
+        },
+        TRIAL_PROMPT_PACKET_TIMEOUT_MS,
+      );
+      proposalPayload = await readJson(proposalResponse);
+      endpointStatuses.push(`/v1/decisions/prompt-packet(product-retry):${proposalResponse.status}`);
+      providerTruth = providerModelTruthFromPayload(proposalPayload, selectedProviderTruth);
+      proposedDiff = diffFromPayload(proposalPayload);
+      providerCallMade = trialProviderCallMadeFromPayload(proposalPayload, providerTruth);
+      modelCalledForGeneration = providerTruth.modelCalledForGeneration
+        ?? (providerCallMade ? providerTruth.modelId || providerTruth.modelLabel : "none");
+      promptPacketReasonCode =
+        typeof proposalPayload === "object" && proposalPayload !== null
+          ? String((proposalPayload as Record<string, unknown>).reason_code ?? "").trim()
+          : "";
+    }
+    if (
+      prompt.expectedOutcome === "edit_reversible" &&
+      !proposedDiff.trim() &&
+      promptPacketReasonCode === "coder_no_changes_needed" &&
+      (packet.selectedTarget ?? prompt.targetFile).includes("dummy-coding-targets/")
+    ) {
+      await prepareDummyTrialFixtureForReversibleApply(
+        packet.selectedTarget ?? prompt.targetFile,
+        onStep,
+      );
+      onStep?.(previewLoadingPhaseLabel(sourceProxyReachable, "preview"));
+      proposalResponse = await fetchWithTimeout(
+        "/v1/decisions/prompt-packet",
+        {
+          body: JSON.stringify({
+            active_task_id: taskId,
+            allowed_files: packet.allowedFiles,
+            expected_outcome: prompt.expectedOutcome,
+            needs_codebase_context: true,
+            prefer_free: true,
+            protected_paths_blocked: true,
+            quick_find_hints: prompt.verifyPathHints,
+            selected_target: packet.selectedTarget,
+            task: taskText,
+            trial_mode: "live_apply",
+            trial_prompt_id: prompt.id,
+            verification: packet.checks,
+            wants_implementation: true,
+          }),
+          headers: { "content-type": "application/json" },
+          method: "POST",
+        },
+        TRIAL_PROMPT_PACKET_TIMEOUT_MS,
+      );
+      proposalPayload = await readJson(proposalResponse);
+      endpointStatuses.push(`/v1/decisions/prompt-packet(retry):${proposalResponse.status}`);
+      providerTruth = providerModelTruthFromPayload(proposalPayload, selectedProviderTruth);
+      proposedDiff = diffFromPayload(proposalPayload);
+      providerCallMade = trialProviderCallMadeFromPayload(proposalPayload, providerTruth);
+      modelCalledForGeneration = providerTruth.modelCalledForGeneration
+        ?? (providerCallMade ? providerTruth.modelId || providerTruth.modelLabel : "none");
+      promptPacketReasonCode =
+        typeof proposalPayload === "object" && proposalPayload !== null
+          ? String((proposalPayload as Record<string, unknown>).reason_code ?? "").trim()
+          : "";
+    }
+    const trialDryRunOnly = /dry run/i.test(prompt.prompt);
+    if (
+      prompt.expectedOutcome === "edit_reversible" &&
+      !proposedDiff.trim() &&
+      promptPacketReasonCode === "coder_no_changes_needed" &&
+      providerCallMade
+    ) {
+      return baseResult({
+        checks_result: "already satisfied on disk; live model call recorded",
+        failure_reason: "",
+        model_called_for_generation: modelCalledForGeneration,
+        provider: providerTruth.providerLabel,
+        provider_call_made: true,
+        run_id: taskId,
+        reverse_status_text: "Product code already satisfies this prompt; no trial edit was applied.",
+        visible_result_label: "PASS",
+      });
+    }
     if (prompt.expectedOutcome !== "edit_reversible") {
       if (proposedDiff.trim()) {
         return baseResult({
@@ -2248,7 +3375,36 @@ export default function CodingCockpitShell() {
           provider_call_made: providerCallMade,
           preview_changed_files: changedFilesFromDiffPreview(proposedDiff),
           run_id: taskId,
-          visible_result_label: "FAIL",
+          visible_result_label: "NEEDS FIX",
+        });
+      }
+      if (!providerCallMade || modelCalledForGeneration === "none") {
+        if (prompt.expectedOutcome === "safety_block_expected") {
+          const safetyBlockedEarly =
+            promptPacketReasonCode === "protected_path_request" ||
+            promptPacketReasonCode === "secret_path" ||
+            promptPacketReasonCode === "protected_path";
+          return baseResult({
+            checks_result: "Blocked for safety",
+            failure_reason: "",
+            model_called_for_generation: modelCalledForGeneration,
+            next_recommended_action: "Keep protected paths and secrets untouched.",
+            provider: providerTruth.providerLabel,
+            provider_call_made: providerCallMade,
+            run_id: taskId,
+            reverse_status_text: "No applied trial edits to reverse.",
+            visible_result_label: safetyBlockedEarly ? "NO EDIT EXPECTED" : "BLOCKED",
+          });
+        }
+        return baseResult({
+          checks_result: "not run",
+          failure_reason: "Needs fix: expected no-edit outcome was not proven by a real model call.",
+          model_called_for_generation: modelCalledForGeneration,
+          next_recommended_action: "Restore provider/model generation before counting expected no-edit prompts.",
+          provider: providerTruth.providerLabel,
+          provider_call_made: providerCallMade,
+          run_id: taskId,
+          visible_result_label: "NEEDS FIX",
         });
       }
       return baseResult({
@@ -2257,23 +3413,53 @@ export default function CodingCockpitShell() {
             ? "Clarification needed"
             : prompt.expectedOutcome === "safety_block_expected"
               ? "Blocked for safety"
-              : "Manual step needed",
+              : prompt.expectedOutcome === "noop_expected"
+                ? "No edit needed"
+                : "Manual step needed",
         failure_reason: "",
         model_called_for_generation: modelCalledForGeneration,
         provider: providerTruth.providerLabel,
         provider_call_made: providerCallMade,
         run_id: taskId,
-        visible_result_label: "EXPECTED_NO_EDIT",
+        reverse_status_text: "No applied trial edits to reverse.",
+        visible_result_label: "NO EDIT EXPECTED",
       });
     }
     if (!providerCallMade) {
+      const syncTimedOut = promptPacketReasonCode === "coder_sync_timeout";
+      const modelCallFailed =
+        promptPacketReasonCode === "realistic_trial_model_call_failed" ||
+        promptPacketReasonCode === "dummy_trial_model_call_failed";
+      const selectedTarget = packet.selectedTarget ?? prompt.targetFile;
       return baseResult({
-        failure_reason: "FAIL: No model call",
+        endpoint_statuses: [...endpointStatuses],
+        error_summary: syncTimedOut
+          ? `reason_code=${promptPacketReasonCode}; timeout_stage=${String(
+              (typeof proposalPayload === "object" && proposalPayload !== null
+                ? ((proposalPayload as Record<string, unknown>).coder_diagnostics as Record<string, unknown> | undefined)
+                    ?.timeout_stage
+                : "") ?? "unknown",
+            )}`
+          : promptPacketReasonCode
+            ? modelCallFailed
+              ? trialModelProofFailureSummary(proposalPayload, promptPacketReasonCode, selectedTarget)
+              : `reason_code=${promptPacketReasonCode}`
+            : "provider_call_made=false",
+        failure_reason: syncTimedOut
+          ? "NEEDS FIX: Coder exceeded the Source Proxy sync deadline before the model returned. Transcript and suite progress are preserved — retry this prompt."
+          : modelCallFailed
+            ? "NEEDS FIX: Source Proxy route succeeded, but the trial model-proof call did not complete."
+            : "FAIL: No model call",
         model_called_for_generation: modelCalledForGeneration,
+        next_recommended_action: syncTimedOut
+          ? "Restart Source Proxy with the coder lane (qwen2.5-coder:7b), then rerun. If it still times out, inspect timeout_stage in diagnostics."
+          : modelCallFailed
+            ? "Run: curl -k https://127.0.0.1:8787/v1/models ; confirm the coder alias is listed and Ollama can answer qwen2.5-coder:7b quickly, then rerun the suite."
+          : "Confirm Source Proxy exposes the coder model route and rerun.",
         provider: providerTruth.providerLabel,
         provider_call_made: false,
         run_id: taskId,
-        visible_result_label: "FAIL",
+        visible_result_label: syncTimedOut || modelCallFailed ? "NEEDS FIX" : "FAIL",
       });
     }
     if (!proposedDiff.trim()) {
@@ -2283,7 +3469,7 @@ export default function CodingCockpitShell() {
         provider: providerTruth.providerLabel,
         provider_call_made: true,
         run_id: taskId,
-        visible_result_label: "NO-GO",
+        visible_result_label: "NEEDS FIX",
       });
     }
 
@@ -2297,7 +3483,7 @@ export default function CodingCockpitShell() {
           risk_tier: prompt.risk,
           schema_version: 1,
           source: "coding-reversible-trial-runner-suite",
-          target: packet.selectedTarget,
+          target: packet.selectedTarget ?? prompt.targetFile,
           task_type: "modify_existing_file",
           verification: packet.checks,
         },
@@ -2312,16 +3498,33 @@ export default function CodingCockpitShell() {
     if (!diffResponse.ok) {
       return baseResult({
         endpoint_statuses: [...endpointStatuses],
+        error_summary: safePayloadSummary(diffPayload),
         failure_reason: messageFromPayload(diffPayload, diffResponse.status),
         model_called_for_generation: modelCalledForGeneration,
         provider: providerTruth.providerLabel,
         provider_call_made: true,
         run_id: taskId,
+        visible_result_label: "NEEDS FIX",
       });
     }
     const previewChangedFiles = changedFilesFromPayload(diffPayload);
     const protectedTouched = previewChangedFiles.some((path) => isProtectedTarget(path));
     const outsideAllowed = previewChangedFiles.some((path) => !packet.allowedFiles.includes(path));
+    if (trialDryRunOnly) {
+      return baseResult({
+        applied_changed_files: [],
+        checks_result: "dry-run preview only (no disk write)",
+        disk_changed_files: [],
+        failure_reason: "",
+        model_called_for_generation: modelCalledForGeneration,
+        provider: providerTruth.providerLabel,
+        provider_call_made: true,
+        preview_changed_files: previewChangedFiles,
+        reverse_status_text: "Dry run: preview recorded without execute-approved.",
+        run_id: taskId,
+        visible_result_label: "PASS",
+      });
+    }
     if (statusFromPayload(diffPayload) === "blocked" || protectedTouched || outsideAllowed) {
       return baseResult({
         checks_result: "blocked",
@@ -2331,14 +3534,17 @@ export default function CodingCockpitShell() {
         provider_call_made: true,
         preview_changed_files: previewChangedFiles,
         run_id: taskId,
-        visible_result_label: protectedTouched ? "BLOCKED" : "NO-GO",
+        next_recommended_action: protectedTouched
+          ? "Keep the protected-path block and verify no files changed."
+          : "Inspect the generated diff and allowed-file metadata; the model edited outside the expected scope.",
+        visible_result_label: protectedTouched ? "BLOCKED" : "NEEDS FIX",
       });
     }
 
     onStep?.("Editing files");
     const applyResponse = await fetch("/v1/actions/execute-approved", {
       body: JSON.stringify({
-        action: `Run reversible trial ${prompt.id}`,
+        action: `Live trial ${prompt.id}`,
         approved: true,
         approved_diff: proposedDiff,
         allowed_files: packet.allowedFiles,
@@ -2353,16 +3559,20 @@ export default function CodingCockpitShell() {
     if (!applyResponse.ok) {
       return baseResult({
         endpoint_statuses: [...endpointStatuses],
+        error_summary: safePayloadSummary(applyPayload),
         failure_reason: messageFromPayload(applyPayload, applyResponse.status),
         model_called_for_generation: modelCalledForGeneration,
         provider: providerTruth.providerLabel,
         provider_call_made: true,
         preview_changed_files: previewChangedFiles,
         run_id: taskId,
+        visible_result_label: "NEEDS FIX",
       });
     }
     const appliedChangedFiles = changedFilesFromApplyPayloadOrDiff(applyPayload, proposedDiff);
     const diskChangedFiles = appliedChangedFiles;
+    const applySnapshots = changedFileSnapshotsFromPayload(applyPayload);
+    const missingBeforeSnapshots = appliedChangedFiles.filter((file) => !snapshotHasBefore(applySnapshots, file));
     const reverseDiff = reverseUnifiedDiff(proposedDiff);
     const reversalAvailable = reverseDiff.trim().length > 0;
     if (appliedChangedFiles.length === 0 || diskChangedFiles.length === 0) {
@@ -2378,7 +3588,27 @@ export default function CodingCockpitShell() {
         reverse_diff: reverseDiff,
         reversal_available: reversalAvailable,
         run_id: taskId,
-        visible_result_label: "FAIL",
+        visible_result_label: "NEEDS FIX",
+      });
+    }
+    if (previewChangedFiles.length === 0 || missingBeforeSnapshots.length > 0) {
+      return baseResult({
+        applied_changed_files: appliedChangedFiles,
+        checks_result: "recorded",
+        disk_changed_files: diskChangedFiles,
+        failure_reason:
+          previewChangedFiles.length === 0
+            ? "Needs fix: generated diff did not produce preview changed files."
+            : `Needs fix: before snapshot missing for ${formatList(missingBeforeSnapshots, "changed files")}.`,
+        model_called_for_generation: modelCalledForGeneration,
+        next_recommended_action: "Require changed-file preview proof and server backup snapshots before counting an edit trial as PASS.",
+        provider: providerTruth.providerLabel,
+        provider_call_made: true,
+        preview_changed_files: previewChangedFiles,
+        reverse_diff: reverseDiff,
+        reversal_available: reversalAvailable,
+        run_id: taskId,
+        visible_result_label: "NEEDS FIX",
       });
     }
     if (!reversalAvailable) {
@@ -2394,7 +3624,48 @@ export default function CodingCockpitShell() {
         reverse_diff: reverseDiff,
         reversal_available: false,
         run_id: taskId,
-        visible_result_label: "FAIL",
+        visible_result_label: "NEEDS FIX",
+      });
+    }
+
+    const suiteAppliedAt = new Date().toISOString();
+    const suiteReceiptId = `trial-suite:${prompt.id}:${taskId}`;
+    updateAppliedRunReceipts((receipts) =>
+      appendAppliedRunReceipt(
+        receipts,
+        buildSuiteTrialReceipt({
+          allowedFiles: packet.allowedFiles,
+          appliedAt: suiteAppliedAt,
+          changedFiles: appliedChangedFiles,
+          diff: proposedDiff,
+          model: modelCalledForGeneration,
+          prompt,
+          provider: providerTruth.providerLabel,
+          reverseDiff,
+          revertedAt: null,
+          runId: taskId,
+          target: packet.selectedTarget ?? prompt.targetFile,
+        }),
+      ),
+    );
+
+    if (!prompt.autoRevert) {
+      onStep?.("Ready for review");
+      return baseResult({
+        applied_changed_files: appliedChangedFiles,
+        checks_result: "git diff --check recorded",
+        disk_changed_files: diskChangedFiles,
+        failure_reason: "",
+        model_called_for_generation: modelCalledForGeneration,
+        provider: providerTruth.providerLabel,
+        provider_call_made: true,
+        preview_changed_files: previewChangedFiles,
+        reverse_diff: reverseDiff,
+        reverse_status_text: "Applied; reverse manually with Reverse trial edits when finished inspecting.",
+        reverted: false,
+        reversal_available: true,
+        run_id: taskId,
+        visible_result_label: "PASS",
       });
     }
 
@@ -2412,15 +3683,17 @@ export default function CodingCockpitShell() {
         checks_result: "recorded",
         disk_changed_files: diskChangedFiles,
         endpoint_statuses: [...endpointStatuses],
+        error_summary: safePayloadSummary(revertTaskPayload),
         failure_reason: messageFromPayload(revertTaskPayload, revertTaskResponse.status),
         model_called_for_generation: modelCalledForGeneration,
         provider: providerTruth.providerLabel,
         provider_call_made: true,
         preview_changed_files: previewChangedFiles,
         reverse_diff: reverseDiff,
+        reverse_status_text: `Needs manual reverse: ${formatList(diskChangedFiles, "changed files not recorded")}`,
         reversal_available: true,
         run_id: taskId,
-        visible_result_label: "FAIL",
+        visible_result_label: "NEEDS FIX",
       });
     }
     const revertTaskId = taskIdFromPayload(revertTaskPayload);
@@ -2436,14 +3709,15 @@ export default function CodingCockpitShell() {
         provider_call_made: true,
         preview_changed_files: previewChangedFiles,
         reverse_diff: reverseDiff,
+        reverse_status_text: `Needs manual reverse: ${formatList(diskChangedFiles, "changed files not recorded")}`,
         reversal_available: true,
         run_id: taskId,
-        visible_result_label: "FAIL",
+        visible_result_label: "NEEDS FIX",
       });
     }
     const revertResponse = await fetch("/v1/actions/execute-approved", {
       body: JSON.stringify({
-        action: `Revert reversible trial ${prompt.id}`,
+        action: `Revert live trial ${prompt.id}`,
         approved: true,
         approved_diff: reverseDiff,
         allowed_files: packet.allowedFiles,
@@ -2461,18 +3735,56 @@ export default function CodingCockpitShell() {
         checks_result: "recorded",
         disk_changed_files: diskChangedFiles,
         endpoint_statuses: [...endpointStatuses],
+        error_summary: safePayloadSummary(revertPayload),
         failure_reason: messageFromPayload(revertPayload, revertResponse.status),
         model_called_for_generation: modelCalledForGeneration,
         provider: providerTruth.providerLabel,
         provider_call_made: true,
         preview_changed_files: previewChangedFiles,
         reverse_diff: reverseDiff,
+        reverse_status_text: `Needs manual reverse: ${formatList(diskChangedFiles, "changed files not recorded")}`,
         reversal_available: true,
         run_id: taskId,
-        visible_result_label: "FAIL",
+        visible_result_label: "NEEDS FIX",
+      });
+    }
+    const revertSnapshots = changedFileSnapshotsFromPayload(revertPayload);
+    const notRestoredFiles = appliedChangedFiles.filter((file) => !snapshotRestored(applySnapshots, revertSnapshots, file));
+    if (notRestoredFiles.length > 0) {
+      return baseResult({
+        applied_changed_files: appliedChangedFiles,
+        checks_result: "recorded",
+        disk_changed_files: diskChangedFiles,
+        endpoint_statuses: [...endpointStatuses],
+        error_summary: safePayloadSummary(revertPayload),
+        failure_reason: `Needs fix: reverse did not restore the before snapshot for ${formatList(notRestoredFiles, "changed files")}.`,
+        model_called_for_generation: modelCalledForGeneration,
+        next_recommended_action: "Inspect the reverse diff and restore the listed files before rerunning Coder 10.",
+        provider: providerTruth.providerLabel,
+        provider_call_made: true,
+        preview_changed_files: previewChangedFiles,
+        reverse_diff: reverseDiff,
+        reverse_status_text: `Reverse incomplete: ${formatList(notRestoredFiles, "changed files")}`,
+        reversal_available: true,
+        run_id: taskId,
+        visible_result_label: "NEEDS FIX",
       });
     }
     onStep?.("Checking work");
+    const revertedAt = new Date().toISOString();
+    updateAppliedRunReceipts((receipts) =>
+      receipts.map((receipt) =>
+        receipt.id === suiteReceiptId
+          ? {
+              ...receipt,
+              revertedAt,
+              reversalModel: modelCalledForGeneration,
+              reversalProvider: providerTruth.providerLabel,
+              reversalProviderModelSource: "trial-suite",
+            }
+          : receipt,
+      ),
+    );
     return baseResult({
       applied_changed_files: appliedChangedFiles,
       checks_result: "git diff --check recorded",
@@ -2483,68 +3795,155 @@ export default function CodingCockpitShell() {
       provider_call_made: true,
       preview_changed_files: previewChangedFiles,
       reverse_diff: reverseDiff,
+      reverse_status_text: "Reverted clean after live apply (worked + reverted).",
       reverted: true,
       reversal_available: true,
       run_id: taskId,
-      visible_result_label: "PASS",
+      visible_result_label: "REVERTED",
     });
   }
 
-  async function handleRunReversibleSuite() {
+  async function handleRunReversibleSuite(resumeState?: ReversibleSuiteState) {
     if (reversibleSuiteState.status === "running" || reversibleSuiteState.status === "stopping") return;
-    const suiteId = `suite-${Date.now().toString(36)}`;
-    const prompts = selectReversibleTrialPrompts(reversibleTrialCount, reversibleTrialCategory);
+    if (!normalizeReversibleTrialCategoryInput(reversibleTrialCategory)) {
+      setReversibleSuiteCopyStatus(
+        `Category invalid: "${reversibleTrialCategory}". Use ${reversibleTrialCategories.join(", ")}.`,
+      );
+      return;
+    }
+    const isResume = Boolean(resumeState?.suiteId);
+    const runCount = resumeState?.count ?? reversibleTrialCount;
+    const suiteId = resumeState?.suiteId || `suite-${Date.now().toString(36)}`;
+    const prompts = selectReversibleTrialPrompts(runCount, reversibleTrialCategory);
+    const startIndex = isResume ? Math.min(Math.max(resumeState?.completed ?? 0, 0), prompts.length) : 0;
+    const modelLaneUnavailable =
+      !sourceProxyReachable ||
+      selectedProviderTruth.status === "unavailable" ||
+      selectedProviderTruth.providerModelProbeOk === false;
+    if (!isResume && modelLaneUnavailable) {
+      const reason = !sourceProxyReachable
+        ? "Source Proxy is unreachable at /v1/self/status."
+        : selectedProviderTruth.blockedReason ||
+          `${selectedProviderTruth.modelLabel} is not available from the configured local model lane.`;
+      const blockedState: ReversibleSuiteState = {
+        completed: 0,
+        count: runCount,
+        currentPrompt: "",
+        currentPromptElapsedMs: null,
+        currentStep: "Blocked before model proof",
+        currentStepStartedAt: null,
+        expectedNoEdit: 0,
+        fail: 0,
+        interruptionReason: `model_lane_unavailable: ${reason}`,
+        interruptionSource: "route_failed",
+        pass: 0,
+        provider: selectedProviderTruth.providerLabel,
+        model: selectedProviderTruth.modelLabel,
+        results: [],
+        reverted: 0,
+        status: "failed",
+        stopped: false,
+        suiteFinishedAt: performance.now(),
+        suiteId,
+        suiteStartedAt: performance.now(),
+      };
+      setReversibleSuiteCopyStatus(
+        `Trial blocked before run: ${reason} Run curl -k https://127.0.0.1:8787/v1/models and install or select an available Ollama model.`,
+      );
+      setReversibleSuiteState(blockedState);
+      storeReversibleSuiteState(blockedState);
+      return;
+    }
     stopReversibleSuiteAfterCurrentRef.current = false;
-    setReversibleSuiteCopyStatus("");
+    setReversibleSuiteCopyStatus(
+      isResume && startIndex < prompts.length
+        ? `Resuming suite ${suiteId}: ${startIndex}/${prompts.length} complete.`
+        : "",
+    );
     setReversiblePromptsCopyStatus("");
-    setReversibleSuiteState({
-      completed: 0,
-      count: reversibleTrialCount,
-      currentStep: "Reading request",
-      currentPrompt: prompts[0]?.quickTitle ?? "",
-      expectedNoEdit: 0,
-      fail: 0,
-      pass: 0,
-      provider: selectedProviderTruth.providerLabel,
-      model: selectedProviderTruth.modelLabel,
-      results: [],
-      reverted: 0,
+    if (!isResume) {
+      updateAppliedRunReceipts((receipts) =>
+        receipts.filter((receipt) => !receipt.id.startsWith("trial-suite:")),
+      );
+      clearStoredReversibleSuiteState();
+    }
+    const suiteStartedAt = resumeState?.suiteStartedAt ?? performance.now();
+    const currentStepStartedAt = performance.now();
+    const initialSuiteState: ReversibleSuiteState = {
+      completed: resumeState?.completed ?? 0,
+      count: runCount,
+      currentPrompt:
+        startIndex < prompts.length
+          ? `${startIndex + 1}/${prompts.length}: ${prompts[startIndex]?.quickTitle ?? "Resuming"}`
+          : "Suite finished.",
+      currentPromptElapsedMs: null,
+      currentStep: isResume ? "Resuming after browser refresh/dev reload" : "Reading request",
+      currentStepStartedAt,
+      expectedNoEdit: resumeState?.expectedNoEdit ?? 0,
+      fail: resumeState?.fail ?? 0,
+      interruptionReason: null,
+      interruptionSource: "none",
+      pass: resumeState?.pass ?? 0,
+      provider: resumeState?.provider || selectedProviderTruth.providerLabel,
+      model: resumeState?.model || selectedProviderTruth.modelLabel,
+      results: resumeState?.results ?? [],
+      reverted: resumeState?.reverted ?? 0,
       status: "running",
       stopped: false,
+      suiteFinishedAt: null,
       suiteId,
-    });
-    let nextState: ReversibleSuiteState = {
-      completed: 0,
-      count: reversibleTrialCount,
-      currentStep: "Reading request",
-      currentPrompt: "",
-      expectedNoEdit: 0,
-      fail: 0,
-      pass: 0,
-      provider: selectedProviderTruth.providerLabel,
-      model: selectedProviderTruth.modelLabel,
-      results: [],
-      reverted: 0,
-      status: "running",
-      stopped: false,
-      suiteId,
+      suiteStartedAt,
     };
+    setReversibleSuiteState(initialSuiteState);
+    storeReversibleSuiteState(initialSuiteState);
+    let nextState: ReversibleSuiteState = initialSuiteState;
+    let suiteAbort: ReversibleSuiteAbort | null = null;
     try {
-      for (const [index, prompt] of prompts.entries()) {
+      for (let index = startIndex; index < prompts.length; index += 1) {
+        const prompt = prompts[index];
+        if (!prompt) continue;
         nextState = {
           ...nextState,
           currentPrompt: `${index + 1}/${prompts.length}: ${prompt.quickTitle}`,
           currentStep: "Reading request",
+          currentPromptElapsedMs: null,
+          interruptionReason: null,
+          interruptionSource: "none",
           status: stopReversibleSuiteAfterCurrentRef.current ? "stopping" : "running",
         };
         setReversibleSuiteState(nextState);
+        storeReversibleSuiteState(nextState);
         let result: ReversibleSuitePromptResult;
         try {
+          const promptStartedAt = performance.now();
+          if (
+            prompt.expectedOutcome === "edit_reversible" &&
+            prompt.targetFile.includes("dummy-coding-targets/")
+          ) {
+            await prepareDummyTrialFixtureForReversibleApply(prompt.targetFile, (step) => {
+              nextState = {
+                ...nextState,
+                currentStep: step,
+                currentStepStartedAt: performance.now(),
+                currentPromptElapsedMs: elapsedMs(promptStartedAt),
+              };
+              setReversibleSuiteState(nextState);
+              storeReversibleSuiteState(nextState);
+            });
+          }
           result = await runOneReversibleTrialPrompt(prompt, (step) => {
-            nextState = { ...nextState, currentStep: step };
+            nextState = {
+              ...nextState,
+              currentStep: step,
+              currentStepStartedAt: performance.now(),
+              currentPromptElapsedMs: elapsedMs(promptStartedAt),
+            };
             setReversibleSuiteState(nextState);
+            storeReversibleSuiteState(nextState);
           });
+          result = { ...result, elapsed_ms: elapsedMs(promptStartedAt) };
         } catch (error) {
+          const failureReason = error instanceof Error ? error.message : "Trial prompt failed.";
           result = {
             allowed_files: prompt.expected_scope,
             applied_changed_files: [],
@@ -2552,109 +3951,386 @@ export default function CodingCockpitShell() {
             checks_run: ["git diff --check"],
             disk_changed_files: [],
             endpoint_statuses: [],
+            error_summary: "",
             expected_outcome: prompt.expectedOutcome,
-            failure_reason: error instanceof Error ? error.message : "Trial prompt failed.",
+            failure_reason: failureReason,
             model_called_for_generation: "none",
+            next_recommended_action: "Copy diagnostics and inspect the failed prompt runner exception.",
             prompt,
             provider: selectedProviderTruth.providerLabel,
             provider_call_made: false,
             preview_changed_files: [],
             reverse_diff: "",
+            reverse_status_text: "No applied trial edits to reverse.",
             reverted: false,
             reversal_available: false,
             run_id: "",
             selected_target: prompt.targetFile,
             target_candidates: prompt.expected_scope,
-            visible_result_label: "FAIL",
+            visible_result_label: reversibleSuiteExceptionLabel(failureReason),
+            elapsed_ms: null,
           };
         }
+        const expectedNoEditPassed =
+          result.visible_result_label === "NO EDIT EXPECTED" ||
+          (result.visible_result_label === "BLOCKED" && result.expected_outcome !== "edit_reversible");
+        const editPassed =
+          result.visible_result_label === "PASS" ||
+          result.visible_result_label === "REVERTED";
+        const revertedPass = result.visible_result_label === "REVERTED";
+        const bucketedSuccess =
+          editPassed ||
+          expectedNoEditPassed ||
+          (result.visible_result_label === "BLOCKED" &&
+            result.expected_outcome === "safety_block_expected");
         nextState = {
           ...nextState,
           completed: nextState.completed + 1,
           currentPrompt: `${index + 1}/${prompts.length}: ${prompt.quickTitle}`,
-          currentStep: result.visible_result_label === "PASS" || result.visible_result_label === "EXPECTED_NO_EDIT" ? "Ready to review" : "Needs fix",
-          expectedNoEdit: nextState.expectedNoEdit + (result.visible_result_label === "EXPECTED_NO_EDIT" ? 1 : 0),
-          fail: nextState.fail + (result.visible_result_label === "PASS" || result.visible_result_label === "EXPECTED_NO_EDIT" ? 0 : 1),
-          pass: nextState.pass + (result.visible_result_label === "PASS" ? 1 : 0),
+          currentStep: bucketedSuccess ? "Ready to review" : "Needs fix",
+          expectedNoEdit: nextState.expectedNoEdit + (expectedNoEditPassed ? 1 : 0),
+          fail: nextState.fail + (bucketedSuccess ? 0 : 1),
+          pass: nextState.pass + (editPassed && !revertedPass ? 1 : 0),
           provider: result.provider || nextState.provider,
-          model: result.model_called_for_generation || nextState.model,
+          model:
+            result.model_called_for_generation && result.model_called_for_generation !== "none"
+              ? result.model_called_for_generation
+              : nextState.model,
           results: [...nextState.results, result],
           reverted: nextState.reverted + (result.reverted ? 1 : 0),
           status: stopReversibleSuiteAfterCurrentRef.current ? "stopping" : "running",
         };
+        if (result.reverted && result.reversal_available && prompt.autoRevert) {
+          updateAppliedRunReceipts((receipts) => syncSuiteReceiptRevertState(receipts, result));
+        }
         setReversibleSuiteState(nextState);
+        storeReversibleSuiteState(nextState);
+        suiteAbort = reversibleSuiteAbortForResult(result);
+        if (suiteAbort) {
+          nextState = {
+            ...nextState,
+            currentStep: suiteAbort.step,
+            interruptionReason: suiteAbort.reason,
+            interruptionSource: suiteAbort.source,
+            status: "failed",
+          };
+          setReversibleSuiteState(nextState);
+          storeReversibleSuiteState(nextState);
+          break;
+        }
         if (stopReversibleSuiteAfterCurrentRef.current) break;
       }
+      const suiteFinishedAt = performance.now();
+      const stoppedByUser = stopReversibleSuiteAfterCurrentRef.current;
       const doneState = {
         ...nextState,
         currentPrompt: nextState.completed > 0 ? "Suite finished." : "",
-        currentStep: "Finished",
-        status: nextState.fail > 0 ? "failed" as const : "done" as const,
-        stopped: stopReversibleSuiteAfterCurrentRef.current,
+        currentStep: stoppedByUser ? "Stopped after current prompt" : suiteAbort?.step ?? "Finished",
+        currentStepStartedAt: null,
+        interruptionReason: stoppedByUser ? "user_clicked_stop_after_current_prompt" : suiteAbort?.reason ?? null,
+        interruptionSource: stoppedByUser ? "user_stop" as const : suiteAbort?.source ?? "none" as const,
+        status: nextState.fail > 0 || suiteAbort ? "failed" as const : "done" as const,
+        stopped: stoppedByUser,
+        suiteFinishedAt,
       };
+      updateAppliedRunReceipts((receipts) =>
+        doneState.results.reduce(
+          (current, result) =>
+            result.reverted && result.reversal_available
+              ? syncSuiteReceiptRevertState(current, result)
+              : current,
+          receipts,
+        ),
+      );
       setReversibleSuiteState(doneState);
+      storeReversibleSuiteState(doneState);
+      const passCount = doneState.results.filter((result) => result.visible_result_label === "PASS").length;
+      if (suiteAbort) {
+        setReversibleSuiteCopyStatus(
+          `${suiteAbort.step}. Copy diagnostics, check Source Proxy health, then rerun the bounded suite.`,
+        );
+      } else if (passCount > 0) {
+        const uniqueTargets = new Set(
+          doneState.results
+            .filter((result) => result.reversal_available && !result.reverted)
+            .map((result) => suiteResultTargetKey(result)),
+        );
+        setReversibleSuiteCopyStatus(
+          uniqueTargets.size < passCount
+            ? `Suite finished: ${passCount} PASS edit(s) across ${uniqueTargets.size} fixture file(s). Reverse once per file when done inspecting.`
+            : `Suite finished: ${passCount} edit(s) applied. Use Reverse trial edits when done inspecting.`,
+        );
+      }
     } catch {
-      setReversibleSuiteState((current) => ({ ...current, status: "failed" }));
+      setReversibleSuiteState((current) => {
+        const failedState = {
+          ...current,
+          status: "failed" as const,
+          currentStepStartedAt: null,
+          interruptionReason: current.interruptionReason ?? "route_failed",
+          interruptionSource:
+            current.interruptionSource === "none" ? "route_failed" as const : current.interruptionSource,
+          suiteFinishedAt: current.suiteFinishedAt ?? performance.now(),
+        };
+        storeReversibleSuiteState(failedState);
+        return failedState;
+      });
     }
   }
 
   function handleStopReversibleSuiteAfterCurrent() {
     stopReversibleSuiteAfterCurrentRef.current = true;
-    setReversibleSuiteState((current) => ({
-      ...current,
-      status: current.status === "running" ? "stopping" : current.status,
-      stopped: true,
-    }));
+    setReversibleSuiteState((current) => {
+      const stoppingState = {
+        ...current,
+        interruptionReason: "user_clicked_stop_after_current_prompt",
+        interruptionSource: "user_stop" as const,
+        status: current.status === "running" ? "stopping" as const : current.status,
+        stopped: true,
+      };
+      storeReversibleSuiteState(stoppingState);
+      return stoppingState;
+    });
   }
 
-  async function handleReverseRemainingTrialEdits() {
-    const remaining = reversibleSuiteState.results.filter(
-      (result) => result.reversal_available && !result.reverted && result.reverse_diff.trim(),
+  async function handleReverseRemainingTrialEdits(options: { clearSuiteAfter?: boolean } = {}) {
+    const remainingFromSuite = latestUnrevertedSuiteResultsByTarget(reversibleSuiteState.results);
+    const remainingFromReceipts = orphanUnrevertedTrialReceipts.filter((receipt) =>
+      receipt.id.startsWith("trial-suite:"),
     );
-    if (remaining.length === 0 || isReverting) return;
+    const totalRemaining = remainingFromSuite.length + remainingFromReceipts.length;
+    if (totalRemaining === 0 || isReverting) {
+      setReversibleSuiteCopyStatus(
+        totalRemaining === 0
+          ? "No trial edits are waiting for reverse."
+          : "Reverse already in progress.",
+      );
+      return;
+    }
     setIsReverting(true);
-    setReversibleSuiteCopyStatus(`Undoing ${remaining.length} trial edit(s)...`);
+    setReversibleSuiteCopyStatus(`Undoing ${totalRemaining} trial edit(s)...`);
+    const revertedSuiteKeys = new Set<string>();
+    const revertedReceiptIds = new Set<string>();
+    const revertedTargets = new Set<string>();
+    const failures: string[] = [];
+    const allSuiteResults = reversibleSuiteState.results;
     try {
-      for (const result of remaining.slice().reverse()) {
-        await applyReverseReceipt({
-          allowedFiles: result.allowed_files,
-          appliedAt: new Date().toISOString(),
-          changedFiles: result.disk_changed_files,
-          diff: reverseUnifiedDiff(result.reverse_diff),
-          hermesUsedForThisRun: null,
-          id: `trial-reset:${result.run_id || result.prompt.id}`,
-          model: result.model_called_for_generation,
-          prompt: result.prompt.prompt,
-          provider: result.provider,
-          providerModelSource: "trial-suite",
-          providerModelStatus: "recorded",
-          revertedAt: null,
-          reversalModel: null,
-          reversalProvider: null,
-          reversalProviderModelSource: null,
-          reverseDiff: result.reverse_diff,
-          target: result.selected_target || result.prompt.targetFile,
-          taskId: result.run_id,
-        });
+      const suiteReceipts = remainingFromSuite.map((result) =>
+        receiptForSuiteReverseResult(result, appliedRunReceipts),
+      );
+      const receiptsById = new Map(
+        [...appliedRunReceipts, ...suiteReceipts].map((receipt) => [receipt.id, receipt]),
+      );
+      let reconciledReceipts = await reconcileTrialReceiptsViaApi([...receiptsById.values()]);
+      updateAppliedRunReceipts((current) => {
+        const merged = new Map(current.map((receipt) => [receipt.id, receipt]));
+        for (const receipt of reconciledReceipts) {
+          merged.set(receipt.id, receipt);
+        }
+        reconciledReceipts = [...merged.values()];
+        return reconciledReceipts;
+      });
+
+      for (const result of remainingFromSuite.slice().reverse()) {
+        const receipt = receiptForSuiteReverseResult(result, reconciledReceipts);
+        const reconciled = reconciledReceipts.find((item) => item.id === receipt.id) ?? receipt;
+        const targetKey = suiteResultTargetKey(result);
+        if (revertedTargets.has(targetKey)) {
+          revertedSuiteKeys.add(`${result.prompt.id}:${result.run_id}`);
+          revertedReceiptIds.add(receipt.id);
+          continue;
+        }
+        if (reconciled.revertedAt || reconciled.staleResolvedAt) {
+          revertedSuiteKeys.add(`${result.prompt.id}:${result.run_id}`);
+          revertedReceiptIds.add(receipt.id);
+          if (reconciled.staleResolvedAt) {
+            revertedTargets.add(targetKey);
+            registerSuiteTargetReverted(
+              targetKey,
+              allSuiteResults,
+              reconciledReceipts,
+              revertedSuiteKeys,
+              revertedReceiptIds,
+            );
+          }
+          continue;
+        }
+        try {
+          await applyReverseReceipt(receipt);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Reverse apply failed.";
+          const [freshReceipt] = await reconcileTrialReceiptsViaApi([receipt]);
+          if (freshReceipt?.staleResolvedAt || reversalLooksAlreadyApplied(message)) {
+            revertedTargets.add(targetKey);
+            registerSuiteTargetReverted(
+              targetKey,
+              allSuiteResults,
+              reconciledReceipts,
+              revertedSuiteKeys,
+              revertedReceiptIds,
+            );
+            if (freshReceipt) {
+              reconciledReceipts = reconciledReceipts.map((item) =>
+                item.id === freshReceipt.id ? freshReceipt : item,
+              );
+            }
+            continue;
+          }
+          const baselineReset = buildDummyTrialBaselineResetReceipt(
+            receipt.target,
+            receipt,
+            trialFixtureBaselines,
+          );
+          if (baselineReset) {
+            try {
+              await applyReverseReceipt(baselineReset);
+              revertedTargets.add(targetKey);
+              registerSuiteTargetReverted(
+                targetKey,
+                allSuiteResults,
+                reconciledReceipts,
+                revertedSuiteKeys,
+                revertedReceiptIds,
+              );
+              continue;
+            } catch (resetError) {
+              const resetMessage =
+                resetError instanceof Error ? resetError.message : "Baseline fixture reset failed.";
+              const [freshReceipt] = await reconcileTrialReceiptsViaApi([receipt]);
+              if (freshReceipt?.staleResolvedAt || reversalLooksAlreadyApplied(resetMessage)) {
+                revertedTargets.add(targetKey);
+                registerSuiteTargetReverted(
+                  targetKey,
+                  allSuiteResults,
+                  reconciledReceipts,
+                  revertedSuiteKeys,
+                  revertedReceiptIds,
+                );
+                continue;
+              }
+              failures.push(`${receipt.target}: ${resetMessage}`);
+              continue;
+            }
+          }
+          failures.push(`${receipt.target}: ${message}`);
+          continue;
+        }
+        revertedTargets.add(targetKey);
+        registerSuiteTargetReverted(
+          targetKey,
+          allSuiteResults,
+          reconciledReceipts,
+          revertedSuiteKeys,
+          revertedReceiptIds,
+        );
       }
-      setReversibleSuiteState((current) => ({
-        ...current,
-        reverted: current.reverted + remaining.length,
-        results: current.results.map((result) =>
-          remaining.some((item) => item.run_id === result.run_id && item.prompt.id === result.prompt.id)
-            ? { ...result, reverted: true }
-            : result,
-        ),
-      }));
-      setReversibleSuiteCopyStatus("All test edits undone.");
-    } catch (error) {
-      setReversibleSuiteCopyStatus(error instanceof Error ? error.message : "Reverse trial edits failed.");
+      for (const receipt of remainingFromReceipts.slice().reverse()) {
+        const reconciled = reconciledReceipts.find((item) => item.id === receipt.id) ?? receipt;
+        if (reconciled.revertedAt || reconciled.staleResolvedAt) {
+          revertedReceiptIds.add(receipt.id);
+          continue;
+        }
+        try {
+          await applyReverseReceipt(receipt);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Reverse apply failed.";
+          const [freshReceipt] = await reconcileTrialReceiptsViaApi([receipt]);
+          if (freshReceipt?.staleResolvedAt || reversalLooksAlreadyApplied(message)) {
+            revertedReceiptIds.add(receipt.id);
+            continue;
+          }
+          const baselineReset = buildDummyTrialBaselineResetReceipt(
+            receipt.target,
+            receipt,
+            trialFixtureBaselines,
+          );
+          if (baselineReset) {
+            try {
+              await applyReverseReceipt(baselineReset);
+              revertedReceiptIds.add(receipt.id);
+              continue;
+            } catch (resetError) {
+              const resetMessage =
+                resetError instanceof Error ? resetError.message : "Baseline fixture reset failed.";
+              failures.push(`${receipt.target}: ${resetMessage}`);
+              continue;
+            }
+          }
+          failures.push(`${receipt.target}: ${message}`);
+          continue;
+        }
+        revertedReceiptIds.add(receipt.id);
+      }
+      const revertedAt = new Date().toISOString();
+      const revertedCount = revertedReceiptIds.size;
+      if (revertedCount > 0) {
+        updateAppliedRunReceipts((receipts) =>
+          receipts.map((receipt) =>
+            revertedReceiptIds.has(receipt.id)
+              ? {
+                  ...receipt,
+                  revertedAt,
+                  reversalModel: receipt.model,
+                  reversalProvider: receipt.provider,
+                  reversalProviderModelSource: "trial-suite",
+                }
+              : receipt,
+          ),
+        );
+        setReversibleSuiteState((current) => ({
+          ...current,
+          reverted: current.results.filter(
+            (result) =>
+              result.reversal_available &&
+              (result.reverted || revertedSuiteKeys.has(`${result.prompt.id}:${result.run_id}`)),
+          ).length,
+          results: syncReversibleSuiteResultsFromReceipts(
+            current.results.map((result) =>
+              revertedSuiteKeys.has(`${result.prompt.id}:${result.run_id}`)
+                ? {
+                    ...result,
+                    reverted: true,
+                    reverse_status_text: "Reversed manually through trial runner controls.",
+                  }
+                : result,
+            ),
+            reconciledReceipts,
+          ),
+        }));
+      }
+      const revertedTargetCount = revertedTargets.size;
+      if (options.clearSuiteAfter && failures.length === 0) {
+        clearStoredReversibleSuiteState();
+        setReversibleSuiteState(defaultReversibleSuiteState());
+        setReversibleSuiteCopyStatus(
+          revertedTargetCount > 0
+            ? `Reversed ${revertedTargetCount} fixture file(s) and cleared suite results.`
+            : "No fixture edits were pending; cleared suite results.",
+        );
+        return;
+      }
+      setReversibleSuiteCopyStatus(
+        failures.length > 0
+          ? `Reversed ${revertedTargetCount} fixture file(s). ${failures.length} item(s) still need attention: ${failures[0]}`
+          : revertedTargetCount > 0
+            ? revertedCount > revertedTargetCount
+              ? `Reversed ${revertedTargetCount} fixture file(s) (${revertedCount} catalog receipt(s) cleared).`
+              : `Reversed ${revertedTargetCount} fixture file(s).`
+            : "No trial edits were reversed. Check diagnostics for blocker details.",
+      );
     } finally {
       setIsReverting(false);
     }
   }
 
   async function handleDraftPreview() {
+    const runStartedAt = performance.now();
+    setComposerTiming({
+      diffPreviewMs: null,
+      promptPacketMs: null,
+      runStartedAt,
+      totalMs: null,
+    });
     if (!canPreview) {
       setDraftReady(hasTaskDraft);
       setDiagnosticCopyStatus("");
@@ -2665,7 +4341,7 @@ export default function CodingCockpitShell() {
     setDraftReady(true);
     rememberPromptSnapshot(task);
     setReversalStatus("");
-    if (currentDesignTaskKind || showCombinedFlow) {
+    if (trialMode !== "code" && (currentDesignTaskKind || showCombinedFlow)) {
       setDiagnosticCopyStatus("");
       setVerificationCopyStatus("");
       setPreviewState(idlePreviewState());
@@ -2826,12 +4502,16 @@ export default function CodingCockpitShell() {
         verification: packet.checks,
       };
       const promptTask = taskTextForPromptPacket(packet.taskText, trimmedTarget);
+      const promptPacketStartedAt = performance.now();
       const proposalResponse = await fetchWithTimeout(
         "/v1/decisions/prompt-packet",
         {
           body: JSON.stringify({
+            expected_outcome: "edit_reversible",
             needs_codebase_context: true,
             prefer_free: true,
+            quick_find_hints: packet.targetCandidates,
+            selected_target: trimmedTarget,
             target_files: packet.allowedFiles,
             targeted_files: packet.allowedFiles,
             task: promptTask,
@@ -2843,12 +4523,60 @@ export default function CodingCockpitShell() {
         },
         MANUAL_PROMPT_PACKET_TIMEOUT_MS,
       );
+      const promptPacketMs = elapsedMs(promptPacketStartedAt);
+      setComposerTiming((current) => ({
+        ...current,
+        promptPacketMs,
+      }));
       const proposalPayload = await readJson(proposalResponse);
       if (!proposalResponse.ok) {
         throw new Error(messageFromPayload(proposalPayload, proposalResponse.status));
       }
       const proposalProviderTruth = providerModelTruthFromPayload(proposalPayload, selectedTruth);
       const modelCalledForGeneration = proposalProviderTruth.modelCalledForGeneration ?? "none";
+      const proposedDiff = diffFromPayload(proposalPayload);
+      const alreadySatisfied = isCoderAlreadySatisfied(proposalPayload);
+      if (!proposedDiff && alreadySatisfied) {
+        const alreadySatisfiedBlocker = "Task appears already done. No diff is required.";
+        setPreviewState({
+          approvalAvailable: false,
+          approvedAt: null,
+          appliedAt: null,
+          applySummary: "",
+          allowedFiles: packet.allowedFiles,
+          blocker: alreadySatisfiedBlocker,
+          changedFiles: [],
+          checks: packet.checks,
+          currentPhase: manualTaskPhaseLabels.done,
+          diff: "",
+          error: null,
+          events: [
+            ...packetEvents,
+            manualEvent("preview", "done", "Coder reported no changes needed because the target already satisfies the request."),
+            manualEvent("review", "done", "Coder reported no changes needed because the target already satisfies the request."),
+            manualEvent("done", "done", "No preview diff was needed and no files were changed."),
+          ],
+          forbiddenFiles: packet.forbiddenFiles,
+          isApplying: false,
+          isLoading: false,
+          ...providerTruthPatch(proposalProviderTruth),
+          previewStatus: "already satisfied",
+          requirementSummary:
+            "The task appears already done. No approval or apply is available because there is no diff.",
+          reasonCode: "coder_no_changes_needed",
+          reviewerSummary: "Already satisfied; no diff invented.",
+          routeCalled: "/v1/decisions/prompt-packet",
+          selectedTarget: packet.selectedTarget,
+          status: "satisfied",
+          targetCandidates: packet.targetCandidates,
+          targetMatch: true,
+          taskId: taskIdFromPayload(proposalPayload),
+          taskSpecAllowed: true,
+          verifierSummary: "No diff to verify. Recommended check: git diff --check.",
+          technicalDetail: "coder_no_changes_needed",
+        });
+        return;
+      }
       if (!proposalProviderTruth.providerCallMade || modelCalledForGeneration === "none") {
         setPreviewState({
           approvalAvailable: false,
@@ -2888,10 +4616,9 @@ export default function CodingCockpitShell() {
         return;
       }
 
-      const proposedDiff = diffFromPayload(proposalPayload);
       if (!proposedDiff) {
         const reasonCode = noDiffReasonCodeFromPayload(proposalPayload);
-        if (isCoderAlreadySatisfied(proposalPayload)) {
+        if (alreadySatisfied) {
           const alreadySatisfiedBlocker = "Task appears already done. No diff is required.";
           setPreviewState({
             approvalAvailable: false,
@@ -2931,7 +4658,13 @@ export default function CodingCockpitShell() {
           });
           return;
         }
-        const noDiffBlocker = noDiffBlockerFromPayload(proposalPayload);
+        const noDiffBlocker =
+          reasonCode === "realistic_trial_model_call_failed"
+            ? coderSummaryFromPayload(
+                proposalPayload,
+                "Realistic reversible trial could not prove a live model call.",
+              )
+            : noDiffBlockerFromPayload(proposalPayload);
         setPreviewState({
           approvalAvailable: false,
           approvedAt: null,
@@ -2978,6 +4711,7 @@ export default function CodingCockpitShell() {
         manualEvent("checks", "running", `Preparing checks: ${packet.checks.join(", ")}.`),
       ];
       setManualProgress(checksEvents, "checks");
+      const diffPreviewStartedAt = performance.now();
       const diffResponse = await fetchWithTimeout("/v1/verification/diff-preview", {
         body: JSON.stringify({
           route_type: "source-proxy-default",
@@ -2988,6 +4722,10 @@ export default function CodingCockpitShell() {
         headers: { "content-type": "application/json" },
         method: "POST",
       });
+      setComposerTiming((current) => ({
+        ...current,
+        diffPreviewMs: elapsedMs(diffPreviewStartedAt),
+      }));
       const diffPayload = await readJson(diffResponse);
       if (!diffResponse.ok) {
         throw new Error(messageFromPayload(diffPayload, diffResponse.status));
@@ -3255,6 +4993,11 @@ export default function CodingCockpitShell() {
         verifierSummary: "Preview failed before verifier evidence.",
         technicalDetail,
       });
+    } finally {
+      setComposerTiming((current) => ({
+        ...current,
+        totalMs: elapsedMs(runStartedAt),
+      }));
     }
   }
 
@@ -3427,9 +5170,10 @@ export default function CodingCockpitShell() {
     if (!taskId) {
       throw new Error("Reverse task create did not return a task id.");
     }
+    const revertAction = revertActionForReceipt(receipt);
     const reverseResponse = await fetch("/v1/actions/execute-approved", {
       body: JSON.stringify({
-        action: `Revert ${receipt.target}`,
+        action: revertAction,
         approved: true,
         approved_diff: reverseDiff,
         allowed_files: allowedFiles,
@@ -3444,6 +5188,37 @@ export default function CodingCockpitShell() {
       throw new Error(messageFromPayload(reversePayload, reverseResponse.status));
     }
     return messageFromPayload(reversePayload, reverseResponse.status);
+  }
+
+  async function prepareDummyTrialFixtureForReversibleApply(
+    target: string,
+    onStep?: (step: string) => void,
+  ): Promise<void> {
+    const normalized = normalizeRepoPath(target);
+    const resetDiffs = dummyTrialBaselineResetDiffs(normalized);
+    if (resetDiffs.length === 0) {
+      return;
+    }
+    const providerTruth = selectedProviderTruth;
+    onStep?.("Resetting trial fixture");
+    for (const [index, resetDiff] of resetDiffs.entries()) {
+      const receipt = buildTrialFixtureResetReceiptFromDiff(normalized, resetDiff, {
+        appliedAt: "suite-fixture-prep",
+        hermesUsedForThisRun: providerTruth.hermesUsedForThisRun,
+        idSuffix: `suite-cycle-reset-${index}`,
+        model: providerTruth.modelLabel ?? "unknown",
+        prompt: `Reset ${normalized} to trial baseline before the next reversible apply.`,
+        provider: providerTruth.providerLabel,
+        providerModelSource: providerTruth.source,
+        providerModelStatus: providerTruth.status,
+      });
+      try {
+        await applyReverseReceipt(receipt);
+        return;
+      } catch {
+        // Try the next reset shape (legacy vs satisfied bounded apply).
+      }
+    }
   }
 
   async function handleRevertReceipt(receipt: AppliedRunReceipt) {
@@ -3500,22 +5275,39 @@ export default function CodingCockpitShell() {
     }
   }
 
-  async function handleRevertAllTrialRuns() {
-    if (!canRevertTrialRuns) return;
+  async function handleRevertAllTrialRuns(options: { clearSuiteAfter?: boolean } = {}) {
+    if (!canRevertTrialRuns && !options.clearSuiteAfter) return;
+    if (suitePendingRevertCount > 0) {
+      await handleReverseRemainingTrialEdits();
+      if (availableTrialResetReceipts.length === 0 && !options.clearSuiteAfter) {
+        return;
+      }
+    }
     setIsReverting(true);
     const trialReceipts = [
-      ...unrevertedTrialRunReceipts,
+      ...orphanUnrevertedTrialReceipts,
       ...availableTrialResetReceipts.filter(
-        (resetReceipt) => !unrevertedTrialRunReceipts.some((receipt) => receipt.target === resetReceipt.target),
+        (resetReceipt) =>
+          !orphanUnrevertedTrialReceipts.some((receipt) => receipt.target === resetReceipt.target),
       ),
     ];
     setReversalStatus(`Reverting ${trialReceipts.length} trial item(s) in reverse order...`);
     setDiagnosticCopyStatus("");
     const revertedIds: string[] = [];
+    const failures: string[] = [];
     try {
       for (const receipt of [...trialReceipts].reverse()) {
-        await applyReverseReceipt(receipt);
-        revertedIds.push(receipt.id);
+        try {
+          await applyReverseReceipt(receipt);
+          revertedIds.push(receipt.id);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Reverse apply failed.";
+          if (reversalLooksAlreadyApplied(message)) {
+            revertedIds.push(receipt.id);
+            continue;
+          }
+          failures.push(`${receipt.target}: ${message}`);
+        }
       }
       const revertedAt = new Date().toISOString();
       updateAppliedRunReceipts((receipts) =>
@@ -3546,9 +5338,18 @@ export default function CodingCockpitShell() {
           ? "idle"
           : currentRunReverted
             ? "ready"
-            : current.status,
+          : current.status,
       }));
-      setReversalStatus(`Reverted ${revertedIds.length} trial item(s). Ready for a clean prompt retest.`);
+      if (options.clearSuiteAfter && failures.length === 0) {
+        clearStoredReversibleSuiteState();
+        setReversibleSuiteState(defaultReversibleSuiteState());
+        setReversibleSuiteCopyStatus(`Cleaned up ${revertedIds.length} trial item(s) and cleared suite results.`);
+      }
+      setReversalStatus(
+        failures.length > 0
+          ? `Cleaned up ${revertedIds.length} trial item(s). ${failures.length} item(s) still need attention: ${failures[0]}`
+          : `Reverted ${revertedIds.length} trial item(s). Ready for a clean prompt retest.`,
+      );
     } catch (error) {
       const message = error instanceof Error ? error.message : "Reverse apply failed.";
       setReversalStatus(`Stopped after reverting ${revertedIds.length} run(s). ${message}`);
@@ -3633,23 +5434,33 @@ export default function CodingCockpitShell() {
   const liveResultLabel =
     reversalStatus.toLowerCase().startsWith("reverted")
       ? "REVERTED"
-      : previewState.reasonCode === "protected_path_request"
-        ? "BLOCKED"
-      : liveRunnerState === "Idle" || previewState.isLoading || previewState.isApplying || reversibleSuiteState.status === "running" || reversibleSuiteState.status === "stopping"
-          ? liveRunnerState
-          : liveProofComplete
-            ? "PASS"
-            : "FAIL";
+      : previewState.status === "satisfied" || previewState.reasonCode === "coder_no_changes_needed"
+        ? "ALREADY SATISFIED"
+        : previewState.reasonCode === "protected_path_request" || previewState.status === "blocked"
+          ? "BLOCKED"
+          : previewState.status === "error" && previewState.reasonCode === "no_model_call"
+            ? "FAIL"
+            : liveRunnerState === "Idle" || previewState.isLoading || previewState.isApplying || reversibleSuiteState.status === "running" || reversibleSuiteState.status === "stopping"
+              ? liveRunnerState
+              : liveProofComplete
+                ? "PASS"
+                : previewState.status === "error"
+                  ? "FAIL"
+                  : codingVisibleResult.primary_label;
   const liveResultSentence =
     liveResultLabel === "PASS"
       ? "SpiritOS called the model, applied a bounded disk change, recorded checks, and stored a reverse diff."
-      : liveResultLabel === "BLOCKED"
-        ? "Protected paths were blocked before any edit."
-        : liveResultLabel === "REVERTED"
-          ? "This run was reverted through execute-approved using the stored reverse diff."
-          : liveRunnerState === "Idle"
-            ? "Describe a change and start a live coding run."
-            : previewState.error ?? previewState.blocker ?? previewState.applySummary ?? "SpiritOS is working on the run.";
+      : liveResultLabel === "ALREADY SATISFIED"
+        ? "The target file already matches this task. Copy the path below and confirm on disk, or reset the trial fixture to run a live edit again."
+        : liveResultLabel === "BLOCKED"
+          ? "Protected paths were blocked before any edit."
+          : liveResultLabel === "REVERTED"
+            ? "This run was reverted through execute-approved using the stored reverse diff."
+            : liveRunnerState === "Idle"
+              ? "Describe a change and start a live coding run."
+              : previewState.status === "satisfied"
+                ? (previewState.blocker ?? "No diff was required because the target already satisfies the task.")
+                : previewState.error ?? previewState.blocker ?? previewState.applySummary ?? codingVisibleResult.plain_summary;
   const simpleProgressItems = [
     "Reading request",
     "Finding files",
@@ -3714,6 +5525,47 @@ export default function CodingCockpitShell() {
       active: previewState.status !== "idle" || Boolean(currentAppliedRunReceipt),
     },
   ].filter((item) => item.active);
+  const reversibleSuiteCanResume =
+    reversibleSuiteState.status === "failed" &&
+    reversibleSuiteState.interruptionSource === "browser_refresh_or_dev_reload" &&
+    reversibleSuiteState.completed < reversibleSuiteState.count;
+  const phoneBackgroundState =
+    reversibleSuiteState.status === "running" || reversibleSuiteState.status === "stopping"
+      ? "Running in this browser"
+      : reversibleSuiteCanResume
+        ? "Paused, ready to resume"
+        : reversibleSuiteState.status === "done"
+          ? "Finished, saved locally"
+          : reversibleSuiteState.status === "failed"
+            ? "Stopped, saved locally"
+            : reversibleSuiteState.results.length > 0
+              ? "Last suite saved locally"
+              : "Ready";
+  const phoneBackgroundDetail =
+    reversibleSuiteState.status === "running" || reversibleSuiteState.status === "stopping"
+      ? "Keep this tab open while the suite runs. If the browser reloads or the Windows session pauses, completed prompt results stay in this browser and the resume button appears after reload."
+      : reversibleSuiteCanResume
+        ? `Resume from prompt ${reversibleSuiteState.completed + 1} of ${reversibleSuiteState.count}; completed rows were preserved.`
+        : reversibleSuiteState.results.length > 0
+          ? "Completed suite details are preserved across refresh until cleanup clears them."
+          : "Start a reversible suite from the left rail, then use this panel as the quick phone check.";
+  const phoneNetworkState =
+    typeof navigator !== "undefined" && "onLine" in navigator
+      ? navigator.onLine
+        ? "Browser online"
+        : "Browser offline"
+      : sourceProxyReachable
+        ? "Proxy reachable"
+        : "Proxy not confirmed";
+  const phoneResumeAction = reversibleSuiteCanResume ? (
+    <button
+      className={`mt-3 inline-flex min-h-10 w-full items-center justify-center rounded-md border border-[var(--ddv4-pill-border)] px-3 text-sm font-semibold text-[var(--ddv4-fg)] transition-colors hover:bg-[var(--ddv4-surface-fill)] ${commandFocusClass}`}
+      onClick={() => void handleRunReversibleSuite(reversibleSuiteState)}
+      type="button"
+    >
+      Resume interrupted suite ({reversibleSuiteState.completed}/{reversibleSuiteState.count})
+    </button>
+  ) : null;
   function handleNewCodingChat() {
     setTask("");
     setDraftReady(false);
@@ -3728,12 +5580,12 @@ export default function CodingCockpitShell() {
   return (
     <div className="dashboard-demo-v4-route-shell dashboard-demo-v4-root">
       <main className="dashboard-demo-v4-route-main min-h-dvh overflow-x-hidden text-[var(--ddv4-fg)]">
-        <div className="mx-auto grid min-h-dvh w-full max-w-[min(1500px,100%)] gap-5 px-4 py-5 sm:px-6 lg:px-8 lg:py-8 xl:grid-cols-[260px_minmax(0,1fr)_340px]">
+        <div className="mx-auto grid min-h-dvh w-full max-w-[min(1500px,100%)] gap-4 px-3 py-4 sm:px-5 lg:px-6 lg:py-6 min-[920px]:grid-cols-[230px_minmax(0,1fr)] min-[1200px]:grid-cols-[248px_minmax(0,1fr)_320px] min-[1440px]:grid-cols-[260px_minmax(0,1fr)_340px]">
           <h1 className="sr-only">Coding</h1>
 
           <aside
             aria-label="Coding chats"
-            className={`${commandPanelClass} space-y-4 p-4 xl:sticky xl:top-6 xl:max-h-[calc(100dvh-3rem)] xl:overflow-auto`}
+            className={`${commandPanelClass} space-y-4 p-4 min-[920px]:sticky min-[920px]:top-4 min-[920px]:max-h-[calc(100dvh-2rem)] min-[920px]:overflow-auto`}
           >
             <div>
               <p className={commandLabelClass}>Workspace</p>
@@ -3770,8 +5622,13 @@ export default function CodingCockpitShell() {
               <p className={commandLabelClass}>Trial Runner</p>
               <h3 className={`mt-2 text-base font-semibold ${commandTextClass}`}>Trial runner</h3>
               <p className={`mt-1 text-xs leading-5 ${commandMutedClass}`}>
-                Runs real test prompts and undoes test edits.
+                Runs real test prompts, applies reversible edits, and leaves them on disk until you reverse manually.
               </p>
+              {reversibleSuiteState.results.length > 0 ? (
+                <p className={`mt-1 text-xs leading-5 ${commandMutedClass}`}>
+                  Last suite stays in this browser after refresh until you clear it or run again.
+                </p>
+              ) : null}
               <div className="mt-3 grid gap-2">
                 <label className="grid gap-1">
                   <span className={commandLabelClass}>Category</span>
@@ -3804,6 +5661,11 @@ export default function CodingCockpitShell() {
                       <option key={count} value={count}>{count}</option>
                     ))}
                   </select>
+                  {reversibleSuiteCountMismatch ? (
+                    <span className={`text-xs leading-5 ${commandMutedClass}`}>
+                      Results are from a ×{reversibleSuiteState.count} run. Count only changes the next run — use cleanup to reset the panel.
+                    </span>
+                  ) : null}
                 </label>
               </div>
               <button
@@ -3814,6 +5676,17 @@ export default function CodingCockpitShell() {
               >
                 Run reversible trial suite
               </button>
+              {reversibleSuiteState.status === "failed" &&
+              reversibleSuiteState.interruptionSource === "browser_refresh_or_dev_reload" &&
+              reversibleSuiteState.completed < reversibleSuiteState.count ? (
+                <button
+                  className={`mt-2 inline-flex min-h-10 w-full items-center justify-center rounded-md border border-[var(--ddv4-pill-border)] px-3 text-sm font-semibold text-[var(--ddv4-fg)] transition-colors hover:bg-[var(--ddv4-surface-fill)] ${commandFocusClass}`}
+                  onClick={() => void handleRunReversibleSuite(reversibleSuiteState)}
+                  type="button"
+                >
+                  Resume interrupted suite ({reversibleSuiteState.completed}/{reversibleSuiteState.count})
+                </button>
+              ) : null}
               {reversibleSuiteState.status === "running" || reversibleSuiteState.status === "stopping" ? (
                 <button
                   className={`mt-2 inline-flex min-h-10 w-full items-center justify-center rounded-md border border-[var(--ddv4-pill-border)] px-3 text-sm font-semibold text-[var(--ddv4-fg)] transition-colors hover:bg-[var(--ddv4-surface-fill)] ${commandFocusClass}`}
@@ -3828,7 +5701,7 @@ export default function CodingCockpitShell() {
                   ["Done", `${reversibleSuiteState.completed}/${reversibleSuiteState.count}`],
                   ["Worked", String(reversibleSuiteState.pass)],
                   ["Needs fix", String(reversibleSuiteState.fail)],
-                  ["Undone", String(reversibleSuiteState.reverted)],
+                  ["Reverted", String(reversibleSuiteState.reverted)],
                 ].map(([label, value]) => (
                   <div className="rounded-md border border-[var(--ddv4-surface-border-soft)] p-2" key={label}>
                     <dt className={commandLabelClass}>{label}</dt>
@@ -3840,9 +5713,45 @@ export default function CodingCockpitShell() {
                 <div className="mt-3 rounded-md border border-[var(--ddv4-surface-border-soft)] p-2 text-xs">
                   <p className={`font-semibold ${commandTextClass}`}>{reversibleSuiteState.currentPrompt}</p>
                   <p className={`mt-1 ${commandMutedClass}`}>{reversibleSuiteState.currentStep}</p>
+                  <p className={`mt-2 text-xs font-mono ${commandMutedClass}`} aria-live="polite">
+                    Timer — suite:{" "}
+                    {formatElapsedMs(
+                      reversibleSuiteState.suiteStartedAt,
+                      reversibleSuiteTimingEndAt(reversibleSuiteState),
+                    )}
+                    {reversibleSuiteState.currentPromptElapsedMs != null
+                      ? ` · prompt: ${(reversibleSuiteState.currentPromptElapsedMs / 1000).toFixed(1)}s`
+                      : isReversibleSuiteTimingFrozen(reversibleSuiteState)
+                        ? ""
+                        : " · prompt: running…"}
+                    {!isReversibleSuiteTimingFrozen(reversibleSuiteState) &&
+                    reversibleSuiteState.currentStepStartedAt != null
+                      ? ` · step (${reversibleSuiteState.currentStep}): ${formatElapsedMs(reversibleSuiteState.currentStepStartedAt)}`
+                      : isReversibleSuiteTimingFrozen(reversibleSuiteState)
+                        ? ` · step: ${reversibleSuiteState.currentStep}`
+                        : ""}
+                  </p>
                   <p className={`mt-1 break-words ${commandMutedClass}`}>
                     Open/check this file: {reversibleSuiteState.results.at(-1)?.prompt.verifyPathHints[0] ?? selectReversibleTrialPrompts(reversibleTrialCount, reversibleTrialCategory)[reversibleSuiteState.completed]?.verifyPathHints[0] ?? "shown after run starts"}
                   </p>
+                </div>
+              ) : null}
+              {reversibleSuiteState.results.length > 0 ? (
+                <div className="mt-3 space-y-2" aria-label="Trial run results">
+                  {reversibleSuiteState.results.slice(-6).map((result, index) => (
+                    <article className="rounded-md border border-[var(--ddv4-surface-border-soft)] p-2 text-xs" key={`${result.prompt.id}-${result.run_id || index}`}>
+                      <div className="flex items-start justify-between gap-2">
+                        <p className={`min-w-0 font-semibold ${commandTextClass}`}>{result.prompt.quickTitle}</p>
+                        <span className={`shrink-0 rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] ${reversibleResultTagClass(result.visible_result_label)}`}>
+                          {result.visible_result_label}
+                        </span>
+                      </div>
+                      <p className={`mt-1 ${commandMutedClass}`}>{result.reverse_status_text}</p>
+                      {result.failure_reason ? (
+                        <p className="mt-1 text-rose-100">{result.failure_reason}</p>
+                      ) : null}
+                    </article>
+                  ))}
                 </div>
               ) : null}
               <button
@@ -3862,31 +5771,15 @@ export default function CodingCockpitShell() {
                 <Copy aria-hidden="true" size={16} />
                 Copy trial diagnostics
               </button>
-              {reversibleSuiteState.results.some((result) => result.reversal_available && !result.reverted) ? (
-                <button
-                  className={`mt-3 inline-flex min-h-10 w-full items-center justify-center rounded-md border border-[var(--ddv4-pill-border)] px-3 text-sm font-semibold text-[var(--ddv4-fg)] transition-colors hover:bg-[var(--ddv4-surface-fill)] disabled:cursor-not-allowed disabled:opacity-60 ${commandFocusClass}`}
-                  disabled={isReverting}
-                  onClick={() => void handleReverseRemainingTrialEdits()}
-                  type="button"
-                >
-                  Reverse trial edits
-                </button>
-              ) : reversibleSuiteState.results.some((result) => result.reversal_available) ? (
-                <p className={`mt-3 text-xs font-semibold ${commandMutedClass}`}>All test edits undone.</p>
-              ) : (
-                <button
-                  className={`mt-3 inline-flex min-h-10 w-full items-center justify-center rounded-md border border-[var(--ddv4-pill-border)] px-3 text-sm font-semibold text-[var(--ddv4-fg)] transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${commandFocusClass}`}
-                  disabled
-                  type="button"
-                >
-                  Reverse trial edits
-                </button>
-              )}
-              {!reversibleSuiteState.results.some((result) => result.reversal_available) ? (
-                <p className={`mt-2 text-xs ${commandMutedClass}`}>
-                  Available when a trial edit remains after a run.
-                </p>
-              ) : null}
+              {reversibleSuiteFinished && reversibleSuiteState.results.length > 0
+                ? reversibleSuiteReversalPanel
+                : reversibleSuiteState.status === "running" || reversibleSuiteState.status === "stopping"
+                  ? (
+                      <p className={`mt-3 text-xs ${commandMutedClass}`}>
+                        Reverse trial edits unlocks when the suite reaches Done (or after refresh marks an interrupted run as failed).
+                      </p>
+                    )
+                  : null}
               {reversiblePromptsCopyStatus || reversibleSuiteCopyStatus ? (
                 <p className={`mt-2 text-xs ${commandMutedClass}`}>{reversiblePromptsCopyStatus || reversibleSuiteCopyStatus}</p>
               ) : null}
@@ -3894,23 +5787,32 @@ export default function CodingCockpitShell() {
           </aside>
 
           <section className="flex min-w-0 flex-col gap-5">
-            <section className={`${commandPanelClass} p-4 sm:p-5`} aria-labelledby="task-transcript-heading">
-              <p className={commandLabelClass}>Task transcript</p>
-              <h2 id="task-transcript-heading" className={`mt-2 text-lg font-semibold ${commandTextClass}`}>
-                Task transcript
-              </h2>
-              <div className="mt-4 space-y-3">
-                <article className={`${commandInsetClass} p-4`}>
-                  <p className={commandLabelClass}>Britton</p>
-                  <p className={`mt-2 whitespace-pre-wrap break-words text-base leading-7 ${commandTextClass}`}>
-                    {task.trim() || "No active task. Start with a natural coding prompt."}
-                  </p>
-                </article>
-                <article className={`${commandInsetClass} p-4`}>
-                  <p className={commandLabelClass}>SpiritOS</p>
-                  <p className={`mt-2 text-sm leading-6 ${commandMutedClass}`}>{liveResultSentence}</p>
-                </article>
+            <section className={`${commandPanelClass} p-4 sm:p-5`} aria-labelledby="phone-trial-heading">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
+                  <p className={commandLabelClass}>Phone trial</p>
+                  <h2 id="phone-trial-heading" className={`mt-2 text-lg font-semibold ${commandTextClass}`}>
+                    Background trial
+                  </h2>
+                  <p className={`mt-2 text-sm leading-6 ${commandMutedClass}`}>{phoneBackgroundDetail}</p>
+                </div>
+                <span className="inline-flex min-h-9 shrink-0 items-center rounded-md border border-[var(--ddv4-pill-border)] px-3 text-xs font-semibold text-[var(--ddv4-fg)]">
+                  {phoneBackgroundState}
+                </span>
               </div>
+              <dl className="mt-4 grid gap-2 text-xs sm:grid-cols-3">
+                {[
+                  ["Progress", `${reversibleSuiteState.completed}/${reversibleSuiteState.count}`],
+                  ["Connection", phoneNetworkState],
+                  ["Saved", reversibleSuiteState.results.length > 0 ? "Yes" : "Waiting"],
+                ].map(([label, value]) => (
+                  <div className={`${commandInsetClass} min-w-0 p-3`} key={label}>
+                    <dt className={commandLabelClass}>{label}</dt>
+                    <dd className={`mt-1 truncate ${commandTextClass}`} title={value}>{value}</dd>
+                  </div>
+                ))}
+              </dl>
+              {phoneResumeAction}
             </section>
 
             <section className={`${commandPanelClass} p-4 sm:p-5`} aria-labelledby="task-composer-heading">
@@ -3952,22 +5854,43 @@ export default function CodingCockpitShell() {
                 ) : null}
                 <button
                   className={`inline-flex min-h-12 items-center justify-center rounded-md border border-[var(--ddv4-pill-border)] px-4 text-sm font-semibold text-[var(--ddv4-fg)] transition-colors hover:bg-[var(--ddv4-surface-fill)] disabled:cursor-not-allowed disabled:opacity-60 ${commandFocusClass}`}
-                  disabled={!currentAppliedRunReceipt || Boolean(currentAppliedRunReceipt.revertedAt) || isReverting}
+                  disabled={!currentReversalReceipt || Boolean(currentReversalReceipt.revertedAt) || isReverting}
                   onClick={() => {
-                    if (currentAppliedRunReceipt && !currentAppliedRunReceipt.revertedAt) {
-                      void handleRevertReceipt(currentAppliedRunReceipt);
+                    if (currentReversalReceipt && !currentReversalReceipt.revertedAt) {
+                      void handleRevertReceipt(currentReversalReceipt);
                     }
                   }}
                   title={
-                    currentAppliedRunReceipt && !currentAppliedRunReceipt.revertedAt
-                      ? "Undo the last manual change."
-                      : "Available after a manual change is applied."
+                    currentReversalReceipt && !currentReversalReceipt.revertedAt
+                      ? currentTrialFixtureResetReceipt && !currentAppliedRunReceipt
+                        ? "Reset the trial fixture so you can run a live edit again."
+                        : "Undo the last manual change."
+                      : "Available after a manual change is applied or when a trial fixture reset is offered."
                   }
                   type="button"
                 >
-                  {isReverting ? "Undoing..." : "Undo last change"}
+                  {isReverting
+                    ? "Undoing..."
+                    : currentTrialFixtureResetReceipt && !currentAppliedRunReceipt
+                      ? "Reset trial fixture"
+                      : "Undo last change"}
                 </button>
               </div>
+              {composerTiming.runStartedAt != null &&
+              (previewState.isLoading || previewState.isApplying || composerTiming.totalMs != null) ? (
+                <p className={`mt-2 text-xs font-mono ${commandMutedClass}`} aria-live="polite">
+                  Timer — total: {formatElapsedMs(composerTiming.runStartedAt)}
+                  {composerTiming.promptPacketMs != null
+                    ? ` · prompt-packet: ${(composerTiming.promptPacketMs / 1000).toFixed(1)}s`
+                    : previewState.isLoading
+                      ? " · prompt-packet: running…"
+                      : ""}
+                  {composerTiming.diffPreviewMs != null
+                    ? ` · diff-preview: ${(composerTiming.diffPreviewMs / 1000).toFixed(1)}s`
+                    : ""}
+                  {composerTiming.totalMs != null ? ` · finished: ${(composerTiming.totalMs / 1000).toFixed(1)}s` : ""}
+                </p>
+              ) : null}
               {!currentAppliedRunReceipt || currentAppliedRunReceipt.revertedAt ? (
                 <p className={`mt-2 text-xs ${commandMutedClass}`}>
                   Undo is available after Start coding applies a reversible change.
@@ -3995,7 +5918,7 @@ export default function CodingCockpitShell() {
 
           <aside
             aria-label="Review pane"
-            className={`${commandPanelClass} space-y-4 p-4 xl:sticky xl:top-6 xl:max-h-[calc(100dvh-3rem)] xl:overflow-auto`}
+            className={`${commandPanelClass} space-y-4 p-4 min-[920px]:col-span-2 min-[1200px]:col-span-1 min-[1200px]:sticky min-[1200px]:top-4 min-[1200px]:max-h-[calc(100dvh-2rem)] min-[1200px]:overflow-auto`}
           >
             <section role="status" aria-live="polite">
               <p className={commandLabelClass}>Status</p>
@@ -4032,9 +5955,9 @@ export default function CodingCockpitShell() {
               <h2 id="review-pane-heading" className={`mt-2 text-lg font-semibold ${commandTextClass}`}>
                 Review pane
               </h2>
-              <h3 className={`mt-4 text-lg font-semibold ${commandTextClass}`}>
-                {liveResultLabel}
-              </h3>
+              <div className="mt-4">
+                <VisibleResultBadgeRow result={codingVisibleResult} />
+              </div>
               <p className={`mt-2 text-sm leading-6 ${commandMutedClass}`}>{liveResultSentence}</p>
               <button
                 className={`mt-4 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-md border border-[var(--ddv4-pill-border)] px-3 text-sm font-semibold text-[var(--ddv4-fg)] transition-colors hover:bg-[var(--ddv4-surface-fill)] disabled:cursor-not-allowed disabled:opacity-60 ${commandFocusClass}`}
@@ -4072,6 +5995,33 @@ export default function CodingCockpitShell() {
                   </dd>
                 </div>
               </dl>
+              {verificationTargets.length > 0 &&
+              (previewState.status === "satisfied" ||
+                previewState.status === "ready" ||
+                previewState.status === "applied") ? (
+                <div className={`${commandInsetClass} mt-4 p-3`}>
+                  <p className={commandLabelClass}>Verify on disk</p>
+                  <p className={`mt-1 text-xs ${commandMutedClass}`}>
+                    Open this file in your editor and confirm the warning tone (or reset the fixture to re-run live).
+                  </p>
+                  <ul className="mt-3 space-y-2">
+                    {verificationTargets.map((target) => (
+                      <li className="rounded-md border border-[var(--ddv4-surface-border-soft)] p-3" key={target.path}>
+                        <p className={`break-all font-mono text-xs ${commandTextClass}`}>{target.path}</p>
+                        <button
+                          className={`mt-2 inline-flex min-h-9 items-center justify-center gap-2 rounded-md border border-[var(--ddv4-pill-border)] px-3 text-xs font-semibold text-[var(--ddv4-fg)] transition-colors hover:bg-[var(--ddv4-surface-fill)] disabled:cursor-not-allowed disabled:opacity-60 ${commandFocusClass}`}
+                          disabled={!target.safe}
+                          onClick={() => void copyVerificationPath(target.path)}
+                          type="button"
+                        >
+                          <Copy aria-hidden="true" size={14} />
+                          Copy path to verify
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
               {currentAppliedRunReceipt && !currentAppliedRunReceipt.revertedAt ? (
                 <button
                   className={`mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-md border border-[var(--ddv4-pill-border)] px-3 text-sm font-semibold text-[var(--ddv4-fg)] transition-colors hover:bg-[var(--ddv4-surface-fill)] disabled:cursor-not-allowed disabled:opacity-60 ${commandFocusClass}`}
@@ -4082,26 +6032,9 @@ export default function CodingCockpitShell() {
                   {isReverting ? "Undoing..." : "Undo last change"}
                 </button>
               ) : null}
-              {reversibleSuiteState.results.some((result) => result.reversal_available && !result.reverted) ? (
-                <button
-                  className={`mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-md border border-[var(--ddv4-pill-border)] px-3 text-sm font-semibold text-[var(--ddv4-fg)] transition-colors hover:bg-[var(--ddv4-surface-fill)] disabled:cursor-not-allowed disabled:opacity-60 ${commandFocusClass}`}
-                  disabled={isReverting}
-                  onClick={() => void handleReverseRemainingTrialEdits()}
-                  type="button"
-                >
-                  Reverse trial edits
-                </button>
-              ) : reversibleSuiteState.results.some((result) => result.reversal_available) ? (
-                <p className={`mt-3 text-sm ${commandMutedClass}`}>All test edits undone.</p>
-              ) : (
-                <button
-                  className={`mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-md border border-[var(--ddv4-pill-border)] px-3 text-sm font-semibold text-[var(--ddv4-fg)] transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${commandFocusClass}`}
-                  disabled
-                  type="button"
-                >
-                  Reverse trial edits
-                </button>
-              )}
+              {reversibleSuiteFinished && (reversibleSuiteState.results.length > 0 || canRevertTrialRuns)
+                ? <div className="mt-4">{reversibleSuiteReversalPanel}</div>
+                : null}
               {diagnosticCopyStatus ? (
                 <p className={`mt-3 text-sm ${commandMutedClass}`}>{diagnosticCopyStatus}</p>
               ) : null}
@@ -4360,13 +6293,7 @@ export default function CodingCockpitShell() {
                 >
                   {isReverting ? "Reverting trial runs..." : "Revert all trial runs"}
                 </button>
-                <p className={`text-[11px] leading-4 ${commandMutedClass}`}>
-                  {unrevertedTrialRunReceipts.length > 0
-                    ? `${unrevertedTrialRunReceipts.length} applied trial run${unrevertedTrialRunReceipts.length === 1 ? "" : "s"} can be reversed.`
-                    : availableTrialResetReceipts.length > 0
-                      ? `${availableTrialResetReceipts.length} already-satisfied trial fixture${availableTrialResetReceipts.length === 1 ? "" : "s"} can be reset.`
-                    : "No reversible trial state is available yet."}
-                </p>
+                <p className={`text-[11px] leading-4 ${commandMutedClass}`}>{trialReversalHelpText}</p>
                 <dl className="grid gap-1.5 text-xs">
                   <div className="flex items-center justify-between gap-3 rounded-md border border-[var(--ddv4-surface-border-soft)] px-2 py-1.5">
                     <dt className="font-semibold uppercase tracking-[0.12em] text-[var(--ddv4-fg-faint)]">
@@ -5529,11 +7456,22 @@ export default function CodingCockpitShell() {
   );
 }
 
+export default CodingCockpitShell;
+
 async function readJson(response: Response): Promise<unknown> {
   try {
     return await response.json();
   } catch {
     return {};
+  }
+}
+
+class BrowserAbortTimeoutError extends Error {
+  timeoutLayer = "browser_abort_timeout" as const;
+
+  constructor(message = "browser_abort_timeout") {
+    super(message);
+    this.name = "BrowserAbortTimeoutError";
   }
 }
 
@@ -5547,12 +7485,22 @@ async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}
     });
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") {
-      throw new Error("manual_preview_route_timeout");
+      throw new BrowserAbortTimeoutError();
     }
     throw error;
   } finally {
     window.clearTimeout(timeout);
   }
+}
+
+function timeoutLayerFromError(error: unknown): "browser_abort_timeout" | "source_proxy_timeout" | "long_running_task_timeout" | "ollama_provider_timeout" | "unknown_timeout" {
+  if (error instanceof BrowserAbortTimeoutError) return error.timeoutLayer;
+  const message = error instanceof Error ? error.message.toLowerCase() : String(error ?? "").toLowerCase();
+  if (message.includes("browser_abort_timeout") || message.includes("aborterror")) return "browser_abort_timeout";
+  if (message.includes("coder_sync_timeout") || message.includes("source_proxy_timeout")) return "source_proxy_timeout";
+  if (message.includes("long_running")) return "long_running_task_timeout";
+  if (message.includes("ollama") || message.includes("provider") || message.includes("litellm")) return "ollama_provider_timeout";
+  return "unknown_timeout";
 }
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -5570,6 +7518,17 @@ function messageFromPayload(payload: unknown, status: number): string {
     stringValue(detail.reason_code) ??
     stringValue(record.status);
   return message ?? `Preview request returned status ${status}.`;
+}
+
+function safePayloadSummary(payload: unknown): string {
+  if (!payload || typeof payload !== "object") {
+    return String(payload ?? "").slice(0, 400);
+  }
+  try {
+    return JSON.stringify(payload).slice(0, 800);
+  } catch {
+    return "Response body could not be serialized.";
+  }
 }
 
 function taskTextForPromptPacket(task: string, targetFile: string): string {
@@ -5696,6 +7655,63 @@ function changedFilesFromPayload(payload: unknown): string[] {
 function changedFilesFromApplyPayloadOrDiff(payload: unknown, approvedDiff: string): string[] {
   const fromPayload = changedFilesFromPayload(payload);
   return fromPayload.length > 0 ? fromPayload : changedFilesFromDiffPreview(approvedDiff);
+}
+
+type ChangedFileSnapshot = {
+  missingBeforeApply: boolean;
+  path: string;
+  sha256After: string | null;
+  sha256Before: string | null;
+};
+
+function changedFileSnapshotsFromPayload(payload: unknown): ChangedFileSnapshot[] {
+  const record = asRecord(payload);
+  const execution = asRecord(record.execution);
+  const candidates = [
+    record.changed_file_snapshots,
+    record.changedFileSnapshots,
+    execution.changed_file_snapshots,
+    execution.changedFileSnapshots,
+  ];
+  const snapshots = candidates.find(Array.isArray);
+  if (!Array.isArray(snapshots)) return [];
+  return snapshots
+    .map((item) => {
+      const snapshot = asRecord(item);
+      const path = normalizeRepoPath(stringValue(snapshot.path) ?? "");
+      if (!path) return null;
+      return {
+        missingBeforeApply: snapshot.missing_before_apply === true || snapshot.missingBeforeApply === true,
+        path,
+        sha256After: stringValue(snapshot.sha256_after) ?? stringValue(snapshot.sha256After) ?? null,
+        sha256Before: stringValue(snapshot.sha256_before) ?? stringValue(snapshot.sha256Before) ?? null,
+      };
+    })
+    .filter((item): item is ChangedFileSnapshot => item !== null);
+}
+
+function snapshotForPath(snapshots: ChangedFileSnapshot[], path: string): ChangedFileSnapshot | undefined {
+  const normalized = normalizeRepoPath(path);
+  return snapshots.find((snapshot) => snapshot.path === normalized);
+}
+
+function snapshotHasBefore(snapshots: ChangedFileSnapshot[], path: string): boolean {
+  const snapshot = snapshotForPath(snapshots, path);
+  return Boolean(snapshot && !snapshot.missingBeforeApply && snapshot.sha256Before);
+}
+
+function snapshotRestored(
+  applySnapshots: ChangedFileSnapshot[],
+  revertSnapshots: ChangedFileSnapshot[],
+  path: string,
+): boolean {
+  const applySnapshot = snapshotForPath(applySnapshots, path);
+  const revertSnapshot = snapshotForPath(revertSnapshots, path);
+  return Boolean(
+    applySnapshot?.sha256Before &&
+      revertSnapshot?.sha256After &&
+      applySnapshot.sha256Before === revertSnapshot.sha256After,
+  );
 }
 
 function uniqueNormalizedFiles(files: string[]): string[] {

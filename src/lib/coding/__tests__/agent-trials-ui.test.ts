@@ -13,6 +13,11 @@ import {
   classifyAgentTrialFixture,
   evaluateManualComposerTrialVerdict,
   isLongAgentTrialRun,
+  routeSummaryTrialHasSatisfiedApplyShape,
+  routeSummaryTrialHasStatusPrefix,
+  routeSummaryTrialResetDiff,
+  routeSummaryTrialResetDiffFromSatisfiedShape,
+  stateTrialResetDiffFromSatisfiedShape,
 } from "@/lib/coding/agent-trials-ui";
 import { localHermesProviderModelTruth } from "@/lib/coding/model-provider-status";
 
@@ -122,15 +127,11 @@ describe("agent trials UI helpers", () => {
 
     expect(state.manualPrompt).toContain("hey can you run the 10 agent trial");
     expect(state.bankLabel).toBe("Realistic reversible live trials");
-    expect(state.actualPromptPreviews[0]?.fixtureId).toBe(
-      "realistic-reversible-001-soccer-scouting-agent-card",
-    );
+    expect(state.actualPromptPreviews[0]?.fixtureId).toBe("coder-001");
     expect(state.actualPromptPreviews[0]?.submittedPrompt).toContain(
-      "soccer scouting intelligence agent card",
+      "badge thingy needs like a warning mode",
     );
-    expect(state.actualPromptPreviews[0]?.title).toBe(
-      "realistic reversible 001 soccer scouting agent card",
-    );
+    expect(state.actualPromptPreviews[0]?.title).toBe("coder 001");
     expect(state.actualPromptPreviews[0]?.expectedBehavior).toBe("productive_preview");
     expect(state.actualPromptPreviews[0]?.result).toBe("Preview diff produced");
     expect(state.actualPromptPreviews[0]?.reason).toBe("target discovery succeeded");
@@ -139,7 +140,7 @@ describe("agent trials UI helpers", () => {
     expect(state.actualPromptPreviews[0]?.diffWithinAllowedFiles).toBe(true);
     expect(state.actualPromptPreviews[0]?.submittedPrompt).not.toContain("hey can you run the 10 agent trial");
     expect(state.submittedPromptsCopyText).toContain(
-      "realistic-reversible-001-soccer-scouting-agent-card",
+      "coder-001",
     );
     expect(state.submittedPromptsCopyText).toContain("Expected behavior: productive_preview");
     expect(state.issueReportCopyText).toContain("Realistic Prompt Tester issue report");
@@ -165,13 +166,40 @@ describe("agent trials UI helpers", () => {
     });
 
     expect(state.actualPromptPreviews).toHaveLength(4);
-    expect(state.actualPromptPreviews[0]?.fixtureId).toBe(
-      "realistic-reversible-001-soccer-scouting-agent-card",
-    );
-    expect(state.actualPromptPreviews[3]?.fixtureId).toBe(
-      "realistic-reversible-004-oracle-daily-briefing-action",
-    );
+    expect(state.actualPromptPreviews[0]?.fixtureId).toBe("coder-001");
+    expect(state.actualPromptPreviews[3]?.fixtureId).toBe("coder-004");
     expect(state.submittedPromptsCopyText).toContain("Prompt 4:");
+  });
+
+  it("honors selected actual-intelligence counts without padding or capping submitted prompt copy", () => {
+    const cases = [
+      { mode: "code" as const, prefix: "coder" },
+      { mode: "design" as const, prefix: "designer" },
+      { mode: "hybrid" as const, prefix: "combined" },
+    ];
+
+    for (const { mode, prefix } of cases) {
+      for (const runSize of [10, 25, 50, 100] as const) {
+        const previews = buildAgentTrialPromptPreviews({
+          mode,
+          profile: "britton-realistic",
+          runSize,
+        });
+        expect(previews).toHaveLength(runSize);
+        expect(previews[0]?.fixtureId).toBe(`${prefix}-001`);
+        expect(previews.at(-1)?.fixtureId).toBe(`${prefix}-${String(runSize).padStart(3, "0")}`);
+        expect(new Set(previews.map((preview) => preview.submittedPrompt))).toHaveLength(runSize);
+      }
+
+      const state = buildAgentTrialUiState({
+        mode,
+        profile: "britton-realistic",
+        runSize: 100,
+        viewport: "desktop",
+      });
+      expect(state.submittedPromptsCopyText).toContain("Prompt 100:");
+      expect(state.submittedPromptsCopyText).toContain(`${prefix}-100`);
+    }
   });
 
   it("keeps already-satisfied badge classification honest when warning tone exists on disk", () => {
@@ -460,7 +488,7 @@ describe("agent trials UI helpers", () => {
       mode: "code",
       profile: "britton-realistic",
       providerTruth: configuredHermesTruth,
-      runSize: 10,
+      runSize: 25,
     }).find((item) => item.fixtureId === "coding-010-protected-path-trap");
 
     expect(preview?.copyPasteBlock).toContain("diagnostic_sidecar_classification: blocked_for_safety");
@@ -510,6 +538,51 @@ describe("agent trials UI helpers", () => {
     expect(verdict.actualBehavior).toBe("already_satisfied_noop");
   });
 
+  it("scores manual composer badge warning as PASS when warning tone already exists on disk", () => {
+    const prompt =
+      "Make the small badge component support a warning state for partial results while keeping the existing success and failure styles.";
+    const verdict = evaluateManualComposerTrialVerdict({
+      componentTrialContent: `tone: "neutral" | "success" | "warning";`,
+      preview: {
+        approvalAvailable: false,
+        diff: "",
+        isLoading: false,
+        reasonCode: "coder_no_changes_needed",
+        selectedTarget: "tests/ui-agent-trials/fixtures/dummy-coding-targets/component-trial.tsx",
+        status: "satisfied",
+      },
+      task: prompt,
+    });
+
+    expect(verdict.verdict).toBe("PASS");
+    expect(verdict.fixtureId).toBe("manual-composer-badge-warning-live");
+    expect(verdict.expectedBehavior).toBe("already_satisfied_noop");
+    expect(verdict.actualBehavior).toBe("already_satisfied_noop");
+  });
+
+  it("scores manual composer badge warning live prompts against the dedicated fixture", () => {
+    const prompt =
+      "Make the small badge component support a warning state for partial results while keeping the existing success and failure styles.";
+    const verdict = evaluateManualComposerTrialVerdict({
+      componentTrialContent: `tone: "neutral" | "success" | "warning";`,
+      preview: {
+        approvalAvailable: false,
+        appliedAt: "2026-05-31T01:31:33.895Z",
+        changedFiles: ["tests/ui-agent-trials/fixtures/dummy-coding-targets/component-trial.tsx"],
+        diff: `diff --git a/tests/ui-agent-trials/fixtures/dummy-coding-targets/component-trial.tsx`,
+        isLoading: false,
+        selectedTarget: "tests/ui-agent-trials/fixtures/dummy-coding-targets/component-trial.tsx",
+        status: "applied",
+      },
+      task: prompt,
+    });
+
+    expect(verdict.verdict).toBe("PASS");
+    expect(verdict.fixtureId).toBe("manual-composer-badge-warning-live");
+    expect(verdict.expectedBehavior).toBe("productive_preview");
+    expect(verdict.actualBehavior).toBe("productive_preview");
+  });
+
   it("scores coding-008 clarification prompts as PASS when clarification is returned", () => {
     const prompt =
       "make the label better in that fixture we talked about yesterday. i mean the label prop, probably? ask me which fixture if you cant tell. no guessing across files.";
@@ -541,5 +614,59 @@ describe("agent trials UI helpers", () => {
       "Moving to next prompt",
       "Done",
     ]);
+  });
+
+  it("builds a route-summary reset diff that undoes the live-trial apply shape", () => {
+    const appliedFixture = [
+      '  return "Request completed.";',
+      "  }",
+      " ",
+      "  const safeMessage =",
+      '    typeof input.message === "string" && input.message.trim()',
+      "      ? input.message.trim().slice(0, 120)",
+      '      : "Request failed.";',
+      " ",
+      "  return `Status: ${input.status} - ${safeMessage}`;",
+    ].join("\n");
+    const diff = routeSummaryTrialResetDiff();
+    expect(routeSummaryTrialHasStatusPrefix(appliedFixture)).toBe(true);
+    expect(diff).toContain("-  const safeMessage =");
+    expect(diff).toContain('+  return typeof input.message === "string"');
+    expect(diff).not.toContain("Request completed.`");
+  });
+
+  it("builds a route-summary reset diff that undoes the satisfied status+body shape", () => {
+    const appliedFixture = [
+      '  return "Request completed.";',
+      "  }",
+      " ",
+      "  const message = typeof input.body === 'string' ? input.body.trim() : input.message?.trim() || '';",
+      "  const safeMessage = message.length > 50 ? message.substring(0, 50) + '...' : message;",
+      "",
+      "  return safeMessage",
+      "    ? `Request failed with status ${input.status}: ${safeMessage}`",
+      "    : `Request failed with status ${input.status}`;",
+    ].join("\n");
+    const diff = routeSummaryTrialResetDiffFromSatisfiedShape();
+    expect(routeSummaryTrialHasSatisfiedApplyShape(appliedFixture)).toBe(true);
+    expect(diff).toContain("-  const message = typeof input.body");
+    expect(diff).toContain('+  return typeof input.message === "string"');
+  });
+
+  it("builds a state-trial reset diff that undoes the satisfied selection-preserve shape", () => {
+    const appliedFixture = [
+      "export function selectedItemAfterRefresh(",
+      "  items: TrialListItem[],",
+      "  selectedId: string | null,",
+      "): TrialListItem | null {",
+      "  if (!items.length) return null;",
+      "  const foundItem = items.find(item => item.id === selectedId);",
+      "  return foundItem || items[0];",
+      "}",
+    ].join("\n");
+    const diff = stateTrialResetDiffFromSatisfiedShape();
+    expect(diff).toContain("-  const foundItem = items.find");
+    expect(diff).toContain("+  return items[0];");
+    expect(appliedFixture).toContain("foundItem");
   });
 });

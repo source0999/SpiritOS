@@ -19,6 +19,7 @@ from uuid import uuid4
 
 from source_proxy.agents.registry import SwarmAgentRole, normalize_agent_role
 from source_proxy.routing.litellm_router import (
+    _read_coder_timeout_seconds,
     available_model_aliases,
     get_router,
     route_model_for_alias,
@@ -28,6 +29,8 @@ from source_proxy.routing.ollama_route import (
     local_model_unavailable_from_error,
     local_model_unavailable_payload,
     ollama_route_status_entry,
+    resolve_coder_ollama_model_name,
+    resolve_ollama_route,
 )
 from source_proxy.planning.plan import (
     AcceptanceCriterion,
@@ -64,6 +67,39 @@ _GIT_APPLY_FLAG_CHAINS: tuple[tuple[str, ...], ...] = (
     ("--ignore-whitespace",),
     ("--ignore-space-change",),
 )
+
+_active_coder_timing: dict[str, Any] = {}
+
+
+def reset_coder_timing_diagnostics() -> None:
+    _active_coder_timing.clear()
+
+
+def snapshot_coder_timing_diagnostics() -> dict[str, Any]:
+    flat = dict(_active_coder_timing)
+    for event in (
+        "coder_llm",
+        "prompt_context",
+        "provider_request_started",
+        "provider_request_done",
+        "provider_request_failed",
+    ):
+        nested = _active_coder_timing.get(event)
+        if isinstance(nested, dict):
+            flat.update(nested)
+    return flat
+
+
+def _mark_coder_timing(event: str, **data: Any) -> None:
+    now_ms = round(time.perf_counter() * 1000, 2)
+    started_key = f"{event}_started_ms"
+    if started_key not in _active_coder_timing:
+        _active_coder_timing[started_key] = now_ms
+    _active_coder_timing[event] = data
+    _active_coder_timing[f"{event}_at_ms"] = now_ms
+    origin = _active_coder_timing.get("target_resolution_started_ms")
+    if isinstance(origin, (int, float)):
+        _active_coder_timing[f"{event}_done_ms"] = round(now_ms - origin, 2)
 
 
 def _workspace_root_from_package_walk() -> Path:
@@ -895,6 +931,7 @@ def execute_approved_long_running_task(
         "changed_files": [file["path"] for file in verification["changed_files"]],
         "backup_manifest": apply_result["manifest_path"],
         "backup_root": apply_result["backup_root"],
+        "changed_file_snapshots": apply_result["changed_file_snapshots"],
         "approved_diff_path": apply_result["approved_diff_path"],
         "risk": verification["risk"],
         "rollback_hint": "Use the backup manifest and approved.diff under backup_root before reverting files.",
@@ -956,6 +993,7 @@ def execute_approved_long_running_task(
         "applied_at": audit_record["approved_at"],
         "audit": audit_record,
         "backup_root": apply_result["backup_root"],
+        "changed_file_snapshots": apply_result["changed_file_snapshots"],
         "changed_files": verification["changed_files"],
         "message": "Approved diff applied after safety verification; post-apply verification is required before completion.",
         "post_apply_verification": post_apply_verification,
@@ -1973,11 +2011,32 @@ def _apply_verified_diff(
         last_msg = check_failures[-1] if check_failures else "No diff variants to try."
         raise LongRunningTaskError(f"{last_msg}\n{hint}".strip(), "diff_apply_check_failed")
 
+    before_by_path = {
+        str(item.get("path")): item
+        for item in backed_up_files
+        if isinstance(item, dict) and item.get("path")
+    }
+    changed_file_snapshots: list[dict[str, Any]] = []
+    for file in changed_files:
+        rel_path = str(file["path"])
+        resolved = (workspace_root / rel_path).resolve()
+        before = before_by_path.get(rel_path, {})
+        changed_file_snapshots.append(
+            {
+                "path": rel_path,
+                "backup_path": before.get("backup_path"),
+                "sha256_before": before.get("sha256"),
+                "sha256_after": _sha256_file(resolved) if resolved.exists() and resolved.is_file() else None,
+                "missing_before_apply": bool(before.get("missing_before_apply")),
+            }
+        )
+
     return {
         "backup_root": str(backup_root.relative_to(workspace_root)).replace("\\", "/"),
         "workspace_root": str(workspace_root),
         "manifest_path": str(manifest_path.relative_to(workspace_root)).replace("\\", "/"),
         "approved_diff_path": str(approved_diff_path.relative_to(workspace_root)).replace("\\", "/"),
+        "changed_file_snapshots": changed_file_snapshots,
     }
 
 
@@ -3358,7 +3417,7 @@ def propose_coder_agent_implementation_diff(
         packet,
         source_task=_coder_reviewer_feedback_task(source_task, reviewer_feedback),
     )
-    selected_alias = model_alias or _configured_coder_model_alias()
+    selected_alias = model_alias or _coder_model_alias()
     if llm_call is None:
         alias_error = _coder_model_alias_configuration_error(selected_alias)
         if alias_error is not None:
@@ -3537,6 +3596,8 @@ def propose_coder_agent_diff_payload_from_plan(
     _previous_reviewer_signature: str = "",
 ) -> dict[str, Any]:
     """Run packet-only Coder, then convert its CoderResponse into approval diff payload."""
+    if not _active_coder_timing.get("target_resolution_started_ms"):
+        _mark_coder_timing("target_resolution_started")
     root = (workspace_root or _workspace_root()).resolve()
     task = str(getattr(architect_plan, "source_task", "") or "")
     packet = _architect_coder_packet(architect_plan)
@@ -3617,9 +3678,16 @@ def propose_coder_agent_diff_payload_from_plan(
     target_exists = abs_target.is_file()
     diagnostics["target_exists"] = target_exists
     diagnostics["target_action"] = "replace file" if target_exists else "create file"
+    _mark_coder_timing("architect_plan_done")
     prompt = _render_coder_prompt_from_packet(packet, source_task=task)
     diagnostics["prompt_size"] = len(prompt)
-    selected_alias = model_alias or _configured_coder_model_alias()
+    _mark_coder_timing(
+        "prompt_context",
+        prompt_context_char_count=len(prompt),
+        prompt_context_paths=[item.path for item in packet.context_slices[:12]],
+        prompt_context_token_estimate=max(1, len(prompt) // 4),
+    )
+    selected_alias = model_alias or _coder_model_alias()
     _record_coder_provider_model_truth(
         diagnostics,
         selected_alias=selected_alias,
@@ -3702,6 +3770,7 @@ def propose_coder_agent_diff_payload_from_plan(
             reason_code="coder_replacement_content_validation_failed",
         )
 
+    _mark_coder_timing("diff_parse_started")
     try:
         unified = generate_unified_diff_from_content(root, replacement_target, content)
     except Exception as error:  # noqa: BLE001 - fail closed with diagnostics
@@ -3719,6 +3788,8 @@ def propose_coder_agent_diff_payload_from_plan(
             ),
             reason_code="coder_backend_diff_generation_failed",
         )
+    _mark_coder_timing("diff_parse_done", response_chars=len(content))
+    diagnostics.update(snapshot_coder_timing_diagnostics())
     diagnostics["generated_diff_length"] = len(unified)
     diagnostics["normalized_diff_length"] = len(unified)
     if not unified:
@@ -4386,13 +4457,17 @@ def _coder_subjective_improvement_contract(task: str) -> str:
 
 
 def _coder_model_alias() -> str:
-    configured = _configured_coder_model_alias() or "local"
+    configured = _configured_coder_model_alias()
     enabled = available_model_aliases()
-    if configured in enabled:
+    if configured:
+        if configured in enabled:
+            return configured
         return configured
+    if "coder" in enabled:
+        return "coder"
     if "local" in enabled:
         return "local"
-    return configured
+    return "coder"
 
 
 def _configured_coder_model_alias() -> str:
@@ -4423,18 +4498,65 @@ def _call_coder_llm(
     *,
     model_alias: str | None = None,
     timeout_seconds: float | None = None,
+    num_retries: int | None = None,
 ) -> str:
     alias = model_alias or _coder_model_alias()
-    completion = get_router().completion(
-        model=alias,
-        messages=[{"role": "system", "content": prompt}],
-        stream=False,
-        temperature=0,
-        timeout=(
-            timeout_seconds
-            if timeout_seconds is not None
-            else float(os.getenv("SOURCE_PROXY_CODER_TIMEOUT_SECONDS", "180"))
-        ),
+    resolved_model = route_model_for_alias(alias) or ""
+    ollama_route = resolve_ollama_route(probe=False)
+    coder_ollama_model = resolve_coder_ollama_model_name(probe=False)
+    deadline_seconds = float(
+        os.getenv("SOURCE_PROXY_CODER_SYNC_DEADLINE_SEC", "180") or "180"
+    )
+    request_timeout = (
+        timeout_seconds
+        if timeout_seconds is not None
+        else _read_coder_timeout_seconds()
+    )
+    remaining_ms = None
+    origin = _active_coder_timing.get("target_resolution_started_ms")
+    if isinstance(origin, (int, float)):
+        remaining_ms = max(
+            0.0,
+            deadline_seconds * 1000 - (time.perf_counter() * 1000 - origin),
+        )
+    _mark_coder_timing(
+        "coder_llm",
+        model_requested=alias,
+        model_resolved=resolved_model,
+        litellm_model=resolved_model,
+        ollama_base=ollama_route.api_base,
+        coder_ollama_model=coder_ollama_model,
+        prompt_context_char_count=len(prompt),
+        deadline_seconds=deadline_seconds,
+        remaining_ms_at_provider_start=remaining_ms,
+        request_timeout_seconds=request_timeout,
+    )
+    provider_started = time.perf_counter()
+    _mark_coder_timing("provider_request_started", model_requested=alias)
+    completion_kwargs: dict[str, Any] = {
+        "model": alias,
+        "messages": [{"role": "system", "content": prompt}],
+        "stream": False,
+        "temperature": 0,
+        "timeout": request_timeout,
+    }
+    if num_retries is not None:
+        completion_kwargs["num_retries"] = num_retries
+    try:
+        completion = get_router().completion(**completion_kwargs)
+    except Exception as error:
+        _mark_coder_timing(
+            "provider_request_failed",
+            exception_type=type(error).__name__,
+            exception_message=str(error)[:240],
+            provider_done_ms=round((time.perf_counter() - provider_started) * 1000, 2),
+        )
+        raise
+    provider_done_ms = round((time.perf_counter() - provider_started) * 1000, 2)
+    _mark_coder_timing(
+        "provider_request_done",
+        provider_done_ms=provider_done_ms,
+        provider_first_response_ms=provider_done_ms,
     )
     payload = completion.model_dump() if hasattr(completion, "model_dump") else dict(completion)
     choices = payload.get("choices")

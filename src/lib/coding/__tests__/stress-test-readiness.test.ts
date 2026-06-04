@@ -25,6 +25,26 @@ describe("stress test readiness", () => {
     expect(readiness.trialRunnerModelTruth).toBe("hermes4");
   });
 
+  it("is ready when the Qwen coder lane has a live provider call", () => {
+    const truth = localHermesProviderModelTruth({
+      configuredModel: "qwen2.5-coder:7b",
+      modelId: "ollama_chat/qwen2.5-coder:7b",
+      providerCallMade: true,
+      status: "available",
+      source: "runtime",
+    });
+    const readiness = buildStressTestReadiness({
+      composerProviderTruth: truth,
+      sourceProxyReachable: true,
+      staleTrialReceiptCount: 0,
+      trialFixturesClean: "yes",
+      trialRunnerProviderTruth: truth,
+    });
+
+    expect(readiness.readyForTenPromptStressTest).toBe(true);
+    expect(readiness.manualComposerModelTruth).toBe("qwen2.5-coder:7b");
+  });
+
   it("blocks when trial receipts are still active", () => {
     const truth = localHermesProviderModelTruth({
       modelId: "ollama_chat/hermes4",

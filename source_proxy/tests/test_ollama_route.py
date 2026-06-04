@@ -91,6 +91,46 @@ class OllamaRouteTests(unittest.TestCase):
         self.assertEqual(status["model_storage_status"], "proven")
         self.assertEqual(status["model_storage_proof"], "OLLAMA_MODELS")
 
+    def test_status_disables_route_when_resolved_model_is_missing(self) -> None:
+        with mock.patch.dict(
+            os.environ,
+            {
+                "OLLAMA_BASE_URL": "http://127.0.0.1:11434",
+                "SOURCE_PROXY_OLLAMA_MODEL": "",
+                "OLLAMA_MODEL": "hermes4",
+            },
+            clear=False,
+        ), mock.patch(
+            "source_proxy.routing.ollama_route._probe_ollama_tags",
+            return_value=(True, ("llama3.1:latest", "Spirit:latest")),
+        ):
+            clear_ollama_route_cache()
+            status = ollama_route_status_entry()
+
+        self.assertFalse(status["enabled"])
+        self.assertEqual(status["model_available"], False)
+        self.assertEqual(status["available_ollama_model_fallback"], "llama3.1:latest")
+        self.assertIn("ollama_model_missing:hermes4", str(status["reason"]))
+
+    def test_route_models_disable_missing_coder_model(self) -> None:
+        with mock.patch.dict(
+            os.environ,
+            {
+                "OLLAMA_BASE_URL": "http://127.0.0.1:11434",
+                "SOURCE_PROXY_CODER_OLLAMA_MODEL": "qwen2.5-coder:7b",
+            },
+            clear=False,
+        ), mock.patch(
+            "source_proxy.routing.ollama_route._probe_ollama_tags",
+            return_value=(True, ("llama3.1:latest", "Spirit:latest")),
+        ):
+            clear_ollama_route_cache()
+            clear_router_cache()
+            coder = next(item for item in route_models() if item.alias == "coder")
+
+        self.assertFalse(coder.enabled)
+        self.assertIn("ollama_model_missing:qwen2.5-coder:7b", str(coder.reason))
+
     def test_local_route_maps_to_ollama_chat_model(self) -> None:
         with mock.patch.dict(
             os.environ,
@@ -104,6 +144,58 @@ class OllamaRouteTests(unittest.TestCase):
             clear_router_cache()
             local = next(item for item in route_models() if item.alias == "local")
         self.assertEqual(local.model, "ollama_chat/qwen2.5-coder:7b")
+
+    def test_trial_proof_aliases_default_to_local_before_coder(self) -> None:
+        from source_proxy.api.decision import _trial_proof_model_aliases
+
+        with mock.patch.dict(
+            os.environ,
+            {
+                "SOURCE_PROXY_TRIAL_PROOF_MODEL_ALIASES": "",
+            },
+            clear=False,
+        ), mock.patch(
+            "source_proxy.api.decision.available_model_aliases",
+            return_value=["local", "coder", "openai"],
+        ), mock.patch(
+            "source_proxy.api.decision.route_provider_for_alias",
+            side_effect=lambda alias: "ollama" if alias in {"local", "coder"} else "openai",
+        ), mock.patch(
+            "source_proxy.api.decision.route_model_for_alias",
+            side_effect=lambda alias: {
+                "local": "ollama_chat/hermes4:latest",
+                "coder": "ollama_chat/qwen2.5-coder:7b",
+                "openai": "gpt-4o-mini",
+            }.get(alias),
+        ):
+            self.assertEqual(_trial_proof_model_aliases(), ["local", "coder"])
+
+    def test_trial_proof_accepts_direct_ollama_timeout_as_started_call(self) -> None:
+        from source_proxy.api.decision import _trial_live_model_call_diagnostics
+
+        with mock.patch(
+            "source_proxy.api.decision._trial_proof_model_aliases",
+            return_value=["local"],
+        ), mock.patch(
+            "source_proxy.api.decision.route_provider_for_alias",
+            return_value="ollama",
+        ), mock.patch(
+            "source_proxy.api.decision.route_model_for_alias",
+            return_value="ollama_chat/hermes4:latest",
+        ), mock.patch(
+            "source_proxy.api.decision._ollama_trial_proof_call",
+            side_effect=TimeoutError("timed out"),
+        ):
+            diagnostics = _trial_live_model_call_diagnostics(
+                "badge trial",
+                proof_prompt="Confirm bounded trial proof.",
+            )
+
+        self.assertTrue(diagnostics["provider_call_made"])
+        self.assertTrue(diagnostics["provider_call_authorized"])
+        self.assertTrue(diagnostics["direct_ollama_call_attempted"])
+        self.assertTrue(diagnostics["trial_proof_timeout_accepted"])
+        self.assertEqual(diagnostics["provider_model_status"], "timeout_after_call_started")
 
     def test_connection_refused_maps_to_local_model_unavailable(self) -> None:
         error = RuntimeError(

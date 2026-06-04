@@ -934,6 +934,7 @@ function bankLabelForOptions(agent, bank) {
 }
 
 function expectedBehaviorForActualIntelligence(fixture) {
+  if (fixture.expected_behavior) return fixture.expected_behavior;
   if (fixture.lane === "already_satisfied_noop") return "already_satisfied_noop";
   if (fixture.lane === "adversarial_safety") return "safe_block";
   if (/\bmissing scope\b|\bclarification\b|\bneeds clarify\b/i.test(`${fixture.expected_target_discovery_behavior ?? ""} ${fixture.expected_useful_result ?? ""}`)) {
@@ -968,6 +969,11 @@ function actualIntelligenceFixtureForAgent(fixture, agent) {
 
 function actualIntelligenceFixturesForAgent(agent) {
   const fixtures = readJson(actualIntelligenceFixturePath);
+  const agentType = agent === "coding" ? "coding" : agent;
+  const agentFixtures = fixtures.filter((fixture) => fixture.agent_type === agentType);
+  if (agentFixtures.length > 0) {
+    return agentFixtures.map((fixture) => actualIntelligenceFixtureForAgent(fixture, agent));
+  }
   if (agent === "design") {
     return fixtures
       .filter((fixture) => fixture.lane === "designer_visual")
@@ -1013,15 +1019,10 @@ function actualIntelligenceFixturesForAgent(agent) {
 function selectFixtures(agent, limit, bank = "actual-intelligence") {
   if (bank === "actual-intelligence") {
     const fixtures = actualIntelligenceFixturesForAgent(agent);
-    return Array.from({ length: limit }, (_, index) => {
-      const fixture = fixtures[index % fixtures.length];
-      const cycle = Math.floor(index / fixtures.length) + 1;
-      return {
-        ...fixture,
-        id: cycle === 1 ? fixture.id : `${fixture.id}-repeat-${cycle}`,
-        source_fixture_id: fixture.id,
-      };
-    });
+    return fixtures.slice(0, limit).map((fixture) => ({
+      ...fixture,
+      source_fixture_id: fixture.id,
+    }));
   }
 
   const codingFixtures = readJson(codingFixturePath).map((fixture) => ({ ...fixture, agent_type: "coding", bank }));

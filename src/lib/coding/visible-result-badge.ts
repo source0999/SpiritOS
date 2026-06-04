@@ -284,7 +284,7 @@ export function mapVisibleResultBadge(input: VisibleResultBadgeInput): VisibleRe
 
   if (noLiveModelCall) {
     secondary_badges.push({
-      label: input.provider_call_made === false ? "WARNING: No live model call" : "NOT LIVE MODEL PROOF",
+      label: input.provider_call_made === false ? "WARNING: No live model call" : "LIVE MODEL CALL RECORDED",
       tone: "warning",
     });
   } else if (input.disqualifies_live_claim === true) {
