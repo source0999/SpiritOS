@@ -5,6 +5,7 @@ node_modules
 .venv-source-proxy-windows
 .venv/
 .venv
+.venv-*/
 **/.venv/
 __pycache__/
 *.py[cod]
@@ -79,6 +80,7 @@ Thumbs.db
 
 # Local Playwright / Codex smoke screenshots (never commit)
 .codex-smoke/
+.codex-remote-attachments/
 
 # Rotated local env backups
 .env.local.backup.*
@@ -114,3 +116,11 @@ scout/.venv/
 scout/data.backup-*/
 tmp/
 data/source-proxy/visual-index/
+
+# Local face-organizer outputs and private review artifacts
+scripts/media/backups/
+scripts/media/review_exports/
+scripts/media/known_performers/
+scripts/media/face_verification_report.html
+scripts/media/*manifest*.json
+scripts/media/rename_plan.json

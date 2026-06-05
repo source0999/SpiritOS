@@ -2,8 +2,8 @@
 
 import { FormEvent, useState } from "react";
 import { Eye, EyeOff, LogIn, RefreshCw, Server, ShieldCheck } from "lucide-react";
-import { SPIRITFLIX_FALLBACK_SERVER } from "@/lib/spiritflix/jellyfin-client";
-import type { SpiritFlixServerInfo } from "@/lib/spiritflix/types";
+import { SPIRITFLIX_FALLBACK_SERVER } from "@/lib/spiritflix-jellyfin-client";
+import type { SpiritFlixServerInfo } from "@/lib/spiritflix-types";
 
 interface SpiritFlixLoginProps {
   serverUrl: string;
@@ -53,7 +53,7 @@ export function SpiritFlixLogin({
 
         <h1>SpiritFlix</h1>
         <p className="spiritflix-login__copy">
-          A private cinematic wrapper for your real Jellyfin library.
+          Sign in with the dedicated private Jellyfin user for this library.
         </p>
 
         <div className={`spiritflix-health ${serverInfo ? "is-ok" : "is-warn"}`}>
@@ -119,7 +119,7 @@ export function SpiritFlixLogin({
 
         <div className="spiritflix-login__privacy">
           <ShieldCheck size={17} aria-hidden="true" />
-          <span>Only the returned token, user id, username, and server URL are stored locally.</span>
+          <span>Resume history stays in this user's Jellyfin lane; do not use your main Jellyfin user here.</span>
         </div>
       </div>
     </section>

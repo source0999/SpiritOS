@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import type { JellyfinClient } from "@/lib/spiritflix/jellyfin-client";
-import type { JellyfinItem } from "@/lib/spiritflix/types";
+import type { JellyfinClient } from "@/lib/spiritflix-jellyfin-client";
+import type { JellyfinItem } from "@/lib/spiritflix-types";
 
 interface SpiritFlixImageProps {
   client: JellyfinClient;
@@ -12,6 +12,12 @@ interface SpiritFlixImageProps {
   width?: number;
   alt?: string;
   className?: string;
+}
+
+function imageFallbackOrder(type: "Primary" | "Backdrop" | "Thumb"): Array<"Primary" | "Backdrop" | "Thumb"> {
+  if (type === "Thumb") return ["Thumb", "Primary", "Backdrop"];
+  if (type === "Backdrop") return ["Backdrop", "Thumb", "Primary"];
+  return ["Primary", "Thumb", "Backdrop"];
 }
 
 export function SpiritFlixImage({
@@ -29,18 +35,29 @@ export function SpiritFlixImage({
     let alive = true;
     let objectUrl = "";
 
-    client
-      .getImageObjectUrl(item, type, width)
-      .then((nextSrc) => {
-        objectUrl = nextSrc;
-        if (alive) {
-          setFailed(false);
-          setSrc(nextSrc);
+    async function loadImage() {
+      setFailed(false);
+      setSrc("");
+
+      for (const imageType of imageFallbackOrder(type)) {
+        try {
+          const nextSrc = await client.getImageObjectUrl(item, imageType, width);
+          if (alive) {
+            objectUrl = nextSrc;
+            setSrc(nextSrc);
+            return;
+          }
+          URL.revokeObjectURL(nextSrc);
+          return;
+        } catch {
+          // Try the next Jellyfin image type before falling back to the letter tile.
         }
-      })
-      .catch(() => {
-        if (alive) setFailed(true);
-      });
+      }
+
+      if (alive) setFailed(true);
+    }
+
+    void loadImage();
 
     return () => {
       alive = false;

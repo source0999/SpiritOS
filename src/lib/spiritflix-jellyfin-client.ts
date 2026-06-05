@@ -3,9 +3,10 @@ import type {
   JellyfinItem,
   JellyfinItemsResponse,
   JellyfinLibrary,
+  FaceOrganizerMetadataResponse,
   SpiritFlixServerInfo,
   SpiritFlixSession,
-} from "./types";
+} from "./spiritflix-types";
 
 export const SPIRITFLIX_DEFAULT_SERVER = "http://spirit.tailb69ea6.ts.net:8096";
 export const SPIRITFLIX_FALLBACK_SERVER = "http://100.111.32.31:8096";
@@ -14,7 +15,9 @@ const CLIENT_NAME = "SpiritFlix";
 const CLIENT_VERSION = "0.1.0";
 const DEVICE_NAME = "SpiritFlix Web";
 const DEVICE_ID_KEY = "spiritflix_device_id";
-const SESSION_KEY = "spiritflix_session";
+const SESSION_KEY = "spiritflix_private_gooner_session";
+const GOONER_ITEM_FIELDS =
+  "Path,SeriesName,DateCreated,IndexNumber,ParentIndexNumber,Overview,ProductionYear,RunTimeTicks,Genres,People,UserData,PrimaryImageAspectRatio,MediaStreams,MediaSources,ChildCount";
 
 export function getStoredSession(): SpiritFlixSession | null {
   if (typeof window === "undefined") return null;
@@ -101,6 +104,7 @@ export class JellyfinClient {
     const method = init.method ?? "GET";
     const response = await fetch("/api/spiritflix/jellyfin", {
       method: "POST",
+      keepalive: init.keepalive,
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
@@ -157,13 +161,13 @@ export class JellyfinClient {
     return data.Items ?? [];
   }
 
-  async getLibraryItems(parentId: string, searchTerm = "", limit = 40): Promise<JellyfinItem[]> {
+  async getLibraryItems(parentId: string, searchTerm = "", limit?: number): Promise<JellyfinItem[]> {
     if (!this.userId) return [];
     const query = toQuery({
       ParentId: parentId,
       Recursive: true,
-      IncludeItemTypes: "Movie,Episode,Video",
-      Fields: "Overview,ProductionYear,RunTimeTicks,Genres,UserData,PrimaryImageAspectRatio,MediaSources",
+      IncludeItemTypes: "Movie,Series,Season,Episode,Video,Folder",
+      Fields: GOONER_ITEM_FIELDS,
       ImageTypeLimit: 1,
       EnableImageTypes: "Primary,Backdrop,Thumb,Logo",
       SortBy: "SortName",
@@ -174,14 +178,29 @@ export class JellyfinClient {
     const data = await this.request<JellyfinItemsResponse<JellyfinItem>>(
       `/Users/${this.userId}/Items?${query}`,
     );
-    return data.Items ?? [];
+    if (data.Items?.length || searchTerm) return data.Items ?? [];
+
+    const fallbackQuery = toQuery({
+      ParentId: parentId,
+      Recursive: true,
+      Fields: GOONER_ITEM_FIELDS,
+      ImageTypeLimit: 1,
+      EnableImageTypes: "Primary,Backdrop,Thumb,Logo",
+      SortBy: "SortName",
+      SortOrder: "Ascending",
+      Limit: limit,
+    });
+    const fallbackData = await this.request<JellyfinItemsResponse<JellyfinItem>>(
+      `/Users/${this.userId}/Items?${fallbackQuery}`,
+    );
+    return fallbackData.Items ?? [];
   }
 
   async getPlaylistItems(playlistId: string): Promise<JellyfinItem[]> {
     if (!this.userId) return [];
     const query = toQuery({
       userId: this.userId,
-      Fields: "Overview,ProductionYear,RunTimeTicks,Genres,UserData,PrimaryImageAspectRatio,MediaSources",
+      Fields: "Overview,ProductionYear,RunTimeTicks,Genres,UserData,PrimaryImageAspectRatio,MediaStreams,MediaSources",
       ImageTypeLimit: 1,
       EnableImageTypes: "Primary,Backdrop,Thumb,Logo",
     });
@@ -196,7 +215,7 @@ export class JellyfinClient {
     const query = toQuery({
       Recursive: true,
       IncludeItemTypes: "Playlist",
-      Fields: "Overview,ProductionYear,RunTimeTicks,Genres,UserData,PrimaryImageAspectRatio,ChildCount",
+      Fields: "Overview,ProductionYear,RunTimeTicks,Genres,UserData,PrimaryImageAspectRatio,MediaStreams,MediaSources,ChildCount",
       ImageTypeLimit: 1,
       EnableImageTypes: "Primary,Backdrop,Thumb,Logo",
       SortBy: "SortName",
@@ -209,8 +228,40 @@ export class JellyfinClient {
     return data.Items ?? [];
   }
 
-  async getContinueWatching(): Promise<JellyfinItem[]> {
-    return this.getItemsByQuery({ Filters: "IsResumable", SortBy: "DatePlayed", Limit: 18 });
+  async getContinueWatching(parentId?: string): Promise<JellyfinItem[]> {
+    if (!this.userId) return [];
+    const query = toQuery({
+      Recursive: true,
+      ParentId: parentId,
+      Fields: GOONER_ITEM_FIELDS,
+      ImageTypeLimit: 3,
+      EnableImageTypes: "Primary,Backdrop,Thumb,Logo",
+      Limit: 18,
+    });
+    const data = await this.request<JellyfinItemsResponse<JellyfinItem>>(
+      `/Users/${this.userId}/Items/Resume?${query}`,
+    );
+    return data.Items ?? [];
+  }
+
+  async getLibraryResumeItems(parentId: string): Promise<JellyfinItem[]> {
+    if (!this.userId) return [];
+    const query = toQuery({
+      ParentId: parentId,
+      Recursive: true,
+      IncludeItemTypes: "Movie,Episode,Video",
+      Fields: GOONER_ITEM_FIELDS,
+      Filters: "IsResumable",
+      ImageTypeLimit: 3,
+      EnableImageTypes: "Primary,Backdrop,Thumb,Logo",
+      SortBy: "DatePlayed",
+      SortOrder: "Descending",
+      Limit: 24,
+    });
+    const data = await this.request<JellyfinItemsResponse<JellyfinItem>>(
+      `/Users/${this.userId}/Items?${query}`,
+    );
+    return data.Items ?? [];
   }
 
   async getLatestAdded(): Promise<JellyfinItem[]> {
@@ -221,13 +272,72 @@ export class JellyfinClient {
     return this.getItemsByQuery({ Filters: "IsFavorite", SortBy: "SortName", Limit: 18 });
   }
 
+  async getLibraryFavoriteItems(parentId: string): Promise<JellyfinItem[]> {
+    if (!this.userId) return [];
+    const query = toQuery({
+      ParentId: parentId,
+      Recursive: true,
+      IncludeItemTypes: "Movie,Episode,Video",
+      Fields: GOONER_ITEM_FIELDS,
+      Filters: "IsFavorite",
+      ImageTypeLimit: 3,
+      EnableImageTypes: "Primary,Backdrop,Thumb,Logo",
+      SortBy: "SortName",
+      SortOrder: "Ascending",
+      Limit: 24,
+    });
+    const data = await this.request<JellyfinItemsResponse<JellyfinItem>>(
+      `/Users/${this.userId}/Items?${query}`,
+    );
+    return data.Items ?? [];
+  }
+
+  async setFavorite(itemId: string, isFavorite: boolean): Promise<void> {
+    if (!this.userId) return;
+    await this.request<void>(`/Users/${this.userId}/FavoriteItems/${itemId}`, {
+      method: isFavorite ? "POST" : "DELETE",
+    });
+  }
+
+  async getFaceOrganizerMetadata(items: JellyfinItem[]): Promise<FaceOrganizerMetadataResponse> {
+    if (!items.length) {
+      return {
+        knownPerformers: [],
+        videos: {},
+        scannedCount: 0,
+        generatedAt: new Date().toISOString(),
+      };
+    }
+
+    const response = await fetch("/api/spiritflix/face-metadata", {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        items: items.map((item) => ({
+          id: item.Id,
+          name: item.Name,
+          path: item.Path,
+        })),
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Face Organizer metadata is unavailable.");
+    }
+
+    return (await response.json()) as FaceOrganizerMetadataResponse;
+  }
+
   private async getItemsByQuery(extra: Record<string, string | number>): Promise<JellyfinItem[]> {
     if (!this.userId) return [];
     const query = toQuery({
       Recursive: true,
       IncludeItemTypes: "Movie,Episode,Video",
-      Fields: "Overview,ProductionYear,RunTimeTicks,Genres,UserData,PrimaryImageAspectRatio,MediaSources",
-      ImageTypeLimit: 1,
+      Fields: GOONER_ITEM_FIELDS,
+      ImageTypeLimit: 3,
       EnableImageTypes: "Primary,Backdrop,Thumb,Logo",
       Limit: 18,
       ...extra,
@@ -290,20 +400,33 @@ export class JellyfinClient {
     return `${this.serverUrl}/Videos/${itemId}/master.m3u8?${query}`;
   }
 
-  async reportPlayback(itemId: string, event: "Start" | "Progress" | "Stopped", positionTicks: number, isPaused = false): Promise<void> {
+  async reportPlayback(
+    itemId: string,
+    event: "Start" | "Progress" | "Stopped",
+    positionTicks: number,
+    isPaused = false,
+    options: { keepalive?: boolean } = {},
+  ): Promise<void> {
     if (!this.token) return;
-    await fetch(`${this.serverUrl}/Sessions/Playing/${event}`, {
+    const path =
+      event === "Start"
+        ? "/Sessions/Playing"
+        : event === "Progress"
+          ? "/Sessions/Playing/Progress"
+          : "/Sessions/Playing/Stopped";
+    const playSessionId = `spiritflix-${itemId}`;
+
+    await this.request<void>(path, {
       method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        "X-Emby-Authorization": authHeader(this.token),
-      },
+      keepalive: options.keepalive,
       body: JSON.stringify({
         ItemId: itemId,
+        MediaSourceId: itemId,
+        PlaySessionId: playSessionId,
         PositionTicks: positionTicks,
         IsPaused: isPaused,
         PlayMethod: "DirectStream",
+        CanSeek: true,
       }),
     }).catch(() => undefined);
   }
