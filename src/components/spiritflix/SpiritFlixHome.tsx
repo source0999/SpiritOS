@@ -79,10 +79,38 @@ const LIBRARY_SORT_DIRECTION_KEY = "spiritflix_library_sort_direction";
 const FACE_METADATA_CACHE_KEY = "spiritflix_face_metadata_v1";
 const TEMP_LIBRARY_NAME = "Home Videos and Photos";
 const MODEL_NAME_ALIASES: Record<string, string> = {
+  aaliyahyasan: "Aaliyah Yasan",
+  alannasworlx: "Alannasworldx",
+  alannasworldx: "Alannasworldx",
+  cutegeekie: "Cute Geekie",
+  cutegeeky: "Cute Geekie",
+  cutelittlepearl: "Cute Geekie",
+  gemthejewels: "Gem The Jewels",
+  gemthejewls: "Gem The Jewels",
+  izzygreen: "Izzy Green",
+  jakarababy: "Jakara Mitchell",
+  jakaramitchell: "Jakara Mitchell",
+  jazmanjafar: "Jazmen Jafar",
+  jazmenjafar: "Jazmen Jafar",
+  jazmenjarfar: "Jazmen Jafar",
+  kinkykttn: "Kinkykttn",
+  kinkyktn: "Kinkykttn",
+  mackzjones: "Mackzjones",
+  misslilu: "Miss LiLu",
+  puffypink: "Puffy Pink",
+  ruthlce: "Ruth Lee",
+  ruthlee: "Ruth Lee",
+  savaschultz: "Sava Schultz",
+  savaschult: "Sava Schultz",
+  savaschu: "Sava Schultz",
+  savaschyltz: "Sava Schultz",
+  siennaababi: "Sienna Ababi",
+  siennaabab: "Sienna Ababi",
   sendnudes: "Sendnudesx",
   sendnudesx: "Sendnudesx",
   sendnudexx: "Sendnudesx",
   sendnudesxx: "Sendnudesx",
+  whoahannahjo: "Whoahannahjo",
 };
 const NON_MODEL_FOLDER_NAMES = new Set(["yes", "other"]);
 

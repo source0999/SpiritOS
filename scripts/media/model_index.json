@@ -1,0 +1,485 @@
+{
+  "schema": "spiritflix-model-index/v1",
+  "generated_at": "2026-06-05T21:01:44+00:00",
+  "source_dir": "/DATA/yes",
+  "models": [
+    {
+      "name": "Aaliyah Yasan",
+      "slug": "aaliyah-yasan",
+      "aliases": [],
+      "status": "user-confirmed",
+      "video_count": 2,
+      "profile_handles": []
+    },
+    {
+      "name": "Alannasworldx",
+      "slug": "alannasworldx",
+      "aliases": [],
+      "status": "user-confirmed",
+      "video_count": 2,
+      "profile_handles": []
+    },
+    {
+      "name": "Alienland",
+      "slug": "alienland",
+      "aliases": [],
+      "status": "local-auto",
+      "video_count": 1,
+      "profile_handles": []
+    },
+    {
+      "name": "Amburne",
+      "slug": "amburne",
+      "aliases": [],
+      "status": "local-auto",
+      "video_count": 1,
+      "profile_handles": []
+    },
+    {
+      "name": "Azilia Hadid",
+      "slug": "azilia-hadid",
+      "aliases": [],
+      "status": "profile-url",
+      "video_count": 3,
+      "profile_handles": [
+        {
+          "platform": "onlyfans",
+          "handle": "aziliahadid",
+          "url": "https://onlyfans.com/aziliahadid",
+          "source": "watermark_ocr",
+          "raw": "OnlyFans.com/aziliahadid"
+        }
+      ]
+    },
+    {
+      "name": "Bearuby",
+      "slug": "bearuby",
+      "aliases": [],
+      "status": "profile-url",
+      "video_count": 3,
+      "profile_handles": [
+        {
+          "platform": "onlyfans",
+          "handle": "bearuby",
+          "url": "https://onlyfans.com/bearuby",
+          "source": "watermark_ocr",
+          "raw": "OnlyFans.com/bearuby"
+        }
+      ]
+    },
+    {
+      "name": "Brenda Trindade",
+      "slug": "brenda-trindade",
+      "aliases": [],
+      "status": "local-auto",
+      "video_count": 1,
+      "profile_handles": []
+    },
+    {
+      "name": "Chloe Lamb",
+      "slug": "chloe-lamb",
+      "aliases": [],
+      "status": "profile-url",
+      "video_count": 3,
+      "profile_handles": [
+        {
+          "platform": "onlyfans",
+          "handle": "chloelamb",
+          "url": "https://onlyfans.com/chloelamb",
+          "source": "watermark_ocr",
+          "raw": "OnlyFans.com/chloelamb"
+        }
+      ]
+    },
+    {
+      "name": "Cute Geekie",
+      "slug": "cute-geekie",
+      "aliases": [],
+      "status": "profile-url",
+      "video_count": 10,
+      "profile_handles": [
+        {
+          "platform": "onlyfans",
+          "handle": "cutegeekie",
+          "url": "https://onlyfans.com/cutegeekie",
+          "source": "watermark_ocr",
+          "raw": "OnlyFans.com/cutegeekie"
+        },
+        {
+          "platform": "onlyfans",
+          "handle": "cutelittlepearl",
+          "url": "https://onlyfans.com/cutelittlepearl",
+          "source": "watermark_ocr",
+          "raw": "OnlyFans.com/cutelittlepearl"
+        },
+        {
+          "platform": "fansly",
+          "handle": "cutegeekie",
+          "url": "https://fansly.com/cutegeekie",
+          "source": "watermark_ocr",
+          "raw": "fansly.com/cutegeekie"
+        }
+      ]
+    },
+    {
+      "name": "Cutefru",
+      "slug": "cutefru",
+      "aliases": [],
+      "status": "profile-url",
+      "video_count": 1,
+      "profile_handles": [
+        {
+          "platform": "onlyfans",
+          "handle": "cutefru",
+          "url": "https://onlyfans.com/cutefru",
+          "source": "watermark_ocr",
+          "raw": "onlyfans.com/cutefru"
+        }
+      ]
+    },
+    {
+      "name": "Gem The Jewels",
+      "slug": "gem-the-jewels",
+      "aliases": [],
+      "status": "profile-url",
+      "video_count": 2,
+      "profile_handles": [
+        {
+          "platform": "onlyfans",
+          "handle": "gemthejewels",
+          "url": "https://onlyfans.com/gemthejewels",
+          "source": "watermark_ocr",
+          "raw": "OnlyFans.com/gemthejewels"
+        }
+      ]
+    },
+    {
+      "name": "Haylee Love",
+      "slug": "haylee-love",
+      "aliases": [],
+      "status": "local-auto",
+      "video_count": 3,
+      "profile_handles": []
+    },
+    {
+      "name": "Izzy Green",
+      "slug": "izzy-green",
+      "aliases": [],
+      "status": "profile-url",
+      "video_count": 3,
+      "profile_handles": [
+        {
+          "platform": "onlyfans",
+          "handle": "izzygreen",
+          "url": "https://onlyfans.com/izzygreen",
+          "source": "watermark_ocr",
+          "raw": "OnlyFans.com/izzygreen"
+        }
+      ]
+    },
+    {
+      "name": "Jakara Mitchell",
+      "slug": "jakara-mitchell",
+      "aliases": [],
+      "status": "profile-url",
+      "video_count": 4,
+      "profile_handles": [
+        {
+          "platform": "onlyfans",
+          "handle": "jakarababy",
+          "url": "https://onlyfans.com/jakarababy",
+          "source": "watermark_ocr",
+          "raw": "OnlyFans.com/jakarababy"
+        }
+      ]
+    },
+    {
+      "name": "Jazmen Jafar",
+      "slug": "jazmen-jafar",
+      "aliases": [],
+      "status": "profile-url",
+      "video_count": 4,
+      "profile_handles": [
+        {
+          "platform": "fansly",
+          "handle": "jazmenjafar",
+          "url": "https://fansly.com/jazmenjafar",
+          "source": "watermark_ocr",
+          "raw": "fansly.com/jazmenjafar"
+        }
+      ]
+    },
+    {
+      "name": "Katianakayfree",
+      "slug": "katianakayfree",
+      "aliases": [],
+      "status": "profile-url",
+      "video_count": 1,
+      "profile_handles": [
+        {
+          "platform": "onlyfans",
+          "handle": "katianakayfree",
+          "url": "https://onlyfans.com/katianakayfree",
+          "source": "watermark_ocr",
+          "raw": "OnlyFans.com/katianakayfree"
+        }
+      ]
+    },
+    {
+      "name": "Katievaynes",
+      "slug": "katievaynes",
+      "aliases": [],
+      "status": "profile-url",
+      "video_count": 1,
+      "profile_handles": [
+        {
+          "platform": "onlyfans",
+          "handle": "katievaynes",
+          "url": "https://onlyfans.com/katievaynes",
+          "source": "watermark_ocr",
+          "raw": "OnlyFans.com/katievaynes"
+        }
+      ]
+    },
+    {
+      "name": "Kinkykttn",
+      "slug": "kinkykttn",
+      "aliases": [],
+      "status": "profile-url",
+      "video_count": 4,
+      "profile_handles": [
+        {
+          "platform": "onlyfans",
+          "handle": "kinkykttn",
+          "url": "https://onlyfans.com/kinkykttn",
+          "source": "watermark_ocr",
+          "raw": "OnlyFans.com/kinkykttn"
+        }
+      ]
+    },
+    {
+      "name": "Leighbunbun",
+      "slug": "leighbunbun",
+      "aliases": [],
+      "status": "local-auto",
+      "video_count": 1,
+      "profile_handles": []
+    },
+    {
+      "name": "Lustcnotal",
+      "slug": "lustcnotal",
+      "aliases": [],
+      "status": "local-auto",
+      "video_count": 1,
+      "profile_handles": []
+    },
+    {
+      "name": "Mackzjones",
+      "slug": "mackzjones",
+      "aliases": [],
+      "status": "user-confirmed",
+      "video_count": 1,
+      "profile_handles": []
+    },
+    {
+      "name": "Maditay",
+      "slug": "maditay",
+      "aliases": [],
+      "status": "local-auto",
+      "video_count": 1,
+      "profile_handles": []
+    },
+    {
+      "name": "Melissa Debling",
+      "slug": "melissa-debling",
+      "aliases": [],
+      "status": "local-auto",
+      "video_count": 1,
+      "profile_handles": []
+    },
+    {
+      "name": "Miss LiLu",
+      "slug": "miss-lilu",
+      "aliases": [],
+      "status": "user-confirmed",
+      "video_count": 3,
+      "profile_handles": []
+    },
+    {
+      "name": "Mulai",
+      "slug": "mulai",
+      "aliases": [],
+      "status": "profile-url",
+      "video_count": 1,
+      "profile_handles": [
+        {
+          "platform": "onlyfans",
+          "handle": "mulai",
+          "url": "https://onlyfans.com/mulai",
+          "source": "watermark_ocr",
+          "raw": "OnlyFans.com/mulai"
+        }
+      ]
+    },
+    {
+      "name": "Pinkychu",
+      "slug": "pinkychu",
+      "aliases": [],
+      "status": "user-confirmed",
+      "video_count": 1,
+      "profile_handles": []
+    },
+    {
+      "name": "Puffy Pink",
+      "slug": "puffy-pink",
+      "aliases": [],
+      "status": "user-confirmed",
+      "video_count": 1,
+      "profile_handles": []
+    },
+    {
+      "name": "Ruth Lee",
+      "slug": "ruth-lee",
+      "aliases": [],
+      "status": "profile-url",
+      "video_count": 1,
+      "profile_handles": [
+        {
+          "platform": "onlyfans",
+          "handle": "ruth_lee",
+          "url": "https://onlyfans.com/ruth_lee",
+          "source": "watermark_ocr",
+          "raw": "OnlyFans.com/ruth_lee"
+        }
+      ]
+    },
+    {
+      "name": "Sakhovanski",
+      "slug": "sakhovanski",
+      "aliases": [],
+      "status": "local-auto",
+      "video_count": 1,
+      "profile_handles": []
+    },
+    {
+      "name": "Sava Schultz",
+      "slug": "sava-schultz",
+      "aliases": [],
+      "status": "profile-url",
+      "video_count": 10,
+      "profile_handles": [
+        {
+          "platform": "onlyfans",
+          "handle": "savaschultz",
+          "url": "https://onlyfans.com/savaschultz",
+          "source": "watermark_ocr",
+          "raw": "OnlyFans.com/savaschultz"
+        }
+      ]
+    },
+    {
+      "name": "Sendnudes",
+      "slug": "sendnudes",
+      "aliases": [],
+      "status": "profile-url",
+      "video_count": 1,
+      "profile_handles": [
+        {
+          "platform": "onlyfans",
+          "handle": "sendnudes",
+          "url": "https://onlyfans.com/sendnudes",
+          "source": "watermark_ocr",
+          "raw": "OnlyFans.com/sendnudes"
+        }
+      ]
+    },
+    {
+      "name": "Sendnudesx",
+      "slug": "sendnudesx",
+      "aliases": [],
+      "status": "profile-url",
+      "video_count": 6,
+      "profile_handles": [
+        {
+          "platform": "onlyfans",
+          "handle": "sendnudesx",
+          "url": "https://onlyfans.com/sendnudesx",
+          "source": "watermark_ocr",
+          "raw": "OnlyFans.com/sendnudesx"
+        }
+      ]
+    },
+    {
+      "name": "Sienna",
+      "slug": "sienna",
+      "aliases": [],
+      "status": "profile-url",
+      "video_count": 1,
+      "profile_handles": [
+        {
+          "platform": "onlyfans",
+          "handle": "sienna",
+          "url": "https://onlyfans.com/sienna",
+          "source": "watermark_ocr",
+          "raw": "OnlyFans.com/sienna"
+        }
+      ]
+    },
+    {
+      "name": "Sienna Ababi",
+      "slug": "sienna-ababi",
+      "aliases": [],
+      "status": "profile-url",
+      "video_count": 5,
+      "profile_handles": [
+        {
+          "platform": "onlyfans",
+          "handle": "siennaababi",
+          "url": "https://onlyfans.com/siennaababi",
+          "source": "watermark_ocr",
+          "raw": "OnlyFans.com/siennaababi"
+        }
+      ]
+    },
+    {
+      "name": "Whoahannahjo",
+      "slug": "whoahannahjo",
+      "aliases": [],
+      "status": "profile-url",
+      "video_count": 3,
+      "profile_handles": [
+        {
+          "platform": "onlyfans",
+          "handle": "whoahannahjo",
+          "url": "https://onlyfans.com/whoahannahjo",
+          "source": "watermark_ocr",
+          "raw": "OnlyFans.com/whoahannahjo"
+        }
+      ]
+    },
+    {
+      "name": "Yummy Couple",
+      "slug": "yummy-couple",
+      "aliases": [],
+      "status": "user-confirmed",
+      "video_count": 1,
+      "profile_handles": []
+    },
+    {
+      "name": "Zoey Uso",
+      "slug": "zoey-uso",
+      "aliases": [],
+      "status": "profile-url",
+      "video_count": 1,
+      "profile_handles": [
+        {
+          "platform": "fansly",
+          "handle": "ZoeyUso",
+          "url": "https://fansly.com/ZoeyUso",
+          "source": "watermark_ocr",
+          "raw": "fansly.com/ZoeyUso"
+        }
+      ]
+    }
+  ]
+}

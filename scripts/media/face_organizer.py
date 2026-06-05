@@ -90,6 +90,7 @@ DEFAULT_REPORT = os.environ.get("FACE_ORGANIZER_REPORT", "scripts/media/face_ver
 DEFAULT_BACKUP_DIR = os.environ.get("FACE_ORGANIZER_BACKUP_DIR", "scripts/media/backups")
 DEFAULT_RENAME_MANIFEST = os.environ.get("FACE_ORGANIZER_RENAME_MANIFEST", "scripts/media/rename_plan.json")
 DEFAULT_ORGANIZE_MANIFEST = os.environ.get("FACE_ORGANIZER_ORGANIZE_MANIFEST", "scripts/media/organize_manifest.json")
+DEFAULT_VERIFICATION_REGISTRY = os.environ.get("FACE_ORGANIZER_VERIFICATION_REGISTRY", "scripts/media/performer_verification.json")
 DEFAULT_MODEL = os.environ.get("FACE_ORGANIZER_MODEL", "buffalo_l")
 MODEL_VERSION = f"insightface:{DEFAULT_MODEL}"
 NOISE_TOKENS = {
@@ -157,6 +158,7 @@ class OrganizerConfig:
     min_face_area_ratio: float
     ocr_watermarks: bool
     organize_manifest_path: Path
+    verification_registry_path: Path
 
 
 @dataclasses.dataclass
@@ -415,6 +417,15 @@ def split_handle_words(value: str) -> str:
         "cutegeekie": "Cute Geekie",
         "qutegeekie": "Cute Geekie",
         "meekie": "Cute Geekie",
+        "cutegeer": "Cute Geekie",
+        "cutegeer": "Cute Geekie",
+        "cuteyeekie": "Cute Geekie",
+        "cutegdekie": "Cute Geekie",
+        "cuteggekie": "Cute Geekie",
+        "cutegoekie": "Cute Geekie",
+        "cuteadekie": "Cute Geekie",
+        "cutegeel": "Cute Geekie",
+        "utegeekie": "Cute Geekie",
         "ambune": "Amburne",
         "amburne": "Amburne",
         "katianakayfm": "Katianakayfree",
@@ -461,19 +472,56 @@ def split_handle_words(value: str) -> str:
         "jazmer": "Jazmen Jafar",
         "gemthejewels": "Gem The Jewels",
         "gemejewels": "Gem The Jewels",
+        "gemthejewls": "Gem The Jewels",
+        "gemthejewls": "Gem The Jewels",
+        "gemthejewels": "Gem The Jewels",
         "brendatril": "Brenda Trindade",
         "brendatri": "Brenda Trindade",
         "brendatrii": "Brenda Trindade",
         "brendatrindadee": "Brenda Trindade",
+        "aziliahadid": "Azilia Hadid",
+        "izzygreen": "Izzy Green",
+        "izzygree": "Izzy Green",
+        "lzzygreen": "Izzy Green",
+        "izzygeen": "Izzy Green",
+        "izzyg": "Izzy Green",
+        "zygreen": "Izzy Green",
+        "siennaababi": "Sienna Ababi",
+        "siennaabab": "Sienna Ababi",
+        "slennaababi": "Sienna Ababi",
+        "sienaabbi": "Sienna Ababi",
+        "leighbunbun": "Leighbunbun",
+        "eighbunbun": "Leighbunbun",
+        "jakara": "Jakara Mitchell",
+        "iaarababy": "Jakara Mitchell",
+        "iaaraoaby": "Jakara Mitchell",
+        "jakarab": "Jakara Mitchell",
+        "jakarabap": "Jakara Mitchell",
+        "jakarabao": "Jakara Mitchell",
+        "jakarababy": "Jakara Mitchell",
+        "jakaramitchell": "Jakara Mitchell",
+        "karamito": "Jakara Mitchell",
+        "karamite": "Jakara Mitchell",
+        "karamit": "Jakara Mitchell",
+        "sakhovanski": "Sakhovanski",
+        "saknovanski": "Sakhovanski",
+        "khovansk": "Sakhovanski",
+        "hayleelove": "Haylee Love",
+        "havleel": "Haylee Love",
+        "hayleelov": "Haylee Love",
+        "hayleeloy": "Haylee Love",
         "aaliyahyasan": "Aaliyah Yasan",
         "thatbritishgirl": "Aaliyah Yasan",
         "thatbritishgirlxdirtyspringbok": "Aaliyah Yasan",
+        "abmy": "Aaliyah Yasan",
         "kinkykttn": "Kinkykttn",
         "kinkyktn": "Kinkykttn",
         "alannasworlx": "Alannasworldx",
         "alannasworldx": "Alannasworldx",
         "olenfromalannasworldx": "Alannasworldx",
         "tolenfromalannasworldx": "Alannasworldx",
+        "romalannasworldx": "Alannasworldx",
+        "stolentromalannasworldx": "Alannasworldx",
         "omalannasworldx": "Alannasworldx",
     }
     lowered = normalize_identity_key(value)
@@ -752,6 +800,284 @@ def build_match(performer_id: str | None, name: str, similarity: float) -> Match
 
 def normalize_identity_key(name: str) -> str:
     return re.sub(r"[^a-z0-9]+", "", name.lower())
+
+
+SEED_PERFORMER_ALIASES: dict[str, str] = {
+    "siennaababi": "Sienna Ababi",
+    "siennaabab": "Sienna Ababi",
+    "slennaababi": "Sienna Ababi",
+    "sienaabbi": "Sienna Ababi",
+    "gemthejewels": "Gem The Jewels",
+    "gemthejewls": "Gem The Jewels",
+    "gemthejewels": "Gem The Jewels",
+    "cutelittlepearl": "Cute Geekie",
+    "cutegeekie": "Cute Geekie",
+    "cutegeeky": "Cute Geekie",
+    "cutegeek": "Cute Geekie",
+    "jazmenjafar": "Jazmen Jafar",
+    "jazmenjarfar": "Jazmen Jafar",
+    "jazmanjafar": "Jazmen Jafar",
+    "jakarababy": "Jakara Mitchell",
+    "jakaramitchell": "Jakara Mitchell",
+    "karamito": "Jakara Mitchell",
+    "karamite": "Jakara Mitchell",
+    "aaliyahyasan": "Aaliyah Yasan",
+    "thatbritishgirl": "Aaliyah Yasan",
+    "savaschultz": "Sava Schultz",
+    "savasch": "Sava Schultz",
+    "savaschu": "Sava Schultz",
+    "savaschyltz": "Sava Schultz",
+    "savaschuilitz": "Sava Schultz",
+    "savaschuiltz": "Sava Schultz",
+    "savaschult": "Sava Schultz",
+    "savaschulz": "Sava Schultz",
+    "savash": "Sava Schultz",
+    "ruthlce": "Ruth Lee",
+    "ruthlee": "Ruth Lee",
+    "pinkychu": "Pinkychu",
+    "pinkychi": "Pinkychu",
+    "mackzjones": "Mackzjones",
+    "misslilu": "Miss LiLu",
+    "lilushandjobs": "Miss LiLu",
+    "sendnudesx": "Sendnudesx",
+    "sendnueesx": "Sendnudesx",
+    "whoahannahjo": "Whoahannahjo",
+    "kinkykttn": "Kinkykttn",
+    "kinkyktn": "Kinkykttn",
+    "alannasworldx": "Alannasworldx",
+    "alannasworlx": "Alannasworldx",
+    "olenfromalannasworldx": "Alannasworldx",
+    "tolenfromalannasworldx": "Alannasworldx",
+    "stolentromalannasworldx": "Alannasworldx",
+    "puffypink": "Puffy Pink",
+}
+
+
+TRUSTED_PROFILE_HANDLES = {
+    "aaliyahyasan",
+    "alannasworldx",
+    "alannasworlx",
+    "cutegeekie",
+    "cutelittlepearl",
+    "gemthejewels",
+    "izzygreen",
+    "jakaramitchell",
+    "jakarababy",
+    "jazmenjafar",
+    "kinkykttn",
+    "mackzjones",
+    "misslilu",
+    "pinkychu",
+    "puffypink",
+    "ruthlee",
+    "savaschultz",
+    "sendnudes",
+    "sendnudesx",
+    "sienna",
+    "siennaababi",
+    "whoahannahjo",
+}
+
+
+def blank_performer_registry() -> dict[str, Any]:
+    return {
+        "schema": "media-performer-verification/v1",
+        "generated_at": utc_now(),
+        "updated_at": utc_now(),
+        "performers": {},
+        "aliases": dict(SEED_PERFORMER_ALIASES),
+        "rules": {
+            "verified_identity_sources": ["user_correction", "profile_url", "local_face_db"],
+            "non_identity_sources": ["site_watermark", "telegram_repost", "filename_only"],
+            "note": "This registry stores text/profile evidence only; it does not perform internet face identification.",
+        },
+    }
+
+
+def load_performer_registry(path: Path) -> dict[str, Any]:
+    registry = load_json(path, blank_performer_registry())
+    if not isinstance(registry, dict):
+        registry = blank_performer_registry()
+    registry.setdefault("schema", "media-performer-verification/v1")
+    registry.setdefault("generated_at", utc_now())
+    registry.setdefault("performers", {})
+    aliases = registry.setdefault("aliases", {})
+    for key, value in SEED_PERFORMER_ALIASES.items():
+        aliases.setdefault(key, value)
+    return registry
+
+
+def registry_aliases(registry: dict[str, Any] | None) -> dict[str, str]:
+    aliases = dict(SEED_PERFORMER_ALIASES)
+    if registry:
+        for key, value in (registry.get("aliases") or {}).items():
+            if isinstance(key, str) and isinstance(value, str):
+                aliases[normalize_identity_key(key)] = value
+    return aliases
+
+
+def canonical_performer_name(name: str, registry: dict[str, Any] | None = None) -> str:
+    cleaned = split_handle_words(name)
+    aliases = registry_aliases(registry)
+    key = normalize_identity_key(cleaned or name)
+    if key in aliases:
+        return aliases[key]
+    for performer in (registry or {}).get("performers", {}).values():
+        if not isinstance(performer, dict):
+            continue
+        canonical = str(performer.get("name") or "")
+        if not canonical:
+            continue
+        keys = {normalize_identity_key(canonical), normalize_identity_key(str(performer.get("slug") or ""))}
+        keys.update(normalize_identity_key(str(alias)) for alias in performer.get("aliases", []) if isinstance(alias, str))
+        if key in keys:
+            return canonical
+    return cleaned
+
+
+def profile_handles_from_hints(metadata_hints: dict[str, Any]) -> list[dict[str, str]]:
+    handles: list[dict[str, str]] = []
+    seen: set[tuple[str, str]] = set()
+    for item in metadata_hints.get("candidate_names", []):
+        raw = str(item.get("raw") or "")
+        for match in re.finditer(r"\b(onlyfans|fansly|fanvue)\.com[/\\:|]+([A-Za-z0-9_.-]{4,})", raw, re.I):
+            platform = match.group(1).lower()
+            handle = re.sub(r"[^A-Za-z0-9_.-].*$", "", match.group(2)).strip("._-")
+            if not handle:
+                continue
+            key = (platform, handle.lower())
+            if key in seen:
+                continue
+            seen.add(key)
+            handles.append(
+                {
+                    "platform": platform,
+                    "handle": handle,
+                    "url": f"https://{platform}.com/{handle}",
+                    "source": str(item.get("source") or "watermark_ocr"),
+                    "raw": raw,
+                }
+            )
+    return handles
+
+
+def update_registry_entry(
+    registry: dict[str, Any],
+    canonical_name: str,
+    alias_names: Iterable[str],
+    record: dict[str, Any],
+) -> None:
+    if not canonical_name or canonical_name == "unknown performer":
+        return
+    slug = slugify(canonical_name)
+    performers = registry.setdefault("performers", {})
+    entry = performers.setdefault(
+        slug,
+        {
+            "name": canonical_name,
+            "slug": slug,
+            "aliases": [],
+            "profile_handles": [],
+            "status": "needs-review",
+            "evidence": [],
+            "video_count": 0,
+        },
+    )
+    entry["name"] = canonical_name
+    entry["slug"] = slug
+    alias_set = {str(alias) for alias in entry.get("aliases", []) if alias}
+    for alias in alias_names:
+        if alias and normalize_identity_key(alias) != normalize_identity_key(canonical_name):
+            alias_set.add(str(alias))
+            registry.setdefault("aliases", {})[normalize_identity_key(alias)] = canonical_name
+    entry["aliases"] = sorted(alias_set, key=str.lower)
+    if not record.get("_folder_alias_only"):
+        entry["video_count"] = int(entry.get("video_count") or 0) + 1
+
+    hints = record.get("metadata_hints") or {}
+    handle_set = {(item.get("platform"), str(item.get("handle", "")).lower()) for item in entry.get("profile_handles", [])}
+    for handle in profile_handles_from_hints(hints):
+        handle_key = normalize_identity_key(handle["handle"])
+        canonical_key = normalize_identity_key(canonical_name)
+        handle_name = canonical_performer_name(handle["handle"], registry)
+        if handle_key != canonical_key and handle_key not in TRUSTED_PROFILE_HANDLES:
+            continue
+        if normalize_identity_key(handle_name) != canonical_key:
+            continue
+        key = (handle["platform"], handle["handle"].lower())
+        if key not in handle_set:
+            entry.setdefault("profile_handles", []).append(handle)
+            handle_set.add(key)
+
+    signals: set[str] = set()
+    for performer in record.get("performers") or []:
+        if isinstance(performer, dict):
+            signals.update(str(signal) for signal in performer.get("source_signals", []) if signal)
+    if "user_correction" in signals:
+        entry["status"] = "user-confirmed"
+    elif entry.get("profile_handles"):
+        entry["status"] = "profile-url"
+    elif any((p.get("status") == "auto" and not p.get("verification_needed")) for p in record.get("performers") or [] if isinstance(p, dict)):
+        entry["status"] = "local-auto"
+
+    evidence = entry.setdefault("evidence", [])
+    video_path = str(record.get("video_path") or record.get("path") or "")
+    for candidate in (hints.get("candidate_names") or [])[:5]:
+        if not isinstance(candidate, dict):
+            continue
+        source = str(candidate.get("source") or "")
+        if not source.startswith("watermark_ocr"):
+            continue
+        evidence_key = (video_path, source, str(candidate.get("raw") or candidate.get("name") or ""))
+        if any((item.get("video_path"), item.get("source"), item.get("raw")) == evidence_key for item in evidence):
+            continue
+        evidence.append(
+            {
+                "video_path": video_path,
+                "source": source,
+                "name": candidate.get("name"),
+                "raw": candidate.get("raw"),
+                "confidence": candidate.get("confidence"),
+                "frame_path": candidate.get("frame_path"),
+            }
+        )
+    entry["evidence"] = evidence[-20:]
+
+
+def canonicalize_record(record: dict[str, Any], registry: dict[str, Any], source_dir: Path) -> tuple[dict[str, Any], bool]:
+    changed = False
+    performers = record.get("performers") or []
+    new_performers: list[dict[str, Any]] = []
+    for performer in performers:
+        if not isinstance(performer, dict):
+            continue
+        original_name = str(performer.get("name") or "")
+        if not original_name or original_name == "unknown performer":
+            new_performers.append(performer)
+            continue
+        canonical = canonical_performer_name(original_name, registry)
+        new_performer = dict(performer)
+        if canonical and canonical != original_name:
+            new_performer["name"] = canonical
+            new_performer["id"] = slugify(canonical)
+            label = str(new_performer.get("label") or "")
+            if label:
+                new_performer["label"] = re.sub(re.escape(original_name), canonical, label, count=1)
+            changed = True
+        new_performers.append(new_performer)
+        update_registry_entry(registry, canonical or original_name, [original_name], record)
+    if new_performers != performers:
+        record["performers"] = new_performers
+    identity = record.get("identity_resolution")
+    if isinstance(identity, dict):
+        original_name = str(identity.get("name") or "")
+        canonical = canonical_performer_name(original_name, registry)
+        if canonical and canonical != original_name:
+            identity["name"] = canonical
+            changed = True
+    if record.get("performers"):
+        record["suggested_organization"] = suggested_org(record["performers"], source_dir)
+    return record, changed
 
 
 def best_watermark_hint(metadata_hints: dict[str, Any]) -> dict[str, Any] | None:
@@ -1298,6 +1624,16 @@ def backup_state(config: OrganizerConfig, include_videos: bool = False) -> Path:
             shutil.rmtree(target_db)
         shutil.copytree(config.db_dir, target_db)
         manifest["files"].append({"type": "known_performers", "source": str(config.db_dir), "backup": str(target_db)})
+    if config.verification_registry_path.exists():
+        target_registry = backup_root / config.verification_registry_path.name
+        shutil.copy2(config.verification_registry_path, target_registry)
+        manifest["files"].append(
+            {
+                "type": "performer_verification",
+                "source": str(config.verification_registry_path),
+                "backup": str(target_registry),
+            }
+        )
     if config.report_path.exists():
         target_report = backup_root / config.report_path.name
         target_report.parent.mkdir(parents=True, exist_ok=True)
@@ -1580,6 +1916,147 @@ def organize_videos(config: OrganizerConfig) -> dict[str, Any]:
         json_dump(config.organize_manifest_path, manifest)
         logging.info("Wrote organize manifest: %s", config.organize_manifest_path)
     return manifest
+
+
+def verify_performers(config: OrganizerConfig, enable_online: bool = False) -> dict[str, Any]:
+    records = collect_metadata(config.source_dir, config.recursive)
+    if config.sample_limit:
+        records = records[: config.sample_limit]
+    registry = load_performer_registry(config.verification_registry_path)
+    preserved_aliases = dict(registry.get("aliases") or {})
+    registry["performers"] = {}
+    registry["aliases"] = {**dict(SEED_PERFORMER_ALIASES), **preserved_aliases}
+    registry["generated_at"] = registry.get("generated_at") or utc_now()
+    registry["updated_at"] = utc_now()
+    registry["source_dir"] = str(config.source_dir)
+    registry["online_metadata_requested"] = bool(enable_online)
+
+    changed_records = 0
+    scanned_records = 0
+    for record in records:
+        scanned_records += 1
+        before = json.dumps(record, sort_keys=True, default=str)
+        record, changed = canonicalize_record(record, registry, config.source_dir)
+        after = json.dumps(record, sort_keys=True, default=str)
+        changed = changed or before != after
+        if changed:
+            changed_records += 1
+            if config.apply:
+                meta_path = Path(record.get("_meta_path") or meta_path_for(Path(record.get("video_path") or "")))
+                clean_record = {key: value for key, value in record.items() if key != "_meta_path"}
+                json_dump(meta_path, clean_record)
+
+    # Add model folders as aliases/evidence so UI fallback names do not split cards.
+    models_root = config.source_dir / "models"
+    if models_root.exists():
+        for folder in sorted(path for path in models_root.iterdir() if path.is_dir()):
+            folder_name = folder.name
+            canonical = canonical_performer_name(folder_name, registry)
+            if canonical and canonical != "unknown performer":
+                update_registry_entry(
+                    registry,
+                    canonical,
+                    [folder_name],
+                    {
+                        "_folder_alias_only": True,
+                        "video_path": str(folder),
+                        "performers": [{"name": canonical, "status": "folder"}],
+                        "metadata_hints": {},
+                    },
+                )
+
+    # Collapse exact duplicate registry entries after aliases have been learned.
+    performers = registry.get("performers") or {}
+    merged: dict[str, dict[str, Any]] = {}
+    for entry in performers.values():
+        if not isinstance(entry, dict):
+            continue
+        canonical = canonical_performer_name(str(entry.get("name") or ""), registry)
+        slug = slugify(canonical)
+        target = merged.setdefault(
+            slug,
+            {
+                "name": canonical,
+                "slug": slug,
+                "aliases": [],
+                "profile_handles": [],
+                "status": entry.get("status") or "needs-review",
+                "evidence": [],
+                "video_count": 0,
+            },
+        )
+        target["video_count"] = int(target.get("video_count") or 0) + int(entry.get("video_count") or 0)
+        for field in ("aliases", "profile_handles", "evidence"):
+            existing = json.dumps(target.get(field, []), sort_keys=True)
+            seen = {json.dumps(item, sort_keys=True) for item in target.get(field, [])}
+            for item in entry.get(field, []) or []:
+                key = json.dumps(item, sort_keys=True)
+                if key not in seen:
+                    target.setdefault(field, []).append(item)
+                    seen.add(key)
+            if field == "aliases":
+                target[field] = sorted({str(item) for item in target.get(field, []) if item}, key=str.lower)
+            elif existing:
+                target[field] = target.get(field, [])[-30:]
+        status_rank = {"user-confirmed": 0, "profile-url": 1, "local-auto": 2, "needs-review": 3}
+        if status_rank.get(str(entry.get("status")), 99) < status_rank.get(str(target.get("status")), 99):
+            target["status"] = entry.get("status")
+    registry["performers"] = dict(sorted(merged.items(), key=lambda item: item[0]))
+
+    model_index = {
+        "schema": "spiritflix-model-index/v1",
+        "generated_at": utc_now(),
+        "source_dir": str(config.source_dir),
+        "models": [
+            {
+                "name": entry.get("name"),
+                "slug": slug,
+                "aliases": entry.get("aliases", []),
+                "status": entry.get("status", "needs-review"),
+                "video_count": entry.get("video_count", 0),
+                "profile_handles": entry.get("profile_handles", []),
+            }
+            for slug, entry in registry["performers"].items()
+        ],
+    }
+
+    if config.apply:
+        json_dump(config.verification_registry_path, registry)
+        json_dump(config.verification_registry_path.with_name("model_index.json"), model_index)
+        logging.info("Wrote performer verification registry: %s", config.verification_registry_path)
+        logging.info("Wrote SpiritFlix model index: %s", config.verification_registry_path.with_name("model_index.json"))
+        manifest = organize_videos(config)
+        remove_empty_model_dirs(config.source_dir)
+    else:
+        logging.info(
+            "dry-run: scanned %s metadata record(s), would update %s record(s), registry %s",
+            scanned_records,
+            changed_records,
+            config.verification_registry_path,
+        )
+        manifest = {"entries": []}
+    return {
+        "scanned_records": scanned_records,
+        "changed_records": changed_records,
+        "registry_path": str(config.verification_registry_path),
+        "model_index_path": str(config.verification_registry_path.with_name("model_index.json")),
+        "model_count": len(registry.get("performers") or {}),
+        "organize_entries": len(manifest.get("entries", [])),
+    }
+
+
+def remove_empty_model_dirs(source_dir: Path) -> None:
+    models_root = source_dir / "models"
+    if not models_root.exists():
+        return
+    for folder in sorted((path for path in models_root.iterdir() if path.is_dir()), key=lambda path: len(path.parts), reverse=True):
+        try:
+            visible_files = [path for path in folder.rglob("*") if path.is_file() and ".face-review" not in path.parts]
+            if not visible_files:
+                shutil.rmtree(folder)
+                logging.info("Removed empty model folder: %s", folder)
+        except Exception as exc:
+            logging.warning("Could not remove empty model folder %s: %s", folder, exc)
 
 
 def backfill_review_frames(config: OrganizerConfig, enable_online: bool = False) -> list[dict[str, Any]]:
@@ -1910,6 +2387,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     mode.add_argument("--rename-plan", action="store_true", help="generate a review-only smart rename manifest")
     mode.add_argument("--backup-state", action="store_true", help="copy current sidecars, performer DB, report, and optionally videos to backups")
     mode.add_argument("--backfill-review-frames", action="store_true", help="extract general review frames for existing sidecars")
+    mode.add_argument("--verify-performers", action="store_true", help="build/update canonical performer registry and repair duplicate names")
     parser.add_argument("--face-image", type=Path, help="face crop/image to use with --add-performer")
     parser.add_argument("--source", type=Path, default=Path(DEFAULT_SOURCE), help=f"media source directory (default: {DEFAULT_SOURCE})")
     parser.add_argument("--db", type=Path, default=Path(DEFAULT_DB), help=f"known performers DB directory (default: {DEFAULT_DB})")
@@ -1926,6 +2404,12 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         type=Path,
         default=Path(DEFAULT_ORGANIZE_MANIFEST),
         help=f"organization manifest path (default: {DEFAULT_ORGANIZE_MANIFEST})",
+    )
+    parser.add_argument(
+        "--verification-registry",
+        type=Path,
+        default=Path(DEFAULT_VERIFICATION_REGISTRY),
+        help=f"canonical performer verification registry path (default: {DEFAULT_VERIFICATION_REGISTRY})",
     )
     parser.add_argument("--apply", action="store_true", help="write sidecar JSON, review crops, NFO files, or DB changes")
     parser.add_argument("--dry-run", action="store_true", help="explicit dry-run; this is already the default")
@@ -1962,6 +2446,7 @@ def make_config(args: argparse.Namespace) -> OrganizerConfig:
         backup_dir=args.backup_dir,
         rename_manifest_path=args.rename_manifest,
         organize_manifest_path=args.organize_manifest,
+        verification_registry_path=args.verification_registry,
         apply=bool(args.apply and not args.dry_run),
         write_nfo=bool(args.write_nfo),
         backup_videos=bool(args.backup_videos),
@@ -2014,6 +2499,12 @@ def main(argv: list[str] | None = None) -> int:
         if config.apply:
             backup_state(config, include_videos=False)
         backfill_review_frames(config, enable_online=bool(args.online_metadata))
+        return 0
+    if args.verify_performers:
+        if config.apply:
+            backup_state(config, include_videos=False)
+        summary = verify_performers(config, enable_online=bool(args.online_metadata))
+        logging.info("Performer verification summary: %s", summary)
         return 0
     if args.organize:
         if not config.apply:
