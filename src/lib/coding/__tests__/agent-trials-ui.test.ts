@@ -20,6 +20,7 @@ import {
   stateTrialResetDiffFromSatisfiedShape,
 } from "@/lib/coding/agent-trials-ui";
 import { localHermesProviderModelTruth } from "@/lib/coding/model-provider-status";
+import { mapVisibleResultBadge } from "@/lib/coding/visible-result-badge";
 
 const configuredHermesTruth = localHermesProviderModelTruth({
   modelId: "ollama_chat/hermes4",
@@ -312,6 +313,27 @@ describe("agent trials UI helpers", () => {
     expect(result.simpleResult).toBe("Already satisfied");
     expect(result.previewDiffProduced).toBe(false);
     expect(result.falselyBlocked).toBe(false);
+  });
+
+  it("does not count already-satisfied live-apply rows as edited proof", () => {
+    const badge = mapVisibleResultBadge({
+      actual_behavior: "already_satisfied_noop",
+      applied_changed_files: [],
+      checks_run: ["git diff --check"],
+      disk_changed_files: [],
+      expected_behavior: "edit_reversible",
+      model_called_for_generation: "ollama_chat/qwen2.5-coder:7b",
+      preview_changed_files: [],
+      provider_call_made: true,
+      reason_code: "coder_no_changes_needed",
+      status: "already_satisfied",
+      trial_mode: "live_apply",
+    });
+
+    expect(badge.primary_label).toBe("ALREADY SATISFIED");
+    expect(badge.should_count_as_productive).toBe(false);
+    expect(badge.score_counts_as_live_usefulness).toBe(false);
+    expect(badge.live_apply_proof_status).toBe("not_proven");
   });
 
   it("classifies deterministic sidecar outcomes for trial diagnostics", () => {

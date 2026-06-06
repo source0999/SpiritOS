@@ -235,6 +235,11 @@ export function mapVisibleResultBadge(input: VisibleResultBadgeInput): VisibleRe
     primary_tone = "success";
     plain_summary = input.reversal_available === true ? "Applied, verified, revert ready." : "Applied and verified.";
     should_count_as_productive = true;
+  } else if (alreadySatisfied) {
+    primary_label = "ALREADY SATISFIED";
+    primary_tone = "success";
+    plain_summary = "No change was needed.";
+    should_count_as_productive = false;
   } else if (trialMode === "live_apply" && !liveApplyCriteriaMet && (noLiveModelCall || appliedChangedFiles.length === 0 || diskChangedFiles.length === 0)) {
     primary_label = "FAIL";
     primary_tone = "danger";
@@ -251,11 +256,6 @@ export function mapVisibleResultBadge(input: VisibleResultBadgeInput): VisibleRe
     primary_label = "WARNING";
     primary_tone = "warning";
     plain_summary = "Needs a target or file before preview.";
-  } else if (alreadySatisfied) {
-    primary_label = "ALREADY SATISFIED";
-    primary_tone = "success";
-    plain_summary = "No change was needed.";
-    should_count_as_productive = true;
   } else if (previewOnlyProof && useful) {
     primary_label = "PREVIEW ONLY";
     primary_tone = "neutral";

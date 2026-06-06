@@ -8,6 +8,5 @@ export function selectedItemAfterRefresh(
   selectedId: string | null,
 ): TrialListItem | null {
   if (!items.length) return null;
-  const foundItem = items.find(item => item.id === selectedId);
-  return foundItem || items[0];
+  return items[0];
 }

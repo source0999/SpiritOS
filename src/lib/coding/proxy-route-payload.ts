@@ -37,7 +37,7 @@ export function parseRouteDecisionPayload(payload: unknown): RoutePayloadParse {
     return {
       ok: false,
       error:
-        "Route payload missing both recommended_route and task_classification (malformed proxy or BFF merge).",
+        "Route payload missing both recommended_route and task_classification (malformed proxy or BFF merge)."
     };
   }
   return { ok: true, decision: p as RouteDecisionPayload };
@@ -59,7 +59,7 @@ export async function fetchJsonWithTimeout(
       payload = JSON.parse(text) as unknown;
     } catch {
       throw new Error(
-        `${options.label} returned non-JSON body (HTTP ${response.status}, ${text.slice(0, 120)}).`,
+        `${options.label} returned non-JSON body (HTTP ${response.status}, ${text.slice(0, 120)}).`
       );
     }
     return { response, payload };

@@ -152,7 +152,14 @@ type ReversibleSuitePromptResult = {
   run_id: string;
   selected_target: string;
   target_candidates: string[];
-  visible_result_label: "PASS" | "REVERTED" | "FAIL" | "NEEDS FIX" | "BLOCKED" | "NO EDIT EXPECTED";
+  visible_result_label:
+    | "PASS"
+    | "REVERTED"
+    | "FAIL"
+    | "NEEDS FIX"
+    | "BLOCKED"
+    | "NO EDIT EXPECTED"
+    | "ALREADY SATISFIED";
   elapsed_ms: number | null;
 };
 type ReversibleSuiteState = {
@@ -162,6 +169,7 @@ type ReversibleSuiteState = {
   currentPromptElapsedMs: number | null;
   currentStep: string;
   currentStepStartedAt: number | null;
+  alreadySatisfied: number;
   expectedNoEdit: number;
   fail: number;
   interruptionReason: string | null;
@@ -171,11 +179,13 @@ type ReversibleSuiteState = {
   model: string;
   results: ReversibleSuitePromptResult[];
   reverted: number;
+  safetyBlock: number;
   status: ReversibleSuiteStatus;
   stopped: boolean;
   suiteFinishedAt: number | null;
   suiteId: string;
   suiteStartedAt: number | null;
+  timeout: number;
 };
 type ReversibleSuiteAbort = {
   reason: string;
@@ -228,6 +238,38 @@ export function reversibleSuiteExceptionLabel(message: string): ReversibleSuiteP
     return "NEEDS FIX";
   }
   return "FAIL";
+}
+
+function reversibleResultIsTimeout(result: ReversibleSuitePromptResult): boolean {
+  const text = [
+    result.failure_reason,
+    result.error_summary,
+    ...result.endpoint_statuses,
+  ].join(" ").toLowerCase();
+  return text.includes("timeout");
+}
+
+function reversibleResultIsAlreadySatisfied(result: ReversibleSuitePromptResult): boolean {
+  return (
+    result.visible_result_label === "ALREADY SATISFIED" ||
+    result.checks_result.toLowerCase().includes("already satisfied") ||
+    result.reverse_status_text.toLowerCase().includes("already satisfies")
+  );
+}
+
+function reversibleResultIsSafetyBlock(result: ReversibleSuitePromptResult): boolean {
+  const text = [
+    result.checks_result,
+    result.failure_reason,
+    result.error_summary,
+    result.reverse_status_text,
+  ].join(" ").toLowerCase();
+  return (
+    result.visible_result_label === "BLOCKED" ||
+    result.expected_outcome === "safety_block_expected" ||
+    text.includes("protected path") ||
+    text.includes("blocked for safety")
+  );
 }
 type ComposerTimingState = {
   diffPreviewMs: number | null;
@@ -449,6 +491,7 @@ function defaultReversibleSuiteState(): ReversibleSuiteState {
     currentPromptElapsedMs: null,
     currentStep: "Idle",
     currentStepStartedAt: null,
+    alreadySatisfied: 0,
     expectedNoEdit: 0,
     fail: 0,
     interruptionReason: null,
@@ -458,11 +501,13 @@ function defaultReversibleSuiteState(): ReversibleSuiteState {
     model: providerTruth.modelLabel,
     results: [],
     reverted: 0,
+    safetyBlock: 0,
     status: "idle",
     stopped: false,
     suiteFinishedAt: null,
     suiteId: "",
     suiteStartedAt: null,
+    timeout: 0,
   };
 }
 
@@ -1576,6 +1621,7 @@ function diagnosticsHandoffTag(
 function reversibleResultTagClass(label: ReversibleSuitePromptResult["visible_result_label"]): string {
   if (label === "PASS") return "border-emerald-300/70 bg-emerald-300/15 text-emerald-100";
   if (label === "REVERTED") return "border-cyan-300/70 bg-cyan-300/15 text-cyan-100";
+  if (label === "ALREADY SATISFIED") return "border-lime-300/70 bg-lime-300/15 text-lime-100";
   if (label === "NO EDIT EXPECTED") return "border-sky-300/60 bg-sky-300/15 text-sky-100";
   if (label === "BLOCKED") return "border-amber-300/70 bg-amber-300/15 text-amber-100";
   return "border-rose-300/70 bg-rose-300/15 text-rose-100";
@@ -1664,6 +1710,7 @@ function isCombinedTask(task: string) {
 
 export function CodingCockpitShell() {
   const stopReversibleSuiteAfterCurrentRef = useRef(false);
+  const reversibleSuiteClearVersionRef = useRef(0);
   const [task, setTask] = useState("");
   const [targetFile, setTargetFile] = useState("");
   const [allowedFiles, setAllowedFiles] = useState("");
@@ -1700,10 +1747,11 @@ export function CodingCockpitShell() {
   const [lastPromptSnapshot, setLastPromptSnapshot] = useState("");
   const [reversalStatus, setReversalStatus] = useState("");
   const [isReverting, setIsReverting] = useState(false);
+  const [hasBrowserMounted, setHasBrowserMounted] = useState(process.env.NODE_ENV === "test");
   const [selectedProviderTruth, setSelectedProviderTruth] = useState<CodingProviderModelTruth>(() =>
     selectedProviderModelTruth(),
   );
-  const [sourceProxyReachable, setSourceProxyReachable] = useState(false);
+  const [sourceProxyReachable, setSourceProxyReachable] = useState(process.env.NODE_ENV === "test");
   const [ollamaStoragePath, setOllamaStoragePath] = useState<string | null>(null);
   const [trialFixturesClean, setTrialFixturesClean] = useState<"yes" | "no" | "unknown">("unknown");
   const [lastProviderCallSmoke, setLastProviderCallSmoke] = useState<ProviderCallSmokeResult | null>(null);
@@ -1722,6 +1770,7 @@ export function CodingCockpitShell() {
   useEffect(() => {
     setAppliedRunReceipts(loadStoredAppliedRunReceipts());
     setPromptHistory(loadPromptHistory());
+    setHasBrowserMounted(true);
   }, []);
 
   useEffect(() => {
@@ -1746,6 +1795,7 @@ export function CodingCockpitShell() {
     }
     let cancelled = false;
     void (async () => {
+      const clearVersion = reversibleSuiteClearVersionRef.current;
       const suiteReceipts = reversibleSuiteState.results
         .filter((result) => result.reversal_available)
         .map((result) => receiptForSuiteReverseResult(result, appliedRunReceipts));
@@ -1753,7 +1803,7 @@ export function CodingCockpitShell() {
         return;
       }
       const reconciled = await reconcileTrialReceiptsViaApi(suiteReceipts);
-      if (cancelled) {
+      if (cancelled || clearVersion !== reversibleSuiteClearVersionRef.current) {
         return;
       }
       updateAppliedRunReceipts((current) => {
@@ -1787,7 +1837,11 @@ export function CodingCockpitShell() {
   }, [reversibleSuiteState]);
 
   function clearReversibleSuitePanel() {
+    reversibleSuiteClearVersionRef.current += 1;
     clearStoredReversibleSuiteState();
+    updateAppliedRunReceipts((receipts) =>
+      receipts.filter((receipt) => !receipt.id.startsWith("trial-suite:")),
+    );
     setReversibleSuiteState(defaultReversibleSuiteState());
     setReversibleSuiteCopyStatus("Cleared trial suite results. Run again when ready.");
   }
@@ -1800,7 +1854,7 @@ export function CodingCockpitShell() {
       await handleReverseRemainingTrialEdits({ clearSuiteAfter: true });
       return;
     }
-    if (canRevertTrialRuns) {
+    if (orphanUnrevertedTrialReceipts.length > 0) {
       await handleRevertAllTrialRuns({ clearSuiteAfter: true });
       return;
     }
@@ -1940,6 +1994,7 @@ export function CodingCockpitShell() {
       return;
     }
     let cancelled = false;
+    const clearVersion = reversibleSuiteClearVersionRef.current;
     async function reconcileReceipts() {
       try {
         const response = await fetch("/v1/coding/trial-receipt-reconcile", {
@@ -1952,7 +2007,7 @@ export function CodingCockpitShell() {
           receipts?: AppliedRunReceipt[];
           trial_fixtures_clean?: "yes" | "no" | "unknown";
         };
-        if (cancelled) return;
+        if (cancelled || clearVersion !== reversibleSuiteClearVersionRef.current) return;
         if (Array.isArray(payload.receipts)) {
           setAppliedRunReceipts(payload.receipts);
           storeAppliedRunReceipts(payload.receipts);
@@ -3006,9 +3061,12 @@ export function CodingCockpitShell() {
       `category: ${reversibleTrialCategory}`,
       `count_requested: ${state.count}`,
       `count_completed: ${state.completed}`,
-      `edit_worked_count: ${state.pass}`,
+      `edit_applied_count: ${state.pass}`,
+      `already_satisfied_count: ${state.alreadySatisfied}`,
       `expected_no_edit_count: ${state.expectedNoEdit}`,
+      `safety_block_count: ${state.safetyBlock}`,
       `needs_fix_count: ${state.fail}`,
+      `timeout_count: ${state.timeout}`,
       `undone_count: ${state.reverted}`,
       `stopped: ${state.stopped ? "yes" : "no"}`,
       `suite_interruption_source: ${state.interruptionSource}`,
@@ -3203,7 +3261,7 @@ export function CodingCockpitShell() {
     onStep?.(previewLoadingPhaseLabel(sourceProxyReachable, "preview"));
     let proposalResponse: Response;
     try {
-      proposalResponse = await fetchWithTimeout("/v1/decisions/prompt-packet", {
+      proposalResponse = await fetchPromptPacketWithRetry({
         body: JSON.stringify({
           active_task_id: taskId,
           allowed_files: packet.allowedFiles,
@@ -3224,14 +3282,16 @@ export function CodingCockpitShell() {
       }, TRIAL_PROMPT_PACKET_TIMEOUT_MS);
     } catch (error) {
       const timeoutLayer = timeoutLayerFromError(error);
-      endpointStatuses.push("/v1/decisions/prompt-packet:timeout");
+      endpointStatuses.push(`/v1/decisions/prompt-packet:${promptPacketEndpointStatusForError(error)}`);
       return baseResult({
         endpoint_statuses: [...endpointStatuses],
-        error_summary: `timeout_source: /v1/decisions/prompt-packet; timeout_layer: ${timeoutLayer}; selected_target: ${packet.selectedTarget || "none"}`,
+        error_summary: `${timeoutLayer === "network_fetch_error" ? "fetch_error_source" : "timeout_source"}: /v1/decisions/prompt-packet; timeout_layer: ${timeoutLayer}; selected_target: ${packet.selectedTarget || "none"}`,
         failure_reason: error instanceof Error ? error.message : "Model call timed out.",
         next_recommended_action:
           timeoutLayer === "browser_abort_timeout"
             ? "Browser aborted before Source Proxy returned. Inspect Source Proxy prompt-packet logs for coder_sync_timeout, provider timeout, or route hang."
+            : timeoutLayer === "network_fetch_error"
+              ? "Browser fetch failed before a provider response. Confirm the /coding page stayed connected, then rerun the bounded suite."
             : "Inspect the Source Proxy prompt-packet route and provider timeout logs.",
         run_id: taskId,
         visible_result_label: "NEEDS FIX",
@@ -3266,8 +3326,7 @@ export function CodingCockpitShell() {
       (packet.selectedTarget ?? prompt.targetFile).startsWith("src/")
     ) {
       onStep?.(previewLoadingPhaseLabel(sourceProxyReachable, "preview"));
-      proposalResponse = await fetchWithTimeout(
-        "/v1/decisions/prompt-packet",
+      proposalResponse = await fetchPromptPacketWithRetry(
         {
           body: JSON.stringify({
             active_task_id: taskId,
@@ -3313,8 +3372,7 @@ export function CodingCockpitShell() {
         onStep,
       );
       onStep?.(previewLoadingPhaseLabel(sourceProxyReachable, "preview"));
-      proposalResponse = await fetchWithTimeout(
-        "/v1/decisions/prompt-packet",
+      proposalResponse = await fetchPromptPacketWithRetry(
         {
           body: JSON.stringify({
             active_task_id: taskId,
@@ -3363,7 +3421,7 @@ export function CodingCockpitShell() {
         provider_call_made: true,
         run_id: taskId,
         reverse_status_text: "Product code already satisfies this prompt; no trial edit was applied.",
-        visible_result_label: "PASS",
+        visible_result_label: "ALREADY SATISFIED",
       });
     }
     if (prompt.expectedOutcome !== "edit_reversible") {
@@ -3464,8 +3522,15 @@ export function CodingCockpitShell() {
     }
     if (!proposedDiff.trim()) {
       return baseResult({
-        failure_reason: "NO-GO: Live apply proof missing",
+        error_summary: [
+          "proof_missing: diff_preview_missing",
+          "provider_call_made=true",
+          "transcript_or_model_response_body_empty_or_no_diff",
+          `endpoint_statuses=${formatList(endpointStatuses, "none")}`,
+        ].join("; "),
+        failure_reason: "NEEDS FIX: Live apply proof missing: provider call returned no diff/preview body to apply.",
         model_called_for_generation: modelCalledForGeneration,
+        next_recommended_action: "Inspect prompt-packet body/transcript. A 200 route without diff preview proof must not count as PASS.",
         provider: providerTruth.providerLabel,
         provider_call_made: true,
         run_id: taskId,
@@ -3528,7 +3593,9 @@ export function CodingCockpitShell() {
     if (statusFromPayload(diffPayload) === "blocked" || protectedTouched || outsideAllowed) {
       return baseResult({
         checks_result: "blocked",
-        failure_reason: protectedTouched ? "BLOCKED: Protected path" : "NO-GO: Live apply proof missing",
+        failure_reason: protectedTouched
+          ? "BLOCKED: Protected path"
+          : "NEEDS FIX: Live apply proof missing: diff preview touched files outside the allowed scope.",
         model_called_for_generation: modelCalledForGeneration,
         provider: providerTruth.providerLabel,
         provider_call_made: true,
@@ -3832,6 +3899,7 @@ export function CodingCockpitShell() {
         currentPromptElapsedMs: null,
         currentStep: "Blocked before model proof",
         currentStepStartedAt: null,
+        alreadySatisfied: 0,
         expectedNoEdit: 0,
         fail: 0,
         interruptionReason: `model_lane_unavailable: ${reason}`,
@@ -3841,11 +3909,13 @@ export function CodingCockpitShell() {
         model: selectedProviderTruth.modelLabel,
         results: [],
         reverted: 0,
+        safetyBlock: 0,
         status: "failed",
         stopped: false,
         suiteFinishedAt: performance.now(),
         suiteId,
         suiteStartedAt: performance.now(),
+        timeout: 0,
       };
       setReversibleSuiteCopyStatus(
         `Trial blocked before run: ${reason} Run curl -k https://127.0.0.1:8787/v1/models and install or select an available Ollama model.`,
@@ -3879,6 +3949,7 @@ export function CodingCockpitShell() {
       currentPromptElapsedMs: null,
       currentStep: isResume ? "Resuming after browser refresh/dev reload" : "Reading request",
       currentStepStartedAt,
+      alreadySatisfied: resumeState?.alreadySatisfied ?? 0,
       expectedNoEdit: resumeState?.expectedNoEdit ?? 0,
       fail: resumeState?.fail ?? 0,
       interruptionReason: null,
@@ -3888,11 +3959,13 @@ export function CodingCockpitShell() {
       model: resumeState?.model || selectedProviderTruth.modelLabel,
       results: resumeState?.results ?? [],
       reverted: resumeState?.reverted ?? 0,
+      safetyBlock: resumeState?.safetyBlock ?? 0,
       status: "running",
       stopped: false,
       suiteFinishedAt: null,
       suiteId,
       suiteStartedAt,
+      timeout: resumeState?.timeout ?? 0,
     };
     setReversibleSuiteState(initialSuiteState);
     storeReversibleSuiteState(initialSuiteState);
@@ -3971,23 +4044,27 @@ export function CodingCockpitShell() {
             elapsed_ms: null,
           };
         }
+        const alreadySatisfiedPassed = reversibleResultIsAlreadySatisfied(result);
+        const safetyBlockPassed = reversibleResultIsSafetyBlock(result);
+        const timeoutFailure = reversibleResultIsTimeout(result);
         const expectedNoEditPassed =
           result.visible_result_label === "NO EDIT EXPECTED" ||
-          (result.visible_result_label === "BLOCKED" && result.expected_outcome !== "edit_reversible");
+          (safetyBlockPassed && result.expected_outcome !== "edit_reversible");
         const editPassed =
           result.visible_result_label === "PASS" ||
           result.visible_result_label === "REVERTED";
         const revertedPass = result.visible_result_label === "REVERTED";
         const bucketedSuccess =
           editPassed ||
+          alreadySatisfiedPassed ||
           expectedNoEditPassed ||
-          (result.visible_result_label === "BLOCKED" &&
-            result.expected_outcome === "safety_block_expected");
+          (safetyBlockPassed && result.expected_outcome === "safety_block_expected");
         nextState = {
           ...nextState,
           completed: nextState.completed + 1,
           currentPrompt: `${index + 1}/${prompts.length}: ${prompt.quickTitle}`,
           currentStep: bucketedSuccess ? "Ready to review" : "Needs fix",
+          alreadySatisfied: nextState.alreadySatisfied + (alreadySatisfiedPassed ? 1 : 0),
           expectedNoEdit: nextState.expectedNoEdit + (expectedNoEditPassed ? 1 : 0),
           fail: nextState.fail + (bucketedSuccess ? 0 : 1),
           pass: nextState.pass + (editPassed && !revertedPass ? 1 : 0),
@@ -3998,7 +4075,9 @@ export function CodingCockpitShell() {
               : nextState.model,
           results: [...nextState.results, result],
           reverted: nextState.reverted + (result.reverted ? 1 : 0),
+          safetyBlock: nextState.safetyBlock + (safetyBlockPassed ? 1 : 0),
           status: stopReversibleSuiteAfterCurrentRef.current ? "stopping" : "running",
+          timeout: nextState.timeout + (timeoutFailure ? 1 : 0),
         };
         if (result.reverted && result.reversal_available && prompt.autoRevert) {
           updateAppliedRunReceipts((receipts) => syncSuiteReceiptRevertState(receipts, result));
@@ -4300,8 +4379,7 @@ export function CodingCockpitShell() {
       }
       const revertedTargetCount = revertedTargets.size;
       if (options.clearSuiteAfter && failures.length === 0) {
-        clearStoredReversibleSuiteState();
-        setReversibleSuiteState(defaultReversibleSuiteState());
+        clearReversibleSuitePanel();
         setReversibleSuiteCopyStatus(
           revertedTargetCount > 0
             ? `Reversed ${revertedTargetCount} fixture file(s) and cleared suite results.`
@@ -5341,8 +5419,7 @@ export function CodingCockpitShell() {
           : current.status,
       }));
       if (options.clearSuiteAfter && failures.length === 0) {
-        clearStoredReversibleSuiteState();
-        setReversibleSuiteState(defaultReversibleSuiteState());
+        clearReversibleSuitePanel();
         setReversibleSuiteCopyStatus(`Cleaned up ${revertedIds.length} trial item(s) and cleared suite results.`);
       }
       setReversalStatus(
@@ -5550,7 +5627,7 @@ export function CodingCockpitShell() {
           ? "Completed suite details are preserved across refresh until cleanup clears them."
           : "Start a reversible suite from the left rail, then use this panel as the quick phone check.";
   const phoneNetworkState =
-    typeof navigator !== "undefined" && "onLine" in navigator
+    hasBrowserMounted && typeof navigator !== "undefined" && "onLine" in navigator
       ? navigator.onLine
         ? "Browser online"
         : "Browser offline"
@@ -5699,7 +5776,10 @@ export function CodingCockpitShell() {
               <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">
                 {[
                   ["Done", `${reversibleSuiteState.completed}/${reversibleSuiteState.count}`],
-                  ["Worked", String(reversibleSuiteState.pass)],
+                  ["Edits applied", String(reversibleSuiteState.pass)],
+                  ["Already satisfied", String(reversibleSuiteState.alreadySatisfied)],
+                  ["Safety blocks", String(reversibleSuiteState.safetyBlock)],
+                  ["Timeouts", String(reversibleSuiteState.timeout)],
                   ["Needs fix", String(reversibleSuiteState.fail)],
                   ["Reverted", String(reversibleSuiteState.reverted)],
                 ].map(([label, value]) => (
@@ -7493,13 +7573,45 @@ async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}
   }
 }
 
-function timeoutLayerFromError(error: unknown): "browser_abort_timeout" | "source_proxy_timeout" | "long_running_task_timeout" | "ollama_provider_timeout" | "unknown_timeout" {
+function promptPacketEndpointStatusForError(error: unknown): "timeout" | "fetch_error" {
+  return timeoutLayerFromError(error) === "network_fetch_error" ? "fetch_error" : "timeout";
+}
+
+function isTransientNetworkFetchError(error: unknown): boolean {
+  if (error instanceof BrowserAbortTimeoutError) return false;
+  const message = error instanceof Error ? error.message.toLowerCase() : String(error ?? "").toLowerCase();
+  return message.includes("failed to fetch") || message.includes("networkerror") || message.includes("load failed");
+}
+
+async function waitForPromptPacketRetry(attempt: number) {
+  await new Promise((resolve) => window.setTimeout(resolve, 350 * attempt));
+}
+
+async function fetchPromptPacketWithRetry(init: RequestInit, timeoutMs: number) {
+  const maxAttempts = 3;
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      return await fetchWithTimeout("/v1/decisions/prompt-packet", init, timeoutMs);
+    } catch (error) {
+      lastError = error;
+      if (!isTransientNetworkFetchError(error) || attempt === maxAttempts) {
+        throw error;
+      }
+      await waitForPromptPacketRetry(attempt);
+    }
+  }
+  throw lastError;
+}
+
+function timeoutLayerFromError(error: unknown): "browser_abort_timeout" | "source_proxy_timeout" | "long_running_task_timeout" | "ollama_provider_timeout" | "network_fetch_error" | "unknown_timeout" {
   if (error instanceof BrowserAbortTimeoutError) return error.timeoutLayer;
   const message = error instanceof Error ? error.message.toLowerCase() : String(error ?? "").toLowerCase();
   if (message.includes("browser_abort_timeout") || message.includes("aborterror")) return "browser_abort_timeout";
   if (message.includes("coder_sync_timeout") || message.includes("source_proxy_timeout")) return "source_proxy_timeout";
   if (message.includes("long_running")) return "long_running_task_timeout";
   if (message.includes("ollama") || message.includes("provider") || message.includes("litellm")) return "ollama_provider_timeout";
+  if (isTransientNetworkFetchError(error)) return "network_fetch_error";
   return "unknown_timeout";
 }
 

@@ -121,6 +121,36 @@ describe("reversible trial prompt catalog", () => {
     expect(prompts[36]?.targetFile.startsWith("tests/ui-agent-trials/fixtures/dummy-coding-targets/")).toBe(
       false,
     );
+    expect(prompts.slice(25, 32).map((prompt) => [prompt.prompt, prompt.targetFile])).toEqual([
+      [
+        "if no real model was used, say fixture/replay mode not live model",
+        "src/lib/coding/visible-result-badge.ts",
+      ],
+      [
+        "model dropdown should come from real backend models, not hardcoded fake labels",
+        "src/components/coding/CodingCockpitShell.tsx",
+      ],
+      [
+        "route said success true but transcript empty, that should be needs fix not worked",
+        "src/components/coding/CodingCockpitShell.tsx",
+      ],
+      [
+        "check all prompt banks have enough unique prompts for 10 25 50 100",
+        "src/lib/coding/reversible-trial-prompts.ts",
+      ],
+      [
+        "rename worked if it only means “patched then reverted” bc thats confusing",
+        "src/components/coding/CodingCockpitShell.tsx",
+      ],
+      [
+        "when command is blocked show command category and why blocked",
+        "src/components/coding/CodingCockpitShell.tsx",
+      ],
+      [
+        "add command buckets read only, test, build, install ask, network ask, forbidden",
+        "src/lib/coding/proxy-route-payload.ts",
+      ],
+    ]);
   });
 
   it("keeps hidden metadata on Coder 10 while targeting fixture files for most edit prompts", () => {

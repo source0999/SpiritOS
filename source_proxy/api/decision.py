@@ -379,6 +379,14 @@ def _product_trial_feature_already_satisfied_payload(
             return satisfied(
                 "Reversible trial prompt bank already rejects duplicate tier prompts.",
             )
+        if ("prompt banks" in lowered and "unique prompts" in lowered) and (
+            "validateReversibleTrialPromptBank" in current
+            and "duplicate normalized prompt text" in current
+            and "for (const count of bankCountTiers)" in current
+        ):
+            return satisfied(
+                "Reversible trial prompt bank already validates unique prompts for 10/25/50/100 tiers.",
+            )
         if ("count dropdown" in lowered or "25/50/100" in lowered) and (
             "selectReversibleTrialPrompts slices to this count" in current
             or "export function selectReversibleTrialPrompts(" in current
@@ -439,6 +447,24 @@ def _product_trial_feature_already_satisfied_payload(
     ):
         return satisfied(
             "Model/provider display already comes from Source Proxy self-status model routes.",
+        )
+    if (
+        ("success true" in lowered and "transcript empty" in lowered)
+        or ("needs fix" in lowered and "not worked" in lowered)
+    ) and (
+        "provider_call_made=true" in current
+        and "transcript_or_model_response_body_empty_or_no_diff" in current
+        and "NEEDS FIX: Live apply proof missing" in current
+    ):
+        return satisfied(
+            "No-diff live model responses already become NEEDS FIX instead of PASS.",
+        )
+    if ("rename worked" in lowered or "patched then reverted" in lowered) and (
+        '["Edits applied", String(reversibleSuiteState.pass)]' in current
+        and "edit_worked_count" not in current
+    ):
+        return satisfied(
+            "Suite summary already labels applied edits without using ambiguous worked wording.",
         )
     if (
         ("spinner" in lowered and "backend" in lowered)

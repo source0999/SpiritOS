@@ -1,6 +1,6 @@
 export type TrialBadgeProps = {
   label: string;
-  tone: "neutral" | "success" | "warning";
+  tone: "neutral" | "success";
 };
 
 export function TrialBadge({ label, tone }: TrialBadgeProps) {

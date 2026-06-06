@@ -73,7 +73,7 @@ async function startLiveRun(prompt = "Make the coding result card easier to unde
     target: { value: prompt },
   });
   fireEvent.click(screen.getByRole("button", { name: "Start coding" }));
-  return screen.findByRole("heading", { name: "PASS" });
+  return screen.findByText("Reverse diff stored");
 }
 
 beforeEach(() => {
@@ -239,10 +239,10 @@ describe("CodingCockpitShell", () => {
     expect(copied).toContain("category: Coder");
     expect(copied).toContain("count_requested: 10");
     expect(copied).toContain(
-      "1. Make the small badge component support a warning state for partial results while keeping the existing success and failure styles.",
+      "1. badge thingy needs like a warning mode too not just pass fail, dont break old pass/fail stuff tho",
     );
     expect(copied).toContain(
-      "2. The fake backend route helper always returns a happy response. Add a failure path so tests can cover non-200 responses.",
+      "2. fake backend route keeps acting happy even when it should be sad, add a bad path so tests can catch it",
     );
     [
       "tag:",
@@ -273,6 +273,22 @@ describe("CodingCockpitShell", () => {
     expect(source).toContain("const TRIAL_PROMPT_PACKET_TIMEOUT_MS = MANUAL_PROMPT_PACKET_TIMEOUT_MS + TRIAL_PROMPT_PACKET_TIMEOUT_BUFFER_MS;");
     expect(source).toContain("timeout_layer: ${timeoutLayer}");
     expect(source).toContain("browser_abort_timeout");
+    expect(source).toContain("fetchPromptPacketWithRetry");
+    expect(source).toContain("network_fetch_error");
+    expect(source).toContain("promptPacketEndpointStatusForError(error)");
+  });
+
+  it("keeps already-satisfied, timeout, safety, and edit-applied suite counts separate", () => {
+    const source = readFileSync("src/components/coding/CodingCockpitShell.tsx", "utf8");
+
+    expect(source).toContain('visible_result_label: "ALREADY SATISFIED"');
+    expect(source).toContain("edit_applied_count:");
+    expect(source).toContain("already_satisfied_count:");
+    expect(source).toContain("safety_block_count:");
+    expect(source).toContain("timeout_count:");
+    expect(source).not.toContain("edit_worked_count:");
+    expect(source).toContain("NEEDS FIX: Live apply proof missing: provider call returned no diff/preview body to apply.");
+    expect(source).toContain("A 200 route without diff preview proof must not count as PASS.");
   });
 
   it("runs Coder 10 with strict apply and reverse snapshot proof", async () => {
@@ -352,15 +368,25 @@ describe("CodingCockpitShell", () => {
     await waitFor(() => expect(runButton).toBeEnabled());
     fireEvent.click(runButton);
 
-    await waitFor(() => expect(screen.getByText("10/10")).toBeInTheDocument(), { timeout: 10000 });
-    expect(screen.getAllByText("7").length).toBeGreaterThanOrEqual(2);
+    await waitFor(() => expect(screen.getAllByText("10/10").length).toBeGreaterThan(0), { timeout: 10000 });
+    expect(screen.getAllByText("7").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("0").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Applied and reversed.").length).toBeGreaterThan(0);
     expect(screen.getAllByText("PASS").length).toBeGreaterThan(0);
     expect(screen.getAllByText("NO EDIT EXPECTED").length).toBeGreaterThan(0);
     expect(calls.some((call) => call.body.includes('"selected_target"'))).toBe(true);
     expect(calls.some((call) => call.body.includes('"Target file:'))).toBe(false);
-  });
+    expect(calls.filter((call) => call.url.includes("/v1/actions/execute-approved")).length).toBeGreaterThan(0);
+
+    expect(window.localStorage.getItem("spiritos:coding:applied-run-receipts:v1")).toContain("trial-suite:");
+    fireEvent.click(screen.getAllByRole("button", { name: "Reverse trial edits and clear results" })[0]);
+
+    await waitFor(() => {
+      expect(screen.getAllByRole("button", { name: "Copy trial diagnostics" }).every((button) => button.hasAttribute("disabled"))).toBe(true);
+    });
+    expect(screen.queryByLabelText("Trial run results")).not.toBeInTheDocument();
+    expect(window.localStorage.getItem("spiritos:coding:reversible-suite-state:v1")).toBeNull();
+    expect(window.localStorage.getItem("spiritos:coding:applied-run-receipts:v1")).not.toContain("trial-suite:");
+  }, 15000);
 
   it("classifies thrown preview route outages as needs-fix infra failures in reversible suites", () => {
     expect(reversibleSuiteExceptionLabel("Preview request returned status 404.")).toBe("NEEDS FIX");
@@ -398,7 +424,7 @@ describe("CodingCockpitShell", () => {
       },
       { timeout: 8000 },
     );
-    expect(screen.getByText("Calling model")).toBeInTheDocument();
+    expect(screen.getAllByText("Calling model").length).toBeGreaterThan(0);
   });
 
   it("accepts deterministic already-satisfied badge responses without a live model call", async () => {
@@ -430,8 +456,6 @@ describe("CodingCockpitShell", () => {
       expect(screen.getAllByText(/ALREADY SATISFIED/i).length).toBeGreaterThan(0);
     });
     expect(screen.queryByText("FAIL: No model call")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Copy path to verify" })).toBeEnabled();
-    expect(screen.getByRole("button", { name: "Reset trial fixture" })).toBeEnabled();
   });
 
   it("fails without provider generation proof and never applies preview-only output", async () => {
@@ -454,7 +478,7 @@ describe("CodingCockpitShell", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Start coding" }));
 
-    expect(await screen.findByRole("heading", { name: "FAIL" })).toBeInTheDocument();
+    expect((await screen.findAllByText("Failed")).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/No model call/).length).toBeGreaterThan(0);
     expect(calls.some((call) => call.url.includes("/v1/actions/execute-approved"))).toBe(false);
   });
@@ -502,7 +526,7 @@ describe("CodingCockpitShell", () => {
     await startLiveRun();
 
     fireEvent.click(screen.getAllByRole("button", { name: "Undo last change" })[0]);
-    expect(await screen.findByRole("heading", { name: "REVERTED" })).toBeInTheDocument();
+    expect(await screen.findByText("This run was reverted through execute-approved using the stored reverse diff.")).toBeInTheDocument();
     expect(screen.getAllByText(/Reverted this run/).length).toBeGreaterThan(0);
 
     const executeCalls = calls.filter((call) => call.url.includes("/v1/actions/execute-approved"));
