@@ -904,6 +904,129 @@ class CodingRegressionPackTests(unittest.TestCase):
         self.assertIn('failed: "Needs fix"', payload["proposed_diff"])
         llm_mock.assert_called_once()
 
+    def test_prompt_packet_live_trial_creates_hidden_allowed_agent_lab_target(self) -> None:
+        target = "src/app/agent-lab/page.tsx"
+        client = self._decision_client()
+
+        with mock.patch(
+            "source_proxy.tasks.long_running._call_coder_llm",
+            return_value=json.dumps(
+                {
+                    "action": "replace_file",
+                    "target": target,
+                    "content_lines": [
+                        "const sections = [\"basic apps\", \"tools\", \"diagnostics\", \"tests\"];",
+                        "",
+                        "export default function AgentLabPage() {",
+                        "  return (",
+                        '    <main className="min-h-dvh bg-slate-950 text-white">',
+                        '      <h1>Agent Lab</h1>',
+                        '      <p>/agent-lab</p>',
+                        '      <p>This is for local coder benchmark tests.</p>',
+                        "      <div>",
+                        "        {sections.map((section) => (",
+                        "          <section key={section}>",
+                        "            <h2>{section}</h2>",
+                        "          </section>",
+                        "        ))}",
+                        "      </div>",
+                        "    </main>",
+                        "  );",
+                        "}",
+                        "",
+                    ],
+                }
+            ),
+        ) as llm_mock:
+            response = client.post(
+                "/v1/decisions/prompt-packet",
+                json={
+                    "task": (
+                        "make a new isolated test area at `/agent-lab`. "
+                        "if it doesnt exist create the route and page files needed."
+                    ),
+                    "selected_target": target,
+                    "allowed_files": [target],
+                    "quick_find_hints": [target],
+                    "wants_implementation": True,
+                    "needs_codebase_context": True,
+                    "trial_mode": "live_apply",
+                    "expected_outcome": "edit_reversible",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        self.assertEqual(payload["target"], target)
+        self.assertEqual(payload["reason_code"], "")
+        self.assertTrue(payload["provider_call_made"])
+        self.assertIn("AgentLabPage", payload["proposed_diff"])
+        self.assertEqual(payload["coder_diagnostics"]["target_action"], "create file")
+        llm_mock.assert_called_once()
+
+    def test_prompt_packet_live_trial_reuses_hidden_allowed_existing_agent_lab_target(self) -> None:
+        target = "src/app/agent-lab/page.tsx"
+        _write(
+            self.root / target,
+            "\n".join(
+                [
+                    "export default function AgentLabPage() {",
+                    "  return <main><h1>Agent Lab</h1></main>;",
+                    "}",
+                    "",
+                ]
+            ),
+        )
+        client = self._decision_client()
+
+        with mock.patch(
+            "source_proxy.tasks.long_running._call_coder_llm",
+            return_value=json.dumps(
+                {
+                    "action": "replace_file",
+                    "target": target,
+                    "content_lines": [
+                        "const sections = [\"basic apps\", \"tools\", \"diagnostics\", \"tests\"];",
+                        "",
+                        "export default function AgentLabPage() {",
+                        "  return (",
+                        '    <main className="min-h-dvh bg-slate-950 text-white">',
+                        "      <h1>Agent Lab</h1>",
+                        "      <p>This is for local coder benchmark tests.</p>",
+                        "      {sections.map((section) => <section key={section}>{section}</section>)}",
+                        "    </main>",
+                        "  );",
+                        "}",
+                        "",
+                    ],
+                }
+            ),
+        ) as llm_mock:
+            response = client.post(
+                "/v1/decisions/prompt-packet",
+                json={
+                    "task": (
+                        "make a new isolated test area at `/agent-lab`. "
+                        "if it doesnt exist create the route and page files needed."
+                    ),
+                    "selected_target": target,
+                    "allowed_files": [target],
+                    "quick_find_hints": [target],
+                    "wants_implementation": True,
+                    "needs_codebase_context": True,
+                    "trial_mode": "live_apply",
+                    "expected_outcome": "edit_reversible",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        self.assertEqual(payload["target"], target)
+        self.assertEqual(payload["reason_code"], "")
+        self.assertTrue(payload["provider_call_made"])
+        self.assertIn("local coder benchmark tests", payload["proposed_diff"])
+        llm_mock.assert_called_once()
+
     def test_prompt_packet_current_designer_trial_uses_bounded_live_diff_path(self) -> None:
         target = "src/components/chat/ChatThreadListItem.tsx"
         _write(

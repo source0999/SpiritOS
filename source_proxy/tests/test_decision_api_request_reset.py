@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import unittest
+from types import SimpleNamespace
 
 from source_proxy.api.decision import (
     AVAILABLE_ROUTES,
     PromptPacketRequest,
     RouteDecisionRequest,
+    _architect_plan_has_usable_coder_packet,
     _coder_prompt_packet_status,
     _request_with_cleared_file_focus,
     _route_payload_requests_coder_agent_diff,
@@ -31,6 +33,28 @@ class DecisionApiRequestResetTests(unittest.TestCase):
         self.assertEqual(route["route_type"], "local_route")
         self.assertEqual(route["execution_path"], "coder_agent")
         self.assertFalse(route["manual_prompt_packet"])
+
+    def test_architect_packet_must_match_expected_prompt_packet_target(self) -> None:
+        plan = SimpleNamespace(
+            coder_packet=SimpleNamespace(
+                operation="create",
+                target_file=SimpleNamespace(path=".env.local.example"),
+                context_slices=[],
+            )
+        )
+
+        self.assertFalse(
+            _architect_plan_has_usable_coder_packet(
+                plan,
+                expected_target="src/app/agent-lab/page.tsx",
+            )
+        )
+        self.assertTrue(
+            _architect_plan_has_usable_coder_packet(
+                plan,
+                expected_target=".env.local.example",
+            )
+        )
 
     def test_local_route_payload_includes_coder_agent_bridge_route(self) -> None:
         payload = _with_bridge_route(

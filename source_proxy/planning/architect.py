@@ -88,14 +88,6 @@ _CLASS_FRAGMENT_RE = re.compile(
     r"\b(?:[a-z]+:)*[a-z][a-z0-9-]*(?:-\[[^\]\s]+\]|-[a-z0-9./]+)+\b",
     re.IGNORECASE,
 )
-_CODE_IDENTIFIER_RE = re.compile(
-    r"(?<![A-Za-z0-9_$./-])(?:"
-    r"[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)+"
-    r"|[A-Z][A-Za-z0-9_$]*[a-z0-9_$][A-Za-z0-9_$]*[A-Z][A-Za-z0-9_$]*"
-    r"|[a-z][A-Za-z0-9_$]*[A-Z][A-Za-z0-9_$]*"
-    r"|[A-Za-z_$][\w$]*_[A-Za-z0-9_$][\w$]*"
-    r")(?![A-Za-z0-9_$/-])"
-)
 _CLASS_UTILITY_PREFIXES = {
     "accent",
     "align",
@@ -180,18 +172,6 @@ _CLASS_UTILITY_PREFIXES = {
     "w",
     "z",
 }
-_FRAGMENT_META_WORDS = {"class", "classname", "classes", "fragment", "fragments", "include", "includes", "target"}
-_CODE_FRAGMENT_PATH_SUFFIXES = {
-    ".css",
-    ".js",
-    ".jsx",
-    ".json",
-    ".md",
-    ".mdx",
-    ".py",
-    ".ts",
-    ".tsx",
-}
 _ROUTE_RE = re.compile(r"(?<![A-Za-z0-9_./@<-])(/[A-Za-z0-9_()/.-]+)")
 _FILE_PATH_IN_REPOMIX_RE = re.compile(r'<file\s+path="([^"]+)"')
 _RISKY_COMMAND_RE = re.compile(
@@ -224,9 +204,12 @@ def plan_bounded_proposal_create_deterministically(
     if not create_ok:
         if blocked_reason in {"protected_path", "secret_path", "path_escape", "outside_workspace"}:
             return Block(blocked_reason)
-        return FallthroughToLLM(blocked_reason or "bounded_create_not_allowed")
+        if blocked_reason != "target_already_exists":
+            return FallthroughToLLM(blocked_reason or "bounded_create_not_allowed")
 
     target_path = normalize_repo_path_candidate(bounded.target_file)
+    target_abs = (root / target_path).resolve()
+    target_exists = target_abs.is_file()
     planning_task = bounded.task or effective_planning_task_text(task)
     context_mode = derive_context_mode(target_path)
     forbidden_paths = merge_proposal_forbidden_paths(
@@ -234,6 +217,9 @@ def plan_bounded_proposal_create_deterministically(
         context_defaults=forbidden_paths_for_context_mode(context_mode),
     )
     context_slices: list[ContextSlice] = []
+    if target_exists:
+        target_content = target_abs.read_text(encoding="utf-8", errors="replace")
+        context_slices.append(_context_slice(target_path, "target", target_content))
     reference_page = root / BOUNDED_CREATE_REFERENCE_PAGE
     if reference_page.is_file():
         reference_content = reference_page.read_text(encoding="utf-8", errors="replace")
@@ -252,14 +238,18 @@ def plan_bounded_proposal_create_deterministically(
         coder_packet=CoderPacket(
             target_file=TargetFile(
                 path=target_path,
-                exists=False,
-                sha256_before=None,
+                exists=target_exists,
+                sha256_before=_sha256_bytes(target_abs.read_bytes()) if target_exists else None,
             ),
-            operation="create",
+            operation="edit" if target_exists else "create",
             acceptance_criteria=[
                 AcceptanceCriterion(
                     id="create-target-only",
-                    description=f"Create only {target_path} as a Next.js app route page.",
+                    description=(
+                        f"Modify only {target_path} as a Next.js app route page."
+                        if target_exists
+                        else f"Create only {target_path} as a Next.js app route page."
+                    ),
                     kind="behavioral",
                 ),
             ],
@@ -269,13 +259,13 @@ def plan_bounded_proposal_create_deterministically(
                 preserve_imports=[],
                 preserve_exports=[],
                 max_added_lines=120,
-                max_removed_lines=0,
+                max_removed_lines=120 if target_exists else 0,
             ),
             context_slices=context_slices,
             forbidden_paths=forbidden_paths,
             style_directives=[
                 "bounded_proposal_create",
-                "deterministic_new_file_route",
+                "deterministic_existing_file_route" if target_exists else "deterministic_new_file_route",
                 *_style_directives(target_path),
             ],
         ),
@@ -1150,19 +1140,7 @@ def _class_fragments(task: str) -> list[str]:
         if not _class_utility_like(value):
             continue
         fragments.append(value)
-    for match in _CODE_IDENTIFIER_RE.finditer(searchable):
-        value = match.group(0).strip().strip("`'\".;:")
-        if value.lower() in _FRAGMENT_META_WORDS or value.lower().startswith("target"):
-            continue
-        if _path_like_code_fragment(value):
-            continue
-        fragments.append(value)
     return _dedupe(fragments)
-
-
-def _path_like_code_fragment(value: str) -> bool:
-    lowered = value.strip("`'\".;:").lower()
-    return any(lowered.endswith(suffix) for suffix in _CODE_FRAGMENT_PATH_SUFFIXES)
 
 
 def _route_requirements(task: str) -> list[str]:

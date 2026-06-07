@@ -150,6 +150,7 @@ class PromptPacketRequest(RouteDecisionRequest):
     trial_mode: str | None = None
     expected_outcome: str | None = None
     selected_target: str | None = None
+    allowed_files: list[str] = Field(default_factory=list)
     quick_find_hints: list[str] = Field(default_factory=list)
     trial_recover_already_satisfied: bool = False
 
@@ -1798,10 +1799,22 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
         _workspace_root(),
     )
     hard_target_reason = _first_target_hard_block_reason(route_reasons)
+    allowed_create_target = _trial_allowed_missing_create_target(
+        reset_request,
+        explicit_target,
+        route_reasons,
+    )
+    allowed_live_trial_target = _trial_allowed_selected_target(
+        reset_request,
+        explicit_target,
+    )
     target_gate_blocked = bool(
         hard_target_reason
         or "target_unresolved" in route_reasons
-        or _target_missing_blocks_prompt_packet(trial_task, route_reasons)
+        or (
+            _target_missing_blocks_prompt_packet(trial_task, route_reasons)
+            and not allowed_create_target
+        )
     )
     expected_live_trial_outcome = str(reset_request.expected_outcome or "") in {
         "clarify_expected",
@@ -1904,9 +1917,15 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
                 if recovered is not None:
                     coder = recovered
                 else:
-                    architect_plan = _load_or_prepare_architect_plan(
+                    architect_task = _trial_bounded_create_task(
                         trial_task,
+                        explicit_target,
+                        reset_request.allowed_files,
+                    ) if allowed_create_target or allowed_live_trial_target else trial_task
+                    architect_plan = _load_or_prepare_architect_plan(
+                        architect_task,
                         reset_request.active_task_id,
+                        expected_target=explicit_target,
                     )
                     coder = await _bounded_coder_diff_or_stub(
                         trial_task,
@@ -2220,9 +2239,14 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
     return payload
 
 
-def _load_or_prepare_architect_plan(task: str, task_id: str | None) -> Any | None:
+def _load_or_prepare_architect_plan(
+    task: str,
+    task_id: str | None,
+    *,
+    expected_target: str | None = None,
+) -> Any | None:
     plan = _load_active_architect_plan(task_id)
-    if _architect_plan_has_usable_coder_packet(plan):
+    if _architect_plan_has_usable_coder_packet(plan, expected_target=expected_target):
         return plan
 
     if task_id:
@@ -2231,7 +2255,7 @@ def _load_or_prepare_architect_plan(task: str, task_id: str | None) -> Any | Non
 
             advance_long_running_task(task_id)
             plan = _load_active_architect_plan(task_id)
-            if _architect_plan_has_usable_coder_packet(plan):
+            if _architect_plan_has_usable_coder_packet(plan, expected_target=expected_target):
                 return plan
         except Exception:
             plan = None
@@ -2264,10 +2288,17 @@ def _deterministic_architect_plan_for_prompt_packet(
         return None
 
 
-def _architect_plan_has_usable_coder_packet(architect_plan: Any | None) -> bool:
+def _architect_plan_has_usable_coder_packet(
+    architect_plan: Any | None,
+    *,
+    expected_target: str | None = None,
+) -> bool:
     packet = getattr(architect_plan, "coder_packet", None)
     target_file = getattr(packet, "target_file", None)
     target_path = str(getattr(target_file, "path", "") or "").strip()
+    normalized_expected = _normalize_trial_create_path(expected_target or "")
+    if normalized_expected and target_path != normalized_expected:
+        return False
     context_slices = getattr(packet, "context_slices", None)
     operation = str(getattr(packet, "operation", "") or "").strip()
     if operation == "create":
@@ -2286,6 +2317,93 @@ def _target_missing_blocks_prompt_packet(task: str, route_reasons: list[str]) ->
         workspace_root=_workspace_root(),
     )
     return not create_ok
+
+
+def _trial_allowed_missing_create_target(
+    request: PromptPacketRequest,
+    target: str,
+    route_reasons: list[str],
+) -> bool:
+    if request.trial_mode != "live_apply" or "target_missing" not in route_reasons:
+        return False
+    normalized_target = _normalize_trial_create_path(target)
+    if not normalized_target:
+        return False
+    root = _workspace_root()
+    resolved_target = resolve_target_from_task(
+        f"Target file: {normalized_target}",
+        root,
+    )
+    if unsafe_target_for_route(request.task, resolved_target, root) is not None:
+        return False
+    return _trial_path_allowed(normalized_target, request.allowed_files)
+
+
+def _trial_allowed_selected_target(
+    request: PromptPacketRequest,
+    target: str,
+) -> bool:
+    if request.trial_mode != "live_apply":
+        return False
+    normalized_target = _normalize_trial_create_path(target)
+    if not normalized_target:
+        return False
+    return _trial_path_allowed(normalized_target, request.allowed_files)
+
+
+def _trial_bounded_create_task(task: str, target: str, allowed_files: list[str]) -> str:
+    normalized_target = _normalize_trial_create_path(target)
+    allowed = [
+        normalized
+        for item in allowed_files
+        if (normalized := _normalize_trial_allowed_path(item))
+    ]
+    if not normalized_target or not allowed:
+        return task
+    payload = {
+        "task": task.strip(),
+        "mode": "proposal",
+        "target_file": normalized_target,
+        "allowed_files": allowed,
+        "forbidden_files": [".env", ".env.local", "credentials", "private keys"],
+        "expected_checks": ["git diff --check"],
+        "rollback_hint": f"Delete {normalized_target} if this reversible trial is rolled back.",
+    }
+    return f"{task.strip()}\n\nProposal task:\n```json\n{json.dumps(payload, sort_keys=True)}\n```"
+
+
+def _normalize_trial_create_path(path: str) -> str:
+    normalized = _normalize_trial_allowed_path(path)
+    if not normalized:
+        return ""
+    allowed_prefixes = (
+        "src/app/agent-lab/",
+        "src/components/agent-lab/",
+        "src/lib/agent-lab/",
+        "src/app/api/agent-lab/",
+        "tests/agent-lab/",
+    )
+    return normalized if normalized.startswith(allowed_prefixes) else ""
+
+
+def _normalize_trial_allowed_path(path: str) -> str:
+    from source_proxy.safety.paths import normalize_repo_path_candidate
+
+    return normalize_repo_path_candidate(str(path or ""))
+
+
+def _trial_path_allowed(target: str, allowed_files: list[str]) -> bool:
+    normalized_allowed = [
+        normalized
+        for item in allowed_files
+        if (normalized := _normalize_trial_allowed_path(item))
+    ]
+    for allowed in normalized_allowed:
+        if allowed == target:
+            return True
+        if allowed.endswith("/**") and target.startswith(allowed[:-3] + "/"):
+            return True
+    return False
 
 
 def _coder_prompt_packet_status(

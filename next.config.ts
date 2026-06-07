@@ -21,11 +21,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Cache-Control",
-            value: "no-store, max-age=0, must-revalidate",
-          },
-          {
-            key: "Clear-Site-Data",
-            value: '"cache"',
+            value: "no-cache, must-revalidate",
           },
         ],
       },

@@ -101,6 +101,7 @@ source_proxy/**/*.py[cod]
 
 # Local root runtime artifacts
 .spirit-backups/
+data/coding-runs.json
 data/*.jsonl
 data/*.sqlite3
 

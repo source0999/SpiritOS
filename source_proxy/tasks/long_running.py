@@ -3059,15 +3059,26 @@ def _light_repair_json_text(raw_response: str) -> str:
     return re.sub(r",\s*([}\]])", r"\1", repaired)
 
 
+def _repair_missing_commas_between_json_strings(raw_response: str) -> str:
+    repaired = _light_repair_json_text(raw_response)
+    return re.sub(
+        r'("(?:\\.|[^"\\])*")(\s*\n\s*)(")',
+        r"\1,\2\3",
+        repaired,
+    )
+
+
 def _candidate_json_texts(raw_response: str) -> list[tuple[str, str]]:
     raw = (raw_response or "").strip()
     fenced = _strip_json_fence(raw)
     extracted = _json_object_slice(fenced)
+    repaired = _light_repair_json_text(extracted)
     candidates = [
         ("raw", raw),
         ("fenced", fenced),
         ("extracted", extracted),
-        ("repaired", _light_repair_json_text(extracted)),
+        ("repaired", repaired),
+        ("repaired_missing_string_commas", _repair_missing_commas_between_json_strings(extracted)),
     ]
     seen: set[str] = set()
     unique: list[tuple[str, str]] = []
@@ -3755,6 +3766,45 @@ def propose_coder_agent_diff_payload_from_plan(
             content=content,
             task_text=effective_planning_task_text(task),
         )
+        if not content_validation["ok"] and deterministic is None and not reviewer_feedback:
+            reason = str(content_validation.get("summary") or "Replacement content validation failed.")
+            notes.append(f"Retrying Coder after replacement content validation failed: {reason}")
+            retry_response = propose_coder_agent_implementation_diff(
+                packet,
+                root,
+                source_task=task,
+                llm_call=llm_call,
+                model_alias=model_alias,
+                reviewer_feedback=[
+                    (
+                        "The previous replacement content failed deterministic validation: "
+                        f"{reason}. Return a complete valid TS/TSX file as JSON content_lines."
+                    )
+                ],
+            )
+            _merge_coder_response_diagnostics(diagnostics, retry_response)
+            if retry_response.status != "blocked" and retry_response.replacement_content is not None:
+                response = retry_response
+                replacement_target = response.target_path
+                content = _normalize_replacement_content(response.replacement_content)
+                content_validation = validate_replacement_content(
+                    workspace_root=root,
+                    target_path=replacement_target,
+                    content=content,
+                    task_text=effective_planning_task_text(task),
+                )
+            if not content_validation["ok"]:
+                fallback = _deterministic_bounded_create_response(packet, task, root)
+                if fallback is not None:
+                    notes.append("Using deterministic bounded scaffold after validation feedback retry failed.")
+                    response = fallback
+                    replacement_target = response.target_path
+                    content = _normalize_replacement_content(response.replacement_content)
+                    content_validation = {
+                        "ok": True,
+                        "missing": [],
+                        "summary": "Bounded proposal scaffold passed structural validation.",
+                    }
     diagnostics["content_validation"] = content_validation
     if not content_validation["ok"]:
         reason = str(content_validation.get("summary") or "Replacement content validation failed.")
@@ -4022,8 +4072,6 @@ def _deterministic_bounded_create_response(
     )
 
     if not packet_is_bounded_proposal_create(packet):
-        return None
-    if packet.target_file.exists:
         return None
     content = bounded_create_replacement_content(packet.target_file.path, task)
     if not content:

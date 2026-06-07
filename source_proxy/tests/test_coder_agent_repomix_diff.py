@@ -903,6 +903,71 @@ class CoderAgentRepomixDiffTests(unittest.TestCase):
             self.assertFalse(out.get("coder_blocked", False))
             self.assertIn("Repair", out["proposed_diff"])
 
+    def test_missing_comma_between_content_lines_is_repaired(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            rel = "src/app/demo/page.tsx"
+            (root / rel).parent.mkdir(parents=True)
+            (root / rel).write_text("export default function Page() { return null; }\n", encoding="utf-8")
+            _write_repomix(root, rel)
+
+            out = propose_coder_agent_implementation_diff(
+                task=f"Target file: {rel}\nUpdate the page.",
+                workspace_root=root,
+                llm_call=lambda _prompt, _model: (
+                    "```json\n"
+                    "{\n"
+                    '  "action": "replace_file",\n'
+                    f'  "target": "{rel}",\n'
+                    '  "content_lines": [\n'
+                    '    "export default function Page() {",\n'
+                    '    "  return <main className=\\"p-4\\">Calculator</main>;"\n'
+                    '    "}"\n'
+                    "  ]\n"
+                    "}\n"
+                    "```"
+                ),
+            )
+
+            self.assertFalse(out.get("coder_blocked", False), out)
+            self.assertIn("Calculator", out["proposed_diff"])
+
+    def test_invalid_replacement_content_gets_one_validation_feedback_retry(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            rel = "src/app/demo/page.tsx"
+            (root / rel).parent.mkdir(parents=True)
+            (root / rel).write_text("export default function Page() { return null; }\n", encoding="utf-8")
+            _write_repomix(root, rel)
+            responses = iter(
+                [
+                    _json_lines_response(
+                        rel,
+                        "export default function Page() {\n  return <main><span>Broken</main>;\n}\n",
+                    ),
+                    _json_lines_response(
+                        rel,
+                        "export default function Page() {\n  return <main><span>Fixed</span></main>;\n}\n",
+                    ),
+                ]
+            )
+            prompts: list[str] = []
+
+            def llm_call(prompt: str, _model: str) -> str:
+                prompts.append(prompt)
+                return next(responses)
+
+            out = propose_coder_agent_implementation_diff(
+                task=f"Target file: {rel}\nUpdate the page.",
+                workspace_root=root,
+                llm_call=llm_call,
+            )
+
+            self.assertFalse(out.get("coder_blocked", False), out)
+            self.assertIn("Fixed", out["proposed_diff"])
+            self.assertEqual(len(prompts), 2)
+            self.assertIn("failed deterministic validation", prompts[1])
+
     def test_prose_response_returns_coder_response_not_json(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

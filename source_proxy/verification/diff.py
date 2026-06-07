@@ -721,9 +721,26 @@ def _is_path_like_text_requirement(value: str) -> bool:
     return "/" in value and value.endswith((".tsx", ".ts", ".js", ".jsx", ".md"))
 
 
+def _is_route_like_text_requirement(value: str) -> bool:
+    if not value.startswith("/"):
+        return False
+    if any(char.isspace() for char in value):
+        return False
+    if "." in PurePosixPath(value).name:
+        return False
+    return bool(re.match(r"^/[A-Za-z0-9_()/.-]+$", value))
+
+
 def _should_skip_quoted_text_requirement(task_text: str, match: re.Match[str]) -> bool:
     value = match.group("value").strip()
     prefix = task_text[max(0, match.start() - 24) : match.start()]
+    display_prefix = task_text[max(0, match.start() - 64) : match.start()]
+    if _is_route_like_text_requirement(value) and not re.search(
+        r"\b(?:say|display|show|render|include|text|label|copy|heading|title|exact)\b",
+        display_prefix,
+        flags=re.IGNORECASE,
+    ):
+        return True
     return bool(re.search(r"(?:className|class)\s*=\s*$", prefix)) or (
         _is_path_like_text_requirement(value)
     )
@@ -870,13 +887,6 @@ def _extract_class_fragments(task_text: str) -> list[str]:
                 continue
             if _class_utility_like(cleaned) or _code_identifier_like(cleaned):
                 found.append(cleaned)
-    for match in _CODE_IDENTIFIER_RE.finditer(searchable):
-        value = match.group(0)
-        if value.lower() in _FRAGMENT_META_WORDS or value.lower().startswith("target"):
-            continue
-        if _path_like_code_fragment(value):
-            continue
-        found.append(value)
     return list(dict.fromkeys(found))
 
 

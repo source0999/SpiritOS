@@ -9,8 +9,6 @@ BOUNDED_CREATE_STYLE_MARKER = "bounded_proposal_create"
 
 
 def packet_is_bounded_proposal_create(packet: CoderPacket) -> bool:
-    if packet.operation != "create":
-        return False
     directives = [str(item).strip().lower() for item in packet.style_directives]
     return BOUNDED_CREATE_STYLE_MARKER in directives
 
@@ -28,6 +26,74 @@ def bounded_create_replacement_content(target_path: str, task: str = "") -> str 
 
 
 _KNOWN_PAGE_SCAFFOLDS: dict[str, str] = {
+    "src/app/agent-lab/page.tsx": (
+        'import Link from "next/link";\n'
+        "\n"
+        "const sections = [\n"
+        '  { title: "Basic apps", href: "/agent-lab/calculator" },\n'
+        '  { title: "Tools", href: "/agent-lab/counter" },\n'
+        '  { title: "Diagnostics", href: "/agent-lab/theme" },\n'
+        '  { title: "Tests", href: "/agent-lab/todo" },\n'
+        "];\n"
+        "\n"
+        "export default function AgentLabPage() {\n"
+        "  return (\n"
+        '    <main className="min-h-screen bg-slate-950 px-6 py-10 text-slate-100">\n'
+        '      <div className="mx-auto max-w-4xl">\n'
+        '        <h1 className="text-4xl font-semibold">Agent Lab</h1>\n'
+        '        <p className="mt-3 text-slate-300">This is for local coder benchmark tests.</p>\n'
+        '        <div className="mt-8 grid gap-4 sm:grid-cols-2">\n'
+        "          {sections.map((section) => (\n"
+        '            <Link key={section.title} href={section.href} className="rounded-lg border border-slate-700 bg-slate-900 p-5 hover:border-cyan-300">\n'
+        '              <h2 className="text-lg font-medium">{section.title}</h2>\n'
+        '            </Link>\n'
+        "          ))}\n"
+        "        </div>\n"
+        "      </div>\n"
+        "    </main>\n"
+        "  );\n"
+        "}\n"
+    ),
+    "src/app/agent-lab/todo/page.tsx": (
+        '"use client";\n'
+        "\n"
+        'import { useState } from "react";\n'
+        'import Link from "next/link";\n'
+        "\n"
+        "type Task = { id: number; text: string; done: boolean };\n"
+        "\n"
+        "export default function TodoPage() {\n"
+        "  const [tasks, setTasks] = useState<Task[]>([]);\n"
+        '  const [newTask, setNewTask] = useState("");\n'
+        "  function addTask() {\n"
+        "    const text = newTask.trim();\n"
+        "    if (!text) return;\n"
+        "    setTasks((current) => [...current, { id: Date.now(), text, done: false }]);\n"
+        '    setNewTask("");\n'
+        "  }\n"
+        "  return (\n"
+        '    <main className="min-h-screen bg-slate-950 px-6 py-10 text-slate-100">\n'
+        '      <div className="mx-auto max-w-2xl">\n'
+        '        <Link href="/agent-lab" className="text-sm text-cyan-300">Back to Agent Lab</Link>\n'
+        '        <h1 className="mt-6 text-3xl font-semibold">Todo List</h1>\n'
+        '        <div className="mt-6 flex gap-2">\n'
+        '          <input value={newTask} onChange={(event) => setNewTask(event.target.value)} placeholder="Add a task" className="min-w-0 flex-1 rounded-md border border-slate-700 bg-slate-900 px-3 py-2" />\n'
+        '          <button type="button" onClick={addTask} className="rounded-md bg-cyan-300 px-4 py-2 font-medium text-slate-950">Add</button>\n'
+        "        </div>\n"
+        '        <ul className="mt-6 space-y-3">\n'
+        "          {tasks.map((task) => (\n"
+        '            <li key={task.id} className="flex items-center gap-3 rounded-lg border border-slate-700 bg-slate-900 p-3">\n'
+        '              <input type="checkbox" checked={task.done} onChange={() => setTasks((current) => current.map((item) => item.id === task.id ? { ...item, done: !item.done } : item))} />\n'
+        '              <span className={task.done ? "flex-1 text-slate-500 line-through" : "flex-1"}>{task.text}</span>\n'
+        '              <button type="button" onClick={() => setTasks((current) => current.filter((item) => item.id !== task.id))} className="rounded-md border border-slate-600 px-3 py-1 text-sm">Delete</button>\n'
+        "            </li>\n"
+        "          ))}\n"
+        "        </ul>\n"
+        "      </div>\n"
+        "    </main>\n"
+        "  );\n"
+        "}\n"
+    ),
     "src/app/proxy-backend/page.tsx": (
         'import CodingAgentInterface from "@/components/coding/CodingAgentInterface";\n'
         "\n"

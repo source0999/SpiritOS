@@ -645,6 +645,43 @@ class DiffVerificationPreviewTests(unittest.TestCase):
         self.assertIn("missing exact text: gap-1.5", result["missing"])
         self.assertNotIn("missing exact text: gap-2", result["missing"])
 
+    def test_replacement_content_does_not_require_quoted_route_references(self) -> None:
+        import tempfile
+        from pathlib import Path
+
+        task = (
+            "make a todo page at `/agent-lab/todo` and link it from `/agent-lab`. "
+            "i should be able to add a task, check it off, and delete it."
+        )
+        content = "\n".join(
+            [
+                '"use client";',
+                "",
+                "export default function TodoPage() {",
+                "  return (",
+                "    <main>",
+                "      <h1>Todo</h1>",
+                "      <input aria-label=\"Task\" />",
+                "      <button>Add task</button>",
+                "      <button>Delete</button>",
+                "    </main>",
+                "  );",
+                "}",
+                "",
+            ]
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            result = validate_replacement_content(
+                workspace_root=Path(tmp),
+                target_path="src/app/agent-lab/todo/page.tsx",
+                content=content,
+                task_text=task,
+            )
+
+        self.assertTrue(result["ok"], result)
+        self.assertNotIn("missing exact text: /agent-lab/todo", result["missing"])
+        self.assertNotIn("missing exact text: /agent-lab", result["missing"])
+
     def test_replacement_content_add_keeps_normal_final_text_requirement(self) -> None:
         import tempfile
         from pathlib import Path

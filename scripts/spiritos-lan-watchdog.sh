@@ -6,6 +6,7 @@ LOG="${SPIRITOS_LAN_WATCHDOG_LOG:-$HOME/spiritos-dev-lan-watchdog.log}"
 DEV_LOG="${SPIRITOS_LAN_DEV_LOG:-$HOME/spiritos-dev-lan.log}"
 RESTART_DELAY="${SPIRITOS_LAN_RESTART_DELAY:-5}"
 HEALTH_URL="${SPIRITOS_LAN_HEALTH_URL:-https://127.0.0.1:3000/coding}"
+FRONTEND_SCRIPT="${SPIRITOS_LAN_FRONTEND_SCRIPT:-dev:https:lan}"
 HEALTH_INTERVAL="${SPIRITOS_LAN_HEALTH_INTERVAL:-15}"
 HEALTH_STARTUP_GRACE="${SPIRITOS_LAN_HEALTH_STARTUP_GRACE:-75}"
 HEALTH_FAILURE_LIMIT="${SPIRITOS_LAN_HEALTH_FAILURE_LIMIT:-3}"
@@ -88,8 +89,8 @@ snapshot
 while true; do
   stop_frontend_processes ""
   clean_next_dev_cache
-  log "starting frontend: npm run dev:https:lan"
-  npm run dev:https:lan >> "$DEV_LOG" 2>&1 &
+  log "starting frontend: npm run $FRONTEND_SCRIPT"
+  npm run "$FRONTEND_SCRIPT" >> "$DEV_LOG" 2>&1 &
   app_pid=$!
   failures=0
   started_at=$(date +%s)

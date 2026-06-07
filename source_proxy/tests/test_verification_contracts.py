@@ -109,6 +109,28 @@ class VerificationContractTests(unittest.TestCase):
 
         self.assertTrue(result["ok"], result)
 
+    def test_validate_replacement_content_does_not_treat_natural_language_as_class_fragments(self) -> None:
+        task = (
+            "make a new isolated test area at `/agent-lab`. if it doesnt exist create the route "
+            "and page files needed. the page should say Agent Lab, explain this is for local coder "
+            "benchmark tests, and have empty sections for basic apps, tools, diagnostics, and tests. "
+            "dont touch real SpiritOS pages. verify `/agent-lab` loads."
+        )
+        content = (
+            "export default function Page() {\n"
+            "  return <main><h1>Agent Lab</h1><p>local coder benchmark tests</p><p>/agent-lab</p></main>;\n"
+            "}\n"
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            result = validate_replacement_content(
+                workspace_root=Path(tmp),
+                target_path="src/app/agent-lab/page.tsx",
+                content=content,
+                task_text=task,
+            )
+
+        self.assertTrue(result["ok"], result)
+
 
 if __name__ == "__main__":
     unittest.main()
