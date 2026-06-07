@@ -40,9 +40,10 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: unknown;
+  let body: unknown = {};
   try {
-    body = await request.json();
+    const bodyText = await request.text();
+    body = bodyText.trim() ? JSON.parse(bodyText) : {};
   } catch {
     return Response.json({ error: "Invalid JSON body" }, { status: 400 });
   }

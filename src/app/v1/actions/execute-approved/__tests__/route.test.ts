@@ -1,14 +1,21 @@
 /// <reference types="vitest/globals" />
 
 import { sourceProxyFetch } from "@/lib/source-proxy-origin";
+import { patchCodingRun, upsertCodingRunRow } from "@/lib/coding/durable-run-store";
 
 import { POST } from "../route";
 
 vi.mock("@/lib/source-proxy-origin", () => ({
   sourceProxyFetch: vi.fn(),
 }));
+vi.mock("@/lib/coding/durable-run-store", () => ({
+  patchCodingRun: vi.fn(),
+  upsertCodingRunRow: vi.fn(),
+}));
 
 const mockedSourceProxyFetch = vi.mocked(sourceProxyFetch);
+const mockedPatchCodingRun = vi.mocked(patchCodingRun);
+const mockedUpsertCodingRunRow = vi.mocked(upsertCodingRunRow);
 
 function jsonRequest(body: unknown): Request {
   return new Request("http://localhost/v1/actions/execute-approved", {
@@ -21,6 +28,8 @@ function jsonRequest(body: unknown): Request {
 describe("execute-approved route", () => {
   beforeEach(() => {
     mockedSourceProxyFetch.mockReset();
+    mockedPatchCodingRun.mockReset();
+    mockedUpsertCodingRunRow.mockReset();
     vi.stubEnv("SPIRIT_CODING_USE_PROXY", "true");
   });
 
@@ -93,6 +102,172 @@ describe("execute-approved route", () => {
     });
   });
 
+  it("records suite apply proof server-side before browser post-apply parsing can reload", async () => {
+    mockedSourceProxyFetch.mockResolvedValueOnce(
+      {
+        headers: new Headers({ "content-type": "application/json" }),
+        status: 200,
+        statusText: "OK",
+        text: async () =>
+          JSON.stringify({
+            task: {
+              ast_snapshot: {
+                approved_execution_evidence: {
+                  audit: {
+                    changed_files: ["src/app/agent-lab/page.tsx"],
+                  },
+                },
+              },
+            },
+            tool: "long_running_task_tracker",
+          }),
+      } as unknown as Awaited<ReturnType<typeof sourceProxyFetch>>,
+    );
+
+    const response = await POST(
+      jsonRequest({
+        action: "Live trial coder-001",
+        allowed_files: ["src/app/agent-lab/page.tsx"],
+        approved: true,
+        approved_diff:
+          "--- /dev/null\n+++ b/src/app/agent-lab/page.tsx\n@@ -0,0 +1 @@\n+export default function AgentLabPage() { return null; }\n",
+        target: "src/app/agent-lab/page.tsx",
+        task_id: "task-apply-proof",
+        trial_prompt_id: "coder-001",
+        trial_prompt_text: "make a new isolated test area",
+        trial_suite_id: "suite-apply-proof",
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(mockedUpsertCodingRunRow).toHaveBeenCalledWith(
+      "suite-apply-proof",
+      "coder-001",
+      expect.objectContaining({
+        applied_changed_files: ["src/app/agent-lab/page.tsx"],
+        disk_changed_files: ["src/app/agent-lab/page.tsx"],
+        endpoint_statuses: expect.arrayContaining([
+          "/v1/actions/execute-approved:server_apply_proof_recorded",
+        ]),
+        result_label: "PASS",
+        status: "completed",
+        step_instrumentation: expect.objectContaining({
+          last_progress_reason_code: "server_apply_proof_recorded",
+          result_finalized_at: expect.any(String),
+        }),
+      }),
+    );
+    expect(mockedPatchCodingRun).toHaveBeenCalledWith(
+      "suite-apply-proof",
+      expect.objectContaining({
+        applied_changed_files: ["src/app/agent-lab/page.tsx"],
+        disk_changed_files: ["src/app/agent-lab/page.tsx"],
+        final_summary: "Apply proof recorded by execute-approved route; browser runner can resume.",
+        status: "running",
+      }),
+    );
+  });
+
+  it("marks the suite completed when server proof records the final clean prompt", async () => {
+    mockedSourceProxyFetch.mockResolvedValueOnce(
+      {
+        headers: new Headers({ "content-type": "application/json" }),
+        status: 200,
+        statusText: "OK",
+        text: async () =>
+          JSON.stringify({
+            task: {
+              ast_snapshot: {
+                approved_execution_evidence: {
+                  audit: {
+                    changed_files: ["src/app/agent-lab/proxy-health/page.tsx"],
+                  },
+                },
+              },
+            },
+          }),
+      } as unknown as Awaited<ReturnType<typeof sourceProxyFetch>>,
+    );
+    mockedUpsertCodingRunRow.mockResolvedValueOnce({
+      completed_count: 10,
+      requested_count: 10,
+      rows: Array.from({ length: 10 }, (_, index) => ({
+        applied_changed_files: [`src/app/agent-lab/${index}.tsx`],
+        disk_changed_files: [`src/app/agent-lab/${index}.tsx`],
+        prompt_id: `coder-${String(index + 1).padStart(3, "0")}`,
+        reason_code: "",
+        result_label: "PASS",
+        status: "completed",
+      })),
+    } as Awaited<ReturnType<typeof upsertCodingRunRow>>);
+
+    const response = await POST(
+      jsonRequest({
+        action: "Live trial coder-010",
+        allowed_files: ["src/app/agent-lab/proxy-health/page.tsx"],
+        approved: true,
+        approved_diff:
+          "--- /dev/null\n+++ b/src/app/agent-lab/proxy-health/page.tsx\n@@ -0,0 +1 @@\n+export default function ProxyHealthPage() { return null; }\n",
+        target: "src/app/agent-lab/proxy-health/page.tsx",
+        task_id: "task-final-proof",
+        trial_prompt_id: "coder-010",
+        trial_prompt_text: "make a fake proxy health page",
+        trial_suite_id: "suite-final-proof",
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(mockedPatchCodingRun).toHaveBeenCalledWith(
+      "suite-final-proof",
+      expect.objectContaining({
+        final_summary: "Suite completed by execute-approved server proof.",
+        status: "completed",
+      }),
+    );
+  });
+
+  it("forwards reverse diffs that delete newly-created files", async () => {
+    mockedSourceProxyFetch.mockResolvedValueOnce(
+      {
+        headers: new Headers({ "content-type": "application/json" }),
+        status: 200,
+        statusText: "OK",
+        text: async () => JSON.stringify({ ok: true }),
+      } as unknown as Awaited<ReturnType<typeof sourceProxyFetch>>,
+    );
+
+    const deletionDiff = [
+      "diff --git a/src/app/agent-lab/revert-smoke/page.tsx b/src/app/agent-lab/revert-smoke/page.tsx",
+      "deleted file mode 100644",
+      "--- b/src/app/agent-lab/revert-smoke/page.tsx",
+      "+++ /dev/null",
+      "@@ -1 +0,0 @@",
+      "-export default function RevertSmoke() { return null; }",
+      "",
+    ].join("\n");
+
+    const response = await POST(
+      jsonRequest({
+        action: "Revert live trial coder-001",
+        allowed_files: ["src/app/agent-lab/revert-smoke/page.tsx"],
+        approved: true,
+        approved_diff: deletionDiff,
+        target: "src/app/agent-lab/revert-smoke/page.tsx",
+        task_id: "task-revert-123",
+      }),
+    );
+
+    await expect(response.json()).resolves.toEqual({ ok: true });
+    expect(response.status).toBe(200);
+    const [, init] = mockedSourceProxyFetch.mock.calls[0];
+    expect(JSON.parse(String(init?.body))).toMatchObject({
+      action: "Revert live trial coder-001",
+      allowed_files: ["src/app/agent-lab/revert-smoke/page.tsx"],
+      changed_files: ["src/app/agent-lab/revert-smoke/page.tsx"],
+      target: "src/app/agent-lab/revert-smoke/page.tsx",
+    });
+  });
+
   it("rejects approved diffs outside allowed_files before forwarding", async () => {
     const response = await POST(
       jsonRequest({
@@ -112,6 +287,40 @@ describe("execute-approved route", () => {
       unexpected_files: ["src/demo.ts"],
     });
     expect(response.status).toBe(409);
+    expect(mockedSourceProxyFetch).not.toHaveBeenCalled();
+  });
+
+  it("rejects new interactive agent-lab app-router pages without use client before forwarding", async () => {
+    const response = await POST(
+      jsonRequest({
+        action: "Live trial coder-002",
+        allowed_files: ["src/app/agent-lab/calculator/page.tsx"],
+        approved: true,
+        approved_diff: [
+          "diff --git a/src/app/agent-lab/calculator/page.tsx b/src/app/agent-lab/calculator/page.tsx",
+          "new file mode 100644",
+          "--- /dev/null",
+          "+++ b/src/app/agent-lab/calculator/page.tsx",
+          "@@ -0,0 +1,6 @@",
+          "+import React, { useState } from 'react';",
+          "+",
+          "+export default function CalculatorPage() {",
+          "+  const [num1, setNum1] = useState('');",
+          "+  return <input value={num1} onChange={(event) => setNum1(event.target.value)} />;",
+          "+}",
+          "",
+        ].join("\n"),
+        target: "src/app/agent-lab/calculator/page.tsx",
+        task_id: "task-client-directive",
+      }),
+    );
+
+    await expect(response.json()).resolves.toMatchObject({
+      error:
+        'execute-approved rejected an interactive app-router page without "use client" as the first line.',
+      missing_use_client_files: ["src/app/agent-lab/calculator/page.tsx"],
+    });
+    expect(response.status).toBe(422);
     expect(mockedSourceProxyFetch).not.toHaveBeenCalled();
   });
 

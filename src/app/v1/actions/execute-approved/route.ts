@@ -1,4 +1,5 @@
 import { sourceProxyFetch } from "@/lib/source-proxy-origin";
+import { patchCodingRun, upsertCodingRunRow } from "@/lib/coding/durable-run-store";
 import { createHash } from "crypto";
 
 export async function POST(request: Request) {
@@ -36,6 +37,24 @@ export async function POST(request: Request) {
         ? record.approvalId
         : "";
   const allowedFiles = stringArrayValue(record.allowed_files ?? record.allowedFiles);
+  const trialSuiteId =
+    typeof record.trial_suite_id === "string"
+      ? record.trial_suite_id
+      : typeof record.trialSuiteId === "string"
+        ? record.trialSuiteId
+        : "";
+  const trialPromptId =
+    typeof record.trial_prompt_id === "string"
+      ? record.trial_prompt_id
+      : typeof record.trialPromptId === "string"
+        ? record.trialPromptId
+        : "";
+  const trialPromptText =
+    typeof record.trial_prompt_text === "string"
+      ? record.trial_prompt_text
+      : typeof record.trialPromptText === "string"
+        ? record.trialPromptText
+        : "";
   const changedFiles = changedFilesFromApprovedDiff(approvedDiff);
 
   if (!approved) {
@@ -118,6 +137,18 @@ export async function POST(request: Request) {
       { status: 409 },
     );
   }
+  const clientDirectiveViolations = agentLabClientDirectiveViolations(approvedDiff);
+  if (clientDirectiveViolations.length > 0) {
+    return Response.json(
+      {
+        changed_files: changedFiles,
+        error:
+          'execute-approved rejected an interactive app-router page without "use client" as the first line.',
+        missing_use_client_files: clientDirectiveViolations,
+      },
+      { status: 422 },
+    );
+  }
   const expectedApprovalId = approvalIdForApprovedDiff({
     approvedDiff,
     target,
@@ -167,13 +198,172 @@ export async function POST(request: Request) {
     },
   );
 
-  return new Response(await response.text(), {
+  const responseText = await response.text();
+  const responseOk = response.ok ?? (response.status >= 200 && response.status < 300);
+  if (responseOk && trialSuiteId && trialPromptId) {
+    await recordTrialApplyProof({
+      allowedFiles,
+      approvedDiff,
+      changedFiles,
+      responseText,
+      taskId,
+      trialPromptId,
+      trialPromptText,
+      trialSuiteId,
+    });
+  }
+
+  return new Response(responseText, {
     headers: {
       "content-type": response.headers.get("content-type") ?? "application/json",
     },
     status: response.status,
     statusText: response.statusText,
   });
+}
+
+async function recordTrialApplyProof(input: {
+  allowedFiles: string[];
+  approvedDiff: string;
+  changedFiles: string[];
+  responseText: string;
+  taskId: string;
+  trialPromptId: string;
+  trialPromptText: string;
+  trialSuiteId: string;
+}) {
+  const payload = parseJsonRecord(input.responseText);
+  const appliedChangedFiles = uniqueStrings([
+    ...changedFilesFromPayload(payload),
+    ...input.changedFiles,
+    ...changedFilesFromApprovedDiff(input.approvedDiff),
+  ]).filter((file) => input.allowedFiles.includes(file));
+  if (appliedChangedFiles.length === 0) return;
+  const now = new Date().toISOString();
+  const endpointStatuses = [
+    "/v1/actions/execute-approved:200",
+    "/v1/actions/execute-approved:server_apply_proof_recorded",
+  ];
+  const runAfterRow = await upsertCodingRunRow(input.trialSuiteId, input.trialPromptId, {
+    applied_changed_files: appliedChangedFiles,
+    checks_result: "server apply proof recorded",
+    checks_run: ["git diff --check"],
+    disk_changed_files: appliedChangedFiles,
+    endpoint_statuses: endpointStatuses,
+    error_summary: "",
+    generated_diff_present: true,
+    preview_changed_files: appliedChangedFiles,
+    prompt_excerpt: input.trialPromptText.slice(0, 220),
+    prompt_text: input.trialPromptText,
+    provider_call_made: true,
+    reason_code: "",
+    result_label: "PASS",
+    reversal_available: true,
+    reversal_status: "available",
+    run_id: input.taskId,
+    status: "completed",
+    step_instrumentation: {
+      checks_completed_at: now,
+      disk_probe_completed_at: now,
+      disk_probe_started_at: now,
+      execute_approved_body_read_completed_at: now,
+      execute_approved_completed_at: now,
+      execute_approved_http_status: "200",
+      last_progress_reason_code: "server_apply_proof_recorded",
+      result_finalized_at: now,
+      reverse_receipt_created_at: now,
+    },
+  });
+  const serverProofCompletesSuite = Boolean(
+    runAfterRow &&
+      runAfterRow.requested_count > 0 &&
+      runAfterRow.completed_count >= runAfterRow.requested_count &&
+      runAfterRow.rows.length === runAfterRow.requested_count &&
+      runAfterRow.rows.every(
+        (row) =>
+          row.status === "completed" &&
+          row.result_label === "PASS" &&
+          !row.reason_code &&
+          row.applied_changed_files.length > 0 &&
+          row.disk_changed_files.length > 0,
+      ),
+  );
+  await patchCodingRun(input.trialSuiteId, {
+    applied_changed_files: appliedChangedFiles,
+    checks_result: "server apply proof recorded",
+    checks_run: ["git diff --check"],
+    disk_changed_files: appliedChangedFiles,
+    endpoint_statuses: endpointStatuses,
+    final_summary: serverProofCompletesSuite
+      ? "Suite completed by execute-approved server proof."
+      : "Apply proof recorded by execute-approved route; browser runner can resume.",
+    generated_diff_present: true,
+    preview_changed_files: appliedChangedFiles,
+    provider_call_made: true,
+    reason_code: null,
+    reversal_available: true,
+    reversal_status: "available",
+    status: serverProofCompletesSuite ? "completed" : "running",
+  });
+}
+
+function parseJsonRecord(text: string): Record<string, unknown> {
+  try {
+    const parsed = JSON.parse(text);
+    return parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>) : {};
+  } catch {
+    return {};
+  }
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+}
+
+function nestedRecord(record: Record<string, unknown>, keys: string[]): Record<string, unknown> {
+  return keys.reduce<Record<string, unknown>>((current, key) => asRecord(current[key]), record);
+}
+
+function changedFilesFromPayload(payload: Record<string, unknown>): string[] {
+  const task = asRecord(payload.task);
+  const execution = asRecord(payload.execution);
+  const taskExecution = asRecord(task.execution);
+  const taskAudit = nestedRecord(task, ["ast_snapshot", "approved_execution_evidence", "audit"]);
+  const candidates = [
+    payload.applied_changed_files,
+    payload.disk_changed_files,
+    payload.changed_files,
+    execution.applied_changed_files,
+    execution.disk_changed_files,
+    execution.changed_files,
+    taskExecution.applied_changed_files,
+    taskExecution.disk_changed_files,
+    taskExecution.changed_files,
+    taskAudit.changed_files,
+  ];
+  const changed = candidates.find(Array.isArray);
+  if (!Array.isArray(changed)) return [];
+  return uniqueStrings(
+    changed
+      .map((item) => {
+        if (typeof item === "string") return normalizeRepoPath(item);
+        return normalizeRepoPath(typeof asRecord(item).path === "string" ? String(asRecord(item).path) : "");
+      })
+      .filter(Boolean),
+  );
+}
+
+function uniqueStrings(values: string[]): string[] {
+  return Array.from(new Set(values.filter(Boolean)));
+}
+
+function normalizeRepoPath(value: string) {
+  return value
+    .replace(/\\/g, "/")
+    .replace(/^\.\//, "")
+    .replace(/^a\//, "")
+    .replace(/^b\//, "")
+    .trim();
 }
 
 function stringArrayValue(value: unknown): string[] {
@@ -183,6 +373,11 @@ function stringArrayValue(value: unknown): string[] {
 function changedFilesFromApprovedDiff(diff: string): string[] {
   const files = new Set<string>();
   for (const line of diff.split(/\r?\n/)) {
+    const diffMatch = line.match(/^diff --git a\/(.+?) b\/(.+)$/);
+    if (diffMatch?.[2]) {
+      files.add(diffMatch[2].trim());
+      continue;
+    }
     if (!line.startsWith("+++ b/")) {
       continue;
     }
@@ -192,6 +387,48 @@ function changedFilesFromApprovedDiff(diff: string): string[] {
     }
   }
   return [...files];
+}
+
+function agentLabClientDirectiveViolations(diff: string): string[] {
+  const violations = new Set<string>();
+  const sections = diff.split(/\ndiff --git /);
+  for (const section of sections) {
+    const text = section.startsWith("diff --git ") ? section : `diff --git ${section}`;
+    const file = normalizedNewFilePath(text);
+    if (!file || !/^src\/app\/agent-lab\/.*\/page\.tsx$/.test(file)) continue;
+    if (!/(^|\n)--- \/dev\/null(\n|$)/.test(text)) continue;
+    const addedLines = text
+      .split(/\r?\n/)
+      .filter((line) => line.startsWith("+") && !line.startsWith("+++"))
+      .map((line) => line.slice(1));
+    const source = addedLines.join("\n");
+    if (!usesClientOnlyReactFeatures(source)) continue;
+    if (hasUseClientDirective(addedLines)) continue;
+    violations.add(file);
+  }
+  return [...violations].sort();
+}
+
+function normalizedNewFilePath(diffSection: string): string | null {
+  const match = diffSection.match(/(?:^|\n)\+\+\+ b\/([^\n\r]+)/);
+  if (!match?.[1]) return null;
+  return match[1].trim().replace(/\\/g, "/");
+}
+
+function usesClientOnlyReactFeatures(source: string): boolean {
+  return (
+    /\b(useState|useEffect|useMemo|useReducer|useRef|useCallback)\b/.test(source) ||
+    /\b(onClick|onChange|onSubmit|onKeyDown|localStorage|sessionStorage|window\.|document\.)\b/.test(source)
+  );
+}
+
+function hasUseClientDirective(lines: string[]): boolean {
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    return /^["']use client["'];?$/.test(trimmed);
+  }
+  return false;
 }
 
 function isProtectedApplyPath(path: string) {

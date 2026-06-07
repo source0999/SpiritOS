@@ -38,6 +38,13 @@ import {
   formatChangedFilesDiagnosticsLines,
 } from "@/lib/coding/changed-files-diagnostics";
 import {
+  allUnrevertedSuiteResultsInReversePromptOrder,
+  buildDeleteFileReverseDiff,
+  isAgentLabTrialPath,
+  pathIsAllowedForTrialReverse,
+  uniqueAgentLabTargetsFromResults,
+} from "@/lib/coding/agent-lab-cleanup";
+import {
   localHermesProviderModelTruth,
   ollamaStoragePathFromSelfStatus,
   providerModelTruthFromPayload,
@@ -71,6 +78,31 @@ import {
   type ReversibleTrialCount,
   type ReversibleTrialPrompt,
 } from "@/lib/coding/reversible-trial-prompts";
+import type { DurableCodingRun, DurableCodingRunRow, DurableCodingRunStatus } from "@/lib/coding/durable-run-types";
+import {
+  buildTrialPromptQuickLinks,
+  classifyCurrentSuiteAgentLabFiles,
+  classifyEditReversibleAlreadySatisfied,
+  downgradePassWithoutReversalProof,
+  betweenPromptsStaleSummary,
+  durableRunHasStaleBetweenPromptsGap,
+  durableRunHasStalePostApplyVerification,
+  formatAgentLabBaselineDiagnostics,
+  mergeStepInstrumentation,
+  postApplyStaleNextAction,
+  postApplyStaleReasonCode,
+  trialRunnerRunBlocked,
+  type AgentLabBaselineSnapshot,
+  type TrialApplyStepInstrumentation,
+} from "@/lib/coding/reversible-trial-runner";
+import {
+  buildRouteUnavailableDiagnostic,
+  extractReasonCodeFromSummary,
+  isRouteInfraUnavailableSummary,
+  readApiResponse,
+  type RouteAvailabilityFailure,
+  waitForV1RoutesAfterHmr,
+} from "@/lib/coding/route-availability";
 
 const commandPanelClass =
   "rounded-md border border-[var(--ddv4-surface-border-soft)] bg-[var(--ddv4-pill-bg)] shadow-[var(--ddv4-glass-shadow-drop)] backdrop-blur-xl";
@@ -157,6 +189,7 @@ type ReversibleSuitePromptResult = {
     | "REVERTED"
     | "FAIL"
     | "NEEDS FIX"
+    | "RUNNING"
     | "BLOCKED"
     | "NO EDIT EXPECTED"
     | "ALREADY SATISFIED";
@@ -186,6 +219,11 @@ type ReversibleSuiteState = {
   suiteId: string;
   suiteStartedAt: number | null;
   timeout: number;
+  baselineCheckedAt: string | null;
+  baselineAgentLabFiles: string[];
+  baselineDirtyAgentLabFiles: string[];
+  baselineUnrevertedReceipts: string[];
+  baselineCleanForFreshSuite: boolean | null;
 };
 type ReversibleSuiteAbort = {
   reason: string;
@@ -193,25 +231,76 @@ type ReversibleSuiteAbort = {
   step: string;
 };
 
+function buildRouteUnavailableSuitePromptResult(
+  prompt: ReversibleTrialPrompt,
+  failure: RouteAvailabilityFailure,
+  promptNumber: number,
+  providerLabel: string,
+): ReversibleSuitePromptResult {
+  const diagnostic = buildRouteUnavailableDiagnostic(failure, promptNumber);
+  return {
+    allowed_files: prompt.expected_scope,
+    applied_changed_files: [],
+    checks_result: "not run",
+    checks_run: ["git diff --check"],
+    disk_changed_files: [],
+    endpoint_statuses: [`${failure.route}:${failure.status}`],
+    error_summary: diagnostic.error_summary,
+    expected_outcome: prompt.expectedOutcome,
+    failure_reason: diagnostic.failure_reason,
+    model_called_for_generation: "none",
+    next_recommended_action: diagnostic.next_recommended_action,
+    prompt,
+    provider: providerLabel,
+    provider_call_made: false,
+    preview_changed_files: [],
+    reverse_diff: "",
+    reverse_status_text: "No applied trial edits to reverse.",
+    reverted: false,
+    reversal_available: false,
+    run_id: `${prompt.id}:route-unavailable`,
+    selected_target: prompt.targetFile,
+    target_candidates: prompt.expected_scope,
+    visible_result_label: diagnostic.visible_result_label,
+    elapsed_ms: null,
+  };
+}
+
+function buildRouteUnavailablePromptResult(
+  baseResult: (patch: Partial<ReversibleSuitePromptResult>) => ReversibleSuitePromptResult,
+  failure: RouteAvailabilityFailure,
+  endpointStatuses: string[],
+  promptNumber?: number,
+  providerCallMade = false,
+  runId = "",
+): ReversibleSuitePromptResult {
+  const diagnostic = buildRouteUnavailableDiagnostic(failure, promptNumber);
+  endpointStatuses.push(`${failure.route}:${failure.status}`);
+  return baseResult({
+    endpoint_statuses: [...endpointStatuses],
+    error_summary: diagnostic.error_summary,
+    failure_reason: diagnostic.failure_reason,
+    next_recommended_action: diagnostic.next_recommended_action,
+    provider_call_made: providerCallMade,
+    run_id: runId,
+    visible_result_label: diagnostic.visible_result_label,
+  });
+}
+
 function reversibleSuiteAbortForResult(result: ReversibleSuitePromptResult): ReversibleSuiteAbort | null {
   const endpointText = result.endpoint_statuses.join(", ");
   const failureText = `${result.failure_reason} ${result.error_summary}`.toLowerCase();
   const hasServerError = result.endpoint_statuses.some((status) => /:5\d\d(?:\b|$)/.test(status));
-  const hasTimedOut = result.endpoint_statuses.some((status) => /:timeout(?:\b|$)/.test(status));
   const fetchFailed = failureText.includes("failed to fetch");
-  const targetMissing = failureText.includes("reason_code=target_missing");
-  const providerTimedOut =
-    hasTimedOut ||
-    failureText.includes("timeout_source: /v1/decisions/prompt-packet") ||
-    failureText.includes("model call timed out");
 
-  if (providerTimedOut) {
+  if (isRouteInfraUnavailableSummary(result.error_summary, result.failure_reason)) {
     return {
-      reason: `provider_timeout: ${endpointText || result.failure_reason || "model route timed out"}`,
-      source: "provider_timeout",
-      step: "Stopped after provider timeout",
+      reason: `route_unavailable: ${result.error_summary || result.failure_reason}`,
+      source: "route_failed",
+      step: "Stopped: SpiritOS /v1 API routes unavailable",
     };
   }
+
   if (hasServerError || fetchFailed) {
     return {
       reason: hasServerError
@@ -289,6 +378,7 @@ const manualTaskPhaseLabels = {
   analyzing: "Reading request",
   discovering: "Finding files",
   packet: "Finding files",
+  promptPacket: "Running prompt-packet",
   preview: "Calling model",
   checks: "Checking",
   review: "Ready to review",
@@ -301,6 +391,12 @@ const manualTaskPhaseLabels = {
 const MANUAL_PROMPT_PACKET_TIMEOUT_MS = 180_000;
 const TRIAL_PROMPT_PACKET_TIMEOUT_BUFFER_MS = 180_000;
 const TRIAL_PROMPT_PACKET_TIMEOUT_MS = MANUAL_PROMPT_PACKET_TIMEOUT_MS + TRIAL_PROMPT_PACKET_TIMEOUT_BUFFER_MS;
+const TRIAL_PROMPT_PACKET_MAX_ATTEMPTS = 2;
+const TRIAL_POST_MODEL_STAGE_TIMEOUT_MS = 60_000;
+const TRIAL_EXECUTE_APPROVED_STALE_MS = TRIAL_POST_MODEL_STAGE_TIMEOUT_MS + 45_000;
+const TRIAL_BETWEEN_PROMPTS_STALE_MS = 45_000;
+const TRIAL_DURABLE_ROW_SYNC_TIMEOUT_MS = 20_000;
+const TRIAL_LONG_RUNNING_TIMEOUT_MS = 30_000;
 const PROTECTED_FORBIDDEN_FILES = [
   ".env*",
   "source_proxy/data/**",
@@ -474,6 +570,13 @@ const appliedRunReceiptStorageKey = "spiritos:coding:applied-run-receipts:v1";
 const promptHistoryStorageKey = "spiritos:coding:prompt-history:v1";
 const reversibleSuiteStorageKey = "spiritos:coding:reversible-suite-state:v1";
 
+type BackendRunSyncState = {
+  runId: string;
+  status: "idle" | "loading" | "synced" | "attached" | "error";
+  lastSyncedAt: string | null;
+  message: string;
+};
+
 function storedReversibleSuiteSnapshot(): string | null {
   if (typeof window === "undefined") return null;
   return (
@@ -508,6 +611,11 @@ function defaultReversibleSuiteState(): ReversibleSuiteState {
     suiteId: "",
     suiteStartedAt: null,
     timeout: 0,
+    baselineCheckedAt: null,
+    baselineAgentLabFiles: [],
+    baselineDirtyAgentLabFiles: [],
+    baselineUnrevertedReceipts: [],
+    baselineCleanForFreshSuite: null,
   };
 }
 
@@ -589,6 +697,1043 @@ function clearStoredReversibleSuiteState() {
   if (typeof window === "undefined") return;
   window.sessionStorage.removeItem(reversibleSuiteStorageKey);
   window.localStorage.removeItem(reversibleSuiteStorageKey);
+}
+
+function durableRunStatusForSuite(state: ReversibleSuiteState): DurableCodingRunStatus {
+  if (state.status === "running") return "running";
+  if (state.status === "stopping") return "cancelled";
+  if (state.status === "done") return "completed";
+  if (state.interruptionSource === "provider_timeout") return "timed_out";
+  if (state.status === "failed") return "failed";
+  return "pending";
+}
+
+function durableRunIsVisibleInCodingCloud(run: DurableCodingRun | null | undefined) {
+  return Boolean(run && run.status !== "cleared");
+}
+
+function shouldAttachDurableRunToUi(run: DurableCodingRun, current: ReversibleSuiteState): boolean {
+  if (run.status === "running" || run.status === "pending" || run.status === "completed") {
+    return true;
+  }
+  const runKey = run.run_id || run.suite_id;
+  if (current.suiteId && current.suiteId === runKey) {
+    return true;
+  }
+  const stored = loadStoredReversibleSuiteState();
+  if (stored.suiteId && stored.suiteId === runKey) {
+    return true;
+  }
+  return false;
+}
+
+const REVERSIBLE_SUITE_LEASE_KEY = "spiritos-reversible-suite-runner-lease";
+const REVERSIBLE_SUITE_LEASE_TTL_MS = 15_000;
+
+function readReversibleSuiteRunnerLease() {
+  if (typeof window === "undefined") return null;
+  try {
+    return JSON.parse(window.localStorage.getItem(REVERSIBLE_SUITE_LEASE_KEY) ?? "null") as
+      | { runId?: string; at?: number }
+      | null;
+  } catch {
+    return null;
+  }
+}
+
+function touchReversibleSuiteRunnerLease(runId: string) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(REVERSIBLE_SUITE_LEASE_KEY, JSON.stringify({ runId, at: Date.now() }));
+  } catch {
+    // Quota/private mode — stale guard falls back to local-runner ref only.
+  }
+}
+
+function reversibleSuiteRunnerLeaseActive(runId: string, nowMs = Date.now()) {
+  const parsed = readReversibleSuiteRunnerLease();
+  return Boolean(
+    parsed?.runId === runId &&
+      typeof parsed.at === "number" &&
+      nowMs - parsed.at <= REVERSIBLE_SUITE_LEASE_TTL_MS,
+  );
+}
+
+function reversibleSuiteRunnerLeaseKnown(runId: string) {
+  return readReversibleSuiteRunnerLease()?.runId === runId;
+}
+
+function clearReversibleSuiteRunnerLease(runId: string) {
+  if (typeof window === "undefined") return;
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(REVERSIBLE_SUITE_LEASE_KEY) ?? "null") as
+      | { runId?: string }
+      | null;
+    if (parsed?.runId === runId) {
+      window.localStorage.removeItem(REVERSIBLE_SUITE_LEASE_KEY);
+    }
+  } catch {
+    // ignore
+  }
+}
+
+function durableRunPendingPromptId(run: DurableCodingRun): string | null {
+  const inFlight = run.rows.find((row) => row.status === "running" || row.status === "pending");
+  if (inFlight) return inFlight.prompt_id;
+  const currentRow = run.current_prompt_id
+    ? run.rows.find((row) => row.prompt_id === run.current_prompt_id)
+    : null;
+  if (
+    currentRow &&
+    currentRow.status !== "completed" &&
+    currentRow.status !== "reverted" &&
+    currentRow.status !== "failed"
+  ) {
+    return currentRow.prompt_id;
+  }
+  if (run.completed_count < run.requested_count && (run.status === "running" || run.status === "pending")) {
+    const completedIds = new Set(
+      run.rows
+        .filter((row) => row.status === "completed" || row.status === "reverted")
+        .map((row) => row.prompt_id),
+    );
+    const count = (reversibleTrialCounts.includes(run.requested_count as ReversibleTrialCount)
+      ? run.requested_count
+      : 10) as ReversibleTrialCount;
+    const prompts = selectReversibleTrialPrompts(count, "Coder");
+    return prompts.find((prompt) => !completedIds.has(prompt.id))?.id ?? run.current_prompt_id ?? null;
+  }
+  return run.current_prompt_id ?? null;
+}
+
+function durableRunInFlightActiveRow(run: DurableCodingRun): DurableCodingRunRow | null {
+  const byCurrentId = run.current_prompt_id
+    ? run.rows.find((row) => row.prompt_id === run.current_prompt_id)
+    : null;
+  if (byCurrentId && (byCurrentId.status === "running" || byCurrentId.status === "pending")) {
+    return byCurrentId;
+  }
+  const existing = run.rows.find((row) => row.status === "running" || row.status === "pending");
+  if (existing) return existing;
+  const pendingPromptId = durableRunPendingPromptId(run);
+  if (!pendingPromptId || (run.status !== "running" && run.status !== "pending")) return null;
+  return {
+    prompt_id: pendingPromptId,
+    run_id: `${run.run_id}:${run.current_prompt_id}`,
+    prompt_text: "",
+    prompt_excerpt: "",
+    status: "running",
+    started_at: run.current_prompt_started_at ?? run.updated_at,
+    updated_at: run.current_step_started_at ?? run.updated_at,
+    provider_call_made: run.provider_call_made,
+    model_called_for_generation: run.model_called_for_generation,
+    endpoint_statuses: run.endpoint_statuses || [],
+    reason_code: run.reason_code || "",
+    generated_diff_present: run.generated_diff_present,
+    preview_changed_files: run.preview_changed_files || [],
+    applied_changed_files: run.applied_changed_files || [],
+    disk_changed_files: run.disk_changed_files || [],
+    checks_run: run.checks_run || [],
+    checks_result: run.checks_result || "",
+    reversal_available: run.reversal_available,
+    reversal_status: run.reversal_status,
+    result_label: "RUNNING",
+    error_summary: run.last_error || "",
+  };
+}
+
+function durableRunOrphanedInFlightStep(run: DurableCodingRun | null | undefined, nowMs = Date.now()) {
+  if (!run || (run.status !== "running" && run.status !== "pending")) return false;
+  if (
+    durableRunHasStaleEditingFiles(run, nowMs) ||
+    durableRunHasStaleExecuteApproved(run, nowMs)
+  ) {
+    return true;
+  }
+  if (reversibleSuiteRunnerLeaseActive(run.run_id, nowMs)) return false;
+  return durableRunHasStalePromptPacket(run, nowMs);
+}
+
+function durableRunSuccessfulRows(run: DurableCodingRun) {
+  return run.rows.filter((row) => row.status === "completed" || row.status === "reverted");
+}
+
+function durableRunIsResumableUserStop(run: DurableCodingRun) {
+  return (
+    (run.status === "cancelled" || run.reason_code === "user_stop") &&
+    durableRunSuccessfulRows(run).length < run.requested_count
+  );
+}
+
+function durableRunHasLocalRefreshInterruptedInFlightStep(run: DurableCodingRun) {
+  if (run.status !== "running" && run.status !== "pending") return false;
+  const lease = readReversibleSuiteRunnerLease();
+  if (lease?.runId !== run.run_id || typeof lease.at !== "number") return false;
+  if (reversibleSuiteRunnerLeaseActive(run.run_id)) return false;
+  const activeRow = durableRunInFlightActiveRow(run);
+  return Boolean(
+    activeRow &&
+      durableRunSuccessfulRows(run).length < run.requested_count &&
+      (durableRunHasStalePromptPacket(run) ||
+        durableRunHasStaleExecuteApproved(run) ||
+        durableRunHasStaleEditingFiles(run) ||
+        durableRunHasStalePostApplyVerification(run, Date.now(), TRIAL_EXECUTE_APPROVED_STALE_MS) ||
+        durableRunBetweenPromptsStale(run)),
+  );
+}
+
+function reversibleSuiteStateCanResume(state: ReversibleSuiteState) {
+  return (
+    state.status === "failed" &&
+    (state.interruptionSource === "browser_refresh_or_dev_reload" ||
+      state.interruptionSource === "user_stop") &&
+    state.completed < state.count
+  );
+}
+
+function durableRunBetweenPromptsStale(run: DurableCodingRun | null | undefined, nowMs = Date.now()) {
+  if (!durableRunHasStaleBetweenPromptsGap(run, nowMs, TRIAL_BETWEEN_PROMPTS_STALE_MS)) return false;
+  if (!run) return false;
+  if (reversibleSuiteRunnerLeaseActive(run.run_id, nowMs)) {
+    const summary = (run.final_summary || "").toLowerCase();
+    return (
+      summary.includes("ready for review") ||
+      summary.includes("ready to review") ||
+      summary.includes("trial edit applied") ||
+      summary.includes("prompt passed") ||
+      summary.includes("continuing")
+    );
+  }
+  return true;
+}
+
+function durableRunIsStaleStepInterruption(run: DurableCodingRun): boolean {
+  if (durableRunBetweenPromptsStale(run)) return true;
+  if (durableRunOrphanedInFlightStep(run)) return true;
+  if (durableRunHasStalePostApplyVerification(run, Date.now(), TRIAL_EXECUTE_APPROVED_STALE_MS)) return true;
+  if (run.reason_code === "prompt_packet_stale_no_completion") {
+    const staleRow = run.rows.find((row) => row.reason_code === "prompt_packet_stale_no_completion");
+    if (staleRow) return !staleRow.provider_call_made;
+    return !run.provider_call_made;
+  }
+  if (run.reason_code === "execute_approved_stale_no_completion") {
+    const staleRow = run.rows.find((row) => row.reason_code === "execute_approved_stale_no_completion");
+    if (staleRow) return !staleRow.applied_changed_files?.length;
+    return (run.applied_changed_files || []).length === 0;
+  }
+  if (
+    run.reason_code === "apply_ack_no_disk_proof" ||
+    run.reason_code === "post_apply_verification_missing" ||
+    run.reason_code === "execute_approved_no_completion" ||
+    run.reason_code === "between_prompts_runner_lost"
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function durableRunHasStalePromptPacket(run: DurableCodingRun | null | undefined, nowMs = Date.now()) {
+  if (!run || (run.status !== "running" && run.status !== "pending")) return false;
+  const activeRow = durableRunInFlightActiveRow(run);
+  if (!activeRow || activeRow.status !== "running") return false;
+  const statuses = new Set([...(run.endpoint_statuses || []), ...(activeRow.endpoint_statuses || [])]);
+  if (!statuses.has("/v1/decisions/prompt-packet:started")) return false;
+  if ([...statuses].some((status) => status.startsWith("/v1/decisions/prompt-packet:200"))) return false;
+  if ([...statuses].some((status) => status.includes("stale_no_completion") || status.includes(":timeout"))) return false;
+  const promptPacketInFlight = true;
+  const startedAt = Date.parse(
+    (promptPacketInFlight
+      ? run.current_prompt_started_at || activeRow.started_at
+      : run.current_step_started_at) ||
+      run.current_prompt_started_at ||
+      activeRow.updated_at ||
+      activeRow.started_at ||
+      run.updated_at ||
+      run.created_at,
+  );
+  return Number.isFinite(startedAt) && nowMs - startedAt > TRIAL_PROMPT_PACKET_TIMEOUT_MS;
+}
+
+function durableRunHasStaleExecuteApproved(run: DurableCodingRun | null | undefined, nowMs = Date.now()) {
+  if (!run || (run.status !== "running" && run.status !== "pending")) return false;
+  const activeRow = durableRunInFlightActiveRow(run);
+  if (!activeRow) return false;
+  const statuses = new Set([...(run.endpoint_statuses || []), ...(activeRow.endpoint_statuses || [])]);
+  if (![...statuses].some((status) => status.startsWith("/v1/verification/diff-preview:200"))) return false;
+  if ([...statuses].some((status) => status.startsWith("/v1/actions/execute-approved:"))) return false;
+  if ([...statuses].some((status) => status.includes("stale_no_completion") || status.includes(":timeout"))) {
+    return false;
+  }
+  if (!(run.final_summary || "").toLowerCase().includes("preparing apply")) return false;
+  const startedAt = Date.parse(
+    run.current_step_started_at ||
+      run.current_prompt_started_at ||
+      activeRow.updated_at ||
+      activeRow.started_at ||
+      run.updated_at ||
+      run.created_at,
+  );
+  return Number.isFinite(startedAt) && nowMs - startedAt > TRIAL_EXECUTE_APPROVED_STALE_MS;
+}
+
+function durableRunHasStaleEditingFiles(run: DurableCodingRun | null | undefined, nowMs = Date.now()) {
+  if (!run || (run.status !== "running" && run.status !== "pending")) return false;
+  if (!(run.final_summary || "").toLowerCase().includes("editing files")) return false;
+  const activeRow = durableRunInFlightActiveRow(run);
+  const statuses = new Set([...(run.endpoint_statuses || []), ...(activeRow?.endpoint_statuses || [])]);
+  if (![...statuses].some((status) => status.startsWith("/v1/verification/diff-preview:200"))) return false;
+  if ([...statuses].some((status) => status.startsWith("/v1/actions/execute-approved:200"))) return false;
+  if (
+    [...statuses].some(
+      (status) =>
+        status.includes("stale_no_completion") ||
+        status.includes(":timeout") ||
+        status.startsWith("/v1/actions/execute-approved:stale"),
+    )
+  ) {
+    return false;
+  }
+  const startedAt = Date.parse(
+    run.current_step_started_at ||
+      run.current_prompt_started_at ||
+      activeRow?.updated_at ||
+      activeRow?.started_at ||
+      run.updated_at ||
+      run.created_at,
+  );
+  return Number.isFinite(startedAt) && nowMs - startedAt > TRIAL_EXECUTE_APPROVED_STALE_MS;
+}
+
+async function markDurableCodingRunPromptPacketStale(run: DurableCodingRun): Promise<DurableCodingRun | null> {
+  const activeRow = durableRunInFlightActiveRow(run);
+  if (!activeRow) return null;
+  const endpointStatuses = [
+    ...new Set([
+      ...(activeRow.endpoint_statuses || []),
+      "/v1/decisions/prompt-packet:stale_no_completion",
+    ]),
+  ];
+  const promptNumber = activeRow.prompt_id.match(/\d+/)?.[0]?.replace(/^0+/, "") || "current";
+  const hasPromptPacket200 = [...endpointStatuses].some((status) =>
+    status.startsWith("/v1/decisions/prompt-packet:200"),
+  );
+  const errorSummary = hasPromptPacket200
+    ? `Prompt ${promptNumber} recorded prompt-packet:200 but never reached a terminal suite stage before the stale deadline.`
+    : `Prompt ${promptNumber} stayed on prompt-packet:started without a recorded prompt-packet completion before the stale deadline.`;
+  const rowResponse = await fetch(
+    `/v1/coding/runs/${encodeURIComponent(run.run_id)}/rows/${encodeURIComponent(activeRow.prompt_id)}`,
+    {
+      body: JSON.stringify({
+        ...activeRow,
+        endpoint_statuses: endpointStatuses,
+        error_summary: errorSummary,
+        reason_code: "prompt_packet_stale_no_completion",
+        result_label: "NEEDS FIX",
+        status: "failed",
+      }),
+      headers: { "content-type": "application/json" },
+      method: "POST",
+    },
+  );
+  if (!rowResponse.ok) return null;
+  const runResponse = await fetch(`/v1/coding/runs/${encodeURIComponent(run.run_id)}`, {
+    body: JSON.stringify({
+      current_prompt_id: activeRow.prompt_id,
+      endpoint_statuses: [
+        ...new Set([...(run.endpoint_statuses || []), "/v1/decisions/prompt-packet:stale_no_completion"]),
+      ],
+      final_summary: "Stopped after prompt-packet stale/no completion.",
+      last_error: errorSummary,
+      reason_code: "prompt_packet_stale_no_completion",
+      reversal_available: run.rows.some((row) => row.reversal_available),
+      reversal_status: run.rows.some((row) => row.reversal_status === "available") ? "available" : "none",
+      status: "failed",
+    }),
+    headers: { "content-type": "application/json" },
+    method: "PATCH",
+  });
+  if (!runResponse.ok) return null;
+  const payload = await runResponse.json();
+  return payload.run ?? null;
+}
+
+async function markDurableCodingRunExecuteApprovedStale(run: DurableCodingRun): Promise<DurableCodingRun | null> {
+  const activeRow = durableRunInFlightActiveRow(run);
+  if (!activeRow) return null;
+  const endpointStatuses = [
+    ...new Set([
+      ...(activeRow.endpoint_statuses || []),
+      "/v1/actions/execute-approved:stale_no_completion",
+    ]),
+  ];
+  const promptNumber = activeRow.prompt_id.match(/\d+/)?.[0]?.replace(/^0+/, "") || "current";
+  const errorSummary = `Prompt ${promptNumber} stayed on preparing apply without a recorded execute-approved completion before the stale deadline.`;
+  const rowResponse = await fetch(
+    `/v1/coding/runs/${encodeURIComponent(run.run_id)}/rows/${encodeURIComponent(activeRow.prompt_id)}`,
+    {
+      body: JSON.stringify({
+        ...activeRow,
+        endpoint_statuses: endpointStatuses,
+        error_summary: errorSummary,
+        reason_code: "execute_approved_stale_no_completion",
+        result_label: "NEEDS FIX",
+        status: "failed",
+      }),
+      headers: { "content-type": "application/json" },
+      method: "POST",
+    },
+  );
+  if (!rowResponse.ok) return null;
+  const runResponse = await fetch(`/v1/coding/runs/${encodeURIComponent(run.run_id)}`, {
+    body: JSON.stringify({
+      current_prompt_id: activeRow.prompt_id,
+      endpoint_statuses: [
+        ...new Set([...(run.endpoint_statuses || []), "/v1/actions/execute-approved:stale_no_completion"]),
+      ],
+      final_summary: "Stopped after execute-approved stale/no completion.",
+      last_error: errorSummary,
+      reason_code: "execute_approved_stale_no_completion",
+      reversal_available: run.rows.some((row) => row.reversal_available),
+      reversal_status: run.rows.some((row) => row.reversal_status === "available") ? "available" : "none",
+      status: "failed",
+    }),
+    headers: { "content-type": "application/json" },
+    method: "PATCH",
+  });
+  if (!runResponse.ok) return null;
+  const payload = await runResponse.json();
+  return payload.run ?? null;
+}
+
+async function markDurableCodingRunPostApplyStale(run: DurableCodingRun): Promise<DurableCodingRun | null> {
+  const promptId = durableRunPendingPromptId(run);
+  if (!promptId) return null;
+  const activeRow =
+    run.rows.find((row) => row.prompt_id === promptId) ?? durableRunInFlightActiveRow(run);
+  if (!activeRow) return null;
+  const reasonCode = postApplyStaleReasonCode(run);
+  const endpointStatuses = [
+    ...new Set([
+      ...(activeRow.endpoint_statuses || []),
+      ...(run.endpoint_statuses || []),
+      "/v1/actions/execute-approved:stale_no_completion",
+    ]),
+  ];
+  const promptNumber = promptId.match(/\d+/)?.[0]?.replace(/^0+/, "") || "current";
+  const errorSummary = `Prompt ${promptNumber} reached execute-approved without disk/applied proof before the stale deadline (${reasonCode}).`;
+  const rowResponse = await fetch(
+    `/v1/coding/runs/${encodeURIComponent(run.run_id)}/rows/${encodeURIComponent(promptId)}`,
+    {
+      body: JSON.stringify({
+        ...activeRow,
+        endpoint_statuses: endpointStatuses,
+        error_summary: errorSummary,
+        reason_code: reasonCode,
+        result_label: "NEEDS FIX",
+        status: "failed",
+        step_instrumentation: mergeStepInstrumentation(activeRow.step_instrumentation, {
+          last_progress_reason_code: reasonCode,
+          result_finalized_at: new Date().toISOString(),
+        }),
+      }),
+      headers: { "content-type": "application/json" },
+      method: "POST",
+    },
+  );
+  if (!rowResponse.ok) return null;
+  const runResponse = await fetch(`/v1/coding/runs/${encodeURIComponent(run.run_id)}`, {
+    body: JSON.stringify({
+      current_prompt_id: promptId,
+      endpoint_statuses: [
+        ...new Set([...(run.endpoint_statuses || []), "/v1/actions/execute-approved:stale_no_completion"]),
+      ],
+      final_summary: "Stopped after post-apply verification stale/no completion.",
+      last_error: errorSummary,
+      reason_code: reasonCode,
+      reversal_available: run.rows.some((row) => row.reversal_available),
+      reversal_status: run.rows.some((row) => row.reversal_status === "available") ? "available" : "none",
+      status: "failed",
+    }),
+    headers: { "content-type": "application/json" },
+    method: "PATCH",
+  });
+  if (!runResponse.ok) return null;
+  const payload = await runResponse.json();
+  return payload.run ?? null;
+}
+
+async function markDurableCodingRunEditingFilesStale(run: DurableCodingRun): Promise<DurableCodingRun | null> {
+  const promptId = durableRunPendingPromptId(run);
+  if (!promptId) return null;
+  const activeRow =
+    run.rows.find((row) => row.prompt_id === promptId) ?? durableRunInFlightActiveRow(run);
+  if (!activeRow) return null;
+  const endpointStatuses = [
+    ...new Set([
+      ...(activeRow.endpoint_statuses || []),
+      ...(run.endpoint_statuses || []),
+      "/v1/actions/execute-approved:stale_no_completion",
+    ]),
+  ];
+  const promptNumber = promptId.match(/\d+/)?.[0]?.replace(/^0+/, "") || "current";
+  const errorSummary = `Prompt ${promptNumber} stayed on Editing files without a recorded execute-approved completion before the stale deadline.`;
+  const rowResponse = await fetch(
+    `/v1/coding/runs/${encodeURIComponent(run.run_id)}/rows/${encodeURIComponent(promptId)}`,
+    {
+      body: JSON.stringify({
+        ...activeRow,
+        endpoint_statuses: endpointStatuses,
+        error_summary: errorSummary,
+        reason_code: "execute_approved_stale_no_completion",
+        result_label: "NEEDS FIX",
+        status: "failed",
+      }),
+      headers: { "content-type": "application/json" },
+      method: "POST",
+    },
+  );
+  if (!rowResponse.ok) return null;
+  const runResponse = await fetch(`/v1/coding/runs/${encodeURIComponent(run.run_id)}`, {
+    body: JSON.stringify({
+      current_prompt_id: promptId,
+      endpoint_statuses: [
+        ...new Set([...(run.endpoint_statuses || []), "/v1/actions/execute-approved:stale_no_completion"]),
+      ],
+      final_summary: "Stopped after Editing files stale/no completion.",
+      last_error: errorSummary,
+      reason_code: "execute_approved_stale_no_completion",
+      reversal_available: run.rows.some((row) => row.reversal_available),
+      reversal_status: run.rows.some((row) => row.reversal_status === "available") ? "available" : "none",
+      status: "failed",
+    }),
+    headers: { "content-type": "application/json" },
+    method: "PATCH",
+  });
+  if (!runResponse.ok) return null;
+  const payload = await runResponse.json();
+  return payload.run ?? null;
+}
+
+async function markDurableCodingRunBetweenPromptsStale(run: DurableCodingRun): Promise<DurableCodingRun | null> {
+  const nextPromptId = durableRunPendingPromptId(run);
+  const resumeAt = Math.min(run.completed_count + 1, run.requested_count);
+  const errorSummary = betweenPromptsStaleSummary(run);
+  const runResponse = await fetch(`/v1/coding/runs/${encodeURIComponent(run.run_id)}`, {
+    body: JSON.stringify({
+      current_prompt_id: nextPromptId ?? run.current_prompt_id,
+      final_summary: `Paused, ready to resume from prompt ${resumeAt}`,
+      last_error: errorSummary,
+      reason_code: "between_prompts_runner_lost",
+      status: "failed",
+    }),
+    headers: { "content-type": "application/json" },
+    method: "PATCH",
+  });
+  if (!runResponse.ok) return null;
+  const payload = await runResponse.json();
+  return payload.run ?? null;
+}
+
+async function failDurableRunIfPromptPacketStale(
+  run: DurableCodingRun | null | undefined,
+  context: "attach" | "poll" = "poll",
+) {
+  const stalePromptPacket = durableRunHasStalePromptPacket(run);
+  const staleExecuteApproved = durableRunHasStaleExecuteApproved(run);
+  const staleEditingFiles = durableRunHasStaleEditingFiles(run);
+  const stalePostApplyVerification = durableRunHasStalePostApplyVerification(
+    run,
+    Date.now(),
+    TRIAL_EXECUTE_APPROVED_STALE_MS,
+  );
+  const staleBetweenPrompts = durableRunBetweenPromptsStale(run);
+  if (
+    !stalePromptPacket &&
+    !staleExecuteApproved &&
+    !staleEditingFiles &&
+    !stalePostApplyVerification &&
+    !staleBetweenPrompts
+  ) {
+    return run ?? null;
+  }
+  const staleRun = run;
+  if (!staleRun) return null;
+  if (!reversibleSuiteRunnerLeaseKnown(staleRun.run_id)) {
+    return staleRun;
+  }
+  if (staleBetweenPrompts) {
+    // #region agent log
+    fetch("http://localhost:7784/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "0fdea5" },
+      body: JSON.stringify({
+        sessionId: "0fdea5",
+        hypothesisId: "H9",
+        location: "CodingCockpitShell.tsx:failDurableRunIfPromptPacketStale",
+        message: "between-prompts stale detected",
+        data: {
+          runId: staleRun.run_id,
+          completedCount: staleRun.completed_count,
+          finalSummary: staleRun.final_summary,
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
+    return (await markDurableCodingRunBetweenPromptsStale(staleRun)) ?? staleRun;
+  }
+  if (stalePostApplyVerification) {
+    return (await markDurableCodingRunPostApplyStale(staleRun)) ?? staleRun;
+  }
+  if (staleEditingFiles) {
+    return (await markDurableCodingRunEditingFilesStale(staleRun)) ?? staleRun;
+  }
+  if (staleExecuteApproved) {
+    return (await markDurableCodingRunExecuteApprovedStale(staleRun)) ?? staleRun;
+  }
+  return (await markDurableCodingRunPromptPacketStale(staleRun)) ?? staleRun;
+}
+
+async function cancelDurableCodingRunForUserStop(runId: string): Promise<DurableCodingRun | null> {
+  const response = await fetch(`/v1/coding/runs/${encodeURIComponent(runId)}`, {
+    body: JSON.stringify({
+      final_summary: "Stopped by user",
+      last_error: "user_clicked_stop_on_synced_run",
+      reason_code: "user_stop",
+      status: "cancelled",
+    }),
+    headers: { "content-type": "application/json" },
+    method: "PATCH",
+  });
+  if (!response.ok) return null;
+  const payload = await response.json();
+  return payload.run ?? null;
+}
+
+async function releaseSyncedReversibleSuiteRun(
+  runId: string,
+  options: { localRunnerActive: boolean; source: "poll" | "user_stop" },
+): Promise<DurableCodingRun | null> {
+  const response = await fetch(`/v1/coding/runs/${encodeURIComponent(runId)}`, { cache: "no-store" });
+  if (!response.ok) return null;
+  const payload = await response.json();
+  let run = payload.run as DurableCodingRun | null | undefined;
+  if (!run) return null;
+  if (!options.localRunnerActive) {
+    run = (await failDurableRunIfPromptPacketStale(run, options.source === "user_stop" ? "attach" : "poll")) ?? run;
+  }
+  if (
+    options.source === "user_stop" &&
+    (run.status === "running" || run.status === "pending")
+  ) {
+    run = (await cancelDurableCodingRunForUserStop(runId)) ?? run;
+  }
+  return run;
+}
+
+function suiteStateFromDurableRun(run: DurableCodingRun): ReversibleSuiteState {
+  const count = (reversibleTrialCounts.includes(run.requested_count as ReversibleTrialCount)
+    ? run.requested_count
+    : 10) as ReversibleTrialCount;
+  const prompts = selectReversibleTrialPrompts(count, "Coder");
+  const promptById = new Map(prompts.map((prompt) => [prompt.id, prompt]));
+  const staleInterruption = durableRunIsStaleStepInterruption(run);
+  const userStopMidSuite = durableRunIsResumableUserStop(run);
+  const localRefreshInterruptedInFlightStep = durableRunHasLocalRefreshInterruptedInFlightStep(run);
+  const resumableInterruption = staleInterruption || userStopMidSuite || localRefreshInterruptedInFlightStep;
+  const resumeRows = resumableInterruption ? durableRunSuccessfulRows(run) : run.rows;
+  const results = resumeRows
+    .map((row) => reversibleResultFromDurableRow(row, promptById.get(row.prompt_id)))
+    .filter((result): result is ReversibleSuitePromptResult => Boolean(result));
+  const status = resumableInterruption
+    ? "failed"
+    : run.status === "running" || run.status === "pending"
+      ? "running"
+      : run.status === "completed" || run.status === "reverted"
+        ? "done"
+        : "failed";
+  const nowMs = Date.now();
+  const suiteStartedAtMs = Date.parse(run.suite_started_at || run.created_at);
+  const activeRow = run.current_prompt_id
+    ? run.rows.find((row) => row.prompt_id === run.current_prompt_id)
+    : run.rows.find((row) => row.status === "running");
+  const promptStartedAtMs = Date.parse(
+    run.current_prompt_started_at ||
+      activeRow?.started_at ||
+      activeRow?.updated_at ||
+      run.updated_at ||
+      run.created_at,
+  );
+  const stepStartedAtMs = Date.parse(run.current_step_started_at || activeRow?.updated_at || run.updated_at || run.created_at);
+  const completedCount = resumableInterruption ? resumeRows.length : run.completed_count;
+  return {
+    completed: completedCount,
+    count,
+    currentPrompt:
+      run.current_prompt_id && promptById.get(run.current_prompt_id)
+        ? `${Math.min(completedCount + 1, count)}/${count}: ${promptById.get(run.current_prompt_id)?.quickTitle}`
+        : activeRow && promptById.get(activeRow.prompt_id)
+          ? `${Math.min(completedCount + 1, count)}/${count}: ${promptById.get(activeRow.prompt_id)?.quickTitle}`
+          : results.length > 0
+            ? "Suite finished."
+            : "",
+    currentPromptElapsedMs: null,
+    currentStep: resumableInterruption
+      ? `Paused, ready to resume from prompt ${completedCount + 1}`
+      : run.final_summary || (status === "running" ? "Active run attached" : "Synced from backend"),
+    currentStepStartedAt:
+      Number.isFinite(stepStartedAtMs) && status === "running"
+        ? performance.now() - Math.max(0, nowMs - stepStartedAtMs)
+        : null,
+    alreadySatisfied: results.filter((result) => result.visible_result_label === "ALREADY SATISFIED").length,
+    expectedNoEdit: results.filter((result) => result.visible_result_label === "NO EDIT EXPECTED").length,
+    fail: resumableInterruption
+      ? 0
+      : results.filter((result) => result.visible_result_label === "FAIL" || result.visible_result_label === "NEEDS FIX").length,
+    interruptionReason: resumableInterruption
+      ? run.last_error ||
+        (userStopMidSuite
+          ? "Suite stopped by user before completion; resume from the interrupted prompt."
+          : localRefreshInterruptedInFlightStep
+            ? "Browser refreshed while the prompt was in flight; resume from the interrupted prompt."
+          : (run.final_summary || "").toLowerCase().includes("preparing apply")
+            ? "Apply step lost before execute-approved completion; resume from the interrupted prompt."
+            : "Prompt-packet lost before provider proof; resume from the interrupted prompt.")
+      : run.last_error,
+    interruptionSource: staleInterruption
+      ? "browser_refresh_or_dev_reload"
+      : localRefreshInterruptedInFlightStep
+        ? "browser_refresh_or_dev_reload"
+      : run.status === "timed_out"
+        ? "provider_timeout"
+        : run.status === "cancelled"
+          ? "user_stop"
+          : "none",
+    pass: results.filter((result) => result.visible_result_label === "PASS").length,
+    provider: run.provider,
+    model: run.model || run.model_called_for_generation,
+    results,
+    reverted: results.filter((result) => result.reverted).length,
+    safetyBlock: results.filter((result) => result.visible_result_label === "BLOCKED").length,
+    status,
+    stopped: run.status === "cancelled",
+    suiteFinishedAt: status === "running" ? null : performance.now(),
+    suiteId: run.suite_id || run.run_id,
+    suiteStartedAt:
+      Number.isFinite(suiteStartedAtMs)
+        ? performance.now() - Math.max(0, nowMs - suiteStartedAtMs)
+        : performance.now(),
+    timeout: run.status === "timed_out" ? 1 : results.filter(reversibleResultIsTimeout).length,
+    baselineCheckedAt: null,
+    baselineAgentLabFiles: [],
+    baselineDirtyAgentLabFiles: [],
+    baselineUnrevertedReceipts: [],
+    baselineCleanForFreshSuite: null,
+  };
+}
+
+function reversibleResultFromDurableRow(
+  row: DurableCodingRunRow,
+  prompt: ReversibleTrialPrompt | undefined,
+): ReversibleSuitePromptResult | null {
+  if (!prompt) return null;
+  return {
+    allowed_files: prompt.expected_scope,
+    applied_changed_files: row.applied_changed_files,
+    checks_result: row.checks_result,
+    checks_run: row.checks_run,
+    disk_changed_files: row.disk_changed_files,
+    endpoint_statuses: row.endpoint_statuses || [],
+    error_summary: row.error_summary,
+    expected_outcome: prompt.expectedOutcome,
+    failure_reason: row.error_summary,
+    model_called_for_generation: row.model_called_for_generation,
+    next_recommended_action: row.error_summary
+      ? "Inspect persisted row diagnostics before rerunning."
+      : "Review persisted backend run state.",
+    prompt,
+    provider: "",
+    provider_call_made: row.provider_call_made,
+    preview_changed_files: row.preview_changed_files,
+    reverse_diff: row.reverse_diff || "",
+    reverse_status_text:
+      row.reversal_available && row.reversal_status === "none"
+        ? "Revert availability persisted; refresh-safe reverse diff status depends on stored receipt."
+        : row.reversal_status || "No applied trial edits to reverse.",
+    reverted: row.reversal_status === "reverted",
+    reversal_available: row.reversal_available,
+    run_id: row.run_id || row.prompt_id,
+    selected_target:
+      row.applied_changed_files[0] ||
+      row.preview_changed_files[0] ||
+      row.disk_changed_files[0] ||
+      prompt.targetFile,
+    target_candidates: prompt.expected_scope,
+    visible_result_label: row.result_label as ReversibleSuitePromptResult["visible_result_label"],
+    elapsed_ms: null,
+  };
+}
+
+function durableRowFromReversibleResult(result: ReversibleSuitePromptResult, status: DurableCodingRunStatus): DurableCodingRunRow {
+  const promptText = reversibleTrialPromptForMode(result.prompt, modeForTrialCategory(result.prompt.category));
+  return {
+    prompt_id: result.prompt.id,
+    run_id: result.run_id,
+    prompt_text: promptText,
+    prompt_excerpt: promptText.slice(0, 240),
+    status,
+    started_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    provider_call_made: result.provider_call_made,
+    model_called_for_generation: result.model_called_for_generation || "none",
+    endpoint_statuses: result.endpoint_statuses,
+    reason_code: extractReasonCodeFromSummary(result.error_summary) || result.failure_reason || "",
+    generated_diff_present: result.preview_changed_files.length > 0 || result.applied_changed_files.length > 0,
+    preview_changed_files: result.preview_changed_files,
+    applied_changed_files: result.applied_changed_files,
+    disk_changed_files: result.disk_changed_files,
+    checks_run: result.checks_run,
+    checks_result: result.checks_result,
+    reversal_available: result.reversal_available,
+    reversal_status: result.reverted ? "reverted" : result.reversal_available ? "available" : "none",
+    reverse_diff: result.reverse_diff,
+    result_label: result.visible_result_label,
+    error_summary: result.error_summary || result.failure_reason,
+  };
+}
+
+function durableRunStatusForResult(result: ReversibleSuitePromptResult): DurableCodingRunStatus {
+  if (result.visible_result_label === "REVERTED") return "reverted";
+  if (reversibleResultIsTimeout(result)) return "timed_out";
+  if (result.visible_result_label === "FAIL" || result.visible_result_label === "NEEDS FIX") return "failed";
+  return "completed";
+}
+
+function durableRunPatchFromSuite(state: ReversibleSuiteState): Partial<DurableCodingRun> {
+  const rows = state.results.map((result) => durableRowFromReversibleResult(result, durableRunStatusForResult(result)));
+  const patch: Partial<DurableCodingRun> = {
+    benchmark_name: `Messy Coder ${state.count}`,
+    completed_count: state.completed,
+    final_summary: state.currentStep,
+    last_error: state.interruptionReason,
+    reason_code: state.status === "running" ? null : undefined,
+    model: state.model,
+    model_called_for_generation: state.model,
+    provider: state.provider,
+    provider_call_made: rows.some((row) => row.provider_call_made),
+    requested_count: state.count,
+    reversal_available: rows.some((row) => row.reversal_available),
+    reversal_status: rows.some((row) => row.reversal_status === "available") ? "available" : "none",
+    status: durableRunStatusForSuite(state),
+  };
+  if (rows.length > 0) {
+    patch.current_prompt_id = state.results.at(-1)?.prompt.id ?? null;
+    patch.rows = rows;
+  }
+  return patch;
+}
+
+async function createDurableCodingRunForSuite(state: ReversibleSuiteState): Promise<DurableCodingRun | null> {
+  const response = await fetch("/v1/coding/runs", {
+    body: JSON.stringify({
+      ...durableRunPatchFromSuite(state),
+      run_id: state.suiteId,
+      suite_id: state.suiteId,
+      suite_started_at: new Date().toISOString(),
+      frontend_url: "https://10.0.0.186:3000/coding",
+      proxy_url: "https://10.0.0.186:8787",
+      started_by_surface: "coding",
+      lane: "coder",
+    }),
+    headers: { "content-type": "application/json" },
+    method: "POST",
+  });
+  if (!response.ok) return null;
+  const payload = await response.json();
+  return payload.run ?? null;
+}
+
+async function patchDurableCodingRunFromSuite(state: ReversibleSuiteState): Promise<DurableCodingRun | null> {
+  if (!state.suiteId) return null;
+  const response = await fetch(`/v1/coding/runs/${encodeURIComponent(state.suiteId)}`, {
+    body: JSON.stringify(durableRunPatchFromSuite(state)),
+    headers: { "content-type": "application/json" },
+    method: "PATCH",
+  });
+  if (!response.ok) return null;
+  const payload = await response.json();
+  return payload.run ?? null;
+}
+
+async function markDurableCodingRunCleared(runId: string): Promise<DurableCodingRun | null> {
+  try {
+    const response = await fetchWithTimeout(
+      `/v1/coding/runs/${encodeURIComponent(runId)}`,
+      {
+        body: JSON.stringify({
+          status: "cleared",
+          reason_code: "user_cleared_synced_run",
+          last_error: null,
+          final_summary: "Run cleared from synced coding cloud.",
+          reversal_status: "none",
+        }),
+        headers: { "content-type": "application/json" },
+        method: "PATCH",
+      },
+      TRIAL_DURABLE_ROW_SYNC_TIMEOUT_MS,
+    );
+    if (!response.ok) return null;
+    const payload = await response.json();
+    return payload.run ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function postDurableCodingRunRow(
+  suiteId: string,
+  result: ReversibleSuitePromptResult,
+  status: DurableCodingRunStatus,
+): Promise<DurableCodingRun | null> {
+  const response = await fetch(
+    `/v1/coding/runs/${encodeURIComponent(suiteId)}/rows/${encodeURIComponent(result.prompt.id)}`,
+    {
+      body: JSON.stringify(durableRowFromReversibleResult(result, status)),
+      headers: { "content-type": "application/json" },
+      method: "POST",
+    },
+  );
+  if (!response.ok) return null;
+  const payload = await response.json();
+  return payload.run ?? null;
+}
+
+async function postDurableCodingRunRowWithTimeout(
+  suiteId: string,
+  result: ReversibleSuitePromptResult,
+  status: DurableCodingRunStatus,
+  timeoutMs = TRIAL_DURABLE_ROW_SYNC_TIMEOUT_MS,
+): Promise<DurableCodingRun | null> {
+  try {
+    const response = await fetchWithTimeout(
+      `/v1/coding/runs/${encodeURIComponent(suiteId)}/rows/${encodeURIComponent(result.prompt.id)}`,
+      {
+        body: JSON.stringify(durableRowFromReversibleResult(result, status)),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      },
+      timeoutMs,
+    );
+    if (!response.ok) return null;
+    const payload = await response.json();
+    return payload.run ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function patchDurableCodingRunFromSuiteWithTimeout(
+  state: ReversibleSuiteState,
+  timeoutMs = TRIAL_DURABLE_ROW_SYNC_TIMEOUT_MS,
+): Promise<DurableCodingRun | null> {
+  if (!state.suiteId) return null;
+  try {
+    const response = await fetchWithTimeout(
+      `/v1/coding/runs/${encodeURIComponent(state.suiteId)}`,
+      {
+        body: JSON.stringify(durableRunPatchFromSuite(state)),
+        headers: { "content-type": "application/json" },
+        method: "PATCH",
+      },
+      timeoutMs,
+    );
+    if (!response.ok) return null;
+    const payload = await response.json();
+    return payload.run ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function postDurableCodingRunPromptStatus(
+  suiteId: string,
+  prompt: ReversibleTrialPrompt,
+  status: DurableCodingRunStatus,
+  state: ReversibleSuiteState,
+): Promise<DurableCodingRun | null> {
+  const promptText = reversibleTrialPromptForMode(prompt, modeForTrialCategory(prompt.category));
+  const response = await fetch(
+    `/v1/coding/runs/${encodeURIComponent(suiteId)}/rows/${encodeURIComponent(prompt.id)}`,
+    {
+      body: JSON.stringify({
+        prompt_id: prompt.id,
+        run_id: `${suiteId}:${prompt.id}`,
+        prompt_text: promptText,
+        prompt_excerpt: promptText.slice(0, 240),
+        status,
+        current_prompt_started_at: new Date().toISOString(),
+        current_step_started_at: new Date().toISOString(),
+        provider_call_made: false,
+        model_called_for_generation: state.model || "none",
+        endpoint_statuses: [],
+        reason_code: "",
+        generated_diff_present: false,
+        preview_changed_files: [],
+        applied_changed_files: [],
+        disk_changed_files: [],
+        checks_run: [],
+        checks_result: "",
+        reversal_available: false,
+        reversal_status: "none",
+        result_label: status === "running" ? "RUNNING" : "",
+        error_summary: "",
+      }),
+      headers: { "content-type": "application/json" },
+      method: "POST",
+    },
+  );
+  if (!response.ok) return null;
+  const payload = await response.json();
+  return payload.run ?? null;
+}
+
+async function postDurableCodingRunPromptProgress(
+  suiteId: string,
+  prompt: ReversibleTrialPrompt,
+  patch: Partial<DurableCodingRunRow>,
+  runPatch: Partial<DurableCodingRun> = {},
+): Promise<DurableCodingRun | null> {
+  const promptText = reversibleTrialPromptForMode(prompt, modeForTrialCategory(prompt.category));
+  const rowResponse = await fetch(
+    `/v1/coding/runs/${encodeURIComponent(suiteId)}/rows/${encodeURIComponent(prompt.id)}`,
+    {
+      body: JSON.stringify({
+        prompt_id: prompt.id,
+        run_id: `${suiteId}:${prompt.id}`,
+        prompt_text: promptText,
+        prompt_excerpt: promptText.slice(0, 240),
+        status: "running",
+        result_label: "RUNNING",
+        ...patch,
+      }),
+      headers: { "content-type": "application/json" },
+      method: "POST",
+    },
+  );
+  if (!rowResponse.ok) return null;
+  const runResponse = await fetch(`/v1/coding/runs/${encodeURIComponent(suiteId)}`, {
+    body: JSON.stringify({
+      current_prompt_id: prompt.id,
+      current_step_started_at: new Date().toISOString(),
+      status: "running",
+      ...runPatch,
+    }),
+    headers: { "content-type": "application/json" },
+    method: "PATCH",
+  });
+  if (!runResponse.ok) return null;
+  const payload = await runResponse.json();
+  return payload.run ?? null;
 }
 
 function isRecoverableModelLaneBlockedSuite(state: ReversibleSuiteState): boolean {
@@ -998,6 +2143,10 @@ function modeForTrialCategory(category: ReversibleTrialCategory): AgentTrialMode
   return "code";
 }
 
+function reversibleTrialCountLabel(category: ReversibleTrialCategory, count: ReversibleTrialCount): string {
+  return category === "Coder" ? `Messy Coder ${count}` : String(count);
+}
+
 function splitFiles(value: string): string[] {
   return splitLinesOrCommas(value)
     .map((item) => normalizeRepoPath(item))
@@ -1063,10 +2212,33 @@ function isSafeRepoPath(value: string): boolean {
   );
 }
 
-function reverseUnifiedDiff(diff: string): string {
-  return diff
-    .split("\n")
-    .map((line) => {
+export function reverseUnifiedDiff(diff: string): string {
+  const lines = diff.split("\n");
+  const reversed: string[] = [];
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index] ?? "";
+    const nextLine = lines[index + 1] ?? "";
+    if (line.startsWith("--- ") && nextLine.startsWith("+++ ")) {
+      reversed.push(`--- ${nextLine.slice(4)}`);
+      reversed.push(`+++ ${line.slice(4)}`);
+      index += 1;
+      continue;
+    }
+    if (line.startsWith("new file mode ")) {
+      reversed.push(line.replace("new file mode ", "deleted file mode "));
+      continue;
+    }
+    if (line.startsWith("deleted file mode ")) {
+      reversed.push(line.replace("deleted file mode ", "new file mode "));
+      continue;
+    }
+    const indexMatch = line.match(/^index ([0-9a-f]+)\.\.([0-9a-f]+)(.*)$/);
+    if (indexMatch) {
+      reversed.push(`index ${indexMatch[2]}..${indexMatch[1]}${indexMatch[3] ?? ""}`);
+      continue;
+    }
+    reversed.push(
+      (() => {
       if (line.startsWith("+") && !line.startsWith("+++")) {
         return `-${line.slice(1)}`;
       }
@@ -1074,8 +2246,10 @@ function reverseUnifiedDiff(diff: string): string {
         return `+${line.slice(1)}`;
       }
       return line;
-    })
-    .join("\n");
+      })(),
+    );
+  }
+  return reversed.join("\n");
 }
 
 function reverseDiffForReceipt(receipt: AppliedRunReceipt): string {
@@ -1086,6 +2260,25 @@ function reverseDiffForReceipt(receipt: AppliedRunReceipt): string {
   }
   const rebuiltReverseDiff = reverseUnifiedDiff(receipt.diff);
   return rebuiltReverseDiff.trim() ? rebuiltReverseDiff : receipt.reverseDiff;
+}
+
+export function executeReadyReverseDiff(diff: string): string {
+  const lines = diff.split("\n");
+  const normalized: string[] = [];
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index] ?? "";
+    const nextLine = lines[index + 1] ?? "";
+    const oldMatch = line.match(/^--- b\/(.+)$/);
+    const newMatch = nextLine.match(/^\+\+\+ a\/(.+)$/);
+    if (oldMatch?.[1] && newMatch?.[1] && oldMatch[1] === newMatch[1]) {
+      normalized.push(`--- a/${oldMatch[1]}`);
+      normalized.push(`+++ b/${newMatch[1]}`);
+      index += 1;
+      continue;
+    }
+    normalized.push(line);
+  }
+  return normalized.join("\n");
 }
 
 function buildReverseTaskDescription(
@@ -1138,6 +2331,10 @@ function loadStoredAppliedRunReceipts(): AppliedRunReceipt[] {
 function storeAppliedRunReceipts(receipts: AppliedRunReceipt[]) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(appliedRunReceiptStorageKey, JSON.stringify(receipts));
+}
+
+function appliedRunReceiptsAreEqual(a: AppliedRunReceipt[], b: AppliedRunReceipt[]) {
+  return JSON.stringify(a) === JSON.stringify(b);
 }
 
 function loadPromptHistory(): string[] {
@@ -1623,6 +2820,7 @@ function reversibleResultTagClass(label: ReversibleSuitePromptResult["visible_re
   if (label === "REVERTED") return "border-cyan-300/70 bg-cyan-300/15 text-cyan-100";
   if (label === "ALREADY SATISFIED") return "border-lime-300/70 bg-lime-300/15 text-lime-100";
   if (label === "NO EDIT EXPECTED") return "border-sky-300/60 bg-sky-300/15 text-sky-100";
+  if (label === "RUNNING") return "border-blue-300/70 bg-blue-300/15 text-blue-100";
   if (label === "BLOCKED") return "border-amber-300/70 bg-amber-300/15 text-amber-100";
   return "border-rose-300/70 bg-rose-300/15 text-rose-100";
 }
@@ -1710,7 +2908,10 @@ function isCombinedTask(task: string) {
 
 export function CodingCockpitShell() {
   const stopReversibleSuiteAfterCurrentRef = useRef(false);
+  const suiteFetchAbortRef = useRef<AbortController | null>(null);
   const reversibleSuiteClearVersionRef = useRef(0);
+  const localReversibleSuiteRunningRef = useRef(false);
+  const autoResumeSuiteIdRef = useRef("");
   const [task, setTask] = useState("");
   const [targetFile, setTargetFile] = useState("");
   const [allowedFiles, setAllowedFiles] = useState("");
@@ -1743,16 +2944,29 @@ export function CodingCockpitShell() {
   const [designReportCopyStatus, setDesignReportCopyStatus] = useState("");
   const [combinedCopyStatus, setCombinedCopyStatus] = useState("");
   const [appliedRunReceipts, setAppliedRunReceipts] = useState<AppliedRunReceipt[]>([]);
+  const appliedRunReceiptsRef = useRef<AppliedRunReceipt[]>([]);
   const [promptHistory, setPromptHistory] = useState<string[]>([]);
   const [lastPromptSnapshot, setLastPromptSnapshot] = useState("");
   const [reversalStatus, setReversalStatus] = useState("");
   const [isReverting, setIsReverting] = useState(false);
+  const [backgroundCleanupActive, setBackgroundCleanupActive] = useState(false);
   const [hasBrowserMounted, setHasBrowserMounted] = useState(process.env.NODE_ENV === "test");
   const [selectedProviderTruth, setSelectedProviderTruth] = useState<CodingProviderModelTruth>(() =>
     selectedProviderModelTruth(),
   );
   const [sourceProxyReachable, setSourceProxyReachable] = useState(process.env.NODE_ENV === "test");
   const [ollamaStoragePath, setOllamaStoragePath] = useState<string | null>(null);
+  const [backendRunSync, setBackendRunSync] = useState<BackendRunSyncState>({
+    lastSyncedAt: null,
+    message: "No active run",
+    runId: "",
+    status: "idle",
+  });
+  const [agentLabBaselineSnapshot, setAgentLabBaselineSnapshot] = useState<AgentLabBaselineSnapshot | null>(null);
+  const [agentLabBaselineLoadState, setAgentLabBaselineLoadState] = useState<
+    "idle" | "loading" | "ready" | "error"
+  >("idle");
+  const [agentLabBaselineLoadError, setAgentLabBaselineLoadError] = useState("");
   const [trialFixturesClean, setTrialFixturesClean] = useState<"yes" | "no" | "unknown">("unknown");
   const [lastProviderCallSmoke, setLastProviderCallSmoke] = useState<ProviderCallSmokeResult | null>(null);
   const [stressSmokeStatus, setStressSmokeStatus] = useState("");
@@ -1771,7 +2985,181 @@ export function CodingCockpitShell() {
     setAppliedRunReceipts(loadStoredAppliedRunReceipts());
     setPromptHistory(loadPromptHistory());
     setHasBrowserMounted(true);
+    void refreshAgentLabBaseline();
   }, []);
+
+  useEffect(() => {
+    appliedRunReceiptsRef.current = appliedRunReceipts;
+  }, [appliedRunReceipts]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function attachBackendRun() {
+      setBackendRunSync((current) => ({ ...current, message: "Syncing backend run state", status: "loading" }));
+      try {
+        const activeResponse = await fetch("/v1/coding/runs/active", { cache: "no-store" });
+        const activePayload = activeResponse.ok ? await activeResponse.json() : {};
+        let run = activePayload.run as DurableCodingRun | null | undefined;
+        let cloudCleared = false;
+        if (!run) {
+          const recentResponse = await fetch("/v1/coding/runs/recent?limit=1", { cache: "no-store" });
+          const recentPayload = recentResponse.ok ? await recentResponse.json() : {};
+          run = Array.isArray(recentPayload.runs) ? recentPayload.runs[0] : null;
+        }
+        if (!durableRunIsVisibleInCodingCloud(run)) {
+          cloudCleared = run?.status === "cleared";
+          run = null;
+        }
+        if (!localReversibleSuiteRunningRef.current) {
+          run = await failDurableRunIfPromptPacketStale(run, "attach");
+        }
+        if (cancelled) return;
+        if (!run) {
+          if (cloudCleared) {
+            reversibleSuiteClearVersionRef.current += 1;
+            clearStoredReversibleSuiteState();
+            setReversibleSuiteState(defaultReversibleSuiteState());
+          }
+          setBackendRunSync({
+            lastSyncedAt: new Date().toISOString(),
+            message: cloudCleared ? "Run cleared from coding cloud" : "No active run",
+            runId: "",
+            status: "synced",
+          });
+          return;
+        }
+        const syncedState = suiteStateFromDurableRun(run);
+        setReversibleTrialCount(syncedState.count);
+        setReversibleSuiteState((current) => {
+          if (current.status === "running" || current.status === "stopping") return current;
+          if (!shouldAttachDurableRunToUi(run, current)) return current;
+          return syncedState;
+        });
+        setBackendRunSync({
+          lastSyncedAt: new Date().toISOString(),
+          message: run.status === "running" || run.status === "pending" ? "Active run attached" : "Synced from backend",
+          runId:
+            run.status === "running" || run.status === "pending" || shouldAttachDurableRunToUi(run, reversibleSuiteState)
+              ? run.run_id
+              : "",
+          status: run.status === "running" || run.status === "pending" ? "attached" : "synced",
+        });
+      } catch (error) {
+        if (cancelled) return;
+        setBackendRunSync({
+          lastSyncedAt: null,
+          message: error instanceof Error ? error.message : "Backend run sync failed",
+          runId: "",
+          status: "error",
+        });
+      }
+    }
+    void attachBackendRun();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!backendRunSync.runId) return;
+    const interval = window.setInterval(() => {
+      void (async () => {
+        try {
+          const response = await fetch(`/v1/coding/runs/${encodeURIComponent(backendRunSync.runId)}`, {
+            cache: "no-store",
+          });
+          if (!response.ok) return;
+          const payload = await response.json();
+          let run = payload.run as DurableCodingRun | null | undefined;
+          if (!run) return;
+          if (!localReversibleSuiteRunningRef.current) {
+            run = await failDurableRunIfPromptPacketStale(run);
+          }
+          if (!run) return;
+          if (run.status === "cleared") {
+            reversibleSuiteClearVersionRef.current += 1;
+            clearStoredReversibleSuiteState();
+            setReversibleSuiteState(defaultReversibleSuiteState());
+            setBackendRunSync({
+              lastSyncedAt: new Date().toISOString(),
+              message: "Run cleared from another device",
+              runId: "",
+              status: "synced",
+            });
+            return;
+          }
+          if (!localReversibleSuiteRunningRef.current) {
+            setReversibleSuiteState((current) => {
+              if (current.suiteId && current.suiteId !== run.suite_id && current.suiteId !== run.run_id) return current;
+              if (!shouldAttachDurableRunToUi(run, current)) return current;
+              return suiteStateFromDurableRun(run);
+            });
+          }
+          setBackendRunSync((current) => ({
+            lastSyncedAt: new Date().toISOString(),
+            message: run.status === "running" || run.status === "pending" ? "Active run attached" : "Synced from backend",
+            runId:
+              run.status === "running" || run.status === "pending"
+                ? run.run_id
+                : current.runId && current.runId === run.run_id
+                  ? run.run_id
+                  : "",
+            status: run.status === "running" || run.status === "pending" ? "attached" : "synced",
+          }));
+        } catch {
+          setBackendRunSync((current) => ({ ...current, message: "Backend run polling failed", status: "error" }));
+        }
+      })();
+    }, 3500);
+    return () => window.clearInterval(interval);
+  }, [backendRunSync.runId]);
+
+  useEffect(() => {
+    if (backendRunSync.runId) return;
+    if (reversibleSuiteState.status === "running" || reversibleSuiteState.status === "stopping") return;
+    let cancelled = false;
+    async function pollActiveBackendRun() {
+      try {
+        const response = await fetch("/v1/coding/runs/active", { cache: "no-store" });
+        if (!response.ok) return;
+        const payload = await response.json();
+        let run = payload.run as DurableCodingRun | null | undefined;
+        if (cancelled || !durableRunIsVisibleInCodingCloud(run) || !run) return;
+        if (!localReversibleSuiteRunningRef.current) {
+          run = await failDurableRunIfPromptPacketStale(run);
+        }
+        if (cancelled || !durableRunIsVisibleInCodingCloud(run) || !run) return;
+        const syncedState = suiteStateFromDurableRun(run);
+        if (!shouldAttachDurableRunToUi(run, syncedState)) return;
+        setReversibleTrialCount(syncedState.count);
+        if (!localReversibleSuiteRunningRef.current) {
+          setReversibleSuiteState((current) => {
+            if (current.status === "idle" && current.results.length === 0 && !current.suiteId) {
+              return current;
+            }
+            return syncedState;
+          });
+        }
+        setBackendRunSync({
+          lastSyncedAt: new Date().toISOString(),
+          message: "Active run attached",
+          runId: run.run_id,
+          status: "attached",
+        });
+      } catch {
+        if (!cancelled) {
+          setBackendRunSync((current) => ({ ...current, message: "Waiting for backend run", status: "synced" }));
+        }
+      }
+    }
+    const interval = window.setInterval(() => {
+      void pollActiveBackendRun();
+    }, 3000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, [backendRunSync.runId, reversibleSuiteState.status]);
 
   useEffect(() => {
     if (process.env.NODE_ENV === "test") return;
@@ -1798,7 +3186,7 @@ export function CodingCockpitShell() {
       const clearVersion = reversibleSuiteClearVersionRef.current;
       const suiteReceipts = reversibleSuiteState.results
         .filter((result) => result.reversal_available)
-        .map((result) => receiptForSuiteReverseResult(result, appliedRunReceipts));
+        .map((result) => receiptForSuiteReverseResult(result, appliedRunReceiptsRef.current));
       if (suiteReceipts.length === 0) {
         return;
       }
@@ -1826,7 +3214,7 @@ export function CodingCockpitShell() {
     return () => {
       cancelled = true;
     };
-  }, [appliedRunReceipts, reversibleSuiteState.results.length, reversibleSuiteState.status, reversibleSuiteState.suiteId]);
+  }, [reversibleSuiteState.results.length, reversibleSuiteState.status, reversibleSuiteState.suiteId]);
 
   useEffect(() => {
     if (process.env.NODE_ENV === "test") return;
@@ -1836,29 +3224,189 @@ export function CodingCockpitShell() {
     storeReversibleSuiteState(reversibleSuiteState);
   }, [reversibleSuiteState]);
 
-  function clearReversibleSuitePanel() {
+  async function clearReversibleSuitePanel(options: { syncBackend?: boolean } = {}) {
+    const syncBackend = options.syncBackend ?? true;
+    const runId = backendRunSync.runId || reversibleSuiteState.suiteId;
     reversibleSuiteClearVersionRef.current += 1;
     clearStoredReversibleSuiteState();
     updateAppliedRunReceipts((receipts) =>
       receipts.filter((receipt) => !receipt.id.startsWith("trial-suite:")),
     );
     setReversibleSuiteState(defaultReversibleSuiteState());
+    setBackendRunSync({
+      lastSyncedAt: new Date().toISOString(),
+      message: "No active run",
+      runId: "",
+      status: "synced",
+    });
     setReversibleSuiteCopyStatus("Cleared trial suite results. Run again when ready.");
+    if (syncBackend && runId) {
+      const clearedRun = await markDurableCodingRunCleared(runId);
+      if (!clearedRun) {
+        setBackendRunSync({
+          lastSyncedAt: new Date().toISOString(),
+          message: "Backend clear timed out or failed",
+          runId: "",
+          status: "error",
+        });
+        setReversibleSuiteCopyStatus(
+          "Cleared the local panel, but backend clear timed out or failed. Refresh should not reattach this panel; retry Clear if the backend still shows an active run.",
+        );
+      }
+    }
+  }
+
+  async function resetPausedSyncedSuiteNow(copyStatus: string) {
+    await clearReversibleSuitePanel({ syncBackend: true });
+    const cleanState = defaultReversibleSuiteState();
+    setReversibleSuiteState(cleanState);
+    storeReversibleSuiteState(cleanState);
+    setReversibleSuiteCopyStatus(copyStatus);
   }
 
   async function handleCleanUpTrialRunner() {
+    if (backgroundCleanupActive && !isReverting) {
+      setBackgroundCleanupActive(false);
+    }
     if (isReverting || reversibleSuiteState.status === "running" || reversibleSuiteState.status === "stopping") {
       return;
     }
-    if (suitePendingRevertCount > 0) {
-      await handleReverseRemainingTrialEdits({ clearSuiteAfter: true });
+    const baseline = await refreshAgentLabBaseline();
+    const resultsSnapshot = reversibleSuiteState.results;
+    const suiteSnapshot = {
+      model: reversibleSuiteState.model,
+      provider: reversibleSuiteState.provider,
+      suiteId: reversibleSuiteState.suiteId,
+    };
+    const pendingRevert = suitePendingRevertCount > 0;
+    const orphanReceipts = orphanUnrevertedTrialReceipts.length;
+    const categorySnapshot = reversibleTrialCategory;
+    const receiptsSnapshot = [...appliedRunReceiptsRef.current];
+    const hasLeftovers = Boolean(baseline && !baseline.baseline_clean_for_fresh_suite);
+    const needsReceiptReverse = pendingRevert || orphanReceipts > 0 || resultsSnapshot.length > 0;
+    const pausedSyncedSuite =
+      reversibleSuiteStateCanResume(reversibleSuiteState) &&
+      Boolean(reversibleSuiteState.suiteId || backendRunSync.runId);
+
+    if (needsReceiptReverse) {
+      setBackgroundCleanupActive(true);
+      await clearReversibleSuitePanel();
+      setReversibleSuiteCopyStatus("UI cleared; reversing trial edits in background...");
+      const reverseWork = pendingRevert || resultsSnapshot.length > 0
+        ? handleReverseRemainingTrialEdits({
+            agentLabFullCleanup: categorySnapshot === "Coder",
+            appliedReceiptsOverride: receiptsSnapshot,
+            clearSuiteAfter: false,
+            resultsOverride: resultsSnapshot,
+            suiteSnapshot,
+          })
+        : handleRevertAllTrialRuns({ clearSuiteAfter: false });
+      const reversePromise = Promise.race([
+        reverseWork,
+        new Promise<string>((_, reject) => {
+          window.setTimeout(
+            () => reject(new Error("Background trial reverse timed out after 120s.")),
+            120_000,
+          );
+        }),
+      ]);
+      void reversePromise
+        .then(async (note) => {
+          if (categorySnapshot === "Coder") {
+            const refreshed = await refreshAgentLabBaseline();
+            if (refreshed && !refreshed.baseline_clean_for_fresh_suite) {
+              const sweepNote = await sweepAgentLabLeftoverFilesViaServer();
+              setReversibleSuiteCopyStatus(sweepNote);
+              await refreshAgentLabBaseline();
+              return;
+            }
+          }
+          if (note) {
+            setReversibleSuiteCopyStatus(note);
+          }
+          await refreshAgentLabBaseline();
+        })
+        .catch((error) => {
+          setReversibleSuiteCopyStatus(
+            error instanceof Error ? error.message : "Background trial reverse failed after UI clear.",
+          );
+        })
+        .finally(() => {
+          setBackgroundCleanupActive(false);
+        });
       return;
     }
-    if (orphanUnrevertedTrialReceipts.length > 0) {
-      await handleRevertAllTrialRuns({ clearSuiteAfter: true });
+
+    if (hasLeftovers && baseline) {
+      setBackgroundCleanupActive(true);
+      try {
+        if (pausedSyncedSuite) {
+          await resetPausedSyncedSuiteNow("Paused suite cleared. Removing agent-lab leftovers...");
+        }
+        setReversibleSuiteCopyStatus(
+          `Removing ${baseline.baseline_dirty_agent_lab_files.length} agent-lab leftover file(s)...`,
+        );
+        const note = await sweepAgentLabLeftoverFilesViaServer();
+        const refreshed = await refreshAgentLabBaseline();
+        if (!pausedSyncedSuite) {
+          await clearReversibleSuitePanel({ syncBackend: true });
+        }
+        if (refreshed?.baseline_clean_for_fresh_suite) {
+          const cleanState = defaultReversibleSuiteState();
+          setReversibleSuiteState(cleanState);
+          storeReversibleSuiteState(cleanState);
+          setReversibleSuiteCopyStatus(
+            note.includes("clean") ? note : "Agent-lab leftovers removed. Workspace is clean for a fresh Coder benchmark.",
+          );
+        } else {
+          setReversibleSuiteCopyStatus(note);
+        }
+      } catch (error) {
+        setReversibleSuiteCopyStatus(
+          error instanceof Error ? error.message : "Agent-lab leftover cleanup failed.",
+        );
+      } finally {
+        setIsReverting(false);
+        setBackgroundCleanupActive(false);
+        await refreshAgentLabBaseline();
+      }
       return;
     }
-    clearReversibleSuitePanel();
+
+    if (pausedSyncedSuite) {
+      await resetPausedSyncedSuiteNow("Paused suite cleared. Run again when ready.");
+      await refreshAgentLabBaseline();
+      return;
+    }
+
+    if (categorySnapshot === "Coder" && !baseline) {
+      setBackgroundCleanupActive(true);
+      setIsReverting(true);
+      setReversibleSuiteCopyStatus("Retrying agent-lab cleanup through server sweep...");
+      try {
+        const note = await sweepAgentLabLeftoverFilesViaServer();
+        const refreshed = await refreshAgentLabBaseline();
+        setReversibleSuiteCopyStatus(note);
+        if (refreshed?.baseline_clean_for_fresh_suite) {
+          const cleanState = defaultReversibleSuiteState();
+          setReversibleSuiteState(cleanState);
+          storeReversibleSuiteState(cleanState);
+        }
+      } catch (error) {
+        setReversibleSuiteCopyStatus(
+          error instanceof Error ? error.message : "Agent-lab leftover cleanup failed.",
+        );
+      } finally {
+        setIsReverting(false);
+        setBackgroundCleanupActive(false);
+        await refreshAgentLabBaseline();
+      }
+      return;
+    }
+
+    await clearReversibleSuitePanel();
+    setReversibleSuiteCopyStatus("Cleared trial suite results. Run again when ready.");
+    await refreshAgentLabBaseline();
   }
 
   useEffect(() => {
@@ -2009,8 +3557,13 @@ export function CodingCockpitShell() {
         };
         if (cancelled || clearVersion !== reversibleSuiteClearVersionRef.current) return;
         if (Array.isArray(payload.receipts)) {
-          setAppliedRunReceipts(payload.receipts);
-          storeAppliedRunReceipts(payload.receipts);
+          setAppliedRunReceipts((current) => {
+            if (appliedRunReceiptsAreEqual(current, payload.receipts ?? [])) {
+              return current;
+            }
+            storeAppliedRunReceipts(payload.receipts ?? []);
+            return payload.receipts ?? [];
+          });
         }
         if (payload.trial_fixtures_clean) {
           setTrialFixturesClean(payload.trial_fixtures_clean);
@@ -2218,12 +3771,130 @@ export function CodingCockpitShell() {
   const canRevertTrialRuns = trialReversalCount > 0 && !isReverting;
   const reversibleSuiteBusy =
     reversibleSuiteState.status === "running" || reversibleSuiteState.status === "stopping";
+  const agentLabHasLeftovers =
+    agentLabBaselineSnapshot !== null && !agentLabBaselineSnapshot.baseline_clean_for_fresh_suite;
+  const currentSuiteAgentLabFileClassification = useMemo(
+    () =>
+      classifyCurrentSuiteAgentLabFiles({
+        completedPromptChangedFiles: reversibleSuiteState.results
+          .filter(
+            (result) =>
+              result.visible_result_label === "PASS" ||
+              result.visible_result_label === "REVERTED" ||
+              result.visible_result_label === "ALREADY SATISFIED",
+          )
+          .flatMap((result) => [
+            result.selected_target,
+            ...result.applied_changed_files,
+            ...result.disk_changed_files,
+            ...result.preview_changed_files,
+          ]),
+        dirtyAgentLabFiles: agentLabBaselineSnapshot?.baseline_dirty_agent_lab_files ?? [],
+      }),
+    [agentLabBaselineSnapshot?.baseline_dirty_agent_lab_files, reversibleSuiteState.results],
+  );
+  const agentLabHasStaleLeftoversOutsideCurrentSuite =
+    currentSuiteAgentLabFileClassification.staleLeftoverFiles.length > 0;
+  const agentLabBaselineBlocksRun =
+    reversibleTrialCategory === "Coder" &&
+    (agentLabBaselineLoadState !== "ready" || agentLabHasLeftovers);
+  const reversibleSuiteCanResume = reversibleSuiteStateCanResume(reversibleSuiteState);
+  const reversibleSuiteResumeBlocked =
+    isReverting ||
+    backgroundCleanupActive ||
+    reversibleSuiteBusy ||
+    agentLabHasStaleLeftoversOutsideCurrentSuite;
+  const reversibleSuiteResumeBlockedMessage =
+    isReverting || backgroundCleanupActive
+      ? "Cleanup/reverse is still running. Wait before resuming the suite."
+      : reversibleSuiteBusy
+        ? "Trial suite is still running. Wait for the current prompt to finish."
+        : agentLabHasStaleLeftoversOutsideCurrentSuite
+          ? `Resume blocked by ${currentSuiteAgentLabFileClassification.staleLeftoverFiles.length} stale Agent Lab leftover file(s) outside this suite: ${currentSuiteAgentLabFileClassification.staleLeftoverFiles.join(", ")}`
+          : "";
+  useEffect(() => {
+    if (process.env.NODE_ENV === "test") return;
+    if (localReversibleSuiteRunningRef.current) return;
+    if (!reversibleSuiteStateCanResume(reversibleSuiteState)) return;
+    if (!reversibleSuiteState.suiteId) return;
+    if (!reversibleSuiteRunnerLeaseKnown(reversibleSuiteState.suiteId)) return;
+    if (reversibleSuiteState.completed >= reversibleSuiteState.count) return;
+    if (agentLabHasStaleLeftoversOutsideCurrentSuite) return;
+    const resumeKey = `${reversibleSuiteState.suiteId}:${reversibleSuiteState.completed}`;
+    if (autoResumeSuiteIdRef.current === resumeKey) return;
+    autoResumeSuiteIdRef.current = resumeKey;
+    setReversibleSuiteCopyStatus(
+      `Auto-resuming suite ${reversibleSuiteState.suiteId}: ${reversibleSuiteState.completed}/${reversibleSuiteState.count} complete.`,
+    );
+    void handleRunReversibleSuite(reversibleSuiteState, { forceResume: true });
+  }, [
+    agentLabHasStaleLeftoversOutsideCurrentSuite,
+    reversibleSuiteState.completed,
+    reversibleSuiteState.count,
+    reversibleSuiteState.status,
+    reversibleSuiteState.suiteId,
+  ]);
+  const hasReversibleSuiteDiagnostics =
+    reversibleSuiteState.status !== "idle" &&
+    (reversibleSuiteState.results.length > 0 ||
+      Boolean(reversibleSuiteState.suiteId) ||
+      Boolean(reversibleSuiteState.currentPrompt) ||
+      Boolean(reversibleSuiteState.interruptionReason) ||
+      Boolean(backendRunSync.runId));
+  const trialRunnerBlock = trialRunnerRunBlocked({
+    backgroundCleanupActive,
+    isReverting,
+    orphanUnrevertedReceiptCount: orphanUnrevertedTrialReceipts.length,
+    suitePendingRevertCount,
+    suiteStatus: reversibleSuiteState.status,
+  });
+  const reversibleSuiteRunBlocked = trialRunnerBlock.blocked || agentLabBaselineBlocksRun;
+  const reversibleSuiteRunBlockedMessage = agentLabBaselineBlocksRun
+    ? agentLabBaselineLoadState === "loading"
+      ? "Checking Agent Lab baseline before run..."
+      : agentLabBaselineLoadState === "error"
+        ? `Agent Lab baseline check failed: ${agentLabBaselineLoadError || "unknown error"}. Retry cleanup or refresh.`
+        : agentLabHasLeftovers
+          ? `Agent Lab still has ${agentLabBaselineSnapshot?.baseline_dirty_agent_lab_files.length ?? 0} leftover file(s). Reverse them before a fresh Coder benchmark.`
+          : "Agent Lab baseline is not ready yet. Wait for the baseline check to finish."
+    : trialRunnerBlock.message;
+  const reversibleSuiteFinished =
+    reversibleSuiteState.status === "done" || reversibleSuiteState.status === "failed";
   const canCleanUpTrialRunner =
     !isReverting &&
     !reversibleSuiteBusy &&
-    (reversibleSuiteState.results.length > 0 || canRevertTrialRuns || suitePendingRevertCount > 0);
+    !backgroundCleanupActive &&
+    agentLabBaselineLoadState !== "loading" &&
+    (reversibleSuiteState.results.length > 0 ||
+      canRevertTrialRuns ||
+      suitePendingRevertCount > 0 ||
+      agentLabHasLeftovers ||
+      (reversibleTrialCategory === "Coder" && agentLabBaselineLoadState === "error") ||
+      (reversibleSuiteCanResume && Boolean(reversibleSuiteState.suiteId || backendRunSync.runId)));
+  const showTrialCleanupPanel =
+    backgroundCleanupActive ||
+    isReverting ||
+    agentLabHasLeftovers ||
+    reversibleTrialCategory === "Coder" ||
+    (reversibleSuiteFinished && reversibleSuiteState.results.length > 0);
+  const agentLabBaselineStatusText =
+    reversibleTrialCategory === "Coder"
+      ? agentLabBaselineLoadState === "loading"
+        ? "Checking Agent Lab baseline..."
+        : agentLabBaselineLoadState === "error"
+          ? `Agent Lab baseline check failed: ${agentLabBaselineLoadError || "unknown error"}`
+          : agentLabBaselineSnapshot
+            ? agentLabBaselineSnapshot.baseline_clean_for_fresh_suite
+              ? "Agent Lab baseline clean — ready for a fresh Coder benchmark."
+              : `Agent Lab baseline dirty (${agentLabBaselineSnapshot.baseline_dirty_agent_lab_files.length} leftover file(s)). Reverse before running.`
+            : "Agent Lab baseline not loaded yet."
+      : null;
   const trialReversalHelpText =
-    suitePendingRevertCount > 0
+    backgroundCleanupActive || isReverting
+      ? "Cleanup/reverse is still running. Wait for it to finish before starting another benchmark."
+      : agentLabHasLeftovers
+        ? `Agent Lab still has ${agentLabBaselineSnapshot?.baseline_dirty_agent_lab_files.length ?? 0} leftover file(s) on disk. Reverse them before a fresh Coder benchmark.`
+        : suitePendingRevertCount > 0
       ? suitePassReversibleRowCount > suitePendingRevertTargetCount
         ? `Current suite made ${suitePendingRevertTargetCount} dummy fixture edit(s). Product-code PASS rows may be no-op checks; this button reverses fixtures and clears results.`
         : `Current suite made ${suitePendingRevertTargetCount} dummy fixture edit(s). This button reverses fixtures and clears results.`
@@ -2238,8 +3909,6 @@ export function CodingCockpitShell() {
           : reversibleSuiteState.results.length > 0
             ? "No unreverted trial edits remain. Reset fixtures below if disk still looks edited."
             : "No applied trial edits to reverse.";
-  const reversibleSuiteFinished =
-    reversibleSuiteState.status === "done" || reversibleSuiteState.status === "failed";
   const reversibleSuiteCountMismatch =
     reversibleSuiteState.results.length > 0 && reversibleSuiteState.count !== reversibleTrialCount;
   const reversibleSuiteReversalPanel = (
@@ -2250,12 +3919,33 @@ export function CodingCockpitShell() {
         onClick={() => void handleCleanUpTrialRunner()}
         type="button"
       >
-        {isReverting
+        {isReverting || backgroundCleanupActive
           ? "Cleaning up trial run..."
+          : agentLabBaselineLoadState === "error"
+            ? "Retry agent-lab cleanup"
+          : agentLabHasLeftovers && reversibleSuiteState.results.length === 0
+            ? "Reverse agent-lab leftovers"
+          : reversibleSuiteCanResume && (reversibleSuiteState.suiteId || backendRunSync.runId)
+            ? "Clear paused suite and reverse leftovers"
           : canCleanUpTrialRunner
             ? "Reverse trial edits and clear results"
+            : agentLabBaselineSnapshot?.baseline_clean_for_fresh_suite
+              ? "Trial cleanup complete"
             : "Trial cleanup complete"}
       </button>
+      {agentLabBaselineStatusText ? (
+        <p
+          className={`mt-2 text-xs font-semibold ${
+            agentLabBaselineLoadState === "error"
+              ? "text-rose-200"
+              : agentLabBaselineSnapshot?.baseline_clean_for_fresh_suite
+                ? "text-emerald-300"
+                : "text-amber-200"
+          }`}
+        >
+          {agentLabBaselineStatusText}
+        </p>
+      ) : null}
       <p className={`mt-2 text-xs ${commandMutedClass}`}>{trialReversalHelpText}</p>
     </>
   );
@@ -2715,6 +4405,9 @@ export function CodingCockpitShell() {
   function updateAppliedRunReceipts(updater: (receipts: AppliedRunReceipt[]) => AppliedRunReceipt[]) {
     setAppliedRunReceipts((current) => {
       const next = updater(current);
+      if (appliedRunReceiptsAreEqual(current, next)) {
+        return current;
+      }
       storeAppliedRunReceipts(next);
       return next;
     });
@@ -2818,7 +4511,7 @@ export function CodingCockpitShell() {
     return [
       "SpiritOS /coding diagnostics",
       "diagnostic_version: manual-natural-runner.v1",
-      "run_id: not recorded",
+      `run_id: ${backendRunSync.runId || previewState.taskId || "pending_backend_record"}`,
       `timestamp: ${new Date().toISOString()}`,
       `composer_elapsed: ${formatElapsedMs(
         composerTiming.runStartedAt,
@@ -3094,9 +4787,27 @@ export function CodingCockpitShell() {
       `health_search: use Source Proxy research routes when enabled`,
       "final_tree_status: verify with git status after suite; use Reverse trial edits to undo applied prompts manually",
       "next_recommended_action: inspect failures, copy diagnostics, then rerun the bounded suite",
+      ...formatAgentLabBaselineDiagnostics({
+        baseline_agent_lab_files: state.baselineAgentLabFiles,
+        baseline_checked_at: state.baselineCheckedAt ?? "not checked",
+        baseline_clean_for_fresh_suite: state.baselineCleanForFreshSuite ?? false,
+        baseline_dirty_agent_lab_files: state.baselineDirtyAgentLabFiles,
+        baseline_unreverted_receipts: state.baselineUnrevertedReceipts,
+      }),
       "",
       "per_prompt:",
     ];
+    if (state.results.length === 0 && (state.suiteId || state.interruptionReason || state.currentPrompt)) {
+      lines.push(
+        "- local_results: none",
+        `  backend_run_id: ${backendRunSync.runId || state.suiteId || "none"}`,
+        `  backend_sync_status: ${backendRunSync.status}`,
+        `  backend_sync_message: ${backendRunSync.message || "none"}`,
+        `  paused_prompt: ${state.currentPrompt || "none"}`,
+        `  agent_lab_baseline: ${agentLabBaselineSnapshot?.baseline_clean_for_fresh_suite ? "clean" : agentLabBaselineSnapshot ? "dirty" : "unknown"}`,
+        `  agent_lab_dirty_files: ${formatList(agentLabBaselineSnapshot?.baseline_dirty_agent_lab_files ?? [], "none")}`,
+      );
+    }
     for (const result of state.results) {
       lines.push(
         `- prompt_id: ${result.prompt.id}`,
@@ -3185,12 +4896,295 @@ export function CodingCockpitShell() {
     }
   }
 
+  async function fetchAgentLabBaselineSnapshot(): Promise<AgentLabBaselineSnapshot | null> {
+    const unrevertedTargets = appliedRunReceiptsRef.current
+      .filter((receipt) => receipt.id.startsWith("trial-suite:") && !receipt.revertedAt && !receipt.staleResolvedAt)
+      .flatMap((receipt) => [receipt.target, ...receipt.changedFiles])
+      .filter((path) => isAgentLabTrialPath(path));
+    try {
+      const query = unrevertedTargets.length > 0 ? `?unreverted_targets=${encodeURIComponent(unrevertedTargets.join(","))}` : "";
+      const response = await fetch(`/v1/coding/agent-lab-baseline${query}`, { cache: "no-store" });
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => "");
+        setAgentLabBaselineLoadState("error");
+        setAgentLabBaselineLoadError(errorText || `HTTP ${response.status}`);
+        return null;
+      }
+      const payload = await response.json() as AgentLabBaselineSnapshot;
+      setAgentLabBaselineLoadState("ready");
+      setAgentLabBaselineLoadError("");
+      return payload;
+    } catch (error) {
+      setAgentLabBaselineLoadState("error");
+      setAgentLabBaselineLoadError(error instanceof Error ? error.message : "baseline fetch failed");
+      return null;
+    }
+  }
+
+  async function refreshAgentLabBaseline() {
+    if (reversibleTrialCategory === "Coder") {
+      setAgentLabBaselineLoadState((current) => (current === "ready" ? "loading" : current === "idle" ? "loading" : current));
+    }
+    const snapshot = await fetchAgentLabBaselineSnapshot();
+    setAgentLabBaselineSnapshot(snapshot);
+    setTrialFixturesClean(snapshot ? (snapshot.baseline_clean_for_fresh_suite ? "yes" : "no") : "unknown");
+    return snapshot;
+  }
+
+  async function sweepAgentLabLeftoverFilesViaServer(): Promise<string> {
+    const unrevertedTargets = appliedRunReceiptsRef.current
+      .filter((receipt) => receipt.id.startsWith("trial-suite:") && !receipt.revertedAt && !receipt.staleResolvedAt)
+      .flatMap((receipt) => [receipt.target, ...receipt.changedFiles])
+      .filter((path) => isAgentLabTrialPath(path));
+    // #region agent log
+    fetch("http://localhost:7784/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "0fdea5" },
+      body: JSON.stringify({
+        sessionId: "0fdea5",
+        hypothesisId: "H5",
+        location: "CodingCockpitShell.tsx:sweepAgentLabLeftoverFilesViaServer",
+        message: "sweep request start",
+        data: { unrevertedTargetCount: unrevertedTargets.length },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
+    const response = await fetchWithTimeout(
+      "/v1/coding/agent-lab-sweep",
+      {
+        body: JSON.stringify({ unreverted_targets: unrevertedTargets }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      },
+      120_000,
+    );
+    const payload = (await response.json().catch(() => ({}))) as {
+      clean?: boolean;
+      error?: string;
+      message?: string;
+      snapshot?: AgentLabBaselineSnapshot;
+    };
+    // #region agent log
+    fetch("http://localhost:7784/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "0fdea5" },
+      body: JSON.stringify({
+        sessionId: "0fdea5",
+        hypothesisId: "H5",
+        location: "CodingCockpitShell.tsx:sweepAgentLabLeftoverFilesViaServer",
+        message: "sweep request finished",
+        data: { ok: response.ok, clean: payload.clean, error: payload.error ?? null },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
+    if (!response.ok) {
+      throw new Error(payload.error || `agent-lab sweep HTTP ${response.status}`);
+    }
+    if (payload.snapshot) {
+      setAgentLabBaselineSnapshot(payload.snapshot);
+      setAgentLabBaselineLoadState("ready");
+      setAgentLabBaselineLoadError("");
+      setTrialFixturesClean(payload.snapshot.baseline_clean_for_fresh_suite ? "yes" : "no");
+    } else {
+      await refreshAgentLabBaseline();
+    }
+    return payload.message || (payload.clean ? "Workspace is clean for a fresh Coder benchmark." : "Agent-lab sweep finished.");
+  }
+
+  function buildAgentLabCleanupSeedReceipt(target: string): AppliedRunReceipt {
+    const providerTruth = selectedProviderTruth;
+    const normalizedTarget = normalizeRepoPath(target);
+    return {
+      allowedFiles: [
+        normalizedTarget,
+        "src/app/agent-lab/**",
+        "src/components/agent-lab/**",
+        "src/lib/agent-lab/**",
+        "src/app/api/agent-lab/**",
+        "tests/agent-lab/**",
+      ],
+      appliedAt: new Date().toISOString(),
+      changedFiles: [target],
+      diff: "",
+      hermesUsedForThisRun: providerTruth.hermesUsedForThisRun,
+      id: `trial-suite:cleanup:${target}`,
+      model: providerTruth.modelLabel,
+      prompt: `Cleanup delete ${target}`,
+      provider: providerTruth.providerLabel,
+      providerModelSource: providerTruth.source,
+      providerModelStatus: providerTruth.status,
+      revertedAt: null,
+      reversalModel: null,
+      reversalProvider: null,
+      reversalProviderModelSource: null,
+      reverseDiff: "",
+      target: normalizedTarget,
+      taskId: `cleanup-${normalizedTarget}`,
+    };
+  }
+
+  async function sweepAgentLabLeftoverFiles(paths: string[]): Promise<string> {
+    const ordered = [...new Set(paths.map((path) => normalizeRepoPath(path)).filter(Boolean))].sort(
+      (left, right) => right.length - left.length,
+    );
+    if (ordered.length === 0) {
+      return "No agent-lab leftover files were found on disk.";
+    }
+    const failures: string[] = [];
+    let removed = 0;
+    for (const target of ordered) {
+      const cleanupReceipt = buildAgentLabCleanupSeedReceipt(target);
+      try {
+        // #region agent log
+        fetch("http://localhost:7784/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "0fdea5" },
+          body: JSON.stringify({
+            sessionId: "0fdea5",
+            hypothesisId: "H1",
+            location: "CodingCockpitShell.tsx:sweepAgentLabLeftoverFiles",
+            message: "sweep delete start",
+            data: { target, allowedFiles: cleanupReceipt.allowedFiles },
+            timestamp: Date.now(),
+          }),
+        }).catch(() => {});
+        // #endregion
+        await sweepDeleteAgentLabFileWithRetry(cleanupReceipt);
+        removed += 1;
+        // #region agent log
+        fetch("http://localhost:7784/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "0fdea5" },
+          body: JSON.stringify({
+            sessionId: "0fdea5",
+            hypothesisId: "H1",
+            location: "CodingCockpitShell.tsx:sweepAgentLabLeftoverFiles",
+            message: "sweep delete ok",
+            data: { target },
+            timestamp: Date.now(),
+          }),
+        }).catch(() => {});
+        // #endregion
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Agent-lab delete failed.";
+        // #region agent log
+        fetch("http://localhost:7784/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "0fdea5" },
+          body: JSON.stringify({
+            sessionId: "0fdea5",
+            hypothesisId: "H1",
+            location: "CodingCockpitShell.tsx:sweepAgentLabLeftoverFiles",
+            message: "sweep delete failed",
+            data: { target, error: message },
+            timestamp: Date.now(),
+          }),
+        }).catch(() => {});
+        // #endregion
+        if (reversalLooksAlreadyApplied(message)) {
+          removed += 1;
+          continue;
+        }
+        failures.push(`${target}: ${message}`);
+      }
+    }
+    if (failures.length > 0) {
+      return `Removed ${removed}/${ordered.length} agent-lab file(s). Still dirty: ${failures.slice(0, 3).join("; ")}`;
+    }
+    return `Removed ${removed} agent-lab leftover file(s). Workspace is clean for a fresh Coder benchmark.`;
+  }
+
+  async function sweepDeleteAgentLabFileWithRetry(
+    receipt: AppliedRunReceipt,
+    maxAttempts = 3,
+  ): Promise<void> {
+    let lastError: unknown;
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      try {
+        await applyAgentLabDeleteFallback(receipt);
+        return;
+      } catch (error) {
+        lastError = error;
+        const retryable =
+          attempt < maxAttempts &&
+          (error instanceof BrowserAbortTimeoutError ||
+            isTransientNetworkFetchError(error));
+        // #region agent log
+        fetch("http://localhost:7784/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "0fdea5" },
+          body: JSON.stringify({
+            sessionId: "0fdea5",
+            hypothesisId: "H2",
+            location: "CodingCockpitShell.tsx:sweepDeleteAgentLabFileWithRetry",
+            message: retryable ? "sweep delete retry" : "sweep delete give up",
+            data: {
+              attempt,
+              target: receipt.target,
+              error: error instanceof Error ? error.message : String(error),
+            },
+            timestamp: Date.now(),
+          }),
+        }).catch(() => {});
+        // #endregion
+        if (!retryable) break;
+        await waitForPromptPacketRetry(attempt);
+      }
+    }
+    throw lastError instanceof Error ? lastError : new Error("Agent-lab delete failed.");
+  }
+
+  function finalizeReversibleTrialResult(
+    result: ReversibleSuitePromptResult,
+  ): ReversibleSuitePromptResult {
+    const passProof = downgradePassWithoutReversalProof({
+      appliedChangedFiles: result.applied_changed_files,
+      diskChangedFiles: result.disk_changed_files,
+      expectedOutcome: result.expected_outcome,
+      reversalAvailable: result.reversal_available,
+      reverseDiff: result.reverse_diff,
+      visibleResultLabel: result.visible_result_label,
+    });
+    if (!passProof.downgraded) return result;
+    return {
+      ...result,
+      error_summary: result.error_summary || `reason_code=${passProof.reason_code}`,
+      failure_reason: passProof.failure_reason,
+      visible_result_label: passProof.visible_result_label,
+    };
+  }
+
   async function runOneReversibleTrialPrompt(
+    suiteId: string,
     prompt: ReversibleTrialPrompt,
     onStep?: (step: string) => void,
+    options: { baselineCleanForFreshSuite?: boolean | null } = {},
   ): Promise<ReversibleSuitePromptResult> {
     const promptStartedAt = performance.now();
     const endpointStatuses: string[] = [];
+    let stepInstrumentation: TrialApplyStepInstrumentation = {
+      prompt_packet_requested_at: new Date().toISOString(),
+    };
+    const pushProgress = (
+      patch: Partial<DurableCodingRunRow>,
+      runPatch: Partial<DurableCodingRun> = {},
+      instrumentationPatch?: TrialApplyStepInstrumentation,
+    ) => {
+      if (instrumentationPatch) {
+        stepInstrumentation = mergeStepInstrumentation(stepInstrumentation, instrumentationPatch);
+      }
+      void postDurableCodingRunPromptProgress(
+        suiteId,
+        prompt,
+        {
+          ...patch,
+          step_instrumentation: stepInstrumentation,
+        },
+        runPatch,
+      );
+    };
     const effectivePrompt = reversibleTrialPromptForMode(prompt, modeForTrialCategory(prompt.category));
     const taskText = effectivePrompt;
     const packet = buildManualTaskPacket({
@@ -3227,23 +5221,62 @@ export function CodingCockpitShell() {
       ...patch,
     });
     onStep?.("Reading request");
-    const taskResponse = await fetch("/v1/tasks/long-running", {
-      body: JSON.stringify({
-        description: effectivePrompt,
-        steps: [
-          "Reading request",
-          "Finding files",
-          "Calling model",
-          "Editing files",
-          "Checking",
-          "Ready for review",
-        ],
-      }),
-      headers: { "content-type": "application/json" },
-      method: "POST",
-    });
-    const taskPayload = await readJson(taskResponse);
+    let taskResponse: Response;
+    try {
+      taskResponse = await fetchWithTimeout(
+        "/v1/tasks/long-running",
+        {
+          body: JSON.stringify({
+            description: effectivePrompt,
+            steps: [
+              "Reading request",
+              "Finding files",
+              "Calling model",
+              "Editing files",
+              "Checking",
+              "Ready for review",
+            ],
+          }),
+          headers: { "content-type": "application/json" },
+          method: "POST",
+          signal: suiteFetchAbortRef.current?.signal ?? undefined,
+        },
+        TRIAL_LONG_RUNNING_TIMEOUT_MS,
+      );
+    } catch (error) {
+      if (suiteFetchAbortRef.current?.signal.aborted) {
+        throw new Error("user_stop");
+      }
+      endpointStatuses.push(`/v1/tasks/long-running:${promptPacketEndpointStatusForError(error)}`);
+      return baseResult({
+        endpoint_statuses: [...endpointStatuses],
+        error_summary: `timeout_source: /v1/tasks/long-running; timeout_layer: ${timeoutLayerFromError(error)}`,
+        failure_reason: error instanceof Error ? error.message : "Long-running task create timed out.",
+        next_recommended_action: "Restart spiritos-lan if /v1/tasks/long-running is wedged, then rerun from this prompt.",
+        visible_result_label: "NEEDS FIX",
+      });
+    }
+    const taskRead = await readApiResponse(taskResponse, "/v1/tasks/long-running");
+    const taskPayload = taskRead.payload;
     endpointStatuses.push(`/v1/tasks/long-running:${taskResponse.status}`);
+    if (taskRead.routeFailure) {
+      return buildRouteUnavailablePromptResult(baseResult, taskRead.routeFailure, endpointStatuses);
+    }
+    void postDurableCodingRunPromptProgress(
+      suiteId,
+      prompt,
+      {
+        endpoint_statuses: [...endpointStatuses],
+        model_called_for_generation: selectedProviderTruth.modelId || selectedProviderTruth.modelLabel || "none",
+      },
+      {
+        endpoint_statuses: [...endpointStatuses],
+        final_summary: "Reading request",
+        model: selectedProviderTruth.modelId || selectedProviderTruth.modelLabel || "none",
+        model_called_for_generation: selectedProviderTruth.modelId || selectedProviderTruth.modelLabel || "none",
+        provider: selectedProviderTruth.providerLabel,
+      },
+    );
     if (!taskResponse.ok) {
       return baseResult({
         endpoint_statuses: [...endpointStatuses],
@@ -3258,29 +5291,63 @@ export function CodingCockpitShell() {
       });
     }
 
-    onStep?.(previewLoadingPhaseLabel(sourceProxyReachable, "preview"));
+    onStep?.(previewLoadingPhaseLabel(sourceProxyReachable, "promptPacket"));
+    const promptPacketStartedStatuses = [...endpointStatuses, "/v1/decisions/prompt-packet:started"];
+    await postDurableCodingRunPromptProgress(
+      suiteId,
+      prompt,
+      {
+        endpoint_statuses: promptPacketStartedStatuses,
+        model_called_for_generation: selectedProviderTruth.modelId || selectedProviderTruth.modelLabel || "none",
+      },
+      {
+        endpoint_statuses: promptPacketStartedStatuses,
+        final_summary: previewLoadingPhaseLabel(sourceProxyReachable, "promptPacket"),
+        model: selectedProviderTruth.modelId || selectedProviderTruth.modelLabel || "none",
+        model_called_for_generation: selectedProviderTruth.modelId || selectedProviderTruth.modelLabel || "none",
+        provider: selectedProviderTruth.providerLabel,
+      },
+    );
+    const promptPacketSignal = suiteFetchAbortRef.current?.signal ?? undefined;
+    const trialPromptPacketRetry = {
+      maxAttempts: TRIAL_PROMPT_PACKET_MAX_ATTEMPTS,
+      onRetry: (attempt: number) => {
+        if (attempt > 1) {
+          onStep?.(`Running prompt-packet (retry ${attempt}/${TRIAL_PROMPT_PACKET_MAX_ATTEMPTS})`);
+        }
+      },
+      totalBudgetMs: TRIAL_PROMPT_PACKET_TIMEOUT_MS,
+    };
     let proposalResponse: Response;
     try {
-      proposalResponse = await fetchPromptPacketWithRetry({
-        body: JSON.stringify({
-          active_task_id: taskId,
-          allowed_files: packet.allowedFiles,
-          expected_outcome: prompt.expectedOutcome,
-          needs_codebase_context: true,
-          prefer_free: true,
-          protected_paths_blocked: true,
-          quick_find_hints: prompt.verifyPathHints,
-          selected_target: packet.selectedTarget,
-          task: taskText,
-          trial_mode: "live_apply",
-          trial_prompt_id: prompt.id,
-          verification: packet.checks,
-          wants_implementation: true,
-        }),
-        headers: { "content-type": "application/json" },
-        method: "POST",
-      }, TRIAL_PROMPT_PACKET_TIMEOUT_MS);
+      proposalResponse = await fetchPromptPacketWithRetry(
+        {
+          body: JSON.stringify({
+            active_task_id: taskId,
+            allowed_files: packet.allowedFiles,
+            expected_outcome: prompt.expectedOutcome,
+            needs_codebase_context: true,
+            prefer_free: true,
+            protected_paths_blocked: true,
+            quick_find_hints: prompt.verifyPathHints,
+            selected_target: packet.selectedTarget,
+            task: taskText,
+            trial_mode: "live_apply",
+            trial_prompt_id: prompt.id,
+            verification: packet.checks,
+            wants_implementation: true,
+          }),
+          headers: { "content-type": "application/json" },
+          method: "POST",
+          signal: promptPacketSignal,
+        },
+        MANUAL_PROMPT_PACKET_TIMEOUT_MS,
+        trialPromptPacketRetry,
+      );
     } catch (error) {
+      if (promptPacketSignal?.aborted || suiteFetchAbortRef.current?.signal.aborted) {
+        throw new Error("user_stop");
+      }
       const timeoutLayer = timeoutLayerFromError(error);
       endpointStatuses.push(`/v1/decisions/prompt-packet:${promptPacketEndpointStatusForError(error)}`);
       return baseResult({
@@ -3297,9 +5364,29 @@ export function CodingCockpitShell() {
         visible_result_label: "NEEDS FIX",
       });
     }
-    let proposalPayload = await readJson(proposalResponse);
+    let proposalRead = await readApiResponse(proposalResponse, "/v1/decisions/prompt-packet");
+    let proposalPayload = proposalRead.payload;
     endpointStatuses.push(`/v1/decisions/prompt-packet:${proposalResponse.status}`);
+    if (proposalRead.routeFailure) {
+      return buildRouteUnavailablePromptResult(
+        baseResult,
+        proposalRead.routeFailure,
+        endpointStatuses,
+        undefined,
+        false,
+        taskId,
+      );
+    }
     if (!proposalResponse.ok) {
+      await postDurableCodingRunPromptProgress(
+        suiteId,
+        prompt,
+        { endpoint_statuses: [...endpointStatuses] },
+        {
+          endpoint_statuses: [...endpointStatuses],
+          final_summary: `prompt-packet failed (${proposalResponse.status})`,
+        },
+      );
       return baseResult({
         endpoint_statuses: [...endpointStatuses],
         error_summary: safePayloadSummary(proposalPayload),
@@ -3318,6 +5405,27 @@ export function CodingCockpitShell() {
       typeof proposalPayload === "object" && proposalPayload !== null
         ? String((proposalPayload as Record<string, unknown>).reason_code ?? "").trim()
         : "";
+    await postDurableCodingRunPromptProgress(
+      suiteId,
+      prompt,
+      {
+        endpoint_statuses: [...endpointStatuses],
+        generated_diff_present: proposedDiff.trim().length > 0,
+        model_called_for_generation: modelCalledForGeneration,
+        provider_call_made: providerCallMade,
+        reason_code: promptPacketReasonCode,
+      },
+      {
+        endpoint_statuses: [...endpointStatuses],
+        final_summary: providerCallMade ? "prompt-packet returned; calling model" : "prompt-packet returned; awaiting provider proof",
+        generated_diff_present: proposedDiff.trim().length > 0,
+        model: modelCalledForGeneration,
+        model_called_for_generation: modelCalledForGeneration,
+        provider: providerTruth.providerLabel,
+        provider_call_made: providerCallMade,
+        reason_code: promptPacketReasonCode || null,
+      },
+    );
     if (
       prompt.expectedOutcome === "edit_reversible" &&
       !proposedDiff.trim() &&
@@ -3325,7 +5433,16 @@ export function CodingCockpitShell() {
       !providerCallMade &&
       (packet.selectedTarget ?? prompt.targetFile).startsWith("src/")
     ) {
-      onStep?.(previewLoadingPhaseLabel(sourceProxyReachable, "preview"));
+      onStep?.("Recovering prompt-packet route");
+      await postDurableCodingRunPromptProgress(
+        suiteId,
+        prompt,
+        { endpoint_statuses: [...endpointStatuses] },
+        {
+          endpoint_statuses: [...endpointStatuses],
+          final_summary: "Recovering prompt-packet route (already-satisfied retry)",
+        },
+      );
       proposalResponse = await fetchPromptPacketWithRetry(
         {
           body: JSON.stringify({
@@ -3346,11 +5463,24 @@ export function CodingCockpitShell() {
           }),
           headers: { "content-type": "application/json" },
           method: "POST",
+          signal: promptPacketSignal,
         },
-        TRIAL_PROMPT_PACKET_TIMEOUT_MS,
+        MANUAL_PROMPT_PACKET_TIMEOUT_MS,
+        trialPromptPacketRetry,
       );
-      proposalPayload = await readJson(proposalResponse);
+      proposalRead = await readApiResponse(proposalResponse, "/v1/decisions/prompt-packet");
+      proposalPayload = proposalRead.payload;
       endpointStatuses.push(`/v1/decisions/prompt-packet(product-retry):${proposalResponse.status}`);
+      if (proposalRead.routeFailure) {
+        return buildRouteUnavailablePromptResult(
+          baseResult,
+          proposalRead.routeFailure,
+          endpointStatuses,
+          undefined,
+          false,
+          taskId,
+        );
+      }
       providerTruth = providerModelTruthFromPayload(proposalPayload, selectedProviderTruth);
       proposedDiff = diffFromPayload(proposalPayload);
       providerCallMade = trialProviderCallMadeFromPayload(proposalPayload, providerTruth);
@@ -3361,6 +5491,27 @@ export function CodingCockpitShell() {
           ? String((proposalPayload as Record<string, unknown>).reason_code ?? "").trim()
           : "";
     }
+    await postDurableCodingRunPromptProgress(
+      suiteId,
+      prompt,
+      {
+        endpoint_statuses: [...endpointStatuses],
+        generated_diff_present: proposedDiff.trim().length > 0,
+        model_called_for_generation: modelCalledForGeneration,
+        provider_call_made: providerCallMade,
+        reason_code: promptPacketReasonCode,
+      },
+      {
+        endpoint_statuses: [...endpointStatuses],
+        final_summary: providerCallMade ? "Model returned; previewing diff" : "prompt-packet finished without provider proof",
+        generated_diff_present: proposedDiff.trim().length > 0,
+        model: modelCalledForGeneration,
+        model_called_for_generation: modelCalledForGeneration,
+        provider: providerTruth.providerLabel,
+        provider_call_made: providerCallMade,
+        reason_code: promptPacketReasonCode || null,
+      },
+    );
     if (
       prompt.expectedOutcome === "edit_reversible" &&
       !proposedDiff.trim() &&
@@ -3391,11 +5542,24 @@ export function CodingCockpitShell() {
           }),
           headers: { "content-type": "application/json" },
           method: "POST",
+          signal: promptPacketSignal,
         },
-        TRIAL_PROMPT_PACKET_TIMEOUT_MS,
+        MANUAL_PROMPT_PACKET_TIMEOUT_MS,
+        trialPromptPacketRetry,
       );
-      proposalPayload = await readJson(proposalResponse);
+      proposalRead = await readApiResponse(proposalResponse, "/v1/decisions/prompt-packet");
+      proposalPayload = proposalRead.payload;
       endpointStatuses.push(`/v1/decisions/prompt-packet(retry):${proposalResponse.status}`);
+      if (proposalRead.routeFailure) {
+        return buildRouteUnavailablePromptResult(
+          baseResult,
+          proposalRead.routeFailure,
+          endpointStatuses,
+          undefined,
+          false,
+          taskId,
+        );
+      }
       providerTruth = providerModelTruthFromPayload(proposalPayload, selectedProviderTruth);
       proposedDiff = diffFromPayload(proposalPayload);
       providerCallMade = trialProviderCallMadeFromPayload(proposalPayload, providerTruth);
@@ -3413,16 +5577,74 @@ export function CodingCockpitShell() {
       promptPacketReasonCode === "coder_no_changes_needed" &&
       providerCallMade
     ) {
-      return baseResult({
-        checks_result: "already satisfied on disk; live model call recorded",
-        failure_reason: "",
-        model_called_for_generation: modelCalledForGeneration,
-        provider: providerTruth.providerLabel,
-        provider_call_made: true,
-        run_id: taskId,
-        reverse_status_text: "Product code already satisfies this prompt; no trial edit was applied.",
-        visible_result_label: "ALREADY SATISFIED",
+      const alreadySatisfiedClassification = classifyEditReversibleAlreadySatisfied({
+        baselineCleanForFreshSuite: options.baselineCleanForFreshSuite ?? null,
+        expectedOutcome: prompt.expectedOutcome,
+        promptPacketReasonCode,
+        proposedDiff,
+        providerCallMade,
       });
+      if (alreadySatisfiedClassification.kind === "needs_fix") {
+        pushProgress(
+          {
+            endpoint_statuses: [...endpointStatuses],
+            model_called_for_generation: modelCalledForGeneration,
+            provider_call_made: true,
+            reason_code: alreadySatisfiedClassification.reason_code,
+            result_label: "NEEDS FIX",
+          },
+          {
+            final_summary: `Prompt classified as ${alreadySatisfiedClassification.reason_code}`,
+            model: modelCalledForGeneration,
+            model_called_for_generation: modelCalledForGeneration,
+            provider: providerTruth.providerLabel,
+            provider_call_made: true,
+          },
+          {
+            last_progress_reason_code: alreadySatisfiedClassification.reason_code,
+            prompt_packet_completed_at: new Date().toISOString(),
+            result_finalized_at: new Date().toISOString(),
+          },
+        );
+        return finalizeReversibleTrialResult(
+          baseResult({
+            checks_result: alreadySatisfiedClassification.reason_code,
+            error_summary: `reason_code=${alreadySatisfiedClassification.reason_code}`,
+            failure_reason: `NEEDS FIX: edit-required prompt reported already satisfied without expected-no-edit proof (${alreadySatisfiedClassification.reason_code}).`,
+            model_called_for_generation: modelCalledForGeneration,
+            next_recommended_action:
+              alreadySatisfiedClassification.reason_code === "dirty_baseline_already_satisfied"
+                ? "Reverse trial edits and clear agent-lab leftovers before rerunning."
+                : "Inspect prompt-packet/disk proof. Already satisfied cannot count as success for edit_reversible prompts.",
+            provider: providerTruth.providerLabel,
+            provider_call_made: true,
+            run_id: taskId,
+            reverse_status_text: "No applied trial edit with reversal proof.",
+            visible_result_label: "NEEDS FIX",
+          }),
+        );
+      }
+      pushProgress(
+        {},
+        {},
+        {
+          last_progress_reason_code: "coder_no_changes_needed",
+          prompt_packet_completed_at: new Date().toISOString(),
+          result_finalized_at: new Date().toISOString(),
+        },
+      );
+      return finalizeReversibleTrialResult(
+        baseResult({
+          checks_result: "already satisfied on disk; live model call recorded",
+          failure_reason: "",
+          model_called_for_generation: modelCalledForGeneration,
+          provider: providerTruth.providerLabel,
+          provider_call_made: true,
+          run_id: taskId,
+          reverse_status_text: "Product code already satisfies this prompt; no trial edit was applied.",
+          visible_result_label: "ALREADY SATISFIED",
+        }),
+      );
     }
     if (prompt.expectedOutcome !== "edit_reversible") {
       if (proposedDiff.trim()) {
@@ -3539,27 +5761,73 @@ export function CodingCockpitShell() {
     }
 
     onStep?.("Finding files");
-    const diffResponse = await fetch("/v1/verification/diff-preview", {
-      body: JSON.stringify({
-        route_type: "live_apply",
-        task_spec: {
-          allowed_files: packet.allowedFiles,
-          forbidden_files: PROTECTED_FORBIDDEN_FILES,
-          risk_tier: prompt.risk,
-          schema_version: 1,
-          source: "coding-reversible-trial-runner-suite",
-          target: packet.selectedTarget ?? prompt.targetFile,
-          task_type: "modify_existing_file",
-          verification: packet.checks,
-        },
-        task_text: taskText,
-        unified_diff: proposedDiff,
-      }),
-      headers: { "content-type": "application/json" },
-      method: "POST",
-    });
-    const diffPayload = await readJson(diffResponse);
+    let diffResponse: Response;
+    try {
+      diffResponse = await fetchWithTimeout("/v1/verification/diff-preview", {
+        body: JSON.stringify({
+          route_type: "live_apply",
+          task_spec: {
+            allowed_files: packet.allowedFiles,
+            forbidden_files: PROTECTED_FORBIDDEN_FILES,
+            risk_tier: prompt.risk,
+            schema_version: 1,
+            source: "coding-reversible-trial-runner-suite",
+            target: packet.selectedTarget ?? prompt.targetFile,
+            task_type: "modify_existing_file",
+            verification: packet.checks,
+          },
+          task_text: taskText,
+          unified_diff: proposedDiff,
+        }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+        signal: suiteFetchAbortRef.current?.signal ?? undefined,
+      }, TRIAL_POST_MODEL_STAGE_TIMEOUT_MS);
+    } catch (error) {
+      endpointStatuses.push(`/v1/verification/diff-preview:${promptPacketEndpointStatusForError(error)}`);
+      return baseResult({
+        endpoint_statuses: [...endpointStatuses],
+        error_summary: `timeout_source: /v1/verification/diff-preview; timeout_layer: ${timeoutLayerFromError(error)}`,
+        failure_reason: error instanceof Error ? error.message : "Diff preview timed out.",
+        model_called_for_generation: modelCalledForGeneration,
+        provider: providerTruth.providerLabel,
+        provider_call_made: true,
+        run_id: taskId,
+        visible_result_label: "NEEDS FIX",
+      });
+    }
+    const diffRead = await readApiResponse(diffResponse, "/v1/verification/diff-preview");
+    const diffPayload = diffRead.payload;
     endpointStatuses.push(`/v1/verification/diff-preview:${diffResponse.status}`);
+    if (diffRead.routeFailure) {
+      return buildRouteUnavailablePromptResult(
+        baseResult,
+        diffRead.routeFailure,
+        endpointStatuses,
+        undefined,
+        true,
+        taskId,
+      );
+    }
+    void postDurableCodingRunPromptProgress(
+      suiteId,
+      prompt,
+      {
+        endpoint_statuses: [...endpointStatuses],
+        generated_diff_present: proposedDiff.trim().length > 0,
+        model_called_for_generation: modelCalledForGeneration,
+        provider_call_made: true,
+      },
+      {
+        endpoint_statuses: [...endpointStatuses],
+        final_summary: "Diff preview returned; preparing apply",
+        generated_diff_present: proposedDiff.trim().length > 0,
+        model: modelCalledForGeneration,
+        model_called_for_generation: modelCalledForGeneration,
+        provider: providerTruth.providerLabel,
+        provider_call_made: true,
+      },
+    );
     if (!diffResponse.ok) {
       return baseResult({
         endpoint_statuses: [...endpointStatuses],
@@ -3608,21 +5876,170 @@ export function CodingCockpitShell() {
       });
     }
 
+    if (previewChangedFiles.some((file) => file.startsWith("src/app/"))) {
+      await waitForV1RoutesAfterHmr({
+        maxAttempts: 5,
+        delayMs: 400,
+        signal: suiteFetchAbortRef.current?.signal,
+      });
+    }
+
     onStep?.("Editing files");
-    const applyResponse = await fetch("/v1/actions/execute-approved", {
-      body: JSON.stringify({
-        action: `Live trial ${prompt.id}`,
-        approved: true,
-        approved_diff: proposedDiff,
-        allowed_files: packet.allowedFiles,
-        target: packet.selectedTarget,
-        task_id: taskId,
-      }),
-      headers: { "content-type": "application/json" },
-      method: "POST",
-    });
-    const applyPayload = await readJson(applyResponse);
+    pushProgress(
+      {
+        endpoint_statuses: [...endpointStatuses],
+        preview_changed_files: previewChangedFiles,
+        provider_call_made: true,
+      },
+      {
+        final_summary: "Editing files",
+        preview_changed_files: previewChangedFiles,
+      },
+      {
+        diff_preview_completed_at: new Date().toISOString(),
+        execute_approved_requested_at: new Date().toISOString(),
+      },
+    );
+    let applyResponse: Response;
+    try {
+      applyResponse = await fetchWithTimeout("/v1/actions/execute-approved", {
+        body: JSON.stringify({
+          action: `Live trial ${prompt.id}`,
+          approved: true,
+          approved_diff: proposedDiff,
+          allowed_files: packet.allowedFiles,
+          target: packet.selectedTarget,
+          task_id: taskId,
+          trial_prompt_id: prompt.id,
+          trial_prompt_text: prompt.prompt,
+          trial_suite_id: suiteId,
+        }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+        signal: suiteFetchAbortRef.current?.signal ?? undefined,
+      }, TRIAL_POST_MODEL_STAGE_TIMEOUT_MS);
+    } catch (error) {
+      if (suiteFetchAbortRef.current?.signal.aborted) {
+        throw new Error("user_stop");
+      }
+      endpointStatuses.push(`/v1/actions/execute-approved:${promptPacketEndpointStatusForError(error)}`);
+      return baseResult({
+        endpoint_statuses: [...endpointStatuses],
+        error_summary: `timeout_source: /v1/actions/execute-approved; timeout_layer: ${timeoutLayerFromError(error)}`,
+        failure_reason: error instanceof Error ? error.message : "Apply route timed out.",
+        model_called_for_generation: modelCalledForGeneration,
+        provider: providerTruth.providerLabel,
+        provider_call_made: true,
+        preview_changed_files: previewChangedFiles,
+        run_id: taskId,
+        visible_result_label: "NEEDS FIX",
+      });
+    }
     endpointStatuses.push(`/v1/actions/execute-approved:${applyResponse.status}`);
+    const applyResponseContentType = applyResponse.headers.get("content-type") ?? "unknown";
+    pushProgress(
+      {
+        endpoint_statuses: [...endpointStatuses],
+        model_called_for_generation: modelCalledForGeneration,
+        preview_changed_files: previewChangedFiles,
+        provider_call_made: true,
+      },
+      {
+        endpoint_statuses: [...endpointStatuses],
+        final_summary: "Apply route returned; reading execute-approved proof",
+        model: modelCalledForGeneration,
+        model_called_for_generation: modelCalledForGeneration,
+        preview_changed_files: previewChangedFiles,
+        provider: providerTruth.providerLabel,
+        provider_call_made: true,
+      },
+      {
+        execute_approved_body_read_started_at: new Date().toISOString(),
+        execute_approved_completed_at: new Date().toISOString(),
+        execute_approved_content_type: applyResponseContentType,
+        execute_approved_http_status: String(applyResponse.status),
+        last_progress_reason_code: applyResponse.ok
+          ? "execute_approved_http_200_body_pending"
+          : "execute_approved_http_error_body_pending",
+      },
+    );
+    let applyRead: Awaited<ReturnType<typeof readApiResponse>>;
+    try {
+      applyRead = await readApiResponse(applyResponse, "/v1/actions/execute-approved", undefined, {
+        bodyTimeoutMs: TRIAL_POST_MODEL_STAGE_TIMEOUT_MS,
+        signal: suiteFetchAbortRef.current?.signal,
+      });
+    } catch (error) {
+      if (suiteFetchAbortRef.current?.signal.aborted) {
+        throw new Error("user_stop");
+      }
+      endpointStatuses.push(`/v1/actions/execute-approved:body_${promptPacketEndpointStatusForError(error)}`);
+      const reasonCode = "execute_approved_body_read_failed";
+      pushProgress(
+        {
+          endpoint_statuses: [...endpointStatuses],
+          error_summary: `reason_code=${reasonCode}; timeout_source=/v1/actions/execute-approved body; timeout_layer=${timeoutLayerFromError(error)}`,
+          preview_changed_files: previewChangedFiles,
+          reason_code: reasonCode,
+          result_label: "NEEDS FIX",
+        },
+        {
+          endpoint_statuses: [...endpointStatuses],
+          final_summary: "Apply route body read failed after execute-approved returned.",
+          last_error: error instanceof Error ? error.message : "Apply route body read timed out.",
+          reason_code: reasonCode,
+        },
+        {
+          execute_approved_body_read_failed_at: new Date().toISOString(),
+          last_progress_reason_code: reasonCode,
+          result_finalized_at: new Date().toISOString(),
+        },
+      );
+      return baseResult({
+        endpoint_statuses: [...endpointStatuses],
+        error_summary: `timeout_source: /v1/actions/execute-approved body; timeout_layer: ${timeoutLayerFromError(error)}`,
+        failure_reason: error instanceof Error ? error.message : "Apply route body read timed out.",
+        model_called_for_generation: modelCalledForGeneration,
+        provider: providerTruth.providerLabel,
+        provider_call_made: true,
+        preview_changed_files: previewChangedFiles,
+        run_id: taskId,
+        visible_result_label: "NEEDS FIX",
+      });
+    }
+    const applyPayload = applyRead.payload;
+    pushProgress(
+      {
+        endpoint_statuses: [...endpointStatuses],
+        model_called_for_generation: modelCalledForGeneration,
+        preview_changed_files: previewChangedFiles,
+        provider_call_made: true,
+      },
+      {
+        endpoint_statuses: [...endpointStatuses],
+        final_summary: "Apply route returned; checking disk state",
+        model: modelCalledForGeneration,
+        model_called_for_generation: modelCalledForGeneration,
+        preview_changed_files: previewChangedFiles,
+        provider: providerTruth.providerLabel,
+        provider_call_made: true,
+      },
+      {
+        execute_approved_body_read_completed_at: new Date().toISOString(),
+        disk_probe_started_at: new Date().toISOString(),
+        last_progress_reason_code: applyResponse.ok ? "execute_approved_body_read" : "execute_approved_failed",
+      },
+    );
+    if (applyRead.routeFailure) {
+      return buildRouteUnavailablePromptResult(
+        baseResult,
+        applyRead.routeFailure,
+        endpointStatuses,
+        undefined,
+        true,
+        taskId,
+      );
+    }
     if (!applyResponse.ok) {
       return baseResult({
         endpoint_statuses: [...endpointStatuses],
@@ -3639,24 +6056,56 @@ export function CodingCockpitShell() {
     const appliedChangedFiles = changedFilesFromApplyPayloadOrDiff(applyPayload, proposedDiff);
     const diskChangedFiles = appliedChangedFiles;
     const applySnapshots = changedFileSnapshotsFromPayload(applyPayload);
-    const missingBeforeSnapshots = appliedChangedFiles.filter((file) => !snapshotHasBefore(applySnapshots, file));
+    const missingBeforeSnapshots = appliedChangedFiles.filter((file) => !snapshotHasRestorableBaseline(applySnapshots, file));
     const reverseDiff = reverseUnifiedDiff(proposedDiff);
     const reversalAvailable = reverseDiff.trim().length > 0;
-    if (appliedChangedFiles.length === 0 || diskChangedFiles.length === 0) {
-      return baseResult({
+    pushProgress(
+      {
         applied_changed_files: appliedChangedFiles,
-        checks_result: "recorded",
-        disk_changed_files: [],
-        failure_reason: "FAIL: No disk change",
-        model_called_for_generation: modelCalledForGeneration,
-        provider: providerTruth.providerLabel,
-        provider_call_made: true,
+        disk_changed_files: diskChangedFiles,
+        endpoint_statuses: [...endpointStatuses],
         preview_changed_files: previewChangedFiles,
-        reverse_diff: reverseDiff,
-        reversal_available: reversalAvailable,
-        run_id: taskId,
-        visible_result_label: "NEEDS FIX",
-      });
+        provider_call_made: true,
+      },
+      {},
+      {
+        checks_started_at: new Date().toISOString(),
+        disk_probe_completed_at: new Date().toISOString(),
+      },
+    );
+    if (appliedChangedFiles.length === 0 || diskChangedFiles.length === 0) {
+      const reasonCode = "apply_ack_no_disk_proof";
+      pushProgress(
+        {
+          endpoint_statuses: [...endpointStatuses],
+          reason_code: reasonCode,
+          result_label: "NEEDS FIX",
+        },
+        {},
+        {
+          checks_completed_at: new Date().toISOString(),
+          last_progress_reason_code: reasonCode,
+          result_finalized_at: new Date().toISOString(),
+        },
+      );
+      return finalizeReversibleTrialResult(
+        baseResult({
+          applied_changed_files: appliedChangedFiles,
+          checks_result: "recorded",
+          disk_changed_files: [],
+          error_summary: `reason_code=${reasonCode}`,
+          failure_reason: "NEEDS FIX: execute-approved returned 200 but no disk/applied proof was recorded.",
+          model_called_for_generation: modelCalledForGeneration,
+          next_recommended_action: postApplyStaleNextAction(reasonCode),
+          provider: providerTruth.providerLabel,
+          provider_call_made: true,
+          preview_changed_files: previewChangedFiles,
+          reverse_diff: reverseDiff,
+          reversal_available: reversalAvailable,
+          run_id: taskId,
+          visible_result_label: "NEEDS FIX",
+        }),
+      );
     }
     if (previewChangedFiles.length === 0 || missingBeforeSnapshots.length > 0) {
       return baseResult({
@@ -3666,7 +6115,7 @@ export function CodingCockpitShell() {
         failure_reason:
           previewChangedFiles.length === 0
             ? "Needs fix: generated diff did not produce preview changed files."
-            : `Needs fix: before snapshot missing for ${formatList(missingBeforeSnapshots, "changed files")}.`,
+            : `Needs fix: restorable baseline snapshot missing for ${formatList(missingBeforeSnapshots, "changed files")}.`,
         model_called_for_generation: modelCalledForGeneration,
         next_recommended_action: "Require changed-file preview proof and server backup snapshots before counting an edit trial as PASS.",
         provider: providerTruth.providerLabel,
@@ -3716,24 +6165,71 @@ export function CodingCockpitShell() {
       ),
     );
 
-    if (!prompt.autoRevert) {
-      onStep?.("Ready for review");
-      return baseResult({
-        applied_changed_files: appliedChangedFiles,
-        checks_result: "git diff --check recorded",
-        disk_changed_files: diskChangedFiles,
-        failure_reason: "",
-        model_called_for_generation: modelCalledForGeneration,
-        provider: providerTruth.providerLabel,
-        provider_call_made: true,
-        preview_changed_files: previewChangedFiles,
-        reverse_diff: reverseDiff,
-        reverse_status_text: "Applied; reverse manually with Reverse trial edits when finished inspecting.",
-        reverted: false,
-        reversal_available: true,
-        run_id: taskId,
-        visible_result_label: "PASS",
+    if (diskChangedFiles.some((file) => file.startsWith("src/app/"))) {
+      const postApplyHmrStartedAt = Date.now();
+      const postApplyHmr = await waitForV1RoutesAfterHmr({
+        maxAttempts: 5,
+        delayMs: 400,
+        signal: suiteFetchAbortRef.current?.signal,
       });
+      if ("cancelled" in postApplyHmr && postApplyHmr.cancelled) {
+        throw new Error("user_stop");
+      }
+      if (!postApplyHmr.ok && "failure" in postApplyHmr) {
+        return buildRouteUnavailablePromptResult(
+          baseResult,
+          postApplyHmr.failure,
+          endpointStatuses,
+          undefined,
+          true,
+          taskId,
+        );
+      }
+    }
+
+    if (!prompt.autoRevert) {
+      onStep?.("Prompt passed; continuing suite");
+      pushProgress(
+        {
+          applied_changed_files: appliedChangedFiles,
+          checks_run: packet.checks,
+          disk_changed_files: diskChangedFiles,
+          endpoint_statuses: [...endpointStatuses],
+          preview_changed_files: previewChangedFiles,
+          reversal_available: true,
+          reversal_status: "available",
+          result_label: "PASS",
+        },
+        {
+          applied_changed_files: appliedChangedFiles,
+          disk_changed_files: diskChangedFiles,
+          final_summary: "Prompt passed; continuing suite",
+        },
+        {
+          checks_completed_at: new Date().toISOString(),
+          last_progress_reason_code: "pass_with_reversal_proof",
+          result_finalized_at: new Date().toISOString(),
+          reverse_receipt_created_at: new Date().toISOString(),
+        },
+      );
+      return finalizeReversibleTrialResult(
+        baseResult({
+          applied_changed_files: appliedChangedFiles,
+          checks_result: "git diff --check recorded",
+          disk_changed_files: diskChangedFiles,
+          failure_reason: "",
+          model_called_for_generation: modelCalledForGeneration,
+          provider: providerTruth.providerLabel,
+          provider_call_made: true,
+          preview_changed_files: previewChangedFiles,
+          reverse_diff: reverseDiff,
+          reverse_status_text: "Applied; reverse manually with Reverse trial edits when finished inspecting.",
+          reverted: false,
+          reversal_available: true,
+          run_id: taskId,
+          visible_result_label: "PASS",
+        }),
+      );
     }
 
     onStep?.("Undoing trial edit");
@@ -3744,6 +6240,33 @@ export function CodingCockpitShell() {
     });
     const revertTaskPayload = await readJson(revertTaskResponse);
     endpointStatuses.push(`/v1/tasks/long-running(revert):${revertTaskResponse.status}`);
+    void postDurableCodingRunPromptProgress(
+      suiteId,
+      prompt,
+      {
+        applied_changed_files: appliedChangedFiles,
+        disk_changed_files: diskChangedFiles,
+        endpoint_statuses: [...endpointStatuses],
+        model_called_for_generation: modelCalledForGeneration,
+        preview_changed_files: previewChangedFiles,
+        provider_call_made: true,
+        reversal_available: true,
+        reversal_status: "available",
+      },
+      {
+        applied_changed_files: appliedChangedFiles,
+        disk_changed_files: diskChangedFiles,
+        endpoint_statuses: [...endpointStatuses],
+        final_summary: "Trial edit applied; creating revert task",
+        model: modelCalledForGeneration,
+        model_called_for_generation: modelCalledForGeneration,
+        preview_changed_files: previewChangedFiles,
+        provider: providerTruth.providerLabel,
+        provider_call_made: true,
+        reversal_available: true,
+        reversal_status: "available",
+      },
+    );
     if (!revertTaskResponse.ok) {
       return baseResult({
         applied_changed_files: appliedChangedFiles,
@@ -3782,20 +6305,69 @@ export function CodingCockpitShell() {
         visible_result_label: "NEEDS FIX",
       });
     }
-    const revertResponse = await fetch("/v1/actions/execute-approved", {
-      body: JSON.stringify({
-        action: `Revert live trial ${prompt.id}`,
-        approved: true,
-        approved_diff: reverseDiff,
-        allowed_files: packet.allowedFiles,
-        target: packet.selectedTarget,
-        task_id: revertTaskId,
-      }),
-      headers: { "content-type": "application/json" },
-      method: "POST",
-    });
+    let revertResponse: Response;
+    try {
+      revertResponse = await fetchWithTimeout("/v1/actions/execute-approved", {
+        body: JSON.stringify({
+          action: `Revert live trial ${prompt.id}`,
+          approved: true,
+          approved_diff: reverseDiff,
+          allowed_files: packet.allowedFiles,
+          target: packet.selectedTarget,
+          task_id: revertTaskId,
+        }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      }, TRIAL_POST_MODEL_STAGE_TIMEOUT_MS);
+    } catch (error) {
+      endpointStatuses.push(`/v1/actions/execute-approved(revert):${promptPacketEndpointStatusForError(error)}`);
+      return baseResult({
+        applied_changed_files: appliedChangedFiles,
+        checks_result: "recorded",
+        disk_changed_files: diskChangedFiles,
+        endpoint_statuses: [...endpointStatuses],
+        error_summary: `timeout_source: /v1/actions/execute-approved(revert); timeout_layer: ${timeoutLayerFromError(error)}`,
+        failure_reason: error instanceof Error ? error.message : "Reverse route timed out.",
+        model_called_for_generation: modelCalledForGeneration,
+        provider: providerTruth.providerLabel,
+        provider_call_made: true,
+        preview_changed_files: previewChangedFiles,
+        reverse_diff: reverseDiff,
+        reverse_status_text: `Needs manual reverse: ${formatList(diskChangedFiles, "changed files not recorded")}`,
+        reversal_available: true,
+        run_id: taskId,
+        visible_result_label: "NEEDS FIX",
+      });
+    }
     const revertPayload = await readJson(revertResponse);
     endpointStatuses.push(`/v1/actions/execute-approved(revert):${revertResponse.status}`);
+    void postDurableCodingRunPromptProgress(
+      suiteId,
+      prompt,
+      {
+        applied_changed_files: appliedChangedFiles,
+        disk_changed_files: diskChangedFiles,
+        endpoint_statuses: [...endpointStatuses],
+        model_called_for_generation: modelCalledForGeneration,
+        preview_changed_files: previewChangedFiles,
+        provider_call_made: true,
+        reversal_available: true,
+        reversal_status: revertResponse.ok ? "reverted" : "available",
+      },
+      {
+        applied_changed_files: appliedChangedFiles,
+        disk_changed_files: diskChangedFiles,
+        endpoint_statuses: [...endpointStatuses],
+        final_summary: revertResponse.ok ? "Reverse route returned; checking restoration" : "Reverse route failed",
+        model: modelCalledForGeneration,
+        model_called_for_generation: modelCalledForGeneration,
+        preview_changed_files: previewChangedFiles,
+        provider: providerTruth.providerLabel,
+        provider_call_made: true,
+        reversal_available: true,
+        reversal_status: revertResponse.ok ? "reverted" : "available",
+      },
+    );
     if (!revertResponse.ok) {
       return baseResult({
         applied_changed_files: appliedChangedFiles,
@@ -3870,28 +6442,146 @@ export function CodingCockpitShell() {
     });
   }
 
-  async function handleRunReversibleSuite(resumeState?: ReversibleSuiteState) {
-    if (reversibleSuiteState.status === "running" || reversibleSuiteState.status === "stopping") return;
+  async function handleRunReversibleSuite(
+    resumeState?: ReversibleSuiteState,
+    options: { forceResume?: boolean } = {},
+  ) {
+    // #region agent log
+    fetch("http://localhost:7784/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "0fdea5" },
+      body: JSON.stringify({
+        sessionId: "0fdea5",
+        hypothesisId: "H4",
+        location: "CodingCockpitShell.tsx:handleRunReversibleSuite",
+        message: "run click entered",
+        data: {
+          isResume: Boolean(resumeState?.suiteId),
+          suiteStatus: reversibleSuiteState.status,
+          baselineLoadState: agentLabBaselineLoadState,
+          baselineClean: agentLabBaselineSnapshot?.baseline_clean_for_fresh_suite ?? null,
+          dirtyCount: agentLabBaselineSnapshot?.baseline_dirty_agent_lab_files.length ?? null,
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
+    const isResume = Boolean(resumeState?.suiteId);
+    if (
+      !isResume &&
+      (reversibleSuiteState.status === "running" || reversibleSuiteState.status === "stopping")
+    ) {
+      return;
+    }
+    if (isResume && reversibleSuiteResumeBlocked && !options.forceResume) {
+      setReversibleSuiteCopyStatus(reversibleSuiteResumeBlockedMessage);
+      // #region agent log
+      fetch("http://localhost:7784/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "0fdea5" },
+        body: JSON.stringify({
+          sessionId: "0fdea5",
+          hypothesisId: "H10",
+          location: "CodingCockpitShell.tsx:handleRunReversibleSuite",
+          message: "resume blocked active guard",
+          data: {
+            isReverting,
+            backgroundCleanupActive,
+            suiteStatus: reversibleSuiteState.status,
+          },
+          timestamp: Date.now(),
+        }),
+      }).catch(() => {});
+      // #endregion
+      return;
+    }
+    if (!isResume) {
+      const latestBaseline =
+        reversibleTrialCategory === "Coder" ? await refreshAgentLabBaseline() : agentLabBaselineSnapshot;
+      if (reversibleTrialCategory === "Coder" && !latestBaseline) {
+        const blockMessage = `Agent Lab baseline check failed: ${agentLabBaselineLoadError || "Source Proxy unreachable or SPIRIT_CODING_USE_PROXY is off."}`;
+        setReversibleSuiteCopyStatus(blockMessage);
+        // #region agent log
+        fetch("http://localhost:7784/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "0fdea5" },
+          body: JSON.stringify({
+            sessionId: "0fdea5",
+            hypothesisId: "H4",
+            location: "CodingCockpitShell.tsx:handleRunReversibleSuite",
+            message: "run blocked baseline fetch failed",
+            data: { blockMessage },
+            timestamp: Date.now(),
+          }),
+        }).catch(() => {});
+        // #endregion
+        return;
+      }
+      if (reversibleTrialCategory === "Coder" && latestBaseline && !latestBaseline.baseline_clean_for_fresh_suite) {
+        const blockMessage = `Agent Lab still has ${latestBaseline.baseline_dirty_agent_lab_files.length} leftover file(s). Reverse them before a fresh Coder benchmark.`;
+        setReversibleSuiteCopyStatus(blockMessage);
+        setAgentLabBaselineSnapshot(latestBaseline);
+        // #region agent log
+        fetch("http://localhost:7784/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "0fdea5" },
+          body: JSON.stringify({
+            sessionId: "0fdea5",
+            hypothesisId: "H4",
+            location: "CodingCockpitShell.tsx:handleRunReversibleSuite",
+            message: "run blocked baseline dirty",
+            data: { blockMessage, dirtyFiles: latestBaseline.baseline_dirty_agent_lab_files },
+            timestamp: Date.now(),
+          }),
+        }).catch(() => {});
+        // #endregion
+        return;
+      }
+      if (trialRunnerBlock.blocked) {
+        setReversibleSuiteCopyStatus(trialRunnerBlock.message);
+        return;
+      }
+    }
     if (!normalizeReversibleTrialCategoryInput(reversibleTrialCategory)) {
       setReversibleSuiteCopyStatus(
         `Category invalid: "${reversibleTrialCategory}". Use ${reversibleTrialCategories.join(", ")}.`,
       );
       return;
     }
-    const isResume = Boolean(resumeState?.suiteId);
     const runCount = resumeState?.count ?? reversibleTrialCount;
     const suiteId = resumeState?.suiteId || `suite-${Date.now().toString(36)}`;
     const prompts = selectReversibleTrialPrompts(runCount, reversibleTrialCategory);
     const startIndex = isResume ? Math.min(Math.max(resumeState?.completed ?? 0, 0), prompts.length) : 0;
+    let runSourceProxyReachable = sourceProxyReachable;
+    let runProviderTruth = selectedProviderTruth;
+    if (!isResume) {
+      try {
+        const response = await fetch("/v1/self/status", { method: "GET" });
+        if (response.ok) {
+          const payload = await response.json() as unknown;
+          runSourceProxyReachable = true;
+          runProviderTruth = providerModelTruthFromSelfStatus(payload);
+          setSourceProxyReachable(true);
+          setOllamaStoragePath(ollamaStoragePathFromSelfStatus(payload));
+          setSelectedProviderTruth(runProviderTruth);
+        } else {
+          runSourceProxyReachable = false;
+          setSourceProxyReachable(false);
+        }
+      } catch {
+        runSourceProxyReachable = false;
+        setSourceProxyReachable(false);
+      }
+    }
     const modelLaneUnavailable =
-      !sourceProxyReachable ||
-      selectedProviderTruth.status === "unavailable" ||
-      selectedProviderTruth.providerModelProbeOk === false;
+      !runSourceProxyReachable ||
+      runProviderTruth.status === "unavailable" ||
+      runProviderTruth.providerModelProbeOk === false;
     if (!isResume && modelLaneUnavailable) {
-      const reason = !sourceProxyReachable
+      const reason = !runSourceProxyReachable
         ? "Source Proxy is unreachable at /v1/self/status."
-        : selectedProviderTruth.blockedReason ||
-          `${selectedProviderTruth.modelLabel} is not available from the configured local model lane.`;
+        : runProviderTruth.blockedReason ||
+          `${runProviderTruth.modelLabel} is not available from the configured local model lane.`;
       const blockedState: ReversibleSuiteState = {
         completed: 0,
         count: runCount,
@@ -3905,8 +6595,8 @@ export function CodingCockpitShell() {
         interruptionReason: `model_lane_unavailable: ${reason}`,
         interruptionSource: "route_failed",
         pass: 0,
-        provider: selectedProviderTruth.providerLabel,
-        model: selectedProviderTruth.modelLabel,
+        provider: runProviderTruth.providerLabel,
+        model: runProviderTruth.modelLabel,
         results: [],
         reverted: 0,
         safetyBlock: 0,
@@ -3916,15 +6606,67 @@ export function CodingCockpitShell() {
         suiteId,
         suiteStartedAt: performance.now(),
         timeout: 0,
+        baselineCheckedAt: null,
+        baselineAgentLabFiles: [],
+        baselineDirtyAgentLabFiles: [],
+        baselineUnrevertedReceipts: [],
+        baselineCleanForFreshSuite: null,
       };
       setReversibleSuiteCopyStatus(
         `Trial blocked before run: ${reason} Run curl -k https://127.0.0.1:8787/v1/models and install or select an available Ollama model.`,
       );
       setReversibleSuiteState(blockedState);
       storeReversibleSuiteState(blockedState);
+      const blockedRun = await createDurableCodingRunForSuite(blockedState);
+      setBackendRunSync({
+        lastSyncedAt: new Date().toISOString(),
+        message: blockedRun ? "Synced from backend" : "Backend sync failed",
+        runId: blockedRun?.run_id ?? suiteId,
+        status: blockedRun ? "synced" : "error",
+      });
       return;
     }
+    let agentLabBaseline: AgentLabBaselineSnapshot | null = null;
+    if (!isResume && reversibleTrialCategory === "Coder") {
+      agentLabBaseline = await fetchAgentLabBaselineSnapshot();
+      if (agentLabBaseline && !agentLabBaseline.baseline_clean_for_fresh_suite) {
+        const dirtyState: ReversibleSuiteState = {
+          ...defaultReversibleSuiteState(),
+          baselineAgentLabFiles: agentLabBaseline.baseline_agent_lab_files,
+          baselineCheckedAt: agentLabBaseline.baseline_checked_at,
+          baselineCleanForFreshSuite: false,
+          baselineDirtyAgentLabFiles: agentLabBaseline.baseline_dirty_agent_lab_files,
+          baselineUnrevertedReceipts: agentLabBaseline.baseline_unreverted_receipts,
+          count: runCount,
+          currentStep: "BASELINE DIRTY",
+          interruptionReason:
+            "Agent Lab contains leftovers from a prior suite. Reverse trial edits before rerunning.",
+          interruptionSource: "route_failed",
+          provider: runProviderTruth.providerLabel,
+          model: runProviderTruth.modelLabel,
+          status: "failed",
+          suiteFinishedAt: performance.now(),
+          suiteId,
+          suiteStartedAt: performance.now(),
+        };
+        setReversibleSuiteCopyStatus(
+          "Agent Lab contains leftovers from a prior suite. Reverse trial edits before rerunning.",
+        );
+        setReversibleSuiteState(dirtyState);
+        storeReversibleSuiteState(dirtyState);
+        setAgentLabBaselineSnapshot(agentLabBaseline);
+        return;
+      }
+      if (agentLabBaseline) {
+        setAgentLabBaselineSnapshot(agentLabBaseline);
+      }
+    }
     stopReversibleSuiteAfterCurrentRef.current = false;
+    suiteFetchAbortRef.current?.abort();
+    suiteFetchAbortRef.current = new AbortController();
+    localReversibleSuiteRunningRef.current = true;
+    touchReversibleSuiteRunnerLease(suiteId);
+    const suiteRunnerLeaseInterval = window.setInterval(() => touchReversibleSuiteRunnerLease(suiteId), 5_000);
     setReversibleSuiteCopyStatus(
       isResume && startIndex < prompts.length
         ? `Resuming suite ${suiteId}: ${startIndex}/${prompts.length} complete.`
@@ -3966,15 +6708,72 @@ export function CodingCockpitShell() {
       suiteId,
       suiteStartedAt,
       timeout: resumeState?.timeout ?? 0,
+      baselineCheckedAt:
+        agentLabBaseline?.baseline_checked_at ??
+        resumeState?.baselineCheckedAt ??
+        null,
+      baselineAgentLabFiles:
+        agentLabBaseline?.baseline_agent_lab_files ?? resumeState?.baselineAgentLabFiles ?? [],
+      baselineDirtyAgentLabFiles:
+        agentLabBaseline?.baseline_dirty_agent_lab_files ?? resumeState?.baselineDirtyAgentLabFiles ?? [],
+      baselineUnrevertedReceipts:
+        agentLabBaseline?.baseline_unreverted_receipts ?? resumeState?.baselineUnrevertedReceipts ?? [],
+      baselineCleanForFreshSuite:
+        agentLabBaseline?.baseline_clean_for_fresh_suite ??
+        resumeState?.baselineCleanForFreshSuite ??
+        null,
     };
     setReversibleSuiteState(initialSuiteState);
     storeReversibleSuiteState(initialSuiteState);
+    const createdRun = isResume
+      ? await patchDurableCodingRunFromSuiteWithTimeout(initialSuiteState)
+      : await createDurableCodingRunForSuite(initialSuiteState);
+    // #region agent log
+    fetch("http://localhost:7784/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "0fdea5" },
+      body: JSON.stringify({
+        sessionId: "0fdea5",
+        hypothesisId: "H10",
+        location: "CodingCockpitShell.tsx:handleRunReversibleSuite",
+        message: isResume ? "resume backend sync" : "fresh run backend sync",
+        data: {
+          isResume,
+          suiteId,
+          startIndex,
+          synced: Boolean(createdRun),
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
+    setBackendRunSync({
+      lastSyncedAt: new Date().toISOString(),
+      message: createdRun ? "Active run attached" : "Backend sync failed",
+      runId: createdRun?.run_id ?? suiteId,
+      status: createdRun ? "attached" : "error",
+    });
     let nextState: ReversibleSuiteState = initialSuiteState;
     let suiteAbort: ReversibleSuiteAbort | null = null;
+    let durableRowSyncFailed = false;
     try {
       for (let index = startIndex; index < prompts.length; index += 1) {
         const prompt = prompts[index];
         if (!prompt) continue;
+        // #region agent log
+        fetch("http://localhost:7784/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "0fdea5" },
+          body: JSON.stringify({
+            sessionId: "0fdea5",
+            hypothesisId: "H8",
+            location: "CodingCockpitShell.tsx:handleRunReversibleSuite",
+            message: "suite loop iteration start",
+            data: { suiteId, index, promptId: prompt.id },
+            timestamp: Date.now(),
+          }),
+        }).catch(() => {});
+        // #endregion
         nextState = {
           ...nextState,
           currentPrompt: `${index + 1}/${prompts.length}: ${prompt.quickTitle}`,
@@ -3986,7 +6785,60 @@ export function CodingCockpitShell() {
         };
         setReversibleSuiteState(nextState);
         storeReversibleSuiteState(nextState);
+        void patchDurableCodingRunFromSuite(nextState).then((run) => {
+          if (!run) return;
+          setBackendRunSync({
+            lastSyncedAt: new Date().toISOString(),
+            message: "Active run attached",
+            runId: run.run_id,
+            status: "attached",
+          });
+        });
+        void postDurableCodingRunPromptStatus(nextState.suiteId, prompt, "running", nextState);
         let result: ReversibleSuitePromptResult;
+        const routeReady = await waitForV1RoutesAfterHmr({
+          maxAttempts: 3,
+          delayMs: 350,
+          signal: suiteFetchAbortRef.current?.signal,
+        });
+        if (!routeReady.ok && "cancelled" in routeReady && routeReady.cancelled) {
+          const stoppedState = {
+            ...nextState,
+            currentStep: "Stopped by user",
+            interruptionReason: "user_clicked_stop_suite",
+            interruptionSource: "user_stop" as const,
+            status: "failed" as const,
+            stopped: true,
+            suiteFinishedAt: performance.now(),
+          };
+          setReversibleSuiteState(stoppedState);
+          storeReversibleSuiteState(stoppedState);
+          await patchDurableCodingRunFromSuite(stoppedState);
+          break;
+        }
+        if (!routeReady.ok && "failure" in routeReady) {
+          result = buildRouteUnavailableSuitePromptResult(
+            prompt,
+            routeReady.failure,
+            index + 1,
+            selectedProviderTruth.providerLabel,
+          );
+          const routeAbortState = {
+            ...nextState,
+            completed: nextState.completed + 1,
+            currentStep: "Stopped: SpiritOS /v1 API routes unavailable",
+            fail: nextState.fail + 1,
+            results: [...nextState.results, result],
+            status: "failed" as const,
+            interruptionReason: `route_unavailable: ${result.error_summary}`,
+            interruptionSource: "route_failed" as const,
+          };
+          setReversibleSuiteState(routeAbortState);
+          storeReversibleSuiteState(routeAbortState);
+          await postDurableCodingRunRow(routeAbortState.suiteId, result, durableRunStatusForResult(result));
+          await patchDurableCodingRunFromSuite(routeAbortState);
+          break;
+        }
         try {
           const promptStartedAt = performance.now();
           if (
@@ -4002,21 +6854,61 @@ export function CodingCockpitShell() {
               };
               setReversibleSuiteState(nextState);
               storeReversibleSuiteState(nextState);
+              void patchDurableCodingRunFromSuite(nextState);
             });
           }
-          result = await runOneReversibleTrialPrompt(prompt, (step) => {
-            nextState = {
-              ...nextState,
-              currentStep: step,
-              currentStepStartedAt: performance.now(),
-              currentPromptElapsedMs: elapsedMs(promptStartedAt),
-            };
-            setReversibleSuiteState(nextState);
-            storeReversibleSuiteState(nextState);
-          });
-          result = { ...result, elapsed_ms: elapsedMs(promptStartedAt) };
+          result = await runOneReversibleTrialPrompt(
+            nextState.suiteId,
+            prompt,
+            (step) => {
+              nextState = {
+                ...nextState,
+                currentStep: step,
+                currentStepStartedAt: performance.now(),
+                currentPromptElapsedMs: elapsedMs(promptStartedAt),
+              };
+              setReversibleSuiteState(nextState);
+              storeReversibleSuiteState(nextState);
+              void patchDurableCodingRunFromSuite(nextState);
+            },
+            { baselineCleanForFreshSuite: nextState.baselineCleanForFreshSuite },
+          );
+          result = finalizeReversibleTrialResult({ ...result, elapsed_ms: elapsedMs(promptStartedAt) });
+          // #region agent log
+          fetch("http://localhost:7784/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "0fdea5" },
+            body: JSON.stringify({
+              sessionId: "0fdea5",
+              hypothesisId: "H6",
+              location: "CodingCockpitShell.tsx:handleRunReversibleSuite",
+              message: "prompt returned",
+              data: {
+                promptId: prompt.id,
+                index,
+                label: result.visible_result_label,
+              },
+              timestamp: Date.now(),
+            }),
+          }).catch(() => {});
+          // #endregion
         } catch (error) {
           const failureReason = error instanceof Error ? error.message : "Trial prompt failed.";
+          if (failureReason === "user_stop") {
+            const stoppedState = {
+              ...nextState,
+              currentStep: "Stopped by user",
+              interruptionReason: "user_clicked_stop_suite",
+              interruptionSource: "user_stop" as const,
+              status: "failed" as const,
+              stopped: true,
+              suiteFinishedAt: performance.now(),
+            };
+            setReversibleSuiteState(stoppedState);
+            storeReversibleSuiteState(stoppedState);
+            await patchDurableCodingRunFromSuite(stoppedState);
+            break;
+          }
           result = {
             allowed_files: prompt.expected_scope,
             applied_changed_files: [],
@@ -4037,7 +6929,7 @@ export function CodingCockpitShell() {
             reverse_status_text: "No applied trial edits to reverse.",
             reverted: false,
             reversal_available: false,
-            run_id: "",
+            run_id: `${suiteId}:${prompt.id}`,
             selected_target: prompt.targetFile,
             target_candidates: prompt.expected_scope,
             visible_result_label: reversibleSuiteExceptionLabel(failureReason),
@@ -4063,7 +6955,7 @@ export function CodingCockpitShell() {
           ...nextState,
           completed: nextState.completed + 1,
           currentPrompt: `${index + 1}/${prompts.length}: ${prompt.quickTitle}`,
-          currentStep: bucketedSuccess ? "Ready to review" : "Needs fix",
+          currentStep: bucketedSuccess ? "Continuing to next prompt..." : "Needs fix",
           alreadySatisfied: nextState.alreadySatisfied + (alreadySatisfiedPassed ? 1 : 0),
           expectedNoEdit: nextState.expectedNoEdit + (expectedNoEditPassed ? 1 : 0),
           fail: nextState.fail + (bucketedSuccess ? 0 : 1),
@@ -4084,6 +6976,63 @@ export function CodingCockpitShell() {
         }
         setReversibleSuiteState(nextState);
         storeReversibleSuiteState(nextState);
+        const rowSyncedRun = await postDurableCodingRunRowWithTimeout(
+          nextState.suiteId,
+          result,
+          durableRunStatusForResult(result),
+        );
+        // #region agent log
+        fetch("http://localhost:7784/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "0fdea5" },
+          body: JSON.stringify({
+            sessionId: "0fdea5",
+            hypothesisId: "H7",
+            location: "CodingCockpitShell.tsx:handleRunReversibleSuite",
+            message: "row sync finished",
+            data: {
+              promptId: prompt.id,
+              synced: Boolean(rowSyncedRun),
+              completed: nextState.completed,
+            },
+            timestamp: Date.now(),
+          }),
+        }).catch(() => {});
+        // #endregion
+        if (rowSyncedRun) {
+          setBackendRunSync({
+            lastSyncedAt: new Date().toISOString(),
+            message: "Synced from backend",
+            runId: rowSyncedRun.run_id,
+            status: "synced",
+          });
+        } else {
+          const syncFailedState = {
+            ...nextState,
+            currentStep: "Stopped: durable row sync failed",
+            interruptionReason:
+              "durable_row_sync_failed: prompt result could not be persisted before the sync timeout.",
+            interruptionSource: "route_failed" as const,
+            status: "failed" as const,
+            suiteFinishedAt: performance.now(),
+          };
+          setReversibleSuiteState(syncFailedState);
+          storeReversibleSuiteState(syncFailedState);
+          setBackendRunSync({
+            lastSyncedAt: new Date().toISOString(),
+            message: "Backend row sync failed",
+            runId: nextState.suiteId,
+            status: "error",
+          });
+          setReversibleSuiteCopyStatus(
+            "Stopped after prompt result: durable row sync timed out or failed. Resume/clear controls remain available.",
+          );
+          await patchDurableCodingRunFromSuiteWithTimeout(syncFailedState);
+          nextState = syncFailedState;
+          durableRowSyncFailed = true;
+          break;
+        }
+        await patchDurableCodingRunFromSuiteWithTimeout(nextState);
         suiteAbort = reversibleSuiteAbortForResult(result);
         if (suiteAbort) {
           nextState = {
@@ -4095,6 +7044,7 @@ export function CodingCockpitShell() {
           };
           setReversibleSuiteState(nextState);
           storeReversibleSuiteState(nextState);
+          await patchDurableCodingRunFromSuite(nextState);
           break;
         }
         if (stopReversibleSuiteAfterCurrentRef.current) break;
@@ -4104,11 +7054,23 @@ export function CodingCockpitShell() {
       const doneState = {
         ...nextState,
         currentPrompt: nextState.completed > 0 ? "Suite finished." : "",
-        currentStep: stoppedByUser ? "Stopped after current prompt" : suiteAbort?.step ?? "Finished",
+        currentStep: durableRowSyncFailed
+          ? nextState.currentStep
+          : stoppedByUser
+            ? "Stopped after current prompt"
+            : suiteAbort?.step ?? "Finished",
         currentStepStartedAt: null,
-        interruptionReason: stoppedByUser ? "user_clicked_stop_after_current_prompt" : suiteAbort?.reason ?? null,
-        interruptionSource: stoppedByUser ? "user_stop" as const : suiteAbort?.source ?? "none" as const,
-        status: nextState.fail > 0 || suiteAbort ? "failed" as const : "done" as const,
+        interruptionReason: durableRowSyncFailed
+          ? nextState.interruptionReason
+          : stoppedByUser
+            ? "user_clicked_stop_after_current_prompt"
+            : suiteAbort?.reason ?? null,
+        interruptionSource: durableRowSyncFailed
+          ? nextState.interruptionSource
+          : stoppedByUser
+            ? "user_stop" as const
+            : suiteAbort?.source ?? "none" as const,
+        status: durableRowSyncFailed || nextState.fail > 0 || suiteAbort ? "failed" as const : "done" as const,
         stopped: stoppedByUser,
         suiteFinishedAt,
       };
@@ -4123,6 +7085,15 @@ export function CodingCockpitShell() {
       );
       setReversibleSuiteState(doneState);
       storeReversibleSuiteState(doneState);
+      const doneRun = await patchDurableCodingRunFromSuite(doneState);
+      if (doneRun) {
+        setBackendRunSync({
+          lastSyncedAt: new Date().toISOString(),
+          message: "Synced from backend",
+          runId: doneRun.run_id,
+          status: "synced",
+        });
+      }
       const passCount = doneState.results.filter((result) => result.visible_result_label === "PASS").length;
       if (suiteAbort) {
         setReversibleSuiteCopyStatus(
@@ -4152,13 +7123,46 @@ export function CodingCockpitShell() {
           suiteFinishedAt: current.suiteFinishedAt ?? performance.now(),
         };
         storeReversibleSuiteState(failedState);
+        void patchDurableCodingRunFromSuite(failedState);
         return failedState;
       });
     }
+    window.clearInterval(suiteRunnerLeaseInterval);
+    clearReversibleSuiteRunnerLease(suiteId);
+    localReversibleSuiteRunningRef.current = false;
   }
 
-  function handleStopReversibleSuiteAfterCurrent() {
+  async function handleStopReversibleSuiteAfterCurrent() {
     stopReversibleSuiteAfterCurrentRef.current = true;
+    suiteFetchAbortRef.current?.abort();
+    clearReversibleSuiteRunnerLease(reversibleSuiteState.suiteId);
+    const runId = backendRunSync.runId || reversibleSuiteState.suiteId;
+    if (!localReversibleSuiteRunningRef.current && runId) {
+      const released = await releaseSyncedReversibleSuiteRun(runId, {
+        localRunnerActive: false,
+        source: "user_stop",
+      });
+      if (released) {
+        const syncedState = suiteStateFromDurableRun(released);
+        setReversibleSuiteState(syncedState);
+        storeReversibleSuiteState(syncedState);
+        setBackendRunSync({
+          lastSyncedAt: new Date().toISOString(),
+          message: reversibleSuiteStateCanResume(syncedState)
+            ? "Paused, ready to resume"
+            : "Stopped, synced",
+          runId:
+            released.status === "running" || released.status === "pending"
+              ? released.run_id
+              : "",
+          status:
+            released.status === "running" || released.status === "pending"
+              ? "attached"
+              : "synced",
+        });
+        return;
+      }
+    }
     setReversibleSuiteState((current) => {
       const stoppingState = {
         ...current,
@@ -4168,23 +7172,48 @@ export function CodingCockpitShell() {
         stopped: true,
       };
       storeReversibleSuiteState(stoppingState);
+      void patchDurableCodingRunFromSuite({
+        ...stoppingState,
+        status: "failed",
+      });
       return stoppingState;
     });
   }
 
-  async function handleReverseRemainingTrialEdits(options: { clearSuiteAfter?: boolean } = {}) {
-    const remainingFromSuite = latestUnrevertedSuiteResultsByTarget(reversibleSuiteState.results);
+  async function handleReverseRemainingTrialEdits(
+    options: {
+      agentLabFullCleanup?: boolean;
+      appliedReceiptsOverride?: AppliedRunReceipt[];
+      clearSuiteAfter?: boolean;
+      resultsOverride?: ReversibleSuitePromptResult[];
+      suiteSnapshot?: Pick<ReversibleSuiteState, "model" | "provider" | "suiteId">;
+    } = {},
+  ): Promise<string | undefined> {
+    const activeResults = options.resultsOverride ?? reversibleSuiteState.results;
+    const activeSuite = options.suiteSnapshot ?? reversibleSuiteState;
+    const activeReceipts = options.appliedReceiptsOverride ?? appliedRunReceipts;
+    const remainingFromSuite = options.agentLabFullCleanup
+      ? allUnrevertedSuiteResultsInReversePromptOrder(activeResults)
+      : latestUnrevertedSuiteResultsByTarget(activeResults);
+    const remainingSuiteReceiptIds = new Set(remainingFromSuite.map((result) => suiteReceiptIdForResult(result)));
     const remainingFromReceipts = orphanUnrevertedTrialReceipts.filter((receipt) =>
-      receipt.id.startsWith("trial-suite:"),
+      receipt.id.startsWith("trial-suite:") && !remainingSuiteReceiptIds.has(receipt.id),
     );
     const totalRemaining = remainingFromSuite.length + remainingFromReceipts.length;
     if (totalRemaining === 0 || isReverting) {
+      if (totalRemaining === 0 && options.clearSuiteAfter) {
+        await clearReversibleSuitePanel();
+        setReversibleSuiteCopyStatus("No fixture edits were pending; cleared suite results.");
+        return "No fixture edits were pending; cleared suite results.";
+      }
       setReversibleSuiteCopyStatus(
         totalRemaining === 0
           ? "No trial edits are waiting for reverse."
           : "Reverse already in progress.",
       );
-      return;
+      return totalRemaining === 0
+        ? "No trial edits are waiting for reverse."
+        : "Reverse already in progress.";
     }
     setIsReverting(true);
     setReversibleSuiteCopyStatus(`Undoing ${totalRemaining} trial edit(s)...`);
@@ -4192,13 +7221,13 @@ export function CodingCockpitShell() {
     const revertedReceiptIds = new Set<string>();
     const revertedTargets = new Set<string>();
     const failures: string[] = [];
-    const allSuiteResults = reversibleSuiteState.results;
+    const allSuiteResults = activeResults;
     try {
       const suiteReceipts = remainingFromSuite.map((result) =>
-        receiptForSuiteReverseResult(result, appliedRunReceipts),
+        receiptForSuiteReverseResult(result, activeReceipts),
       );
       const receiptsById = new Map(
-        [...appliedRunReceipts, ...suiteReceipts].map((receipt) => [receipt.id, receipt]),
+        [...activeReceipts, ...suiteReceipts].map((receipt) => [receipt.id, receipt]),
       );
       let reconciledReceipts = await reconcileTrialReceiptsViaApi([...receiptsById.values()]);
       updateAppliedRunReceipts((current) => {
@@ -4214,7 +7243,7 @@ export function CodingCockpitShell() {
         const receipt = receiptForSuiteReverseResult(result, reconciledReceipts);
         const reconciled = reconciledReceipts.find((item) => item.id === receipt.id) ?? receipt;
         const targetKey = suiteResultTargetKey(result);
-        if (revertedTargets.has(targetKey)) {
+        if (!options.agentLabFullCleanup && revertedTargets.has(targetKey)) {
           revertedSuiteKeys.add(`${result.prompt.id}:${result.run_id}`);
           revertedReceiptIds.add(receipt.id);
           continue;
@@ -4235,7 +7264,7 @@ export function CodingCockpitShell() {
           continue;
         }
         try {
-          await applyReverseReceipt(receipt);
+          await applyReverseReceiptWithAgentLabFallback(receipt, options.agentLabFullCleanup === true);
         } catch (error) {
           const message = error instanceof Error ? error.message : "Reverse apply failed.";
           const [freshReceipt] = await reconcileTrialReceiptsViaApi([receipt]);
@@ -4291,6 +7320,27 @@ export function CodingCockpitShell() {
               continue;
             }
           }
+          if (options.agentLabFullCleanup && isAgentLabTrialPath(receipt.target)) {
+            try {
+              await applyAgentLabDeleteFallback(receipt);
+              revertedTargets.add(targetKey);
+              registerSuiteTargetReverted(
+                targetKey,
+                allSuiteResults,
+                reconciledReceipts,
+                revertedSuiteKeys,
+                revertedReceiptIds,
+              );
+              continue;
+            } catch (deleteError) {
+              failures.push(
+                `${receipt.target}: ${
+                  deleteError instanceof Error ? deleteError.message : "Agent-lab delete fallback failed."
+                }`,
+              );
+              continue;
+            }
+          }
           failures.push(`${receipt.target}: ${message}`);
           continue;
         }
@@ -4310,7 +7360,7 @@ export function CodingCockpitShell() {
           continue;
         }
         try {
-          await applyReverseReceipt(receipt);
+          await applyReverseReceiptWithAgentLabFallback(receipt, options.agentLabFullCleanup === true);
         } catch (error) {
           const message = error instanceof Error ? error.message : "Reverse apply failed.";
           const [freshReceipt] = await reconcileTrialReceiptsViaApi([receipt]);
@@ -4340,9 +7390,76 @@ export function CodingCockpitShell() {
         }
         revertedReceiptIds.add(receipt.id);
       }
+      if (options.agentLabFullCleanup) {
+        for (const target of uniqueAgentLabTargetsFromResults(allSuiteResults)) {
+          if (revertedTargets.has(target)) continue;
+          const seedResult = allSuiteResults.find(
+            (result) =>
+              result.reversal_available &&
+              !result.reverted &&
+              [result.selected_target, ...result.applied_changed_files, ...result.disk_changed_files].some(
+                (file) => normalizeRepoPath(file) === target,
+              ),
+          );
+          const seedReceipt = seedResult
+            ? receiptForSuiteReverseResult(seedResult, reconciledReceipts)
+            : buildAgentLabCleanupSeedReceipt(target);
+          try {
+            await applyAgentLabDeleteFallback(seedReceipt);
+            revertedTargets.add(target);
+            registerSuiteTargetReverted(
+              target,
+              allSuiteResults,
+              reconciledReceipts,
+              revertedSuiteKeys,
+              revertedReceiptIds,
+            );
+          } catch (error) {
+            failures.push(
+              `${target}: ${
+                error instanceof Error ? error.message : "Agent-lab delete sweep failed."
+              }`,
+            );
+          }
+        }
+      }
       const revertedAt = new Date().toISOString();
       const revertedCount = revertedReceiptIds.size;
       if (revertedCount > 0) {
+        const reversedResultsForBackend = syncReversibleSuiteResultsFromReceipts(
+          activeResults.map((result) =>
+            revertedSuiteKeys.has(`${result.prompt.id}:${result.run_id}`)
+              ? {
+                  ...result,
+                  reverted: true,
+                  reverse_status_text: "Reversed manually through trial runner controls.",
+                }
+              : result,
+          ),
+          reconciledReceipts,
+        );
+        const reversedSuiteStateForBackend: ReversibleSuiteState = {
+          ...reversibleSuiteState,
+          reverted: reversedResultsForBackend.filter((result) => result.reversal_available && result.reverted).length,
+          results: reversedResultsForBackend,
+          suiteId: activeSuite.suiteId || reversibleSuiteState.suiteId,
+        };
+        if (reversedSuiteStateForBackend.suiteId) {
+          for (const result of reversedResultsForBackend) {
+            if (revertedSuiteKeys.has(`${result.prompt.id}:${result.run_id}`)) {
+              await postDurableCodingRunRow(reversedSuiteStateForBackend.suiteId, result, "reverted");
+            }
+          }
+          const run = await patchDurableCodingRunFromSuite(reversedSuiteStateForBackend);
+          if (run) {
+            setBackendRunSync({
+              lastSyncedAt: new Date().toISOString(),
+              message: "Reversal synced from backend",
+              runId: run.run_id,
+              status: "synced",
+            });
+          }
+        }
         updateAppliedRunReceipts((receipts) =>
           receipts.map((receipt) =>
             revertedReceiptIds.has(receipt.id)
@@ -4356,14 +7473,14 @@ export function CodingCockpitShell() {
               : receipt,
           ),
         );
-        setReversibleSuiteState((current) => ({
-          ...current,
-          reverted: current.results.filter(
-            (result) =>
-              result.reversal_available &&
-              (result.reverted || revertedSuiteKeys.has(`${result.prompt.id}:${result.run_id}`)),
-          ).length,
-          results: syncReversibleSuiteResultsFromReceipts(
+        setReversibleSuiteState((current) => {
+          if (current.status === "idle" && current.results.length === 0 && !current.suiteId) {
+            return current;
+          }
+          const results =
+            current.suiteId === reversedSuiteStateForBackend.suiteId
+              ? reversedSuiteStateForBackend.results
+              : syncReversibleSuiteResultsFromReceipts(
             current.results.map((result) =>
               revertedSuiteKeys.has(`${result.prompt.id}:${result.run_id}`)
                 ? {
@@ -4374,28 +7491,47 @@ export function CodingCockpitShell() {
                 : result,
             ),
             reconciledReceipts,
-          ),
-        }));
+          );
+          const updatedState = {
+            ...current,
+            reverted: results.filter(
+              (result) =>
+                result.reversal_available &&
+                (result.reverted || revertedSuiteKeys.has(`${result.prompt.id}:${result.run_id}`)),
+            ).length,
+            results,
+          };
+          if (!options.clearSuiteAfter && !options.agentLabFullCleanup) {
+            storeReversibleSuiteState(updatedState);
+          }
+          return updatedState;
+        });
       }
       const revertedTargetCount = revertedTargets.size;
-      if (options.clearSuiteAfter && failures.length === 0) {
-        clearReversibleSuitePanel();
-        setReversibleSuiteCopyStatus(
-          revertedTargetCount > 0
-            ? `Reversed ${revertedTargetCount} fixture file(s) and cleared suite results.`
-            : "No fixture edits were pending; cleared suite results.",
-        );
-        return;
-      }
-      setReversibleSuiteCopyStatus(
+      const summary =
         failures.length > 0
           ? `Reversed ${revertedTargetCount} fixture file(s). ${failures.length} item(s) still need attention: ${failures[0]}`
           : revertedTargetCount > 0
             ? revertedCount > revertedTargetCount
               ? `Reversed ${revertedTargetCount} fixture file(s) (${revertedCount} catalog receipt(s) cleared).`
               : `Reversed ${revertedTargetCount} fixture file(s).`
-            : "No trial edits were reversed. Check diagnostics for blocker details.",
-      );
+            : "No trial edits were reversed. Check diagnostics for blocker details.";
+      if (options.agentLabFullCleanup) {
+        updateAppliedRunReceipts((receipts) =>
+          receipts.filter((receipt) => !receipt.id.startsWith("trial-suite:")),
+        );
+      }
+      if (options.clearSuiteAfter && failures.length === 0) {
+        await clearReversibleSuitePanel();
+        const clearedMessage =
+          revertedTargetCount > 0
+            ? `Reversed ${revertedTargetCount} fixture file(s) and cleared suite results.`
+            : "No fixture edits were pending; cleared suite results.";
+        setReversibleSuiteCopyStatus(clearedMessage);
+        return clearedMessage;
+      }
+      setReversibleSuiteCopyStatus(summary);
+      return summary;
     } finally {
       setIsReverting(false);
     }
@@ -4585,6 +7721,7 @@ export function CodingCockpitShell() {
         "/v1/decisions/prompt-packet",
         {
           body: JSON.stringify({
+            allowed_files: packet.allowedFiles,
             expected_outcome: "edit_reversible",
             needs_codebase_context: true,
             prefer_free: true,
@@ -5218,10 +8355,25 @@ export function CodingCockpitShell() {
   }
 
   async function applyReverseReceipt(receipt: AppliedRunReceipt) {
-    const reverseDiff = reverseDiffForReceipt(receipt);
+    const reverseDiff = executeReadyReverseDiff(reverseDiffForReceipt(receipt));
     const changedFiles = changedFilesFromDiffPreview(reverseDiff);
-    const allowedFiles = receipt.allowedFiles.map((path) => normalizeRepoPath(path)).filter(Boolean);
-    const outsideAllowed = changedFiles.filter((path) => !allowedFiles.includes(path));
+    const allowedFiles = [
+      ...new Set([
+        ...changedFiles.map((path) => normalizeRepoPath(path)).filter(Boolean),
+        normalizeRepoPath(receipt.target),
+        ...receipt.allowedFiles.map((path) => normalizeRepoPath(path)).filter(Boolean),
+        ...(isAgentLabTrialPath(receipt.target)
+          ? [
+              "src/app/agent-lab/**",
+              "src/components/agent-lab/**",
+              "src/lib/agent-lab/**",
+              "src/app/api/agent-lab/**",
+              "tests/agent-lab/**",
+            ]
+          : []),
+      ]),
+    ];
+    const outsideAllowed = changedFiles.filter((path) => !pathIsAllowedForTrialReverse(path, allowedFiles));
     if (allowedFiles.length === 0) {
       throw new Error("Reverse blocked because allowed_files are missing from the applied-run receipt.");
     }
@@ -5233,13 +8385,13 @@ export function CodingCockpitShell() {
         `Reverse blocked because changed_files are not fully contained in allowed_files: ${outsideAllowed.join(", ")}`,
       );
     }
-    const taskResponse = await fetch("/v1/tasks/long-running", {
+    const taskResponse = await fetchWithTimeout("/v1/tasks/long-running", {
       body: JSON.stringify({
         description: buildReverseTaskDescription(receipt, changedFiles, allowedFiles),
       }),
       headers: { "content-type": "application/json" },
       method: "POST",
-    });
+    }, TRIAL_POST_MODEL_STAGE_TIMEOUT_MS);
     const taskPayload = await readJson(taskResponse);
     if (!taskResponse.ok) {
       throw new Error(messageFromPayload(taskPayload, taskResponse.status));
@@ -5249,7 +8401,7 @@ export function CodingCockpitShell() {
       throw new Error("Reverse task create did not return a task id.");
     }
     const revertAction = revertActionForReceipt(receipt);
-    const reverseResponse = await fetch("/v1/actions/execute-approved", {
+    const reverseResponse = await fetchWithTimeout("/v1/actions/execute-approved", {
       body: JSON.stringify({
         action: revertAction,
         approved: true,
@@ -5260,12 +8412,114 @@ export function CodingCockpitShell() {
       }),
       headers: { "content-type": "application/json" },
       method: "POST",
-    });
+    }, TRIAL_POST_MODEL_STAGE_TIMEOUT_MS);
     const reversePayload = await readJson(reverseResponse);
     if (!reverseResponse.ok) {
       throw new Error(messageFromPayload(reversePayload, reverseResponse.status));
     }
     return messageFromPayload(reversePayload, reverseResponse.status);
+  }
+
+  async function readTrialWorkspaceFileStatus(
+    path: string,
+  ): Promise<{ status: "ok" | "missing" | "error"; content?: string; error?: string }> {
+    try {
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), TRIAL_POST_MODEL_STAGE_TIMEOUT_MS);
+      const response = await fetch("/v1/coding/workspace-read", {
+        body: JSON.stringify({ path }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+        signal: controller.signal,
+      });
+      window.clearTimeout(timeout);
+      if (response.status === 404) {
+        return { status: "missing" };
+      }
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => ({}))) as { error?: string };
+        const errorText = payload.error ?? `workspace read HTTP ${response.status}`;
+        if (response.status === 400 && /not found|no such file|missing|does not exist|unknown path/i.test(errorText)) {
+          return { status: "missing" };
+        }
+        if (/not found|no such file|missing|does not exist/i.test(errorText)) {
+          return { status: "missing" };
+        }
+        return { status: "error", error: errorText };
+      }
+      const payload = (await response.json()) as { content?: string; excerpt?: string };
+      return { content: payload.excerpt ?? payload.content ?? "", status: "ok" };
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return { error: "workspace read timed out", status: "error" };
+      }
+      return {
+        error: error instanceof Error ? error.message : "workspace read failed",
+        status: "error",
+      };
+    }
+  }
+
+  async function readTrialWorkspaceFile(path: string): Promise<string | null> {
+    const status = await readTrialWorkspaceFileStatus(path);
+    if (status.status === "ok") return status.content ?? "";
+    if (status.status === "missing") return null;
+    throw new Error(status.error ?? "workspace read failed");
+  }
+
+  async function applyAgentLabDeleteFallback(receipt: AppliedRunReceipt) {
+    const before = await readTrialWorkspaceFileStatus(receipt.target);
+    if (before.status === "missing") {
+      return "Agent-lab file already absent on disk.";
+    }
+    if (before.status === "error") {
+      throw new Error(before.error ?? "Could not read agent-lab file before delete.");
+    }
+    const deleteReceipt: AppliedRunReceipt = {
+      ...receipt,
+      reverseDiff: buildDeleteFileReverseDiff(receipt.target, before.content ?? ""),
+    };
+    await applyReverseReceipt(deleteReceipt);
+    const after = await readTrialWorkspaceFileStatus(receipt.target);
+    if (after.status === "ok") {
+      // #region agent log
+      fetch("http://localhost:7784/ingest/da155463-47fd-4bed-94cb-233903115f13", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "0fdea5" },
+        body: JSON.stringify({
+          sessionId: "0fdea5",
+          hypothesisId: "H3",
+          location: "CodingCockpitShell.tsx:applyAgentLabDeleteFallback",
+          message: "delete ack but file still present",
+          data: { target: receipt.target },
+          timestamp: Date.now(),
+        }),
+      }).catch(() => {});
+      // #endregion
+      throw new Error(`Delete did not remove ${receipt.target} from the workspace.`);
+    }
+    if (after.status === "error") {
+      throw new Error(after.error ?? `Could not verify delete for ${receipt.target}.`);
+    }
+    return `Deleted ${receipt.target}.`;
+  }
+
+  async function applyReverseReceiptWithAgentLabFallback(
+    receipt: AppliedRunReceipt,
+    agentLabFullCleanup: boolean,
+  ) {
+    try {
+      return await applyReverseReceipt(receipt);
+    } catch (error) {
+      if (!agentLabFullCleanup || !isAgentLabTrialPath(receipt.target)) {
+        throw error;
+      }
+      const message = error instanceof Error ? error.message : String(error);
+      if (reversalLooksAlreadyApplied(message)) {
+        return message;
+      }
+      return applyAgentLabDeleteFallback(receipt);
+    }
   }
 
   async function prepareDummyTrialFixtureForReversibleApply(
@@ -5356,8 +8610,11 @@ export function CodingCockpitShell() {
   async function handleRevertAllTrialRuns(options: { clearSuiteAfter?: boolean } = {}) {
     if (!canRevertTrialRuns && !options.clearSuiteAfter) return;
     if (suitePendingRevertCount > 0) {
-      await handleReverseRemainingTrialEdits();
+      await handleReverseRemainingTrialEdits({ clearSuiteAfter: options.clearSuiteAfter });
       if (availableTrialResetReceipts.length === 0 && !options.clearSuiteAfter) {
+        return;
+      }
+      if (options.clearSuiteAfter) {
         return;
       }
     }
@@ -5419,7 +8676,7 @@ export function CodingCockpitShell() {
           : current.status,
       }));
       if (options.clearSuiteAfter && failures.length === 0) {
-        clearReversibleSuitePanel();
+        await clearReversibleSuitePanel();
         setReversibleSuiteCopyStatus(`Cleaned up ${revertedIds.length} trial item(s) and cleared suite results.`);
       }
       setReversalStatus(
@@ -5602,30 +8859,26 @@ export function CodingCockpitShell() {
       active: previewState.status !== "idle" || Boolean(currentAppliedRunReceipt),
     },
   ].filter((item) => item.active);
-  const reversibleSuiteCanResume =
-    reversibleSuiteState.status === "failed" &&
-    reversibleSuiteState.interruptionSource === "browser_refresh_or_dev_reload" &&
-    reversibleSuiteState.completed < reversibleSuiteState.count;
   const phoneBackgroundState =
     reversibleSuiteState.status === "running" || reversibleSuiteState.status === "stopping"
-      ? "Running in this browser"
+      ? "Running, backend synced"
       : reversibleSuiteCanResume
         ? "Paused, ready to resume"
         : reversibleSuiteState.status === "done"
-          ? "Finished, saved locally"
+          ? "Finished, synced"
           : reversibleSuiteState.status === "failed"
-            ? "Stopped, saved locally"
+            ? "Stopped, synced"
             : reversibleSuiteState.results.length > 0
-              ? "Last suite saved locally"
+              ? "Last suite synced"
               : "Ready";
   const phoneBackgroundDetail =
     reversibleSuiteState.status === "running" || reversibleSuiteState.status === "stopping"
-      ? "Keep this tab open while the suite runs. If the browser reloads or the Windows session pauses, completed prompt results stay in this browser and the resume button appears after reload."
+      ? "Backend run state is the source of truth. Other devices attach automatically while /coding stays open."
       : reversibleSuiteCanResume
-        ? `Resume from prompt ${reversibleSuiteState.completed + 1} of ${reversibleSuiteState.count}; completed rows were preserved.`
+        ? `Resume from prompt ${reversibleSuiteState.completed + 1} of ${reversibleSuiteState.count}; completed rows were preserved by backend sync.`
         : reversibleSuiteState.results.length > 0
-          ? "Completed suite details are preserved across refresh until cleanup clears them."
-          : "Start a reversible suite from the left rail, then use this panel as the quick phone check.";
+          ? "Completed suite details rehydrate from backend state across refresh."
+          : "Start a reversible suite from the left rail, then use this panel as the quick sync check.";
   const phoneNetworkState =
     hasBrowserMounted && typeof navigator !== "undefined" && "onLine" in navigator
       ? navigator.onLine
@@ -5636,7 +8889,8 @@ export function CodingCockpitShell() {
         : "Proxy not confirmed";
   const phoneResumeAction = reversibleSuiteCanResume ? (
     <button
-      className={`mt-3 inline-flex min-h-10 w-full items-center justify-center rounded-md border border-[var(--ddv4-pill-border)] px-3 text-sm font-semibold text-[var(--ddv4-fg)] transition-colors hover:bg-[var(--ddv4-surface-fill)] ${commandFocusClass}`}
+      className={`mt-3 inline-flex min-h-10 w-full items-center justify-center rounded-md border border-[var(--ddv4-pill-border)] px-3 text-sm font-semibold text-[var(--ddv4-fg)] transition-colors hover:bg-[var(--ddv4-surface-fill)] disabled:cursor-not-allowed disabled:opacity-60 ${commandFocusClass}`}
+      disabled={reversibleSuiteResumeBlocked}
       onClick={() => void handleRunReversibleSuite(reversibleSuiteState)}
       type="button"
     >
@@ -5695,17 +8949,30 @@ export function CodingCockpitShell() {
               <p className={`mt-2 line-clamp-4 text-sm leading-5 ${commandTextClass}`}>{currentTaskTitle}</p>
               <p className={`mt-2 text-xs ${commandMutedClass}`}>{currentTaskTarget}</p>
             </section>
-            <section className={`${commandInsetClass} p-3`} aria-label="Reversible trial runner">
+            <section className={`${commandInsetClass} p-3`} aria-label="Isolated agent-lab benchmark">
               <p className={commandLabelClass}>Trial Runner</p>
-              <h3 className={`mt-2 text-base font-semibold ${commandTextClass}`}>Trial runner</h3>
+              <h3 className={`mt-2 text-base font-semibold ${commandTextClass}`}>
+                {reversibleTrialCategory === "Coder" ? "Isolated agent-lab benchmark" : "Trial runner"}
+              </h3>
               <p className={`mt-1 text-xs leading-5 ${commandMutedClass}`}>
-                Runs real test prompts, applies reversible edits, and leaves them on disk until you reverse manually.
+                {reversibleTrialCategory === "Coder"
+                  ? "Runs messy human Coder prompts against isolated agent-lab pages only."
+                  : "Runs real test prompts, applies reversible edits, and leaves them on disk until you reverse manually."}
               </p>
               {reversibleSuiteState.results.length > 0 ? (
                 <p className={`mt-1 text-xs leading-5 ${commandMutedClass}`}>
-                  Last suite stays in this browser after refresh until you clear it or run again.
+                  Last suite syncs from backend after refresh or when another device opens /coding.
                 </p>
               ) : null}
+              <div className="mt-3 rounded-md border border-[var(--ddv4-surface-border-soft)] p-2 text-xs">
+                <p className={`font-semibold ${commandTextClass}`}>{backendRunSync.message}</p>
+                <p className={`mt-1 break-all ${commandMutedClass}`}>
+                  Run ID: {backendRunSync.runId || "none"}
+                </p>
+                <p className={`mt-1 ${commandMutedClass}`}>
+                  Last synced: {backendRunSync.lastSyncedAt ?? "not yet"}
+                </p>
+              </div>
               <div className="mt-3 grid gap-2">
                 <label className="grid gap-1">
                   <span className={commandLabelClass}>Category</span>
@@ -5730,12 +8997,12 @@ export function CodingCockpitShell() {
                   <select
                     aria-label="Trial count"
                     className={`min-h-10 rounded-md border border-[var(--ddv4-surface-border-soft)] bg-[var(--ddv4-surface-fill)] px-3 text-sm font-semibold ${commandTextClass} ${commandControlClass}`}
-                    disabled={reversibleSuiteState.status === "running" || reversibleSuiteState.status === "stopping"}
+                    disabled={reversibleSuiteRunBlocked}
                     onChange={(event) => setReversibleTrialCount(Number(event.target.value) as ReversibleTrialCount)}
                     value={reversibleTrialCount}
                   >
                     {reversibleTrialCounts.map((count) => (
-                      <option key={count} value={count}>{count}</option>
+                      <option key={count} value={count}>{reversibleTrialCountLabel(reversibleTrialCategory, count)}</option>
                     ))}
                   </select>
                   {reversibleSuiteCountMismatch ? (
@@ -5745,32 +9012,61 @@ export function CodingCockpitShell() {
                   ) : null}
                 </label>
               </div>
+              {reversiblePromptsCopyStatus || reversibleSuiteCopyStatus ? (
+                <p
+                  className={`mt-2 text-xs ${
+                    reversibleSuiteCopyStatus.toLowerCase().includes("clean") ||
+                    reversibleSuiteCopyStatus.toLowerCase().includes("removed")
+                      ? "font-semibold text-emerald-300"
+                      : reversibleSuiteCopyStatus.toLowerCase().includes("still dirty") ||
+                          reversibleSuiteCopyStatus.toLowerCase().includes("failed") ||
+                          reversibleSuiteCopyStatus.toLowerCase().includes("blocked")
+                        ? "font-semibold text-rose-200"
+                        : commandMutedClass
+                  }`}
+                >
+                  {reversiblePromptsCopyStatus || reversibleSuiteCopyStatus}
+                </p>
+              ) : null}
+              {reversibleSuiteRunBlocked ? (
+                <p className={`mt-2 text-xs font-semibold text-amber-200`}>{reversibleSuiteRunBlockedMessage}</p>
+              ) : null}
               <button
                 className={`mt-3 inline-flex min-h-10 w-full items-center justify-center rounded-md bg-emerald-300 px-3 text-sm font-semibold text-slate-950 transition-colors hover:bg-emerald-200 disabled:cursor-not-allowed disabled:opacity-60 ${commandFocusClass}`}
-                disabled={reversibleSuiteState.status === "running" || reversibleSuiteState.status === "stopping"}
-                onClick={() => void handleRunReversibleSuite()}
+                disabled={reversibleSuiteRunBlocked}
+                onClick={() => {
+                  if (reversibleSuiteRunBlocked) {
+                    setReversibleSuiteCopyStatus(reversibleSuiteRunBlockedMessage);
+                    return;
+                  }
+                  void handleRunReversibleSuite();
+                }}
                 type="button"
               >
-                Run reversible trial suite
+                {reversibleTrialCategory === "Coder" ? "Run messy Coder benchmark" : "Run reversible trial suite"}
               </button>
-              {reversibleSuiteState.status === "failed" &&
-              reversibleSuiteState.interruptionSource === "browser_refresh_or_dev_reload" &&
-              reversibleSuiteState.completed < reversibleSuiteState.count ? (
+              {reversibleSuiteCanResume ? (
                 <button
-                  className={`mt-2 inline-flex min-h-10 w-full items-center justify-center rounded-md border border-[var(--ddv4-pill-border)] px-3 text-sm font-semibold text-[var(--ddv4-fg)] transition-colors hover:bg-[var(--ddv4-surface-fill)] ${commandFocusClass}`}
+                  className={`mt-2 inline-flex min-h-10 w-full items-center justify-center rounded-md border border-[var(--ddv4-pill-border)] px-3 text-sm font-semibold text-[var(--ddv4-fg)] transition-colors hover:bg-[var(--ddv4-surface-fill)] disabled:cursor-not-allowed disabled:opacity-60 ${commandFocusClass}`}
+                  disabled={reversibleSuiteResumeBlocked}
                   onClick={() => void handleRunReversibleSuite(reversibleSuiteState)}
                   type="button"
                 >
                   Resume interrupted suite ({reversibleSuiteState.completed}/{reversibleSuiteState.count})
                 </button>
               ) : null}
+              {reversibleSuiteCanResume && agentLabHasLeftovers ? (
+                <p className={`mt-2 text-xs ${commandMutedClass}`}>
+                  Agent Lab edits from completed prompts stay on disk; resume continues the batch.
+                </p>
+              ) : null}
               {reversibleSuiteState.status === "running" || reversibleSuiteState.status === "stopping" ? (
                 <button
                   className={`mt-2 inline-flex min-h-10 w-full items-center justify-center rounded-md border border-[var(--ddv4-pill-border)] px-3 text-sm font-semibold text-[var(--ddv4-fg)] transition-colors hover:bg-[var(--ddv4-surface-fill)] ${commandFocusClass}`}
-                  onClick={handleStopReversibleSuiteAfterCurrent}
+                  onClick={() => void handleStopReversibleSuiteAfterCurrent()}
                   type="button"
                 >
-                  Stop after current prompt
+                  Stop suite now
                 </button>
               ) : null}
               <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">
@@ -5818,7 +9114,12 @@ export function CodingCockpitShell() {
               ) : null}
               {reversibleSuiteState.results.length > 0 ? (
                 <div className="mt-3 space-y-2" aria-label="Trial run results">
-                  {reversibleSuiteState.results.slice(-6).map((result, index) => (
+                  {reversibleSuiteState.results.slice(-6).map((result, index) => {
+                    const quickLinks = buildTrialPromptQuickLinks({
+                      quickFindPaths: result.prompt.verifyPathHints,
+                      selectedTarget: result.selected_target,
+                    });
+                    return (
                     <article className="rounded-md border border-[var(--ddv4-surface-border-soft)] p-2 text-xs" key={`${result.prompt.id}-${result.run_id || index}`}>
                       <div className="flex items-start justify-between gap-2">
                         <p className={`min-w-0 font-semibold ${commandTextClass}`}>{result.prompt.quickTitle}</p>
@@ -5830,8 +9131,47 @@ export function CodingCockpitShell() {
                       {result.failure_reason ? (
                         <p className="mt-1 text-rose-100">{result.failure_reason}</p>
                       ) : null}
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {quickLinks.map((link) => (
+                          <Link
+                            className={`inline-flex min-h-8 items-center rounded-md border border-[var(--ddv4-pill-border)] px-2 text-[11px] font-semibold text-[var(--ddv4-fg)] hover:bg-[var(--ddv4-surface-fill)] ${commandFocusClass}`}
+                            href={link.href}
+                            key={link.href}
+                            rel="noreferrer"
+                            target="_blank"
+                          >
+                            {link.label}
+                          </Link>
+                        ))}
+                        {result.selected_target ? (
+                          <button
+                            className={`inline-flex min-h-8 items-center rounded-md border border-[var(--ddv4-pill-border)] px-2 text-[11px] font-semibold text-[var(--ddv4-fg)] hover:bg-[var(--ddv4-surface-fill)] ${commandFocusClass}`}
+                            onClick={() => void copyTextToClipboard(result.selected_target)}
+                            type="button"
+                          >
+                            Copy target path
+                          </button>
+                        ) : null}
+                        {result.reversal_available && !result.reverted ? (
+                          <button
+                            className={`inline-flex min-h-8 items-center rounded-md border border-[var(--ddv4-pill-border)] px-2 text-[11px] font-semibold text-[var(--ddv4-fg)] hover:bg-[var(--ddv4-surface-fill)] ${commandFocusClass}`}
+                            onClick={() => {
+                              const receipt = appliedRunReceiptsRef.current.find(
+                                (item) => item.id === suiteReceiptIdForResult(result),
+                              );
+                              if (receipt && !receipt.revertedAt) {
+                                void handleRevertReceipt(receipt);
+                              }
+                            }}
+                            type="button"
+                          >
+                            Reverse this prompt
+                          </button>
+                        ) : null}
+                      </div>
                     </article>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : null}
               <button
@@ -5844,14 +9184,14 @@ export function CodingCockpitShell() {
               </button>
               <button
                 className={`mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-md border border-[var(--ddv4-pill-border)] px-3 text-sm font-semibold text-[var(--ddv4-fg)] transition-colors hover:bg-[var(--ddv4-surface-fill)] disabled:cursor-not-allowed disabled:opacity-60 ${commandFocusClass}`}
-                disabled={reversibleSuiteState.results.length === 0}
+                disabled={!hasReversibleSuiteDiagnostics}
                 onClick={() => void copyReversibleSuiteDiagnostics()}
                 type="button"
               >
                 <Copy aria-hidden="true" size={16} />
                 Copy trial diagnostics
               </button>
-              {reversibleSuiteFinished && reversibleSuiteState.results.length > 0
+              {showTrialCleanupPanel
                 ? reversibleSuiteReversalPanel
                 : reversibleSuiteState.status === "running" || reversibleSuiteState.status === "stopping"
                   ? (
@@ -5861,7 +9201,19 @@ export function CodingCockpitShell() {
                     )
                   : null}
               {reversiblePromptsCopyStatus || reversibleSuiteCopyStatus ? (
-                <p className={`mt-2 text-xs ${commandMutedClass}`}>{reversiblePromptsCopyStatus || reversibleSuiteCopyStatus}</p>
+                <p
+                  className={`mt-2 text-xs ${
+                    reversibleSuiteCopyStatus.toLowerCase().includes("clean") ||
+                    reversibleSuiteCopyStatus.toLowerCase().includes("removed")
+                      ? "font-semibold text-emerald-300"
+                      : reversibleSuiteCopyStatus.toLowerCase().includes("still dirty") ||
+                          reversibleSuiteCopyStatus.toLowerCase().includes("failed")
+                        ? "font-semibold text-rose-200"
+                        : commandMutedClass
+                  }`}
+                >
+                  {reversiblePromptsCopyStatus || reversibleSuiteCopyStatus}
+                </p>
               ) : null}
             </section>
           </aside>
@@ -6050,7 +9402,7 @@ export function CodingCockpitShell() {
               </button>
               <button
                 className={`mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-md border border-[var(--ddv4-pill-border)] px-3 text-sm font-semibold text-[var(--ddv4-fg)] transition-colors hover:bg-[var(--ddv4-surface-fill)] disabled:cursor-not-allowed disabled:opacity-60 ${commandFocusClass}`}
-                disabled={reversibleSuiteState.results.length === 0}
+                disabled={!hasReversibleSuiteDiagnostics}
                 onClick={() => void copyReversibleSuiteDiagnostics()}
                 type="button"
               >
@@ -6112,7 +9464,7 @@ export function CodingCockpitShell() {
                   {isReverting ? "Undoing..." : "Undo last change"}
                 </button>
               ) : null}
-              {reversibleSuiteFinished && (reversibleSuiteState.results.length > 0 || canRevertTrialRuns)
+              {showTrialCleanupPanel
                 ? <div className="mt-4">{reversibleSuiteReversalPanel}</div>
                 : null}
               {diagnosticCopyStatus ? (
@@ -7555,21 +10907,38 @@ class BrowserAbortTimeoutError extends Error {
   }
 }
 
-async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}, timeoutMs = 8000) {
+async function fetchWithTimeout(
+  input: RequestInfo | URL,
+  init: RequestInit = {},
+  timeoutMs = 8000,
+) {
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
+  const externalSignal = init.signal;
+  const onExternalAbort = () => controller.abort();
+  if (externalSignal) {
+    if (externalSignal.aborted) {
+      controller.abort();
+    } else {
+      externalSignal.addEventListener("abort", onExternalAbort);
+    }
+  }
   try {
     return await fetch(input, {
       ...init,
       signal: controller.signal,
     });
   } catch (error) {
+    if (externalSignal?.aborted) {
+      throw error;
+    }
     if (error instanceof DOMException && error.name === "AbortError") {
       throw new BrowserAbortTimeoutError();
     }
     throw error;
   } finally {
     window.clearTimeout(timeout);
+    externalSignal?.removeEventListener("abort", onExternalAbort);
   }
 }
 
@@ -7587,12 +10956,32 @@ async function waitForPromptPacketRetry(attempt: number) {
   await new Promise((resolve) => window.setTimeout(resolve, 350 * attempt));
 }
 
-async function fetchPromptPacketWithRetry(init: RequestInit, timeoutMs: number) {
-  const maxAttempts = 3;
+type PromptPacketRetryOptions = {
+  maxAttempts?: number;
+  onRetry?: (attempt: number) => void;
+  totalBudgetMs?: number;
+};
+
+async function fetchPromptPacketWithRetry(
+  init: RequestInit,
+  timeoutMs: number,
+  options: PromptPacketRetryOptions = {},
+) {
+  const maxAttempts = options.maxAttempts ?? 3;
+  const totalBudgetMs = options.totalBudgetMs ?? timeoutMs * maxAttempts;
   let lastError: unknown;
+  const fetchStartedAt = Date.now();
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    if (Date.now() - fetchStartedAt >= totalBudgetMs) {
+      throw new BrowserAbortTimeoutError("prompt_packet_total_budget_exceeded");
+    }
+    if (init.signal?.aborted) {
+      throw new DOMException("The operation was aborted.", "AbortError");
+    }
+    options.onRetry?.(attempt);
     try {
-      return await fetchWithTimeout("/v1/decisions/prompt-packet", init, timeoutMs);
+      const response = await fetchWithTimeout("/v1/decisions/prompt-packet", init, timeoutMs);
+      return response;
     } catch (error) {
       lastError = error;
       if (!isTransientNetworkFetchError(error) || attempt === maxAttempts) {
@@ -7743,14 +11132,36 @@ function coderSummaryFromPayload(payload: unknown, fallback: string): string {
   return reasonCode ? `No diff returned (${reasonCode}).` : fallback;
 }
 
-function changedFilesFromPayload(payload: unknown): string[] {
+function nestedRecord(record: Record<string, unknown>, keys: string[]): Record<string, unknown> {
+  return keys.reduce<Record<string, unknown>>((current, key) => asRecord(current[key]), record);
+}
+
+export function changedFilesFromPayload(payload: unknown): string[] {
   const record = asRecord(payload);
+  const task = asRecord(record.task);
+  const execution = asRecord(record.execution);
+  const taskExecution = asRecord(task.execution);
+  const taskAudit = nestedRecord(task, ["ast_snapshot", "approved_execution_evidence", "audit"]);
   const changed =
     Array.isArray(record.applied_changed_files)
       ? record.applied_changed_files
       : Array.isArray(record.disk_changed_files)
         ? record.disk_changed_files
-        : record.changed_files;
+        : Array.isArray(record.changed_files)
+          ? record.changed_files
+          : Array.isArray(execution.applied_changed_files)
+            ? execution.applied_changed_files
+            : Array.isArray(execution.disk_changed_files)
+              ? execution.disk_changed_files
+              : Array.isArray(execution.changed_files)
+                ? execution.changed_files
+                : Array.isArray(taskExecution.applied_changed_files)
+                  ? taskExecution.applied_changed_files
+                  : Array.isArray(taskExecution.disk_changed_files)
+                    ? taskExecution.disk_changed_files
+                    : Array.isArray(taskExecution.changed_files)
+                      ? taskExecution.changed_files
+                      : taskAudit.changed_files;
   if (!Array.isArray(changed)) {
     return [];
   }
@@ -7776,14 +11187,21 @@ type ChangedFileSnapshot = {
   sha256Before: string | null;
 };
 
-function changedFileSnapshotsFromPayload(payload: unknown): ChangedFileSnapshot[] {
+export function changedFileSnapshotsFromPayload(payload: unknown): ChangedFileSnapshot[] {
   const record = asRecord(payload);
   const execution = asRecord(record.execution);
+  const task = asRecord(record.task);
+  const taskExecution = asRecord(task.execution);
+  const taskAudit = nestedRecord(task, ["ast_snapshot", "approved_execution_evidence", "audit"]);
   const candidates = [
     record.changed_file_snapshots,
     record.changedFileSnapshots,
     execution.changed_file_snapshots,
     execution.changedFileSnapshots,
+    taskExecution.changed_file_snapshots,
+    taskExecution.changedFileSnapshots,
+    taskAudit.changed_file_snapshots,
+    taskAudit.changedFileSnapshots,
   ];
   const snapshots = candidates.find(Array.isArray);
   if (!Array.isArray(snapshots)) return [];
@@ -7807,18 +11225,21 @@ function snapshotForPath(snapshots: ChangedFileSnapshot[], path: string): Change
   return snapshots.find((snapshot) => snapshot.path === normalized);
 }
 
-function snapshotHasBefore(snapshots: ChangedFileSnapshot[], path: string): boolean {
+function snapshotHasRestorableBaseline(snapshots: ChangedFileSnapshot[], path: string): boolean {
   const snapshot = snapshotForPath(snapshots, path);
-  return Boolean(snapshot && !snapshot.missingBeforeApply && snapshot.sha256Before);
+  return Boolean(snapshot && (snapshot.missingBeforeApply || snapshot.sha256Before));
 }
 
-function snapshotRestored(
+export function snapshotRestored(
   applySnapshots: ChangedFileSnapshot[],
   revertSnapshots: ChangedFileSnapshot[],
   path: string,
 ): boolean {
   const applySnapshot = snapshotForPath(applySnapshots, path);
   const revertSnapshot = snapshotForPath(revertSnapshots, path);
+  if (applySnapshot?.missingBeforeApply) {
+    return Boolean(revertSnapshot && revertSnapshot.sha256After === null);
+  }
   return Boolean(
     applySnapshot?.sha256Before &&
       revertSnapshot?.sha256After &&
