@@ -21,7 +21,7 @@ export function changedFilesFromDiffPreview(diff: string): string[] {
       files.add(normalizeRepoPath(match[2]));
       continue;
     }
-    const plusMatch = line.match(/^\+\+\+ b\/(.+)$/);
+    const plusMatch = line.match(/^\+\+\+ [ab]\/(.+)$/);
     if (plusMatch?.[1] && plusMatch[1] !== "/dev/null") {
       files.add(normalizeRepoPath(plusMatch[1]));
     }

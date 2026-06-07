@@ -1474,7 +1474,7 @@ export function buildAgentTrialPromptPreviews({
       `live_apply_status: ${liveApplyStatus}`,
       `live_apply_proof_status: ${visibleResult.live_apply_proof_status}`,
       `trial_id: ${fixture.id}`,
-      "run_id: not recorded",
+      "run_id: pending_backend_record",
       `agent_type: ${mode === "design" ? "design" : mode === "hybrid" ? "combined" : "coding"}`,
       "viewport: selected in runner",
       `profile: ${profile}`,

@@ -1,4 +1,4 @@
-export type TrialResultCardState = "success" | "failed";
+export type TrialResultCardState = "success" | "failed" | "pending";
 
 export type TrialResultCardProps = {
   detail: string;

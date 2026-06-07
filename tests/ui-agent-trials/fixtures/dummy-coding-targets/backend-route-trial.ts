@@ -3,9 +3,9 @@ export type TrialRouteResponse = {
   message: string;
 };
 
-export function buildTrialRouteResponse(message: string): TrialRouteResponse {
+export function buildTrialRouteResponse(message: string, ok = true): TrialRouteResponse {
   return {
-    ok: true,
+    ok,
     message,
   };
 }

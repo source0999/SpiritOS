@@ -692,3 +692,17 @@ describe("agent trials UI helpers", () => {
     expect(appliedFixture).toContain("foundItem");
   });
 });
+
+describe("reversible trial runner scoring imports", () => {
+  it("keeps edit-required already satisfied out of productive success buckets", async () => {
+    const { classifyEditReversibleAlreadySatisfied } = await import("@/lib/coding/reversible-trial-runner");
+    expect(
+      classifyEditReversibleAlreadySatisfied({
+        expectedOutcome: "edit_reversible",
+        promptPacketReasonCode: "coder_no_changes_needed",
+        providerCallMade: true,
+        proposedDiff: "",
+      }).kind,
+    ).toBe("needs_fix");
+  });
+});
