@@ -264,6 +264,26 @@ export class JellyfinClient {
     return data.Items ?? [];
   }
 
+  async getWatchHistory(parentId?: string): Promise<JellyfinItem[]> {
+    if (!this.userId) return [];
+    const query = toQuery({
+      ParentId: parentId,
+      Recursive: true,
+      IncludeItemTypes: "Movie,Episode,Video",
+      Fields: GOONER_ITEM_FIELDS,
+      Filters: "IsPlayed",
+      ImageTypeLimit: 3,
+      EnableImageTypes: "Primary,Backdrop,Thumb,Logo",
+      SortBy: "DatePlayed",
+      SortOrder: "Descending",
+      Limit: 60,
+    });
+    const data = await this.request<JellyfinItemsResponse<JellyfinItem>>(
+      `/Users/${this.userId}/Items?${query}`,
+    );
+    return data.Items ?? [];
+  }
+
   async getLatestAdded(): Promise<JellyfinItem[]> {
     return this.getItemsByQuery({ SortBy: "DateCreated", SortOrder: "Descending", Limit: 18 });
   }

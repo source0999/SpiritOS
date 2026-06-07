@@ -9,6 +9,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   ChevronLeft,
   ChevronRight,
+  Clock3,
   Grid2X2,
   List,
   LogOut,
@@ -59,7 +60,7 @@ interface SpiritFlixHomeProps {
   onPlay: (item: JellyfinItem, queueItems?: JellyfinItem[], sourceTitle?: string, startPositionTicks?: number) => void;
 }
 
-type LibraryViewMode = "grid" | "list";
+type LibraryViewMode = "grid" | "list" | "history";
 type LibrarySortMode = "model" | "title" | "dateAdded" | "duration";
 type LibrarySortDirection = "asc" | "desc";
 
@@ -229,6 +230,23 @@ function getDateCreatedMs(item: JellyfinItem): number {
   return Number.isFinite(value) ? value : 0;
 }
 
+function getLastPlayedMs(item: JellyfinItem): number {
+  if (!item.UserData?.LastPlayedDate) return 0;
+  const value = new Date(item.UserData.LastPlayedDate).getTime();
+  return Number.isFinite(value) ? value : 0;
+}
+
+function getLastPlayedLabel(item: JellyfinItem): string {
+  const playedAt = getLastPlayedMs(item);
+  if (!playedAt) return "No recent play date";
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(playedAt));
+}
+
 function getDurationTicks(item: JellyfinItem): number {
   if (typeof item.RunTimeTicks === "number" && item.RunTimeTicks > 0) return item.RunTimeTicks;
   const sourceTicks =
@@ -376,7 +394,7 @@ export function SpiritFlixHome({
     const sourceItems = selectedModelGroup?.items ?? playableLibraryItems;
     const allowedIds = selectedModelGroup ? new Set(sourceItems.map((item) => item.Id)) : null;
     const seen = new Set<string>();
-    return [...data.continueWatching, ...sourceItems]
+    return [...data.continueWatching, ...data.watchHistory, ...sourceItems]
       .filter((item) => {
         if (allowedIds && !allowedIds.has(item.Id)) return false;
         if (seen.has(item.Id)) return false;
@@ -390,7 +408,7 @@ export function SpiritFlixHome({
         return rightDate - leftDate;
       })
       .slice(0, 14);
-  }, [data.continueWatching, playableLibraryItems, selectedModelGroup]);
+  }, [data.continueWatching, data.watchHistory, playableLibraryItems, selectedModelGroup]);
   const favoriteItems = useMemo(() => {
     const sourceItems = selectedModelGroup?.items ?? playableLibraryItems;
     const allowedIds = selectedModelGroup ? new Set(sourceItems.map((item) => item.Id)) : null;
@@ -405,6 +423,25 @@ export function SpiritFlixHome({
       })
       .sort((left, right) => left.Name.localeCompare(right.Name));
   }, [data.favorites, playableLibraryItems, selectedModelGroup]);
+  const historyItems = useMemo(() => {
+    const sourceItems = selectedModelGroup?.items ?? playableLibraryItems;
+    const allowedIds = selectedModelGroup ? new Set(sourceItems.map((item) => item.Id)) : null;
+    const seen = new Set<string>();
+    return [...data.continueWatching, ...data.watchHistory, ...sourceItems]
+      .filter((item) => {
+        if (allowedIds && !allowedIds.has(item.Id)) return false;
+        if (seen.has(item.Id)) return false;
+        seen.add(item.Id);
+        return Boolean(
+          item.UserData?.LastPlayedDate ||
+            item.UserData?.Played ||
+            (item.UserData?.PlaybackPositionTicks && item.UserData.PlaybackPositionTicks > 0) ||
+            (item.UserData?.PlayCount && item.UserData.PlayCount > 0),
+        );
+      })
+      .sort((left, right) => getLastPlayedMs(right) - getLastPlayedMs(left) || left.Name.localeCompare(right.Name))
+      .slice(0, 80);
+  }, [data.continueWatching, data.watchHistory, playableLibraryItems, selectedModelGroup]);
   const libraryStats = [
     { label: "Videos", value: playableLibraryItems.length },
     { label: "Models", value: modelGroups.length },
@@ -437,7 +474,7 @@ export function SpiritFlixHome({
 
   useEffect(() => {
     const stored = window.localStorage.getItem(LIBRARY_VIEW_MODE_KEY);
-    if (stored === "grid" || stored === "list") setViewMode(stored);
+    if (stored === "grid" || stored === "list" || stored === "history") setViewMode(stored);
     const storedSort = window.localStorage.getItem(LIBRARY_SORT_MODE_KEY);
     if (storedSort === "model" || storedSort === "title" || storedSort === "dateAdded" || storedSort === "duration") setSortMode(storedSort);
     const storedDirection = window.localStorage.getItem(LIBRARY_SORT_DIRECTION_KEY);
@@ -673,6 +710,15 @@ export function SpiritFlixHome({
                   <List size={19} aria-hidden="true" />
                   <span>List</span>
                 </button>
+                <button
+                  type="button"
+                  className={viewMode === "history" ? "is-active" : undefined}
+                  aria-pressed={viewMode === "history"}
+                  onClick={() => setViewMode("history")}
+                >
+                  <Clock3 size={18} aria-hidden="true" />
+                  <span>History</span>
+                </button>
               </div>
             </div>
 
@@ -875,7 +921,7 @@ export function SpiritFlixHome({
                     />
                   ))}
                 </motion.div>
-              ) : (
+              ) : viewMode === "list" ? (
                 <motion.div
                   key="list"
                   className="spiritflix-library-list"
@@ -933,10 +979,73 @@ export function SpiritFlixHome({
                     </button>
                   ))}
                 </motion.div>
+              ) : (
+                <motion.div
+                  key="history"
+                  className="spiritflix-library-list spiritflix-library-list--history"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.18 }}
+                >
+                  {historyItems.map((item) => (
+                    <button
+                      key={item.Id}
+                      type="button"
+                      className="spiritflix-library-row spiritflix-library-row--history"
+                      onClick={() => {
+                        if (isPlayableItem(item)) {
+                          onPlay(
+                            item,
+                            historyItems,
+                            "Watch History",
+                            hasResumeProgress(item) ? getResumePositionTicks(item) : undefined,
+                          );
+                        } else {
+                          onOpenDetails(item);
+                        }
+                      }}
+                    >
+                      <span className="spiritflix-library-row__thumb">
+                        <SpiritFlixImage client={client} item={item} type="Thumb" width={260} alt="" />
+                      </span>
+                      <span className="spiritflix-library-row__copy">
+                        <strong>{item.Name}</strong>
+                        <small>{getDisplayModelName(item, faceMetadata)}</small>
+                        <em>{getLastPlayedLabel(item)}</em>
+                        <span>
+                          {hasResumeProgress(item)
+                            ? `${getResumeSlotLabel(item)} / ${getTimeLeftLabel(item)}`
+                            : `${formatRuntime(getDurationTicks(item))} / ${item.UserData?.PlayCount ?? 0} plays`}
+                        </span>
+                      </span>
+                      {isPlayableItem(item) ? (
+                        <span
+                          className="spiritflix-library-row__play"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onPlay(
+                              item,
+                              historyItems,
+                              "Watch History",
+                              hasResumeProgress(item) ? getResumePositionTicks(item) : undefined,
+                            );
+                          }}
+                        >
+                          <Play size={18} fill="currentColor" aria-hidden="true" />
+                        </span>
+                      ) : null}
+                    </button>
+                  ))}
+                </motion.div>
               )}
             </AnimatePresence>
 
-            {!visibleLibraryItems.length ? <p className="spiritflix-empty">{libraryTitle} has no indexed videos yet.</p> : null}
+            {viewMode === "history" && !historyItems.length ? (
+              <p className="spiritflix-empty">No private watch history has synced for {selectedModelGroup?.name ?? libraryTitle} yet.</p>
+            ) : viewMode !== "history" && !visibleLibraryItems.length ? (
+              <p className="spiritflix-empty">{libraryTitle} has no indexed videos yet.</p>
+            ) : null}
 
             <motion.button
               type="button"

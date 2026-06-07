@@ -1753,6 +1753,19 @@
   transform: translateY(0);
 }
 
+.spiritflix-player.is-controls-hidden .spiritflix-player__top,
+.spiritflix-player.is-controls-hidden .spiritflix-player__controls,
+.spiritflix-player.is-controls-hidden:focus-within .spiritflix-player__top,
+.spiritflix-player.is-controls-hidden:focus-within .spiritflix-player__controls {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.spiritflix-player.is-controls-hidden .spiritflix-player__controls,
+.spiritflix-player.is-controls-hidden:focus-within .spiritflix-player__controls {
+  transform: translateY(0.5rem);
+}
+
 .spiritflix-player__diagnostics {
   position: absolute;
   z-index: 3;

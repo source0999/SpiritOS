@@ -16,6 +16,7 @@ import type {
   SpiritFlixServerInfo,
   SpiritFlixSession,
 } from "@/lib/spiritflix-types";
+import { hasResumeProgress } from "@/lib/spiritflix-resume";
 import { SpiritFlixHome } from "./SpiritFlixHome";
 import { SpiritFlixLogin } from "./SpiritFlixLogin";
 import { SpiritFlixDetailsModal } from "./SpiritFlixDetailsModal";
@@ -42,6 +43,7 @@ const emptyHome: SpiritFlixHomeData = {
   featuredItems: [],
   libraryItems: [],
   continueWatching: [],
+  watchHistory: [],
   latestAdded: [],
   favorites: [],
 };
@@ -78,6 +80,15 @@ function getLastPlayedMs(item: JellyfinItem): number {
 
 function sortByLastPlayed(items: JellyfinItem[]): JellyfinItem[] {
   return [...items].sort((left, right) => getLastPlayedMs(right) - getLastPlayedMs(left));
+}
+
+function hasWatchActivity(item: JellyfinItem): boolean {
+  return Boolean(
+    item.UserData?.LastPlayedDate ||
+      item.UserData?.Played ||
+      (item.UserData?.PlaybackPositionTicks && item.UserData.PlaybackPositionTicks > 0) ||
+      (item.UserData?.PlayCount && item.UserData.PlayCount > 0),
+  );
 }
 
 function isKenshinItem(item: JellyfinItem): boolean {
@@ -120,6 +131,12 @@ function upsertPlaybackItem(items: JellyfinItem[], item: JellyfinItem): Jellyfin
     return nextItems;
   }
   return [item, ...nextItems];
+}
+
+function upsertWatchHistoryItem(items: JellyfinItem[], item: JellyfinItem): JellyfinItem[] {
+  const nextItems = items.filter((candidate) => candidate.Id !== item.Id);
+  if (!hasWatchActivity(item)) return nextItems;
+  return sortByLastPlayed([item, ...nextItems]);
 }
 
 function applyFavoriteState(item: JellyfinItem, itemId: string, isFavorite: boolean): JellyfinItem {
@@ -175,9 +192,9 @@ export function SpiritFlixApp() {
   );
 
   const loadHome = useCallback(
-    async (libraryId?: string | null, term = searchTerm) => {
+    async (libraryId?: string | null, term = searchTerm, options: { silent?: boolean } = {}) => {
       if (!session) return;
-      setLoadingHome(true);
+      if (!options.silent) setLoadingHome(true);
       setHomeError("");
       try {
         const libraries = (await client.getLibraries()).filter(isMediaLibrary);
@@ -189,7 +206,7 @@ export function SpiritFlixApp() {
             ? null
             : otherLibrary?.Id ?? libraries[0]?.Id ?? null;
         const animeLibrary = libraries.find((library) => library.Name.toLowerCase() === "anime");
-        const [libraryItems, featuredItems, continueWatching, latestAdded, favorites] = await Promise.all([
+        const [libraryItems, featuredItems, continueWatching, watchHistory, latestAdded, favorites] = await Promise.all([
           selectedLibraryId ? client.getLibraryItems(selectedLibraryId, term) : Promise.resolve([]),
           !selectedLibraryId && animeLibrary
             ? client
@@ -197,23 +214,34 @@ export function SpiritFlixApp() {
                 .then((items) => items.filter((item) => isPlayableItem(item) && isKenshinItem(item)).sort(byEpisodeOrder))
             : Promise.resolve([]),
           selectedLibraryId ? client.getLibraryResumeItems(selectedLibraryId) : client.getContinueWatching(),
+          client.getWatchHistory(selectedLibraryId ?? undefined),
           selectedLibraryId ? client.getLibraryItems(selectedLibraryId, "", 18) : client.getLatestAdded(),
           selectedLibraryId ? client.getLibraryFavoriteItems(selectedLibraryId) : client.getFavorites(),
         ]);
+        const libraryItemsUnique = uniqueItems(libraryItems);
+        const watchHistoryItems = sortByLastPlayed(uniqueItems(watchHistory.filter(hasWatchActivity)));
+        const continueWatchingItems = sortByLastPlayed(
+          uniqueItems([
+            ...continueWatching,
+            ...watchHistoryItems.filter(hasResumeProgress),
+            ...libraryItemsUnique.filter(hasResumeProgress),
+          ]),
+        );
         setHomeData({
           libraries,
           playlists: [],
           selectedLibraryId,
           featuredItems: uniqueItems(featuredItems),
-          libraryItems: uniqueItems(libraryItems),
-          continueWatching: sortByLastPlayed(uniqueItems(continueWatching)),
+          libraryItems: libraryItemsUnique,
+          continueWatching: continueWatchingItems,
+          watchHistory: watchHistoryItems,
           latestAdded: uniqueItems(latestAdded),
           favorites: uniqueItems(favorites),
         });
       } catch {
         setHomeError("Could not load your Jellyfin library. Log out and back in if the token expired.");
       } finally {
-        setLoadingHome(false);
+        if (!options.silent) setLoadingHome(false);
       }
     },
     [client, homeData.selectedLibraryId, searchTerm, session],
@@ -252,6 +280,24 @@ export function SpiritFlixApp() {
     }, 0);
     return () => window.clearTimeout(timer);
   }, [loadHome, session]);
+
+  useEffect(() => {
+    if (!session) return undefined;
+    const refreshPlaybackState = () => {
+      void loadHome(homeData.selectedLibraryId, searchTerm, { silent: true });
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") refreshPlaybackState();
+    };
+    const timer = window.setInterval(refreshPlaybackState, 30000);
+    window.addEventListener("focus", refreshPlaybackState);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refreshPlaybackState);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [homeData.selectedLibraryId, loadHome, searchTerm, session]);
 
   const handleLogin = async (username: string, password: string, targetServerUrl: string) => {
     const authClient = new JellyfinClient(targetServerUrl);
@@ -321,6 +367,11 @@ export function SpiritFlixApp() {
         const nextFeaturedItems = current.featuredItems.map((item) => applyPlaybackProgress(item, progress));
         const nextLatestAdded = current.latestAdded.map((item) => applyPlaybackProgress(item, progress));
         const nextFavorites = current.favorites.map((item) => applyPlaybackProgress(item, progress));
+        const nextWatchHistory = current.watchHistory.map((item) => {
+          const nextItem = applyPlaybackProgress(item, progress);
+          if (nextItem.Id === progress.itemId) updatedItem = nextItem;
+          return nextItem;
+        });
         const nextContinueWatching = current.continueWatching.map((item) => {
           const nextItem = applyPlaybackProgress(item, progress);
           if (nextItem.Id === progress.itemId) updatedItem = nextItem;
@@ -336,6 +387,9 @@ export function SpiritFlixApp() {
           featuredItems: nextFeaturedItems,
           latestAdded: nextLatestAdded,
           favorites: nextFavorites,
+          watchHistory: nextSourceItem
+            ? upsertWatchHistoryItem(nextWatchHistory, nextSourceItem)
+            : nextWatchHistory,
           continueWatching: nextSourceItem
             ? upsertPlaybackItem(nextContinueWatching, nextSourceItem)
             : nextContinueWatching.filter((item) => item.Id !== progress.itemId),
@@ -363,6 +417,7 @@ export function SpiritFlixApp() {
         libraryItems: current.libraryItems.map((libraryItem) => applyFavoriteState(libraryItem, item.Id, isFavorite)),
         featuredItems: current.featuredItems.map((featuredItem) => applyFavoriteState(featuredItem, item.Id, isFavorite)),
         continueWatching: current.continueWatching.map((resumeItem) => applyFavoriteState(resumeItem, item.Id, isFavorite)),
+        watchHistory: current.watchHistory.map((historyItem) => applyFavoriteState(historyItem, item.Id, isFavorite)),
         latestAdded: current.latestAdded.map((latestItem) => applyFavoriteState(latestItem, item.Id, isFavorite)),
         favorites: upsertFavoriteItem(
           current.favorites.map((favoriteItem) => applyFavoriteState(favoriteItem, item.Id, isFavorite)),

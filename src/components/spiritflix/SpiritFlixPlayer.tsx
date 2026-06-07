@@ -44,6 +44,7 @@ const DOUBLE_TAP_MAX_MS = 320;
 const DOUBLE_TAP_MAX_DISTANCE = 48;
 const PINCH_TOGGLE_THRESHOLD = 0.08;
 const PINCH_GESTURE_SUPPRESS_MS = 450;
+const TOUCH_MOUSE_REVEAL_SUPPRESS_MS = 1200;
 const UI_TIME_UPDATE_MS = 500;
 const PLAYBACK_REPORT_MS = 15000;
 const DIAGNOSTIC_SAMPLE_MS = 2000;
@@ -94,6 +95,13 @@ function getStoredRepeatMode(): RepeatMode {
 
 function isInteractiveTarget(target: EventTarget | null): boolean {
   return target instanceof Element && Boolean(target.closest("button, input, a, [role='button']"));
+}
+
+function getTouchAt(
+  touches: { length: number; item?: (index: number) => { clientX: number; clientY: number } | null; [index: number]: { clientX: number; clientY: number } | undefined },
+  index: number,
+): { clientX: number; clientY: number } | null {
+  return touches.item?.(index) ?? touches[index] ?? null;
 }
 
 function getBufferedAheadSeconds(video: HTMLVideoElement): number {
@@ -152,6 +160,8 @@ export function SpiritFlixPlayer({
   const touchTapStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
   const pinchStartRef = useRef<{ startDistance: number; currentDistance: number } | null>(null);
   const suppressPointerUntilRef = useRef(0);
+  const suppressTouchUntilRef = useRef(0);
+  const lastTouchInteractionAtRef = useRef(0);
   const volumeRef = useRef(1);
   const mutedRef = useRef(false);
   const repeatModeRef = useRef<RepeatMode>(getStoredRepeatMode());
@@ -160,6 +170,7 @@ export function SpiritFlixPlayer({
   const [isMuted, setIsMuted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
+  const [controlsHiddenByUser, setControlsHiddenByUser] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
@@ -238,6 +249,7 @@ export function SpiritFlixPlayer({
 
   const revealControls = useCallback(
     (keepVisible = false) => {
+      setControlsHiddenByUser(false);
       setShowControls(true);
       if (hideTimer.current) window.clearTimeout(hideTimer.current);
       if (!keepVisible && isPlaying) {
@@ -249,6 +261,11 @@ export function SpiritFlixPlayer({
 
   const hideControls = useCallback(() => {
     if (hideTimer.current) window.clearTimeout(hideTimer.current);
+    const activeElement = document.activeElement;
+    if (activeElement instanceof HTMLElement && shellRef.current?.contains(activeElement)) {
+      activeElement.blur();
+    }
+    setControlsHiddenByUser(true);
     setShowControls(false);
   }, []);
 
@@ -585,6 +602,9 @@ export function SpiritFlixPlayer({
   }, [onClose, seekBy, toggleFullscreen, togglePlay, volume]);
 
   const handlePointerDown = (event: React.PointerEvent<HTMLElement>) => {
+    if (event.pointerType === "touch") {
+      lastTouchInteractionAtRef.current = Date.now();
+    }
     if (Date.now() < suppressPointerUntilRef.current || pinchStartRef.current) return;
     if (isInteractiveTarget(event.target)) return;
     event.currentTarget.setPointerCapture?.(event.pointerId);
@@ -600,11 +620,10 @@ export function SpiritFlixPlayer({
     (x: number, y: number) => {
       const shellWidth = shellRef.current?.clientWidth ?? window.innerWidth;
       const isCenterTap = x > shellWidth * 0.32 && x < shellWidth * 0.68;
-
-      if (showControls && isPlaying) {
-        hideControls();
-        return;
-      }
+      const activeElement = document.activeElement;
+      const controlsHaveFocus =
+        activeElement instanceof HTMLElement &&
+        Boolean(activeElement.closest(".spiritflix-player__top, .spiritflix-player__controls"));
 
       const lastTap = lastTapRef.current;
       if (
@@ -626,17 +645,21 @@ export function SpiritFlixPlayer({
 
       lastTapRef.current = { time: Date.now(), x, y };
       if (isCenterTap) {
+        setControlsHiddenByUser(false);
         togglePlay();
-      } else if (showControls) {
+      } else if (showControls || controlsHaveFocus) {
         hideControls();
       } else {
         revealControls();
       }
     },
-    [hideControls, isPlaying, revealControls, seekBy, showControls, togglePlay],
+    [hideControls, revealControls, seekBy, showControls, togglePlay],
   );
 
   const handlePointerUp = (event: React.PointerEvent<HTMLElement>) => {
+    if (event.pointerType === "touch") {
+      lastTouchInteractionAtRef.current = Date.now();
+    }
     if (Date.now() < suppressPointerUntilRef.current || pinchStartRef.current) {
       pointerStartRef.current = null;
       return;
@@ -680,8 +703,8 @@ export function SpiritFlixPlayer({
 
   const touchDistance = (touches: { length: number; item(index: number): { clientX: number; clientY: number } | null }) => {
     if (touches.length < 2) return 0;
-    const first = touches.item(0);
-    const second = touches.item(1);
+    const first = getTouchAt(touches, 0);
+    const second = getTouchAt(touches, 1);
     if (!first || !second) return 0;
     return Math.hypot(second.clientX - first.clientX, second.clientY - first.clientY);
   };
@@ -705,7 +728,9 @@ export function SpiritFlixPlayer({
 
   return (
     <section
-      className={`spiritflix-player is-fit-${fitMode} ${showControls || !isPlaying ? "is-awake" : "is-idle"}`}
+      className={`spiritflix-player is-fit-${fitMode} ${
+        !controlsHiddenByUser && (showControls || !isPlaying) ? "is-awake" : "is-idle"
+      } ${controlsHiddenByUser ? "is-controls-hidden" : ""}`}
       ref={shellRef}
       style={playerStyle}
       aria-label={`${item.Name} player`}
@@ -715,10 +740,20 @@ export function SpiritFlixPlayer({
         pointerStartRef.current = null;
       }}
       onPointerMove={(event) => {
-        if (event.pointerType === "mouse") revealControls();
+        if (
+          event.pointerType === "mouse" &&
+          Date.now() - lastTouchInteractionAtRef.current > TOUCH_MOUSE_REVEAL_SUPPRESS_MS
+        ) {
+          revealControls();
+        }
       }}
-      onMouseMove={() => revealControls()}
+      onMouseMove={() => {
+        if (Date.now() - lastTouchInteractionAtRef.current > TOUCH_MOUSE_REVEAL_SUPPRESS_MS) {
+          revealControls();
+        }
+      }}
       onTouchStart={(event) => {
+        lastTouchInteractionAtRef.current = Date.now();
         if (event.touches.length === 2) {
           event.preventDefault();
           const distance = touchDistance(event.touches);
@@ -727,7 +762,7 @@ export function SpiritFlixPlayer({
           touchTapStartRef.current = null;
           lastTapRef.current = null;
         } else if (event.touches.length === 1 && !isInteractiveTarget(event.target)) {
-          const touch = event.touches.item(0);
+          const touch = getTouchAt(event.touches, 0);
           if (touch) {
             touchTapStartRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
           }
@@ -742,6 +777,7 @@ export function SpiritFlixPlayer({
         pinchStartRef.current = { ...pinch, currentDistance: nextDistance };
       }}
       onTouchEnd={(event) => {
+        lastTouchInteractionAtRef.current = Date.now();
         const pinch = pinchStartRef.current;
         if (pinch && event.touches.length < 2) {
           const distanceRatio = pinch.currentDistance / pinch.startDistance;
@@ -753,15 +789,16 @@ export function SpiritFlixPlayer({
             revealControls();
           }
           suppressPointerUntilRef.current = Date.now() + PINCH_GESTURE_SUPPRESS_MS;
+          suppressTouchUntilRef.current = Date.now() + PINCH_GESTURE_SUPPRESS_MS;
           touchTapStartRef.current = null;
         } else {
           const start = touchTapStartRef.current;
-          const touch = event.changedTouches.item(0);
+          const touch = getTouchAt(event.changedTouches, 0);
           touchTapStartRef.current = null;
           if (
             start &&
             touch &&
-            Date.now() >= suppressPointerUntilRef.current &&
+            Date.now() >= suppressTouchUntilRef.current &&
             Date.now() - lastPointerTapAtRef.current > PINCH_GESTURE_SUPPRESS_MS
           ) {
             const dx = touch.clientX - start.x;

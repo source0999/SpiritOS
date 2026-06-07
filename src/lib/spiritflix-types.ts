@@ -118,6 +118,7 @@ export interface SpiritFlixHomeData {
   featuredItems: JellyfinItem[];
   libraryItems: JellyfinItem[];
   continueWatching: JellyfinItem[];
+  watchHistory: JellyfinItem[];
   latestAdded: JellyfinItem[];
   favorites: JellyfinItem[];
 }
