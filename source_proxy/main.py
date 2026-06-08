@@ -12,6 +12,7 @@ from source_proxy.api.decision import router as decision_router
 from source_proxy.api.diff_verification import router as diff_verification_router
 from source_proxy.api.healthcheck import router as healthcheck_router
 from source_proxy.api.long_running_tasks import router as long_running_tasks_router
+from source_proxy.api.obsidian_context import router as obsidian_context_router
 from source_proxy.api.self_status import router as self_status_router
 from source_proxy.api.sandbox_terminal import router as sandbox_terminal_router
 from source_proxy.api.scout_intake import router as scout_intake_router
@@ -39,6 +40,7 @@ app.include_router(decision_router)
 app.include_router(diff_verification_router)
 app.include_router(healthcheck_router)
 app.include_router(long_running_tasks_router)
+app.include_router(obsidian_context_router)
 app.include_router(sandbox_terminal_router)
 app.include_router(scout_intake_router)
 app.include_router(self_status_router)

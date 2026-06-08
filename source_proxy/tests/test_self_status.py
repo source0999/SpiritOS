@@ -11,6 +11,7 @@ from fastapi.testclient import TestClient
 
 from source_proxy.api.action_preview import router as action_preview_router
 from source_proxy.api.context_index import router as context_index_router
+from source_proxy.api.obsidian_context import router as obsidian_context_router
 from source_proxy.api.self_status import router as self_status_router
 from source_proxy.api.tools_manifest import router as tools_manifest_router
 from source_proxy.self_status import (
@@ -25,6 +26,7 @@ def _test_app() -> FastAPI:
     app = FastAPI()
     app.include_router(action_preview_router)
     app.include_router(context_index_router)
+    app.include_router(obsidian_context_router)
     app.include_router(self_status_router)
     app.include_router(tools_manifest_router)
     return app
@@ -45,6 +47,10 @@ class SelfStatusManifestTests(unittest.TestCase):
             "present",
         )
         self.assertFalse(manifest["context_bundle_status"]["content_included"])
+        self.assertEqual(
+            manifest["memory_context_diagnostics"]["obsidian_status"],
+            "disabled",
+        )
         self.assertIn(
             "full_drive_browsing",
             {tool["name"] for tool in manifest["disabled_tools"]},
@@ -238,6 +244,21 @@ class SelfStatusManifestTests(unittest.TestCase):
         self.assertEqual(payload["manifest_version"], "2.7A-3")
         self.assertIn("context_bundle_status", payload)
         self.assertIn("context_inclusion_policy", payload)
+        self.assertIn("memory_context_diagnostics", payload)
+
+    def test_obsidian_context_endpoint_is_disabled_by_default(self) -> None:
+        client = TestClient(_test_app())
+        with patch.dict(os.environ, {"OBSIDIAN_CONTEXT_ENABLED": ""}, clear=False):
+            response = client.post(
+                "/v1/context/obsidian/query",
+                json={"task": "find notes about coder trials"},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["status"], "disabled")
+        self.assertFalse(payload["diagnostics"]["obsidian_context_used"])
+        self.assertEqual(payload["notes"], [])
 
     def test_action_preview_blocks_secret_or_broad_filesystem_scope(self) -> None:
         preview = build_action_preview(

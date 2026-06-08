@@ -7,6 +7,7 @@ from typing import Any
 from source_proxy.api.decision import AVAILABLE_ROUTES
 from source_proxy.agents.registry import get_provider_capability_payload
 from source_proxy.codex.adapter import build_codex_cli_status
+from source_proxy.context.obsidian import obsidian_context_diagnostics
 from source_proxy.routing.litellm_router import routing_status
 from source_proxy.routing.ollama_route import ollama_route_status_entry
 
@@ -33,6 +34,7 @@ def build_self_status_manifest(project_root: Path | None = None) -> dict[str, An
         "provider_capabilities": tools_manifest["provider_capabilities"],
         "codex_cli_status": tools_manifest["codex_cli_status"],
         "context_bundle_status": _context_bundle_status(root),
+        "memory_context_diagnostics": obsidian_context_diagnostics(),
         "repo_metadata": _repo_metadata(root),
     }
 
@@ -76,6 +78,7 @@ def build_context_index_manifest(project_root: Path | None = None) -> dict[str, 
         ),
         "configured_roots": _configured_roots(root),
         "context_bundle_status": _context_bundle_status(root),
+        "memory_context_diagnostics": obsidian_context_diagnostics(),
         "repo_metadata": _repo_metadata(root),
         "context_inclusion_policy": {
             "contents_included": False,
@@ -86,12 +89,14 @@ def build_context_index_manifest(project_root: Path | None = None) -> dict[str, 
                 "report generated context bundle presence",
                 "report configured root candidates",
                 "report limited repo metadata presence",
+                "report optional Obsidian context diagnostics without note contents",
             ],
             "blocked_here": [
                 "read bundle contents",
                 "read source file contents",
                 "expand Windows allowlisted folders",
                 "include .env, certificates, private keys, or token files",
+                "write or modify Obsidian notes",
             ],
         },
         "next_context_selection_action": (
