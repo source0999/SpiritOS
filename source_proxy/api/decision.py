@@ -54,6 +54,7 @@ from source_proxy.tasks.long_running import (
     derive_context_mode,
     forbidden_paths_for_context_mode,
     generate_unified_diff_from_content,
+    propose_dummy_product_site_create_diff,
     propose_coder_agent_diff_payload_from_plan,
     reset_coder_timing_diagnostics,
     snapshot_coder_timing_diagnostics,
@@ -153,6 +154,12 @@ class PromptPacketRequest(RouteDecisionRequest):
     allowed_files: list[str] = Field(default_factory=list)
     quick_find_hints: list[str] = Field(default_factory=list)
     trial_recover_already_satisfied: bool = False
+    dummy_coder_10_packet: dict[str, Any] | None = None
+    expected_result_state: str | None = None
+    primary_expected_targets: list[str] = Field(default_factory=list)
+    forbidden_files: list[str] = Field(default_factory=list)
+    selected_prompt_id: str | None = None
+    trial_prompt_id: str | None = None
 
 
 class ApiVsManualPreviewRequest(PromptPacketRequest):
@@ -1916,6 +1923,16 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
                     )
                 if recovered is not None:
                     coder = recovered
+                elif _dummy_product_site_create_mode(reset_request):
+                    architect_plan = None
+                    coder = await asyncio.get_running_loop().run_in_executor(
+                        None,
+                        functools.partial(
+                            propose_dummy_product_site_create_diff,
+                            task=trial_task,
+                            workspace_root=_workspace_root(),
+                        ),
+                    )
                 else:
                     architect_task = _trial_bounded_create_task(
                         trial_task,
@@ -1991,15 +2008,37 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
         )
         notes = coder.get("coder_notes") if isinstance(coder.get("coder_notes"), list) else []
         bundle = coder.get("bundle")
+        changed_files = (
+            coder.get("changed_files")
+            if isinstance(coder.get("changed_files"), list)
+            else diagnostics.get("changed_files")
+            if isinstance(diagnostics.get("changed_files"), list)
+            else []
+        )
+        checks_run = (
+            coder.get("checks_run")
+            if isinstance(coder.get("checks_run"), list)
+            else diagnostics.get("checks_run")
+            if isinstance(diagnostics.get("checks_run"), list)
+            else []
+        )
         manual_available = coder_blocked and not proposed and not already_satisfied
+        context_packet_summary = (
+            diagnostics.get("context_packet_summary")
+            if isinstance(diagnostics.get("context_packet_summary"), dict)
+            else {}
+        )
+        safe_diagnostics_summary = _safe_coder_diagnostics_summary(diagnostics)
         context_lines = [
             f"Coder Agent replacement-content generation (repomix bundle: {bundle or 'none'}).",
             "Coder prompt rule: strict JSON replacement content only; backend generated the unified diff.",
             "model_output_mode: replacement_content",
-            "generated_diff_by_backend: true",
-            "model_raw_diff_used: false",
+            f"model_output_classification: {diagnostics.get('model_output_classification') or 'unknown_untrusted'}",
+            f"generated_diff_by_backend: {bool(diagnostics.get('generated_diff_by_backend'))}",
+            f"model_raw_diff_used: {bool(diagnostics.get('model_raw_diff_used'))}",
             f"Coder blocked reason code: {reason_code or 'none'}.",
-            f"Coder diagnostics: {diagnostics}",
+            f"Context packet summary: {context_packet_summary}",
+            f"Coder diagnostics summary: {safe_diagnostics_summary}",
             *[str(item) for item in notes],
         ]
         phase_label, increment_label, increment_goal = _phase_fields_for(
@@ -2015,6 +2054,8 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
         )
         verification_plan_payload = _verification_plan_payload_for_response(architect_plan)
         task_spec_payload = _task_spec_payload_for_response(architect_plan, coder_packet_payload)
+        if _dummy_product_site_create_mode(reset_request):
+            task_spec_payload = _dummy_product_site_create_task_spec()
         if reason_code in TARGET_HARD_BLOCK_REASON_CODES or reason_code == "target_unresolved":
             task_spec_payload = _blocked_task_spec_payload(
                 task_type=reason_code,
@@ -2056,9 +2097,36 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
                 "context_inclusion_mode": "coder_agent_repomix",
                 "context_mode": context_mode,
                 "included_paths": packet_context_paths or ([target] if target else []),
+                "selected_target_candidates": context_packet_summary.get("selected_target_candidates", []),
+                "selected_target": target or explicit_target,
+                "allowed_files": task_spec_payload.get("allowed_files", []),
+                "forbidden_files": task_spec_payload.get("forbidden_files", []),
+                "protected_paths": forbidden_paths,
+                "checks_that_will_run": (
+                    verification_plan_payload.get("required_checks", [])
+                    or task_spec_payload.get("verification", [])
+                ),
+                "expected_output_format": context_packet_summary.get(
+                    "expected_output_format",
+                    "strict JSON replace_file with content_lines; backend converts model-authored content to unified diff",
+                ),
+                "scaffold_fallback_ban_flags": context_packet_summary.get(
+                    "scaffold_fallback_ban_flags",
+                    {},
+                ),
+                "trial_mode_flags": context_packet_summary.get("trial_mode_flags", {}),
+                "rollback_reversal_available": context_packet_summary.get(
+                    "rollback_reversal_available",
+                    True,
+                ),
+                "obsidian_context_summary": context_packet_summary.get(
+                    "obsidian_context_summary",
+                    diagnostics.get("memory_context_diagnostics", {}),
+                ),
                 "omitted_paths": [],
                 "redaction_notes": [
-                    "Manual prompt packet text was not generated; pure Coder Agent diff path is active.",
+                    "Context packet summaries omit full source content and raw Obsidian note content.",
+                    "Full structured coder_diagnostics remain available separately for tooling.",
                 ],
                 "estimated_context_tokens": 0,
                 "file_contents_claimed": _coder_packet_payload_has_context_content(
@@ -2177,6 +2245,10 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
             "verificationPlan": _camel_verification_plan_payload(verification_plan_payload),
             "proposed_diff": proposed,
             "proposedDiff": proposed,
+            "changed_files": changed_files,
+            "changedFiles": changed_files,
+            "checks_run": checks_run,
+            "checksRun": checks_run,
             "target": target,
             "coder_agent_local_diff": bool((proposed or "").strip() and target),
             "coderAgentLocalDiff": bool((proposed or "").strip() and target),
@@ -2382,6 +2454,7 @@ def _normalize_trial_create_path(path: str) -> str:
         "src/lib/agent-lab/",
         "src/app/api/agent-lab/",
         "tests/agent-lab/",
+        "tests/ui-agent-trials/fixtures/dummy-product-site/",
     )
     return normalized if normalized.startswith(allowed_prefixes) else ""
 
@@ -2401,9 +2474,46 @@ def _trial_path_allowed(target: str, allowed_files: list[str]) -> bool:
     for allowed in normalized_allowed:
         if allowed == target:
             return True
-        if allowed.endswith("/**") and target.startswith(allowed[:-3] + "/"):
+        if allowed.endswith("/**") and target.startswith(allowed[:-3]):
             return True
     return False
+
+
+def _dummy_product_site_create_mode(request: PromptPacketRequest) -> bool:
+    prompt_id = str(request.selected_prompt_id or request.trial_prompt_id or "").strip()
+    expected_state = str(request.expected_result_state or "").strip()
+    packet = request.dummy_coder_10_packet if isinstance(request.dummy_coder_10_packet, dict) else {}
+    packet_state = str(packet.get("expected_result_state") or "").strip()
+    return (
+        prompt_id == "coder-001-init-dummy-product-site"
+        or expected_state == "PASS_DUMMY_PROJECT_INIT"
+        or packet_state == "PASS_DUMMY_PROJECT_INIT"
+    )
+
+
+def _dummy_product_site_create_task_spec() -> dict[str, Any]:
+    return {
+        "schema_version": 1,
+        "task_type": "create_file_bundle",
+        "target": "tests/ui-agent-trials/fixtures/dummy-product-site/",
+        "allowed_files": ["tests/ui-agent-trials/fixtures/dummy-product-site/**"],
+        "forbidden_files": [
+            "src/app/**",
+            "src/components/**",
+            "src/lib/**",
+            "source_proxy/**",
+            "docs/**",
+            ".env*",
+            "package.json",
+            "package-lock.json",
+            "pnpm-lock.yaml",
+            "yarn.lock",
+        ],
+        "literal_requirements": ["LumaCart"],
+        "verification": ["git diff --check"],
+        "risk_tier": "low",
+        "source": "dummy-coder-001-create-mode",
+    }
 
 
 def _coder_prompt_packet_status(
@@ -2558,6 +2668,47 @@ def _coder_packet_payload_for_response(
         "forbidden_paths": forbidden_paths,
         "style_directives": [],
     }
+
+
+def _safe_coder_diagnostics_summary(diagnostics: dict[str, Any]) -> dict[str, Any]:
+    keys = (
+        "generation_source",
+        "diff_source",
+        "model_output_classification",
+        "raw_response_length",
+        "parser_repair_used",
+        "scaffold_used",
+        "scaffold_kind",
+        "fallback_used",
+        "fallback_kind",
+        "bounded_create_used",
+        "known_scaffold_used",
+        "generic_scaffold_used",
+        "model_raw_diff_used",
+        "generated_diff_by_backend",
+        "trial_result_trust_status",
+        "provider_call_made",
+        "model_output_usable",
+        "scaffold_or_fallback_blocked",
+        "recommended_next_action",
+        "validation_status",
+        "target_path_selected",
+        "context_mode",
+    )
+    summary = {key: diagnostics.get(key) for key in keys if key in diagnostics}
+    context_packet = diagnostics.get("context_packet_summary")
+    if isinstance(context_packet, dict):
+        summary["context_packet_summary"] = {
+            "selected_target": context_packet.get("selected_target"),
+            "allowed_files": context_packet.get("allowed_files", []),
+            "forbidden_files": context_packet.get("forbidden_files", []),
+            "checks_that_will_run": context_packet.get("checks_that_will_run", []),
+            "expected_output_format": context_packet.get("expected_output_format"),
+            "repo_snippet_count": len(context_packet.get("repo_snippet_summaries", []) or []),
+            "repo_snippet_omitted_count": context_packet.get("repo_snippet_omitted_count", 0),
+            "obsidian_context_summary": context_packet.get("obsidian_context_summary", {}),
+        }
+    return summary
 
 
 def _task_spec_payload_for_response(

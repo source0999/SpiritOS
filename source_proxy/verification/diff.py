@@ -930,6 +930,7 @@ def _requirement_coverage(
     task_text: str | None,
     *,
     explicit_target: str | None = None,
+    task_spec: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     task = _requirement_source_text(task_text or "").strip()
     if not task:
@@ -942,6 +943,13 @@ def _requirement_coverage(
         for file in files
         if _normalize_task_spec_path(str(file.get("path") or ""))
     }
+    dummy_create_coverage = _dummy_product_site_create_requirement_coverage(
+        changed_paths,
+        added,
+        task_spec,
+    )
+    if dummy_create_coverage is not None:
+        return dummy_create_coverage
     missing: list[str] = []
 
     target = explicit_target or _extract_explicit_target(task)
@@ -960,7 +968,9 @@ def _requirement_coverage(
     class_fragments = _extract_class_fragments(task)
     imports = _extract_import_requirements(task)
 
-    if target and target not in changed_paths:
+    if target and target.endswith("/") and changed_paths and all(path.startswith(target) for path in changed_paths):
+        pass
+    elif target and target not in changed_paths:
         missing.append(f"missing target file: {target}")
     if route and route_target and target and target != route_target:
         missing.append(f"route {route} maps to {route_target}, not {target}")
@@ -1010,6 +1020,53 @@ def _requirement_coverage(
         "missing": missing,
         "required": required,
         "summary": "Requirement coverage passed." if not missing else "; ".join(missing[:8]),
+    }
+
+
+DUMMY_PRODUCT_SITE_ROOT = "tests/ui-agent-trials/fixtures/dummy-product-site/"
+DUMMY_PRODUCT_SITE_REQUIRED_FILES = {
+    f"{DUMMY_PRODUCT_SITE_ROOT}README.md",
+    f"{DUMMY_PRODUCT_SITE_ROOT}package.json",
+    f"{DUMMY_PRODUCT_SITE_ROOT}index.html",
+    f"{DUMMY_PRODUCT_SITE_ROOT}src/main.js",
+    f"{DUMMY_PRODUCT_SITE_ROOT}src/products.js",
+    f"{DUMMY_PRODUCT_SITE_ROOT}src/styles.css",
+}
+
+
+def _dummy_product_site_create_requirement_coverage(
+    changed_paths: set[str],
+    added_text: str,
+    task_spec: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    if not isinstance(task_spec, dict):
+        return None
+    task_type = str(task_spec.get("task_type") or task_spec.get("taskType") or "").strip()
+    target = _normalize_task_spec_path(
+        str(task_spec.get("target") or "") if task_spec.get("target") is not None else ""
+    )
+    allowed = _dedupe_paths(
+        _normalize_task_spec_path(str(item))
+        for item in _task_spec_list(task_spec, "allowed_files", "allowedFiles")
+    )
+    if task_type != "create_file_bundle" or target != DUMMY_PRODUCT_SITE_ROOT:
+        return None
+    if not any(item == f"{DUMMY_PRODUCT_SITE_ROOT}**" for item in allowed):
+        return None
+    missing_files = sorted(DUMMY_PRODUCT_SITE_REQUIRED_FILES - changed_paths)
+    missing: list[str] = [f"missing expected file: {path}" for path in missing_files]
+    if "LumaCart" not in added_text:
+        missing.append("missing exact text: LumaCart")
+    return {
+        "ok": not missing,
+        "missing": missing,
+        "required": {
+            "target": target,
+            "task_type": task_type,
+            "expected_files": sorted(DUMMY_PRODUCT_SITE_REQUIRED_FILES),
+            "texts": ["LumaCart"],
+        },
+        "summary": "Dummy product site create bundle coverage passed." if not missing else "; ".join(missing[:8]),
     }
 
 
@@ -1086,6 +1143,7 @@ def preview_diff_verification(
         files,
         preview_task_text,
         explicit_target=resolved_target,
+        task_spec=task_spec_payload if isinstance(task_spec_payload, dict) else None,
     )
     if not requirement_coverage["ok"]:
         path = _extract_explicit_target(preview_task_text) or "*"
@@ -1321,6 +1379,7 @@ def _parse_changed_files(unified_diff: str) -> list[dict[str, Any]]:
 IMPLEMENTATION_TASK_SPEC_TYPES = {
     "modify_existing_file",
     "create_new_file",
+    "create_file_bundle",
     "delete_file",
 }
 NON_WRITE_TASK_SPEC_TYPES = {
@@ -1375,15 +1434,15 @@ def task_spec_diff_check(
     elif task_type in IMPLEMENTATION_TASK_SPEC_TYPES:
         if not allowed:
             reason_codes.append("task_spec_missing_allowed_files")
-        outside_allowed = [path for path in changed if allowed and path not in allowed]
+        outside_allowed = [path for path in changed if allowed and not _task_spec_path_matches_any(path, allowed)]
         if outside_allowed:
             reason_codes.append("task_spec_allowed_file_violation")
-        if target and changed and target not in changed:
+        if target and changed and not _task_spec_target_matches_changed(target, changed):
             reason_codes.append("task_spec_target_mismatch")
     elif task_type:
         reason_codes.append("task_spec_unsupported")
 
-    forbidden_changed = [path for path in changed if path and path in forbidden]
+    forbidden_changed = [path for path in changed if path and _task_spec_path_matches_any(path, forbidden)]
     if forbidden_changed:
         reason_codes.append("task_spec_forbidden_file_violation")
 
@@ -1398,7 +1457,7 @@ def task_spec_diff_check(
         "task_type": task_type or None,
         "summary": "TaskSpec check passed." if not reason_codes else "; ".join(reason_codes),
         "violations": {
-            "outside_allowed": [path for path in changed if allowed and path not in allowed],
+            "outside_allowed": [path for path in changed if allowed and not _task_spec_path_matches_any(path, allowed)],
             "forbidden": forbidden_changed,
         },
     }
@@ -1497,6 +1556,30 @@ def _dedupe_paths(values) -> list[str]:
         seen.add(path)
         result.append(path)
     return result
+
+
+def _task_spec_path_matches_any(path: str, patterns: list[str]) -> bool:
+    normalized = _normalize_task_spec_path(path)
+    for pattern in patterns:
+        candidate = _normalize_task_spec_path(pattern)
+        if not candidate:
+            continue
+        if candidate.endswith("/**"):
+            root = candidate[:-3]
+            if normalized.startswith(root):
+                return True
+        elif normalized == candidate:
+            return True
+    return False
+
+
+def _task_spec_target_matches_changed(target: str, changed: list[str]) -> bool:
+    normalized = _normalize_task_spec_path(target)
+    if not normalized:
+        return True
+    if normalized.endswith("/"):
+        return all(path.startswith(normalized) for path in changed)
+    return normalized in changed
 
 
 def _clean_repo_path(raw_path: str, *, strip_diff_prefix: bool) -> str:

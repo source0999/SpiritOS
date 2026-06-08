@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Literal
 
+from source_proxy.context.obsidian import obsidian_context_diagnostics
 from source_proxy.decision.router import DecisionInput, RouteDecision, decide_route
 
 TargetModelHint = Literal["chatgpt", "claude", "gemini", "google_ai_studio", "grok"]
@@ -238,6 +239,7 @@ def _context_metadata_for(
         "redaction_notes": redaction_notes,
         "estimated_context_tokens": _estimate_tokens(relevant_context),
         "file_contents_claimed": mode == "supplied_excerpt",
+        "memory_context_diagnostics": obsidian_context_diagnostics(),
     }
 
 

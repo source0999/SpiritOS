@@ -287,12 +287,11 @@ def plan_task_deterministically(
     clean_task = (task or "").strip()
     root = workspace_root.resolve()
     planning_text = effective_planning_task_text(clean_task)
-    if len(planning_text) > 500:
-        return FallthroughToLLM("task_too_long")
-
     bounded_create = plan_bounded_proposal_create_deterministically(task, task_id, root)
     if isinstance(bounded_create, (Plan, Block)):
         return bounded_create
+    if len(planning_text) > 500:
+        return FallthroughToLLM("task_too_long")
 
     resolved = resolve_target_from_task(clean_task, root)
     unsafe_target = unsafe_target_for_route(clean_task, resolved, root)

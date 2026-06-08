@@ -32,6 +32,7 @@ from source_proxy.routing.ollama_route import (
     resolve_coder_ollama_model_name,
     resolve_ollama_route,
 )
+from source_proxy.context.obsidian import obsidian_context_diagnostics
 from source_proxy.planning.plan import (
     AcceptanceCriterion,
     CoderPacket,
@@ -857,29 +858,24 @@ def execute_approved_long_running_task(
     architect_plan = load_plan(task_id)
     is_reversible_live_trial = action.lower().startswith("live trial") or action.lower().startswith("revert live trial")
     trial_task_spec = (
-        {
-            "schema_version": 1,
-            "task_type": "modify_existing_file",
-            "target": target,
-            "allowed_files": [target] if target else [],
-            "forbidden_files": [
-                ".env*",
-                "source_proxy/data/**",
-                "backend/volumes/**",
-                "backend/searxng_data/**",
-                ".spirit-backups/**",
-            ],
-            "verification": ["git diff --check"],
-            "risk_tier": "low",
-            "source": "coding-live-runner-reversible-trial",
-        }
+        _reversible_live_trial_task_spec(
+            action=action,
+            approved_diff=approved_diff,
+            target=target,
+        )
         if is_reversible_live_trial
         else None
     )
     verification = preview_diff_verification(
         approved_diff,
         test_command=test_command,
-        task_text=f"Target file: {target}" if is_reversible_live_trial and target else task.description,
+        task_text=(
+            task.description
+            if _is_dummy_product_site_live_trial_spec(trial_task_spec)
+            else f"Target file: {target}"
+            if is_reversible_live_trial and target
+            else task.description
+        ),
         architect_plan=None if is_reversible_live_trial else architect_plan,
         task_spec=trial_task_spec,
     )
@@ -1005,6 +1001,71 @@ def execute_approved_long_running_task(
         "push_ran": False,
     }
     return payload
+
+
+def _reversible_live_trial_task_spec(
+    *,
+    action: str,
+    approved_diff: str,
+    target: str | None,
+) -> dict[str, Any]:
+    if _approved_diff_is_dummy_product_site_bundle(approved_diff):
+        is_revert = action.lower().startswith("revert live trial")
+        return {
+            "schema_version": 1,
+            "task_type": "delete_file" if is_revert else "create_file_bundle",
+            "target": DUMMY_PRODUCT_SITE_ROOT,
+            "allowed_files": [f"{DUMMY_PRODUCT_SITE_ROOT}**"],
+            "forbidden_files": [
+                ".env*",
+                "package.json",
+                "package-lock.json",
+                "source_proxy/**",
+                "src/app/**",
+                "src/components/**",
+                "src/lib/**",
+                "docs/**",
+                "backend/volumes/**",
+                "backend/searxng_data/**",
+                ".spirit-backups/**",
+            ],
+            "verification": ["git diff --check"],
+            "risk_tier": "low",
+            "source": "coding-live-runner-selected-prompt-create-bundle",
+        }
+    return {
+        "schema_version": 1,
+        "task_type": "modify_existing_file",
+        "target": target,
+        "allowed_files": [target] if target else [],
+        "forbidden_files": [
+            ".env*",
+            "source_proxy/data/**",
+            "backend/volumes/**",
+            "backend/searxng_data/**",
+            ".spirit-backups/**",
+        ],
+        "verification": ["git diff --check"],
+        "risk_tier": "low",
+        "source": "coding-live-runner-reversible-trial",
+    }
+
+
+def _approved_diff_is_dummy_product_site_bundle(approved_diff: str) -> bool:
+    changed = [
+        str(file.get("path") or "").replace("\\", "/")
+        for file in _parse_changed_files(approved_diff)
+        if isinstance(file, dict) and str(file.get("path") or "").strip()
+    ]
+    return bool(changed) and all(path.startswith(DUMMY_PRODUCT_SITE_ROOT) for path in changed)
+
+
+def _is_dummy_product_site_live_trial_spec(task_spec: dict[str, Any] | None) -> bool:
+    return bool(
+        isinstance(task_spec, dict)
+        and task_spec.get("task_type") == "create_file_bundle"
+        and task_spec.get("target") == DUMMY_PRODUCT_SITE_ROOT
+    )
 
 
 def approval_id_for_approved_diff(
@@ -3008,6 +3069,327 @@ def replacement_content_matches_disk(
     )
 
 
+DUMMY_PRODUCT_SITE_ROOT = "tests/ui-agent-trials/fixtures/dummy-product-site/"
+DUMMY_PRODUCT_SITE_STARTER_FILES = (
+    "README.md",
+    "package.json",
+    "index.html",
+    "src/main.js",
+    "src/products.js",
+    "src/styles.css",
+)
+
+
+def propose_dummy_product_site_create_diff(
+    *,
+    task: str,
+    workspace_root: Path | None = None,
+    llm_call: Callable[[str, str], str] | None = None,
+    model_alias: str | None = None,
+) -> dict[str, Any]:
+    """Model-authored multi-file create path for Coder 001 LumaCart."""
+    root = (workspace_root or _workspace_root()).resolve()
+    selected_alias = model_alias or _dummy_product_site_create_model_alias()
+    diagnostics: dict[str, Any] = {
+        **_base_coder_diagnostics(DUMMY_PRODUCT_SITE_ROOT),
+        "context_mode": "dummy_product_site_create",
+        "context_slices": [],
+        "target_exists": (root / DUMMY_PRODUCT_SITE_ROOT).is_dir(),
+        "target_action": "create file bundle",
+        "trial_mode": "live_apply",
+        "expected_result_state": "PASS_DUMMY_PROJECT_INIT",
+        "expected_root": DUMMY_PRODUCT_SITE_ROOT,
+        "expected_starter_files": list(DUMMY_PRODUCT_SITE_STARTER_FILES),
+        "forbidden_paths": [
+            "src/app/**",
+            "src/components/**",
+            "src/lib/**",
+            "source_proxy/**",
+            "docs/**",
+            ".env*",
+            "package.json",
+            "package-lock.json",
+        ],
+    }
+    _set_trial_generation_provenance(diagnostics, trial_mode=True)
+    _record_coder_provider_model_truth(
+        diagnostics,
+        selected_alias=selected_alias,
+        provider_call_made=False,
+    )
+    alias_error = None if llm_call is not None else _coder_model_alias_configuration_error(selected_alias)
+    if alias_error is not None:
+        reason, needed_context = alias_error
+        diagnostics["validation_status"] = "coder_model_not_configured"
+        return _coder_blocked_payload(
+            target=DUMMY_PRODUCT_SITE_ROOT,
+            notes=["CODER_BLOCKED reason_code: coder_model_not_configured"],
+            diagnostics=diagnostics,
+            bundle_name=None,
+            reason=needed_context,
+            needed_context=reason,
+            reason_code="coder_model_not_configured",
+        )
+    prompt = _render_dummy_product_site_create_prompt(task)
+    try:
+        _record_coder_provider_model_truth(
+            diagnostics,
+            selected_alias=selected_alias,
+            provider_call_made=True,
+        )
+        raw_response = (
+            llm_call(prompt, selected_alias)
+            if llm_call is not None
+            else _call_coder_llm(prompt, model_alias=selected_alias)
+        )
+    except Exception as error:  # noqa: BLE001
+        diagnostics["validation_status"] = "coder_model_router_error"
+        return _coder_blocked_payload(
+            target=DUMMY_PRODUCT_SITE_ROOT,
+            notes=["CODER_BLOCKED reason_code: coder_model_router_error"],
+            diagnostics=diagnostics,
+            bundle_name=None,
+            reason="Coder model/router call failed.",
+            needed_context=str(error),
+            reason_code="coder_model_router_error",
+        )
+    diagnostics["generation_source"] = "model"
+    diagnostics["diff_source"] = "pending_backend_diff_from_model_file_bundle"
+    diagnostics["raw_response_length"] = len(raw_response or "")
+    diagnostics["raw_response_excerpt_safe"] = _safe_raw_response_excerpt(raw_response or "")
+    diagnostics["model_output_classification"] = "model_structured_file_bundle"
+    files, parse_error = _parse_dummy_product_site_file_bundle(raw_response or "")
+    if parse_error:
+        repair_prompt = _render_dummy_product_site_create_repair_prompt(
+            task,
+            parse_error=parse_error,
+            raw_response=raw_response or "",
+        )
+        try:
+            repair_response = (
+                llm_call(repair_prompt, selected_alias)
+                if llm_call is not None
+                else _call_coder_llm(repair_prompt, model_alias=selected_alias)
+            )
+        except Exception as error:  # noqa: BLE001
+            diagnostics["validation_status"] = "coder_model_router_error"
+            diagnostics["repair_attempted"] = True
+            diagnostics["repair_error_message"] = str(error)
+            return _coder_blocked_payload(
+                target=DUMMY_PRODUCT_SITE_ROOT,
+                notes=["CODER_BLOCKED reason_code: coder_model_router_error"],
+                diagnostics=diagnostics,
+                bundle_name=None,
+                reason="Coder model/router repair call failed.",
+                needed_context=str(error),
+                reason_code="coder_model_router_error",
+            )
+        diagnostics["repair_attempted"] = True
+        diagnostics["repair_raw_response_length"] = len(repair_response or "")
+        diagnostics["repair_raw_response_excerpt_safe"] = _safe_raw_response_excerpt(repair_response or "")
+        files, parse_error = _parse_dummy_product_site_file_bundle(repair_response or "")
+    if parse_error:
+        diagnostics["validation_status"] = "coder_file_bundle_validation_failed"
+        diagnostics["parse_error_message"] = parse_error
+        diagnostics["trial_result_trust_status"] = "model_output_not_usable"
+        diagnostics["recommended_next_action"] = "retry_with_create_file_bundle_json"
+        return _coder_blocked_payload(
+            target=DUMMY_PRODUCT_SITE_ROOT,
+            notes=["CODER_BLOCKED reason_code: coder_file_bundle_validation_failed"],
+            diagnostics=diagnostics,
+            bundle_name=None,
+            reason=parse_error,
+            needed_context="Return only JSON with action=create_file_bundle and files[].path/content_lines.",
+            reason_code="coder_file_bundle_validation_failed",
+        )
+    assert files is not None
+    validation = _validate_dummy_product_site_file_bundle(files)
+    diagnostics["content_validation"] = validation
+    if not validation["ok"]:
+        diagnostics["validation_status"] = "coder_file_bundle_validation_failed"
+        diagnostics["trial_result_trust_status"] = "model_output_not_usable"
+        diagnostics["recommended_next_action"] = "retry_with_dummy_root_only_file_bundle"
+        return _coder_blocked_payload(
+            target=DUMMY_PRODUCT_SITE_ROOT,
+            notes=["CODER_BLOCKED reason_code: coder_file_bundle_validation_failed"],
+            diagnostics=diagnostics,
+            bundle_name=None,
+            reason=str(validation["summary"]),
+            needed_context=", ".join(str(item) for item in validation["missing"][:8]),
+            reason_code="coder_file_bundle_validation_failed",
+        )
+    diffs: list[str] = []
+    for file in files:
+        diffs.append(generate_unified_diff_from_content(root, file["path"], file["content"]))
+    unified = "\n".join(diff.strip("\n") for diff in diffs if diff.strip()) + "\n"
+    if not unified.strip():
+        diagnostics["validation_status"] = "coder_backend_diff_generation_failed"
+        return _coder_blocked_payload(
+            target=DUMMY_PRODUCT_SITE_ROOT,
+            notes=["CODER_BLOCKED reason_code: coder_backend_diff_generation_failed"],
+            diagnostics=diagnostics,
+            bundle_name=None,
+            reason="Model-authored file bundle produced an empty diff.",
+            needed_context="Retry Coder 001 with files that differ from disk.",
+            reason_code="coder_backend_diff_generation_failed",
+        )
+    apply_ok, apply_error = _git_apply_generated_diff_ok(root, unified)
+    if not apply_ok:
+        diagnostics["validation_status"] = "coder_backend_diff_generation_failed"
+        return _coder_blocked_payload(
+            target=DUMMY_PRODUCT_SITE_ROOT,
+            notes=["CODER_BLOCKED reason_code: coder_backend_diff_generation_failed"],
+            diagnostics=diagnostics,
+            bundle_name=None,
+            reason=f"Generated diff did not pass git apply --check: {apply_error}",
+            needed_context="Retry with a clean file bundle under the dummy root.",
+            reason_code="coder_backend_diff_generation_failed",
+        )
+    changed_files = [file["path"] for file in files]
+    diagnostics["validation_status"] = "preview_ready"
+    diagnostics["changed_files"] = changed_files
+    diagnostics["generated_diff_length"] = len(unified)
+    diagnostics["generated_diff_by_backend"] = False
+    diagnostics["diff_source"] = "model_authored_file_bundle_backend_converted_to_diff"
+    diagnostics["trial_result_trust_status"] = "model_authored_diff_proven"
+    diagnostics["recommended_next_action"] = "preview_and_apply_selected_prompt_diff"
+    return {
+        "proposed_diff": unified,
+        "target": DUMMY_PRODUCT_SITE_ROOT,
+        "coder_notes": [
+            "Model-authored dummy product site file bundle validated.",
+            "CODER_PREVIEW reason_code: dummy_product_site_create_bundle",
+        ],
+        "bundle": None,
+        "reason_code": "dummy_product_site_create_bundle",
+        "coder_diagnostics": diagnostics,
+        "changed_files": changed_files,
+        "checks_run": ["git apply --check"],
+    }
+
+
+def _render_dummy_product_site_create_prompt(task: str) -> str:
+    expected_paths = [
+        f"{DUMMY_PRODUCT_SITE_ROOT}{name}"
+        for name in DUMMY_PRODUCT_SITE_STARTER_FILES
+    ]
+    return "\n".join(
+        [
+            "You are Coder 001 for the isolated LumaCart dummy fixture.",
+            task.strip(),
+            "Return only JSON. Do not return markdown.",
+            "Required schema:",
+            '{"action":"create_file_bundle","files":[{"path":"tests/ui-agent-trials/fixtures/dummy-product-site/README.md","content_lines":["line"]}]}',
+            "Every path must be under tests/ui-agent-trials/fixtures/dummy-product-site/.",
+            "Create these starter files: " + ", ".join(expected_paths) + ".",
+            "Do not edit root package.json, Source Proxy, src/app, src/components, src/lib, docs, .env, or lock files.",
+            "For package.json, prefer one compact content_lines string instead of multiple pretty-printed lines.",
+            "Content must be model-authored, small, static, and coherent for a fake product storefront named LumaCart.",
+        ]
+    )
+
+
+def _render_dummy_product_site_create_repair_prompt(
+    task: str,
+    *,
+    parse_error: str,
+    raw_response: str,
+) -> str:
+    expected_paths = [
+        f"{DUMMY_PRODUCT_SITE_ROOT}{name}"
+        for name in DUMMY_PRODUCT_SITE_STARTER_FILES
+    ]
+    return "\n".join(
+        [
+            "Your previous Coder 001 response was rejected because it was not valid JSON.",
+            f"Parse error: {parse_error}",
+            "Return a fresh response. Return only one JSON object. Do not use markdown fences.",
+            "Required schema:",
+            '{"action":"create_file_bundle","files":[{"path":"tests/ui-agent-trials/fixtures/dummy-product-site/README.md","content_lines":["line"]}]}',
+            "Every content_lines item must be a valid JSON string. Escape quotes inside package.json lines with backslashes.",
+            "For package.json, prefer one compact content_lines string instead of multiple pretty-printed lines.",
+            "Every path must be under tests/ui-agent-trials/fixtures/dummy-product-site/.",
+            "Create these starter files: " + ", ".join(expected_paths) + ".",
+            "The fake product site must be named LumaCart.",
+            "Do not edit root package.json, Source Proxy, src/app, src/components, src/lib, docs, .env, or lock files.",
+            "Original task:",
+            task.strip(),
+            "Do not copy the rejected response. Generate fresh valid JSON.",
+        ]
+    )
+
+
+def _parse_dummy_product_site_file_bundle(
+    raw_response: str,
+) -> tuple[list[dict[str, str]] | None, str]:
+    if _looks_like_unified_diff(raw_response):
+        return None, "Coder returned a unified diff instead of create_file_bundle JSON."
+    parsed: Any = None
+    last_error = ""
+    for _source, candidate in _candidate_json_texts(raw_response):
+        try:
+            parsed = json.loads(candidate)
+            break
+        except json.JSONDecodeError as error:
+            last_error = str(error)
+    if not isinstance(parsed, dict):
+        return None, last_error or "Response was not a JSON object."
+    if parsed.get("action") != "create_file_bundle":
+        return None, "JSON action must be create_file_bundle."
+    raw_files = parsed.get("files")
+    if not isinstance(raw_files, list) or not raw_files:
+        return None, "create_file_bundle.files must be a non-empty list."
+    files: list[dict[str, str]] = []
+    for index, item in enumerate(raw_files):
+        if not isinstance(item, dict):
+            return None, f"files[{index}] must be an object."
+        path = item.get("path")
+        if not isinstance(path, str) or not path.strip():
+            return None, f"files[{index}].path must be a string."
+        if "content_lines" in item:
+            lines = item.get("content_lines")
+            if not isinstance(lines, list) or not all(isinstance(line, str) for line in lines):
+                return None, f"files[{index}].content_lines must be a list of strings."
+            content = "\n".join(lines)
+        else:
+            raw_content = item.get("content")
+            if not isinstance(raw_content, str) or not raw_content:
+                return None, f"files[{index}] must include content_lines or content."
+            content = raw_content
+        files.append({"path": path.replace("\\", "/").lstrip("./"), "content": content})
+    return files, ""
+
+
+def _validate_dummy_product_site_file_bundle(files: list[dict[str, str]]) -> dict[str, Any]:
+    missing: list[str] = []
+    paths = [file["path"] for file in files]
+    path_set = set(paths)
+    for expected in DUMMY_PRODUCT_SITE_STARTER_FILES:
+        full_path = f"{DUMMY_PRODUCT_SITE_ROOT}{expected}"
+        if full_path not in path_set:
+            missing.append(f"missing starter file: {full_path}")
+    for path in paths:
+        normalized = path.replace("\\", "/").lstrip("./")
+        if not normalized.startswith(DUMMY_PRODUCT_SITE_ROOT):
+            missing.append(f"outside dummy root: {path}")
+        if normalized in {"package.json", "package-lock.json", "pnpm-lock.yaml", "yarn.lock"}:
+            missing.append(f"root package mutation rejected: {path}")
+        if normalized.startswith(("source_proxy/", "src/app/", "src/components/", "src/lib/", "docs/")):
+            missing.append(f"forbidden path rejected: {path}")
+        if normalized.startswith(".env") or "/.env" in normalized:
+            missing.append(f"env path rejected: {path}")
+    for file in files:
+        if not file["content"].strip():
+            missing.append(f"empty content: {file['path']}")
+    return {
+        "ok": not missing,
+        "missing": missing,
+        "summary": "Create-mode file bundle passed dummy-root validation."
+        if not missing
+        else "Create-mode file bundle failed dummy-root validation.",
+    }
+
+
 _CODER_RAW_RESPONSE_EXCERPT_LIMIT = 1500
 
 
@@ -3056,6 +3438,7 @@ def _light_repair_json_text(raw_response: str) -> str:
             }
         )
     )
+    repaired = re.sub(r'\\(?="\s*[,}\]])', "", repaired)
     return re.sub(r",\s*([}\]])", r"\1", repaired)
 
 
@@ -3401,10 +3784,17 @@ def propose_coder_agent_implementation_diff(
             blocked_reason="Deterministic TaskSpec did not validate against the CoderPacket.",
             blocked_needed_context="Regenerate the Architect plan before running Coder.",
         )
-    from source_proxy.planning.bounded_create import packet_is_bounded_proposal_create
+    from source_proxy.planning.bounded_create import (
+        bounded_create_replacement_content,
+        packet_is_bounded_proposal_create,
+    )
 
     if not packet.context_slices and not (
-        packet.operation == "create" and packet_is_bounded_proposal_create(packet)
+        packet.operation == "create"
+        and (
+            packet_is_bounded_proposal_create(packet)
+            or bounded_create_replacement_content(target_path, source_task) is not None
+        )
     ):
         return CoderResponse(
             status="blocked",
@@ -3629,11 +4019,19 @@ def propose_coder_agent_diff_payload_from_plan(
     notes: list[str] = []
     diagnostics: dict[str, Any] = _base_coder_diagnostics(target_path)
     diagnostics["trial_mode"] = "live_apply" if force_live_model else "preview_only_or_standard"
+    _set_trial_generation_provenance(diagnostics, trial_mode=force_live_model)
     diagnostics["coder_attempt_count"] = _review_attempt
     diagnostics["reviewer_retry_count"] = max(0, _review_attempt - 1)
     diagnostics["retry_reason"] = "reviewer_feedback" if _review_attempt > 1 else ""
     task_spec = task_spec_from_plan(architect_plan)
     diagnostics["task_spec"] = task_spec.to_dict()
+    diagnostics["context_packet_summary"] = _coder_context_packet_summary(
+        packet=packet,
+        task_spec=task_spec.to_dict(),
+        source_task=task,
+        model_alias=model_alias or _coder_model_alias(),
+        trial_mode=force_live_model,
+    )
     task_spec_errors = validate_task_spec_for_packet(task_spec, packet)
     if task_spec_errors:
         notes.append(
@@ -3710,6 +4108,7 @@ def propose_coder_agent_diff_payload_from_plan(
         deterministic = _deterministic_bounded_create_response(packet, task, root)
     if deterministic is not None:
         response = deterministic
+        _mark_scaffold_or_fallback_provenance(diagnostics, response)
     else:
         _record_coder_provider_model_truth(
             diagnostics,
@@ -3724,10 +4123,20 @@ def propose_coder_agent_diff_payload_from_plan(
             model_alias=model_alias,
             reviewer_feedback=reviewer_feedback,
         )
+        _mark_model_response_provenance(diagnostics, response)
         if response.status == "blocked" and packet.operation == "create":
             fallback = _deterministic_bounded_create_response(packet, task, root)
             if fallback is not None:
-                response = fallback
+                if force_live_model:
+                    response = fallback
+                    _mark_scaffold_or_fallback_provenance(
+                        diagnostics,
+                        response,
+                        fallback_kind="blocked_model_create_disqualified_in_trial",
+                    )
+                else:
+                    response = fallback
+                    _mark_scaffold_or_fallback_provenance(diagnostics, response, fallback_kind="blocked_model_create")
     _merge_coder_response_diagnostics(diagnostics, response)
     if response.status == "blocked" or response.replacement_content is None:
         diagnostics["validation_status"] = "coder_blocked"
@@ -3766,6 +4175,19 @@ def propose_coder_agent_diff_payload_from_plan(
             content=content,
             task_text=effective_planning_task_text(task),
         )
+        if not content_validation["ok"] and deterministic is None and not force_live_model:
+            fallback = _deterministic_bounded_create_response(packet, task, root)
+            if fallback is not None:
+                notes.append("Using deterministic bounded scaffold after initial model content validation failed.")
+                response = fallback
+                _mark_scaffold_or_fallback_provenance(diagnostics, response, fallback_kind="validation_failed")
+                replacement_target = response.target_path
+                content = _normalize_replacement_content(response.replacement_content or "")
+                content_validation = {
+                    "ok": True,
+                    "missing": [],
+                    "summary": "Bounded proposal scaffold passed structural validation.",
+                }
         if not content_validation["ok"] and deterministic is None and not reviewer_feedback:
             reason = str(content_validation.get("summary") or "Replacement content validation failed.")
             notes.append(f"Retrying Coder after replacement content validation failed: {reason}")
@@ -3785,6 +4207,7 @@ def propose_coder_agent_diff_payload_from_plan(
             _merge_coder_response_diagnostics(diagnostics, retry_response)
             if retry_response.status != "blocked" and retry_response.replacement_content is not None:
                 response = retry_response
+                _mark_model_response_provenance(diagnostics, response)
                 replacement_target = response.target_path
                 content = _normalize_replacement_content(response.replacement_content)
                 content_validation = validate_replacement_content(
@@ -3793,11 +4216,12 @@ def propose_coder_agent_diff_payload_from_plan(
                     content=content,
                     task_text=effective_planning_task_text(task),
                 )
-            if not content_validation["ok"]:
+            if not content_validation["ok"] and not force_live_model:
                 fallback = _deterministic_bounded_create_response(packet, task, root)
                 if fallback is not None:
                     notes.append("Using deterministic bounded scaffold after validation feedback retry failed.")
                     response = fallback
+                    _mark_scaffold_or_fallback_provenance(diagnostics, response, fallback_kind="validation_retry_failed")
                     replacement_target = response.target_path
                     content = _normalize_replacement_content(response.replacement_content)
                     content_validation = {
@@ -3806,6 +4230,19 @@ def propose_coder_agent_diff_payload_from_plan(
                         "summary": "Bounded proposal scaffold passed structural validation.",
                     }
     diagnostics["content_validation"] = content_validation
+    if force_live_model and _trial_scaffold_or_fallback_used(diagnostics):
+        diagnostics["validation_status"] = "scaffold_blocked_in_trial_mode"
+        diagnostics["trial_result_trust_status"] = "invalid_scaffold_blocked"
+        notes.append("CODER_BLOCKED reason_code: scaffold_blocked_in_trial_mode")
+        return _coder_blocked_payload(
+            target=replacement_target,
+            notes=notes,
+            diagnostics=diagnostics,
+            bundle_name=bundle_name,
+            reason="Trial mode disallows deterministic scaffold, backend-generated app page, and fallback-to-pass paths.",
+            needed_context="Retry with model-authored output only. Scaffold/fallback rows must be INVALID or NEEDS_FIX, not PASS.",
+            reason_code="scaffold_blocked_in_trial_mode",
+        )
     if not content_validation["ok"]:
         reason = str(content_validation.get("summary") or "Replacement content validation failed.")
         diagnostics["validation_status"] = "coder_replacement_content_validation_failed"
@@ -3842,6 +4279,10 @@ def propose_coder_agent_diff_payload_from_plan(
     diagnostics.update(snapshot_coder_timing_diagnostics())
     diagnostics["generated_diff_length"] = len(unified)
     diagnostics["normalized_diff_length"] = len(unified)
+    if diagnostics.get("generation_source") == "model":
+        diagnostics["diff_source"] = "backend_diff_from_model_authored_replacement"
+        diagnostics["generated_diff_by_backend"] = True
+        diagnostics["trial_result_trust_status"] = "model_authored_diff_proven"
     if not unified:
         if content_validation["ok"] and replacement_content_matches_disk(
             root, replacement_target, content
@@ -4071,9 +4512,9 @@ def _deterministic_bounded_create_response(
         packet_is_bounded_proposal_create,
     )
 
-    if not packet_is_bounded_proposal_create(packet):
-        return None
     content = bounded_create_replacement_content(packet.target_file.path, task)
+    if not packet_is_bounded_proposal_create(packet) and content is None:
+        return None
     if not content:
         return None
     target_path = packet.target_file.path
@@ -4130,6 +4571,51 @@ def _markdown_append_literal(task: str) -> str:
     return markdown_append_literal(effective_planning_task_text(task))
 
 
+def _coder_context_packet_summary(
+    *,
+    packet: CoderPacket,
+    task_spec: dict[str, Any],
+    source_task: str,
+    model_alias: str,
+    trial_mode: bool,
+) -> dict[str, Any]:
+    return {
+        "user_prompt_excerpt": _safe_raw_response_excerpt(source_task)[:300],
+        "selected_target": packet.target_file.path,
+        "selected_target_exists": packet.target_file.exists,
+        "selected_target_candidates": [packet.target_file.path],
+        "allowed_files": list(task_spec.get("allowed_files") or []),
+        "forbidden_files": list(task_spec.get("forbidden_files") or []),
+        "protected_paths": list(packet.forbidden_paths),
+        "repo_snippet_summaries": [
+            {
+                "path": item.path,
+                "kind": item.kind,
+                "chars": len(item.content),
+                "sha256": item.sha256,
+                "line_range": item.line_range,
+            }
+            for item in packet.context_slices[:12]
+        ],
+        "repo_snippet_omitted_count": max(0, len(packet.context_slices) - 12),
+        "obsidian_context_summary": obsidian_context_diagnostics(),
+        "model_route": {
+            "provider": route_provider_for_alias(model_alias) or "",
+            "model_alias": model_alias,
+            "model": route_model_for_alias(model_alias) or "",
+        },
+        "trial_mode_flags": {
+            "trial_mode": "live_apply" if trial_mode else "preview_only_or_standard",
+            "force_live_model": trial_mode,
+        },
+        "scaffold_fallback_ban_flags": dict(TRIAL_MODE_BAN_CONTRACT),
+        "expected_output_format": "strict JSON replace_file with content_lines; backend converts model-authored content to unified diff",
+        "checks_that_will_run": list(task_spec.get("verification") or []),
+        "rollback_reversal_available": True,
+        "secrets_policy": "safe summary only; no .env, token, credential, or full note dumps",
+    }
+
+
 def _base_coder_diagnostics(target_path: str) -> dict[str, Any]:
     return {
         "selected_model_alias": "",
@@ -4175,10 +4661,13 @@ def _base_coder_diagnostics(target_path: str) -> dict[str, Any]:
         "context_mode": derive_context_mode(target_path),
         "forbidden_paths": [],
         "context_slices": [],
+        "memory_context_diagnostics": obsidian_context_diagnostics(),
+        "obsidian_context_used_in_prompt": False,
         "bundle_snapshot_check": "not_applicable",
         "bundle_snapshot_expected_sha256": "",
         "bundle_snapshot_actual_sha256": "",
         "task_spec": None,
+        "recommended_next_action": "",
     }
 
 
@@ -4254,12 +4743,210 @@ def _record_coder_provider_model_truth(
     }
 
 
+TRIAL_MODE_BAN_CONTRACT = {
+    "allow_known_scaffold": False,
+    "allow_generic_scaffold": False,
+    "allow_deterministic_stub": False,
+    "allow_backend_generated_page": False,
+    "allow_fallback_to_pass": False,
+    "require_model_authored_diff": True,
+}
+
+
+def _set_trial_generation_provenance(
+    diagnostics: dict[str, Any],
+    *,
+    trial_mode: bool,
+) -> None:
+    diagnostics["trial_mode_ban_contract"] = dict(TRIAL_MODE_BAN_CONTRACT)
+    diagnostics["generation_source"] = "unknown"
+    diagnostics["diff_source"] = "none"
+    diagnostics["model_output_classification"] = "not_classified"
+    diagnostics["raw_response_excerpt_safe"] = ""
+    diagnostics["scaffold_used"] = False
+    diagnostics["scaffold_kind"] = ""
+    diagnostics["fallback_used"] = False
+    diagnostics["fallback_kind"] = ""
+    diagnostics["parser_repair_used"] = False
+    diagnostics["bounded_create_used"] = False
+    diagnostics["known_scaffold_used"] = False
+    diagnostics["generic_scaffold_used"] = False
+    diagnostics["model_raw_diff_used"] = False
+    diagnostics["generated_diff_by_backend"] = False
+    diagnostics["trial_result_trust_status"] = (
+        "requires_model_authored_diff" if trial_mode else "not_trial_mode"
+    )
+
+
+MODEL_OUTPUT_CONTRACT_VALUES = {
+    "model_unified_diff",
+    "model_structured_file_edit",
+    "model_markdown_code_block",
+    "model_full_file_content",
+    "model_prose_only",
+    "model_empty_response",
+    "model_malformed_output",
+    "model_wrong_file",
+    "model_protected_path_attempt",
+    "scaffold_blocked",
+    "fallback_blocked",
+    "unknown_untrusted",
+}
+
+
+def _safe_raw_response_excerpt(value: str) -> str:
+    cleaned = re.sub(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", "[redacted-email]", value or "")
+    cleaned = re.sub(r"sk-[A-Za-z0-9_-]{12,}", "[redacted-token]", cleaned)
+    return cleaned[:500]
+
+
+def _classify_model_output(response: CoderResponse) -> str:
+    reason_code = _coder_response_reason_code(response)
+    if reason_code in {"coder_target_mismatch", "coder_task_spec_diff_blocked"}:
+        return "model_wrong_file"
+    if reason_code in {"protected_path", "secret_path", "path_escape", "outside_workspace"}:
+        return "model_protected_path_attempt"
+    raw = (response.raw_response_excerpt or "").strip()
+    if response.raw_response_length <= 0 or not raw:
+        return "model_empty_response"
+    if _looks_like_unified_diff(raw):
+        return "model_unified_diff"
+    if raw.startswith("```"):
+        return "model_markdown_code_block"
+    if response.replacement_content is not None:
+        return "model_structured_file_edit"
+    if response.parse_error_class or response.last_json_error:
+        if _looks_like_full_file_content(raw):
+            return "model_full_file_content"
+        if _looks_like_prose_only(raw):
+            return "model_prose_only"
+        return "model_malformed_output"
+    if _looks_like_full_file_content(raw):
+        return "model_full_file_content"
+    if _looks_like_prose_only(raw):
+        return "model_prose_only"
+    return "unknown_untrusted"
+
+
+def _looks_like_full_file_content(raw: str) -> bool:
+    stripped = raw.strip()
+    if "\n" not in stripped:
+        return False
+    markers = (
+        '"use client"',
+        "'use client'",
+        "import ",
+        "export ",
+        "def ",
+        "class ",
+        "function ",
+        "const ",
+    )
+    return any(stripped.startswith(marker) or f"\n{marker}" in stripped for marker in markers)
+
+
+def _looks_like_prose_only(raw: str) -> bool:
+    lowered = raw.strip().lower()
+    if not lowered:
+        return False
+    if any(marker in lowered for marker in ("{", "}", "@@", "diff --git", "```")):
+        return False
+    words = re.findall(r"[a-z]{2,}", lowered)
+    return len(words) >= 3
+
+
+def _recommended_next_action_for(
+    *,
+    reason_code: str,
+    classification: str,
+) -> str:
+    if reason_code in {"target_unresolved", "coder_packet_missing_context", "coder_needs_context"}:
+        return "ask_user_for_clarification_or_regenerate_architect_context"
+    if classification in {"model_empty_response", "model_prose_only", "model_malformed_output"}:
+        return "retry_with_stricter_output_contract_or_stronger_model"
+    if classification in {"model_wrong_file", "model_protected_path_attempt"}:
+        return "regenerate_with_allowed_files_and_protected_path_block"
+    if classification in {"scaffold_blocked", "fallback_blocked"}:
+        return "retry_model_authored_output_only"
+    if reason_code in {"coder_model_not_configured", "local_model_unavailable", "coder_model_router_error"}:
+        return "check_model_route_or_use_configured_stronger_model"
+    if reason_code == "coder_replacement_content_validation_failed":
+        return "provide_more_repo_context_or_retry_with_validation_feedback"
+    if reason_code == "coder_backend_diff_generation_failed":
+        return "inspect_file_manually_or_retry_with_narrower_context"
+    return "inspect_failure_reason_then_retry_or_escalate_model"
+
+
+def _mark_model_response_provenance(
+    diagnostics: dict[str, Any],
+    response: CoderResponse,
+) -> None:
+    diagnostics["generation_source"] = "model" if response.raw_response_length > 0 else "model_empty_or_unproven"
+    diagnostics["diff_source"] = "pending_backend_diff_from_model_output"
+    diagnostics["raw_response_length"] = response.raw_response_length
+    diagnostics["raw_response_excerpt_safe"] = _safe_raw_response_excerpt(response.raw_response_excerpt)
+    diagnostics["parser_repair_used"] = response.json_attempt_count > 1 or response.coder_format_retry_count > 0
+    classification = _classify_model_output(response)
+    diagnostics["model_output_classification"] = classification
+    diagnostics["model_output_contract_values"] = sorted(MODEL_OUTPUT_CONTRACT_VALUES)
+    if response.status == "blocked":
+        reason_code = _coder_response_reason_code(response)
+        diagnostics["trial_result_trust_status"] = "model_output_not_usable"
+        diagnostics["recommended_next_action"] = _recommended_next_action_for(
+            reason_code=reason_code,
+            classification=classification,
+        )
+    elif response.replacement_content is not None:
+        diagnostics["trial_result_trust_status"] = "model_authored_output_pending_validation"
+        diagnostics["recommended_next_action"] = "run_backend_validation_and_diff_preview"
+
+
+def _mark_scaffold_or_fallback_provenance(
+    diagnostics: dict[str, Any],
+    response: CoderResponse,
+    *,
+    fallback_kind: str = "deterministic_scaffold",
+) -> None:
+    reasoning = str(response.reasoning or "").lower()
+    target = str(response.target_path or "")
+    known_scaffold = "deterministic bounded-create" in reasoning or target.startswith("src/app/agent-lab/")
+    diagnostics["generation_source"] = "backend_scaffold"
+    diagnostics["diff_source"] = "backend_generated_page"
+    diagnostics["model_output_classification"] = (
+        "scaffold_blocked" if known_scaffold else "fallback_blocked"
+    )
+    diagnostics["scaffold_used"] = True
+    diagnostics["scaffold_kind"] = "known_agent_lab_scaffold" if known_scaffold else "generic_scaffold"
+    diagnostics["fallback_used"] = True
+    diagnostics["fallback_kind"] = fallback_kind
+    diagnostics["bounded_create_used"] = True
+    diagnostics["known_scaffold_used"] = known_scaffold
+    diagnostics["generic_scaffold_used"] = not known_scaffold
+    diagnostics["generated_diff_by_backend"] = True
+    diagnostics["trial_result_trust_status"] = "invalid_scaffold_or_fallback"
+    diagnostics["recommended_next_action"] = "retry_model_authored_output_only"
+
+
+def _trial_scaffold_or_fallback_used(diagnostics: dict[str, Any]) -> bool:
+    return any(
+        bool(diagnostics.get(key))
+        for key in (
+            "scaffold_used",
+            "fallback_used",
+            "bounded_create_used",
+            "known_scaffold_used",
+            "generic_scaffold_used",
+        )
+    ) or diagnostics.get("generation_source") == "backend_scaffold"
+
+
 def _merge_coder_response_diagnostics(
     diagnostics: dict[str, Any],
     response: CoderResponse,
 ) -> None:
     diagnostics["raw_response_length"] = response.raw_response_length
     diagnostics["raw_response_excerpt"] = response.raw_response_excerpt
+    diagnostics["raw_response_excerpt_safe"] = _safe_raw_response_excerpt(response.raw_response_excerpt)
     diagnostics["parse_error_class"] = response.parse_error_class
     diagnostics["parse_error_message"] = response.parse_error_message
     diagnostics["json_attempt_count"] = response.json_attempt_count
@@ -4372,6 +5059,23 @@ def _coder_blocked_payload(
     needed_context: str,
     reason_code: str,
 ) -> dict[str, Any]:
+    classification = str(diagnostics.get("model_output_classification") or "")
+    if not classification or classification == "not_classified":
+        diagnostics["model_output_classification"] = (
+            "scaffold_blocked"
+            if _trial_scaffold_or_fallback_used(diagnostics)
+            else "unknown_untrusted"
+        )
+        classification = str(diagnostics["model_output_classification"])
+    diagnostics["model_output_usable"] = False
+    diagnostics["scaffold_or_fallback_blocked"] = _trial_scaffold_or_fallback_used(diagnostics)
+    diagnostics["recommended_next_action"] = (
+        str(diagnostics.get("recommended_next_action") or "")
+        or _recommended_next_action_for(
+            reason_code=reason_code,
+            classification=classification,
+        )
+    )
     return {
         "proposed_diff": "",
         "target": target,
@@ -4516,6 +5220,17 @@ def _coder_model_alias() -> str:
     if "local" in enabled:
         return "local"
     return "coder"
+
+
+def _dummy_product_site_create_model_alias() -> str:
+    configured = _configured_coder_model_alias()
+    enabled = available_model_aliases()
+    if configured and configured in enabled:
+        return configured
+    for alias in ("coder", "local", "openai", "anthropic", "deepseek"):
+        if alias in enabled:
+            return alias
+    return configured or "coder"
 
 
 def _configured_coder_model_alias() -> str:

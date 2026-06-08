@@ -24,6 +24,7 @@ from source_proxy.tasks.long_running import (
     create_long_running_task,
     execute_approved_long_running_task,
     propose_coder_agent_diff_payload_from_plan,
+    propose_dummy_product_site_create_diff,
     record_post_apply_verification,
     reset_long_running_tasks,
 )
@@ -237,6 +238,69 @@ class CodingRegressionPackTests(unittest.TestCase):
             },
             preview["deterministic_checks"],
         )
+
+    def test_coder_001_create_bundle_task_spec_preview_allows_dummy_root_wildcard(self) -> None:
+        from source_proxy.tasks.long_running import generate_unified_diff_from_content
+
+        files = {
+            "README.md": "# LumaCart\n",
+            "package.json": '{"name":"lumacart-dummy","private":true}\n',
+            "index.html": '<div id="app">LumaCart</div>\n',
+            "src/main.js": "console.log('LumaCart');\n",
+            "src/products.js": "export const products = [];\n",
+            "src/styles.css": "body { font-family: system-ui; }\n",
+        }
+        diff = "\n".join(
+            generate_unified_diff_from_content(
+                self.root,
+                f"tests/ui-agent-trials/fixtures/dummy-product-site/{path}",
+                content,
+            ).strip()
+            for path, content in files.items()
+        ) + "\n"
+
+        preview = preview_diff_verification(
+            diff,
+            route_type="local_route",
+            task_text="make LumaCart under tests/ui-agent-trials/fixtures/dummy-product-site/",
+            task_spec={
+                "schema_version": 1,
+                "task_type": "create_file_bundle",
+                "target": "tests/ui-agent-trials/fixtures/dummy-product-site/",
+                "allowed_files": ["tests/ui-agent-trials/fixtures/dummy-product-site/**"],
+                "forbidden_files": ["package.json", "source_proxy/**", "src/app/**", ".env*"],
+            },
+        )
+
+        self.assertEqual(preview["status"], "preview_ready", preview.get("blocked_reasons"))
+        self.assertTrue(preview["task_spec_check"]["ok"])
+        self.assertEqual(
+            preview["task_spec_check"]["allowed_files"],
+            ["tests/ui-agent-trials/fixtures/dummy-product-site/**"],
+        )
+
+    def test_coder_001_create_bundle_task_spec_still_rejects_root_package(self) -> None:
+        from source_proxy.tasks.long_running import generate_unified_diff_from_content
+
+        diff = generate_unified_diff_from_content(self.root, "package.json", "{}\n")
+
+        preview = preview_diff_verification(
+            diff,
+            route_type="local_route",
+            task_text="make LumaCart under tests/ui-agent-trials/fixtures/dummy-product-site/",
+            task_spec={
+                "schema_version": 1,
+                "task_type": "create_file_bundle",
+                "target": "tests/ui-agent-trials/fixtures/dummy-product-site/",
+                "allowed_files": ["tests/ui-agent-trials/fixtures/dummy-product-site/**"],
+                "forbidden_files": ["package.json", "source_proxy/**", "src/app/**", ".env*"],
+            },
+        )
+
+        reason_codes = {reason["reason_code"] for reason in preview["blocked_reasons"]}
+        self.assertEqual(preview["status"], "blocked")
+        self.assertIn("task_spec_allowed_file_violation", reason_codes)
+        self.assertIn("task_spec_forbidden_file_violation", reason_codes)
 
     def test_coder_task_spec_blocks_wrong_file_diff(self) -> None:
         plan = self._planned_doc_task()
@@ -908,36 +972,39 @@ class CodingRegressionPackTests(unittest.TestCase):
         target = "src/app/agent-lab/page.tsx"
         client = self._decision_client()
 
-        with mock.patch(
-            "source_proxy.tasks.long_running._call_coder_llm",
-            return_value=json.dumps(
-                {
-                    "action": "replace_file",
-                    "target": target,
-                    "content_lines": [
-                        "const sections = [\"basic apps\", \"tools\", \"diagnostics\", \"tests\"];",
-                        "",
-                        "export default function AgentLabPage() {",
-                        "  return (",
-                        '    <main className="min-h-dvh bg-slate-950 text-white">',
-                        '      <h1>Agent Lab</h1>',
-                        '      <p>/agent-lab</p>',
-                        '      <p>This is for local coder benchmark tests.</p>',
-                        "      <div>",
-                        "        {sections.map((section) => (",
-                        "          <section key={section}>",
-                        "            <h2>{section}</h2>",
-                        "          </section>",
-                        "        ))}",
-                        "      </div>",
-                        "    </main>",
-                        "  );",
-                        "}",
-                        "",
-                    ],
-                }
-            ),
-        ) as llm_mock:
+        with (
+            mock.patch("source_proxy.tasks.long_running.available_model_aliases", return_value={"coder"}),
+            mock.patch(
+                "source_proxy.tasks.long_running._call_coder_llm",
+                return_value=json.dumps(
+                    {
+                        "action": "replace_file",
+                        "target": target,
+                        "content_lines": [
+                            "const sections = [\"basic apps\", \"tools\", \"diagnostics\", \"tests\"];",
+                            "",
+                            "export default function AgentLabPage() {",
+                            "  return (",
+                            '    <main className="min-h-dvh bg-slate-950 text-white">',
+                            '      <h1>Agent Lab</h1>',
+                            '      <p>/agent-lab</p>',
+                            '      <p>This is for local coder benchmark tests.</p>',
+                            "      <div>",
+                            "        {sections.map((section) => (",
+                            "          <section key={section}>",
+                            "            <h2>{section}</h2>",
+                            "          </section>",
+                            "        ))}",
+                            "      </div>",
+                            "    </main>",
+                            "  );",
+                            "}",
+                            "",
+                        ],
+                    }
+                ),
+            ) as llm_mock,
+        ):
             response = client.post(
                 "/v1/decisions/prompt-packet",
                 json={
@@ -962,7 +1029,491 @@ class CodingRegressionPackTests(unittest.TestCase):
         self.assertTrue(payload["provider_call_made"])
         self.assertIn("AgentLabPage", payload["proposed_diff"])
         self.assertEqual(payload["coder_diagnostics"]["target_action"], "create file")
+        self.assertIn("context_packet_summary", payload["coder_diagnostics"])
+        self.assertEqual(
+            payload["context_metadata"]["expected_output_format"],
+            "strict JSON replace_file with content_lines; backend converts model-authored content to unified diff",
+        )
+        self.assertEqual(payload["context_metadata"]["selected_target"], target)
+        self.assertEqual(payload["context_metadata"]["allowed_files"], [target])
+        self.assertIn("obsidian_context_summary", payload["context_metadata"])
+        self.assertIn("model_output_classification", payload["relevant_context"])
         llm_mock.assert_called_once()
+
+    def test_prompt_packet_agent_lab_create_blocks_known_scaffold_in_live_trial_mode(self) -> None:
+        target = "src/app/agent-lab/page.tsx"
+        client = self._decision_client()
+
+        with (
+            mock.patch("source_proxy.tasks.long_running.available_model_aliases", return_value={"coder"}),
+            mock.patch(
+                "source_proxy.tasks.long_running._call_coder_llm",
+                return_value="Here is what I would build.",
+            ) as llm_mock,
+        ):
+            response = client.post(
+                "/v1/decisions/prompt-packet",
+                json={
+                    "task": (
+                        "make a new isolated test area at `/agent-lab`. "
+                        "if it doesnt exist create the route and page files needed. "
+                        "the page should say Agent Lab and explain local coder benchmark tests."
+                    ),
+                    "selected_target": target,
+                    "allowed_files": [target],
+                    "quick_find_hints": [target],
+                    "wants_implementation": True,
+                    "needs_codebase_context": True,
+                    "trial_mode": "live_apply",
+                    "expected_outcome": "edit_reversible",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        self.assertEqual(payload["target"], target)
+        self.assertTrue(payload["provider_call_made"])
+        self.assertEqual(payload["reason_code"], "scaffold_blocked_in_trial_mode")
+        self.assertEqual(payload["proposed_diff"], "")
+        self.assertTrue(payload["coder_diagnostics"]["scaffold_used"])
+        self.assertTrue(payload["coder_diagnostics"]["known_scaffold_used"])
+        self.assertEqual(payload["coder_diagnostics"]["model_output_classification"], "scaffold_blocked")
+        self.assertEqual(payload["coder_diagnostics"]["trial_result_trust_status"], "invalid_scaffold_blocked")
+        self.assertEqual(payload["coder_diagnostics"]["recommended_next_action"], "retry_model_authored_output_only")
+        llm_mock.assert_called()
+
+    def test_prompt_packet_calculator_create_blocks_fallback_after_invalid_model_tsx_in_live_trial(self) -> None:
+        target = "src/app/agent-lab/calculator/page.tsx"
+        client = self._decision_client()
+
+        with (
+            mock.patch("source_proxy.tasks.long_running.available_model_aliases", return_value={"coder"}),
+            mock.patch(
+                "source_proxy.tasks.long_running._call_coder_llm",
+                return_value=json.dumps(
+                    {
+                        "action": "replace_file",
+                        "target": target,
+                        "content_lines": [
+                            "use client",
+                            "export default function CalculatorPage() {",
+                            "  return <main>Calculator</main>;",
+                            "}",
+                        ],
+                    }
+                ),
+            ) as llm_mock,
+        ):
+            response = client.post(
+                "/v1/decisions/prompt-packet",
+                json={
+                    "task": (
+                        "make a calculator page at `/agent-lab/calculator`. "
+                        "two number inputs, add subtract multiply divide buttons, show the result."
+                    ),
+                    "selected_target": target,
+                    "allowed_files": [target],
+                    "quick_find_hints": [target],
+                    "wants_implementation": True,
+                    "needs_codebase_context": True,
+                    "trial_mode": "live_apply",
+                    "expected_outcome": "edit_reversible",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        self.assertEqual(payload["target"], target)
+        self.assertTrue(payload["provider_call_made"])
+        self.assertEqual(payload["reason_code"], "coder_replacement_content_validation_failed")
+        self.assertEqual(payload["proposed_diff"], "")
+        self.assertFalse(payload["coder_diagnostics"]["fallback_used"])
+        self.assertEqual(payload["coder_diagnostics"]["model_output_classification"], "model_structured_file_edit")
+        self.assertEqual(payload["coder_diagnostics"]["trial_result_trust_status"], "model_authored_output_pending_validation")
+        llm_mock.assert_called()
+
+    def test_dummy_product_site_create_mode_accepts_model_authored_bundle(self) -> None:
+        files = [
+            ("README.md", ["# LumaCart", "Isolated dummy coder trial fixture."]),
+            ("package.json", ['{"name":"lumacart-dummy","private":true,"scripts":{"smoke":"node src/main.js"}}']),
+            ("index.html", ["<div id=\"app\">LumaCart</div>", "<script type=\"module\" src=\"./src/main.js\"></script>"]),
+            ("src/main.js", ["import { products } from './products.js';", "console.log('LumaCart', products.length);"]),
+            ("src/products.js", ["export const products = [{ id: 'lamp', name: 'Desk Lamp', price: 32 }];"]),
+            ("src/styles.css", ["body { font-family: system-ui; }"]),
+        ]
+        model_json = json.dumps(
+            {
+                "action": "create_file_bundle",
+                "files": [
+                    {
+                        "path": f"tests/ui-agent-trials/fixtures/dummy-product-site/{path}",
+                        "content_lines": lines,
+                    }
+                    for path, lines in files
+                ],
+            }
+        )
+
+        payload = propose_dummy_product_site_create_diff(
+            task="make LumaCart in the dummy root",
+            workspace_root=self.root,
+            llm_call=lambda _prompt, _alias: model_json,
+            model_alias="coder",
+        )
+
+        self.assertEqual(payload["reason_code"], "dummy_product_site_create_bundle")
+        self.assertIn("tests/ui-agent-trials/fixtures/dummy-product-site/README.md", payload["proposed_diff"])
+        self.assertIn("tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css", payload["proposed_diff"])
+        self.assertFalse(payload["coder_diagnostics"]["generated_diff_by_backend"])
+        self.assertEqual(
+            payload["coder_diagnostics"]["trial_result_trust_status"],
+            "model_authored_diff_proven",
+        )
+        self.assertFalse((self.root / "tests/ui-agent-trials/fixtures/dummy-product-site").exists())
+
+    def test_dummy_product_site_create_mode_rejects_outside_root(self) -> None:
+        model_json = json.dumps(
+            {
+                "action": "create_file_bundle",
+                "files": [
+                    {"path": "package.json", "content_lines": ["{}"]},
+                    {
+                        "path": "tests/ui-agent-trials/fixtures/dummy-product-site/README.md",
+                        "content_lines": ["# LumaCart"],
+                    },
+                ],
+            }
+        )
+
+        payload = propose_dummy_product_site_create_diff(
+            task="make LumaCart in the dummy root",
+            workspace_root=self.root,
+            llm_call=lambda _prompt, _alias: model_json,
+            model_alias="coder",
+        )
+
+        self.assertEqual(payload["reason_code"], "coder_file_bundle_validation_failed")
+        self.assertTrue(payload["coder_blocked"])
+        self.assertIn("root package mutation rejected: package.json", payload["needed_context"])
+
+    def test_dummy_product_site_create_mode_repairs_invalid_local_json_with_model_retry(self) -> None:
+        files = [
+            ("README.md", ["# LumaCart", "Isolated dummy coder trial fixture."]),
+            ("package.json", ['{"name":"lumacart-dummy","private":true}']),
+            ("index.html", ["<div id=\"app\">LumaCart</div>"]),
+            ("src/main.js", ["console.log('LumaCart');"]),
+            ("src/products.js", ["export const products = [];"]),
+            ("src/styles.css", ["body { font-family: system-ui; }"]),
+        ]
+        valid_json = json.dumps(
+            {
+                "action": "create_file_bundle",
+                "files": [
+                    {
+                        "path": f"tests/ui-agent-trials/fixtures/dummy-product-site/{path}",
+                        "content_lines": lines,
+                    }
+                    for path, lines in files
+                ],
+            }
+        )
+        calls = iter(
+            [
+                '{"action":"create_file_bundle","files":[{"path":"tests/ui-agent-trials/fixtures/dummy-product-site/README.md","content_lines":["unterminated]}',
+                valid_json,
+            ]
+        )
+
+        payload = propose_dummy_product_site_create_diff(
+            task="make LumaCart in the dummy root",
+            workspace_root=self.root,
+            llm_call=lambda _prompt, _alias: next(calls),
+            model_alias="coder",
+        )
+
+        self.assertEqual(payload["reason_code"], "dummy_product_site_create_bundle")
+        self.assertTrue(payload["coder_diagnostics"]["repair_attempted"])
+        self.assertEqual(payload["coder_diagnostics"]["generation_source"], "model")
+        self.assertFalse(payload["coder_diagnostics"]["fallback_used"])
+        self.assertFalse(payload["coder_diagnostics"]["scaffold_used"])
+        self.assertFalse(payload["coder_diagnostics"]["generated_diff_by_backend"])
+        self.assertIn("tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js", payload["changed_files"])
+
+    def test_prompt_packet_coder_001_uses_create_mode_not_readme_replacement(self) -> None:
+        client = self._decision_client()
+        files = [
+            ("README.md", ["# LumaCart", "Isolated dummy coder trial fixture."]),
+            ("package.json", ['{"name":"lumacart-dummy","private":true}']),
+            ("index.html", ["<div id=\"app\">LumaCart</div>"]),
+            ("src/main.js", ["console.log('LumaCart');"]),
+            ("src/products.js", ["export const products = [];"]),
+            ("src/styles.css", ["body { font-family: system-ui; }"]),
+        ]
+
+        with (
+            mock.patch("source_proxy.tasks.long_running.available_model_aliases", return_value={"coder"}),
+            mock.patch(
+                "source_proxy.tasks.long_running._call_coder_llm",
+                return_value=json.dumps(
+                    {
+                        "action": "create_file_bundle",
+                        "files": [
+                            {
+                                "path": f"tests/ui-agent-trials/fixtures/dummy-product-site/{path}",
+                                "content_lines": lines,
+                            }
+                            for path, lines in files
+                        ],
+                    }
+                ),
+            ),
+        ):
+            response = client.post(
+                "/v1/decisions/prompt-packet",
+                json={
+                    "task": "make a tiny fake product website project for testing the coder agent. call it LumaCart.",
+                    "selected_target": "tests/ui-agent-trials/fixtures/dummy-product-site/README.md",
+                    "allowed_files": ["tests/ui-agent-trials/fixtures/dummy-product-site/**"],
+                    "wants_implementation": True,
+                    "needs_codebase_context": True,
+                    "trial_mode": "live_apply",
+                    "expected_result_state": "PASS_DUMMY_PROJECT_INIT",
+                    "selected_prompt_id": "coder-001-init-dummy-product-site",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        self.assertEqual(payload["reason_code"], "dummy_product_site_create_bundle")
+        self.assertEqual(payload["target"], "tests/ui-agent-trials/fixtures/dummy-product-site/")
+        self.assertIn("tests/ui-agent-trials/fixtures/dummy-product-site/README.md", payload["changed_files"])
+        self.assertIn("tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js", payload["changedFiles"])
+        self.assertIn("git apply --check", payload["checks_run"])
+        self.assertIn("src/products.js", payload["proposed_diff"])
+        self.assertNotEqual(payload["reason_code"], "coder_replacement_content_validation_failed")
+        self.assertEqual(payload["task_spec"]["allowed_files"], ["tests/ui-agent-trials/fixtures/dummy-product-site/**"])
+
+    def test_prompt_packet_coder_001_create_mode_can_use_cloud_alias(self) -> None:
+        client = self._decision_client()
+        files = [
+            ("README.md", ["# LumaCart", "Isolated dummy coder trial fixture."]),
+            ("package.json", ['{"name":"lumacart-dummy","private":true}']),
+            ("index.html", ["<div id=\"app\">LumaCart</div>"]),
+            ("src/main.js", ["console.log('LumaCart');"]),
+            ("src/products.js", ["export const products = [];"]),
+            ("src/styles.css", ["body { font-family: system-ui; }"]),
+        ]
+
+        with (
+            mock.patch.dict(os.environ, {"SOURCE_PROXY_CODER_MODEL_ALIAS": "coder"}),
+            mock.patch("source_proxy.tasks.long_running.available_model_aliases", return_value={"openai"}),
+            mock.patch("source_proxy.tasks.long_running.route_provider_for_alias", return_value="openai"),
+            mock.patch("source_proxy.tasks.long_running.route_model_for_alias", return_value="gpt-4o-mini"),
+            mock.patch(
+                "source_proxy.tasks.long_running._call_coder_llm",
+                return_value=json.dumps(
+                    {
+                        "action": "create_file_bundle",
+                        "files": [
+                            {
+                                "path": f"tests/ui-agent-trials/fixtures/dummy-product-site/{path}",
+                                "content_lines": lines,
+                            }
+                            for path, lines in files
+                        ],
+                    }
+                ),
+            ) as llm_mock,
+        ):
+            response = client.post(
+                "/v1/decisions/prompt-packet",
+                json={
+                    "task": "make a tiny fake product website project for testing the coder agent. call it LumaCart.",
+                    "selected_target": "tests/ui-agent-trials/fixtures/dummy-product-site/README.md",
+                    "allowed_files": ["tests/ui-agent-trials/fixtures/dummy-product-site/**"],
+                    "wants_implementation": True,
+                    "needs_codebase_context": True,
+                    "trial_mode": "live_apply",
+                    "expected_result_state": "PASS_DUMMY_PROJECT_INIT",
+                    "selected_prompt_id": "coder-001-init-dummy-product-site",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        self.assertEqual(payload["reason_code"], "dummy_product_site_create_bundle")
+        self.assertEqual(payload["coder_diagnostics"]["selected_model_alias"], "openai")
+        self.assertEqual(payload["provider"], "openai")
+        self.assertEqual(payload["model"], "gpt-4o-mini")
+        self.assertIn("tests/ui-agent-trials/fixtures/dummy-product-site/README.md", payload["changed_files"])
+        self.assertIn("src/products.js", payload["proposed_diff"])
+        llm_mock.assert_called_once()
+        self.assertEqual(llm_mock.call_args.kwargs["model_alias"], "openai")
+
+    def test_prompt_packet_live_trial_prose_only_is_needs_fix_not_pass(self) -> None:
+        target = "src/app/agent-lab/calculator/page.tsx"
+        client = self._decision_client()
+
+        with (
+            mock.patch("source_proxy.tasks.long_running.available_model_aliases", return_value={"coder"}),
+            mock.patch(
+                "source_proxy.tasks.long_running._call_coder_llm",
+                return_value="I would add the calculator UI with inputs and buttons.",
+            ) as llm_mock,
+        ):
+            response = client.post(
+                "/v1/decisions/prompt-packet",
+                json={
+                    "task": (
+                        "make a calculator page at `/agent-lab/calculator`. "
+                        "two number inputs, add subtract multiply divide buttons, show the result."
+                    ),
+                    "selected_target": target,
+                    "allowed_files": [target],
+                    "quick_find_hints": [target],
+                    "wants_implementation": True,
+                    "needs_codebase_context": True,
+                    "trial_mode": "live_apply",
+                    "expected_outcome": "edit_reversible",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        self.assertTrue(payload["provider_call_made"])
+        self.assertEqual(payload["proposed_diff"], "")
+        self.assertIn(payload["status"], {"blocked", "needs_coder_diff"})
+        self.assertNotEqual(payload["status"], "preview_ready")
+        self.assertEqual(payload["coder_diagnostics"]["model_output_classification"], "scaffold_blocked")
+        self.assertEqual(payload["reason_code"], "scaffold_blocked_in_trial_mode")
+        self.assertEqual(payload["coder_diagnostics"]["trial_result_trust_status"], "invalid_scaffold_blocked")
+        llm_mock.assert_called()
+
+    def test_existing_file_prose_only_model_output_is_classified_unusable(self) -> None:
+        target = "src/app/agent-lab/existing/page.tsx"
+        _write(
+            self.root / target,
+            "export default function ExistingPage() { return <main>Old</main>; }\n",
+        )
+        task = "\n".join(
+            [
+                "Target file: src/app/agent-lab/existing/page.tsx",
+                "Change the page text from Old to New.",
+            ]
+        )
+        planned = plan_task_deterministically(task, "task-existing-prose", self.root)
+        self.assertIsInstance(planned, Plan, planned)
+
+        out = propose_coder_agent_diff_payload_from_plan(
+            architect_plan=planned.plan,
+            workspace_root=self.root,
+            llm_call=lambda *_args: "I would change Old to New.",
+            force_live_model=True,
+        )
+
+        self.assertTrue(out["coder_blocked"])
+        self.assertEqual(out["proposed_diff"], "")
+        self.assertNotEqual(out.get("reason_code"), "")
+        self.assertEqual(out["coder_diagnostics"]["model_output_classification"], "model_prose_only")
+        self.assertFalse(out["coder_diagnostics"]["model_output_usable"])
+        self.assertEqual(
+            out["coder_diagnostics"]["recommended_next_action"],
+            "retry_with_stricter_output_contract_or_stronger_model",
+        )
+
+    def test_prompt_packet_agent_lab_known_apps_cannot_fall_back_to_pass_in_live_trial(self) -> None:
+        client = self._decision_client()
+        cases = [
+            (
+                "src/app/agent-lab/cards/page.tsx",
+                "make a fake cards page at `/agent-lab/cards` and add a search box.",
+                ["CardsPage", "Search cards", "Card 8"],
+            ),
+            (
+                "src/app/agent-lab/form/page.tsx",
+                "make a form page at `/agent-lab/form` with name and message fields.",
+                ["FormPage", "Name and message are required.", "Submitted Message"],
+            ),
+            (
+                "src/app/agent-lab/counter/page.tsx",
+                "make a counter page at `/agent-lab/counter` with plus, minus, reset and remember after refresh.",
+                ["CounterPage", "agent-lab-counter", "Reset"],
+            ),
+            (
+                "src/app/agent-lab/theme/page.tsx",
+                "make a theme toggle page at `/agent-lab/theme` and remember the choice after refresh.",
+                ["ThemePage", "agent-lab-theme", "Switch Theme"],
+            ),
+            (
+                "src/app/agent-lab/notes/page.tsx",
+                "make a notes page at `/agent-lab/notes` with title, body, add, and delete.",
+                ["NotesPage", "Add Note", "Delete"],
+            ),
+            (
+                "src/app/agent-lab/model-picker/page.tsx",
+                "make a fake model picker page at `/agent-lab/model-picker` with provider and model dropdowns.",
+                ["ModelPickerPage", "Selected provider/model", "qwen2.5-coder:7b"],
+            ),
+            (
+                "src/app/agent-lab/proxy-health/page.tsx",
+                "make a fake proxy health page at `/agent-lab/proxy-health` with fake statuses and refresh.",
+                ["ProxyHealthPage", "Frontend online", "Last refreshed"],
+            ),
+        ]
+
+        for target, task, snippets in cases:
+            with self.subTest(target=target):
+                with mock.patch(
+                    "source_proxy.tasks.long_running._call_coder_llm",
+                    return_value=json.dumps(
+                        {
+                            "action": "replace_file",
+                            "target": target,
+                            "content_lines": [
+                                "use client",
+                                "import { Button } from '@/components/ui/button';",
+                                "export default function BrokenPage() {",
+                                "  return <main>broken",
+                            ],
+                        }
+                    ),
+                ) as llm_mock:
+                    response = client.post(
+                        "/v1/decisions/prompt-packet",
+                        json={
+                            "task": task,
+                            "selected_target": target,
+                            "allowed_files": [target],
+                            "quick_find_hints": [target],
+                            "wants_implementation": True,
+                            "needs_codebase_context": True,
+                            "trial_mode": "live_apply",
+                            "expected_outcome": "edit_reversible",
+                        },
+                    )
+
+                self.assertEqual(response.status_code, 200, response.text)
+                payload = response.json()
+                self.assertEqual(payload["target"], target)
+                self.assertTrue(payload["provider_call_made"])
+                self.assertEqual(payload["reason_code"], "coder_replacement_content_validation_failed")
+                self.assertEqual(payload["proposed_diff"], "")
+                self.assertFalse(payload["coder_diagnostics"]["fallback_used"])
+                self.assertEqual(payload["coder_diagnostics"]["trial_result_trust_status"], "model_authored_output_pending_validation")
+                self.assertGreaterEqual(llm_mock.call_count, 1)
+
+    def test_prompt_packet_agent_lab_known_scaffold_remains_available_outside_live_trial(self) -> None:
+        target = "src/app/agent-lab/calculator/page.tsx"
+        from source_proxy.planning.bounded_create import bounded_create_replacement_content
+
+        content = bounded_create_replacement_content(
+            target,
+            "make a calculator page at `/agent-lab/calculator`.",
+        )
+
+        self.assertIsNotNone(content)
+        self.assertIn("CalculatorPage", content or "")
+        self.assertIn("Cannot divide by zero", content or "")
 
     def test_prompt_packet_live_trial_reuses_hidden_allowed_existing_agent_lab_target(self) -> None:
         target = "src/app/agent-lab/page.tsx"
