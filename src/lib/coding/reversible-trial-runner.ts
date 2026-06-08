@@ -37,6 +37,11 @@ export type TrialApplyStepInstrumentation = {
   execute_approved_http_status?: string | null;
   execute_approved_requested_at?: string | null;
   last_progress_reason_code?: string | null;
+  model_response_classification?: string | null;
+  model_response_parse_decision?: string | null;
+  model_response_raw_length?: number | null;
+  model_response_safe_excerpt?: string | null;
+  no_diff_reason_code?: string | null;
   prompt_packet_completed_at?: string | null;
   prompt_packet_requested_at?: string | null;
   result_finalized_at?: string | null;
@@ -49,6 +54,19 @@ export type AgentLabBaselineSnapshot = {
   baseline_clean_for_fresh_suite: boolean;
   baseline_dirty_agent_lab_files: string[];
   baseline_unreverted_receipts: string[];
+};
+
+export type NoDiffModelResponseClassification = {
+  allowedFiles: string[];
+  hasFullFileContent: boolean;
+  hasMarkdownCodeBlock: boolean;
+  hasUnifiedDiffMarkers: boolean;
+  parseDecision: string;
+  rawResponseLength: number;
+  reasonCode: string;
+  safeExcerpt: string;
+  selectedTarget: string;
+  summary: string;
 };
 
 export type CurrentSuiteAgentLabFileClassification = {
@@ -337,13 +355,146 @@ export function classifyCurrentSuiteAgentLabFiles(input: {
 }
 
 export function formatAgentLabBaselineDiagnostics(snapshot: AgentLabBaselineSnapshot): string[] {
+  const checked = snapshot.baseline_checked_at !== "not checked";
+  const cleanText = checked
+    ? snapshot.baseline_clean_for_fresh_suite
+      ? "true"
+      : "false"
+    : "not checked";
   return [
     `baseline_checked_at: ${snapshot.baseline_checked_at}`,
     `baseline_agent_lab_files: ${snapshot.baseline_agent_lab_files.join(", ") || "none"}`,
     `baseline_dirty_agent_lab_files: ${snapshot.baseline_dirty_agent_lab_files.join(", ") || "none"}`,
     `baseline_unreverted_receipts: ${snapshot.baseline_unreverted_receipts.join(", ") || "none"}`,
-    `baseline_clean_for_fresh_suite: ${snapshot.baseline_clean_for_fresh_suite ? "true" : "false"}`,
+    `baseline_clean_for_fresh_suite: ${cleanText}`,
   ];
+}
+
+function asTrialRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function trialString(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function trialStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.map((item) => trialString(item)).filter(Boolean)
+    : [];
+}
+
+function safeModelExcerpt(value: unknown): string {
+  return trialString(value)
+    .replace(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g, "[redacted-email]")
+    .replace(/(sk-[A-Za-z0-9_-]{12,})/g, "[redacted-token]")
+    .slice(0, 500);
+}
+
+export function classifyNoDiffModelResponse(input: {
+  allowedFiles?: string[];
+  payload: unknown;
+  selectedTarget?: string;
+}): NoDiffModelResponseClassification {
+  const record = asTrialRecord(input.payload);
+  const diagnostics = {
+    ...asTrialRecord(record.coder_diagnostics),
+    ...asTrialRecord(record.coderDiagnostics),
+  };
+  const rawResponseLength = Number(diagnostics.raw_response_length ?? 0) || 0;
+  const safeExcerpt = safeModelExcerpt(diagnostics.raw_response_excerpt);
+  const reasonFromPayload = trialString(record.reason_code) || trialString(record.reasonCode);
+  const parseErrorClass = trialString(diagnostics.parse_error_class);
+  const parseErrorMessage = trialString(diagnostics.parse_error_message);
+  const lastJsonError = trialString(diagnostics.last_json_error);
+  const validationStatus = trialString(diagnostics.validation_status);
+  const parseDecision =
+    validationStatus ||
+    parseErrorClass ||
+    parseErrorMessage ||
+    lastJsonError ||
+    reasonFromPayload ||
+    "diff_extractor_no_candidate";
+  const selectedTarget =
+    input.selectedTarget ||
+    trialString(record.target) ||
+    trialString(diagnostics.target_path_selected) ||
+    trialString(diagnostics.explicit_target_parsed);
+  const taskSpec = asTrialRecord(diagnostics.task_spec);
+  const allowedFiles =
+    input.allowedFiles?.length
+      ? input.allowedFiles
+      : trialStringArray(taskSpec.allowed_files).length
+        ? trialStringArray(taskSpec.allowed_files)
+        : trialStringArray(record.allowed_files);
+  const lowerExcerpt = safeExcerpt.toLowerCase();
+  const hasMarkdownCodeBlock = safeExcerpt.includes("```");
+  const hasUnifiedDiffMarkers =
+    /(^|\n)(diff --git |---\s+\S+[\s\S]*\n\+\+\+\s+\S+[\s\S]*\n@@)/.test(safeExcerpt);
+  const hasFullFileContent =
+    /\b(export default|function\s+[A-Za-z0-9_]+|const\s+[A-Za-z0-9_]+\s*=|<main\b|<section\b|<!doctype html|import\s+)/i.test(
+      safeExcerpt,
+    );
+
+  let reasonCode = reasonFromPayload || "diff_extractor_no_candidate";
+  if (rawResponseLength === 0 || reasonFromPayload === "coder_empty_model_response") {
+    reasonCode = "model_empty_response";
+  } else if (
+    reasonFromPayload === "target_missing" ||
+    reasonFromPayload === "target_unresolved" ||
+    validationStatus.includes("target")
+  ) {
+    reasonCode = "target_inference_blocked";
+  } else if (
+    reasonFromPayload === "task_spec_allowed_file_violation" ||
+    validationStatus.includes("task_spec") ||
+    parseDecision.includes("allowed")
+  ) {
+    reasonCode = "allowed_files_rejected_change";
+  } else if (
+    reasonFromPayload === "coder_replacement_content_validation_failed" ||
+    validationStatus.includes("validation_failed")
+  ) {
+    reasonCode = "verification_rejected_patch";
+  } else if (hasUnifiedDiffMarkers) {
+    reasonCode = "diff_preview_rejected";
+  } else if (hasMarkdownCodeBlock) {
+    reasonCode = "model_code_block_unparsed";
+  } else if (hasFullFileContent) {
+    reasonCode = "model_full_file_unconverted";
+  } else if (
+    reasonFromPayload === "coder_response_repair_exhausted" ||
+    reasonFromPayload === "coder_response_not_json" ||
+    parseErrorClass ||
+    lowerExcerpt
+  ) {
+    reasonCode = "model_prose_only_no_file_change";
+  }
+
+  return {
+    allowedFiles,
+    hasFullFileContent,
+    hasMarkdownCodeBlock,
+    hasUnifiedDiffMarkers,
+    parseDecision,
+    rawResponseLength,
+    reasonCode,
+    safeExcerpt,
+    selectedTarget,
+    summary: [
+      `reason=${reasonCode}`,
+      `raw_len=${rawResponseLength}`,
+      `code_block=${hasMarkdownCodeBlock ? "yes" : "no"}`,
+      `diff_markers=${hasUnifiedDiffMarkers ? "yes" : "no"}`,
+      `full_file=${hasFullFileContent ? "yes" : "no"}`,
+      `parse=${parseDecision || "none"}`,
+      `selected_target=${selectedTarget || "none"}`,
+      `allowed_files=${allowedFiles.join(", ") || "none"}`,
+      safeExcerpt ? `excerpt=${safeExcerpt}` : "",
+    ].filter(Boolean).join("; "),
+  };
 }
 
 export function collectAgentLabFilesFromListEntries(

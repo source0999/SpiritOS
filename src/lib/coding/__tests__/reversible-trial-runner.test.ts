@@ -4,6 +4,7 @@ import type { DurableCodingRun } from "@/lib/coding/durable-run-types";
 import {
   betweenPromptsStaleSummary,
   buildTrialPromptQuickLinks,
+  classifyNoDiffModelResponse,
   classifyCurrentSuiteAgentLabFiles,
   classifyEditReversibleAlreadySatisfied,
   downgradePassWithoutReversalProof,
@@ -12,6 +13,7 @@ import {
   evaluateAgentLabBaseline,
   inferAgentLabPageHref,
   postApplyStaleReasonCode,
+  formatAgentLabBaselineDiagnostics,
   trialRunnerRunBlocked,
 } from "@/lib/coding/reversible-trial-runner";
 
@@ -71,6 +73,95 @@ describe("reversible trial runner helpers", () => {
     });
     expect(snapshot.baseline_clean_for_fresh_suite).toBe(false);
     expect(snapshot.baseline_dirty_agent_lab_files).toContain("src/app/agent-lab/cards/page.tsx");
+  });
+
+  it("formats unchecked baseline truth without implying dirty state", () => {
+    expect(
+      formatAgentLabBaselineDiagnostics({
+        baseline_agent_lab_files: [],
+        baseline_checked_at: "not checked",
+        baseline_clean_for_fresh_suite: true,
+        baseline_dirty_agent_lab_files: [],
+        baseline_unreverted_receipts: [],
+      }),
+    ).toContain("baseline_clean_for_fresh_suite: not checked");
+  });
+
+  it("classifies empty provider 200 no-diff responses", () => {
+    expect(
+      classifyNoDiffModelResponse({
+        allowedFiles: ["src/app/agent-lab/page.tsx"],
+        payload: {
+          reason_code: "coder_empty_model_response",
+          coder_diagnostics: { raw_response_length: 0, raw_response_excerpt: "" },
+        },
+        selectedTarget: "src/app/agent-lab/page.tsx",
+      }).reasonCode,
+    ).toBe("model_empty_response");
+  });
+
+  it("classifies prose-only provider 200 no-diff responses", () => {
+    const classified = classifyNoDiffModelResponse({
+      allowedFiles: ["src/app/agent-lab/page.tsx"],
+      payload: {
+        reason_code: "coder_response_repair_exhausted",
+        coder_diagnostics: {
+          parse_error_class: "JSONDecodeError",
+          raw_response_excerpt: "Here is what I would change.",
+          raw_response_length: 29,
+        },
+      },
+      selectedTarget: "src/app/agent-lab/page.tsx",
+    });
+
+    expect(classified.reasonCode).toBe("model_prose_only_no_file_change");
+    expect(classified.summary).toContain("selected_target=src/app/agent-lab/page.tsx");
+  });
+
+  it("classifies markdown code block provider 200 no-diff responses", () => {
+    expect(
+      classifyNoDiffModelResponse({
+        payload: {
+          reason_code: "coder_response_repair_exhausted",
+          coder_diagnostics: {
+            raw_response_excerpt: "```tsx\nexport default function Page() { return <main />; }\n```",
+            raw_response_length: 64,
+          },
+        },
+      }).reasonCode,
+    ).toBe("model_code_block_unparsed");
+  });
+
+  it("classifies full-file provider 200 no-diff responses", () => {
+    expect(
+      classifyNoDiffModelResponse({
+        payload: {
+          reason_code: "coder_response_repair_exhausted",
+          coder_diagnostics: {
+            raw_response_excerpt: "export default function Page() { return <main>Agent Lab</main>; }",
+            raw_response_length: 64,
+          },
+        },
+      }).reasonCode,
+    ).toBe("model_full_file_unconverted");
+  });
+
+  it("keeps allowed-file safety visible for no-diff responses", () => {
+    const classified = classifyNoDiffModelResponse({
+      allowedFiles: ["src/app/agent-lab/page.tsx"],
+      payload: {
+        reason_code: "task_spec_allowed_file_violation",
+        coder_diagnostics: {
+          raw_response_excerpt: "attempted source_proxy/api/decision.py",
+          raw_response_length: 39,
+          validation_status: "coder_task_spec_diff_blocked",
+        },
+      },
+      selectedTarget: "src/app/agent-lab/page.tsx",
+    });
+
+    expect(classified.reasonCode).toBe("allowed_files_rejected_change");
+    expect(classified.allowedFiles).toEqual(["src/app/agent-lab/page.tsx"]);
   });
 
   it("separates current-suite expected agent-lab files from stale leftovers", () => {

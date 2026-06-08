@@ -9,6 +9,7 @@ import CodingCockpitShell, {
   reverseUnifiedDiff,
   snapshotRestored,
   reversibleSuiteExceptionLabel,
+  shouldClearStaleLocalTrialStateAfterCloudClear,
 } from "@/components/coding/CodingCockpitShell";
 
 const navMock = vi.hoisted(() => ({ path: "/coding" }));
@@ -171,14 +172,16 @@ describe("CodingCockpitShell", () => {
     expect(screen.getByRole("navigation", { name: "Coding session list" })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Active task" })).toBeInTheDocument();
     expect(screen.getByRole("complementary", { name: "Review pane" })).toBeInTheDocument();
-    const trialRunner = screen.getByRole("region", { name: "Isolated agent-lab benchmark" });
-    expect(within(trialRunner).getByText("Isolated agent-lab benchmark")).toBeInTheDocument();
+    const trialRunner = screen.getByRole("region", { name: "Trial Runner" });
+    expect(within(trialRunner).getByRole("heading", { name: "Trial Runner" })).toBeInTheDocument();
     expect(within(trialRunner).getByRole("combobox", { name: "Trial category" })).toBeInTheDocument();
     expect(within(trialRunner).getByRole("combobox", { name: "Trial count" })).toBeInTheDocument();
+    expect(within(trialRunner).getByRole("combobox", { name: "Trial runner mode" })).toHaveValue("individual");
     ["Coder", "Designer", "Combined", "Messy Coder 10", "Messy Coder 25", "Messy Coder 50", "Messy Coder 100"].forEach((option) => {
       expect(within(trialRunner).getByRole("option", { name: option })).toBeInTheDocument();
     });
-    expect(within(trialRunner).getByRole("button", { name: "Run messy Coder benchmark" })).toBeInTheDocument();
+    expect(within(trialRunner).getByRole("button", { name: "Run selected prompt" })).toBeInTheDocument();
+    expect(within(trialRunner).getByRole("button", { name: "Run all trials" })).toBeInTheDocument();
     expect(within(trialRunner).getByRole("button", { name: "Copy prompts" })).toBeInTheDocument();
     expect(within(trialRunner).getByRole("button", { name: "Copy trial diagnostics" })).toBeDisabled();
     expect(screen.getByRole("heading", { name: "Coding runner" })).toBeInTheDocument();
@@ -226,6 +229,156 @@ describe("CodingCockpitShell", () => {
     ].forEach((text) => {
       expect(screen.queryByText(text)).not.toBeInTheDocument();
     });
+  });
+
+  it("renders compact individual prompt mode inside Trial Runner", () => {
+    installCommonFetchMock();
+    render(<CodingCockpitShell />);
+
+    const runner = screen.getByRole("region", { name: "Trial Runner" });
+    expect(within(runner).getByRole("combobox", { name: "Dummy Coder prompt" })).toBeInTheDocument();
+    expect(within(runner).getByText("Coder 001 - Init Dummy Product Site")).toBeInTheDocument();
+    expect(within(runner).getByText("PASS_DUMMY_PROJECT_INIT")).toBeInTheDocument();
+    expect(within(runner).getByText("dummy-product-site")).toBeInTheDocument();
+    expect(within(runner).getByText("View prompt + boundaries")).toBeInTheDocument();
+    expect(within(runner).queryByText(/make a tiny fake product website project/)).not.toBeInTheDocument();
+
+    fireEvent.click(within(runner).getByText("View prompt + boundaries"));
+    expect(within(runner).getByText("tests/ui-agent-trials/fixtures/dummy-product-site/")).toBeInTheDocument();
+    expect(within(runner).getByText("tests/ui-agent-trials/fixtures/dummy-product-site/**")).toBeInTheDocument();
+    expect(within(runner).getByText(/src\/app\/\*\*/)).toBeInTheDocument();
+
+    fireEvent.change(within(runner).getByRole("combobox", { name: "Dummy Coder prompt" }), {
+      target: { value: "coder-009-noop-category-proof" },
+    });
+
+    expect(within(runner).getByText("Coder 009 - No-Op / Already Satisfied Proof")).toBeInTheDocument();
+    expect(within(runner).getByText("PASS_NOOP")).toBeInTheDocument();
+    expect(within(runner).getByText("tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js")).toBeInTheDocument();
+  });
+
+  it("submits only one selected LumaCart prompt with dummy-root boundaries", async () => {
+    const calls = installCommonFetchMock((url, init) => {
+      if (url.includes("/v1/decisions/prompt-packet")) {
+        const parsed = init?.body ? JSON.parse(String(init.body)) : {};
+        return jsonResponse({
+          changed_files: [],
+          coder_diagnostics: {
+            diff_source: "model_authored_diff",
+            generation_source: "model",
+            model_output_classification: "model_authored_diff",
+            trial_result_trust_status: "model_authored",
+          },
+          provider_call_made: true,
+          reason_code: "coder_no_changes_needed",
+          recommended_next_action: "Inspect cited category evidence.",
+          simple_reason: "category exists at tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js",
+          status: "proposal_ready",
+          taskEcho: parsed.task,
+        });
+      }
+      return null;
+    });
+    render(<CodingCockpitShell />);
+
+    const runner = screen.getByRole("region", { name: "Trial Runner" });
+    fireEvent.change(within(runner).getByRole("combobox", { name: "Dummy Coder prompt" }), {
+      target: { value: "coder-009-noop-category-proof" },
+    });
+    fireEvent.click(within(runner).getByRole("button", { name: "Run selected prompt" }));
+
+    await waitFor(() => expect(within(runner).getByText("PASS_NOOP / score 10")).toBeInTheDocument());
+    const promptPacketCalls = calls.filter((call) => call.url.includes("/v1/decisions/prompt-packet"));
+    expect(promptPacketCalls).toHaveLength(1);
+    const body = JSON.parse(promptPacketCalls[0].body);
+    expect(body.selected_prompt_id).toBe("coder-009-noop-category-proof");
+    expect(body.dummy_coder_10_packet.fixture_root).toBe("tests/ui-agent-trials/fixtures/dummy-product-site/");
+    expect(body.dummy_coder_10_packet.allowed_write_root).toBe("tests/ui-agent-trials/fixtures/dummy-product-site/**");
+    expect(body.dummy_coder_10_packet.forbidden_files).toEqual(
+      expect.arrayContaining(["src/app/**", "source_proxy/**", "package.json", ".env*", ".git/**"]),
+    );
+    expect(JSON.stringify(body)).not.toMatch(/run_full_suite|25|50|100/i);
+  });
+
+  it("shows selected-prompt pending state immediately after click", async () => {
+    const promptPacketGate: { release: () => void } = { release: () => undefined };
+    installCommonFetchMock((url) => {
+      if (url.includes("/v1/decisions/prompt-packet")) {
+        return null;
+      }
+      return null;
+    });
+    vi.mocked(globalThis.fetch).mockImplementation(async (input, init) => {
+      const url = String(input);
+      const body = typeof init?.body === "string" ? init.body : "";
+      if (url.includes("/v1/tasks/long-running")) {
+        return jsonResponse({ task_id: "task_pending_001" });
+      }
+      if (url.includes("/v1/decisions/prompt-packet")) {
+        await new Promise<void>((resolve) => {
+          promptPacketGate.release = resolve;
+        });
+        return jsonResponse({ status: "blocked", reason_code: "coder_file_bundle_validation_failed" });
+      }
+      if (url.includes("/v1/self/status")) {
+        return jsonResponse({ model_routes: [] });
+      }
+      if (url.includes("/v1/coding/agent-lab-baseline")) {
+        return jsonResponse({
+          baseline_agent_lab_files: [],
+          baseline_checked_at: new Date().toISOString(),
+          baseline_clean_for_fresh_suite: true,
+          baseline_dirty_agent_lab_files: [],
+          baseline_unreverted_receipts: [],
+          visible_label: "BASELINE CLEAN",
+        });
+      }
+      if (url.includes("/v1/coding/trial-receipt-reconcile")) {
+        return jsonResponse({ ok: true, receipts: body ? JSON.parse(body).receipts ?? [] : [] });
+      }
+      if (url.includes("/v1/coding/runs/active")) return jsonResponse({ run: null });
+      if (url.includes("/v1/coding/runs/recent")) return jsonResponse({ count: 0, runs: [] });
+      throw new Error(`Unexpected fetch: ${url}`);
+    });
+
+    render(<CodingCockpitShell />);
+    const runner = screen.getByRole("region", { name: "Trial Runner" });
+    fireEvent.click(within(runner).getByRole("button", { name: "Run selected prompt" }));
+
+    await waitFor(() => expect(within(runner).getByText(/Running task task_pending_001/)).toBeInTheDocument());
+    expect(within(runner).getByRole("button", { name: "Run selected prompt" })).toBeDisabled();
+    promptPacketGate.release();
+  });
+
+  it("clears selected-prompt blocked result with the Trial Runner reverse clear action", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+    installCommonFetchMock((url) => {
+      if (url.includes("/v1/decisions/prompt-packet")) {
+        return jsonResponse({
+          coder_diagnostics: {
+            generation_source: "model",
+            model_output_classification: "model_prose_only",
+            trial_result_trust_status: "model_output_not_usable",
+          },
+          reason_code: "coder_file_bundle_validation_failed",
+          status: "blocked",
+        });
+      }
+      return null;
+    });
+
+    render(<CodingCockpitShell />);
+    const runner = screen.getByRole("region", { name: "Trial Runner" });
+    fireEvent.click(within(runner).getByRole("button", { name: "Run selected prompt" }));
+
+    await waitFor(() => expect(within(runner).getByText("Needs fix")).toBeInTheDocument());
+    fireEvent.click(within(runner).getByRole("button", { name: "Reverse trial edits and clear results" }));
+
+    await waitFor(() => expect(within(runner).getByText("Cleared")).toBeInTheDocument());
+    fireEvent.click(within(runner).getByRole("button", { name: "Copy diagnostics" }));
+    await waitFor(() => expect(writeText).toHaveBeenCalled());
+    expect(String(writeText.mock.calls.at(-1)?.[0] ?? "")).toContain("selected_prompt_result: none");
   });
 
   it("runs natural prompts as live apply, records proof, enables diagnostics, and offers run-only revert", async () => {
@@ -361,7 +514,8 @@ describe("CodingCockpitShell", () => {
     expect(source).toContain("safety_block_count:");
     expect(source).toContain("timeout_count:");
     expect(source).not.toContain("edit_worked_count:");
-    expect(source).toContain("NEEDS FIX: Live apply proof missing: provider call returned no diff/preview body to apply.");
+    expect(source).toContain("NEEDS FIX: Live apply proof missing: ${noDiffClassification.reasonCode}.");
+    expect(source).toContain("no_diff_reason_code: noDiffClassification.reasonCode");
     expect(source).toContain("A 200 route without diff preview proof must not count as PASS.");
   });
 
@@ -531,6 +685,58 @@ describe("CodingCockpitShell", () => {
     expect(reversibleSuiteExceptionLabel("Failed to fetch")).toBe("NEEDS FIX");
     expect(reversibleSuiteExceptionLabel("Coder exceeded the Source Proxy sync deadline")).toBe("NEEDS FIX");
     expect(reversibleSuiteExceptionLabel("Expected copy did not appear in target file.")).toBe("FAIL");
+  });
+
+  it("retries transient long-running task fetch failures before marking a coder prompt needs-fix", async () => {
+    let longRunningPromptCalls = 0;
+    const calls = installCommonFetchMock((url, init) => {
+      const body = typeof init?.body === "string" ? JSON.parse(init.body) as Record<string, unknown> : {};
+      if (url.includes("/v1/tasks/long-running") && body.diagnostic !== true) {
+        longRunningPromptCalls += 1;
+        if (longRunningPromptCalls === 1) {
+          throw new Error("Failed to fetch");
+        }
+      }
+      if (url.includes("/v1/decisions/prompt-packet")) {
+        return jsonResponse({
+          coder_diagnostics: {
+            litellm_model: "ollama_chat/hermes4:latest",
+            provider: "ollama",
+            provider_call_made: true,
+            router_call_attempted: true,
+          },
+          model: "ollama_chat/hermes4:latest",
+          proposed_diff: liveDiff,
+          provider: "ollama",
+          provider_call_made: true,
+          status: "proposal_ready",
+        });
+      }
+      if (url.includes("/v1/verification/diff-preview")) {
+        return jsonResponse({
+          changed_files: [{ path: targetFile }],
+          git_apply_check_ok: true,
+          status: "preview_ready",
+        });
+      }
+      if (url.includes("/v1/actions/execute-approved")) {
+        return jsonResponse({
+          changed_files: [{ path: targetFile }],
+          disk_changed_files: [targetFile],
+          status: "applied_needs_verification",
+        });
+      }
+      return null;
+    });
+
+    render(<CodingCockpitShell />);
+    const runButton = screen.getByRole("button", { name: "Run messy Coder benchmark" });
+    await waitFor(() => expect(runButton).toBeEnabled());
+    fireEvent.click(runButton);
+
+    await waitFor(() => expect(longRunningPromptCalls).toBeGreaterThanOrEqual(2));
+    expect(calls.some((call) => call.url.includes("/v1/decisions/prompt-packet"))).toBe(true);
+    expect(calls.some((call) => call.body.includes("/v1/tasks/long-running(retry 1):fetch_error"))).toBe(true);
   });
 
   it("stops the suite on mid-run Next HTML 404 instead of cascading fake prompt failures", async () => {
@@ -994,6 +1200,99 @@ describe("CodingCockpitShell", () => {
     expect(screen.queryByText("1/10: make a new isolated test")).not.toBeInTheDocument();
   });
 
+  it("classifies clean cloud plus active null as stale local trial state instead of cleanup blocker", () => {
+    const baseState = {
+      completed: 0,
+      count: 10,
+      currentPrompt: "",
+      currentPromptElapsedMs: null,
+      currentStep: "Idle",
+      currentStepStartedAt: null,
+      alreadySatisfied: 0,
+      expectedNoEdit: 0,
+      fail: 0,
+      interruptionReason: null,
+      interruptionSource: "none",
+      pass: 0,
+      provider: "Local / Ollama",
+      model: "qwen2.5-coder:7b",
+      results: [],
+      reverted: 0,
+      safetyBlock: 0,
+      status: "idle",
+      stopped: false,
+      suiteFinishedAt: null,
+      suiteId: "",
+      suiteStartedAt: null,
+      timeout: 0,
+      baselineCheckedAt: null,
+      baselineAgentLabFiles: [],
+      baselineDirtyAgentLabFiles: [],
+      baselineUnrevertedReceipts: [],
+      baselineCleanForFreshSuite: true,
+    } as Parameters<typeof shouldClearStaleLocalTrialStateAfterCloudClear>[0]["reversibleSuiteState"];
+    const receipt = {
+      allowedFiles: ["src/app/agent-lab/page.tsx"],
+      appliedAt: "2026-06-07T18:00:00.000Z",
+      changedFiles: ["src/app/agent-lab/page.tsx"],
+      diff: "diff --git a/src/app/agent-lab/page.tsx b/src/app/agent-lab/page.tsx\n",
+      id: "trial-suite:coder-001:task-one",
+      model: "qwen2.5-coder:7b",
+      prompt: "make a new isolated test area",
+      provider: "Local / Ollama",
+      providerModelSource: "runtime",
+      providerModelStatus: "available",
+      hermesUsedForThisRun: false,
+      revertedAt: null,
+      reversalModel: null,
+      reversalProvider: null,
+      reversalProviderModelSource: null,
+      reverseDiff: "diff --git a/src/app/agent-lab/page.tsx b/src/app/agent-lab/page.tsx\n",
+      target: "src/app/agent-lab/page.tsx",
+      taskId: "task-one",
+    };
+
+    expect(
+      shouldClearStaleLocalTrialStateAfterCloudClear({
+        agentLabBaselineClean: true,
+        agentLabBaselineLoadState: "ready",
+        appliedRunReceipts: [receipt],
+        backendRunSync: { runId: "", status: "synced" },
+        localRunnerActive: false,
+        reversibleSuiteState: {
+          ...baseState,
+          results: [{ prompt: { id: "coder-001" } }],
+          status: "failed",
+          suiteId: "suite-cleared-on-other-device",
+        } as typeof baseState,
+      }),
+    ).toBe(true);
+    expect(
+      shouldClearStaleLocalTrialStateAfterCloudClear({
+        agentLabBaselineClean: false,
+        agentLabBaselineLoadState: "ready",
+        appliedRunReceipts: [receipt],
+        backendRunSync: { runId: "", status: "synced" },
+        localRunnerActive: false,
+        reversibleSuiteState: baseState,
+      }),
+    ).toBe(false);
+    expect(
+      shouldClearStaleLocalTrialStateAfterCloudClear({
+        agentLabBaselineClean: true,
+        agentLabBaselineLoadState: "ready",
+        appliedRunReceipts: [receipt],
+        backendRunSync: { runId: "", status: "synced" },
+        localRunnerActive: true,
+        reversibleSuiteState: {
+          ...baseState,
+          status: "running",
+          suiteId: "suite-active-local-runner",
+        },
+      }),
+    ).toBe(false);
+  });
+
   it("surfaces backend failure instead of a stuck Calling model spinner", () => {
     const shellSrc = readFileSync("src/components/coding/CodingCockpitShell.tsx", "utf8");
     expect(shellSrc).toContain("function previewLoadingPhaseLabel(");
@@ -1059,6 +1358,7 @@ describe("CodingCockpitShell", () => {
     expect(shellSrc).toContain("function durableRunBetweenPromptsStale(");
     expect(shellSrc).toContain("markDurableCodingRunBetweenPromptsStale");
     expect(shellSrc).toContain("between_prompts_runner_lost");
+    expect(shellSrc).toContain("if (reversibleSuiteRunnerLeaseActive(run.run_id, nowMs)) {\n    return false;\n  }");
     expect(shellSrc).toContain("const autoResumeSuiteIdRef = useRef");
     expect(shellSrc).toContain("Auto-resuming suite");
     expect(shellSrc).toContain("void handleRunReversibleSuite(reversibleSuiteState, { forceResume: true });");
@@ -1092,6 +1392,19 @@ describe("CodingCockpitShell", () => {
     expect(backendClear).toBeGreaterThan(clearVersion);
     expect(shellSrc).toContain("fetchWithTimeout(\n      `/v1/coding/runs/${encodeURIComponent(runId)}`");
     expect(shellSrc).toContain("Backend clear timed out or failed");
+  });
+
+  it("drains agent-lab cleanup after reverse so one button click reaches clean baseline", () => {
+    const shellSrc = readFileSync("src/components/coding/CodingCockpitShell.tsx", "utf8");
+    expect(shellSrc).toContain("TRIAL_CLEANUP_DRAIN_MAX_PASSES = 3");
+    expect(shellSrc).toContain("async function drainAgentLabCleanupToClean");
+    expect(shellSrc).toContain("forceAgentLabSweep?: boolean");
+    expect(shellSrc).toContain("const shouldSweepAgentLab = options.forceAgentLabSweep || reversibleTrialCategory === \"Coder\";");
+    expect(shellSrc).toContain("waitForV1RoutesAfterHmr({\n        delayMs: 500");
+    expect(shellSrc).toContain("Reverse completed; cleanup pass ${pass}/${TRIAL_CLEANUP_DRAIN_MAX_PASSES}");
+    expect(shellSrc).toContain("await drainAgentLabCleanupToClean(note ?? \"\", { forceAgentLabSweep: true });");
+    expect(shellSrc).toContain("await drainAgentLabCleanupToClean(note, { forceAgentLabSweep: true });");
+    expect(shellSrc).toContain("Agent-lab cleanup finished. Workspace is clean for a fresh Coder benchmark.");
   });
 
   it("disables run while background cleanup/reverse is active", async () => {

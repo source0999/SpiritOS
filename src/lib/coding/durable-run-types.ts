@@ -24,10 +24,34 @@ export type DurableCodingRunStepInstrumentation = {
   execute_approved_http_status?: string | null;
   execute_approved_requested_at?: string | null;
   last_progress_reason_code?: string | null;
+  model_response_classification?: string | null;
+  model_response_parse_decision?: string | null;
+  model_response_raw_length?: number | null;
+  model_response_safe_excerpt?: string | null;
+  no_diff_reason_code?: string | null;
   prompt_packet_completed_at?: string | null;
   prompt_packet_requested_at?: string | null;
   result_finalized_at?: string | null;
   reverse_receipt_created_at?: string | null;
+};
+
+export type DurableCodingRunProvenance = {
+  generation_source: string;
+  diff_source: string;
+  model_output_classification: string;
+  raw_response_length: number;
+  raw_response_excerpt_safe: string;
+  scaffold_used: boolean;
+  scaffold_kind: string;
+  fallback_used: boolean;
+  fallback_kind: string;
+  parser_repair_used: boolean;
+  bounded_create_used: boolean;
+  known_scaffold_used: boolean;
+  generic_scaffold_used: boolean;
+  model_raw_diff_used: boolean;
+  generated_diff_by_backend: boolean;
+  trial_result_trust_status: string;
 };
 
 export type DurableCodingRunOwnerKind =
@@ -89,6 +113,7 @@ export type DurableCodingRunRow = {
   reverse_diff?: string;
   result_label: string;
   error_summary: string;
+  provenance?: DurableCodingRunProvenance;
   step_instrumentation?: DurableCodingRunStepInstrumentation;
   owner_kind?: DurableCodingRunOwnerKind | null;
   write_source?: DurableCodingRunWriteSource | null;

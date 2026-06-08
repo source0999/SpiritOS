@@ -65,6 +65,14 @@ import {
 import { copyTextToClipboard } from "@/lib/clipboard";
 import { taskRequestsPreviewOnly } from "@/lib/coding/preview-only-request";
 import {
+  buildDummyCoder10RunnerPacket,
+  dummyCoder10Prompts,
+  formatDummyCoder10ForbiddenSummary,
+  type DummyCoder10Prompt,
+} from "@/lib/coding/dummy-coder-10-prompts";
+import { gradeDummyCoder10Result, type DummyCoder10GradingResult } from "@/lib/coding/dummy-coder-10-grader";
+import { buildExistingDummyProjectSummary } from "@/lib/coding/dummy-project-summary";
+import {
   mapVisibleResultBadge,
   type VisibleResultBadge,
   type VisibleResultTone,
@@ -78,9 +86,15 @@ import {
   type ReversibleTrialCount,
   type ReversibleTrialPrompt,
 } from "@/lib/coding/reversible-trial-prompts";
-import type { DurableCodingRun, DurableCodingRunRow, DurableCodingRunStatus } from "@/lib/coding/durable-run-types";
+import type {
+  DurableCodingRun,
+  DurableCodingRunProvenance,
+  DurableCodingRunRow,
+  DurableCodingRunStatus,
+} from "@/lib/coding/durable-run-types";
 import {
   buildTrialPromptQuickLinks,
+  classifyNoDiffModelResponse,
   classifyCurrentSuiteAgentLabFiles,
   classifyEditReversibleAlreadySatisfied,
   downgradePassWithoutReversalProof,
@@ -160,6 +174,7 @@ type PreviewState = {
 };
 
 type TrialRunState = "idle" | "running" | "complete";
+type TrialRunnerMode = "individual" | "benchmark";
 type ReversibleSuiteStatus = "idle" | "running" | "stopping" | "done" | "failed";
 type ReversibleSuitePromptResult = {
   allowed_files: string[];
@@ -176,6 +191,7 @@ type ReversibleSuitePromptResult = {
   prompt: ReversibleTrialPrompt;
   provider: string;
   provider_call_made: boolean;
+  provenance: DurableCodingRunProvenance;
   preview_changed_files: string[];
   reverse_diff: string;
   reverse_status_text: string;
@@ -230,6 +246,27 @@ type ReversibleSuiteAbort = {
   source: Extract<ReversibleSuiteState["interruptionSource"], "route_failed" | "provider_timeout">;
   step: string;
 };
+type DummyCoder10RunState = {
+  status: "idle" | "starting" | "request_sent" | "running" | "complete" | "blocked" | "applied" | "cleared" | "error";
+  selectedPromptId: string | null;
+  taskId: string | null;
+  message: string;
+  errorText: string | null;
+  rawBackendStatus: string | null;
+  changedFiles: string[];
+  checksRun: string[];
+  verificationStatus: string | null;
+  generationSource: string | null;
+  diffSource: string | null;
+  modelOutputClassification: string | null;
+  trialResultTrustStatus: string | null;
+  scaffoldUsed: boolean | null;
+  fallbackUsed: boolean | null;
+  generatedDiffByBackend: boolean | null;
+  recommendedNextAction: string | null;
+  grader: DummyCoder10GradingResult | null;
+  packet: unknown | null;
+};
 
 function buildRouteUnavailableSuitePromptResult(
   prompt: ReversibleTrialPrompt,
@@ -253,6 +290,7 @@ function buildRouteUnavailableSuitePromptResult(
     prompt,
     provider: providerLabel,
     provider_call_made: false,
+    provenance: normalizeTrialResultProvenance(undefined),
     preview_changed_files: [],
     reverse_diff: "",
     reverse_status_text: "No applied trial edits to reverse.",
@@ -397,6 +435,9 @@ const TRIAL_EXECUTE_APPROVED_STALE_MS = TRIAL_POST_MODEL_STAGE_TIMEOUT_MS + 45_0
 const TRIAL_BETWEEN_PROMPTS_STALE_MS = 45_000;
 const TRIAL_DURABLE_ROW_SYNC_TIMEOUT_MS = 20_000;
 const TRIAL_LONG_RUNNING_TIMEOUT_MS = 30_000;
+const TRIAL_LONG_RUNNING_MAX_ATTEMPTS = 3;
+const TRIAL_CLEANUP_DRAIN_MAX_PASSES = 3;
+const TRIAL_CLEANUP_ROUTE_HEALTH_ATTEMPTS = 8;
 const PROTECTED_FORBIDDEN_FILES = [
   ".env*",
   "source_proxy/data/**",
@@ -576,6 +617,34 @@ type BackendRunSyncState = {
   lastSyncedAt: string | null;
   message: string;
 };
+
+export function shouldClearStaleLocalTrialStateAfterCloudClear({
+  agentLabBaselineClean,
+  agentLabBaselineLoadState,
+  appliedRunReceipts,
+  backendRunSync,
+  localRunnerActive,
+  reversibleSuiteState,
+}: {
+  agentLabBaselineClean: boolean | null | undefined;
+  agentLabBaselineLoadState: "idle" | "loading" | "ready" | "error";
+  appliedRunReceipts: AppliedRunReceipt[];
+  backendRunSync: Pick<BackendRunSyncState, "runId" | "status">;
+  localRunnerActive: boolean;
+  reversibleSuiteState: ReversibleSuiteState;
+}): boolean {
+  if (localRunnerActive) return false;
+  if (backendRunSync.status !== "synced" || backendRunSync.runId) return false;
+  if (agentLabBaselineLoadState !== "ready" || !agentLabBaselineClean) return false;
+  const hasStaleLocalSuite =
+    reversibleSuiteState.status !== "idle" ||
+    reversibleSuiteState.results.length > 0 ||
+    Boolean(reversibleSuiteState.suiteId);
+  const hasStaleTrialSuiteReceipts = appliedRunReceipts.some(
+    (receipt) => receipt.id.startsWith("trial-suite:") && !receipt.revertedAt && !receipt.staleResolvedAt,
+  );
+  return hasStaleLocalSuite || hasStaleTrialSuiteReceipts;
+}
 
 function storedReversibleSuiteSnapshot(): string | null {
   if (typeof window === "undefined") return null;
@@ -895,14 +964,7 @@ function durableRunBetweenPromptsStale(run: DurableCodingRun | null | undefined,
   if (!durableRunHasStaleBetweenPromptsGap(run, nowMs, TRIAL_BETWEEN_PROMPTS_STALE_MS)) return false;
   if (!run) return false;
   if (reversibleSuiteRunnerLeaseActive(run.run_id, nowMs)) {
-    const summary = (run.final_summary || "").toLowerCase();
-    return (
-      summary.includes("ready for review") ||
-      summary.includes("ready to review") ||
-      summary.includes("trial edit applied") ||
-      summary.includes("prompt passed") ||
-      summary.includes("continuing")
-    );
+    return false;
   }
   return true;
 }
@@ -1454,6 +1516,7 @@ function reversibleResultFromDurableRow(
     prompt,
     provider: "",
     provider_call_made: row.provider_call_made,
+    provenance: normalizeTrialResultProvenance(row.provenance),
     preview_changed_files: row.preview_changed_files,
     reverse_diff: row.reverse_diff || "",
     reverse_status_text:
@@ -1485,6 +1548,7 @@ function durableRowFromReversibleResult(result: ReversibleSuitePromptResult, sta
     started_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     provider_call_made: result.provider_call_made,
+    provenance: normalizeTrialResultProvenance(result.provenance),
     model_called_for_generation: result.model_called_for_generation || "none",
     endpoint_statuses: result.endpoint_statuses,
     reason_code: extractReasonCodeFromSummary(result.error_summary) || result.failure_reason || "",
@@ -1500,6 +1564,51 @@ function durableRowFromReversibleResult(result: ReversibleSuitePromptResult, sta
     result_label: result.visible_result_label,
     error_summary: result.error_summary || result.failure_reason,
   };
+}
+
+const EMPTY_TRIAL_RESULT_PROVENANCE: DurableCodingRunProvenance = {
+  generation_source: "unknown",
+  diff_source: "none",
+  model_output_classification: "not_classified",
+  raw_response_length: 0,
+  raw_response_excerpt_safe: "",
+  scaffold_used: false,
+  scaffold_kind: "",
+  fallback_used: false,
+  fallback_kind: "",
+  parser_repair_used: false,
+  bounded_create_used: false,
+  known_scaffold_used: false,
+  generic_scaffold_used: false,
+  model_raw_diff_used: false,
+  generated_diff_by_backend: false,
+  trial_result_trust_status: "missing_provenance",
+};
+
+function normalizeTrialResultProvenance(input: Partial<DurableCodingRunProvenance> | null | undefined): DurableCodingRunProvenance {
+  const merged = { ...EMPTY_TRIAL_RESULT_PROVENANCE, ...(input ?? {}) };
+  return {
+    ...merged,
+    raw_response_length: Number(merged.raw_response_length) || 0,
+    scaffold_used: Boolean(merged.scaffold_used),
+    fallback_used: Boolean(merged.fallback_used),
+    parser_repair_used: Boolean(merged.parser_repair_used),
+    bounded_create_used: Boolean(merged.bounded_create_used),
+    known_scaffold_used: Boolean(merged.known_scaffold_used),
+    generic_scaffold_used: Boolean(merged.generic_scaffold_used),
+    model_raw_diff_used: Boolean(merged.model_raw_diff_used),
+    generated_diff_by_backend: Boolean(merged.generated_diff_by_backend),
+  };
+}
+
+function trialProvenanceFromPayload(payload: unknown): DurableCodingRunProvenance {
+  const record = payload && typeof payload === "object" && !Array.isArray(payload)
+    ? (payload as Record<string, unknown>)
+    : {};
+  const diagnostics = record.coder_diagnostics && typeof record.coder_diagnostics === "object" && !Array.isArray(record.coder_diagnostics)
+    ? (record.coder_diagnostics as Partial<DurableCodingRunProvenance>)
+    : {};
+  return normalizeTrialResultProvenance(diagnostics);
 }
 
 function durableRunStatusForResult(result: ReversibleSuitePromptResult): DurableCodingRunStatus {
@@ -2929,12 +3038,36 @@ export function CodingCockpitShell() {
   const [trialCopyStatus, setTrialCopyStatus] = useState("");
   const [trialRunState, setTrialRunState] = useState<TrialRunState>("idle");
   const [reversibleTrialCategory, setReversibleTrialCategory] = useState<ReversibleTrialCategory>("Coder");
+  const [trialRunnerMode, setTrialRunnerMode] = useState<TrialRunnerMode>("individual");
   const [reversiblePromptsCopyStatus, setReversiblePromptsCopyStatus] = useState("");
   const [reversibleSuiteCopyStatus, setReversibleSuiteCopyStatus] = useState("");
   const [reversibleSuiteState, setReversibleSuiteState] = useState<ReversibleSuiteState>(
     () => defaultReversibleSuiteState(),
   );
   const [reversibleTrialCount, setReversibleTrialCount] = useState<ReversibleTrialCount>(10);
+  const [selectedDummyCoderPromptId, setSelectedDummyCoderPromptId] = useState(dummyCoder10Prompts[0].id);
+  const [dummyCoderRunCopyStatus, setDummyCoderRunCopyStatus] = useState("");
+  const [dummyCoderRunState, setDummyCoderRunState] = useState<DummyCoder10RunState>({
+    changedFiles: [],
+    checksRun: [],
+    diffSource: null,
+    fallbackUsed: null,
+    generatedDiffByBackend: null,
+    generationSource: null,
+    grader: null,
+    message: "No LumaCart prompt has been run in this panel.",
+    errorText: null,
+    modelOutputClassification: null,
+    packet: null,
+    rawBackendStatus: null,
+    recommendedNextAction: null,
+    scaffoldUsed: null,
+    selectedPromptId: null,
+    taskId: null,
+    status: "idle",
+    trialResultTrustStatus: null,
+    verificationStatus: null,
+  });
   const [composerTiming, setComposerTiming] = useState<ComposerTimingState>({
     diffPreviewMs: null,
     promptPacketMs: null,
@@ -3175,6 +3308,37 @@ export function CodingCockpitShell() {
 
   useEffect(() => {
     if (process.env.NODE_ENV === "test") return;
+    if (
+      !shouldClearStaleLocalTrialStateAfterCloudClear({
+        agentLabBaselineClean: agentLabBaselineSnapshot?.baseline_clean_for_fresh_suite,
+        agentLabBaselineLoadState,
+        appliedRunReceipts: appliedRunReceiptsRef.current,
+        backendRunSync,
+        localRunnerActive: localReversibleSuiteRunningRef.current,
+        reversibleSuiteState,
+      })
+    ) {
+      return;
+    }
+    reversibleSuiteClearVersionRef.current += 1;
+    clearStoredReversibleSuiteState();
+    updateAppliedRunReceipts((receipts) => receipts.filter((receipt) => !receipt.id.startsWith("trial-suite:")));
+    setReversibleSuiteState(defaultReversibleSuiteState());
+    setReversibleSuiteCopyStatus(
+      "Cleared stale local trial state because the cloud run is clear and Agent Lab baseline is clean.",
+    );
+  }, [
+    agentLabBaselineLoadState,
+    agentLabBaselineSnapshot?.baseline_clean_for_fresh_suite,
+    backendRunSync.runId,
+    backendRunSync.status,
+    reversibleSuiteState.results.length,
+    reversibleSuiteState.status,
+    reversibleSuiteState.suiteId,
+  ]);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === "test") return;
     if (reversibleSuiteState.status !== "done" && reversibleSuiteState.status !== "failed") {
       return;
     }
@@ -3230,7 +3394,7 @@ export function CodingCockpitShell() {
     reversibleSuiteClearVersionRef.current += 1;
     clearStoredReversibleSuiteState();
     updateAppliedRunReceipts((receipts) =>
-      receipts.filter((receipt) => !receipt.id.startsWith("trial-suite:")),
+      receipts.filter((receipt) => !receipt.id.startsWith("trial-suite:") && !receipt.id.startsWith("selected-prompt:")),
     );
     setReversibleSuiteState(defaultReversibleSuiteState());
     setBackendRunSync({
@@ -3240,6 +3404,7 @@ export function CodingCockpitShell() {
       status: "synced",
     });
     setReversibleSuiteCopyStatus("Cleared trial suite results. Run again when ready.");
+    clearDummyCoder10RunState();
     if (syncBackend && runId) {
       const clearedRun = await markDurableCodingRunCleared(runId);
       if (!clearedRun) {
@@ -3264,12 +3429,99 @@ export function CodingCockpitShell() {
     setReversibleSuiteCopyStatus(copyStatus);
   }
 
+  async function drainAgentLabCleanupToClean(
+    initialNote = "",
+    options: { forceAgentLabSweep?: boolean } = {},
+  ): Promise<string> {
+    let latestNote = initialNote;
+    const shouldSweepAgentLab = options.forceAgentLabSweep || reversibleTrialCategory === "Coder";
+    for (let pass = 1; pass <= TRIAL_CLEANUP_DRAIN_MAX_PASSES; pass += 1) {
+      const routeReady = await waitForV1RoutesAfterHmr({
+        delayMs: 500,
+        maxAttempts: TRIAL_CLEANUP_ROUTE_HEALTH_ATTEMPTS,
+      });
+      if (!routeReady.ok) {
+        const message =
+          "Reverse completed, waiting for Next route rebuild before confirming Agent Lab cleanup.";
+        setReversibleSuiteCopyStatus(message);
+        latestNote = message;
+      }
+
+      const refreshed = await refreshAgentLabBaseline();
+      if (refreshed?.baseline_clean_for_fresh_suite) {
+        const cleanState = defaultReversibleSuiteState();
+        setReversibleSuiteState(cleanState);
+        clearStoredReversibleSuiteState();
+        const cleanNote =
+          latestNote && latestNote.toLowerCase().includes("clean")
+            ? latestNote
+            : "Agent-lab cleanup finished. Workspace is clean for a fresh Coder benchmark.";
+        setReversibleSuiteCopyStatus(cleanNote);
+        return cleanNote;
+      }
+
+      if (!shouldSweepAgentLab) {
+        break;
+      }
+
+      const dirtyCount = refreshed?.baseline_dirty_agent_lab_files.length ?? 0;
+      setReversibleSuiteCopyStatus(
+        dirtyCount > 0
+          ? `Reverse completed; cleanup pass ${pass}/${TRIAL_CLEANUP_DRAIN_MAX_PASSES} removing ${dirtyCount} agent-lab leftover file(s)...`
+          : `Reverse completed; cleanup pass ${pass}/${TRIAL_CLEANUP_DRAIN_MAX_PASSES} checking Agent Lab baseline...`,
+      );
+      latestNote = await sweepAgentLabLeftoverFilesViaServer();
+    }
+
+    const finalSnapshot = await refreshAgentLabBaseline();
+    if (finalSnapshot?.baseline_clean_for_fresh_suite) {
+      const cleanState = defaultReversibleSuiteState();
+      setReversibleSuiteState(cleanState);
+      clearStoredReversibleSuiteState();
+      const cleanNote =
+        latestNote && latestNote.toLowerCase().includes("clean")
+          ? latestNote
+          : "Agent-lab cleanup finished. Workspace is clean for a fresh Coder benchmark.";
+      setReversibleSuiteCopyStatus(cleanNote);
+      return cleanNote;
+    }
+
+    const dirtyCount = finalSnapshot?.baseline_dirty_agent_lab_files.length ?? 0;
+    const dirtyNote =
+      dirtyCount > 0
+        ? `Reverse completed but Agent Lab still has ${dirtyCount} leftover file(s). Retry cleanup or inspect copied diagnostics.`
+        : "Reverse completed but Agent Lab baseline could not be confirmed. Retry cleanup after route health stabilizes.";
+    setReversibleSuiteCopyStatus(dirtyNote);
+    return dirtyNote;
+  }
+
   async function handleCleanUpTrialRunner() {
     if (backgroundCleanupActive && !isReverting) {
       setBackgroundCleanupActive(false);
     }
     if (isReverting || reversibleSuiteState.status === "running" || reversibleSuiteState.status === "stopping") {
       return;
+    }
+    const selectedPromptReceipt = selectedPromptReceiptFromState();
+    if (selectedPromptReceipt) {
+      setBackgroundCleanupActive(true);
+      setReversibleSuiteCopyStatus("Reversing selected-prompt edit and clearing Trial Runner results...");
+      try {
+        await handleRevertReceipt(selectedPromptReceipt);
+        await clearReversibleSuitePanel({ syncBackend: true });
+        clearDummyCoder10RunState("Selected-prompt edits reversed. Results cleared.");
+        setReversibleSuiteCopyStatus("Selected-prompt edits reversed. Trial Runner results cleared.");
+      } catch (error) {
+        setReversibleSuiteCopyStatus(
+          error instanceof Error ? error.message : "Selected-prompt reverse failed.",
+        );
+      } finally {
+        setBackgroundCleanupActive(false);
+      }
+      return;
+    }
+    if (dummyCoderRunState.status !== "idle" && dummyCoderRunState.status !== "cleared") {
+      clearDummyCoder10RunState();
     }
     const baseline = await refreshAgentLabBaseline();
     const resultsSnapshot = reversibleSuiteState.results;
@@ -3313,13 +3565,8 @@ export function CodingCockpitShell() {
       void reversePromise
         .then(async (note) => {
           if (categorySnapshot === "Coder") {
-            const refreshed = await refreshAgentLabBaseline();
-            if (refreshed && !refreshed.baseline_clean_for_fresh_suite) {
-              const sweepNote = await sweepAgentLabLeftoverFilesViaServer();
-              setReversibleSuiteCopyStatus(sweepNote);
-              await refreshAgentLabBaseline();
-              return;
-            }
+            await drainAgentLabCleanupToClean(note ?? "", { forceAgentLabSweep: true });
+            return;
           }
           if (note) {
             setReversibleSuiteCopyStatus(note);
@@ -3347,20 +3594,10 @@ export function CodingCockpitShell() {
           `Removing ${baseline.baseline_dirty_agent_lab_files.length} agent-lab leftover file(s)...`,
         );
         const note = await sweepAgentLabLeftoverFilesViaServer();
-        const refreshed = await refreshAgentLabBaseline();
         if (!pausedSyncedSuite) {
           await clearReversibleSuitePanel({ syncBackend: true });
         }
-        if (refreshed?.baseline_clean_for_fresh_suite) {
-          const cleanState = defaultReversibleSuiteState();
-          setReversibleSuiteState(cleanState);
-          storeReversibleSuiteState(cleanState);
-          setReversibleSuiteCopyStatus(
-            note.includes("clean") ? note : "Agent-lab leftovers removed. Workspace is clean for a fresh Coder benchmark.",
-          );
-        } else {
-          setReversibleSuiteCopyStatus(note);
-        }
+        await drainAgentLabCleanupToClean(note, { forceAgentLabSweep: true });
       } catch (error) {
         setReversibleSuiteCopyStatus(
           error instanceof Error ? error.message : "Agent-lab leftover cleanup failed.",
@@ -3777,17 +4014,12 @@ export function CodingCockpitShell() {
     () =>
       classifyCurrentSuiteAgentLabFiles({
         completedPromptChangedFiles: reversibleSuiteState.results
-          .filter(
-            (result) =>
-              result.visible_result_label === "PASS" ||
-              result.visible_result_label === "REVERTED" ||
-              result.visible_result_label === "ALREADY SATISFIED",
-          )
           .flatMap((result) => [
             result.selected_target,
             ...result.applied_changed_files,
             ...result.disk_changed_files,
             ...result.preview_changed_files,
+            ...result.target_candidates,
           ]),
         dirtyAgentLabFiles: agentLabBaselineSnapshot?.baseline_dirty_agent_lab_files ?? [],
       }),
@@ -3869,8 +4101,25 @@ export function CodingCockpitShell() {
       canRevertTrialRuns ||
       suitePendingRevertCount > 0 ||
       agentLabHasLeftovers ||
+      (dummyCoderRunState.status !== "idle" && dummyCoderRunState.status !== "cleared") ||
       (reversibleTrialCategory === "Coder" && agentLabBaselineLoadState === "error") ||
       (reversibleSuiteCanResume && Boolean(reversibleSuiteState.suiteId || backendRunSync.runId)));
+  const hasSelectedPromptResult =
+    dummyCoderRunState.status !== "idle" && dummyCoderRunState.status !== "cleared";
+  const selectedPromptTrialLabel: ReversibleSuitePromptResult["visible_result_label"] =
+    dummyCoderRunState.status === "starting" ||
+    dummyCoderRunState.status === "request_sent" ||
+    dummyCoderRunState.status === "running"
+      ? "RUNNING"
+      : dummyCoderRunState.status === "applied"
+        ? "PASS"
+        : dummyCoderRunState.status === "blocked"
+          ? "BLOCKED"
+          : dummyCoderRunState.status === "complete" && dummyCoderRunState.grader?.label === "PASS"
+            ? "PASS"
+            : dummyCoderRunState.status === "complete" && dummyCoderRunState.grader?.resultState === "PASS_NOOP"
+              ? "ALREADY SATISFIED"
+              : "NEEDS FIX";
   const showTrialCleanupPanel =
     backgroundCleanupActive ||
     isReverting ||
@@ -3892,6 +4141,10 @@ export function CodingCockpitShell() {
   const trialReversalHelpText =
     backgroundCleanupActive || isReverting
       ? "Cleanup/reverse is still running. Wait for it to finish before starting another benchmark."
+      : hasSelectedPromptResult
+        ? selectedPromptReceiptFromState()
+          ? "Selected prompt applied reversible edits. This button reverses them and clears the selected-prompt result."
+          : "No applied selected-prompt edits to reverse. This button clears the selected-prompt result."
       : agentLabHasLeftovers
         ? `Agent Lab still has ${agentLabBaselineSnapshot?.baseline_dirty_agent_lab_files.length ?? 0} leftover file(s) on disk. Reverse them before a fresh Coder benchmark.`
         : suitePendingRevertCount > 0
@@ -4790,7 +5043,7 @@ export function CodingCockpitShell() {
       ...formatAgentLabBaselineDiagnostics({
         baseline_agent_lab_files: state.baselineAgentLabFiles,
         baseline_checked_at: state.baselineCheckedAt ?? "not checked",
-        baseline_clean_for_fresh_suite: state.baselineCleanForFreshSuite ?? false,
+        baseline_clean_for_fresh_suite: state.baselineCleanForFreshSuite ?? true,
         baseline_dirty_agent_lab_files: state.baselineDirtyAgentLabFiles,
         baseline_unreverted_receipts: state.baselineUnrevertedReceipts,
       }),
@@ -4893,6 +5146,388 @@ export function CodingCockpitShell() {
       setReversiblePromptsCopyStatus("Prompts copied.");
     } catch {
       setReversiblePromptsCopyStatus("Prompts are ready but clipboard access failed.");
+    }
+  }
+
+  const selectedDummyCoderPrompt = useMemo<DummyCoder10Prompt>(
+    () => dummyCoder10Prompts.find((prompt) => prompt.id === selectedDummyCoderPromptId) ?? dummyCoder10Prompts[0],
+    [selectedDummyCoderPromptId],
+  );
+  const existingDummyProjectSummary = useMemo(
+    () => buildExistingDummyProjectSummary({ files: [] }),
+    [],
+  );
+  const selectedDummyCoderPacket = useMemo(
+    () => buildDummyCoder10RunnerPacket(selectedDummyCoderPrompt, existingDummyProjectSummary),
+    [existingDummyProjectSummary, selectedDummyCoderPrompt],
+  );
+
+  function dummyCoder10DiagnosticsText(state = dummyCoderRunState) {
+    const grader = state.grader;
+    if (state.status === "cleared" || !state.selectedPromptId) {
+      return [
+        "selected_prompt_result: none",
+        "selected_prompt_task_id: none",
+        "selected_prompt_status: cleared",
+        "message: no active selected-prompt result",
+      ].join("\n");
+    }
+    return [
+      `selected_prompt_id: ${state.selectedPromptId ?? selectedDummyCoderPrompt.id}`,
+      `selected_prompt_task_id: ${state.taskId ?? "none"}`,
+      `selected_prompt_number: ${selectedDummyCoderPrompt.number}`,
+      `selected_prompt_title: ${selectedDummyCoderPrompt.title}`,
+      `submitted_prompt: ${selectedDummyCoderPrompt.submittedPrompt}`,
+      `fixture_root: ${selectedDummyCoderPrompt.fixtureRoot}`,
+      `allowed_write_root: ${selectedDummyCoderPrompt.allowedWriteRoot}`,
+      `primary_expected_targets: ${formatList(selectedDummyCoderPrompt.primaryExpectedTargets, "none")}`,
+      `expected_result_state: ${selectedDummyCoderPrompt.expectedResultState}`,
+      `run_status: ${state.status}`,
+      `error_text: ${state.errorText ?? "none"}`,
+      `raw_backend_status: ${state.rawBackendStatus ?? "none"}`,
+      `changed_files: ${formatList(state.changedFiles, "none")}`,
+      `checks_run: ${formatList(state.checksRun, "none")}`,
+      `verification_status: ${state.verificationStatus ?? "none"}`,
+      `generation_source: ${state.generationSource ?? "none"}`,
+      `diff_source: ${state.diffSource ?? "none"}`,
+      `model_output_classification: ${state.modelOutputClassification ?? "none"}`,
+      `trial_result_trust_status: ${state.trialResultTrustStatus ?? "none"}`,
+      `scaffold_used: ${String(state.scaffoldUsed ?? false)}`,
+      `fallback_used: ${String(state.fallbackUsed ?? false)}`,
+      `generated_diff_by_backend: ${String(state.generatedDiffByBackend ?? false)}`,
+      `grader_result_state: ${grader?.resultState ?? "not graded"}`,
+      `grader_label: ${grader?.label ?? "not graded"}`,
+      `grader_score: ${grader?.score ?? "not graded"}`,
+      `grader_reason: ${grader?.reason ?? "not graded"}`,
+      `critical_failures: ${formatList(grader?.criticalFailures ?? [], "none")}`,
+      `file_scope_status: ${grader?.fileScope.file_scope_status ?? "not graded"}`,
+      `provenance_status: ${grader?.provenance.provenance_status ?? "not graded"}`,
+      `recommended_next_action: ${state.recommendedNextAction ?? grader?.recommendedNextAction ?? "none"}`,
+      `existing_dummy_project_summary: ${existingDummyProjectSummary}`,
+    ].join("\n");
+  }
+
+  async function copyDummyCoder10Diagnostics() {
+    const copied = await copyTextToClipboard(dummyCoder10DiagnosticsText());
+    setDummyCoderRunCopyStatus(copied.ok ? "Selected prompt diagnostics copied." : "Diagnostics ready; clipboard unavailable.");
+  }
+
+  function clearDummyCoder10RunState(message = "No applied selected-prompt edits to reverse. Results cleared.") {
+    setDummyCoderRunCopyStatus("");
+    setDummyCoderRunState({
+      changedFiles: [],
+      checksRun: [],
+      diffSource: null,
+      errorText: null,
+      fallbackUsed: null,
+      generatedDiffByBackend: null,
+      generationSource: null,
+      grader: null,
+      message,
+      modelOutputClassification: null,
+      packet: null,
+      rawBackendStatus: null,
+      recommendedNextAction: null,
+      scaffoldUsed: null,
+      selectedPromptId: null,
+      taskId: null,
+      status: "cleared",
+      trialResultTrustStatus: null,
+      verificationStatus: null,
+    });
+  }
+
+  function selectedPromptReceiptFromState(state = dummyCoderRunState) {
+    if (!state.taskId) return null;
+    return appliedRunReceiptsRef.current.find(
+      (receipt) => receipt.id.startsWith("selected-prompt:") && receipt.taskId === state.taskId && !receipt.revertedAt,
+    ) ?? null;
+  }
+
+  async function handleRunDummyCoder10Prompt() {
+    const prompt = selectedDummyCoderPrompt;
+    const packet = buildDummyCoder10RunnerPacket(prompt, existingDummyProjectSummary);
+    setDummyCoderRunCopyStatus("");
+    setDummyCoderRunState({
+      changedFiles: [],
+      checksRun: [],
+      diffSource: null,
+      errorText: null,
+      fallbackUsed: null,
+      generatedDiffByBackend: null,
+      generationSource: null,
+      grader: null,
+      message: "Starting selected prompt...",
+      modelOutputClassification: null,
+      packet,
+      rawBackendStatus: null,
+      recommendedNextAction: null,
+      scaffoldUsed: null,
+      selectedPromptId: prompt.id,
+      taskId: null,
+      status: "starting",
+      trialResultTrustStatus: null,
+      verificationStatus: null,
+    });
+
+    try {
+      const taskResponse = await fetchWithTimeout("/v1/tasks/long-running", {
+        body: JSON.stringify({ description: prompt.submittedPrompt }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      }, TRIAL_POST_MODEL_STAGE_TIMEOUT_MS);
+      const taskPayload = await readJson(taskResponse);
+      if (!taskResponse.ok) {
+        throw new Error(messageFromPayload(taskPayload, taskResponse.status));
+      }
+      const taskId = taskIdFromPayload(taskPayload);
+      if (!taskId) {
+        throw new Error("Long-running task create did not return a task id.");
+      }
+      setDummyCoderRunState((current) => ({
+        ...current,
+        message: `Running task ${taskId}`,
+        rawBackendStatus: "task_created",
+        status: "running",
+        taskId,
+      }));
+
+      setDummyCoderRunState((current) => ({
+        ...current,
+        message: "Request sent",
+        rawBackendStatus: "request_sent",
+        status: "request_sent",
+      }));
+      const response = await fetchWithTimeout("/v1/decisions/prompt-packet", {
+        body: JSON.stringify({
+          active_task_id: taskId,
+          allowed_files: [prompt.allowedWriteRoot],
+          dummy_coder_10_packet: packet,
+          expected_result_state: prompt.expectedResultState,
+          forbidden_files: prompt.forbiddenFiles,
+          primary_expected_targets: prompt.primaryExpectedTargets,
+          project_contract: prompt.projectContract,
+          prompt: prompt.submittedPrompt,
+          selected_target: prompt.primaryExpectedTargets[0] ?? prompt.fixtureRoot,
+          selected_prompt_id: prompt.id,
+          target_file: prompt.primaryExpectedTargets[0] ?? prompt.fixtureRoot,
+          task: prompt.submittedPrompt,
+          trial_mode: "live_apply",
+          trial_mode_contract: packet.trial_mode_contract,
+          trial_prompt_id: prompt.id,
+          wants_implementation: true,
+        }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      }, TRIAL_PROMPT_PACKET_TIMEOUT_MS);
+      setDummyCoderRunState((current) => ({
+        ...current,
+        message: `Running task ${taskId}`,
+        rawBackendStatus: `/v1/decisions/prompt-packet:${response.status}`,
+        status: "running",
+      }));
+      const proposalRead = await readApiResponse(response, "/v1/decisions/prompt-packet");
+      const payload = proposalRead.payload;
+      const record = asRecord(payload);
+      const coderDiagnostics = asRecord(record.coder_diagnostics);
+      const changedFiles = changedFilesFromPayload(payload);
+      const proposedDiff = stringValue(record.proposed_diff) ?? stringValue(record.proposedDiff) ?? "";
+      const selectedTarget =
+        stringValue(record.target) ??
+        prompt.primaryExpectedTargets[0] ??
+        prompt.fixtureRoot;
+      const checksRun = [
+        ...new Set(
+          [
+            ...arrayOfStrings(record.checks_run),
+            ...arrayOfStrings(record.checksRun),
+            ...arrayOfStrings(coderDiagnostics.checks_run),
+          ].filter(Boolean),
+        ),
+      ];
+      const rawBackendStatus = stringValue(record.status) ?? `http_${response.status}`;
+      const reasonCode = stringValue(record.reason_code) ?? stringValue(record.reasonCode);
+      const scaffoldUsed = booleanValue(record.scaffold_used) ?? booleanValue(coderDiagnostics.scaffold_used);
+      const fallbackUsed = booleanValue(record.fallback_used) ?? booleanValue(coderDiagnostics.fallback_used);
+      const generatedDiffByBackend =
+        booleanValue(record.generated_diff_by_backend) ?? booleanValue(coderDiagnostics.generated_diff_by_backend);
+      const generationSource =
+        stringValue(record.generation_source) ?? stringValue(coderDiagnostics.generation_source) ?? null;
+      const diffSource = stringValue(record.diff_source) ?? stringValue(coderDiagnostics.diff_source) ?? null;
+      const modelOutputClassification =
+        stringValue(record.model_output_classification) ?? stringValue(coderDiagnostics.model_output_classification) ?? null;
+      const trialResultTrustStatus =
+        stringValue(record.trial_result_trust_status) ?? stringValue(coderDiagnostics.trial_result_trust_status) ?? null;
+      const blockedReason =
+        prompt.allowBlockedPass && /protect|secret|env|source_proxy|blocked/i.test(`${reasonCode} ${rawBackendStatus}`)
+          ? reasonCode ?? rawBackendStatus
+          : null;
+      const noOpEvidence =
+        prompt.allowNoopPass && /category|already|no[_ -]?changes|satisfied/i.test(`${reasonCode} ${rawBackendStatus}`)
+          ? stringValue(record.simple_reason) ?? stringValue(record.reason) ?? rawBackendStatus
+          : null;
+      let appliedChangedFiles = changedFiles;
+      let verificationStatus = stringValue(record.verification_status) ?? stringValue(record.checks_result) ?? null;
+      let applyMessage: string | null = null;
+      if (response.ok && proposedDiff.trim() && selectedTarget) {
+        setDummyCoderRunState((current) => ({
+          ...current,
+          message: `Running task ${taskId}: previewing diff`,
+          rawBackendStatus,
+          status: "running",
+        }));
+        const taskSpec = asRecord(record.task_spec);
+        const diffResponse = await fetchWithTimeout("/v1/verification/diff-preview", {
+          body: JSON.stringify({
+            route_type: "source-proxy-default",
+            task_spec: Object.keys(taskSpec).length > 0
+              ? taskSpec
+              : {
+                  allowed_files: [prompt.allowedWriteRoot],
+                  forbidden_files: prompt.forbiddenFiles,
+                  risk_tier: "low",
+                  source: "dummy-coder-10-selected-prompt",
+                  target: selectedTarget,
+                  task_type: "create_or_modify_files",
+                  verification: ["git diff --check"],
+                },
+            task_text: prompt.submittedPrompt,
+            unified_diff: proposedDiff,
+          }),
+          headers: { "content-type": "application/json" },
+          method: "POST",
+        }, TRIAL_POST_MODEL_STAGE_TIMEOUT_MS);
+        const diffPayload = await readJson(diffResponse);
+        if (!diffResponse.ok) {
+          throw new Error(messageFromPayload(diffPayload, diffResponse.status));
+        }
+        const diffStatus = statusFromPayload(diffPayload);
+        const previewChangedFiles = changedFilesFromPayload(diffPayload);
+        if (diffStatus === "blocked") {
+          throw new Error(messageFromPayload(diffPayload, diffResponse.status));
+        }
+        setDummyCoderRunState((current) => ({
+          ...current,
+          changedFiles: previewChangedFiles,
+          message: `Running task ${taskId}: applying diff`,
+          rawBackendStatus,
+          status: "running",
+          verificationStatus: "diff preview passed",
+        }));
+        const applyResponse = await fetchWithTimeout("/v1/actions/execute-approved", {
+          body: JSON.stringify({
+            action: `Run selected dummy Coder prompt ${prompt.id}`,
+            approved: true,
+            approved_diff: proposedDiff,
+            allowed_files: [prompt.allowedWriteRoot],
+            target: selectedTarget,
+            task_id: taskId,
+          }),
+          headers: { "content-type": "application/json" },
+          method: "POST",
+        }, TRIAL_POST_MODEL_STAGE_TIMEOUT_MS);
+        const applyPayload = await readJson(applyResponse);
+        if (!applyResponse.ok) {
+          throw new Error(messageFromPayload(applyPayload, applyResponse.status));
+        }
+        appliedChangedFiles = changedFilesFromApplyPayloadOrDiff(applyPayload, proposedDiff);
+        applyMessage = messageFromPayload(applyPayload, applyResponse.status);
+        verificationStatus = applyMessage;
+        const appliedAt = new Date().toISOString();
+        const receipt: AppliedRunReceipt = {
+          allowedFiles: [prompt.allowedWriteRoot],
+          appliedAt,
+          changedFiles: appliedChangedFiles,
+          diff: proposedDiff,
+          hermesUsedForThisRun: null,
+          id: `selected-prompt:${prompt.id}:${taskId}`,
+          model: stringValue(record.model) ?? selectedProviderTruth.modelLabel,
+          prompt: prompt.submittedPrompt,
+          provider: stringValue(record.provider) ?? selectedProviderTruth.providerLabel,
+          providerModelSource: stringValue(record.provider_model_source) ?? "selected-prompt",
+          providerModelStatus: stringValue(record.provider_model_status) ?? "recorded",
+          revertedAt: null,
+          reversalModel: null,
+          reversalProvider: null,
+          reversalProviderModelSource: null,
+          reverseDiff: reverseUnifiedDiff(proposedDiff),
+          target: selectedTarget,
+          taskId,
+        };
+        updateAppliedRunReceipts((receipts) => appendAppliedRunReceipt(receipts, receipt));
+      }
+
+      const grader = gradeDummyCoder10Result({
+        blockedReason,
+        categoryEvidencePresent: prompt.id === "coder-009-noop-category-proof" ? Boolean(noOpEvidence) : undefined,
+        changedFiles: appliedChangedFiles,
+        checksRun,
+        claimedVerificationWithoutEvidence:
+          /pass|verified|checks passed/i.test(`${record.simple_reason ?? ""} ${record.verification_status ?? ""}`) &&
+          checksRun.length === 0,
+        commandFailed: /fail|error/i.test(String(record.checks_result ?? record.verification_status ?? "")),
+        noOpEvidence,
+        prompt,
+        requiredInitFilesPresent: prompt.id === "coder-001-init-dummy-product-site"
+          ? prompt.primaryExpectedTargets.every((target) => appliedChangedFiles.includes(target))
+          : undefined,
+        provenance: {
+          diff_source: diffSource,
+          fallback_used: fallbackUsed,
+          generated_diff_by_backend: generatedDiffByBackend,
+          generation_source: generationSource,
+          model_output_classification: modelOutputClassification,
+          model_output_usable: booleanValue(record.model_output_usable),
+          provider_call_made: booleanValue(record.provider_call_made),
+          scaffold_used: scaffoldUsed,
+          trial_result_trust_status: trialResultTrustStatus,
+        },
+        verificationEvidence: checksRun.length > 0 || record.verification_status ? [String(record.verification_status ?? "recorded")] : [],
+      });
+      const selectedPromptStatus: DummyCoder10RunState["status"] =
+        grader.label === "INVALID"
+          ? "error"
+          : grader.label === "NEEDS_FIX"
+            ? "blocked"
+            : applyMessage
+              ? "applied"
+              : response.ok
+                ? "complete"
+                : "error";
+      setDummyCoderRunState({
+        changedFiles: appliedChangedFiles,
+        checksRun,
+        diffSource,
+        errorText: null,
+        fallbackUsed,
+        generatedDiffByBackend,
+        generationSource,
+        grader,
+        message: applyMessage ?? grader.reason,
+        modelOutputClassification,
+        packet,
+        rawBackendStatus,
+        recommendedNextAction:
+          stringValue(record.recommended_next_action) ??
+          stringValue(record.next_recommended_action) ??
+          grader.recommendedNextAction,
+        scaffoldUsed,
+        selectedPromptId: prompt.id,
+        status: selectedPromptStatus,
+        taskId,
+        trialResultTrustStatus,
+        verificationStatus,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Dummy Coder 10 prompt failed.";
+      setDummyCoderRunState((current) => ({
+        ...current,
+        errorText: message,
+        message,
+        rawBackendStatus: "request_failed",
+        recommendedNextAction: "Inspect the prompt-packet route before running this prompt again.",
+        status: "error",
+      }));
     }
   }
 
@@ -5208,6 +5843,7 @@ export function CodingCockpitShell() {
       prompt,
       provider: selectedProviderTruth.providerLabel,
       provider_call_made: false,
+      provenance: normalizeTrialResultProvenance(undefined),
       preview_changed_files: [],
       reverse_diff: "",
       reverse_status_text: "No applied trial edits to reverse.",
@@ -5222,26 +5858,43 @@ export function CodingCockpitShell() {
     });
     onStep?.("Reading request");
     let taskResponse: Response;
+    const taskCreateInit = {
+      body: JSON.stringify({
+        description: effectivePrompt,
+        steps: [
+          "Reading request",
+          "Finding files",
+          "Calling model",
+          "Editing files",
+          "Checking",
+          "Ready for review",
+        ],
+      }),
+      headers: { "content-type": "application/json" },
+      method: "POST",
+      signal: suiteFetchAbortRef.current?.signal ?? undefined,
+    };
     try {
-      taskResponse = await fetchWithTimeout(
-        "/v1/tasks/long-running",
-        {
-          body: JSON.stringify({
-            description: effectivePrompt,
-            steps: [
-              "Reading request",
-              "Finding files",
-              "Calling model",
-              "Editing files",
-              "Checking",
-              "Ready for review",
-            ],
-          }),
-          headers: { "content-type": "application/json" },
-          method: "POST",
-          signal: suiteFetchAbortRef.current?.signal ?? undefined,
-        },
+      taskResponse = await fetchLongRunningTaskWithRetry(
+        taskCreateInit,
         TRIAL_LONG_RUNNING_TIMEOUT_MS,
+        {
+          maxAttempts: TRIAL_LONG_RUNNING_MAX_ATTEMPTS,
+          onTransientError: (attempt, error) => {
+            endpointStatuses.push(`/v1/tasks/long-running(retry ${attempt}):${promptPacketEndpointStatusForError(error)}`);
+            onStep?.(`Reading request (retry ${attempt + 1}/${TRIAL_LONG_RUNNING_MAX_ATTEMPTS})`);
+            pushProgress(
+              {
+                endpoint_statuses: [...endpointStatuses],
+                error_summary: `transient /v1/tasks/long-running fetch error; retry ${attempt}/${TRIAL_LONG_RUNNING_MAX_ATTEMPTS - 1}`,
+              },
+              {
+                endpoint_statuses: [...endpointStatuses],
+                final_summary: "Retrying long-running task create",
+              },
+            );
+          },
+        },
       );
     } catch (error) {
       if (suiteFetchAbortRef.current?.signal.aborted) {
@@ -5743,18 +6396,60 @@ export function CodingCockpitShell() {
       });
     }
     if (!proposedDiff.trim()) {
+      const noDiffClassification = classifyNoDiffModelResponse({
+        allowedFiles: packet.allowedFiles,
+        payload: proposalPayload,
+        selectedTarget: packet.selectedTarget ?? prompt.targetFile,
+      });
+      pushProgress(
+        {
+          endpoint_statuses: [...endpointStatuses],
+          model_called_for_generation: modelCalledForGeneration,
+          provider_call_made: true,
+          reason_code: noDiffClassification.reasonCode,
+          result_label: "NEEDS FIX",
+        },
+        {
+          endpoint_statuses: [...endpointStatuses],
+          final_summary: `Prompt classified as ${noDiffClassification.reasonCode}`,
+          model: modelCalledForGeneration,
+          model_called_for_generation: modelCalledForGeneration,
+          provider: providerTruth.providerLabel,
+          provider_call_made: true,
+          reason_code: noDiffClassification.reasonCode,
+        },
+        {
+          last_progress_reason_code: noDiffClassification.reasonCode,
+          model_response_classification: noDiffClassification.reasonCode,
+          model_response_parse_decision: noDiffClassification.parseDecision,
+          model_response_raw_length: noDiffClassification.rawResponseLength,
+          model_response_safe_excerpt: noDiffClassification.safeExcerpt,
+          no_diff_reason_code: noDiffClassification.reasonCode,
+          prompt_packet_completed_at: new Date().toISOString(),
+          result_finalized_at: new Date().toISOString(),
+        },
+      );
       return baseResult({
         error_summary: [
           "proof_missing: diff_preview_missing",
           "provider_call_made=true",
-          "transcript_or_model_response_body_empty_or_no_diff",
+          noDiffClassification.summary,
           `endpoint_statuses=${formatList(endpointStatuses, "none")}`,
         ].join("; "),
-        failure_reason: "NEEDS FIX: Live apply proof missing: provider call returned no diff/preview body to apply.",
+        failure_reason: `NEEDS FIX: Live apply proof missing: ${noDiffClassification.reasonCode}.`,
         model_called_for_generation: modelCalledForGeneration,
-        next_recommended_action: "Inspect prompt-packet body/transcript. A 200 route without diff preview proof must not count as PASS.",
+        next_recommended_action:
+          noDiffClassification.reasonCode === "model_empty_response"
+            ? "Check Ollama/qwen availability and retry; the model returned an empty body."
+            : noDiffClassification.reasonCode === "model_code_block_unparsed" ||
+                noDiffClassification.reasonCode === "model_full_file_unconverted"
+              ? "Inspect prompt-packet coder_diagnostics and add a bounded extractor only for selected_target/allowed_files if the content is safe."
+              : noDiffClassification.reasonCode === "allowed_files_rejected_change"
+                ? "Keep the allowed-files gate strict and retry with a target that matches allowed_files."
+                : "Inspect prompt-packet coder_diagnostics. A 200 route without diff preview proof must not count as PASS.",
         provider: providerTruth.providerLabel,
         provider_call_made: true,
+        checks_result: noDiffClassification.reasonCode,
         run_id: taskId,
         visible_result_label: "NEEDS FIX",
       });
@@ -6924,6 +7619,7 @@ export function CodingCockpitShell() {
             prompt,
             provider: selectedProviderTruth.providerLabel,
             provider_call_made: false,
+            provenance: normalizeTrialResultProvenance(undefined),
             preview_changed_files: [],
             reverse_diff: "",
             reverse_status_text: "No applied trial edits to reverse.",
@@ -8949,15 +9645,11 @@ export function CodingCockpitShell() {
               <p className={`mt-2 line-clamp-4 text-sm leading-5 ${commandTextClass}`}>{currentTaskTitle}</p>
               <p className={`mt-2 text-xs ${commandMutedClass}`}>{currentTaskTarget}</p>
             </section>
-            <section className={`${commandInsetClass} p-3`} aria-label="Isolated agent-lab benchmark">
+            <section className={`${commandInsetClass} p-3`} aria-label="Trial Runner">
               <p className={commandLabelClass}>Trial Runner</p>
-              <h3 className={`mt-2 text-base font-semibold ${commandTextClass}`}>
-                {reversibleTrialCategory === "Coder" ? "Isolated agent-lab benchmark" : "Trial runner"}
-              </h3>
+              <h3 className={`mt-2 text-base font-semibold ${commandTextClass}`}>Trial Runner</h3>
               <p className={`mt-1 text-xs leading-5 ${commandMutedClass}`}>
-                {reversibleTrialCategory === "Coder"
-                  ? "Runs messy human Coder prompts against isolated agent-lab pages only."
-                  : "Runs real test prompts, applies reversible edits, and leaves them on disk until you reverse manually."}
+                Run one dummy Coder prompt or a later benchmark. Coder 001 creates LumaCart first.
               </p>
               {reversibleSuiteState.results.length > 0 ? (
                 <p className={`mt-1 text-xs leading-5 ${commandMutedClass}`}>
@@ -9011,6 +9703,19 @@ export function CodingCockpitShell() {
                     </span>
                   ) : null}
                 </label>
+                <label className="grid gap-1">
+                  <span className={commandLabelClass}>Mode</span>
+                  <select
+                    aria-label="Trial runner mode"
+                    className={`min-h-10 rounded-md border border-[var(--ddv4-surface-border-soft)] bg-[var(--ddv4-surface-fill)] px-3 text-sm font-semibold ${commandTextClass} ${commandControlClass}`}
+                    disabled={reversibleSuiteState.status === "running" || reversibleSuiteState.status === "stopping" || dummyCoderRunState.status === "running" || dummyCoderRunState.status === "starting" || dummyCoderRunState.status === "request_sent"}
+                    onChange={(event) => setTrialRunnerMode(event.target.value as TrialRunnerMode)}
+                    value={trialRunnerMode}
+                  >
+                    <option value="individual">Individual prompt</option>
+                    <option value="benchmark">Benchmark count</option>
+                  </select>
+                </label>
               </div>
               {reversiblePromptsCopyStatus || reversibleSuiteCopyStatus ? (
                 <p
@@ -9028,23 +9733,230 @@ export function CodingCockpitShell() {
                   {reversiblePromptsCopyStatus || reversibleSuiteCopyStatus}
                 </p>
               ) : null}
-              {reversibleSuiteRunBlocked ? (
+              {trialRunnerMode === "individual" ? (
+                <div className="mt-3 space-y-3">
+                  <label className="grid gap-1">
+                    <span className={commandLabelClass}>Selected prompt</span>
+                    <select
+                      aria-label="Dummy Coder prompt"
+                      className={`min-h-10 rounded-md border border-[var(--ddv4-surface-border-soft)] bg-[var(--ddv4-surface-fill)] px-3 text-sm font-semibold ${commandTextClass} ${commandControlClass}`}
+                      disabled={dummyCoderRunState.status === "running" || dummyCoderRunState.status === "starting" || dummyCoderRunState.status === "request_sent"}
+                      onChange={(event) => {
+                        setSelectedDummyCoderPromptId(event.target.value);
+                        setDummyCoderRunCopyStatus("");
+                      }}
+                      value={selectedDummyCoderPrompt.id}
+                    >
+                      {dummyCoder10Prompts.map((prompt) => (
+                        <option key={prompt.id} value={prompt.id}>
+                          Coder {String(prompt.number).padStart(3, "0")} - {prompt.title}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <div className="flex flex-wrap gap-2 text-[11px] font-semibold">
+                    <span className="rounded-md border border-[var(--ddv4-pill-border)] px-2 py-1 text-[var(--ddv4-fg)]">
+                      {selectedDummyCoderPrompt.expectedResultState}
+                    </span>
+                    <span className="rounded-md border border-[var(--ddv4-pill-border)] px-2 py-1 text-[var(--ddv4-fg)]">
+                      dummy-product-site
+                    </span>
+                  </div>
+                  <details className="rounded-md border border-[var(--ddv4-surface-border-soft)] p-2 text-xs">
+                    <summary className={`cursor-pointer font-semibold ${commandTextClass}`}>View prompt + boundaries</summary>
+                    <div className={`mt-2 space-y-2 ${commandTextClass}`}>
+                      <p className="whitespace-pre-wrap leading-5">{selectedDummyCoderPrompt.submittedPrompt}</p>
+                      <dl className="grid gap-2">
+                        {[
+                          ["Fixture root", selectedDummyCoderPrompt.fixtureRoot],
+                          ["Allowed write root", selectedDummyCoderPrompt.allowedWriteRoot],
+                          ["Forbidden summary", formatDummyCoder10ForbiddenSummary(selectedDummyCoderPrompt)],
+                          ["Primary expected targets", formatList(selectedDummyCoderPrompt.primaryExpectedTargets, "none")],
+                        ].map(([label, value]) => (
+                          <div key={label}>
+                            <dt className={commandLabelClass}>{label}</dt>
+                            <dd className="mt-1 break-words">{value}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </div>
+                  </details>
+                  <button
+                    className={`inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-md bg-emerald-300 px-3 text-sm font-semibold text-slate-950 transition-colors hover:bg-emerald-200 disabled:cursor-not-allowed disabled:opacity-60 ${commandFocusClass}`}
+                    disabled={
+                      dummyCoderRunState.status === "running" ||
+                      dummyCoderRunState.status === "starting" ||
+                      dummyCoderRunState.status === "request_sent" ||
+                      reversibleSuiteState.status === "running" ||
+                      reversibleSuiteState.status === "stopping"
+                    }
+                    onClick={() => void handleRunDummyCoder10Prompt()}
+                    type="button"
+                  >
+                    {(dummyCoderRunState.status === "running" || dummyCoderRunState.status === "starting" || dummyCoderRunState.status === "request_sent") ? (
+                      <span className="h-2 w-2 animate-pulse rounded-full bg-slate-950" aria-hidden="true" />
+                    ) : null}
+                    Run selected prompt
+                  </button>
+                  {reversibleSuiteRunBlocked ? (
+                    <p className={`text-xs font-semibold text-amber-200`}>{reversibleSuiteRunBlockedMessage}</p>
+                  ) : null}
+                  <button
+                    className={`inline-flex min-h-10 w-full items-center justify-center rounded-md border border-[var(--ddv4-pill-border)] px-3 text-sm font-semibold text-[var(--ddv4-fg)] transition-colors hover:bg-[var(--ddv4-surface-fill)] disabled:cursor-not-allowed disabled:opacity-60 ${commandFocusClass}`}
+                    disabled={
+                      reversibleSuiteRunBlocked ||
+                      dummyCoderRunState.status === "running" ||
+                      dummyCoderRunState.status === "starting" ||
+                      dummyCoderRunState.status === "request_sent"
+                    }
+                    onClick={() => {
+                      if (reversibleSuiteRunBlocked) {
+                        setReversibleSuiteCopyStatus(reversibleSuiteRunBlockedMessage);
+                        return;
+                      }
+                      void handleRunReversibleSuite();
+                    }}
+                    type="button"
+                  >
+                    Run all trials
+                  </button>
+                  <div className="rounded-md border border-[var(--ddv4-surface-border-soft)] p-2 text-xs">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className={`font-semibold ${commandTextClass}`}>
+                          {dummyCoderRunState.message || "Ready"}
+                        </p>
+                        <p className={`mt-1 break-all ${commandMutedClass}`}>
+                          Prompt: {dummyCoderRunState.selectedPromptId ?? selectedDummyCoderPrompt.id}
+                          {dummyCoderRunState.taskId ? ` | Task: ${dummyCoderRunState.taskId}` : ""}
+                        </p>
+                      </div>
+                      <span
+                        className={`shrink-0 rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] ${
+                          dummyCoderRunState.status === "error" || dummyCoderRunState.grader?.label === "INVALID"
+                            ? "border-rose-300/40 bg-rose-300/10 text-rose-100"
+                            : dummyCoderRunState.status === "blocked" || dummyCoderRunState.grader?.label === "NEEDS_FIX"
+                              ? "border-amber-300/40 bg-amber-300/10 text-amber-100"
+                              : dummyCoderRunState.status === "applied" || dummyCoderRunState.grader
+                                ? "border-emerald-300/40 bg-emerald-300/10 text-emerald-100"
+                                : "border-[var(--ddv4-pill-border)] text-[var(--ddv4-fg-muted)]"
+                        }`}
+                      >
+                        {dummyCoderRunState.status === "idle"
+                          ? "Ready"
+                          : dummyCoderRunState.status === "starting"
+                            ? "Starting selected prompt..."
+                            : dummyCoderRunState.status === "request_sent"
+                              ? "Request sent"
+                              : dummyCoderRunState.status === "running" && dummyCoderRunState.taskId
+                                ? `Running task ${dummyCoderRunState.taskId}`
+                                : dummyCoderRunState.status === "blocked"
+                                  ? "Needs fix"
+                                  : dummyCoderRunState.status === "applied"
+                                    ? "Applied / review"
+                                    : dummyCoderRunState.status === "error"
+                                      ? "Failed"
+                                      : dummyCoderRunState.status === "cleared"
+                                        ? "Cleared"
+                                        : dummyCoderRunState.grader?.label ?? dummyCoderRunState.status}
+                      </span>
+                    </div>
+                    {dummyCoderRunState.errorText ? (
+                      <p className="mt-2 break-words text-xs font-semibold text-rose-100">{dummyCoderRunState.errorText}</p>
+                    ) : null}
+                  </div>
+                  {hasSelectedPromptResult ? (
+                    <div className="space-y-2" aria-label="Selected prompt trial preview">
+                      <article className="rounded-md border border-[var(--ddv4-surface-border-soft)] p-2 text-xs">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className={`min-w-0 font-semibold ${commandTextClass}`}>
+                            Coder {String(selectedDummyCoderPrompt.number).padStart(3, "0")} - {selectedDummyCoderPrompt.title}
+                          </p>
+                          <span className={`shrink-0 rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] ${reversibleResultTagClass(selectedPromptTrialLabel)}`}>
+                            {selectedPromptTrialLabel}
+                          </span>
+                        </div>
+                        <p className={`mt-1 ${commandMutedClass}`}>
+                          {dummyCoderRunState.taskId ? `Task ${dummyCoderRunState.taskId}` : "Task pending"} | Backend {dummyCoderRunState.rawBackendStatus ?? "not started"}
+                        </p>
+                        <p className={`mt-1 ${commandTextClass}`}>
+                          {dummyCoderRunState.message || "Ready"}
+                        </p>
+                        {dummyCoderRunState.grader ? (
+                          <p className={`mt-1 ${commandMutedClass}`}>
+                            Grader: {dummyCoderRunState.grader.resultState} / score {dummyCoderRunState.grader.score}
+                          </p>
+                        ) : null}
+                        {dummyCoderRunState.changedFiles.length > 0 ? (
+                          <p className={`mt-1 break-words ${commandMutedClass}`}>
+                            Changed: {formatList(dummyCoderRunState.changedFiles, "none")}
+                          </p>
+                        ) : null}
+                        {dummyCoderRunState.verificationStatus ? (
+                          <p className={`mt-1 break-words ${commandMutedClass}`}>
+                            Verification: {dummyCoderRunState.verificationStatus}
+                          </p>
+                        ) : null}
+                        {dummyCoderRunState.recommendedNextAction ?? dummyCoderRunState.grader?.recommendedNextAction ? (
+                          <p className="mt-1 break-words text-rose-100">
+                            {dummyCoderRunState.recommendedNextAction ?? dummyCoderRunState.grader?.recommendedNextAction}
+                          </p>
+                        ) : null}
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {dummyCoderRunState.changedFiles.map((path) => (
+                            <button
+                              className={`inline-flex min-h-8 items-center rounded-md border border-[var(--ddv4-pill-border)] px-2 text-[11px] font-semibold text-[var(--ddv4-fg)] hover:bg-[var(--ddv4-surface-fill)] ${commandFocusClass}`}
+                              key={path}
+                              onClick={() => void copyTextToClipboard(path)}
+                              type="button"
+                            >
+                              Copy changed path
+                            </button>
+                          ))}
+                          <button
+                            className={`inline-flex min-h-8 items-center rounded-md border border-[var(--ddv4-pill-border)] px-2 text-[11px] font-semibold text-[var(--ddv4-fg)] hover:bg-[var(--ddv4-surface-fill)] ${commandFocusClass}`}
+                            onClick={() => void copyTextToClipboard(selectedDummyCoderPrompt.fixtureRoot)}
+                            type="button"
+                          >
+                            Copy target root
+                          </button>
+                        </div>
+                      </article>
+                      {reversibleSuiteReversalPanel}
+                    </div>
+                  ) : null}
+                  <button
+                    className={`inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-md border border-[var(--ddv4-pill-border)] px-3 text-sm font-semibold text-[var(--ddv4-fg)] transition-colors hover:bg-[var(--ddv4-surface-fill)] ${commandFocusClass}`}
+                    onClick={() => void copyDummyCoder10Diagnostics()}
+                    type="button"
+                  >
+                    <Copy aria-hidden="true" size={16} />
+                    Copy diagnostics
+                  </button>
+                  {dummyCoderRunCopyStatus ? (
+                    <p className={`text-xs ${commandMutedClass}`}>{dummyCoderRunCopyStatus}</p>
+                  ) : null}
+                </div>
+              ) : null}
+              {trialRunnerMode === "benchmark" && reversibleSuiteRunBlocked ? (
                 <p className={`mt-2 text-xs font-semibold text-amber-200`}>{reversibleSuiteRunBlockedMessage}</p>
               ) : null}
-              <button
-                className={`mt-3 inline-flex min-h-10 w-full items-center justify-center rounded-md bg-emerald-300 px-3 text-sm font-semibold text-slate-950 transition-colors hover:bg-emerald-200 disabled:cursor-not-allowed disabled:opacity-60 ${commandFocusClass}`}
-                disabled={reversibleSuiteRunBlocked}
-                onClick={() => {
-                  if (reversibleSuiteRunBlocked) {
-                    setReversibleSuiteCopyStatus(reversibleSuiteRunBlockedMessage);
-                    return;
-                  }
-                  void handleRunReversibleSuite();
-                }}
-                type="button"
-              >
-                {reversibleTrialCategory === "Coder" ? "Run messy Coder benchmark" : "Run reversible trial suite"}
-              </button>
+              {trialRunnerMode === "benchmark" ? (
+                <button
+                  className={`mt-3 inline-flex min-h-10 w-full items-center justify-center rounded-md bg-emerald-300 px-3 text-sm font-semibold text-slate-950 transition-colors hover:bg-emerald-200 disabled:cursor-not-allowed disabled:opacity-60 ${commandFocusClass}`}
+                  disabled={reversibleSuiteRunBlocked}
+                  onClick={() => {
+                    if (reversibleSuiteRunBlocked) {
+                      setReversibleSuiteCopyStatus(reversibleSuiteRunBlockedMessage);
+                      return;
+                    }
+                    void handleRunReversibleSuite();
+                  }}
+                  type="button"
+                >
+                  {reversibleTrialCategory === "Coder" ? "Run messy Coder benchmark" : "Run reversible trial suite"}
+                </button>
+              ) : null}
               {reversibleSuiteCanResume ? (
                 <button
                   className={`mt-2 inline-flex min-h-10 w-full items-center justify-center rounded-md border border-[var(--ddv4-pill-border)] px-3 text-sm font-semibold text-[var(--ddv4-fg)] transition-colors hover:bg-[var(--ddv4-surface-fill)] disabled:cursor-not-allowed disabled:opacity-60 ${commandFocusClass}`}
@@ -9191,7 +10103,7 @@ export function CodingCockpitShell() {
                 <Copy aria-hidden="true" size={16} />
                 Copy trial diagnostics
               </button>
-              {showTrialCleanupPanel
+              {showTrialCleanupPanel && !(trialRunnerMode === "individual" && hasSelectedPromptResult)
                 ? reversibleSuiteReversalPanel
                 : reversibleSuiteState.status === "running" || reversibleSuiteState.status === "stopping"
                   ? (
@@ -10956,6 +11868,36 @@ async function waitForPromptPacketRetry(attempt: number) {
   await new Promise((resolve) => window.setTimeout(resolve, 350 * attempt));
 }
 
+type LongRunningTaskRetryOptions = {
+  maxAttempts?: number;
+  onTransientError?: (attempt: number, error: unknown) => void;
+};
+
+async function fetchLongRunningTaskWithRetry(
+  init: RequestInit,
+  timeoutMs: number,
+  options: LongRunningTaskRetryOptions = {},
+) {
+  const maxAttempts = options.maxAttempts ?? 3;
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    if (init.signal?.aborted) {
+      throw new DOMException("The operation was aborted.", "AbortError");
+    }
+    try {
+      return await fetchWithTimeout("/v1/tasks/long-running", init, timeoutMs);
+    } catch (error) {
+      lastError = error;
+      if (!isTransientNetworkFetchError(error) || attempt === maxAttempts) {
+        throw error;
+      }
+      options.onTransientError?.(attempt, error);
+      await waitForPromptPacketRetry(attempt);
+    }
+  }
+  throw lastError;
+}
+
 type PromptPacketRetryOptions = {
   maxAttempts?: number;
   onRetry?: (attempt: number) => void;
@@ -11335,6 +12277,15 @@ function blockerFromPayload(payload: unknown): string {
 
 function stringValue(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+function booleanValue(value: unknown): boolean | null {
+  return typeof value === "boolean" ? value : null;
+}
+
+function arrayOfStrings(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((item) => (typeof item === "string" ? item.trim() : "")).filter(Boolean);
 }
 
 function GateStatus({

@@ -6,6 +6,7 @@ import type {
   DurableCodingRun,
   DurableCodingRunCreateInput,
   DurableCodingRunPatchInput,
+  DurableCodingRunProvenance,
   DurableCodingRunRow,
 } from "@/lib/coding/durable-run-types";
 import {
@@ -118,6 +119,44 @@ function mergeStringLists(
   incoming: string[] | null | undefined,
 ): string[] {
   return Array.from(new Set([...(current ?? []), ...(incoming ?? [])]));
+}
+
+const EMPTY_TRIAL_PROVENANCE: DurableCodingRunProvenance = {
+  generation_source: "unknown",
+  diff_source: "none",
+  model_output_classification: "not_classified",
+  raw_response_length: 0,
+  raw_response_excerpt_safe: "",
+  scaffold_used: false,
+  scaffold_kind: "",
+  fallback_used: false,
+  fallback_kind: "",
+  parser_repair_used: false,
+  bounded_create_used: false,
+  known_scaffold_used: false,
+  generic_scaffold_used: false,
+  model_raw_diff_used: false,
+  generated_diff_by_backend: false,
+  trial_result_trust_status: "missing_provenance",
+};
+
+function normalizeTrialProvenance(
+  incoming: Partial<DurableCodingRunProvenance> | null | undefined,
+  existing?: DurableCodingRunProvenance,
+): DurableCodingRunProvenance {
+  const merged = { ...EMPTY_TRIAL_PROVENANCE, ...(existing ?? {}), ...(incoming ?? {}) };
+  return {
+    ...merged,
+    raw_response_length: Number(merged.raw_response_length) || 0,
+    scaffold_used: Boolean(merged.scaffold_used),
+    fallback_used: Boolean(merged.fallback_used),
+    parser_repair_used: Boolean(merged.parser_repair_used),
+    bounded_create_used: Boolean(merged.bounded_create_used),
+    known_scaffold_used: Boolean(merged.known_scaffold_used),
+    generic_scaffold_used: Boolean(merged.generic_scaffold_used),
+    model_raw_diff_used: Boolean(merged.model_raw_diff_used),
+    generated_diff_by_backend: Boolean(merged.generated_diff_by_backend),
+  };
 }
 
 function normalizedRowStatus(row: DurableCodingRunRow): DurableCodingRunRow {
@@ -386,6 +425,7 @@ export async function upsertCodingRunRow(runId: string, promptId: string, row: P
       reverse_diff: typeof row.reverse_diff === "string" ? row.reverse_diff : existing?.reverse_diff,
       result_label: preserveServerApplyProof ? existing?.result_label ?? "PASS" : row.result_label || existing?.result_label || "",
       error_summary: preserveServerApplyProof ? existing?.error_summary ?? "" : row.error_summary || existing?.error_summary || "",
+      provenance: normalizeTrialProvenance(row.provenance, existing?.provenance),
       step_instrumentation: {
         ...(existing?.step_instrumentation ?? {}),
         ...(row.step_instrumentation ?? {}),

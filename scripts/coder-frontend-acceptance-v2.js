@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable @typescript-eslint/no-require-imports */
 const fs = require("node:fs");
 const https = require("node:https");
 const { chromium } = require("@playwright/test");
@@ -8,6 +9,8 @@ const donePath = process.env.CODER_ACCEPTANCE_DONE || "/tmp/coder-frontend-accep
 const base = process.env.CODER_ACCEPTANCE_BASE || "https://127.0.0.1:3000";
 const passCount = Number(process.env.CODER_ACCEPTANCE_PASSES || "2");
 const timeoutMs = Number(process.env.CODER_ACCEPTANCE_TIMEOUT_MS || String(24 * 60 * 1000));
+const cleanupButtonPattern =
+  /Reverse trial edits and clear results|Reverse agent-lab leftovers|Clear paused suite and reverse leftovers|Trial cleanup complete/i;
 
 function log(event, data = {}) {
   fs.appendFileSync(logPath, `${JSON.stringify({ at: new Date().toISOString(), event, ...data })}\n`);
@@ -73,8 +76,21 @@ function runViolations(run) {
 }
 
 async function assertRunInvariant(runId, label, previousCompleted = 0) {
-  const response = await api(`/v1/coding/runs/${encodeURIComponent(runId)}`);
-  const run = response.body?.run;
+  let response;
+  let run;
+  for (let attempt = 1; attempt <= 5; attempt += 1) {
+    response = await api(`/v1/coding/runs/${encodeURIComponent(runId)}`);
+    run = response.body?.run;
+    if (run) break;
+    const active = await api("/v1/coding/runs/active");
+    if (active.body?.run?.run_id === runId) {
+      run = active.body.run;
+      log("run_lookup_active_fallback", { attempt, label, runId });
+      break;
+    }
+    log("run_lookup_retry", { attempt, label, runId, status: response.status });
+    await sleep(750);
+  }
   if (!run) throw new Error(`${label}: run ${runId} not found`);
   const violations = runViolations(run);
   log("invariant_check", {
@@ -102,20 +118,39 @@ function extractProgress(text) {
 }
 
 async function pageState(page, label) {
-  const state = await page.evaluate(() => {
-    const body = document.body.innerText;
-    const buttons = [...document.querySelectorAll("button")].map((button) => ({
-      disabled: button.disabled,
-      text: (button.textContent || "").replace(/\s+/g, " ").trim(),
-    }));
-    return { body, buttons };
-  });
+  let state = null;
+  let lastError = null;
+  for (let attempt = 1; attempt <= 5; attempt += 1) {
+    try {
+      state = await page.evaluate(() => {
+        const body = document.body.innerText;
+        const buttons = [...document.querySelectorAll("button")].map((button) => ({
+          disabled: button.disabled,
+          text: (button.textContent || "").replace(/\s+/g, " ").trim(),
+        }));
+        return { body, buttons };
+      });
+      break;
+    } catch (error) {
+      lastError = error;
+      const message = error instanceof Error ? error.message : String(error);
+      if (!/Execution context was destroyed|navigation|Target closed|Cannot find context/i.test(message)) {
+        throw error;
+      }
+      log("page_state_retry", { attempt, label, message });
+      await page.waitForLoadState("domcontentloaded", { timeout: 10000 }).catch(() => {});
+      await sleep(750);
+    }
+  }
+  if (!state) {
+    throw lastError || new Error(`${label}: page state unavailable after retry`);
+  }
   const summary = {
     clean: /Agent Lab baseline clean|BASELINE CLEAN|Workspace is clean for a fresh Coder benchmark/i.test(state.body),
     dirty: /Agent Lab still has \d+ leftover|baseline dirty/i.test(state.body),
     paused: /Paused, ready to resume|browser refresh\/dev reload/i.test(state.body),
     progress: extractProgress(state.body),
-    reverseButton: state.buttons.find((button) => /Reverse trial edits and clear results|Reverse agent-lab leftovers|Trial cleanup complete/i.test(button.text)) || null,
+    reverseButton: state.buttons.find((button) => cleanupButtonPattern.test(button.text)) || null,
     runButton: state.buttons.find((button) => /Run messy Coder benchmark|Run strict Coder benchmark|Run Coder benchmark/i.test(button.text)) || null,
     runId: extractRunId(state.body),
     running: /Running prompt-packet|RUNNING|Running/i.test(state.body),
@@ -130,24 +165,53 @@ async function pageState(page, label) {
 
 async function clickButton(page, pattern) {
   const buttons = await page.locator("button").all();
+  const disabledMatches = [];
   for (const button of buttons) {
     const text = ((await button.textContent()) || "").replace(/\s+/g, " ").trim();
     if (pattern.test(text)) {
+      const disabled = await button.isDisabled().catch(() => false);
+      if (disabled) {
+        disabledMatches.push(text);
+        continue;
+      }
       await button.click({ timeout: 10000 });
       return text;
     }
   }
-  throw new Error(`button not found: ${pattern}`);
+  throw new Error(`enabled button not found: ${pattern}; disabled matches=${disabledMatches.join(" | ") || "none"}`);
 }
 
-async function waitClean(label) {
+async function waitClean(label, cleanupPages = []) {
   for (let i = 0; i < 45; i += 1) {
     const baseline = await api("/v1/coding/agent-lab-baseline");
     if (i % 5 === 0) log("baseline_poll", { baseline, label });
     if (baseline.body?.baseline_clean_for_fresh_suite) return baseline;
+    for (const [pageIndex, page] of cleanupPages.entries()) {
+      const state = await pageState(page, `${label}:cleanup_poll_${i + 1}_${pageIndex + 1}`).catch((error) => {
+        log("cleanup_poll_page_state_failed", { label, message: error.message, pageIndex });
+        return null;
+      });
+      if (state?.reverseButton && !state.reverseButton.disabled) {
+        const clicked = await clickButton(page, cleanupButtonPattern);
+        log("clicked_poll_cleanup", { clicked, label, pageIndex });
+        await sleep(3000);
+      }
+    }
     await sleep(1000);
   }
   throw new Error(`${label}: baseline did not become clean`);
+}
+
+async function waitStartReady(page, label) {
+  let lastState = null;
+  for (let i = 0; i < 20; i += 1) {
+    lastState = await pageState(page, `${label}:start_ready_${i + 1}`);
+    if (!lastState.dirty && lastState.clean && !lastState.runButton?.disabled) {
+      return lastState;
+    }
+    await sleep(1000);
+  }
+  return lastState;
 }
 
 async function runOnce(browser, name) {
@@ -161,7 +225,7 @@ async function runOnce(browser, name) {
   await primary.goto(`${base}/coding`, { timeout: 30000, waitUntil: "domcontentloaded" });
   await primary.waitForLoadState("networkidle", { timeout: 20000 }).catch(() => {});
   await primary.waitForTimeout(1500);
-  const before = await pageState(primary, `${name}:before`);
+  const before = await waitStartReady(primary, `${name}:before`);
   if (before.dirty || before.runButton?.disabled) throw new Error(`${name}: cannot start dirty=${before.dirty} disabled=${before.runButton?.disabled}`);
 
   const clicked = await clickButton(primary, /Run messy Coder benchmark|Run strict Coder benchmark|Run Coder benchmark/i);
@@ -221,11 +285,23 @@ async function runOnce(browser, name) {
   const secondaryFinal = await pageState(secondary, `${name}:secondary_final`);
   if (secondaryFinal.runId !== runId) throw new Error(`${name}: secondary lost completed run`);
 
-  const reverseClicked = await clickButton(primary, /Reverse trial edits and clear results|Reverse agent-lab leftovers|Trial cleanup complete/i);
+  let reverseClicked;
+  try {
+    reverseClicked = await clickButton(primary, cleanupButtonPattern);
+  } catch (primaryError) {
+    log("primary_cleanup_click_failed", { message: primaryError.message, name });
+    reverseClicked = await clickButton(secondary, cleanupButtonPattern);
+  }
   log("clicked_reverse_clear", { name, reverseClicked });
   await primary.waitForTimeout(8000);
-  const afterClear = await pageState(primary, `${name}:after_clear`);
-  const clean = await waitClean(`${name}:after_clear`);
+  let afterClear = await pageState(primary, `${name}:after_clear`);
+  for (let cleanupAttempt = 1; cleanupAttempt <= 3 && afterClear.dirty && afterClear.reverseButton && !afterClear.reverseButton.disabled; cleanupAttempt += 1) {
+    const leftoverClicked = await clickButton(primary, cleanupButtonPattern);
+    log("clicked_leftover_cleanup", { cleanupAttempt, leftoverClicked, name });
+    await primary.waitForTimeout(8000);
+    afterClear = await pageState(primary, `${name}:after_leftover_cleanup_${cleanupAttempt}`);
+  }
+  const clean = await waitClean(`${name}:after_clear`, [primary, secondary]);
   const activeAfterClear = await api("/v1/coding/runs/active");
   log("clear_check", { activeAfterClear, afterClear, clean, name });
   if (activeAfterClear.body?.run) throw new Error(`${name}: active run remains after clear`);
