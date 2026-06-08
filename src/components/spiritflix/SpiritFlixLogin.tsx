@@ -119,7 +119,7 @@ export function SpiritFlixLogin({
 
         <div className="spiritflix-login__privacy">
           <ShieldCheck size={17} aria-hidden="true" />
-          <span>Resume history stays in this user's Jellyfin lane; do not use your main Jellyfin user here.</span>
+          <span>Resume history stays in this user&apos;s Jellyfin lane; do not use your main Jellyfin user here.</span>
         </div>
       </div>
     </section>

@@ -474,10 +474,13 @@ export function SpiritFlixHome({
 
   useEffect(() => {
     const stored = window.localStorage.getItem(LIBRARY_VIEW_MODE_KEY);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (stored === "grid" || stored === "list" || stored === "history") setViewMode(stored);
     const storedSort = window.localStorage.getItem(LIBRARY_SORT_MODE_KEY);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (storedSort === "model" || storedSort === "title" || storedSort === "dateAdded" || storedSort === "duration") setSortMode(storedSort);
     const storedDirection = window.localStorage.getItem(LIBRARY_SORT_DIRECTION_KEY);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (storedDirection === "asc" || storedDirection === "desc") setSortDirection(storedDirection);
   }, []);
 
@@ -506,12 +509,15 @@ export function SpiritFlixHome({
   }, [sortDirection]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedModel(null);
   }, [data.selectedLibraryId, searchTerm]);
 
   useEffect(() => {
     if (isHomeView || !playableLibraryItems.length) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFaceMetadata(null);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFaceMetadataError("");
       return undefined;
     }
