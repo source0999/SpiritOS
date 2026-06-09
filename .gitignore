@@ -87,6 +87,10 @@ Thumbs.db
 # Local Playwright / Codex smoke screenshots (never commit)
 .codex-smoke/
 .codex-remote-attachments/
+.codex-*.pid
+
+# Local coder gate runtime state (README is tracked; state.json is operator-local)
+.gate/state.json
 
 # Rotated local env backups
 .env.local.backup.*

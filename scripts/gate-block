@@ -1,0 +1,28 @@
+#!/usr/bin/env node
+import {
+  fail,
+  nowIso,
+  printState,
+  readGateState,
+  writeGateState,
+} from "./gate-lib.mjs";
+
+try {
+  const reason = process.argv.slice(2).join(" ").trim();
+  if (!reason) {
+    throw new Error("Block reason is required.");
+  }
+
+  const state = readGateState();
+  const nextState = {
+    ...state,
+    status: "BLOCKED",
+    updated_at: nowIso(),
+    notes: reason,
+  };
+
+  writeGateState(nextState);
+  printState(nextState);
+} catch (error) {
+  fail(error);
+}

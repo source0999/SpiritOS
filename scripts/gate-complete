@@ -1,0 +1,39 @@
+#!/usr/bin/env node
+import {
+  fail,
+  nowIso,
+  printState,
+  readGateState,
+  requireIncrement,
+  writeGateState,
+} from "./gate-lib.mjs";
+
+try {
+  const increment = requireIncrement(process.argv[2]);
+  const state = readGateState();
+
+  if (state.status !== "RUNNING_INCREMENT") {
+    throw new Error(`Cannot complete ${increment}; gate status is ${state.status}.`);
+  }
+
+  if (state.approved_increment !== increment) {
+    throw new Error(
+      `Cannot complete ${increment}; running increment is ${state.approved_increment}.`,
+    );
+  }
+
+  const nextState = {
+    ...state,
+    status: "WAITING_FOR_HUMAN",
+    approved_increment: null,
+    last_completed_increment: increment,
+    approval_token: null,
+    updated_at: nowIso(),
+    notes: "",
+  };
+
+  writeGateState(nextState);
+  printState(nextState);
+} catch (error) {
+  fail(error);
+}

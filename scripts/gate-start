@@ -1,0 +1,39 @@
+#!/usr/bin/env node
+import {
+  fail,
+  nowIso,
+  printState,
+  readGateState,
+  requireIncrement,
+  writeGateState,
+} from "./gate-lib.mjs";
+
+try {
+  const increment = requireIncrement(process.argv[2]);
+  const state = readGateState();
+
+  if (state.status !== "APPROVED_INCREMENT") {
+    throw new Error(`Cannot start ${increment}; gate status is ${state.status}.`);
+  }
+
+  if (state.approved_increment !== increment) {
+    throw new Error(
+      `Cannot start ${increment}; approved increment is ${state.approved_increment}.`,
+    );
+  }
+
+  if (!state.approval_token) {
+    throw new Error(`Cannot start ${increment}; approval token is missing.`);
+  }
+
+  const nextState = {
+    ...state,
+    status: "RUNNING_INCREMENT",
+    updated_at: nowIso(),
+  };
+
+  writeGateState(nextState);
+  printState(nextState);
+} catch (error) {
+  fail(error);
+}

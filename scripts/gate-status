@@ -1,0 +1,8 @@
+#!/usr/bin/env node
+import { fail, printState, readGateState } from "./gate-lib.mjs";
+
+try {
+  printState(readGateState());
+} catch (error) {
+  fail(error);
+}
