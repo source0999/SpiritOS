@@ -12,12 +12,14 @@ from source_proxy.cartographer.git_status import read_git_status_for_project
 from source_proxy.cartographer.models import CartographerProject
 from source_proxy.cartographer.project_discovery import discover_projects
 from source_proxy.cartographer.push_queue import build_push_queue
+from source_proxy.approval.external_gate import central_gate_check
 
 RECEIPT_PATH = "docs/cartographer-autopilot-receipt.md"
 AUDIT_PATH = "data/approved_actions.audit.jsonl"
 
 
 def run_docs_autopilot_apply() -> dict[str, object]:
+    central_gate_check("apply", run_id="cartographer_docs_autopilot_apply")
     config = docs_autopilot_config()
     project = _first_project()
     if project is None:

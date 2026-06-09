@@ -90,6 +90,7 @@ from source_proxy.routing.litellm_router import (
     route_provider_for_alias,
 )
 from source_proxy.routing.ollama_route import ollama_route_status_entry, resolve_ollama_route
+from source_proxy.approval.external_gate import central_gate_check
 
 router = APIRouter(prefix="/v1/decisions")
 
@@ -831,6 +832,8 @@ def _trial_proof_model_aliases() -> list[str]:
 
 
 def _trial_proof_timeout_error(error: Exception) -> bool:
+    if isinstance(error, TimeoutError):
+        return True
     message = str(error).lower()
     return "timeout" in message or "timed out" in message
 
@@ -841,6 +844,7 @@ def _ollama_trial_proof_call(
     proof_prompt: str,
     timeout_seconds: float,
 ) -> str:
+    central_gate_check("model_call", run_id=f"ollama_trial_proof:{alias}")
     litellm_model = route_model_for_alias(alias) or ""
     if route_provider_for_alias(alias) != "ollama" or not litellm_model.startswith("ollama_chat/"):
         raise ValueError(f"Trial proof direct Ollama path is not available for alias {alias!r}.")
@@ -898,6 +902,8 @@ def _trial_live_model_call_diagnostics(
     last_error: Exception | None = None
     for alias in aliases:
         timeout_attempts = [per_alias_timeout]
+        if not quick_proof:
+            timeout_attempts.append(max(per_alias_timeout * 2, per_alias_timeout + 15.0))
         for attempt_index, timeout_seconds in enumerate(timeout_attempts):
             # #region agent log
             _agent_debug_log(
@@ -914,7 +920,11 @@ def _trial_live_model_call_diagnostics(
             )
             # #endregion
             try:
-                direct_ollama = route_provider_for_alias(alias) == "ollama"
+                direct_ollama = (
+                    os.getenv("SOURCE_PROXY_TRIAL_DIRECT_OLLAMA_PROOF", "1").strip().lower()
+                    not in {"0", "false", "no", "off"}
+                    and route_provider_for_alias(alias) == "ollama"
+                )
                 raw = (
                     _ollama_trial_proof_call(
                         alias=alias,
@@ -963,7 +973,7 @@ def _trial_live_model_call_diagnostics(
                 return diagnostics
             except Exception as error:
                 last_error = error
-                attempted_direct_ollama = route_provider_for_alias(alias) == "ollama"
+                attempted_direct_ollama = bool(locals().get("direct_ollama"))
                 # #region agent log
                 _agent_debug_log(
                     hypothesis_id="C",
@@ -2263,6 +2273,8 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
             "status": status_value,
             "reason_code": reason_code,
             "reasonCode": reason_code,
+            "diagnostics_summary": safe_diagnostics_summary,
+            "diagnosticsSummary": safe_diagnostics_summary,
             "coder_diagnostics": diagnostics,
             "coderDiagnostics": diagnostics,
             "manual_prompt_packet_available": manual_available,
@@ -2694,8 +2706,32 @@ def _safe_coder_diagnostics_summary(diagnostics: dict[str, Any]) -> dict[str, An
         "validation_status",
         "target_path_selected",
         "context_mode",
+        "structured_output_mode",
+        "file_block_repair_source",
+        "json_repair_source",
+        "parsed_output_mode",
     )
     summary = {key: diagnostics.get(key) for key in keys if key in diagnostics}
+    content_validation = diagnostics.get("content_validation")
+    if isinstance(content_validation, dict):
+        summary["content_validation"] = {
+            "ok": content_validation.get("ok"),
+            "summary": content_validation.get("summary"),
+            "caps": content_validation.get("caps", {}),
+            "missing_count": len(content_validation.get("missing", []) or []),
+        }
+    honesty_gate = diagnostics.get("structured_honesty_gate")
+    if isinstance(honesty_gate, dict):
+        summary["structured_honesty_gate"] = {
+            "status": honesty_gate.get("status"),
+            "mode": honesty_gate.get("mode"),
+            "classifier_alias": honesty_gate.get("classifier_alias"),
+            "classifier_model": honesty_gate.get("classifier_model"),
+            "classifier_provider": honesty_gate.get("classifier_provider"),
+            "phi4_mini_gatekeeper_configured": honesty_gate.get("phi4_mini_gatekeeper_configured"),
+            "finding_count": len(honesty_gate.get("findings", []) or []),
+            "summary": honesty_gate.get("summary"),
+        }
     context_packet = diagnostics.get("context_packet_summary")
     if isinstance(context_packet, dict):
         summary["context_packet_summary"] = {

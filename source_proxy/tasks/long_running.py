@@ -2,6 +2,7 @@
 
 import difflib
 import hashlib
+import html
 import json
 import os
 import re
@@ -18,6 +19,7 @@ from typing import Any, Callable, Literal
 from uuid import uuid4
 
 from source_proxy.agents.registry import SwarmAgentRole, normalize_agent_role
+from source_proxy.approval.external_gate import central_gate_check
 from source_proxy.routing.litellm_router import (
     _read_coder_timeout_seconds,
     available_model_aliases,
@@ -29,6 +31,7 @@ from source_proxy.routing.ollama_route import (
     local_model_unavailable_from_error,
     local_model_unavailable_payload,
     ollama_route_status_entry,
+    resolve_classifier_ollama_model_name,
     resolve_coder_ollama_model_name,
     resolve_ollama_route,
 )
@@ -556,8 +559,9 @@ INSTRUCTIONS (NEVER violate):
 - You must satisfy exact user requirements.
 - You are not writing a patch or unified diff.
 - You are writing the complete final content for exactly one target file.
-- Return only JSON. No prose. Do not wrap it in markdown unless using a single ```json fence.
-- Prefer content_lines: every line of the replacement file must be one string in content_lines.
+- Prefer the XML-style file block output. No prose.
+- If XML is awkward, use the FILE delimiter output. JSON remains accepted only as a legacy fallback.
+- Do not wrap the file block or JSON in markdown fences.
 - Do not include a unified diff unless explicitly asked.
 - Target must exactly match the explicit Target file line and TaskSpec.target.
 - Only edit files in TaskSpec.allowed_files.
@@ -572,15 +576,24 @@ INSTRUCTIONS (NEVER violate):
   5. required existing components are imported from real repo paths
   6. TSX is syntactically valid
   7. no raw task text appears in code
-  8. content_lines/content is the full replacement file, not a diff hunk
+  8. the file block content is the full replacement file, not a diff hunk
 
-Return exactly one of these JSON shapes:
+Preferred output shape:
+<file path="REPO_RELATIVE_PATH">
+FULL_FILE_CONTENT
+</file>
+
+Alternate accepted output shape:
+<<<FILE: REPO_RELATIVE_PATH
+FULL_FILE_CONTENT
+>>>
+
+Legacy accepted JSON shapes:
 {{"action":"replace_file","target":"REPO_RELATIVE_PATH","content_lines":["line 1","line 2"],"notes":"short optional note"}}
-Legacy accepted schema, but prefer content_lines:
 {{"action":"replace_file","target":"REPO_RELATIVE_PATH","content":"FULL_FILE_CONTENT","notes":"short optional note"}}
 {{"action":"blocked","reason_code":"coder_needs_context","reason":"Cannot produce safe file content because ...","needed_context":["specific file or check needed"]}}
 
-Return the JSON now.
+Return the file block now.
 """
 DEFAULT_SQLITE_PATH = Path("data") / "long_running_tasks.sqlite3"
 DEFAULT_AUDIT_LOG_PATH = Path("data") / "approved_actions.audit.jsonl"
@@ -842,6 +855,7 @@ def execute_approved_long_running_task(
     explicit approval intent, and this function still fails closed on blocked
     paths before any workspace write occurs.
     """
+    central_gate_check("apply", run_id=f"execute_approved_long_running_task:{task_id}")
     task = _lookup_task(task_id)
     expected_approval_id = approval_id_for_approved_diff(
         task_id=task_id,
@@ -3078,6 +3092,20 @@ DUMMY_PRODUCT_SITE_STARTER_FILES = (
     "src/products.js",
     "src/styles.css",
 )
+DUMMY_PRODUCT_SITE_MAX_FILES = 12
+DUMMY_PRODUCT_SITE_MAX_LINES_PER_FILE = 240
+DUMMY_PRODUCT_SITE_MAX_TOTAL_LINES = 900
+DUMMY_PRODUCT_SITE_BLACKLIST_KEYWORDS = (
+    "api_key",
+    "apikey",
+    "bearer ",
+    "credential",
+    "password",
+    "private_key",
+    "secret",
+    "token",
+)
+DUMMY_PRODUCT_SITE_REPAIR_MIN_VARIANCE = 0.02
 
 
 def propose_dummy_product_site_create_diff(
@@ -3100,6 +3128,12 @@ def propose_dummy_product_site_create_diff(
         "expected_result_state": "PASS_DUMMY_PROJECT_INIT",
         "expected_root": DUMMY_PRODUCT_SITE_ROOT,
         "expected_starter_files": list(DUMMY_PRODUCT_SITE_STARTER_FILES),
+        "backend_caps": {
+            "max_files": DUMMY_PRODUCT_SITE_MAX_FILES,
+            "max_lines_per_file": DUMMY_PRODUCT_SITE_MAX_LINES_PER_FILE,
+            "max_total_lines": DUMMY_PRODUCT_SITE_MAX_TOTAL_LINES,
+            "blacklist_keywords": list(DUMMY_PRODUCT_SITE_BLACKLIST_KEYWORDS),
+        },
         "forbidden_paths": [
             "src/app/**",
             "src/components/**",
@@ -3159,6 +3193,8 @@ def propose_dummy_product_site_create_diff(
     diagnostics["raw_response_excerpt_safe"] = _safe_raw_response_excerpt(raw_response or "")
     diagnostics["model_output_classification"] = "model_structured_file_bundle"
     files, parse_error = _parse_dummy_product_site_file_bundle(raw_response or "")
+    parse_meta = _dummy_product_site_parse_meta(raw_response or "", files)
+    diagnostics.update(parse_meta)
     if parse_error:
         repair_prompt = _render_dummy_product_site_create_repair_prompt(
             task,
@@ -3187,24 +3223,36 @@ def propose_dummy_product_site_create_diff(
         diagnostics["repair_attempted"] = True
         diagnostics["repair_raw_response_length"] = len(repair_response or "")
         diagnostics["repair_raw_response_excerpt_safe"] = _safe_raw_response_excerpt(repair_response or "")
-        files, parse_error = _parse_dummy_product_site_file_bundle(repair_response or "")
+        repair_variance = _character_variance(raw_response or "", repair_response or "")
+        diagnostics["repair_character_variance"] = repair_variance
+        diagnostics["repair_similarity_guard_min_variance"] = DUMMY_PRODUCT_SITE_REPAIR_MIN_VARIANCE
+        if repair_variance < DUMMY_PRODUCT_SITE_REPAIR_MIN_VARIANCE:
+            parse_error = "repair_response_too_similar_to_rejected_response"
+            files = None
+        else:
+            files, parse_error = _parse_dummy_product_site_file_bundle(repair_response or "")
+            repair_parse_meta = _dummy_product_site_parse_meta(repair_response or "", files)
+            diagnostics.update(repair_parse_meta)
+            diagnostics["parser_repair_used"] = not bool(parse_error)
     if parse_error:
         diagnostics["validation_status"] = "coder_file_bundle_validation_failed"
         diagnostics["parse_error_message"] = parse_error
         diagnostics["trial_result_trust_status"] = "model_output_not_usable"
-        diagnostics["recommended_next_action"] = "retry_with_create_file_bundle_json"
+        diagnostics["recommended_next_action"] = "retry_with_file_blocks_or_delimited_bundle"
         return _coder_blocked_payload(
             target=DUMMY_PRODUCT_SITE_ROOT,
             notes=["CODER_BLOCKED reason_code: coder_file_bundle_validation_failed"],
             diagnostics=diagnostics,
             bundle_name=None,
             reason=parse_error,
-            needed_context="Return only JSON with action=create_file_bundle and files[].path/content_lines.",
+            needed_context="Return only <file path=\"...\">...</file> blocks or <<<FILE: path ... >>> blocks under the dummy root.",
             reason_code="coder_file_bundle_validation_failed",
         )
     assert files is not None
     validation = _validate_dummy_product_site_file_bundle(files)
     diagnostics["content_validation"] = validation
+    honesty_gate = _dummy_product_site_honesty_gate(files, task=task)
+    diagnostics["structured_honesty_gate"] = honesty_gate
     if not validation["ok"]:
         diagnostics["validation_status"] = "coder_file_bundle_validation_failed"
         diagnostics["trial_result_trust_status"] = "model_output_not_usable"
@@ -3216,6 +3264,19 @@ def propose_dummy_product_site_create_diff(
             bundle_name=None,
             reason=str(validation["summary"]),
             needed_context=", ".join(str(item) for item in validation["missing"][:8]),
+            reason_code="coder_file_bundle_validation_failed",
+        )
+    if honesty_gate["status"] == "blocked":
+        diagnostics["validation_status"] = "coder_file_bundle_validation_failed"
+        diagnostics["trial_result_trust_status"] = "model_output_not_usable"
+        diagnostics["recommended_next_action"] = "retry_with_honest_dummy_product_site_bundle"
+        return _coder_blocked_payload(
+            target=DUMMY_PRODUCT_SITE_ROOT,
+            notes=["CODER_BLOCKED reason_code: coder_file_bundle_validation_failed"],
+            diagnostics=diagnostics,
+            bundle_name=None,
+            reason=str(honesty_gate["summary"]),
+            needed_context=", ".join(str(item) for item in honesty_gate["findings"][:8]),
             reason_code="coder_file_bundle_validation_failed",
         )
     diffs: list[str] = []
@@ -3249,7 +3310,7 @@ def propose_dummy_product_site_create_diff(
     diagnostics["validation_status"] = "preview_ready"
     diagnostics["changed_files"] = changed_files
     diagnostics["generated_diff_length"] = len(unified)
-    diagnostics["generated_diff_by_backend"] = False
+    diagnostics["generated_diff_by_backend"] = True
     diagnostics["diff_source"] = "model_authored_file_bundle_backend_converted_to_diff"
     diagnostics["trial_result_trust_status"] = "model_authored_diff_proven"
     diagnostics["recommended_next_action"] = "preview_and_apply_selected_prompt_diff"
@@ -3277,13 +3338,20 @@ def _render_dummy_product_site_create_prompt(task: str) -> str:
         [
             "You are Coder 001 for the isolated LumaCart dummy fixture.",
             task.strip(),
-            "Return only JSON. Do not return markdown.",
-            "Required schema:",
-            '{"action":"create_file_bundle","files":[{"path":"tests/ui-agent-trials/fixtures/dummy-product-site/README.md","content_lines":["line"]}]}',
+            "Return only file blocks. Do not return markdown or prose.",
+            "Preferred format, repeated once per file:",
+            '<file path="tests/ui-agent-trials/fixtures/dummy-product-site/README.md">',
+            "# LumaCart",
+            "</file>",
+            "Alternate accepted format, repeated once per file:",
+            "<<<FILE: tests/ui-agent-trials/fixtures/dummy-product-site/README.md",
+            "# LumaCart",
+            ">>>",
+            "Legacy JSON create_file_bundle is accepted only as a fallback.",
             "Every path must be under tests/ui-agent-trials/fixtures/dummy-product-site/.",
             "Create these starter files: " + ", ".join(expected_paths) + ".",
+            f"Caps: max {DUMMY_PRODUCT_SITE_MAX_FILES} files, max {DUMMY_PRODUCT_SITE_MAX_LINES_PER_FILE} lines per file, max {DUMMY_PRODUCT_SITE_MAX_TOTAL_LINES} total lines.",
             "Do not edit root package.json, Source Proxy, src/app, src/components, src/lib, docs, .env, or lock files.",
-            "For package.json, prefer one compact content_lines string instead of multiple pretty-printed lines.",
             "Content must be model-authored, small, static, and coherent for a fake product storefront named LumaCart.",
         ]
     )
@@ -3301,20 +3369,22 @@ def _render_dummy_product_site_create_repair_prompt(
     ]
     return "\n".join(
         [
-            "Your previous Coder 001 response was rejected because it was not valid JSON.",
+            "Your previous Coder 001 response was rejected because it did not match the file bundle contract.",
             f"Parse error: {parse_error}",
-            "Return a fresh response. Return only one JSON object. Do not use markdown fences.",
-            "Required schema:",
-            '{"action":"create_file_bundle","files":[{"path":"tests/ui-agent-trials/fixtures/dummy-product-site/README.md","content_lines":["line"]}]}',
-            "Every content_lines item must be a valid JSON string. Escape quotes inside package.json lines with backslashes.",
-            "For package.json, prefer one compact content_lines string instead of multiple pretty-printed lines.",
+            "Return a fresh response. Return only file blocks. Do not use markdown fences.",
+            "Preferred format, repeated once per file:",
+            '<file path="tests/ui-agent-trials/fixtures/dummy-product-site/README.md">',
+            "# LumaCart",
+            "</file>",
+            "Alternate accepted format: <<<FILE: path, then content, then >>> on its own line.",
             "Every path must be under tests/ui-agent-trials/fixtures/dummy-product-site/.",
             "Create these starter files: " + ", ".join(expected_paths) + ".",
+            f"Caps: max {DUMMY_PRODUCT_SITE_MAX_FILES} files, max {DUMMY_PRODUCT_SITE_MAX_LINES_PER_FILE} lines per file, max {DUMMY_PRODUCT_SITE_MAX_TOTAL_LINES} total lines.",
             "The fake product site must be named LumaCart.",
             "Do not edit root package.json, Source Proxy, src/app, src/components, src/lib, docs, .env, or lock files.",
             "Original task:",
             task.strip(),
-            "Do not copy the rejected response. Generate fresh valid JSON.",
+            "Do not copy the rejected response. Generate fresh valid file blocks.",
         ]
     )
 
@@ -3323,7 +3393,12 @@ def _parse_dummy_product_site_file_bundle(
     raw_response: str,
 ) -> tuple[list[dict[str, str]] | None, str]:
     if _looks_like_unified_diff(raw_response):
-        return None, "Coder returned a unified diff instead of create_file_bundle JSON."
+        return None, "Coder returned a unified diff instead of file blocks."
+    block_files, block_error = _parse_multi_file_blocks(raw_response)
+    if block_files is not None:
+        return block_files, ""
+    if block_error != "no_file_blocks":
+        return None, block_error
     parsed: Any = None
     last_error = ""
     for _source, candidate in _candidate_json_texts(raw_response):
@@ -3360,10 +3435,153 @@ def _parse_dummy_product_site_file_bundle(
     return files, ""
 
 
+def _dummy_product_site_parse_meta(
+    raw_response: str,
+    files: list[dict[str, str]] | None,
+) -> dict[str, str]:
+    if files is None:
+        return {
+            "structured_output_mode": "",
+            "file_block_repair_source": "",
+            "json_repair_source": "",
+            "parsed_output_mode": "",
+        }
+    raw = _strip_optional_coder_fence(raw_response)
+    if _parse_xml_multi_file_blocks(raw_response)[0] is not None:
+        source = "xml_file_blocks"
+        return {
+            "structured_output_mode": source,
+            "file_block_repair_source": source,
+            "json_repair_source": "",
+            "parsed_output_mode": "create_file_bundle",
+        }
+    if _parse_delimited_multi_file_blocks(raw_response)[0] is not None:
+        source = "delimited_file_blocks"
+        return {
+            "structured_output_mode": source,
+            "file_block_repair_source": source,
+            "json_repair_source": "",
+            "parsed_output_mode": "create_file_bundle",
+        }
+    for source, candidate in _candidate_json_texts(raw):
+        try:
+            parsed = json.loads(candidate)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(parsed, dict) and parsed.get("action") == "create_file_bundle":
+            return {
+                "structured_output_mode": "json_create_file_bundle",
+                "file_block_repair_source": "",
+                "json_repair_source": source,
+                "parsed_output_mode": "create_file_bundle",
+            }
+    return {
+        "structured_output_mode": "unknown_create_file_bundle",
+        "file_block_repair_source": "",
+        "json_repair_source": "",
+        "parsed_output_mode": "create_file_bundle",
+    }
+
+
+def _parse_multi_file_blocks(raw_response: str) -> tuple[list[dict[str, str]] | None, str]:
+    xml_files, xml_error = _parse_xml_multi_file_blocks(raw_response)
+    if xml_files is not None:
+        return xml_files, ""
+    if xml_error != "no_xml_file_blocks":
+        return None, xml_error
+    delimited_files, delimited_error = _parse_delimited_multi_file_blocks(raw_response)
+    if delimited_files is not None:
+        return delimited_files, ""
+    if delimited_error != "no_delimited_file_blocks":
+        return None, delimited_error
+    return None, "no_file_blocks"
+
+
+def _parse_xml_multi_file_blocks(raw_response: str) -> tuple[list[dict[str, str]] | None, str]:
+    raw = _strip_optional_coder_fence(raw_response)
+    pattern = re.compile(
+        r"<file\s+path=(?P<quote>['\"])(?P<path>.*?)(?P=quote)\s*>(?P<content>.*?)</file>",
+        re.DOTALL | re.IGNORECASE,
+    )
+    matches = list(pattern.finditer(raw))
+    if not matches:
+        return None, "no_xml_file_blocks"
+    files: list[dict[str, str]] = []
+    for index, match in enumerate(matches):
+        path = html.unescape(match.group("path")).strip().replace("\\", "/").lstrip("./")
+        content = _decode_file_block_content(match.group("content"))
+        if not path:
+            return None, f"files[{index}].path must be a string."
+        if content == "":
+            return None, f"files[{index}] must include content."
+        files.append({"path": path, "content": content})
+    return files, ""
+
+
+def _parse_delimited_multi_file_blocks(raw_response: str) -> tuple[list[dict[str, str]] | None, str]:
+    raw = _strip_optional_coder_fence(raw_response)
+    pattern = re.compile(
+        r"<<<FILE:\s*(?P<path>[^\r\n]+)\r?\n(?P<content>.*?)\r?\n>>>",
+        re.DOTALL,
+    )
+    matches = list(pattern.finditer(raw))
+    if not matches:
+        return None, "no_delimited_file_blocks"
+    files: list[dict[str, str]] = []
+    for index, match in enumerate(matches):
+        path = match.group("path").strip().replace("\\", "/").lstrip("./")
+        content = match.group("content")
+        if not path:
+            return None, f"files[{index}].path must be a string."
+        if content == "":
+            return None, f"files[{index}] must include content."
+        files.append({"path": path, "content": content})
+    return files, ""
+
+
+def _character_variance(left: str, right: str) -> float:
+    if not left and not right:
+        return 0.0
+    return 1.0 - difflib.SequenceMatcher(a=left or "", b=right or "").ratio()
+
+
+def _dummy_product_site_honesty_gate(files: list[dict[str, str]], *, task: str) -> dict[str, Any]:
+    """Structured classifier gate with deterministic fallback for Coder 001 bundles."""
+    classifier_model = route_model_for_alias("classifier") or f"ollama_chat/{resolve_classifier_ollama_model_name(probe=False)}"
+    findings: list[str] = []
+    joined = "\n".join(file["content"] for file in files).lower()
+    paths = [file["path"] for file in files]
+    if "lumacart" not in joined and "lumacart" in task.lower():
+        findings.append("missing requested product name: LumaCart")
+    if any(path.startswith(("src/app/", "source_proxy/", "docs/")) for path in paths):
+        findings.append("bundle claims unsafe non-dummy path")
+    if not any(path.endswith("src/products.js") for path in paths):
+        findings.append("missing product data file for dummy storefront")
+    status = "blocked" if findings else "passed"
+    return {
+        "status": status,
+        "mode": "deterministic_fallback",
+        "classifier_alias": "classifier",
+        "classifier_model": classifier_model,
+        "classifier_provider": route_provider_for_alias("classifier") or "ollama",
+        "phi4_mini_gatekeeper_configured": "phi4-mini" in classifier_model.lower(),
+        "findings": findings,
+        "summary": "Structured honesty gate passed."
+        if status == "passed"
+        else "Structured honesty gate blocked the file bundle.",
+    }
+
+
 def _validate_dummy_product_site_file_bundle(files: list[dict[str, str]]) -> dict[str, Any]:
     missing: list[str] = []
     paths = [file["path"] for file in files]
     path_set = set(paths)
+    total_lines = 0
+    if len(files) > DUMMY_PRODUCT_SITE_MAX_FILES:
+        missing.append(f"too many files: {len(files)} > {DUMMY_PRODUCT_SITE_MAX_FILES}")
+    duplicates = sorted(path for path in path_set if paths.count(path) > 1)
+    for path in duplicates:
+        missing.append(f"duplicate file rejected: {path}")
     for expected in DUMMY_PRODUCT_SITE_STARTER_FILES:
         full_path = f"{DUMMY_PRODUCT_SITE_ROOT}{expected}"
         if full_path not in path_set:
@@ -3379,11 +3597,34 @@ def _validate_dummy_product_site_file_bundle(files: list[dict[str, str]]) -> dic
         if normalized.startswith(".env") or "/.env" in normalized:
             missing.append(f"env path rejected: {path}")
     for file in files:
-        if not file["content"].strip():
+        content = file["content"]
+        lines = content.splitlines()
+        line_count = max(1, len(lines)) if content else 0
+        total_lines += line_count
+        if not content.strip():
             missing.append(f"empty content: {file['path']}")
+        if line_count > DUMMY_PRODUCT_SITE_MAX_LINES_PER_FILE:
+            missing.append(
+                f"file line cap exceeded: {file['path']} has {line_count} > {DUMMY_PRODUCT_SITE_MAX_LINES_PER_FILE}"
+            )
+        lowered_content = content.lower()
+        lowered_path = file["path"].lower()
+        for keyword in DUMMY_PRODUCT_SITE_BLACKLIST_KEYWORDS:
+            if keyword in lowered_path or keyword in lowered_content:
+                missing.append(f"blacklist keyword rejected: {keyword.strip()} in {file['path']}")
+                break
+    if total_lines > DUMMY_PRODUCT_SITE_MAX_TOTAL_LINES:
+        missing.append(f"total line cap exceeded: {total_lines} > {DUMMY_PRODUCT_SITE_MAX_TOTAL_LINES}")
     return {
         "ok": not missing,
         "missing": missing,
+        "caps": {
+            "file_count": len(files),
+            "total_lines": total_lines,
+            "max_files": DUMMY_PRODUCT_SITE_MAX_FILES,
+            "max_lines_per_file": DUMMY_PRODUCT_SITE_MAX_LINES_PER_FILE,
+            "max_total_lines": DUMMY_PRODUCT_SITE_MAX_TOTAL_LINES,
+        },
         "summary": "Create-mode file bundle passed dummy-root validation."
         if not missing
         else "Create-mode file bundle failed dummy-root validation.",
@@ -3473,6 +3714,186 @@ def _candidate_json_texts(raw_response: str) -> list[tuple[str, str]]:
     return unique
 
 
+def _strip_optional_coder_fence(raw_response: str) -> str:
+    lines = (raw_response or "").strip().splitlines()
+    if len(lines) < 2:
+        return (raw_response or "").strip()
+    if not re.match(r"^```(?:xml|html|text|txt)?\s*$", lines[0].strip(), re.IGNORECASE):
+        return (raw_response or "").strip()
+    if lines[-1].strip() != "```":
+        return (raw_response or "").strip()
+    return "\n".join(lines[1:-1]).strip()
+
+
+def _strip_outer_markdown_fence_for_contract(raw_response: str) -> tuple[str, dict[str, Any], str]:
+    raw = (raw_response or "").strip()
+    meta: dict[str, Any] = {
+        "markdown_fence_found": False,
+        "markdown_fence_stripped": False,
+        "markdown_fence_language": "",
+    }
+    lines = raw.splitlines()
+    fence_indexes = [
+        index
+        for index, line in enumerate(lines)
+        if re.match(r"^\s*```(?P<lang>[A-Za-z0-9_-]*)\s*$", line)
+    ]
+    if not fence_indexes:
+        return raw, meta, ""
+
+    meta["markdown_fence_found"] = True
+    opener = lines[fence_indexes[0]].strip()
+    language = opener[3:].strip().lower()
+    meta["markdown_fence_language"] = language
+    if fence_indexes[0] != 0:
+        return raw, meta, "markdown_fence_not_outer"
+    if len(fence_indexes) == 1:
+        return raw, meta, "markdown_fence_unclosed"
+    if fence_indexes[-1] != len(lines) - 1:
+        return raw, meta, "markdown_fence_trailing_content"
+    if len(fence_indexes) > 2:
+        return raw, meta, "markdown_fence_nested"
+    stripped = "\n".join(lines[1:-1]).strip()
+    if not stripped:
+        return raw, meta, "markdown_fence_empty"
+    meta["markdown_fence_stripped"] = True
+    return stripped, meta, ""
+
+
+def _contains_markdown_fence(raw_response: str) -> bool:
+    return bool(re.search(r"(^|\n)\s*```", raw_response or ""))
+
+
+def _has_unclosed_xml_file_tag(raw_response: str) -> bool:
+    raw = raw_response or ""
+    return bool(re.search(r"(?<!<)<file(?:\s|>)", raw, re.IGNORECASE)) and not bool(
+        re.search(r"</file\s*>", raw, re.IGNORECASE)
+    )
+
+
+def _normalize_output_contract_path(path: str) -> tuple[str, str]:
+    normalized = (path or "").replace("\\", "/").strip()
+    if not normalized:
+        return "", "file_block_path_missing"
+    if (
+        normalized.startswith("/")
+        or re.match(r"^[A-Za-z]:/", normalized)
+        or normalized == ".."
+        or normalized.startswith("../")
+        or "/../" in normalized
+        or normalized.endswith("/..")
+    ):
+        return normalized, "unsafe_path"
+    normalized = normalized.lstrip("./")
+    return normalized, ""
+
+
+def _decode_file_block_content(content: str) -> str:
+    stripped = content
+    cdata_start = "<![CDATA["
+    cdata_end = "]]>"
+    if stripped.startswith(cdata_start) and stripped.endswith(cdata_end):
+        stripped = stripped[len(cdata_start) : -len(cdata_end)]
+    if stripped.startswith("\n"):
+        stripped = stripped[1:]
+    if stripped.endswith("\n"):
+        stripped = stripped[:-1]
+    return stripped
+
+
+def _parse_xml_file_block(raw_response: str) -> tuple[dict[str, Any] | None, str]:
+    raw = (raw_response or "").strip()
+    pattern = re.compile(
+        r"<file\s+path=(?P<quote>['\"])(?P<path>.*?)(?P=quote)\s*>(?P<content>.*?)</file>",
+        re.DOTALL | re.IGNORECASE,
+    )
+    matches = list(pattern.finditer(raw))
+    if not matches:
+        if _has_unclosed_xml_file_tag(raw):
+            return None, "unclosed_file_tag"
+        if bool(re.search(r"(?<!<)<file(?:\s|>)", raw, re.IGNORECASE)):
+            return None, "malformed_file_block"
+        return None, "no_xml_file_block"
+    if len(matches) > 1:
+        return None, "multiple_file_blocks_not_allowed"
+    match = matches[0]
+    path, path_error = _normalize_output_contract_path(html.unescape(match.group("path")))
+    content = _decode_file_block_content(match.group("content"))
+    if path_error:
+        return None, path_error
+    if content == "":
+        return None, "empty_diff"
+    return (
+        {
+            "action": "replace_file",
+            "target": path,
+            "content": content,
+            "content_source": "xml_file_block",
+            "notes": "Coder returned XML file block.",
+        },
+        "",
+    )
+
+
+def _parse_delimited_file_block(raw_response: str) -> tuple[dict[str, Any] | None, str]:
+    raw = (raw_response or "").strip()
+    pattern = re.compile(
+        r"<<<FILE\s*:\s*(?P<path>[^\r\n]+)\r?\n(?P<content>.*?)\r?\n>>>",
+        re.DOTALL,
+    )
+    matches = list(pattern.finditer(raw))
+    if not matches:
+        if "<<<FILE:" in raw:
+            return None, "malformed_file_block"
+        return None, "no_delimited_file_block"
+    if len(matches) > 1:
+        return None, "multiple_file_blocks_not_allowed"
+    match = matches[0]
+    path, path_error = _normalize_output_contract_path(match.group("path"))
+    content = match.group("content")
+    if path_error:
+        return None, path_error
+    if content == "":
+        return None, "empty_diff"
+    return (
+        {
+            "action": "replace_file",
+            "target": path,
+            "content": content,
+            "content_source": "delimited_file_block",
+            "notes": "Coder returned FILE delimiter block.",
+        },
+        "",
+    )
+
+
+def _parse_file_block_structured_output(
+    raw_response: str,
+    *,
+    fence_meta: dict[str, Any] | None = None,
+) -> tuple[dict[str, Any] | None, str, dict[str, Any]]:
+    meta = {
+        "file_block_repair_source": "",
+        "file_block_error": "",
+        **(fence_meta or {}),
+    }
+    if _contains_markdown_fence(raw_response):
+        meta["file_block_error"] = "markdown_fence_found"
+        return None, "markdown_fence_found", meta
+    for source, parser in (
+        ("xml_file_block", _parse_xml_file_block),
+        ("delimited_file_block", _parse_delimited_file_block),
+    ):
+        parsed, error = parser(raw_response)
+        if parsed is not None:
+            meta["file_block_repair_source"] = source
+            return parsed, "", meta
+        if error != f"no_{source}":
+            meta["file_block_error"] = error
+            return None, error, meta
+    return None, "no_file_block", meta
+
+
 def _parse_coder_structured_output(
     raw_response: str,
 ) -> tuple[dict[str, Any] | None, str, dict[str, Any]]:
@@ -3484,6 +3905,11 @@ def _parse_coder_structured_output(
         "parse_error_message": "",
         "last_json_error": "",
         "json_repair_source": "",
+        "file_block_repair_source": "",
+        "structured_output_mode": "",
+        "markdown_fence_found": False,
+        "markdown_fence_stripped": False,
+        "markdown_fence_language": "",
     }
     if not raw:
         meta["parse_error_class"] = "empty_response"
@@ -3492,16 +3918,39 @@ def _parse_coder_structured_output(
         return None, "coder_empty_model_response", meta
     if _looks_like_unified_diff(raw):
         meta["parse_error_class"] = "wrong_format_unified_diff"
-        meta["parse_error_message"] = "Coder returned a unified diff instead of replacement JSON."
+        meta["parse_error_message"] = "Coder returned a unified diff instead of replacement file block."
         meta["last_json_error"] = meta["parse_error_message"]
         return None, "coder_response_wrong_format_unified_diff", meta
 
+    contract_raw, fence_meta, fence_error = _strip_outer_markdown_fence_for_contract(raw)
+    meta.update(fence_meta)
+    if fence_error:
+        meta["parse_error_class"] = "file_block_validation"
+        meta["parse_error_message"] = fence_error
+        meta["last_json_error"] = fence_error
+        return None, "coder_invalid_replacement_payload", meta
+
+    file_block, file_block_error, file_block_meta = _parse_file_block_structured_output(
+        contract_raw,
+        fence_meta=fence_meta,
+    )
+    meta.update(file_block_meta)
+    if file_block is not None:
+        meta["structured_output_mode"] = str(file_block.get("content_source") or "file_block")
+        return file_block, "", meta
+    if file_block_error != "no_file_block":
+        meta["parse_error_class"] = "file_block_validation"
+        meta["parse_error_message"] = file_block_error
+        meta["last_json_error"] = file_block_error
+        return None, "coder_invalid_replacement_payload", meta
+
     parsed: Any = None
     last_error: json.JSONDecodeError | None = None
-    for source, candidate in _candidate_json_texts(raw):
+    for source, candidate in _candidate_json_texts(contract_raw):
         try:
             parsed = json.loads(candidate)
             meta["json_repair_source"] = source
+            meta["structured_output_mode"] = "json_replace_file"
             break
         except json.JSONDecodeError as error:
             last_error = error
@@ -3562,10 +4011,10 @@ def _coder_retry_prompt(
     parser_error: str = "",
 ) -> str:
     if reason == "coder_response_not_json":
-        failure = "Your previous response was not valid JSON."
+        failure = "Your previous response was not a valid file block or legacy JSON."
     elif reason == "coder_response_wrong_format_unified_diff":
         failure = (
-            "You returned a diff, but this route requires JSON with content_lines. "
+            "You returned a diff, but this route requires a complete file block. "
             "Do not return unified diff hunks."
         )
     elif reason == "coder_target_mismatch":
@@ -3590,8 +4039,8 @@ def _coder_retry_prompt(
         failure = f"{failure}\nParser/schema error: {parser_error}"
     return (
         f"{base_prompt}\n\nRETRY REQUIRED:\n{failure}\n"
-        "Return only JSON using the same TaskSpec.target and TaskSpec.allowed_files. "
-        "Prefer content_lines."
+        "Return only one <file path=\"...\">...</file> block using the same "
+        "TaskSpec.target and TaskSpec.allowed_files."
     )
 
 
@@ -3607,7 +4056,7 @@ def _coder_reviewer_feedback_task(source_task: str, reviewer_feedback: list[str]
             *(f"- {item}" for item in feedback[:8]),
             "",
             "Retry with the same target file and the same TaskSpec.allowed_files. "
-            "Return replacement JSON only; do not apply the diff.",
+            "Return one replacement file block only; do not apply the diff.",
         ]
     )
 
@@ -3841,7 +4290,7 @@ def propose_coder_agent_implementation_diff(
     )
     last_parse_meta: dict[str, Any] = {}
     last_failure_signature = ""
-    max_json_attempts = 3
+    max_json_attempts = 2
     for attempt_index in range(max_json_attempts):
         json_attempt_count = attempt_index + 1
         try:
@@ -3924,21 +4373,46 @@ def propose_coder_agent_implementation_diff(
                 json_attempt_count=json_attempt_count,
                 coder_format_retry_count=max(0, json_attempt_count - 1),
                 last_json_error=str(last_parse_meta.get("last_json_error") or ""),
+                structured_output_mode=str(parse_meta.get("structured_output_mode") or ""),
+                file_block_repair_source=str(parse_meta.get("file_block_repair_source") or ""),
+                json_repair_source=str(parse_meta.get("json_repair_source") or ""),
+                markdown_fence_found=bool(parse_meta.get("markdown_fence_found")),
+                markdown_fence_stripped=bool(parse_meta.get("markdown_fence_stripped")),
+                markdown_fence_language=str(parse_meta.get("markdown_fence_language") or ""),
             )
 
         replacement_target = str(parsed["target"]).replace("\\", "/").lstrip("./")
-        if replacement_target != target_path:
-            last_reason_code = "coder_target_mismatch"
-            last_reason = f"Coder JSON targeted {replacement_target}, but packet target is {target_path}."
+        replacement_target, path_error = _normalize_output_contract_path(replacement_target)
+        if path_error:
+            last_reason_code = "coder_invalid_replacement_payload"
+            last_reason = f"Coder output target failed path safety validation: {path_error}."
             last_parse_meta = {
                 **parse_meta,
-                "parse_error_class": "target_validation",
-                "parse_error_message": last_reason,
-                "last_json_error": last_reason,
+                "parse_error_class": "path_validation",
+                "parse_error_message": path_error,
+                "last_json_error": path_error,
             }
             current_prompt = _coder_retry_prompt(
                 prompt,
-                "coder_target_mismatch",
+                "coder_invalid_replacement_payload",
+                parser_error=path_error,
+            )
+            continue
+        if replacement_target != target_path:
+            last_reason_code = "coder_out_of_scope_file"
+            last_reason = (
+                f"Coder output targeted out-of-scope file {replacement_target}, "
+                f"but allowed target is {target_path}."
+            )
+            last_parse_meta = {
+                **parse_meta,
+                "parse_error_class": "scope_validation",
+                "parse_error_message": "out-of-scope file",
+                "last_json_error": "out-of-scope file",
+            }
+            current_prompt = _coder_retry_prompt(
+                prompt,
+                "coder_out_of_scope_file",
                 parser_error=last_reason,
             )
             continue
@@ -3964,6 +4438,12 @@ def propose_coder_agent_implementation_diff(
             json_attempt_count=json_attempt_count,
             coder_format_retry_count=max(0, json_attempt_count - 1),
             last_json_error=str(last_parse_meta.get("last_json_error") or ""),
+            structured_output_mode=str(parse_meta.get("structured_output_mode") or ""),
+            file_block_repair_source=str(parse_meta.get("file_block_repair_source") or ""),
+            json_repair_source=str(parse_meta.get("json_repair_source") or ""),
+            markdown_fence_found=bool(parse_meta.get("markdown_fence_found")),
+            markdown_fence_stripped=bool(parse_meta.get("markdown_fence_stripped")),
+            markdown_fence_language=str(parse_meta.get("markdown_fence_language") or ""),
         )
 
     return CoderResponse(
@@ -3982,6 +4462,12 @@ def propose_coder_agent_implementation_diff(
             last_parse_meta.get("coder_format_retry_count") or max(0, max_json_attempts - 1)
         ),
         last_json_error=str(last_parse_meta.get("last_json_error") or ""),
+        structured_output_mode=str(last_parse_meta.get("structured_output_mode") or ""),
+        file_block_repair_source=str(last_parse_meta.get("file_block_repair_source") or ""),
+        json_repair_source=str(last_parse_meta.get("json_repair_source") or ""),
+        markdown_fence_found=bool(last_parse_meta.get("markdown_fence_found")),
+        markdown_fence_stripped=bool(last_parse_meta.get("markdown_fence_stripped")),
+        markdown_fence_language=str(last_parse_meta.get("markdown_fence_language") or ""),
     )
 
 
@@ -4104,7 +4590,7 @@ def propose_coder_agent_diff_payload_from_plan(
     )
 
     deterministic = None if force_live_model else _deterministic_markdown_append_response(packet, task)
-    if deterministic is None and not force_live_model:
+    if deterministic is None and not force_live_model and llm_call is None:
         deterministic = _deterministic_bounded_create_response(packet, task, root)
     if deterministic is not None:
         response = deterministic
@@ -4175,7 +4661,7 @@ def propose_coder_agent_diff_payload_from_plan(
             content=content,
             task_text=effective_planning_task_text(task),
         )
-        if not content_validation["ok"] and deterministic is None and not force_live_model:
+        if not content_validation["ok"] and deterministic is None and not force_live_model and llm_call is None:
             fallback = _deterministic_bounded_create_response(packet, task, root)
             if fallback is not None:
                 notes.append("Using deterministic bounded scaffold after initial model content validation failed.")
@@ -4216,7 +4702,7 @@ def propose_coder_agent_diff_payload_from_plan(
                     content=content,
                     task_text=effective_planning_task_text(task),
                 )
-            if not content_validation["ok"] and not force_live_model:
+            if not content_validation["ok"] and not force_live_model and llm_call is None:
                 fallback = _deterministic_bounded_create_response(packet, task, root)
                 if fallback is not None:
                     notes.append("Using deterministic bounded scaffold after validation feedback retry failed.")
@@ -4609,7 +5095,7 @@ def _coder_context_packet_summary(
             "force_live_model": trial_mode,
         },
         "scaffold_fallback_ban_flags": dict(TRIAL_MODE_BAN_CONTRACT),
-        "expected_output_format": "strict JSON replace_file with content_lines; backend converts model-authored content to unified diff",
+        "expected_output_format": "single replacement file block; legacy JSON replace_file still accepted; backend converts model-authored content to unified diff",
         "checks_that_will_run": list(task_spec.get("verification") or []),
         "rollback_reversal_available": True,
         "secrets_policy": "safe summary only; no .env, token, credential, or full note dumps",
@@ -4637,6 +5123,12 @@ def _base_coder_diagnostics(target_path: str) -> dict[str, Any]:
         "json_attempt_count": 0,
         "coder_format_retry_count": 0,
         "last_json_error": "",
+        "structured_output_mode": "",
+        "file_block_repair_source": "",
+        "json_repair_source": "",
+        "markdown_fence_found": False,
+        "markdown_fence_stripped": False,
+        "markdown_fence_language": "",
         "parsed_output_mode": "",
         "normalized_diff_length": 0,
         "generated_diff_length": 0,
@@ -4952,6 +5444,12 @@ def _merge_coder_response_diagnostics(
     diagnostics["json_attempt_count"] = response.json_attempt_count
     diagnostics["coder_format_retry_count"] = response.coder_format_retry_count
     diagnostics["last_json_error"] = response.last_json_error
+    diagnostics["structured_output_mode"] = response.structured_output_mode
+    diagnostics["file_block_repair_source"] = response.file_block_repair_source
+    diagnostics["json_repair_source"] = response.json_repair_source
+    diagnostics["markdown_fence_found"] = response.markdown_fence_found
+    diagnostics["markdown_fence_stripped"] = response.markdown_fence_stripped
+    diagnostics["markdown_fence_language"] = response.markdown_fence_language
 
 
 def _tampered_context_slices(packet: CoderPacket) -> list[str]:
@@ -4979,6 +5477,7 @@ def _coder_response_reason_code(response: CoderResponse) -> str:
         "coder_response_wrong_format_unified_diff",
         "coder_response_repair_exhausted",
         "coder_target_mismatch",
+        "coder_out_of_scope_file",
         "coder_invalid_replacement_payload",
         "coder_replacement_content_validation_failed",
     ):
@@ -5264,6 +5763,7 @@ def _call_coder_llm(
     num_retries: int | None = None,
 ) -> str:
     alias = model_alias or _coder_model_alias()
+    central_gate_check("model_call", run_id=f"coder_llm:{alias}")
     resolved_model = route_model_for_alias(alias) or ""
     ollama_route = resolve_ollama_route(probe=False)
     coder_ollama_model = resolve_coder_ollama_model_name(probe=False)

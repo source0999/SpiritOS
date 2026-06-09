@@ -13,6 +13,7 @@ from source_proxy.approval.gate import (
     SpendEstimationUnavailable,
     async_pre_call_hook,
 )
+from source_proxy.approval.external_gate import ExternalGateError, central_gate_check
 from source_proxy.expenditure.logger import (
     build_expenditure_record,
     log_completion_expenditure,
@@ -57,6 +58,18 @@ async def chat_completions(
     response: Response,
     background_tasks: BackgroundTasks,
 ) -> dict[str, Any]:
+    try:
+        central_gate_check("model_call", run_id="source_proxy_chat_completions")
+    except ExternalGateError as gate_error:
+        raise HTTPException(
+            status_code=status.HTTP_423_LOCKED,
+            detail={
+                "message": str(gate_error),
+                "reason_code": gate_error.reason_code,
+                **gate_error.payload,
+            },
+        ) from gate_error
+
     if request.stream:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

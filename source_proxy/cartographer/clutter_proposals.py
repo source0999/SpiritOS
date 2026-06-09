@@ -8,6 +8,7 @@ from pathlib import Path
 from source_proxy.cartographer.clutter_inventory import build_clutter_inventory
 from source_proxy.cartographer.models import ClutterCandidate, ClutterDeletionProposal
 from source_proxy.cartographer.project_discovery import discover_projects
+from source_proxy.approval.external_gate import central_gate_check
 
 _MAX_LOW_RISK_FILES_PER_PROPOSAL = 50
 
@@ -48,6 +49,7 @@ def apply_approved_low_risk_deletion_proposal(
     approved: bool,
     approved_by: str,
 ) -> dict[str, object]:
+    central_gate_check("apply", run_id=f"cartographer_clutter_cleanup:{proposal_id}")
     if not approved:
         raise ClutterCleanupError(
             "approved must be true before low-risk cleanup can run.",

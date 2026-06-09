@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from source_proxy.cartographer.models import ProposalRecord
+from source_proxy.approval.external_gate import central_gate_check
 from source_proxy.cartographer.project_discovery import discover_projects
 from source_proxy.cartographer.proposals import list_proposals
 from source_proxy.tasks.long_running import (
@@ -31,6 +32,7 @@ def apply_approved_doc_proposal(
     approved: bool,
     approved_by: str = "cartographer-ui",
 ) -> dict[str, Any]:
+    central_gate_check("apply", run_id=f"cartographer_apply_approved_doc_proposal:{proposal_id}")
     if approved is not True:
         raise CartographerApplyError(
             "approved must be true before Cartographer can apply a proposal.",

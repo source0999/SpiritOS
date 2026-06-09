@@ -8,7 +8,9 @@ from typing import Any
 from source_proxy.routing.ollama_route import (
     clear_ollama_route_cache,
     ollama_coder_route_status_entry,
+    ollama_classifier_route_status_entry,
     ollama_route_status_entry,
+    resolve_classifier_ollama_model_name,
     resolve_coder_ollama_model_name,
     resolve_ollama_model_name,
     resolve_ollama_route,
@@ -28,8 +30,10 @@ def route_models() -> list[RouteModel]:
     ollama_resolution = resolve_ollama_route(probe=True)
     ollama_model = ollama_resolution.model
     coder_ollama_model = resolve_coder_ollama_model_name(probe=True)
+    classifier_ollama_model = resolve_classifier_ollama_model_name(probe=True)
     local_status = ollama_route_status_entry()
     coder_status = ollama_coder_route_status_entry()
+    classifier_status = ollama_classifier_route_status_entry()
     openai_model = os.getenv("SOURCE_PROXY_OPENAI_MODEL", "gpt-4o-mini")
     anthropic_model = os.getenv(
         "SOURCE_PROXY_ANTHROPIC_MODEL", "claude-3-7-sonnet-20250219"
@@ -50,6 +54,13 @@ def route_models() -> list[RouteModel]:
             model=f"ollama_chat/{coder_ollama_model}",
             enabled=coder_status.get("enabled") is True,
             reason=str(coder_status.get("reason") or "") or None,
+        ),
+        RouteModel(
+            alias="classifier",
+            provider="ollama",
+            model=f"ollama_chat/{classifier_ollama_model}",
+            enabled=classifier_status.get("enabled") is True,
+            reason=str(classifier_status.get("reason") or "") or None,
         ),
         RouteModel(
             alias="openai",
@@ -164,6 +175,8 @@ def routing_status() -> list[dict[str, str | bool | None]]:
             item.update(local_status)
         if route_model.alias == "coder" and route_model.provider == "ollama":
             item.update(ollama_coder_route_status_entry())
+        if route_model.alias == "classifier" and route_model.provider == "ollama":
+            item.update(ollama_classifier_route_status_entry())
         statuses.append(item)
     return statuses
 

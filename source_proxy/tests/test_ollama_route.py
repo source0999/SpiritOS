@@ -8,7 +8,11 @@ from source_proxy.routing.litellm_router import clear_router_cache, route_models
 from source_proxy.routing.ollama_route import (
     clear_ollama_route_cache,
     local_model_unavailable_from_error,
+    ollama_classifier_route_status_entry,
+    ollama_coder_route_status_entry,
     ollama_route_status_entry,
+    resolve_classifier_ollama_model_name,
+    resolve_coder_ollama_model_name,
     resolve_ollama_model_name,
     resolve_ollama_route,
 )
@@ -130,6 +134,65 @@ class OllamaRouteTests(unittest.TestCase):
 
         self.assertFalse(coder.enabled)
         self.assertIn("ollama_model_missing:qwen2.5-coder:7b", str(coder.reason))
+
+    def test_unconfigured_coder_prefers_7b_with_14b_comparison_fallback(self) -> None:
+        with mock.patch.dict(
+            os.environ,
+            {
+                "OLLAMA_BASE_URL": "http://127.0.0.1:11434",
+                "SOURCE_PROXY_CODER_OLLAMA_MODEL": "",
+            },
+            clear=False,
+        ), mock.patch(
+            "source_proxy.routing.ollama_route._probe_ollama_tags",
+            return_value=(True, ("qwen2.5-coder:14b", "qwen2.5-coder:7b")),
+        ):
+            clear_ollama_route_cache()
+            status = ollama_coder_route_status_entry()
+            self.assertEqual(resolve_coder_ollama_model_name(), "qwen2.5-coder:7b")
+
+        self.assertEqual(status["requested_ollama_model"], "auto:qwen2.5-coder:7b")
+        self.assertEqual(status["ollama_model"], "qwen2.5-coder:7b")
+        self.assertEqual(status["available_ollama_model_fallback"], "qwen2.5-coder:14b")
+
+    def test_unconfigured_coder_falls_back_to_7b_when_14b_missing(self) -> None:
+        with mock.patch.dict(
+            os.environ,
+            {
+                "OLLAMA_BASE_URL": "http://127.0.0.1:11434",
+                "SOURCE_PROXY_CODER_OLLAMA_MODEL": "",
+            },
+            clear=False,
+        ), mock.patch(
+            "source_proxy.routing.ollama_route._probe_ollama_tags",
+            return_value=(True, ("qwen2.5-coder:7b",)),
+        ):
+            clear_ollama_route_cache()
+            status = ollama_coder_route_status_entry()
+
+        self.assertEqual(status["ollama_model"], "qwen2.5-coder:7b")
+        self.assertIsNone(status["available_ollama_model_fallback"])
+
+    def test_classifier_status_defaults_to_phi4_mini(self) -> None:
+        with mock.patch.dict(
+            os.environ,
+            {
+                "OLLAMA_BASE_URL": "http://127.0.0.1:11434",
+                "SOURCE_PROXY_CLASSIFIER_OLLAMA_MODEL": "",
+            },
+            clear=False,
+        ), mock.patch(
+            "source_proxy.routing.ollama_route._probe_ollama_tags",
+            return_value=(True, ("phi4-mini:latest", "qwen2.5-coder:14b")),
+        ):
+            clear_ollama_route_cache()
+            status = ollama_classifier_route_status_entry()
+            self.assertEqual(resolve_classifier_ollama_model_name(), "phi4-mini:latest")
+
+        self.assertEqual(status["alias"], "classifier")
+        self.assertEqual(status["requested_ollama_model"], "auto:phi4-mini:latest")
+        self.assertEqual(status["model"], "ollama_chat/phi4-mini:latest")
+        self.assertTrue(status["enabled"])
 
     def test_local_route_maps_to_ollama_chat_model(self) -> None:
         with mock.patch.dict(

@@ -66,7 +66,7 @@ export const dummyCoder10Prompts: DummyCoder10Prompt[] = [
     number: 1,
     title: "Init Dummy Product Site",
     submittedPrompt:
-      "make a tiny fake product website project for testing the coder agent. call it LumaCart. put it only in `tests/ui-agent-trials/fixtures/dummy-product-site/`. if that folder doesnt exist create it. dont touch the real app, coding page, spiritflix, source_proxy, docs, or root package files.",
+      "make a tiny fake product website project for testing the coder agent. call it LumaCart. put it only in `tests/ui-agent-trials/fixtures/dummy-product-site/`. if that folder doesnt exist create it. return one file block per file using `<file path=\"...\">...</file>` or `<<<FILE: path` delimiters. dont touch the real app, coding page, spiritflix, source_proxy, docs, or root package files.",
     primaryExpectedTargets: [
       `${DUMMY_CODER_10_FIXTURE_ROOT}README.md`,
       `${DUMMY_CODER_10_FIXTURE_ROOT}package.json`,

@@ -8,6 +8,7 @@ from typing import Any, Callable
 
 from source_proxy.planning.plan import ArchitectPlan, ContextSlice
 from source_proxy.routing.litellm_router import available_model_aliases, get_router
+from source_proxy.approval.external_gate import central_gate_check
 
 
 @dataclass(frozen=True)
@@ -334,6 +335,7 @@ def _reviewer_model_alias() -> str:
 
 
 def _call_reviewer_llm(prompt: str, *, model_alias: str) -> str:
+    central_gate_check("model_call", run_id="reviewer_llm")
     completion = get_router().completion(
         model=model_alias,
         messages=[{"role": "system", "content": prompt}],

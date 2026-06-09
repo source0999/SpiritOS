@@ -259,6 +259,80 @@ class CoderAgentRepomixDiffTests(unittest.TestCase):
             self.assertGreater(out["coder_diagnostics"]["generated_diff_length"], 0)
             self.assertIsNot(out.get("already_satisfied"), True)
 
+    def test_xml_file_block_replacement_returns_backend_generated_diff(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            rel = "src/mock/CodingAgentInterface.tsx"
+            target = root / rel
+            target.parent.mkdir(parents=True)
+            target.write_text("export default function Page() { return null; }\n", encoding="utf-8")
+            _write_repomix(root, rel)
+
+            out = propose_coder_agent_implementation_diff(
+                task=f"Target file: {rel}\nRender OK.",
+                workspace_root=root,
+                llm_call=lambda _prompt, _model: (
+                    f'<file path="{rel}">\n'
+                    'export default function Page() { return <main className="min-h-screen">OK</main>; }\n'
+                    "</file>"
+                ),
+            )
+
+            self.assertEqual(out["target"], rel)
+            self.assertFalse(out.get("coder_blocked", False))
+            self.assertIn("+export default function Page()", out["proposed_diff"])
+            self.assertEqual(out["coder_diagnostics"]["structured_output_mode"], "xml_file_block")
+            self.assertEqual(out["coder_diagnostics"]["file_block_repair_source"], "xml_file_block")
+            self.assertEqual(out["coder_diagnostics"]["validation_status"], "preview_ready")
+
+    def test_delimited_file_block_replacement_returns_backend_generated_diff(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            rel = "src/mock/CodingAgentInterface.tsx"
+            target = root / rel
+            target.parent.mkdir(parents=True)
+            target.write_text("export default function Page() { return null; }\n", encoding="utf-8")
+            _write_repomix(root, rel)
+
+            out = propose_coder_agent_implementation_diff(
+                task=f"Target file: {rel}\nRender OK.",
+                workspace_root=root,
+                llm_call=lambda _prompt, _model: (
+                    f"<<<FILE: {rel}\n"
+                    'export default function Page() { return <main className="min-h-screen">OK</main>; }\n'
+                    ">>>"
+                ),
+            )
+
+            self.assertEqual(out["target"], rel)
+            self.assertFalse(out.get("coder_blocked", False))
+            self.assertIn("+export default function Page()", out["proposed_diff"])
+            self.assertEqual(out["coder_diagnostics"]["structured_output_mode"], "delimited_file_block")
+            self.assertEqual(out["coder_diagnostics"]["file_block_repair_source"], "delimited_file_block")
+
+    def test_multiple_file_blocks_are_rejected_before_diff_preview(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            rel = "src/mock/CodingAgentInterface.tsx"
+            target = root / rel
+            target.parent.mkdir(parents=True)
+            target.write_text("export default function Page() { return null; }\n", encoding="utf-8")
+            _write_repomix(root, rel)
+
+            out = propose_coder_agent_implementation_diff(
+                task=f"Target file: {rel}\nRender OK.",
+                workspace_root=root,
+                llm_call=lambda _prompt, _model: (
+                    f'<file path="{rel}">one</file>\n'
+                    f'<file path="{rel}">two</file>'
+                ),
+            )
+
+            self.assertTrue(out["coder_blocked"])
+            self.assertEqual(out["reason_code"], "coder_response_repair_exhausted")
+            self.assertEqual(out["coder_diagnostics"]["parse_error_class"], "file_block_validation")
+            self.assertIn("multiple_file_blocks_not_allowed", out["coder_diagnostics"]["parse_error_message"])
+
     def test_reviewer_blocked_attempt_retries_and_surfaces_successful_diff(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -770,7 +844,7 @@ class CoderAgentRepomixDiffTests(unittest.TestCase):
             self.assertEqual(out["reason_code"], "coder_backend_diff_generation_failed")
             self.assertIsNot(out.get("already_satisfied"), True)
 
-    def test_fenced_json_replacement_returns_parsed_content(self) -> None:
+    def test_markdown_fenced_json_output_is_stripped_and_used(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             rel = "src/app/demo/page.tsx"
@@ -787,8 +861,158 @@ class CoderAgentRepomixDiffTests(unittest.TestCase):
                 + "\n```",
             )
 
-            self.assertEqual(out["target"], rel)
+            self.assertFalse(out.get("coder_blocked", False), out)
             self.assertIn("Done", out["proposed_diff"])
+            self.assertTrue(out["coder_diagnostics"]["markdown_fence_found"])
+            self.assertTrue(out["coder_diagnostics"]["markdown_fence_stripped"])
+            self.assertEqual(out["coder_diagnostics"]["markdown_fence_language"], "json")
+
+    def test_markdown_fenced_xml_file_block_is_stripped_and_used(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            rel = "src/app/demo/page.tsx"
+            target = root / rel
+            target.parent.mkdir(parents=True)
+            target.write_text("export default function Page() { return null; }\n", encoding="utf-8")
+            _write_repomix(root, rel)
+
+            out = propose_coder_agent_implementation_diff(
+                task=f"Target file: {rel}\nUpdate the page.",
+                workspace_root=root,
+                llm_call=lambda _prompt, _model: (
+                    "```xml\n"
+                    f'<file path="{rel}">\n'
+                    "export default function Page() { return <main>XML Done</main>; }\n"
+                    "</file>\n"
+                    "```"
+                ),
+            )
+
+            self.assertFalse(out.get("coder_blocked", False), out)
+            self.assertIn("XML Done", out["proposed_diff"])
+            self.assertEqual(out["coder_diagnostics"]["structured_output_mode"], "xml_file_block")
+            self.assertTrue(out["coder_diagnostics"]["markdown_fence_found"])
+            self.assertTrue(out["coder_diagnostics"]["markdown_fence_stripped"])
+
+    def test_unclosed_markdown_fence_is_rejected_with_diagnostic(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            rel = "src/app/demo/page.tsx"
+            (root / rel).parent.mkdir(parents=True)
+            (root / rel).write_text("export default function Page() { return null; }\n", encoding="utf-8")
+            _write_repomix(root, rel)
+
+            out = propose_coder_agent_implementation_diff(
+                task=f"Target file: {rel}\nUpdate the page.",
+                workspace_root=root,
+                llm_call=lambda _prompt, _model: (
+                    "```xml\n"
+                    f'<file path="{rel}">\n'
+                    "export default function Page() { return <main>Open fence</main>; }\n"
+                    "</file>\n"
+                ),
+            )
+
+            self.assertTrue(out["coder_blocked"])
+            self.assertEqual(out["coder_diagnostics"]["last_json_error"], "markdown_fence_unclosed")
+            self.assertTrue(out["coder_diagnostics"]["markdown_fence_found"])
+            self.assertFalse(out["coder_diagnostics"]["markdown_fence_stripped"])
+
+    def test_unclosed_file_tag_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            rel = "src/app/demo/page.tsx"
+            (root / rel).parent.mkdir(parents=True)
+            (root / rel).write_text("export default function Page() { return null; }\n", encoding="utf-8")
+            _write_repomix(root, rel)
+
+            out = propose_coder_agent_implementation_diff(
+                task=f"Target file: {rel}\nUpdate the page.",
+                workspace_root=root,
+                llm_call=lambda _prompt, _model: (
+                    f'<file path="{rel}">\n'
+                    "export default function Page() { return <main>Open</main>; }\n"
+                ),
+            )
+
+            self.assertTrue(out["coder_blocked"])
+            self.assertEqual(out["coder_diagnostics"]["last_json_error"], "unclosed_file_tag")
+
+    def test_no_file_block_prose_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            rel = "src/app/demo/page.tsx"
+            (root / rel).parent.mkdir(parents=True)
+            (root / rel).write_text("export default function Page() { return null; }\n", encoding="utf-8")
+            _write_repomix(root, rel)
+
+            out = propose_coder_agent_implementation_diff(
+                task=f"Target file: {rel}\nUpdate the page.",
+                workspace_root=root,
+                llm_call=lambda _prompt, _model: "hey make it shiny and fix the page thanks",
+            )
+
+            self.assertTrue(out["coder_blocked"])
+            self.assertEqual(out["coder_diagnostics"]["json_attempt_count"], 2)
+            self.assertEqual(out["coder_diagnostics"]["structured_output_mode"], "")
+
+    def test_malformed_file_block_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            rel = "src/app/demo/page.tsx"
+            (root / rel).parent.mkdir(parents=True)
+            (root / rel).write_text("export default function Page() { return null; }\n", encoding="utf-8")
+            _write_repomix(root, rel)
+
+            out = propose_coder_agent_implementation_diff(
+                task=f"Target file: {rel}\nUpdate the page.",
+                workspace_root=root,
+                llm_call=lambda _prompt, _model: (
+                    "<<<FILE: src/app/demo/page.tsx\n"
+                    "export default function Page() { return null; }\n"
+                ),
+            )
+
+            self.assertTrue(out["coder_blocked"])
+            self.assertEqual(out["coder_diagnostics"]["last_json_error"], "malformed_file_block")
+
+    def test_empty_file_block_content_is_rejected_as_empty_diff(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            rel = "src/app/demo/page.tsx"
+            (root / rel).parent.mkdir(parents=True)
+            (root / rel).write_text("export default function Page() { return null; }\n", encoding="utf-8")
+            _write_repomix(root, rel)
+
+            out = propose_coder_agent_implementation_diff(
+                task=f"Target file: {rel}\nUpdate the page.",
+                workspace_root=root,
+                llm_call=lambda _prompt, _model: f'<file path="{rel}">\n</file>',
+            )
+
+            self.assertTrue(out["coder_blocked"])
+            self.assertEqual(out["coder_diagnostics"]["last_json_error"], "empty_diff")
+
+    def test_unsafe_file_block_path_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            rel = "src/app/demo/page.tsx"
+            (root / rel).parent.mkdir(parents=True)
+            (root / rel).write_text("export default function Page() { return null; }\n", encoding="utf-8")
+            _write_repomix(root, rel)
+
+            out = propose_coder_agent_implementation_diff(
+                task=f"Target file: {rel}\nUpdate the page.",
+                workspace_root=root,
+                llm_call=lambda _prompt, _model: (
+                    '<file path="../.env">\n'
+                    "SECRET=oops\n"
+                    "</file>"
+                ),
+            )
+
+            self.assertTrue(out["coder_blocked"])
+            self.assertEqual(out["coder_diagnostics"]["last_json_error"], "unsafe_path")
 
     def test_content_lines_replacement_returns_backend_generated_diff(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -915,7 +1139,6 @@ class CoderAgentRepomixDiffTests(unittest.TestCase):
                 task=f"Target file: {rel}\nUpdate the page.",
                 workspace_root=root,
                 llm_call=lambda _prompt, _model: (
-                    "```json\n"
                     "{\n"
                     '  "action": "replace_file",\n'
                     f'  "target": "{rel}",\n'
@@ -925,7 +1148,6 @@ class CoderAgentRepomixDiffTests(unittest.TestCase):
                     '    "}"\n'
                     "  ]\n"
                     "}\n"
-                    "```"
                 ),
             )
 
@@ -1020,7 +1242,7 @@ class CoderAgentRepomixDiffTests(unittest.TestCase):
                 out["coder_diagnostics"]["last_json_error"].lower(),
             )
 
-    def test_json_with_wrong_target_returns_coder_target_mismatch(self) -> None:
+    def test_json_with_wrong_target_returns_out_of_scope_file(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             rel = "src/app/demo/page.tsx"
@@ -1038,7 +1260,8 @@ class CoderAgentRepomixDiffTests(unittest.TestCase):
             )
 
             self.assertTrue(out["coder_blocked"])
-            self.assertEqual(out["reason_code"], "coder_target_mismatch")
+            self.assertEqual(out["reason_code"], "coder_out_of_scope_file")
+            self.assertEqual(out["coder_diagnostics"]["last_json_error"], "out-of-scope file")
 
     def test_json_with_missing_content_returns_invalid_payload(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -1237,7 +1460,10 @@ class CoderAgentRepomixDiffTests(unittest.TestCase):
             (root / rel).write_text("export default function Page() { return null; }\n", encoding="utf-8")
             _write_repomix(root, rel)
 
-            with mock.patch.dict("os.environ", {}, clear=True):
+            with (
+                mock.patch.dict("os.environ", {}, clear=True),
+                mock.patch("source_proxy.tasks.long_running.available_model_aliases", return_value=set()),
+            ):
                 out = propose_coder_agent_implementation_diff(
                     task=f"Target file: {rel}\nCreate a brand new page.",
                     workspace_root=root,
@@ -1405,9 +1631,11 @@ class CoderAgentRepomixDiffTests(unittest.TestCase):
 
     def test_prompt_contract_mentions_json_replacement_and_blocked(self) -> None:
         self.assertIn("complete final content", CODER_SYSTEM_PROMPT)
+        self.assertIn('<file path="REPO_RELATIVE_PATH">', CODER_SYSTEM_PROMPT)
+        self.assertIn("<<<FILE: REPO_RELATIVE_PATH", CODER_SYSTEM_PROMPT)
         self.assertIn('"action":"replace_file"', CODER_SYSTEM_PROMPT)
         self.assertIn('"content_lines":["line 1","line 2"]', CODER_SYSTEM_PROMPT)
-        self.assertIn("Return only JSON", CODER_SYSTEM_PROMPT)
+        self.assertIn("JSON remains accepted only as a legacy fallback", CODER_SYSTEM_PROMPT)
         self.assertIn("TaskSpec.allowed_files", CODER_SYSTEM_PROMPT)
         self.assertIn('"action":"blocked"', CODER_SYSTEM_PROMPT)
         self.assertNotIn("Output ONLY a valid unified diff", CODER_SYSTEM_PROMPT)

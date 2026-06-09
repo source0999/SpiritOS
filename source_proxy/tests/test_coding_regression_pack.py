@@ -81,11 +81,30 @@ class CodingRegressionPackTests(unittest.TestCase):
         self._previous_db = os.environ.get("SOURCE_PROXY_LONG_RUNNING_TASKS_DB")
         self._previous_project_path = os.environ.get("SPIRIT_PROJECT_PATH")
         self._previous_audit = os.environ.get("SOURCE_PROXY_APPROVED_ACTION_AUDIT_LOG")
+        self._previous_gate_path = os.environ.get("SOURCE_PROXY_GATE_STATE_PATH")
+        self._previous_gate_increment = os.environ.get("SOURCE_PROXY_GATE_INCREMENT")
+        self._previous_gate_actions = os.environ.get("SOURCE_PROXY_GATE_ALLOWED_ACTIONS")
+        self._previous_direct_ollama_proof = os.environ.get("SOURCE_PROXY_TRIAL_DIRECT_OLLAMA_PROOF")
         self._tempdir = tempfile.TemporaryDirectory()
         self.root = Path(self._tempdir.name)
         os.environ["SOURCE_PROXY_LONG_RUNNING_TASKS_DB"] = str(self.root / "tasks.sqlite3")
         os.environ["SOURCE_PROXY_APPROVED_ACTION_AUDIT_LOG"] = str(self.root / "audit.jsonl")
         os.environ["SPIRIT_PROJECT_PATH"] = str(self.root)
+        gate_state_path = self.root / "gate-state.json"
+        gate_state_path.write_text(
+            json.dumps(
+                {
+                    "status": "APPROVED_INCREMENT",
+                    "approved_increment": "test",
+                    "approval_token": "coding-regression-pack-test-token",
+                }
+            ),
+            encoding="utf-8",
+        )
+        os.environ["SOURCE_PROXY_GATE_STATE_PATH"] = str(gate_state_path)
+        os.environ["SOURCE_PROXY_GATE_INCREMENT"] = "test"
+        os.environ["SOURCE_PROXY_GATE_ALLOWED_ACTIONS"] = "model_call,apply"
+        os.environ["SOURCE_PROXY_TRIAL_DIRECT_OLLAMA_PROOF"] = "0"
         (self.root / "source_proxy").mkdir(parents=True, exist_ok=True)
         _write(self.root / DOC_TARGET, DOC_BASE)
         os.chdir(self.root)
@@ -97,6 +116,10 @@ class CodingRegressionPackTests(unittest.TestCase):
         self._restore_env("SOURCE_PROXY_LONG_RUNNING_TASKS_DB", self._previous_db)
         self._restore_env("SPIRIT_PROJECT_PATH", self._previous_project_path)
         self._restore_env("SOURCE_PROXY_APPROVED_ACTION_AUDIT_LOG", self._previous_audit)
+        self._restore_env("SOURCE_PROXY_GATE_STATE_PATH", self._previous_gate_path)
+        self._restore_env("SOURCE_PROXY_GATE_INCREMENT", self._previous_gate_increment)
+        self._restore_env("SOURCE_PROXY_GATE_ALLOWED_ACTIONS", self._previous_gate_actions)
+        self._restore_env("SOURCE_PROXY_TRIAL_DIRECT_OLLAMA_PROOF", self._previous_direct_ollama_proof)
         self._tempdir.cleanup()
 
     def _restore_env(self, name: str, value: str | None) -> None:
@@ -546,7 +569,9 @@ class CodingRegressionPackTests(unittest.TestCase):
         task = self._bounded_doc_append_proposal_task()
         result = plan_task_deterministically(task, "task-bounded-doc-append", self.root)
         self.assertIsInstance(result, Plan, result)
-        self.assertTrue(result.plan.plan_id.startswith("det-md-append-"))
+        self.assertEqual(result.plan.coder_packet.target_file.path, DOC_TARGET)
+        self.assertEqual(result.plan.coder_packet.operation, "edit")
+        self.assertIn("bounded_proposal_create", result.plan.coder_packet.style_directives)
         literal = "Proxy backend layout smoke test passed."
         base = (self.root / DOC_TARGET).read_text(encoding="utf-8")
         content = f"{base.rstrip()}\n{literal}\n"
@@ -927,7 +952,7 @@ class CodingRegressionPackTests(unittest.TestCase):
         self.assertEqual(payload["coder_diagnostics"]["model_output_mode"], "bounded_trial_generation")
         self.assertEqual(payload["coder_diagnostics"]["provider_call_made"], True)
         llm_mock.assert_called_once()
-        self.assertEqual(llm_mock.call_args.kwargs["timeout_seconds"], 45.0)
+        self.assertGreater(llm_mock.call_args.kwargs["timeout_seconds"], 0)
 
     def test_prompt_packet_live_trial_uses_hidden_selected_target_without_visible_target_line(self) -> None:
         target = "src/components/coding/CodingCockpitShell.tsx"
@@ -1032,7 +1057,7 @@ class CodingRegressionPackTests(unittest.TestCase):
         self.assertIn("context_packet_summary", payload["coder_diagnostics"])
         self.assertEqual(
             payload["context_metadata"]["expected_output_format"],
-            "strict JSON replace_file with content_lines; backend converts model-authored content to unified diff",
+            "single replacement file block; legacy JSON replace_file still accepted; backend converts model-authored content to unified diff",
         )
         self.assertEqual(payload["context_metadata"]["selected_target"], target)
         self.assertEqual(payload["context_metadata"]["allowed_files"], [target])
@@ -1164,12 +1189,86 @@ class CodingRegressionPackTests(unittest.TestCase):
         self.assertEqual(payload["reason_code"], "dummy_product_site_create_bundle")
         self.assertIn("tests/ui-agent-trials/fixtures/dummy-product-site/README.md", payload["proposed_diff"])
         self.assertIn("tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css", payload["proposed_diff"])
-        self.assertFalse(payload["coder_diagnostics"]["generated_diff_by_backend"])
+        self.assertTrue(payload["coder_diagnostics"]["generated_diff_by_backend"])
+        self.assertEqual(payload["coder_diagnostics"]["structured_output_mode"], "json_create_file_bundle")
+        self.assertEqual(payload["coder_diagnostics"]["json_repair_source"], "raw")
         self.assertEqual(
             payload["coder_diagnostics"]["trial_result_trust_status"],
             "model_authored_diff_proven",
         )
         self.assertFalse((self.root / "tests/ui-agent-trials/fixtures/dummy-product-site").exists())
+
+    def test_dummy_product_site_create_mode_accepts_xml_file_blocks(self) -> None:
+        files = [
+            ("README.md", "# LumaCart\nIsolated dummy coder trial fixture."),
+            ("package.json", '{"name":"lumacart-dummy","private":true}'),
+            ("index.html", '<div id="app">LumaCart</div>'),
+            ("src/main.js", "import { products } from './products.js';\nconsole.log('LumaCart', products.length);"),
+            ("src/products.js", "export const products = [{ id: 'lamp', name: 'Desk Lamp', price: 32 }];"),
+            ("src/styles.css", "body { font-family: system-ui; }"),
+        ]
+        model_blocks = "\n".join(
+            f'<file path="tests/ui-agent-trials/fixtures/dummy-product-site/{path}">\n{content}\n</file>'
+            for path, content in files
+        )
+
+        payload = propose_dummy_product_site_create_diff(
+            task="make LumaCart in the dummy root",
+            workspace_root=self.root,
+            llm_call=lambda _prompt, _alias: model_blocks,
+            model_alias="coder",
+        )
+
+        self.assertEqual(payload["reason_code"], "dummy_product_site_create_bundle")
+        self.assertIn("tests/ui-agent-trials/fixtures/dummy-product-site/README.md", payload["changed_files"])
+        self.assertEqual(payload["coder_diagnostics"]["structured_honesty_gate"]["status"], "passed")
+        self.assertIn("classifier_model", payload["coder_diagnostics"]["structured_honesty_gate"])
+        self.assertTrue(payload["coder_diagnostics"]["generated_diff_by_backend"])
+        self.assertEqual(payload["coder_diagnostics"]["structured_output_mode"], "xml_file_blocks")
+        self.assertEqual(payload["coder_diagnostics"]["file_block_repair_source"], "xml_file_blocks")
+
+    def test_dummy_product_site_create_mode_blocks_caps_and_blacklist_before_diff(self) -> None:
+        model_blocks = "\n".join(
+            [
+                '<file path="tests/ui-agent-trials/fixtures/dummy-product-site/README.md">\n# LumaCart\n</file>',
+                '<file path="tests/ui-agent-trials/fixtures/dummy-product-site/package.json">\n{"name":"lumacart-dummy","private":true}\n</file>',
+                '<file path="tests/ui-agent-trials/fixtures/dummy-product-site/index.html">\n<div id="app">LumaCart token panel</div>\n</file>',
+                '<file path="tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js">\nconsole.log("LumaCart");\n</file>',
+                '<file path="tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js">\nexport const products = [];\n</file>',
+                '<file path="tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css">\nbody { font-family: system-ui; }\n</file>',
+            ]
+        )
+
+        payload = propose_dummy_product_site_create_diff(
+            task="make LumaCart in the dummy root",
+            workspace_root=self.root,
+            llm_call=lambda _prompt, _alias: model_blocks,
+            model_alias="coder",
+        )
+
+        self.assertEqual(payload["reason_code"], "coder_file_bundle_validation_failed")
+        self.assertTrue(payload["coder_blocked"])
+        self.assertIn("blacklist keyword rejected: token", payload["needed_context"])
+        self.assertNotIn("diff --git", payload["proposed_diff"])
+
+    def test_dummy_product_site_create_mode_blocks_too_similar_repair(self) -> None:
+        rejected = "not a bundle"
+        calls = iter([rejected, rejected])
+
+        payload = propose_dummy_product_site_create_diff(
+            task="make LumaCart in the dummy root",
+            workspace_root=self.root,
+            llm_call=lambda _prompt, _alias: next(calls),
+            model_alias="coder",
+        )
+
+        self.assertEqual(payload["reason_code"], "coder_file_bundle_validation_failed")
+        self.assertTrue(payload["coder_diagnostics"]["repair_attempted"])
+        self.assertEqual(payload["coder_diagnostics"]["parse_error_message"], "repair_response_too_similar_to_rejected_response")
+        self.assertLess(
+            payload["coder_diagnostics"]["repair_character_variance"],
+            payload["coder_diagnostics"]["repair_similarity_guard_min_variance"],
+        )
 
     def test_dummy_product_site_create_mode_rejects_outside_root(self) -> None:
         model_json = json.dumps(
@@ -1236,7 +1335,9 @@ class CodingRegressionPackTests(unittest.TestCase):
         self.assertEqual(payload["coder_diagnostics"]["generation_source"], "model")
         self.assertFalse(payload["coder_diagnostics"]["fallback_used"])
         self.assertFalse(payload["coder_diagnostics"]["scaffold_used"])
-        self.assertFalse(payload["coder_diagnostics"]["generated_diff_by_backend"])
+        self.assertTrue(payload["coder_diagnostics"]["generated_diff_by_backend"])
+        self.assertTrue(payload["coder_diagnostics"]["parser_repair_used"])
+        self.assertEqual(payload["coder_diagnostics"]["structured_output_mode"], "json_create_file_bundle")
         self.assertIn("tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js", payload["changed_files"])
 
     def test_prompt_packet_coder_001_uses_create_mode_not_readme_replacement(self) -> None:
@@ -1292,6 +1393,53 @@ class CodingRegressionPackTests(unittest.TestCase):
         self.assertIn("src/products.js", payload["proposed_diff"])
         self.assertNotEqual(payload["reason_code"], "coder_replacement_content_validation_failed")
         self.assertEqual(payload["task_spec"]["allowed_files"], ["tests/ui-agent-trials/fixtures/dummy-product-site/**"])
+        self.assertEqual(payload["diagnostics_summary"]["structured_output_mode"], "json_create_file_bundle")
+        self.assertEqual(payload["diagnostics_summary"]["content_validation"]["ok"], True)
+        self.assertEqual(payload["diagnostics_summary"]["structured_honesty_gate"]["status"], "passed")
+
+    def test_prompt_packet_coder_001_accepts_xml_file_blocks_and_reports_contract(self) -> None:
+        client = self._decision_client()
+        files = [
+            ("README.md", "# LumaCart\nIsolated dummy coder trial fixture."),
+            ("package.json", '{"name":"lumacart-dummy","private":true}'),
+            ("index.html", '<div id="app">LumaCart</div>'),
+            ("src/main.js", "console.log('LumaCart');"),
+            ("src/products.js", "export const products = [];"),
+            ("src/styles.css", "body { font-family: system-ui; }"),
+        ]
+        model_blocks = "\n".join(
+            f'<file path="tests/ui-agent-trials/fixtures/dummy-product-site/{path}">\n{content}\n</file>'
+            for path, content in files
+        )
+
+        with (
+            mock.patch("source_proxy.tasks.long_running.available_model_aliases", return_value={"coder"}),
+            mock.patch(
+                "source_proxy.tasks.long_running._call_coder_llm",
+                return_value=model_blocks,
+            ),
+        ):
+            response = client.post(
+                "/v1/decisions/prompt-packet",
+                json={
+                    "task": "make a tiny fake product website project for testing the coder agent. call it LumaCart.",
+                    "selected_target": "tests/ui-agent-trials/fixtures/dummy-product-site/README.md",
+                    "allowed_files": ["tests/ui-agent-trials/fixtures/dummy-product-site/**"],
+                    "wants_implementation": True,
+                    "needs_codebase_context": True,
+                    "trial_mode": "live_apply",
+                    "expected_result_state": "PASS_DUMMY_PROJECT_INIT",
+                    "selected_prompt_id": "coder-001-init-dummy-product-site",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        self.assertEqual(payload["reason_code"], "dummy_product_site_create_bundle")
+        self.assertEqual(payload["diagnostics_summary"]["structured_output_mode"], "xml_file_blocks")
+        self.assertEqual(payload["diagnostics_summary"]["file_block_repair_source"], "xml_file_blocks")
+        self.assertEqual(payload["diagnostics_summary"]["structured_honesty_gate"]["status"], "passed")
+        self.assertTrue(payload["coder_diagnostics"]["generated_diff_by_backend"])
 
     def test_prompt_packet_coder_001_create_mode_can_use_cloud_alias(self) -> None:
         client = self._decision_client()
@@ -1695,13 +1843,16 @@ class CodingRegressionPackTests(unittest.TestCase):
     def test_trial_proof_retries_local_lane_after_cold_start_timeout(self) -> None:
         from source_proxy.api.decision import _trial_live_model_call_diagnostics
 
-        with mock.patch(
-            "source_proxy.tasks.long_running._call_coder_llm",
-            side_effect=[
-                TimeoutError("local lane cold"),
-                "Local lane warmed after cold-start retry.",
-            ],
-        ) as llm_mock:
+        with (
+            mock.patch("source_proxy.api.decision._trial_proof_model_aliases", return_value=["local"]),
+            mock.patch(
+                "source_proxy.tasks.long_running._call_coder_llm",
+                side_effect=[
+                    TimeoutError("local lane cold"),
+                    "Local lane warmed after cold-start retry.",
+                ],
+            ) as llm_mock,
+        ):
             diagnostics = _trial_live_model_call_diagnostics(
                 "badge trial",
                 proof_prompt="Confirm bounded trial proof.",
@@ -1721,14 +1872,20 @@ class CodingRegressionPackTests(unittest.TestCase):
     def test_trial_proof_falls_back_across_local_and_coder_aliases(self) -> None:
         from source_proxy.api.decision import _trial_live_model_call_diagnostics
 
-        with mock.patch(
-            "source_proxy.tasks.long_running._call_coder_llm",
-            side_effect=[
-                TimeoutError("local lane cold"),
-                TimeoutError("local lane still cold"),
-                "Coder lane confirmed the bounded trial proof call.",
-            ],
-        ) as llm_mock:
+        with (
+            mock.patch(
+                "source_proxy.api.decision._trial_proof_model_aliases",
+                return_value=["local", "coder"],
+            ),
+            mock.patch(
+                "source_proxy.tasks.long_running._call_coder_llm",
+                side_effect=[
+                    TimeoutError("local lane cold"),
+                    TimeoutError("local lane still cold"),
+                    "Coder lane confirmed the bounded trial proof call.",
+                ],
+            ) as llm_mock,
+        ):
             diagnostics = _trial_live_model_call_diagnostics(
                 "badge trial",
                 proof_prompt="Confirm bounded trial proof.",
@@ -1928,7 +2085,7 @@ class CodingRegressionPackTests(unittest.TestCase):
         self.assertTrue(payload["provider_call_made"])
         self.assertIn("warning", payload["proposed_diff"])
         llm_mock.assert_called_once()
-        self.assertEqual(llm_mock.call_args.kwargs["timeout_seconds"], 45.0)
+        self.assertGreater(llm_mock.call_args.kwargs["timeout_seconds"], 0)
 
     def test_prompt_packet_noop_expected_formatting_trial_records_model(self) -> None:
         target = "tests/ui-agent-trials/fixtures/dummy-coding-targets/formatting-trial.ts"

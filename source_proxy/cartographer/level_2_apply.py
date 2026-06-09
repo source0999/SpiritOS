@@ -8,6 +8,7 @@ from typing import Any
 
 from source_proxy.cartographer.git_status import read_git_status_for_project
 from source_proxy.cartographer.project_discovery import discover_projects
+from source_proxy.approval.external_gate import central_gate_check
 
 RECEIPT_DIR = "docs/cartographer-level-2-apply-receipts"
 FORBIDDEN_PREFIXES = (
@@ -39,6 +40,7 @@ def run_level_2_docs_apply(
     approval_id: str | None = None,
     approval_actor: str | None = None,
 ) -> dict[str, Any]:
+    central_gate_check("apply", run_id=f"cartographer_level_2_docs_apply:{proposal_id}")
     project = _first_project()
     if project is None:
         return _blocked(proposal_id=proposal_id, blockers=["no_project_available"])

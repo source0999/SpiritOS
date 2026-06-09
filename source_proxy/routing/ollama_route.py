@@ -61,14 +61,21 @@ def resolve_ollama_model_name() -> str:
 
 _CODER_MODEL_CANDIDATES = (
     "qwen2.5-coder:7b",
+    "qwen2.5-coder:14b",
     "qwen2.5-coder:latest",
     "deepseek-coder:6.7b",
     "codellama:7b",
 )
 
+_DEFAULT_CLASSIFIER_MODEL = "phi4-mini:latest"
+_CLASSIFIER_MODEL_CANDIDATES = (
+    "phi4-mini:latest",
+    "phi4-mini",
+)
+
 
 def resolve_coder_ollama_model_name(*, probe: bool = True) -> str:
-    """Local coding trials: prefer an installed fast coder model over chat Hermes."""
+    """Local coding trials: prefer Qwen 7B until larger coders pass contract tests."""
     explicit = os.getenv("SOURCE_PROXY_CODER_OLLAMA_MODEL", "").strip()
     if explicit:
         return explicit
@@ -78,6 +85,19 @@ def resolve_coder_ollama_model_name(*, probe: bool = True) -> str:
             if candidate in route.available_models:
                 return candidate
     return resolve_ollama_model_name()
+
+
+def resolve_classifier_ollama_model_name(*, probe: bool = True) -> str:
+    """Local routing/classifier lane: prefer Phi-4 Mini when installed."""
+    explicit = os.getenv("SOURCE_PROXY_CLASSIFIER_OLLAMA_MODEL", "").strip()
+    if explicit:
+        return explicit
+    route = resolve_ollama_route(probe=probe)
+    if route.probe_ok and route.available_models:
+        for candidate in _CLASSIFIER_MODEL_CANDIDATES:
+            if candidate in route.available_models:
+                return candidate
+    return _DEFAULT_CLASSIFIER_MODEL
 
 
 def _ollama_model_available(model: str, available_models: tuple[str, ...]) -> bool | None:
@@ -95,7 +115,9 @@ def _ollama_model_available(model: str, available_models: tuple[str, ...]) -> bo
 def _first_available_ollama_model(available_models: tuple[str, ...]) -> str | None:
     for preferred in (
         "qwen2.5-coder:7b",
+        "qwen2.5-coder:14b",
         "qwen2.5-coder:latest",
+        "phi4-mini:latest",
         "llama3.1:latest",
         "Spirit:latest",
         "dolphin-llama3:latest",
@@ -219,7 +241,11 @@ def ollama_coder_route_status_entry() -> dict[str, str | bool | None]:
     coder_model = resolve_coder_ollama_model_name(probe=True)
     model_available = _ollama_model_available(coder_model, chat_route.available_models)
     enabled = chat_route.probe_ok and model_available is not False
-    fallback_model = _first_available_ollama_model(chat_route.available_models)
+    fallback_model = _first_available_candidate_after(
+        coder_model,
+        _CODER_MODEL_CANDIDATES,
+        chat_route.available_models,
+    )
     storage = _ollama_model_storage_proof()
     return {
         "alias": "coder",
@@ -244,6 +270,44 @@ def ollama_coder_route_status_entry() -> dict[str, str | bool | None]:
             else "ollama_unreachable"
             if not chat_route.probe_ok
             else _ollama_missing_model_reason(coder_model, chat_route.available_models)
+        ),
+    }
+
+
+def ollama_classifier_route_status_entry() -> dict[str, str | bool | None]:
+    chat_route = resolve_ollama_route(probe=True)
+    classifier_model = resolve_classifier_ollama_model_name(probe=True)
+    model_available = _ollama_model_available(classifier_model, chat_route.available_models)
+    enabled = chat_route.probe_ok and model_available is not False
+    fallback_model = _first_available_candidate_after(
+        classifier_model,
+        _CLASSIFIER_MODEL_CANDIDATES,
+        chat_route.available_models,
+    )
+    storage = _ollama_model_storage_proof()
+    return {
+        "alias": "classifier",
+        "provider": "ollama",
+        "model": f"ollama_chat/{classifier_model}",
+        "requested_ollama_model": os.getenv("SOURCE_PROXY_CLASSIFIER_OLLAMA_MODEL", "").strip()
+        or f"auto:{_DEFAULT_CLASSIFIER_MODEL}",
+        "ollama_model": classifier_model,
+        "api_base_host": safe_ollama_host_label(chat_route.api_base),
+        "api_base": chat_route.api_base,
+        "enabled": enabled,
+        "probe_ok": chat_route.probe_ok,
+        "model_available": model_available,
+        "available_ollama_model_fallback": fallback_model,
+        "selected_via": "classifier_lane",
+        "model_storage_status": storage["status"],
+        "model_storage_path": storage["path"],
+        "model_storage_proof": storage["proof"],
+        "reason": (
+            None
+            if enabled
+            else "ollama_unreachable"
+            if not chat_route.probe_ok
+            else _ollama_missing_model_reason(classifier_model, chat_route.available_models)
         ),
     }
 
@@ -283,6 +347,12 @@ def ollama_route_status_entry() -> dict[str, str | bool | None]:
 def _ollama_model_storage_proof() -> dict[str, str]:
     env_path = os.getenv("OLLAMA_MODELS", "").strip()
     if env_path:
+        if env_path.replace("\\", "/").startswith(_SPIRIT_8TB_ROOT):
+            return {
+                "status": "proven",
+                "path": env_path,
+                "proof": "OLLAMA_MODELS",
+            }
         real_env_path = os.path.realpath(env_path)
         return {
             "status": "proven" if real_env_path.startswith(_SPIRIT_8TB_ROOT) else "not_proven",
@@ -303,6 +373,27 @@ def _ollama_model_storage_proof() -> dict[str, str]:
         "path": real_home,
         "proof": "default_ollama_home",
     }
+
+
+def _first_available_candidate_after(
+    selected_model: str,
+    candidates: tuple[str, ...],
+    available_models: tuple[str, ...],
+) -> str | None:
+    try:
+        start_index = candidates.index(selected_model) + 1
+    except ValueError:
+        start_index = 0
+    for candidate in candidates[start_index:]:
+        if _ollama_model_names_equivalent(candidate, selected_model):
+            continue
+        if _ollama_model_available(candidate, available_models):
+            return candidate
+    return None
+
+
+def _ollama_model_names_equivalent(left: str, right: str) -> bool:
+    return left == right or left.removesuffix(":latest") == right.removesuffix(":latest")
 
 
 def _select_reachable_base(

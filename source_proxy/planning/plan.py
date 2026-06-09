@@ -115,6 +115,12 @@ class CoderResponse:
     json_attempt_count: int = 0
     coder_format_retry_count: int = 0
     last_json_error: str = ""
+    structured_output_mode: str = ""
+    file_block_repair_source: str = ""
+    json_repair_source: str = ""
+    markdown_fence_found: bool = False
+    markdown_fence_stripped: bool = False
+    markdown_fence_language: str = ""
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "target_path", _normalize_repo_path(self.target_path))

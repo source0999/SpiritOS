@@ -33,6 +33,7 @@ from source_proxy.planning.plan import (
     VerificationPlan,
 )
 from source_proxy.routing.litellm_router import available_model_aliases, get_router
+from source_proxy.approval.external_gate import central_gate_check
 from source_proxy.safety.paths import normalize_repo_path_candidate
 from source_proxy.tasks.long_running import (
     REPOMIX_BUNDLE_NAMES,
@@ -1225,6 +1226,7 @@ def _raise_if_model_alias_unavailable(alias: str) -> None:
 
 
 def _call_architect_llm(prompt: str, *, model_alias: str) -> str:
+    central_gate_check("model_call", run_id="architect_llm")
     completion = get_router().completion(
         model=model_alias,
         messages=[{"role": "system", "content": prompt}],

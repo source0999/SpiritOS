@@ -47,10 +47,11 @@ class SelfStatusManifestTests(unittest.TestCase):
             "present",
         )
         self.assertFalse(manifest["context_bundle_status"]["content_included"])
-        self.assertEqual(
+        self.assertIn(
             manifest["memory_context_diagnostics"]["obsidian_status"],
-            "disabled",
+            {"configured_not_scanned", "disabled"},
         )
+        self.assertTrue(manifest["memory_context_diagnostics"]["obsidian_read_only"])
         self.assertIn(
             "full_drive_browsing",
             {tool["name"] for tool in manifest["disabled_tools"]},

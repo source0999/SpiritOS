@@ -12,6 +12,7 @@ DEFAULT_INCLUDE_GLOBS = "*.md"
 DEFAULT_EXCLUDE_GLOBS = ".obsidian/**, private/**, secrets/**, archive/**"
 DEFAULT_MAX_NOTES = 8
 DEFAULT_MAX_CHARS_PER_NOTE = 1200
+DEFAULT_LOCAL_VAULT = Path("data") / "design-vault"
 
 
 @dataclass(frozen=True)
@@ -25,9 +26,15 @@ class ObsidianContextConfig:
 
 
 def obsidian_context_config_from_env() -> ObsidianContextConfig:
+    enabled_raw = os.getenv("OBSIDIAN_CONTEXT_ENABLED")
+    vault_path = os.getenv("OBSIDIAN_VAULT_PATH", "").strip()
+    default_vault = _default_local_vault_path()
+    if not vault_path and default_vault:
+        vault_path = str(default_vault)
+    enabled = _env_true("OBSIDIAN_CONTEXT_ENABLED") if enabled_raw is not None else bool(vault_path)
     return ObsidianContextConfig(
-        enabled=_env_true("OBSIDIAN_CONTEXT_ENABLED"),
-        vault_path=os.getenv("OBSIDIAN_VAULT_PATH", "").strip(),
+        enabled=enabled,
+        vault_path=vault_path,
         include_globs=_split_globs(os.getenv("OBSIDIAN_INCLUDE_GLOBS", DEFAULT_INCLUDE_GLOBS)),
         exclude_globs=_split_globs(os.getenv("OBSIDIAN_EXCLUDE_GLOBS", DEFAULT_EXCLUDE_GLOBS)),
         max_notes=_bounded_int(os.getenv("OBSIDIAN_MAX_NOTES", ""), DEFAULT_MAX_NOTES, 1, 25),
@@ -38,6 +45,14 @@ def obsidian_context_config_from_env() -> ObsidianContextConfig:
             8000,
         ),
     )
+
+
+def _default_local_vault_path() -> Path | None:
+    for candidate in [Path.cwd(), *Path.cwd().parents, Path(__file__).resolve(), *Path(__file__).resolve().parents]:
+        vault = candidate / DEFAULT_LOCAL_VAULT
+        if vault.is_dir():
+            return vault.resolve()
+    return None
 
 
 def obsidian_context_diagnostics(
@@ -53,6 +68,8 @@ def obsidian_context_diagnostics(
         "obsidian_context_paths": [],
         "obsidian_status": _status_for_config(cfg),
         "obsidian_vault_path_configured": bool(cfg.vault_path),
+        "obsidian_default_vault": str(DEFAULT_LOCAL_VAULT),
+        "obsidian_vault_path": cfg.vault_path,
         "obsidian_include_globs": list(cfg.include_globs),
         "obsidian_exclude_globs": list(cfg.exclude_globs),
         "obsidian_max_notes": cfg.max_notes,
