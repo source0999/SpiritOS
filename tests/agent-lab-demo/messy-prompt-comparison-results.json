@@ -1,0 +1,299 @@
+﻿[
+    {
+        "id":  "premium-coding-cockpit",
+        "prompt":  "make the coding cockpit actually feel premium and expensive like a real pro tool, add some nice animations and modern touches but dont break anything",
+        "model_label":  "14b",
+        "raw_model_response":  "\u003cfile path=\"tests/agent-lab-demo/14b/premium-coding-cockpit/index.html\"\u003e\n\u003c!DOCTYPE html\u003e\n\u003chtml lang=\"en\"\u003e\n\u003chead\u003e\n    \u003cmeta charset=\"UTF-8\"\u003e\n    \u003cmeta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"\u003e\n    \u003ctitle\u003ePremium Coding Cockpit\u003c/title\u003e\n    \u003cstyle\u003e\n        body {\n            font-family: \u0027Arial\u0027, sans-serif;\n            background-color: #f4f4f9;\n            margin: 0;\n            padding: 0;\n            display: flex;\n            justify-content: center;\n            align-items: center;\n            height: 100vh;\n        }\n        .cockpit {\n            background-color: #fff;\n            border-radius: 20px;\n            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);\n            padding: 40px;\n            width: 80%;\n            max-width: 600px;\n            text-align: center;\n            animation: fadeIn 1s ease-in-out;\n        }\n        @keyframes fadeIn {\n            from { opacity: 0; }\n            to { opacity: 1; }\n        }\n        h1 {\n            color: #333;\n            margin-bottom: 20px;\n        }\n        button {\n            background-color: #007bff;\n            color: #fff;\n            border: none;\n            padding: 10px 20px;\n            font-size: 16px;\n            border-radius: 5px;\n            cursor: pointer;\n            transition: background-color 0.3s ease;\n        }\n        button:hover {\n            background-color: #0056b3;\n        }\n    \u003c/style\u003e\n\u003c/head\u003e\n\u003cbody\u003e\n    \u003cdiv class=\"cockpit\"\u003e\n        \u003ch1\u003eWelcome to the Premium Coding Cockpit\u003c/h1\u003e\n        \u003cbutton\u003eStart Coding\u003c/button\u003e\n    \u003c/div\u003e\n\u003c/body\u003e\n\u003c/html\u003e\n\u003c/file\u003e",
+        "parsed_file_blocks":  [
+                                   {
+                                       "path":  "tests/agent-lab-demo/14b/premium-coding-cockpit/index.html",
+                                       "content":  "\u003c!DOCTYPE html\u003e\n\u003chtml lang=\"en\"\u003e\n\u003chead\u003e\n    \u003cmeta charset=\"UTF-8\"\u003e\n    \u003cmeta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"\u003e\n    \u003ctitle\u003ePremium Coding Cockpit\u003c/title\u003e\n    \u003cstyle\u003e\n        body {\n            font-family: \u0027Arial\u0027, sans-serif;\n            background-color: #f4f4f9;\n            margin: 0;\n            padding: 0;\n            display: flex;\n            justify-content: center;\n            align-items: center;\n            height: 100vh;\n        }\n        .cockpit {\n            background-color: #fff;\n            border-radius: 20px;\n            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);\n            padding: 40px;\n            width: 80%;\n            max-width: 600px;\n            text-align: center;\n            animation: fadeIn 1s ease-in-out;\n        }\n        @keyframes fadeIn {\n            from { opacity: 0; }\n            to { opacity: 1; }\n        }\n        h1 {\n            color: #333;\n            margin-bottom: 20px;\n        }\n        button {\n            background-color: #007bff;\n            color: #fff;\n            border: none;\n            padding: 10px 20px;\n            font-size: 16px;\n            border-radius: 5px;\n            cursor: pointer;\n            transition: background-color 0.3s ease;\n        }\n        button:hover {\n            background-color: #0056b3;\n        }\n    \u003c/style\u003e\n\u003c/head\u003e\n\u003cbody\u003e\n    \u003cdiv class=\"cockpit\"\u003e\n        \u003ch1\u003eWelcome to the Premium Coding Cockpit\u003c/h1\u003e\n        \u003cbutton\u003eStart Coding\u003c/button\u003e\n    \u003c/div\u003e\n\u003c/body\u003e\n\u003c/html\u003e",
+                                       "line_count":  57
+                                   }
+                               ],
+        "diff_preview":  "diff --git a/tests/agent-lab-demo/14b/premium-coding-cockpit/index.html b/tests/agent-lab-demo/14b/premium-coding-cockpit/index.html\nnew file mode 100644\n--- /dev/null\n+++ b/tests/agent-lab-demo/14b/premium-coding-cockpit/index.html\n@@ -0,0 +1,57 @@\n+\u003c!DOCTYPE html\u003e\n+\u003chtml lang=\"en\"\u003e\n+\u003chead\u003e\n+    \u003cmeta charset=\"UTF-8\"\u003e\n+    \u003cmeta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"\u003e\n+    \u003ctitle\u003ePremium Coding Cockpit\u003c/title\u003e\n+    \u003cstyle\u003e\n+        body {\n+            font-family: \u0027Arial\u0027, sans-serif;\n+            background-color: #f4f4f9;\n+            margin: 0;\n+            padding: 0;\n+            display: flex;\n+            justify-content: center;\n+            align-items: center;\n+            height: 100vh;\n+        }\n+        .cockpit {\n+            background-color: #fff;\n+            border-radius: 20px;\n+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);\n+            padding: 40px;\n+            width: 80%;\n+            max-width: 600px;\n+            text-align: center;\n+            animation: fadeIn 1s ease-in-out;\n+        }\n+        @keyframes fadeIn {\n+            from { opacity: 0; }\n+            to { opacity: 1; }\n+        }\n+        h1 {\n+            color: #333;\n+            margin-bottom: 20px;\n+        }\n+        button {\n+            background-color: #007bff;\n+            color: #fff;\n+            border: none;\n+            padding: 10px 20px;\n+            font-size: 16px;\n+            border-radius: 5px;\n+            cursor: pointer;\n+            transition: background-color 0.3s ease;\n+        }\n+        button:hover {\n+            background-color: #0056b3;\n+        }\n+    \u003c/style\u003e\n+\u003c/head\u003e\n+\u003cbody\u003e\n+    \u003cdiv class=\"cockpit\"\u003e\n+        \u003ch1\u003eWelcome to the Premium Coding Cockpit\u003c/h1\u003e\n+        \u003cbutton\u003eStart Coding\u003c/button\u003e\n+    \u003c/div\u003e\n+\u003c/body\u003e\n+\u003c/html\u003e",
+        "diagnostics":  {
+                            "model_alias":  "coder",
+                            "response_ms":  174488.67,
+                            "file_block_count":  1,
+                            "isolated_root":  "tests/agent-lab-demo/14b/premium-coding-cockpit/",
+                            "bad_paths":  [
+
+                                          ],
+                            "fenced_content_paths":  [
+
+                                                     ],
+                            "apply_attempted":  false,
+                            "malformed_file_block":  false
+                        }
+    },
+    {
+        "id":  "init-experimental-repo-homepage",
+        "prompt":  "init a new repo seperatre from spiritOS for expermitianl feautres nad make homepage",
+        "model_label":  "7b",
+        "raw_model_response":  "\u003cfile path=\"tests/agent-lab-demo/7b/init-experimental-repo-homepage/.gitignore\"\u003e\nnode_modules/\ndist/\n*.log\n\u003c/file\u003e\n\n\u003cfile path=\"tests/agent-lab-demo/7b/init-experimental-repo-homepage/package.json\"\u003e\n{\n  \"name\": \"experimental-repo\",\n  \"version\": \"1.0.0\",\n  \"description\": \"Experimental features and homepage for the new repo\",\n  \"main\": \"index.js\",\n  \"scripts\": {\n    \"start\": \"node index.js\"\n  },\n  \"dependencies\": {\n    \"express\": \"^4.17.1\"\n  }\n}\n\u003c/file\u003e\n\n\u003cfile path=\"tests/agent-lab-demo/7b/init-experimental-repo-homepage/index.js\"\u003e\nconst express = require(\u0027express\u0027);\nconst app = express();\nconst port = 3000;\n\napp.get(\u0027/\u0027, (req, res) =\u003e {\n  res.send(\u0027\u003ch1\u003eWelcome to the Experimental Repo Homepage\u003c/h1\u003e\u0027);\n});\n\napp.listen(port, () =\u003e {\n  console.log(`App listening at http://localhost:${port}`);\n});\n\u003c/file\u003e",
+        "parsed_file_blocks":  [
+                                   {
+                                       "path":  "tests/agent-lab-demo/7b/init-experimental-repo-homepage/.gitignore",
+                                       "content":  "node_modules/\ndist/\n*.log",
+                                       "line_count":  3
+                                   },
+                                   {
+                                       "path":  "tests/agent-lab-demo/7b/init-experimental-repo-homepage/package.json",
+                                       "content":  "{\n  \"name\": \"experimental-repo\",\n  \"version\": \"1.0.0\",\n  \"description\": \"Experimental features and homepage for the new repo\",\n  \"main\": \"index.js\",\n  \"scripts\": {\n    \"start\": \"node index.js\"\n  },\n  \"dependencies\": {\n    \"express\": \"^4.17.1\"\n  }\n}",
+                                       "line_count":  12
+                                   },
+                                   {
+                                       "path":  "tests/agent-lab-demo/7b/init-experimental-repo-homepage/index.js",
+                                       "content":  "const express = require(\u0027express\u0027);\nconst app = express();\nconst port = 3000;\n\napp.get(\u0027/\u0027, (req, res) =\u003e {\n  res.send(\u0027\u003ch1\u003eWelcome to the Experimental Repo Homepage\u003c/h1\u003e\u0027);\n});\n\napp.listen(port, () =\u003e {\n  console.log(`App listening at http://localhost:${port}`);\n});",
+                                       "line_count":  11
+                                   }
+                               ],
+        "diff_preview":  "diff --git a/tests/agent-lab-demo/7b/init-experimental-repo-homepage/.gitignore b/tests/agent-lab-demo/7b/init-experimental-repo-homepage/.gitignore\nnew file mode 100644\n--- /dev/null\n+++ b/tests/agent-lab-demo/7b/init-experimental-repo-homepage/.gitignore\n@@ -0,0 +1,3 @@\n+node_modules/\n+dist/\n+*.log\n\ndiff --git a/tests/agent-lab-demo/7b/init-experimental-repo-homepage/package.json b/tests/agent-lab-demo/7b/init-experimental-repo-homepage/package.json\nnew file mode 100644\n--- /dev/null\n+++ b/tests/agent-lab-demo/7b/init-experimental-repo-homepage/package.json\n@@ -0,0 +1,12 @@\n+{\n+  \"name\": \"experimental-repo\",\n+  \"version\": \"1.0.0\",\n+  \"description\": \"Experimental features and homepage for the new repo\",\n+  \"main\": \"index.js\",\n+  \"scripts\": {\n+    \"start\": \"node index.js\"\n+  },\n+  \"dependencies\": {\n+    \"express\": \"^4.17.1\"\n+  }\n+}\n\ndiff --git a/tests/agent-lab-demo/7b/init-experimental-repo-homepage/index.js b/tests/agent-lab-demo/7b/init-experimental-repo-homepage/index.js\nnew file mode 100644\n--- /dev/null\n+++ b/tests/agent-lab-demo/7b/init-experimental-repo-homepage/index.js\n@@ -0,0 +1,11 @@\n+const express = require(\u0027express\u0027);\n+const app = express();\n+const port = 3000;\n+\n+app.get(\u0027/\u0027, (req, res) =\u003e {\n+  res.send(\u0027\u003ch1\u003eWelcome to the Experimental Repo Homepage\u003c/h1\u003e\u0027);\n+});\n+\n+app.listen(port, () =\u003e {\n+  console.log(`App listening at http://localhost:${port}`);\n+});",
+        "diagnostics":  {
+                            "model_alias":  "coder",
+                            "response_ms":  63147.79,
+                            "file_block_count":  3,
+                            "isolated_root":  "tests/agent-lab-demo/7b/init-experimental-repo-homepage/",
+                            "bad_paths":  [
+
+                                          ],
+                            "fenced_content_paths":  [
+
+                                                     ],
+                            "apply_attempted":  false,
+                            "malformed_file_block":  false
+                        }
+    },
+    {
+        "id":  "coding-cockpit-modern",
+        "prompt":  "make the coding cockpit look nicer and more modern pls",
+        "model_label":  "7b",
+        "raw_model_response":  "\u003cfile path=\"tests/agent-lab-demo/7b/coding-cockpit-modern/styles.css\"\u003e\n/* Add your CSS styles here to make the coding cockpit look nicer and more modern */\nbody {\n  font-family: \u0027Arial\u0027, sans-serif;\n  background-color: #f4f4f9;\n  color: #333;\n}\n\n.container {\n  max-width: 1200px;\n  margin: 0 auto;\n  padding: 20px;\n}\n\n.header {\n  background-color: #007bff;\n  color: white;\n  padding: 15px;\n  text-align: center;\n}\n\n.code-editor {\n  background-color: #fff;\n  border-radius: 4px;\n  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);\n  margin-top: 20px;\n  padding: 15px;\n}\n\n.footer {\n  text-align: center;\n  padding: 10px;\n  background-color: #f8f9fa;\n}\n\u003c/file\u003e",
+        "parsed_file_blocks":  [
+                                   {
+                                       "path":  "tests/agent-lab-demo/7b/coding-cockpit-modern/styles.css",
+                                       "content":  "/* Add your CSS styles here to make the coding cockpit look nicer and more modern */\nbody {\n  font-family: \u0027Arial\u0027, sans-serif;\n  background-color: #f4f4f9;\n  color: #333;\n}\n\n.container {\n  max-width: 1200px;\n  margin: 0 auto;\n  padding: 20px;\n}\n\n.header {\n  background-color: #007bff;\n  color: white;\n  padding: 15px;\n  text-align: center;\n}\n\n.code-editor {\n  background-color: #fff;\n  border-radius: 4px;\n  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);\n  margin-top: 20px;\n  padding: 15px;\n}\n\n.footer {\n  text-align: center;\n  padding: 10px;\n  background-color: #f8f9fa;\n}",
+                                       "line_count":  33
+                                   }
+                               ],
+        "diff_preview":  "diff --git a/tests/agent-lab-demo/7b/coding-cockpit-modern/styles.css b/tests/agent-lab-demo/7b/coding-cockpit-modern/styles.css\nnew file mode 100644\n--- /dev/null\n+++ b/tests/agent-lab-demo/7b/coding-cockpit-modern/styles.css\n@@ -0,0 +1,33 @@\n+/* Add your CSS styles here to make the coding cockpit look nicer and more modern */\n+body {\n+  font-family: \u0027Arial\u0027, sans-serif;\n+  background-color: #f4f4f9;\n+  color: #333;\n+}\n+\n+.container {\n+  max-width: 1200px;\n+  margin: 0 auto;\n+  padding: 20px;\n+}\n+\n+.header {\n+  background-color: #007bff;\n+  color: white;\n+  padding: 15px;\n+  text-align: center;\n+}\n+\n+.code-editor {\n+  background-color: #fff;\n+  border-radius: 4px;\n+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);\n+  margin-top: 20px;\n+  padding: 15px;\n+}\n+\n+.footer {\n+  text-align: center;\n+  padding: 10px;\n+  background-color: #f8f9fa;\n+}",
+        "diagnostics":  {
+                            "model_alias":  "coder",
+                            "response_ms":  15078.34,
+                            "file_block_count":  1,
+                            "isolated_root":  "tests/agent-lab-demo/7b/coding-cockpit-modern/",
+                            "bad_paths":  [
+
+                                          ],
+                            "fenced_content_paths":  [
+
+                                                     ],
+                            "apply_attempted":  false,
+                            "malformed_file_block":  false
+                        }
+    },
+    {
+        "id":  "trial-runner-dark-mode",
+        "prompt":  "add dark mode toggle to the trial runner thing",
+        "model_label":  "7b",
+        "raw_model_response":  "\u003cfile path=\"tests/agent-lab-demo/7b/trial-runner-dark-mode/DarkModeToggle.js\"\u003e\nimport React from \u0027react\u0027;\n\nconst DarkModeToggle = ({ isDarkMode, onToggle }) =\u003e {\n  return (\n    \u003cbutton onClick={onToggle}\u003e\n      {isDarkMode ? \u0027Switch to Light Mode\u0027 : \u0027Switch to Dark Mode\u0027}\n    \u003c/button\u003e\n  );\n};\n\nexport default DarkModeToggle;\n\u003c/file\u003e\n\n\u003cfile path=\"tests/agent-lab-demo/7b/trial-runner-dark-mode/App.js\"\u003e\nimport React, { useState } from \u0027react\u0027;\nimport DarkModeToggle from \u0027./DarkModeToggle\u0027;\n\nconst App = () =\u003e {\n  const [isDarkMode, setIsDarkMode] = useState(false);\n\n  const toggleDarkMode = () =\u003e {\n    setIsDarkMode(!isDarkMode);\n    document.body.classList.toggle(\u0027dark-mode\u0027, isDarkMode);\n  };\n\n  return (\n    \u003cdiv\u003e\n      \u003ch1\u003eTrial Runner\u003c/h1\u003e\n      \u003cDarkModeToggle isDarkMode={isDarkMode} onToggle={toggleDarkMode} /\u003e\n    \u003c/div\u003e\n  );\n};\n\nexport default App;\n\u003c/file\u003e\n\n\u003cfile path=\"tests/agent-lab-demo/7b/trial-runner-dark-mode/index.css\"\u003e\nbody {\n  font-family: Arial, sans-serif;\n}\n\nbody.dark-mode {\n  background-color: #333;\n  color: #fff;\n}\n\u003c/file\u003e",
+        "parsed_file_blocks":  [
+                                   {
+                                       "path":  "tests/agent-lab-demo/7b/trial-runner-dark-mode/DarkModeToggle.js",
+                                       "content":  "import React from \u0027react\u0027;\n\nconst DarkModeToggle = ({ isDarkMode, onToggle }) =\u003e {\n  return (\n    \u003cbutton onClick={onToggle}\u003e\n      {isDarkMode ? \u0027Switch to Light Mode\u0027 : \u0027Switch to Dark Mode\u0027}\n    \u003c/button\u003e\n  );\n};\n\nexport default DarkModeToggle;",
+                                       "line_count":  11
+                                   },
+                                   {
+                                       "path":  "tests/agent-lab-demo/7b/trial-runner-dark-mode/App.js",
+                                       "content":  "import React, { useState } from \u0027react\u0027;\nimport DarkModeToggle from \u0027./DarkModeToggle\u0027;\n\nconst App = () =\u003e {\n  const [isDarkMode, setIsDarkMode] = useState(false);\n\n  const toggleDarkMode = () =\u003e {\n    setIsDarkMode(!isDarkMode);\n    document.body.classList.toggle(\u0027dark-mode\u0027, isDarkMode);\n  };\n\n  return (\n    \u003cdiv\u003e\n      \u003ch1\u003eTrial Runner\u003c/h1\u003e\n      \u003cDarkModeToggle isDarkMode={isDarkMode} onToggle={toggleDarkMode} /\u003e\n    \u003c/div\u003e\n  );\n};\n\nexport default App;",
+                                       "line_count":  20
+                                   },
+                                   {
+                                       "path":  "tests/agent-lab-demo/7b/trial-runner-dark-mode/index.css",
+                                       "content":  "body {\n  font-family: Arial, sans-serif;\n}\n\nbody.dark-mode {\n  background-color: #333;\n  color: #fff;\n}",
+                                       "line_count":  8
+                                   }
+                               ],
+        "diff_preview":  "diff --git a/tests/agent-lab-demo/7b/trial-runner-dark-mode/DarkModeToggle.js b/tests/agent-lab-demo/7b/trial-runner-dark-mode/DarkModeToggle.js\nnew file mode 100644\n--- /dev/null\n+++ b/tests/agent-lab-demo/7b/trial-runner-dark-mode/DarkModeToggle.js\n@@ -0,0 +1,11 @@\n+import React from \u0027react\u0027;\n+\n+const DarkModeToggle = ({ isDarkMode, onToggle }) =\u003e {\n+  return (\n+    \u003cbutton onClick={onToggle}\u003e\n+      {isDarkMode ? \u0027Switch to Light Mode\u0027 : \u0027Switch to Dark Mode\u0027}\n+    \u003c/button\u003e\n+  );\n+};\n+\n+export default DarkModeToggle;\n\ndiff --git a/tests/agent-lab-demo/7b/trial-runner-dark-mode/App.js b/tests/agent-lab-demo/7b/trial-runner-dark-mode/App.js\nnew file mode 100644\n--- /dev/null\n+++ b/tests/agent-lab-demo/7b/trial-runner-dark-mode/App.js\n@@ -0,0 +1,20 @@\n+import React, { useState } from \u0027react\u0027;\n+import DarkModeToggle from \u0027./DarkModeToggle\u0027;\n+\n+const App = () =\u003e {\n+  const [isDarkMode, setIsDarkMode] = useState(false);\n+\n+  const toggleDarkMode = () =\u003e {\n+    setIsDarkMode(!isDarkMode);\n+    document.body.classList.toggle(\u0027dark-mode\u0027, isDarkMode);\n+  };\n+\n+  return (\n+    \u003cdiv\u003e\n+      \u003ch1\u003eTrial Runner\u003c/h1\u003e\n+      \u003cDarkModeToggle isDarkMode={isDarkMode} onToggle={toggleDarkMode} /\u003e\n+    \u003c/div\u003e\n+  );\n+};\n+\n+export default App;\n\ndiff --git a/tests/agent-lab-demo/7b/trial-runner-dark-mode/index.css b/tests/agent-lab-demo/7b/trial-runner-dark-mode/index.css\nnew file mode 100644\n--- /dev/null\n+++ b/tests/agent-lab-demo/7b/trial-runner-dark-mode/index.css\n@@ -0,0 +1,8 @@\n+body {\n+  font-family: Arial, sans-serif;\n+}\n+\n+body.dark-mode {\n+  background-color: #333;\n+  color: #fff;\n+}",
+        "diagnostics":  {
+                            "model_alias":  "coder",
+                            "response_ms":  19025.83,
+                            "file_block_count":  3,
+                            "isolated_root":  "tests/agent-lab-demo/7b/trial-runner-dark-mode/",
+                            "bad_paths":  [
+
+                                          ],
+                            "fenced_content_paths":  [
+
+                                                     ],
+                            "apply_attempted":  false,
+                            "malformed_file_block":  false
+                        }
+    },
+    {
+        "id":  "agents-dashboard-fake-data",
+        "prompt":  "make a simple dashboard for testing agents with some fake data",
+        "model_label":  "7b",
+        "raw_model_response":  "\u003cfile path=\"tests/agent-lab-demo/7b/agents-dashboard-fake-data/Dashboard.js\"\u003e\nimport React from \u0027react\u0027;\n\nconst Dashboard = () =\u003e {\n  const agentsData = [\n    { id: 1, name: \u0027Agent A\u0027, status: \u0027Online\u0027 },\n    { id: 2, name: \u0027Agent B\u0027, status: \u0027Offline\u0027 },\n    { id: 3, name: \u0027Agent C\u0027, status: \u0027Pending\u0027 },\n  ];\n\n  return (\n    \u003cdiv style={{ display: \u0027flex\u0027, flexDirection: \u0027column\u0027, alignItems: \u0027center\u0027, padding: \u002720px\u0027 }}\u003e\n      \u003ch1\u003eAgents Dashboard\u003c/h1\u003e\n      \u003ctable border=\"1\" style={{ width: \u002780%\u0027, margin: \u002720px auto\u0027 }}\u003e\n        \u003cthead\u003e\n          \u003ctr\u003e\n            \u003cth\u003eID\u003c/th\u003e\n            \u003cth\u003eName\u003c/th\u003e\n            \u003cth\u003eStatus\u003c/th\u003e\n          \u003c/tr\u003e\n        \u003c/thead\u003e\n        \u003ctbody\u003e\n          {agentsData.map(agent =\u003e (\n            \u003ctr key={agent.id}\u003e\n              \u003ctd\u003e{agent.id}\u003c/td\u003e\n              \u003ctd\u003e{agent.name}\u003c/td\u003e\n              \u003ctd style={{ color: agent.status === \u0027Online\u0027 ? \u0027green\u0027 : agent.status === \u0027Offline\u0027 ? \u0027red\u0027 : \u0027orange\u0027 }}\u003e{agent.status}\u003c/td\u003e\n            \u003c/tr\u003e\n          ))}\n        \u003c/tbody\u003e\n      \u003c/table\u003e\n    \u003c/div\u003e\n  );\n};\n\nexport default Dashboard;\n\u003c/file\u003e",
+        "parsed_file_blocks":  [
+                                   {
+                                       "path":  "tests/agent-lab-demo/7b/agents-dashboard-fake-data/Dashboard.js",
+                                       "content":  "import React from \u0027react\u0027;\n\nconst Dashboard = () =\u003e {\n  const agentsData = [\n    { id: 1, name: \u0027Agent A\u0027, status: \u0027Online\u0027 },\n    { id: 2, name: \u0027Agent B\u0027, status: \u0027Offline\u0027 },\n    { id: 3, name: \u0027Agent C\u0027, status: \u0027Pending\u0027 },\n  ];\n\n  return (\n    \u003cdiv style={{ display: \u0027flex\u0027, flexDirection: \u0027column\u0027, alignItems: \u0027center\u0027, padding: \u002720px\u0027 }}\u003e\n      \u003ch1\u003eAgents Dashboard\u003c/h1\u003e\n      \u003ctable border=\"1\" style={{ width: \u002780%\u0027, margin: \u002720px auto\u0027 }}\u003e\n        \u003cthead\u003e\n          \u003ctr\u003e\n            \u003cth\u003eID\u003c/th\u003e\n            \u003cth\u003eName\u003c/th\u003e\n            \u003cth\u003eStatus\u003c/th\u003e\n          \u003c/tr\u003e\n        \u003c/thead\u003e\n        \u003ctbody\u003e\n          {agentsData.map(agent =\u003e (\n            \u003ctr key={agent.id}\u003e\n              \u003ctd\u003e{agent.id}\u003c/td\u003e\n              \u003ctd\u003e{agent.name}\u003c/td\u003e\n              \u003ctd style={{ color: agent.status === \u0027Online\u0027 ? \u0027green\u0027 : agent.status === \u0027Offline\u0027 ? \u0027red\u0027 : \u0027orange\u0027 }}\u003e{agent.status}\u003c/td\u003e\n            \u003c/tr\u003e\n          ))}\n        \u003c/tbody\u003e\n      \u003c/table\u003e\n    \u003c/div\u003e\n  );\n};\n\nexport default Dashboard;",
+                                       "line_count":  35
+                                   }
+                               ],
+        "diff_preview":  "diff --git a/tests/agent-lab-demo/7b/agents-dashboard-fake-data/Dashboard.js b/tests/agent-lab-demo/7b/agents-dashboard-fake-data/Dashboard.js\nnew file mode 100644\n--- /dev/null\n+++ b/tests/agent-lab-demo/7b/agents-dashboard-fake-data/Dashboard.js\n@@ -0,0 +1,35 @@\n+import React from \u0027react\u0027;\n+\n+const Dashboard = () =\u003e {\n+  const agentsData = [\n+    { id: 1, name: \u0027Agent A\u0027, status: \u0027Online\u0027 },\n+    { id: 2, name: \u0027Agent B\u0027, status: \u0027Offline\u0027 },\n+    { id: 3, name: \u0027Agent C\u0027, status: \u0027Pending\u0027 },\n+  ];\n+\n+  return (\n+    \u003cdiv style={{ display: \u0027flex\u0027, flexDirection: \u0027column\u0027, alignItems: \u0027center\u0027, padding: \u002720px\u0027 }}\u003e\n+      \u003ch1\u003eAgents Dashboard\u003c/h1\u003e\n+      \u003ctable border=\"1\" style={{ width: \u002780%\u0027, margin: \u002720px auto\u0027 }}\u003e\n+        \u003cthead\u003e\n+          \u003ctr\u003e\n+            \u003cth\u003eID\u003c/th\u003e\n+            \u003cth\u003eName\u003c/th\u003e\n+            \u003cth\u003eStatus\u003c/th\u003e\n+          \u003c/tr\u003e\n+        \u003c/thead\u003e\n+        \u003ctbody\u003e\n+          {agentsData.map(agent =\u003e (\n+            \u003ctr key={agent.id}\u003e\n+              \u003ctd\u003e{agent.id}\u003c/td\u003e\n+              \u003ctd\u003e{agent.name}\u003c/td\u003e\n+              \u003ctd style={{ color: agent.status === \u0027Online\u0027 ? \u0027green\u0027 : agent.status === \u0027Offline\u0027 ? \u0027red\u0027 : \u0027orange\u0027 }}\u003e{agent.status}\u003c/td\u003e\n+            \u003c/tr\u003e\n+          ))}\n+        \u003c/tbody\u003e\n+      \u003c/table\u003e\n+    \u003c/div\u003e\n+  );\n+};\n+\n+export default Dashboard;",
+        "diagnostics":  {
+                            "model_alias":  "coder",
+                            "response_ms":  18457.59,
+                            "file_block_count":  1,
+                            "isolated_root":  "tests/agent-lab-demo/7b/agents-dashboard-fake-data/",
+                            "bad_paths":  [
+
+                                          ],
+                            "fenced_content_paths":  [
+
+                                                     ],
+                            "apply_attempted":  false,
+                            "malformed_file_block":  false
+                        }
+    },
+    {
+        "id":  "dashboard-energy",
+        "prompt":  "the dashboard feels a little flat give it some energy",
+        "model_label":  "7b",
+        "raw_model_response":  "\u003cfile path=\"tests/agent-lab-demo/7b/dashboard-energy/Dashboard.jsx\"\u003e\nimport React from \u0027react\u0027;\nimport \u0027./Dashboard.css\u0027;\n\nconst Dashboard = () =\u003e {\n  return (\n    \u003cdiv className=\"dashboard-container\"\u003e\n      \u003ch1\u003eEnergy Dashboard\u003c/h1\u003e\n      \u003cdiv className=\"energy-meter\"\u003e\n        \u003cspan className=\"meter-label\"\u003eCurrent Energy Usage:\u003c/span\u003e\n        \u003cspan className=\"meter-value\"\u003e500 kWh\u003c/span\u003e\n      \u003c/div\u003e\n      \u003cdiv className=\"chart\"\u003e\n        {/* Placeholder for energy usage chart */}\n        \u003ccanvas id=\"energyChart\"\u003e\u003c/canvas\u003e\n      \u003c/div\u003e\n    \u003c/div\u003e\n  );\n};\n\nexport default Dashboard;\n\u003c/file\u003e\n\n\u003cfile path=\"tests/agent-lab-demo/7b/dashboard-energy/Dashboard.css\"\u003e\n.dashboard-container {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  height: 100vh;\n  background-color: #f4f4f9;\n}\n\nh1 {\n  color: #333;\n}\n\n.energy-meter {\n  margin-top: 20px;\n  font-size: 24px;\n  color: #555;\n}\n\n.meter-label {\n  display: block;\n  margin-bottom: 5px;\n}\n\n.meter-value {\n  font-weight: bold;\n}\n\n.chart {\n  margin-top: 30px;\n}\n\u003c/file\u003e\n\n\u003cfile path=\"tests/agent-lab-demo/7b/dashboard-energy/index.js\"\u003e\nimport React from \u0027react\u0027;\nimport ReactDOM from \u0027react-dom\u0027;\nimport Dashboard from \u0027./Dashboard\u0027;\n\nconst root = document.getElementById(\u0027root\u0027);\nReactDOM.render(\u003cDashboard /\u003e, root);\n\u003c/file\u003e",
+        "parsed_file_blocks":  [
+                                   {
+                                       "path":  "tests/agent-lab-demo/7b/dashboard-energy/Dashboard.jsx",
+                                       "content":  "import React from \u0027react\u0027;\nimport \u0027./Dashboard.css\u0027;\n\nconst Dashboard = () =\u003e {\n  return (\n    \u003cdiv className=\"dashboard-container\"\u003e\n      \u003ch1\u003eEnergy Dashboard\u003c/h1\u003e\n      \u003cdiv className=\"energy-meter\"\u003e\n        \u003cspan className=\"meter-label\"\u003eCurrent Energy Usage:\u003c/span\u003e\n        \u003cspan className=\"meter-value\"\u003e500 kWh\u003c/span\u003e\n      \u003c/div\u003e\n      \u003cdiv className=\"chart\"\u003e\n        {/* Placeholder for energy usage chart */}\n        \u003ccanvas id=\"energyChart\"\u003e\u003c/canvas\u003e\n      \u003c/div\u003e\n    \u003c/div\u003e\n  );\n};\n\nexport default Dashboard;",
+                                       "line_count":  20
+                                   },
+                                   {
+                                       "path":  "tests/agent-lab-demo/7b/dashboard-energy/Dashboard.css",
+                                       "content":  ".dashboard-container {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  height: 100vh;\n  background-color: #f4f4f9;\n}\n\nh1 {\n  color: #333;\n}\n\n.energy-meter {\n  margin-top: 20px;\n  font-size: 24px;\n  color: #555;\n}\n\n.meter-label {\n  display: block;\n  margin-bottom: 5px;\n}\n\n.meter-value {\n  font-weight: bold;\n}\n\n.chart {\n  margin-top: 30px;\n}",
+                                       "line_count":  31
+                                   },
+                                   {
+                                       "path":  "tests/agent-lab-demo/7b/dashboard-energy/index.js",
+                                       "content":  "import React from \u0027react\u0027;\nimport ReactDOM from \u0027react-dom\u0027;\nimport Dashboard from \u0027./Dashboard\u0027;\n\nconst root = document.getElementById(\u0027root\u0027);\nReactDOM.render(\u003cDashboard /\u003e, root);",
+                                       "line_count":  6
+                                   }
+                               ],
+        "diff_preview":  "diff --git a/tests/agent-lab-demo/7b/dashboard-energy/Dashboard.jsx b/tests/agent-lab-demo/7b/dashboard-energy/Dashboard.jsx\nnew file mode 100644\n--- /dev/null\n+++ b/tests/agent-lab-demo/7b/dashboard-energy/Dashboard.jsx\n@@ -0,0 +1,20 @@\n+import React from \u0027react\u0027;\n+import \u0027./Dashboard.css\u0027;\n+\n+const Dashboard = () =\u003e {\n+  return (\n+    \u003cdiv className=\"dashboard-container\"\u003e\n+      \u003ch1\u003eEnergy Dashboard\u003c/h1\u003e\n+      \u003cdiv className=\"energy-meter\"\u003e\n+        \u003cspan className=\"meter-label\"\u003eCurrent Energy Usage:\u003c/span\u003e\n+        \u003cspan className=\"meter-value\"\u003e500 kWh\u003c/span\u003e\n+      \u003c/div\u003e\n+      \u003cdiv className=\"chart\"\u003e\n+        {/* Placeholder for energy usage chart */}\n+        \u003ccanvas id=\"energyChart\"\u003e\u003c/canvas\u003e\n+      \u003c/div\u003e\n+    \u003c/div\u003e\n+  );\n+};\n+\n+export default Dashboard;\n\ndiff --git a/tests/agent-lab-demo/7b/dashboard-energy/Dashboard.css b/tests/agent-lab-demo/7b/dashboard-energy/Dashboard.css\nnew file mode 100644\n--- /dev/null\n+++ b/tests/agent-lab-demo/7b/dashboard-energy/Dashboard.css\n@@ -0,0 +1,31 @@\n+.dashboard-container {\n+  display: flex;\n+  flex-direction: column;\n+  align-items: center;\n+  justify-content: center;\n+  height: 100vh;\n+  background-color: #f4f4f9;\n+}\n+\n+h1 {\n+  color: #333;\n+}\n+\n+.energy-meter {\n+  margin-top: 20px;\n+  font-size: 24px;\n+  color: #555;\n+}\n+\n+.meter-label {\n+  display: block;\n+  margin-bottom: 5px;\n+}\n+\n+.meter-value {\n+  font-weight: bold;\n+}\n+\n+.chart {\n+  margin-top: 30px;\n+}\n\ndiff --git a/tests/agent-lab-demo/7b/dashboard-energy/index.js b/tests/agent-lab-demo/7b/dashboard-energy/index.js\nnew file mode 100644\n--- /dev/null\n+++ b/tests/agent-lab-demo/7b/dashboard-energy/index.js\n@@ -0,0 +1,6 @@\n+import React from \u0027react\u0027;\n+import ReactDOM from \u0027react-dom\u0027;\n+import Dashboard from \u0027./Dashboard\u0027;\n+\n+const root = document.getElementById(\u0027root\u0027);\n+ReactDOM.render(\u003cDashboard /\u003e, root);",
+        "diagnostics":  {
+                            "model_alias":  "coder",
+                            "response_ms":  18453.93,
+                            "file_block_count":  3,
+                            "isolated_root":  "tests/agent-lab-demo/7b/dashboard-energy/",
+                            "bad_paths":  [
+
+                                          ],
+                            "fenced_content_paths":  [
+
+                                                     ],
+                            "apply_attempted":  false,
+                            "malformed_file_block":  false
+                        }
+    },
+    {
+        "id":  "server-health",
+        "prompt":  "check server health",
+        "model_label":  "7b",
+        "raw_model_response":  "\u003cfile path=\"tests/agent-lab-demo/7b/server-health/health.js\"\u003e\nconst express = require(\u0027express\u0027);\nconst router = express.Router();\n\nrouter.get(\u0027/health\u0027, (req, res) =\u003e {\n  res.status(200).json({ status: \u0027UP\u0027 });\n});\n\nmodule.exports = router;\n\u003c/file\u003e",
+        "parsed_file_blocks":  [
+                                   {
+                                       "path":  "tests/agent-lab-demo/7b/server-health/health.js",
+                                       "content":  "const express = require(\u0027express\u0027);\nconst router = express.Router();\n\nrouter.get(\u0027/health\u0027, (req, res) =\u003e {\n  res.status(200).json({ status: \u0027UP\u0027 });\n});\n\nmodule.exports = router;",
+                                       "line_count":  8
+                                   }
+                               ],
+        "diff_preview":  "diff --git a/tests/agent-lab-demo/7b/server-health/health.js b/tests/agent-lab-demo/7b/server-health/health.js\nnew file mode 100644\n--- /dev/null\n+++ b/tests/agent-lab-demo/7b/server-health/health.js\n@@ -0,0 +1,8 @@\n+const express = require(\u0027express\u0027);\n+const router = express.Router();\n+\n+router.get(\u0027/health\u0027, (req, res) =\u003e {\n+  res.status(200).json({ status: \u0027UP\u0027 });\n+});\n+\n+module.exports = router;",
+        "diagnostics":  {
+                            "model_alias":  "coder",
+                            "response_ms":  3935.21,
+                            "file_block_count":  1,
+                            "isolated_root":  "tests/agent-lab-demo/7b/server-health/",
+                            "bad_paths":  [
+
+                                          ],
+                            "fenced_content_paths":  [
+
+                                                     ],
+                            "apply_attempted":  false,
+                            "malformed_file_block":  false
+                        }
+    },
+    {
+        "id":  "experimental-features-homepage-fix",
+        "prompt":  "fix homepage on experimental features repo",
+        "model_label":  "7b",
+        "raw_model_response":  "\u003cfile path=\"tests/agent-lab-demo/7b/experimental-features-homepage-fix/HomePage.js\"\u003e\nimport React from \u0027react\u0027;\n\nconst HomePage = () =\u003e {\n  return (\n    \u003cdiv\u003e\n      \u003ch1\u003eExperimental Features Homepage\u003c/h1\u003e\n      \u003cp\u003eWelcome to the experimental features homepage!\u003c/p\u003e\n    \u003c/div\u003e\n  );\n};\n\nexport default HomePage;\n\u003c/file\u003e\n\n\u003cfile path=\"tests/agent-lab-demo/7b/experimental-features-homepage-fix/index.js\"\u003e\nimport React from \u0027react\u0027;\nimport ReactDOM from \u0027react-dom\u0027;\nimport HomePage from \u0027./HomePage\u0027;\n\nconst rootElement = document.getElementById(\u0027root\u0027);\nReactDOM.render(\u003cHomePage /\u003e, rootElement);\n\u003c/file\u003e",
+        "parsed_file_blocks":  [
+                                   {
+                                       "path":  "tests/agent-lab-demo/7b/experimental-features-homepage-fix/HomePage.js",
+                                       "content":  "import React from \u0027react\u0027;\n\nconst HomePage = () =\u003e {\n  return (\n    \u003cdiv\u003e\n      \u003ch1\u003eExperimental Features Homepage\u003c/h1\u003e\n      \u003cp\u003eWelcome to the experimental features homepage!\u003c/p\u003e\n    \u003c/div\u003e\n  );\n};\n\nexport default HomePage;",
+                                       "line_count":  12
+                                   },
+                                   {
+                                       "path":  "tests/agent-lab-demo/7b/experimental-features-homepage-fix/index.js",
+                                       "content":  "import React from \u0027react\u0027;\nimport ReactDOM from \u0027react-dom\u0027;\nimport HomePage from \u0027./HomePage\u0027;\n\nconst rootElement = document.getElementById(\u0027root\u0027);\nReactDOM.render(\u003cHomePage /\u003e, rootElement);",
+                                       "line_count":  6
+                                   }
+                               ],
+        "diff_preview":  "diff --git a/tests/agent-lab-demo/7b/experimental-features-homepage-fix/HomePage.js b/tests/agent-lab-demo/7b/experimental-features-homepage-fix/HomePage.js\nnew file mode 100644\n--- /dev/null\n+++ b/tests/agent-lab-demo/7b/experimental-features-homepage-fix/HomePage.js\n@@ -0,0 +1,12 @@\n+import React from \u0027react\u0027;\n+\n+const HomePage = () =\u003e {\n+  return (\n+    \u003cdiv\u003e\n+      \u003ch1\u003eExperimental Features Homepage\u003c/h1\u003e\n+      \u003cp\u003eWelcome to the experimental features homepage!\u003c/p\u003e\n+    \u003c/div\u003e\n+  );\n+};\n+\n+export default HomePage;\n\ndiff --git a/tests/agent-lab-demo/7b/experimental-features-homepage-fix/index.js b/tests/agent-lab-demo/7b/experimental-features-homepage-fix/index.js\nnew file mode 100644\n--- /dev/null\n+++ b/tests/agent-lab-demo/7b/experimental-features-homepage-fix/index.js\n@@ -0,0 +1,6 @@\n+import React from \u0027react\u0027;\n+import ReactDOM from \u0027react-dom\u0027;\n+import HomePage from \u0027./HomePage\u0027;\n+\n+const rootElement = document.getElementById(\u0027root\u0027);\n+ReactDOM.render(\u003cHomePage /\u003e, rootElement);",
+        "diagnostics":  {
+                            "model_alias":  "coder",
+                            "response_ms":  8143.28,
+                            "file_block_count":  2,
+                            "isolated_root":  "tests/agent-lab-demo/7b/experimental-features-homepage-fix/",
+                            "bad_paths":  [
+
+                                          ],
+                            "fenced_content_paths":  [
+
+                                                     ],
+                            "apply_attempted":  false,
+                            "malformed_file_block":  false
+                        }
+    },
+    {
+        "id":  "premium-coding-cockpit",
+        "prompt":  "make the coding cockpit actually feel premium and expensive like a real pro tool, add some nice animations and modern touches but dont break anything",
+        "model_label":  "7b",
+        "raw_model_response":  "\u003cfile path=\"tests/agent-lab-demo/7b/premium-coding-cockpit/PremiumCockpit.css\"\u003e\n/* Add premium styling */\nbody {\n    background-color: #1e1e2f;\n    color: #d4d4d4;\n    font-family: \u0027Fira Code\u0027, monospace;\n}\n\n.container {\n    max-width: 1200px;\n    margin: 0 auto;\n    padding: 2rem;\n}\n\n.header {\n    display: flex;\n    justify-content: space-between;\n    align-items: center;\n    margin-bottom: 2rem;\n}\n\n.logo {\n    font-size: 2.5rem;\n    color: #61dafb;\n}\n\n.navbar {\n    display: flex;\n    gap: 1rem;\n}\n\n.nav-item {\n    padding: 0.5rem 1rem;\n    background-color: #333;\n    border-radius: 4px;\n    cursor: pointer;\n    transition: background-color 0.3s ease;\n}\n\n.nav-item:hover {\n    background-color: #555;\n}\n\n.code-editor {\n    background-color: #282c34;\n    color: #d4d4d4;\n    border-radius: 4px;\n    padding: 1rem;\n    font-size: 0.9rem;\n    line-height: 1.6;\n    overflow-y: auto;\n}\n\n.code-editor:focus {\n    outline: none;\n    box-shadow: 0 0 5px #61dafb;\n}\n\n.button {\n    background-color: #61dafb;\n    color: #282c34;\n    border: none;\n    padding: 0.75rem 1.5rem;\n    font-size: 0.9rem;\n    cursor: pointer;\n    border-radius: 4px;\n    transition: background-color 0.3s ease;\n}\n\n.button:hover {\n    background-color: #4caf50;\n}\n\u003c/file\u003e\n\n\u003cfile path=\"tests/agent-lab-demo/7b/premium-coding-cockpit/PremiumCockpit.js\"\u003e\nimport React, { useState } from \u0027react\u0027;\nimport \u0027./PremiumCockpit.css\u0027;\n\nconst PremiumCockpit = () =\u003e {\n    const [code, setCode] = useState(\u0027\u0027);\n    const [output, setOutput] = useState(\u0027\u0027);\n\n    const runCode = () =\u003e {\n        try {\n            const result = eval(code);\n            setOutput(result);\n        } catch (error) {\n            setOutput(error.message);\n        }\n    };\n\n    return (\n        \u003cdiv className=\"container\"\u003e\n            \u003cheader className=\"header\"\u003e\n                \u003cdiv className=\"logo\"\u003ePremium Coding Cockpit\u003c/div\u003e\n                \u003cnav className=\"navbar\"\u003e\n                    \u003cdiv className=\"nav-item\"\u003eFile Explorer\u003c/div\u003e\n                    \u003cdiv className=\"nav-item\"\u003eSettings\u003c/div\u003e\n                \u003c/nav\u003e\n            \u003c/header\u003e\n            \u003cdiv className=\"code-editor\" contentEditable=\"true\" onInput={(e) =\u003e setCode(e.target.innerText)}\u003e\u003c/div\u003e\n            \u003cbutton className=\"button\" onClick={runCode}\u003eRun Code\u003c/button\u003e\n            \u003cpre\u003e{output}\u003c/pre\u003e\n        \u003c/div\u003e\n    );\n};\n\nexport default PremiumCockpit;\n\u003c/file\u003e\n\n\u003cfile path=\"tests/agent-lab-demo/7b/premium-coding-cockpit/PremiumCockpit.jsx\"\u003e\nimport React, { useState } from \u0027react\u0027;\nimport \u0027./PremiumCockpit.css\u0027;\n\nconst PremiumCockpit = () =\u003e {\n    const [code, setCode] = useState(\u0027\u0027);\n    const [output, setOutput] = useState(\u0027\u0027);\n\n    const runCode = () =\u003e {\n        try {\n            const result = eval(code);\n            setOutput(result);\n        } catch (error) {\n            setOutput(error.message);\n        }\n    };\n\n    return (\n        \u003cdiv className=\"container\"\u003e\n            \u003cheader className=\"header\"\u003e\n                \u003cdiv className=\"logo\"\u003ePremium Coding Cockpit\u003c/div\u003e\n                \u003cnav className=\"navbar\"\u003e\n                    \u003cdiv className=\"nav-item\"\u003eFile Explorer\u003c/div\u003e\n                    \u003cdiv className=\"nav-item\"\u003eSettings\u003c/div\u003e\n                \u003c/nav\u003e\n            \u003c/header\u003e\n            \u003cdiv className=\"code-editor\" contentEditable=\"true\" onInput={(e) =\u003e setCode(e.target.innerText)}\u003e\u003c/div\u003e\n            \u003cbutton className=\"button\" onClick={runCode}\u003eRun Code\u003c/button\u003e\n            \u003cpre\u003e{output}\u003c/pre\u003e\n        \u003c/div\u003e\n    );\n};\n\nexport default PremiumCockpit;\n\u003c/file\u003e",
+        "parsed_file_blocks":  [
+                                   {
+                                       "path":  "tests/agent-lab-demo/7b/premium-coding-cockpit/PremiumCockpit.css",
+                                       "content":  "/* Add premium styling */\nbody {\n    background-color: #1e1e2f;\n    color: #d4d4d4;\n    font-family: \u0027Fira Code\u0027, monospace;\n}\n\n.container {\n    max-width: 1200px;\n    margin: 0 auto;\n    padding: 2rem;\n}\n\n.header {\n    display: flex;\n    justify-content: space-between;\n    align-items: center;\n    margin-bottom: 2rem;\n}\n\n.logo {\n    font-size: 2.5rem;\n    color: #61dafb;\n}\n\n.navbar {\n    display: flex;\n    gap: 1rem;\n}\n\n.nav-item {\n    padding: 0.5rem 1rem;\n    background-color: #333;\n    border-radius: 4px;\n    cursor: pointer;\n    transition: background-color 0.3s ease;\n}\n\n.nav-item:hover {\n    background-color: #555;\n}\n\n.code-editor {\n    background-color: #282c34;\n    color: #d4d4d4;\n    border-radius: 4px;\n    padding: 1rem;\n    font-size: 0.9rem;\n    line-height: 1.6;\n    overflow-y: auto;\n}\n\n.code-editor:focus {\n    outline: none;\n    box-shadow: 0 0 5px #61dafb;\n}\n\n.button {\n    background-color: #61dafb;\n    color: #282c34;\n    border: none;\n    padding: 0.75rem 1.5rem;\n    font-size: 0.9rem;\n    cursor: pointer;\n    border-radius: 4px;\n    transition: background-color 0.3s ease;\n}\n\n.button:hover {\n    background-color: #4caf50;\n}",
+                                       "line_count":  71
+                                   },
+                                   {
+                                       "path":  "tests/agent-lab-demo/7b/premium-coding-cockpit/PremiumCockpit.js",
+                                       "content":  "import React, { useState } from \u0027react\u0027;\nimport \u0027./PremiumCockpit.css\u0027;\n\nconst PremiumCockpit = () =\u003e {\n    const [code, setCode] = useState(\u0027\u0027);\n    const [output, setOutput] = useState(\u0027\u0027);\n\n    const runCode = () =\u003e {\n        try {\n            const result = eval(code);\n            setOutput(result);\n        } catch (error) {\n            setOutput(error.message);\n        }\n    };\n\n    return (\n        \u003cdiv className=\"container\"\u003e\n            \u003cheader className=\"header\"\u003e\n                \u003cdiv className=\"logo\"\u003ePremium Coding Cockpit\u003c/div\u003e\n                \u003cnav className=\"navbar\"\u003e\n                    \u003cdiv className=\"nav-item\"\u003eFile Explorer\u003c/div\u003e\n                    \u003cdiv className=\"nav-item\"\u003eSettings\u003c/div\u003e\n                \u003c/nav\u003e\n            \u003c/header\u003e\n            \u003cdiv className=\"code-editor\" contentEditable=\"true\" onInput={(e) =\u003e setCode(e.target.innerText)}\u003e\u003c/div\u003e\n            \u003cbutton className=\"button\" onClick={runCode}\u003eRun Code\u003c/button\u003e\n            \u003cpre\u003e{output}\u003c/pre\u003e\n        \u003c/div\u003e\n    );\n};\n\nexport default PremiumCockpit;",
+                                       "line_count":  33
+                                   },
+                                   {
+                                       "path":  "tests/agent-lab-demo/7b/premium-coding-cockpit/PremiumCockpit.jsx",
+                                       "content":  "import React, { useState } from \u0027react\u0027;\nimport \u0027./PremiumCockpit.css\u0027;\n\nconst PremiumCockpit = () =\u003e {\n    const [code, setCode] = useState(\u0027\u0027);\n    const [output, setOutput] = useState(\u0027\u0027);\n\n    const runCode = () =\u003e {\n        try {\n            const result = eval(code);\n            setOutput(result);\n        } catch (error) {\n            setOutput(error.message);\n        }\n    };\n\n    return (\n        \u003cdiv className=\"container\"\u003e\n            \u003cheader className=\"header\"\u003e\n                \u003cdiv className=\"logo\"\u003ePremium Coding Cockpit\u003c/div\u003e\n                \u003cnav className=\"navbar\"\u003e\n                    \u003cdiv className=\"nav-item\"\u003eFile Explorer\u003c/div\u003e\n                    \u003cdiv className=\"nav-item\"\u003eSettings\u003c/div\u003e\n                \u003c/nav\u003e\n            \u003c/header\u003e\n            \u003cdiv className=\"code-editor\" contentEditable=\"true\" onInput={(e) =\u003e setCode(e.target.innerText)}\u003e\u003c/div\u003e\n            \u003cbutton className=\"button\" onClick={runCode}\u003eRun Code\u003c/button\u003e\n            \u003cpre\u003e{output}\u003c/pre\u003e\n        \u003c/div\u003e\n    );\n};\n\nexport default PremiumCockpit;",
+                                       "line_count":  33
+                                   }
+                               ],
+        "diff_preview":  "diff --git a/tests/agent-lab-demo/7b/premium-coding-cockpit/PremiumCockpit.css b/tests/agent-lab-demo/7b/premium-coding-cockpit/PremiumCockpit.css\nnew file mode 100644\n--- /dev/null\n+++ b/tests/agent-lab-demo/7b/premium-coding-cockpit/PremiumCockpit.css\n@@ -0,0 +1,71 @@\n+/* Add premium styling */\n+body {\n+    background-color: #1e1e2f;\n+    color: #d4d4d4;\n+    font-family: \u0027Fira Code\u0027, monospace;\n+}\n+\n+.container {\n+    max-width: 1200px;\n+    margin: 0 auto;\n+    padding: 2rem;\n+}\n+\n+.header {\n+    display: flex;\n+    justify-content: space-between;\n+    align-items: center;\n+    margin-bottom: 2rem;\n+}\n+\n+.logo {\n+    font-size: 2.5rem;\n+    color: #61dafb;\n+}\n+\n+.navbar {\n+    display: flex;\n+    gap: 1rem;\n+}\n+\n+.nav-item {\n+    padding: 0.5rem 1rem;\n+    background-color: #333;\n+    border-radius: 4px;\n+    cursor: pointer;\n+    transition: background-color 0.3s ease;\n+}\n+\n+.nav-item:hover {\n+    background-color: #555;\n+}\n+\n+.code-editor {\n+    background-color: #282c34;\n+    color: #d4d4d4;\n+    border-radius: 4px;\n+    padding: 1rem;\n+    font-size: 0.9rem;\n+    line-height: 1.6;\n+    overflow-y: auto;\n+}\n+\n+.code-editor:focus {\n+    outline: none;\n+    box-shadow: 0 0 5px #61dafb;\n+}\n+\n+.button {\n+    background-color: #61dafb;\n+    color: #282c34;\n+    border: none;\n+    padding: 0.75rem 1.5rem;\n+    font-size: 0.9rem;\n+    cursor: pointer;\n+    border-radius: 4px;\n+    transition: background-color 0.3s ease;\n+}\n+\n+.button:hover {\n+    background-color: #4caf50;\n+}\n\ndiff --git a/tests/agent-lab-demo/7b/premium-coding-cockpit/PremiumCockpit.js b/tests/agent-lab-demo/7b/premium-coding-cockpit/PremiumCockpit.js\nnew file mode 100644\n--- /dev/null\n+++ b/tests/agent-lab-demo/7b/premium-coding-cockpit/PremiumCockpit.js\n@@ -0,0 +1,33 @@\n+import React, { useState } from \u0027react\u0027;\n+import \u0027./PremiumCockpit.css\u0027;\n+\n+const PremiumCockpit = () =\u003e {\n+    const [code, setCode] = useState(\u0027\u0027);\n+    const [output, setOutput] = useState(\u0027\u0027);\n+\n+    const runCode = () =\u003e {\n+        try {\n+            const result = eval(code);\n+            setOutput(result);\n+        } catch (error) {\n+            setOutput(error.message);\n+        }\n+    };\n+\n+    return (\n+        \u003cdiv className=\"container\"\u003e\n+            \u003cheader className=\"header\"\u003e\n+                \u003cdiv className=\"logo\"\u003ePremium Coding Cockpit\u003c/div\u003e\n+                \u003cnav className=\"navbar\"\u003e\n+                    \u003cdiv className=\"nav-item\"\u003eFile Explorer\u003c/div\u003e\n+                    \u003cdiv className=\"nav-item\"\u003eSettings\u003c/div\u003e\n+                \u003c/nav\u003e\n+            \u003c/header\u003e\n+            \u003cdiv className=\"code-editor\" contentEditable=\"true\" onInput={(e) =\u003e setCode(e.target.innerText)}\u003e\u003c/div\u003e\n+            \u003cbutton className=\"button\" onClick={runCode}\u003eRun Code\u003c/button\u003e\n+            \u003cpre\u003e{output}\u003c/pre\u003e\n+        \u003c/div\u003e\n+    );\n+};\n+\n+export default PremiumCockpit;\n\ndiff --git a/tests/agent-lab-demo/7b/premium-coding-cockpit/PremiumCockpit.jsx b/tests/agent-lab-demo/7b/premium-coding-cockpit/PremiumCockpit.jsx\nnew file mode 100644\n--- /dev/null\n+++ b/tests/agent-lab-demo/7b/premium-coding-cockpit/PremiumCockpit.jsx\n@@ -0,0 +1,33 @@\n+import React, { useState } from \u0027react\u0027;\n+import \u0027./PremiumCockpit.css\u0027;\n+\n+const PremiumCockpit = () =\u003e {\n+    const [code, setCode] = useState(\u0027\u0027);\n+    const [output, setOutput] = useState(\u0027\u0027);\n+\n+    const runCode = () =\u003e {\n+        try {\n+            const result = eval(code);\n+            setOutput(result);\n+        } catch (error) {\n+            setOutput(error.message);\n+        }\n+    };\n+\n+    return (\n+        \u003cdiv className=\"container\"\u003e\n+            \u003cheader className=\"header\"\u003e\n+                \u003cdiv className=\"logo\"\u003ePremium Coding Cockpit\u003c/div\u003e\n+                \u003cnav className=\"navbar\"\u003e\n+                    \u003cdiv className=\"nav-item\"\u003eFile Explorer\u003c/div\u003e\n+                    \u003cdiv className=\"nav-item\"\u003eSettings\u003c/div\u003e\n+                \u003c/nav\u003e\n+            \u003c/header\u003e\n+            \u003cdiv className=\"code-editor\" contentEditable=\"true\" onInput={(e) =\u003e setCode(e.target.innerText)}\u003e\u003c/div\u003e\n+            \u003cbutton className=\"button\" onClick={runCode}\u003eRun Code\u003c/button\u003e\n+            \u003cpre\u003e{output}\u003c/pre\u003e\n+        \u003c/div\u003e\n+    );\n+};\n+\n+export default PremiumCockpit;",
+        "diagnostics":  {
+                            "model_alias":  "coder",
+                            "response_ms":  48763.7,
+                            "file_block_count":  3,
+                            "isolated_root":  "tests/agent-lab-demo/7b/premium-coding-cockpit/",
+                            "bad_paths":  [
+
+                                          ],
+                            "fenced_content_paths":  [
+
+                                                     ],
+                            "apply_attempted":  false,
+                            "malformed_file_block":  false
+                        }
+    }
+]
