@@ -1,0 +1,12 @@
+=== PRE-RUN README ===
+# Continue Lane Preflight
+
+This disposable workspace is only for testing whether Continue can edit files.
+
+=== COMMAND ===
+cwd: /home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-lane-preflight/workspace
+cn --auto -p "Run only in this disposable workspace. Do not modify files outside this workspace. In this disposable workspace only, edit README.md by adding one new line that says: Continue file edit proof. Do not touch anything else."
+
+=== STDOUT/STDERR ===
+I have edited README.md by adding the line "Continue file edit proof."
+EXIT_CODE=0

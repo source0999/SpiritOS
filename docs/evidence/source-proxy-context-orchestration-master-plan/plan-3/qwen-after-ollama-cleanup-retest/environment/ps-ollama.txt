@@ -1,0 +1,30 @@
+$ ps -ef | grep -E 'ollama|aider|cn|continue|node' | grep -v grep || true
+
+STDOUT:
+ollama      1448       1  0 Jun02 ?        00:15:41 /usr/local/bin/ollama serve
+source     17474   17473  0 Jun02 pts/4    00:00:00 node /mnt/spirit-8tb/projects/999Playr/node_modules/.bin/concurrently -k npm run dev:web npm run media:server
+source     17505   17484  0 Jun02 pts/4    00:00:00 sh -c node scripts/media-server.cjs
+source     17506   17505  0 Jun02 pts/4    00:09:16 node scripts/media-server.cjs
+source     17513   17507  0 Jun02 pts/4    00:00:05 node /mnt/spirit-8tb/projects/999Playr/node_modules/.bin/vite --host 0.0.0.0 --port 5173
+source    360697       1  0 Jun09 ?        00:00:11 python3 scripts/agent-trials/run-continue-default-one-prompt-smoke.py --serve --host 0.0.0.0 --port 8774
+source    396786  396784  0 Jun09 pts/2    00:00:00 node /home/source/SpiritOS/node_modules/.bin/../next/dist/bin/next dev -H 0.0.0.0 --webpack -p 3000 --experimental-https --experimental-https-key ./certificates/spirit-dev-key.pem --experimental-https-cert ./certificates/spirit-dev.pem
+devmon    728771       1  0 06:34 ?        00:00:00 /bin/bash /usr/bin/devmon --mount-options nosuid,nodev,noatime --ignore-label EFI
+source   1374988       1  0 19:59 ?        00:00:00 python3 -m http.server 8778 --directory docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/native-continue-api-smoke
+source   1421786       1  0 20:48 ?        00:00:00 python3 scripts/agent-trials/run-aider-goose-local-agent-smoke.py --serve --host 0.0.0.0 --port 8779
+source   1433217       1  0 21:02 ?        00:00:00 python3 scripts/agent-trials/run-aider-qwen-one-lane-debug.py --serve --host 0.0.0.0 --port 8780
+ollama   1441237    1448  1 21:12 ?        00:00:06 /usr/local/bin/ollama runner --model /usr/share/ollama/.ollama/models/blobs/sha256-60e05f2100071479f596b964f89f510f057ce397ea22f2833a0cfe029bfc2463 --port 34997
+source   1448378 1448377  1 21:21 ?        00:00:00 python3 scripts/agent-trials/run-qwen-after-ollama-cleanup-retest.py --run
+source   2071578       1  0 Jun07 ?        00:00:18 /home/source/.cursor-server/bin/linux-x64/b887a26c4f70bd8136bfffeda812b24194ec9ce0/node /home/source/.cursor-server/bin/multiplex-server/3ce73d09cffc8f33c6d911e972bd0f6dabbe3e26e810844be8060e6b10987db8.js bd17a834-0a56-4a2e-bf45-ad7d54422522 0
+source   2959767 2959754  0 Jun08 ?        00:07:31 /home/source/.cursor-server/bin/linux-x64/80c653c2c3528e65016a0d304b54486084b470b0/node /home/source/.cursor-server/bin/linux-x64/80c653c2c3528e65016a0d304b54486084b470b0/out/server-main.js --start-server --host=127.0.0.1 --port 0 --connection-token-file /run/user/1000/cursor-remote-code.token.[redacted] --telemetry-level off --enable-remote-auto-shutdown --accept-server-license-terms
+source   2959801 2959767  0 Jun08 ?        00:05:00 /home/source/.cursor-server/bin/linux-x64/80c653c2c3528e65016a0d304b54486084b470b0/node /home/source/.cursor-server/bin/linux-x64/80c653c2c3528e65016a0d304b54486084b470b0/out/bootstrap-fork --type=ptyHost --logsPath /home/source/.cursor-server/data/logs/20260608T165805
+source   2959826 2959767  0 Jun08 ?        00:01:02 /home/source/.cursor-server/bin/linux-x64/80c653c2c3528e65016a0d304b54486084b470b0/node /home/source/.cursor-server/bin/linux-x64/80c653c2c3528e65016a0d304b54486084b470b0/out/bootstrap-fork --type=fileWatcher
+source   3186160 2959767  4 Jun08 ?        02:03:25 /home/source/.cursor-server/bin/linux-x64/80c653c2c3528e65016a0d304b54486084b470b0/node --dns-result-order=ipv4first --inspect-port=0 --experimental-network-inspection /home/source/.cursor-server/bin/linux-x64/80c653c2c3528e65016a0d304b54486084b470b0/out/bootstrap-fork --type=extensionHost --transformURIs --useHostProxy=false
+source   3186504 3186160  0 Jun08 ?        00:00:06 /home/source/.cursor-server/bin/linux-x64/80c653c2c3528e65016a0d304b54486084b470b0/node /home/source/.cursor-server/bin/linux-x64/80c653c2c3528e65016a0d304b54486084b470b0/extensions/markdown-language-features/dist/serverWorkerMain --node-ipc --clientProcessId=3186160
+source   3186720 3186160  0 Jun08 ?        00:00:06 /home/source/.cursor-server/bin/linux-x64/80c653c2c3528e65016a0d304b54486084b470b0/node /home/source/.cursor-server/bin/linux-x64/80c653c2c3528e65016a0d304b54486084b470b0/extensions/json-language-features/server/dist/node/jsonServerMain --node-ipc --clientProcessId=3186160
+source   3745245       1  0 Jun05 ?        00:01:06 node ./scripts/media-ingest-worker.mjs
+
+
+STDERR:
+
+EXIT: 0
+ELAPSED: 0.03

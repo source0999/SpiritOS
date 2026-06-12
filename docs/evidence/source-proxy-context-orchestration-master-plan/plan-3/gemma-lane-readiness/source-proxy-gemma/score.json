@@ -1,0 +1,11 @@
+{
+  "lane": "source-proxy-gemma",
+  "model": "gemma3n:e4b",
+  "status": "SKIPPED",
+  "total": 0,
+  "selected_model_proven": false,
+  "file_edit_happened": false,
+  "manual_required": false,
+  "reason": "Direct Ollama Gemma smoke did not pass.",
+  "needed_config": "Set SOURCE_PROXY_OLLAMA_MODEL=gemma3n:e4b and OLLAMA_MODEL=gemma3n:e4b; verify route status resolves to that exact model."
+}

@@ -1,0 +1,16 @@
+=== command -v cn ===
+/usr/bin/cn
+=== cn --version ===
+1.5.44
+=== command -v continue ===
+continue
+=== continue --version ===
+--: line 9: continue: only meaningful in a `for', `while', or `until' loop
+=== npx @continuedev/cli --version ===
+1.5.44
+=== npx continue --version ===
+npm error could not determine executable to run
+npm error A complete log of this run can be found in: /home/source/.npm/_logs/2026-06-10T01_03_35_758Z-debug-0.log
+=== which cn / file ===
+/usr/bin/cn
+/usr/bin/cn: symbolic link to ../lib/node_modules/@continuedev/cli/dist/cn.js

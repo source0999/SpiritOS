@@ -1,0 +1,9 @@
+$ env | grep -E 'OLLAMA|CUDA|NVIDIA' || true
+
+STDOUT:
+
+
+STDERR:
+
+EXIT: 0
+ELAPSED: 0.007

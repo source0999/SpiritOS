@@ -1,0 +1,10 @@
+$ docker ps | grep -i ollama || true
+
+STDOUT:
+d36c2dbb0cff   ollama/ollama:latest                                "/bin/ollama serve"       3 weeks ago   Up 6 days (healthy)     11434/tcp                                     spirit-ollama
+
+
+STDERR:
+
+EXIT: 0
+ELAPSED: 3.013

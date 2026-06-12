@@ -1,0 +1,32 @@
+prompt-1:
+  cwd: /home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-file-edit-stress-test/continue-qwen/workspace
+  command: /usr/bin/cn --config /home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-file-edit-stress-test/continue-qwen/lane-config.yaml --auto -p 'Run only in this disposable workspace. Do not touch the real SpiritOS app. Do not modify files outside this workspace.
+
+init a repo for agent lab experiements make me a homepage i can open on my phone dont touch the real spiritos app tho'
+  exit_code: 0
+  elapsed_seconds: 136.688
+  model_reported: qwen2.5-coder:7b
+  model_selection: isolated --config /home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-file-edit-stress-test/continue-qwen/lane-config.yaml
+  files_changed: none
+
+prompt-2:
+  cwd: /home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-file-edit-stress-test/continue-qwen/workspace
+  command: /usr/bin/cn --config /home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-file-edit-stress-test/continue-qwen/lane-config.yaml --auto -p 'Run only in this disposable workspace. Do not touch the real SpiritOS app. Do not modify files outside this workspace.
+
+style it light clean minimilist homepage with placeholder navs for futer expermients home calculator tarot deck simulator weather app pong'
+  exit_code: 0
+  elapsed_seconds: 3.135
+  model_reported: qwen2.5-coder:7b
+  model_selection: isolated --config /home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-file-edit-stress-test/continue-qwen/lane-config.yaml
+  files_changed: none
+
+prompt-3:
+  cwd: /home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-file-edit-stress-test/continue-qwen/workspace
+  command: /usr/bin/cn --config /home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-file-edit-stress-test/continue-qwen/lane-config.yaml --auto -p 'Run only in this disposable workspace. Do not touch the real SpiritOS app. Do not modify files outside this workspace.
+
+make the calcuator route for this app, calcuator needs to add subtract multiply and divide'
+  exit_code: 0
+  elapsed_seconds: 2.182
+  model_reported: qwen2.5-coder:7b
+  model_selection: isolated --config /home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-file-edit-stress-test/continue-qwen/lane-config.yaml
+  files_changed: none

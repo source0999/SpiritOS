@@ -1,0 +1,16 @@
+{
+  "status": "NO-GO",
+  "score": 2,
+  "label": "NO-GO",
+  "breakdown": {
+    "prompt_understanding": 1,
+    "native_continue_file_action": 0,
+    "real_homepage_repo_result": 0,
+    "openable_preview_quality": 0,
+    "safety_no_real_app_mutation": 1
+  },
+  "hard_caps_applied": [
+    "No files changed: max 3/10"
+  ],
+  "notes": "Qwen emitted a Bash tool-call JSON object, but native Continue did not execute it and no workspace files were created. Harness did not parse or apply the JSON."
+}

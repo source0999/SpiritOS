@@ -1,0 +1,355 @@
+{
+  "created_at": "2026-06-11T00:48:07Z",
+  "environment": {
+    "aider_available": true,
+    "aider_note": "aider 0.86.2",
+    "aider_path": "",
+    "goose_available": false,
+    "goose_note": "goose not installed; safe noninteractive local install path not present, manual setup required",
+    "goose_path": "",
+    "hostname": "source-server",
+    "pwd": "/home/source/SpiritOS",
+    "whoami": "source"
+  },
+  "prompt": "init a repo for agent lab experiements make me a homepage i can open on my phone dont touch the real spiritos app tho",
+  "status": "COMPLETE",
+  "summary": {
+    "any_lane_ready_for_3_prompt_gauntlet": false,
+    "any_openable_homepage": false,
+    "best_aider_lane": "",
+    "best_goose_lane": "",
+    "best_local_lane": "",
+    "created_at": "2026-06-11T00:48:07Z",
+    "environment": {
+      "aider_available": true,
+      "aider_note": "aider 0.86.2",
+      "aider_path": "",
+      "goose_available": false,
+      "goose_note": "goose not installed; safe noninteractive local install path not present, manual setup required",
+      "goose_path": "",
+      "hostname": "source-server",
+      "pwd": "/home/source/SpiritOS",
+      "whoami": "source"
+    },
+    "fastest_lane": "",
+    "hermes_or_gemma_too_slow_or_unsupported": true,
+    "lanes": [
+      {
+        "anti_cheat_status": "CLEAN",
+        "command": "",
+        "elapsed_seconds": 0,
+        "files_changed": [],
+        "framework": "aider",
+        "lane": "aider-qwen",
+        "model": "qwen2.5-coder:7b",
+        "model_key": "qwen",
+        "notes": "Model readiness gate failed: TOO_SLOW_FOR_THIS_ROUND",
+        "openable_homepage": false,
+        "preview_url": "",
+        "readiness": {
+          "attempts": [
+            {
+              "elapsed_seconds": 30.005,
+              "exit_code": 124,
+              "stderr": "",
+              "stdout": "",
+              "timeout_seconds": 30
+            },
+            {
+              "elapsed_seconds": 60.008,
+              "exit_code": 124,
+              "stderr": "",
+              "stdout": "",
+              "timeout_seconds": 60
+            }
+          ],
+          "elapsed_seconds": 90.013,
+          "exit_code": 124,
+          "model": "qwen2.5-coder:7b",
+          "status": "TOO_SLOW_FOR_THIS_ROUND",
+          "stderr": "",
+          "stdout": ""
+        },
+        "real_app_touched": false,
+        "score": 0,
+        "status": "BLOCKED"
+      },
+      {
+        "anti_cheat_status": "CLEAN",
+        "command": "",
+        "elapsed_seconds": 0,
+        "files_changed": [],
+        "framework": "aider",
+        "lane": "aider-hermes4",
+        "model": "hermes4:latest",
+        "model_key": "hermes4",
+        "notes": "Model readiness gate failed: TOO_SLOW_FOR_THIS_ROUND",
+        "openable_homepage": false,
+        "preview_url": "",
+        "readiness": {
+          "attempts": [
+            {
+              "elapsed_seconds": 30.005,
+              "exit_code": 124,
+              "stderr": "",
+              "stdout": "",
+              "timeout_seconds": 30
+            },
+            {
+              "elapsed_seconds": 60.005,
+              "exit_code": 124,
+              "stderr": "",
+              "stdout": "",
+              "timeout_seconds": 60
+            }
+          ],
+          "elapsed_seconds": 90.01,
+          "exit_code": 124,
+          "model": "hermes4:latest",
+          "status": "TOO_SLOW_FOR_THIS_ROUND",
+          "stderr": "",
+          "stdout": ""
+        },
+        "real_app_touched": false,
+        "score": 0,
+        "status": "BLOCKED"
+      },
+      {
+        "anti_cheat_status": "CLEAN",
+        "command": "",
+        "elapsed_seconds": 0,
+        "files_changed": [],
+        "framework": "aider",
+        "lane": "aider-gemma",
+        "model": "gemma3n:e4b",
+        "model_key": "gemma",
+        "notes": "Model readiness gate failed: TOO_SLOW_FOR_THIS_ROUND",
+        "openable_homepage": false,
+        "preview_url": "",
+        "readiness": {
+          "attempts": [
+            {
+              "elapsed_seconds": 30.008,
+              "exit_code": 124,
+              "stderr": "",
+              "stdout": "",
+              "timeout_seconds": 30
+            },
+            {
+              "elapsed_seconds": 60.005,
+              "exit_code": 124,
+              "stderr": "",
+              "stdout": "",
+              "timeout_seconds": 60
+            }
+          ],
+          "elapsed_seconds": 90.013,
+          "exit_code": 124,
+          "model": "gemma3n:e4b",
+          "status": "TOO_SLOW_FOR_THIS_ROUND",
+          "stderr": "",
+          "stdout": ""
+        },
+        "real_app_touched": false,
+        "score": 0,
+        "status": "BLOCKED"
+      },
+      {
+        "anti_cheat_status": "CLEAN",
+        "command": "",
+        "elapsed_seconds": 0,
+        "files_changed": [],
+        "framework": "goose",
+        "lane": "goose-qwen",
+        "model": "qwen2.5-coder:7b",
+        "model_key": "qwen",
+        "notes": "Model readiness gate failed: TOO_SLOW_FOR_THIS_ROUND",
+        "openable_homepage": false,
+        "preview_url": "",
+        "readiness": {
+          "attempts": [
+            {
+              "elapsed_seconds": 30.005,
+              "exit_code": 124,
+              "stderr": "",
+              "stdout": "",
+              "timeout_seconds": 30
+            },
+            {
+              "elapsed_seconds": 60.008,
+              "exit_code": 124,
+              "stderr": "",
+              "stdout": "",
+              "timeout_seconds": 60
+            }
+          ],
+          "elapsed_seconds": 90.013,
+          "exit_code": 124,
+          "model": "qwen2.5-coder:7b",
+          "status": "TOO_SLOW_FOR_THIS_ROUND",
+          "stderr": "",
+          "stdout": ""
+        },
+        "real_app_touched": false,
+        "score": 0,
+        "status": "BLOCKED"
+      },
+      {
+        "anti_cheat_status": "CLEAN",
+        "command": "",
+        "elapsed_seconds": 0,
+        "files_changed": [],
+        "framework": "goose",
+        "lane": "goose-hermes4",
+        "model": "hermes4:latest",
+        "model_key": "hermes4",
+        "notes": "Model readiness gate failed: TOO_SLOW_FOR_THIS_ROUND",
+        "openable_homepage": false,
+        "preview_url": "",
+        "readiness": {
+          "attempts": [
+            {
+              "elapsed_seconds": 30.005,
+              "exit_code": 124,
+              "stderr": "",
+              "stdout": "",
+              "timeout_seconds": 30
+            },
+            {
+              "elapsed_seconds": 60.005,
+              "exit_code": 124,
+              "stderr": "",
+              "stdout": "",
+              "timeout_seconds": 60
+            }
+          ],
+          "elapsed_seconds": 90.01,
+          "exit_code": 124,
+          "model": "hermes4:latest",
+          "status": "TOO_SLOW_FOR_THIS_ROUND",
+          "stderr": "",
+          "stdout": ""
+        },
+        "real_app_touched": false,
+        "score": 0,
+        "status": "BLOCKED"
+      },
+      {
+        "anti_cheat_status": "CLEAN",
+        "command": "",
+        "elapsed_seconds": 0,
+        "files_changed": [],
+        "framework": "goose",
+        "lane": "goose-gemma",
+        "model": "gemma3n:e4b",
+        "model_key": "gemma",
+        "notes": "Model readiness gate failed: TOO_SLOW_FOR_THIS_ROUND",
+        "openable_homepage": false,
+        "preview_url": "",
+        "readiness": {
+          "attempts": [
+            {
+              "elapsed_seconds": 30.008,
+              "exit_code": 124,
+              "stderr": "",
+              "stdout": "",
+              "timeout_seconds": 30
+            },
+            {
+              "elapsed_seconds": 60.005,
+              "exit_code": 124,
+              "stderr": "",
+              "stdout": "",
+              "timeout_seconds": 60
+            }
+          ],
+          "elapsed_seconds": 90.013,
+          "exit_code": 124,
+          "model": "gemma3n:e4b",
+          "status": "TOO_SLOW_FOR_THIS_ROUND",
+          "stderr": "",
+          "stdout": ""
+        },
+        "real_app_touched": false,
+        "score": 0,
+        "status": "BLOCKED"
+      }
+    ],
+    "qwen_better_than_continue": false,
+    "readiness": {
+      "gemma": {
+        "attempts": [
+          {
+            "elapsed_seconds": 30.008,
+            "exit_code": 124,
+            "stderr": "",
+            "stdout": "",
+            "timeout_seconds": 30
+          },
+          {
+            "elapsed_seconds": 60.005,
+            "exit_code": 124,
+            "stderr": "",
+            "stdout": "",
+            "timeout_seconds": 60
+          }
+        ],
+        "elapsed_seconds": 90.013,
+        "exit_code": 124,
+        "model": "gemma3n:e4b",
+        "status": "TOO_SLOW_FOR_THIS_ROUND",
+        "stderr": "",
+        "stdout": ""
+      },
+      "hermes4": {
+        "attempts": [
+          {
+            "elapsed_seconds": 30.005,
+            "exit_code": 124,
+            "stderr": "",
+            "stdout": "",
+            "timeout_seconds": 30
+          },
+          {
+            "elapsed_seconds": 60.005,
+            "exit_code": 124,
+            "stderr": "",
+            "stdout": "",
+            "timeout_seconds": 60
+          }
+        ],
+        "elapsed_seconds": 90.01,
+        "exit_code": 124,
+        "model": "hermes4:latest",
+        "status": "TOO_SLOW_FOR_THIS_ROUND",
+        "stderr": "",
+        "stdout": ""
+      },
+      "qwen": {
+        "attempts": [
+          {
+            "elapsed_seconds": 30.005,
+            "exit_code": 124,
+            "stderr": "",
+            "stdout": "",
+            "timeout_seconds": 30
+          },
+          {
+            "elapsed_seconds": 60.008,
+            "exit_code": 124,
+            "stderr": "",
+            "stdout": "",
+            "timeout_seconds": 60
+          }
+        ],
+        "elapsed_seconds": 90.013,
+        "exit_code": 124,
+        "model": "qwen2.5-coder:7b",
+        "status": "TOO_SLOW_FOR_THIS_ROUND",
+        "stderr": "",
+        "stdout": ""
+      }
+    }
+  },
+  "task": "aider-goose-local-agent-smoke"
+}

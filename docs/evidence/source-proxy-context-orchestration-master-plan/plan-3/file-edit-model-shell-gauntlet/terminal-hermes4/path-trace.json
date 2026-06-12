@@ -1,0 +1,12 @@
+{
+  "lane_name": "terminal-hermes4",
+  "execution_shell": "terminal",
+  "model": "hermes4:latest",
+  "provider": "ollama",
+  "mode": "",
+  "effort": "",
+  "errors": [
+    "Ollama model `hermes4:latest` is not installed."
+  ],
+  "anti_cheat_status": "clean"
+}

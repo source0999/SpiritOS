@@ -1,0 +1,8 @@
+{
+  "no_aider_continue_goose_lanes_run": true,
+  "no_app_files_created": true,
+  "no_model_benchmark_scores_faked": true,
+  "no_services_stopped_or_restarted": true,
+  "no_sudo_used": true,
+  "status": "CLEAN"
+}

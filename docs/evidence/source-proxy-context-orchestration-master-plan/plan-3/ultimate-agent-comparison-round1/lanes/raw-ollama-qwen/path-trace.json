@@ -1,0 +1,17 @@
+{
+  "lane_name": "raw-ollama-qwen",
+  "shell": "raw",
+  "model_target": "qwen2.5-coder:7b",
+  "model_observed": "qwen2.5-coder:7b",
+  "execution_mode": "raw-output-harness-applied",
+  "command": "ollama-api-generate http://127.0.0.1:11434 qwen2.5-coder:7b",
+  "elapsed_seconds": 15.192,
+  "exit_code": 0,
+  "timed_out": false,
+  "files_changed": [
+    "parsed-preview/index.html"
+  ],
+  "preview_path": "lanes/raw-ollama-qwen/parsed-preview/index.html",
+  "raw_parse_applied": true,
+  "real_app_touched": false
+}

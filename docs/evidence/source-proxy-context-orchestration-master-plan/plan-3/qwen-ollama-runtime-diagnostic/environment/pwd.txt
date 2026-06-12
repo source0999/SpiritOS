@@ -1,0 +1,10 @@
+$ pwd
+
+STDOUT:
+/home/source/SpiritOS
+
+
+STDERR:
+
+EXIT: 0
+ELAPSED: 0.005

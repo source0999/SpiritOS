@@ -1,0 +1,57 @@
+Continue Config Discovery (read-only inspection)
+================================================
+Date: 2026-06-10
+
+Config locations
+----------------
+- Primary: /home/source/.continue/config.yaml (auth.json configUri points here)
+- Legacy: /home/source/.continue/config.json
+- Alternate: /home/source/.continue/spirit-config.yaml
+- Permissions: /home/source/.continue/permissions.yaml
+- Auth: /home/source/.continue/auth.json (authenticated; user present)
+
+Configured models (from config.yaml)
+------------------------------------
+- gemini-flash: provider=gemini, model=gemini-2.5-flash, roles=[chat, edit, summarize]
+- hermes4: provider=ollama, model=hermes4, apiBase=http://localhost:11434, roles=[chat]
+- hermes4-embed: provider=ollama, model=hermes4, roles=[embed]
+- anthropic/claude-sonnet-4-6 (hub slug via `uses:`)
+
+config.json (legacy) lists:
+- Hermes 4 via ollama at http://localhost:11434
+
+spirit-config.yaml lists:
+- hermes4 via ollama (tools: false in capabilities)
+
+Gauntlet-relevant model availability
+------------------------------------
+- Qwen: qwen2.5-coder:7b installed in Ollama but NOT listed in Continue config.yaml
+- Hermes: hermes4 configured in Continue; hermes4:latest installed in Ollama
+- Gemma: NOT installed in Ollama; NOT in Continue config.yaml
+- OpenAI gpt-4o-mini: NOT in Continue config.yaml (would need hub slug or config add)
+
+Write tools / permissions
+-------------------------
+permissions.yaml allow list includes:
+- Write
+- MultiEdit
+- Bash(ls*), Bash(rm*), Bash(grep*)
+
+Headless mode
+-------------
+- Supported via `cn -p` / `cn --print` (non-interactive, prints response and exits)
+- `--auto` enables auto mode (all tools allowed without interactive approval)
+- `--readonly` available for plan/read-only mode
+- `--format json` available with -p for structured output
+
+Model used in preflight run (from session b367162a-9135-4034-b985-5a6aa3041e79)
+---------------------------------------------------------------------------------
+- gemini-2.5-flash (default selection; no --model flag passed)
+- Tools invoked: Read, MultiEdit
+- Session workspace: continue-lane-preflight/workspace
+
+Notes for gauntlet lanes
+------------------------
+- Per-lane model selection likely requires `cn --model <slug>` or config changes
+- Default model is gemini-2.5-flash, not qwen/hermes/gemma/gpt-4o-mini
+- Ollama hermes4 is available locally if configured as active model

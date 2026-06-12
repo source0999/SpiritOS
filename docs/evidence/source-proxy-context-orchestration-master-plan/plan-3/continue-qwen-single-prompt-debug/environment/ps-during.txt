@@ -1,0 +1,424 @@
+$ powershell -NoProfile -Command 'Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match '"'"'cn|continue|node|ollama|gemini'"'"' -or $_.Name -match '"'"'cn|node|ollama'"'"' } | Select-Object ProcessId,ParentProcessId,Name,CommandLine | Format-List'
+
+STDOUT:
+
+
+ProcessId       : 10080
+ParentProcessId : 3188
+Name            : node.exe
+CommandLine     : 
+
+ProcessId       : 10812
+ParentProcessId : 11176
+Name            : nxnode.bin
+CommandLine     : 
+
+ProcessId       : 12432
+ParentProcessId : 2448
+Name            : powershell.exe
+CommandLine     : "powershell.exe" -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -Command 
+                  $env:SPIRIT_TELEMETRY_TOKEN='[redacted]'; $env:PORT='3000'; Set-Location 
+                  'C:\SpiritOS\spiritdesktop-windows'; node .\agent.js
+
+ProcessId       : 17980
+ParentProcessId : 12432
+Name            : node.exe
+CommandLine     : "C:\Program Files\nodejs\node.exe" .\agent.js
+
+ProcessId       : 21280
+ParentProcessId : 19272
+Name            : Discord.exe
+CommandLine     : "C:\Users\smith\AppData\Local\Discord\app-1.0.9240\Discord.exe" --type=renderer 
+                  --user-data-dir="C:\Users\smith\AppData\Roaming\discord" --standard-schemes=disclip 
+                  --secure-schemes=disclip,sentry-ipc --bypasscsp-schemes=sentry-ipc --cors-schemes=sentry-ipc 
+                  --fetch-schemes=disclip,sentry-ipc --streaming-schemes=disclip 
+                  --app-user-model-id=com.squirrel.Discord.Discord 
+                  --app-path="C:\Users\smith\AppData\Local\Discord\app-1.0.9240\resources\app.asar" --no-sandbox 
+                  --no-zygote --enable-blink-features=EnumerateDevices,AudioOutputDevices 
+                  --autoplay-policy=no-user-gesture-required --disable-background-timer-throttling --enable-h264-mf 
+                  --enable-h264-mf-zero-copy --video-capture-use-gpu-memory-buffer --lang=en-US 
+                  --device-scale-factor=1 --num-raster-threads=4 --enable-main-frame-before-activation 
+                  --renderer-client-id=6 --time-ticks-at-unix-epoch=-1780883920324804 --launch-time-ticks=53069858 
+                  --field-trial-handle=1812,i,3629860239473005019,17968571549341903953,262144 
+                  --enable-features=EnableTransparentHwndEnlargement --disable-features=AllowAggressiveThrottlingWithWe
+                  bSocket,HardwareMediaKeyHandling,IntensiveWakeUpThrottling,MediaSessionService,ScreenAIOCREnabled,Spa
+                  reRendererForSitePerProcess,UseEcoQoSForBackgroundProcess,WinDelaySpellcheckServiceInit,WinRetrieveSu
+                  ggestionsOnlyOnDemand --variations-seed-version --mojo-platform-channel-handle=4304 
+                  --enable-node-leakage-in-renderers /prefetch:1
+
+ProcessId       : 22684
+ParentProcessId : 12456
+Name            : RadeonSoftware.exe
+CommandLine     : "C:\Program Files\AMD\CNext\CNext\Radeonsoftware.exe" atlogon
+
+ProcessId       : 10860
+ParentProcessId : 22684
+Name            : cncmd.exe
+CommandLine     : "C:\Program Files\AMD\CNext\CNext\cncmd.exe" watch 22684
+
+ProcessId       : 25608
+ParentProcessId : 14596
+Name            : cmd.exe
+CommandLine     : "C:\WINDOWS\system32\cmd.exe" /C "C:\Program Files\AMD\CNext\CNext\AMDRSServ.exe"
+
+ProcessId       : 27448
+ParentProcessId : 25952
+Name            : AMDRSSrcExt.exe
+CommandLine     : "C:\Program Files\AMD\CNext\CNext\AMDRSSrcExt.exe" fb28e830-7c29-4591-b2df-4e16275fa0d9 
+                  SOFTWARE\AMD\DVR\Overlays
+
+ProcessId       : 30744
+ParentProcessId : 27628
+Name            : Cursor.exe
+CommandLine     : "C:\Users\smith\AppData\Local\Programs\cursor\Cursor.exe" --type=utility 
+                  --utility-sub-type=node.mojom.NodeService --lang=en-US --service-sandbox-type=none 
+                  --video-capture-use-gpu-memory-buffer --user-data-dir="C:\Users\smith\AppData\Roaming\Cursor" 
+                  --standard-schemes=vscode-webview,vscode-file,cursor-rpc-devtools --enable-sandbox 
+                  --secure-schemes=vscode-webview,vscode-file,cursor-rpc-devtools,sentry-ipc 
+                  --bypasscsp-schemes=sentry-ipc 
+                  --cors-schemes=vscode-webview,vscode-file,cursor-rpc-devtools,sentry-ipc 
+                  --fetch-schemes=vscode-webview,vscode-file,cursor-rpc-devtools,sentry-ipc 
+                  --service-worker-schemes=vscode-webview --code-cache-schemes=vscode-webview,vscode-file 
+                  --field-trial-handle=1836,i,8777166510421938037,1932955705189747773,262144 --enable-features=Document
+                  PolicyIncludeJSCallStacksInCrashReports,EnableTransparentHwndEnlargement,PdfUseShowSaveFilePicker --d
+                  isable-features=CalculateNativeWinOcclusion,LocalNetworkAccessChecks,ScreenAIOCREnabled,SpareRenderer
+                  ForSitePerProcess,TraceSiteInstanceGetProcessCreation --variations-seed-version 
+                  --trace-process-track-uuid=3190708996619331833 --mojo-platform-channel-handle=4908 /prefetch:14
+
+ProcessId       : 27360
+ParentProcessId : 27628
+Name            : Cursor.exe
+CommandLine     : "C:\Users\smith\AppData\Local\Programs\cursor\Cursor.exe" --type=utility 
+                  --utility-sub-type=node.mojom.NodeService --lang=en-US --service-sandbox-type=none 
+                  --video-capture-use-gpu-memory-buffer --user-data-dir="C:\Users\smith\AppData\Roaming\Cursor" 
+                  --standard-schemes=vscode-webview,vscode-file,cursor-rpc-devtools --enable-sandbox 
+                  --secure-schemes=vscode-webview,vscode-file,cursor-rpc-devtools,sentry-ipc 
+                  --bypasscsp-schemes=sentry-ipc 
+                  --cors-schemes=vscode-webview,vscode-file,cursor-rpc-devtools,sentry-ipc 
+                  --fetch-schemes=vscode-webview,vscode-file,cursor-rpc-devtools,sentry-ipc 
+                  --service-worker-schemes=vscode-webview --code-cache-schemes=vscode-webview,vscode-file 
+                  --field-trial-handle=1836,i,8777166510421938037,1932955705189747773,262144 --enable-features=Document
+                  PolicyIncludeJSCallStacksInCrashReports,EnableTransparentHwndEnlargement,PdfUseShowSaveFilePicker --d
+                  isable-features=CalculateNativeWinOcclusion,LocalNetworkAccessChecks,ScreenAIOCREnabled,SpareRenderer
+                  ForSitePerProcess,TraceSiteInstanceGetProcessCreation --variations-seed-version 
+                  --trace-process-track-uuid=3190708997556373682 --mojo-platform-channel-handle=4712 /prefetch:14
+
+ProcessId       : 30996
+ParentProcessId : 27628
+Name            : Cursor.exe
+CommandLine     : "C:\Users\smith\AppData\Local\Programs\cursor\Cursor.exe" --type=utility 
+                  --utility-sub-type=node.mojom.NodeService --lang=en-US --service-sandbox-type=none 
+                  --video-capture-use-gpu-memory-buffer --user-data-dir="C:\Users\smith\AppData\Roaming\Cursor" 
+                  --standard-schemes=vscode-webview,vscode-file,cursor-rpc-devtools --enable-sandbox 
+                  --secure-schemes=vscode-webview,vscode-file,cursor-rpc-devtools,sentry-ipc 
+                  --bypasscsp-schemes=sentry-ipc 
+                  --cors-schemes=vscode-webview,vscode-file,cursor-rpc-devtools,sentry-ipc 
+                  --fetch-schemes=vscode-webview,vscode-file,cursor-rpc-devtools,sentry-ipc 
+                  --service-worker-schemes=vscode-webview --code-cache-schemes=vscode-webview,vscode-file 
+                  --field-trial-handle=1836,i,8777166510421938037,1932955705189747773,262144 --enable-features=Document
+                  PolicyIncludeJSCallStacksInCrashReports,EnableTransparentHwndEnlargement,PdfUseShowSaveFilePicker --d
+                  isable-features=CalculateNativeWinOcclusion,LocalNetworkAccessChecks,ScreenAIOCREnabled,SpareRenderer
+                  ForSitePerProcess,TraceSiteInstanceGetProcessCreation --variations-seed-version 
+                  --trace-process-track-uuid=3190708998493415531 --mojo-platform-channel-handle=4704 /prefetch:14
+
+ProcessId       : 5820
+ParentProcessId : 27628
+Name            : Cursor.exe
+CommandLine     : "C:\Users\smith\AppData\Local\Programs\cursor\Cursor.exe" --type=utility 
+                  --utility-sub-type=node.mojom.NodeService --lang=en-US --service-sandbox-type=none 
+                  --dns-result-order=ipv4first --experimental-network-inspection --inspect-port=0 
+                  --video-capture-use-gpu-memory-buffer --user-data-dir="C:\Users\smith\AppData\Roaming\Cursor" 
+                  --standard-schemes=vscode-webview,vscode-file,cursor-rpc-devtools --enable-sandbox 
+                  --secure-schemes=vscode-webview,vscode-file,cursor-rpc-devtools,sentry-ipc 
+                  --bypasscsp-schemes=sentry-ipc 
+                  --cors-schemes=vscode-webview,vscode-file,cursor-rpc-devtools,sentry-ipc 
+                  --fetch-schemes=vscode-webview,vscode-file,cursor-rpc-devtools,sentry-ipc 
+                  --service-worker-schemes=vscode-webview --code-cache-schemes=vscode-webview,vscode-file 
+                  --field-trial-handle=1836,i,8777166510421938037,1932955705189747773,262144 --enable-features=Document
+                  PolicyIncludeJSCallStacksInCrashReports,EnableTransparentHwndEnlargement,PdfUseShowSaveFilePicker --d
+                  isable-features=CalculateNativeWinOcclusion,LocalNetworkAccessChecks,ScreenAIOCREnabled,SpareRenderer
+                  ForSitePerProcess,TraceSiteInstanceGetProcessCreation --variations-seed-version 
+                  --trace-process-track-uuid=3190708999430457380 --mojo-platform-channel-handle=5204 /prefetch:14
+
+ProcessId       : 14884
+ParentProcessId : 27628
+Name            : Cursor.exe
+CommandLine     : "C:\Users\smith\AppData\Local\Programs\cursor\Cursor.exe" --type=utility 
+                  --utility-sub-type=node.mojom.NodeService --lang=en-US --service-sandbox-type=none 
+                  --dns-result-order=ipv4first --experimental-network-inspection --inspect-port=0 
+                  --video-capture-use-gpu-memory-buffer --user-data-dir="C:\Users\smith\AppData\Roaming\Cursor" 
+                  --standard-schemes=vscode-webview,vscode-file,cursor-rpc-devtools --enable-sandbox 
+                  --secure-schemes=vscode-webview,vscode-file,cursor-rpc-devtools,sentry-ipc 
+                  --bypasscsp-schemes=sentry-ipc 
+                  --cors-schemes=vscode-webview,vscode-file,cursor-rpc-devtools,sentry-ipc 
+                  --fetch-schemes=vscode-webview,vscode-file,cursor-rpc-devtools,sentry-ipc 
+                  --service-worker-schemes=vscode-webview --code-cache-schemes=vscode-webview,vscode-file 
+                  --field-trial-handle=1836,i,8777166510421938037,1932955705189747773,262144 --enable-features=Document
+                  PolicyIncludeJSCallStacksInCrashReports,EnableTransparentHwndEnlargement,PdfUseShowSaveFilePicker --d
+                  isable-features=CalculateNativeWinOcclusion,LocalNetworkAccessChecks,ScreenAIOCREnabled,SpareRenderer
+                  ForSitePerProcess,TraceSiteInstanceGetProcessCreation --variations-seed-version 
+                  --trace-process-track-uuid=3190709000367499229 --mojo-platform-channel-handle=5460 /prefetch:14
+
+ProcessId       : 28776
+ParentProcessId : 23932
+Name            : ollama.exe
+CommandLine     : "C:\Users\smith\AppData\Local\Programs\Ollama\ollama.exe" serve 
+
+ProcessId       : 32076
+ParentProcessId : 32540
+Name            : cmd.exe
+CommandLine     : C:\WINDOWS\system32\cmd.exe /c ""C:\nvm4w\nodejs\nvm\nodejs\npm.cmd" run dev -- --host 127.0.0.1 
+                  --port 4329 "
+
+ProcessId       : 34208
+ParentProcessId : 32076
+Name            : node.exe
+CommandLine     : "C:\nvm4w\nodejs\nvm\nodejs\\node.exe"  "C:\nvm4w\nodejs\nvm\nodejs\node_modules\npm\bin\npm-cli.js" 
+                  run dev -- --host 127.0.0.1 --port 4329
+
+ProcessId       : 34584
+ParentProcessId : 29644
+Name            : node.exe
+CommandLine     : "node"   "C:\Users\smith\OneDrive\Documents\Study guide\node_modules\.bin\\..\astro\astro.js" dev 
+                  --host 127.0.0.1 --port 4329
+
+ProcessId       : 24244
+ParentProcessId : 34584
+Name            : esbuild.exe
+CommandLine     : "C:\Users\smith\OneDrive\Documents\Study 
+                  guide\node_modules\vite\node_modules\@esbuild\win32-x64\esbuild.exe" --service=0.25.12 --ping
+
+ProcessId       : 30896
+ParentProcessId : 27628
+Name            : Cursor.exe
+CommandLine     : "C:\Users\smith\AppData\Local\Programs\cursor\Cursor.exe" --type=utility 
+                  --utility-sub-type=node.mojom.NodeService --lang=en-US --service-sandbox-type=none 
+                  --video-capture-use-gpu-memory-buffer --user-data-dir="C:\Users\smith\AppData\Roaming\Cursor" 
+                  --standard-schemes=vscode-webview,vscode-file,cursor-rpc-devtools --enable-sandbox 
+                  --secure-schemes=vscode-webview,vscode-file,cursor-rpc-devtools,sentry-ipc 
+                  --bypasscsp-schemes=sentry-ipc 
+                  --cors-schemes=vscode-webview,vscode-file,cursor-rpc-devtools,sentry-ipc 
+                  --fetch-schemes=vscode-webview,vscode-file,cursor-rpc-devtools,sentry-ipc 
+                  --service-worker-schemes=vscode-webview --code-cache-schemes=vscode-webview,vscode-file 
+                  --field-trial-handle=1836,i,8777166510421938037,1932955705189747773,262144 --enable-features=Document
+                  PolicyIncludeJSCallStacksInCrashReports,EnableTransparentHwndEnlargement,PdfUseShowSaveFilePicker --d
+                  isable-features=CalculateNativeWinOcclusion,LocalNetworkAccessChecks,ScreenAIOCREnabled,SpareRenderer
+                  ForSitePerProcess,TraceSiteInstanceGetProcessCreation --variations-seed-version 
+                  --trace-process-track-uuid=3190709003178624776 --mojo-platform-channel-handle=8088 /prefetch:14
+
+ProcessId       : 27940
+ParentProcessId : 27628
+Name            : Cursor.exe
+CommandLine     : "C:\Users\smith\AppData\Local\Programs\cursor\Cursor.exe" --type=utility 
+                  --utility-sub-type=node.mojom.NodeService --lang=en-US --service-sandbox-type=none 
+                  --dns-result-order=ipv4first --experimental-network-inspection --inspect-port=0 
+                  --video-capture-use-gpu-memory-buffer --user-data-dir="C:\Users\smith\AppData\Roaming\Cursor" 
+                  --standard-schemes=vscode-webview,vscode-file,cursor-rpc-devtools --enable-sandbox 
+                  --secure-schemes=vscode-webview,vscode-file,cursor-rpc-devtools,sentry-ipc 
+                  --bypasscsp-schemes=sentry-ipc 
+                  --cors-schemes=vscode-webview,vscode-file,cursor-rpc-devtools,sentry-ipc 
+                  --fetch-schemes=vscode-webview,vscode-file,cursor-rpc-devtools,sentry-ipc 
+                  --service-worker-schemes=vscode-webview --code-cache-schemes=vscode-webview,vscode-file 
+                  --field-trial-handle=1836,i,8777166510421938037,1932955705189747773,262144 --enable-features=Document
+                  PolicyIncludeJSCallStacksInCrashReports,EnableTransparentHwndEnlargement,PdfUseShowSaveFilePicker --d
+                  isable-features=CalculateNativeWinOcclusion,LocalNetworkAccessChecks,ScreenAIOCREnabled,SpareRenderer
+                  ForSitePerProcess,TraceSiteInstanceGetProcessCreation --variations-seed-version 
+                  --trace-process-track-uuid=3190709004115666625 --mojo-platform-channel-handle=8092 /prefetch:14
+
+ProcessId       : 11124
+ParentProcessId : 27628
+Name            : Cursor.exe
+CommandLine     : "C:\Users\smith\AppData\Local\Programs\cursor\Cursor.exe" --type=utility 
+                  --utility-sub-type=node.mojom.NodeService --lang=en-US --service-sandbox-type=none 
+                  --video-capture-use-gpu-memory-buffer --user-data-dir="C:\Users\smith\AppData\Roaming\Cursor" 
+                  --standard-schemes=vscode-webview,vscode-file,cursor-rpc-devtools --enable-sandbox 
+                  --secure-schemes=vscode-webview,vscode-file,cursor-rpc-devtools,sentry-ipc 
+                  --bypasscsp-schemes=sentry-ipc 
+                  --cors-schemes=vscode-webview,vscode-file,cursor-rpc-devtools,sentry-ipc 
+                  --fetch-schemes=vscode-webview,vscode-file,cursor-rpc-devtools,sentry-ipc 
+                  --service-worker-schemes=vscode-webview --code-cache-schemes=vscode-webview,vscode-file 
+                  --field-trial-handle=1836,i,8777166510421938037,1932955705189747773,262144 --enable-features=Document
+                  PolicyIncludeJSCallStacksInCrashReports,EnableTransparentHwndEnlargement,PdfUseShowSaveFilePicker --d
+                  isable-features=CalculateNativeWinOcclusion,LocalNetworkAccessChecks,ScreenAIOCREnabled,SpareRenderer
+                  ForSitePerProcess,TraceSiteInstanceGetProcessCreation --variations-seed-version 
+                  --trace-process-track-uuid=3190709005052708474 --mojo-platform-channel-handle=8020 /prefetch:14
+
+ProcessId       : 32748
+ParentProcessId : 27628
+Name            : Cursor.exe
+CommandLine     : "C:\Users\smith\AppData\Local\Programs\cursor\Cursor.exe" --type=utility 
+                  --utility-sub-type=node.mojom.NodeService --lang=en-US --service-sandbox-type=none 
+                  --dns-result-order=ipv4first --experimental-network-inspection --inspect-port=0 
+                  --video-capture-use-gpu-memory-buffer --user-data-dir="C:\Users\smith\AppData\Roaming\Cursor" 
+                  --standard-schemes=vscode-webview,vscode-file,cursor-rpc-devtools --enable-sandbox 
+                  --secure-schemes=vscode-webview,vscode-file,cursor-rpc-devtools,sentry-ipc 
+                  --bypasscsp-schemes=sentry-ipc 
+                  --cors-schemes=vscode-webview,vscode-file,cursor-rpc-devtools,sentry-ipc 
+                  --fetch-schemes=vscode-webview,vscode-file,cursor-rpc-devtools,sentry-ipc 
+                  --service-worker-schemes=vscode-webview --code-cache-schemes=vscode-webview,vscode-file 
+                  --field-trial-handle=1836,i,8777166510421938037,1932955705189747773,262144 --enable-features=Document
+                  PolicyIncludeJSCallStacksInCrashReports,EnableTransparentHwndEnlargement,PdfUseShowSaveFilePicker --d
+                  isable-features=CalculateNativeWinOcclusion,LocalNetworkAccessChecks,ScreenAIOCREnabled,SpareRenderer
+                  ForSitePerProcess,TraceSiteInstanceGetProcessCreation --variations-seed-version 
+                  --trace-process-track-uuid=3190709005989750323 --mojo-platform-channel-handle=7124 /prefetch:14
+
+ProcessId       : 31132
+ParentProcessId : 27628
+Name            : Cursor.exe
+CommandLine     : "C:\Users\smith\AppData\Local\Programs\cursor\Cursor.exe" --type=utility 
+                  --utility-sub-type=node.mojom.NodeService --lang=en-US --service-sandbox-type=none 
+                  --dns-result-order=ipv4first --experimental-network-inspection --inspect-port=0 
+                  --video-capture-use-gpu-memory-buffer --user-data-dir="C:\Users\smith\AppData\Roaming\Cursor" 
+                  --standard-schemes=vscode-webview,vscode-file,cursor-rpc-devtools --enable-sandbox 
+                  --secure-schemes=vscode-webview,vscode-file,cursor-rpc-devtools,sentry-ipc 
+                  --bypasscsp-schemes=sentry-ipc 
+                  --cors-schemes=vscode-webview,vscode-file,cursor-rpc-devtools,sentry-ipc 
+                  --fetch-schemes=vscode-webview,vscode-file,cursor-rpc-devtools,sentry-ipc 
+                  --service-worker-schemes=vscode-webview --code-cache-schemes=vscode-webview,vscode-file 
+                  --field-trial-handle=1836,i,8777166510421938037,1932955705189747773,262144 --enable-features=Document
+                  PolicyIncludeJSCallStacksInCrashReports,EnableTransparentHwndEnlargement,PdfUseShowSaveFilePicker --d
+                  isable-features=CalculateNativeWinOcclusion,LocalNetworkAccessChecks,ScreenAIOCREnabled,SpareRenderer
+                  ForSitePerProcess,TraceSiteInstanceGetProcessCreation --variations-seed-version 
+                  --trace-process-track-uuid=3190709006926792172 --mojo-platform-channel-handle=6324 /prefetch:14
+
+ProcessId       : 15616
+ParentProcessId : 27628
+Name            : Cursor.exe
+CommandLine     : "C:\Users\smith\AppData\Local\Programs\cursor\Cursor.exe" --type=utility 
+                  --utility-sub-type=node.mojom.NodeService --lang=en-US --service-sandbox-type=none 
+                  --dns-result-order=ipv4first --experimental-network-inspection --inspect-port=0 
+                  --video-capture-use-gpu-memory-buffer --user-data-dir="C:\Users\smith\AppData\Roaming\Cursor" 
+                  --standard-schemes=vscode-webview,vscode-file,cursor-rpc-devtools --enable-sandbox 
+                  --secure-schemes=vscode-webview,vscode-file,cursor-rpc-devtools,sentry-ipc 
+                  --bypasscsp-schemes=sentry-ipc 
+                  --cors-schemes=vscode-webview,vscode-file,cursor-rpc-devtools,sentry-ipc 
+                  --fetch-schemes=vscode-webview,vscode-file,cursor-rpc-devtools,sentry-ipc 
+                  --service-worker-schemes=vscode-webview --code-cache-schemes=vscode-webview,vscode-file 
+                  --field-trial-handle=1836,i,8777166510421938037,1932955705189747773,262144 --enable-features=Document
+                  PolicyIncludeJSCallStacksInCrashReports,EnableTransparentHwndEnlargement,PdfUseShowSaveFilePicker --d
+                  isable-features=CalculateNativeWinOcclusion,LocalNetworkAccessChecks,ScreenAIOCREnabled,SpareRenderer
+                  ForSitePerProcess,TraceSiteInstanceGetProcessCreation --variations-seed-version 
+                  --trace-process-track-uuid=3190709007863834021 --mojo-platform-channel-handle=4860 /prefetch:14
+
+ProcessId       : 33644
+ParentProcessId : 27940
+Name            : Cursor.exe
+CommandLine     : C:\Users\smith\AppData\Local\Programs\cursor\Cursor.exe c:\Users\smith\AppData\Local\Programs\cursor\
+                  resources\app\extensions\json-language-features\server\dist\node\jsonServerMain --node-ipc 
+                  --clientProcessId=27940
+
+ProcessId       : 11652
+ParentProcessId : 27940
+Name            : node.exe
+CommandLine     : c:\Users\smith\AppData\Local\Programs\cursor\resources\app\resources\helpers\node.exe 
+                  --max-old-space-size=15931 -e "process.title = process.env[\"VSCODE_PROCESS_TITLE\"]; 
+                  require(process.argv[1])" c:\Users\smith\AppData\Local\Programs\cursor\resources\app\extensions\node_
+                  modules\typescript\lib\tsserver.js --serverMode partialSemantic --useInferredProjectPerProjectRoot 
+                  --disableAutomaticTypingAcquisition --cancellationPipeName C:\Users\smith\AppData\Local\Temp\vscode-t
+                  ypescript\6850d47c29c0e89e5297\tscancellation-81cb4fc413a6ed3c3853.tmp* --locale en 
+                  --noGetErrOnBackgroundUpdate --canUseWatchEvents --validateDefaultNpmLocation
+
+ProcessId       : 25536
+ParentProcessId : 27940
+Name            : node.exe
+CommandLine     : c:\Users\smith\AppData\Local\Programs\cursor\resources\app\resources\helpers\node.exe 
+                  --max-old-space-size=15931 -e "process.title = process.env[\"VSCODE_PROCESS_TITLE\"]; 
+                  require(process.argv[1])" c:\Users\smith\AppData\Local\Programs\cursor\resources\app\extensions\node_
+                  modules\typescript\lib\tsserver.js --useInferredProjectPerProjectRoot --enableTelemetry 
+                  --cancellationPipeName C:\Users\smith\AppData\Local\Temp\vscode-typescript\6850d47c29c0e89e5297\tscan
+                  cellation-6edeb88f52d43169f58e.tmp* --locale en --noGetErrOnBackgroundUpdate --canUseWatchEvents 
+                  --validateDefaultNpmLocation
+
+ProcessId       : 19432
+ParentProcessId : 25536
+Name            : node.exe
+CommandLine     : c:\Users\smith\AppData\Local\Programs\cursor\resources\app\resources\helpers\node.exe c:/Users/smith/
+                  AppData/Local/Programs/cursor/resources/app/extensions/node_modules/typescript/lib/typingsInstaller.j
+                  s --globalTypingsCacheLocation C:/Users/smith/AppData/Local/Microsoft/TypeScript/5.9 
+                  --enableTelemetry --typesMapLocation c:/Users/smith/AppData/Local/Programs/cursor/resources/app/exten
+                  sions/node_modules/typescript/lib/typesMap.json --validateDefaultNpmLocation
+
+ProcessId       : 32140
+ParentProcessId : 27940
+Name            : Cursor.exe
+CommandLine     : C:\Users\smith\AppData\Local\Programs\cursor\Cursor.exe c:\Users\smith\AppData\Local\Programs\cursor\
+                  resources\app\extensions\css-language-features\server\dist\node\cssServerMain --node-ipc 
+                  --clientProcessId=27940
+
+ProcessId       : 3872
+ParentProcessId : 34128
+Name            : node.exe
+CommandLine     : "C:\nvm4w\nodejs\nvm\nodejs\node.exe" C:\nvm4w\nodejs\nvm\nodejs/node_modules/npm/bin/npm-cli.js run 
+                  preview --host 127.0.0.1 --port 4322
+
+ProcessId       : 33600
+ParentProcessId : 33464
+Name            : node.exe
+CommandLine     : "node"   "C:\Users\smith\OneDrive\Documents\Study guide\node_modules\.bin\\..\astro\astro.js" 
+                  preview 127.0.0.1 4322
+
+ProcessId       : 10560
+ParentProcessId : 27940
+Name            : Cursor.exe
+CommandLine     : C:\Users\smith\AppData\Local\Programs\cursor\Cursor.exe c:\Users\smith\AppData\Local\Programs\cursor\
+                  resources\app\extensions\markdown-language-features\dist\serverWorkerMain --node-ipc 
+                  --clientProcessId=27940
+
+ProcessId       : 27984
+ParentProcessId : 28776
+Name            : llama-server.exe
+CommandLine     : C:\Users\smith\AppData\Local\Programs\Ollama\lib\ollama\llama-server.exe --model C:\Users\smith\.olla
+                  ma\models\blobs\sha256-60e05f2100071479f596b964f89f510f057ce397ea22f2833a0cfe029bfc2463 --port 53618 
+                  --host 127.0.0.1 --no-webui --offline -c 4096 -np 1 --log-verbosity 4 --no-log-prefix 
+                  --no-log-timestamps --no-jinja --chat-template chatml --flash-attn auto -b 512 -ub 512 
+                  --context-shift --keep 4
+
+ProcessId       : 37488
+ParentProcessId : 7164
+Name            : node_repl.exe
+CommandLine     : "C:\Users\smith\AppData\Local\OpenAI\Codex\bin\34ab3e1324cc55b5\node_repl.exe"
+
+ProcessId       : 33328
+ParentProcessId : 13340
+Name            : ShellHost.exe
+CommandLine     : C:\WINDOWS\system32\shellhost.exe loadComponent --extensionCategory 
+                  com.microsoft.windows.extensions.xaml.dragtray --extensionId DragTray --controlName DragTrayControl 
+                  --valueSet AAAAAgAAAAwAAAAMRHJhZ0l0ZW1zRGlyAAAADAAAABhDOlxVc2Vyc1xzbWl0aFxEb3dubG9hZHMAAAAMAAAAH0Nvcn
+                  JlbGF0aW9uVmVjdG9yR2VuZXJhdGlvblRpbWUAAAAPAdz4f9VglDoAAAAMAAAACURyYWdJdGVtcwAABAwAAAABAAAAEnJlcG9taXg
+                  tb3V0cHV0LnhtbAAAAAwAAAANRGlzbWlzc1BvbGljeQAAAAwAAAAPRXhwbGljaXREaXNtaXNzAAAADAAAABFXaW5kb3dpbmdCZWhh
+                  dmlvcgAAAAwAAAAFUG9wdXAAAAAMAAAAEUNvcnJlbGF0aW9uVmVjdG9yAAAADAAAABh1TjVuakFSN2lVR3JDTEhhVDV6ZWVnLjAAA
+                  AAMAAAAC1BlcnNvbmFsaXR5AAAADAAAAApGdWxsU2NyZWVuAAAADAAAABFMYXVuY2hlclByb2Nlc3NJRAAAAAUAADQc
+
+ProcessId       : 10484
+ParentProcessId : 7164
+Name            : node_repl.exe
+CommandLine     : "C:\Users\smith\AppData\Local\OpenAI\Codex\bin\34ab3e1324cc55b5\node_repl.exe"
+
+ProcessId       : 24568
+ParentProcessId : 7164
+Name            : powershell.exe
+CommandLine     : "C:\WINDOWS\System32\WindowsPowerShell\v1.0\powershell.exe" -Command "try { 
+                  [Console]::OutputEncoding=[System.Text.Encoding]::UTF8 } catch {}
+                  Stop-Process -Id 32148 -Force -ErrorAction SilentlyContinue; python3 -m py_compile 
+                  scripts/agent-trials/run-continue-qwen-single-prompt-debug.py; python3 
+                  scripts/agent-trials/run-continue-qwen-single-prompt-debug.py --run"
+
+ProcessId       : 33252
+ParentProcessId : 24568
+Name            : python3.13.exe
+CommandLine     : "C:\Users\smith\AppData\Local\Microsoft\WindowsApps\python3.exe" 
+                  scripts/agent-trials/run-continue-qwen-single-prompt-debug.py --run
+
+ProcessId       : 30136
+ParentProcessId : 33252
+Name            : powershell.exe
+CommandLine     : powershell -NoProfile -Command "Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match 
+                  'cn|continue|node|ollama|gemini' -or $_.Name -match 'cn|node|ollama' } | Select-Object 
+                  ProcessId,ParentProcessId,Name,CommandLine | Format-List"
+
+
+
+
+
+STDERR:
+

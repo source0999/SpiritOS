@@ -1,0 +1,11 @@
+{
+  "lane": "continue-gemma",
+  "execution_shell": "continue",
+  "model": "gemma",
+  "provider": "continue",
+  "total": null,
+  "label": "NOT_RUN_MANUAL_REQUIRED",
+  "reason": "Continue CLI `cn` is not on PATH.",
+  "prompt_scores": [],
+  "actual_file_edit_result": false
+}

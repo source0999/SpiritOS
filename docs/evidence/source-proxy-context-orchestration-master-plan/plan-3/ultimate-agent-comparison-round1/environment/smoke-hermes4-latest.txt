@@ -1,0 +1,7 @@
+$ ollama-api-generate http://127.0.0.1:11434 hermes4:latest
+
+STDOUT:
+
+
+STDERR:
+timed out

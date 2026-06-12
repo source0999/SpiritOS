@@ -1,0 +1,8 @@
+$ ollama ps
+
+STDOUT:
+NAME    ID    SIZE    PROCESSOR    CONTEXT    UNTIL 
+
+
+STDERR:
+

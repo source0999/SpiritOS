@@ -1,0 +1,12 @@
+{
+  "lane_name": "raw-ollama-hermes4",
+  "shell": "raw",
+  "model_target": "hermes4:latest",
+  "model_observed": "unknown",
+  "execution_mode": "manual-pending",
+  "elapsed_seconds": 0.0,
+  "files_changed": [],
+  "preview_path": "",
+  "notes": "hermes4 smoke over 90s or unavailable",
+  "real_app_touched": false
+}

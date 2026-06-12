@@ -1,0 +1,7 @@
+$ cn --help
+
+STDOUT:
+
+
+STDERR:
+[WinError 2] The system cannot find the file specified

@@ -1,0 +1,30 @@
+{
+  "cn_available": true,
+  "cn_path": "/usr/bin/cn",
+  "cn_version": "1.5.44",
+  "cn_reason": "",
+  "headless_flags": [
+    "--auto",
+    "-p"
+  ],
+  "model_flag_documented": true,
+  "config_flag_documented": true,
+  "default_config": "/home/source/.continue/config.yaml",
+  "selection_methods": {
+    "continue-default": "No --model; uses default from ~/.continue/config.yaml (gemini-2.5-flash).",
+    "continue-qwen": "Disposable isolated config with single Ollama qwen2.5-coder:7b model.",
+    "continue-hermes4": "Disposable isolated config with single Ollama hermes4 model.",
+    "continue-gemma": "Manual required; gemma not available.",
+    "continue-gpt4o-mini": "Disposable isolated config with only OpenAI gpt-4o-mini (hub slug alone did not override default).",
+    "continue-claude-sonnet": "Disposable isolated config with only anthropic/claude-sonnet-4-6 hub entry."
+  },
+  "hub_slug_tests": {
+    "openai/gpt-4o-mini": "ok",
+    "anthropic/claude-sonnet-4-6": "ok",
+    "hermes4_local_name": "FAILED: --model hermes4 errors with config parse failure"
+  },
+  "isolated_config_tests": {
+    "hermes4": "Works via --config with single-model yaml (slow on cold Ollama).",
+    "qwen2.5-coder:7b": "Works via --config with single-model yaml."
+  }
+}

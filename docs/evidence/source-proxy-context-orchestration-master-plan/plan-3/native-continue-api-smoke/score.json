@@ -1,0 +1,16 @@
+{
+  "status": "GO",
+  "score": 8,
+  "label": "GO",
+  "breakdown": {
+    "prompt_understanding": 2,
+    "native_continue_file_action": 2,
+    "real_homepage_repo_result": 2,
+    "openable_preview_quality": 1,
+    "safety_no_real_app_mutation": 2
+  },
+  "hard_caps_applied": [
+    "Openable homepage but basic: max 8/10"
+  ],
+  "notes": "Native Continue created workspace/index.html. Homepage is openable but basic."
+}

@@ -1,0 +1,9 @@
+$ ollama ps
+
+STDOUT:
+NAME           ID              SIZE      PROCESSOR          CONTEXT    UNTIL              
+gemma3n:e4b    15cb39fd9394    8.3 GB    68%/32% CPU/GPU    4096       3 minutes from now    
+
+
+STDERR:
+

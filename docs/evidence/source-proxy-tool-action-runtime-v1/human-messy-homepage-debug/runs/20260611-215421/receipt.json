@@ -1,0 +1,272 @@
+{
+  "diagnostics_packet": {
+    "adapter_source": "ollama_generate/tool_action_runtime_v1",
+    "blocked_reasons": [],
+    "execution_count": 1,
+    "files_touched": [
+      "index.html"
+    ],
+    "final_state": "completed",
+    "format_retries_used": 0,
+    "model_call_count": 1,
+    "model_id": "qwen2.5-coder:7b",
+    "parsed_action_count": 1,
+    "skipped_checks": [],
+    "verification_repairs_used": 0
+  },
+  "executions": [
+    {
+      "receipt": {
+        "action_id": "human-messy-homepage:0:1:WriteFile",
+        "action_type": "WriteFile",
+        "adapter_source": "ollama_generate/tool_action_runtime_v1",
+        "after_status": {
+          "file_count": 1,
+          "files": [
+            "index.html"
+          ]
+        },
+        "before_status": {
+          "file_count": 0,
+          "files": []
+        },
+        "blocked_reason": "",
+        "diff_summary": "--- a/index.html\n+++ b/index.html\n@@ -0,0 +1,35 @@\n+<!DOCTYPE html>\n+<html lang=\"en\">\n+<head>\n+    <meta charset=\"UTF-8\">\n+    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n+    <title>Agent Lab Experiments</title>\n+    <style>\n+        body {\n+            font-family: Arial, sans-serif;\n+            background-color: #f4f4f9;\n+            margin: 0;\n+            padding: 0;\n+        }\n+        .container {\n+            width: 80%;\n+            margin: 50px auto;\n+            background-color: #fff;\n+            padding: 20px;\n+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);\n+        }\n+        h1 {\n+            color: #333;\n+        }\n+        p {\n+            color: #666;\n+        }\n+    </style>\n+</head>\n+<body>\n+    <div class=\"container\">\n+        <h1>Welcome to Agent Lab Experiments</h1>\n+        <p>This is the homepage for your agent lab experiments.</p>\n+    </div>\n+</body>\n+</html>",
+        "error_code": "",
+        "files_touched": [
+          "index.html"
+        ],
+        "status": "completed",
+        "stderr": "",
+        "stdout": "",
+        "target": "index.html",
+        "workspace_root": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-tool-action-runtime-v1\\human-messy-homepage-debug\\runs\\20260611-215421\\workspace"
+      },
+      "result": {
+        "action_id": "human-messy-homepage:0:1:WriteFile",
+        "adapter_source": "ollama_generate/tool_action_runtime_v1",
+        "blocked_reason": "",
+        "diff_summary": "--- a/index.html\n+++ b/index.html\n@@ -0,0 +1,35 @@\n+<!DOCTYPE html>\n+<html lang=\"en\">\n+<head>\n+    <meta charset=\"UTF-8\">\n+    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n+    <title>Agent Lab Experiments</title>\n+    <style>\n+        body {\n+            font-family: Arial, sans-serif;\n+            background-color: #f4f4f9;\n+            margin: 0;\n+            padding: 0;\n+        }\n+        .container {\n+            width: 80%;\n+            margin: 50px auto;\n+            background-color: #fff;\n+            padding: 20px;\n+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);\n+        }\n+        h1 {\n+            color: #333;\n+        }\n+        p {\n+            color: #666;\n+        }\n+    </style>\n+</head>\n+<body>\n+    <div class=\"container\">\n+        <h1>Welcome to Agent Lab Experiments</h1>\n+        <p>This is the homepage for your agent lab experiments.</p>\n+    </div>\n+</body>\n+</html>",
+        "error_code": "",
+        "files_touched": [
+          "index.html"
+        ],
+        "observation": "",
+        "receipt_path": "",
+        "schema_version": 1,
+        "status": "completed",
+        "stderr": "",
+        "stdout": ""
+      }
+    }
+  ],
+  "final_state": "completed",
+  "model_calls": [
+    {
+      "call_index": 0,
+      "packet": {
+        "call_index": 0,
+        "context_packet": {
+          "allowed_files": [
+            "index.html",
+            "styles.css"
+          ],
+          "forbidden_real_repo_mutation": true,
+          "transparent_default_target": "index.html",
+          "user_prompt": "init a repo and make homepage for agent lab expermients",
+          "workspace_mode": "disposable_workspace"
+        },
+        "loop_policy": {
+          "max_format_retries": 2,
+          "max_verification_repairs": 0,
+          "recommended_checks": [],
+          "run_recommended_checks": false
+        },
+        "observations": [],
+        "task_spec": {
+          "allowed_files": [
+            "index.html",
+            "styles.css"
+          ],
+          "approval_level": "preview_only_no_apply",
+          "blockers": [],
+          "clarification_prompt": "",
+          "clarification_state": "not_needed",
+          "context_sources": [
+            "target_path",
+            "repo_map"
+          ],
+          "forbidden_files": [
+            ".env",
+            ".env.*",
+            "*.pem",
+            "*.key",
+            "certificates/*"
+          ],
+          "intent": "create",
+          "literal_requirements": [],
+          "risk_tier": "medium",
+          "schema_version": 1,
+          "source": "task_spec_intake",
+          "target": "index.html",
+          "task_type": "create_new_file",
+          "verification": [
+            "git diff --check"
+          ],
+          "workspace_mode": "disposable_workspace"
+        },
+        "tool_contract": {
+          "schema_version": 1,
+          "stable_error_codes": [
+            "backend_authorship_rejected",
+            "bash_string_args_only_for_bash",
+            "content_required",
+            "empty_transcript",
+            "execution_blocked_until_plan_3",
+            "free_floating_code_no_path_action",
+            "invalid_action_schema",
+            "invalid_json",
+            "target_not_allowed",
+            "target_required",
+            "unsupported_action_type"
+          ],
+          "tools": [
+            {
+              "action_type": "ReadFile",
+              "capability": "read",
+              "execution_state": "parser_only"
+            },
+            {
+              "action_type": "ListFiles",
+              "capability": "read",
+              "execution_state": "parser_only"
+            },
+            {
+              "action_type": "SearchRepo",
+              "capability": "read",
+              "execution_state": "parser_only"
+            },
+            {
+              "action_type": "WriteFile",
+              "capability": "write",
+              "execution_state": "blocked_until_plan_3"
+            },
+            {
+              "action_type": "EditFile",
+              "capability": "write",
+              "execution_state": "blocked_until_plan_3"
+            },
+            {
+              "action_type": "MultiEdit",
+              "capability": "write",
+              "execution_state": "blocked_until_plan_3"
+            },
+            {
+              "action_type": "RunCheck",
+              "capability": "execute",
+              "execution_state": "blocked_until_plan_3"
+            },
+            {
+              "action_type": "AskClarification",
+              "capability": "respond",
+              "execution_state": "parser_only"
+            },
+            {
+              "action_type": "ReturnFinal",
+              "capability": "respond",
+              "execution_state": "parser_only"
+            }
+          ]
+        },
+        "workspace_contract": {
+          "allowed_files": [
+            "index.html",
+            "styles.css"
+          ],
+          "approval_level": "disposable_workspace",
+          "forbidden_files": [
+            ".env",
+            ".env.*",
+            "*.pem",
+            "*.key",
+            "certificates/*"
+          ],
+          "network_allowed": false,
+          "protected_paths": [],
+          "workspace_root": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-tool-action-runtime-v1\\human-messy-homepage-debug\\runs\\20260611-215421\\workspace"
+        }
+      },
+      "raw_transcript": "{\"action_type\":\"WriteFile\",\"target\":\"index.html\",\"arguments\":{\"content\":\"<!DOCTYPE html>\\n<html lang=\\\"en\\\">\\n<head>\\n    <meta charset=\\\"UTF-8\\\">\\n    <meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1.0\\\">\\n    <title>Agent Lab Experiments</title>\\n    <style>\\n        body {\\n            font-family: Arial, sans-serif;\\n            background-color: #f4f4f9;\\n            margin: 0;\\n            padding: 0;\\n        }\\n        .container {\\n            width: 80%;\\n            margin: 50px auto;\\n            background-color: #fff;\\n            padding: 20px;\\n            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);\\n        }\\n        h1 {\\n            color: #333;\\n        }\\n        p {\\n            color: #666;\\n        }\\n    </style>\\n</head>\\n<body>\\n    <div class=\\\"container\\\">\\n        <h1>Welcome to Agent Lab Experiments</h1>\\n        <p>This is the homepage for your agent lab experiments.</p>\\n    </div>\\n</body>\\n</html>\"},\"reason\":\"Create the requested homepage.\"}"
+    }
+  ],
+  "parse_results": [
+    {
+      "actions": [
+        {
+          "action_id": "human-messy-homepage:0:1:WriteFile",
+          "action_type": "WriteFile",
+          "adapter_source": "ollama_generate/tool_action_runtime_v1",
+          "allowed_files_snapshot": [
+            "index.html",
+            "styles.css"
+          ],
+          "arguments": {
+            "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Agent Lab Experiments</title>\n    <style>\n        body {\n            font-family: Arial, sans-serif;\n            background-color: #f4f4f9;\n            margin: 0;\n            padding: 0;\n        }\n        .container {\n            width: 80%;\n            margin: 50px auto;\n            background-color: #fff;\n            padding: 20px;\n            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);\n        }\n        h1 {\n            color: #333;\n        }\n        p {\n            color: #666;\n        }\n    </style>\n</head>\n<body>\n    <div class=\"container\">\n        <h1>Welcome to Agent Lab Experiments</h1>\n        <p>This is the homepage for your agent lab experiments.</p>\n    </div>\n</body>\n</html>"
+          },
+          "authorship": "model_authored",
+          "created_at": "",
+          "execution_state": "blocked_until_plan_3",
+          "model_id": "qwen2.5-coder:7b",
+          "reason": "Create the requested homepage.",
+          "requires_approval": true,
+          "schema_version": 1,
+          "source_message_id": "human-messy-homepage:0",
+          "target": "index.html"
+        }
+      ],
+      "adapter_source": "ollama_generate/tool_action_runtime_v1",
+      "decisions": [
+        {
+          "action_id": "human-messy-homepage:0:1:WriteFile",
+          "adapter_source": "ollama_generate/tool_action_runtime_v1",
+          "detail": "",
+          "error_code": "",
+          "parser": "strict_json",
+          "status": "accepted"
+        }
+      ],
+      "error_code": "",
+      "ok": true,
+      "raw_transcript": "{\"action_type\":\"WriteFile\",\"target\":\"index.html\",\"arguments\":{\"content\":\"<!DOCTYPE html>\\n<html lang=\\\"en\\\">\\n<head>\\n    <meta charset=\\\"UTF-8\\\">\\n    <meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1.0\\\">\\n    <title>Agent Lab Experiments</title>\\n    <style>\\n        body {\\n            font-family: Arial, sans-serif;\\n            background-color: #f4f4f9;\\n            margin: 0;\\n            padding: 0;\\n        }\\n        .container {\\n            width: 80%;\\n            margin: 50px auto;\\n            background-color: #fff;\\n            padding: 20px;\\n            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);\\n        }\\n        h1 {\\n            color: #333;\\n        }\\n        p {\\n            color: #666;\\n        }\\n    </style>\\n</head>\\n<body>\\n    <div class=\\\"container\\\">\\n        <h1>Welcome to Agent Lab Experiments</h1>\\n        <p>This is the homepage for your agent lab experiments.</p>\\n    </div>\\n</body>\\n</html>\"},\"reason\":\"Create the requested homepage.\"}",
+      "repair_prompt": ""
+    }
+  ],
+  "parsed_actions": [
+    {
+      "action_id": "human-messy-homepage:0:1:WriteFile",
+      "action_type": "WriteFile",
+      "adapter_source": "ollama_generate/tool_action_runtime_v1",
+      "allowed_files_snapshot": [
+        "index.html",
+        "styles.css"
+      ],
+      "arguments": {
+        "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Agent Lab Experiments</title>\n    <style>\n        body {\n            font-family: Arial, sans-serif;\n            background-color: #f4f4f9;\n            margin: 0;\n            padding: 0;\n        }\n        .container {\n            width: 80%;\n            margin: 50px auto;\n            background-color: #fff;\n            padding: 20px;\n            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);\n        }\n        h1 {\n            color: #333;\n        }\n        p {\n            color: #666;\n        }\n    </style>\n</head>\n<body>\n    <div class=\"container\">\n        <h1>Welcome to Agent Lab Experiments</h1>\n        <p>This is the homepage for your agent lab experiments.</p>\n    </div>\n</body>\n</html>"
+      },
+      "authorship": "model_authored",
+      "created_at": "",
+      "execution_state": "blocked_until_plan_3",
+      "model_id": "qwen2.5-coder:7b",
+      "reason": "Create the requested homepage.",
+      "requires_approval": true,
+      "schema_version": 1,
+      "source_message_id": "human-messy-homepage:0",
+      "target": "index.html"
+    }
+  ],
+  "raw_model_transcripts": [
+    "{\"action_type\":\"WriteFile\",\"target\":\"index.html\",\"arguments\":{\"content\":\"<!DOCTYPE html>\\n<html lang=\\\"en\\\">\\n<head>\\n    <meta charset=\\\"UTF-8\\\">\\n    <meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1.0\\\">\\n    <title>Agent Lab Experiments</title>\\n    <style>\\n        body {\\n            font-family: Arial, sans-serif;\\n            background-color: #f4f4f9;\\n            margin: 0;\\n            padding: 0;\\n        }\\n        .container {\\n            width: 80%;\\n            margin: 50px auto;\\n            background-color: #fff;\\n            padding: 20px;\\n            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);\\n        }\\n        h1 {\\n            color: #333;\\n        }\\n        p {\\n            color: #666;\\n        }\\n    </style>\\n</head>\\n<body>\\n    <div class=\\\"container\\\">\\n        <h1>Welcome to Agent Lab Experiments</h1>\\n        <p>This is the homepage for your agent lab experiments.</p>\\n    </div>\\n</body>\\n</html>\"},\"reason\":\"Create the requested homepage.\"}"
+  ],
+  "receipt_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-tool-action-runtime-v1\\human-messy-homepage-debug\\runs\\20260611-215421\\receipt.json",
+  "skipped_checks": []
+}

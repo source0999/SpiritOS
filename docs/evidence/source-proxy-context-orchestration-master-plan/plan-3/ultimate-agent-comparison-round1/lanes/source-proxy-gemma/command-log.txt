@@ -1,0 +1,3 @@
+command: source-proxy source-proxy-gemma
+elapsed_seconds: 3.832
+exit_code: 0

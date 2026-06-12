@@ -1,0 +1,17 @@
+{
+  "selected_model": "qwen2.5-coder:7b",
+  "provider": "ollama",
+  "context_sources": {
+    "attempted": true,
+    "error": "build_context_source_readiness_packet() takes 1 positional argument but 2 were given"
+  },
+  "architect_status": {
+    "attempted": true,
+    "type": "FallthroughToLLM",
+    "repr": "FallthroughToLLM(reason='no_explicit_target', kind='fallthrough_to_llm')"
+  },
+  "parser_route": "none",
+  "files_read_written": {
+    "written": []
+  }
+}

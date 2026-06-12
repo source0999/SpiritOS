@@ -1,0 +1,3 @@
+anthropic messages model=claude-3-5-sonnet-latest
+anthropic messages model=claude-3-5-sonnet-latest
+anthropic messages model=claude-3-5-sonnet-latest

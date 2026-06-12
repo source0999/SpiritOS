@@ -1,0 +1,3 @@
+command: source-proxy source-proxy-strong-api
+elapsed_seconds: 3.855
+exit_code: 0

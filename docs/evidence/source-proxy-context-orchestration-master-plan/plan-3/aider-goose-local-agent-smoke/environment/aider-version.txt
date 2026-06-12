@@ -1,0 +1,13 @@
+$ command -v aider || true; aider --version || true
+
+STDOUT:
+
+
+STDERR:
+bash: line 1: aider: command not found
+
+EXIT: 0
+ELAPSED: 0.006
+
+AFTER VENV INSTALL:
+aider 0.86.2

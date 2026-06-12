@@ -1,0 +1,9 @@
+{
+  "lane_name": "continue-hermes4",
+  "execution_shell": "continue",
+  "target_model": "hermes4",
+  "model_selection_method": "isolated_config",
+  "errors": ["Run aborted during prompt 1"],
+  "partial_workspace_files": ["index.html", "README.md"],
+  "anti_cheat_status": "clean"
+}

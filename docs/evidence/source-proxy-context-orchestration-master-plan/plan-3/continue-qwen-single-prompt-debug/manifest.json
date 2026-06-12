@@ -1,0 +1,51 @@
+{
+  "task": "continue-qwen-single-prompt-debug",
+  "created_at": "2026-06-10T03:20:59Z",
+  "status": "BLOCKED",
+  "phase_reached": "phase-3",
+  "blocker": "CONTINUE_CLI_NOT_AVAILABLE_IN_THIS_EXECUTION_ENV",
+  "model_target": "qwen2.5-coder:7b",
+  "model_observed": "unknown",
+  "continue_command": "",
+  "elapsed_seconds": 8.111,
+  "files_changed": [],
+  "preview_path": "",
+  "preview_url": "",
+  "transcript_path": "docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-qwen-single-prompt-debug/continue-qwen/prompt-transcript.txt",
+  "diff_path": "docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-qwen-single-prompt-debug/continue-qwen/diff-after-prompt.patch",
+  "closeout_path": "docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-qwen-single-prompt-debug/closeout.md",
+  "clean_command": "python3 scripts/agent-trials/run-continue-qwen-single-prompt-debug.py --clean",
+  "real_app_touched": false,
+  "anti_cheat_status": "CLEAN",
+  "qwen_direct_smoke": {
+    "status": "PASS",
+    "elapsed_seconds": 5.017,
+    "exit_code": 0,
+    "timed_out": false,
+    "output": "QWEN_READY\n\n\n\u001b[?2026h\u001b[?25l\u001b[1G\u2819 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2839 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?25l\u001b[?2026h\u001b[?25l\u001b[1G\u001b[K\u001b[?25h\u001b[?2026l\u001b[2K\u001b[1G\u001b[?25h\u001b[?25l\u001b[?25h\u001b[?25l\u001b[?25h\u001b[?25l\u001b[?25h\u001b[?25l\u001b[?25h\u001b[?25l\u001b[?25h",
+    "runner_spawned": true,
+    "model_observed": true,
+    "gpu_snapshot_during_path": "docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-qwen-single-prompt-debug/environment/nvidia-smi-during.txt",
+    "transcript_path": "docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-qwen-single-prompt-debug/environment/direct-qwen-smoke.txt"
+  },
+  "readme_edit_smoke": {
+    "status": "NOT_RUN"
+  },
+  "homepage_prompt": {
+    "status": "NOT_RUN"
+  },
+  "process_conflict_notes": [
+    "Ollama reports qwen2.5-coder:7b loaded."
+  ],
+  "environment": {
+    "date": "$ cmd /c date /t\n\nSTDOUT:\nTue 06/09/2026 \n\n\nSTDERR:\n\n",
+    "cn_path": "",
+    "cn_available": false,
+    "env_filtered": "\n",
+    "qwen_installed": true,
+    "target_model_exact_available": true,
+    "conflict_notes": [
+      "Ollama reports qwen2.5-coder:7b loaded."
+    ]
+  }
+}

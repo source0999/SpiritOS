@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Qwen Ollama Runtime Diagnostic</title>
+<style>
+body { font-family: Arial, sans-serif; margin: 24px; max-width: 1100px; line-height: 1.45; }
+table { border-collapse: collapse; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+th { background: #f4f4f4; width: 260px; }
+code { background: #f6f6f6; padding: 2px 4px; }
+</style>
+</head>
+<body>
+<h1>Qwen Ollama Runtime Diagnostic</h1>
+<table>
+<tr><th>Final status</th><td>RUNTIME_CONFLICT_DETECTED</td></tr>
+<tr><th>Qwen installed</th><td>yes</td></tr>
+<tr><th>Duplicate Ollama warning</th><td>yes</td></tr>
+<tr><th>CLI cold time</th><td>119.934s</td></tr>
+<tr><th>CLI warm time</th><td>119.925s</td></tr>
+<tr><th>HTTP cold time</th><td>29.939s</td></tr>
+<tr><th>HTTP warm time</th><td>0.226s</td></tr>
+<tr><th>Load duration</th><td>29.711</td></tr>
+<tr><th>Generation duration</th><td>0.062</td></tr>
+<tr><th>GPU used</th><td>yes</td></tr>
+<tr><th>Swap pressure</th><td>yes</td></tr>
+<tr><th>Suspected blocker</th><td>Duplicate Docker/system Ollama services are running. Qwen cold/warm CLI startup is too slow for readiness gates; readiness harness blocked before Aider. Swap is in use, which may contribute to slow model load.</td></tr>
+<tr><th>Recommended fix</th><td>OPERATOR_DECISION_REQUIRED</td></tr>
+<tr><th>Aider should be allowed to run</th><td>yes</td></tr>
+<tr><th>Clean command</th><td><code>python3 scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py --clean</code></td></tr>
+</table>
+</body>
+</html>

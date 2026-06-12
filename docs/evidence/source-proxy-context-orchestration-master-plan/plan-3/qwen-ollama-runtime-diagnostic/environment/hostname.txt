@@ -1,0 +1,10 @@
+$ hostname
+
+STDOUT:
+source-server
+
+
+STDERR:
+
+EXIT: 0
+ELAPSED: 0.006

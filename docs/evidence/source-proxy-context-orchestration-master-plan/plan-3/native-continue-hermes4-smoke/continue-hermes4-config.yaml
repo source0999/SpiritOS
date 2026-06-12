@@ -1,0 +1,12 @@
+schema: v1.5.44
+name: native-continue-hermes4-smoke
+version: 1.0.0
+models:
+  - name: hermes4
+    model: hermes4:latest
+    provider: ollama
+    apiBase: http://localhost:11434
+    roles:
+      - chat
+      - edit
+allowAnonymousTelemetry: false

@@ -1,0 +1,74 @@
+{
+  "task": "continue-qwen-real-env-debug",
+  "created_at": "2026-06-10T10:12:54Z",
+  "status": "WARNING",
+  "environment_gate_result": "PASS",
+  "hostname": "source-server",
+  "user": "source",
+  "pwd": "/home/source/SpiritOS",
+  "cn_path": "/usr/bin/cn",
+  "phase_reached": "homepage-prompt",
+  "blocker": "",
+  "model_target": "qwen2.5-coder:7b",
+  "model_observed": "qwen2.5-coder:7b",
+  "continue_command": "/usr/bin/cn --config /home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-qwen-real-env-debug/continue-qwen/lane-config.yaml --auto -p 'Run only in this disposable workspace. Do not touch the real SpiritOS app. Do not modify files outside this workspace.\n\ninit a repo for agent lab experiements make me a homepage i can open on my phone dont touch the real spiritos app tho'",
+  "qwen_direct_smoke_time": 10.66,
+  "readme_edit_smoke": {
+    "status": "PASS",
+    "label": "BLOCKED",
+    "blocker": "",
+    "elapsed_seconds": 6.078,
+    "exit_code": 0,
+    "command": "/usr/bin/cn --config /home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-qwen-real-env-debug/continue-qwen/lane-config.yaml --auto -p 'Run only in this folder. Edit README.md by adding one new line that says CONTINUE_QWEN_EDIT_READY. Do not touch anything else.'",
+    "files_changed": [
+      "README.md"
+    ],
+    "bridge": {
+      "status": "APPLIED",
+      "tool": "MultiEdit",
+      "path": "docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-qwen-real-env-debug/continue-qwen/workspace/README.md",
+      "edit_count": 1
+    },
+    "model_observed": "qwen2.5-coder:7b"
+  },
+  "homepage_prompt": {
+    "status": "RAN",
+    "label": "WARNING",
+    "blocker": "",
+    "elapsed_seconds": 3.003,
+    "exit_code": 0,
+    "command": "/usr/bin/cn --config /home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-qwen-real-env-debug/continue-qwen/lane-config.yaml --auto -p 'Run only in this disposable workspace. Do not touch the real SpiritOS app. Do not modify files outside this workspace.\n\ninit a repo for agent lab experiements make me a homepage i can open on my phone dont touch the real spiritos app tho'",
+    "files_changed": [
+      "index.md"
+    ],
+    "bridge": {
+      "status": "APPLIED",
+      "tool": "Bash",
+      "command": "git init && echo '# Agent Lab Homepage' >> index.md",
+      "exit_code": 0,
+      "stdout": "Reinitialized existing Git repository in /home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-qwen-real-env-debug/continue-qwen/workspace/.git/\n",
+      "stderr": ""
+    },
+    "preview_path": "",
+    "preview_url": "",
+    "score": {
+      "label": "WARNING",
+      "total": 6
+    }
+  },
+  "files_changed": [
+    "index.md"
+  ],
+  "preview_url": "",
+  "preview_path": "",
+  "launcher_url": "http://10.0.0.186:8776/",
+  "process_conflict_notes": [
+    "Duplicate Ollama servers observed: 2 serve processes.",
+    "Ollama servers are split across ollama and root users."
+  ],
+  "anti_cheat_status": "CLEAN",
+  "real_app_touched": false,
+  "closeout_path": "docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-qwen-real-env-debug/closeout.md",
+  "clean_command": "python3 scripts/agent-trials/run-continue-qwen-real-env-debug.py --clean",
+  "elapsed_seconds": 23.348
+}

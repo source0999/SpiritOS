@@ -1,0 +1,11 @@
+{
+  "lane": "continue-gemma",
+  "model": "gemma3n:e4b",
+  "status": "SKIPPED",
+  "total": 0,
+  "selected_model_proven": false,
+  "file_edit_happened": false,
+  "manual_required": false,
+  "reason": "Direct Ollama Gemma smoke did not pass.",
+  "needed_config": "Use `cn --config <single-model yaml for gemma3n:e4b> --auto -p <prompt>`."
+}

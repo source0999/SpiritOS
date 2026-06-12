@@ -1,0 +1,12 @@
+{
+  "lane_name": "continue-claude-sonnet",
+  "execution_shell": "continue",
+  "target_model": "claude-sonnet-4-6",
+  "errors": [
+    "Continue exited 1 on prompt 1."
+  ],
+  "session_ids": [],
+  "models_observed": [],
+  "prompts": [],
+  "anti_cheat_status": "clean"
+}

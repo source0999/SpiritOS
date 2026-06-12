@@ -1,0 +1,17 @@
+{
+  "lane_name": "raw-api-gpt4o-mini",
+  "shell": "raw-api",
+  "model_target": "gpt-4o-mini",
+  "model_observed": "gpt-4o-mini",
+  "execution_mode": "raw-output-harness-applied",
+  "command": "openai chat model=gpt-4o-mini",
+  "elapsed_seconds": 14.456,
+  "exit_code": 0,
+  "timed_out": false,
+  "files_changed": [
+    "parsed-preview/index.html"
+  ],
+  "preview_path": "lanes/raw-api-gpt4o-mini/parsed-preview/index.html",
+  "raw_parse_applied": true,
+  "real_app_touched": false
+}

@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lane Plumbing Repair</title>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; background: #f6f7f9; color: #202733; }
+    main { max-width: 1120px; margin: 0 auto; padding: 28px; }
+    section { background: #fff; border: 1px solid #d8dee8; border-radius: 8px; padding: 16px; margin: 14px 0; }
+    pre { white-space: pre-wrap; background: #111827; color: #e5e7eb; padding: 12px; border-radius: 6px; overflow: auto; }
+    dt { font-weight: 700; }
+  </style>
+</head>
+<body><main>
+<h1>Lane Plumbing Repair</h1>
+<section><h2>Diagnosis</h2><pre># Lane Plumbing Diagnosis
+
+## Findings
+
+- Raw Qwen appeared strong because its transcript included usable HTML. Under the stricter rule, free-floating HTML is not enough; only a path plus content block or a model action can be executed.
+- Continue plus Qwen did use Qwen. Round 1 recorded `qwen2.5-coder:7b` as the observed model.
+- Continue plus Qwen emitted 2 parseable model action(s) in the inspected transcript: Bash, MultiEdit.
+- The old bridge missed valid output when Continue printed more than one JSON action. It tried to parse the whole transcript as one object, so multiple line-delimited actions became `NO_TOOL_CALL`.
+- One Continue action used a string as Bash arguments. The adapter must normalize that to a command only when the tool name is `Bash`.
+- Source Proxy was advisory-only because the planner returned `FallthroughToLLM(reason=&#x27;no_explicit_target&#x27;)`. The messy prompt intentionally has no target file, so the planner never reached a file-edit contract.
+- The missing adapter is a workspace-only executor that accepts model-authored Write/Edit/MultiEdit/Bash calls or explicit path plus content blocks, then writes only inside the disposable workspace.
+- The smallest honest fix is shared action parsing plus path-contained execution for Continue output, and a Source Proxy Qwen bridge mode that calls the selected model and sends only its model-authored actions or path/content blocks to the same adapter.
+
+## Answers
+
+- Why raw Qwen got a preview: free HTML was extracted into `lanes/raw-ollama-qwen/parsed-preview/index.html` by the previous harness.
+- Did Continue emit tool calls: yes.
+- Did Continue only chat: no.
+- Did model selection use Qwen: yes.
+- Did the bridge reject a valid action: yes, multiple JSON actions and string Bash arguments were not handled.
+- Why Source Proxy was advisory-only: no explicit target caused planner fallthrough.
+- Exact missing adapter: selected-model output to workspace action executor.
+- Smallest honest fix: parse model actions, enforce containment, execute in disposable workspace, preserve transcript/diff/events.
+</pre></section>
+<section><h2>Run State</h2><dl><dt>Anti-cheat</dt><dd>CLEAN</dd><dt>Real app touched</dt><dd>False</dd></dl></section>
+<section><h2>continue-qwen-bridged</h2><dl><dt>Status</dt><dd>WARNING</dd><dt>Score</dt><dd>5</dd><dt>Mode</dt><dd>continue-tool-bridge</dd><dt>Files</dt><dd>README.md</dd></dl><p>No preview generated because this lane did not produce an openable homepage.</p><details><summary>Transcript</summary><pre>$ /usr/bin/cn --config /home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/lane-plumbing-repair/continue-qwen-bridged/lane-config.yaml --auto -p &#x27;Run only in this disposable workspace. Do not touch the real SpiritOS app. Do not modify files outside this workspace.
+
+init a repo for agent lab experiements make me a homepage i can open on my phone dont touch the real spiritos app tho&#x27;
+[stdout] ```json
+[stdout] {&quot;name&quot;: &quot;Bash&quot;, &quot;arguments&quot;: {&quot;command&quot;: &quot;git init &amp;&amp; echo &#x27;# Agent Lab Experiments Homepage&#x27; &gt; README.md&quot;}}
+[stdout] ```
+
+[exit] 0
+[elapsed_seconds] 4.005
+</pre></details><details><summary>Tool events</summary><pre>{&quot;ts&quot;: &quot;2026-06-10T11:08:08Z&quot;, &quot;event&quot;: &quot;MODEL_ACTION&quot;, &quot;tool&quot;: &quot;Bash&quot;, &quot;arguments_type&quot;: &quot;dict&quot;}
+</pre></details><details><summary>Diff</summary><pre>--- a/README.md
++++ b/README.md
+@@ -0,0 +1 @@
++# Agent Lab Experiments Homepage
+</pre></details><details><summary>Path trace</summary><pre>{
+  &quot;lane_name&quot;: &quot;continue-qwen-bridged&quot;,
+  &quot;model_target&quot;: &quot;qwen2.5-coder:7b&quot;,
+  &quot;model_observed&quot;: &quot;qwen2.5-coder:7b&quot;,
+  &quot;execution_mode&quot;: &quot;continue-tool-bridge&quot;,
+  &quot;command&quot;: &quot;/usr/bin/cn --config /home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/lane-plumbing-repair/continue-qwen-bridged/lane-config.yaml --auto -p &#x27;Run only in this disposable workspace. Do not touch the real SpiritOS app. Do not modify files outside this workspace.\n\ninit a repo for agent lab experiements make me a homepage i can open on my phone dont touch the real spiritos app tho&#x27;&quot;,
+  &quot;elapsed_seconds&quot;: 4.005,
+  &quot;exit_code&quot;: 0,
+  &quot;timed_out&quot;: false,
+  &quot;files_changed&quot;: [
+    &quot;README.md&quot;
+  ],
+  &quot;preview_path&quot;: &quot;&quot;,
+  &quot;adapter&quot;: {
+    &quot;mode&quot;: &quot;continue-tool-bridge&quot;,
+    &quot;actions_seen&quot;: 1,
+    &quot;applied&quot;: [
+      {
+        &quot;status&quot;: &quot;APPLIED&quot;,
+        &quot;tool&quot;: &quot;Bash&quot;,
+        &quot;command&quot;: &quot;git init &amp;&amp; echo &#x27;# Agent Lab Experiments Homepage&#x27; &gt; README.md&quot;,
+        &quot;exit_code&quot;: 0,
+        &quot;stdout&quot;: &quot;Initialized empty Git repository in /home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/lane-plumbing-repair/continue-qwen-bridged/workspace/.git/\n&quot;,
+        &quot;stderr&quot;: &quot;hint: Using &#x27;master&#x27; as the name for the initial branch. This default branch name\nhint: is subject to change. To configure the initial branch name to use in all\nhint: of your new repositories, which will suppress this warning, call:\nhint: \nhint: \tgit config --global init.defaultBranch &lt;name&gt;\nhint: \nhint: Names commonly chosen instead of &#x27;master&#x27; are &#x27;main&#x27;, &#x27;trunk&#x27; and\nhint: &#x27;development&#x27;. The just-created branch can be renamed via this command:\nhint: \nhint: \tgit branch -m &lt;name&gt;\n&quot;
+      }
+    ],
+    &quot;rejected&quot;: [],
+    &quot;file_blocks_seen&quot;: 0
+  },
+  &quot;real_app_touched&quot;: false
+}</pre></details></section><section><h2>source-proxy-qwen</h2><dl><dt>Status</dt><dd>NO-GO</dd><dt>Score</dt><dd>3</dd><dt>Mode</dt><dd>source-proxy-tool-bridge</dd><dt>Files</dt><dd>none</dd></dl><p>No preview generated because this lane did not produce an openable homepage.</p><details><summary>Transcript</summary><pre>$ ollama-api-generate http://127.0.0.1:11434 qwen2.5-coder:7b
+
+STDOUT:
+Sure, I can help you set up a simple homepage using HTML and serve it locally in this disposable workspace. Let&#x27;s create a basic website with an index.html file that you can open on your phone.
+
+1. **Create a new directory for your project:**
+   ```bash
+   mkdir agent-lab-experiment
+   cd agent-lab-experiment
+   ```
+
+2. **Create an HTML file (index.html):**
+   ```html
+   &lt;!DOCTYPE html&gt;
+   &lt;html lang=&quot;en&quot;&gt;
+   &lt;head&gt;
+       &lt;meta charset=&quot;UTF-8&quot;&gt;
+       &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;&gt;
+       &lt;title&gt;Agent Lab Experiment&lt;/title&gt;
+   &lt;/head&gt;
+   &lt;body&gt;
+       &lt;h1&gt;Welcome to the Agent Lab Experiment Homepage&lt;/h1&gt;
+       &lt;p&gt;This is a simple page for your experiment.&lt;/p&gt;
+   &lt;/body&gt;
+   &lt;/html&gt;
+   ```
+
+3. **Create an HTTP server to serve the HTML file:**
+   You can use Python&#x27;s built-in HTTP server for this purpose.
+   ```bash
+   python -m http.server
+   ```
+
+4. **Open the page on your phone:**
+   Once the server is running, you should see a message like `Serving HTTP on 0.0.0.0 port 8000 (http://0.0.0.0:8000/)`. On your phone, open a web browser and navigate to `http://&lt;your-workspace-ip&gt;:8000`.
+
+Make sure to replace `&lt;your-workspace-ip&gt;` with the actual IP address of the workspace where you are running this command.
+
+This setup will allow you to see your simple homepage on your phone without touching the real SpiritOS app. If you need more advanced features or want to add other files, feel free to modify and extend the project as needed!
+
+STDERR:
+
+</pre></details><details><summary>Tool events</summary><pre>{&quot;ts&quot;: &quot;2026-06-10T11:08:15Z&quot;, &quot;event&quot;: &quot;REJECTED_NO_MODEL_ACTION&quot;}
+</pre></details><details><summary>Diff</summary><pre></pre></details><details><summary>Path trace</summary><pre>{
+  &quot;lane_name&quot;: &quot;source-proxy-qwen&quot;,
+  &quot;model_target&quot;: &quot;qwen2.5-coder:7b&quot;,
+  &quot;model_observed&quot;: &quot;qwen2.5-coder:7b&quot;,
+  &quot;execution_mode&quot;: &quot;source-proxy-tool-bridge&quot;,
+  &quot;command&quot;: &quot;ollama-api-generate http://127.0.0.1:11434 qwen2.5-coder:7b&quot;,
+  &quot;elapsed_seconds&quot;: 6.755,
+  &quot;exit_code&quot;: 0,
+  &quot;timed_out&quot;: false,
+  &quot;files_changed&quot;: [],
+  &quot;preview_path&quot;: &quot;&quot;,
+  &quot;adapter&quot;: {
+    &quot;mode&quot;: &quot;source-proxy-tool-bridge&quot;,
+    &quot;actions_seen&quot;: 0,
+    &quot;applied&quot;: [],
+    &quot;rejected&quot;: [],
+    &quot;file_blocks_seen&quot;: 0
+  },
+  &quot;real_app_touched&quot;: false
+}</pre></details></section>
+</main></body></html>

@@ -1,0 +1,8 @@
+{
+  "label": "WARNING",
+  "total": 5,
+  "notes": [
+    "file action without openable preview",
+    "markdown-only"
+  ]
+}

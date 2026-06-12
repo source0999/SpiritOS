@@ -1,0 +1,6 @@
+{
+  "status": "SKIPPED",
+  "model": "gemma3n:e4b",
+  "reason": "No Gemma route proved file editing, so the one-prompt mini smoke did not run.",
+  "file_edit_happened": false
+}

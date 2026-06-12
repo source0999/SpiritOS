@@ -1,0 +1,29 @@
+$ systemctl status ollama --no-pager || true
+
+STDOUT:
+● ollama.service - Ollama Service
+     Loaded: loaded (/etc/systemd/system/ollama.service; enabled; preset: enabled)
+     Active: active (running) since Tue 2026-06-02 20:39:05 EDT; 1 week 1 day ago
+   Main PID: 1448 (ollama)
+      Tasks: 25 (limit: 18962)
+     Memory: 2.5G (peak: 12.2G swap: 178.1M swap peak: 653.0M)
+        CPU: 14h 11min 23.443s
+     CGroup: /system.slice/ollama.service
+             └─1448 /usr/local/bin/ollama serve
+
+Jun 10 20:58:59 source-server ollama[1448]: [GIN] 2026/06/10 - 20:58:59 | 200 |       8.319µs |       127.0.0.1 | HEAD     "/"
+Jun 10 21:00:59 source-server ollama[1448]: [GIN] 2026/06/10 - 21:00:59 | 200 |        9.56µs |       127.0.0.1 | HEAD     "/"
+Jun 10 21:00:59 source-server ollama[1448]: [GIN] 2026/06/10 - 21:00:59 | 200 |    1.160025ms |       127.0.0.1 | GET      "/api/tags"
+Jun 10 21:00:59 source-server ollama[1448]: [GIN] 2026/06/10 - 21:00:59 | 200 |       6.113µs |       127.0.0.1 | HEAD     "/"
+Jun 10 21:00:59 source-server ollama[1448]: [GIN] 2026/06/10 - 21:00:59 | 200 |       7.562µs |       127.0.0.1 | GET      "/api/ps"
+Jun 10 21:01:00 source-server ollama[1448]: [GIN] 2026/06/10 - 21:01:00 | 200 |       7.714µs |       127.0.0.1 | HEAD     "/"
+Jun 10 21:01:00 source-server ollama[1448]: [GIN] 2026/06/10 - 21:01:00 | 200 |    1.059555ms |       127.0.0.1 | GET      "/api/tags"
+Jun 10 21:01:00 source-server ollama[1448]: [GIN] 2026/06/10 - 21:01:00 | 200 |       6.764µs |       127.0.0.1 | HEAD     "/"
+Jun 10 21:01:00 source-server ollama[1448]: [GIN] 2026/06/10 - 21:01:00 | 200 |        9.83µs |       127.0.0.1 | GET      "/api/ps"
+Jun 10 21:01:02 source-server ollama[1448]: [GIN] 2026/06/10 - 21:01:02 | 200 |       6.771µs |       127.0.0.1 | HEAD     "/"
+
+
+STDERR:
+
+EXIT: 0
+ELAPSED: 8.072

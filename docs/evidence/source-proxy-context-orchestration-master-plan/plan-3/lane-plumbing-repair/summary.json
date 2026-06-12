@@ -1,0 +1,32 @@
+{
+  "status": "DONE",
+  "elapsed_seconds": 11.293,
+  "anti_cheat_status": "CLEAN",
+  "real_app_touched": false,
+  "scaffolds_fallbacks_repairs_used": false,
+  "results": [
+    {
+      "lane": "continue-qwen-bridged",
+      "status": "WARNING",
+      "score": 5,
+      "time": 4.005,
+      "execution_mode": "continue-tool-bridge",
+      "files_changed": [
+        "README.md"
+      ],
+      "preview": "",
+      "notes": "file action without openable preview; markdown-only"
+    },
+    {
+      "lane": "source-proxy-qwen",
+      "status": "NO-GO",
+      "score": 3,
+      "time": 6.755,
+      "execution_mode": "source-proxy-tool-bridge",
+      "files_changed": [],
+      "preview": "",
+      "notes": "no model-authored file action applied"
+    }
+  ],
+  "ready_for_3_prompt_gauntlet": false
+}

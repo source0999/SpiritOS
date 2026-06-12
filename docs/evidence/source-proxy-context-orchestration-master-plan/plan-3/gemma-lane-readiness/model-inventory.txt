@@ -1,0 +1,79 @@
+# Gemma Lane Model Inventory
+
+GPU name: NVIDIA-SMI 580.159.03 Driver Version: 580.159.03 CUDA Version: 13.0
+VRAM total: 12288 MiB
+VRAM free: 7123 MiB
+Selected Gemma model: gemma3n:e4b
+Selection reason: Preferred practical Gemma E4B lane for 12 GB VRAM.
+
+Installed Ollama models:
+- gemma3n:e4b
+- hermes4:latest
+- hf.co/bartowski/NousResearch_Hermes-4-14B-GGUF:Q4_K_M
+- hermes3:8b-abliterated
+- mannix/llama3-8b-ablitered-v3:latest
+- qwen2.5-coder:7b
+- llama3.1:8b
+- llama3:latest
+
+## ollama list
+command: ollama list
+exit_code: 0
+elapsed_seconds: 0.02
+
+NAME                                                     ID              SIZE      MODIFIED      
+gemma3n:e4b                                              15cb39fd9394    7.5 GB    3 minutes ago    
+hermes4:latest                                           3e79497c9643    9.0 GB    11 days ago      
+hf.co/bartowski/NousResearch_Hermes-4-14B-GGUF:Q4_K_M    ce5cb56a7898    9.0 GB    11 days ago      
+hermes3:8b-abliterated                                   621eb9c2e65e    4.7 GB    2 weeks ago      
+mannix/llama3-8b-ablitered-v3:latest                     46688a22037e    4.7 GB    2 weeks ago      
+qwen2.5-coder:7b                                         dae161e27b0e    4.7 GB    3 weeks ago      
+llama3.1:8b                                              46e0c10c039e    4.9 GB    3 weeks ago      
+llama3:latest                                            365c0bd3c000    4.7 GB    7 weeks ago
+
+
+## nvidia-smi
+command: nvidia-smi
+exit_code: 0
+elapsed_seconds: 0.064
+
+Tue Jun  9 22:40:26 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 580.159.03             Driver Version: 580.159.03     CUDA Version: 13.0     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce RTX 3060        Off |   00000000:01:00.0 Off |                  N/A |
+|  0%   43C    P8             17W /  170W |    5165MiB /  12288MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|    0   N/A  N/A            1659      G   /usr/lib/xorg/Xorg                       16MiB |
+|    0   N/A  N/A         1540628      C   /usr/bin/ollama                        5130MiB |
++-----------------------------------------------------------------------------------------+
+
+
+## free -h
+command: free -h
+exit_code: 0
+elapsed_seconds: 0.003
+
+               total        used        free      shared  buff/cache   available
+Mem:            15Gi       8.5Gi       181Mi       193Mi       7.3Gi       7.0Gi
+Swap:          4.0Gi       4.0Gi       1.8Mi
+
+
+## df -h /mnt/spirit-8tb
+command: df -h /mnt/spirit-8tb
+exit_code: 0
+elapsed_seconds: 0.002
+
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sda1       7.3T  131G  6.8T   2% /mnt/spirit-8tb

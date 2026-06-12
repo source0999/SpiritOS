@@ -1,0 +1,3 @@
+command: source-proxy source-proxy-qwen
+elapsed_seconds: 11.418
+exit_code: 0

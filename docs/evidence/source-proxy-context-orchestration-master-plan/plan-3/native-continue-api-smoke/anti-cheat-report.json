@@ -1,0 +1,13 @@
+{
+  "status": "CLEAN",
+  "no_spiritos_bridge_used": true,
+  "no_source_proxy_used": true,
+  "no_raw_output_parser_used": true,
+  "no_harness_created_homepage": true,
+  "no_post_run_repair": true,
+  "no_template_app_files": true,
+  "no_known_good_files": true,
+  "no_real_app_mutation": true,
+  "contaminated": false,
+  "basis": "Only native /usr/bin/cn ran inside workspace before workspace/index.html appeared. Post-run code wrote evidence files outside workspace only."
+}

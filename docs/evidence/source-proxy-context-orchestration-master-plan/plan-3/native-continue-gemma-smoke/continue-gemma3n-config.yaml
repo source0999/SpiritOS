@@ -1,0 +1,12 @@
+schema: v1.5.44
+name: native-continue-gemma-smoke
+version: 1.0.0
+models:
+  - name: gemma3n
+    model: gemma3n:e4b
+    provider: ollama
+    apiBase: http://localhost:11434
+    roles:
+      - chat
+      - edit
+allowAnonymousTelemetry: false

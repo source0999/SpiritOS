@@ -1,0 +1,45 @@
+$ hostname; whoami; pwd; command -v aider || true; aider --version || true; ollama list || true; ollama ps || true; nvidia-smi || true
+
+STDOUT:
+source-server
+source
+/home/source/SpiritOS
+/home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/aider-goose-local-agent-smoke/.venv-aider/bin/aider
+aider 0.86.2
+NAME                                                     ID              SIZE      MODIFIED     
+gemma3n:e4b                                              15cb39fd9394    7.5 GB    22 hours ago    
+hermes4:latest                                           3e79497c9643    9.0 GB    12 days ago     
+hf.co/bartowski/NousResearch_Hermes-4-14B-GGUF:Q4_K_M    ce5cb56a7898    9.0 GB    12 days ago     
+hermes3:8b-abliterated                                   621eb9c2e65e    4.7 GB    2 weeks ago     
+mannix/llama3-8b-ablitered-v3:latest                     46688a22037e    4.7 GB    2 weeks ago     
+qwen2.5-coder:7b                                         dae161e27b0e    4.7 GB    3 weeks ago     
+llama3.1:8b                                              46e0c10c039e    4.9 GB    3 weeks ago     
+llama3:latest                                            365c0bd3c000    4.7 GB    7 weeks ago     
+NAME    ID    SIZE    PROCESSOR    CONTEXT    UNTIL 
+Wed Jun 10 21:00:59 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 580.159.03             Driver Version: 580.159.03     CUDA Version: 13.0     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce RTX 3060        Off |   00000000:01:00.0 Off |                  N/A |
+|  0%   37C    P8             16W /  170W |    5165MiB /  12288MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|    0   N/A  N/A            1659      G   /usr/lib/xorg/Xorg                       16MiB |
+|    0   N/A  N/A         1540628      C   /usr/bin/ollama                        5130MiB |
++-----------------------------------------------------------------------------------------+
+
+
+STDERR:
+
+EXIT: 0
+ELAPSED: 0.813

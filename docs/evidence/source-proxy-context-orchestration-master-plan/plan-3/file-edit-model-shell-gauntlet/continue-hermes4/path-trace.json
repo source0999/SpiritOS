@@ -1,0 +1,12 @@
+{
+  "lane_name": "continue-hermes4",
+  "execution_shell": "continue",
+  "model": "hermes4:latest",
+  "provider": "continue",
+  "mode": "",
+  "effort": "",
+  "errors": [
+    "Continue CLI `cn` is not on PATH."
+  ],
+  "anti_cheat_status": "clean"
+}

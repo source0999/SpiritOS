@@ -1,0 +1,88 @@
+To create a simple homepage for your agent lab experiments that you can open on your phone, follow these steps:
+
+1. **Initialize a Git Repository**: First, create a new directory for your project and initialize a Git repository.
+
+2. **Create an HTML File**: Create a basic HTML file that will serve as your homepage.
+
+3. **Add Basic Content**: Add some content to the HTML file that describes your agent lab experiments.
+
+4. **Open the File on Your Phone**: You can use a local server or simply open the HTML file directly in your mobile browser.
+
+Here’s how you can do this step-by-step:
+
+### Step 1: Initialize a Git Repository
+
+Open your terminal and run the following commands:
+
+```bash
+mkdir agent-lab-experiments
+cd agent-lab-experiments
+git init
+```
+
+### Step 2: Create an HTML File
+
+Create a file named `index.html`:
+
+```bash
+touch index.html
+```
+
+### Step 3: Add Basic Content
+
+Open `index.html` in a text editor and add the following HTML code:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Lab Experiments</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            color: #333;
+        }
+        p {
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <h1>Welcome to the Agent Lab Experiments</h1>
+    <p>This is a simple homepage for your agent lab experiments.</p>
+    <p>Explore various experiments and findings related to agent-based systems.</p>
+</body>
+</html>
+```
+
+### Step 4: Open the File on Your Phone
+
+To view the homepage on your phone, you can either:
+
+- **Use a Local Server**: If you have a local server set up (like using Python's built-in HTTP server), you can run it with:
+
+    ```bash
+    python -m http.server
+    ```
+
+    Then, access it from your phone using your computer's IP address and the port number (default is 8000).
+
+- **Directly Open the File**: If you just want to open the file directly, you can transfer the `index.html` file to your phone and open it in a web browser.
+
+### Step 5: Commit Your Changes
+
+Finally, commit your changes to the Git repository:
+
+```bash
+git add index.html
+git commit -m "Initial commit: Add homepage for agent lab experiments"
+```
+
+Now you have a simple homepage for your agent lab experiments that you can access on your phone!

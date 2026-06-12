@@ -1,0 +1,77 @@
+status: active handoff for Source Proxy Tool Action Runtime v1
+
+Source-of-truth rule:
+Use repo documents as authority. Do not implement runtime behavior from memory. If the roadmap docs are missing, stop and ask for docs install instead of implementing runtime from memory.
+
+Required First Reads:
+- docs/plan-index.md
+- docs/source-proxy-tool-action-runtime-v1-master-plan.md
+- docs/evidence/agent-runtime-trial-harness/plan-7/final-grade-report.json
+- docs/evidence/agent-runtime-trial-harness/plan-8/plan-8-pivot-evidence.md
+- docs/evidence/agent-runtime-trial-harness/plan-8/future-roadmap-request-packet.json
+- docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/lane-plumbing-repair/diagnosis.md
+- docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/lane-plumbing-repair/closeout.md
+- docs/agent-runtime-trial-harness-mac-subagent-port-new-chat-handoff-v0.1.md
+- docs/agent-runtime-trial-harness-mac-subagent-port-master-plan-v0.1.md
+- docs/mac-worker-operator-contract.md
+- docs/spiritos-coding-readiness-roadmap-to-codex-like-features.md
+
+Continuation Rule:
+Continue the next uncompleted plan only. If no Plan 0 closeout exists, start Plan 0/8 only. Do not skip ahead. Stop at each plan boundary and wait for Britton approval before the next plan.
+
+PIVOT Workflow Rule:
+- Work one approved plan at a time.
+- Work increment by increment.
+- After each increment: run checks, record concise evidence, state GO/NO-GO, continue automatically if GO.
+- At phase end: confirm increments, evidence, no forbidden scope, checks, GO/NO-GO.
+- At plan end: produce manual verification block, expected output, files changed, artifacts, blockers, GO/NO-GO, next plan title only.
+- Britton approves plans, not every increment.
+- Never invent roadmap content from vibes.
+
+Active Roadmap Sequence:
+- Plan 0/8: Roadmap Install, Baseline, And Pivot Guard
+- Plan 1/8: Natural Prompt To TaskSpec Intake
+- Plan 2/8: Tool/Action Contract And Parser
+- Plan 3/8: Disposable Workspace Executor And Safety Gates
+- Plan 4/8: Bounded Agent Loop And Verification Receipts
+- Plan 5/8: Mac/Subagent Advisory Tool Broker
+- Plan 6/8: /coding UI Integration For TaskSpec, Actions, Diffs, And Receipts
+- Plan 7/8: Trap Suite, Golden Tasks, And Safety Verification
+- Plan 8/8: Benchmark Return Gate And Comparison Rerun Packet
+
+Current Next Action:
+If no Plan 0 closeout exists, start Plan 0/8 only: Roadmap Install, Baseline, And Pivot Guard.
+
+Forbidden Scope:
+- no runtime implementation unless the current approved plan explicitly authorizes it
+- no source_proxy/, src/, scripts/, package, backend, app route, CSS, provider config, Cartographer, Mac worker runtime, or generated evidence edits outside the current approved plan
+- no provider/model calls unless the current approved plan explicitly authorizes them
+- no trial prompts or benchmark reruns before the benchmark return gate
+- no safe apply execution
+- no real app mutation from a trial prompt
+- no hidden scaffolds, hidden repairs, or backend-authored task files pretending to be model output
+- no Cartographer activation or mutation
+- no hidden workers, daemons, launch agents, queues, or background jobs
+- no branch, worktree, stash, reset, checkout, clean, commit, or push without explicit later approval
+- no final CSS polish
+
+Mac/subagent Advisory Boundary:
+Mac worker and subagents may provide advisory packets, system status, safe checks, repo context, search packets, browser/design inspection packets, safety review, component mapping, test-scribe notes, and Tool Steward audit notes only when approved by the active plan. They must not write repo files, apply code, start hidden workers, run Cart workflows, change routing, read secrets, commit, push, or bypass Source Proxy authority.
+
+No-Cheat Rule:
+Fair means generic tools/actions are exposed, the selected model decides paths and contents, only model-authored actions execute after validation, and transcript/action/diff/check/receipt evidence is recorded.
+
+Cheating means the backend creates task files for the model, task-specific helpers tell the model exactly what to write, vague/freeform output is upgraded into working files without explicit model-authored path/content/action, or Mac/subagents apply code or bypass Source Proxy.
+
+Benchmark Pause Rule:
+Benchmarking, stress testing, and comparisons against Aider, Continue, raw local-model harnesses, Codex, or cloud-model lanes stay paused until Source Proxy has native hands: TaskSpec intake, tool/action contract, parser, disposable workspace executor, authority validator, bounded loop, receipts, UI diagnostics, Mac/subagent advisory boundaries, and trap-suite proof.
+
+Manual Verification Expectations:
+Every plan closeout must include files changed, artifacts, checks run, expected output, blockers, GO/NO-GO, and the next plan title only. Verification should prove no forbidden source/runtime mutation occurred and should include `git status --branch --short --untracked-files=normal` plus targeted greps/checks from the active plan.
+
+Rollback Conditions:
+For docs-only work, rollback by removing only the docs created by the current plan. For runtime work, rollback only generated disposable workspaces, receipts, or files created by the active plan. Never use destructive git operations without explicit later approval.
+
+Stop Conditions:
+Stop and report NO-GO if source-of-truth docs are missing, authority boundaries conflict, unapproved source/runtime files change, any hidden worker starts, any provider/model call is attempted outside plan scope, Mac/subagents gain write authority, real app files are mutated by a trial prompt, or benchmark execution begins before the return gate.
+

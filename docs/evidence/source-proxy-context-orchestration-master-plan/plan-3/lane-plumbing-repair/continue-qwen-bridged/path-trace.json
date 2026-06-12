@@ -1,0 +1,31 @@
+{
+  "lane_name": "continue-qwen-bridged",
+  "model_target": "qwen2.5-coder:7b",
+  "model_observed": "qwen2.5-coder:7b",
+  "execution_mode": "continue-tool-bridge",
+  "command": "/usr/bin/cn --config /home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/lane-plumbing-repair/continue-qwen-bridged/lane-config.yaml --auto -p 'Run only in this disposable workspace. Do not touch the real SpiritOS app. Do not modify files outside this workspace.\n\ninit a repo for agent lab experiements make me a homepage i can open on my phone dont touch the real spiritos app tho'",
+  "elapsed_seconds": 4.005,
+  "exit_code": 0,
+  "timed_out": false,
+  "files_changed": [
+    "README.md"
+  ],
+  "preview_path": "",
+  "adapter": {
+    "mode": "continue-tool-bridge",
+    "actions_seen": 1,
+    "applied": [
+      {
+        "status": "APPLIED",
+        "tool": "Bash",
+        "command": "git init && echo '# Agent Lab Experiments Homepage' > README.md",
+        "exit_code": 0,
+        "stdout": "Initialized empty Git repository in /home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/lane-plumbing-repair/continue-qwen-bridged/workspace/.git/\n",
+        "stderr": "hint: Using 'master' as the name for the initial branch. This default branch name\nhint: is subject to change. To configure the initial branch name to use in all\nhint: of your new repositories, which will suppress this warning, call:\nhint: \nhint: \tgit config --global init.defaultBranch <name>\nhint: \nhint: Names commonly chosen instead of 'master' are 'main', 'trunk' and\nhint: 'development'. The just-created branch can be renamed via this command:\nhint: \nhint: \tgit branch -m <name>\n"
+      }
+    ],
+    "rejected": [],
+    "file_blocks_seen": 0
+  },
+  "real_app_touched": false
+}

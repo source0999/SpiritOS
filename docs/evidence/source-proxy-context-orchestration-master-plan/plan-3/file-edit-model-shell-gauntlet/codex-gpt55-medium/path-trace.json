@@ -1,0 +1,12 @@
+{
+  "lane_name": "codex-gpt55-medium",
+  "execution_shell": "codex",
+  "model": "gpt-5.5",
+  "provider": "codex",
+  "mode": "",
+  "effort": "medium",
+  "errors": [
+    "Codex model and effort selection is not exposed as a safe headless file-edit lane in this environment."
+  ],
+  "anti_cheat_status": "clean"
+}

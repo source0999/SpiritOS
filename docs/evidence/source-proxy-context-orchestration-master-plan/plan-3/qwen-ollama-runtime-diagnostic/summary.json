@@ -1,0 +1,16 @@
+{
+  "aider_should_run": true,
+  "clean_duplicate_ollama": true,
+  "final_status": "RUNTIME_CONFLICT_DETECTED",
+  "gpu_used": true,
+  "manual_cleanup_commands": [
+    "systemctl status ollama --no-pager",
+    "docker ps | grep -i ollama",
+    "# Choose one Ollama runtime; do not run these without deciding which runtime should own 11434."
+  ],
+  "readiness_policy": "Make readiness diagnostic-only if HTTP API responds within 120 seconds; do not block Aider solely on CLI warmup variance.",
+  "recommended_aider_timeout_seconds": 300,
+  "recommended_fix": "OPERATOR_DECISION_REQUIRED",
+  "suspected_blocker": "Duplicate Docker/system Ollama services are running. Qwen cold/warm CLI startup is too slow for readiness gates; readiness harness blocked before Aider. Swap is in use, which may contribute to slow model load.",
+  "warm_run_faster": true
+}

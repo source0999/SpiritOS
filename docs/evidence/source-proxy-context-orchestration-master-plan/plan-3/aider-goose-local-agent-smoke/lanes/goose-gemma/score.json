@@ -1,0 +1,42 @@
+{
+  "anti_cheat_status": "CLEAN",
+  "command": "",
+  "diff": "",
+  "elapsed_seconds": 0,
+  "files_changed": [],
+  "framework": "goose",
+  "lane": "goose-gemma",
+  "model": "gemma3n:e4b",
+  "model_key": "gemma",
+  "notes": "Model readiness gate failed: TOO_SLOW_FOR_THIS_ROUND",
+  "openable_homepage": false,
+  "preview_url": "",
+  "readiness": {
+    "attempts": [
+      {
+        "elapsed_seconds": 30.008,
+        "exit_code": 124,
+        "stderr": "",
+        "stdout": "",
+        "timeout_seconds": 30
+      },
+      {
+        "elapsed_seconds": 60.005,
+        "exit_code": 124,
+        "stderr": "",
+        "stdout": "",
+        "timeout_seconds": 60
+      }
+    ],
+    "elapsed_seconds": 90.013,
+    "exit_code": 124,
+    "model": "gemma3n:e4b",
+    "status": "TOO_SLOW_FOR_THIS_ROUND",
+    "stderr": "",
+    "stdout": ""
+  },
+  "real_app_touched": false,
+  "score": 0,
+  "status": "BLOCKED",
+  "transcript": ""
+}

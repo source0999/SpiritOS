@@ -1,0 +1,6 @@
+{
+  "lane": "manual-terminal-qwen",
+  "status": "MANUAL_REQUIRED",
+  "score": null,
+  "notes": "Paste terminal output, then run --score-manual."
+}

@@ -1,0 +1,74 @@
+Sure, I can guide you through setting up a simple project for your agent lab experiments and creating a basic homepage that you can open on your phone. Here's how you can do it:
+
+1. **Initialize a Git Repository:**
+
+   First, let's initialize a new Git repository for your experiments.
+
+   ```bash
+   mkdir agent-lab-experiments
+   cd agent-lab-experiments
+   git init
+   ```
+
+2. **Create a Basic Homepage:**
+
+   Now, let's create a simple HTML file that you can open on your phone.
+
+   ```bash
+   touch index.html
+   ```
+
+   Open `index.html` in a text editor and add the following content:
+
+   ```html
+   <!DOCTYPE html>
+   <html lang="en">
+   <head>
+       <meta charset="UTF-8">
+       <meta name="viewport" content="width=device-width, initial-scale=1.0">
+       <title>Agent Lab Experiments</title>
+       <style>
+           body {
+               font-family: Arial, sans-serif;
+               text-align: center;
+               margin-top: 50px;
+           }
+       </style>
+   </head>
+   <body>
+       <h1>Welcome to Agent Lab Experiments</h1>
+       <p>This is a simple homepage you can open on your phone.</p>
+   </body>
+   </html>
+   ```
+
+3. **Commit Your Changes:**
+
+   Add and commit your changes to the repository.
+
+   ```bash
+   git add index.html
+   git commit -m "Add basic homepage"
+   ```
+
+4. **Serve the Page Locally:**
+
+   To view this page on your phone, you can serve it locally using a simple HTTP server. If you have Python installed, you can use it to serve the page.
+
+   For Python 3:
+
+   ```bash
+   python3 -m http.server 8000
+   ```
+
+   For Python 2:
+
+   ```bash
+   python -m SimpleHTTPServer 8000
+   ```
+
+5. **Access the Page on Your Phone:**
+
+   Make sure your phone is connected to the same network as your computer. Open a web browser on your phone and enter the IP address of your computer followed by the port number. For example, if your computer's IP address is `192.168.1.5`, you would enter `http://192.168.1.5:8000` in your phone's browser.
+
+This setup is entirely contained within the disposable workspace and does not affect any external applications, including the real SpiritOS app.

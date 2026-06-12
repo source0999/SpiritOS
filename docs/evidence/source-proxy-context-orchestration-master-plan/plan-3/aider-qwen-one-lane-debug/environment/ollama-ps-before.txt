@@ -1,0 +1,10 @@
+$ ollama ps || true
+
+STDOUT:
+NAME    ID    SIZE    PROCESSOR    CONTEXT    UNTIL 
+
+
+STDERR:
+
+EXIT: 0
+ELAPSED: 0.022

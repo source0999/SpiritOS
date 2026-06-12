@@ -1,0 +1,90 @@
+{
+  "artifact_type": "source_proxy_tool_action_runtime_v1_comparison_matrix_packet",
+  "schema_version": 1,
+  "status": "planned_no_execution",
+  "same_prompt_bank_required": true,
+  "same_disposable_workspace_rule_required": true,
+  "same_receipt_requirements_required": true,
+  "provider_approval_required_before_execution": true,
+  "comparison_lanes": [
+    {
+      "lane_id": "source_proxy_qwen",
+      "label": "Source Proxy + Qwen",
+      "status": "eligible_after_manual_approval",
+      "availability_check_required": true,
+      "execution_allowed_in_plan_8": false,
+      "wrapper": "source_proxy_tool_action_runtime_v1",
+      "model_failure_vs_wrapper_failure_rule": "Model failure requires a valid wrapper packet, model transcript, parsed action or parse error, and honest receipt. Wrapper failure is used when Source Proxy fails to expose tools, parse valid actions, execute allowed disposable actions, or preserve receipts."
+    },
+    {
+      "lane_id": "source_proxy_hermes_gemma",
+      "label": "Source Proxy + Hermes/Gemma as available",
+      "status": "eligible_after_manual_approval_if_available",
+      "availability_check_required": true,
+      "execution_allowed_in_plan_8": false,
+      "wrapper": "source_proxy_tool_action_runtime_v1",
+      "model_failure_vs_wrapper_failure_rule": "Availability and route health are checked before scoring. Unavailable models are not scored as model failures."
+    },
+    {
+      "lane_id": "aider_local_model",
+      "label": "Aider + local model",
+      "status": "eligible_after_manual_approval",
+      "availability_check_required": true,
+      "execution_allowed_in_plan_8": false,
+      "wrapper": "aider",
+      "model_failure_vs_wrapper_failure_rule": "Aider wrapper failures are separated from model-output failures using raw transcript, file diff, and command output evidence."
+    },
+    {
+      "lane_id": "continue_local_model",
+      "label": "Continue + local model",
+      "status": "eligible_after_manual_approval",
+      "availability_check_required": true,
+      "execution_allowed_in_plan_8": false,
+      "wrapper": "continue",
+      "model_failure_vs_wrapper_failure_rule": "Continue adapter/tool-call failures are separated from model-output failures using the same prompt bank and receipt requirements."
+    },
+    {
+      "lane_id": "raw_local_model_harness",
+      "label": "Raw local model harness",
+      "status": "eligible_after_manual_approval",
+      "availability_check_required": true,
+      "execution_allowed_in_plan_8": false,
+      "wrapper": "raw_harness",
+      "model_failure_vs_wrapper_failure_rule": "Raw model output is scored separately from any harness formatting, timeout, or parse transport failure."
+    },
+    {
+      "lane_id": "codex_manual_lane",
+      "label": "Codex/manual lane if safe",
+      "status": "manual_review_required",
+      "availability_check_required": true,
+      "execution_allowed_in_plan_8": false,
+      "wrapper": "codex_manual",
+      "model_failure_vs_wrapper_failure_rule": "Manual intervention must be labeled and cannot be compared as autonomous model output."
+    },
+    {
+      "lane_id": "cloud_api_lanes",
+      "label": "Cloud API lanes if explicitly approved",
+      "status": "blocked_until_explicit_cloud_approval",
+      "availability_check_required": true,
+      "execution_allowed_in_plan_8": false,
+      "wrapper": "cloud_api",
+      "model_failure_vs_wrapper_failure_rule": "Cloud lanes require explicit approval, secret-safe setup, and separate cost/provider receipt before any call."
+    }
+  ],
+  "minimum_artifacts_per_trial": [
+    "prompt_id",
+    "prompt_text",
+    "lane_id",
+    "wrapper_id",
+    "model_id_or_unavailable_reason",
+    "raw_model_output",
+    "parsed_actions_or_parse_error",
+    "disposable_workspace_diff",
+    "files_touched",
+    "checks_attempted",
+    "blocked_reasons",
+    "final_label",
+    "model_failure_vs_wrapper_failure",
+    "no_hidden_mutation_proof"
+  ]
+}

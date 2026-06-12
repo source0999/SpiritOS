@@ -127,6 +127,8 @@ scout/.venv/
 scout/data.backup-*/
 tmp/
 data/source-proxy/visual-index/
+docs/evidence/**/workspace/
+docs/evidence/**/http-server.pid
 
 # Local face-organizer outputs and private review artifacts
 scripts/media/backups/

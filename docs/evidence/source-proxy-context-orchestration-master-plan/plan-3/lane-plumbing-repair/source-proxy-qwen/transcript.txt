@@ -1,0 +1,42 @@
+$ ollama-api-generate http://127.0.0.1:11434 qwen2.5-coder:7b
+
+STDOUT:
+Sure, I can help you set up a simple homepage using HTML and serve it locally in this disposable workspace. Let's create a basic website with an index.html file that you can open on your phone.
+
+1. **Create a new directory for your project:**
+   ```bash
+   mkdir agent-lab-experiment
+   cd agent-lab-experiment
+   ```
+
+2. **Create an HTML file (index.html):**
+   ```html
+   <!DOCTYPE html>
+   <html lang="en">
+   <head>
+       <meta charset="UTF-8">
+       <meta name="viewport" content="width=device-width, initial-scale=1.0">
+       <title>Agent Lab Experiment</title>
+   </head>
+   <body>
+       <h1>Welcome to the Agent Lab Experiment Homepage</h1>
+       <p>This is a simple page for your experiment.</p>
+   </body>
+   </html>
+   ```
+
+3. **Create an HTTP server to serve the HTML file:**
+   You can use Python's built-in HTTP server for this purpose.
+   ```bash
+   python -m http.server
+   ```
+
+4. **Open the page on your phone:**
+   Once the server is running, you should see a message like `Serving HTTP on 0.0.0.0 port 8000 (http://0.0.0.0:8000/)`. On your phone, open a web browser and navigate to `http://<your-workspace-ip>:8000`.
+
+Make sure to replace `<your-workspace-ip>` with the actual IP address of the workspace where you are running this command.
+
+This setup will allow you to see your simple homepage on your phone without touching the real SpiritOS app. If you need more advanced features or want to add other files, feel free to modify and extend the project as needed!
+
+STDERR:
+

@@ -1,0 +1,51 @@
+{
+  "preflight": "continue-lane-preflight",
+  "created_at": "2026-06-10T01:05:00Z",
+  "status": "GO",
+  "continue_cli": {
+    "available": true,
+    "command": "cn",
+    "path": "/usr/bin/cn",
+    "version": "1.5.44",
+    "install_method": "global npm symlink (/usr/lib/node_modules/@continuedev/cli)"
+  },
+  "headless": {
+    "supported": true,
+    "flags_used": ["--auto", "-p"],
+    "worked": true,
+    "exit_code": 0,
+    "duration_ms_approx": 5690
+  },
+  "model": {
+    "configured_default": "gemini-2.5-flash",
+    "used_in_run": "gemini-2.5-flash",
+    "session_id": "b367162a-9135-4034-b985-5a6aa3041e79"
+  },
+  "file_edit": {
+    "target": "workspace/README.md",
+    "edited_by_continue": true,
+    "proof_line": "Continue file edit proof.",
+    "tools_used": ["Read", "MultiEdit"],
+    "contaminated": false,
+    "files_outside_workspace_changed": false
+  },
+  "command_run": {
+    "cwd": "/home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-lane-preflight/workspace",
+    "exact": "cn --auto -p \"Run only in this disposable workspace. Do not modify files outside this workspace. In this disposable workspace only, edit README.md by adding one new line that says: Continue file edit proof. Do not touch anything else.\""
+  },
+  "manual_required": false,
+  "gauntlet_run": false,
+  "plan_4_started": false,
+  "real_spiritos_app_touched": false,
+  "artifacts": [
+    "closeout.md",
+    "manifest.json",
+    "command-diagnostics.txt",
+    "continue-version.txt",
+    "model-config-discovery.txt",
+    "manual-required.md",
+    "workspace/README.md",
+    "transcript.txt",
+    "diff-after-run.patch"
+  ]
+}

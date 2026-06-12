@@ -1,0 +1,16 @@
+--- before/index.html
++++ after/index.html
+@@ -0,0 +1,13 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Agent Lab Experiments</title>
++</head>
++<body>
++    <h1>Welcome to the Agent Lab Experiments</h1>
++    <p>This is a homepage for your experiments.</p>
++    <p>Access it from your phone!</p>
++</body>
++</html>

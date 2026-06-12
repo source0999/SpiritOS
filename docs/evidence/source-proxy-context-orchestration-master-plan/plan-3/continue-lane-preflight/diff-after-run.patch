@@ -1,0 +1,8 @@
+diff --git a/workspace/README.md b/workspace/README.md
+--- a/workspace/README.md
++++ b/workspace/README.md
+@@ -1,3 +1,4 @@
+ # Continue Lane Preflight
+ 
+ This disposable workspace is only for testing whether Continue can edit files.
++Continue file edit proof.

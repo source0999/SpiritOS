@@ -1,0 +1,8 @@
+$ ollama-api-generate http://127.0.0.1:11434 gemma3n:e4b
+
+STDOUT:
+READY
+
+
+STDERR:
+

@@ -1,0 +1,10 @@
+$ whoami
+
+STDOUT:
+source
+
+
+STDERR:
+
+EXIT: 0
+ELAPSED: 0.006

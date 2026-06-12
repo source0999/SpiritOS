@@ -1,0 +1,12 @@
+{
+  "lane_name": "codex-strong-medium",
+  "execution_shell": "codex",
+  "model": "strong",
+  "provider": "codex",
+  "mode": "",
+  "effort": "medium",
+  "errors": [
+    "Codex model and effort selection is not exposed as a safe headless file-edit lane in this environment."
+  ],
+  "anti_cheat_status": "clean"
+}

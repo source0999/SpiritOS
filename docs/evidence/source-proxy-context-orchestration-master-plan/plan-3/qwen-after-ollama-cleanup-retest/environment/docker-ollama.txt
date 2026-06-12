@@ -1,0 +1,9 @@
+$ docker ps | grep -i ollama || true
+
+STDOUT:
+
+
+STDERR:
+
+EXIT: 0
+ELAPSED: 0.09

@@ -1,0 +1,10 @@
+prompt-1:
+  cwd: /home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-file-edit-stress-test/continue-claude-sonnet/workspace
+  command: /usr/bin/cn --config /home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-file-edit-stress-test/continue-claude-sonnet/lane-config.yaml --auto -p 'Run only in this disposable workspace. Do not touch the real SpiritOS app. Do not modify files outside this workspace.
+
+init a repo for agent lab experiements make me a homepage i can open on my phone dont touch the real spiritos app tho'
+  exit_code: 1
+  elapsed_seconds: 2.538
+  model_reported: unknown
+  model_selection: isolated --config /home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-file-edit-stress-test/continue-claude-sonnet/lane-config.yaml
+  files_changed: none

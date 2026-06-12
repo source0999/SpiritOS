@@ -1,0 +1,3 @@
+command: openai chat model=gpt-4o-mini
+elapsed_seconds: 14.456
+exit_code: 0

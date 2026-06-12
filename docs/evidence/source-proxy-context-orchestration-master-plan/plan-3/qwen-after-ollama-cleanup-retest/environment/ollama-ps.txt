@@ -1,0 +1,11 @@
+$ ollama ps || true
+
+STDOUT:
+NAME                ID              SIZE      PROCESSOR    CONTEXT    UNTIL              
+qwen2.5-coder:7b    dae161e27b0e    4.9 GB    100% GPU     4096       6 minutes from now    
+
+
+STDERR:
+
+EXIT: 0
+ELAPSED: 0.022

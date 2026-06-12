@@ -1,0 +1,30 @@
+$ systemctl status ollama --no-pager || true
+
+STDOUT:
+● ollama.service - Ollama Service
+     Loaded: loaded (/etc/systemd/system/ollama.service; enabled; preset: enabled)
+     Active: active (running) since Tue 2026-06-02 20:39:05 EDT; 1 week 1 day ago
+   Main PID: 1448 (ollama)
+      Tasks: 38 (limit: 18962)
+     Memory: 5.7G (peak: 12.2G swap: 176.1M swap peak: 653.0M)
+        CPU: 14h 11min 31.987s
+     CGroup: /system.slice/ollama.service
+             ├─   1448 /usr/local/bin/ollama serve
+             └─1441237 /usr/local/bin/ollama runner --model /usr/share/ollama/.ollama/models/blobs/sha256-60e05f2100071479f596b964f89f510f057ce397ea22f2833a0cfe029bfc2463 --port 34997
+
+Jun 10 21:13:16 source-server ollama[1448]: [GIN] 2026/06/10 - 21:13:16 | 200 |      38.414µs |       127.0.0.1 | GET      "/api/ps"
+Jun 10 21:15:47 source-server ollama[1448]: [GIN] 2026/06/10 - 21:15:47 | 200 |      20.297µs |       127.0.0.1 | HEAD     "/"
+Jun 10 21:15:47 source-server ollama[1448]: [GIN] 2026/06/10 - 21:15:47 | 200 |      76.231µs |       127.0.0.1 | GET      "/api/ps"
+Jun 10 21:17:09 source-server ollama[1448]: [GIN] 2026/06/10 - 21:17:09 | 200 |       7.665µs |       127.0.0.1 | HEAD     "/"
+Jun 10 21:17:09 source-server ollama[1448]: [GIN] 2026/06/10 - 21:17:09 | 200 |      31.737µs |       127.0.0.1 | GET      "/api/ps"
+Jun 10 21:17:20 source-server ollama[1448]: [GIN] 2026/06/10 - 21:17:20 | 200 |   283.23904ms |       127.0.0.1 | POST     "/api/generate"
+Jun 10 21:21:13 source-server ollama[1448]: [GIN] 2026/06/10 - 21:21:13 | 200 |       6.185µs |       127.0.0.1 | HEAD     "/"
+Jun 10 21:21:13 source-server ollama[1448]: [GIN] 2026/06/10 - 21:21:13 | 200 |    1.000782ms |       127.0.0.1 | GET      "/api/tags"
+Jun 10 21:21:13 source-server ollama[1448]: [GIN] 2026/06/10 - 21:21:13 | 200 |       6.128µs |       127.0.0.1 | HEAD     "/"
+Jun 10 21:21:13 source-server ollama[1448]: [GIN] 2026/06/10 - 21:21:13 | 200 |      22.825µs |       127.0.0.1 | GET      "/api/ps"
+
+
+STDERR:
+
+EXIT: 0
+ELAPSED: 0.047

@@ -1,0 +1,22 @@
+{
+  "repo_root": "/home/source/SpiritOS",
+  "evidence_root": "/home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/native-continue-hermes4-smoke",
+  "workspace_root": "/home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/native-continue-hermes4-smoke/workspace",
+  "allowed_setup_paths": [
+    "/home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/native-continue-hermes4-smoke/workspace",
+    "/home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/native-continue-hermes4-smoke/workspace/.git"
+  ],
+  "continue_output_files": [],
+  "evidence_files_created_after_run": [
+    "manifest.json",
+    "score.json",
+    "anti-cheat-report.json",
+    "path-trace.json",
+    "closeout.md",
+    "diff-after-run.patch",
+    "files-after-run.txt",
+    "workspace-status.txt",
+    "post-real-app-status.txt"
+  ],
+  "real_app_status_after_excluding_this_evidence": "?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-default-one-prompt-smoke/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-file-edit-stress-test/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-lane-preflight/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-qwen-real-env-debug/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-qwen-single-prompt-debug/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/file-edit-model-shell-gauntlet/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/gemma-lane-readiness/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/lane-plumbing-repair/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/native-continue-api-smoke/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/native-continue-gemma-smoke/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/native-continue-qwen-smoke/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/ultimate-agent-comparison-round1/\n?? scripts/agent-trials/run-continue-default-one-prompt-smoke.py\n?? scripts/agent-trials/run-continue-file-edit-stress-test.py\n?? scripts/agent-trials/run-continue-qwen-real-env-debug.py\n?? scripts/agent-trials/run-continue-qwen-single-prompt-debug.py\n?? scripts/agent-trials/run-file-edit-model-shell-gauntlet.py\n?? scripts/agent-trials/run-gemma-lane-readiness.py\n?? scripts/agent-trials/run-lane-plumbing-repair.py\n?? scripts/agent-trials/run-ultimate-agent-comparison-round1.py\n"
+}

@@ -1,0 +1,12 @@
+{
+  "lane_name": "continue-gpt4o-mini",
+  "execution_shell": "continue",
+  "model": "gpt-4o-mini",
+  "provider": "continue",
+  "mode": "",
+  "effort": "",
+  "errors": [
+    "Continue CLI `cn` is not on PATH."
+  ],
+  "anti_cheat_status": "clean"
+}

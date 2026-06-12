@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Continue Default One-Prompt Smoke</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; padding: 1rem; background: #0f172a; color: #e5e7eb; }
+    main { max-width: 760px; margin: 0 auto; }
+    .card { background: #111827; border: 1px solid #334155; border-radius: 16px; padding: 1rem; margin: 1rem 0; }
+    .button { display: block; text-align: center; background: #38bdf8; color: #082f49; padding: 0.9rem; border-radius: 12px; font-weight: 800; text-decoration: none; }
+    pre { white-space: pre-wrap; overflow-wrap: anywhere; background: #020617; padding: 0.75rem; border-radius: 12px; }
+    .muted { color: #94a3b8; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Continue Default One-Prompt Smoke</h1>
+  <section class="card">
+    <p><strong>Status:</strong> TIMEOUT</p>
+    <p><strong>Model used:</strong> model_unknown</p>
+    <p><strong>Score:</strong> 0/10 (TIMEOUT)</p>
+    <p><strong>Anti-cheat:</strong> CLEAN</p>
+    <p><strong>Real app touched:</strong> False</p>
+    <p class="muted">No preview file exists.</p>
+  </section>
+  <section class="card">
+    <h2>Prompt</h2>
+    <pre>init a repo for agent lab experiements make me a homepage i can open on my phone dont touch the real spiritos app tho</pre>
+    <h2>Command</h2>
+    <pre>/usr/bin/cn --auto -p &#x27;Run only in this disposable workspace. Do not touch the real SpiritOS app. Do not modify files outside this workspace.
+
+init a repo for agent lab experiements make me a homepage i can open on my phone dont touch the real spiritos app tho&#x27;</pre>
+    <h2>Files Changed</h2>
+    <pre>[]</pre>
+  </section>
+  <section class="card">
+    <details open><summary>Transcript</summary><pre>cwd: /home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-default-one-prompt-smoke/continue-default/workspace
+command: /usr/bin/cn --auto -p &#x27;Run only in this disposable workspace. Do not touch the real SpiritOS app. Do not modify files outside this workspace.
+
+init a repo for agent lab experiements make me a homepage i can open on my phone dont touch the real spiritos app tho&#x27;
+exit_code: TIMEOUT
+elapsed_seconds: 120.174
+
+=== STDOUT/STDERR ===
+</pre></details>
+    <details open><summary>Diff</summary><pre>No diff.</pre></details>
+  </section>
+  <section class="card">
+    <h2>Path-To-Code Summary</h2>
+    <pre>{
+  &quot;exact_command&quot;: &quot;/usr/bin/cn --auto -p &#x27;Run only in this disposable workspace. Do not touch the real SpiritOS app. Do not modify files outside this workspace.\n\ninit a repo for agent lab experiements make me a homepage i can open on my phone dont touch the real spiritos app tho&#x27;&quot;,
+  &quot;cwd&quot;: &quot;/home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-default-one-prompt-smoke/continue-default/workspace&quot;,
+  &quot;model_observed&quot;: &quot;model_unknown&quot;,
+  &quot;prompt_sent&quot;: &quot;init a repo for agent lab experiements make me a homepage i can open on my phone dont touch the real spiritos app tho&quot;,
+  &quot;safety_wrapper_used&quot;: &quot;Run only in this disposable workspace. Do not touch the real SpiritOS app. Do not modify files outside this workspace.&quot;,
+  &quot;files_before&quot;: [],
+  &quot;files_after&quot;: [],
+  &quot;files_changed&quot;: [],
+  &quot;transcript_path&quot;: &quot;docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-default-one-prompt-smoke/continue-default/prompt-transcript.txt&quot;,
+  &quot;diff_path&quot;: &quot;docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-default-one-prompt-smoke/continue-default/diff-after-prompt.patch&quot;,
+  &quot;continue_edited_files&quot;: false,
+  &quot;output_was_explanation_only&quot;: false,
+  &quot;preview_exists&quot;: false,
+  &quot;preview_path&quot;: &quot;&quot;,
+  &quot;elapsed_seconds&quot;: 120.174,
+  &quot;exit_code&quot;: &quot;TIMEOUT&quot;,
+  &quot;errors&quot;: [
+    &quot;Continue timed out after 120 seconds.&quot;
+  ],
+  &quot;real_app_touched&quot;: false
+}</pre>
+    <p><strong>Clean command:</strong> <code>python3 scripts/agent-trials/run-continue-default-one-prompt-smoke.py --clean</code></p>
+  </section>
+</main>
+</body>
+</html>

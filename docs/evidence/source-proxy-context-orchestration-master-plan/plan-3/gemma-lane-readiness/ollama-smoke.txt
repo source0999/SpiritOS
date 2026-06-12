@@ -1,0 +1,6 @@
+$ ollama run gemma3n:e4b <prompt>
+Prompt: say GEMMA_READY in one line
+
+command: ollama run gemma3n:e4b 'say GEMMA_READY in one line'
+exit_code: TIMEOUT
+elapsed_seconds: 180.021

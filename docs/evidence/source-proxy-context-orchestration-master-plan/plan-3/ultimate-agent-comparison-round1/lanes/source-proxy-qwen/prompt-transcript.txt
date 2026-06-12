@@ -1,0 +1,7 @@
+$ source-proxy source-proxy-qwen
+
+STDOUT:
+FallthroughToLLM(reason='no_explicit_target', kind='fallthrough_to_llm')
+
+STDERR:
+

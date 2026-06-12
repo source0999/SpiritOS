@@ -1,0 +1,3 @@
+ollama run qwen2.5-coder:7b <exact prompt>
+ollama run qwen2.5-coder:7b <exact prompt>
+ollama run qwen2.5-coder:7b <exact prompt>

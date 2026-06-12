@@ -1,0 +1,49 @@
+{
+  "raw_qwen_result": {
+    "lane_name": "raw-ollama-qwen",
+    "shell": "raw",
+    "model_target": "qwen2.5-coder:7b",
+    "model_observed": "qwen2.5-coder:7b",
+    "execution_mode": "raw-output-harness-applied",
+    "command": "ollama-api-generate http://127.0.0.1:11434 qwen2.5-coder:7b",
+    "elapsed_seconds": 15.192,
+    "exit_code": 0,
+    "timed_out": false,
+    "files_changed": [
+      "parsed-preview/index.html"
+    ],
+    "preview_path": "lanes/raw-ollama-qwen/parsed-preview/index.html",
+    "raw_parse_applied": true,
+    "real_app_touched": false
+  },
+  "continue_qwen_result": {
+    "lane_name": "continue-qwen-bridged",
+    "shell": "continue",
+    "model_target": "qwen2.5-coder:7b",
+    "model_observed": "qwen2.5-coder:7b",
+    "execution_mode": "continue-tool-bridge",
+    "command": "/usr/bin/cn --config /home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/ultimate-agent-comparison-round1/lanes/continue-qwen-bridged/lane-config.yaml --auto -p 'Run only in this disposable workspace. Do not touch the real SpiritOS app. Do not modify files outside this workspace.\n\ninit a repo for agent lab experiements make me a homepage i can open on my phone dont touch the real spiritos app tho'",
+    "elapsed_seconds": 78.141,
+    "exit_code": 0,
+    "timed_out": false,
+    "bridge": {
+      "status": "NO_TOOL_CALL"
+    },
+    "files_changed": [],
+    "preview_path": "",
+    "real_app_touched": false
+  },
+  "source_proxy_qwen_route": {
+    "route_type": "source-proxy-advisory-only",
+    "attempted": true,
+    "status": "BLOCKED",
+    "detail": "planner returned fallthrough"
+  },
+  "continue_actions_seen": [
+    "Bash",
+    "MultiEdit"
+  ],
+  "continue_action_count": 2,
+  "raw_had_free_html": true,
+  "raw_had_explicit_path_content": true
+}

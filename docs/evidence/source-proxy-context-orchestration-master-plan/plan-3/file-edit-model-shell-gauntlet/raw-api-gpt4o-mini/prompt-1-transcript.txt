@@ -1,0 +1,85 @@
+To set up a disposable workspace for your agent lab experiments and create a simple homepage that you can open on your phone, follow these steps:
+
+1. **Initialize a Git Repository**:
+   Open your terminal and navigate to your desired workspace directory. Then run the following commands:
+
+   ```bash
+   mkdir agent-lab-experiments
+   cd agent-lab-experiments
+   git init
+   ```
+
+2. **Create a Simple Homepage**:
+   Create an `index.html` file for your homepage. You can use a text editor to create this file. Here's a simple example of what the content could look like:
+
+   ```html
+   <!DOCTYPE html>
+   <html lang="en">
+   <head>
+       <meta charset="UTF-8">
+       <meta name="viewport" content="width=device-width, initial-scale=1.0">
+       <title>Agent Lab Experiments</title>
+       <style>
+           body {
+               font-family: Arial, sans-serif;
+               margin: 0;
+               padding: 20px;
+               background-color: #f4f4f4;
+           }
+           h1 {
+               color: #333;
+           }
+           a {
+               display: inline-block;
+               margin: 10px 0;
+               padding: 10px;
+               background-color: #007BFF;
+               color: white;
+               text-decoration: none;
+               border-radius: 5px;
+           }
+           a:hover {
+               background-color: #0056b3;
+           }
+       </style>
+   </head>
+   <body>
+       <h1>Welcome to the Agent Lab Experiments</h1>
+       <p>This is a simple homepage for your experiments.</p>
+       <a href="#experiment1">Experiment 1</a>
+       <a href="#experiment2">Experiment 2</a>
+       <a href="#experiment3">Experiment 3</a>
+   </body>
+   </html>
+   ```
+
+3. **Save the File**:
+   Make sure to save the `index.html` file in the `agent-lab-experiments` directory.
+
+4. **Run a Local Server**:
+   To view the homepage on your phone, you can use a simple HTTP server. If you have Python installed, you can run the following command in your terminal:
+
+   ```bash
+   python -m http.server 8000
+   ```
+
+   If you're using Python 3, you may need to specify the version:
+
+   ```bash
+   python3 -m http.server 8000
+   ```
+
+5. **Access the Homepage on Your Phone**:
+   - Make sure your phone is connected to the same Wi-Fi network as your computer.
+   - Find your computer's local IP address (you can usually find this in your network settings).
+   - Open a web browser on your phone and enter the URL: `http://<your-computer-ip>:8000`, replacing `<your-computer-ip>` with your actual local IP address.
+
+6. **Commit Your Changes**:
+   After you have created your homepage, you can commit your changes to the Git repository:
+
+   ```bash
+   git add index.html
+   git commit -m "Initial commit: Add homepage for agent lab experiments"
+   ```
+
+Now you have a simple homepage for your agent lab experiments that you can access from your phone! Remember, this setup is in a disposable workspace and does not affect the real SpiritOS app.

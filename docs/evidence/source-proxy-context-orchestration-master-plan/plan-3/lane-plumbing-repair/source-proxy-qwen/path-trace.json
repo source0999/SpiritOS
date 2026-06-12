@@ -1,0 +1,20 @@
+{
+  "lane_name": "source-proxy-qwen",
+  "model_target": "qwen2.5-coder:7b",
+  "model_observed": "qwen2.5-coder:7b",
+  "execution_mode": "source-proxy-tool-bridge",
+  "command": "ollama-api-generate http://127.0.0.1:11434 qwen2.5-coder:7b",
+  "elapsed_seconds": 6.755,
+  "exit_code": 0,
+  "timed_out": false,
+  "files_changed": [],
+  "preview_path": "",
+  "adapter": {
+    "mode": "source-proxy-tool-bridge",
+    "actions_seen": 0,
+    "applied": [],
+    "rejected": [],
+    "file_blocks_seen": 0
+  },
+  "real_app_touched": false
+}

@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Native Continue Smoke Comparison</title><style>body{font-family:Arial,sans-serif;line-height:1.45;margin:24px;max-width:1200px}table{border-collapse:collapse;width:100%;margin:16px 0}th,td{border:1px solid #ddd;padding:8px;vertical-align:top;text-align:left}th{background:#f4f4f4;width:180px}pre{white-space:pre-wrap;background:#f5f5f5;padding:12px;border:1px solid #ddd;overflow:auto}code{background:#f5f5f5;padding:2px 4px}.go{color:#087a2f;font-weight:700}.nogo{color:#a32020;font-weight:700}</style></head><body>
+<h1>Native Continue Smoke Comparison</h1>
+<p>API model result: <span class="go">GO</span>. Qwen result: <span class="nogo">NO-GO</span>.</p>
+<table><thead><tr><th>Field</th><th>API smoke</th><th>Qwen smoke</th></tr></thead><tbody><tr><th>Status</th><td>GO</td><td>NO-GO</td></tr><tr><th>Model target</th><td>gemini-flash from existing /home/source/.continue/config.yaml default API config</td><td>qwen2.5-coder:7b via isolated Continue ollama config</td></tr><tr><th>Model observed</th><td>not printed by Continue transcript</td><td>qwen2.5-coder:7b configured; transcript did not print model name</td></tr><tr><th>Command</th><td><code>timeout 300s /usr/bin/cn --config &quot;/home/source/.continue/config.yaml&quot; --auto -p &quot;&lt;exact prompt&gt;&quot;</code></td><td><code>timeout 300s /usr/bin/cn --config &quot;/home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/native-continue-qwen-smoke/continue-qwen-config.yaml&quot; --auto -p &quot;&lt;exact prompt&gt;&quot;</code></td></tr><tr><th>Elapsed</th><td>7s</td><td>13s</td></tr><tr><th>Native files created</th><td>yes</td><td>no</td></tr><tr><th>Files changed</th><td>index.html</td><td>none</td></tr><tr><th>Openable homepage</th><td>yes</td><td>no</td></tr><tr><th>Score</th><td>8/10</td><td>2/10</td></tr><tr><th>Preview</th><td><a href="http://10.0.0.186:8778/workspace/index.html">http://10.0.0.186:8778/workspace/index.html</a></td><td>none</td></tr><tr><th>Anti-cheat</th><td>CLEAN</td><td>CLEAN</td></tr></tbody></table>
+<h2>API Transcript</h2><pre>=== Native Continue transcript start ===
+2026-06-10T19:56:48-04:00
+COMMAND: timeout 300s /usr/bin/cn --config &quot;/home/source/.continue/config.yaml&quot; --auto -p &quot;&lt;exact prompt&gt;&quot;
+PROMPT:
+Run only in this disposable workspace. Do not touch the real SpiritOS app. Do not modify files outside this workspace.
+
+init a repo for agent lab experiements make me a homepage i can open on my phone dont touch the real spiritos app tho
+--- output ---
+I&#x27;ve initialized a git repository and created an `index.html` file in your workspace. You can open this file on your phone by serving it through a local web server or a service like localtunnel.
+--- exit status ---
+0
+2026-06-10T19:56:55-04:00
+</pre>
+<h2>Qwen Transcript</h2><pre>=== Native Continue Qwen transcript start ===
+2026-06-10T20:02:13-04:00
+COMMAND: timeout 300s /usr/bin/cn --config &quot;/home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/native-continue-qwen-smoke/continue-qwen-config.yaml&quot; --auto -p &quot;&lt;exact prompt&gt;&quot;
+PROMPT:
+Run only in this disposable workspace. Do not touch the real SpiritOS app. Do not modify files outside this workspace.
+
+init a repo for agent lab experiements make me a homepage i can open on my phone dont touch the real spiritos app tho
+--- output ---
+{&quot;name&quot;: &quot;Bash&quot;, &quot;arguments&quot;: {&quot;command&quot;: &quot;git init agent-lab-experiments\necho &#x27;# Agent Lab Homepage&#x27; &gt; index.html\nmkdir css js\necho &#x27;body { font-family: Arial, sans-serif; }&#x27; &gt; css/styles.css\necho &#x27;&lt;!DOCTYPE html&gt;\n&lt;html lang=\&quot;en\&quot;&gt;\n&lt;head&gt;\n&lt;meta charset=\&quot;UTF-8\&quot;&gt;\n&lt;title&gt;Agent Lab&lt;/title&gt;\n&lt;link rel=\&quot;stylesheet\&quot; href=\&quot;css/styles.css\&quot;&gt;\n&lt;/head&gt;\n&lt;body&gt;\n&lt;h1&gt;Welcome to the Agent Lab!&lt;/h1&gt;\n&lt;p&gt;This is your personal homepage.&lt;/p&gt;\n&lt;/body&gt;\n&lt;/html&gt;&#x27; &gt; index.html\necho &#x27;&lt;!DOCTYPE html&gt;\n&lt;html lang=\&quot;en\&quot;&gt;\n&lt;head&gt;\n&lt;meta charset=\&quot;UTF-8\&quot;&gt;\n&lt;title&gt;Agent Lab&lt;/title&gt;\n&lt;link rel=\&quot;stylesheet\&quot; href=\&quot;css/styles.css\&quot;&gt;\n&lt;script src=\&quot;js/script.js\&quot;&gt;&lt;/script&gt;\n&lt;/head&gt;\n&lt;body&gt;\n&lt;h1&gt;Welcome to the Agent Lab!&lt;/h1&gt;\n&lt;p&gt;This is your personal homepage.&lt;/p&gt;\n&lt;/body&gt;\n&lt;/html&gt;&#x27; &gt; index.html\n&quot;}}
+--- exit status ---
+0
+2026-06-10T20:02:26-04:00
+</pre>
+<h2>API Diff</h2><pre></pre>
+<h2>Qwen Diff</h2><pre></pre>
+<h2>API Path Trace</h2><pre>{
+  &quot;repo_root&quot;: &quot;/home/source/SpiritOS&quot;,
+  &quot;evidence_root&quot;: &quot;/home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/native-continue-api-smoke&quot;,
+  &quot;workspace_root&quot;: &quot;/home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/native-continue-api-smoke/workspace&quot;,
+  &quot;allowed_setup_paths&quot;: [
+    &quot;/home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/native-continue-api-smoke/workspace&quot;,
+    &quot;/home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/native-continue-api-smoke/workspace/.git&quot;
+  ],
+  &quot;continue_output_files&quot;: [
+    &quot;index.html&quot;
+  ],
+  &quot;evidence_files_created_after_run&quot;: [
+    &quot;manifest.json&quot;,
+    &quot;score.json&quot;,
+    &quot;anti-cheat-report.json&quot;,
+    &quot;path-trace.json&quot;,
+    &quot;closeout.md&quot;,
+    &quot;index.html&quot;,
+    &quot;diff-after-run.patch&quot;,
+    &quot;files-after-run.txt&quot;,
+    &quot;workspace-status.txt&quot;,
+    &quot;post-real-app-status.txt&quot;
+  ],
+  &quot;real_app_status_before_excluding_this_evidence&quot;: &quot;?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-default-one-prompt-smoke/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-file-edit-stress-test/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-lane-preflight/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-qwen-real-env-debug/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-qwen-single-prompt-debug/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/file-edit-model-shell-gauntlet/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/gemma-lane-readiness/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/lane-plumbing-repair/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/ultimate-agent-comparison-round1/\n?? scripts/agent-trials/run-continue-default-one-prompt-smoke.py\n?? scripts/agent-trials/run-continue-file-edit-stress-test.py\n?? scripts/agent-trials/run-continue-qwen-real-env-debug.py\n?? scripts/agent-trials/run-continue-qwen-single-prompt-debug.py\n?? scripts/agent-trials/run-file-edit-model-shell-gauntlet.py\n?? scripts/agent-trials/run-gemma-lane-readiness.py\n?? scripts/agent-trials/run-lane-plumbing-repair.py\n?? scripts/agent-trials/run-ultimate-agent-comparison-round1.py\n&quot;,
+  &quot;real_app_status_after_excluding_this_evidence&quot;: &quot;?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-default-one-prompt-smoke/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-file-edit-stress-test/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-lane-preflight/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-qwen-real-env-debug/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-qwen-single-prompt-debug/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/file-edit-model-shell-gauntlet/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/gemma-lane-readiness/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/lane-plumbing-repair/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/ultimate-agent-comparison-round1/\n?? scripts/agent-trials/run-continue-default-one-prompt-smoke.py\n?? scripts/agent-trials/run-continue-file-edit-stress-test.py\n?? scripts/agent-trials/run-continue-qwen-real-env-debug.py\n?? scripts/agent-trials/run-continue-qwen-single-prompt-debug.py\n?? scripts/agent-trials/run-file-edit-model-shell-gauntlet.py\n?? scripts/agent-trials/run-gemma-lane-readiness.py\n?? scripts/agent-trials/run-lane-plumbing-repair.py\n?? scripts/agent-trials/run-ultimate-agent-comparison-round1.py\n&quot;
+}
+</pre>
+<h2>Qwen Path Trace</h2><pre>{
+  &quot;repo_root&quot;: &quot;/home/source/SpiritOS&quot;,
+  &quot;evidence_root&quot;: &quot;/home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/native-continue-qwen-smoke&quot;,
+  &quot;workspace_root&quot;: &quot;/home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/native-continue-qwen-smoke/workspace&quot;,
+  &quot;allowed_setup_paths&quot;: [
+    &quot;/home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/native-continue-qwen-smoke/workspace&quot;,
+    &quot;/home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/native-continue-qwen-smoke/workspace/.git&quot;
+  ],
+  &quot;continue_output_files&quot;: [],
+  &quot;evidence_files_created_after_run&quot;: [
+    &quot;manifest.json&quot;,
+    &quot;score.json&quot;,
+    &quot;anti-cheat-report.json&quot;,
+    &quot;path-trace.json&quot;,
+    &quot;closeout.md&quot;,
+    &quot;qwen.html&quot;,
+    &quot;diff-after-run.patch&quot;,
+    &quot;files-after-run.txt&quot;,
+    &quot;workspace-status.txt&quot;,
+    &quot;post-real-app-status.txt&quot;
+  ],
+  &quot;real_app_status_before_excluding_this_evidence&quot;: &quot;?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-default-one-prompt-smoke/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-file-edit-stress-test/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-lane-preflight/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-qwen-real-env-debug/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-qwen-single-prompt-debug/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/file-edit-model-shell-gauntlet/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/gemma-lane-readiness/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/lane-plumbing-repair/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/native-continue-api-smoke/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/ultimate-agent-comparison-round1/\n?? scripts/agent-trials/run-continue-default-one-prompt-smoke.py\n?? scripts/agent-trials/run-continue-file-edit-stress-test.py\n?? scripts/agent-trials/run-continue-qwen-real-env-debug.py\n?? scripts/agent-trials/run-continue-qwen-single-prompt-debug.py\n?? scripts/agent-trials/run-file-edit-model-shell-gauntlet.py\n?? scripts/agent-trials/run-gemma-lane-readiness.py\n?? scripts/agent-trials/run-lane-plumbing-repair.py\n?? scripts/agent-trials/run-ultimate-agent-comparison-round1.py\n&quot;,
+  &quot;real_app_status_after_excluding_this_evidence&quot;: &quot;?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-default-one-prompt-smoke/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-file-edit-stress-test/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-lane-preflight/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-qwen-real-env-debug/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-qwen-single-prompt-debug/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/file-edit-model-shell-gauntlet/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/gemma-lane-readiness/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/lane-plumbing-repair/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/native-continue-api-smoke/\n?? docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/ultimate-agent-comparison-round1/\n?? scripts/agent-trials/run-continue-default-one-prompt-smoke.py\n?? scripts/agent-trials/run-continue-file-edit-stress-test.py\n?? scripts/agent-trials/run-continue-qwen-real-env-debug.py\n?? scripts/agent-trials/run-continue-qwen-single-prompt-debug.py\n?? scripts/agent-trials/run-file-edit-model-shell-gauntlet.py\n?? scripts/agent-trials/run-gemma-lane-readiness.py\n?? scripts/agent-trials/run-lane-plumbing-repair.py\n?? scripts/agent-trials/run-ultimate-agent-comparison-round1.py\n&quot;
+}</pre>
+<h2>API Anti-cheat</h2><pre>{
+  &quot;status&quot;: &quot;CLEAN&quot;,
+  &quot;no_spiritos_bridge_used&quot;: true,
+  &quot;no_source_proxy_used&quot;: true,
+  &quot;no_raw_output_parser_used&quot;: true,
+  &quot;no_harness_created_homepage&quot;: true,
+  &quot;no_post_run_repair&quot;: true,
+  &quot;no_template_app_files&quot;: true,
+  &quot;no_known_good_files&quot;: true,
+  &quot;no_real_app_mutation&quot;: true,
+  &quot;contaminated&quot;: false,
+  &quot;basis&quot;: &quot;Only native /usr/bin/cn ran inside workspace before workspace/index.html appeared. Post-run code wrote evidence files outside workspace only.&quot;
+}
+</pre>
+<h2>Qwen Anti-cheat</h2><pre>{
+  &quot;status&quot;: &quot;CLEAN&quot;,
+  &quot;no_spiritos_bridge_used&quot;: true,
+  &quot;no_source_proxy_used&quot;: true,
+  &quot;no_raw_output_parser_used&quot;: true,
+  &quot;no_harness_created_homepage&quot;: true,
+  &quot;no_post_run_repair&quot;: true,
+  &quot;no_template_app_files&quot;: true,
+  &quot;no_known_good_files&quot;: true,
+  &quot;no_real_app_mutation&quot;: true,
+  &quot;contaminated&quot;: false,
+  &quot;basis&quot;: &quot;Native /usr/bin/cn printed tool-call JSON only. The harness intentionally did not execute or parse that JSON, leaving the workspace unchanged.&quot;
+}</pre>
+</body></html>

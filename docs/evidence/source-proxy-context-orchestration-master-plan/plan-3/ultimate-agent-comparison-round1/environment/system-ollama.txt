@@ -1,0 +1,28 @@
+$ bash -lc 'systemctl status ollama --no-pager || true'
+
+STDOUT:
+● ollama.service - Ollama Service
+     Loaded: loaded (/etc/systemd/system/ollama.service; enabled; preset: enabled)
+     Active: active (running) since Tue 2026-06-02 20:39:05 EDT; 1 week 0 days ago
+   Main PID: 1448 (ollama)
+      Tasks: 47 (limit: 18962)
+     Memory: 9.0G (peak: 12.2G swap: 179.3M swap peak: 653.0M)
+        CPU: 13h 55min 44.002s
+     CGroup: /system.slice/ollama.service
+             ├─  1448 /usr/local/bin/ollama serve
+             └─736552 /usr/local/bin/ollama runner --ollama-engine --model /usr/share/ollama/.ollama/models/blobs/sha256-38e8dcc30df4eb0e29eaf5c74ba6ce3f2cd66badad50768fc14362acfb8b8cb6 --port 37967
+
+Jun 10 06:41:35 source-server ollama[1448]: time=2026-06-10T06:41:35.759-04:00 level=INFO source=device.go:245 msg="model weights" device=CPU size="5.2 GiB"
+Jun 10 06:41:35 source-server ollama[1448]: time=2026-06-10T06:41:35.759-04:00 level=INFO source=device.go:251 msg="kv cache" device=CUDA0 size="64.0 MiB"
+Jun 10 06:41:35 source-server ollama[1448]: time=2026-06-10T06:41:35.759-04:00 level=INFO source=device.go:262 msg="compute graph" device=CUDA0 size="206.3 MiB"
+Jun 10 06:41:35 source-server ollama[1448]: time=2026-06-10T06:41:35.759-04:00 level=INFO source=device.go:267 msg="compute graph" device=CPU size="17.5 MiB"
+Jun 10 06:41:35 source-server ollama[1448]: time=2026-06-10T06:41:35.759-04:00 level=INFO source=device.go:272 msg="total memory" size="7.7 GiB"
+Jun 10 06:41:35 source-server ollama[1448]: time=2026-06-10T06:41:35.759-04:00 level=INFO source=sched.go:561 msg="loaded runners" count=1
+Jun 10 06:41:35 source-server ollama[1448]: time=2026-06-10T06:41:35.759-04:00 level=INFO source=server.go:1364 msg="waiting for llama runner to start responding"
+Jun 10 06:41:35 source-server ollama[1448]: time=2026-06-10T06:41:35.759-04:00 level=INFO source=server.go:1398 msg="waiting for server to become available" status="llm server loading model"
+Jun 10 06:42:44 source-server ollama[1448]: time=2026-06-10T06:42:44.854-04:00 level=INFO source=server.go:1402 msg="llama runner started in 70.95 seconds"
+Jun 10 06:43:21 source-server ollama[1448]: [GIN] 2026/06/10 - 06:43:21 | 200 |         1m48s |       127.0.0.1 | POST     "/api/generate"
+
+
+STDERR:
+

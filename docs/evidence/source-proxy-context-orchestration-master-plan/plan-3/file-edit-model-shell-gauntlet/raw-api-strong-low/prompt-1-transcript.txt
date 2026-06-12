@@ -1,0 +1,100 @@
+Sure, I can help you set up a simple project for your agent lab experiments. We'll create a basic homepage that you can open on your phone. Here's how you can do it:
+
+1. **Initialize a Git Repository**: First, we'll set up a new Git repository for your experiments.
+
+2. **Create a Simple Homepage**: We'll create a basic HTML file that you can open on your phone.
+
+3. **Instructions to View on Phone**: I'll provide instructions on how you can view this page on your phone.
+
+Let's get started:
+
+### Step 1: Initialize a Git Repository
+
+Open your terminal and navigate to the directory where you want to create this project. Then run the following commands:
+
+```bash
+mkdir agent-lab-experiments
+cd agent-lab-experiments
+git init
+```
+
+### Step 2: Create a Simple Homepage
+
+Create an `index.html` file with the following content:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Lab Experiments</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Welcome to Agent Lab Experiments</h1>
+    <p>This is a simple homepage for your experiments.</p>
+</body>
+</html>
+```
+
+### Step 3: Commit Your Changes
+
+Save the file and commit your changes:
+
+```bash
+git add index.html
+git commit -m "Add simple homepage"
+```
+
+### Step 4: View on Your Phone
+
+To view this page on your phone, you can use a local server. If you have Python installed, you can run a simple HTTP server:
+
+1. **Start the Server**:
+
+   If you're using Python 3, run:
+
+   ```bash
+   python3 -m http.server 8000
+   ```
+
+   If you're using Python 2, run:
+
+   ```bash
+   python -m SimpleHTTPServer 8000
+   ```
+
+2. **Find Your Local IP Address**:
+
+   Find your local IP address by running:
+
+   ```bash
+   ifconfig
+   ```
+
+   or
+
+   ```bash
+   ipconfig
+   ```
+
+   Look for an IP address that looks something like `192.168.x.x`.
+
+3. **Open on Your Phone**:
+
+   Connect your phone to the same Wi-Fi network as your computer. Open a web browser on your phone and enter the URL:
+
+   ```
+   http://<your-local-ip-address>:8000
+   ```
+
+   Replace `<your-local-ip-address>` with the IP address you found earlier.
+
+That's it! You should now be able to view your simple homepage on your phone. Let me know if you need further assistance.

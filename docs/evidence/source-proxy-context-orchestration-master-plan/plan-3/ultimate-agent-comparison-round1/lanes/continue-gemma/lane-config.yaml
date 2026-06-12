@@ -1,0 +1,12 @@
+schema: v1.5.44
+name: round1-gemma
+version: 1.0.0
+models:
+  - name: gemma
+    model: gemma3n:e4b
+    provider: ollama
+    apiBase: http://127.0.0.1:11434
+    roles:
+      - chat
+      - edit
+allowAnonymousTelemetry: false

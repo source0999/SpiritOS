@@ -1,0 +1,4 @@
+$ ollama-api-generate http://127.0.0.1:11434 qwen2.5-coder:7b
+[stdout] {"model":"qwen2.5-coder:7b","created_at":"2026-06-10T10:13:07.579758294Z","response":"QWEN_READY","done":true,"done_reason":"stop","context":[151644,8948,198,2610,525,1207,16948,11,3465,553,54364,14817,13,1446,525,264,10950,17847,13,151645,198,151644,872,198,36790,1207,54,953,51184,304,825,1555,151645,198,151644,77091,198,48,54,953,51184],"total_duration":10609177437,"load_duration":10492638245,"prompt_eval_count":37,"prompt_eval_duration":30341193,"eval_count":5,"eval_duration":62723908}
+[exit] 0
+[elapsed_seconds] 10.66

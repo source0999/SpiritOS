@@ -1,0 +1,3 @@
+command: ollama-api-generate http://127.0.0.1:11434 gemma3n:e4b
+elapsed_seconds: 104.477
+exit_code: 0

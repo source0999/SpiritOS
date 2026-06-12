@@ -1,0 +1,7 @@
+{
+  "route_type": "source-proxy-tool-bridge",
+  "model_target": "qwen2.5-coder:7b",
+  "model_observed": "qwen2.5-coder:7b",
+  "selected_model_call": "ollama /api/generate",
+  "adapter": "shared_workspace_action_executor"
+}

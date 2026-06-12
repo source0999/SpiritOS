@@ -1,0 +1,11 @@
+$ command -v aider || true; aider --version || true
+
+STDOUT:
+/home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/aider-goose-local-agent-smoke/.venv-aider/bin/aider
+aider 0.86.2
+
+
+STDERR:
+
+EXIT: 0
+ELAPSED: 0.726

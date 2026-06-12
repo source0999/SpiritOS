@@ -1,0 +1,106 @@
+$ ollama-api-generate http://127.0.0.1:11434 gemma3n:e4b
+
+STDOUT:
+Okay, let's get this done! Here's a plan to initialize a repository for your agent lab experiments and create a simple, mobile-friendly homepage.
+
+## 1. Initialize the Repository (GitHub)
+
+We'll use Git and GitHub to manage your experiments.
+
+**Steps:**
+
+1. **Create a GitHub account:** If you don't have one, go to [https://github.com/](https://github.com/) and sign up.
+2. **Create a new repository:**
+   - Click the "+" button in the top right corner and select "New repository".
+   - **Repository name:**  `agent-lab-experiments` (or something similar)
+   - **Description:**  `Repository for documenting and sharing agent lab experiments.`
+   - **Visibility:** Choose "Public" if you want others to see your work, or "Private" if it's for personal use.
+   - **Initialize this repository with:** **Do not check this box.** We'll initialize it locally first.
+   - Click "Create repository".
+3. **Clone the repository to your local machine:**
+   - Go to your newly created repository on GitHub.
+   - Click the green "Code" button.
+   - Copy the HTTPS or SSH URL.
+   - Open your terminal or command prompt.
+   - Navigate to the directory where you want to store your experiments.
+   - Run the command: `git clone <repository_url>` (replace `<repository_url>` with the URL you copied).
+
+Now you have a local copy of your experiment repository!
+
+## 2. Create the Homepage (Simple HTML)
+
+We'll create a basic HTML file that will serve as your homepage. This will be simple and designed to look good on a mobile phone.
+
+**Steps:**
+
+1. **Create a new file:** In your `agent-lab-experiments` directory, create a new file named `index.html`.
+2. **Paste the following HTML code into `index.html`:**
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Lab Experiments</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        header {
+            background-color: #007bff;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        nav {
+            background-color: #ddd;
+            padding: 10px;
+        }
+        nav a {
+            color: #007bff;
+            text-decoration: none;
+            margin: 0 15px;
+        }
+        main {
+            padding: 20px;
+            text-align: center;
+        }
+        h1 {
+            color: #007bff;
+        }
+        p {
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Agent Lab Experiments</h1>
+    </header>
+    <nav>
+        <a href="experiments.html">Experiments</a>
+        <a href="notes.html">Notes</a>
+        <a href="resources.html">Resources</a>
+    </nav>
+    <main>
+        <h1>Welcome!</h1>
+        <p>This is the homepage for my agent lab experiments. Here you can find links to different sections:</p>
+        <ul>
+            <li><a href="experiments.html">View my current experiments</a></li>
+            <li><a href="notes.html">Read my experiment notes</a></li>
+            <li><a href="resources.html">Useful links and tools</a></li>
+        </ul>
+    </main>
+</body>
+</html>
+```
+
+3. **Create additional HTML
+
+STDERR:
+

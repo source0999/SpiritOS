@@ -1,0 +1,23 @@
+--- before/index.html
++++ after/index.html
+@@ -52,7 +52,19 @@
+         <a href="#weather">Weather App</a>
+         <a href="#pong">Pong</a>
+     </nav>
+-    <section>
++    <script>
++    function add(a, b) { return a + b; }
++    function subtract(a, b) { return a - b; }
++    function multiply(a, b) { return a * b; }
++    function divide(a, b) { return b !== 0 ? a / b : 'Error: Division by zero'; }
++
++    // Example usage:
++    console.log('Add: ', add(2, 3));
++    console.log('Subtract: ', subtract(5, 2));
++    console.log('Multiply: ', multiply(4, 3));
++    console.log('Divide: ', divide(10, 2));
++</script>
++<section>
+         <h2>Future Experiments</h2>
+         <p>Select a project from the navigation above to get started.</p>
+     </section>

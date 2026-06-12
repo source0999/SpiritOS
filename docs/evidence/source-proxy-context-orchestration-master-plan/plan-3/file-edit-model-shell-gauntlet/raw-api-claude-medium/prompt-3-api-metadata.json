@@ -1,0 +1,6 @@
+{
+  "command_or_provider": "anthropic messages model=claude-3-5-sonnet-latest",
+  "errors": [
+    "HTTP Error 400: Bad Request"
+  ]
+}

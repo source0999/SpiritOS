@@ -20,6 +20,12 @@ Fresh chats should use `docs/agent-runtime-trial-harness-mac-subagent-port-new-c
 
 The old Source Proxy Agent Integration Preflight roadmap is closed through Plan 12/12 and is historical/verification authority only. Do not restart it, do not start final CSS polish, and do not implement Codex-like features outside the active roadmap.
 
+## Active Source Proxy Tool Action Runtime Direction
+
+The active Source Proxy Tool Action Runtime v1 roadmap is `docs/source-proxy-tool-action-runtime-v1-master-plan.md`.
+
+Fresh chats should use `docs/source-proxy-tool-action-runtime-v1-new-chat-handoff.txt`, continue the next uncompleted plan only, and keep benchmarking paused until native TaskSpec plus tool/action runtime hands, disposable workspace execution, receipts, and trap-suite proof are GO.
+
 ## Source Proxy Agent Integration Preflight Direction
 
 The Source Proxy Agent Integration Preflight Build Roadmap is closed through Plan 12/12 and is ready for manual review:
@@ -43,6 +49,8 @@ Preflight closeout and next-roadmap boundary:
 | `docs/spiritos-coding-readiness-roadmap-to-codex-like-features.md` | status: active roadmap | SpiritOS `/coding` readiness to Codex-like feature planning, beginning with Plan 0/7 | Current source of truth for `/coding` readiness; one whole plan per chat; implementation-forward after Plan 0; stops before Codex-like features and final CSS polish |
 | `docs/agent-runtime-trial-harness-mac-subagent-port-master-plan-v0.1.md` | status: active roadmap | Agent Runtime Trial Harness + Mac Advisory Subagent Port v1, beginning with Plan 0/8 | Current source of truth; one approved plan at a time; no invented future scope |
 | `docs/agent-runtime-trial-harness-mac-subagent-port-new-chat-handoff-v0.1.md` | status: active handoff | Fresh-chat continuation guard for the active runtime trial harness roadmap | Read master plan and latest closeout, continue next uncompleted plan only, do not restart old Source Proxy preflight |
+| `docs/source-proxy-tool-action-runtime-v1-master-plan.md` | status: active roadmap | Source Proxy native TaskSpec, generic tool/action hands, disposable workspace executor, receipts, advisory Mac/subagent broker, and benchmark return gate | Current source of truth for runtime-hands planning; implementation only by approved plan; benchmarking paused until native hands and trap-suite proof are GO |
+| `docs/source-proxy-tool-action-runtime-v1-new-chat-handoff.txt` | status: active handoff | Fresh-chat continuation guard for Source Proxy Tool Action Runtime v1 | Continue next uncompleted plan only; if no Plan 0 closeout exists, start Plan 0/8 only; no runtime-from-memory |
 | `docs/source-proxy-agent-integration-preflight-build-roadmap-v0.1.md` | status: closed build-first roadmap | Source Proxy agent integration and Preflight Final CSS roadmap completed through Plan 12/12 | Historical/verification authority only; next runtime/soak roadmap requires Britton approval |
 | `docs/source-proxy-agent-integration-preflight-new-chat-handoff-v0.1.md` | status: historical handoff | Fresh-chat handoff used to start the completed preflight roadmap | Do not replay Plan 0 or restart the closed roadmap from this handoff |
 | `docs/source-proxy-agent-integration-preflight-plan-12-closeout-v0.1.md` | status: Plan 12/12 complete | Final preflight review and soak decision closeout | GO for manual review; production readiness NO-GO; automatic soak NO-GO |

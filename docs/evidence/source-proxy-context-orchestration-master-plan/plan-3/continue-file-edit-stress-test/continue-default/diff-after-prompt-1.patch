@@ -1,0 +1,20 @@
+--- before/index.html
++++ after/index.html
+@@ -0,0 +1,17 @@
++<!DOCTYPE html>
++<html>
++<head>
++    <title>Agent Lab Homepage</title>
++    <meta name="viewport" content="width=device-width, initial-scale=1">
++    <style>
++        body { font-family: sans-serif; margin: 20px; }
++        h1 { color: #333; }
++        p { color: #666; }
++    </style>
++</head>
++<body>
++    <h1>Welcome to Agent Lab!</h1>
++    <p>This is your personal homepage for agent experiments.</p>
++    <p>You can open this on your phone to view your progress.</p>
++</body>
++</html>
