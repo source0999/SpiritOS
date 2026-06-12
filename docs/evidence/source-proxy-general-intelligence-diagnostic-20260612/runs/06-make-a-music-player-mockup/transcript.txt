@@ -1,0 +1,10 @@
+```json
+{
+  "action_type": "WriteFile",
+  "target": "src/components/MusicPlayer.js",
+  "arguments": {
+    "content": "// MusicPlayer.js\nimport React, { useState } from 'react';\n\nconst MusicPlayer = () => {\n  const [isPlaying, setIsPlaying] = useState(false);\n  const [currentTrack, setCurrentTrack] = useState('Song Title');\n\n  const togglePlayPause = () => {\n    setIsPlaying(!isPlaying);\n  };\n\n  return (\n    <div className='music-player'>\n      <h3>{currentTrack}</h3>\n      <button onClick={togglePlayPause}>{isPlaying ? 'Pause' : 'Play'}</button>\n    </div>\n  );\n};\n\nexport default MusicPlayer;"
+  },
+  "reason": "A basic music player component to be used in the mockup."
+}
+```

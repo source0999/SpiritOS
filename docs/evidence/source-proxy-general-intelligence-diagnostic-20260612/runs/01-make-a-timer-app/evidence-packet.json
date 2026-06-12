@@ -1,0 +1,147 @@
+{
+  "allowed_extensions": [
+    ".html",
+    ".css",
+    ".js"
+  ],
+  "artifact_class": "static_ui_artifact",
+  "artifact_matches_plain_intent": false,
+  "artifact_opens": true,
+  "artifact_usable_for_obvious_purpose": false,
+  "backend_created_any_content": false,
+  "browser_console_errors_if_available": "not_available_playwright_not_run",
+  "content_byte_match_by_target": {
+    "index.html": true,
+    "script.js": true,
+    "styles.css": true
+  },
+  "context_sources": [],
+  "diff_path": "docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/01-make-a-timer-app/workspace.diff",
+  "evidence_packet_path": "docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/01-make-a-timer-app/evidence-packet.json",
+  "exact_allowed_files_if_any": [],
+  "external_urls_or_remote_resources_referenced": [],
+  "file_bytes_match_model_authored_action_content": true,
+  "files_actually_created": [
+    "index.html",
+    "script.js",
+    "styles.css"
+  ],
+  "files_model_attempted_to_create": [
+    "index.html",
+    "script.js",
+    "styles.css"
+  ],
+  "inferred_user_intent": "create",
+  "missing_local_references": [],
+  "model_context_packet_summary": [
+    {
+      "allowed_extensions": [
+        ".html",
+        ".css",
+        ".js"
+      ],
+      "allowed_files": [],
+      "artifact_class": "static_ui_artifact",
+      "benchmark_eligible": false,
+      "max_file_count": 3,
+      "mode": "product",
+      "model_may_choose_paths": false,
+      "model_requirements": [
+        "explicit model-authored target path",
+        "explicit model-authored file content",
+        "supported Source Proxy action JSON or path-bound file block"
+      ],
+      "network_allowed": false,
+      "route_type": "product",
+      "task_shape": "disposable_small_file_bundle"
+    }
+  ],
+  "original_user_prompt": "make a timer app",
+  "parsed_actions": [
+    {
+      "action_id": "human-messy-homepage:0:1:WriteFile",
+      "action_type": "WriteFile",
+      "adapter_source": "ollama_generate/tool_action_runtime_v1",
+      "allowed_files_snapshot": [],
+      "arguments": {
+        "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Timer App</title>\n    <link rel=\"stylesheet\" href=\"styles.css\">\n</head>\n<body>\n    <div class=\"timer-container\">\n        <h1 id=\"timer\">00:00</h1>\n        <button id=\"startBtn\">Start</button>\n        <button id=\"stopBtn\">Stop</button>\n    </div>\n    <script src=\"script.js\"></script>\n</body>\n</html>"
+      },
+      "authorship": "model_authored",
+      "created_at": "",
+      "execution_state": "blocked_until_plan_3",
+      "model_id": "qwen2.5-coder:7b",
+      "reason": "HTML structure for the timer app.",
+      "requires_approval": true,
+      "schema_version": 1,
+      "source_message_id": "human-messy-homepage:0",
+      "target": "index.html"
+    },
+    {
+      "action_id": "human-messy-homepage:0:2:WriteFile",
+      "action_type": "WriteFile",
+      "adapter_source": "ollama_generate/tool_action_runtime_v1",
+      "allowed_files_snapshot": [],
+      "arguments": {
+        "content": "body {\n    display: flex;\n    justify-content: center;\n    align-items: center;\n    height: 100vh;\n    background-color: #f0f0f0;\n}\n\n.timer-container {\n    text-align: center;\n}\n\n#timer {\n    font-size: 48px;\n    margin-bottom: 20px;\n}\n\nbutton {\n    padding: 10px 20px;\n    font-size: 16px;\n    cursor: pointer;\n}"
+      },
+      "authorship": "model_authored",
+      "created_at": "",
+      "execution_state": "blocked_until_plan_3",
+      "model_id": "qwen2.5-coder:7b",
+      "reason": "CSS styles for the timer app.",
+      "requires_approval": true,
+      "schema_version": 1,
+      "source_message_id": "human-messy-homepage:0",
+      "target": "styles.css"
+    },
+    {
+      "action_id": "human-messy-homepage:0:3:WriteFile",
+      "action_type": "WriteFile",
+      "adapter_source": "ollama_generate/tool_action_runtime_v1",
+      "allowed_files_snapshot": [],
+      "arguments": {
+        "content": "let timer = document.getElementById('timer');\nlet startBtn = document.getElementById('startBtn');\nlet stopBtn = document.getElementById('stopBtn');\n\nlet interval;\nlet time = 0;\n\nfunction formatTime(seconds) {\n    const minutes = Math.floor(seconds / 60);\n    const remainingSeconds = seconds % 60;\n    return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;\n}\n\nfunction startTimer() {\n    interval = setInterval(() => {\n        time++;\n        timer.textContent = formatTime(time);\n    }, 1000);\n}\n\nfunction stopTimer() {\n    clearInterval(interval);\n}\n\nstartBtn.addEventListener('click', startTimer);\nstopBtn.addEventListener('click', stopTimer);"
+      },
+      "authorship": "model_authored",
+      "created_at": "",
+      "execution_state": "blocked_until_plan_3",
+      "model_id": "qwen2.5-coder:7b",
+      "reason": "JavaScript logic for the timer app.",
+      "requires_approval": true,
+      "schema_version": 1,
+      "source_message_id": "human-messy-homepage:0",
+      "target": "script.js"
+    }
+  ],
+  "preview_url_if_available": "",
+  "proxy_confidence_if_available": null,
+  "proxy_exact_target_suggestion_if_any": "",
+  "proxy_gathered_local_intelligence_only": false,
+  "proxy_searched_web": false,
+  "raw_model_response": "{\"action_type\":\"WriteFile\",\"target\":\"index.html\",\"arguments\":{\"content\":\"<!DOCTYPE html>\\n<html lang=\\\"en\\\">\\n<head>\\n    <meta charset=\\\"UTF-8\\\">\\n    <meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1.0\\\">\\n    <title>Timer App</title>\\n    <link rel=\\\"stylesheet\\\" href=\\\"styles.css\\\">\\n</head>\\n<body>\\n    <div class=\\\"timer-container\\\">\\n        <h1 id=\\\"timer\\\">00:00</h1>\\n        <button id=\\\"startBtn\\\">Start</button>\\n        <button id=\\\"stopBtn\\\">Stop</button>\\n    </div>\\n    <script src=\\\"script.js\\\"></script>\\n</body>\\n</html>\"},\"reason\":\"HTML structure for the timer app.\"}\n\n{\"action_type\":\"WriteFile\",\"target\":\"styles.css\",\"arguments\":{\"content\":\"body {\\n    display: flex;\\n    justify-content: center;\\n    align-items: center;\\n    height: 100vh;\\n    background-color: #f0f0f0;\\n}\\n\\n.timer-container {\\n    text-align: center;\\n}\\n\\n#timer {\\n    font-size: 48px;\\n    margin-bottom: 20px;\\n}\\n\\nbutton {\\n    padding: 10px 20px;\\n    font-size: 16px;\\n    cursor: pointer;\\n}\"},\"reason\":\"CSS styles for the timer app.\"}\n\n{\"action_type\":\"WriteFile\",\"target\":\"script.js\",\"arguments\":{\"content\":\"let timer = document.getElementById('timer');\\nlet startBtn = document.getElementById('startBtn');\\nlet stopBtn = document.getElementById('stopBtn');\\n\\nlet interval;\\nlet time = 0;\\n\\nfunction formatTime(seconds) {\\n    const minutes = Math.floor(seconds / 60);\\n    const remainingSeconds = seconds % 60;\\n    return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;\\n}\\n\\nfunction startTimer() {\\n    interval = setInterval(() => {\\n        time++;\\n        timer.textContent = formatTime(time);\\n    }, 1000);\\n}\\n\\nfunction stopTimer() {\\n    clearInterval(interval);\\n}\\n\\nstartBtn.addEventListener('click', startTimer);\\nstopBtn.addEventListener('click', stopTimer);\"},\"reason\":\"JavaScript logic for the timer app.\"}",
+  "real_app_files_touched": false,
+  "receipt_path": "docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/01-make-a-timer-app/receipt.json",
+  "repo_context_cartographer_obsidian_search_intelligence_used": false,
+  "route_classification": {
+    "next_action": "",
+    "reason_codes": [
+      "prefer_free_or_subscription_route",
+      "implementation_requested",
+      "target_unresolved"
+    ],
+    "risk_tier": "medium",
+    "route_type": "product"
+  },
+  "runtime_errors": [],
+  "score_path": "docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/01-make-a-timer-app/score.json",
+  "source_proxy_reason_codes": [],
+  "source_proxy_score_status": "GO",
+  "target_files_model_authored_or_proxy_suggested": "model_action",
+  "task_shape": "disposable_small_file_bundle",
+  "transcript_path": "docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/01-make-a-timer-app/transcript.txt",
+  "usability_reason_codes": [
+    "timer_controls_or_ticking_logic_missing"
+  ],
+  "verdict": "FAIL",
+  "workspace_path": "docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/01-make-a-timer-app/workspace"
+}

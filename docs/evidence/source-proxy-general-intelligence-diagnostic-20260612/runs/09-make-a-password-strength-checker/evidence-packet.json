@@ -1,0 +1,121 @@
+{
+  "allowed_extensions": [],
+  "artifact_class": "",
+  "artifact_matches_plain_intent": false,
+  "artifact_opens": false,
+  "artifact_usable_for_obvious_purpose": false,
+  "backend_created_any_content": false,
+  "browser_console_errors_if_available": "not_available_playwright_not_run",
+  "content_byte_match_by_target": {
+    "src/password_strength_checker.py": false
+  },
+  "context_sources": [
+    "clarification_request"
+  ],
+  "diff_path": "docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/09-make-a-password-strength-checker/workspace.diff",
+  "evidence_packet_path": "docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/09-make-a-password-strength-checker/evidence-packet.json",
+  "exact_allowed_files_if_any": [],
+  "external_urls_or_remote_resources_referenced": [],
+  "file_bytes_match_model_authored_action_content": false,
+  "files_actually_created": [],
+  "files_model_attempted_to_create": [
+    "src/password_strength_checker.py"
+  ],
+  "inferred_user_intent": "modify",
+  "missing_local_references": [],
+  "model_context_packet_summary": [
+    {
+      "allowed_extensions": [],
+      "allowed_files": [],
+      "artifact_class": "",
+      "benchmark_eligible": false,
+      "max_file_count": 8,
+      "mode": "product",
+      "model_may_choose_paths": false,
+      "model_requirements": [
+        "explicit model-authored target path",
+        "explicit model-authored file content",
+        "supported Source Proxy action JSON or path-bound file block"
+      ],
+      "network_allowed": false,
+      "route_type": "product",
+      "task_shape": "clarification_required_real_repo_implementation"
+    },
+    {
+      "allowed_extensions": [],
+      "allowed_files": [],
+      "artifact_class": "",
+      "benchmark_eligible": false,
+      "max_file_count": 8,
+      "mode": "product",
+      "model_may_choose_paths": false,
+      "model_requirements": [
+        "explicit model-authored target path",
+        "explicit model-authored file content",
+        "supported Source Proxy action JSON or path-bound file block"
+      ],
+      "network_allowed": false,
+      "route_type": "product",
+      "task_shape": "clarification_required_real_repo_implementation"
+    }
+  ],
+  "original_user_prompt": "make a password strength checker",
+  "parsed_actions": [
+    {
+      "action_id": "human-messy-homepage:1:1:WriteFile",
+      "action_type": "WriteFile",
+      "adapter_source": "ollama_generate/tool_action_runtime_v1",
+      "allowed_files_snapshot": [],
+      "arguments": {
+        "content": "def check_password_strength(password):\n    if len(password) < 8:\n        return False\n    if not any(char.isdigit() for char in password):\n        return False\n    if not any(char.isupper() for char in password):\n        return False\n    if not any(char.islower() for char in password):\n        return False\n    return True"
+      },
+      "authorship": "model_authored",
+      "created_at": "",
+      "execution_state": "blocked_until_plan_3",
+      "model_id": "qwen2.5-coder:7b",
+      "reason": "This Python function checks the strength of a password based on length, digit presence, uppercase letter presence, and lowercase letter presence.",
+      "requires_approval": true,
+      "schema_version": 1,
+      "source_message_id": "human-messy-homepage:1",
+      "target": "src/password_strength_checker.py"
+    }
+  ],
+  "preview_url_if_available": "",
+  "proxy_confidence_if_available": null,
+  "proxy_exact_target_suggestion_if_any": "",
+  "proxy_gathered_local_intelligence_only": false,
+  "proxy_searched_web": false,
+  "raw_model_response": "```json\n{\n  \"action_type\": \"WriteFile\",\n  \"target\": \"password_strength_checker.py\",\n  \"arguments\": {\n    \"content\": \"#!/usr/bin/env python3\\n\\nimport re\\n\\ndef check_password_strength(password):\\n    if len(password) < 8:\\n        return 'Weak: Password is too short.'\\n    if not re.search(r'[a-z]', password):\\n        return 'Weak: No lowercase letters.'\\n    if not re.search(r'[A-Z]', password):\\n        return 'Weak: No uppercase letters.'\\n    if not re.search(r'\\\\d', password):\\n        return 'Weak: No digits.'\\n    if not re.search(r'[!@#$%^&*(),.?\":{}|<>]', password):\\n        return 'Weak: No special characters.'\\n    return 'Strong: Password meets all criteria.'\"\n  },\n  \"reason\": \"A simple Python script to check the strength of a password.\"\n}\n```\n\n--- MODEL CALL ---\n\n{\"action_type\":\"WriteFile\",\"target\":\"src/password_strength_checker.py\",\"arguments\":{\"content\":\"def check_password_strength(password):\\n    if len(password) < 8:\\n        return False\\n    if not any(char.isdigit() for char in password):\\n        return False\\n    if not any(char.isupper() for char in password):\\n        return False\\n    if not any(char.islower() for char in password):\\n        return False\\n    return True\"},\"reason\":\"This Python function checks the strength of a password based on length, digit presence, uppercase letter presence, and lowercase letter presence.\"}",
+  "real_app_files_touched": false,
+  "receipt_path": "docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/09-make-a-password-strength-checker/receipt.json",
+  "repo_context_cartographer_obsidian_search_intelligence_used": false,
+  "route_classification": {
+    "next_action": "",
+    "reason_codes": [
+      "prefer_free_or_subscription_route",
+      "sensitive_or_secret_risk",
+      "implementation_requested",
+      "target_unresolved"
+    ],
+    "risk_tier": "high",
+    "route_type": "product"
+  },
+  "runtime_errors": [],
+  "score_path": "docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/09-make-a-password-strength-checker/score.json",
+  "source_proxy_reason_codes": [
+    "expected_blocked_result",
+    "free_floating_code_no_path_action",
+    "target_not_allowed"
+  ],
+  "source_proxy_score_status": "EXPECTED-BLOCKED",
+  "target_files_model_authored_or_proxy_suggested": "model_action",
+  "task_shape": "clarification_required_real_repo_implementation",
+  "transcript_path": "docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/09-make-a-password-strength-checker/transcript.txt",
+  "usability_reason_codes": [
+    "password_strength_live_check_missing",
+    "no_html_openable_artifact",
+    "plain_intent_terms_missing"
+  ],
+  "verdict": "FAIL",
+  "workspace_path": "docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/09-make-a-password-strength-checker/workspace"
+}

@@ -1,0 +1,282 @@
+{
+  "diagnostics_packet": {
+    "adapter_source": "ollama_generate/tool_action_runtime_v1",
+    "allowed_scope_source": "",
+    "benchmark_eligibility_reason": "pure_diagnostic_no_proxy_scope_help",
+    "blocked_reasons": [],
+    "clarification_or_block_reason": "",
+    "execution_count": 1,
+    "files_touched": [
+      "site/home.html"
+    ],
+    "final_state": "completed",
+    "format_retries_used": 0,
+    "model_authored_targets": [
+      "site/home.html"
+    ],
+    "model_call_count": 1,
+    "model_id": "mock-model",
+    "parsed_action_count": 1,
+    "proxy_artifact_class_suggested": "",
+    "proxy_exact_target_suggested": "",
+    "route_type": "pure_diagnostic",
+    "skipped_checks": [],
+    "task_shape": "",
+    "task_shape_source": "",
+    "verification_repairs_used": 0,
+    "workspace_decision_source": ""
+  },
+  "executions": [
+    {
+      "receipt": {
+        "action_id": "human-messy-homepage:0:1:WriteFile",
+        "action_type": "WriteFile",
+        "adapter_source": "ollama_generate/tool_action_runtime_v1",
+        "after_status": {
+          "file_count": 1,
+          "files": [
+            "site/home.html"
+          ]
+        },
+        "before_status": {
+          "file_count": 0,
+          "files": []
+        },
+        "blocked_reason": "",
+        "diff_summary": "--- a/site/home.html\n+++ b/site/home.html\n@@ -0,0 +1 @@\n+<!doctype html><html><head><title>Pure Path</title></head><body><h1>Pure Path</h1></body></html>\n",
+        "error_code": "",
+        "files_touched": [
+          "site/home.html"
+        ],
+        "status": "completed",
+        "stderr": "",
+        "stdout": "",
+        "target": "site/home.html",
+        "workspace_root": "/home/source/SpiritOS/docs/evidence/source-proxy-orchestrator-correction/phase-2-receipt-samples/pure-homepage-workspace"
+      },
+      "result": {
+        "action_id": "human-messy-homepage:0:1:WriteFile",
+        "adapter_source": "ollama_generate/tool_action_runtime_v1",
+        "blocked_reason": "",
+        "diff_summary": "--- a/site/home.html\n+++ b/site/home.html\n@@ -0,0 +1 @@\n+<!doctype html><html><head><title>Pure Path</title></head><body><h1>Pure Path</h1></body></html>\n",
+        "error_code": "",
+        "files_touched": [
+          "site/home.html"
+        ],
+        "observation": "",
+        "receipt_path": "",
+        "schema_version": 1,
+        "status": "completed",
+        "stderr": "",
+        "stdout": ""
+      }
+    }
+  ],
+  "final_state": "completed",
+  "model_calls": [
+    {
+      "call_index": 0,
+      "packet": {
+        "call_index": 0,
+        "context_packet": {
+          "benchmark_eligibility_reason": "pure_diagnostic_no_proxy_scope_help",
+          "benchmark_eligible": true,
+          "forbidden_real_repo_mutation": true,
+          "max_file_count": 8,
+          "mode": "pure",
+          "model_may_choose_paths": true,
+          "model_requirements": [
+            "explicit model-authored target path",
+            "explicit model-authored file content",
+            "supported Source Proxy action JSON or path-bound file block"
+          ],
+          "network_allowed": false,
+          "route_type": "pure_diagnostic",
+          "user_prompt": "init a repo and make homepage for agent lab expermients",
+          "workspace_mode": "disposable_workspace"
+        },
+        "loop_policy": {
+          "max_format_retries": 2,
+          "max_verification_repairs": 0,
+          "recommended_checks": [],
+          "run_recommended_checks": false
+        },
+        "observations": [],
+        "task_spec": {
+          "allowed_files": [],
+          "approval_level": "disposable_workspace",
+          "blockers": [],
+          "clarification_prompt": "",
+          "clarification_state": "not_needed",
+          "context_sources": [
+            "user_prompt"
+          ],
+          "forbidden_files": [
+            ".env",
+            ".env.*",
+            "*.pem",
+            "*.key",
+            "certificates/*"
+          ],
+          "intent": "create_or_edit",
+          "literal_requirements": [],
+          "risk_tier": "medium",
+          "schema_version": 1,
+          "source": "human_messy_homepage_pure_mode",
+          "target": "",
+          "task_type": "create_or_edit_in_disposable_workspace",
+          "user_prompt": "init a repo and make homepage for agent lab expermients",
+          "verification": [
+            "git diff --check"
+          ],
+          "workspace_mode": "disposable_workspace"
+        },
+        "tool_contract": {
+          "schema_version": 1,
+          "stable_error_codes": [
+            "backend_authorship_rejected",
+            "bash_string_args_only_for_bash",
+            "content_required",
+            "empty_transcript",
+            "execution_blocked_until_plan_3",
+            "free_floating_code_no_path_action",
+            "invalid_action_schema",
+            "invalid_json",
+            "target_not_allowed",
+            "target_required",
+            "unsupported_action_type"
+          ],
+          "tools": [
+            {
+              "action_type": "ReadFile",
+              "capability": "read",
+              "execution_state": "parser_only"
+            },
+            {
+              "action_type": "ListFiles",
+              "capability": "read",
+              "execution_state": "parser_only"
+            },
+            {
+              "action_type": "SearchRepo",
+              "capability": "read",
+              "execution_state": "parser_only"
+            },
+            {
+              "action_type": "WriteFile",
+              "capability": "write",
+              "execution_state": "blocked_until_plan_3"
+            },
+            {
+              "action_type": "EditFile",
+              "capability": "write",
+              "execution_state": "blocked_until_plan_3"
+            },
+            {
+              "action_type": "MultiEdit",
+              "capability": "write",
+              "execution_state": "blocked_until_plan_3"
+            },
+            {
+              "action_type": "RunCheck",
+              "capability": "execute",
+              "execution_state": "blocked_until_plan_3"
+            },
+            {
+              "action_type": "AskClarification",
+              "capability": "respond",
+              "execution_state": "parser_only"
+            },
+            {
+              "action_type": "ReturnFinal",
+              "capability": "respond",
+              "execution_state": "parser_only"
+            }
+          ]
+        },
+        "workspace_contract": {
+          "allowed_file_extensions": [],
+          "allowed_files": [],
+          "approval_level": "disposable_workspace",
+          "forbidden_files": [
+            ".env",
+            ".env.*",
+            "*.pem",
+            "*.key",
+            "certificates/*"
+          ],
+          "max_file_count": 8,
+          "model_may_choose_paths": true,
+          "network_allowed": false,
+          "protected_paths": [],
+          "workspace_root": "/home/source/SpiritOS/docs/evidence/source-proxy-orchestrator-correction/phase-2-receipt-samples/pure-homepage-workspace"
+        }
+      },
+      "raw_transcript": "{\"action_type\": \"WriteFile\", \"target\": \"site/home.html\", \"arguments\": {\"content\": \"<!doctype html><html><head><title>Pure Path</title></head><body><h1>Pure Path</h1></body></html>\\n\"}, \"reason\": \"Choose a safe disposable homepage path.\"}"
+    }
+  ],
+  "parse_results": [
+    {
+      "actions": [
+        {
+          "action_id": "human-messy-homepage:0:1:WriteFile",
+          "action_type": "WriteFile",
+          "adapter_source": "ollama_generate/tool_action_runtime_v1",
+          "allowed_files_snapshot": [],
+          "arguments": {
+            "content": "<!doctype html><html><head><title>Pure Path</title></head><body><h1>Pure Path</h1></body></html>\n"
+          },
+          "authorship": "model_authored",
+          "created_at": "",
+          "execution_state": "blocked_until_plan_3",
+          "model_id": "mock-model",
+          "reason": "Choose a safe disposable homepage path.",
+          "requires_approval": true,
+          "schema_version": 1,
+          "source_message_id": "human-messy-homepage:0",
+          "target": "site/home.html"
+        }
+      ],
+      "adapter_source": "ollama_generate/tool_action_runtime_v1",
+      "decisions": [
+        {
+          "action_id": "human-messy-homepage:0:1:WriteFile",
+          "adapter_source": "ollama_generate/tool_action_runtime_v1",
+          "detail": "",
+          "error_code": "",
+          "parser": "strict_json",
+          "status": "accepted"
+        }
+      ],
+      "error_code": "",
+      "ok": true,
+      "raw_transcript": "{\"action_type\": \"WriteFile\", \"target\": \"site/home.html\", \"arguments\": {\"content\": \"<!doctype html><html><head><title>Pure Path</title></head><body><h1>Pure Path</h1></body></html>\\n\"}, \"reason\": \"Choose a safe disposable homepage path.\"}",
+      "repair_prompt": ""
+    }
+  ],
+  "parsed_actions": [
+    {
+      "action_id": "human-messy-homepage:0:1:WriteFile",
+      "action_type": "WriteFile",
+      "adapter_source": "ollama_generate/tool_action_runtime_v1",
+      "allowed_files_snapshot": [],
+      "arguments": {
+        "content": "<!doctype html><html><head><title>Pure Path</title></head><body><h1>Pure Path</h1></body></html>\n"
+      },
+      "authorship": "model_authored",
+      "created_at": "",
+      "execution_state": "blocked_until_plan_3",
+      "model_id": "mock-model",
+      "reason": "Choose a safe disposable homepage path.",
+      "requires_approval": true,
+      "schema_version": 1,
+      "source_message_id": "human-messy-homepage:0",
+      "target": "site/home.html"
+    }
+  ],
+  "raw_model_transcripts": [
+    "{\"action_type\": \"WriteFile\", \"target\": \"site/home.html\", \"arguments\": {\"content\": \"<!doctype html><html><head><title>Pure Path</title></head><body><h1>Pure Path</h1></body></html>\\n\"}, \"reason\": \"Choose a safe disposable homepage path.\"}"
+  ],
+  "receipt_path": "docs/evidence/source-proxy-orchestrator-correction/phase-2-receipt-samples/pure-homepage-receipt.json",
+  "skipped_checks": []
+}

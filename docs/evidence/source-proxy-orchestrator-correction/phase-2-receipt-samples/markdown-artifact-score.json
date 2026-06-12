@@ -1,0 +1,64 @@
+{
+  "actions_seen": 1,
+  "adapter_source": "ollama_generate/tool_action_runtime_v1",
+  "allowed_files_source": "artifact_class_extensions",
+  "allowed_scope_source": "artifact_class_extensions",
+  "artifact_class": "markdown_document",
+  "backend_created_content": false,
+  "benchmark_eligibility_reason": "product_route_uses_proxy_orchestration",
+  "benchmark_eligible": false,
+  "blocked_reasons": [],
+  "content_byte_match_by_target": {
+    "release-checklist.md": true
+  },
+  "deterministic_scaffold_used": false,
+  "dummy_fixture_used": false,
+  "elapsed_seconds": 0.001,
+  "fallback_used": false,
+  "file_equals_model_action_content": true,
+  "files_changed": [
+    "release-checklist.md"
+  ],
+  "files_touched": [
+    "release-checklist.md"
+  ],
+  "final_state": "completed",
+  "mode": "product",
+  "model_authored_content_hashes": {
+    "release-checklist.md": "d9909a5d26e771332bb386982e6b4af96642d8d2efa46257b6bc61d6d139b219"
+  },
+  "model_authored_targets": [
+    "release-checklist.md"
+  ],
+  "model_chose_target": true,
+  "model_id": "mock-model",
+  "openable_homepage": false,
+  "openable_homepage_paths": [],
+  "parsed_action_count": 1,
+  "path_selection_mode": "model_chosen",
+  "preview_url": "",
+  "product_helper_used": true,
+  "prompt": "make a markdown checklist for release verification",
+  "proxy_exact_target_suggested": "",
+  "proxy_orchestration_used": true,
+  "pure_mode": false,
+  "raw_model_transcript_count": 1,
+  "raw_transcript_path": "docs/evidence/source-proxy-orchestrator-correction/phase-2-receipt-samples/markdown-artifact-transcript.txt",
+  "real_app_touched": false,
+  "reason_codes": [
+    "openable_homepage_missing"
+  ],
+  "receipt_path": "docs/evidence/source-proxy-orchestrator-correction/phase-2-receipt-samples/markdown-artifact-receipt.json",
+  "route_type": "product",
+  "status": "NO-GO",
+  "system_preselected_target": false,
+  "target_path_source": "model_action",
+  "task_shape": "disposable_single_file_artifact",
+  "task_shape_source": "generic_artifact_resolver",
+  "transparent_default_target_used": false,
+  "workspace_decision_source": "generic_artifact_resolver",
+  "workspace_files": [
+    "release-checklist.md"
+  ],
+  "workspace_path": "docs/evidence/source-proxy-orchestrator-correction/phase-2-receipt-samples/markdown-artifact-workspace"
+}

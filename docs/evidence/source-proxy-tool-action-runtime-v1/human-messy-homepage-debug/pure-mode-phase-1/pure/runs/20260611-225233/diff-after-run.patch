@@ -1,0 +1,17 @@
+--- a/README.md
++++ b/README.md
+@@ -0,0 +1,14 @@
++# Agent Lab Experiments
++
++Welcome to the Agent Lab Experiments repository!
++
++This is where we will conduct various experiments and develop new agents.
++
++## Getting Started
++
++1. Clone this repository.
++2. Create a new experiment directory.
++3. Add your code and documentation.
++4. Commit and push your changes.
++
++Happy experimenting!

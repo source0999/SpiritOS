@@ -1,0 +1,4 @@
+--- a/site/home.html
++++ b/site/home.html
+@@ -0,0 +1 @@
++<!doctype html><html><head><title>Pure Path</title></head><body><h1>Pure Path</h1></body></html>

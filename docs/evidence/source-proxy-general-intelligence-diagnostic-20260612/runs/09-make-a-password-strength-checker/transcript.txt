@@ -1,0 +1,14 @@
+```json
+{
+  "action_type": "WriteFile",
+  "target": "password_strength_checker.py",
+  "arguments": {
+    "content": "#!/usr/bin/env python3\n\nimport re\n\ndef check_password_strength(password):\n    if len(password) < 8:\n        return 'Weak: Password is too short.'\n    if not re.search(r'[a-z]', password):\n        return 'Weak: No lowercase letters.'\n    if not re.search(r'[A-Z]', password):\n        return 'Weak: No uppercase letters.'\n    if not re.search(r'\\d', password):\n        return 'Weak: No digits.'\n    if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):\n        return 'Weak: No special characters.'\n    return 'Strong: Password meets all criteria.'"
+  },
+  "reason": "A simple Python script to check the strength of a password."
+}
+```
+
+--- MODEL CALL ---
+
+{"action_type":"WriteFile","target":"src/password_strength_checker.py","arguments":{"content":"def check_password_strength(password):\n    if len(password) < 8:\n        return False\n    if not any(char.isdigit() for char in password):\n        return False\n    if not any(char.isupper() for char in password):\n        return False\n    if not any(char.islower() for char in password):\n        return False\n    return True"},"reason":"This Python function checks the strength of a password based on length, digit presence, uppercase letter presence, and lowercase letter presence."}

@@ -1,0 +1,72 @@
+--- a/index.html
++++ b/index.html
+@@ -0,0 +1,17 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Timer App</title>
++    <link rel="stylesheet" href="styles.css">
++</head>
++<body>
++    <div class="timer-container">
++        <h1 id="timer">00:00</h1>
++        <button id="startBtn">Start</button>
++        <button id="stopBtn">Stop</button>
++    </div>
++    <script src="script.js"></script>
++</body>
++</html>--- a/script.js
++++ b/script.js
+@@ -0,0 +1,26 @@
++let timer = document.getElementById('timer');
++let startBtn = document.getElementById('startBtn');
++let stopBtn = document.getElementById('stopBtn');
++
++let interval;
++let time = 0;
++
++function formatTime(seconds) {
++    const minutes = Math.floor(seconds / 60);
++    const remainingSeconds = seconds % 60;
++    return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
++}
++
++function startTimer() {
++    interval = setInterval(() => {
++        time++;
++        timer.textContent = formatTime(time);
++    }, 1000);
++}
++
++function stopTimer() {
++    clearInterval(interval);
++}
++
++startBtn.addEventListener('click', startTimer);
++stopBtn.addEventListener('click', stopTimer);--- a/styles.css
++++ b/styles.css
+@@ -0,0 +1,22 @@
++body {
++    display: flex;
++    justify-content: center;
++    align-items: center;
++    height: 100vh;
++    background-color: #f0f0f0;
++}
++
++.timer-container {
++    text-align: center;
++}
++
++#timer {
++    font-size: 48px;
++    margin-bottom: 20px;
++}
++
++button {
++    padding: 10px 20px;
++    font-size: 16px;
++    cursor: pointer;
++}

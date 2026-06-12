@@ -1,0 +1,457 @@
+{
+  "diagnostics_packet": {
+    "adapter_source": "ollama_generate/tool_action_runtime_v1",
+    "blocked_reasons": [],
+    "execution_count": 1,
+    "files_touched": [
+      "README.md"
+    ],
+    "final_state": "completed",
+    "format_retries_used": 1,
+    "model_call_count": 2,
+    "model_id": "qwen2.5-coder:7b",
+    "parsed_action_count": 1,
+    "skipped_checks": [],
+    "verification_repairs_used": 0
+  },
+  "executions": [
+    {
+      "receipt": {
+        "action_id": "human-messy-homepage:1:1:WriteFile",
+        "action_type": "WriteFile",
+        "adapter_source": "ollama_generate/tool_action_runtime_v1",
+        "after_status": {
+          "file_count": 1,
+          "files": [
+            "README.md"
+          ]
+        },
+        "before_status": {
+          "file_count": 0,
+          "files": []
+        },
+        "blocked_reason": "",
+        "diff_summary": "--- a/README.md\n+++ b/README.md\n@@ -0,0 +1,14 @@\n+# Agent Lab Experiments\n+\n+Welcome to the Agent Lab Experiments repository!\n+\n+This is where we will conduct various experiments and develop new agents.\n+\n+## Getting Started\n+\n+1. Clone this repository.\n+2. Create a new experiment directory.\n+3. Add your code and documentation.\n+4. Commit and push your changes.\n+\n+Happy experimenting!",
+        "error_code": "",
+        "files_touched": [
+          "README.md"
+        ],
+        "status": "completed",
+        "stderr": "",
+        "stdout": "",
+        "target": "README.md",
+        "workspace_root": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-tool-action-runtime-v1\\human-messy-homepage-debug\\pure-mode-phase-1\\pure\\runs\\20260611-225233\\workspace"
+      },
+      "result": {
+        "action_id": "human-messy-homepage:1:1:WriteFile",
+        "adapter_source": "ollama_generate/tool_action_runtime_v1",
+        "blocked_reason": "",
+        "diff_summary": "--- a/README.md\n+++ b/README.md\n@@ -0,0 +1,14 @@\n+# Agent Lab Experiments\n+\n+Welcome to the Agent Lab Experiments repository!\n+\n+This is where we will conduct various experiments and develop new agents.\n+\n+## Getting Started\n+\n+1. Clone this repository.\n+2. Create a new experiment directory.\n+3. Add your code and documentation.\n+4. Commit and push your changes.\n+\n+Happy experimenting!",
+        "error_code": "",
+        "files_touched": [
+          "README.md"
+        ],
+        "observation": "",
+        "receipt_path": "",
+        "schema_version": 1,
+        "status": "completed",
+        "stderr": "",
+        "stdout": ""
+      }
+    }
+  ],
+  "final_state": "completed",
+  "model_calls": [
+    {
+      "call_index": 0,
+      "packet": {
+        "call_index": 0,
+        "context_packet": {
+          "forbidden_real_repo_mutation": true,
+          "max_file_count": 8,
+          "mode": "pure",
+          "model_may_choose_paths": true,
+          "network_allowed": false,
+          "user_prompt": "init a repo and make homepage for agent lab expermients",
+          "workspace_mode": "disposable_workspace"
+        },
+        "loop_policy": {
+          "max_format_retries": 2,
+          "max_verification_repairs": 0,
+          "recommended_checks": [],
+          "run_recommended_checks": false
+        },
+        "observations": [],
+        "task_spec": {
+          "allowed_files": [],
+          "approval_level": "disposable_workspace",
+          "blockers": [],
+          "clarification_prompt": "",
+          "clarification_state": "not_needed",
+          "context_sources": [
+            "user_prompt"
+          ],
+          "forbidden_files": [
+            ".env",
+            ".env.*",
+            "*.pem",
+            "*.key",
+            "certificates/*"
+          ],
+          "intent": "create_or_edit",
+          "literal_requirements": [],
+          "risk_tier": "medium",
+          "schema_version": 1,
+          "source": "human_messy_homepage_pure_mode",
+          "target": "",
+          "task_type": "create_or_edit_in_disposable_workspace",
+          "user_prompt": "init a repo and make homepage for agent lab expermients",
+          "verification": [
+            "git diff --check"
+          ],
+          "workspace_mode": "disposable_workspace"
+        },
+        "tool_contract": {
+          "schema_version": 1,
+          "stable_error_codes": [
+            "backend_authorship_rejected",
+            "bash_string_args_only_for_bash",
+            "content_required",
+            "empty_transcript",
+            "execution_blocked_until_plan_3",
+            "free_floating_code_no_path_action",
+            "invalid_action_schema",
+            "invalid_json",
+            "target_not_allowed",
+            "target_required",
+            "unsupported_action_type"
+          ],
+          "tools": [
+            {
+              "action_type": "ReadFile",
+              "capability": "read",
+              "execution_state": "parser_only"
+            },
+            {
+              "action_type": "ListFiles",
+              "capability": "read",
+              "execution_state": "parser_only"
+            },
+            {
+              "action_type": "SearchRepo",
+              "capability": "read",
+              "execution_state": "parser_only"
+            },
+            {
+              "action_type": "WriteFile",
+              "capability": "write",
+              "execution_state": "blocked_until_plan_3"
+            },
+            {
+              "action_type": "EditFile",
+              "capability": "write",
+              "execution_state": "blocked_until_plan_3"
+            },
+            {
+              "action_type": "MultiEdit",
+              "capability": "write",
+              "execution_state": "blocked_until_plan_3"
+            },
+            {
+              "action_type": "RunCheck",
+              "capability": "execute",
+              "execution_state": "blocked_until_plan_3"
+            },
+            {
+              "action_type": "AskClarification",
+              "capability": "respond",
+              "execution_state": "parser_only"
+            },
+            {
+              "action_type": "ReturnFinal",
+              "capability": "respond",
+              "execution_state": "parser_only"
+            }
+          ]
+        },
+        "workspace_contract": {
+          "allowed_files": [],
+          "approval_level": "disposable_workspace",
+          "forbidden_files": [
+            ".env",
+            ".env.*",
+            "*.pem",
+            "*.key",
+            "certificates/*"
+          ],
+          "max_file_count": 8,
+          "model_may_choose_paths": true,
+          "network_allowed": false,
+          "protected_paths": [],
+          "workspace_root": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-tool-action-runtime-v1\\human-messy-homepage-debug\\pure-mode-phase-1\\pure\\runs\\20260611-225233\\workspace"
+        }
+      },
+      "raw_transcript": "```json\n[\n    {\n        \"action_type\": \"WriteFile\",\n        \"target\": \"README.md\",\n        \"arguments\": {\n            \"content\": \"# Agent Lab Experiments\\n\\nWelcome to the Agent Lab Experiments repository. This is a space where we will conduct various experiments and tests related to our agent technology.\\n\\n## Getting Started\\n\\n1. Clone this repository to your local machine.\\n2. Navigate to the project directory.\\n3. Run the necessary setup scripts or commands as per the instructions in the `setup.md` file.\\n4. Begin experimenting with the provided code and resources.\\n\\n## Contributing\\n\\nWe welcome contributions from the community. Please read our [CONTRIBUTING.md](CONTRIBUTING.md) file for guidelines on how to contribute.\\n\\n## License\\n\\nThis project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.\"\n        },\n        \"reason\": \"Provides a clear and concise overview of the repository and instructions for getting started.\"\n    }\n]\n```"
+    },
+    {
+      "call_index": 1,
+      "packet": {
+        "call_index": 1,
+        "context_packet": {
+          "forbidden_real_repo_mutation": true,
+          "max_file_count": 8,
+          "mode": "pure",
+          "model_may_choose_paths": true,
+          "network_allowed": false,
+          "user_prompt": "init a repo and make homepage for agent lab expermients",
+          "workspace_mode": "disposable_workspace"
+        },
+        "loop_policy": {
+          "max_format_retries": 2,
+          "max_verification_repairs": 0,
+          "recommended_checks": [],
+          "run_recommended_checks": false
+        },
+        "observations": [
+          {
+            "error_code": "free_floating_code_no_path_action",
+            "repair_prompt": "Return an explicit Source Proxy action with action_type and target, or a <file path=\"repo/path\">...</file> block. Do not send free-floating code.",
+            "type": "parse_error"
+          }
+        ],
+        "task_spec": {
+          "allowed_files": [],
+          "approval_level": "disposable_workspace",
+          "blockers": [],
+          "clarification_prompt": "",
+          "clarification_state": "not_needed",
+          "context_sources": [
+            "user_prompt"
+          ],
+          "forbidden_files": [
+            ".env",
+            ".env.*",
+            "*.pem",
+            "*.key",
+            "certificates/*"
+          ],
+          "intent": "create_or_edit",
+          "literal_requirements": [],
+          "risk_tier": "medium",
+          "schema_version": 1,
+          "source": "human_messy_homepage_pure_mode",
+          "target": "",
+          "task_type": "create_or_edit_in_disposable_workspace",
+          "user_prompt": "init a repo and make homepage for agent lab expermients",
+          "verification": [
+            "git diff --check"
+          ],
+          "workspace_mode": "disposable_workspace"
+        },
+        "tool_contract": {
+          "schema_version": 1,
+          "stable_error_codes": [
+            "backend_authorship_rejected",
+            "bash_string_args_only_for_bash",
+            "content_required",
+            "empty_transcript",
+            "execution_blocked_until_plan_3",
+            "free_floating_code_no_path_action",
+            "invalid_action_schema",
+            "invalid_json",
+            "target_not_allowed",
+            "target_required",
+            "unsupported_action_type"
+          ],
+          "tools": [
+            {
+              "action_type": "ReadFile",
+              "capability": "read",
+              "execution_state": "parser_only"
+            },
+            {
+              "action_type": "ListFiles",
+              "capability": "read",
+              "execution_state": "parser_only"
+            },
+            {
+              "action_type": "SearchRepo",
+              "capability": "read",
+              "execution_state": "parser_only"
+            },
+            {
+              "action_type": "WriteFile",
+              "capability": "write",
+              "execution_state": "blocked_until_plan_3"
+            },
+            {
+              "action_type": "EditFile",
+              "capability": "write",
+              "execution_state": "blocked_until_plan_3"
+            },
+            {
+              "action_type": "MultiEdit",
+              "capability": "write",
+              "execution_state": "blocked_until_plan_3"
+            },
+            {
+              "action_type": "RunCheck",
+              "capability": "execute",
+              "execution_state": "blocked_until_plan_3"
+            },
+            {
+              "action_type": "AskClarification",
+              "capability": "respond",
+              "execution_state": "parser_only"
+            },
+            {
+              "action_type": "ReturnFinal",
+              "capability": "respond",
+              "execution_state": "parser_only"
+            }
+          ]
+        },
+        "workspace_contract": {
+          "allowed_files": [],
+          "approval_level": "disposable_workspace",
+          "forbidden_files": [
+            ".env",
+            ".env.*",
+            "*.pem",
+            "*.key",
+            "certificates/*"
+          ],
+          "max_file_count": 8,
+          "model_may_choose_paths": true,
+          "network_allowed": false,
+          "protected_paths": [],
+          "workspace_root": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-tool-action-runtime-v1\\human-messy-homepage-debug\\pure-mode-phase-1\\pure\\runs\\20260611-225233\\workspace"
+        }
+      },
+      "raw_transcript": "{\"action_type\":\"WriteFile\",\"target\":\"README.md\",\"arguments\":{\"content\":\"# Agent Lab Experiments\\n\\nWelcome to the Agent Lab Experiments repository!\\n\\nThis is where we will conduct various experiments and develop new agents.\\n\\n## Getting Started\\n\\n1. Clone this repository.\\n2. Create a new experiment directory.\\n3. Add your code and documentation.\\n4. Commit and push your changes.\\n\\nHappy experimenting!\"},\"reason\":\"A README file provides an overview of the repository and instructions for getting started.\"}"
+    }
+  ],
+  "parse_results": [
+    {
+      "actions": [],
+      "adapter_source": "ollama_generate/tool_action_runtime_v1",
+      "decisions": [
+        {
+          "action_id": "",
+          "adapter_source": "generic",
+          "detail": "Expecting value: line 1 column 1 (char 0)",
+          "error_code": "invalid_json",
+          "parser": "strict_json",
+          "status": "rejected"
+        },
+        {
+          "action_id": "",
+          "adapter_source": "generic",
+          "detail": "Expecting value: line 1 column 1 (char 0)",
+          "error_code": "invalid_json",
+          "parser": "line_delimited_json",
+          "status": "rejected"
+        },
+        {
+          "action_id": "",
+          "adapter_source": "ollama_generate/tool_action_runtime_v1",
+          "detail": "No path-bound Aider-like edit chunk found.",
+          "error_code": "",
+          "parser": "aider_path_bound_edit",
+          "status": "skipped"
+        },
+        {
+          "action_id": "",
+          "adapter_source": "ollama_generate/tool_action_runtime_v1",
+          "detail": "No explicit <file path=\"...\"> block found.",
+          "error_code": "invalid_action_schema",
+          "parser": "path_content_block",
+          "status": "rejected"
+        },
+        {
+          "action_id": "",
+          "adapter_source": "ollama_generate/tool_action_runtime_v1",
+          "detail": "No markdown code block was tied to an explicit file path.",
+          "error_code": "",
+          "parser": "markdown_path_content_block",
+          "status": "skipped"
+        },
+        {
+          "action_id": "",
+          "adapter_source": "generic",
+          "detail": "Code-like output had no path-bound action or file block.",
+          "error_code": "free_floating_code_no_path_action",
+          "parser": "contract",
+          "status": "rejected"
+        }
+      ],
+      "error_code": "free_floating_code_no_path_action",
+      "ok": false,
+      "raw_transcript": "```json\n[\n    {\n        \"action_type\": \"WriteFile\",\n        \"target\": \"README.md\",\n        \"arguments\": {\n            \"content\": \"# Agent Lab Experiments\\n\\nWelcome to the Agent Lab Experiments repository. This is a space where we will conduct various experiments and tests related to our agent technology.\\n\\n## Getting Started\\n\\n1. Clone this repository to your local machine.\\n2. Navigate to the project directory.\\n3. Run the necessary setup scripts or commands as per the instructions in the `setup.md` file.\\n4. Begin experimenting with the provided code and resources.\\n\\n## Contributing\\n\\nWe welcome contributions from the community. Please read our [CONTRIBUTING.md](CONTRIBUTING.md) file for guidelines on how to contribute.\\n\\n## License\\n\\nThis project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.\"\n        },\n        \"reason\": \"Provides a clear and concise overview of the repository and instructions for getting started.\"\n    }\n]\n```",
+      "repair_prompt": "Return an explicit Source Proxy action with action_type and target, or a <file path=\"repo/path\">...</file> block. Do not send free-floating code."
+    },
+    {
+      "actions": [
+        {
+          "action_id": "human-messy-homepage:1:1:WriteFile",
+          "action_type": "WriteFile",
+          "adapter_source": "ollama_generate/tool_action_runtime_v1",
+          "allowed_files_snapshot": [],
+          "arguments": {
+            "content": "# Agent Lab Experiments\n\nWelcome to the Agent Lab Experiments repository!\n\nThis is where we will conduct various experiments and develop new agents.\n\n## Getting Started\n\n1. Clone this repository.\n2. Create a new experiment directory.\n3. Add your code and documentation.\n4. Commit and push your changes.\n\nHappy experimenting!"
+          },
+          "authorship": "model_authored",
+          "created_at": "",
+          "execution_state": "blocked_until_plan_3",
+          "model_id": "qwen2.5-coder:7b",
+          "reason": "A README file provides an overview of the repository and instructions for getting started.",
+          "requires_approval": true,
+          "schema_version": 1,
+          "source_message_id": "human-messy-homepage:1",
+          "target": "README.md"
+        }
+      ],
+      "adapter_source": "ollama_generate/tool_action_runtime_v1",
+      "decisions": [
+        {
+          "action_id": "human-messy-homepage:1:1:WriteFile",
+          "adapter_source": "ollama_generate/tool_action_runtime_v1",
+          "detail": "",
+          "error_code": "",
+          "parser": "strict_json",
+          "status": "accepted"
+        }
+      ],
+      "error_code": "",
+      "ok": true,
+      "raw_transcript": "{\"action_type\":\"WriteFile\",\"target\":\"README.md\",\"arguments\":{\"content\":\"# Agent Lab Experiments\\n\\nWelcome to the Agent Lab Experiments repository!\\n\\nThis is where we will conduct various experiments and develop new agents.\\n\\n## Getting Started\\n\\n1. Clone this repository.\\n2. Create a new experiment directory.\\n3. Add your code and documentation.\\n4. Commit and push your changes.\\n\\nHappy experimenting!\"},\"reason\":\"A README file provides an overview of the repository and instructions for getting started.\"}",
+      "repair_prompt": ""
+    }
+  ],
+  "parsed_actions": [
+    {
+      "action_id": "human-messy-homepage:1:1:WriteFile",
+      "action_type": "WriteFile",
+      "adapter_source": "ollama_generate/tool_action_runtime_v1",
+      "allowed_files_snapshot": [],
+      "arguments": {
+        "content": "# Agent Lab Experiments\n\nWelcome to the Agent Lab Experiments repository!\n\nThis is where we will conduct various experiments and develop new agents.\n\n## Getting Started\n\n1. Clone this repository.\n2. Create a new experiment directory.\n3. Add your code and documentation.\n4. Commit and push your changes.\n\nHappy experimenting!"
+      },
+      "authorship": "model_authored",
+      "created_at": "",
+      "execution_state": "blocked_until_plan_3",
+      "model_id": "qwen2.5-coder:7b",
+      "reason": "A README file provides an overview of the repository and instructions for getting started.",
+      "requires_approval": true,
+      "schema_version": 1,
+      "source_message_id": "human-messy-homepage:1",
+      "target": "README.md"
+    }
+  ],
+  "raw_model_transcripts": [
+    "```json\n[\n    {\n        \"action_type\": \"WriteFile\",\n        \"target\": \"README.md\",\n        \"arguments\": {\n            \"content\": \"# Agent Lab Experiments\\n\\nWelcome to the Agent Lab Experiments repository. This is a space where we will conduct various experiments and tests related to our agent technology.\\n\\n## Getting Started\\n\\n1. Clone this repository to your local machine.\\n2. Navigate to the project directory.\\n3. Run the necessary setup scripts or commands as per the instructions in the `setup.md` file.\\n4. Begin experimenting with the provided code and resources.\\n\\n## Contributing\\n\\nWe welcome contributions from the community. Please read our [CONTRIBUTING.md](CONTRIBUTING.md) file for guidelines on how to contribute.\\n\\n## License\\n\\nThis project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.\"\n        },\n        \"reason\": \"Provides a clear and concise overview of the repository and instructions for getting started.\"\n    }\n]\n```",
+    "{\"action_type\":\"WriteFile\",\"target\":\"README.md\",\"arguments\":{\"content\":\"# Agent Lab Experiments\\n\\nWelcome to the Agent Lab Experiments repository!\\n\\nThis is where we will conduct various experiments and develop new agents.\\n\\n## Getting Started\\n\\n1. Clone this repository.\\n2. Create a new experiment directory.\\n3. Add your code and documentation.\\n4. Commit and push your changes.\\n\\nHappy experimenting!\"},\"reason\":\"A README file provides an overview of the repository and instructions for getting started.\"}"
+  ],
+  "receipt_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-tool-action-runtime-v1\\human-messy-homepage-debug\\pure-mode-phase-1\\pure\\runs\\20260611-225233\\receipt.json",
+  "skipped_checks": []
+}

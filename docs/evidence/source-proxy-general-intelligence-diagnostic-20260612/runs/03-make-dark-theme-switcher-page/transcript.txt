@@ -1,0 +1,28 @@
+```json
+[
+    {
+        "action_type": "WriteFile",
+        "target": "dark-theme-switcher.html",
+        "arguments": {
+            "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Dark Theme Switcher</title>\n    <link rel=\"stylesheet\" href=\"dark-theme-switcher.css\">\n</head>\n<body>\n    <button id=\"theme-toggle\">Toggle Dark Mode</button>\n    <script src=\"dark-theme-switcher.js\"></script>\n</body>\n</html>"
+        },
+        "reason": "HTML file for the dark theme switcher page."
+    },
+    {
+        "action_type": "WriteFile",
+        "target": "dark-theme-switcher.css",
+        "arguments": {
+            "content": "body {\n    background-color: #333;\n    color: #fff;\n}\nbutton {\n    background-color: #555;\n    border: none;\n    padding: 10px 20px;\n    cursor: pointer;\n}\nbutton:hover {\n    background-color: #777;\n}"
+        },
+        "reason": "CSS file for styling the dark theme switcher page."
+    },
+    {
+        "action_type": "WriteFile",
+        "target": "dark-theme-switcher.js",
+        "arguments": {
+            "content": "document.getElementById('theme-toggle').addEventListener('click', function() {\n    document.body.classList.toggle('dark-mode');\n});"
+        },
+        "reason": "JavaScript file for handling the theme toggle functionality."
+    }
+]
+```

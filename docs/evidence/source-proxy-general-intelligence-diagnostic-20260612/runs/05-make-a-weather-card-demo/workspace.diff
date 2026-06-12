@@ -1,0 +1,49 @@
+--- a/weather-card.css
++++ b/weather-card.css
+@@ -0,0 +1,15 @@
++.weather-card {
++    width: 300px;
++    padding: 20px;
++    border: 1px solid #ccc;
++    border-radius: 5px;
++    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
++}
++
++.weather-card h2 {
++    margin-top: 0;
++}
++
++.weather-card p {
++    margin: 5px 0;
++}--- a/weather-card.html
++++ b/weather-card.html
+@@ -0,0 +1,17 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Weather Card</title>
++    <link rel="stylesheet" href="weather-card.css">
++</head>
++<body>
++    <div class="weather-card">
++        <h2 id="city">City</h2>
++        <p id="temperature">Temperature: 0°C</p>
++        <p id="description">Description: Clear sky</p>
++    </div>
++    <script src="weather-card.js"></script>
++</body>
++</html>--- a/weather-card.js
++++ b/weather-card.js
+@@ -0,0 +1,10 @@
++document.addEventListener('DOMContentLoaded', function() {
++    const cityElement = document.getElementById('city');
++    const temperatureElement = document.getElementById('temperature');
++    const descriptionElement = document.getElementById('description');
++
++    // Example data
++    cityElement.textContent = 'New York';
++    temperatureElement.textContent = '15°C';
++    descriptionElement.textContent = 'Partly cloudy';
++});

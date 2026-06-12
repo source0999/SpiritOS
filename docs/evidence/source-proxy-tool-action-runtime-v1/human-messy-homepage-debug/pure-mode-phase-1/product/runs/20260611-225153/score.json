@@ -1,0 +1,46 @@
+{
+  "actions_seen": 1,
+  "adapter_source": "ollama_generate/tool_action_runtime_v1",
+  "allowed_files_source": "product_helper",
+  "backend_created_content": false,
+  "benchmark_eligible": false,
+  "blocked_reasons": [],
+  "deterministic_scaffold_used": false,
+  "dummy_fixture_used": false,
+  "elapsed_seconds": 31.9,
+  "fallback_used": false,
+  "file_equals_model_action_content": true,
+  "files_changed": [
+    "index.html"
+  ],
+  "files_touched": [
+    "index.html"
+  ],
+  "final_state": "completed",
+  "mode": "product",
+  "model_chose_target": false,
+  "model_id": "qwen2.5-coder:7b",
+  "openable_homepage": true,
+  "openable_homepage_paths": [
+    "index.html"
+  ],
+  "parsed_action_count": 1,
+  "path_selection_mode": "product_helper",
+  "preview_url": "http://10.0.0.126:8765/",
+  "product_helper_used": true,
+  "prompt": "init a repo and make homepage for agent lab expermients",
+  "pure_mode": false,
+  "raw_model_transcript_count": 1,
+  "raw_transcript_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-tool-action-runtime-v1\\human-messy-homepage-debug\\pure-mode-phase-1\\product\\runs\\20260611-225153\\raw-transcript.txt",
+  "real_app_touched": false,
+  "reason_codes": [],
+  "receipt_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-tool-action-runtime-v1\\human-messy-homepage-debug\\pure-mode-phase-1\\product\\runs\\20260611-225153\\receipt.json",
+  "status": "GO",
+  "system_preselected_target": true,
+  "target_path_source": "system_preselected",
+  "transparent_default_target_used": true,
+  "workspace_files": [
+    "index.html"
+  ],
+  "workspace_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-tool-action-runtime-v1\\human-messy-homepage-debug\\pure-mode-phase-1\\product\\runs\\20260611-225153\\workspace"
+}
