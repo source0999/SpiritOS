@@ -217,6 +217,7 @@ def parse_model_actions(
     )
     for parser_name, parser in (
         ("strict_json", _parse_strict_json_actions),
+        ("fenced_json", _parse_fenced_json_actions),
         ("line_delimited_json", _parse_line_delimited_json_actions),
         ("aider_path_bound_edit", _parse_aider_path_bound_edits),
         ("path_content_block", _parse_path_content_blocks),
@@ -327,6 +328,59 @@ def _parse_line_delimited_json_actions(
             ]
         specs.append(parsed)
     return _actions_from_specs(specs, context, parser="line_delimited_json")
+
+
+def _parse_fenced_json_actions(
+    raw: str,
+    context: _ParseContext,
+) -> tuple[list[SourceProxyAction], list[ActionParseDecision]]:
+    decisions: list[ActionParseDecision] = []
+    matches = list(
+        re.finditer(
+            r"```\s*(?:json)?\s*\r?\n(?P<body>.*?)\r?\n```",
+            raw,
+            flags=re.DOTALL | re.IGNORECASE,
+        )
+    )
+    if not matches:
+        return [], [
+            ActionParseDecision(
+                parser="fenced_json",
+                status="skipped",
+                detail="Transcript did not contain a fenced JSON action block.",
+                adapter_source=context.adapter_source,
+            )
+        ]
+    for match in matches:
+        body = match.group("body").strip()
+        try:
+            parsed = json.loads(body)
+        except json.JSONDecodeError as error:
+            decisions.append(
+                ActionParseDecision(
+                    parser="fenced_json",
+                    status="rejected",
+                    error_code="invalid_json",
+                    detail=str(error),
+                    adapter_source=context.adapter_source,
+                )
+            )
+            continue
+        specs = _json_action_specs(parsed)
+        if specs is None:
+            decisions.append(
+                ActionParseDecision(
+                    parser="fenced_json",
+                    status="rejected",
+                    error_code="invalid_action_schema",
+                    detail="Fenced JSON root must be an action object or actions list.",
+                    adapter_source=context.adapter_source,
+                )
+            )
+            continue
+        actions, action_decisions = _actions_from_specs(specs, context, parser="fenced_json")
+        return actions, [*decisions, *action_decisions]
+    return [], decisions
 
 
 def _parse_path_content_blocks(
@@ -578,6 +632,8 @@ def _parse_aider_path_bound_edits(
 
 
 def _json_action_specs(parsed: Any) -> list[dict[str, Any]] | None:
+    if isinstance(parsed, list):
+        return [item for item in parsed if isinstance(item, dict)]
     if isinstance(parsed, dict) and isinstance(parsed.get("actions"), list):
         return [item for item in parsed["actions"] if isinstance(item, dict)]
     if isinstance(parsed, dict) and (

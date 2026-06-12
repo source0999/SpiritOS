@@ -51,9 +51,12 @@ UNSAFE_COMMAND_MARKERS = (
 class ToolActionWorkspaceContract:
     workspace_root: Path
     allowed_files: tuple[str, ...] = ()
+    allowed_file_extensions: tuple[str, ...] = ()
     forbidden_files: tuple[str, ...] = ()
     protected_paths: tuple[str, ...] = ()
     approval_level: str = "disposable_workspace"
+    model_may_choose_paths: bool = False
+    max_file_count: int = 8
     network_allowed: bool = False
     output_limit_bytes: int = DEFAULT_OUTPUT_LIMIT_BYTES
     search_result_limit: int = DEFAULT_SEARCH_RESULT_LIMIT
@@ -196,6 +199,15 @@ def _execute_write_file(
     content = action.arguments.get("content")
     if not isinstance(content, str):
         return _blocked_execution(action, contract, before, before, "content_required", "WriteFile requires string content.")
+    if not resolved.path.exists() and before.file_count >= contract.max_file_count:
+        return _blocked_execution(
+            action,
+            contract,
+            before,
+            before,
+            "file_count_limit_exceeded",
+            f"Disposable workspace file count limit exceeded: {contract.max_file_count}.",
+        )
     old = _read_text_if_exists(resolved.path)
     resolved.path.parent.mkdir(parents=True, exist_ok=True)
     resolved.path.write_text(content, encoding="utf-8")
@@ -412,6 +424,9 @@ def _blocked_command_reason(command: str, contract: ToolActionWorkspaceContract)
 
 
 def _is_allowed_repo_path(repo_path: str, action: SourceProxyAction, contract: ToolActionWorkspaceContract) -> bool:
+    if contract.model_may_choose_paths:
+        return True
+    normalized = normalize_repo_path_candidate(repo_path)
     contract_allowed = set(contract.normalized_allowed_files())
     if contract_allowed:
         allowed = contract_allowed
@@ -421,7 +436,14 @@ def _is_allowed_repo_path(repo_path: str, action: SourceProxyAction, contract: T
             for path in action.allowed_files_snapshot
             if normalize_repo_path_candidate(path)
         }
-    return bool(allowed) and normalize_repo_path_candidate(repo_path) in allowed
+    if allowed:
+        return normalized in allowed
+    extensions = {
+        extension.lower() if extension.startswith(".") else f".{extension.lower()}"
+        for extension in contract.allowed_file_extensions
+        if extension
+    }
+    return bool(extensions) and any(normalized.lower().endswith(extension) for extension in extensions)
 
 
 def _is_protected_repo_path(repo_path: str, contract: ToolActionWorkspaceContract) -> bool:

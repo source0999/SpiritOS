@@ -268,9 +268,12 @@ def _model_packet(
         "workspace_contract": {
             "workspace_root": str(request.workspace_contract.workspace_root.resolve()),
             "allowed_files": list(request.workspace_contract.allowed_files),
+            "allowed_file_extensions": list(request.workspace_contract.allowed_file_extensions),
             "forbidden_files": list(request.workspace_contract.forbidden_files),
             "protected_paths": list(request.workspace_contract.protected_paths),
             "approval_level": request.workspace_contract.approval_level,
+            "model_may_choose_paths": request.workspace_contract.model_may_choose_paths,
+            "max_file_count": request.workspace_contract.max_file_count,
             "network_allowed": request.workspace_contract.network_allowed,
         },
         "loop_policy": {
@@ -300,6 +303,27 @@ def _build_receipt(
         "model_id": request.model_id,
         "adapter_source": request.adapter_source,
         "final_state": final_state,
+        "route_type": request.context_packet.get("route_type") or request.context_packet.get("mode") or "",
+        "task_shape": request.context_packet.get("task_shape") or request.task_spec.get("task_shape") or "",
+        "task_shape_source": request.context_packet.get("task_shape_source") or request.task_spec.get("task_shape_source") or "",
+        "workspace_decision_source": request.context_packet.get("workspace_decision_source")
+        or request.task_spec.get("workspace_decision_source")
+        or "",
+        "allowed_scope_source": request.context_packet.get("allowed_scope_source")
+        or request.task_spec.get("allowed_scope_source")
+        or "",
+        "proxy_artifact_class_suggested": request.context_packet.get("artifact_class") or "",
+        "proxy_exact_target_suggested": request.context_packet.get("proxy_exact_target_suggested") or "",
+        "model_authored_targets": sorted(
+            {
+                str(action.get("target") or "")
+                for action in parsed_actions
+                if action.get("action_type") in {"WriteFile", "EditFile", "MultiEdit"}
+                and str(action.get("target") or "")
+            }
+        ),
+        "benchmark_eligibility_reason": request.context_packet.get("benchmark_eligibility_reason") or "",
+        "clarification_or_block_reason": request.context_packet.get("clarification_or_block_reason") or "",
         "model_call_count": len(model_calls),
         "format_retries_used": format_retries,
         "verification_repairs_used": verification_repairs,

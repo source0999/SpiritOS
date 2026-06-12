@@ -35,6 +35,16 @@ ClarificationState = Literal["not_needed", "required", "blocked"]
 
 
 @dataclass(frozen=True)
+class ArtifactCreateResolution:
+    task_kind: TaskKind
+    task_shape: str
+    artifact_class: str
+    allowed_extensions: list[str]
+    max_file_count: int
+    reason_code: str
+
+
+@dataclass(frozen=True)
 class TaskSpecIntake:
     schema_version: int
     task_kind: TaskKind
@@ -44,6 +54,14 @@ class TaskSpecIntake:
     allowed_files: list[str]
     forbidden_files: list[str]
     protected_paths: list[str]
+    task_shape: str
+    task_shape_source: str
+    artifact_class: str
+    allowed_extensions: list[str]
+    max_file_count: int
+    target_source: str
+    workspace_decision_source: str
+    allowed_scope_source: str
     workspace_mode: WorkspaceMode
     approval_level: str
     model_lane: str
@@ -67,6 +85,7 @@ def build_task_spec_intake(
     forbidden_files: list[str] | tuple[str, ...] | None = None,
     wants_implementation: bool = False,
     model_lane: str = "coder_agent",
+    allow_messy_homepage_helper: bool = True,
 ) -> TaskSpecIntake:
     prompt = (task or "").strip()
     allowed = _normalize_list(allowed_files or [])
@@ -96,11 +115,25 @@ def build_task_spec_intake(
     clarification_state: ClarificationState = "not_needed"
     clarification_prompt = ""
     risk_level = str(decision.risk_tier or "low")
+    task_shape = ""
+    task_shape_source = ""
+    artifact_class = ""
+    allowed_extensions: list[str] = []
+    max_file_count = 8
+    target_source = "none"
+    workspace_decision_source = "route_decision"
+    allowed_scope_source = "none"
+    artifact_resolution = _resolve_disposable_artifact_create(prompt)
 
     if unsafe is not None:
         task_kind = "protected_path" if unsafe.reason_code == "protected_path" else "path_escape"
         target_paths = [unsafe.path]
         allowed = []
+        task_shape = "blocked_protected_or_unsafe_path"
+        task_shape_source = "protected_path_gate"
+        target_source = "blocked_target"
+        workspace_decision_source = "protected_path_gate"
+        allowed_scope_source = "blocked"
         clarification_state = "blocked"
         clarification_prompt = _blocked_prompt(unsafe.reason_code, unsafe.path)
         risk_level = "high"
@@ -113,6 +146,12 @@ def build_task_spec_intake(
         target_paths = [target] if target else []
         allowed = list(proposal.allowed_files)
         explicit_forbidden = _dedupe([*explicit_forbidden, *proposal.forbidden_files])
+        task_shape = "bounded_disposable_create"
+        task_shape_source = "explicit_task_spec"
+        artifact_class = "explicit_target"
+        target_source = "user_explicit"
+        workspace_decision_source = "explicit_task_spec"
+        allowed_scope_source = "user_explicit_allowed_files"
         if create_ok:
             task_kind = "create_new_file"
             workspace_mode = "disposable_workspace"
@@ -132,26 +171,45 @@ def build_task_spec_intake(
                 "with explicit allowed_files, or choose an existing repo file."
             )
             allowed = []
+            task_shape = "explicit_target_missing"
+            task_shape_source = "route_decision"
+            target_source = "user_explicit_missing"
         else:
             task_kind = "modify_existing_file"
             workspace_mode = "real_repo_preview"
             allowed = allowed or [target]
-    elif wants_implementation and _is_messy_homepage_disposable_prompt(prompt):
-        target = "index.html"
-        target_paths = [target]
-        task_kind = "create_new_file"
+            task_shape = _explicit_target_shape(target)
+            task_shape_source = "explicit_user_target"
+            artifact_class = _artifact_class_for_path(target)
+            target_source = "user_explicit"
+            workspace_decision_source = "explicit_user_target"
+            allowed_scope_source = "user_explicit_target"
+    elif wants_implementation and allow_messy_homepage_helper and artifact_resolution is not None:
+        task_kind = artifact_resolution.task_kind
         intent = "create"
         workspace_mode = "disposable_workspace"
-        allowed = ["index.html", "styles.css"]
+        task_shape = artifact_resolution.task_shape
+        task_shape_source = "generic_artifact_resolver"
+        artifact_class = artifact_resolution.artifact_class
+        allowed_extensions = artifact_resolution.allowed_extensions
+        max_file_count = artifact_resolution.max_file_count
+        target_paths = []
+        target_source = "model_authored_required"
+        workspace_decision_source = "generic_artifact_resolver"
+        allowed_scope_source = "artifact_class_extensions"
         clarification_state = "not_needed"
         reason_codes = _dedupe(
             [
                 *_without(reason_codes, "target_missing", "target_unresolved"),
-                "messy_homepage_disposable_candidate",
+                artifact_resolution.reason_code,
             ]
         )
     elif wants_implementation:
         task_kind = "target_unresolved"
+        task_shape = "clarification_required_real_repo_implementation"
+        task_shape_source = "target_resolution"
+        workspace_decision_source = "target_resolution"
+        allowed_scope_source = "none"
         clarification_state = "required"
         clarification_prompt = (
             "Add one repo-relative Target file line or choose a disposable workspace "
@@ -185,6 +243,14 @@ def build_task_spec_intake(
         allowed_files=allowed,
         forbidden_files=forbidden,
         protected_paths=protected_paths,
+        task_shape=task_shape,
+        task_shape_source=task_shape_source,
+        artifact_class=artifact_class,
+        allowed_extensions=allowed_extensions,
+        max_file_count=max_file_count,
+        target_source=target_source,
+        workspace_decision_source=workspace_decision_source,
+        allowed_scope_source=allowed_scope_source,
         workspace_mode=workspace_mode,
         approval_level="preview_only_no_apply",
         model_lane=model_lane,
@@ -219,6 +285,14 @@ def intake_as_legacy_task_spec(intake: TaskSpecIntake) -> dict[str, Any]:
         "approval_level": intake.approval_level,
         "intent": intake.intent,
         "context_sources": list(intake.context_sources),
+        "task_shape": intake.task_shape,
+        "task_shape_source": intake.task_shape_source,
+        "artifact_class": intake.artifact_class,
+        "allowed_extensions": list(intake.allowed_extensions),
+        "max_file_count": intake.max_file_count,
+        "target_source": intake.target_source,
+        "workspace_decision_source": intake.workspace_decision_source,
+        "allowed_scope_source": intake.allowed_scope_source,
     }
 
 
@@ -260,11 +334,107 @@ def _intent_for(task: str, wants_implementation: bool) -> str:
     return "analyze"
 
 
-def _is_messy_homepage_disposable_prompt(task: str) -> bool:
+def _resolve_disposable_artifact_create(task: str) -> ArtifactCreateResolution | None:
     normalized = (task or "").lower()
-    createish = re.search(r"\b(init|initialize|make|create|build|new|repo|repository)\b", normalized)
-    homepageish = re.search(r"\b(homepage|home page|index\.html|landing page)\b", normalized)
-    return bool(createish and homepageish)
+    createish = re.search(r"\b(init|initialize|make|create|build|new|scaffold|start|draft)\b", normalized)
+    if not createish:
+        return None
+    markdownish = re.search(r"\b(markdown|readme|checklist|notes?|guide|document)\b", normalized)
+    jsonish = re.search(r"\b(json|config example|configuration example|sample config|example config)\b", normalized)
+    static_pageish = re.search(
+        r"\b(homepage|home page|landing page|index\.html|html page|static page|website|web page)\b",
+        normalized,
+    )
+    browser_uiish = re.search(
+        r"\b(page|site|app|demo|prototype|ui|interface|dashboard|panel|viewer|tracker|portal|screen|widget)\b",
+        normalized,
+    )
+    bundleish = re.search(r"\b(bundle|tiny project|small project|static demo|demo bundle)\b", normalized)
+    textish = re.search(r"\b(text file|txt|artifact|example)\b", normalized)
+    implementationish = re.search(
+        r"\b(fix|refactor|wire|database|api|backend|server|component|route|auth|integrate|migration)\b",
+        normalized,
+    )
+    disposable_hint = re.search(
+        r"\b(tiny|small|simple|standalone|static|demo|artifact|example|prototype|draft|mock|sample)\b",
+        normalized,
+    )
+    if implementationish and not (browser_uiish and disposable_hint) and not markdownish and not jsonish:
+        return None
+    if markdownish:
+        return ArtifactCreateResolution(
+            task_kind="create_new_file",
+            task_shape="disposable_single_file_artifact",
+            artifact_class="markdown_document",
+            allowed_extensions=[".md"],
+            max_file_count=1,
+            reason_code="generic_artifact_create_candidate",
+        )
+    if jsonish:
+        return ArtifactCreateResolution(
+            task_kind="create_new_file",
+            task_shape="disposable_single_file_artifact",
+            artifact_class="json_example",
+            allowed_extensions=[".json"],
+            max_file_count=1,
+            reason_code="generic_artifact_create_candidate",
+        )
+    if static_pageish:
+        return ArtifactCreateResolution(
+            task_kind="create_new_file",
+            task_shape="disposable_single_file_artifact",
+            artifact_class="html_static_page",
+            allowed_extensions=[".html"],
+            max_file_count=1,
+            reason_code="generic_artifact_create_candidate",
+        )
+    if browser_uiish:
+        return ArtifactCreateResolution(
+            task_kind="create_file_bundle",
+            task_shape="disposable_small_file_bundle",
+            artifact_class="static_ui_artifact",
+            allowed_extensions=[".html", ".css", ".js"],
+            max_file_count=3,
+            reason_code="generic_static_ui_artifact_candidate",
+        )
+    if bundleish:
+        return ArtifactCreateResolution(
+            task_kind="create_file_bundle",
+            task_shape="disposable_small_file_bundle",
+            artifact_class="static_ui_artifact",
+            allowed_extensions=[".html", ".css", ".js"],
+            max_file_count=3,
+            reason_code="generic_artifact_bundle_candidate",
+        )
+    if textish:
+        return ArtifactCreateResolution(
+            task_kind="create_new_file",
+            task_shape="disposable_single_file_artifact",
+            artifact_class="text_artifact",
+            allowed_extensions=[".txt", ".md"],
+            max_file_count=1,
+            reason_code="generic_artifact_create_candidate",
+        )
+    return None
+
+
+def _explicit_target_shape(target: str) -> str:
+    if target.lower().endswith((".md", ".json", ".yaml", ".yml", ".toml", ".xml")):
+        return "explicit_docs_or_config_edit"
+    return "bounded_existing_repo_edit"
+
+
+def _artifact_class_for_path(target: str) -> str:
+    lowered = target.lower()
+    if lowered.endswith(".md"):
+        return "markdown_document"
+    if lowered.endswith(".json"):
+        return "json_example"
+    if lowered.endswith((".yaml", ".yml", ".toml", ".xml")):
+        return "config_file"
+    if lowered.endswith(".html"):
+        return "html_static_page"
+    return "existing_repo_file"
 
 
 def _default_forbidden_files() -> list[str]:

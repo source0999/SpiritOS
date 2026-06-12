@@ -26,13 +26,15 @@ from source_proxy.decision.human_messy_homepage import (
 
 
 EVIDENCE_ROOT = REPO / "docs/evidence/source-proxy-tool-action-runtime-v1/human-messy-homepage-debug"
+PHASE_1_EVIDENCE_ROOT = EVIDENCE_ROOT / "pure-mode-phase-1"
 LATEST_PATH = EVIDENCE_ROOT / "latest-run.json"
 DEFAULT_PORT = 8765
 
 
-def _run(prompt: str, host: str, port: int, model_id: str) -> tuple[int, dict[str, object]]:
+def _run(prompt: str, host: str, port: int, model_id: str, mode: str) -> tuple[int, dict[str, object]]:
     run_id = time.strftime("%Y%m%d-%H%M%S")
-    run_root = EVIDENCE_ROOT / "runs" / run_id
+    evidence_root = PHASE_1_EVIDENCE_ROOT
+    run_root = evidence_root / mode / "runs" / run_id
     paths = HumanMessyHomepagePaths(
         workspace=run_root / "workspace",
         receipt_path=run_root / "receipt.json",
@@ -51,12 +53,14 @@ def _run(prompt: str, host: str, port: int, model_id: str) -> tuple[int, dict[st
         diff_path=paths.diff_path,
         preview_url=preview_url,
         model_id=model_id,
+        mode=mode,
     )
     _write_workspace_files(paths.workspace, run_root / "workspace-files.txt")
     _write_json(
-        LATEST_PATH,
+        evidence_root / f"latest-{mode}-run.json",
         {
             "run_id": run_id,
+            "mode": mode,
             "run_root": str(run_root),
             "workspace": str(paths.workspace),
             "score_path": str(paths.score_path),
@@ -65,7 +69,7 @@ def _run(prompt: str, host: str, port: int, model_id: str) -> tuple[int, dict[st
             "preview_url": preview_url,
         },
     )
-    _write_text(EVIDENCE_ROOT / "preview-url.txt", preview_url + "\n")
+    _write_text(evidence_root / f"preview-url-{mode}.txt", preview_url + "\n")
     _print_score(score, serve_port=serve_port)
     return (0 if score["status"] == "GO" else 1), score
 
@@ -149,6 +153,15 @@ def _write_text(path: Path, text: str) -> None:
 
 def _print_score(score: dict[str, object], *, serve_port: int) -> None:
     print(f"status: {score['status']}")
+    print(f"mode: {score['mode']}")
+    print(f"benchmark_eligible: {str(score['benchmark_eligible']).lower()}")
+    print(f"path_selection_mode: {score['path_selection_mode']}")
+    print(f"target_path_source: {score['target_path_source']}")
+    print(f"allowed_files_source: {score['allowed_files_source']}")
+    print(f"product_helper_used: {str(score['product_helper_used']).lower()}")
+    print(f"transparent_default_target_used: {str(score['transparent_default_target_used']).lower()}")
+    print(f"model_chose_target: {str(score['model_chose_target']).lower()}")
+    print(f"system_preselected_target: {str(score['system_preselected_target']).lower()}")
     print(f"workspace path: {score['workspace_path']}")
     print(f"generated files: {', '.join(score.get('files_changed') or []) or 'none'}")
     print(f"preview URL: {score.get('preview_url') or ''}")
@@ -176,9 +189,10 @@ def main() -> int:
     parser.add_argument("--port", type=int, default=DEFAULT_PORT)
     parser.add_argument("--prompt", default=DEFAULT_HUMAN_MESSY_HOMEPAGE_PROMPT)
     parser.add_argument("--model-id", default=DEFAULT_MODEL_ID)
+    parser.add_argument("--mode", choices=("product", "pure"), default="product")
     args = parser.parse_args()
     if args.run:
-        exit_code, _score = _run(args.prompt, args.host, args.port, args.model_id)
+        exit_code, _score = _run(args.prompt, args.host, args.port, args.model_id, args.mode)
         if args.serve and exit_code == 0:
             _serve(args.host, args.port)
         return exit_code

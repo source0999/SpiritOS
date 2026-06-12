@@ -890,15 +890,15 @@ class CodingRegressionPackTests(unittest.TestCase):
         self.assertEqual(intake["clarification_state"], "not_needed")
         self.assertNotIn("target_unresolved", intake["reason_codes"])
 
-    def test_task_spec_intake_requires_clarification_for_vague_create_prompt(self) -> None:
+    def test_task_spec_intake_requires_clarification_for_vague_real_repo_prompt(self) -> None:
         intake = build_task_spec_intake(
-            "Create a dashboard thing that looks better but I don't know where.",
+            "Fix the dashboard data wiring and route behavior but I don't know which file.",
             workspace_root=self.root,
             wants_implementation=True,
         ).to_dict()
 
         self.assertEqual(intake["task_kind"], "target_unresolved")
-        self.assertEqual(intake["intent"], "create")
+        self.assertEqual(intake["intent"], "fix")
         self.assertEqual(intake["allowed_files"], [])
         self.assertEqual(intake["workspace_mode"], "none")
         self.assertEqual(intake["clarification_state"], "required")
@@ -1032,6 +1032,57 @@ class CodingRegressionPackTests(unittest.TestCase):
         self.assertEqual(parsed["actions"][1]["adapter_source"], "continue")
         self.assertEqual(parsed["adapter_source"], "continue")
         self.assertEqual(parsed["decisions"][-1]["parser"], "line_delimited_json")
+
+    def test_fenced_json_tool_action_parser_accepts_model_authored_action_arrays(self) -> None:
+        raw = (
+            "```json\n"
+            + json.dumps(
+                [
+                    {
+                        "action_type": "WriteFile",
+                        "target": "index.html",
+                        "arguments": {"content": "<!doctype html><html><body>Calculator</body></html>"},
+                        "reason": "Create the HTML shell.",
+                    },
+                    {
+                        "action_type": "WriteFile",
+                        "target": "styles.css",
+                        "arguments": {"content": "body { font-family: sans-serif; }\n"},
+                        "reason": "Style the artifact.",
+                    },
+                    {
+                        "action_type": "WriteFile",
+                        "target": "script.js",
+                        "arguments": {"content": "console.log('calculator');\n"},
+                        "reason": "Add behavior.",
+                    },
+                ],
+                indent=2,
+            )
+            + "\n```"
+        )
+
+        parsed = parse_model_actions(
+            raw,
+            source_message_id="msg-fenced-json",
+            adapter_source="ollama_generate/tool_action_runtime_v1",
+        ).to_dict()
+
+        self.assertTrue(parsed["ok"])
+        self.assertEqual(
+            [action["target"] for action in parsed["actions"]],
+            ["index.html", "styles.css", "script.js"],
+        )
+        self.assertTrue(
+            any(
+                decision["parser"] == "fenced_json" and decision["status"] == "accepted"
+                for decision in parsed["decisions"]
+            )
+        )
+        self.assertEqual(
+            {action["adapter_source"] for action in parsed["actions"]},
+            {"ollama_generate/tool_action_runtime_v1"},
+        )
 
     def test_tool_action_parser_rejects_string_args_unless_continue_tool_is_bash(self) -> None:
         raw = json.dumps(
@@ -1447,12 +1498,96 @@ class CodingRegressionPackTests(unittest.TestCase):
         ).to_dict()
 
         self.assertEqual(intake["task_kind"], "create_new_file")
-        self.assertEqual(intake["target_paths"], ["index.html"])
-        self.assertEqual(intake["allowed_files"], ["index.html", "styles.css"])
+        self.assertEqual(intake["target_paths"], [])
+        self.assertEqual(intake["allowed_files"], [])
+        self.assertEqual(intake["allowed_extensions"], [".html"])
+        self.assertEqual(intake["task_shape"], "disposable_single_file_artifact")
+        self.assertEqual(intake["task_shape_source"], "generic_artifact_resolver")
+        self.assertEqual(intake["artifact_class"], "html_static_page")
+        self.assertEqual(intake["target_source"], "model_authored_required")
         self.assertEqual(intake["workspace_mode"], "disposable_workspace")
         self.assertEqual(intake["clarification_state"], "not_needed")
-        self.assertIn("messy_homepage_disposable_candidate", intake["reason_codes"])
+        self.assertIn("generic_artifact_create_candidate", intake["reason_codes"])
         self.assertFalse(any(path.startswith("src/") for path in intake["allowed_files"]))
+
+    def test_messy_homepage_prompt_can_skip_product_helper_for_pure_mode(self) -> None:
+        intake = build_task_spec_intake(
+            DEFAULT_HUMAN_MESSY_HOMEPAGE_PROMPT,
+            workspace_root=self.root,
+            wants_implementation=True,
+            allow_messy_homepage_helper=False,
+        ).to_dict()
+
+        self.assertEqual(intake["task_kind"], "target_unresolved")
+        self.assertEqual(intake["target_paths"], [])
+        self.assertEqual(intake["allowed_files"], [])
+        self.assertNotIn("generic_artifact_create_candidate", intake["reason_codes"])
+
+    def test_task_spec_intake_classifies_non_homepage_markdown_and_json_artifacts(self) -> None:
+        cases = [
+            ("make a markdown checklist for release verification", "markdown_document", [".md"]),
+            ("create a json config example for local settings", "json_example", [".json"]),
+        ]
+
+        for prompt, artifact_class, extensions in cases:
+            with self.subTest(artifact_class=artifact_class):
+                intake = build_task_spec_intake(
+                    prompt,
+                    workspace_root=self.root,
+                    wants_implementation=True,
+                ).to_dict()
+
+                self.assertEqual(intake["task_kind"], "create_new_file")
+                self.assertEqual(intake["workspace_mode"], "disposable_workspace")
+                self.assertEqual(intake["task_shape"], "disposable_single_file_artifact")
+                self.assertEqual(intake["artifact_class"], artifact_class)
+                self.assertEqual(intake["allowed_extensions"], extensions)
+                self.assertEqual(intake["target_source"], "model_authored_required")
+                self.assertEqual(intake["allowed_scope_source"], "artifact_class_extensions")
+                self.assertEqual(intake["target_paths"], [])
+
+    def test_task_spec_intake_classifies_broad_static_ui_artifact_prompts(self) -> None:
+        prompts = [
+            "init a simple prototype for trying a layout",
+            "build a static UI demo for comparing cards",
+            "create a dashboard panel for tracking status",
+            "start a lightweight viewer interface draft",
+        ]
+
+        for prompt in prompts:
+            with self.subTest(prompt=prompt):
+                intake = build_task_spec_intake(
+                    prompt,
+                    workspace_root=self.root,
+                    wants_implementation=True,
+                ).to_dict()
+
+                self.assertEqual(intake["task_kind"], "create_file_bundle")
+                self.assertEqual(intake["workspace_mode"], "disposable_workspace")
+                self.assertEqual(intake["task_shape"], "disposable_small_file_bundle")
+                self.assertEqual(intake["task_shape_source"], "generic_artifact_resolver")
+                self.assertEqual(intake["artifact_class"], "static_ui_artifact")
+                self.assertEqual(intake["allowed_extensions"], [".html", ".css", ".js"])
+                self.assertEqual(intake["max_file_count"], 3)
+                self.assertEqual(intake["target_source"], "model_authored_required")
+                self.assertEqual(intake["allowed_scope_source"], "artifact_class_extensions")
+                self.assertEqual(intake["target_paths"], [])
+                self.assertEqual(intake["allowed_files"], [])
+                self.assertIn("generic_static_ui_artifact_candidate", intake["reason_codes"])
+
+    def test_task_spec_intake_keeps_explicit_docs_config_target_exactly_bounded(self) -> None:
+        intake = build_task_spec_intake(
+            f"Target file: {DOC_TARGET}\n\nAdd a short config note.",
+            workspace_root=self.root,
+            wants_implementation=True,
+        ).to_dict()
+
+        self.assertEqual(intake["task_kind"], "modify_existing_file")
+        self.assertEqual(intake["target_paths"], [DOC_TARGET])
+        self.assertEqual(intake["allowed_files"], [DOC_TARGET])
+        self.assertEqual(intake["task_shape"], "explicit_docs_or_config_edit")
+        self.assertEqual(intake["target_source"], "user_explicit")
+        self.assertEqual(intake["allowed_scope_source"], "user_explicit_target")
 
     def test_markdown_path_bound_homepage_block_is_model_authored_writefile(self) -> None:
         raw = (
@@ -1505,6 +1640,21 @@ class CodingRegressionPackTests(unittest.TestCase):
         )
 
         self.assertEqual(score["status"], "GO")
+        self.assertEqual(score["mode"], "product")
+        self.assertFalse(score["benchmark_eligible"])
+        self.assertTrue(score["product_helper_used"])
+        self.assertTrue(score["proxy_orchestration_used"])
+        self.assertFalse(score["transparent_default_target_used"])
+        self.assertFalse(score["system_preselected_target"])
+        self.assertTrue(score["model_chose_target"])
+        self.assertEqual(score["route_type"], "product")
+        self.assertEqual(score["task_shape"], "disposable_single_file_artifact")
+        self.assertEqual(score["artifact_class"], "html_static_page")
+        self.assertEqual(score["artifact_score_kind"], "product_artifact_go")
+        self.assertTrue(score["artifact_specific_ok"])
+        self.assertEqual(score["allowed_scope_source"], "artifact_class_extensions")
+        self.assertEqual(score["model_authored_targets"], ["index.html"])
+        self.assertEqual(score["content_byte_match_by_target"], {"index.html": True})
         self.assertEqual(score["actions_seen"], 1)
         self.assertEqual(score["files_changed"], ["index.html"])
         self.assertTrue(score["openable_homepage"])
@@ -1513,6 +1663,250 @@ class CodingRegressionPackTests(unittest.TestCase):
         self.assertTrue(score["file_equals_model_action_content"])
         self.assertFalse(score["real_app_touched"])
         self.assertEqual((workspace / "index.html").read_text(encoding="utf-8"), model_content)
+
+        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+        packet = receipt["model_calls"][0]["packet"]
+        self.assertEqual(packet["context_packet"]["allowed_extensions"], [".html"])
+        self.assertEqual(packet["context_packet"]["proxy_exact_target_suggested"], "")
+        self.assertNotIn("transparent_default_target", packet["context_packet"])
+        self.assertEqual(packet["workspace_contract"]["allowed_file_extensions"], [".html"])
+
+    def test_human_messy_product_runtime_accepts_non_homepage_markdown_artifact(self) -> None:
+        workspace = self.root / "human-messy-markdown-workspace"
+        receipt_path = self.root / "markdown-receipt.json"
+        content = "# Release Checklist\n\n- Verify receipts\n"
+        raw = json.dumps(
+            {
+                "action_type": "WriteFile",
+                "target": "release-checklist.md",
+                "arguments": {"content": content},
+                "reason": "Create the requested markdown checklist.",
+            }
+        )
+
+        score = run_human_messy_homepage(
+            prompt="make a markdown checklist for release verification",
+            workspace=workspace,
+            receipt_path=receipt_path,
+            score_path=self.root / "markdown-score.json",
+            transcript_path=self.root / "markdown-transcript.txt",
+            diff_path=self.root / "markdown-diff.patch",
+            model_id="test-model",
+            model_call=lambda _packet: raw,
+        )
+        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(receipt["final_state"], "completed")
+        self.assertEqual(receipt["diagnostics_packet"]["route_type"], "product")
+        self.assertEqual(receipt["diagnostics_packet"]["task_shape"], "disposable_single_file_artifact")
+        self.assertEqual(receipt["diagnostics_packet"]["proxy_artifact_class_suggested"], "markdown_document")
+        self.assertEqual(receipt["diagnostics_packet"]["model_authored_targets"], ["release-checklist.md"])
+        self.assertEqual(score["status"], "GO")
+        self.assertEqual(score["artifact_score_kind"], "product_artifact_go")
+        self.assertTrue(score["artifact_specific_ok"])
+        self.assertFalse(score["benchmark_eligible"])
+        self.assertFalse(score["openable_homepage"])
+        self.assertEqual(score["files_changed"], ["release-checklist.md"])
+        self.assertEqual(score["model_authored_targets"], ["release-checklist.md"])
+        self.assertFalse(score["backend_created_content"])
+        self.assertTrue(score["file_equals_model_action_content"])
+        self.assertFalse(score["real_app_touched"])
+
+    def test_human_messy_product_runtime_accepts_static_ui_artifact_html(self) -> None:
+        workspace = self.root / "human-messy-static-ui-workspace"
+        receipt_path = self.root / "static-ui-receipt.json"
+        model_content = (
+            "<!doctype html><html><head><title>Prototype</title></head>"
+            "<body><main><h1>Prototype</h1><p>Status tracker draft.</p></main></body></html>\n"
+        )
+        raw = json.dumps(
+            {
+                "action_type": "WriteFile",
+                "target": "prototype.html",
+                "arguments": {"content": model_content},
+                "reason": "Create the requested disposable static UI artifact.",
+            }
+        )
+
+        score = run_human_messy_homepage(
+            prompt="init a simple prototype for trying a layout",
+            workspace=workspace,
+            receipt_path=receipt_path,
+            score_path=self.root / "static-ui-score.json",
+            transcript_path=self.root / "static-ui-transcript.txt",
+            diff_path=self.root / "static-ui-diff.patch",
+            model_id="test-model",
+            model_call=lambda _packet: raw,
+        )
+        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+        packet = receipt["model_calls"][0]["packet"]
+
+        self.assertEqual(score["status"], "GO")
+        self.assertEqual(score["artifact_class"], "static_ui_artifact")
+        self.assertEqual(score["artifact_score_kind"], "product_artifact_go")
+        self.assertEqual(score["model_authored_targets"], ["prototype.html"])
+        self.assertEqual(score["files_changed"], ["prototype.html"])
+        self.assertTrue(score["openable_homepage"])
+        self.assertFalse(score["benchmark_eligible"])
+        self.assertFalse(score["backend_created_content"])
+        self.assertTrue(score["file_equals_model_action_content"])
+        self.assertFalse(score["real_app_touched"])
+        self.assertEqual(packet["context_packet"]["allowed_extensions"], [".html", ".css", ".js"])
+        self.assertEqual(packet["context_packet"]["proxy_exact_target_suggested"], "")
+
+    def test_human_messy_product_runtime_accepts_json_artifact(self) -> None:
+        workspace = self.root / "human-messy-json-workspace"
+        receipt_path = self.root / "json-receipt.json"
+        content = json.dumps({"name": "local-settings", "enabled": True}, indent=2) + "\n"
+        raw = json.dumps(
+            {
+                "action_type": "WriteFile",
+                "target": "local-settings.json",
+                "arguments": {"content": content},
+                "reason": "Create the requested JSON config example.",
+            }
+        )
+
+        score = run_human_messy_homepage(
+            prompt="create a json config example for local settings",
+            workspace=workspace,
+            receipt_path=receipt_path,
+            score_path=self.root / "json-score.json",
+            transcript_path=self.root / "json-transcript.txt",
+            diff_path=self.root / "json-diff.patch",
+            model_id="test-model",
+            model_call=lambda _packet: raw,
+        )
+        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(receipt["final_state"], "completed")
+        self.assertEqual(receipt["diagnostics_packet"]["proxy_artifact_class_suggested"], "json_example")
+        self.assertEqual(score["status"], "GO")
+        self.assertEqual(score["artifact_score_kind"], "product_artifact_go")
+        self.assertTrue(score["artifact_specific_ok"])
+        self.assertFalse(score["benchmark_eligible"])
+        self.assertFalse(score["openable_homepage"])
+        self.assertEqual(score["files_changed"], ["local-settings.json"])
+        self.assertEqual(score["model_authored_targets"], ["local-settings.json"])
+        self.assertEqual(json.loads((workspace / "local-settings.json").read_text(encoding="utf-8"))["enabled"], True)
+        self.assertFalse(score["backend_created_content"])
+        self.assertTrue(score["file_equals_model_action_content"])
+        self.assertFalse(score["real_app_touched"])
+
+    def test_human_messy_product_runtime_blocks_wrong_extension_artifact_target(self) -> None:
+        workspace = self.root / "human-messy-json-wrong-extension"
+        raw = json.dumps(
+            {
+                "action_type": "WriteFile",
+                "target": "config.txt",
+                "arguments": {"content": "{}\n"},
+                "reason": "Wrong extension for a JSON example.",
+            }
+        )
+
+        score = run_human_messy_homepage(
+            prompt="create a json config example for local settings",
+            workspace=workspace,
+            receipt_path=self.root / "json-wrong-receipt.json",
+            score_path=self.root / "json-wrong-score.json",
+            transcript_path=self.root / "json-wrong-transcript.txt",
+            diff_path=self.root / "json-wrong-diff.patch",
+            model_id="test-model",
+            model_call=lambda _packet: raw,
+        )
+
+        self.assertEqual(score["status"], "EXPECTED-BLOCKED")
+        self.assertEqual(score["artifact_score_kind"], "expected_blocked")
+        self.assertTrue(score["expected_blocked"])
+        self.assertEqual(score["files_changed"], [])
+        self.assertIn("target_not_allowed", score["reason_codes"])
+        self.assertIn("expected_blocked_result", score["reason_codes"])
+        self.assertFalse(score["benchmark_eligible"])
+        self.assertFalse((workspace / "config.txt").exists())
+
+    def test_human_messy_product_static_ui_blocks_repo_scaffold_files(self) -> None:
+        for target in (".gitignore", "package.json", "package-lock.json"):
+            with self.subTest(target=target):
+                workspace = self.root / f"human-messy-static-ui-block-{target.replace('.', '_').replace('-', '_')}"
+                raw = json.dumps(
+                    {
+                        "action_type": "WriteFile",
+                        "target": target,
+                        "arguments": {"content": "{}\n"},
+                        "reason": "Attempt repo scaffold file outside static UI artifact scope.",
+                    }
+                )
+
+                score = run_human_messy_homepage(
+                    prompt="build a static UI demo for comparing cards",
+                    workspace=workspace,
+                    receipt_path=self.root / f"static-ui-block-{target.replace('.', '_').replace('-', '_')}-receipt.json",
+                    score_path=self.root / f"static-ui-block-{target.replace('.', '_').replace('-', '_')}-score.json",
+                    transcript_path=self.root / f"static-ui-block-{target.replace('.', '_').replace('-', '_')}-transcript.txt",
+                    diff_path=self.root / f"static-ui-block-{target.replace('.', '_').replace('-', '_')}-diff.patch",
+                    model_id="test-model",
+                    model_call=lambda _packet, raw=raw: raw,
+                )
+
+                self.assertEqual(score["status"], "EXPECTED-BLOCKED")
+                self.assertEqual(score["artifact_class"], "static_ui_artifact")
+                self.assertTrue(score["expected_blocked"])
+                self.assertEqual(score["files_changed"], [])
+                self.assertTrue(
+                    {"target_not_allowed", "path_escape", "protected_path"}.intersection(score["reason_codes"])
+                )
+                self.assertFalse((workspace / target).exists())
+
+    def test_human_messy_homepage_pure_mode_accepts_model_chosen_path(self) -> None:
+        workspace = self.root / "human-messy-pure-workspace"
+        receipt_path = self.root / "pure-receipt.json"
+        score_path = self.root / "pure-score.json"
+        transcript_path = self.root / "pure-raw-transcript.txt"
+        diff_path = self.root / "pure-diff.patch"
+        model_content = (
+            "<!doctype html><html><head><title>Agent Lab Pure</title></head>"
+            "<body><h1>Agent Lab Pure</h1></body></html>\n"
+        )
+        raw = json.dumps(
+            {
+                "action_type": "WriteFile",
+                "target": "site/home.html",
+                "arguments": {"content": model_content},
+                "reason": "Create a homepage path inside the disposable workspace.",
+            }
+        )
+
+        score = run_human_messy_homepage(
+            prompt=DEFAULT_HUMAN_MESSY_HOMEPAGE_PROMPT,
+            workspace=workspace,
+            receipt_path=receipt_path,
+            score_path=score_path,
+            transcript_path=transcript_path,
+            diff_path=diff_path,
+            preview_url="http://127.0.0.1:8765/",
+            model_id="test-model",
+            mode="pure",
+            model_call=lambda _packet: raw,
+        )
+        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+        model_prompt_packet = receipt["model_calls"][0]["packet"]
+
+        self.assertEqual(score["status"], "GO")
+        self.assertEqual(score["mode"], "pure")
+        self.assertEqual(score["route_type"], "pure_diagnostic")
+        self.assertEqual(score["artifact_score_kind"], "pure_benchmark_go")
+        self.assertTrue(score["benchmark_eligible"])
+        self.assertFalse(score["product_helper_used"])
+        self.assertFalse(score["transparent_default_target_used"])
+        self.assertFalse(score["system_preselected_target"])
+        self.assertTrue(score["model_chose_target"])
+        self.assertEqual(score["files_changed"], ["site/home.html"])
+        self.assertEqual(score["openable_homepage_paths"], ["site/home.html"])
+        self.assertTrue(score["file_equals_model_action_content"])
+        self.assertEqual(model_prompt_packet["workspace_contract"]["allowed_files"], [])
+        self.assertTrue(model_prompt_packet["workspace_contract"]["model_may_choose_paths"])
+        self.assertNotIn("transparent_default_target", model_prompt_packet["context_packet"])
+        self.assertEqual((workspace / "site" / "home.html").read_text(encoding="utf-8"), model_content)
 
     def test_human_messy_homepage_advisory_only_does_not_fake_success(self) -> None:
         workspace = self.root / "human-messy-advisory"
