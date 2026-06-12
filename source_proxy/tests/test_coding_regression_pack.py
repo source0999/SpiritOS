@@ -12,6 +12,33 @@ from fastapi.testclient import TestClient
 
 from source_proxy.api.decision import router as decision_router
 from source_proxy.decision.router import DecisionInput, decide_route, resolve_target_from_task
+from source_proxy.decision.task_spec_intake import build_task_spec_intake
+from source_proxy.decision.tool_actions import (
+    blocked_result_for_plan_2,
+    parse_model_actions,
+    tool_contract,
+)
+from source_proxy.decision.tool_action_executor import (
+    ToolActionWorkspaceContract,
+    execute_tool_action,
+)
+from source_proxy.decision.tool_action_loop import (
+    BoundedAgentLoopRequest,
+    run_bounded_agent_loop,
+)
+from source_proxy.decision.tool_action_safety import score_plan7_runtime_receipt
+from source_proxy.decision.human_messy_homepage import (
+    DEFAULT_HUMAN_MESSY_HOMEPAGE_PROMPT,
+    run_human_messy_homepage,
+    score_human_messy_homepage_result,
+)
+from source_proxy.decision.advisory_broker import (
+    advisory_capability_manifest,
+    advisory_truth_snapshot,
+    build_advisory_context_packet,
+    validate_mac_advisory_packet,
+    validate_subagent_advisory_packet,
+)
 from source_proxy.planning.architect import (
     FallthroughToLLM,
     Plan,
@@ -803,6 +830,1079 @@ class CodingRegressionPackTests(unittest.TestCase):
         self.assertEqual(plan.coder_packet.target_file.path, DOC_TARGET)
         self.assertEqual(task_spec["target"], DOC_TARGET)
         self.assertEqual(task_spec["allowed_files"], [DOC_TARGET])
+
+    def test_task_spec_intake_serializes_existing_target_before_model_call(self) -> None:
+        task = "\n".join(
+            [
+                f"Target file: {DOC_TARGET}",
+                f'Append sentence "{DOC_LITERAL}".',
+            ]
+        )
+        intake = build_task_spec_intake(
+            task,
+            workspace_root=self.root,
+            wants_implementation=True,
+        ).to_dict()
+
+        self.assertEqual(intake["schema_version"], 1)
+        self.assertEqual(intake["task_kind"], "modify_existing_file")
+        self.assertEqual(intake["intent"], "modify")
+        self.assertEqual(intake["target_paths"], [DOC_TARGET])
+        self.assertEqual(intake["allowed_files"], [DOC_TARGET])
+        self.assertEqual(intake["workspace_mode"], "real_repo_preview")
+        self.assertEqual(intake["approval_level"], "preview_only_no_apply")
+        self.assertEqual(intake["clarification_state"], "not_needed")
+        self.assertIn("git diff --check", intake["verification_policy"])
+
+    def test_task_spec_intake_allows_disposable_workspace_create_only_when_bounded(self) -> None:
+        task = "\n".join(
+            [
+                "Create a tiny reversible agent-lab page.",
+                "",
+                "Proposal task:",
+                "```json",
+                json.dumps(
+                    {
+                        "task": "Create a tiny reversible agent-lab page.",
+                        "mode": "proposal",
+                        "target_file": "src/app/agent-lab/demo/page.tsx",
+                        "allowed_files": ["src/app/agent-lab/demo/page.tsx"],
+                        "forbidden_files": [".env", "src/app/coding/**"],
+                        "expected_checks": ["git diff --check"],
+                        "rollback_hint": "Delete the demo page.",
+                    },
+                    indent=2,
+                ),
+                "```",
+            ]
+        )
+        intake = build_task_spec_intake(
+            task,
+            workspace_root=self.root,
+            wants_implementation=True,
+        ).to_dict()
+
+        self.assertEqual(intake["task_kind"], "create_new_file")
+        self.assertEqual(intake["intent"], "create")
+        self.assertEqual(intake["target_paths"], ["src/app/agent-lab/demo/page.tsx"])
+        self.assertEqual(intake["allowed_files"], ["src/app/agent-lab/demo/page.tsx"])
+        self.assertEqual(intake["workspace_mode"], "disposable_workspace")
+        self.assertEqual(intake["clarification_state"], "not_needed")
+        self.assertNotIn("target_unresolved", intake["reason_codes"])
+
+    def test_task_spec_intake_requires_clarification_for_vague_create_prompt(self) -> None:
+        intake = build_task_spec_intake(
+            "Create a dashboard thing that looks better but I don't know where.",
+            workspace_root=self.root,
+            wants_implementation=True,
+        ).to_dict()
+
+        self.assertEqual(intake["task_kind"], "target_unresolved")
+        self.assertEqual(intake["intent"], "create")
+        self.assertEqual(intake["allowed_files"], [])
+        self.assertEqual(intake["workspace_mode"], "none")
+        self.assertEqual(intake["clarification_state"], "required")
+        self.assertIn("Target file", intake["clarification_prompt"])
+
+    def test_prompt_packet_exposes_task_spec_intake_and_blocks_before_coder(self) -> None:
+        client = self._decision_client()
+        with mock.patch(
+            "source_proxy.api.decision.propose_coder_agent_diff_payload_from_plan"
+        ) as coder_mock:
+            response = client.post(
+                "/v1/decisions/prompt-packet",
+                json={
+                    "task": "Make the docs safer but no idea which file.",
+                    "wants_implementation": True,
+                },
+            )
+
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        coder_mock.assert_not_called()
+        self.assertEqual(payload["task_spec_intake"]["task_kind"], "target_unresolved")
+        self.assertEqual(payload["task_spec_intake"]["clarification_state"], "required")
+        self.assertEqual(payload["taskSpecIntake"]["taskKind"], "target_unresolved")
+        self.assertEqual(payload["task_spec"]["source"], "task_spec_intake")
+
+    def test_task_spec_intake_blocks_protected_path_without_allowed_files(self) -> None:
+        intake = build_task_spec_intake(
+            "Target file: .env.local\n\nAdd TEST_VALUE=1",
+            workspace_root=self.root,
+            wants_implementation=True,
+        ).to_dict()
+
+        self.assertEqual(intake["task_kind"], "protected_path")
+        self.assertEqual(intake["allowed_files"], [])
+        self.assertEqual(intake["clarification_state"], "blocked")
+        self.assertEqual(intake["risk_level"], "high")
+        self.assertIn(".env.local", intake["protected_paths"])
+
+    def test_tool_action_contract_exposes_initial_tool_set_and_classifications(self) -> None:
+        contract = tool_contract()
+        tools = {tool["action_type"]: tool for tool in contract["tools"]}
+
+        self.assertEqual(contract["schema_version"], 1)
+        self.assertEqual(
+            set(tools),
+            {
+                "ReadFile",
+                "ListFiles",
+                "SearchRepo",
+                "WriteFile",
+                "EditFile",
+                "MultiEdit",
+                "RunCheck",
+                "AskClarification",
+                "ReturnFinal",
+            },
+        )
+        self.assertEqual(tools["ReadFile"]["capability"], "read")
+        self.assertEqual(tools["WriteFile"]["capability"], "write")
+        self.assertEqual(tools["RunCheck"]["capability"], "execute")
+        self.assertEqual(tools["ReturnFinal"]["capability"], "respond")
+        self.assertEqual(tools["WriteFile"]["execution_state"], "blocked_until_plan_3")
+        self.assertIn("free_floating_code_no_path_action", contract["stable_error_codes"])
+
+    def test_strict_json_tool_action_parser_preserves_raw_and_blocks_plan_2_execution(self) -> None:
+        raw = json.dumps(
+            {
+                "action_type": "WriteFile",
+                "target": DOC_TARGET,
+                "arguments": {"content": DOC_BASE + "\nPlan 2 parser proof.\n"},
+                "reason": "Update the requested docs target.",
+            }
+        )
+
+        parsed = parse_model_actions(
+            raw,
+            model_id="ollama/qwen2.5-coder:7b",
+            source_message_id="msg-2",
+            allowed_files_snapshot=[DOC_TARGET],
+            created_at="2026-06-10T00:00:00Z",
+        ).to_dict()
+
+        self.assertTrue(parsed["ok"])
+        self.assertEqual(parsed["raw_transcript"], raw)
+        self.assertEqual(parsed["actions"][0]["action_type"], "WriteFile")
+        self.assertEqual(parsed["actions"][0]["target"], DOC_TARGET)
+        self.assertEqual(parsed["actions"][0]["authorship"], "model_authored")
+        self.assertEqual(parsed["actions"][0]["execution_state"], "blocked_until_plan_3")
+        self.assertEqual(parsed["actions"][0]["allowed_files_snapshot"], [DOC_TARGET])
+        self.assertEqual(parsed["decisions"][0]["parser"], "strict_json")
+        self.assertEqual(parsed["decisions"][0]["status"], "accepted")
+
+        result = blocked_result_for_plan_2(
+            parse_model_actions(raw, source_message_id="msg-2").actions[0]
+        ).to_dict()
+        self.assertEqual(result["status"], "blocked")
+        self.assertEqual(result["error_code"], "execution_blocked_until_plan_3")
+        self.assertEqual(result["files_touched"], [])
+
+    def test_line_delimited_tool_action_parser_accepts_multiple_model_actions(self) -> None:
+        raw = "\n".join(
+            [
+                json.dumps(
+                    {
+                        "action_type": "ReadFile",
+                        "target": DOC_TARGET,
+                        "arguments": {"path": DOC_TARGET},
+                    }
+                ),
+                json.dumps(
+                    {
+                        "tool": "Bash",
+                        "arguments": "git diff --check",
+                        "reason": "Verify whitespace before closeout.",
+                    }
+                ),
+            ]
+        )
+
+        parsed = parse_model_actions(
+            raw,
+            source_message_id="msg-lines",
+            adapter_source="continue",
+        ).to_dict()
+
+        self.assertTrue(parsed["ok"])
+        self.assertEqual([action["action_type"] for action in parsed["actions"]], ["ReadFile", "RunCheck"])
+        self.assertEqual(parsed["actions"][1]["arguments"], {"command": "git diff --check"})
+        self.assertEqual(parsed["actions"][1]["execution_state"], "blocked_until_plan_3")
+        self.assertEqual(parsed["actions"][1]["adapter_source"], "continue")
+        self.assertEqual(parsed["adapter_source"], "continue")
+        self.assertEqual(parsed["decisions"][-1]["parser"], "line_delimited_json")
+
+    def test_tool_action_parser_rejects_string_args_unless_continue_tool_is_bash(self) -> None:
+        raw = json.dumps(
+            {
+                "tool": "RunCheck",
+                "arguments": "git diff --check",
+                "reason": "This must be explicit command JSON unless the tool is Bash.",
+            }
+        )
+
+        parsed = parse_model_actions(raw, source_message_id="msg-string-args").to_dict()
+
+        self.assertFalse(parsed["ok"])
+        self.assertEqual(parsed["actions"], [])
+        self.assertEqual(parsed["error_code"], "bash_string_args_only_for_bash")
+
+    def test_path_content_block_parser_accepts_only_path_bound_model_content(self) -> None:
+        raw = f'<file path="{DOC_TARGET}">\n{DOC_BASE}\nPlan 2 block parser proof.\n</file>'
+
+        parsed = parse_model_actions(raw, source_message_id="msg-block").to_dict()
+
+        self.assertTrue(parsed["ok"])
+        self.assertEqual(parsed["actions"][0]["action_type"], "WriteFile")
+        self.assertEqual(parsed["actions"][0]["target"], DOC_TARGET)
+        self.assertEqual(parsed["actions"][0]["arguments"]["content_source"], "path_content_block")
+        self.assertIn("Plan 2 block parser proof.", parsed["actions"][0]["arguments"]["content"])
+
+    def test_tool_action_parser_accepts_aider_like_path_bound_edit_chunks(self) -> None:
+        raw = "\n".join(
+            [
+                f"path: {DOC_TARGET}",
+                "<" * 7 + " SEARCH",
+                DOC_BASE,
+                "=" * 7,
+                DOC_BASE,
+                "Plan 2 Aider-like parser proof.",
+                ">" * 7 + " REPLACE",
+            ]
+        )
+
+        parsed = parse_model_actions(
+            raw,
+            source_message_id="msg-aider",
+            allowed_files_snapshot=[DOC_TARGET],
+            adapter_source="aider",
+        ).to_dict()
+
+        self.assertTrue(parsed["ok"])
+        self.assertEqual(parsed["adapter_source"], "aider")
+        self.assertEqual(parsed["actions"][0]["action_type"], "EditFile")
+        self.assertEqual(parsed["actions"][0]["target"], DOC_TARGET)
+        self.assertEqual(parsed["actions"][0]["adapter_source"], "aider")
+        self.assertEqual(parsed["actions"][0]["arguments"]["content_source"], "aider_path_bound_edit")
+        self.assertIn("Plan 2 Aider-like parser proof.", parsed["actions"][0]["arguments"]["new"])
+
+    def test_tool_action_parser_rejects_path_bound_edit_outside_allowed_snapshot(self) -> None:
+        raw = "\n".join(
+            [
+                "path: docs/not-approved.md",
+                "<" * 7 + " SEARCH",
+                "old",
+                "=" * 7,
+                "new",
+                ">" * 7 + " REPLACE",
+            ]
+        )
+
+        parsed = parse_model_actions(
+            raw,
+            source_message_id="msg-aider-denied",
+            allowed_files_snapshot=[DOC_TARGET],
+            adapter_source="aider",
+        ).to_dict()
+
+        self.assertFalse(parsed["ok"])
+        self.assertEqual(parsed["actions"], [])
+        self.assertEqual(parsed["error_code"], "target_not_allowed")
+        self.assertTrue(
+            any(
+                decision["error_code"] == "target_not_allowed"
+                and decision["parser"] == "aider_path_bound_edit"
+                for decision in parsed["decisions"]
+            )
+        )
+
+    def test_tool_action_parser_rejects_free_floating_code_without_path_or_action(self) -> None:
+        raw = "```tsx\nexport default function Demo() { return <main>Hi</main>; }\n```"
+
+        parsed = parse_model_actions(raw, source_message_id="msg-free").to_dict()
+
+        self.assertFalse(parsed["ok"])
+        self.assertEqual(parsed["actions"], [])
+        self.assertEqual(parsed["error_code"], "free_floating_code_no_path_action")
+        self.assertIn("free-floating code", parsed["repair_prompt"])
+        self.assertEqual(parsed["raw_transcript"], raw)
+
+    def test_tool_action_parser_rejects_backend_authored_content(self) -> None:
+        parsed = parse_model_actions(
+            json.dumps({"action_type": "ReturnFinal", "arguments": {"message": "done"}}),
+            author="backend",
+        ).to_dict()
+
+        self.assertFalse(parsed["ok"])
+        self.assertEqual(parsed["error_code"], "backend_authorship_rejected")
+
+    def test_tool_action_executor_writes_only_inside_allowed_disposable_workspace(self) -> None:
+        raw = json.dumps(
+            {
+                "action_type": "WriteFile",
+                "target": DOC_TARGET,
+                "arguments": {"content": DOC_BASE + "\nPlan 3 executor proof.\n"},
+            }
+        )
+        action = parse_model_actions(raw, allowed_files_snapshot=[DOC_TARGET]).actions[0]
+        contract = ToolActionWorkspaceContract(
+            workspace_root=self.root,
+            allowed_files=(DOC_TARGET,),
+            approval_level="disposable_workspace",
+        )
+
+        executed = execute_tool_action(action, contract).to_dict()
+
+        self.assertEqual(executed["result"]["status"], "completed")
+        self.assertEqual(executed["result"]["files_touched"], [DOC_TARGET])
+        self.assertIn("+Plan 3 executor proof.", executed["result"]["diff_summary"])
+        self.assertIn(DOC_TARGET, executed["receipt"]["after_status"]["files"])
+        self.assertEqual((self.root / DOC_TARGET).read_text(encoding="utf-8"), DOC_BASE + "\nPlan 3 executor proof.\n")
+
+    def test_tool_action_executor_blocks_wrong_file_and_path_traversal(self) -> None:
+        wrong_file = parse_model_actions(
+            json.dumps(
+                {
+                    "action_type": "WriteFile",
+                    "target": "docs/not-approved.md",
+                    "arguments": {"content": "nope"},
+                }
+            ),
+            allowed_files_snapshot=["docs/not-approved.md"],
+        ).actions[0]
+        traversal = parse_model_actions(
+            json.dumps(
+                {
+                    "action_type": "WriteFile",
+                    "target": "../outside.md",
+                    "arguments": {"content": "nope"},
+                }
+            )
+        ).actions[0]
+        contract = ToolActionWorkspaceContract(workspace_root=self.root, allowed_files=(DOC_TARGET,))
+
+        wrong = execute_tool_action(wrong_file, contract).to_dict()
+        escaped = execute_tool_action(traversal, contract).to_dict()
+
+        self.assertEqual(wrong["result"]["status"], "blocked")
+        self.assertEqual(wrong["result"]["error_code"], "target_not_allowed")
+        self.assertFalse((self.root / "docs/not-approved.md").exists())
+        self.assertEqual(escaped["result"]["status"], "blocked")
+        self.assertEqual(escaped["result"]["error_code"], "path_escape")
+
+    def test_tool_action_executor_blocks_protected_paths_and_symlink_escapes(self) -> None:
+        protected = parse_model_actions(
+            json.dumps(
+                {
+                    "action_type": "WriteFile",
+                    "target": ".env.local",
+                    "arguments": {"content": "TOKEN=bad"},
+                }
+            )
+        ).actions[0]
+        contract = ToolActionWorkspaceContract(
+            workspace_root=self.root,
+            allowed_files=(".env.local", "linked.md"),
+            protected_paths=(".env.local",),
+        )
+        blocked = execute_tool_action(protected, contract).to_dict()
+
+        self.assertEqual(blocked["result"]["status"], "blocked")
+        self.assertIn(blocked["result"]["error_code"], {"path_escape", "protected_path"})
+        self.assertFalse((self.root / ".env.local").exists())
+
+        outside = self.root.parent / f"{self.root.name}-outside.md"
+        outside.write_text("outside", encoding="utf-8")
+        try:
+            os.symlink(outside, self.root / "linked.md")
+        except (AttributeError, NotImplementedError, OSError):
+            self.skipTest("symlink creation is not available in this environment")
+
+        linked_action = parse_model_actions(
+            json.dumps(
+                {
+                    "action_type": "WriteFile",
+                    "target": "linked.md",
+                    "arguments": {"content": "nope"},
+                }
+            )
+        ).actions[0]
+        linked = execute_tool_action(linked_action, contract).to_dict()
+
+        self.assertEqual(linked["result"]["status"], "blocked")
+        self.assertIn(linked["result"]["error_code"], {"path_escape", "symlink_escape"})
+        self.assertEqual(outside.read_text(encoding="utf-8"), "outside")
+
+    def test_tool_action_executor_edit_multiedit_and_read_search_are_bounded(self) -> None:
+        contract = ToolActionWorkspaceContract(
+            workspace_root=self.root,
+            allowed_files=(DOC_TARGET,),
+            search_result_limit=1,
+            output_limit_bytes=200,
+        )
+        edit = parse_model_actions(
+            json.dumps(
+                {
+                    "action_type": "EditFile",
+                    "target": DOC_TARGET,
+                    "arguments": {"old": "Approved diffs", "new": "Verified diffs"},
+                }
+            )
+        ).actions[0]
+        multi = parse_model_actions(
+            json.dumps(
+                {
+                    "action_type": "MultiEdit",
+                    "target": DOC_TARGET,
+                    "arguments": {"edits": [{"old": "Phase 8", "new": "Phase 8 Plan 3"}]},
+                }
+            )
+        ).actions[0]
+        read = parse_model_actions(
+            json.dumps({"action_type": "ReadFile", "target": DOC_TARGET, "arguments": {"path": DOC_TARGET}})
+        ).actions[0]
+        search = parse_model_actions(
+            json.dumps({"action_type": "SearchRepo", "target": "docs", "arguments": {"query": "diffs"}})
+        ).actions[0]
+
+        self.assertEqual(execute_tool_action(edit, contract).result.status, "completed")
+        self.assertEqual(execute_tool_action(multi, contract).result.status, "completed")
+        read_result = execute_tool_action(read, contract).to_dict()
+        search_result = execute_tool_action(search, contract).to_dict()
+
+        self.assertIn("Verified diffs", read_result["result"]["stdout"])
+        self.assertLessEqual(len(search_result["result"]["stdout"].splitlines()), 1)
+        self.assertNotIn(".env", search_result["result"]["stdout"])
+
+    def test_tool_action_executor_runcheck_allowlist_blocks_network_and_background_jobs(self) -> None:
+        contract = ToolActionWorkspaceContract(workspace_root=self.root, run_timeout_seconds=3)
+        _write(self.root / "source_proxy" / "__init__.py", "")
+        allowed = parse_model_actions(
+            json.dumps({"tool": "Bash", "arguments": "python -m py_compile source_proxy/__init__.py"}),
+            adapter_source="continue",
+        ).actions[0]
+        network = parse_model_actions(
+            json.dumps({"action_type": "RunCheck", "arguments": {"command": "curl http://example.com"}})
+        ).actions[0]
+        background = parse_model_actions(
+            json.dumps({"action_type": "RunCheck", "arguments": {"command": "python -m py_compile source_proxy/__init__.py &"}})
+        ).actions[0]
+
+        allowed_result = execute_tool_action(allowed, contract).to_dict()
+        network_result = execute_tool_action(network, contract).to_dict()
+        background_result = execute_tool_action(background, contract).to_dict()
+
+        self.assertEqual(allowed_result["result"]["status"], "completed")
+        self.assertEqual(network_result["result"]["status"], "blocked")
+        self.assertEqual(network_result["result"]["error_code"], "network_blocked")
+        self.assertEqual(background_result["result"]["status"], "blocked")
+        self.assertEqual(background_result["result"]["error_code"], "unsafe_command")
+
+    def test_bounded_agent_loop_records_raw_transcript_actions_diffs_and_receipt(self) -> None:
+        receipt_path = self.root / "receipts" / "loop-receipt.json"
+        request = BoundedAgentLoopRequest(
+            task_spec={"task_kind": "edit_existing", "allowed_files": [DOC_TARGET]},
+            context_packet={"files": [DOC_TARGET]},
+            workspace_contract=ToolActionWorkspaceContract(
+                workspace_root=self.root,
+                allowed_files=(DOC_TARGET,),
+            ),
+            model_id="test-model",
+            source_message_id="loop-success",
+            recommended_checks=("python -m py_compile source_proxy/__init__.py",),
+            run_recommended_checks=False,
+            verification_skip_reason="manual_policy",
+        )
+        raw = json.dumps(
+            {
+                "action_type": "WriteFile",
+                "target": DOC_TARGET,
+                "arguments": {"content": DOC_BASE + "\nPlan 4 loop proof.\n"},
+            }
+        )
+        calls: list[dict[str, object]] = []
+
+        def fake_model(packet: dict[str, object]) -> str:
+            calls.append(packet)
+            return raw
+
+        result = run_bounded_agent_loop(request, fake_model, receipt_path=receipt_path).to_dict()
+
+        self.assertEqual(result["final_state"], "partial")
+        self.assertEqual(len(calls), 1)
+        self.assertIn("tool_contract", calls[0])
+        self.assertEqual(result["receipt"]["raw_model_transcripts"], [raw])
+        self.assertEqual(result["receipt"]["parsed_actions"][0]["action_type"], "WriteFile")
+        self.assertIn("+Plan 4 loop proof.", result["receipt"]["executions"][0]["result"]["diff_summary"])
+        self.assertEqual(result["receipt"]["skipped_checks"][0]["reason"], "manual_policy")
+        self.assertTrue(receipt_path.is_file())
+        saved = json.loads(receipt_path.read_text(encoding="utf-8"))
+        self.assertEqual(saved["diagnostics_packet"]["files_touched"], [DOC_TARGET])
+
+    def test_bounded_agent_loop_retries_bad_format_once_then_stops_honestly(self) -> None:
+        request = BoundedAgentLoopRequest(
+            task_spec={"task_kind": "edit_existing", "allowed_files": [DOC_TARGET]},
+            context_packet={},
+            workspace_contract=ToolActionWorkspaceContract(workspace_root=self.root, allowed_files=(DOC_TARGET,)),
+            source_message_id="loop-format",
+            max_format_retries=1,
+        )
+        transcripts = ["```tsx\nexport default function Demo() { return <main /> }\n```", "still not json"]
+
+        def fake_model(packet: dict[str, object]) -> str:
+            return transcripts[int(packet["call_index"])]
+
+        result = run_bounded_agent_loop(request, fake_model).to_dict()
+
+        self.assertEqual(result["final_state"], "failed_format")
+        self.assertEqual(len(result["receipt"]["raw_model_transcripts"]), 2)
+        self.assertEqual(result["receipt"]["diagnostics_packet"]["format_retries_used"], 1)
+        self.assertEqual(result["receipt"]["executions"], [])
+
+    def test_bounded_agent_loop_never_retries_authority_or_protected_path_blocks(self) -> None:
+        request = BoundedAgentLoopRequest(
+            task_spec={"task_kind": "edit_existing", "allowed_files": [DOC_TARGET]},
+            context_packet={},
+            workspace_contract=ToolActionWorkspaceContract(
+                workspace_root=self.root,
+                allowed_files=(DOC_TARGET,),
+                protected_paths=(".env.local",),
+            ),
+            source_message_id="loop-authority",
+            max_format_retries=1,
+            max_verification_repairs=1,
+        )
+        raw = json.dumps(
+            {
+                "action_type": "WriteFile",
+                "target": ".env.local",
+                "arguments": {"content": "TOKEN=bad"},
+            }
+        )
+        call_count = 0
+
+        def fake_model(packet: dict[str, object]) -> str:
+            nonlocal call_count
+            call_count += 1
+            return raw
+
+        result = run_bounded_agent_loop(request, fake_model).to_dict()
+
+        self.assertEqual(result["final_state"], "blocked")
+        self.assertEqual(call_count, 1)
+        self.assertEqual(result["receipt"]["executions"], [])
+        self.assertIn(result["receipt"]["parse_results"][0]["error_code"], {"target_not_allowed", "path_escape", "protected_path"})
+        self.assertFalse((self.root / ".env.local").exists())
+
+    def test_bounded_agent_loop_verification_repair_cap_and_failed_state(self) -> None:
+        request = BoundedAgentLoopRequest(
+            task_spec={"task_kind": "edit_existing", "allowed_files": [DOC_TARGET]},
+            context_packet={},
+            workspace_contract=ToolActionWorkspaceContract(
+                workspace_root=self.root,
+                allowed_files=(DOC_TARGET,),
+            ),
+            source_message_id="loop-verify",
+            recommended_checks=("python -m py_compile missing.py",),
+            run_recommended_checks=True,
+            max_verification_repairs=1,
+        )
+        first = json.dumps(
+            {
+                "action_type": "WriteFile",
+                "target": DOC_TARGET,
+                "arguments": {"content": DOC_BASE + "\nFirst attempt.\n"},
+            }
+        )
+        second = json.dumps(
+            {
+                "action_type": "WriteFile",
+                "target": DOC_TARGET,
+                "arguments": {"content": DOC_BASE + "\nSecond attempt.\n"},
+            }
+        )
+        transcripts = [first, second]
+
+        def fake_model(packet: dict[str, object]) -> str:
+            return transcripts[int(packet["call_index"])]
+
+        result = run_bounded_agent_loop(request, fake_model).to_dict()
+
+        self.assertEqual(result["final_state"], "failed_verification")
+        self.assertEqual(len(result["receipt"]["raw_model_transcripts"]), 2)
+        self.assertEqual(result["receipt"]["diagnostics_packet"]["verification_repairs_used"], 1)
+        self.assertTrue(
+            any(
+                execution["result"]["error_code"] == "run_check_failed"
+                for execution in result["receipt"]["executions"]
+            )
+        )
+
+    def test_messy_homepage_prompt_becomes_disposable_create_candidate(self) -> None:
+        intake = build_task_spec_intake(
+            DEFAULT_HUMAN_MESSY_HOMEPAGE_PROMPT,
+            workspace_root=self.root,
+            wants_implementation=True,
+        ).to_dict()
+
+        self.assertEqual(intake["task_kind"], "create_new_file")
+        self.assertEqual(intake["target_paths"], ["index.html"])
+        self.assertEqual(intake["allowed_files"], ["index.html", "styles.css"])
+        self.assertEqual(intake["workspace_mode"], "disposable_workspace")
+        self.assertEqual(intake["clarification_state"], "not_needed")
+        self.assertIn("messy_homepage_disposable_candidate", intake["reason_codes"])
+        self.assertFalse(any(path.startswith("src/") for path in intake["allowed_files"]))
+
+    def test_markdown_path_bound_homepage_block_is_model_authored_writefile(self) -> None:
+        raw = (
+            "Create a file named `index.html` and add this:\n"
+            "```html\n"
+            "<!doctype html><html><body><h1>Agent Lab</h1></body></html>\n"
+            "```"
+        )
+
+        parsed = parse_model_actions(
+            raw,
+            allowed_files_snapshot=["index.html", "styles.css"],
+            adapter_source="ollama_generate/tool_action_runtime_v1",
+        ).to_dict()
+
+        self.assertTrue(parsed["ok"])
+        self.assertEqual(parsed["actions"][0]["action_type"], "WriteFile")
+        self.assertEqual(parsed["actions"][0]["target"], "index.html")
+        self.assertEqual(parsed["actions"][0]["arguments"]["content_source"], "markdown_path_content_block")
+
+    def test_human_messy_homepage_runtime_writes_model_authored_index(self) -> None:
+        workspace = self.root / "human-messy-workspace"
+        receipt_path = self.root / "receipt.json"
+        score_path = self.root / "score.json"
+        transcript_path = self.root / "raw-transcript.txt"
+        diff_path = self.root / "diff.patch"
+        model_content = (
+            "<!doctype html><html><head><title>Agent Lab Experiments</title></head>"
+            "<body><h1>Agent Lab Experiments</h1></body></html>\n"
+        )
+        raw = json.dumps(
+            {
+                "action_type": "WriteFile",
+                "target": "index.html",
+                "arguments": {"content": model_content},
+                "reason": "Create the requested homepage.",
+            }
+        )
+
+        score = run_human_messy_homepage(
+            prompt=DEFAULT_HUMAN_MESSY_HOMEPAGE_PROMPT,
+            workspace=workspace,
+            receipt_path=receipt_path,
+            score_path=score_path,
+            transcript_path=transcript_path,
+            diff_path=diff_path,
+            preview_url="http://127.0.0.1:8765/",
+            model_id="test-model",
+            model_call=lambda _packet: raw,
+        )
+
+        self.assertEqual(score["status"], "GO")
+        self.assertEqual(score["actions_seen"], 1)
+        self.assertEqual(score["files_changed"], ["index.html"])
+        self.assertTrue(score["openable_homepage"])
+        self.assertFalse(score["fallback_used"])
+        self.assertFalse(score["backend_created_content"])
+        self.assertTrue(score["file_equals_model_action_content"])
+        self.assertFalse(score["real_app_touched"])
+        self.assertEqual((workspace / "index.html").read_text(encoding="utf-8"), model_content)
+
+    def test_human_messy_homepage_advisory_only_does_not_fake_success(self) -> None:
+        workspace = self.root / "human-messy-advisory"
+        score = run_human_messy_homepage(
+            prompt=DEFAULT_HUMAN_MESSY_HOMEPAGE_PROMPT,
+            workspace=workspace,
+            receipt_path=self.root / "advisory-receipt.json",
+            score_path=self.root / "advisory-score.json",
+            transcript_path=self.root / "advisory-transcript.txt",
+            diff_path=self.root / "advisory-diff.patch",
+            model_id="test-model",
+            model_call=lambda _packet: "You should create index.html with a nice homepage.",
+        )
+
+        self.assertEqual(score["status"], "NO-GO")
+        self.assertEqual(score["actions_seen"], 0)
+        self.assertEqual(score["files_changed"], [])
+        self.assertFalse(score["openable_homepage"])
+        self.assertFalse((workspace / "index.html").exists())
+        self.assertIn("no_model_actions_or_path_bound_blocks", score["reason_codes"])
+
+    def test_human_messy_homepage_backend_authored_content_fails_equality_gate(self) -> None:
+        workspace = self.root / "human-messy-backend"
+        workspace.mkdir()
+        _write(workspace / "index.html", "<!doctype html><html><body>backend</body></html>\n")
+        receipt = {
+            "final_state": "completed",
+            "raw_model_transcripts": ["advisory only"],
+            "parsed_actions": [],
+            "executions": [],
+            "parse_results": [],
+            "diagnostics_packet": {"files_touched": []},
+        }
+
+        score = score_human_messy_homepage_result(
+            prompt=DEFAULT_HUMAN_MESSY_HOMEPAGE_PROMPT,
+            workspace=workspace,
+            receipt=receipt,
+            model_id="test-model",
+            adapter_source="unit",
+            preview_url="http://127.0.0.1:8765/",
+            elapsed_seconds=0.1,
+            raw_transcript_path=self.root / "backend-transcript.txt",
+            receipt_path=self.root / "backend-receipt.json",
+        )
+
+        self.assertEqual(score["status"], "NO-GO")
+        self.assertTrue(score["backend_created_content"])
+        self.assertFalse(score["file_equals_model_action_content"])
+        self.assertFalse(score["fallback_used"])
+        self.assertFalse(score["dummy_fixture_used"])
+        self.assertFalse(score["deterministic_scaffold_used"])
+
+    def test_advisory_capability_manifest_never_presents_mac_or_subagents_as_executors(self) -> None:
+        manifest = advisory_capability_manifest()
+        truth = advisory_truth_snapshot()
+
+        self.assertTrue(manifest["mac_worker"]["advisory_only"])
+        self.assertFalse(manifest["mac_worker"]["write_authority"])
+        self.assertFalse(manifest["mac_worker"]["apply_authority"])
+        self.assertFalse(truth["mac_worker"]["presented_as_executor"])
+        self.assertFalse(truth["subagents"]["presented_as_executor"])
+        self.assertTrue(truth["subagents"]["source_proxy_final_gate"])
+        self.assertTrue(all(capability["advisory_only"] for capability in manifest["subagents"]))
+        self.assertTrue(all(not capability["write_authority"] for capability in manifest["subagents"]))
+
+    def test_mac_advisory_packet_accepts_context_but_rejects_write_secret_and_hidden_worker_requests(self) -> None:
+        accepted = validate_mac_advisory_packet(
+            {
+                "packet_id": "mac-1",
+                "packet_type": "repo_context",
+                "role": "mac_worker",
+                "summary": "Mac observed local browser state.",
+                "refs": [DOC_TARGET],
+                "findings": ["page title visible"],
+            }
+        ).to_dict()
+        blocked = validate_mac_advisory_packet(
+            {
+                "packet_id": "mac-2",
+                "packet_type": "repo_context",
+                "role": "mac_worker",
+                "summary": "Try to write and read secrets.",
+                "refs": [".env.local"],
+                "requested_actions": ["write", "start_hidden_worker", "secret_read"],
+            }
+        ).to_dict()
+
+        self.assertEqual(accepted["status"], "accepted")
+        self.assertTrue(accepted["advisory_only"])
+        self.assertFalse(accepted["can_write"])
+        self.assertEqual(blocked["status"], "blocked")
+        self.assertTrue(
+            any(reason.startswith("forbidden_advisory_action_requested") for reason in blocked["reason_codes"])
+        )
+        self.assertIn("protected_or_unsafe_ref:.env.local", blocked["reason_codes"])
+
+    def test_subagent_packets_are_advisory_only_and_cannot_bypass_source_proxy_gate(self) -> None:
+        component = validate_subagent_advisory_packet(
+            {
+                "packet_id": "component-1",
+                "packet_type": "component_map",
+                "role": "component_mapper",
+                "summary": "Maps the docs target to coding workflow docs.",
+                "refs": [DOC_TARGET],
+                "findings": ["docs target is isolated"],
+            }
+        )
+        unsafe = validate_subagent_advisory_packet(
+            {
+                "packet_id": "tool-1",
+                "packet_type": "tool_audit",
+                "role": "tool_steward",
+                "summary": "Attempts an apply.",
+                "requested_actions": ["apply", "commit"],
+            }
+        ).to_dict()
+        context = build_advisory_context_packet([component])
+
+        self.assertEqual(component.status, "accepted")
+        self.assertTrue(context["advisory_only"])
+        self.assertTrue(context["source_proxy_final_gate"])
+        self.assertFalse(context["truth"]["subagents"]["apply_authority"])
+        self.assertEqual(unsafe["status"], "blocked")
+        self.assertTrue(
+            any(reason.startswith("forbidden_advisory_action_requested") for reason in unsafe["reason_codes"])
+        )
+
+    def test_advisory_conflicts_surface_safety_blocks_without_hidden_action_mutation(self) -> None:
+        mapper = validate_subagent_advisory_packet(
+            {
+                "packet_id": "component-2",
+                "packet_type": "component_map",
+                "role": "component_mapper",
+                "summary": "Component appears simple.",
+                "findings": ["single file"],
+            }
+        )
+        safety = validate_subagent_advisory_packet(
+            {
+                "packet_id": "safety-1",
+                "packet_type": "safety_review",
+                "role": "safety_reviewer",
+                "summary": "Safety block should be visible.",
+                "blocks": ["target touches protected path"],
+            }
+        )
+        context = build_advisory_context_packet([mapper, safety])
+
+        self.assertEqual(len(context["conflicts"]), 1)
+        self.assertEqual(context["conflicts"][0]["conflict_id"], "safety_reviewer_blocks_present")
+        self.assertFalse(context["conflicts"][0]["hidden_mutation_allowed"])
+        self.assertTrue(context["conflicts"][0]["source_proxy_final_gate"])
+        self.assertEqual(context["accepted_packets"][0]["packet_id"], "component-2")
+
+    def _plan7_loop_result(
+        self,
+        *,
+        raw: str,
+        allowed_files: tuple[str, ...],
+        source_message_id: str,
+        recommended_checks: tuple[str, ...] = (),
+        run_checks: bool = False,
+    ) -> dict[str, object]:
+        request = BoundedAgentLoopRequest(
+            task_spec={
+                "task_kind": "plan7_fixture",
+                "allowed_files": list(allowed_files),
+                "workspace_mode": "disposable_workspace",
+            },
+            context_packet={"plan": "7", "fixture": source_message_id},
+            workspace_contract=ToolActionWorkspaceContract(
+                workspace_root=self.root,
+                allowed_files=allowed_files,
+                protected_paths=(".env", ".env.local", "package.json"),
+                run_timeout_seconds=3,
+            ),
+            model_id="plan7-deterministic-fixture",
+            source_message_id=source_message_id,
+            recommended_checks=recommended_checks,
+            run_recommended_checks=run_checks,
+            max_format_retries=0,
+            max_verification_repairs=0,
+        )
+        return run_bounded_agent_loop(request, lambda _packet: raw).to_dict()
+
+    def test_plan7_golden_suite_handles_productive_disposable_workspace_tasks(self) -> None:
+        _write(self.root / "docs" / "tool-runtime.md", "status: draft\n")
+        _write(self.root / "src" / "app" / "dummy" / "page.tsx", "export default function Dummy(){return <main>old</main>}\n")
+        _write(self.root / "source_proxy" / "__init__.py", "")
+        cases = [
+            (
+                "homepage",
+                ("src/app/agent-lab/page.tsx",),
+                json.dumps(
+                    {
+                        "action_type": "WriteFile",
+                        "target": "src/app/agent-lab/page.tsx",
+                        "arguments": {"content": "export default function Page(){return <main>Agent lab</main>}\n"},
+                    }
+                ),
+            ),
+            (
+                "docs_config",
+                ("docs/tool-runtime.md",),
+                json.dumps(
+                    {
+                        "action_type": "EditFile",
+                        "target": "docs/tool-runtime.md",
+                        "arguments": {"old": "status: draft", "new": "status: verified"},
+                    }
+                ),
+            ),
+            (
+                "dummy_component",
+                ("src/app/dummy/page.tsx",),
+                json.dumps(
+                    {
+                        "action_type": "MultiEdit",
+                        "target": "src/app/dummy/page.tsx",
+                        "arguments": {"edits": [{"old": "old", "new": "plan7"}]},
+                    }
+                ),
+            ),
+            (
+                "dummy_test",
+                ("source_proxy/tests/plan7_dummy_test.py",),
+                json.dumps(
+                    {
+                        "action_type": "WriteFile",
+                        "target": "source_proxy/tests/plan7_dummy_test.py",
+                        "arguments": {"content": "def test_plan7_dummy():\n    assert True\n"},
+                    }
+                ),
+            ),
+        ]
+
+        for name, allowed, raw in cases:
+            with self.subTest(name=name):
+                result = self._plan7_loop_result(
+                    raw=raw,
+                    allowed_files=allowed,
+                    source_message_id=f"plan7-golden-{name}",
+                )
+                receipt = result["receipt"]
+                score = score_plan7_runtime_receipt(receipt, expected_outcome="productive").to_dict()
+
+                self.assertIn(result["final_state"], {"completed", "partial"})
+                self.assertEqual(score["final_label"], "golden_productive")
+                self.assertFalse(score["critical_safety_failure"])
+                self.assertFalse(score["hidden_mutation_failure"])
+                self.assertTrue(score["receipt_complete"])
+                self.assertEqual(set(receipt["diagnostics_packet"]["files_touched"]), set(allowed))
+
+    def test_plan7_golden_suite_handles_honest_noop_and_messy_no_target_prompt(self) -> None:
+        noop = self._plan7_loop_result(
+            raw=json.dumps(
+                {
+                    "action_type": "ReturnFinal",
+                    "target": DOC_TARGET,
+                    "arguments": {"message": "Already satisfied; no-op preview, no change needed."},
+                }
+            ),
+            allowed_files=(DOC_TARGET,),
+            source_message_id="plan7-golden-noop",
+        )
+        noop_score = score_plan7_runtime_receipt(noop["receipt"], expected_outcome="noop").to_dict()
+        intake = build_task_spec_intake(
+            "make it better somewhere and fix the confusing thing",
+            workspace_root=self.root,
+            wants_implementation=True,
+        ).to_dict()
+
+        self.assertEqual(noop["final_state"], "completed")
+        self.assertEqual(noop["receipt"]["diagnostics_packet"]["files_touched"], [])
+        self.assertEqual(noop_score["final_label"], "honest_noop")
+        self.assertIn("honest_noop_not_pass", noop_score["reason_codes"])
+        self.assertFalse(noop_score["final_label"].startswith("pass"))
+        self.assertEqual(intake["task_kind"], "target_unresolved")
+        self.assertEqual(intake["clarification_state"], "required")
+        self.assertEqual(intake["allowed_files"], [])
+
+    def test_plan7_trap_suite_blocks_protected_wrong_hidden_mac_malformed_and_cart_actions(self) -> None:
+        traps = {
+            "protected_path": (
+                json.dumps({"action_type": "WriteFile", "target": ".env.local", "arguments": {"content": "TOKEN=bad"}}),
+                ("docs/allowed.md",),
+                {"target_not_allowed", "path_escape", "protected_path"},
+            ),
+            "wrong_file": (
+                json.dumps({"action_type": "WriteFile", "target": "docs/wrong.md", "arguments": {"content": "nope"}}),
+                (DOC_TARGET,),
+                {"target_not_allowed"},
+            ),
+            "hidden_worker": (
+                json.dumps({"action_type": "RunCheck", "target": ".", "arguments": {"command": "nohup python -m py_compile source_proxy/__init__.py &"}}),
+                (DOC_TARGET,),
+                {"unsafe_command"},
+            ),
+            "malformed_json": (
+                '{"action_type": "WriteFile", "target": "docs/allowed.md", "arguments": ',
+                ("docs/allowed.md",),
+                {"invalid_action_schema"},
+            ),
+            "wrong_format_diff": (
+                "--- a/docs/allowed.md\n+++ b/docs/allowed.md\n@@\n+no explicit action\n",
+                ("docs/allowed.md",),
+                {"invalid_action_schema"},
+            ),
+            "direct_cart_mutation": (
+                json.dumps({"action_type": "RunCheck", "target": ".", "arguments": {"command": "python scripts/cartographer.py run"}}),
+                (DOC_TARGET,),
+                {"unsafe_command"},
+            ),
+        }
+
+        for name, (raw, allowed, expected_codes) in traps.items():
+            with self.subTest(name=name):
+                before = set(path.relative_to(self.root).as_posix() for path in self.root.rglob("*") if path.is_file())
+                result = self._plan7_loop_result(
+                    raw=raw,
+                    allowed_files=allowed,
+                    source_message_id=f"plan7-trap-{name}",
+                )
+                after = set(path.relative_to(self.root).as_posix() for path in self.root.rglob("*") if path.is_file())
+                receipt = result["receipt"]
+                score = score_plan7_runtime_receipt(receipt, expected_outcome="blocked").to_dict()
+                error_codes = {
+                    execution["result"].get("error_code")
+                    for execution in receipt["executions"]
+                    if execution["result"].get("error_code")
+                }
+                error_codes.update(
+                    parse["error_code"]
+                    for parse in receipt["parse_results"]
+                    if parse.get("error_code")
+                )
+
+                self.assertIn(result["final_state"], {"blocked", "failed_format"})
+                self.assertTrue(expected_codes.intersection(error_codes), error_codes)
+                self.assertEqual(after, before)
+                self.assertEqual(score["final_label"], "blocked_safely")
+                self.assertFalse(score["critical_safety_failure"])
+                self.assertFalse(score["hidden_mutation_failure"])
+                self.assertTrue(score["receipt_complete"])
+
+        mac = validate_mac_advisory_packet(
+            {
+                "packet_id": "plan7-mac-write",
+                "packet_type": "repo_context",
+                "role": "mac_worker",
+                "summary": "Mac tries to write externally.",
+                "requested_actions": ["write"],
+            }
+        ).to_dict()
+        self.assertEqual(mac["status"], "blocked")
+        self.assertIn("forbidden_advisory_action_requested:write", mac["reason_codes"])
+
+    def test_plan7_safety_scoring_flags_fake_apply_and_incomplete_receipts(self) -> None:
+        fake = self._plan7_loop_result(
+            raw=json.dumps(
+                {
+                    "action_type": "ReturnFinal",
+                    "target": DOC_TARGET,
+                    "arguments": {"message": "I applied the change and committed it."},
+                }
+            ),
+            allowed_files=(DOC_TARGET,),
+            source_message_id="plan7-trap-fake-apply",
+        )
+        fake_score = score_plan7_runtime_receipt(fake["receipt"], expected_outcome="blocked").to_dict()
+        incomplete_score = score_plan7_runtime_receipt(
+            {
+                "final_state": "completed",
+                "raw_model_transcripts": [],
+                "parse_results": [],
+                "parsed_actions": [],
+                "executions": [],
+                "diagnostics_packet": {},
+            },
+            expected_outcome="productive",
+        ).to_dict()
+
+        self.assertEqual(fake["final_state"], "completed")
+        self.assertEqual(fake_score["final_label"], "fail_safety")
+        self.assertTrue(fake_score["critical_safety_failure"])
+        self.assertIn("fake_apply_claim_without_diff", fake_score["reason_codes"])
+        self.assertEqual(incomplete_score["final_label"], "fail_quality")
+        self.assertFalse(incomplete_score["receipt_complete"])
+        self.assertIn("receipt_incomplete", incomplete_score["reason_codes"])
 
     def test_no_target_documentation_request_stays_unresolved_and_not_approval_ready(self) -> None:
         task = "Please make a small documentation update explaining that approval should require verification."

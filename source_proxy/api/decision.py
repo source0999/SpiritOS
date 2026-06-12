@@ -71,6 +71,10 @@ from source_proxy.decision.recommendation import (
     ModelRecommendationInput,
     recommend_model,
 )
+from source_proxy.decision.task_spec_intake import (
+    build_task_spec_intake,
+    intake_as_legacy_task_spec,
+)
 from source_proxy.decision.router import (
     DecisionInput,
     TARGET_HARD_BLOCK_REASON_CODES,
@@ -1779,6 +1783,14 @@ async def route_decision(request: RouteDecisionRequest) -> dict[str, Any]:
 @router.post("/prompt-packet")
 async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
     reset_request = _request_with_cleared_file_focus(request)
+    intake = build_task_spec_intake(
+        reset_request.task,
+        workspace_root=_workspace_root(),
+        allowed_files=reset_request.allowed_files,
+        forbidden_files=reset_request.forbidden_files,
+        wants_implementation=reset_request.wants_implementation,
+    )
+    intake_payload = intake.to_dict()
     trial_target = str(reset_request.selected_target or "").strip()
     trial_task = (
         f"Target file: {trial_target}\n\n{reset_request.task}"
@@ -2067,13 +2079,7 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
         if _dummy_product_site_create_mode(reset_request):
             task_spec_payload = _dummy_product_site_create_task_spec()
         if reason_code in TARGET_HARD_BLOCK_REASON_CODES or reason_code == "target_unresolved":
-            task_spec_payload = _blocked_task_spec_payload(
-                task_type=reason_code,
-                reason_code=reason_code,
-                target=(target or explicit_target)
-                if reason_code in TARGET_HARD_BLOCK_REASON_CODES
-                else None,
-            )
+            task_spec_payload = intake_as_legacy_task_spec(intake)
         manual_browser_prompt = _coder_agent_manual_browser_prompt_text(
             task=reset_request.task,
             target=target or explicit_target,
@@ -2251,6 +2257,8 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
             "coderPacket": _camel_coder_packet_payload(coder_packet_payload),
             "task_spec": task_spec_payload,
             "taskSpec": _camel_task_spec_payload(task_spec_payload),
+            "task_spec_intake": intake_payload,
+            "taskSpecIntake": _camel_task_spec_intake_payload(intake_payload),
             "verification_plan": verification_plan_payload,
             "verificationPlan": _camel_verification_plan_payload(verification_plan_payload),
             "proposed_diff": proposed,
@@ -2320,6 +2328,8 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
     payload = packet.as_payload()
     payload["route_decision"] = route_payload
     payload["research_sources"] = decision.research_sources
+    payload["task_spec_intake"] = intake_payload
+    payload["taskSpecIntake"] = _camel_task_spec_intake_payload(intake_payload)
     return payload
 
 
@@ -2937,6 +2947,35 @@ def _camel_task_spec_payload(payload: dict[str, Any]) -> dict[str, Any]:
         "riskTier": payload.get("risk_tier"),
         "source": payload.get("source"),
         "blockers": payload.get("blockers", []),
+        "clarificationState": payload.get("clarification_state"),
+        "clarificationPrompt": payload.get("clarification_prompt"),
+        "workspaceMode": payload.get("workspace_mode"),
+        "approvalLevel": payload.get("approval_level"),
+        "intent": payload.get("intent"),
+        "contextSources": payload.get("context_sources", []),
+    }
+
+
+def _camel_task_spec_intake_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "schemaVersion": payload.get("schema_version"),
+        "taskKind": payload.get("task_kind"),
+        "intent": payload.get("intent"),
+        "userPrompt": payload.get("user_prompt"),
+        "targetPaths": payload.get("target_paths", []),
+        "allowedFiles": payload.get("allowed_files", []),
+        "forbiddenFiles": payload.get("forbidden_files", []),
+        "protectedPaths": payload.get("protected_paths", []),
+        "workspaceMode": payload.get("workspace_mode"),
+        "approvalLevel": payload.get("approval_level"),
+        "modelLane": payload.get("model_lane"),
+        "contextSources": payload.get("context_sources", []),
+        "verificationPolicy": payload.get("verification_policy", []),
+        "riskLevel": payload.get("risk_level"),
+        "clarificationState": payload.get("clarification_state"),
+        "clarificationPrompt": payload.get("clarification_prompt"),
+        "reasonCodes": payload.get("reason_codes", []),
+        "summary": payload.get("summary"),
     }
 
 
