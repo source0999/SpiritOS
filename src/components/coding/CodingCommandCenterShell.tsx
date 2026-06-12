@@ -78,6 +78,7 @@ import {
 } from "@/lib/coding/proxy-trial-prompts";
 import { buildCodingSettingsRows, settingsReceiptLines } from "@/lib/coding/settings-surface";
 import { deriveCodingTimelineEvents } from "@/lib/coding/timeline-events";
+import { buildToolRuntimeSurface } from "@/lib/coding/tool-runtime-surface";
 import { buildCodingUsageTimeRows, usageTimeReceiptLines } from "@/lib/coding/usage-time-surface";
 import { collectPathsFromUnifiedDiff } from "@/lib/coding/unified-diff-paths";
 import {
@@ -3285,6 +3286,39 @@ export default function CodingCommandCenterShell() {
       state: activeRunState === "blocked" ? "active" : "waiting",
     },
   ];
+  const toolRuntimeSurface = buildToolRuntimeSurface({
+    executions:
+      previewStatus === "ready" || previewStatus === "blocked" || previewStatus === "error"
+        ? [
+            {
+              result: {
+                blocked_reason: receiptBlockedReasonText,
+                diff_summary: activeProposedDiff || "No disposable workspace diff reported.",
+                files_touched: activeChangedFiles,
+                status: previewStatus === "ready" ? "completed" : "blocked",
+                stdout: receiptCommandsRunText,
+              },
+            },
+          ]
+        : [],
+    parsed_actions:
+      previewStatus === "ready" || previewStatus === "blocked" || previewStatus === "error"
+        ? [
+            {
+              action_type: activeProposedDiff ? "WriteFile" : "AskClarification",
+              adapter_source: "source_proxy_ui",
+              target: taskPacket.targetFile || activePreviewTarget || "not reported",
+            },
+          ]
+        : [],
+    task_spec_intake: {
+      allowed_files: taskPacket.allowedFiles,
+      clarification_state: activeBlockedFields.length > 0 ? "required" : "not_needed",
+      model_lane: activeProviderModel.modelLabel,
+      task_kind: taskPacket.taskType,
+      workspace_mode: "disposable_workspace",
+    },
+  });
   const receiptText = [
     "Verification receipt",
     receiptReadinessText,
@@ -3308,6 +3342,7 @@ export default function CodingCommandCenterShell() {
     `Progress current step: ${progressCurrentStepText}`,
     `Progress next step: ${progressNextStepText}`,
     `Public work-state receipt:\n${publicWorkReceiptText}`,
+    toolRuntimeSurface.diagnosticsText,
     `Trial count selected: ${lifecycleTrialCountText}`,
     `Trial stage: ${lifecycleTrialStageText}`,
     `Trial position: ${lifecycleTrialPositionText}`,
@@ -7150,6 +7185,121 @@ export default function CodingCommandCenterShell() {
               </div>
               </div>
             </details>
+
+            <section
+              aria-label="Source Proxy tool runtime"
+              className="mx-auto w-full max-w-5xl rounded-lg border border-cyan-300/20 bg-cyan-300/[0.045] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]"
+            >
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
+                  <h3 className="text-sm font-semibold text-cyan-50">
+                    Source Proxy Tool Runtime
+                  </h3>
+                  <p className="mt-1 text-xs leading-5 text-cyan-50/75">
+                    TaskSpec, model-authored actions, disposable diffs, check output, and receipt
+                    truth are display-only here.
+                  </p>
+                </div>
+                <span className="inline-flex min-h-7 items-center self-start rounded-md border border-cyan-200/25 bg-black/25 px-2 text-xs font-semibold text-cyan-50 sm:self-auto">
+                  apply blocked
+                </span>
+              </div>
+              <div className="mt-3 grid gap-3 lg:grid-cols-2">
+                <section className="rounded-md border border-white/10 bg-black/20 p-3">
+                  <h4 className="text-xs font-semibold uppercase tracking-normal text-zinc-400">
+                    TaskSpec
+                  </h4>
+                  <dl className="mt-2 grid gap-1 text-xs leading-5 text-zinc-300 sm:grid-cols-2">
+                    <div>
+                      <dt className="text-zinc-500">Task kind</dt>
+                      <dd>{toolRuntimeSurface.taskSpec.taskKind}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-zinc-500">Clarification</dt>
+                      <dd>{toolRuntimeSurface.taskSpec.clarificationState}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-zinc-500">Model lane</dt>
+                      <dd>{toolRuntimeSurface.modelLane}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-zinc-500">Workspace</dt>
+                      <dd>{toolRuntimeSurface.taskSpec.workspaceMode}</dd>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <dt className="text-zinc-500">Allowed files</dt>
+                      <dd>
+                        {toolRuntimeSurface.taskSpec.allowedFiles.length > 0
+                          ? toolRuntimeSurface.taskSpec.allowedFiles.join(", ")
+                          : "not declared"}
+                      </dd>
+                    </div>
+                  </dl>
+                </section>
+                <section className="rounded-md border border-white/10 bg-black/20 p-3">
+                  <h4 className="text-xs font-semibold uppercase tracking-normal text-zinc-400">
+                    Tool Truth
+                  </h4>
+                  <p className="mt-2 text-xs leading-5 text-zinc-300">
+                    Exposed tools: {toolRuntimeSurface.toolTruth.exposed.join(", ")}
+                  </p>
+                  <p className="mt-2 text-xs leading-5 text-zinc-300">
+                    Write scope: {toolRuntimeSurface.toolTruth.writeExecutionScope}
+                  </p>
+                  <p className="mt-2 text-xs leading-5 text-zinc-300">
+                    Mac/subagents advisory only:{" "}
+                    {toolRuntimeSurface.advisoryTruth.macSubagentsAdvisoryOnly ? "true" : "false"}
+                  </p>
+                  <p className="mt-2 text-xs leading-5 text-zinc-300">
+                    Source Proxy final gate:{" "}
+                    {toolRuntimeSurface.advisoryTruth.sourceProxyFinalGate ? "true" : "false"}
+                  </p>
+                </section>
+                <section className="rounded-md border border-white/10 bg-black/20 p-3">
+                  <h4 className="text-xs font-semibold uppercase tracking-normal text-zinc-400">
+                    Action Transcript
+                  </h4>
+                  {toolRuntimeSurface.actions.length > 0 ? (
+                    <ul className="mt-2 grid gap-2 text-xs leading-5 text-zinc-300">
+                      {toolRuntimeSurface.actions.map((action, index) => (
+                        <li className="rounded-md border border-white/10 bg-white/[0.03] p-2" key={`${action.actionType}-${index}`}>
+                          <p>
+                            {action.actionType}: {action.status}
+                          </p>
+                          <p>Target: {action.target}</p>
+                          <p>Adapter: {action.adapterSource}</p>
+                          <p>Blocked reason: {action.blockedReason}</p>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-2 text-xs leading-5 text-zinc-500">
+                      No model-authored tool actions recorded in this UI state.
+                    </p>
+                  )}
+                </section>
+                <section className="rounded-md border border-white/10 bg-black/20 p-3">
+                  <h4 className="text-xs font-semibold uppercase tracking-normal text-zinc-400">
+                    Diff And Checks
+                  </h4>
+                  <p className="mt-2 text-xs leading-5 text-zinc-300">
+                    Files touched:{" "}
+                    {toolRuntimeSurface.filesTouched.length > 0
+                      ? toolRuntimeSurface.filesTouched.join(", ")
+                      : "none"}
+                  </p>
+                  <p className="mt-2 text-xs leading-5 text-zinc-300">
+                    Safe apply: {toolRuntimeSurface.safeApplyStatus}
+                  </p>
+                  <pre className="mt-2 max-h-28 overflow-auto rounded-md border border-white/10 bg-black/25 p-2 text-xs leading-5 text-zinc-300">
+                    {toolRuntimeSurface.diffSummary}
+                  </pre>
+                  <pre className="mt-2 max-h-24 overflow-auto rounded-md border border-white/10 bg-black/25 p-2 text-xs leading-5 text-zinc-300">
+                    {toolRuntimeSurface.checkOutput}
+                  </pre>
+                </section>
+              </div>
+            </section>
 
             <details className="mx-auto w-full max-w-5xl rounded-lg border border-white/10 bg-white/[0.025] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
               <summary className="cursor-pointer text-xs font-semibold uppercase tracking-normal text-zinc-400">
