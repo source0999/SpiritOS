@@ -1,0 +1,46 @@
+--- a/stair_tracker.css
++++ b/stair_tracker.css
+@@ -0,0 +1,5 @@
++body { font-family: Arial, sans-serif; }
++#tracker { margin: 20px; }
++button { padding: 10px 20px; margin-right: 10px; }
++ul { list-style-type: none; padding: 0; }
++li { background-color: #f4f4f4; padding: 10px; margin-bottom: 5px; border-radius: 5px; }--- a/stair_tracker.html
++++ b/stair_tracker.html
+@@ -0,0 +1,18 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Stair Workout Tracker</title>
++    <link rel="stylesheet" href="stair_tracker.css">
++</head>
++<body>
++    <h1>Stair Workout Tracker</h1>
++    <div id="tracker">
++        <button onclick="addSet()">Add Set</button>
++        <ul id="sets"></ul>
++        <p>Total Steps: <span id="totalSteps">0</span></p>
++    </div>
++    <script src="stair_tracker.js"></script>
++</body>
++</html>--- a/stair_tracker.js
++++ b/stair_tracker.js
+@@ -0,0 +1,16 @@
++let totalSteps = 0;
++
++function addSet() {
++    const setsList = document.getElementById('sets');
++    const setCount = setsList.children.length + 1;
++    const newSet = document.createElement('li');
++    newSet.textContent = `Set ${setCount}: <input type="number" id="reps${setCount}" placeholder="Reps">`;\n    setsList.appendChild(newSet);
++
++    const repsInput = document.getElementById(`reps${setCount}`);\n    repsInput.addEventListener('change', () => {
++        totalSteps += parseInt(repsInput.value, 10) || 0;
++        document.getElementById('totalSteps').textContent = totalSteps;
++    });
++}
++
++// Initialize total steps display
++document.getElementById('totalSteps').textContent = totalSteps;

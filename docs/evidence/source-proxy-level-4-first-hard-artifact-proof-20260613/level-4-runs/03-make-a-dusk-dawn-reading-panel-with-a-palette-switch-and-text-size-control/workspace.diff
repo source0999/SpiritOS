@@ -1,0 +1,46 @@
+--- a/index.html
++++ b/index.html
+@@ -0,0 +1,18 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Dusk Dawn Reading Panel</title>
++    <link rel="stylesheet" href="styles.css">
++</head>
++<body class="dawn">
++    <div class="container">
++        <h1>Reading Panel</h1>
++        <p id="text">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
++        <button id="paletteSwitch">Palette Switch</button>
++        <input type="range" id="textSize" min="12" max="36" value="16">
++    </div>
++    <script src="script.js"></script>
++</body>
++</html>--- a/script.js
++++ b/script.js
+@@ -0,0 +1,15 @@
++document.getElementById('paletteSwitch').addEventListener('click', function() {
++    const body = document.body;
++    if (body.classList.contains('dawn')) {
++        body.className = 'night';
++    } else if (body.classList.contains('night')) {
++        body.className = 'sunset';
++    } else if (body.classList.contains('sunset')) {
++        body.className = 'sunrise';
++    } else {
++        body.className = 'dawn';
++    }
++});
++document.getElementById('textSize').addEventListener('input', function() {
++    document.getElementById('text').style.fontSize = this.value + 'px';
++});--- a/styles.css
++++ b/styles.css
+@@ -0,0 +1,6 @@
++.container { width: 80%; margin: auto; padding: 20px; }
++body.dawn { background-color: #f5deb3; color: #000; }
++body.night { background-color: #1a1a1a; color: #fff; }
++body.sunset { background-color: #ffa500; color: #000; }
++body.sunrise { background-color: #ff6347; color: #000; }
++#text { font-size: 16px; }

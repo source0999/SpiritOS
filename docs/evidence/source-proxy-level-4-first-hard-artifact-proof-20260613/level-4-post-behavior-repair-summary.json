@@ -1,0 +1,95 @@
+{
+  "browser_results": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-level3-browser-behavior-results-before-repair.json",
+  "model_id": "qwen2.5-coder:7b",
+  "repair_summary_version": "anti-tailoring-post-behavior-repair-v1",
+  "repairs": [
+    {
+      "eligible": false,
+      "prompt": "make a laundry timer that can start pause reset and log a finished load",
+      "run": "01-make-a-laundry-timer-that-can-start-pause-reset-and-log-a-finished-load",
+      "skip_reason": "behavior_not_failed"
+    },
+    {
+      "eligible": false,
+      "prompt": "make a parking trip cost planner with fee people tip and a reset button",
+      "run": "02-make-a-parking-trip-cost-planner-with-fee-people-tip-and-a-reset-button",
+      "skip_reason": "behavior_not_failed"
+    },
+    {
+      "attempts_used": 1,
+      "eligible": true,
+      "file_equals_model_action_content": true,
+      "prompt": "make a dusk dawn reading panel with a palette switch and text size control",
+      "reason_codes": [],
+      "repair_model_authored_targets": [
+        "styles.css"
+      ],
+      "repair_status": "READY_FOR_RETEST",
+      "repaired_files": [
+        "styles.css"
+      ],
+      "run": "03-make-a-dusk-dawn-reading-panel-with-a-palette-switch-and-text-size-control"
+    },
+    {
+      "eligible": false,
+      "prompt": "make a beach packing board where i can add items check them off and see packed count",
+      "run": "04-make-a-beach-packing-board-where-i-can-add-items-check-them-off-and-see-packed-c",
+      "skip_reason": "behavior_not_failed"
+    },
+    {
+      "attempts_used": 1,
+      "eligible": true,
+      "file_equals_model_action_content": true,
+      "prompt": "make a balcony forecast tile with a city switch and f c temp toggle",
+      "reason_codes": [],
+      "repair_model_authored_targets": [
+        "styles.css"
+      ],
+      "repair_status": "READY_FOR_RETEST",
+      "repaired_files": [
+        "styles.css"
+      ],
+      "run": "05-make-a-balcony-forecast-tile-with-a-city-switch-and-f-c-temp-toggle"
+    },
+    {
+      "eligible": false,
+      "prompt": "make a campfire podcast queue with play pause and next episode",
+      "run": "06-make-a-campfire-podcast-queue-with-play-pause-and-next-episode",
+      "skip_reason": "behavior_not_failed"
+    },
+    {
+      "attempts_used": 1,
+      "eligible": true,
+      "file_equals_model_action_content": true,
+      "prompt": "make a stair workout tracker where i can add a set increase reps and see total steps",
+      "reason_codes": [],
+      "repair_model_authored_targets": [
+        "stair_tracker.js"
+      ],
+      "repair_status": "READY_FOR_RETEST",
+      "repaired_files": [
+        "stair_tracker.js"
+      ],
+      "run": "07-make-a-stair-workout-tracker-where-i-can-add-a-set-increase-reps-and-see-total-s"
+    },
+    {
+      "eligible": false,
+      "prompt": "make a sticky memo board where i can add a thought edit it delete it and see saved count",
+      "run": "08-make-a-sticky-memo-board-where-i-can-add-a-thought-edit-it-delete-it-and-see-sav",
+      "skip_reason": "not_eligible_for_behavior_repair"
+    },
+    {
+      "eligible": false,
+      "prompt": "make a secret phrase safety lab with strength feedback and a show hide switch",
+      "run": "09-make-a-secret-phrase-safety-lab-with-strength-feedback-and-a-show-hide-switch",
+      "skip_reason": "behavior_not_failed"
+    },
+    {
+      "eligible": false,
+      "prompt": "make a finger paint pad with color choice brush size draw and clear",
+      "run": "10-make-a-finger-paint-pad-with-color-choice-brush-size-draw-and-clear",
+      "skip_reason": "behavior_not_failed"
+    }
+  ],
+  "run_root": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs"
+}

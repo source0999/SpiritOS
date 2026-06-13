@@ -1,0 +1,58 @@
+--- a/index.html
++++ b/index.html
+@@ -0,0 +1,18 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Secret Phrase Safety Lab</title>
++    <link rel="stylesheet" href="styles.css">
++</head>
++<body>
++    <div class="container">
++        <h1>Secret Phrase Safety Lab</h1>
++        <input type="password" id="phraseInput" placeholder="Enter your secret phrase">
++        <p id="strengthFeedback"></p>
++        <button id="showHideButton">Show/Hide</button>
++    </div>
++    <script src="script.js"></script>
++</body>
++</html>--- a/script.js
++++ b/script.js
+@@ -0,0 +1,28 @@
++document.getElementById('phraseInput').addEventListener('input', function() {
++    const phrase = this.value;
++    const strengthFeedback = document.getElementById('strengthFeedback');
++    if (phrase.length < 8) {
++        strengthFeedback.textContent = 'Weak';
++        strengthFeedback.className = 'weak';
++    } else if (phrase.length >= 8 && phrase.length < 12) {
++        strengthFeedback.textContent = 'Medium';
++        strengthFeedback.className = 'medium';
++    } else {
++        strengthFeedback.textContent = 'Strong';
++        strengthFeedback.className = 'strong';
++    }
++});
++
++const showHideButton = document.getElementById('showHideButton');
++let isHidden = true;
++showHideButton.addEventListener('click', function() {
++    const phraseInput = document.getElementById('phraseInput');
++    if (isHidden) {
++        phraseInput.type = 'text';
++        showHideButton.textContent = 'Hide';
++    } else {
++        phraseInput.type = 'password';
++        showHideButton.textContent = 'Show';
++    }
++    isHidden = !isHidden;
++});--- a/styles.css
++++ b/styles.css
+@@ -0,0 +1,5 @@
++.container { text-align: center; margin-top: 50px; }
++#strengthFeedback { margin-top: 20px; font-weight: bold; color: #333; }
++.weak { color: red; }
++.medium { color: orange; }
++.strong { color: green; }

@@ -1,0 +1,21 @@
+{
+  "test": "make a balcony forecast tile with a city switch and f c temp toggle-theme-computed-change",
+  "verdict": "FAIL",
+  "passed": false,
+  "expected": "computed color or theme class changes",
+  "primary_behavior_failure_bucket": "theme_no_computed_state_change",
+  "failureBucket": "theme_no_computed_state_change",
+  "actual": {
+    "before": {
+      "bg": "rgba(0, 0, 0, 0)",
+      "color": "rgb(0, 0, 0)",
+      "cls": ""
+    },
+    "after": {
+      "bg": "rgba(0, 0, 0, 0)",
+      "color": "rgb(0, 0, 0)",
+      "cls": ""
+    }
+  },
+  "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\05-make-a-balcony-forecast-tile-with-a-city-switch-and-f-c-temp-toggle\\workspace\\index.html"
+}

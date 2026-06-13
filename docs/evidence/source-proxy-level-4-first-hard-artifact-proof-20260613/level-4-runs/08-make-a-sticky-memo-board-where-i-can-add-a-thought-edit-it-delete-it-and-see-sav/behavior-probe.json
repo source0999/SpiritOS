@@ -1,0 +1,11 @@
+{
+  "test": "make a sticky memo board where i can add a thought edit it delete it and see saved count-missing-preview",
+  "verdict": "FAIL",
+  "passed": false,
+  "expected": "openable generated preview exists before behavior probe",
+  "primary_behavior_failure_bucket": "route_blocked_no_preview",
+  "failureBucket": "route_blocked_no_preview",
+  "actual": {
+    "selected_preview_path": ""
+  }
+}

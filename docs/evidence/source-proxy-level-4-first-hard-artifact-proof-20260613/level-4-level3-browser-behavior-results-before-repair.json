@@ -1,0 +1,383 @@
+{
+  "results": [
+    {
+      "run": "01-make-a-laundry-timer-that-can-start-pause-reset-and-log-a-finished-load",
+      "prompt": "make a laundry timer that can start pause reset and log a finished load",
+      "route_status": "GO",
+      "canonical_final_verdict": "UNVERIFIED",
+      "preview_path_local": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\01-make-a-laundry-timer-that-can-start-pause-reset-and-log-a-finished-load\\workspace\\laundry_timer.html",
+      "open_probe": {
+        "opened": true,
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\01-make-a-laundry-timer-that-can-start-pause-reset-and-log-a-finished-load\\workspace\\laundry_timer.html",
+        "title": "Laundry Timer",
+        "bodyText": "0:00\nStart Stop Reset",
+        "elementCounts": {
+          "buttons": 3,
+          "inputs": 0,
+          "links": 0,
+          "canvas": 0,
+          "scripts": 1,
+          "stylesheets": 1
+        },
+        "consoleMessages": [],
+        "pageErrors": []
+      },
+      "behavior_probe": {
+        "test": "make a laundry timer that can start pause reset and log a finished load-timer-change",
+        "verdict": "PASS",
+        "passed": true,
+        "expected": "timer text changes after start",
+        "primary_behavior_failure_bucket": "",
+        "secondary_behavior_failure_bucket": "",
+        "failureBucket": "",
+        "actual": {
+          "before": "0:00\nStart Stop Reset",
+          "afterStart": "0:01\nStart Stop Reset",
+          "afterStop": "0:01\nStart Stop Reset",
+          "clickedStop": true
+        },
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\01-make-a-laundry-timer-that-can-start-pause-reset-and-log-a-finished-load\\workspace\\laundry_timer.html"
+      }
+    },
+    {
+      "run": "02-make-a-parking-trip-cost-planner-with-fee-people-tip-and-a-reset-button",
+      "prompt": "make a parking trip cost planner with fee people tip and a reset button",
+      "route_status": "GO",
+      "canonical_final_verdict": "UNVERIFIED",
+      "preview_path_local": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\02-make-a-parking-trip-cost-planner-with-fee-people-tip-and-a-reset-button\\workspace\\index.html",
+      "open_probe": {
+        "opened": true,
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\02-make-a-parking-trip-cost-planner-with-fee-people-tip-and-a-reset-button\\workspace\\index.html",
+        "title": "Parking Trip Cost Planner",
+        "bodyText": "Parking Trip Cost Planner\nDistance (km): \n\nParking Fee per km: \n\nTip Percentage (%): \n\nCalculate Cost\nReset",
+        "elementCounts": {
+          "buttons": 2,
+          "inputs": 3,
+          "links": 0,
+          "canvas": 0,
+          "scripts": 1,
+          "stylesheets": 1
+        },
+        "consoleMessages": [],
+        "pageErrors": []
+      },
+      "behavior_probe": {
+        "test": "make a parking trip cost planner with fee people tip and a reset button-visible-state-change",
+        "verdict": "PASS",
+        "passed": true,
+        "expected": "numeric input creates a visible numeric result update",
+        "primary_behavior_failure_bucket": "",
+        "failureBucket": "",
+        "actual": {
+          "before": "Parking Trip Cost Planner\nDistance (km): \n\nParking Fee per km: \n\nTip Percentage (%): \n\nCalculate Cost\nReset",
+          "after": "Parking Trip Cost Planner\nDistance (km): \n\nParking Fee per km: \n\nTip Percentage (%): \n\nCalculate Cost\nTotal Cost: $131.04\nReset",
+          "filled": 3,
+          "clicked": true,
+          "appears": false
+        },
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\02-make-a-parking-trip-cost-planner-with-fee-people-tip-and-a-reset-button\\workspace\\index.html"
+      }
+    },
+    {
+      "run": "03-make-a-dusk-dawn-reading-panel-with-a-palette-switch-and-text-size-control",
+      "prompt": "make a dusk dawn reading panel with a palette switch and text size control",
+      "route_status": "GO",
+      "canonical_final_verdict": "UNVERIFIED",
+      "preview_path_local": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\03-make-a-dusk-dawn-reading-panel-with-a-palette-switch-and-text-size-control\\workspace\\index.html",
+      "open_probe": {
+        "opened": true,
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\03-make-a-dusk-dawn-reading-panel-with-a-palette-switch-and-text-size-control\\workspace\\index.html",
+        "title": "Dusk Dawn Reading Panel",
+        "bodyText": "Reading Panel\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.\n\nPalette Switch ",
+        "elementCounts": {
+          "buttons": 1,
+          "inputs": 1,
+          "links": 0,
+          "canvas": 0,
+          "scripts": 1,
+          "stylesheets": 1
+        },
+        "consoleMessages": [],
+        "pageErrors": []
+      },
+      "behavior_probe": {
+        "test": "make a dusk dawn reading panel with a palette switch and text size control-visible-state-change",
+        "verdict": "FAIL",
+        "passed": false,
+        "expected": "input plus action creates visible state change",
+        "primary_behavior_failure_bucket": "generic_no_visible_state_change",
+        "failureBucket": "generic_no_visible_state_change",
+        "actual": {
+          "before": "Reading Panel\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.\n\nPalette Switch ",
+          "after": "Reading Panel\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.\n\nPalette Switch ",
+          "filled": 1,
+          "clicked": true,
+          "appears": false
+        },
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\03-make-a-dusk-dawn-reading-panel-with-a-palette-switch-and-text-size-control\\workspace\\index.html"
+      }
+    },
+    {
+      "run": "04-make-a-beach-packing-board-where-i-can-add-items-check-them-off-and-see-packed-c",
+      "prompt": "make a beach packing board where i can add items check them off and see packed count",
+      "route_status": "GO",
+      "canonical_final_verdict": "UNVERIFIED",
+      "preview_path_local": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\04-make-a-beach-packing-board-where-i-can-add-items-check-them-off-and-see-packed-c\\workspace\\index.html",
+      "open_probe": {
+        "opened": true,
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\04-make-a-beach-packing-board-where-i-can-add-items-check-them-off-and-see-packed-c\\workspace\\index.html",
+        "title": "Beach Packing Board",
+        "bodyText": "Beach Packing Board\n Add Item\n\nPacked Count: 0",
+        "elementCounts": {
+          "buttons": 1,
+          "inputs": 1,
+          "links": 0,
+          "canvas": 0,
+          "scripts": 1,
+          "stylesheets": 1
+        },
+        "consoleMessages": [],
+        "pageErrors": []
+      },
+      "behavior_probe": {
+        "test": "make a beach packing board where i can add items check them off and see packed count-visible-state-change",
+        "verdict": "PASS",
+        "passed": true,
+        "expected": "entered checklist/list text remains visible after action",
+        "primary_behavior_failure_bucket": "",
+        "failureBucket": "",
+        "actual": {
+          "before": "Beach Packing Board\n Add Item\n\nPacked Count: 0",
+          "after": "Beach Packing Board\nbananas\n Add Item\n\nPacked Count: 0",
+          "filled": 1,
+          "clicked": true,
+          "appears": true
+        },
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\04-make-a-beach-packing-board-where-i-can-add-items-check-them-off-and-see-packed-c\\workspace\\index.html"
+      }
+    },
+    {
+      "run": "05-make-a-balcony-forecast-tile-with-a-city-switch-and-f-c-temp-toggle",
+      "prompt": "make a balcony forecast tile with a city switch and f c temp toggle",
+      "route_status": "GO",
+      "canonical_final_verdict": "UNVERIFIED",
+      "preview_path_local": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\05-make-a-balcony-forecast-tile-with-a-city-switch-and-f-c-temp-toggle\\workspace\\index.html",
+      "open_probe": {
+        "opened": true,
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\05-make-a-balcony-forecast-tile-with-a-city-switch-and-f-c-temp-toggle\\workspace\\index.html",
+        "title": "Balcony Forecast Tile",
+        "bodyText": "City\n\nTemperature: 0°C\n\nCondition: Sunny\n\nForecast: Clear skies\n\nToggle Unit (F/C)",
+        "elementCounts": {
+          "buttons": 1,
+          "inputs": 0,
+          "links": 0,
+          "canvas": 0,
+          "scripts": 1,
+          "stylesheets": 1
+        },
+        "consoleMessages": [],
+        "pageErrors": []
+      },
+      "behavior_probe": {
+        "test": "make a balcony forecast tile with a city switch and f c temp toggle-theme-computed-change",
+        "verdict": "FAIL",
+        "passed": false,
+        "expected": "computed color or theme class changes",
+        "primary_behavior_failure_bucket": "theme_no_computed_state_change",
+        "failureBucket": "theme_no_computed_state_change",
+        "actual": {
+          "before": {
+            "bg": "rgba(0, 0, 0, 0)",
+            "color": "rgb(0, 0, 0)",
+            "cls": ""
+          },
+          "after": {
+            "bg": "rgba(0, 0, 0, 0)",
+            "color": "rgb(0, 0, 0)",
+            "cls": ""
+          }
+        },
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\05-make-a-balcony-forecast-tile-with-a-city-switch-and-f-c-temp-toggle\\workspace\\index.html"
+      }
+    },
+    {
+      "run": "06-make-a-campfire-podcast-queue-with-play-pause-and-next-episode",
+      "prompt": "make a campfire podcast queue with play pause and next episode",
+      "route_status": "GO",
+      "canonical_final_verdict": "UNVERIFIED",
+      "preview_path_local": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\06-make-a-campfire-podcast-queue-with-play-pause-and-next-episode\\workspace\\index.html",
+      "open_probe": {
+        "opened": true,
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\06-make-a-campfire-podcast-queue-with-play-pause-and-next-episode\\workspace\\index.html",
+        "title": "Campfire Podcast Queue",
+        "bodyText": "Campfire Podcast Queue\nPlay\nNext Episode\nEpisode 1\nEpisode 2\nEpisode 3",
+        "elementCounts": {
+          "buttons": 2,
+          "inputs": 0,
+          "links": 0,
+          "canvas": 0,
+          "scripts": 1,
+          "stylesheets": 1
+        },
+        "consoleMessages": [],
+        "pageErrors": []
+      },
+      "behavior_probe": {
+        "test": "make a campfire podcast queue with play pause and next episode-player-control-change",
+        "verdict": "PASS",
+        "passed": true,
+        "expected": "play/pause or player control visibly changes state",
+        "primary_behavior_failure_bucket": "",
+        "failureBucket": "",
+        "actual": {
+          "before": "Campfire Podcast Queue\nPlay\nNext Episode\nEpisode 1\nEpisode 2\nEpisode 3",
+          "after": "Campfire Podcast Queue\nPause\nNext Episode\nEpisode 1\nEpisode 2\nEpisode 3",
+          "clicked": true
+        },
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\06-make-a-campfire-podcast-queue-with-play-pause-and-next-episode\\workspace\\index.html"
+      }
+    },
+    {
+      "run": "07-make-a-stair-workout-tracker-where-i-can-add-a-set-increase-reps-and-see-total-s",
+      "prompt": "make a stair workout tracker where i can add a set increase reps and see total steps",
+      "route_status": "GO",
+      "canonical_final_verdict": "UNVERIFIED",
+      "preview_path_local": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\07-make-a-stair-workout-tracker-where-i-can-add-a-set-increase-reps-and-see-total-s\\workspace\\stair_tracker.html",
+      "open_probe": {
+        "opened": true,
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\07-make-a-stair-workout-tracker-where-i-can-add-a-set-increase-reps-and-see-total-s\\workspace\\stair_tracker.html",
+        "title": "Stair Workout Tracker",
+        "bodyText": "Stair Workout Tracker\nAdd Set\n\nTotal Steps: 0",
+        "elementCounts": {
+          "buttons": 1,
+          "inputs": 0,
+          "links": 0,
+          "canvas": 0,
+          "scripts": 1,
+          "stylesheets": 1
+        },
+        "consoleMessages": [],
+        "pageErrors": [
+          "Invalid or unexpected token",
+          "addSet is not defined"
+        ]
+      },
+      "behavior_probe": {
+        "test": "make a stair workout tracker where i can add a set increase reps and see total steps-click-tracker-state-change",
+        "verdict": "FAIL",
+        "passed": false,
+        "expected": "tracker control visibly changes progress state",
+        "primary_behavior_failure_bucket": "tracker_control_no_visible_progress_change",
+        "failureBucket": "tracker_control_no_visible_progress_change",
+        "actual": {
+          "before": "Stair Workout Tracker\nAdd Set\n\nTotal Steps: 0",
+          "after": "Stair Workout Tracker\nAdd Set\n\nTotal Steps: 0",
+          "clicked": true
+        },
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\07-make-a-stair-workout-tracker-where-i-can-add-a-set-increase-reps-and-see-total-s\\workspace\\stair_tracker.html"
+      }
+    },
+    {
+      "run": "08-make-a-sticky-memo-board-where-i-can-add-a-thought-edit-it-delete-it-and-see-sav",
+      "prompt": "make a sticky memo board where i can add a thought edit it delete it and see saved count",
+      "route_status": "EXPECTED-BLOCKED",
+      "canonical_final_verdict": "BLOCKED",
+      "preview_path_local": "",
+      "open_probe": {
+        "opened": false,
+        "reason": "no_browser_viewable_html_artifact",
+        "selected_preview_path": ""
+      },
+      "behavior_probe": {
+        "test": "make a sticky memo board where i can add a thought edit it delete it and see saved count-missing-preview",
+        "verdict": "FAIL",
+        "passed": false,
+        "expected": "openable generated preview exists before behavior probe",
+        "primary_behavior_failure_bucket": "route_blocked_no_preview",
+        "failureBucket": "route_blocked_no_preview",
+        "actual": {
+          "selected_preview_path": ""
+        }
+      }
+    },
+    {
+      "run": "09-make-a-secret-phrase-safety-lab-with-strength-feedback-and-a-show-hide-switch",
+      "prompt": "make a secret phrase safety lab with strength feedback and a show hide switch",
+      "route_status": "GO",
+      "canonical_final_verdict": "UNVERIFIED",
+      "preview_path_local": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\09-make-a-secret-phrase-safety-lab-with-strength-feedback-and-a-show-hide-switch\\workspace\\index.html",
+      "open_probe": {
+        "opened": true,
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\09-make-a-secret-phrase-safety-lab-with-strength-feedback-and-a-show-hide-switch\\workspace\\index.html",
+        "title": "Secret Phrase Safety Lab",
+        "bodyText": "Secret Phrase Safety Lab\n\nShow/Hide",
+        "elementCounts": {
+          "buttons": 1,
+          "inputs": 1,
+          "links": 0,
+          "canvas": 0,
+          "scripts": 1,
+          "stylesheets": 1
+        },
+        "consoleMessages": [],
+        "pageErrors": []
+      },
+      "behavior_probe": {
+        "test": "make a secret phrase safety lab with strength feedback and a show hide switch-password-feedback",
+        "verdict": "PASS",
+        "passed": true,
+        "expected": "weak and stronger inputs change safety text",
+        "primary_behavior_failure_bucket": "",
+        "failureBucket": "",
+        "actual": {
+          "weak": "Secret Phrase Safety Lab\n\nWeak\n\nShow/Hide",
+          "strong": "Secret Phrase Safety Lab\n\nStrong\n\nShow/Hide",
+          "changed": true
+        },
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\09-make-a-secret-phrase-safety-lab-with-strength-feedback-and-a-show-hide-switch\\workspace\\index.html"
+      }
+    },
+    {
+      "run": "10-make-a-finger-paint-pad-with-color-choice-brush-size-draw-and-clear",
+      "prompt": "make a finger paint pad with color choice brush size draw and clear",
+      "route_status": "GO",
+      "canonical_final_verdict": "UNVERIFIED",
+      "preview_path_local": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\10-make-a-finger-paint-pad-with-color-choice-brush-size-draw-and-clear\\workspace\\index.html",
+      "open_probe": {
+        "opened": true,
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\10-make-a-finger-paint-pad-with-color-choice-brush-size-draw-and-clear\\workspace\\index.html",
+        "title": "Finger Paint Pad",
+        "bodyText": "Finger Paint Pad\nRed:  Green:  Blue: \nBrush Size: \n Clear",
+        "elementCounts": {
+          "buttons": 1,
+          "inputs": 4,
+          "links": 0,
+          "canvas": 1,
+          "scripts": 1,
+          "stylesheets": 1
+        },
+        "consoleMessages": [],
+        "pageErrors": []
+      },
+      "behavior_probe": {
+        "test": "make a finger paint pad with color choice brush size draw and clear-drawing-surface-change",
+        "verdict": "PASS",
+        "passed": true,
+        "expected": "mouse drag changes canvas pixels",
+        "primary_behavior_failure_bucket": "",
+        "failureBucket": "",
+        "actual": {
+          "canvas": true,
+          "box": {
+            "x": 8,
+            "y": 143.875,
+            "width": 1282,
+            "height": 802
+          },
+          "changed": true
+        },
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\10-make-a-finger-paint-pad-with-color-choice-brush-size-draw-and-clear\\workspace\\index.html"
+      }
+    }
+  ]
+}

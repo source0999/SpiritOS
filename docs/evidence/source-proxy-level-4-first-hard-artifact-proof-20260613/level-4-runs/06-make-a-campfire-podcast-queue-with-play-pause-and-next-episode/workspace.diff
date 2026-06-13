@@ -1,0 +1,108 @@
+--- a/index.html
++++ b/index.html
+@@ -0,0 +1,18 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Campfire Podcast Queue</title>
++    <link rel="stylesheet" href="styles.css">
++</head>
++<body>
++    <div class="container">
++        <h1>Campfire Podcast Queue</h1>
++        <button id="playPauseBtn">Play</button>
++        <button id="nextEpisodeBtn">Next Episode</button>
++        <ul id="episodeList"></ul>
++    </div>
++    <script src="script.js"></script>
++</body>
++</html>--- a/script.js
++++ b/script.js
+@@ -0,0 +1,43 @@
++const episodes = [
++    { title: 'Episode 1', url: 'episode1.mp3' },
++    { title: 'Episode 2', url: 'episode2.mp3' },
++    { title: 'Episode 3', url: 'episode3.mp3' }
++];
++
++const episodeList = document.getElementById('episodeList');
++const playPauseBtn = document.getElementById('playPauseBtn');
++const nextEpisodeBtn = document.getElementById('nextEpisodeBtn');
++let currentEpisodeIndex = 0;
++let isPlaying = false;
++
++function renderEpisodes() {
++    episodes.forEach((episode, index) => {
++        const li = document.createElement('li');
++        li.textContent = episode.title;
++        if (index === currentEpisodeIndex) {
++            li.style.backgroundColor = '#e0e0e0';
++        }
++        episodeList.appendChild(li);
++    });
++}
++
++function playPause() {
++    if (isPlaying) {
++        // Pause logic here
++        playPauseBtn.textContent = 'Play';
++    } else {
++        // Play logic here
++        playPauseBtn.textContent = 'Pause';
++    }
++    isPlaying = !isPlaying;
++}
++
++function nextEpisode() {
++    currentEpisodeIndex = (currentEpisodeIndex + 1) % episodes.length;
++    renderEpisodes();
++}
++
++playPauseBtn.addEventListener('click', playPause);
++nextEpisodeBtn.addEventListener('click', nextEpisode);
++
++renderEpisodes();--- a/styles.css
++++ b/styles.css
+@@ -0,0 +1,40 @@
++body {
++    font-family: Arial, sans-serif;
++    background-color: #f4f4f9;
++    margin: 0;
++    padding: 20px;
++}
++.container {
++    max-width: 600px;
++    margin: auto;
++    background-color: #fff;
++    padding: 20px;
++    border-radius: 5px;
++    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
++}
++h1 {
++    text-align: center;
++}
++button {
++    display: block;
++    margin: 10px auto;
++    padding: 10px 20px;
++    background-color: #007bff;
++    color: #fff;
++    border: none;
++    border-radius: 5px;
++    cursor: pointer;
++}
++button:hover {
++    background-color: #0056b3;
++}
++#episodeList {
++    list-style-type: none;
++    padding: 0;
++}
++#episodeList li {
++    margin-bottom: 10px;
++    padding: 10px;
++    background-color: #f9f9f9;
++    border-radius: 5px;
++}

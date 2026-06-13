@@ -1,0 +1,171 @@
+{
+  "id": "level4-clean-02",
+  "prompt": "make a parking trip cost planner with fee people tip and a reset button",
+  "family": "calculator/reset",
+  "normalized_intent": "disposable_small_file_bundle",
+  "route_status": "GO",
+  "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\02-make-a-parking-trip-cost-planner-with-fee-people-tip-and-a-reset-button\\workspace\\index.html",
+  "behavior_contract_probe_id": "NOT_RECORDED",
+  "expected_level_4_behaviors": [
+    "Entered numeric values visibly change a calculated total/share.",
+    "Reset clears or returns result/inputs to initial state."
+  ],
+  "active_model": "qwen2.5-coder:7b",
+  "qwen_invoked": true,
+  "gemma_hermes_invoked": false,
+  "cartographer_live_route_owner": false,
+  "route_trace_path": "level-4-runs\\02-make-a-parking-trip-cost-planner-with-fee-people-tip-and-a-reset-button\\route_trace.json",
+  "model_transcript_path": "level-4-runs\\02-make-a-parking-trip-cost-planner-with-fee-people-tip-and-a-reset-button\\transcript.txt",
+  "actions_file_blocks_parsed": 3,
+  "files_applied": [
+    "index.html",
+    "script.js",
+    "styles.css"
+  ],
+  "open_status": "PASS",
+  "behavior_result": "PASS",
+  "observed_before_after": [
+    {
+      "name": "calculation changes visible total/share",
+      "actual": {
+        "before": "Parking Trip Cost Planner\nDistance (km): \n\nParking Fee per km: \n\nTip Percentage (%): \n\nCalculate Cost\nReset",
+        "afterCalc": "Parking Trip Cost Planner\nDistance (km): \n\nParking Fee per km: \n\nTip Percentage (%): \n\nCalculate Cost\nTotal Cost: $42.48\nReset",
+        "filled": 3,
+        "calcClick": {
+          "clicked": true,
+          "label": "Calculate Cost",
+          "index": 0
+        }
+      }
+    },
+    {
+      "name": "reset clears visible state or inputs",
+      "actual": {
+        "beforeValues": [
+          {
+            "tag": "input",
+            "type": "number",
+            "value": "",
+            "checked": false
+          },
+          {
+            "tag": "input",
+            "type": "number",
+            "value": "",
+            "checked": false
+          },
+          {
+            "tag": "input",
+            "type": "number",
+            "value": "",
+            "checked": false
+          }
+        ],
+        "afterValues": [
+          {
+            "tag": "input",
+            "type": "number",
+            "value": "",
+            "checked": false
+          },
+          {
+            "tag": "input",
+            "type": "number",
+            "value": "",
+            "checked": false
+          },
+          {
+            "tag": "input",
+            "type": "number",
+            "value": "",
+            "checked": false
+          }
+        ],
+        "afterCalc": "Parking Trip Cost Planner\nDistance (km): \n\nParking Fee per km: \n\nTip Percentage (%): \n\nCalculate Cost\nTotal Cost: $42.48\nReset",
+        "afterReset": "Parking Trip Cost Planner\nDistance (km): \n\nParking Fee per km: \n\nTip Percentage (%): \n\nCalculate Cost\nReset",
+        "resetClick": {
+          "clicked": true,
+          "label": "Reset",
+          "index": 1
+        }
+      }
+    }
+  ],
+  "second_behavior_observation": {
+    "name": "reset clears visible state or inputs",
+    "passed": true,
+    "expected": "Reset clears or returns result/inputs to initial state.",
+    "actual": {
+      "beforeValues": [
+        {
+          "tag": "input",
+          "type": "number",
+          "value": "",
+          "checked": false
+        },
+        {
+          "tag": "input",
+          "type": "number",
+          "value": "",
+          "checked": false
+        },
+        {
+          "tag": "input",
+          "type": "number",
+          "value": "",
+          "checked": false
+        }
+      ],
+      "afterValues": [
+        {
+          "tag": "input",
+          "type": "number",
+          "value": "",
+          "checked": false
+        },
+        {
+          "tag": "input",
+          "type": "number",
+          "value": "",
+          "checked": false
+        },
+        {
+          "tag": "input",
+          "type": "number",
+          "value": "",
+          "checked": false
+        }
+      ],
+      "afterCalc": "Parking Trip Cost Planner\nDistance (km): \n\nParking Fee per km: \n\nTip Percentage (%): \n\nCalculate Cost\nTotal Cost: $42.48\nReset",
+      "afterReset": "Parking Trip Cost Planner\nDistance (km): \n\nParking Fee per km: \n\nTip Percentage (%): \n\nCalculate Cost\nReset",
+      "resetClick": {
+        "clicked": true,
+        "label": "Reset",
+        "index": 1
+      }
+    },
+    "failure_bucket": ""
+  },
+  "repair_attempts": 0,
+  "repair_status": "SKIPPED_OR_NOT_RECORDED",
+  "strict_final": "PASS",
+  "anti_cheat_flags": {
+    "fallback_used": false,
+    "deterministic_scaffold_used": false,
+    "backend_created_content": false,
+    "cloud_api_fallback_used": false,
+    "real_app_touched": false,
+    "missing_behavior_evidence": false,
+    "missing_transcript": false
+  },
+  "interpretation": "At least two predefined Level 4 behavior observations passed.",
+  "evidence_links": {
+    "preview": "Z:\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\02-make-a-parking-trip-cost-planner-with-fee-people-tip-and-a-reset-button\\workspace\\index.html",
+    "score": "Z:\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\02-make-a-parking-trip-cost-planner-with-fee-people-tip-and-a-reset-button\\score.json",
+    "receipt": "Z:\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\02-make-a-parking-trip-cost-planner-with-fee-people-tip-and-a-reset-button\\receipt.json",
+    "transcript": "Z:\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\02-make-a-parking-trip-cost-planner-with-fee-people-tip-and-a-reset-button\\transcript.txt",
+    "workspace_diff": "Z:\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\02-make-a-parking-trip-cost-planner-with-fee-people-tip-and-a-reset-button\\workspace.diff",
+    "route_trace": "Z:\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\02-make-a-parking-trip-cost-planner-with-fee-people-tip-and-a-reset-button\\route_trace.json",
+    "repair_result": ""
+  }
+}

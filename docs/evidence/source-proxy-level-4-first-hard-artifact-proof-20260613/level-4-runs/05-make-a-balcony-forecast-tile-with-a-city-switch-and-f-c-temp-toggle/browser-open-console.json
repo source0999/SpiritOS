@@ -1,0 +1,16 @@
+{
+  "opened": true,
+  "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\05-make-a-balcony-forecast-tile-with-a-city-switch-and-f-c-temp-toggle\\workspace\\index.html",
+  "title": "Balcony Forecast Tile",
+  "bodyText": "City\n\nTemperature: 0°C\n\nCondition: Sunny\n\nForecast: Clear skies\n\nToggle Unit (F/C)",
+  "elementCounts": {
+    "buttons": 1,
+    "inputs": 0,
+    "links": 0,
+    "canvas": 0,
+    "scripts": 1,
+    "stylesheets": 1
+  },
+  "consoleMessages": [],
+  "pageErrors": []
+}

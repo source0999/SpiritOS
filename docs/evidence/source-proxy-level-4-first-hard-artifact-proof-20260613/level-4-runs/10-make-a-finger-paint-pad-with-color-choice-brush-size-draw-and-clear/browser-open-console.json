@@ -1,0 +1,16 @@
+{
+  "opened": true,
+  "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\10-make-a-finger-paint-pad-with-color-choice-brush-size-draw-and-clear\\workspace\\index.html",
+  "title": "Finger Paint Pad",
+  "bodyText": "Finger Paint Pad\nRed:  Green:  Blue: \nBrush Size: \n Clear",
+  "elementCounts": {
+    "buttons": 1,
+    "inputs": 4,
+    "links": 0,
+    "canvas": 1,
+    "scripts": 1,
+    "stylesheets": 1
+  },
+  "consoleMessages": [],
+  "pageErrors": []
+}

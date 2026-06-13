@@ -1,0 +1,26 @@
+{
+  "behavior_contract_probe_id": "tracker-state-change",
+  "blocking_reason_if_any": "",
+  "disposable_candidate_true_false": true,
+  "explicit_target_path_detected": false,
+  "family_candidates": [
+    "tracker/totals"
+  ],
+  "family_match_reasons": [
+    "prompt_set_family:tracker/totals",
+    "behavior_contract_probe:tracker-state-change"
+  ],
+  "normalized_intent_after_route": "disposable_small_file_bundle",
+  "normalized_intent_before_route": "disposable_small_file_bundle",
+  "normalized_prompt": "make a stair workout tracker where i can add a set increase reps and see total steps",
+  "original_prompt": "make a stair workout tracker where i can add a set increase reps and see total steps",
+  "real_repo_signals": [],
+  "route_decision": "GO",
+  "route_decision_reason": "generic_artifact_resolver",
+  "selected_artifact_family": "tracker/totals",
+  "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\07-make-a-stair-workout-tracker-where-i-can-add-a-set-increase-reps-and-see-total-s\\workspace\\stair_tracker.html",
+  "standalone_artifact_signals": [
+    "creation_or_show_me_verb"
+  ],
+  "why_no_preview_if_blocked": ""
+}

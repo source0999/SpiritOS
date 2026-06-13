@@ -1,0 +1,32 @@
+{
+  "behavior_contract_probe_id": "password-strength-feedback-change",
+  "blocking_reason_if_any": "",
+  "disposable_candidate_true_false": true,
+  "explicit_target_path_detected": false,
+  "family_candidates": [
+    "password/show-hide",
+    "theme/mode toggle",
+    "password/passphrase strength"
+  ],
+  "family_match_reasons": [
+    "prompt_set_family:password/show-hide",
+    "behavior_contract_probe:password-strength-feedback-change",
+    "keyword_family:theme/mode toggle",
+    "keyword_family:password/passphrase strength"
+  ],
+  "normalized_intent_after_route": "disposable_small_file_bundle",
+  "normalized_intent_before_route": "disposable_small_file_bundle",
+  "normalized_prompt": "make a secret phrase safety lab with strength feedback and a show hide switch",
+  "original_prompt": "make a secret phrase safety lab with strength feedback and a show hide switch",
+  "real_repo_signals": [],
+  "route_decision": "GO",
+  "route_decision_reason": "generic_artifact_resolver",
+  "selected_artifact_family": "password/show-hide",
+  "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\09-make-a-secret-phrase-safety-lab-with-strength-feedback-and-a-show-hide-switch\\workspace\\index.html",
+  "standalone_artifact_signals": [
+    "creation_or_show_me_verb",
+    "small_tool_widget_or_interactive_noun",
+    "interactive_family_signal"
+  ],
+  "why_no_preview_if_blocked": ""
+}

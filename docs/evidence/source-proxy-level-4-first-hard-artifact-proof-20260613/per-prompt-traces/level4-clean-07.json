@@ -1,0 +1,90 @@
+{
+  "id": "level4-clean-07",
+  "prompt": "make a stair workout tracker where i can add a set increase reps and see total steps",
+  "family": "tracker/totals",
+  "normalized_intent": "disposable_small_file_bundle",
+  "route_status": "GO",
+  "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\07-make-a-stair-workout-tracker-where-i-can-add-a-set-increase-reps-and-see-total-s\\workspace\\stair_tracker.html",
+  "behavior_contract_probe_id": "tracker-state-change",
+  "expected_level_4_behaviors": [
+    "Add/increment control changes visible set/reps state.",
+    "Total/progress value changes."
+  ],
+  "active_model": "qwen2.5-coder:7b",
+  "qwen_invoked": true,
+  "gemma_hermes_invoked": false,
+  "cartographer_live_route_owner": false,
+  "route_trace_path": "level-4-runs\\07-make-a-stair-workout-tracker-where-i-can-add-a-set-increase-reps-and-see-total-s\\route_trace.json",
+  "model_transcript_path": "level-4-runs\\07-make-a-stair-workout-tracker-where-i-can-add-a-set-increase-reps-and-see-total-s\\transcript.txt",
+  "actions_file_blocks_parsed": 3,
+  "files_applied": [
+    "stair_tracker.css",
+    "stair_tracker.html",
+    "stair_tracker.js"
+  ],
+  "open_status": "PASS",
+  "behavior_result": "FAIL",
+  "observed_before_after": [
+    {
+      "name": "add/increment changes set or reps",
+      "actual": {
+        "before": "Stair Workout Tracker\nAdd Set\n\nTotal Steps: 0",
+        "afterAdd": "Stair Workout Tracker\nAdd Set\n\nTotal Steps: 0",
+        "addClick": {
+          "clicked": true,
+          "label": "Add Set",
+          "index": 0
+        }
+      }
+    },
+    {
+      "name": "total/progress changes",
+      "actual": {
+        "afterAdd": "Stair Workout Tracker\nAdd Set\n\nTotal Steps: 0",
+        "afterRep": "Stair Workout Tracker\nAdd Set\n\nTotal Steps: 0",
+        "repClick": {
+          "clicked": false,
+          "label": "",
+          "index": -1
+        }
+      }
+    }
+  ],
+  "second_behavior_observation": {
+    "name": "total/progress changes",
+    "passed": false,
+    "expected": "Total/progress value changes.",
+    "actual": {
+      "afterAdd": "Stair Workout Tracker\nAdd Set\n\nTotal Steps: 0",
+      "afterRep": "Stair Workout Tracker\nAdd Set\n\nTotal Steps: 0",
+      "repClick": {
+        "clicked": false,
+        "label": "",
+        "index": -1
+      }
+    },
+    "failure_bucket": "tracker_total_no_visible_change"
+  },
+  "repair_attempts": 1,
+  "repair_status": "RECORDED",
+  "strict_final": "FAIL",
+  "anti_cheat_flags": {
+    "fallback_used": false,
+    "deterministic_scaffold_used": false,
+    "backend_created_content": false,
+    "cloud_api_fallback_used": false,
+    "real_app_touched": false,
+    "missing_behavior_evidence": false,
+    "missing_transcript": false
+  },
+  "interpretation": "Level 4 failed: tracker_add_set_no_visible_change",
+  "evidence_links": {
+    "preview": "Z:\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\07-make-a-stair-workout-tracker-where-i-can-add-a-set-increase-reps-and-see-total-s\\workspace\\stair_tracker.html",
+    "score": "Z:\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\07-make-a-stair-workout-tracker-where-i-can-add-a-set-increase-reps-and-see-total-s\\score.json",
+    "receipt": "Z:\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\07-make-a-stair-workout-tracker-where-i-can-add-a-set-increase-reps-and-see-total-s\\receipt.json",
+    "transcript": "Z:\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\07-make-a-stair-workout-tracker-where-i-can-add-a-set-increase-reps-and-see-total-s\\transcript.txt",
+    "workspace_diff": "Z:\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\07-make-a-stair-workout-tracker-where-i-can-add-a-set-increase-reps-and-see-total-s\\workspace.diff",
+    "route_trace": "Z:\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\07-make-a-stair-workout-tracker-where-i-can-add-a-set-increase-reps-and-see-total-s\\route_trace.json",
+    "repair_result": "Z:\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\07-make-a-stair-workout-tracker-where-i-can-add-a-set-increase-reps-and-see-total-s\\post-behavior-repair-result.json"
+  }
+}

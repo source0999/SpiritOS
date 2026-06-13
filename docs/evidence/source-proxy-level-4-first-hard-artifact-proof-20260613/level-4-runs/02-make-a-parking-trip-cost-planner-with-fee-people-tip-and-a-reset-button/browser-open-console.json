@@ -1,0 +1,16 @@
+{
+  "opened": true,
+  "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\02-make-a-parking-trip-cost-planner-with-fee-people-tip-and-a-reset-button\\workspace\\index.html",
+  "title": "Parking Trip Cost Planner",
+  "bodyText": "Parking Trip Cost Planner\nDistance (km): \n\nParking Fee per km: \n\nTip Percentage (%): \n\nCalculate Cost\nReset",
+  "elementCounts": {
+    "buttons": 2,
+    "inputs": 3,
+    "links": 0,
+    "canvas": 0,
+    "scripts": 1,
+    "stylesheets": 1
+  },
+  "consoleMessages": [],
+  "pageErrors": []
+}

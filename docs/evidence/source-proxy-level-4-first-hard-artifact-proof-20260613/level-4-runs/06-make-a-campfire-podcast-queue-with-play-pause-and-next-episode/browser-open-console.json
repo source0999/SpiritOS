@@ -1,0 +1,16 @@
+{
+  "opened": true,
+  "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\06-make-a-campfire-podcast-queue-with-play-pause-and-next-episode\\workspace\\index.html",
+  "title": "Campfire Podcast Queue",
+  "bodyText": "Campfire Podcast Queue\nPlay\nNext Episode\nEpisode 1\nEpisode 2\nEpisode 3",
+  "elementCounts": {
+    "buttons": 2,
+    "inputs": 0,
+    "links": 0,
+    "canvas": 0,
+    "scripts": 1,
+    "stylesheets": 1
+  },
+  "consoleMessages": [],
+  "pageErrors": []
+}

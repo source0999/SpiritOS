@@ -1,0 +1,42 @@
+--- a/index.html
++++ b/index.html
+@@ -0,0 +1,19 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Balcony Forecast Tile</title>
++    <link rel="stylesheet" href="styles.css">
++</head>
++<body>
++    <div class="weather-card">
++        <h2 id="city">City</h2>
++        <p id="temperature">Temperature: 0°C</p>
++        <p id="condition">Condition: Sunny</p>
++        <p id="forecast">Forecast: Clear skies</p>
++        <button id="toggle-unit">Toggle Unit (F/C)</button>
++    </div>
++    <script src="script.js"></script>
++</body>
++</html>--- a/script.js
++++ b/script.js
+@@ -0,0 +1,8 @@
++document.getElementById('toggle-unit').addEventListener('click', function() {
++    var temperature = document.getElementById('temperature');
++    if (temperature.textContent.includes('°C')) {
++        temperature.textContent = 'Temperature: 32°F';
++    } else {
++        temperature.textContent = 'Temperature: 0°C';
++    }
++});--- a/styles.css
++++ b/styles.css
+@@ -0,0 +1,8 @@
++.weather-card {
++    border: 1px solid #ccc;
++    padding: 20px;
++    text-align: center;
++}
++button {
++    margin-top: 10px;
++}

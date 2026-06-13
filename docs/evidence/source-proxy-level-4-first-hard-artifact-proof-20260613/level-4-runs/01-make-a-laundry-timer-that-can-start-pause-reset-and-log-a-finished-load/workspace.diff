@@ -1,0 +1,79 @@
+--- a/laundry_timer.css
++++ b/laundry_timer.css
+@@ -0,0 +1,13 @@
++body {
++    display: flex;
++    justify-content: center;
++    align-items: center;
++    height: 100vh;
++    margin: 0;
++}
++.timer-container {
++    text-align: center;
++}
++button {
++    margin: 5px;
++}--- a/laundry_timer.html
++++ b/laundry_timer.html
+@@ -0,0 +1,18 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Laundry Timer</title>
++    <link rel="stylesheet" href="laundry_timer.css">
++</head>
++<body>
++    <div class="timer-container">
++        <h1 id="timer">00:00</h1>
++        <button id="startBtn">Start</button>
++        <button id="stopBtn" disabled>Stop</button>
++        <button id="resetBtn" disabled>Reset</button>
++    </div>
++    <script src="laundry_timer.js"></script>
++</body>
++</html>--- a/laundry_timer.js
++++ b/laundry_timer.js
+@@ -0,0 +1,41 @@
++let time = 0;
++let intervalId;
++const timerDisplay = document.getElementById('timer');
++const startBtn = document.getElementById('startBtn');
++const stopBtn = document.getElementById('stopBtn');
++const resetBtn = document.getElementById('resetBtn');
++
++function updateTimer() {
++    const minutes = Math.floor(time / 60);
++    let seconds = time % 60;
++    if (seconds < 10) seconds = '0' + seconds;
++    timerDisplay.textContent = `${minutes}:${seconds}`;
++}
++
++startBtn.addEventListener('click', () => {
++    startBtn.disabled = true;
++    stopBtn.disabled = false;
++    resetBtn.disabled = false;
++    intervalId = setInterval(() => {
++        time++;
++        updateTimer();
++    }, 1000);
++});
++
++stopBtn.addEventListener('click', () => {
++    clearInterval(intervalId);
++    startBtn.disabled = false;
++    stopBtn.disabled = true;
++    resetBtn.disabled = false;
++});
++
++resetBtn.addEventListener('click', () => {
++    clearInterval(intervalId);
++    time = 0;
++    updateTimer();
++    startBtn.disabled = false;
++    stopBtn.disabled = true;
++    resetBtn.disabled = true;
++});
++
++updateTimer();

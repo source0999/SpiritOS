@@ -1,0 +1,90 @@
+{
+  "id": "level4-clean-05",
+  "prompt": "make a balcony forecast tile with a city switch and f c temp toggle",
+  "family": "weather/dual-control",
+  "normalized_intent": "disposable_small_file_bundle",
+  "route_status": "GO",
+  "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\05-make-a-balcony-forecast-tile-with-a-city-switch-and-f-c-temp-toggle\\workspace\\index.html",
+  "behavior_contract_probe_id": "weather-card-fields",
+  "expected_level_4_behaviors": [
+    "City/weather control visibly changes city/temp/condition/forecast text.",
+    "F/C toggle visibly changes temperature unit or value."
+  ],
+  "active_model": "qwen2.5-coder:7b",
+  "qwen_invoked": true,
+  "gemma_hermes_invoked": false,
+  "cartographer_live_route_owner": false,
+  "route_trace_path": "level-4-runs\\05-make-a-balcony-forecast-tile-with-a-city-switch-and-f-c-temp-toggle\\route_trace.json",
+  "model_transcript_path": "level-4-runs\\05-make-a-balcony-forecast-tile-with-a-city-switch-and-f-c-temp-toggle\\transcript.txt",
+  "actions_file_blocks_parsed": 3,
+  "files_applied": [
+    "index.html",
+    "script.js",
+    "styles.css"
+  ],
+  "open_status": "PASS",
+  "behavior_result": "FAIL",
+  "observed_before_after": [
+    {
+      "name": "city/weather control changes forecast text",
+      "actual": {
+        "before": "City\n\nTemperature: 0°C\n\nCondition: Sunny\n\nForecast: Clear skies\n\nToggle Unit (F/C)",
+        "afterCity": "City\n\nTemperature: 0°C\n\nCondition: Sunny\n\nForecast: Clear skies\n\nToggle Unit (F/C)",
+        "cityAction": {
+          "clicked": false,
+          "label": "",
+          "index": -1
+        }
+      }
+    },
+    {
+      "name": "unit toggle changes temp unit or value",
+      "actual": {
+        "afterCity": "City\n\nTemperature: 0°C\n\nCondition: Sunny\n\nForecast: Clear skies\n\nToggle Unit (F/C)",
+        "afterUnit": "City\n\nTemperature: 32°F\n\nCondition: Sunny\n\nForecast: Clear skies\n\nToggle Unit (F/C)",
+        "unitAction": {
+          "clicked": true,
+          "label": "Toggle Unit (F/C)",
+          "index": 0
+        }
+      }
+    }
+  ],
+  "second_behavior_observation": {
+    "name": "unit toggle changes temp unit or value",
+    "passed": true,
+    "expected": "F/C toggle visibly changes temperature unit or value.",
+    "actual": {
+      "afterCity": "City\n\nTemperature: 0°C\n\nCondition: Sunny\n\nForecast: Clear skies\n\nToggle Unit (F/C)",
+      "afterUnit": "City\n\nTemperature: 32°F\n\nCondition: Sunny\n\nForecast: Clear skies\n\nToggle Unit (F/C)",
+      "unitAction": {
+        "clicked": true,
+        "label": "Toggle Unit (F/C)",
+        "index": 0
+      }
+    },
+    "failure_bucket": ""
+  },
+  "repair_attempts": 1,
+  "repair_status": "RECORDED",
+  "strict_final": "FAIL",
+  "anti_cheat_flags": {
+    "fallback_used": false,
+    "deterministic_scaffold_used": false,
+    "backend_created_content": false,
+    "cloud_api_fallback_used": false,
+    "real_app_touched": false,
+    "missing_behavior_evidence": false,
+    "missing_transcript": false
+  },
+  "interpretation": "Level 4 failed: weather_city_control_no_visible_change",
+  "evidence_links": {
+    "preview": "Z:\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\05-make-a-balcony-forecast-tile-with-a-city-switch-and-f-c-temp-toggle\\workspace\\index.html",
+    "score": "Z:\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\05-make-a-balcony-forecast-tile-with-a-city-switch-and-f-c-temp-toggle\\score.json",
+    "receipt": "Z:\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\05-make-a-balcony-forecast-tile-with-a-city-switch-and-f-c-temp-toggle\\receipt.json",
+    "transcript": "Z:\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\05-make-a-balcony-forecast-tile-with-a-city-switch-and-f-c-temp-toggle\\transcript.txt",
+    "workspace_diff": "Z:\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\05-make-a-balcony-forecast-tile-with-a-city-switch-and-f-c-temp-toggle\\workspace.diff",
+    "route_trace": "Z:\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\05-make-a-balcony-forecast-tile-with-a-city-switch-and-f-c-temp-toggle\\route_trace.json",
+    "repair_result": "Z:\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\05-make-a-balcony-forecast-tile-with-a-city-switch-and-f-c-temp-toggle\\post-behavior-repair-result.json"
+  }
+}

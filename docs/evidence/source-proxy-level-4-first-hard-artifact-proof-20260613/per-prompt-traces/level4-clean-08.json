@@ -1,0 +1,56 @@
+{
+  "id": "level4-clean-08",
+  "prompt": "make a sticky memo board where i can add a thought edit it delete it and see saved count",
+  "family": "notes/edit-delete",
+  "normalized_intent": "clarification_required_real_repo_implementation",
+  "route_status": "EXPECTED-BLOCKED",
+  "selected_preview_path": "NOT_RECORDED",
+  "behavior_contract_probe_id": "notes-create-edit-visible-note",
+  "expected_level_4_behaviors": [
+    "Typed memo appears visibly.",
+    "Edit or delete changes visible memo state.",
+    "Saved count changes if present."
+  ],
+  "active_model": "qwen2.5-coder:7b",
+  "qwen_invoked": true,
+  "gemma_hermes_invoked": false,
+  "cartographer_live_route_owner": false,
+  "route_trace_path": "level-4-runs\\08-make-a-sticky-memo-board-where-i-can-add-a-thought-edit-it-delete-it-and-see-sav\\route_trace.json",
+  "model_transcript_path": "level-4-runs\\08-make-a-sticky-memo-board-where-i-can-add-a-thought-edit-it-delete-it-and-see-sav\\transcript.txt",
+  "actions_file_blocks_parsed": 0,
+  "files_applied": [],
+  "open_status": "FAIL",
+  "behavior_result": "FAIL",
+  "observed_before_after": [
+    {
+      "name": "preview opens",
+      "actual": {
+        "selected_preview_path": "",
+        "htmlPath": ""
+      }
+    }
+  ],
+  "second_behavior_observation": "NOT_RECORDED",
+  "repair_attempts": 0,
+  "repair_status": "SKIPPED_OR_NOT_RECORDED",
+  "strict_final": "FAIL",
+  "anti_cheat_flags": {
+    "fallback_used": false,
+    "deterministic_scaffold_used": false,
+    "backend_created_content": false,
+    "cloud_api_fallback_used": false,
+    "real_app_touched": false,
+    "missing_behavior_evidence": false,
+    "missing_transcript": false
+  },
+  "interpretation": "Level 4 failed: preview_resolution_failed",
+  "evidence_links": {
+    "preview": "",
+    "score": "Z:\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\08-make-a-sticky-memo-board-where-i-can-add-a-thought-edit-it-delete-it-and-see-sav\\score.json",
+    "receipt": "Z:\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\08-make-a-sticky-memo-board-where-i-can-add-a-thought-edit-it-delete-it-and-see-sav\\receipt.json",
+    "transcript": "Z:\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\08-make-a-sticky-memo-board-where-i-can-add-a-thought-edit-it-delete-it-and-see-sav\\transcript.txt",
+    "workspace_diff": "Z:\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\08-make-a-sticky-memo-board-where-i-can-add-a-thought-edit-it-delete-it-and-see-sav\\workspace.diff",
+    "route_trace": "Z:\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\08-make-a-sticky-memo-board-where-i-can-add-a-thought-edit-it-delete-it-and-see-sav\\route_trace.json",
+    "repair_result": ""
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "test": "make a dusk dawn reading panel with a palette switch and text size control-visible-state-change",
+  "verdict": "FAIL",
+  "passed": false,
+  "expected": "input plus action creates visible state change",
+  "primary_behavior_failure_bucket": "generic_no_visible_state_change",
+  "failureBucket": "generic_no_visible_state_change",
+  "actual": {
+    "before": "Reading Panel\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.\n\nPalette Switch ",
+    "after": "Reading Panel\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.\n\nPalette Switch ",
+    "filled": 1,
+    "clicked": true,
+    "appears": false
+  },
+  "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-4-first-hard-artifact-proof-20260613\\level-4-runs\\03-make-a-dusk-dawn-reading-panel-with-a-palette-switch-and-text-size-control\\workspace\\index.html"
+}

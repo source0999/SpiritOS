@@ -1,0 +1,29 @@
+{
+  "behavior_contract_probe_id": "notes-create-edit-visible-note",
+  "blocking_reason_if_any": "Action target is outside the allowed file snapshot.",
+  "disposable_candidate_true_false": false,
+  "explicit_target_path_detected": false,
+  "family_candidates": [
+    "notes/edit-delete"
+  ],
+  "family_match_reasons": [
+    "prompt_set_family:notes/edit-delete",
+    "behavior_contract_probe:notes-create-edit-visible-note"
+  ],
+  "normalized_intent_after_route": "clarification_required_real_repo_implementation",
+  "normalized_intent_before_route": "clarification_required_real_repo_implementation",
+  "normalized_prompt": "make a sticky memo board where i can add a thought edit it delete it and see saved count",
+  "original_prompt": "make a sticky memo board where i can add a thought edit it delete it and see saved count",
+  "real_repo_signals": [
+    "modify_fix_update"
+  ],
+  "route_decision": "EXPECTED-BLOCKED",
+  "route_decision_reason": "blocked_by_route_or_target_scope",
+  "selected_artifact_family": "notes/edit-delete",
+  "selected_preview_path": "",
+  "standalone_artifact_signals": [
+    "creation_or_show_me_verb",
+    "small_tool_widget_or_interactive_noun"
+  ],
+  "why_no_preview_if_blocked": "missing_preview_artifact; Action target is outside the allowed file snapshot."
+}
