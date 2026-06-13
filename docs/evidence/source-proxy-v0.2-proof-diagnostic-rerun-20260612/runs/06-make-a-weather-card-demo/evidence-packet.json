@@ -1,0 +1,60 @@
+{
+  "artifact_readiness": "READY",
+  "behavior_contract_path": "docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/runs/06-make-a-weather-card-demo/behavior-contract.json",
+  "behavior_probe": {
+    "observed": {
+      "bodyText": "City\n\nTemperature\n\nCondition\n\nChange Weather",
+      "buttons": [
+        {
+          "i": 0,
+          "tag": "BUTTON",
+          "text": "Change Weather",
+          "type": ""
+        }
+      ],
+      "changedAfterControl": false,
+      "hasCity": true,
+      "hasCondition": true,
+      "hasTemp": false,
+      "interacted": false
+    },
+    "path": "docs\\evidence\\source-proxy-v0.2-proof-diagnostic-rerun-20260612\\runs\\06-make-a-weather-card-demo\\workspace\\weather-card.html",
+    "prompt": "make a weather card demo",
+    "reason": "plausible city/temp/condition fields missing",
+    "reason_codes": [
+      "plausible_city_temp_condition_fields_missing"
+    ],
+    "slug": "06-make-a-weather-card-demo",
+    "test": "weather-card-fields",
+    "verdict": "FAIL"
+  },
+  "behavior_required_for_final_pass": true,
+  "browser_behavior_verdict": "FAIL",
+  "canonical_final_verdict": "UNVERIFIED",
+  "canonical_final_verdict_after_behavior": "HANDOFF",
+  "diff_path": "docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/runs/06-make-a-weather-card-demo/workspace.diff",
+  "failure_packet_path": "docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/runs/06-make-a-weather-card-demo/failure-packet.json",
+  "files": [
+    "weather-card.css",
+    "weather-card.html",
+    "weather-card.js"
+  ],
+  "generation_error": "",
+  "handoff_packet_path": "docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/runs/06-make-a-weather-card-demo/handoff-packet.json",
+  "html_paths": [
+    "weather-card.html"
+  ],
+  "product_pass": false,
+  "product_pass_after_behavior": false,
+  "prompt": "make a weather card demo",
+  "reason_codes": [],
+  "receipt_path": "docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/runs/06-make-a-weather-card-demo/receipt.json",
+  "repair_attempts_path": "docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/runs/06-make-a-weather-card-demo/repair-attempts.json",
+  "retest_result_path": "docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/runs/06-make-a-weather-card-demo/retest-result.json",
+  "run_dir": "docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/runs/06-make-a-weather-card-demo",
+  "score_path": "docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/runs/06-make-a-weather-card-demo/score.json",
+  "slug": "06-make-a-weather-card-demo",
+  "source_proxy_status": "GO",
+  "transcript_path": "docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/runs/06-make-a-weather-card-demo/transcript.txt",
+  "workspace_path": "docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/runs/06-make-a-weather-card-demo/workspace"
+}

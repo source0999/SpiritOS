@@ -1,0 +1,65 @@
+{
+  "phase": "Phase 2",
+  "status": "adapter_plan_only",
+  "runtime_behavior_changed": false,
+  "adapter_targets": [
+    {
+      "target": "source_proxy/context/obsidian.py",
+      "future_phase": "Phase 3",
+      "integration_requirement": "Wrap query_obsidian_context as a read-only memory source for intake/context router preview.",
+      "real_flow_prepared": "Obsidian safe excerpt retrieval",
+      "do_not_duplicate": true
+    },
+    {
+      "target": "source_proxy/api/obsidian_context.py",
+      "future_phase": "Phase 3",
+      "integration_requirement": "Use existing /v1/context/obsidian/query route for preview context where route calls are authorized.",
+      "real_flow_prepared": "read-only Obsidian context API",
+      "do_not_duplicate": true
+    },
+    {
+      "target": "source_proxy/api/context_index.py",
+      "future_phase": "Phase 3",
+      "integration_requirement": "Use context index as a source registry in router preview.",
+      "real_flow_prepared": "/v1/context/index",
+      "do_not_duplicate": true
+    },
+    {
+      "target": "source_proxy/api/context_inventory.py",
+      "future_phase": "Phase 3",
+      "integration_requirement": "Use safe context inventory for repo/evidence source discovery.",
+      "real_flow_prepared": "/v1/context/inventory",
+      "do_not_duplicate": true
+    },
+    {
+      "target": "docs/evidence/**",
+      "future_phase": "Phase 3",
+      "integration_requirement": "Read prior receipts by path and summarize only scoped evidence relevant to intake.",
+      "real_flow_prepared": "durable evidence docs",
+      "do_not_duplicate": true
+    },
+    {
+      "target": "data/coding-runs.json",
+      "future_phase": "Phase 3 or Phase 8",
+      "integration_requirement": "Reference run IDs and canonical labels without rewriting run records.",
+      "real_flow_prepared": "durable coding run history",
+      "do_not_duplicate": true
+    },
+    {
+      "target": "docs/evidence/spiritos-cognitive-control-plane-revamp-v0.1/phase-1/canonical-truth-contract.json",
+      "future_phase": "Phase 3 and Phase 6",
+      "integration_requirement": "Attach truth labels and evidence-strength metadata to memory-selected context.",
+      "real_flow_prepared": "canonical truth contract",
+      "do_not_duplicate": true
+    }
+  ],
+  "phase_3_handoff_requirements": [
+    "Build intake/context router preview only after approval.",
+    "Use existing context and Obsidian systems before creating new modules.",
+    "Return preview packets with source refs, privacy level, truth labels, and unverified checks.",
+    "Do not write Obsidian or evidence outside the authorized root.",
+    "Do not start workers or provider calls from context routing."
+  ],
+  "verdict": "GO"
+}
+

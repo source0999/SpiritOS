@@ -1,0 +1,107 @@
+{
+  "browser_results": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10d-browser-behavior-results-before-repair.json",
+  "model_id": "qwen2.5-coder:7b",
+  "repair_summary_version": "anti-tailoring-post-behavior-repair-v1",
+  "repairs": [
+    {
+      "attempts_used": 0,
+      "eligible": true,
+      "file_equals_model_action_content": null,
+      "prompt": "build me a snack break countdown",
+      "reason_codes": [
+        "behavior_failed_verified",
+        "behavior_probe_failed:build me a snack break countdown-timer-change",
+        "missing_probe_metadata",
+        "repair_metadata_incomplete"
+      ],
+      "repair_model_authored_targets": [],
+      "repair_status": "HANDOFF",
+      "repaired_files": [],
+      "reused_existing_result": true,
+      "run": "01-build-me-a-snack-break-countdown"
+    },
+    {
+      "eligible": false,
+      "prompt": "make a pizza money splitter",
+      "run": "02-make-a-pizza-money-splitter",
+      "skip_reason": "behavior_not_failed"
+    },
+    {
+      "eligible": false,
+      "prompt": "make a day night color flipper",
+      "run": "03-make-a-day-night-color-flipper",
+      "skip_reason": "not_eligible_for_behavior_repair"
+    },
+    {
+      "eligible": false,
+      "prompt": "make a farmers market checklist app",
+      "run": "04-make-a-farmers-market-checklist-app",
+      "skip_reason": "behavior_not_failed"
+    },
+    {
+      "eligible": false,
+      "prompt": "make a pretend weekend forecast card",
+      "run": "05-make-a-pretend-weekend-forecast-card",
+      "skip_reason": "behavior_not_failed"
+    },
+    {
+      "eligible": false,
+      "prompt": "make a tiny mixtape player",
+      "run": "06-make-a-tiny-mixtape-player",
+      "skip_reason": "behavior_not_failed"
+    },
+    {
+      "eligible": false,
+      "prompt": "make a coffee cup counter",
+      "run": "07-make-a-coffee-cup-counter",
+      "skip_reason": "behavior_not_failed"
+    },
+    {
+      "attempts_used": 1,
+      "eligible": true,
+      "file_equals_model_action_content": false,
+      "prompt": "make a quick jot pad app",
+      "reason_codes": [
+        "free_floating_code_no_path_action",
+        "repair_attempts_exhausted"
+      ],
+      "repair_model_authored_targets": [],
+      "repair_status": "HANDOFF",
+      "repaired_files": [],
+      "run": "08-make-a-quick-jot-pad-app"
+    },
+    {
+      "attempts_used": 0,
+      "eligible": true,
+      "file_equals_model_action_content": null,
+      "prompt": "make a login safety gauge",
+      "reason_codes": [
+        "behavior_failed_verified",
+        "behavior_probe_failed:make a login safety gauge-password-feedback",
+        "missing_probe_metadata",
+        "repair_metadata_incomplete"
+      ],
+      "repair_model_authored_targets": [],
+      "repair_status": "HANDOFF",
+      "repaired_files": [],
+      "reused_existing_result": true,
+      "run": "09-make-a-login-safety-gauge"
+    },
+    {
+      "attempts_used": 1,
+      "eligible": true,
+      "file_equals_model_action_content": false,
+      "prompt": "make a scribble sketch pad",
+      "reason_codes": [
+        "free_floating_code_no_path_action",
+        "repair_attempts_exhausted"
+      ],
+      "repair_model_authored_targets": [],
+      "repair_status": "HANDOFF",
+      "repaired_files": [],
+      "reused_existing_result": true,
+      "run": "10-make-a-scribble-sketch-pad"
+    }
+  ],
+  "run_root": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10d-runs"
+}

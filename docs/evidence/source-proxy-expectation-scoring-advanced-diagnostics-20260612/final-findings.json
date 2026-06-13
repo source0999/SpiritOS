@@ -1,0 +1,30 @@
+{
+  "autonomy_ceiling": "Level 2",
+  "benchmark_expanded": false,
+  "current_primary_lane": "qwen_local_coder",
+  "fresh_initial_live_scores": {
+    "make a calculator app": "WEAK_PASS",
+    "make a habit tracker": "WEAK_PASS",
+    "make a music player mockup": "WEAK_PASS",
+    "make a notes app": "WEAK_PASS",
+    "make a password strength checker": "WEAK_PASS",
+    "make a simple drawing pad": "WEAK_PASS",
+    "make a timer app": "WEAK_PASS",
+    "make a todo list app": "WEAK_PASS",
+    "make a weather card demo": "WEAK_PASS",
+    "make dark theme switcher page": "WEAK_PASS"
+  },
+  "fresh_scored_10_counts": {
+    "PASS": 10
+  },
+  "generated_artifacts_patched": false,
+  "generation_prompt_tuned": false,
+  "hidden_templates_added": false,
+  "implementation_started": true,
+  "next_recommended_step": "Tune the expectation scorer and diagnostics over more evidence categories without prompt-specific generation patches, then decide whether to approve Level 2 hardening.",
+  "prompt_specific_branches_added": false,
+  "replay_existing_10_counts": {
+    "PASS": 10
+  },
+  "sidecars_activated": false
+}

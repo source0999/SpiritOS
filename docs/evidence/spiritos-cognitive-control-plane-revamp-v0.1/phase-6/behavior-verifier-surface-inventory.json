@@ -1,0 +1,99 @@
+{
+  "phase": "Phase 6 - Behavior verifier",
+  "mode": "read_only_inventory",
+  "repo_path": "\\\\10.0.0.186\\SpiritOS\\",
+  "surfaces": [
+    {
+      "path": "source_proxy/verification/diff.py",
+      "likely_brain_layer": "cerebellum",
+      "current_role": "Builds diff preview verification, changed-file analysis, risk flags, git-apply preview checks, and review guidance.",
+      "reuse_recommendation": "wrap",
+      "proof_level": "real-code",
+      "phase_6_use": "Treat as a supporting code-change verifier. It must not be allowed to produce product PASS without behavior proof."
+    },
+    {
+      "path": "source_proxy/verification/deterministic.py",
+      "likely_brain_layer": "cerebellum",
+      "current_role": "Runs deterministic side-effect-free syntax and policy checks on changed files.",
+      "reuse_recommendation": "wrap",
+      "proof_level": "real-code",
+      "phase_6_use": "Use as lower-tier technical readiness evidence, not as end-user behavior proof."
+    },
+    {
+      "path": "source_proxy/api/diff_verification.py",
+      "likely_brain_layer": "cerebellum",
+      "current_role": "Exposes `/v1/verification/diff-preview` and `/v1/verification/manual-result-preview` for preview-only verification.",
+      "reuse_recommendation": "wrap",
+      "proof_level": "real-code",
+      "phase_6_use": "Future behavior verifier preview endpoint should integrate near this route family or report against its outputs."
+    },
+    {
+      "path": "source_proxy/api/coding_self_tests.py",
+      "likely_brain_layer": "cerebellum",
+      "current_role": "Exposes dry-run self-test and runner-profile execution endpoints for coding workflows.",
+      "reuse_recommendation": "wrap",
+      "proof_level": "real-code",
+      "phase_6_use": "Use for dry-run harness integration only when tests are exact, safe, and acceptance-linked."
+    },
+    {
+      "path": "source_proxy/cartographer/verification_runner.py",
+      "likely_brain_layer": "cerebellum",
+      "current_role": "Provides allowlisted command preview/execution boundaries, mutation blocking, timeout limits, and result receipts.",
+      "reuse_recommendation": "wrap",
+      "proof_level": "real-code",
+      "phase_6_use": "Use as safe command execution substrate for future verifier checks. Phase 6 does not execute it."
+    },
+    {
+      "path": "source_proxy/testing/runner.py",
+      "likely_brain_layer": "cerebellum",
+      "current_role": "Defines Source Proxy, Scout, Cartographer, dashboard, and closeout test profiles with file-change receipts.",
+      "reuse_recommendation": "wrap",
+      "proof_level": "real-code",
+      "phase_6_use": "Use profile receipts as repeatability evidence, but keep product behavior verdicts separate from profile PASS."
+    },
+    {
+      "path": "tests/ui-agent-trials/trial-result-schema.ts",
+      "likely_brain_layer": "cerebellum",
+      "current_role": "Defines preview-only trial status, diagnostic categories, artifact paths, screenshots, safety state, and no-fake-claim score dimensions.",
+      "reuse_recommendation": "wrap",
+      "proof_level": "test-backed",
+      "phase_6_use": "Reuse its diagnostic contract style for behavior verifier outputs and avoid duplicating trial evidence fields."
+    },
+    {
+      "path": "src/components/coding/approval-gate-binding.ts",
+      "likely_brain_layer": "prefrontal-cortex",
+      "current_role": "Binds diff preview state into approval gate decisions before protected apply.",
+      "reuse_recommendation": "wrap",
+      "proof_level": "real-code",
+      "phase_6_use": "Future UI should show behavior verifier status beside approval gates without weakening approval rules."
+    },
+    {
+      "path": "src/components/coding/CodingAgentInterface.tsx",
+      "likely_brain_layer": "prefrontal-cortex",
+      "current_role": "Coding UI surface for manual result preview, diff preview, approval preview, and diagnostic summaries.",
+      "reuse_recommendation": "wrap",
+      "proof_level": "real-code",
+      "phase_6_use": "Future UI exposure should use the existing preview panels rather than a disconnected verifier dashboard."
+    },
+    {
+      "path": "docs/evidence/spiritos-cognitive-control-plane-revamp-v0.1/phase-1/truth-fixture-requirements.json",
+      "likely_brain_layer": "cerebellum",
+      "current_role": "Canonical fixture requirements for the June 12 false-positive and false-negative cases.",
+      "reuse_recommendation": "wrap",
+      "proof_level": "evidence-only",
+      "phase_6_use": "Source of truth for Phase 6.2 behavior fixture contract."
+    }
+  ],
+  "global_warnings": [
+    "Do not duplicate existing diff verification or command runner systems.",
+    "Do not treat preview_ready, artifact exists, or route available as product PASS.",
+    "Future behavior verifier implementation must wrap existing systems or expose a preview endpoint used by tests, UI, or evidence reports."
+  ],
+  "phase_6_boundary": {
+    "source_changed": false,
+    "runtime_endpoint_added": false,
+    "browser_tests_run": false,
+    "provider_calls_run": false,
+    "worker_calls_run": false
+  }
+}

@@ -1,0 +1,369 @@
+{
+  "diagnostics_packet": {
+    "adapter_source": "ollama_generate/tool_action_runtime_v1",
+    "allowed_scope_source": "artifact_class_extensions",
+    "behavior_contract": {
+      "artifact_class": "markdown_document",
+      "behavior_required": true,
+      "contract_status": "ready",
+      "contract_version": "source-proxy-artifact-behavior-contract-v0.2.phase-3",
+      "final_pass_rule": "Final PASS requires every required behavior probe to pass against the generated artifact.",
+      "non_pass_signals": [
+        "route_go",
+        "artifact_exists",
+        "preview_opens",
+        "static_dom_presence",
+        "model_self_report"
+      ],
+      "preview_requirement": "Markdown is not sufficient for an interactive app behavior contract.",
+      "probe_targets": [
+        {
+          "acceptance_criterion": "Markdown preview updates when source text changes.",
+          "expected_observation": "Rendered preview shows formatted content from the entered markdown.",
+          "minimum_proof_tier": 2,
+          "observable_actions": [
+            "type markdown text into the editor"
+          ],
+          "probe_id": "markdown-preview-updates"
+        }
+      ],
+      "prompt": "make a markdown previewer",
+      "task_shape": "disposable_single_file_artifact"
+    },
+    "benchmark_eligibility_reason": "product_route_uses_proxy_orchestration",
+    "blocked_reasons": [],
+    "clarification_or_block_reason": "",
+    "execution_count": 1,
+    "files_touched": [
+      "markdown_preview.md"
+    ],
+    "final_state": "completed",
+    "format_retries_used": 0,
+    "model_authored_targets": [
+      "markdown_preview.md"
+    ],
+    "model_call_count": 1,
+    "model_id": "qwen2.5-coder:7b",
+    "parsed_action_count": 1,
+    "proxy_artifact_class_suggested": "markdown_document",
+    "proxy_exact_target_suggested": "",
+    "route_type": "product",
+    "skipped_checks": [],
+    "task_shape": "disposable_single_file_artifact",
+    "task_shape_source": "generic_artifact_resolver",
+    "verification_repairs_used": 0,
+    "workspace_decision_source": "generic_artifact_resolver"
+  },
+  "executions": [
+    {
+      "receipt": {
+        "action_id": "human-messy-homepage:0:1:WriteFile",
+        "action_type": "WriteFile",
+        "adapter_source": "ollama_generate/tool_action_runtime_v1",
+        "after_status": {
+          "file_count": 1,
+          "files": [
+            "markdown_preview.md"
+          ]
+        },
+        "before_status": {
+          "file_count": 0,
+          "files": []
+        },
+        "blocked_reason": "",
+        "diff_summary": "--- a/markdown_preview.md\n+++ b/markdown_preview.md\n@@ -0,0 +1,15 @@\n+# Markdown Previewer\n+\n+This is a simple markdown previewer.\n+\n+## How to Use\n+1. Write your markdown content in the input area below.\n+2. The rendered markdown will appear here in real-time.\n+\n+## Example\n+```markdown\n+**Bold Text**\n+*Italic Text*\n+- List Item 1\n+- List Item 2\n+```",
+        "error_code": "",
+        "files_touched": [
+          "markdown_preview.md"
+        ],
+        "status": "completed",
+        "stderr": "",
+        "stdout": "",
+        "target": "markdown_preview.md",
+        "workspace_root": "/home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/step-3-unseen-runs/16-make-a-markdown-previewer/workspace"
+      },
+      "result": {
+        "action_id": "human-messy-homepage:0:1:WriteFile",
+        "adapter_source": "ollama_generate/tool_action_runtime_v1",
+        "blocked_reason": "",
+        "diff_summary": "--- a/markdown_preview.md\n+++ b/markdown_preview.md\n@@ -0,0 +1,15 @@\n+# Markdown Previewer\n+\n+This is a simple markdown previewer.\n+\n+## How to Use\n+1. Write your markdown content in the input area below.\n+2. The rendered markdown will appear here in real-time.\n+\n+## Example\n+```markdown\n+**Bold Text**\n+*Italic Text*\n+- List Item 1\n+- List Item 2\n+```",
+        "error_code": "",
+        "files_touched": [
+          "markdown_preview.md"
+        ],
+        "observation": "",
+        "receipt_path": "",
+        "schema_version": 1,
+        "status": "completed",
+        "stderr": "",
+        "stdout": ""
+      }
+    }
+  ],
+  "final_state": "completed",
+  "model_calls": [
+    {
+      "call_index": 0,
+      "packet": {
+        "call_index": 0,
+        "context_packet": {
+          "allowed_extensions": [
+            ".md"
+          ],
+          "allowed_files": [],
+          "allowed_scope_source": "artifact_class_extensions",
+          "artifact_class": "markdown_document",
+          "behavior_contract": {
+            "artifact_class": "markdown_document",
+            "behavior_required": true,
+            "contract_status": "ready",
+            "contract_version": "source-proxy-artifact-behavior-contract-v0.2.phase-3",
+            "final_pass_rule": "Final PASS requires every required behavior probe to pass against the generated artifact.",
+            "non_pass_signals": [
+              "route_go",
+              "artifact_exists",
+              "preview_opens",
+              "static_dom_presence",
+              "model_self_report"
+            ],
+            "preview_requirement": "Markdown is not sufficient for an interactive app behavior contract.",
+            "probe_targets": [
+              {
+                "acceptance_criterion": "Markdown preview updates when source text changes.",
+                "expected_observation": "Rendered preview shows formatted content from the entered markdown.",
+                "minimum_proof_tier": 2,
+                "observable_actions": [
+                  "type markdown text into the editor"
+                ],
+                "probe_id": "markdown-preview-updates"
+              }
+            ],
+            "prompt": "make a markdown previewer",
+            "task_shape": "disposable_single_file_artifact"
+          },
+          "behavior_contract_summary": "Behavior contract before generation:\n- markdown-preview-updates: Markdown preview updates when source text changes. Expected observation: Rendered preview shows formatted content from the entered markdown.\nDo not treat route GO, file creation, preview open, static DOM, or self-report as product PASS.",
+          "benchmark_eligibility_reason": "product_route_uses_proxy_orchestration",
+          "benchmark_eligible": false,
+          "clarification_or_block_reason": "",
+          "forbidden_files": [
+            ".env",
+            ".env.*",
+            "*.pem",
+            "*.key",
+            "certificates/*"
+          ],
+          "forbidden_real_repo_mutation": true,
+          "max_file_count": 1,
+          "mode": "product",
+          "model_may_choose_paths": false,
+          "model_requirements": [
+            "explicit model-authored target path",
+            "explicit model-authored file content",
+            "supported Source Proxy action JSON or path-bound file block"
+          ],
+          "network_allowed": false,
+          "protected_paths": [],
+          "proxy_artifact_class_suggested": true,
+          "proxy_exact_target_suggested": "",
+          "route_type": "product",
+          "target_source": "model_authored_required",
+          "task_shape": "disposable_single_file_artifact",
+          "task_shape_source": "generic_artifact_resolver",
+          "user_prompt": "make a markdown previewer",
+          "workspace_decision_source": "generic_artifact_resolver",
+          "workspace_mode": "disposable_workspace"
+        },
+        "loop_policy": {
+          "max_format_retries": 2,
+          "max_verification_repairs": 0,
+          "recommended_checks": [],
+          "run_recommended_checks": false
+        },
+        "observations": [],
+        "task_spec": {
+          "allowed_extensions": [
+            ".md"
+          ],
+          "allowed_files": [],
+          "allowed_scope_source": "artifact_class_extensions",
+          "approval_level": "preview_only_no_apply",
+          "artifact_class": "markdown_document",
+          "blockers": [],
+          "clarification_prompt": "",
+          "clarification_state": "not_needed",
+          "context_sources": [],
+          "forbidden_files": [
+            ".env",
+            ".env.*",
+            "*.pem",
+            "*.key",
+            "certificates/*"
+          ],
+          "intent": "create",
+          "literal_requirements": [],
+          "max_file_count": 1,
+          "risk_tier": "medium",
+          "schema_version": 1,
+          "source": "task_spec_intake",
+          "target": "",
+          "target_source": "model_authored_required",
+          "task_shape": "disposable_single_file_artifact",
+          "task_shape_source": "generic_artifact_resolver",
+          "task_type": "create_new_file",
+          "verification": [
+            "git diff --check"
+          ],
+          "workspace_decision_source": "generic_artifact_resolver",
+          "workspace_mode": "disposable_workspace"
+        },
+        "tool_contract": {
+          "schema_version": 1,
+          "stable_error_codes": [
+            "backend_authorship_rejected",
+            "bash_string_args_only_for_bash",
+            "content_required",
+            "empty_transcript",
+            "execution_blocked_until_plan_3",
+            "free_floating_code_no_path_action",
+            "invalid_action_schema",
+            "invalid_json",
+            "target_not_allowed",
+            "target_required",
+            "unsupported_action_type"
+          ],
+          "tools": [
+            {
+              "action_type": "ReadFile",
+              "capability": "read",
+              "execution_state": "parser_only"
+            },
+            {
+              "action_type": "ListFiles",
+              "capability": "read",
+              "execution_state": "parser_only"
+            },
+            {
+              "action_type": "SearchRepo",
+              "capability": "read",
+              "execution_state": "parser_only"
+            },
+            {
+              "action_type": "WriteFile",
+              "capability": "write",
+              "execution_state": "blocked_until_plan_3"
+            },
+            {
+              "action_type": "EditFile",
+              "capability": "write",
+              "execution_state": "blocked_until_plan_3"
+            },
+            {
+              "action_type": "MultiEdit",
+              "capability": "write",
+              "execution_state": "blocked_until_plan_3"
+            },
+            {
+              "action_type": "RunCheck",
+              "capability": "execute",
+              "execution_state": "blocked_until_plan_3"
+            },
+            {
+              "action_type": "AskClarification",
+              "capability": "respond",
+              "execution_state": "parser_only"
+            },
+            {
+              "action_type": "ReturnFinal",
+              "capability": "respond",
+              "execution_state": "parser_only"
+            }
+          ]
+        },
+        "workspace_contract": {
+          "allowed_file_extensions": [
+            ".md"
+          ],
+          "allowed_files": [],
+          "approval_level": "disposable_workspace",
+          "forbidden_files": [
+            ".env",
+            ".env.*",
+            "*.pem",
+            "*.key",
+            "certificates/*"
+          ],
+          "max_file_count": 1,
+          "model_may_choose_paths": false,
+          "network_allowed": false,
+          "protected_paths": [],
+          "workspace_root": "/home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/step-3-unseen-runs/16-make-a-markdown-previewer/workspace"
+        }
+      },
+      "raw_transcript": "{\"action_type\":\"WriteFile\",\"target\":\"markdown_preview.md\",\"arguments\":{\"content\":\"# Markdown Previewer\\n\\nThis is a simple markdown previewer.\\n\\n## How to Use\\n1. Write your markdown content in the input area below.\\n2. The rendered markdown will appear here in real-time.\\n\\n## Example\\n```markdown\\n**Bold Text**\\n*Italic Text*\\n- List Item 1\\n- List Item 2\\n```\"},\"reason\":\"A markdown previewer for users to see their formatted content.\"}"
+    }
+  ],
+  "parse_results": [
+    {
+      "actions": [
+        {
+          "action_id": "human-messy-homepage:0:1:WriteFile",
+          "action_type": "WriteFile",
+          "adapter_source": "ollama_generate/tool_action_runtime_v1",
+          "allowed_files_snapshot": [],
+          "arguments": {
+            "content": "# Markdown Previewer\n\nThis is a simple markdown previewer.\n\n## How to Use\n1. Write your markdown content in the input area below.\n2. The rendered markdown will appear here in real-time.\n\n## Example\n```markdown\n**Bold Text**\n*Italic Text*\n- List Item 1\n- List Item 2\n```"
+          },
+          "authorship": "model_authored",
+          "created_at": "",
+          "execution_state": "blocked_until_plan_3",
+          "model_id": "qwen2.5-coder:7b",
+          "reason": "A markdown previewer for users to see their formatted content.",
+          "requires_approval": true,
+          "schema_version": 1,
+          "source_message_id": "human-messy-homepage:0",
+          "target": "markdown_preview.md"
+        }
+      ],
+      "adapter_source": "ollama_generate/tool_action_runtime_v1",
+      "decisions": [
+        {
+          "action_id": "human-messy-homepage:0:1:WriteFile",
+          "adapter_source": "ollama_generate/tool_action_runtime_v1",
+          "detail": "",
+          "error_code": "",
+          "parser": "strict_json",
+          "status": "accepted"
+        }
+      ],
+      "error_code": "",
+      "ok": true,
+      "raw_transcript": "{\"action_type\":\"WriteFile\",\"target\":\"markdown_preview.md\",\"arguments\":{\"content\":\"# Markdown Previewer\\n\\nThis is a simple markdown previewer.\\n\\n## How to Use\\n1. Write your markdown content in the input area below.\\n2. The rendered markdown will appear here in real-time.\\n\\n## Example\\n```markdown\\n**Bold Text**\\n*Italic Text*\\n- List Item 1\\n- List Item 2\\n```\"},\"reason\":\"A markdown previewer for users to see their formatted content.\"}",
+      "repair_prompt": ""
+    }
+  ],
+  "parsed_actions": [
+    {
+      "action_id": "human-messy-homepage:0:1:WriteFile",
+      "action_type": "WriteFile",
+      "adapter_source": "ollama_generate/tool_action_runtime_v1",
+      "allowed_files_snapshot": [],
+      "arguments": {
+        "content": "# Markdown Previewer\n\nThis is a simple markdown previewer.\n\n## How to Use\n1. Write your markdown content in the input area below.\n2. The rendered markdown will appear here in real-time.\n\n## Example\n```markdown\n**Bold Text**\n*Italic Text*\n- List Item 1\n- List Item 2\n```"
+      },
+      "authorship": "model_authored",
+      "created_at": "",
+      "execution_state": "blocked_until_plan_3",
+      "model_id": "qwen2.5-coder:7b",
+      "reason": "A markdown previewer for users to see their formatted content.",
+      "requires_approval": true,
+      "schema_version": 1,
+      "source_message_id": "human-messy-homepage:0",
+      "target": "markdown_preview.md"
+    }
+  ],
+  "raw_model_transcripts": [
+    "{\"action_type\":\"WriteFile\",\"target\":\"markdown_preview.md\",\"arguments\":{\"content\":\"# Markdown Previewer\\n\\nThis is a simple markdown previewer.\\n\\n## How to Use\\n1. Write your markdown content in the input area below.\\n2. The rendered markdown will appear here in real-time.\\n\\n## Example\\n```markdown\\n**Bold Text**\\n*Italic Text*\\n- List Item 1\\n- List Item 2\\n```\"},\"reason\":\"A markdown previewer for users to see their formatted content.\"}"
+  ],
+  "receipt_path": "/home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/step-3-unseen-runs/16-make-a-markdown-previewer/receipt.json",
+  "skipped_checks": []
+}

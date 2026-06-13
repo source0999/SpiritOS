@@ -1,0 +1,36 @@
+{
+  "actual": {
+    "afterStart": "24:59\nStop Reset",
+    "afterStop": "24:59\nStart Reset",
+    "afterWait": "24:59\nStart Reset",
+    "before": "25:00\nStart Reset"
+  },
+  "contract_probe": {
+    "acceptance_criterion": "Start changes elapsed time; Stop freezes elapsed time; Reset returns to zero if present.",
+    "expected_observation": "Displayed time increases after Start and remains unchanged after Stop.",
+    "minimum_proof_tier": 2,
+    "observable_actions": [
+      "click Start",
+      "wait briefly",
+      "click Stop",
+      "optionally click Reset"
+    ],
+    "probe_id": "timer-start-stop-freeze"
+  },
+  "expected": {
+    "changesAfterStart": true,
+    "freezesAfterStop": true
+  },
+  "observed": {
+    "afterStart": "24:59\nStop Reset",
+    "afterStop": "24:59\nStart Reset",
+    "afterWait": "24:59\nStart Reset",
+    "before": "25:00\nStart Reset"
+  },
+  "passed": true,
+  "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\02-make-a-pomodoro-timer\\workspace\\index.html",
+  "reason": "",
+  "reason_codes": [],
+  "test": "timer-start-stop-freeze",
+  "verdict": "PASS"
+}

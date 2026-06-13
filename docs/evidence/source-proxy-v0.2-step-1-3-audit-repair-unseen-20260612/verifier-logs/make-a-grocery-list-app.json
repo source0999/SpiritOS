@@ -1,0 +1,35 @@
+{
+  "actual": {
+    "after": "Grocery List\n Add\nv0.2 proof item",
+    "appears": true,
+    "before": "Grocery List\n Add",
+    "changed": true,
+    "filled": true
+  },
+  "contract_probe": {
+    "acceptance_criterion": "List or ledger app accepts a new item and shows it or updates totals.",
+    "expected_observation": "The entered item appears or a total changes visibly.",
+    "minimum_proof_tier": 2,
+    "observable_actions": [
+      "enter a new item or amount",
+      "click add/save/calculate if present"
+    ],
+    "probe_id": "list-or-ledger-state-change"
+  },
+  "expected": {
+    "itemAppearsOrStateChanges": true
+  },
+  "observed": {
+    "after": "Grocery List\n Add\nv0.2 proof item",
+    "appears": true,
+    "before": "Grocery List\n Add",
+    "changed": true,
+    "filled": true
+  },
+  "passed": true,
+  "path": "Z:\\docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\12-make-a-grocery-list-app\\workspace\\index.html",
+  "reason": "",
+  "reason_codes": [],
+  "test": "list-or-ledger-state-change",
+  "verdict": "PASS"
+}

@@ -1,0 +1,15 @@
+{
+  "bodyText": "00:00\nStart Stop",
+  "consoleMessages": [],
+  "elementCounts": {
+    "buttons": 2,
+    "canvas": 0,
+    "inputs": 0,
+    "links": 0,
+    "scripts": 1,
+    "stylesheets": 1
+  },
+  "opened": true,
+  "pageErrors": [],
+  "title": "Timer App"
+}

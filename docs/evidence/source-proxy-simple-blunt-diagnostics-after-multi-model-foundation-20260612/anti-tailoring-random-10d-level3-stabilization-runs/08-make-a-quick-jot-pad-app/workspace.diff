@@ -1,0 +1,82 @@
+--- a/index.html
++++ b/index.html
+@@ -0,0 +1,18 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Quick Jot Pad</title>
++    <link rel="stylesheet" href="styles.css">
++</head>
++<body>
++    <div class="container">
++        <h1>Quick Jot Pad</h1>
++        <textarea id="noteInput" placeholder="Type your note here..."></textarea>
++        <button id="saveButton">Save Note</button>
++        <div id="notesList"></div>
++    </div>
++    <script src="script.js"></script>
++</body>
++</html>--- a/script.js
++++ b/script.js
+@@ -0,0 +1,16 @@
++document.getElementById('saveButton').addEventListener('click', function() {
++    const noteInput = document.getElementById('noteInput');
++    const notesList = document.getElementById('notesList');
++    const noteText = noteInput.value.trim();
++
++    if (noteText !== '') {
++        const noteElement = document.createElement('div');
++        noteElement.className = 'note';
++        noteElement.textContent = noteText;
++        notesList.appendChild(noteElement);
++        noteInput.value = '';
++        alert('Note saved!');
++    } else {
++        alert('Please enter a note.');
++    }
++});--- a/styles.css
++++ b/styles.css
+@@ -0,0 +1,41 @@
++body {
++    font-family: Arial, sans-serif;
++    background-color: #f4f4f9;
++    margin: 0;
++    padding: 20px;
++}
++.container {
++    max-width: 600px;
++    margin: auto;
++    background: white;
++    padding: 20px;
++    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
++}
++h1 {
++    text-align: center;
++}
++textarea {
++    width: 100%;
++    padding: 10px;
++    margin-bottom: 10px;
++}
++button {
++    display: block;
++    width: 100%;
++    padding: 10px;
++    background-color: #28a745;
++    color: white;
++    border: none;
++    cursor: pointer;
++}
++button:hover {
++    background-color: #218838;
++}
++div#notesList {
++    margin-top: 20px;
++}
++div.note {
++    padding: 10px;
++    margin-bottom: 5px;
++    border: 1px solid #ddd;
++}

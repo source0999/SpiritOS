@@ -1,0 +1,38 @@
+--- a/dark-theme-switcher.html
++++ b/dark-theme-switcher.html
+@@ -0,0 +1,14 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Dark Theme Switcher</title>
++    <link rel="stylesheet" href="dark-theme.css">
++</head>
++<body>
++    <h1>Welcome to the Dark Theme Switcher</h1>
++    <button id="toggleTheme">Toggle Dark Mode</button>
++    <script src="dark-theme.js"></script>
++</body>
++</html>--- a/dark-theme.css
++++ b/dark-theme.css
+@@ -0,0 +1,13 @@
++body {
++    background-color: #333;
++    color: #fff;
++}
++button {
++    background-color: #555;
++    border: none;
++    padding: 10px 20px;
++    cursor: pointer;
++}
++button:hover {
++    background-color: #777;
++}--- a/dark-theme.js
++++ b/dark-theme.js
+@@ -0,0 +1,4 @@
++document.getElementById('toggleTheme').addEventListener('click', function() {
++    document.body.classList.toggle('dark-mode');
++});
++document.body.classList.add('light-mode');

@@ -1,0 +1,836 @@
+{
+  "created_at": "2026-06-13T15:26:30.301211+00:00",
+  "fail_count": 5,
+  "false_negative_corrections_count": 0,
+  "false_positive_corrections_count": 0,
+  "green_threshold": "8/10 behavior PASS required for this batch",
+  "old_result_context": {
+    "source_status": "LOCKED_BEFORE_RUN",
+    "source_title": "Source Proxy Level 3 final clean similar 10 transparent proof"
+  },
+  "overall_verdict": "NO-GO",
+  "pass_count": 5,
+  "repair_attempt_count": 2,
+  "repair_handoff_without_attempt_count": 0,
+  "report_verdict_mismatch_count": 0,
+  "rows": [
+    {
+      "anti_cheat_flags": {
+        "backend_created_content": false,
+        "behavior_failed_marked_pass": false,
+        "cloud_api_fallback_used": false,
+        "deterministic_scaffold_used": false,
+        "fallback_used": false,
+        "missing_behavior_evidence": false,
+        "missing_transcript": false,
+        "real_app_touched": false,
+        "repair_attempts_used": 0,
+        "report_verdict_mismatch": false,
+        "score_integrity_failure": false
+      },
+      "baseline_neighbor": "timer/countdown",
+      "behavior_actual": {
+        "afterStart": "59\nStart Stop Reset",
+        "afterStop": "59\nStart Stop Reset",
+        "before": "60\nStart Stop Reset",
+        "clickedStop": true
+      },
+      "behavior_expected": "timer text changes after start",
+      "behavior_status": "PASS",
+      "behavior_test": "make a laundry flip countdown-timer-change",
+      "evidence_links": {
+        "behavior_failure_packet": "",
+        "behavior_probe": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\01-make-a-laundry-flip-countdown\\behavior-probe.json",
+        "behavior_probe_before_repair": "",
+        "post_behavior_repair_result": "",
+        "preview": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\01-make-a-laundry-flip-countdown\\workspace\\index.html",
+        "receipt": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\01-make-a-laundry-flip-countdown\\receipt.json",
+        "score": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\01-make-a-laundry-flip-countdown\\score.json",
+        "transcript": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\01-make-a-laundry-flip-countdown\\transcript.txt",
+        "workspace_diff": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\01-make-a-laundry-flip-countdown\\workspace.diff"
+      },
+      "expected_behavior": "Start visibly changes the countdown/time state after a short wait. Stop freezes if present. Reset returns to initial state if present.",
+      "failure_bucket": "",
+      "files_changed": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ],
+      "final_behavior_verdict": "PASS",
+      "final_reason_codes": [
+        "behavior_pass_verified"
+      ],
+      "final_verdict": "PASS",
+      "model_authored_targets": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ],
+      "open_status": "PASS",
+      "post_behavior_final_verdict": "PASS",
+      "post_behavior_reason_codes": [
+        "behavior_pass_verified"
+      ],
+      "preview_link": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\01-make-a-laundry-flip-countdown\\workspace\\index.html",
+      "primary_behavior_failure_bucket": "",
+      "prompt": "make a laundry flip countdown",
+      "raw_behavior_pass": true,
+      "raw_final_verdict": "PASS",
+      "repair_attempts": 0,
+      "repair_eligible": false,
+      "repair_failure_bucket": "",
+      "repair_skip_reason": "behavior_not_failed",
+      "repair_status": "SKIPPED",
+      "report_verdict_mismatch": false,
+      "route_status": "GO",
+      "run": "01-make-a-laundry-flip-countdown",
+      "score_integrity_classification": "verified_pass",
+      "score_integrity_failure": false,
+      "secondary_behavior_failure_bucket": "",
+      "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\01-make-a-laundry-flip-countdown\\workspace\\index.html",
+      "strict_human_final_verdict": "PASS",
+      "strict_reason": "timer must visibly change after the start action",
+      "workspace_files": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ]
+    },
+    {
+      "anti_cheat_flags": {
+        "backend_created_content": false,
+        "behavior_failed_marked_pass": false,
+        "cloud_api_fallback_used": false,
+        "deterministic_scaffold_used": false,
+        "fallback_used": false,
+        "missing_behavior_evidence": false,
+        "missing_transcript": false,
+        "real_app_touched": false,
+        "repair_attempts_used": 0,
+        "report_verdict_mismatch": false,
+        "score_integrity_failure": false
+      },
+      "baseline_neighbor": "calculator/splitter",
+      "behavior_actual": {
+        "selected_preview_path": ""
+      },
+      "behavior_expected": "openable generated preview exists before behavior probe",
+      "behavior_status": "FAIL",
+      "behavior_test": "make a parking garage cost sharer-missing-preview",
+      "evidence_links": {
+        "behavior_failure_packet": "",
+        "behavior_probe": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\02-make-a-parking-garage-cost-sharer\\behavior-probe.json",
+        "behavior_probe_before_repair": "",
+        "post_behavior_repair_result": "",
+        "preview": "\\\\10.0.0.186\\SpiritOS\\",
+        "receipt": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\02-make-a-parking-garage-cost-sharer\\receipt.json",
+        "score": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\02-make-a-parking-garage-cost-sharer\\score.json",
+        "transcript": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\02-make-a-parking-garage-cost-sharer\\transcript.txt",
+        "workspace_diff": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\02-make-a-parking-garage-cost-sharer\\workspace.diff"
+      },
+      "expected_behavior": "Entered cost/share values visibly change a calculated result.",
+      "failure_bucket": "route_blocked_no_preview",
+      "files_changed": [],
+      "final_behavior_verdict": "FAIL",
+      "final_reason_codes": [
+        "behavior_failed_verified",
+        "behavior_probe_failed:make a parking garage cost sharer-missing-preview",
+        "route_blocked_no_preview"
+      ],
+      "final_verdict": "FAIL",
+      "model_authored_targets": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ],
+      "open_status": "FAIL",
+      "post_behavior_final_verdict": "FAIL",
+      "post_behavior_reason_codes": [
+        "behavior_failed_verified",
+        "behavior_probe_failed:make a parking garage cost sharer-missing-preview",
+        "route_blocked_no_preview"
+      ],
+      "preview_link": "\\\\10.0.0.186\\SpiritOS\\",
+      "primary_behavior_failure_bucket": "route_blocked_no_preview",
+      "prompt": "make a parking garage cost sharer",
+      "raw_behavior_pass": false,
+      "raw_final_verdict": "FAIL",
+      "repair_attempts": 0,
+      "repair_eligible": false,
+      "repair_failure_bucket": "",
+      "repair_skip_reason": "not_eligible_for_behavior_repair",
+      "repair_status": "SKIPPED",
+      "report_verdict_mismatch": false,
+      "route_status": "EXPECTED-BLOCKED",
+      "run": "02-make-a-parking-garage-cost-sharer",
+      "score_integrity_classification": "verified_fail",
+      "score_integrity_failure": false,
+      "secondary_behavior_failure_bucket": "",
+      "selected_preview_path": "",
+      "strict_human_final_verdict": "FAIL",
+      "strict_reason": "preview did not open for behavior verification",
+      "workspace_files": []
+    },
+    {
+      "anti_cheat_flags": {
+        "backend_created_content": false,
+        "behavior_failed_marked_pass": false,
+        "cloud_api_fallback_used": false,
+        "deterministic_scaffold_used": false,
+        "fallback_used": false,
+        "missing_behavior_evidence": false,
+        "missing_transcript": false,
+        "real_app_touched": false,
+        "repair_attempts_used": 0,
+        "report_verdict_mismatch": false,
+        "score_integrity_failure": false
+      },
+      "baseline_neighbor": "theme/mode toggle",
+      "behavior_actual": {
+        "selected_preview_path": ""
+      },
+      "behavior_expected": "openable generated preview exists before behavior probe",
+      "behavior_status": "FAIL",
+      "behavior_test": "make a dusk dawn palette switch-missing-preview",
+      "evidence_links": {
+        "behavior_failure_packet": "",
+        "behavior_probe": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\03-make-a-dusk-dawn-palette-switch\\behavior-probe.json",
+        "behavior_probe_before_repair": "",
+        "post_behavior_repair_result": "",
+        "preview": "\\\\10.0.0.186\\SpiritOS\\",
+        "receipt": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\03-make-a-dusk-dawn-palette-switch\\receipt.json",
+        "score": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\03-make-a-dusk-dawn-palette-switch\\score.json",
+        "transcript": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\03-make-a-dusk-dawn-palette-switch\\transcript.txt",
+        "workspace_diff": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\03-make-a-dusk-dawn-palette-switch\\workspace.diff"
+      },
+      "expected_behavior": "A control visibly changes theme, palette, color, class, or computed body colors.",
+      "failure_bucket": "route_blocked_no_preview",
+      "files_changed": [],
+      "final_behavior_verdict": "FAIL",
+      "final_reason_codes": [
+        "behavior_failed_verified",
+        "behavior_probe_failed:make a dusk dawn palette switch-missing-preview",
+        "route_blocked_no_preview"
+      ],
+      "final_verdict": "FAIL",
+      "model_authored_targets": [
+        "src/styles/duskDawnPalette.css"
+      ],
+      "open_status": "FAIL",
+      "post_behavior_final_verdict": "FAIL",
+      "post_behavior_reason_codes": [
+        "behavior_failed_verified",
+        "behavior_probe_failed:make a dusk dawn palette switch-missing-preview",
+        "route_blocked_no_preview"
+      ],
+      "preview_link": "\\\\10.0.0.186\\SpiritOS\\",
+      "primary_behavior_failure_bucket": "route_blocked_no_preview",
+      "prompt": "make a dusk dawn palette switch",
+      "raw_behavior_pass": false,
+      "raw_final_verdict": "FAIL",
+      "repair_attempts": 0,
+      "repair_eligible": false,
+      "repair_failure_bucket": "",
+      "repair_skip_reason": "not_eligible_for_behavior_repair",
+      "repair_status": "SKIPPED",
+      "report_verdict_mismatch": false,
+      "route_status": "EXPECTED-BLOCKED",
+      "run": "03-make-a-dusk-dawn-palette-switch",
+      "score_integrity_classification": "verified_fail",
+      "score_integrity_failure": false,
+      "secondary_behavior_failure_bucket": "",
+      "selected_preview_path": "",
+      "strict_human_final_verdict": "FAIL",
+      "strict_reason": "preview did not open for behavior verification",
+      "workspace_files": []
+    },
+    {
+      "anti_cheat_flags": {
+        "backend_created_content": false,
+        "behavior_failed_marked_pass": false,
+        "cloud_api_fallback_used": false,
+        "deterministic_scaffold_used": false,
+        "fallback_used": false,
+        "missing_behavior_evidence": false,
+        "missing_transcript": false,
+        "real_app_touched": false,
+        "repair_attempts_used": 0,
+        "report_verdict_mismatch": false,
+        "score_integrity_failure": false
+      },
+      "baseline_neighbor": "checklist/list",
+      "behavior_actual": {
+        "after": "Beach Bag Checklist\n Add Item\nbananas",
+        "appears": true,
+        "before": "Beach Bag Checklist\n Add Item",
+        "clicked": true,
+        "filled": 1
+      },
+      "behavior_expected": "entered checklist/list text remains visible after action",
+      "behavior_status": "PASS",
+      "behavior_test": "make a beach bag checklist app-visible-state-change",
+      "evidence_links": {
+        "behavior_failure_packet": "",
+        "behavior_probe": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\04-make-a-beach-bag-checklist-app\\behavior-probe.json",
+        "behavior_probe_before_repair": "",
+        "post_behavior_repair_result": "",
+        "preview": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\04-make-a-beach-bag-checklist-app\\workspace\\index.html",
+        "receipt": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\04-make-a-beach-bag-checklist-app\\receipt.json",
+        "score": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\04-make-a-beach-bag-checklist-app\\score.json",
+        "transcript": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\04-make-a-beach-bag-checklist-app\\transcript.txt",
+        "workspace_diff": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\04-make-a-beach-bag-checklist-app\\workspace.diff"
+      },
+      "expected_behavior": "A typed checklist item appears visibly after add/save/enter, and item state can change if controls exist.",
+      "failure_bucket": "",
+      "files_changed": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ],
+      "final_behavior_verdict": "PASS",
+      "final_reason_codes": [
+        "behavior_pass_verified"
+      ],
+      "final_verdict": "PASS",
+      "model_authored_targets": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ],
+      "open_status": "PASS",
+      "post_behavior_final_verdict": "PASS",
+      "post_behavior_reason_codes": [
+        "behavior_pass_verified"
+      ],
+      "preview_link": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\04-make-a-beach-bag-checklist-app\\workspace\\index.html",
+      "primary_behavior_failure_bucket": "",
+      "prompt": "make a beach bag checklist app",
+      "raw_behavior_pass": true,
+      "raw_final_verdict": "PASS",
+      "repair_attempts": 0,
+      "repair_eligible": false,
+      "repair_failure_bucket": "",
+      "repair_skip_reason": "behavior_not_failed",
+      "repair_status": "SKIPPED",
+      "report_verdict_mismatch": false,
+      "route_status": "GO",
+      "run": "04-make-a-beach-bag-checklist-app",
+      "score_integrity_classification": "verified_pass",
+      "score_integrity_failure": false,
+      "secondary_behavior_failure_bucket": "",
+      "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\04-make-a-beach-bag-checklist-app\\workspace\\index.html",
+      "strict_human_final_verdict": "PASS",
+      "strict_reason": "entered checklist/list text must appear visibly",
+      "workspace_files": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ]
+    },
+    {
+      "anti_cheat_flags": {
+        "backend_created_content": false,
+        "behavior_failed_marked_pass": false,
+        "cloud_api_fallback_used": false,
+        "deterministic_scaffold_used": false,
+        "fallback_used": false,
+        "missing_behavior_evidence": false,
+        "missing_transcript": false,
+        "real_app_touched": false,
+        "repair_attempts_used": 1,
+        "report_verdict_mismatch": false,
+        "score_integrity_failure": false
+      },
+      "baseline_neighbor": "weather/forecast/tile",
+      "behavior_actual": {
+        "after": "City: San Francisco\n\nTemperature: 68\u00b0F\n\nCondition: Sunny\n\nChange Weather to New York",
+        "before": "City: San Francisco\n\nTemperature: 68\u00b0F\n\nCondition: Sunny\n\nChange Weather to New York",
+        "clicked": true,
+        "hasWeatherTerms": true
+      },
+      "behavior_expected": "weather-like fields render and control changes content if present",
+      "behavior_status": "FAIL",
+      "behavior_test": "make a pretend balcony forecast tile-forecast-fields-or-update",
+      "evidence_links": {
+        "behavior_failure_packet": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\05-make-a-pretend-balcony-forecast-tile\\behavior-failure-packet.json",
+        "behavior_probe": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\05-make-a-pretend-balcony-forecast-tile\\behavior-probe.json",
+        "behavior_probe_before_repair": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\05-make-a-pretend-balcony-forecast-tile\\behavior-probe-before-repair.json",
+        "post_behavior_repair_result": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\05-make-a-pretend-balcony-forecast-tile\\post-behavior-repair-result.json",
+        "preview": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\05-make-a-pretend-balcony-forecast-tile\\workspace\\index.html",
+        "receipt": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\05-make-a-pretend-balcony-forecast-tile\\receipt.json",
+        "score": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\05-make-a-pretend-balcony-forecast-tile\\score.json",
+        "transcript": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\05-make-a-pretend-balcony-forecast-tile\\transcript.txt",
+        "workspace_diff": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\05-make-a-pretend-balcony-forecast-tile\\workspace.diff"
+      },
+      "expected_behavior": "Weather-like fields are visible, and any provided local demo control changes forecast/weather state.",
+      "failure_bucket": "weather_static_when_update_expected",
+      "files_changed": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ],
+      "final_behavior_verdict": "FAIL",
+      "final_reason_codes": [
+        "behavior_failed_verified",
+        "behavior_probe_failed:make a pretend balcony forecast tile-forecast-fields-or-update",
+        "weather_static_when_update_expected",
+        "post_behavior_repair_failed",
+        "repair_attempts_1"
+      ],
+      "final_verdict": "FAIL",
+      "model_authored_targets": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ],
+      "open_status": "PASS",
+      "post_behavior_final_verdict": "FAIL",
+      "post_behavior_reason_codes": [
+        "behavior_failed_verified",
+        "behavior_probe_failed:make a pretend balcony forecast tile-forecast-fields-or-update",
+        "weather_static_when_update_expected",
+        "post_behavior_repair_failed",
+        "repair_attempts_1"
+      ],
+      "preview_link": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\05-make-a-pretend-balcony-forecast-tile\\workspace\\index.html",
+      "primary_behavior_failure_bucket": "weather_static_when_update_expected",
+      "prompt": "make a pretend balcony forecast tile",
+      "raw_behavior_pass": false,
+      "raw_final_verdict": "FAIL",
+      "repair_attempts": 1,
+      "repair_eligible": true,
+      "repair_failure_bucket": "",
+      "repair_skip_reason": "",
+      "repair_status": "READY_FOR_RETEST",
+      "report_verdict_mismatch": false,
+      "route_status": "GO",
+      "run": "05-make-a-pretend-balcony-forecast-tile",
+      "score_integrity_classification": "verified_fail",
+      "score_integrity_failure": false,
+      "secondary_behavior_failure_bucket": "",
+      "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\05-make-a-pretend-balcony-forecast-tile\\workspace\\index.html",
+      "strict_human_final_verdict": "FAIL",
+      "strict_reason": "weather artifact must show weather fields and update when a control is present",
+      "workspace_files": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ]
+    },
+    {
+      "anti_cheat_flags": {
+        "backend_created_content": false,
+        "behavior_failed_marked_pass": false,
+        "cloud_api_fallback_used": false,
+        "deterministic_scaffold_used": false,
+        "fallback_used": false,
+        "missing_behavior_evidence": false,
+        "missing_transcript": false,
+        "real_app_touched": false,
+        "repair_attempts_used": 0,
+        "report_verdict_mismatch": false,
+        "score_integrity_failure": false
+      },
+      "baseline_neighbor": "player/radio/audio",
+      "behavior_actual": {
+        "after": "Track Title\nPause Skip",
+        "before": "Track Title\nPlay Skip",
+        "clicked": true
+      },
+      "behavior_expected": "play/pause or player control visibly changes state",
+      "behavior_status": "PASS",
+      "behavior_test": "make a campfire podcast mini player-player-control-change",
+      "evidence_links": {
+        "behavior_failure_packet": "",
+        "behavior_probe": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\06-make-a-campfire-podcast-mini-player\\behavior-probe.json",
+        "behavior_probe_before_repair": "",
+        "post_behavior_repair_result": "",
+        "preview": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\06-make-a-campfire-podcast-mini-player\\workspace\\index.html",
+        "receipt": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\06-make-a-campfire-podcast-mini-player\\receipt.json",
+        "score": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\06-make-a-campfire-podcast-mini-player\\score.json",
+        "transcript": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\06-make-a-campfire-podcast-mini-player\\transcript.txt",
+        "workspace_diff": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\06-make-a-campfire-podcast-mini-player\\workspace.diff"
+      },
+      "expected_behavior": "Play/pause, next, or equivalent player control visibly changes player state, label, status, or track text.",
+      "failure_bucket": "",
+      "files_changed": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ],
+      "final_behavior_verdict": "PASS",
+      "final_reason_codes": [
+        "behavior_pass_verified"
+      ],
+      "final_verdict": "PASS",
+      "model_authored_targets": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ],
+      "open_status": "PASS",
+      "post_behavior_final_verdict": "PASS",
+      "post_behavior_reason_codes": [
+        "behavior_pass_verified"
+      ],
+      "preview_link": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\06-make-a-campfire-podcast-mini-player\\workspace\\index.html",
+      "primary_behavior_failure_bucket": "",
+      "prompt": "make a campfire podcast mini player",
+      "raw_behavior_pass": true,
+      "raw_final_verdict": "PASS",
+      "repair_attempts": 0,
+      "repair_eligible": false,
+      "repair_failure_bucket": "",
+      "repair_skip_reason": "behavior_not_failed",
+      "repair_status": "SKIPPED",
+      "report_verdict_mismatch": false,
+      "route_status": "GO",
+      "run": "06-make-a-campfire-podcast-mini-player",
+      "score_integrity_classification": "verified_pass",
+      "score_integrity_failure": false,
+      "secondary_behavior_failure_bucket": "",
+      "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\06-make-a-campfire-podcast-mini-player\\workspace\\index.html",
+      "strict_human_final_verdict": "PASS",
+      "strict_reason": "player control must visibly change state",
+      "workspace_files": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ]
+    },
+    {
+      "anti_cheat_flags": {
+        "backend_created_content": false,
+        "behavior_failed_marked_pass": false,
+        "cloud_api_fallback_used": false,
+        "deterministic_scaffold_used": false,
+        "fallback_used": false,
+        "missing_behavior_evidence": false,
+        "missing_transcript": false,
+        "real_app_touched": false,
+        "repair_attempts_used": 0,
+        "report_verdict_mismatch": false,
+        "score_integrity_failure": false
+      },
+      "baseline_neighbor": "counter/tracker",
+      "behavior_actual": {
+        "after": "1\nIncrement",
+        "before": "0\nIncrement",
+        "clicked": true
+      },
+      "behavior_expected": "tracker control visibly changes progress state",
+      "behavior_status": "PASS",
+      "behavior_test": "make a stair step tally counter-click-tracker-state-change",
+      "evidence_links": {
+        "behavior_failure_packet": "",
+        "behavior_probe": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\07-make-a-stair-step-tally-counter\\behavior-probe.json",
+        "behavior_probe_before_repair": "",
+        "post_behavior_repair_result": "",
+        "preview": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\07-make-a-stair-step-tally-counter\\workspace\\index.html",
+        "receipt": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\07-make-a-stair-step-tally-counter\\receipt.json",
+        "score": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\07-make-a-stair-step-tally-counter\\score.json",
+        "transcript": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\07-make-a-stair-step-tally-counter\\transcript.txt",
+        "workspace_diff": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\07-make-a-stair-step-tally-counter\\workspace.diff"
+      },
+      "expected_behavior": "A button visibly increments or changes count/progress.",
+      "failure_bucket": "",
+      "files_changed": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ],
+      "final_behavior_verdict": "PASS",
+      "final_reason_codes": [
+        "behavior_pass_verified"
+      ],
+      "final_verdict": "PASS",
+      "model_authored_targets": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ],
+      "open_status": "PASS",
+      "post_behavior_final_verdict": "PASS",
+      "post_behavior_reason_codes": [
+        "behavior_pass_verified"
+      ],
+      "preview_link": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\07-make-a-stair-step-tally-counter\\workspace\\index.html",
+      "primary_behavior_failure_bucket": "",
+      "prompt": "make a stair step tally counter",
+      "raw_behavior_pass": true,
+      "raw_final_verdict": "PASS",
+      "repair_attempts": 0,
+      "repair_eligible": false,
+      "repair_failure_bucket": "",
+      "repair_skip_reason": "behavior_not_failed",
+      "repair_status": "SKIPPED",
+      "report_verdict_mismatch": false,
+      "route_status": "GO",
+      "run": "07-make-a-stair-step-tally-counter",
+      "score_integrity_classification": "verified_pass",
+      "score_integrity_failure": false,
+      "secondary_behavior_failure_bucket": "",
+      "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\07-make-a-stair-step-tally-counter\\workspace\\index.html",
+      "strict_human_final_verdict": "PASS",
+      "strict_reason": "tracker/counter control must visibly change progress or count",
+      "workspace_files": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ]
+    },
+    {
+      "anti_cheat_flags": {
+        "backend_created_content": false,
+        "behavior_failed_marked_pass": false,
+        "cloud_api_fallback_used": false,
+        "deterministic_scaffold_used": false,
+        "fallback_used": false,
+        "missing_behavior_evidence": false,
+        "missing_transcript": false,
+        "real_app_touched": false,
+        "repair_attempts_used": 0,
+        "report_verdict_mismatch": false,
+        "score_integrity_failure": false
+      },
+      "baseline_neighbor": "notes/memo",
+      "behavior_actual": {
+        "after": "scratch proof note\n Add Memo",
+        "appears": true,
+        "before": " Add Memo",
+        "clicked": true,
+        "filled": 1
+      },
+      "behavior_expected": "entered note text remains visible after action",
+      "behavior_status": "PASS",
+      "behavior_test": "make a sticky thought memo board-visible-state-change",
+      "evidence_links": {
+        "behavior_failure_packet": "",
+        "behavior_probe": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\08-make-a-sticky-thought-memo-board\\behavior-probe.json",
+        "behavior_probe_before_repair": "",
+        "post_behavior_repair_result": "",
+        "preview": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\08-make-a-sticky-thought-memo-board\\workspace\\index.html",
+        "receipt": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\08-make-a-sticky-thought-memo-board\\receipt.json",
+        "score": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\08-make-a-sticky-thought-memo-board\\score.json",
+        "transcript": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\08-make-a-sticky-thought-memo-board\\transcript.txt",
+        "workspace_diff": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\08-make-a-sticky-thought-memo-board\\workspace.diff"
+      },
+      "expected_behavior": "Typed note/memo text remains visible after add/save/edit. A saved status alone is not enough.",
+      "failure_bucket": "",
+      "files_changed": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ],
+      "final_behavior_verdict": "PASS",
+      "final_reason_codes": [
+        "behavior_pass_verified"
+      ],
+      "final_verdict": "PASS",
+      "model_authored_targets": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ],
+      "open_status": "PASS",
+      "post_behavior_final_verdict": "PASS",
+      "post_behavior_reason_codes": [
+        "behavior_pass_verified"
+      ],
+      "preview_link": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\08-make-a-sticky-thought-memo-board\\workspace\\index.html",
+      "primary_behavior_failure_bucket": "",
+      "prompt": "make a sticky thought memo board",
+      "raw_behavior_pass": true,
+      "raw_final_verdict": "PASS",
+      "repair_attempts": 0,
+      "repair_eligible": false,
+      "repair_failure_bucket": "",
+      "repair_skip_reason": "behavior_not_failed",
+      "repair_status": "SKIPPED",
+      "report_verdict_mismatch": false,
+      "route_status": "GO",
+      "run": "08-make-a-sticky-thought-memo-board",
+      "score_integrity_classification": "verified_pass",
+      "score_integrity_failure": false,
+      "secondary_behavior_failure_bucket": "",
+      "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\08-make-a-sticky-thought-memo-board\\workspace\\index.html",
+      "strict_human_final_verdict": "PASS",
+      "strict_reason": "entered note text must remain visible after save",
+      "workspace_files": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ]
+    },
+    {
+      "anti_cheat_flags": {
+        "backend_created_content": false,
+        "behavior_failed_marked_pass": false,
+        "cloud_api_fallback_used": false,
+        "deterministic_scaffold_used": false,
+        "fallback_used": false,
+        "missing_behavior_evidence": false,
+        "missing_transcript": false,
+        "real_app_touched": false,
+        "repair_attempts_used": 0,
+        "report_verdict_mismatch": false,
+        "score_integrity_failure": false
+      },
+      "baseline_neighbor": "password/passphrase strength",
+      "behavior_actual": {
+        "selected_preview_path": ""
+      },
+      "behavior_expected": "openable generated preview exists before behavior probe",
+      "behavior_status": "FAIL",
+      "behavior_test": "make a secret phrase strength gauge-missing-preview",
+      "evidence_links": {
+        "behavior_failure_packet": "",
+        "behavior_probe": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\09-make-a-secret-phrase-strength-gauge\\behavior-probe.json",
+        "behavior_probe_before_repair": "",
+        "post_behavior_repair_result": "",
+        "preview": "\\\\10.0.0.186\\SpiritOS\\",
+        "receipt": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\09-make-a-secret-phrase-strength-gauge\\receipt.json",
+        "score": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\09-make-a-secret-phrase-strength-gauge\\score.json",
+        "transcript": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\09-make-a-secret-phrase-strength-gauge\\transcript.txt",
+        "workspace_diff": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\09-make-a-secret-phrase-strength-gauge\\workspace.diff"
+      },
+      "expected_behavior": "Weak and stronger phrase inputs visibly change strength feedback.",
+      "failure_bucket": "route_blocked_no_preview",
+      "files_changed": [],
+      "final_behavior_verdict": "FAIL",
+      "final_reason_codes": [
+        "behavior_failed_verified",
+        "behavior_probe_failed:make a secret phrase strength gauge-missing-preview",
+        "route_blocked_no_preview"
+      ],
+      "final_verdict": "FAIL",
+      "model_authored_targets": [
+        "src/components/SecretPhraseStrengthGauge.js"
+      ],
+      "open_status": "FAIL",
+      "post_behavior_final_verdict": "FAIL",
+      "post_behavior_reason_codes": [
+        "behavior_failed_verified",
+        "behavior_probe_failed:make a secret phrase strength gauge-missing-preview",
+        "route_blocked_no_preview"
+      ],
+      "preview_link": "\\\\10.0.0.186\\SpiritOS\\",
+      "primary_behavior_failure_bucket": "route_blocked_no_preview",
+      "prompt": "make a secret phrase strength gauge",
+      "raw_behavior_pass": false,
+      "raw_final_verdict": "FAIL",
+      "repair_attempts": 0,
+      "repair_eligible": false,
+      "repair_failure_bucket": "",
+      "repair_skip_reason": "not_eligible_for_behavior_repair",
+      "repair_status": "SKIPPED",
+      "report_verdict_mismatch": false,
+      "route_status": "EXPECTED-BLOCKED",
+      "run": "09-make-a-secret-phrase-strength-gauge",
+      "score_integrity_classification": "verified_fail",
+      "score_integrity_failure": false,
+      "secondary_behavior_failure_bucket": "",
+      "selected_preview_path": "",
+      "strict_human_final_verdict": "FAIL",
+      "strict_reason": "preview did not open for behavior verification",
+      "workspace_files": []
+    },
+    {
+      "anti_cheat_flags": {
+        "backend_created_content": false,
+        "behavior_failed_marked_pass": false,
+        "cloud_api_fallback_used": false,
+        "deterministic_scaffold_used": false,
+        "fallback_used": false,
+        "missing_behavior_evidence": false,
+        "missing_transcript": false,
+        "real_app_touched": false,
+        "repair_attempts_used": 1,
+        "report_verdict_mismatch": false,
+        "score_integrity_failure": false
+      },
+      "baseline_neighbor": "drawing/canvas/sketch",
+      "behavior_actual": {
+        "box": {
+          "height": 608,
+          "width": 808,
+          "x": 8,
+          "y": 8
+        },
+        "canvas": true,
+        "changed": false
+      },
+      "behavior_expected": "mouse drag changes canvas pixels",
+      "behavior_status": "FAIL",
+      "behavior_test": "make a finger paint doodle pad-drawing-surface-change",
+      "evidence_links": {
+        "behavior_failure_packet": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\10-make-a-finger-paint-doodle-pad\\behavior-failure-packet.json",
+        "behavior_probe": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\10-make-a-finger-paint-doodle-pad\\behavior-probe.json",
+        "behavior_probe_before_repair": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\10-make-a-finger-paint-doodle-pad\\behavior-probe-before-repair.json",
+        "post_behavior_repair_result": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\10-make-a-finger-paint-doodle-pad\\post-behavior-repair-result.json",
+        "preview": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\10-make-a-finger-paint-doodle-pad\\workspace\\index.html",
+        "receipt": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\10-make-a-finger-paint-doodle-pad\\receipt.json",
+        "score": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\10-make-a-finger-paint-doodle-pad\\score.json",
+        "transcript": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\10-make-a-finger-paint-doodle-pad\\transcript.txt",
+        "workspace_diff": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\10-make-a-finger-paint-doodle-pad\\workspace.diff"
+      },
+      "expected_behavior": "Pointer or mouse interaction visibly marks the drawing surface, canvas, or equivalent sketch area.",
+      "failure_bucket": "drawing_canvas_no_pixel_change",
+      "files_changed": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ],
+      "final_behavior_verdict": "FAIL",
+      "final_reason_codes": [
+        "behavior_failed_verified",
+        "behavior_probe_failed:make a finger paint doodle pad-drawing-surface-change",
+        "drawing_canvas_no_pixel_change",
+        "post_behavior_repair_failed",
+        "repair_attempts_1"
+      ],
+      "final_verdict": "FAIL",
+      "model_authored_targets": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ],
+      "open_status": "PASS",
+      "post_behavior_final_verdict": "FAIL",
+      "post_behavior_reason_codes": [
+        "behavior_failed_verified",
+        "behavior_probe_failed:make a finger paint doodle pad-drawing-surface-change",
+        "drawing_canvas_no_pixel_change",
+        "post_behavior_repair_failed",
+        "repair_attempts_1"
+      ],
+      "preview_link": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\10-make-a-finger-paint-doodle-pad\\workspace\\index.html",
+      "primary_behavior_failure_bucket": "drawing_canvas_no_pixel_change",
+      "prompt": "make a finger paint doodle pad",
+      "raw_behavior_pass": false,
+      "raw_final_verdict": "FAIL",
+      "repair_attempts": 1,
+      "repair_eligible": true,
+      "repair_failure_bucket": "",
+      "repair_skip_reason": "",
+      "repair_status": "READY_FOR_RETEST",
+      "report_verdict_mismatch": false,
+      "route_status": "GO",
+      "run": "10-make-a-finger-paint-doodle-pad",
+      "score_integrity_classification": "verified_fail",
+      "score_integrity_failure": false,
+      "secondary_behavior_failure_bucket": "",
+      "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\10-make-a-finger-paint-doodle-pad\\workspace\\index.html",
+      "strict_human_final_verdict": "FAIL",
+      "strict_reason": "drawing interaction must change canvas pixels",
+      "workspace_files": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ]
+    }
+  ],
+  "score_integrity_warnings_count": 0,
+  "title": "Source Proxy Level 3 final clean similar 10 transparent proof",
+  "total_count": 10
+}

@@ -1,0 +1,27 @@
+{
+  "behavior_contract_probe_id": "checklist-add-visible-item",
+  "blocking_reason_if_any": "",
+  "disposable_candidate_true_false": true,
+  "explicit_target_path_detected": false,
+  "family_candidates": [
+    "checklist/list"
+  ],
+  "family_match_reasons": [
+    "prompt_set_family:checklist/list",
+    "behavior_contract_probe:checklist-add-visible-item"
+  ],
+  "normalized_intent_after_route": "disposable_small_file_bundle",
+  "normalized_intent_before_route": "disposable_small_file_bundle",
+  "normalized_prompt": "make a beach bag checklist app",
+  "original_prompt": "make a beach bag checklist app",
+  "real_repo_signals": [],
+  "route_decision": "GO",
+  "route_decision_reason": "generic_artifact_resolver",
+  "selected_artifact_family": "checklist/list",
+  "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-semantic-generalization-gate-b-20260613\\final-clean-10-gate-b-runs\\04-make-a-beach-bag-checklist-app\\workspace\\index.html",
+  "standalone_artifact_signals": [
+    "creation_or_show_me_verb",
+    "small_tool_widget_or_interactive_noun"
+  ],
+  "why_no_preview_if_blocked": ""
+}

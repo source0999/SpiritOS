@@ -1,0 +1,16 @@
+{
+  "opened": true,
+  "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10d-runs\\07-make-a-coffee-cup-counter\\workspace\\index.html",
+  "title": "Coffee Cup Counter",
+  "bodyText": "Coffee Cups Sold: 0\nSell Another Cup",
+  "elementCounts": {
+    "buttons": 1,
+    "inputs": 0,
+    "links": 0,
+    "canvas": 0,
+    "scripts": 1,
+    "stylesheets": 1
+  },
+  "consoleMessages": [],
+  "pageErrors": []
+}

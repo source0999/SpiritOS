@@ -1,0 +1,394 @@
+{
+  "results": [
+    {
+      "run": "01-make-a-kichen-timer-thing",
+      "prompt": "make a kichen timer thing",
+      "route_status": "GO",
+      "canonical_final_verdict": "UNVERIFIED",
+      "preview_path_local": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10-repair-rerun-runs\\01-make-a-kichen-timer-thing\\workspace\\index.html",
+      "open_probe": {
+        "opened": true,
+        "path": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10-repair-rerun-runs\\01-make-a-kichen-timer-thing\\workspace\\index.html",
+        "title": "Kitchen Timer",
+        "bodyText": "00:00\nStart Stop",
+        "elementCounts": {
+          "buttons": 2,
+          "inputs": 0,
+          "links": 0,
+          "canvas": 0,
+          "scripts": 1,
+          "stylesheets": 1
+        },
+        "consoleMessages": [],
+        "pageErrors": []
+      },
+      "behavior_probe": {
+        "test": "make a kichen timer thing-timer-change",
+        "verdict": "PASS",
+        "passed": true,
+        "expected": "timer text changes after start",
+        "actual": {
+          "before": "00:00\nStart Stop",
+          "afterStart": "00:01\nStart Stop",
+          "afterStop": "00:01\nStart Stop",
+          "clickedStop": true
+        },
+        "path": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10-repair-rerun-runs\\01-make-a-kichen-timer-thing\\workspace\\index.html"
+      }
+    },
+    {
+      "run": "02-build-a-tiny-tip-splittr",
+      "prompt": "build a tiny tip splittr",
+      "route_status": "GO",
+      "canonical_final_verdict": "UNVERIFIED",
+      "preview_path_local": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10-repair-rerun-runs\\02-build-a-tiny-tip-splittr\\workspace\\index.html",
+      "open_probe": {
+        "opened": true,
+        "path": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10-repair-rerun-runs\\02-build-a-tiny-tip-splittr\\workspace\\index.html",
+        "title": "Tiny Tip Splittr",
+        "bodyText": "Tiny Tip Splittr\n  Calculate Tip\n\nTip:",
+        "elementCounts": {
+          "buttons": 1,
+          "inputs": 2,
+          "links": 0,
+          "canvas": 0,
+          "scripts": 1,
+          "stylesheets": 1
+        },
+        "consoleMessages": [],
+        "pageErrors": []
+      },
+      "behavior_probe": {
+        "test": "build a tiny tip splittr-visible-state-change",
+        "verdict": "PASS",
+        "passed": true,
+        "expected": "input plus action creates visible state change",
+        "actual": {
+          "before": "Tiny Tip Splittr\n  Calculate Tip\n\nTip:",
+          "after": "Tiny Tip Splittr\n  Calculate Tip\n\nTip: $1.26",
+          "filled": 2,
+          "clicked": true,
+          "appears": false
+        },
+        "path": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10-repair-rerun-runs\\02-build-a-tiny-tip-splittr\\workspace\\index.html"
+      }
+    },
+    {
+      "run": "03-make-a-page-that-flips-lite-and-night-mode",
+      "prompt": "make a page that flips lite and night mode",
+      "route_status": "GO",
+      "canonical_final_verdict": "UNVERIFIED",
+      "preview_path_local": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10-repair-rerun-runs\\03-make-a-page-that-flips-lite-and-night-mode\\workspace\\index.html",
+      "open_probe": {
+        "opened": true,
+        "path": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10-repair-rerun-runs\\03-make-a-page-that-flips-lite-and-night-mode\\workspace\\index.html",
+        "title": "Theme Toggle",
+        "bodyText": "Toggle Theme\nSwitch to Night Mode",
+        "elementCounts": {
+          "buttons": 1,
+          "inputs": 0,
+          "links": 0,
+          "canvas": 0,
+          "scripts": 1,
+          "stylesheets": 1
+        },
+        "consoleMessages": [],
+        "pageErrors": []
+      },
+      "behavior_probe": {
+        "test": "make a page that flips lite and night mode-theme-computed-change",
+        "verdict": "PASS",
+        "passed": true,
+        "expected": "computed color or theme class changes",
+        "actual": {
+          "before": {
+            "bg": "rgb(255, 255, 255)",
+            "color": "rgb(0, 0, 0)",
+            "cls": "light-theme"
+          },
+          "after": {
+            "bg": "rgb(51, 51, 51)",
+            "color": "rgb(255, 255, 255)",
+            "cls": "night-theme"
+          }
+        },
+        "path": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10-repair-rerun-runs\\03-make-a-page-that-flips-lite-and-night-mode\\workspace\\index.html"
+      }
+    },
+    {
+      "run": "04-make-me-a-grocery-checklist",
+      "prompt": "make me a grocery checklist",
+      "route_status": "GO",
+      "canonical_final_verdict": "UNVERIFIED",
+      "preview_path_local": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10-repair-rerun-runs\\04-make-me-a-grocery-checklist\\workspace\\index.html",
+      "open_probe": {
+        "opened": true,
+        "path": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10-repair-rerun-runs\\04-make-me-a-grocery-checklist\\workspace\\index.html",
+        "title": "Grocery Checklist",
+        "bodyText": "Grocery Checklist\n Add Item",
+        "elementCounts": {
+          "buttons": 1,
+          "inputs": 1,
+          "links": 0,
+          "canvas": 0,
+          "scripts": 1,
+          "stylesheets": 1
+        },
+        "consoleMessages": [],
+        "pageErrors": []
+      },
+      "behavior_probe": {
+        "test": "make me a grocery checklist-visible-state-change",
+        "verdict": "PASS",
+        "passed": true,
+        "expected": "entered text remains visible after action",
+        "actual": {
+          "before": "Grocery Checklist\n Add Item",
+          "after": "Grocery Checklist\nbananas\n Add Item",
+          "filled": 1,
+          "clicked": true,
+          "appears": true
+        },
+        "path": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10-repair-rerun-runs\\04-make-me-a-grocery-checklist\\workspace\\index.html"
+      }
+    },
+    {
+      "run": "05-make-a-fake-forecast-card",
+      "prompt": "make a fake forecast card",
+      "route_status": "GO",
+      "canonical_final_verdict": "UNVERIFIED",
+      "preview_path_local": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10-repair-rerun-runs\\05-make-a-fake-forecast-card\\workspace\\index.html",
+      "open_probe": {
+        "opened": true,
+        "path": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10-repair-rerun-runs\\05-make-a-fake-forecast-card\\workspace\\index.html",
+        "title": "Weather Forecast",
+        "bodyText": "City\n\nTemperature: 0°C\n\nCondition: Clear\n\n Update Weather",
+        "elementCounts": {
+          "buttons": 1,
+          "inputs": 1,
+          "links": 0,
+          "canvas": 0,
+          "scripts": 1,
+          "stylesheets": 1
+        },
+        "consoleMessages": [
+          {
+            "type": "error",
+            "text": "Failed to load resource: net::ERR_FILE_NOT_FOUND"
+          },
+          {
+            "type": "error",
+            "text": "Failed to load resource: net::ERR_FILE_NOT_FOUND"
+          }
+        ],
+        "pageErrors": [
+          "updateWeather is not defined"
+        ]
+      },
+      "behavior_probe": {
+        "test": "make a fake forecast card-forecast-fields-or-update",
+        "verdict": "FAIL",
+        "passed": false,
+        "expected": "weather-like fields render and control changes content if present",
+        "actual": {
+          "before": "City\n\nTemperature: 0°C\n\nCondition: Clear\n\n Update Weather",
+          "after": "City\n\nTemperature: 0°C\n\nCondition: Clear\n\n Update Weather",
+          "clicked": true,
+          "hasWeatherTerms": true
+        },
+        "path": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10-repair-rerun-runs\\05-make-a-fake-forecast-card\\workspace\\index.html"
+      }
+    },
+    {
+      "run": "06-make-a-little-podcast-player-mock",
+      "prompt": "make a little podcast player mock",
+      "route_status": "GO",
+      "canonical_final_verdict": "UNVERIFIED",
+      "preview_path_local": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10-repair-rerun-runs\\06-make-a-little-podcast-player-mock\\workspace\\index.html",
+      "open_probe": {
+        "opened": true,
+        "path": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10-repair-rerun-runs\\06-make-a-little-podcast-player-mock\\workspace\\index.html",
+        "title": "Podcast Player",
+        "bodyText": "Track Title\n\nArtist Name\n\nPlay Skip",
+        "elementCounts": {
+          "buttons": 2,
+          "inputs": 0,
+          "links": 0,
+          "canvas": 0,
+          "scripts": 1,
+          "stylesheets": 1
+        },
+        "consoleMessages": [],
+        "pageErrors": []
+      },
+      "behavior_probe": {
+        "test": "make a little podcast player mock-player-control-change",
+        "verdict": "PASS",
+        "passed": true,
+        "expected": "play/pause or player control visibly changes state",
+        "actual": {
+          "before": "Track Title\n\nArtist Name\n\nPlay Skip",
+          "after": "Track Title\n\nArtist Name\n\nPause Skip",
+          "clicked": true
+        },
+        "path": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10-repair-rerun-runs\\06-make-a-little-podcast-player-mock\\workspace\\index.html"
+      }
+    },
+    {
+      "run": "07-make-a-water-drinking-tracker",
+      "prompt": "make a water drinking tracker",
+      "route_status": "GO",
+      "canonical_final_verdict": "UNVERIFIED",
+      "preview_path_local": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10-repair-rerun-runs\\07-make-a-water-drinking-tracker\\workspace\\water_drinking_tracker.html",
+      "open_probe": {
+        "opened": true,
+        "path": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10-repair-rerun-runs\\07-make-a-water-drinking-tracker\\workspace\\water_drinking_tracker.html",
+        "title": "Water Drinking Tracker",
+        "bodyText": "Water Drinking Tracker\nDrink Water\n\n0 glasses of water",
+        "elementCounts": {
+          "buttons": 1,
+          "inputs": 0,
+          "links": 0,
+          "canvas": 0,
+          "scripts": 1,
+          "stylesheets": 1
+        },
+        "consoleMessages": [],
+        "pageErrors": []
+      },
+      "behavior_probe": {
+        "test": "make a water drinking tracker-click-tracker-state-change",
+        "verdict": "PASS",
+        "passed": true,
+        "expected": "tracker control visibly changes progress state",
+        "actual": {
+          "before": "Water Drinking Tracker\nDrink Water\n\n0 glasses of water",
+          "after": "Water Drinking Tracker\nDrink Water\n\n1 glasses of water",
+          "clicked": true
+        },
+        "path": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10-repair-rerun-runs\\07-make-a-water-drinking-tracker\\workspace\\water_drinking_tracker.html"
+      }
+    },
+    {
+      "run": "08-make-a-scratch-notes-app",
+      "prompt": "make a scratch notes app",
+      "route_status": "GO",
+      "canonical_final_verdict": "UNVERIFIED",
+      "preview_path_local": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10-repair-rerun-runs\\08-make-a-scratch-notes-app\\workspace\\index.html",
+      "open_probe": {
+        "opened": true,
+        "path": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10-repair-rerun-runs\\08-make-a-scratch-notes-app\\workspace\\index.html",
+        "title": "Scratch Notes App",
+        "bodyText": "Scratch Notes App\n Save Note",
+        "elementCounts": {
+          "buttons": 1,
+          "inputs": 1,
+          "links": 0,
+          "canvas": 0,
+          "scripts": 1,
+          "stylesheets": 1
+        },
+        "consoleMessages": [],
+        "pageErrors": []
+      },
+      "behavior_probe": {
+        "test": "make a scratch notes app-visible-state-change",
+        "verdict": "FAIL",
+        "passed": false,
+        "expected": "entered text remains visible after action",
+        "actual": {
+          "before": "Scratch Notes App\n Save Note",
+          "after": "Scratch Notes App\n Save Note\n\nNote saved!",
+          "filled": 1,
+          "clicked": true,
+          "appears": false
+        },
+        "path": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10-repair-rerun-runs\\08-make-a-scratch-notes-app\\workspace\\index.html"
+      }
+    },
+    {
+      "run": "09-make-a-password-safety-meter",
+      "prompt": "make a password safety meter",
+      "route_status": "GO",
+      "canonical_final_verdict": "UNVERIFIED",
+      "preview_path_local": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10-repair-rerun-runs\\09-make-a-password-safety-meter\\workspace\\index.html",
+      "open_probe": {
+        "opened": true,
+        "path": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10-repair-rerun-runs\\09-make-a-password-safety-meter\\workspace\\index.html",
+        "title": "Password Safety Meter",
+        "bodyText": "Password Safety Meter",
+        "elementCounts": {
+          "buttons": 0,
+          "inputs": 1,
+          "links": 0,
+          "canvas": 0,
+          "scripts": 1,
+          "stylesheets": 1
+        },
+        "consoleMessages": [
+          {
+            "type": "error",
+            "text": "Failed to load resource: net::ERR_FILE_NOT_FOUND"
+          },
+          {
+            "type": "error",
+            "text": "Failed to load resource: net::ERR_FILE_NOT_FOUND"
+          }
+        ],
+        "pageErrors": []
+      },
+      "behavior_probe": {
+        "test": "make a password safety meter-password-feedback",
+        "verdict": "FAIL",
+        "passed": false,
+        "expected": "weak and stronger inputs change safety text",
+        "actual": {
+          "weak": "Password Safety Meter",
+          "strong": "Password Safety Meter",
+          "changed": false
+        },
+        "path": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10-repair-rerun-runs\\09-make-a-password-safety-meter\\workspace\\index.html"
+      }
+    },
+    {
+      "run": "10-make-a-doodle-board",
+      "prompt": "make a doodle board",
+      "route_status": "GO",
+      "canonical_final_verdict": "UNVERIFIED",
+      "preview_path_local": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10-repair-rerun-runs\\10-make-a-doodle-board\\workspace\\index.html",
+      "open_probe": {
+        "opened": true,
+        "path": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10-repair-rerun-runs\\10-make-a-doodle-board\\workspace\\index.html",
+        "title": "Doodle Board",
+        "bodyText": "",
+        "elementCounts": {
+          "buttons": 0,
+          "inputs": 0,
+          "links": 0,
+          "canvas": 1,
+          "scripts": 1,
+          "stylesheets": 1
+        },
+        "consoleMessages": [],
+        "pageErrors": []
+      },
+      "behavior_probe": {
+        "test": "make a doodle board-drawing-surface-change",
+        "verdict": "PASS",
+        "passed": true,
+        "expected": "mouse drag changes canvas pixels",
+        "actual": {
+          "canvas": true,
+          "box": {
+            "x": 238,
+            "y": 98,
+            "width": 804,
+            "height": 604
+          },
+          "changed": true
+        },
+        "path": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10-repair-rerun-runs\\10-make-a-doodle-board\\workspace\\index.html"
+      }
+    }
+  ]
+}

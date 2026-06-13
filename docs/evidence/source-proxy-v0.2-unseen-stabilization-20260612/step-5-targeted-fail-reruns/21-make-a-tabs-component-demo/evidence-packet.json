@@ -1,0 +1,65 @@
+{
+  "behavior_contract_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-5-targeted-fail-reruns\\21-make-a-tabs-component-demo\\behavior-contract.json",
+  "behavior_probe": {
+    "actual": {
+      "after": "Panel 1\nPanel 2\nPanel 3\nContent of Panel 1\n\nThis is the content for panel 1.",
+      "before": "Panel 1\nPanel 2\nPanel 3\nContent of Panel 1\n\nThis is the content for panel 1.",
+      "changed": false,
+      "clicked": "button"
+    },
+    "contract_probe": {
+      "acceptance_criterion": "Tabs component changes active panel after selecting another tab.",
+      "expected_observation": "Active tab or panel content changes.",
+      "minimum_proof_tier": 2,
+      "observable_actions": [
+        "click a non-active tab"
+      ],
+      "probe_id": "tabs-active-panel-change"
+    },
+    "expected": {
+      "behavior": "tabs-active-panel-change",
+      "proof": "expected/actual/passed recorded by browser probe"
+    },
+    "observed": {
+      "after": "Panel 1\nPanel 2\nPanel 3\nContent of Panel 1\n\nThis is the content for panel 1.",
+      "before": "Panel 1\nPanel 2\nPanel 3\nContent of Panel 1\n\nThis is the content for panel 1.",
+      "changed": false,
+      "clicked": "button"
+    },
+    "passed": false,
+    "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-5-targeted-fail-reruns\\21-make-a-tabs-component-demo\\workspace\\index.html",
+    "reason": "visible state did not change after interaction",
+    "reason_codes": [
+      "visible_state_change_missing"
+    ],
+    "test": "tabs-active-panel-change",
+    "verdict": "FAIL"
+  },
+  "canonical_final_verdict_after_behavior": "FAIL",
+  "diff_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-5-targeted-fail-reruns\\21-make-a-tabs-component-demo\\workspace.diff",
+  "evidence_packet_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-5-targeted-fail-reruns\\21-make-a-tabs-component-demo\\evidence-packet.json",
+  "preview_resolution": {
+    "candidate_paths": [
+      "index.html"
+    ],
+    "explicit_path": "/home/source/SpiritOS/docs/evidence/source-proxy-v0.2-unseen-stabilization-20260612/step-5-targeted-fail-reruns/21-make-a-tabs-component-demo/workspace/index.html",
+    "reason_codes": [
+      "index_html_selected",
+      "explicit_preview_path_invalid_fallback_used"
+    ],
+    "selected_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-5-targeted-fail-reruns\\21-make-a-tabs-component-demo\\workspace\\index.html",
+    "selection_reason": "index_html_present_after_invalid_explicit",
+    "status": "ready"
+  },
+  "preview_selection_reason": "index_html_present_after_invalid_explicit",
+  "product_pass_after_behavior": false,
+  "prompt": "make a tabs component demo",
+  "receipt_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-5-targeted-fail-reruns\\21-make-a-tabs-component-demo\\receipt.json",
+  "retest_result_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-5-targeted-fail-reruns\\21-make-a-tabs-component-demo\\retest-result.json",
+  "run_dir": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-5-targeted-fail-reruns\\21-make-a-tabs-component-demo",
+  "score_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-5-targeted-fail-reruns\\21-make-a-tabs-component-demo\\score.json",
+  "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-5-targeted-fail-reruns\\21-make-a-tabs-component-demo\\workspace\\index.html",
+  "source_proxy_status": "GO",
+  "transcript_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-5-targeted-fail-reruns\\21-make-a-tabs-component-demo\\transcript.txt",
+  "workspace_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-5-targeted-fail-reruns\\21-make-a-tabs-component-demo\\workspace"
+}

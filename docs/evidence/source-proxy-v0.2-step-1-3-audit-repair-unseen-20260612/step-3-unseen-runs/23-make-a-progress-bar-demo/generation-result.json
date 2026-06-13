@@ -1,0 +1,119 @@
+{
+  "prompt": "make a progress bar demo",
+  "score": {
+    "actions_seen": 3,
+    "adapter_source": "ollama_generate/tool_action_runtime_v1",
+    "allowed_files_source": "artifact_class_extensions",
+    "allowed_scope_source": "artifact_class_extensions",
+    "artifact_class": "static_ui_artifact",
+    "artifact_score_kind": "product_artifact_go",
+    "artifact_specific_ok": true,
+    "backend_created_content": false,
+    "behavior_contract": {
+      "artifact_class": "static_ui_artifact",
+      "behavior_required": true,
+      "contract_status": "ready",
+      "contract_version": "source-proxy-artifact-behavior-contract-v0.2.phase-3",
+      "final_pass_rule": "Final PASS requires every required behavior probe to pass against the generated artifact.",
+      "non_pass_signals": [
+        "route_go",
+        "artifact_exists",
+        "preview_opens",
+        "static_dom_presence",
+        "model_self_report"
+      ],
+      "preview_requirement": "Openable HTML artifact is required before behavior can be evaluated.",
+      "probe_targets": [
+        {
+          "acceptance_criterion": "Progress bar demo renders a visible progress value and changes if controls are present.",
+          "expected_observation": "A non-empty progress value is visible; controls change it when provided.",
+          "minimum_proof_tier": 2,
+          "observable_actions": [
+            "inspect progress value",
+            "activate progress control if present"
+          ],
+          "probe_id": "progress-bar-visible-value"
+        }
+      ],
+      "prompt": "make a progress bar demo",
+      "task_shape": "disposable_small_file_bundle"
+    },
+    "behavior_required_for_final_pass": true,
+    "behavior_verdict": "UNVERIFIED",
+    "benchmark_eligibility_reason": "product_route_uses_proxy_orchestration",
+    "benchmark_eligible": false,
+    "blocked_reasons": [],
+    "canonical_final_verdict": "UNVERIFIED",
+    "content_byte_match_by_target": {
+      "progress-bar-demo.css": true,
+      "progress-bar-demo.html": true,
+      "progress-bar-demo.js": true
+    },
+    "deterministic_scaffold_used": false,
+    "dummy_fixture_used": false,
+    "elapsed_seconds": 8.801,
+    "expected_blocked": false,
+    "fallback_used": false,
+    "file_equals_model_action_content": true,
+    "files_changed": [
+      "progress-bar-demo.css",
+      "progress-bar-demo.html",
+      "progress-bar-demo.js"
+    ],
+    "files_touched": [
+      "progress-bar-demo.css",
+      "progress-bar-demo.html",
+      "progress-bar-demo.js"
+    ],
+    "final_state": "completed",
+    "final_verdict_reason_codes": [
+      "behavior_required_but_unverified"
+    ],
+    "mode": "product",
+    "model_authored_content_hashes": {
+      "progress-bar-demo.css": "56c6979aad28bdafd4cfdd59c8bfad213300da053334a4df2fce24fa60981542",
+      "progress-bar-demo.html": "b32057a30de495c0711841127d0665b71f565cad5f47562eeb9e8215be5b5a5d",
+      "progress-bar-demo.js": "61dfcf8b3e38d3e24e24c6b79737213506bc3e4f31d64b970c3f90b5cb9df7dd"
+    },
+    "model_authored_targets": [
+      "progress-bar-demo.css",
+      "progress-bar-demo.html",
+      "progress-bar-demo.js"
+    ],
+    "model_chose_target": true,
+    "model_id": "qwen2.5-coder:7b",
+    "openable_homepage": true,
+    "openable_homepage_paths": [
+      "progress-bar-demo.html"
+    ],
+    "parsed_action_count": 3,
+    "path_selection_mode": "model_chosen",
+    "preview_url": "",
+    "product_helper_used": true,
+    "product_pass": false,
+    "prompt": "make a progress bar demo",
+    "proxy_exact_target_suggested": "",
+    "proxy_orchestration_used": true,
+    "pure_mode": false,
+    "raw_model_transcript_count": 1,
+    "raw_transcript_path": "/home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/step-3-unseen-runs/23-make-a-progress-bar-demo/transcript.txt",
+    "real_app_touched": false,
+    "reason_codes": [],
+    "receipt_path": "/home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/step-3-unseen-runs/23-make-a-progress-bar-demo/receipt.json",
+    "route_status": "GO",
+    "route_type": "product",
+    "status": "GO",
+    "system_preselected_target": false,
+    "target_path_source": "model_action",
+    "task_shape": "disposable_small_file_bundle",
+    "task_shape_source": "generic_artifact_resolver",
+    "transparent_default_target_used": false,
+    "workspace_decision_source": "generic_artifact_resolver",
+    "workspace_files": [
+      "progress-bar-demo.css",
+      "progress-bar-demo.html",
+      "progress-bar-demo.js"
+    ],
+    "workspace_path": "/home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/step-3-unseen-runs/23-make-a-progress-bar-demo/workspace"
+  }
+}

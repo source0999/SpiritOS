@@ -1,0 +1,76 @@
+{
+  "phase": "Phase 0 - Planning baseline and evidence inventory",
+  "workflow": "PIVOT",
+  "verdict": "PARTIAL",
+  "verdict_reason": "Approved evidence roots and v0.2 plan packet are present, but the requested real behavior audit directory is still missing and no proof is claimed from it.",
+  "implementation_phase_completed": "Phase 0 only",
+  "implementation_started_beyond_phase_0": false,
+  "created_or_updated_files": [
+    "docs/evidence/source-proxy-v0.2-artifact-repair-plan/phase-0-baseline.md",
+    "docs/evidence/source-proxy-v0.2-artifact-repair-plan/phase-0-findings.json"
+  ],
+  "plan_files_read": [
+    "docs/evidence/source-proxy-v0.2-artifact-repair-plan/README.md",
+    "docs/evidence/source-proxy-v0.2-artifact-repair-plan/v0.2-plan.md",
+    "docs/evidence/source-proxy-v0.2-artifact-repair-plan/phase-index.md",
+    "docs/evidence/source-proxy-v0.2-artifact-repair-plan/implementation-increments.md",
+    "docs/evidence/source-proxy-v0.2-artifact-repair-plan/acceptance-criteria.md",
+    "docs/evidence/source-proxy-v0.2-artifact-repair-plan/risk-and-permission-rules.md",
+    "docs/evidence/source-proxy-v0.2-artifact-repair-plan/plan-findings.json"
+  ],
+  "evidence_roots": [
+    {
+      "path": "docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/",
+      "found": true,
+      "phase_0_note": "Original June 12 diagnostic root exists with diagnostic summary and run evidence."
+    },
+    {
+      "path": "docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/",
+      "found": true,
+      "phase_0_note": "Revamped June 12 diagnostic root exists with manifest, behavior checks, review summary, report, and run evidence."
+    },
+    {
+      "path": "docs/evidence/spiritos-cognitive-control-plane-revamp-v0.1/",
+      "found": true,
+      "phase_0_note": "v0.1 control-plane evidence root exists, including canonical truth and behavior fixture contracts."
+    },
+    {
+      "path": "docs/evidence/source-proxy-general-intelligence-diagnostic-20260612-real-behavior-audit/",
+      "found": false,
+      "phase_0_note": "Known missing evidence gap; do not invent proof from this root."
+    }
+  ],
+  "current_baseline": {
+    "useful_pass_estimate": 4,
+    "out_of": 11,
+    "basis": "Browser-confirmed useful PASS examples include homepage and timer. Todo and weather remain useful PASS candidates from diagnostic summary but need durable behavior probes. Calculator, dark theme, and habit tracker are preserved as behavior FAIL despite weaker GO/PASS signals."
+  },
+  "known_behavior_failures_to_preserve": [
+    "calculator: 2 + 3 = returned 0, not 5",
+    "dark theme: class changed but computed colors did not change",
+    "habit tracker: static hard-coded habits, no controls or state changes",
+    "notes app: markdown-only, not an app",
+    "music player: missing usable preview/artifact",
+    "password checker: missing usable preview/artifact",
+    "drawing pad: missing usable preview/artifact"
+  ],
+  "truth_rules_preserved": [
+    "Runtime GO, preview existence, file creation, static DOM presence, and model self-report cannot become product PASS.",
+    "Final PASS requires behavior PASS when behavior is required.",
+    "Unverified behavior remains UNVERIFIED or FAIL, not PASS.",
+    "Known false positives must remain zero.",
+    "Failed or out-of-scope local repair must produce HANDOFF."
+  ],
+  "forbidden_actions_observed": {
+    "source_proxy_patch": false,
+    "generated_artifact_patch": false,
+    "provider_api_or_model_call": false,
+    "codex_api_or_local_model_worker_start": false,
+    "diagnostic_batch_rerun": false,
+    "obsidian_mutation": false,
+    "production_source_file_mutation": false,
+    "git_branch_commit_push_stash_reset_checkout_clean_or_stage": false,
+    "paid_api_codex_or_high_usage_escalation": false
+  },
+  "next_authorized_action_only": "Britton reviews Phase 0 and decides whether to approve Phase 1."
+}

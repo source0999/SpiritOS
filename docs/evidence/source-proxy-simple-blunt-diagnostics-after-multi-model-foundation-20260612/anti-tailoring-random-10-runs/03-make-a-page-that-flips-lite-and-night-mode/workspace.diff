@@ -1,0 +1,45 @@
+--- a/index.html
++++ b/index.html
+@@ -0,0 +1,13 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Mode Switcher</title>
++    <link rel="stylesheet" href="styles.css">
++</head>
++<body>
++    <button id="modeSwitcher">Lite Mode</button>
++    <script src="script.js"></script>
++</body>
++</html>--- a/script.js
++++ b/script.js
+@@ -0,0 +1,12 @@
++document.getElementById('modeSwitcher').addEventListener('click', function() {
++    var body = document.body;
++    if (body.classList.contains('lite-mode')) {
++        body.classList.remove('lite-mode');
++        body.classList.add('night-mode');
++        this.textContent = 'Lite Mode';
++    } else {
++        body.classList.remove('night-mode');
++        body.classList.add('lite-mode');
++        this.textContent = 'Night Mode';
++    }
++});--- a/styles.css
++++ b/styles.css
+@@ -0,0 +1,13 @@
++body {
++    transition: background-color 0.5s ease;
++}
++
++.lite-mode {
++    background-color: #fff;
++    color: #333;
++}
++
++.night-mode {
++    background-color: #333;
++    color: #fff;
++}

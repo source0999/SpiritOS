@@ -1,0 +1,385 @@
+{
+  "results": [
+    {
+      "run": "01-make-a-tea-steep-timer",
+      "prompt": "make a tea steep timer",
+      "route_status": "GO",
+      "canonical_final_verdict": "UNVERIFIED",
+      "preview_path_local": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-runs\\01-make-a-tea-steep-timer\\workspace\\index.html",
+      "open_probe": {
+        "opened": true,
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-runs\\01-make-a-tea-steep-timer\\workspace\\index.html",
+        "title": "Tea Steep Timer",
+        "bodyText": "Tea Steep Timer\n Start Timer",
+        "elementCounts": {
+          "buttons": 1,
+          "inputs": 1,
+          "links": 0,
+          "canvas": 0,
+          "scripts": 1,
+          "stylesheets": 1
+        },
+        "consoleMessages": [],
+        "pageErrors": []
+      },
+      "behavior_probe": {
+        "test": "make a tea steep timer-timer-change",
+        "verdict": "FAIL",
+        "passed": false,
+        "expected": "timer text changes after start",
+        "primary_behavior_failure_bucket": "timer_no_visible_change_after_start",
+        "secondary_behavior_failure_bucket": "",
+        "failureBucket": "timer_no_visible_change_after_start",
+        "actual": {
+          "before": "Tea Steep Timer\n Start Timer",
+          "afterStart": "Tea Steep Timer\n Start Timer",
+          "afterStop": "Tea Steep Timer\n Start Timer",
+          "clickedStop": false
+        },
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-runs\\01-make-a-tea-steep-timer\\workspace\\index.html"
+      }
+    },
+    {
+      "run": "02-make-a-road-trip-gas-split-tool",
+      "prompt": "make a road trip gas split tool",
+      "route_status": "GO",
+      "canonical_final_verdict": "UNVERIFIED",
+      "preview_path_local": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-runs\\02-make-a-road-trip-gas-split-tool\\workspace\\index.html",
+      "open_probe": {
+        "opened": true,
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-runs\\02-make-a-road-trip-gas-split-tool\\workspace\\index.html",
+        "title": "Road Trip Gas Split Tool",
+        "bodyText": "Road Trip Gas Split Tool\nTotal Gas (in gallons):\n\n\n\nNumber of Cars:\n\n\nCalculate Gas Split\n\n\n\nGas per Car:",
+        "elementCounts": {
+          "buttons": 1,
+          "inputs": 2,
+          "links": 0,
+          "canvas": 0,
+          "scripts": 1,
+          "stylesheets": 1
+        },
+        "consoleMessages": [],
+        "pageErrors": []
+      },
+      "behavior_probe": {
+        "test": "make a road trip gas split tool-visible-state-change",
+        "verdict": "PASS",
+        "passed": true,
+        "expected": "numeric input creates a visible numeric result update",
+        "primary_behavior_failure_bucket": "",
+        "failureBucket": "",
+        "actual": {
+          "before": "Road Trip Gas Split Tool\nTotal Gas (in gallons):\n\n\n\nNumber of Cars:\n\n\nCalculate Gas Split\n\n\n\nGas per Car:",
+          "after": "Road Trip Gas Split Tool\nTotal Gas (in gallons):\n\n\n\nNumber of Cars:\n\n\nCalculate Gas Split\n\n\n\nGas per Car: 14.00",
+          "filled": 2,
+          "clicked": true,
+          "appears": false
+        },
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-runs\\02-make-a-road-trip-gas-split-tool\\workspace\\index.html"
+      }
+    },
+    {
+      "run": "03-make-a-sunrise-midnight-mode-toggle",
+      "prompt": "make a sunrise midnight mode toggle",
+      "route_status": "EXPECTED-BLOCKED",
+      "canonical_final_verdict": "BLOCKED",
+      "preview_path_local": "",
+      "open_probe": {
+        "opened": false,
+        "reason": "no_browser_viewable_html_artifact",
+        "selected_preview_path": ""
+      },
+      "behavior_probe": {
+        "test": "make a sunrise midnight mode toggle-missing-preview",
+        "verdict": "FAIL",
+        "passed": false,
+        "expected": "openable generated preview exists before behavior probe",
+        "primary_behavior_failure_bucket": "route_blocked_no_preview",
+        "failureBucket": "route_blocked_no_preview",
+        "actual": {
+          "selected_preview_path": ""
+        }
+      }
+    },
+    {
+      "run": "04-make-a-camping-packing-list-app",
+      "prompt": "make a camping packing list app",
+      "route_status": "GO",
+      "canonical_final_verdict": "UNVERIFIED",
+      "preview_path_local": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-runs\\04-make-a-camping-packing-list-app\\workspace\\index.html",
+      "open_probe": {
+        "opened": true,
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-runs\\04-make-a-camping-packing-list-app\\workspace\\index.html",
+        "title": "Camping Packing List",
+        "bodyText": "Camping Packing List\n Add Item",
+        "elementCounts": {
+          "buttons": 1,
+          "inputs": 1,
+          "links": 0,
+          "canvas": 0,
+          "scripts": 1,
+          "stylesheets": 1
+        },
+        "consoleMessages": [],
+        "pageErrors": []
+      },
+      "behavior_probe": {
+        "test": "make a camping packing list app-visible-state-change",
+        "verdict": "PASS",
+        "passed": true,
+        "expected": "entered checklist/list text remains visible after action",
+        "primary_behavior_failure_bucket": "",
+        "failureBucket": "",
+        "actual": {
+          "before": "Camping Packing List\n Add Item",
+          "after": "Camping Packing List\n Add Item\nbananas",
+          "filled": 1,
+          "clicked": true,
+          "appears": true
+        },
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-runs\\04-make-a-camping-packing-list-app\\workspace\\index.html"
+      }
+    },
+    {
+      "run": "05-make-a-pretend-porch-weather-tile",
+      "prompt": "make a pretend porch weather tile",
+      "route_status": "GO",
+      "canonical_final_verdict": "UNVERIFIED",
+      "preview_path_local": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-runs\\05-make-a-pretend-porch-weather-tile\\workspace\\weather-card.html",
+      "open_probe": {
+        "opened": true,
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-runs\\05-make-a-pretend-porch-weather-tile\\workspace\\weather-card.html",
+        "title": "Weather Card",
+        "bodyText": "City\n\nTemperature: 0°C\n\nCondition: Sunny\n\n Update Weather",
+        "elementCounts": {
+          "buttons": 1,
+          "inputs": 1,
+          "links": 0,
+          "canvas": 0,
+          "scripts": 1,
+          "stylesheets": 1
+        },
+        "consoleMessages": [],
+        "pageErrors": []
+      },
+      "behavior_probe": {
+        "test": "make a pretend porch weather tile-forecast-fields-or-update",
+        "verdict": "PASS",
+        "passed": true,
+        "expected": "weather-like fields render and control changes content if present",
+        "primary_behavior_failure_bucket": "",
+        "failureBucket": "",
+        "actual": {
+          "before": "City\n\nTemperature: 0°C\n\nCondition: Sunny\n\n Update Weather",
+          "after": "Codexville\n\nTemperature: 25°C\n\nCondition: Cloudy\n\n Update Weather",
+          "clicked": true,
+          "hasWeatherTerms": true
+        },
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-runs\\05-make-a-pretend-porch-weather-tile\\workspace\\weather-card.html"
+      }
+    },
+    {
+      "run": "06-make-a-tiny-radio-show-player",
+      "prompt": "make a tiny radio show player",
+      "route_status": "GO",
+      "canonical_final_verdict": "UNVERIFIED",
+      "preview_path_local": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-runs\\06-make-a-tiny-radio-show-player\\workspace\\index.html",
+      "open_probe": {
+        "opened": true,
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-runs\\06-make-a-tiny-radio-show-player\\workspace\\index.html",
+        "title": "Radio Show Player",
+        "bodyText": "Radio Show Player\n Play ",
+        "elementCounts": {
+          "buttons": 1,
+          "inputs": 1,
+          "links": 0,
+          "canvas": 0,
+          "scripts": 1,
+          "stylesheets": 1
+        },
+        "consoleMessages": [],
+        "pageErrors": [
+          "Failed to load because no supported source was found."
+        ]
+      },
+      "behavior_probe": {
+        "test": "make a tiny radio show player-player-control-change",
+        "verdict": "FAIL",
+        "passed": false,
+        "expected": "play/pause or player control visibly changes state",
+        "primary_behavior_failure_bucket": "player_control_no_visible_state_change",
+        "failureBucket": "player_control_no_visible_state_change",
+        "actual": {
+          "before": "Radio Show Player\n Play ",
+          "after": "Radio Show Player\n Play ",
+          "clicked": true
+        },
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-runs\\06-make-a-tiny-radio-show-player\\workspace\\index.html"
+      }
+    },
+    {
+      "run": "07-make-a-pushup-rep-counter",
+      "prompt": "make a pushup rep counter",
+      "route_status": "GO",
+      "canonical_final_verdict": "UNVERIFIED",
+      "preview_path_local": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-runs\\07-make-a-pushup-rep-counter\\workspace\\pushup_counter.html",
+      "open_probe": {
+        "opened": true,
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-runs\\07-make-a-pushup-rep-counter\\workspace\\pushup_counter.html",
+        "title": "Pushup Counter",
+        "bodyText": "Pushup Counter\n\n0\n\nDo Pushup",
+        "elementCounts": {
+          "buttons": 1,
+          "inputs": 0,
+          "links": 0,
+          "canvas": 0,
+          "scripts": 1,
+          "stylesheets": 1
+        },
+        "consoleMessages": [],
+        "pageErrors": []
+      },
+      "behavior_probe": {
+        "test": "make a pushup rep counter-click-tracker-state-change",
+        "verdict": "PASS",
+        "passed": true,
+        "expected": "tracker control visibly changes progress state",
+        "primary_behavior_failure_bucket": "",
+        "failureBucket": "",
+        "actual": {
+          "before": "Pushup Counter\n\n0\n\nDo Pushup",
+          "after": "Pushup Counter\n\n1\n\nDo Pushup",
+          "clicked": true
+        },
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-runs\\07-make-a-pushup-rep-counter\\workspace\\pushup_counter.html"
+      }
+    },
+    {
+      "run": "08-make-a-pocket-memo-board-app",
+      "prompt": "make a pocket memo board app",
+      "route_status": "GO",
+      "canonical_final_verdict": "UNVERIFIED",
+      "preview_path_local": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-runs\\08-make-a-pocket-memo-board-app\\workspace\\index.html",
+      "open_probe": {
+        "opened": true,
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-runs\\08-make-a-pocket-memo-board-app\\workspace\\index.html",
+        "title": "Pocket Memo Board",
+        "bodyText": "Add Memo",
+        "elementCounts": {
+          "buttons": 1,
+          "inputs": 1,
+          "links": 0,
+          "canvas": 0,
+          "scripts": 1,
+          "stylesheets": 1
+        },
+        "consoleMessages": [],
+        "pageErrors": []
+      },
+      "behavior_probe": {
+        "test": "make a pocket memo board app-visible-state-change",
+        "verdict": "PASS",
+        "passed": true,
+        "expected": "entered note text remains visible after action",
+        "primary_behavior_failure_bucket": "",
+        "failureBucket": "",
+        "actual": {
+          "before": "Add Memo",
+          "after": "scratch proof note\nAdd Memo",
+          "filled": 1,
+          "clicked": true,
+          "appears": true
+        },
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-runs\\08-make-a-pocket-memo-board-app\\workspace\\index.html"
+      }
+    },
+    {
+      "run": "09-make-a-passphrase-strength-meter",
+      "prompt": "make a passphrase strength meter",
+      "route_status": "GO",
+      "canonical_final_verdict": "UNVERIFIED",
+      "preview_path_local": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-runs\\09-make-a-passphrase-strength-meter\\workspace\\index.html",
+      "open_probe": {
+        "opened": true,
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-runs\\09-make-a-passphrase-strength-meter\\workspace\\index.html",
+        "title": "Passphrase Strength Meter",
+        "bodyText": "Password Strength Meter",
+        "elementCounts": {
+          "buttons": 0,
+          "inputs": 1,
+          "links": 0,
+          "canvas": 0,
+          "scripts": 1,
+          "stylesheets": 1
+        },
+        "consoleMessages": [
+          {
+            "type": "error",
+            "text": "Failed to load resource: net::ERR_FILE_NOT_FOUND"
+          },
+          {
+            "type": "error",
+            "text": "Failed to load resource: net::ERR_FILE_NOT_FOUND"
+          }
+        ],
+        "pageErrors": []
+      },
+      "behavior_probe": {
+        "test": "make a passphrase strength meter-password-feedback",
+        "verdict": "FAIL",
+        "passed": false,
+        "expected": "weak and stronger inputs change safety text",
+        "primary_behavior_failure_bucket": "password_no_visible_strength_text_change",
+        "failureBucket": "password_no_visible_strength_text_change",
+        "actual": {
+          "weak": "Password Strength Meter",
+          "strong": "Password Strength Meter",
+          "changed": false
+        },
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-runs\\09-make-a-passphrase-strength-meter\\workspace\\index.html"
+      }
+    },
+    {
+      "run": "10-make-a-doodle-canvas-notebook",
+      "prompt": "make a doodle canvas notebook",
+      "route_status": "GO",
+      "canonical_final_verdict": "UNVERIFIED",
+      "preview_path_local": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-runs\\10-make-a-doodle-canvas-notebook\\workspace\\index.html",
+      "open_probe": {
+        "opened": true,
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-runs\\10-make-a-doodle-canvas-notebook\\workspace\\index.html",
+        "title": "Doodle Canvas Notebook",
+        "bodyText": "Doodle Canvas Notebook\n Clear",
+        "elementCounts": {
+          "buttons": 1,
+          "inputs": 0,
+          "links": 0,
+          "canvas": 1,
+          "scripts": 1,
+          "stylesheets": 1
+        },
+        "consoleMessages": [],
+        "pageErrors": []
+      },
+      "behavior_probe": {
+        "test": "make a doodle canvas notebook-drawing-surface-change",
+        "verdict": "PASS",
+        "passed": true,
+        "expected": "mouse drag changes canvas pixels",
+        "primary_behavior_failure_bucket": "",
+        "failureBucket": "",
+        "actual": {
+          "canvas": true,
+          "box": {
+            "x": 8,
+            "y": 79.875,
+            "width": 802,
+            "height": 602
+          },
+          "changed": true
+        },
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-runs\\10-make-a-doodle-canvas-notebook\\workspace\\index.html"
+      }
+    }
+  ]
+}

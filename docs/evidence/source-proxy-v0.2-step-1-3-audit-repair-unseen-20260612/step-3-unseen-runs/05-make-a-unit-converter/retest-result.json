@@ -1,0 +1,35 @@
+{
+  "artifact_ready": false,
+  "attempts_used": 0,
+  "behavior_required": true,
+  "behavior_result": {
+    "actual": {
+      "error": "page.goto: net::ERR_FILE_NOT_FOUND at file:///Z:/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/step-3-unseen-runs/05-make-a-unit-converter/workspace/index.html\nCall log:\n\u001b[2m  - navigating to \"file:///Z:/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/step-3-unseen-runs/05-make-a-unit-converter/workspace/index.html\", waiting until \"load\"\u001b[22m\n"
+    },
+    "expected": {
+      "behavior": "unit-converter-result",
+      "proof": "expected/actual/passed recorded by browser probe"
+    },
+    "observed": {},
+    "passed": false,
+    "reason": "browser verifier crashed",
+    "test": "unit-converter-result",
+    "verdict": "NEEDS_FIX"
+  },
+  "canonical_final_verdict": "NEEDS_FIX",
+  "changed_files": [],
+  "diffs": [],
+  "final_reason_codes": [
+    "browser_verifier_crashed",
+    "post_repair_artifact_not_ready",
+    "post_repair_verifier_needs_fix",
+    "repair_ready_for_retest",
+    "route_or_proof_pipeline_needs_fix",
+    "step_1_3_local_product_rerun_no_manual_artifact_patch"
+  ],
+  "handoff_reason": "",
+  "handoff_required": false,
+  "product_pass": false,
+  "repair_status": "READY_FOR_RETEST",
+  "result_version": "source-proxy-artifact-retest-result-v0.2.phase-6"
+}

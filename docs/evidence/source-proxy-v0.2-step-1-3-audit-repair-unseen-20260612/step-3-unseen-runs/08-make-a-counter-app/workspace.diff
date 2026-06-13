@@ -1,0 +1,44 @@
+--- a/index.html
++++ b/index.html
+@@ -0,0 +1,16 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Counter App</title>
++    <link rel="stylesheet" href="styles.css">
++</head>
++<body>
++    <div class="counter-container">
++        <h1 id="counter">0</h1>
++        <button onclick="increment()">Increment</button>
++    </div>
++    <script src="script.js"></script>
++</body>
++</html>--- a/script.js
++++ b/script.js
+@@ -0,0 +1,8 @@
++let counter = 0;
++
++document.getElementById('counter').innerText = counter;
++
++function increment() {
++    counter++;
++    document.getElementById('counter').innerText = counter;
++}--- a/styles.css
++++ b/styles.css
+@@ -0,0 +1,13 @@
++.counter-container {
++    text-align: center;
++    margin-top: 50px;
++}
++
++h1 {
++    font-size: 48px;
++}
++
++button {
++    padding: 10px 20px;
++    font-size: 16px;
++}

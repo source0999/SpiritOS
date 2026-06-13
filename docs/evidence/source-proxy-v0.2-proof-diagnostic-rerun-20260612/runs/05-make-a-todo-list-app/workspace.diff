@@ -1,0 +1,65 @@
+--- a/index.html
++++ b/index.html
+@@ -0,0 +1,18 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Todo List</title>
++    <link rel="stylesheet" href="styles.css">
++</head>
++<body>
++    <div class="container">
++        <h1>Todo List</h1>
++        <input type="text" id="newItemInput" placeholder="Add new item">
++        <button onclick="addItem()">Add</button>
++        <ul id="todoList"></ul>
++    </div>
++    <script src="script.js"></script>
++</body>
++</html>--- a/script.js
++++ b/script.js
+@@ -0,0 +1,14 @@
++function addItem() {
++    const input = document.getElementById('newItemInput');
++    const itemText = input.value.trim();
++    if (itemText !== '') {
++        const ul = document.getElementById('todoList');
++        const li = document.createElement('li');
++        li.textContent = itemText;
++        li.onclick = function() {
++            this.style.textDecoration = 'line-through';
++        };
++        ul.appendChild(li);
++        input.value = '';
++    }
++}
+--- a/styles.css
++++ b/styles.css
+@@ -0,0 +1,25 @@
++body {
++    font-family: Arial, sans-serif;
++}
++.container {
++    width: 300px;
++    margin: auto;
++    text-align: center;
++}
++input[type="text"] {
++    padding: 10px;
++    margin-bottom: 10px;
++}
++button {
++    padding: 10px 20px;
++}
++ul {
++    list-style-type: none;
++    padding: 0;
++}
++li {
++    background-color: #f4f4f4;
++    margin-bottom: 5px;
++    padding: 10px;
++    border-radius: 5px;
++}

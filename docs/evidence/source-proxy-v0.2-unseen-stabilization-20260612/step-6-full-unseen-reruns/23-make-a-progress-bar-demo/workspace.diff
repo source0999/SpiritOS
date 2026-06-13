@@ -1,0 +1,43 @@
+--- a/index.html
++++ b/index.html
+@@ -0,0 +1,16 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Progress Bar Demo</title>
++    <link rel="stylesheet" href="styles.css">
++</head>
++<body>
++    <div class="progress-container">
++        <div id="progress-bar" class="progress-bar"></div>
++    </div>
++    <button id="increment-btn">Increment Progress</button>
++    <script src="script.js"></script>
++</body>
++</html>--- a/script.js
++++ b/script.js
+@@ -0,0 +1,8 @@
++document.getElementById('increment-btn').addEventListener('click', function() {
++    var progressBar = document.getElementById('progress-bar');
++    var width = parseInt(progressBar.style.width) || 0;
++    if (width < 100) {
++        width += 10;
++        progressBar.style.width = width + '%';
++    }
++});--- a/styles.css
++++ b/styles.css
+@@ -0,0 +1,12 @@
++.progress-container {
++    width: 100%;
++    height: 20px;
++    background-color: #ddd;
++}
++
++.progress-bar {
++    height: 100%;
++    background-color: #4caf50;
++    width: 0;
++    transition: width 0.5s ease-in-out;
++}

@@ -1,0 +1,20 @@
+```json
+[
+    {
+        "action_type": "WriteFile",
+        "target": "rain_card.html",
+        "arguments": {
+            "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Rain Card</title>\n    <link rel=\"stylesheet\" href=\"rain_card.css\">\n</head>\n<body>\n    <div class=\"rain-card\">\n        <h1>It's Raining!</h1>\n        <p>Stay dry and enjoy the rain.</p>\n    </div>\n</body>\n</html>"
+        },
+        "reason": "HTML file for the rain card with a title and message."
+    },
+    {
+        "action_type": "WriteFile",
+        "target": "rain_card.css",
+        "arguments": {
+            "content": "body {\n    font-family: Arial, sans-serif;\n    background-color: #f0f0f0;\n}\n\n.rain-card {\n    width: 300px;\n    padding: 20px;\n    margin: 50px auto;\n    background-color: #fff;\n    border-radius: 8px;\n    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);\n}\nh1 {\n    color: #333;\n}\np {\n    color: #666;\n}"
+        },
+        "reason": "CSS file to style the rain card."
+    }
+]
+```

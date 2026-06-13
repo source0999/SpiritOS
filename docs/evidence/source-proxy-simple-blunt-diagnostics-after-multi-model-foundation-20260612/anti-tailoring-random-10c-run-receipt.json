@@ -1,0 +1,117 @@
+{
+  "created_at": "2026-06-13T08:14:35.8155589-04:00",
+  "prompt_file": "anti-tailoring-random-10c.json",
+  "run_root": "anti-tailoring-random-10c-runs",
+  "results": [
+    {
+      "id": "anti-01",
+      "prompt": "make a snack break timer",
+      "slug": "01-make-a-snack-break-timer",
+      "started_at": "2026-06-13T08:13:09.8191631-04:00",
+      "ended_at": "2026-06-13T08:13:21.0868295-04:00",
+      "elapsed_seconds": 11.268,
+      "exit_code": 0,
+      "run_dir_local": "docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10c-runs/01-make-a-snack-break-timer",
+      "output_file": "docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10c-runs/01-make-a-snack-break-timer/runner-output.txt"
+    },
+    {
+      "id": "anti-02",
+      "prompt": "build a messy tab splitter",
+      "slug": "02-build-a-messy-tab-splitter",
+      "started_at": "2026-06-13T08:13:21.0934612-04:00",
+      "ended_at": "2026-06-13T08:13:29.2948776-04:00",
+      "elapsed_seconds": 8.201,
+      "exit_code": 0,
+      "run_dir_local": "docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10c-runs/02-build-a-messy-tab-splitter",
+      "output_file": "docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10c-runs/02-build-a-messy-tab-splitter/runner-output.txt"
+    },
+    {
+      "id": "anti-03",
+      "prompt": "make a day night color toggle",
+      "slug": "03-make-a-day-night-color-toggle",
+      "started_at": "2026-06-13T08:13:29.3007407-04:00",
+      "ended_at": "2026-06-13T08:13:37.5993492-04:00",
+      "elapsed_seconds": 8.299,
+      "exit_code": 0,
+      "run_dir_local": "docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10c-runs/03-make-a-day-night-color-toggle",
+      "output_file": "docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10c-runs/03-make-a-day-night-color-toggle/runner-output.txt"
+    },
+    {
+      "id": "anti-04",
+      "prompt": "make a fridge checklist app",
+      "slug": "04-make-a-fridge-checklist-app",
+      "started_at": "2026-06-13T08:13:37.6063678-04:00",
+      "ended_at": "2026-06-13T08:13:46.9950774-04:00",
+      "elapsed_seconds": 9.389,
+      "exit_code": 0,
+      "run_dir_local": "docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10c-runs/04-make-a-fridge-checklist-app",
+      "output_file": "docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10c-runs/04-make-a-fridge-checklist-app/runner-output.txt"
+    },
+    {
+      "id": "anti-05",
+      "prompt": "make a pretend rain card",
+      "slug": "05-make-a-pretend-rain-card",
+      "started_at": "2026-06-13T08:13:47.0027935-04:00",
+      "ended_at": "2026-06-13T08:13:53.9448868-04:00",
+      "elapsed_seconds": 6.942,
+      "exit_code": 0,
+      "run_dir_local": "docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10c-runs/05-make-a-pretend-rain-card",
+      "output_file": "docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10c-runs/05-make-a-pretend-rain-card/runner-output.txt"
+    },
+    {
+      "id": "anti-06",
+      "prompt": "make a small audio show player",
+      "slug": "06-make-a-small-audio-show-player",
+      "started_at": "2026-06-13T08:13:53.9578834-04:00",
+      "ended_at": "2026-06-13T08:14:02.3555119-04:00",
+      "elapsed_seconds": 8.398,
+      "exit_code": 0,
+      "run_dir_local": "docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10c-runs/06-make-a-small-audio-show-player",
+      "output_file": "docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10c-runs/06-make-a-small-audio-show-player/runner-output.txt"
+    },
+    {
+      "id": "anti-07",
+      "prompt": "make a cup counter for water",
+      "slug": "07-make-a-cup-counter-for-water",
+      "started_at": "2026-06-13T08:14:02.3618497-04:00",
+      "ended_at": "2026-06-13T08:14:08.5447803-04:00",
+      "elapsed_seconds": 6.183,
+      "exit_code": 0,
+      "run_dir_local": "docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10c-runs/07-make-a-cup-counter-for-water",
+      "output_file": "docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10c-runs/07-make-a-cup-counter-for-water/runner-output.txt"
+    },
+    {
+      "id": "anti-08",
+      "prompt": "make a fast sticky notes app",
+      "slug": "08-make-a-fast-sticky-notes-app",
+      "started_at": "2026-06-13T08:14:08.5545091-04:00",
+      "ended_at": "2026-06-13T08:14:18.4060783-04:00",
+      "elapsed_seconds": 9.852,
+      "exit_code": 0,
+      "run_dir_local": "docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10c-runs/08-make-a-fast-sticky-notes-app",
+      "output_file": "docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10c-runs/08-make-a-fast-sticky-notes-app/runner-output.txt"
+    },
+    {
+      "id": "anti-09",
+      "prompt": "make a password weak strong meter",
+      "slug": "09-make-a-password-weak-strong-meter",
+      "started_at": "2026-06-13T08:14:18.4155022-04:00",
+      "ended_at": "2026-06-13T08:14:26.0715978-04:00",
+      "elapsed_seconds": 7.656,
+      "exit_code": 0,
+      "run_dir_local": "docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10c-runs/09-make-a-password-weak-strong-meter",
+      "output_file": "docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10c-runs/09-make-a-password-weak-strong-meter/runner-output.txt"
+    },
+    {
+      "id": "anti-10",
+      "prompt": "make a scribble canvas board",
+      "slug": "10-make-a-scribble-canvas-board",
+      "started_at": "2026-06-13T08:14:26.0832208-04:00",
+      "ended_at": "2026-06-13T08:14:35.8155589-04:00",
+      "elapsed_seconds": 9.732,
+      "exit_code": 0,
+      "run_dir_local": "docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10c-runs/10-make-a-scribble-canvas-board",
+      "output_file": "docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10c-runs/10-make-a-scribble-canvas-board/runner-output.txt"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "test": "build a messy tab splitter-visible-state-change",
+  "verdict": "FAIL",
+  "passed": false,
+  "expected": "input plus action creates visible state change",
+  "actual": {
+    "before": "Add Tab",
+    "after": "Add Tab\nNew TabNew Tab",
+    "filled": 0,
+    "clicked": true,
+    "appears": false
+  },
+  "path": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10c-runs\\02-build-a-messy-tab-splitter\\workspace\\index.html"
+}

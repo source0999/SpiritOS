@@ -1,0 +1,32 @@
+{
+  "actual": {
+    "after": "Flashcard App\n\nWhat is the capital of France?\n\nShow Answer\n\nParis",
+    "before": "Flashcard App\n\nWhat is 2 + 2?\n\nShow Answer\n\n4",
+    "changed": true,
+    "clicked": "button"
+  },
+  "contract_probe": {
+    "acceptance_criterion": "Question/answer app changes visible state after answer/reveal/next interaction.",
+    "expected_observation": "Visible question, answer, score, or feedback changes.",
+    "minimum_proof_tier": 2,
+    "observable_actions": [
+      "activate answer, reveal, or next controls"
+    ],
+    "probe_id": "question-answer-state-change"
+  },
+  "expected": {
+    "expectation": "visible state changes after interaction"
+  },
+  "observed": {
+    "after": "Flashcard App\n\nWhat is the capital of France?\n\nShow Answer\n\nParis",
+    "before": "Flashcard App\n\nWhat is 2 + 2?\n\nShow Answer\n\n4",
+    "changed": true,
+    "clicked": "button"
+  },
+  "passed": true,
+  "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\04-make-a-flashcard-app\\workspace\\index.html",
+  "reason": "",
+  "reason_codes": [],
+  "test": "question-answer-state-change",
+  "verdict": "PASS"
+}

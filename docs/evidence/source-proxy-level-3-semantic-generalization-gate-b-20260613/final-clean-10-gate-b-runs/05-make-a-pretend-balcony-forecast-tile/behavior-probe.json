@@ -1,0 +1,15 @@
+{
+  "test": "make a pretend balcony forecast tile-forecast-fields-or-update",
+  "verdict": "PASS",
+  "passed": true,
+  "expected": "weather-like fields render and control changes content if present",
+  "primary_behavior_failure_bucket": "",
+  "failureBucket": "",
+  "actual": {
+    "before": "Local City\n\nTemperature: 20°C\n\nCondition: Sunny\n\nForecast: Partly cloudy\n\nChange Weather",
+    "after": "New City\n\nTemperature: 25°C\n\nCondition: Cloudy\n\nForecast: Rainy\n\nChange Weather",
+    "clicked": true,
+    "hasWeatherTerms": true
+  },
+  "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-semantic-generalization-gate-b-20260613\\final-clean-10-gate-b-runs\\05-make-a-pretend-balcony-forecast-tile\\workspace\\index.html"
+}

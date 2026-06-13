@@ -1,0 +1,78 @@
+{
+  "title": "Source Proxy Level 3 final clean similar 10 transparent proof",
+  "status": "LOCKED_BEFORE_RUN",
+  "locked_at": "2026-06-13",
+  "threshold": "8/10 behavior PASS",
+  "prompts": [
+    {
+      "id": "final-l3-clean-01",
+      "family": "timer/countdown",
+      "baseline_neighbor": "timer/countdown",
+      "prompt": "make a laundry flip countdown",
+      "expected_behavior": "Start visibly changes the countdown/time state after a short wait. Stop freezes if present. Reset returns to initial state if present."
+    },
+    {
+      "id": "final-l3-clean-02",
+      "family": "calculator/splitter",
+      "baseline_neighbor": "calculator/splitter",
+      "prompt": "make a parking garage cost sharer",
+      "expected_behavior": "Entered cost/share values visibly change a calculated result."
+    },
+    {
+      "id": "final-l3-clean-03",
+      "family": "theme/mode toggle",
+      "baseline_neighbor": "theme/mode toggle",
+      "prompt": "make a dusk dawn palette switch",
+      "expected_behavior": "A control visibly changes theme, palette, color, class, or computed body colors."
+    },
+    {
+      "id": "final-l3-clean-04",
+      "family": "checklist/list",
+      "baseline_neighbor": "checklist/list",
+      "prompt": "make a beach bag checklist app",
+      "expected_behavior": "A typed checklist item appears visibly after add/save/enter, and item state can change if controls exist."
+    },
+    {
+      "id": "final-l3-clean-05",
+      "family": "weather/forecast/tile",
+      "baseline_neighbor": "weather/forecast/tile",
+      "prompt": "make a pretend balcony forecast tile",
+      "expected_behavior": "Weather-like fields are visible, and any provided local demo control changes forecast/weather state."
+    },
+    {
+      "id": "final-l3-clean-06",
+      "family": "player/radio/audio",
+      "baseline_neighbor": "player/radio/audio",
+      "prompt": "make a campfire podcast mini player",
+      "expected_behavior": "Play/pause, next, or equivalent player control visibly changes player state, label, status, or track text."
+    },
+    {
+      "id": "final-l3-clean-07",
+      "family": "counter/tracker",
+      "baseline_neighbor": "counter/tracker",
+      "prompt": "make a stair step tally counter",
+      "expected_behavior": "A button visibly increments or changes count/progress."
+    },
+    {
+      "id": "final-l3-clean-08",
+      "family": "notes/memo",
+      "baseline_neighbor": "notes/memo",
+      "prompt": "make a sticky thought memo board",
+      "expected_behavior": "Typed note/memo text remains visible after add/save/edit. A saved status alone is not enough."
+    },
+    {
+      "id": "final-l3-clean-09",
+      "family": "password/passphrase strength",
+      "baseline_neighbor": "password/passphrase strength",
+      "prompt": "make a secret phrase strength gauge",
+      "expected_behavior": "Weak and stronger phrase inputs visibly change strength feedback."
+    },
+    {
+      "id": "final-l3-clean-10",
+      "family": "drawing/canvas/sketch",
+      "baseline_neighbor": "drawing/canvas/sketch",
+      "prompt": "make a finger paint doodle pad",
+      "expected_behavior": "Pointer or mouse interaction visibly marks the drawing surface, canvas, or equivalent sketch area."
+    }
+  ]
+}

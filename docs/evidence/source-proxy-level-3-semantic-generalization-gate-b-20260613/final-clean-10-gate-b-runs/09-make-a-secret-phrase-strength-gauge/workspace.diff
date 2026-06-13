@@ -1,0 +1,46 @@
+--- a/index.html
++++ b/index.html
+@@ -0,0 +1,15 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Password Strength Gauge</title>
++    <link rel="stylesheet" href="styles.css">
++</head>
++<body>
++    <h1>Password Strength Gauge</h1>
++    <input type="password" id="passwordInput" placeholder="Enter your password">
++    <div id="strengthFeedback"></div>
++    <script src="script.js"></script>
++</body>
++</html>--- a/script.js
++++ b/script.js
+@@ -0,0 +1,14 @@
++document.getElementById('passwordInput').addEventListener('input', function() {
++    const password = this.value;
++    const strengthFeedback = document.getElementById('strengthFeedback');
++    if (password.length < 8) {
++        strengthFeedback.textContent = 'Weak';
++        strengthFeedback.className = 'weak';
++    } else if (password.length >= 8 && password.length < 12) {
++        strengthFeedback.textContent = 'Medium';
++        strengthFeedback.className = 'medium';
++    } else {
++        strengthFeedback.textContent = 'Strong';
++        strengthFeedback.className = 'strong';
++    }
++});--- a/styles.css
++++ b/styles.css
+@@ -0,0 +1,10 @@
++body {
++    font-family: Arial, sans-serif;
++}
++#strengthFeedback {
++    margin-top: 20px;
++    font-size: 16px;
++}
++.weak { color: red; }
++.medium { color: orange; }
++.strong { color: green; }

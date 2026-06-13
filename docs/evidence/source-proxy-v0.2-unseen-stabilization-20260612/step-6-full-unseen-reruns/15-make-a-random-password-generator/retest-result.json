@@ -1,0 +1,44 @@
+{
+  "artifact_ready": true,
+  "attempts_used": 0,
+  "behavior_required": true,
+  "behavior_result": {
+    "actual": {
+      "after": "Password Generator\nGenerate Password",
+      "before": "Password Generator\nGenerate Password",
+      "changed": false,
+      "clicked": "button"
+    },
+    "expected": {
+      "behavior": "password-generator-output",
+      "proof": "expected/actual/passed recorded by browser probe"
+    },
+    "observed": {
+      "after": "Password Generator\nGenerate Password",
+      "before": "Password Generator\nGenerate Password",
+      "changed": false,
+      "clicked": "button"
+    },
+    "passed": false,
+    "reason": "visible state did not change after interaction",
+    "test": "password-generator-output",
+    "verdict": "FAIL"
+  },
+  "canonical_final_verdict": "FAIL",
+  "changed_files": [],
+  "diffs": [],
+  "final_reason_codes": [
+    "behavior_failed",
+    "explicit_preview_path_invalid_fallback_used",
+    "post_repair_behavior_fail",
+    "repair_ready_for_retest",
+    "single_html_entrypoint_selected",
+    "stabilization_rerun_no_manual_artifact_patch",
+    "visible_state_change_missing"
+  ],
+  "handoff_reason": "",
+  "handoff_required": false,
+  "product_pass": false,
+  "repair_status": "READY_FOR_RETEST",
+  "result_version": "source-proxy-artifact-retest-result-v0.2.phase-6"
+}

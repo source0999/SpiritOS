@@ -1,0 +1,14 @@
+{
+  "test": "make a fridge checklist app-visible-state-change",
+  "verdict": "PASS",
+  "passed": true,
+  "expected": "input plus action creates visible state change",
+  "actual": {
+    "before": "Fridge Checklist\n Add",
+    "after": "Fridge Checklist\nbananas\n Add",
+    "filled": 1,
+    "clicked": true,
+    "appears": true
+  },
+  "path": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10c-runs\\04-make-a-fridge-checklist-app\\workspace\\index.html"
+}

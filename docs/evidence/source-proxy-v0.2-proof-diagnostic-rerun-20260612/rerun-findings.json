@@ -1,0 +1,15 @@
+{
+  "schema_version": "source-proxy-v0.2-proof-rerun-findings.v1",
+  "final_verdict": "GO",
+  "pass_count": 9,
+  "fail_count": 2,
+  "needs_fix_count": 0,
+  "known_false_positives": 0,
+  "implementation_started_beyond_rerun": false,
+  "provider_api_used": false,
+  "codex_high_usage_used": false,
+  "hidden_workers_started": false,
+  "original_diagnostic_roots_mutated": false,
+  "report": "Z:/docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/artifact-behavior-report.html",
+  "behavior_results": "Z:/docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/behavior-check-results.json"
+}

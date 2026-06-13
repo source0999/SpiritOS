@@ -1,0 +1,37 @@
+{
+  "actual": {
+    "bodyText": "New City\n\n25\u00b0C\n\nSunny\n\nChange Weather",
+    "buttonCount": 1,
+    "changedAfterControl": true,
+    "hasCity": true,
+    "hasCondition": true,
+    "hasTemp": true
+  },
+  "contract_probe": {
+    "acceptance_criterion": "Weather card renders plausible local demo weather fields without requiring a live API.",
+    "expected_observation": "City, temperature, and condition are visible; any provided local control changes state.",
+    "minimum_proof_tier": 2,
+    "observable_actions": [
+      "inspect city, temperature, and condition fields",
+      "activate local demo control if present"
+    ],
+    "probe_id": "weather-card-fields"
+  },
+  "expected": {
+    "populatedCityTemperatureCondition": true
+  },
+  "observed": {
+    "bodyText": "New City\n\n25\u00b0C\n\nSunny\n\nChange Weather",
+    "buttonCount": 1,
+    "changedAfterControl": true,
+    "hasCity": true,
+    "hasCondition": true,
+    "hasTemp": true
+  },
+  "passed": true,
+  "path": "Z:\\docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-2-reruns\\01-make-a-weather-card-demo\\workspace\\weather-card.html",
+  "reason": "",
+  "reason_codes": [],
+  "test": "weather-card-fields",
+  "verdict": "PASS"
+}

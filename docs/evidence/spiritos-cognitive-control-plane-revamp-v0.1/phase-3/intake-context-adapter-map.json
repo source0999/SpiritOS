@@ -1,0 +1,67 @@
+{
+  "phase": "Phase 3",
+  "status": "adapter_plan_only",
+  "runtime_behavior_changed": false,
+  "adapter_targets": [
+    {
+      "target": "source_proxy/self_status.py::build_context_index_manifest",
+      "future_phase": "Phase 3 implementation or Phase 8 dry-run loop",
+      "integration_requirement": "Use context index manifest as source availability input without file contents.",
+      "real_flow_prepared": "/v1/context/index",
+      "do_not_duplicate": true
+    },
+    {
+      "target": "source_proxy/context/inventory.py::build_safe_context_inventory",
+      "future_phase": "Phase 3 implementation or Phase 8 dry-run loop",
+      "integration_requirement": "Use safe context inventory for source candidates and blocked path policy.",
+      "real_flow_prepared": "/v1/context/inventory",
+      "do_not_duplicate": true
+    },
+    {
+      "target": "source_proxy/context/obsidian.py::query_obsidian_context",
+      "future_phase": "Phase 3 implementation or Phase 8 dry-run loop",
+      "integration_requirement": "Use read-only safe excerpts as optional memory context.",
+      "real_flow_prepared": "/v1/context/obsidian/query",
+      "do_not_duplicate": true
+    },
+    {
+      "target": "source_proxy/decision/router.py",
+      "future_phase": "Phase 3 implementation or Phase 5 selector preview",
+      "integration_requirement": "Reuse existing route/target logic for route hints; do not create parallel router truth.",
+      "real_flow_prepared": "Source Proxy route decision",
+      "do_not_duplicate": true
+    },
+    {
+      "target": "source_proxy/safety/paths.py",
+      "future_phase": "Phase 3 implementation or Phase 4 risk preview",
+      "integration_requirement": "Reuse unsafe path and explicit target helpers for target confidence and risk flags.",
+      "real_flow_prepared": "target safety checks",
+      "do_not_duplicate": true
+    },
+    {
+      "target": "src/components/coding/approval-gate-binding.ts",
+      "future_phase": "Phase 8 dry-run loop",
+      "integration_requirement": "Keep preview packet target and blocker states compatible with /coding UI approval binding.",
+      "real_flow_prepared": "/coding approval gate",
+      "do_not_duplicate": true
+    }
+  ],
+  "phase_4_handoff_requirements": [
+    "Consume preview packet risk_flags and reason_codes.",
+    "Classify permission gates without executing actions.",
+    "Keep memory/context as evidence, not approval.",
+    "Preserve provider/model and worker-start blocks unless separately approved.",
+    "Carry fake-green fixture refs into risk and verifier planning."
+  ],
+  "forbidden_in_phase_3": [
+    "runtime route implementation",
+    "provider/model calls",
+    "worker starts",
+    "Obsidian writes",
+    "production source changes",
+    "generated artifact mutation",
+    "git mutation"
+  ],
+  "verdict": "GO"
+}
+

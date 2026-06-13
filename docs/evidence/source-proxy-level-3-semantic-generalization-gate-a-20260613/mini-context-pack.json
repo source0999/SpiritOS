@@ -1,0 +1,128 @@
+{
+  "anti_cheat_boundary": {
+    "allowed_gate_b_changes": [
+      "generic semantic routing",
+      "generic behavior contract coverage",
+      "family-keyed generation checklist wording",
+      "repair prompt structure",
+      "additive route trace instrumentation",
+      "focused tests"
+    ],
+    "forbidden_gate_b_changes": [
+      "Level 4",
+      "new prompt batches",
+      "scorer green-padding",
+      "exact prompt branches",
+      "cloud fallback",
+      "backend rescue content",
+      "hidden deterministic scaffold",
+      "weakened browser behavior proof"
+    ]
+  },
+  "browser_holdout_rerun": false,
+  "current_failure_diagnosis": {
+    "behavior_repair_failures": [
+      {
+        "id": "final-l3-clean-05",
+        "diagnosis": "weather routed GO and preview opened, but clicked control did not change visible city/temp/condition text; repair wrote allowed files but preserved a city selector mismatch"
+      },
+      {
+        "id": "final-l3-clean-10",
+        "diagnosis": "drawing routed GO and preview opened, but mouse drawing did not mutate canvas pixels; repair changed canvas id without matching script selector"
+      }
+    ],
+    "route_intake_failures": [
+      {
+        "id": "final-l3-clean-02",
+        "diagnosis": "calculator/splitter behavior contract succeeded, but disposable resolver missed cost sharer/share semantics and route blocked with no preview"
+      },
+      {
+        "id": "final-l3-clean-03",
+        "diagnosis": "theme wording was standalone, but resolver missed palette switch/dusk dawn switch semantics and route blocked with no preview"
+      },
+      {
+        "id": "final-l3-clean-09",
+        "diagnosis": "password/passphrase behavior contract succeeded, but resolver missed phrase/passphrase/strength/gauge semantics and route blocked with no preview"
+      }
+    ]
+  },
+  "decision_boundary_findings": {
+    "can_family_inference_succeed_while_route_blocks": true,
+    "safe_rule": "Standalone creation verb plus small tool/widget/app noun or interactive family signal plus no explicit repo/file/component target should become a disposable artifact candidate; existing app/component/src/file/dashboard/production/repo wording should stay real-repo clarification or explicit-target work."
+  },
+  "gate": "A",
+  "model_calls": false,
+  "new_prompt_batches": false,
+  "next_recommended_action": "Review implementation-gate-b-plan.md and approve or revise Gate B before implementation.",
+  "runtime_source_code_changed": false,
+  "source_files_reviewed": [
+    "source_proxy/decision/task_spec_intake.py",
+    "source_proxy/decision/human_messy_homepage.py",
+    "source_proxy/decision/artifact_behavior_contract.py",
+    "source_proxy/decision/artifact_repair_loop.py",
+    "source_proxy/decision/artifact_repair_contract.py",
+    "source_proxy/decision/artifact_final_verdict.py",
+    "docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti_tailoring_run_batch.py",
+    "docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti_tailoring_behavior_probe.mjs"
+  ],
+  "test_plan": {
+    "negative_controls": [
+      "add a parking cost sharer to the existing dashboard",
+      "update the login safety gauge component in src",
+      "modify the production theme switcher",
+      "fix the existing drawing canvas bug in the repo",
+      "change the real weather tile in the app",
+      "edit src/components/ThemeSwitcher.tsx to use dawn colors",
+      "update the existing password meter test file",
+      "repair the dashboard's forecast tile component",
+      "modify the app's real billing splitter route"
+    ],
+    "positive_synonyms": [
+      "cost sharer",
+      "parking cost splitter",
+      "garage cost sharer",
+      "split parking fee tool",
+      "share a garage bill widget",
+      "make something that splits parking costs",
+      "palette switch",
+      "dusk dawn switch",
+      "theme palette flipper",
+      "sunrise sunset mode switch",
+      "make the screen change when it gets dark",
+      "color mood switcher",
+      "phrase strength gauge",
+      "secret phrase meter",
+      "passphrase strength checker",
+      "login phrase safety gauge",
+      "show me how strong this passphrase is",
+      "password safety meter"
+    ]
+  },
+  "verdict": "PACK_READY",
+  "what_was_read": [
+    "prior ChatGPT mini context pack markdown/xml/json",
+    "final-proof-results.json",
+    "transparent-proxy-trace-index.md",
+    "failing per-prompt trace json/md files",
+    "failed run receipts, scores, transcripts, probes, failure packets, repair results, and workspace diffs where available",
+    "root-cause-matrix.md",
+    "failure-family stabilization index.md",
+    "primary intake/routing/behavior/repair/final-verdict source files"
+  ],
+  "what_was_written": [
+    "index.md",
+    "failure-contract.md",
+    "decision-boundary-map.md",
+    "semantic-routing-test-plan.md",
+    "behavior-repair-diagnosis.md",
+    "trace-instrumentation-plan.md",
+    "implementation-gate-b-plan.md",
+    "source-files-reviewed.md",
+    "anti-cheat-boundary.md",
+    "gate-a-terminal-verification.md",
+    "mini-context-pack.md",
+    "mini-context-pack.xml",
+    "mini-context-pack.json"
+  ],
+  "upload_next": "docs/evidence/source-proxy-level-3-semantic-generalization-gate-a-20260613/mini-context-pack.md"
+}

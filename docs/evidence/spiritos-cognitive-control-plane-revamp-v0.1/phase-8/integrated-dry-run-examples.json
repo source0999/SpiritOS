@@ -1,0 +1,146 @@
+{
+  "examples_version": "phase-8.4-v0.1",
+  "mode": "integrated_dry_run_examples_only",
+  "examples": [
+    {
+      "dry_run_id": "phase8-calculator-false-positive-blocked",
+      "request_summary": "Review calculator artifact readiness for later proof.",
+      "phase_gates": {
+        "phase_1_truth": "FAIL",
+        "phase_2_memory": "ready",
+        "phase_3_context": "preview_ready",
+        "phase_4_risk_permission": "preview_only",
+        "phase_5_worker_selector": "recommendation_ready",
+        "phase_6_behavior_verifier": "FAIL",
+        "phase_7_safe_execution": "blocked"
+      },
+      "final_verdict": "BLOCKED",
+      "reason_codes": ["calculator_prior_false_positive", "behavior_verifier_fail", "product_pass_blocked"],
+      "unverified_checks": ["live browser replay not run in Phase 8"],
+      "blocked_actions": ["execution proof", "product PASS claim"],
+      "non_authority_flags": {
+        "would_execute": false,
+        "would_write": false,
+        "would_call_provider": false,
+        "would_start_worker": false,
+        "would_dispatch_worker": false,
+        "would_write_obsidian": false,
+        "would_mutate_git": false,
+        "would_mutate_generated_artifacts": false,
+        "learning_write_performed": false
+      },
+      "product_truth": {
+        "product_pass_claimed": false,
+        "truth_source": "Phase 6 behavior verifier",
+        "observed": "2 + 3 = returned 0 instead of 5"
+      },
+      "phase_9_readiness": "not_ready",
+      "next_safe_action": "Fix behavior under separate implementation authority before controlled live proof."
+    },
+    {
+      "dry_run_id": "phase8-timer-pass-preservation-ready",
+      "request_summary": "Prepare timer pass-preservation case for controlled live proof review.",
+      "phase_gates": {
+        "phase_1_truth": "PASS",
+        "phase_2_memory": "ready",
+        "phase_3_context": "preview_ready",
+        "phase_4_risk_permission": "requires_human_approval",
+        "phase_5_worker_selector": "recommendation_ready",
+        "phase_6_behavior_verifier": "PASS",
+        "phase_7_safe_execution": "preview_ready"
+      },
+      "final_verdict": "DRY_RUN_READY",
+      "reason_codes": ["timer_pass_preserved", "live_proof_requires_operator_approval"],
+      "unverified_checks": ["new live browser proof not run in Phase 8"],
+      "blocked_actions": ["automatic live proof", "generated artifact mutation"],
+      "non_authority_flags": {
+        "would_execute": false,
+        "would_write": false,
+        "would_call_provider": false,
+        "would_start_worker": false,
+        "would_dispatch_worker": false,
+        "would_write_obsidian": false,
+        "would_mutate_git": false,
+        "would_mutate_generated_artifacts": false,
+        "learning_write_performed": false
+      },
+      "product_truth": {
+        "product_pass_claimed": true,
+        "truth_source": "Phase 6 preserved behavior proof",
+        "observed": "timer changed from 00:00 to 00:02 and stayed after Stop"
+      },
+      "phase_9_readiness": "ready_for_controlled_live_proof_review",
+      "next_safe_action": "Ask for explicit Phase 9 approval before any controlled live proof."
+    },
+    {
+      "dry_run_id": "phase8-docs-write-deferred",
+      "request_summary": "Preview a future docs evidence write and verification command.",
+      "phase_gates": {
+        "phase_1_truth": "UNVERIFIED",
+        "phase_2_memory": "ready",
+        "phase_3_context": "preview_ready",
+        "phase_4_risk_permission": "requires_human_approval",
+        "phase_5_worker_selector": "recommendation_ready",
+        "phase_6_behavior_verifier": "UNVERIFIED",
+        "phase_7_safe_execution": "requires_human_approval"
+      },
+      "final_verdict": "UNVERIFIED",
+      "reason_codes": ["no_product_behavior_under_test", "future_safe_write_requires_approval"],
+      "unverified_checks": ["safe write not executed", "verification command not run"],
+      "blocked_actions": ["safe write execution", "sandbox command execution", "git mutation"],
+      "non_authority_flags": {
+        "would_execute": false,
+        "would_write": false,
+        "would_call_provider": false,
+        "would_start_worker": false,
+        "would_dispatch_worker": false,
+        "would_write_obsidian": false,
+        "would_mutate_git": false,
+        "would_mutate_generated_artifacts": false,
+        "learning_write_performed": false
+      },
+      "product_truth": {
+        "product_pass_claimed": false,
+        "truth_source": "not applicable",
+        "observed": "no product behavior claim"
+      },
+      "phase_9_readiness": "not_ready",
+      "next_safe_action": "Keep as preview-only unless a later phase grants exact execution authority."
+    },
+    {
+      "dry_run_id": "phase8-worker-start-blocked",
+      "request_summary": "Evaluate automatic local coding worker start request.",
+      "phase_gates": {
+        "phase_1_truth": "UNVERIFIED",
+        "phase_2_memory": "ready",
+        "phase_3_context": "preview_ready",
+        "phase_4_risk_permission": "blocked",
+        "phase_5_worker_selector": "selection_blocked",
+        "phase_6_behavior_verifier": "UNVERIFIED",
+        "phase_7_safe_execution": "blocked"
+      },
+      "final_verdict": "BLOCKED",
+      "reason_codes": ["automatic_worker_start_forbidden", "phase_8_no_dispatch_authority"],
+      "unverified_checks": ["worker capability not probed because auto-start is forbidden"],
+      "blocked_actions": ["worker start", "worker dispatch", "provider call"],
+      "non_authority_flags": {
+        "would_execute": false,
+        "would_write": false,
+        "would_call_provider": false,
+        "would_start_worker": false,
+        "would_dispatch_worker": false,
+        "would_write_obsidian": false,
+        "would_mutate_git": false,
+        "would_mutate_generated_artifacts": false,
+        "learning_write_performed": false
+      },
+      "product_truth": {
+        "product_pass_claimed": false,
+        "truth_source": "not applicable",
+        "observed": "no product behavior claim"
+      },
+      "phase_9_readiness": "not_ready",
+      "next_safe_action": "Do not start workers automatically in v0.1."
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "actual": {
+    "changed": true,
+    "numbers": [
+      "1",
+      "50.00",
+      "2",
+      "50.00"
+    ]
+  },
+  "contract_probe": {
+    "acceptance_criterion": "Numeric inputs produce a visible calculated result.",
+    "expected_observation": "The displayed total/share/result changes to the expected numeric value.",
+    "minimum_proof_tier": 2,
+    "observable_actions": [
+      "enter small numeric values",
+      "trigger calculation if required"
+    ],
+    "probe_id": "calculator-derived-total"
+  },
+  "expected": {
+    "numericResultVisible": true
+  },
+  "observed": {
+    "after": "Budget Splitter\n Split Budget\nShare 1: 50.00, Share 2: 50.00",
+    "before": "Budget Splitter\n Split Budget",
+    "numbers": [
+      "1",
+      "50.00",
+      "2",
+      "50.00"
+    ]
+  },
+  "passed": true,
+  "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\03-make-a-budget-splitter\\workspace\\index.html",
+  "reason": "",
+  "reason_codes": [],
+  "test": "calculator-derived-total",
+  "verdict": "PASS"
+}

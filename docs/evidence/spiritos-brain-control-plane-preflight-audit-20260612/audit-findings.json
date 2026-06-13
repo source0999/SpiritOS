@@ -1,0 +1,123 @@
+{
+  "overall_readiness_grade": "PARTIAL",
+  "brain_layer_grades": {
+    "Brainstem Health": "PARTIAL",
+    "Thalamus Router": "PARTIAL",
+    "Sensory Parsers": "PARTIAL",
+    "Hippocampus Memory": "PARTIAL",
+    "Amygdala Risk/Vibe Judge": "PARTIAL",
+    "Prefrontal Planner": "PARTIAL",
+    "Basal Ganglia Model Selector": "PARTIAL",
+    "Cerebellum Verifier": "PARTIAL",
+    "Motor Cortex Executor": "WEAK",
+    "Feedback/Learning Loop": "WEAK"
+  },
+  "source_proxy_grade": "PARTIAL",
+  "coding_runner_grade": "PARTIAL",
+  "memory_context_grade": "PARTIAL",
+  "obsidian_readiness_grade": "READ-ONLY ONLY",
+  "obsidian_trust_level": "READ-ONLY ONLY",
+  "verification_grade": "PARTIAL",
+  "worker_routing_grade": "PARTIAL",
+  "risk_permission_grade": "PARTIAL",
+  "known_false_positive_risks": [
+    "artifact exists but product behavior fails",
+    "diff preview ready but behavior untested",
+    "class toggle without visible theme change",
+    "static UI marked functional",
+    "no-diff collapsed into pass",
+    "configured model treated as successful model proof",
+    "docs-only plan treated as working wiring",
+    "Obsidian note existence treated as memory readiness"
+  ],
+  "missing_foundation": [
+    "canonical cognitive loop",
+    "canonical result schema separating runtime artifact apply and product behavior",
+    "behavior-level verifier for generated product tasks",
+    "memory source freshness and conflict policy",
+    "approval-gated Obsidian write-back",
+    "route tests proving memory influences route or is explicitly advisory",
+    "single worker selection policy with cost risk and memory signals"
+  ],
+  "reusable_components": [
+    "source_proxy self-status and tools manifest",
+    "decision router and prompt packet builder",
+    "Ollama and LiteLLM route status",
+    "central gate and spend approval boundaries",
+    "diff verification and replacement content validation",
+    "durable coding run store",
+    "Cartographer repo map component map dirty tree and blueprint packets",
+    "Obsidian read-only query adapter",
+    "Codex safe command envelope validator",
+    "sandbox terminal read-only bubblewrap surface"
+  ],
+  "stale_or_doc_only_components": [
+    "many Cartographer autonomy levels and roadmap docs",
+    "older GO/PASS evidence not tied to product behavior proof",
+    "preview-only coding lanes presented as future worker lanes",
+    "Obsidian-as-Hippocampus intent without trusted-memory guardrails"
+  ],
+  "obsidian_current_usage": {
+    "mode": "read_only",
+    "default_vault": "data/design-vault",
+    "query_endpoint": "/v1/context/obsidian/query",
+    "search": "filesystem markdown glob plus simple term scoring",
+    "redaction": "email token password secret api-key shaped values",
+    "source_proxy_route_decision_influence_proven": false,
+    "write_back_present": false
+  },
+  "obsidian_ready_now_for": [
+    "bounded read-only advisory context",
+    "safe excerpt retrieval",
+    "design-vault context hints",
+    "context-source readiness packet input"
+  ],
+  "obsidian_not_ready_for": [
+    "automatic write-back memory",
+    "authoritative route or planner decisions",
+    "freshness-sensitive memory without metadata",
+    "secret-bearing note ingestion",
+    "model performance truth without evidence links"
+  ],
+  "recommended_obsidian_v0_role": "Read-only Hippocampus advisory context with evidence-linked curated summaries; no automatic writes.",
+  "recommended_next_phase": "Approve a design brief for Hippocampus v0.1 read-only Obsidian promotion and canonical verifier/result contracts.",
+  "blockers_before_plan": [
+    "decide Obsidian trust mode",
+    "repair or quarantine current coding diagnostics failures",
+    "repair or document Vitest mapped-drive module resolution blocker",
+    "define behavior PASS contract",
+    "define memory write approval policy"
+  ],
+  "evidence_files_created": [
+    "audit-summary.md",
+    "brain-layer-map.md",
+    "source-proxy-status.md",
+    "coding-runner-status.md",
+    "memory-context-status.md",
+    "obsidian-readiness.md",
+    "verification-status.md",
+    "worker-route-status.md",
+    "risk-and-permission-status.md",
+    "tests-run.md",
+    "audit-findings.json",
+    "next-plan-input-packet.md"
+  ],
+  "commands_run": [
+    "Select-String memory quick pass",
+    "Get-Location; git status --short; git status --branch --short",
+    "rg --files package/test/config detection",
+    "rg Source Proxy routing inventory",
+    "rg coding runner inventory",
+    "rg Obsidian memory context inventory",
+    "Get-ChildItem repo inventory",
+    "Get-Content key Source Proxy files",
+    "Get-Content Obsidian/context files",
+    "Get-Content source readiness and routing files",
+    "python -m pytest focused Obsidian/context/status/routing suite",
+    "python -m pytest focused coding/verifier suite",
+    "npm run test:coding-frontend-regression -- --run",
+    "npm run typecheck",
+    "static route/store/verifier inspections",
+    "git status --short"
+  ]
+}

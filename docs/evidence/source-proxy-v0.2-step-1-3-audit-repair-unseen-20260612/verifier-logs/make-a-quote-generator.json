@@ -1,0 +1,27 @@
+{
+  "actual": {
+    "error": "page.goto: net::ERR_FILE_NOT_FOUND at file:///Z:/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/step-3-unseen-runs/07-make-a-quote-generator/workspace/index.html\nCall log:\n\u001b[2m  - navigating to \"file:///Z:/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/step-3-unseen-runs/07-make-a-quote-generator/workspace/index.html\", waiting until \"load\"\u001b[22m\n"
+  },
+  "contract_probe": {
+    "acceptance_criterion": "Generator control changes visible generated content.",
+    "expected_observation": "Visible generated text changes or a generated item appears.",
+    "minimum_proof_tier": 2,
+    "observable_actions": [
+      "click generate/new/next control"
+    ],
+    "probe_id": "generator-visible-change"
+  },
+  "expected": {
+    "behavior": "generator-visible-change",
+    "proof": "expected/actual/passed recorded by browser probe"
+  },
+  "observed": {},
+  "passed": false,
+  "path": "Z:\\docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\07-make-a-quote-generator\\workspace\\index.html",
+  "reason": "browser verifier crashed",
+  "reason_codes": [
+    "browser_verifier_crashed"
+  ],
+  "test": "generator-visible-change",
+  "verdict": "NEEDS_FIX"
+}

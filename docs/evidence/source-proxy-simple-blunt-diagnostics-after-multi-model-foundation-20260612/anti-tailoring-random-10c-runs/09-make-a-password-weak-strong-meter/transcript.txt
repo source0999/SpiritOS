@@ -1,0 +1,28 @@
+```json
+[
+    {
+        "action_type": "WriteFile",
+        "target": "password-strength-meter.html",
+        "arguments": {
+            "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Password Strength Meter</title>\n    <link rel=\"stylesheet\" href=\"password-strength-meter.css\">\n</head>\n<body>\n    <h1>Password Strength Meter</h1>\n    <input type=\"password\" id=\"password-input\" placeholder=\"Enter your password\">\n    <div id=\"strength-feedback\"></div>\n    <script src=\"password-strength-meter.js\"></script>\n</body>\n</html>"
+        },
+        "reason": "HTML file to host the password strength meter."
+    },
+    {
+        "action_type": "WriteFile",
+        "target": "password-strength-meter.css",
+        "arguments": {
+            "content": "body {\n    font-family: Arial, sans-serif;\n}\n#strength-feedback {\n    margin-top: 20px;\n    color: #333;\n}"
+        },
+        "reason": "CSS file to style the password strength meter."
+    },
+    {
+        "action_type": "WriteFile",
+        "target": "password-strength-meter.js",
+        "arguments": {
+            "content": "document.getElementById('password-input').addEventListener('input', function() {\n    const password = this.value;\n    let feedback = 'Weak';\n    if (password.length >= 8) {\n        feedback = 'Strong';\n    }\n    document.getElementById('strength-feedback').textContent = feedback;\n});"
+        },
+        "reason": "JavaScript file to handle the password strength calculation and display."
+    }
+]
+```

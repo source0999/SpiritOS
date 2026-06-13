@@ -1,0 +1,30 @@
+# Step 6 Full Unseen Summary
+
+Verdict: PARTIAL
+Counts: 15 PASS / 10 FAIL / 0 HANDOFF / 0 NEEDS_FIX / 0 UNVERIFIED
+
+- make a tip calculator: PASS (behavior_pass_verified;explicit_preview_path_invalid_fallback_used;index_html_selected;post_repair_behavior_pass;repair_ready_for_retest;stabilization_rerun_no_manual_artifact_patch)
+- make a pomodoro timer: PASS (behavior_pass_verified;explicit_preview_path_invalid_fallback_used;index_html_selected;post_repair_behavior_pass;repair_ready_for_retest;stabilization_rerun_no_manual_artifact_patch)
+- make a budget splitter: PASS (behavior_pass_verified;explicit_preview_path_invalid_fallback_used;index_html_selected;post_repair_behavior_pass;repair_ready_for_retest;stabilization_rerun_no_manual_artifact_patch)
+- make a flashcard app: PASS (behavior_pass_verified;explicit_preview_path_invalid_fallback_used;index_html_selected;post_repair_behavior_pass;repair_ready_for_retest;stabilization_rerun_no_manual_artifact_patch)
+- make a unit converter: PASS (behavior_pass_verified;explicit_preview_path_invalid_fallback_used;index_html_selected;post_repair_behavior_pass;repair_ready_for_retest;stabilization_rerun_no_manual_artifact_patch)
+- make a mood tracker: FAIL (visible state did not change after interaction)
+- make a quote generator: PASS (behavior_pass_verified;explicit_preview_path_invalid_fallback_used;index_html_selected;post_repair_behavior_pass;repair_ready_for_retest;stabilization_rerun_no_manual_artifact_patch)
+- make a counter app: PASS (behavior_pass_verified;explicit_preview_path_invalid_fallback_used;index_html_selected;post_repair_behavior_pass;repair_ready_for_retest;stabilization_rerun_no_manual_artifact_patch)
+- make a simple calendar widget: PASS (behavior_pass_verified;explicit_preview_path_invalid_fallback_used;index_html_selected;post_repair_behavior_pass;repair_ready_for_retest;stabilization_rerun_no_manual_artifact_patch)
+- make a color palette picker: FAIL (visible state did not change after interaction)
+- make a quiz app: FAIL (visible state did not change after interaction)
+- make a grocery list app: PASS (behavior_pass_verified;explicit_preview_path_invalid_fallback_used;index_html_selected;post_repair_behavior_pass;repair_ready_for_retest;stabilization_rerun_no_manual_artifact_patch)
+- make a stopwatch: FAIL (visible state did not change after interaction)
+- make a BMI calculator: PASS (behavior_pass_verified;explicit_preview_path_invalid_fallback_used;index_html_selected;post_repair_behavior_pass;repair_ready_for_retest;stabilization_rerun_no_manual_artifact_patch)
+- make a random password generator: FAIL (visible state did not change after interaction)
+- make a markdown previewer: FAIL (markdown preview did not update)
+- make a simple expense tracker: PASS (behavior_pass_verified;explicit_preview_path_invalid_fallback_used;index_html_selected;post_repair_behavior_pass;repair_ready_for_retest;stabilization_rerun_no_manual_artifact_patch)
+- make a water intake tracker: FAIL (visible state did not change after interaction)
+- make a workout set counter: PASS (behavior_pass_verified;explicit_preview_path_invalid_fallback_used;index_html_selected;post_repair_behavior_pass;repair_ready_for_retest;stabilization_rerun_no_manual_artifact_patch)
+- make a simple image gallery mockup: PASS (behavior_pass_verified;explicit_preview_path_invalid_fallback_used;index_html_selected;post_repair_behavior_pass;repair_ready_for_retest;stabilization_rerun_no_manual_artifact_patch)
+- make a tabs component demo: FAIL (visible state did not change after interaction)
+- make an accordion FAQ page: PASS (behavior_pass_verified;explicit_preview_path_invalid_fallback_used;index_html_selected;post_repair_behavior_pass;repair_ready_for_retest;stabilization_rerun_no_manual_artifact_patch)
+- make a progress bar demo: FAIL (visible state did not change after interaction)
+- make a star rating widget: FAIL (visible state did not change after interaction)
+- make a simple habit streak tracker: PASS (behavior_pass_verified;explicit_preview_path_invalid_fallback_used;post_repair_behavior_pass;repair_ready_for_retest;single_html_entrypoint_selected;stabilization_rerun_no_manual_artifact_patch)

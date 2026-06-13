@@ -1,0 +1,48 @@
+{
+  "artifact_readiness": "READY",
+  "behavior_contract_path": "docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/runs/10-make-a-password-strength-checker/behavior-contract.json",
+  "behavior_probe": {
+    "observed": {
+      "changed": true,
+      "hasFeedback": true,
+      "strong": "Password Strength Checker\n\nStrong",
+      "weak": "Password Strength Checker\n\nWeak"
+    },
+    "path": "docs\\evidence\\source-proxy-v0.2-proof-diagnostic-rerun-20260612\\runs\\10-make-a-password-strength-checker\\workspace\\password-strength-checker.html",
+    "prompt": "make a password strength checker",
+    "reason": "",
+    "reason_codes": [],
+    "slug": "10-make-a-password-strength-checker",
+    "test": "password-strength-feedback-change",
+    "verdict": "PASS"
+  },
+  "behavior_required_for_final_pass": true,
+  "browser_behavior_verdict": "PASS",
+  "canonical_final_verdict": "UNVERIFIED",
+  "canonical_final_verdict_after_behavior": "PASS",
+  "diff_path": "docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/runs/10-make-a-password-strength-checker/workspace.diff",
+  "failure_packet_path": "",
+  "files": [
+    "password-strength-checker.css",
+    "password-strength-checker.html",
+    "password-strength-checker.js"
+  ],
+  "generation_error": "",
+  "handoff_packet_path": "",
+  "html_paths": [
+    "password-strength-checker.html"
+  ],
+  "product_pass": false,
+  "product_pass_after_behavior": true,
+  "prompt": "make a password strength checker",
+  "reason_codes": [],
+  "receipt_path": "docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/runs/10-make-a-password-strength-checker/receipt.json",
+  "repair_attempts_path": "docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/runs/10-make-a-password-strength-checker/repair-attempts.json",
+  "retest_result_path": "docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/runs/10-make-a-password-strength-checker/retest-result.json",
+  "run_dir": "docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/runs/10-make-a-password-strength-checker",
+  "score_path": "docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/runs/10-make-a-password-strength-checker/score.json",
+  "slug": "10-make-a-password-strength-checker",
+  "source_proxy_status": "GO",
+  "transcript_path": "docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/runs/10-make-a-password-strength-checker/transcript.txt",
+  "workspace_path": "docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/runs/10-make-a-password-strength-checker/workspace"
+}

@@ -1,0 +1,96 @@
+{
+  "anti_tailoring_checks": [
+    "Prompt echo in receipts must match the submitted fresh prompt exactly.",
+    "Generated UI should match the fresh noun and intent, not reuse old visible labels from the baseline prompt when inappropriate.",
+    "No proxy_exact_target_suggested should appear for these blunt disposable prompts.",
+    "backend_created_content_detected must remain false.",
+    "fallback_used and deterministic_scaffold_used must remain false.",
+    "Behavior probes must verify the fresh prompt's obvious interaction, not a generic open-only condition.",
+    "If the model refuses, returns prose, or creates no behavior, mark NEEDS_FIX or FAIL explicitly."
+  ],
+  "baseline_prompt_family": [
+    "timer",
+    "calculator/splitter",
+    "theme toggle",
+    "checklist/list",
+    "weather/forecast/card",
+    "player/podcast/music",
+    "tracker/counter",
+    "notes app",
+    "password meter/checker",
+    "drawing/canvas/sketch"
+  ],
+  "created_at": "2026-06-13",
+  "prompts": [
+    {
+      "baseline_neighbor": "timer",
+      "expected_behavior": "Starting the timer visibly changes time.",
+      "id": "anti-10e-01",
+      "prompt": "make a tea steep timer"
+    },
+    {
+      "baseline_neighbor": "calculator/splitter",
+      "expected_behavior": "Entered trip cost/share numbers visibly change a result.",
+      "id": "anti-10e-02",
+      "prompt": "make a road trip gas split tool"
+    },
+    {
+      "baseline_neighbor": "theme toggle",
+      "expected_behavior": "A control visibly changes sunrise/midnight or theme colors.",
+      "id": "anti-10e-03",
+      "prompt": "make a sunrise midnight mode toggle"
+    },
+    {
+      "baseline_neighbor": "checklist/list",
+      "expected_behavior": "A typed packing item appears visibly.",
+      "id": "anti-10e-04",
+      "prompt": "make a camping packing list app"
+    },
+    {
+      "baseline_neighbor": "weather/forecast/card",
+      "expected_behavior": "Weather fields appear and a local control changes forecast state if present.",
+      "id": "anti-10e-05",
+      "prompt": "make a pretend porch weather tile"
+    },
+    {
+      "baseline_neighbor": "player/podcast/music",
+      "expected_behavior": "Play/pause or next visibly changes player state.",
+      "id": "anti-10e-06",
+      "prompt": "make a tiny radio show player"
+    },
+    {
+      "baseline_neighbor": "tracker/counter",
+      "expected_behavior": "A button visibly increments or changes progress.",
+      "id": "anti-10e-07",
+      "prompt": "make a pushup rep counter"
+    },
+    {
+      "baseline_neighbor": "notes app",
+      "expected_behavior": "Typed note text appears visibly after add/save.",
+      "id": "anti-10e-08",
+      "prompt": "make a pocket memo board app"
+    },
+    {
+      "baseline_neighbor": "password meter/checker",
+      "expected_behavior": "Weak and stronger passphrases visibly change feedback.",
+      "id": "anti-10e-09",
+      "prompt": "make a passphrase strength meter"
+    },
+    {
+      "baseline_neighbor": "drawing/canvas/sketch",
+      "expected_behavior": "Pointer input visibly marks a canvas or sketch surface.",
+      "id": "anti-10e-10",
+      "prompt": "make a doodle canvas notebook"
+    }
+  ],
+  "purpose": "Fresh 10e messy-human prompt set for score-integrity and failure-bucket validation.",
+  "rules_for_future_run": [
+    "Do not tune generation prompts for this set.",
+    "Do not add prompt-specific branches, aliases, templates, or hidden fallback snippets.",
+    "Do not patch generated artifacts after the model writes them except through the bounded one-attempt repair loop.",
+    "Do not activate sidecars or cloud/API fallback.",
+    "Treat PASS as behavior-proven main interaction, not route GO or preview open."
+  ],
+  "status": "READY_TO_RUN",
+  "title": "Anti-tailoring random 10e blunt prompt challenge"
+}

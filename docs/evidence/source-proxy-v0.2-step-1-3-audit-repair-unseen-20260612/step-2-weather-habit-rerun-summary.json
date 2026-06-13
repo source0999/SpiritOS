@@ -1,0 +1,121 @@
+{
+  "counts": {
+    "FAIL": 0,
+    "HANDOFF": 0,
+    "NEEDS_FIX": 0,
+    "PASS": 2,
+    "UNVERIFIED": 0,
+    "known_false_positives": 0
+  },
+  "results": [
+    {
+      "behavior_contract": {
+        "artifact_class": "static_ui_artifact",
+        "behavior_required": true,
+        "contract_status": "ready",
+        "contract_version": "source-proxy-artifact-behavior-contract-v0.2.phase-3",
+        "final_pass_rule": "Final PASS requires every required behavior probe to pass against the generated artifact.",
+        "non_pass_signals": [
+          "route_go",
+          "artifact_exists",
+          "preview_opens",
+          "static_dom_presence",
+          "model_self_report"
+        ],
+        "preview_requirement": "Openable HTML artifact is required before behavior can be evaluated.",
+        "probe_targets": [
+          {
+            "acceptance_criterion": "Weather card renders plausible local demo weather fields without requiring a live API.",
+            "expected_observation": "City, temperature, and condition are visible; any provided local control changes state.",
+            "minimum_proof_tier": 2,
+            "observable_actions": [
+              "inspect city, temperature, and condition fields",
+              "activate local demo control if present"
+            ],
+            "probe_id": "weather-card-fields"
+          }
+        ],
+        "prompt": "make a weather card demo",
+        "task_shape": "disposable_small_file_bundle"
+      },
+      "expected_behavior": {
+        "populatedCityTemperatureCondition": true
+      },
+      "failure_reason": "",
+      "false_positive_risk": "low",
+      "final_behavior_status": "PASS",
+      "final_verdict": "PASS",
+      "first_attempt_status": "GO",
+      "handoff_reason": "",
+      "notes": "Final verdict comes from browser behavior retest, not route GO.",
+      "observed_behavior": {
+        "bodyText": "New City\n\n25\u00b0C\n\nSunny\n\nChange Weather",
+        "buttonCount": 1,
+        "changedAfterControl": true,
+        "hasCity": true,
+        "hasCondition": true,
+        "hasTemp": true
+      },
+      "preview_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-2-reruns\\01-make-a-weather-card-demo\\workspace\\weather-card.html",
+      "prompt": "make a weather card demo",
+      "receipt_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-2-reruns\\01-make-a-weather-card-demo\\receipt.json",
+      "repair_attempts_used": 0,
+      "route_status": "GO",
+      "transcript_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-2-reruns\\01-make-a-weather-card-demo\\transcript.txt"
+    },
+    {
+      "behavior_contract": {
+        "artifact_class": "static_ui_artifact",
+        "behavior_required": true,
+        "contract_status": "ready",
+        "contract_version": "source-proxy-artifact-behavior-contract-v0.2.phase-3",
+        "final_pass_rule": "Final PASS requires every required behavior probe to pass against the generated artifact.",
+        "non_pass_signals": [
+          "route_go",
+          "artifact_exists",
+          "preview_opens",
+          "static_dom_presence",
+          "model_self_report"
+        ],
+        "preview_requirement": "Openable HTML artifact is required before behavior can be evaluated.",
+        "probe_targets": [
+          {
+            "acceptance_criterion": "User can add, complete, edit, remove, or otherwise change habit state.",
+            "expected_observation": "Habit state changes after user action; static hard-coded habits are not enough.",
+            "minimum_proof_tier": 2,
+            "observable_actions": [
+              "inspect for input/buttons/checkboxes",
+              "add or toggle a habit"
+            ],
+            "probe_id": "habit-state-change"
+          }
+        ],
+        "prompt": "make a habit tracker",
+        "task_shape": "disposable_small_file_bundle"
+      },
+      "expected_behavior": {
+        "checkedStateChanges": true
+      },
+      "failure_reason": "",
+      "false_positive_risk": "low",
+      "final_behavior_status": "PASS",
+      "final_verdict": "PASS",
+      "first_attempt_status": "GO",
+      "handoff_reason": "",
+      "notes": "Final verdict comes from browser behavior retest, not route GO.",
+      "observed_behavior": {
+        "after": "Habit Tracker\nDrink water \nRead a book",
+        "afterChecked": true,
+        "before": "Habit Tracker\nDrink water \nRead a book",
+        "beforeChecked": false,
+        "checkedChanged": true
+      },
+      "preview_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-2-reruns\\02-make-a-habit-tracker\\workspace\\habit-tracker.html",
+      "prompt": "make a habit tracker",
+      "receipt_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-2-reruns\\02-make-a-habit-tracker\\receipt.json",
+      "repair_attempts_used": 0,
+      "route_status": "GO",
+      "transcript_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-2-reruns\\02-make-a-habit-tracker\\transcript.txt"
+    }
+  ]
+}

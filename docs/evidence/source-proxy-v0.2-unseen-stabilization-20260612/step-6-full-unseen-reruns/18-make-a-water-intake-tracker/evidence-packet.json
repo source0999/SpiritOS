@@ -1,0 +1,65 @@
+{
+  "behavior_contract_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\18-make-a-water-intake-tracker\\behavior-contract.json",
+  "behavior_probe": {
+    "actual": {
+      "after": "Water Intake Tracker\n Track Intake\n\nTotal Intake: 0 ml",
+      "before": "Water Intake Tracker\n Track Intake\n\nTotal Intake: 0 ml",
+      "changed": false,
+      "clicked": "button"
+    },
+    "contract_probe": {
+      "acceptance_criterion": "Tracker UI records or changes a visible item/count/completion state.",
+      "expected_observation": "A count, selected state, streak, or tracked item changes visibly.",
+      "minimum_proof_tier": 2,
+      "observable_actions": [
+        "add, toggle, increment, or select a tracker item"
+      ],
+      "probe_id": "tracker-state-change"
+    },
+    "expected": {
+      "behavior": "tracker-state-change",
+      "proof": "expected/actual/passed recorded by browser probe"
+    },
+    "observed": {
+      "after": "Water Intake Tracker\n Track Intake\n\nTotal Intake: 0 ml",
+      "before": "Water Intake Tracker\n Track Intake\n\nTotal Intake: 0 ml",
+      "changed": false,
+      "clicked": "button"
+    },
+    "passed": false,
+    "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\18-make-a-water-intake-tracker\\workspace\\water_intake_tracker.html",
+    "reason": "visible state did not change after interaction",
+    "reason_codes": [
+      "visible_state_change_missing"
+    ],
+    "test": "tracker-state-change",
+    "verdict": "FAIL"
+  },
+  "canonical_final_verdict_after_behavior": "FAIL",
+  "diff_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\18-make-a-water-intake-tracker\\workspace.diff",
+  "evidence_packet_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\18-make-a-water-intake-tracker\\evidence-packet.json",
+  "preview_resolution": {
+    "candidate_paths": [
+      "water_intake_tracker.html"
+    ],
+    "explicit_path": "/home/source/SpiritOS/docs/evidence/source-proxy-v0.2-unseen-stabilization-20260612/step-6-full-unseen-reruns/18-make-a-water-intake-tracker/workspace/water_intake_tracker.html",
+    "reason_codes": [
+      "single_html_entrypoint_selected",
+      "explicit_preview_path_invalid_fallback_used"
+    ],
+    "selected_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\18-make-a-water-intake-tracker\\workspace\\water_intake_tracker.html",
+    "selection_reason": "single_html_entrypoint_after_invalid_explicit",
+    "status": "ready"
+  },
+  "preview_selection_reason": "single_html_entrypoint_after_invalid_explicit",
+  "product_pass_after_behavior": false,
+  "prompt": "make a water intake tracker",
+  "receipt_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\18-make-a-water-intake-tracker\\receipt.json",
+  "retest_result_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\18-make-a-water-intake-tracker\\retest-result.json",
+  "run_dir": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\18-make-a-water-intake-tracker",
+  "score_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\18-make-a-water-intake-tracker\\score.json",
+  "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\18-make-a-water-intake-tracker\\workspace\\water_intake_tracker.html",
+  "source_proxy_status": "GO",
+  "transcript_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\18-make-a-water-intake-tracker\\transcript.txt",
+  "workspace_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\18-make-a-water-intake-tracker\\workspace"
+}

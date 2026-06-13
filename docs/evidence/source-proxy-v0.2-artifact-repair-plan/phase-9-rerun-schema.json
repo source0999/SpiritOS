@@ -1,0 +1,111 @@
+{
+  "phase": "Phase 9 - v0.2 proof diagnostic rerun plan",
+  "schema_version": "source-proxy-v0.2-proof-rerun-plan.phase-9",
+  "rerun_executed": false,
+  "planned_evidence_root": "docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/",
+  "frozen_prompts": [
+    "init a repo and make homepage for agent lab expermients",
+    "make a timer app",
+    "make a calculator app",
+    "make dark theme switcher page",
+    "make a todo list app",
+    "make a weather card demo",
+    "make a music player mockup",
+    "make a habit tracker",
+    "make a notes app",
+    "make a password strength checker",
+    "make a simple drawing pad"
+  ],
+  "required_per_run_files": [
+    "receipt.json",
+    "score.json",
+    "transcript.txt",
+    "workspace.diff",
+    "evidence-packet.json",
+    "behavior-contract.json",
+    "failure-packet.json",
+    "repair-attempts.json",
+    "retest-result.json",
+    "handoff-packet.json"
+  ],
+  "required_top_level_files": [
+    "manifest.json",
+    "diagnostic-summary.md",
+    "behavior-check-results.json",
+    "artifact-review-summary.json",
+    "rerun-findings.json"
+  ],
+  "expected_probes": [
+    {
+      "prompt": "init a repo and make homepage for agent lab expermients",
+      "probe_id": "homepage-visible-intent",
+      "pass_rule": "Visible text includes agent/lab/experiment intent."
+    },
+    {
+      "prompt": "make a timer app",
+      "probe_id": "timer-start-stop-freeze",
+      "pass_rule": "Displayed time increases after Start and remains unchanged after Stop."
+    },
+    {
+      "prompt": "make a calculator app",
+      "probe_id": "calculator-basic-arithmetic",
+      "pass_rule": "The calculator displays 5 for 2 + 3."
+    },
+    {
+      "prompt": "make dark theme switcher page",
+      "probe_id": "theme-computed-color-change",
+      "pass_rule": "Background or text color changes after the toggle."
+    },
+    {
+      "prompt": "make a todo list app",
+      "probe_id": "todo-add-and-change-item",
+      "pass_rule": "The new item appears and at least one item state change is observable."
+    },
+    {
+      "prompt": "make a weather card demo",
+      "probe_id": "weather-card-fields",
+      "pass_rule": "City, temperature, and condition are visible; any provided local control changes state."
+    },
+    {
+      "prompt": "make a music player mockup",
+      "probe_id": "music-player-control-state",
+      "pass_rule": "At least one player control visibly changes state."
+    },
+    {
+      "prompt": "make a habit tracker",
+      "probe_id": "habit-state-change",
+      "pass_rule": "Habit state changes after user action; static hard-coded habits are not enough."
+    },
+    {
+      "prompt": "make a notes app",
+      "probe_id": "notes-create-edit-visible-note",
+      "pass_rule": "Entered note text remains visible in the app artifact."
+    },
+    {
+      "prompt": "make a password strength checker",
+      "probe_id": "password-strength-feedback-change",
+      "pass_rule": "Strength feedback changes between weak and stronger inputs."
+    },
+    {
+      "prompt": "make a simple drawing pad",
+      "probe_id": "drawing-surface-changes",
+      "pass_rule": "Canvas pixels or equivalent drawing state changes after the drag."
+    }
+  ],
+  "target_score": {
+    "goal": "7/11 or 8/11 useful PASS",
+    "stretch": "9/11 if local repair works well",
+    "truth_target": "0 known false positives"
+  },
+  "forbidden_without_separate_approval": [
+    "provider_api_usage",
+    "codex_high_usage_escalation",
+    "hidden_worker_starts",
+    "full_multi_lane_benchmark",
+    "obsidian_write_back",
+    "production_source_repair",
+    "mutating_original_diagnostic_artifacts",
+    "git_operations"
+  ],
+  "next_authorized_action_only": "Britton reviews Phase 9 and decides whether to approve Phase 10."
+}

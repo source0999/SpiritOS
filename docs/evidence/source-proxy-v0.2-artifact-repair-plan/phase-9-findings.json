@@ -1,0 +1,39 @@
+{
+  "phase": "Phase 9 - v0.2 proof diagnostic rerun plan",
+  "workflow": "PIVOT",
+  "verdict": "GO",
+  "verdict_reason": "The v0.2 proof rerun is repeatable and permission-safe as a plan; it freezes inputs and expected probes without running an unapproved diagnostic or escalating.",
+  "implementation_phase_completed": "Phase 9 only",
+  "implementation_started_beyond_phase_9": false,
+  "created_or_updated_files": [
+    "docs/evidence/source-proxy-v0.2-artifact-repair-plan/phase-9-proof-rerun-plan.md",
+    "docs/evidence/source-proxy-v0.2-artifact-repair-plan/phase-9-rerun-schema.json",
+    "docs/evidence/source-proxy-v0.2-artifact-repair-plan/phase-9-closeout.md",
+    "docs/evidence/source-proxy-v0.2-artifact-repair-plan/phase-9-findings.json"
+  ],
+  "rerun_executed": false,
+  "prompt_count": 11,
+  "planned_evidence_root": "docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/",
+  "target_score": {
+    "goal": "7/11 or 8/11 useful PASS",
+    "stretch": "9/11 if local repair works well",
+    "truth_target": "0 known false positives"
+  },
+  "truth_rules": [
+    "Final PASS requires direct or post-repair behavior PASS when behavior is required.",
+    "Runtime GO, file creation, preview opening, static DOM presence, and model self-report are not product PASS.",
+    "Missing, unverified, failed, blocked, out-of-scope, or unsafe work remains non-PASS and may produce HANDOFF."
+  ],
+  "forbidden_actions_observed": {
+    "diagnostic_rerun": false,
+    "provider_api_or_model_call": false,
+    "codex_high_usage_escalation": false,
+    "hidden_worker_start": false,
+    "full_multi_lane_benchmark": false,
+    "obsidian_write_back": false,
+    "production_source_repair": false,
+    "generated_artifact_mutation": false,
+    "git_branch_commit_push_stash_reset_checkout_clean_or_stage": false
+  },
+  "next_authorized_action_only": "Britton reviews Phase 9 and decides whether to approve Phase 10."
+}

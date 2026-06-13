@@ -1,0 +1,17 @@
+{
+  "test": "make a scribble sketch pad-drawing-surface-change",
+  "verdict": "FAIL",
+  "passed": false,
+  "expected": "mouse drag changes canvas pixels",
+  "actual": {
+    "canvas": true,
+    "box": {
+      "x": 238,
+      "y": 98,
+      "width": 804,
+      "height": 604
+    },
+    "changed": false
+  },
+  "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10d-runs\\10-make-a-scribble-sketch-pad\\workspace\\index.html"
+}

@@ -1,0 +1,4 @@
+{
+  "attempts_used": 0,
+  "reason": "no manual generated-artifact patch; generation rerun plus browser retest"
+}

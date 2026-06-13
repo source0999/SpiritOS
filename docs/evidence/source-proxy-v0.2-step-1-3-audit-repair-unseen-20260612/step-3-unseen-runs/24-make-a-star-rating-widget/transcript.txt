@@ -1,0 +1,33 @@
+```json
+[
+    {
+        "action_type": "WriteFile",
+        "target": "star-rating-widget.html",
+        "arguments": {
+            "content": "<div id='rating-container'>\n  <span class='star' onclick='rate(1)'>★</span>\n  <span class='star' onclick='rate(2)'>★</span>\n  <span class='star' onclick='rate(3)'>★</span>\n  <span class='star' onclick='rate(4)'>★</span>\n  <span class='star' onclick='rate(5)'>★</span>\n  <p id='rating-text'></p>\n</div>\n<script src='star-rating-widget.js'></script>"
+        },
+        "reason": "HTML structure for the star rating widget."
+    },
+    {
+        "action_type": "WriteFile",
+        "target": "star-rating-widget.css",
+        "arguments": {
+            "content": ".star {\n  cursor: pointer;\n}\n.star.filled {\n  color: gold;\n}"
+        },
+        "reason": "CSS styles for the star rating widget."
+    },
+    {
+        "action_type": "WriteFile",
+        "target": "star-rating-widget.js",
+        "arguments": {
+            "content": "function rate(rating) {\n  const stars = document.querySelectorAll('.star');\n  stars.forEach((star, index) => {\n    if (index < rating - 1) {\n      star.classList.add('filled');\n    } else {\n      star.classList.remove('filled');\n    }\n  });\n  document.getElementById('rating-text').textContent = `Rating: ${rating}`;
+}"
+        },
+        "reason": "JavaScript functionality for the star rating widget."
+    }
+]
+```
+
+--- MODEL CALL ---
+
+{"action_type":"WriteFile","target":"src/components/StarRatingWidget.html","arguments":{"content":"<div class='star-rating'>\n  <span class='star' onclick='rate(1)'>★</span>\n  <span class='star' onclick='rate(2)'>★</span>\n  <span class='star' onclick='rate(3)'>★</span>\n  <span class='star' onclick='rate(4)'>★</span>\n  <span class='star' onclick='rate(5)'>★</span>\n  <p id='rating-text'></p>\n</div>\n<script>\nfunction rate(rating) {\n  document.querySelectorAll('.star').forEach((star, index) => {\n    if (index < rating - 1) {\n      star.classList.add('filled');\n    } else {\n      star.classList.remove('filled');\n    }\n  });\n  document.getElementById('rating-text').innerText = 'Rating: ' + rating;\n}\n</script>\n<style>\n.star { cursor: pointer; }\n.filled { color: gold; }\n</style>"},"reason":"A simple HTML file for a star rating widget with basic styling and JavaScript functionality."}

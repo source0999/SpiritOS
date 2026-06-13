@@ -1,0 +1,71 @@
+--- a/index.html
++++ b/index.html
+@@ -0,0 +1,17 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Tiny Mixtape Player</title>
++    <link rel="stylesheet" href="styles.css">
++</head>
++<body>
++    <div class="player-container">
++        <h2 id="track-title">Track Title</h2>
++        <button id="play-pause-btn">Play</button>
++        <button id="next-btn">Next</button>
++    </div>
++    <script src="script.js"></script>
++</body>
++</html>--- a/script.js
++++ b/script.js
+@@ -0,0 +1,32 @@
++const trackTitle = document.getElementById('track-title');
++const playPauseBtn = document.getElementById('play-pause-btn');
++const nextBtn = document.getElementById('next-btn');
++
++let isPlaying = false;
++let currentTrack = 0;
++
++const tracks = [
++    'Track 1 - Artist Name',
++    'Track 2 - Artist Name',
++    'Track 3 - Artist Name'
++];
++
++function updateTrack() {
++    trackTitle.textContent = tracks[currentTrack];
++}
++
++playPauseBtn.addEventListener('click', () => {
++    if (isPlaying) {
++        playPauseBtn.textContent = 'Play';
++    } else {
++        playPauseBtn.textContent = 'Pause';
++    }
++    isPlaying = !isPlaying;
++});
++
++nextBtn.addEventListener('click', () => {
++    currentTrack = (currentTrack + 1) % tracks.length;
++    updateTrack();
++});
++
++updateTrack();--- a/styles.css
++++ b/styles.css
+@@ -0,0 +1,15 @@
++.player-container {
++    text-align: center;
++    margin-top: 50px;
++}
++
++#track-title {
++    font-size: 24px;
++    margin-bottom: 20px;
++}
++
++button {
++    padding: 10px 20px;
++    margin: 5px;
++    cursor: pointer;
++}

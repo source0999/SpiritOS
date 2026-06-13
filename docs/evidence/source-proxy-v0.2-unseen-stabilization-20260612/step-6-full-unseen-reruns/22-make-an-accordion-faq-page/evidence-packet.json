@@ -1,0 +1,62 @@
+{
+  "behavior_contract_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\22-make-an-accordion-faq-page\\behavior-contract.json",
+  "behavior_probe": {
+    "actual": {
+      "after": "What is an accordion?\nAn accordion is a vertically stacked set of interactive headings that each contain a title and a body. When a heading is clicked, the corresponding content area expands or collapses.\nHow does an accordion work?",
+      "before": "What is an accordion?\nHow does an accordion work?",
+      "changed": true,
+      "clicked": "button"
+    },
+    "contract_probe": {
+      "acceptance_criterion": "Accordion expands or collapses FAQ content after interaction.",
+      "expected_observation": "Answer visibility or expanded state changes.",
+      "minimum_proof_tier": 2,
+      "observable_actions": [
+        "click a question/header"
+      ],
+      "probe_id": "accordion-expanded-state-change"
+    },
+    "expected": {
+      "expectation": "visible state changes after interaction"
+    },
+    "observed": {
+      "after": "What is an accordion?\nAn accordion is a vertically stacked set of interactive headings that each contain a title and a body. When a heading is clicked, the corresponding content area expands or collapses.\nHow does an accordion work?",
+      "before": "What is an accordion?\nHow does an accordion work?",
+      "changed": true,
+      "clicked": "button"
+    },
+    "passed": true,
+    "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\22-make-an-accordion-faq-page\\workspace\\index.html",
+    "reason": "",
+    "reason_codes": [],
+    "test": "accordion-expanded-state-change",
+    "verdict": "PASS"
+  },
+  "canonical_final_verdict_after_behavior": "PASS",
+  "diff_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\22-make-an-accordion-faq-page\\workspace.diff",
+  "evidence_packet_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\22-make-an-accordion-faq-page\\evidence-packet.json",
+  "preview_resolution": {
+    "candidate_paths": [
+      "index.html"
+    ],
+    "explicit_path": "/home/source/SpiritOS/docs/evidence/source-proxy-v0.2-unseen-stabilization-20260612/step-6-full-unseen-reruns/22-make-an-accordion-faq-page/workspace/index.html",
+    "reason_codes": [
+      "index_html_selected",
+      "explicit_preview_path_invalid_fallback_used"
+    ],
+    "selected_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\22-make-an-accordion-faq-page\\workspace\\index.html",
+    "selection_reason": "index_html_present_after_invalid_explicit",
+    "status": "ready"
+  },
+  "preview_selection_reason": "index_html_present_after_invalid_explicit",
+  "product_pass_after_behavior": true,
+  "prompt": "make an accordion FAQ page",
+  "receipt_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\22-make-an-accordion-faq-page\\receipt.json",
+  "retest_result_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\22-make-an-accordion-faq-page\\retest-result.json",
+  "run_dir": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\22-make-an-accordion-faq-page",
+  "score_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\22-make-an-accordion-faq-page\\score.json",
+  "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\22-make-an-accordion-faq-page\\workspace\\index.html",
+  "source_proxy_status": "GO",
+  "transcript_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\22-make-an-accordion-faq-page\\transcript.txt",
+  "workspace_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\22-make-an-accordion-faq-page\\workspace"
+}

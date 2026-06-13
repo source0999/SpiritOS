@@ -1,0 +1,12 @@
+{
+  "attempts_used": 0,
+  "handoff_reason": "failure_packet_requires_handoff",
+  "handoff_required": true,
+  "reason_codes": [
+    "behavior_failed_verified",
+    "behavior_probe_failed:make a login safety gauge-password-feedback",
+    "missing_probe_metadata",
+    "repair_metadata_incomplete"
+  ],
+  "status": "HANDOFF"
+}

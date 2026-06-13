@@ -1,0 +1,16 @@
+{
+  "opened": true,
+  "path": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10-runs\\01-make-a-kichen-timer-thing\\workspace\\index.html",
+  "title": "Kitchen Timer",
+  "bodyText": "00:00\nStart Stop",
+  "elementCounts": {
+    "buttons": 2,
+    "inputs": 0,
+    "links": 0,
+    "canvas": 0,
+    "scripts": 1,
+    "stylesheets": 1
+  },
+  "consoleMessages": [],
+  "pageErrors": []
+}

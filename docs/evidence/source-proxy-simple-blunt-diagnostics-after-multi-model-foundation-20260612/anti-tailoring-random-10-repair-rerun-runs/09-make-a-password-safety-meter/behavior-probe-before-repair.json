@@ -1,0 +1,12 @@
+{
+  "test": "make a password safety meter-password-feedback",
+  "verdict": "FAIL",
+  "passed": false,
+  "expected": "weak and stronger inputs change safety text",
+  "actual": {
+    "weak": "Password Safety Meter",
+    "strong": "Password Safety Meter",
+    "changed": false
+  },
+  "path": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10-repair-rerun-runs\\09-make-a-password-safety-meter\\workspace\\index.html"
+}

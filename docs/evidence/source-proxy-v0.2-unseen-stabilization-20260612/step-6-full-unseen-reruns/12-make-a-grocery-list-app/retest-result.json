@@ -1,0 +1,44 @@
+{
+  "artifact_ready": true,
+  "attempts_used": 0,
+  "behavior_required": true,
+  "behavior_result": {
+    "actual": {
+      "after": "Grocery List\n Add Item\nv0.2 proof item",
+      "appears": true,
+      "before": "Grocery List\n Add Item",
+      "changed": true,
+      "filled": true
+    },
+    "expected": {
+      "itemAppearsOrStateChanges": true
+    },
+    "observed": {
+      "after": "Grocery List\n Add Item\nv0.2 proof item",
+      "appears": true,
+      "before": "Grocery List\n Add Item",
+      "changed": true,
+      "filled": true
+    },
+    "passed": true,
+    "reason": "",
+    "test": "list-or-ledger-state-change",
+    "verdict": "PASS"
+  },
+  "canonical_final_verdict": "PASS",
+  "changed_files": [],
+  "diffs": [],
+  "final_reason_codes": [
+    "behavior_pass_verified",
+    "explicit_preview_path_invalid_fallback_used",
+    "index_html_selected",
+    "post_repair_behavior_pass",
+    "repair_ready_for_retest",
+    "stabilization_rerun_no_manual_artifact_patch"
+  ],
+  "handoff_reason": "",
+  "handoff_required": false,
+  "product_pass": true,
+  "repair_status": "READY_FOR_RETEST",
+  "result_version": "source-proxy-artifact-retest-result-v0.2.phase-6"
+}

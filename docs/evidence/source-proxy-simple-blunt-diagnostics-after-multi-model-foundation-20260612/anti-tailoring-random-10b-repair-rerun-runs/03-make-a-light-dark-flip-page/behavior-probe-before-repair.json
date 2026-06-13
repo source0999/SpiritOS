@@ -1,0 +1,19 @@
+{
+  "test": "make a light dark flip page-theme-computed-change",
+  "verdict": "FAIL",
+  "passed": false,
+  "expected": "computed color or theme class changes",
+  "actual": {
+    "before": {
+      "bg": "rgba(0, 0, 0, 0)",
+      "color": "rgb(0, 0, 0)",
+      "cls": ""
+    },
+    "after": {
+      "bg": "rgba(0, 0, 0, 0)",
+      "color": "rgb(0, 0, 0)",
+      "cls": ""
+    }
+  },
+  "path": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10b-repair-rerun-runs\\03-make-a-light-dark-flip-page\\workspace\\index.html"
+}

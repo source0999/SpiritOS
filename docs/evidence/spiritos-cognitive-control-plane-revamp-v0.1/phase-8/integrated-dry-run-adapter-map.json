@@ -1,0 +1,91 @@
+{
+  "phase": "Phase 8 - Integrated dry-run loop",
+  "map_version": "phase-8.5-v0.1",
+  "implementation_status": "not_implemented_phase_8_evidence_only",
+  "reuse_first_rules": [
+    "Compose existing phase contracts before creating runtime modules.",
+    "Reuse existing Source Proxy dry-run and preview surfaces where implementation is later approved.",
+    "Do not treat dry-run readiness as execution authority.",
+    "Do not treat dry-run readiness as product PASS.",
+    "Keep learning write-back deferred to v0.2 or stretch."
+  ],
+  "future_adapters": [
+    {
+      "future_adapter": "integrated_dry_run.context_adapter",
+      "existing_surface": "phase-3/context-router-preview-schema.json",
+      "loop_steps": ["sense", "understand"]
+    },
+    {
+      "future_adapter": "integrated_dry_run.memory_adapter",
+      "existing_surface": "phase-2/read-only-memory-contract.json",
+      "loop_steps": ["remember"]
+    },
+    {
+      "future_adapter": "integrated_dry_run.risk_adapter",
+      "existing_surface": "phase-4/executive-preview-schema.json",
+      "loop_steps": ["prioritize"]
+    },
+    {
+      "future_adapter": "integrated_dry_run.worker_selector_adapter",
+      "existing_surface": "phase-5/handoff-preview-schema.json",
+      "loop_steps": ["choose_worker"]
+    },
+    {
+      "future_adapter": "integrated_dry_run.execution_preview_adapter",
+      "existing_surface": "phase-7/safe-execution-preview-contract.json",
+      "loop_steps": ["plan", "act"]
+    },
+    {
+      "future_adapter": "integrated_dry_run.behavior_verifier_adapter",
+      "existing_surface": "phase-6/behavior-verifier-result-schema.json",
+      "loop_steps": ["verify"]
+    },
+    {
+      "future_adapter": "integrated_dry_run.learning_preview_adapter",
+      "existing_surface": "v0.2 deferred learning policy",
+      "loop_steps": ["learn"],
+      "constraint": "preview only; no memory or Obsidian write-back"
+    },
+    {
+      "future_adapter": "integrated_dry_run.source_proxy_self_test_adapter",
+      "existing_surface": "source_proxy/api/coding_self_tests.py and source_proxy/testing/self_tests.py",
+      "loop_steps": ["verify"],
+      "constraint": "future focused dry-run tests only; Phase 8 does not call endpoint"
+    },
+    {
+      "future_adapter": "integrated_dry_run.cartographer_dry_run_adapter",
+      "existing_surface": "source_proxy/api/cartographer.py dry-run surfaces",
+      "loop_steps": ["plan", "act", "verify"],
+      "constraint": "future preview-only integration; Phase 8 does not call endpoint"
+    }
+  ],
+  "phase_9_handoff": {
+    "next_phase": "Phase 9 - Controlled live proof",
+    "handoff_inputs": [
+      "integrated-dry-run-loop-contract.json",
+      "integrated-dry-run-gate-schema.json",
+      "integrated-dry-run-examples.json",
+      "integrated-dry-run-adapter-map.json"
+    ],
+    "handoff_constraints": [
+      "Phase 9 must be explicitly approved before any live proof.",
+      "Phase 9 must start with the smallest controlled proof case.",
+      "Phase 9 must not mutate generated benchmark artifacts.",
+      "Phase 9 must not auto-start workers.",
+      "Phase 9 must not call providers/models unless separately approved.",
+      "Phase 9 must preserve Phase 6 product PASS gating.",
+      "Phase 9 must stop on NO-GO or PARTIAL."
+    ],
+    "recommended_first_live_proof_candidate": {
+      "candidate": "timer pass-preservation fixture",
+      "reason": "Phase 6 has preserved PASS behavior proof and Phase 7 has preview-ready no-execution plan.",
+      "requires_before_start": [
+        "Britton approval for Phase 9",
+        "exact artifact target",
+        "exact non-mutating proof steps",
+        "receipt path",
+        "stop conditions"
+      ]
+    }
+  }
+}

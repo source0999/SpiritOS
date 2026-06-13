@@ -1,0 +1,12 @@
+{
+  "test": "make a mini episode player-player-control-change",
+  "verdict": "FAIL",
+  "passed": false,
+  "expected": "play/pause or player control visibly changes state",
+  "actual": {
+    "before": "Episode Player\n Play ",
+    "after": "Episode Player\n Play ",
+    "clicked": true
+  },
+  "path": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10b-runs\\06-make-a-mini-episode-player\\workspace\\index.html"
+}

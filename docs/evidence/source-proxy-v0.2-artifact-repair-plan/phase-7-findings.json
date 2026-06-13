@@ -1,0 +1,80 @@
+{
+  "phase": "Phase 7 - Handoff packet for failed or out-of-scope local tasks",
+  "workflow": "PIVOT",
+  "verdict": "GO",
+  "verdict_reason": "Failed, unsafe, missing-artifact, provider-needed, production-scope, and worker-unavailable cases now produce HANDOFF packets instead of fake local success or automatic escalation.",
+  "implementation_phase_completed": "Phase 7 only",
+  "implementation_started_beyond_phase_7": false,
+  "created_or_updated_files": [
+    "source_proxy/decision/artifact_handoff_packet.py",
+    "source_proxy/tests/test_artifact_handoff_packet.py",
+    "docs/evidence/source-proxy-v0.2-artifact-repair-plan/phase-7-closeout.md",
+    "docs/evidence/source-proxy-v0.2-artifact-repair-plan/phase-7-findings.json"
+  ],
+  "handoff_packet_fields": [
+    "packet_version",
+    "status",
+    "prompt",
+    "handoff_reason",
+    "final_verdict",
+    "approval_needed",
+    "next_recommended_route",
+    "behavior_contract",
+    "failure_packet_summary",
+    "repair_summary",
+    "retest_summary",
+    "evidence_refs",
+    "operator_message",
+    "safety"
+  ],
+  "sample_handoff_routes": [
+    {
+      "case": "failed_repair",
+      "handoff_reason": "repair_attempts_exhausted",
+      "approval_needed": "stronger_repair_route_approval",
+      "next_recommended_route": "operator-approved bounded repair retry or stronger route"
+    },
+    {
+      "case": "no_artifact",
+      "handoff_reason": "artifact_path_missing",
+      "approval_needed": "artifact_generation_or_rerun_approval",
+      "next_recommended_route": "approved disposable artifact regeneration or diagnostic rerun"
+    },
+    {
+      "case": "provider_needed",
+      "handoff_reason": "provider_api_required",
+      "approval_needed": "provider_api_approval",
+      "next_recommended_route": "operator-approved provider/API route"
+    },
+    {
+      "case": "worker_unavailable",
+      "handoff_reason": "repair_worker_failed",
+      "approval_needed": "local_worker_recovery_approval",
+      "next_recommended_route": "operator-approved local worker recovery"
+    }
+  ],
+  "verification": [
+    {
+      "command": "python -m pytest source_proxy/tests/test_artifact_handoff_packet.py -q",
+      "result": "6 passed"
+    },
+    {
+      "command": "python -m py_compile source_proxy/decision/artifact_handoff_packet.py source_proxy/tests/test_artifact_handoff_packet.py",
+      "result": "passed"
+    }
+  ],
+  "forbidden_actions_observed": {
+    "automatic_escalation": false,
+    "provider_api_or_model_call": false,
+    "codex_api_or_local_model_worker_start": false,
+    "production_source_repair": false,
+    "generated_diagnostic_artifact_patch": false,
+    "non_disposable_artifact_edit": false,
+    "hidden_worker_or_background_job": false,
+    "diagnostic_batch_rerun": false,
+    "obsidian_mutation": false,
+    "git_branch_commit_push_stash_reset_checkout_clean_or_stage": false,
+    "paid_api_codex_or_high_usage_escalation": false
+  },
+  "next_authorized_action_only": "Britton reviews Phase 7 and decides whether to approve Phase 8."
+}

@@ -1,0 +1,16 @@
+{
+  "test": "make a tea steep timer-timer-change",
+  "verdict": "PASS",
+  "passed": true,
+  "expected": "timer text changes after start",
+  "primary_behavior_failure_bucket": "",
+  "secondary_behavior_failure_bucket": "",
+  "failureBucket": "",
+  "actual": {
+    "before": "0:00\nStart Stop Reset",
+    "afterStart": "0:01\nStart Stop Reset",
+    "afterStop": "0:01\nStart Stop Reset",
+    "clickedStop": true
+  },
+  "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-level3-stabilization-runs\\01-make-a-tea-steep-timer\\workspace\\index.html"
+}

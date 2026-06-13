@@ -1,0 +1,12 @@
+{
+  "test": "make a small audio show player-player-control-change",
+  "verdict": "FAIL",
+  "passed": false,
+  "expected": "play/pause or player control visibly changes state",
+  "actual": {
+    "before": "Audio Show Player\n ",
+    "after": "Audio Show Player\n ",
+    "clicked": false
+  },
+  "path": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10c-runs\\06-make-a-small-audio-show-player\\workspace\\index.html"
+}

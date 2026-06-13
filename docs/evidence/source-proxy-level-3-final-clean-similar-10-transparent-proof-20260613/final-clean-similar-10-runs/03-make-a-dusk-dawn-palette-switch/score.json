@@ -1,0 +1,237 @@
+{
+  "actions_seen": 1,
+  "adapter_source": "ollama_generate/tool_action_runtime_v1",
+  "allowed_files_source": "none",
+  "allowed_scope_source": "none",
+  "artifact_class": "",
+  "artifact_score_kind": "expected_blocked",
+  "artifact_specific_ok": false,
+  "backend_created_content": false,
+  "behavior_contract": {
+    "artifact_class": "",
+    "behavior_required": false,
+    "contract_status": "unverified_requirements",
+    "contract_version": "source-proxy-artifact-behavior-contract-v0.2.phase-3",
+    "final_pass_rule": "Final PASS requires later verifier approval; product behavior remains UNVERIFIED before generation.",
+    "generic_behavior_requirement_examples": [
+      "timer/countdown: Start uses local interval/state mutation and visible time/count text changes after start",
+      "bill/tip/splitter/calculator: entered numbers visibly update result",
+      "checklist/list/notes: entered text appears visibly after add/save",
+      "theme/toggle/day/night: computed class/color/theme state visibly changes",
+      "weather/player/tracker/password/canvas: the primary control visibly changes state, feedback, track/status, or pixels"
+    ],
+    "generic_interactive_requirement": "",
+    "non_pass_signals": [
+      "route_go",
+      "artifact_exists",
+      "preview_opens",
+      "static_dom_presence",
+      "model_self_report"
+    ],
+    "preview_requirement": "A later verifier must define artifact readiness for this artifact.",
+    "probe_targets": [],
+    "prompt": "make a dusk dawn palette switch",
+    "task_shape": "clarification_required_real_repo_implementation"
+  },
+  "behavior_required_for_final_pass": true,
+  "behavior_verdict": "UNVERIFIED",
+  "benchmark_eligibility_reason": "product_route_uses_proxy_orchestration",
+  "benchmark_eligible": false,
+  "blocked_reasons": [
+    "Action target is outside the allowed file snapshot."
+  ],
+  "canonical_final_verdict": "BLOCKED",
+  "content_byte_match_by_target": {},
+  "deterministic_scaffold_used": false,
+  "dummy_fixture_used": false,
+  "elapsed_seconds": 10.973,
+  "expectation_score": {
+    "artifact_class": "",
+    "artifact_creation_score": 0,
+    "backend_authored_content_detected": false,
+    "behavior_probe_results": {},
+    "behavior_score": 50,
+    "browser_open_score": 0,
+    "browser_open_verdict": "FAIL",
+    "console_error_count": 0,
+    "context_decision": {
+      "context_sources_used": [
+        "behavior_contract",
+        "model_lane_observability",
+        "task_spec_intake"
+      ],
+      "local_context_needed": false,
+      "reason_codes": [
+        "blunt_local_artifact_prompt",
+        "repo_context_not_required"
+      ],
+      "web_search_needed": false,
+      "web_search_used": false
+    },
+    "context_discipline_score": 100,
+    "context_sources_used": [
+      "behavior_contract",
+      "model_lane_observability",
+      "task_spec_intake"
+    ],
+    "entrypoint_reason": "no_browser_viewable_html_artifact",
+    "expectation_score_version": "source-proxy-expectation-score-v0.1",
+    "expected_artifact_kind": "unknown",
+    "expected_interaction_level": "unverified",
+    "expected_non_goals": [
+      "provider_or_cloud_call",
+      "real_app_mutation",
+      "secret_or_env_mutation",
+      "model_self_report_as_pass",
+      "web_search_or_current_fact_lookup"
+    ],
+    "expected_primary_behaviors": [],
+    "external_resource_reasonability": "none_detected",
+    "external_resources": [],
+    "file_integrity_verdict": "FAIL",
+    "human_review_notes": "Behavior exists but usability depth is weak.",
+    "inferred_intent": "clarification_required_real_repo_implementation",
+    "intent_confidence": "medium",
+    "intent_fit_score": 50,
+    "intent_reason_codes": [
+      "product_route_selected",
+      "task_shape_inferred"
+    ],
+    "lane_policy_verdict": "PASS",
+    "local_intelligence_used": [],
+    "missing_local_references": [],
+    "model_authored_paths": [
+      "src/styles/duskDawnPalette.css"
+    ],
+    "model_authorship_score": 70,
+    "model_lane_discipline_score": 100,
+    "model_lane_selected": "qwen_local_coder",
+    "original_prompt": "make a dusk dawn palette switch",
+    "page_error_count": 0,
+    "product_verdict": "FAIL",
+    "proxy_suggested_paths": [],
+    "route_safety_score": 50,
+    "safety_boundary_score": 100,
+    "safety_boundary_verdict": "PASS",
+    "score_reason_codes": [
+      "artifact_fail",
+      "behavior_evidence_missing",
+      "behavior_weak",
+      "browser_open_fail",
+      "context_pass",
+      "lane_pass",
+      "model_authorship_weak",
+      "no_external_resources_detected",
+      "route_weak",
+      "safety_pass",
+      "sidecar_lanes_preview_only",
+      "usability_weak",
+      "web_search_correctly_not_used"
+    ],
+    "selected_entrypoint": "",
+    "sidecar_lanes_live": false,
+    "task_shape": "clarification_required_real_repo_implementation",
+    "usability_score": 50,
+    "web_search_decision": "not_needed",
+    "web_search_used": false
+  },
+  "expected_blocked": true,
+  "fallback_used": false,
+  "file_equals_model_action_content": false,
+  "files_changed": [],
+  "files_touched": [],
+  "final_state": "blocked",
+  "final_verdict_reason_codes": [
+    "blocked_by_scope_or_permission",
+    "expected_blocked_result",
+    "target_not_allowed"
+  ],
+  "lane_approval_required": "normal_source_proxy_gate",
+  "lane_cost_class": "local_compute",
+  "lane_evidence_refs": [
+    "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\03-make-a-dusk-dawn-palette-switch\\receipt.json",
+    "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\03-make-a-dusk-dawn-palette-switch\\transcript.txt"
+  ],
+  "lane_privacy_class": "local",
+  "lane_selection_reason_codes": [
+    "qwen_primary_local_coder_preserved",
+    "sidecar_lanes_preview_only",
+    "no_model_swap",
+    "no_live_sidecar_call"
+  ],
+  "mode": "product",
+  "model_authored_content_hashes": {
+    "src/styles/duskDawnPalette.css": "78282e45655cb3c97d80f349e242d96c835cb9f4e0ff6b247b9ee096e446e328"
+  },
+  "model_authored_targets": [
+    "src/styles/duskDawnPalette.css"
+  ],
+  "model_chose_target": true,
+  "model_id": "qwen2.5-coder:7b",
+  "model_lane_observability": {
+    "lane_approval_required": "normal_source_proxy_gate",
+    "lane_cost_class": "local_compute",
+    "lane_evidence_refs": [
+      "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\03-make-a-dusk-dawn-palette-switch\\receipt.json",
+      "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\03-make-a-dusk-dawn-palette-switch\\transcript.txt"
+    ],
+    "lane_privacy_class": "local",
+    "lane_selection_reason_codes": [
+      "qwen_primary_local_coder_preserved",
+      "sidecar_lanes_preview_only",
+      "no_model_swap",
+      "no_live_sidecar_call"
+    ],
+    "selected_coder_lane": "qwen_local_coder",
+    "selected_coder_lane_display_name": "Qwen local coder",
+    "sidecar_lanes_considered": [
+      "hermes_sidecar_verifier_preview",
+      "gemma_sidecar_context_preview"
+    ],
+    "sidecar_lanes_live": false,
+    "verifier_lane_required": true
+  },
+  "openable_homepage": false,
+  "openable_homepage_paths": [],
+  "parsed_action_count": 1,
+  "path_selection_mode": "model_chosen",
+  "preview_candidate_paths": [],
+  "preview_resolution_reason_codes": [
+    "missing_preview_artifact"
+  ],
+  "preview_resolution_status": "missing_preview_artifact",
+  "preview_selection_reason": "no_browser_viewable_html_artifact",
+  "preview_url": "",
+  "product_helper_used": true,
+  "product_pass": false,
+  "prompt": "make a dusk dawn palette switch",
+  "proxy_exact_target_suggested": "",
+  "proxy_orchestration_used": true,
+  "pure_mode": false,
+  "raw_model_transcript_count": 1,
+  "raw_transcript_path": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\03-make-a-dusk-dawn-palette-switch\\transcript.txt",
+  "real_app_touched": false,
+  "reason_codes": [
+    "expected_blocked_result",
+    "target_not_allowed"
+  ],
+  "receipt_path": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\03-make-a-dusk-dawn-palette-switch\\receipt.json",
+  "route_status": "EXPECTED-BLOCKED",
+  "route_type": "product",
+  "selected_coder_lane": "qwen_local_coder",
+  "selected_preview_path": "",
+  "sidecar_lanes_considered": [
+    "hermes_sidecar_verifier_preview",
+    "gemma_sidecar_context_preview"
+  ],
+  "status": "EXPECTED-BLOCKED",
+  "system_preselected_target": false,
+  "target_path_source": "model_action",
+  "task_shape": "clarification_required_real_repo_implementation",
+  "task_shape_source": "target_resolution",
+  "transparent_default_target_used": false,
+  "verifier_lane_required": true,
+  "workspace_decision_source": "target_resolution",
+  "workspace_files": [],
+  "workspace_path": "Z:\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\03-make-a-dusk-dawn-palette-switch\\workspace"
+}

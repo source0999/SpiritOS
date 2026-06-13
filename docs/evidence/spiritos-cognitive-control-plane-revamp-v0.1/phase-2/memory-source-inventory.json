@@ -1,0 +1,81 @@
+{
+  "phase": "Phase 2",
+  "repo_path": "\\\\10.0.0.186\\SpiritOS\\",
+  "inspection_mode": "read-only",
+  "memory_sources": [
+    {
+      "path": "source_proxy/context/obsidian.py",
+      "source_type": "obsidian_context_module",
+      "current_role": "Reads markdown notes from configured or default local vault and returns safe excerpts with diagnostics.",
+      "read_only_boundary": "obsidian_read_only diagnostic is true; code path reads files and returns excerpts only.",
+      "privacy_boundary": "Default excludes include .obsidian/**, private/**, secrets/**, archive/**; token/email/secret-shaped values are redacted in excerpts.",
+      "future_use": "Wrap as Phase 2 read-only Hippocampus source for task-relevant notes.",
+      "recommendation": "wrap"
+    },
+    {
+      "path": "source_proxy/api/obsidian_context.py",
+      "source_type": "obsidian_context_route",
+      "current_role": "POST /v1/context/obsidian/query route for read-only note context.",
+      "read_only_boundary": "Delegates to query_obsidian_context only.",
+      "privacy_boundary": "Inherits safe excerpt and exclude-glob behavior from source_proxy/context/obsidian.py.",
+      "future_use": "Candidate preview input for Phase 3 intake/context router.",
+      "recommendation": "wrap"
+    },
+    {
+      "path": "source_proxy/api/context_index.py",
+      "source_type": "context_index_route",
+      "current_role": "GET /v1/context/index route from build_context_index_manifest.",
+      "read_only_boundary": "Read-only route surface.",
+      "privacy_boundary": "Must not expose secrets or raw private context in future adapters.",
+      "future_use": "Source registry for memory and context availability.",
+      "recommendation": "wrap"
+    },
+    {
+      "path": "source_proxy/api/context_inventory.py",
+      "source_type": "context_inventory_route",
+      "current_role": "GET /v1/context/inventory route from build_safe_context_inventory.",
+      "read_only_boundary": "Uses safe inventory builder.",
+      "privacy_boundary": "Future memory adapters must preserve safe inventory limits.",
+      "future_use": "Repo/evidence memory source discovery.",
+      "recommendation": "wrap"
+    },
+    {
+      "path": "data/design-vault/**",
+      "source_type": "default_local_vault",
+      "current_role": "Default local markdown vault if present.",
+      "read_only_boundary": "Read-only inspection only in v0.1 unless separately approved.",
+      "privacy_boundary": "Use include/exclude globs and safe excerpts; never write back in v0.1.",
+      "future_use": "Optional read-only note source.",
+      "recommendation": "wrap"
+    },
+    {
+      "path": "docs/evidence/**",
+      "source_type": "evidence_docs",
+      "current_role": "Plan receipts, closeouts, diagnostics, and verification evidence.",
+      "read_only_boundary": "Read-only source for future phases except the currently authorized evidence root.",
+      "privacy_boundary": "Evidence can contain sensitive diagnostics; future adapters must prefer summary metadata and redact secret-shaped values.",
+      "future_use": "Durable evidence memory for prior decisions and truth labels.",
+      "recommendation": "wrap"
+    },
+    {
+      "path": "data/coding-runs.json",
+      "source_type": "durable_run_store",
+      "current_role": "Durable coding run records including run IDs, prompts, status, model/provider fields, changed files, checks, and result labels.",
+      "read_only_boundary": "Read-only in Phase 2.",
+      "privacy_boundary": "Future adapters must preserve raw diagnostics by reference and avoid exposing full prompt/run payloads unnecessarily.",
+      "future_use": "Run-history memory source for truth labels and prior failures.",
+      "recommendation": "wrap"
+    },
+    {
+      "path": "docs/evidence/spiritos-cognitive-control-plane-revamp-v0.1/phase-1/canonical-truth-contract.json",
+      "source_type": "truth_contract",
+      "current_role": "Canonical labels and evidence-strength rules.",
+      "read_only_boundary": "Read-only contract source for Phase 2.",
+      "privacy_boundary": "No secrets expected; use as metadata contract.",
+      "future_use": "Memory metadata must carry Phase 1 labels and unverified checks.",
+      "recommendation": "wrap"
+    }
+  ],
+  "verdict": "GO"
+}
+

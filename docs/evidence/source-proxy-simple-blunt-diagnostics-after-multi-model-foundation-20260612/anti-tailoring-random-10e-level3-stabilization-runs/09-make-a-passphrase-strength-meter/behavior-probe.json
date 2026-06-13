@@ -1,0 +1,14 @@
+{
+  "test": "make a passphrase strength meter-password-feedback",
+  "verdict": "PASS",
+  "passed": true,
+  "expected": "weak and stronger inputs change safety text",
+  "primary_behavior_failure_bucket": "",
+  "failureBucket": "",
+  "actual": {
+    "weak": "Passphrase Strength Meter\nWeak",
+    "strong": "Passphrase Strength Meter\nStrong",
+    "changed": true
+  },
+  "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-level3-stabilization-runs\\09-make-a-passphrase-strength-meter\\workspace\\passphrase_strength_meter.html"
+}

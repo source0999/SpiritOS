@@ -1,0 +1,82 @@
+{
+  "browser_behavior_results": "anti-tailoring-random-10d-browser-behavior-results.json",
+  "created_at": "2026-06-13T14:00:04.285915+00:00",
+  "html": "anti-tailoring-random-10d.html",
+  "model_id": "qwen2.5-coder:7b",
+  "prompt_file": "anti-tailoring-random-10d.json",
+  "repair_summary": "anti-tailoring-random-10d-post-behavior-repair-summary.json",
+  "results": "anti-tailoring-random-10d-results.json",
+  "rows": [
+    {
+      "prompt": "build me a snack break countdown",
+      "run": "01-build-me-a-snack-break-countdown",
+      "run_dir": "anti-tailoring-random-10d-runs/01-build-me-a-snack-break-countdown",
+      "score_status": "GO",
+      "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10d-runs\\01-build-me-a-snack-break-countdown\\workspace\\index.html"
+    },
+    {
+      "prompt": "make a pizza money splitter",
+      "run": "02-make-a-pizza-money-splitter",
+      "run_dir": "anti-tailoring-random-10d-runs/02-make-a-pizza-money-splitter",
+      "score_status": "GO",
+      "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10d-runs\\02-make-a-pizza-money-splitter\\workspace\\index.html"
+    },
+    {
+      "prompt": "make a day night color flipper",
+      "run": "03-make-a-day-night-color-flipper",
+      "run_dir": "anti-tailoring-random-10d-runs/03-make-a-day-night-color-flipper",
+      "score_status": "EXPECTED-BLOCKED",
+      "selected_preview_path": ""
+    },
+    {
+      "prompt": "make a farmers market checklist app",
+      "run": "04-make-a-farmers-market-checklist-app",
+      "run_dir": "anti-tailoring-random-10d-runs/04-make-a-farmers-market-checklist-app",
+      "score_status": "GO",
+      "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10d-runs\\04-make-a-farmers-market-checklist-app\\workspace\\index.html"
+    },
+    {
+      "prompt": "make a pretend weekend forecast card",
+      "run": "05-make-a-pretend-weekend-forecast-card",
+      "run_dir": "anti-tailoring-random-10d-runs/05-make-a-pretend-weekend-forecast-card",
+      "score_status": "GO",
+      "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10d-runs\\05-make-a-pretend-weekend-forecast-card\\workspace\\weather-card.html"
+    },
+    {
+      "prompt": "make a tiny mixtape player",
+      "run": "06-make-a-tiny-mixtape-player",
+      "run_dir": "anti-tailoring-random-10d-runs/06-make-a-tiny-mixtape-player",
+      "score_status": "GO",
+      "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10d-runs\\06-make-a-tiny-mixtape-player\\workspace\\mixtape-player.html"
+    },
+    {
+      "prompt": "make a coffee cup counter",
+      "run": "07-make-a-coffee-cup-counter",
+      "run_dir": "anti-tailoring-random-10d-runs/07-make-a-coffee-cup-counter",
+      "score_status": "GO",
+      "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10d-runs\\07-make-a-coffee-cup-counter\\workspace\\index.html"
+    },
+    {
+      "prompt": "make a quick jot pad app",
+      "run": "08-make-a-quick-jot-pad-app",
+      "run_dir": "anti-tailoring-random-10d-runs/08-make-a-quick-jot-pad-app",
+      "score_status": "GO",
+      "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10d-runs\\08-make-a-quick-jot-pad-app\\workspace\\index.html"
+    },
+    {
+      "prompt": "make a login safety gauge",
+      "run": "09-make-a-login-safety-gauge",
+      "run_dir": "anti-tailoring-random-10d-runs/09-make-a-login-safety-gauge",
+      "score_status": "GO",
+      "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10d-runs\\09-make-a-login-safety-gauge\\workspace\\login_safety_gauge.html"
+    },
+    {
+      "prompt": "make a scribble sketch pad",
+      "run": "10-make-a-scribble-sketch-pad",
+      "run_dir": "anti-tailoring-random-10d-runs/10-make-a-scribble-sketch-pad",
+      "score_status": "GO",
+      "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10d-runs\\10-make-a-scribble-sketch-pad\\workspace\\index.html"
+    }
+  ],
+  "run_root": "anti-tailoring-random-10d-runs"
+}

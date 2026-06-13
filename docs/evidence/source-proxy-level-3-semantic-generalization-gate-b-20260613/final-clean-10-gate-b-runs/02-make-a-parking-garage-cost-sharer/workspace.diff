@@ -1,0 +1,41 @@
+--- a/index.html
++++ b/index.html
+@@ -0,0 +1,16 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Parking Garage Cost Sharer</title>
++    <link rel="stylesheet" href="styles.css">
++</head>
++<body>
++    <h1>Parking Garage Cost Sharer</h1>
++    <input type="number" id="garageCost" placeholder="Enter garage cost">
++    <button onclick="calculateTotal()">Calculate Total</button>
++    <p>Total: $<span id="total"></span></p>
++    <script src="script.js"></script>
++</body>
++</html>--- a/script.js
++++ b/script.js
+@@ -0,0 +1,8 @@
++function calculateTotal() {
++    const garageCost = parseFloat(document.getElementById('garageCost').value);
++    if (!isNaN(garageCost)) {
++        document.getElementById('total').innerText = garageCost.toFixed(2);
++    } else {
++        document.getElementById('total').innerText = 'Invalid input';
++    }
++}--- a/styles.css
++++ b/styles.css
+@@ -0,0 +1,10 @@
++body {
++    font-family: Arial, sans-serif;
++}
++input, button {
++    padding: 10px;
++    margin: 5px;
++}
++p {
++    font-size: 20px;
++}

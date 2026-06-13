@@ -1,0 +1,32 @@
+{
+  "actual": {
+    "after": "Habit Streak Tracker\n\nCurrent Streak: 2 days\n\nTrack Habit",
+    "before": "Habit Streak Tracker\n\nCurrent Streak: 1 days\n\nTrack Habit",
+    "changed": true,
+    "clicked": "button"
+  },
+  "contract_probe": {
+    "acceptance_criterion": "Tracker UI records or changes a visible item/count/completion state.",
+    "expected_observation": "A count, selected state, streak, or tracked item changes visibly.",
+    "minimum_proof_tier": 2,
+    "observable_actions": [
+      "add, toggle, increment, or select a tracker item"
+    ],
+    "probe_id": "tracker-state-change"
+  },
+  "expected": {
+    "expectation": "tracker state changes after interaction"
+  },
+  "observed": {
+    "after": "Habit Streak Tracker\n\nCurrent Streak: 2 days\n\nTrack Habit",
+    "before": "Habit Streak Tracker\n\nCurrent Streak: 1 days\n\nTrack Habit",
+    "changed": true,
+    "clicked": "button"
+  },
+  "passed": true,
+  "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\25-make-a-simple-habit-streak-tracker\\workspace\\streak-tracker.html",
+  "reason": "",
+  "reason_codes": [],
+  "test": "tracker-state-change",
+  "verdict": "PASS"
+}

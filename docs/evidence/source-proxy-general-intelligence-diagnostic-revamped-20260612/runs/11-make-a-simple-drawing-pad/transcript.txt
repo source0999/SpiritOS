@@ -1,0 +1,10 @@
+```json
+{
+  "action_type": "WriteFile",
+  "target": "drawing_pad.html",
+  "arguments": {
+    "content": "<html><head><title>Drawing Pad</title></head><body><canvas id='myCanvas' width='500' height='500' style='border:1px solid #d3d3d3;'></canvas><script>var canvas = document.getElementById('myCanvas');var ctx = canvas.getContext('2d');</script></body></html>"
+  },
+  "reason": "A simple HTML file to create a drawing pad."
+}
+```

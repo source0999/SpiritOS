@@ -1,0 +1,31 @@
+Phase 3A checks
+
+Focused product tests:
+NOT RUN.
+Reason: Phase 3A was a harness and approval-boundary preflight. No product code was intentionally changed.
+
+Checks performed:
+- git status --branch --short --untracked-files=normal
+- git diff --stat
+- Task A task_spec_intake
+- Task A action parser
+- Task A lower-level action executor with explicit approved file contract
+- Task A path-scoped revert check
+- Task C task_spec_intake negative gate
+- git diff --check -- docs/evidence/source-proxy-remaining-levels-daily-driver-readiness-20260612
+
+git diff --check result:
+PASS, no output.
+
+Post-revert sandbox doc status:
+PASS, no output for:
+git status --short --untracked-files=normal -- docs/evidence/source-proxy-remaining-levels-daily-driver-readiness-20260612/level-3/sandbox-approved-doc.md
+
+Post-revert sandbox doc existence:
+MISSING_AFTER_REVERT
+
+Final Phase 3A verdict:
+NEEDS_FIX
+
+Reason:
+Task C blocked correctly before model action. Task A's lower-level action contract could apply and revert the approved evidence-only file, but task_spec_intake still classified the explicit approved real-repo create as target_missing/ask_clarification, and the first executor attempt reused disposable workspace file-count limits against the repo.

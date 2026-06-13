@@ -1,0 +1,14 @@
+{
+  "test": "make me a grocery checklist-visible-state-change",
+  "verdict": "PASS",
+  "passed": true,
+  "expected": "entered text remains visible after action",
+  "actual": {
+    "before": "Grocery Checklist\n Add Item",
+    "after": "Grocery Checklist\nbananas\n Add Item",
+    "filled": 1,
+    "clicked": true,
+    "appears": true
+  },
+  "path": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10-repair-rerun-runs\\04-make-me-a-grocery-checklist\\workspace\\index.html"
+}

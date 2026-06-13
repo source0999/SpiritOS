@@ -1,0 +1,52 @@
+{
+  "anti_hardcoding_audit": "PASS",
+  "autonomy_recommendation": {
+    "do_not_implement_autonomy": true,
+    "level": "Level 2",
+    "reason": "unseen stabilization did not meet the Level 3 planning threshold"
+  },
+  "baseline": {
+    "FAIL": 5,
+    "HANDOFF": 0,
+    "NEEDS_FIX": 12,
+    "PASS": 8,
+    "UNVERIFIED": 0,
+    "known_false_positives": 0
+  },
+  "calculator_proof_strength": "STRONG",
+  "habit_result": "PASS",
+  "known_false_positives": 0,
+  "root_cause_breakdown": {
+    "missing_artifact": 11,
+    "none": 8,
+    "target_preview_resolution_issue": 1,
+    "true_behavior_failure": 5
+  },
+  "step_2_status": "GO",
+  "step_3_status": "GO",
+  "step_4_counts": {
+    "FAIL": 5,
+    "HANDOFF": 0,
+    "NEEDS_FIX": 0,
+    "PASS": 7,
+    "UNVERIFIED": 0,
+    "known_false_positives": 0
+  },
+  "step_5_counts": {
+    "FAIL": 4,
+    "HANDOFF": 0,
+    "NEEDS_FIX": 0,
+    "PASS": 1,
+    "UNVERIFIED": 0,
+    "known_false_positives": 0
+  },
+  "step_6_counts": {
+    "FAIL": 10,
+    "HANDOFF": 0,
+    "NEEDS_FIX": 0,
+    "PASS": 15,
+    "UNVERIFIED": 0,
+    "known_false_positives": 0
+  },
+  "weather_result": "PASS"
+}

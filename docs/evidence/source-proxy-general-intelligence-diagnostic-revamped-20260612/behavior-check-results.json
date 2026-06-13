@@ -1,0 +1,72 @@
+{
+  "generated_at": "2026-06-12T22:37:56.846Z",
+  "checks": [
+    {
+      "prompt": "init a repo and make homepage for agent lab expermients",
+      "path": "Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/01-init-a-repo-and-make-homepage-for-agent-lab-expermients/workspace/index.html",
+      "test": "open homepage and inspect visible text",
+      "observed": {
+        "hasAgent": true,
+        "hasLab": true,
+        "hasExperiment": true,
+        "bodyText": "welcome to agent lab experiments\n\nthis is the homepage for your agent lab experiments."
+      },
+      "verdict": "PASS"
+    },
+    {
+      "prompt": "make a timer app",
+      "path": "Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/02-make-a-timer-app/workspace/index.html",
+      "test": "start timer, wait, stop, verify display freezes",
+      "observed": {
+        "initial": "00:00",
+        "afterStart": "00:02",
+        "afterStop": "00:02",
+        "afterWait": "00:02"
+      },
+      "verdict": "PASS"
+    },
+    {
+      "prompt": "make a calculator app",
+      "path": "Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/03-make-a-calculator-app/workspace/index.html",
+      "test": "click 2 + 3 =",
+      "observed": {
+        "display": "0"
+      },
+      "verdict": "FAIL",
+      "reason": "display did not equal 5"
+    },
+    {
+      "prompt": "make dark theme switcher page",
+      "path": "Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/04-make-dark-theme-switcher-page/workspace/dark-theme-switcher.html",
+      "test": "capture computed body colors, click toggle, capture again",
+      "observed": {
+        "before": {
+          "cls": "light-mode",
+          "bg": "rgb(51, 51, 51)",
+          "color": "rgb(255, 255, 255)"
+        },
+        "after": {
+          "cls": "light-mode dark-mode",
+          "bg": "rgb(51, 51, 51)",
+          "color": "rgb(255, 255, 255)"
+        }
+      },
+      "verdict": "FAIL",
+      "reason": "computed colors did not change"
+    },
+    {
+      "prompt": "make a habit tracker",
+      "path": "Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/08-make-a-habit-tracker/workspace/habit_tracker.html",
+      "test": "inspect for input/buttons/state-changing controls",
+      "observed": {
+        "inputs": 0,
+        "buttons": 0,
+        "checkboxes": 0,
+        "bodyText": "Habit Tracker\nDrink Water\nRead a Book"
+      },
+      "verdict": "FAIL",
+      "reason": "static hard-coded habits, no controls"
+    }
+  ],
+  "updated_at": "2026-06-12T22:38:14.318Z"
+}

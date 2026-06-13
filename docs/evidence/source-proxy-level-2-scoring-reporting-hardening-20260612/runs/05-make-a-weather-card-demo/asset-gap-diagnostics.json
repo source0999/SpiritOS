@@ -1,0 +1,12 @@
+{
+  "entrypoint": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-expectation-scoring-advanced-diagnostics-20260612\\fresh-scored-10\\runs\\05-make-a-weather-card-demo\\workspace\\weather-card.html",
+  "external_resources": [],
+  "missing_local_references": [],
+  "reason_codes": [
+    "linked_local_files_resolved"
+  ],
+  "referenced_local_files": [
+    "weather-card.css",
+    "weather-card.js"
+  ]
+}

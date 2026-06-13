@@ -1,0 +1,63 @@
+{
+  "actions_seen": 1,
+  "adapter_source": "ollama_generate/tool_action_runtime_v1",
+  "allowed_files_source": "none",
+  "allowed_scope_source": "none",
+  "artifact_class": "",
+  "artifact_score_kind": "expected_blocked",
+  "artifact_specific_ok": false,
+  "backend_created_content": false,
+  "benchmark_eligibility_reason": "product_route_uses_proxy_orchestration",
+  "benchmark_eligible": false,
+  "blocked_reasons": [
+    "Action target is outside the allowed file snapshot."
+  ],
+  "content_byte_match_by_target": {},
+  "deterministic_scaffold_used": false,
+  "dummy_fixture_used": false,
+  "elapsed_seconds": 6.027,
+  "expected_blocked": true,
+  "fallback_used": false,
+  "file_equals_model_action_content": false,
+  "files_changed": [],
+  "files_touched": [],
+  "final_state": "blocked",
+  "mode": "product",
+  "model_authored_content_hashes": {
+    "src/password_strength_checker.py": "14fc97a8935ceae56c55303699fa0ba23da40a57b1dc71d9dacb2c0aa2cf7bcd"
+  },
+  "model_authored_targets": [
+    "src/password_strength_checker.py"
+  ],
+  "model_chose_target": true,
+  "model_id": "qwen2.5-coder:7b",
+  "openable_homepage": false,
+  "openable_homepage_paths": [],
+  "parsed_action_count": 1,
+  "path_selection_mode": "model_chosen",
+  "preview_url": "",
+  "product_helper_used": true,
+  "prompt": "make a password strength checker",
+  "proxy_exact_target_suggested": "",
+  "proxy_orchestration_used": true,
+  "pure_mode": false,
+  "raw_model_transcript_count": 2,
+  "raw_transcript_path": "docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/10-make-a-password-strength-checker/transcript.txt",
+  "real_app_touched": false,
+  "reason_codes": [
+    "expected_blocked_result",
+    "free_floating_code_no_path_action",
+    "target_not_allowed"
+  ],
+  "receipt_path": "docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/10-make-a-password-strength-checker/receipt.json",
+  "route_type": "product",
+  "status": "EXPECTED-BLOCKED",
+  "system_preselected_target": false,
+  "target_path_source": "model_action",
+  "task_shape": "clarification_required_real_repo_implementation",
+  "task_shape_source": "target_resolution",
+  "transparent_default_target_used": false,
+  "workspace_decision_source": "target_resolution",
+  "workspace_files": [],
+  "workspace_path": "docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/10-make-a-password-strength-checker/workspace"
+}

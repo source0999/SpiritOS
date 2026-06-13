@@ -1,0 +1,90 @@
+{
+  "browser_results": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-proof-browser-behavior-results-before-repair.json",
+  "model_id": "qwen2.5-coder:7b",
+  "repair_summary_version": "anti-tailoring-post-behavior-repair-v1",
+  "repairs": [
+    {
+      "eligible": false,
+      "prompt": "make a laundry flip countdown",
+      "run": "01-make-a-laundry-flip-countdown",
+      "skip_reason": "behavior_not_failed"
+    },
+    {
+      "eligible": false,
+      "prompt": "make a parking garage cost sharer",
+      "run": "02-make-a-parking-garage-cost-sharer",
+      "skip_reason": "not_eligible_for_behavior_repair"
+    },
+    {
+      "eligible": false,
+      "prompt": "make a dusk dawn palette switch",
+      "run": "03-make-a-dusk-dawn-palette-switch",
+      "skip_reason": "not_eligible_for_behavior_repair"
+    },
+    {
+      "eligible": false,
+      "prompt": "make a beach bag checklist app",
+      "run": "04-make-a-beach-bag-checklist-app",
+      "skip_reason": "behavior_not_failed"
+    },
+    {
+      "attempts_used": 1,
+      "eligible": true,
+      "file_equals_model_action_content": true,
+      "prompt": "make a pretend balcony forecast tile",
+      "reason_codes": [],
+      "repair_model_authored_targets": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ],
+      "repair_status": "READY_FOR_RETEST",
+      "repaired_files": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ],
+      "run": "05-make-a-pretend-balcony-forecast-tile"
+    },
+    {
+      "eligible": false,
+      "prompt": "make a campfire podcast mini player",
+      "run": "06-make-a-campfire-podcast-mini-player",
+      "skip_reason": "behavior_not_failed"
+    },
+    {
+      "eligible": false,
+      "prompt": "make a stair step tally counter",
+      "run": "07-make-a-stair-step-tally-counter",
+      "skip_reason": "behavior_not_failed"
+    },
+    {
+      "eligible": false,
+      "prompt": "make a sticky thought memo board",
+      "run": "08-make-a-sticky-thought-memo-board",
+      "skip_reason": "behavior_not_failed"
+    },
+    {
+      "eligible": false,
+      "prompt": "make a secret phrase strength gauge",
+      "run": "09-make-a-secret-phrase-strength-gauge",
+      "skip_reason": "not_eligible_for_behavior_repair"
+    },
+    {
+      "attempts_used": 1,
+      "eligible": true,
+      "file_equals_model_action_content": true,
+      "prompt": "make a finger paint doodle pad",
+      "reason_codes": [],
+      "repair_model_authored_targets": [
+        "index.html"
+      ],
+      "repair_status": "READY_FOR_RETEST",
+      "repaired_files": [
+        "index.html"
+      ],
+      "run": "10-make-a-finger-paint-doodle-pad"
+    }
+  ],
+  "run_root": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs"
+}

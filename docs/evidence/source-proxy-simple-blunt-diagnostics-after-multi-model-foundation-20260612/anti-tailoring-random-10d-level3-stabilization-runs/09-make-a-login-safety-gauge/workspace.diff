@@ -1,0 +1,51 @@
+--- a/login.html
++++ b/login.html
+@@ -0,0 +1,17 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Login Safety Gauge</title>
++    <link rel="stylesheet" href="styles.css">
++</head>
++<body>
++    <div class="login-container">
++        <h2>Login</h2>
++        <input type="password" id="password-input" placeholder="Enter password">
++        <p id="strength-feedback"></p>
++    </div>
++    <script src="script.js"></script>
++</body>
++</html>--- a/script.js
++++ b/script.js
+@@ -0,0 +1,15 @@
++document.getElementById('password-input').addEventListener('input', function() {
++    const password = this.value;
++    const strengthFeedback = document.getElementById('strength-feedback');
++
++    if (password.length < 8) {
++        strengthFeedback.textContent = 'Weak';
++        strengthFeedback.className = 'weak';
++    } else if (password.length >= 8 && password.length < 12) {
++        strengthFeedback.textContent = 'Moderate';
++        strengthFeedback.className = 'moderate';
++    } else {
++        strengthFeedback.textContent = 'Strong';
++        strengthFeedback.className = 'strong';
++    }
++});--- a/styles.css
++++ b/styles.css
+@@ -0,0 +1,12 @@
++.login-container {
++    width: 300px;
++    margin: auto;
++    padding: 20px;
++    border: 1px solid #ccc;
++    border-radius: 5px;
++}
++
++#strength-feedback {
++    margin-top: 10px;
++    font-size: 14px;
++}

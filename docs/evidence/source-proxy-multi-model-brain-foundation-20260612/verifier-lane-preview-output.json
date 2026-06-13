@@ -1,0 +1,24 @@
+{
+  "advisory_only": true,
+  "cannot_override_browser_behavior": true,
+  "cannot_trust_model_claim_alone": true,
+  "cannot_turn_unverified_into_pass": true,
+  "evidence_refs": [
+    "sample/receipt.json",
+    "sample/retest-result.json"
+  ],
+  "hidden_benchmark_hint_provider": false,
+  "missing_evidence": [],
+  "model_calls_enabled": false,
+  "output_version": "source-proxy-verifier-lane-output-v0.1",
+  "reasons": [
+    "preview_contract_only_no_model_call",
+    "verifier_lane_advisory_only"
+  ],
+  "recommended_next_action": "collect missing browser/retest evidence before any PASS",
+  "suspected_fake_success": false,
+  "suspected_hardcoding": false,
+  "suspected_scaffold_or_fallback": false,
+  "verdict": "WARNING",
+  "verifier_lane_id": "hermes_sidecar_verifier_preview"
+}

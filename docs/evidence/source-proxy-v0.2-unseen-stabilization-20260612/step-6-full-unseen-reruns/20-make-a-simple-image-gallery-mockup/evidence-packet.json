@@ -1,0 +1,60 @@
+{
+  "behavior_contract_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\20-make-a-simple-image-gallery-mockup\\behavior-contract.json",
+  "behavior_probe": {
+    "actual": {
+      "imageCount": 6
+    },
+    "contract_probe": {
+      "acceptance_criterion": "Image gallery mockup shows image items and supports selection or navigation when controls exist.",
+      "expected_observation": "Main image, selected item, or navigation state changes; static image items are acceptable for a mockup.",
+      "minimum_proof_tier": 2,
+      "observable_actions": [
+        "click thumbnail or next/previous control if present"
+      ],
+      "probe_id": "gallery-navigation-or-selection"
+    },
+    "expected": {
+      "mockupImagesVisible": true
+    },
+    "observed": {
+      "after": "",
+      "before": "",
+      "changed": false,
+      "clicked": "",
+      "imageCount": 6
+    },
+    "passed": true,
+    "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\20-make-a-simple-image-gallery-mockup\\workspace\\index.html",
+    "reason": "",
+    "reason_codes": [],
+    "test": "gallery-navigation-or-selection",
+    "verdict": "PASS"
+  },
+  "canonical_final_verdict_after_behavior": "PASS",
+  "diff_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\20-make-a-simple-image-gallery-mockup\\workspace.diff",
+  "evidence_packet_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\20-make-a-simple-image-gallery-mockup\\evidence-packet.json",
+  "preview_resolution": {
+    "candidate_paths": [
+      "index.html"
+    ],
+    "explicit_path": "/home/source/SpiritOS/docs/evidence/source-proxy-v0.2-unseen-stabilization-20260612/step-6-full-unseen-reruns/20-make-a-simple-image-gallery-mockup/workspace/index.html",
+    "reason_codes": [
+      "index_html_selected",
+      "explicit_preview_path_invalid_fallback_used"
+    ],
+    "selected_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\20-make-a-simple-image-gallery-mockup\\workspace\\index.html",
+    "selection_reason": "index_html_present_after_invalid_explicit",
+    "status": "ready"
+  },
+  "preview_selection_reason": "index_html_present_after_invalid_explicit",
+  "product_pass_after_behavior": true,
+  "prompt": "make a simple image gallery mockup",
+  "receipt_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\20-make-a-simple-image-gallery-mockup\\receipt.json",
+  "retest_result_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\20-make-a-simple-image-gallery-mockup\\retest-result.json",
+  "run_dir": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\20-make-a-simple-image-gallery-mockup",
+  "score_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\20-make-a-simple-image-gallery-mockup\\score.json",
+  "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\20-make-a-simple-image-gallery-mockup\\workspace\\index.html",
+  "source_proxy_status": "GO",
+  "transcript_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\20-make-a-simple-image-gallery-mockup\\transcript.txt",
+  "workspace_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\20-make-a-simple-image-gallery-mockup\\workspace"
+}

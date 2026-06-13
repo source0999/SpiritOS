@@ -1,0 +1,29 @@
+{
+  "behavior_contract_probe_id": "weather-card-fields",
+  "blocking_reason_if_any": "",
+  "disposable_candidate_true_false": true,
+  "explicit_target_path_detected": false,
+  "family_candidates": [
+    "weather/forecast/tile"
+  ],
+  "family_match_reasons": [
+    "prompt_set_family:weather/forecast/tile",
+    "behavior_contract_probe:weather-card-fields",
+    "keyword_family:weather/forecast/tile"
+  ],
+  "normalized_intent_after_route": "disposable_small_file_bundle",
+  "normalized_intent_before_route": "disposable_small_file_bundle",
+  "normalized_prompt": "make a pretend balcony forecast tile",
+  "original_prompt": "make a pretend balcony forecast tile",
+  "real_repo_signals": [],
+  "route_decision": "GO",
+  "route_decision_reason": "generic_artifact_resolver",
+  "selected_artifact_family": "weather/forecast/tile",
+  "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-semantic-generalization-gate-b-20260613\\final-clean-10-gate-b-runs\\05-make-a-pretend-balcony-forecast-tile\\workspace\\index.html",
+  "standalone_artifact_signals": [
+    "creation_or_show_me_verb",
+    "small_tool_widget_or_interactive_noun",
+    "interactive_family_signal"
+  ],
+  "why_no_preview_if_blocked": ""
+}

@@ -1,0 +1,14 @@
+{
+  "test": "make a tiny mixtape player-player-control-change",
+  "verdict": "PASS",
+  "passed": true,
+  "expected": "play/pause or player control visibly changes state",
+  "primary_behavior_failure_bucket": "",
+  "failureBucket": "",
+  "actual": {
+    "before": "Track 1 - Artist Name\nPlay Next",
+    "after": "Track 1 - Artist Name\nPause Next",
+    "clicked": true
+  },
+  "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10d-level3-stabilization-runs\\06-make-a-tiny-mixtape-player\\workspace\\index.html"
+}

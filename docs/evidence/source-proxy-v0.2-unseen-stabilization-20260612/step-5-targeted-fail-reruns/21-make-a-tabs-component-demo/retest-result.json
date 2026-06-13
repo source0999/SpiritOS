@@ -1,0 +1,44 @@
+{
+  "artifact_ready": true,
+  "attempts_used": 0,
+  "behavior_required": true,
+  "behavior_result": {
+    "actual": {
+      "after": "Panel 1\nPanel 2\nPanel 3\nContent of Panel 1\n\nThis is the content for panel 1.",
+      "before": "Panel 1\nPanel 2\nPanel 3\nContent of Panel 1\n\nThis is the content for panel 1.",
+      "changed": false,
+      "clicked": "button"
+    },
+    "expected": {
+      "behavior": "tabs-active-panel-change",
+      "proof": "expected/actual/passed recorded by browser probe"
+    },
+    "observed": {
+      "after": "Panel 1\nPanel 2\nPanel 3\nContent of Panel 1\n\nThis is the content for panel 1.",
+      "before": "Panel 1\nPanel 2\nPanel 3\nContent of Panel 1\n\nThis is the content for panel 1.",
+      "changed": false,
+      "clicked": "button"
+    },
+    "passed": false,
+    "reason": "visible state did not change after interaction",
+    "test": "tabs-active-panel-change",
+    "verdict": "FAIL"
+  },
+  "canonical_final_verdict": "FAIL",
+  "changed_files": [],
+  "diffs": [],
+  "final_reason_codes": [
+    "behavior_failed",
+    "explicit_preview_path_invalid_fallback_used",
+    "index_html_selected",
+    "post_repair_behavior_fail",
+    "repair_ready_for_retest",
+    "stabilization_rerun_no_manual_artifact_patch",
+    "visible_state_change_missing"
+  ],
+  "handoff_reason": "",
+  "handoff_required": false,
+  "product_pass": false,
+  "repair_status": "READY_FOR_RETEST",
+  "result_version": "source-proxy-artifact-retest-result-v0.2.phase-6"
+}

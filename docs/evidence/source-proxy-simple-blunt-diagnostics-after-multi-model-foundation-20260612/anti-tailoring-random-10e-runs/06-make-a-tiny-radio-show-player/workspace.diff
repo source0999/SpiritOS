@@ -1,0 +1,51 @@
+--- a/index.html
++++ b/index.html
+@@ -0,0 +1,18 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Radio Show Player</title>
++    <link rel="stylesheet" href="styles.css">
++</head>
++<body>
++    <div class="player-container">
++        <h1>Radio Show Player</h1>
++        <input type="text" id="station-input" placeholder="Enter station URL">
++        <button onclick="playStation()">Play</button>
++        <audio id="radio-player" controls></audio>
++    </div>
++    <script src="player.js"></script>
++</body>
++</html>--- a/player.js
++++ b/player.js
+@@ -0,0 +1,6 @@
++function playStation() {
++    const stationInput = document.getElementById('station-input');
++    const radioPlayer = document.getElementById('radio-player');
++    radioPlayer.src = stationInput.value;
++    radioPlayer.play();
++}--- a/styles.css
++++ b/styles.css
+@@ -0,0 +1,20 @@
++body {
++    font-family: Arial, sans-serif;
++    display: flex;
++    justify-content: center;
++    align-items: center;
++    height: 100vh;
++    margin: 0;
++}
++.player-container {
++    text-align: center;
++}
++input[type="text"] {
++    padding: 10px;
++    font-size: 16px;
++}
++button {
++    padding: 10px 20px;
++    font-size: 16px;
++    cursor: pointer;
++}

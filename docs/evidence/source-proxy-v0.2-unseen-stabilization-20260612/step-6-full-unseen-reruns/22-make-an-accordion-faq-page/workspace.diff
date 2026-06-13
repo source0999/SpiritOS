@@ -1,0 +1,72 @@
+--- a/index.html
++++ b/index.html
+@@ -0,0 +1,26 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>FAQ</title>
++    <link rel="stylesheet" href="styles.css">
++</head>
++<body>
++    <div class="accordion">
++        <div class="accordion-item">
++            <button class="accordion-button">What is an accordion?</button>
++            <div class="accordion-content">
++                An accordion is a vertically stacked set of interactive headings that each contain a title and a body. When a heading is clicked, the corresponding content area expands or collapses.
++            </div>
++        </div>
++        <div class="accordion-item">
++            <button class="accordion-button">How does an accordion work?</button>
++            <div class="accordion-content">
++                An accordion works by toggling the visibility of its content area when a heading is clicked. This is typically done using JavaScript to add or remove CSS classes that control the height and display properties of the content.
++            </div>
++        </div>
++    </div>
++    <script src="script.js"></script>
++</body>
++</html>--- a/script.js
++++ b/script.js
+@@ -0,0 +1,14 @@
++document.addEventListener('DOMContentLoaded', function() {
++    var acc = document.getElementsByClassName('accordion-button');
++    for (var i = 0; i < acc.length; i++) {
++        acc[i].addEventListener('click', function() {
++            this.classList.toggle('active');
++            var panel = this.nextElementSibling;
++            if (panel.style.display === 'block') {
++                panel.style.display = 'none';
++            } else {
++                panel.style.display = 'block';
++            }
++        });
++    }
++});--- a/styles.css
++++ b/styles.css
+@@ -0,0 +1,25 @@
++.accordion {
++    width: 100%;
++}
++
++.accordion-item {
++    border-bottom: 1px solid #ccc;
++}
++
++.accordion-button {
++    background-color: #f1f1f1;
++    color: #444;
++    padding: 12px;
++    width: 100%;
++    text-align: left;
++    border: none;
++    outline: none;
++    cursor: pointer;
++}
++
++.accordion-content {
++    padding: 0 18px;
++    display: none;
++    overflow: hidden;
++    background-color: #f9f9f9;
++}

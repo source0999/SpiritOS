@@ -1,0 +1,114 @@
+{
+  "contract_id": "spiritos-cognitive-control-plane-revamp-v0.1.phase-1.canonical-truth-contract",
+  "phase": "Phase 1",
+  "status": "evidence-only",
+  "runtime_behavior_changed": false,
+  "labels": {
+    "PASS": {
+      "meaning": "Required behavior was directly verified against the acceptance criteria.",
+      "may_close_go": true,
+      "product_pass_requires_behavior_proof": true
+    },
+    "FAIL": {
+      "meaning": "Required behavior was executed or inspected and did not meet acceptance criteria.",
+      "may_close_go": false
+    },
+    "NEEDS_FIX": {
+      "meaning": "The system path, route, worker, environment, or proof pipeline failed before product behavior could be judged.",
+      "may_close_go": false
+    },
+    "UNVERIFIED": {
+      "meaning": "The check was not run, unavailable, unsafe, or outside authorized scope.",
+      "may_close_go": false
+    },
+    "BLOCKED": {
+      "meaning": "A required gate, permission, dependency, or operator choice prevents progress.",
+      "may_close_go": false
+    },
+    "PARTIAL": {
+      "meaning": "Some required criteria passed, but at least one required criterion remains failed, blocked, or unverified.",
+      "may_close_go": false
+    }
+  },
+  "evidence_strength": [
+    {
+      "type": "behavior_interaction_proof",
+      "strength": "strong",
+      "product_pass_eligible": true
+    },
+    {
+      "type": "computed_state_proof",
+      "strength": "strong",
+      "product_pass_eligible": true
+    },
+    {
+      "type": "screenshot_or_video_proof",
+      "strength": "medium",
+      "product_pass_eligible": "only_when_visual_acceptance_is_directly_proven"
+    },
+    {
+      "type": "test_output",
+      "strength": "medium",
+      "product_pass_eligible": "only_when_test_covers_requested_behavior"
+    },
+    {
+      "type": "diff_preview",
+      "strength": "medium_low",
+      "product_pass_eligible": false
+    },
+    {
+      "type": "route_liveness",
+      "strength": "low",
+      "product_pass_eligible": false
+    },
+    {
+      "type": "artifact_exists",
+      "strength": "low",
+      "product_pass_eligible": false
+    },
+    {
+      "type": "preview_opens",
+      "strength": "low",
+      "product_pass_eligible": false
+    },
+    {
+      "type": "static_content_renders",
+      "strength": "low",
+      "product_pass_eligible": false
+    },
+    {
+      "type": "unit_tests_for_unused_classes",
+      "strength": "low",
+      "product_pass_eligible": false
+    },
+    {
+      "type": "model_success_claim",
+      "strength": "low",
+      "product_pass_eligible": false
+    }
+  ],
+  "required_result_fields": [
+    "label",
+    "scope",
+    "acceptance_criteria",
+    "evidence",
+    "reason_codes",
+    "raw_diagnostics_ref",
+    "unverified_checks",
+    "protected_flow"
+  ],
+  "non_pass_rules": [
+    "artifact existence does not imply product PASS",
+    "preview opens does not imply behavior PASS",
+    "static content does not imply app behavior",
+    "route liveness does not imply worker/product behavior",
+    "model/provider success text is not proof by itself",
+    "passing unit tests for unused classes does not prove integration",
+    "missing preview/artifact cases are FAIL for artifact readiness and UNVERIFIED for behavior",
+    "route/proxy/model unavailability should be NEEDS_FIX when product behavior could not be judged",
+    "no-diff or empty productive output must not collapse to PASS",
+    "corrected behavior diagnostics are proof inputs for future phases"
+  ],
+  "phase_closeout_rule": "A GO closeout must state the real existing flow protected, wrapped, or prepared. Evidence-only phases may GO only when their artifact is complete and the later integration requirement is explicit."
+}
+

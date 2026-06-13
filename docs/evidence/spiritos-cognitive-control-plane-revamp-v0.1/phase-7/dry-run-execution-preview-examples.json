@@ -1,0 +1,101 @@
+{
+  "examples_version": "phase-7.4-v0.1",
+  "mode": "dry_run_examples_only",
+  "examples": [
+    {
+      "preview_id": "phase7-example-calculator-blocked",
+      "requested_action": "Approve and run calculator artifact after diagnostic.",
+      "normalized_target": "calculator-false-positive",
+      "decision": "blocked",
+      "reason_codes": ["behavior_verifier_fail", "prior_false_positive", "execution_not_available_phase_7"],
+      "phase_6_verifier_gate": {
+        "truth_label": "FAIL",
+        "fixture_id": "calculator-false-positive",
+        "required_behavior": "2 + 3 = displays 5",
+        "observed": "display returned 0 instead of 5"
+      },
+      "risk_permission_gate": "blocked",
+      "worker_handoff_gate": "not_requested",
+      "action_preview_gate": "blocked",
+      "execution_plan_preview": [],
+      "would_execute": false,
+      "mutated_anything": false,
+      "worker_started": false,
+      "provider_called": false,
+      "next_safe_action": "Fix behavior in a separately approved implementation phase before any execution proof."
+    },
+    {
+      "preview_id": "phase7-example-timer-preview-ready-no-exec",
+      "requested_action": "Prepare a later proof run for timer behavior.",
+      "normalized_target": "timer-false-negative",
+      "decision": "preview_ready",
+      "reason_codes": ["behavior_verifier_pass_preserved", "requires_later_approved_execution"],
+      "phase_6_verifier_gate": {
+        "truth_label": "PASS",
+        "fixture_id": "timer-false-negative",
+        "required_behavior": "start, wait, stop, freeze",
+        "observed": "timer changed from 00:00 to 00:02 and stayed after Stop"
+      },
+      "risk_permission_gate": "preview_only",
+      "worker_handoff_gate": "not_requested",
+      "action_preview_gate": "requires_human_approval",
+      "execution_plan_preview": [
+        "Open artifact in browser in future approved proof phase.",
+        "Click Start, wait, click Stop, record observed freeze.",
+        "Attach screenshot or trace evidence.",
+        "Do not mutate generated artifacts."
+      ],
+      "would_execute": false,
+      "mutated_anything": false,
+      "worker_started": false,
+      "provider_called": false,
+      "next_safe_action": "Carry into Phase 8 dry-run loop as a non-mutating planned proof step."
+    },
+    {
+      "preview_id": "phase7-example-safe-docs-write-deferred",
+      "requested_action": "Write a docs evidence receipt and run git diff check.",
+      "normalized_target": "docs/evidence/spiritos-cognitive-control-plane-revamp-v0.1/future-receipt.md",
+      "decision": "requires_human_approval",
+      "reason_codes": ["safe_write_execution_deferred", "verification_command_execution_deferred", "would_require_exact_approval"],
+      "phase_6_verifier_gate": {
+        "truth_label": "UNVERIFIED",
+        "notes": "No product behavior claim is being made."
+      },
+      "risk_permission_gate": "requires_human_approval",
+      "worker_handoff_gate": "not_requested",
+      "action_preview_gate": "requires_human_approval",
+      "execution_plan_preview": [
+        "Preview exact allowed docs path.",
+        "Preview rollback and before-state requirements.",
+        "Preview exact verification argv.",
+        "Require later explicit approval before write or command execution."
+      ],
+      "would_execute": false,
+      "mutated_anything": false,
+      "safe_write_executed": false,
+      "sandbox_command_run": false,
+      "git_mutation_performed": false,
+      "next_safe_action": "Keep as preview-only until a later phase grants explicit execution authority."
+    },
+    {
+      "preview_id": "phase7-example-worker-start-blocked",
+      "requested_action": "Start a local coding worker automatically.",
+      "normalized_target": "worker:auto-start",
+      "decision": "blocked",
+      "reason_codes": ["automatic_worker_start", "phase_7_worker_execution_forbidden"],
+      "phase_6_verifier_gate": {
+        "truth_label": "UNVERIFIED",
+        "notes": "No behavior artifact is under verification."
+      },
+      "risk_permission_gate": "blocked",
+      "worker_handoff_gate": "blocked",
+      "action_preview_gate": "blocked",
+      "execution_plan_preview": [],
+      "would_execute": false,
+      "mutated_anything": false,
+      "worker_started": false,
+      "provider_called": false,
+      "next_safe_action": "Do not start workers automatically in v0.1 preview flow."
+    }
+  ]
+}

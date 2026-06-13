@@ -1,0 +1,10 @@
+```json
+{
+  "action_type": "WriteFile",
+  "target": "quote_generator.py",
+  "arguments": {
+    "content": "#!/usr/bin/env python3\nimport random\n\nQUOTES = [\n    \"The only limit to our realization of tomorrow is our doubts of today.\",\n    \"It does not matter how slowly you go as long as you do not stop.\",\n    \"Success is not final, failure is not fatal: It is the courage to continue that counts.\"\n]\n\ndef get_random_quote():\n    return random.choice(QUOTES)\n\nif __name__ == '__main__':\n    print(get_random_quote())"
+  },
+  "reason": "A simple Python script to generate random quotes."
+}
+```

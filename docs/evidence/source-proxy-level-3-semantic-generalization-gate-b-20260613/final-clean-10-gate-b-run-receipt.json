@@ -1,0 +1,82 @@
+{
+  "browser_behavior_results": "docs/evidence/source-proxy-level-3-semantic-generalization-gate-b-20260613/final-clean-10-gate-b-browser-behavior-results.json",
+  "created_at": "2026-06-13T17:20:12.580485+00:00",
+  "html": "docs/evidence/source-proxy-level-3-semantic-generalization-gate-b-20260613/final-clean-10-gate-b.html",
+  "model_id": "qwen2.5-coder:7b",
+  "prompt_file": "docs/evidence/source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613/final-proof-prompt-set.json",
+  "repair_summary": "docs/evidence/source-proxy-level-3-semantic-generalization-gate-b-20260613/final-clean-10-gate-b-post-behavior-repair-summary.json",
+  "results": "docs/evidence/source-proxy-level-3-semantic-generalization-gate-b-20260613/final-clean-10-gate-b-results.json",
+  "rows": [
+    {
+      "prompt": "make a laundry flip countdown",
+      "run": "01-make-a-laundry-flip-countdown",
+      "run_dir": "docs/evidence/source-proxy-level-3-semantic-generalization-gate-b-20260613/final-clean-10-gate-b-runs/01-make-a-laundry-flip-countdown",
+      "score_status": "GO",
+      "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-semantic-generalization-gate-b-20260613\\final-clean-10-gate-b-runs\\01-make-a-laundry-flip-countdown\\workspace\\index.html"
+    },
+    {
+      "prompt": "make a parking garage cost sharer",
+      "run": "02-make-a-parking-garage-cost-sharer",
+      "run_dir": "docs/evidence/source-proxy-level-3-semantic-generalization-gate-b-20260613/final-clean-10-gate-b-runs/02-make-a-parking-garage-cost-sharer",
+      "score_status": "GO",
+      "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-semantic-generalization-gate-b-20260613\\final-clean-10-gate-b-runs\\02-make-a-parking-garage-cost-sharer\\workspace\\index.html"
+    },
+    {
+      "prompt": "make a dusk dawn palette switch",
+      "run": "03-make-a-dusk-dawn-palette-switch",
+      "run_dir": "docs/evidence/source-proxy-level-3-semantic-generalization-gate-b-20260613/final-clean-10-gate-b-runs/03-make-a-dusk-dawn-palette-switch",
+      "score_status": "GO",
+      "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-semantic-generalization-gate-b-20260613\\final-clean-10-gate-b-runs\\03-make-a-dusk-dawn-palette-switch\\workspace\\index.html"
+    },
+    {
+      "prompt": "make a beach bag checklist app",
+      "run": "04-make-a-beach-bag-checklist-app",
+      "run_dir": "docs/evidence/source-proxy-level-3-semantic-generalization-gate-b-20260613/final-clean-10-gate-b-runs/04-make-a-beach-bag-checklist-app",
+      "score_status": "GO",
+      "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-semantic-generalization-gate-b-20260613\\final-clean-10-gate-b-runs\\04-make-a-beach-bag-checklist-app\\workspace\\index.html"
+    },
+    {
+      "prompt": "make a pretend balcony forecast tile",
+      "run": "05-make-a-pretend-balcony-forecast-tile",
+      "run_dir": "docs/evidence/source-proxy-level-3-semantic-generalization-gate-b-20260613/final-clean-10-gate-b-runs/05-make-a-pretend-balcony-forecast-tile",
+      "score_status": "GO",
+      "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-semantic-generalization-gate-b-20260613\\final-clean-10-gate-b-runs\\05-make-a-pretend-balcony-forecast-tile\\workspace\\index.html"
+    },
+    {
+      "prompt": "make a campfire podcast mini player",
+      "run": "06-make-a-campfire-podcast-mini-player",
+      "run_dir": "docs/evidence/source-proxy-level-3-semantic-generalization-gate-b-20260613/final-clean-10-gate-b-runs/06-make-a-campfire-podcast-mini-player",
+      "score_status": "GO",
+      "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-semantic-generalization-gate-b-20260613\\final-clean-10-gate-b-runs\\06-make-a-campfire-podcast-mini-player\\workspace\\index.html"
+    },
+    {
+      "prompt": "make a stair step tally counter",
+      "run": "07-make-a-stair-step-tally-counter",
+      "run_dir": "docs/evidence/source-proxy-level-3-semantic-generalization-gate-b-20260613/final-clean-10-gate-b-runs/07-make-a-stair-step-tally-counter",
+      "score_status": "GO",
+      "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-semantic-generalization-gate-b-20260613\\final-clean-10-gate-b-runs\\07-make-a-stair-step-tally-counter\\workspace\\index.html"
+    },
+    {
+      "prompt": "make a sticky thought memo board",
+      "run": "08-make-a-sticky-thought-memo-board",
+      "run_dir": "docs/evidence/source-proxy-level-3-semantic-generalization-gate-b-20260613/final-clean-10-gate-b-runs/08-make-a-sticky-thought-memo-board",
+      "score_status": "GO",
+      "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-semantic-generalization-gate-b-20260613\\final-clean-10-gate-b-runs\\08-make-a-sticky-thought-memo-board\\workspace\\index.html"
+    },
+    {
+      "prompt": "make a secret phrase strength gauge",
+      "run": "09-make-a-secret-phrase-strength-gauge",
+      "run_dir": "docs/evidence/source-proxy-level-3-semantic-generalization-gate-b-20260613/final-clean-10-gate-b-runs/09-make-a-secret-phrase-strength-gauge",
+      "score_status": "GO",
+      "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-semantic-generalization-gate-b-20260613\\final-clean-10-gate-b-runs\\09-make-a-secret-phrase-strength-gauge\\workspace\\index.html"
+    },
+    {
+      "prompt": "make a finger paint doodle pad",
+      "run": "10-make-a-finger-paint-doodle-pad",
+      "run_dir": "docs/evidence/source-proxy-level-3-semantic-generalization-gate-b-20260613/final-clean-10-gate-b-runs/10-make-a-finger-paint-doodle-pad",
+      "score_status": "GO",
+      "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-semantic-generalization-gate-b-20260613\\final-clean-10-gate-b-runs\\10-make-a-finger-paint-doodle-pad\\workspace\\index.html"
+    }
+  ],
+  "run_root": "docs/evidence/source-proxy-level-3-semantic-generalization-gate-b-20260613/final-clean-10-gate-b-runs"
+}

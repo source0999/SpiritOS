@@ -1,0 +1,37 @@
+{
+  "actual": {
+    "bodyText": "City\n\nTemperature: 0\u00b0C\n\nCondition: Clear\n\nUpdate Weather",
+    "buttonCount": 1,
+    "changedAfterControl": false,
+    "hasCity": true,
+    "hasCondition": true,
+    "hasTemp": true
+  },
+  "contract_probe": {
+    "acceptance_criterion": "Weather card renders plausible local demo weather fields without requiring a live API.",
+    "expected_observation": "City, temperature, and condition are visible; any provided local control changes state.",
+    "minimum_proof_tier": 2,
+    "observable_actions": [
+      "inspect city, temperature, and condition fields",
+      "activate local demo control if present"
+    ],
+    "probe_id": "weather-card-fields"
+  },
+  "expected": {
+    "populatedCityTemperatureCondition": true
+  },
+  "observed": {
+    "bodyText": "City\n\nTemperature: 0\u00b0C\n\nCondition: Clear\n\nUpdate Weather",
+    "buttonCount": 1,
+    "changedAfterControl": false,
+    "hasCity": true,
+    "hasCondition": true,
+    "hasTemp": true
+  },
+  "passed": true,
+  "path": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\runs\\05-make-a-weather-card-demo\\workspace\\weather-card.html",
+  "reason": "",
+  "reason_codes": [],
+  "test": "weather-card-fields",
+  "verdict": "PASS"
+}

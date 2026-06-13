@@ -1,0 +1,28 @@
+```json
+[
+    {
+        "action_type": "WriteFile",
+        "target": "index.html",
+        "arguments": {
+            "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Tabs Component Demo</title>\n    <link rel=\"stylesheet\" href=\"styles.css\">\n</head>\n<body>\n    <div class=\"tabs-container\">\n        <button class=\"tab-button active\" onclick=\"openTab(event, 'Panel1')\">Panel 1</button>\n        <button class=\"tab-button\" onclick=\"openTab(event, 'Panel2')\">Panel 2</button>\n        <button class=\"tab-button\" onclick=\"openTab(event, 'Panel3')\">Panel 3</button>\n    </div>\n    <div id=\"Panel1\" class=\"tab-content active\">\n        <h2>Content of Panel 1</h2>\n        <p>This is the content for panel 1.</p>\n    </div>\n    <div id=\"Panel2\" class=\"tab-content\">\n        <h2>Content of Panel 2</h2>\n        <p>This is the content for panel 2.</p>\n    </div>\n    <div id=\"Panel3\" class=\"tab-content\">\n        <h2>Content of Panel 3</h2>\n        <p>This is the content for panel 3.</p>\n    </div>\n    <script src=\"script.js\"></script>\n</body>\n</html>"
+        },
+        "reason": "HTML file to structure the tabs component and its content."
+    },
+    {
+        "action_type": "WriteFile",
+        "target": "styles.css",
+        "arguments": {
+            "content": ".tabs-container {\n    display: flex;\n}\n.tab-button {\n    padding: 10px 20px;\n    cursor: pointer;\n}\n.tab-button.active {\n    background-color: #f1f1f1;\n}\n.tab-content {\n    display: none;\n    padding: 20px;\n}\n.tab-content.active {\n    display: block;\n}"
+        },
+        "reason": "CSS file to style the tabs component."
+    },
+    {
+        "action_type": "WriteFile",
+        "target": "script.js",
+        "arguments": {
+            "content": "function openTab(evt, tabName) {\n    var i, tabcontent, tablinks;\n    tabcontent = document.getElementsByClassName('tab-content');\n    for (i = 0; i < tabcontent.length; i++) {\n        tabcontent[i].classList.remove('active');\n    }\n    tablinks = document.getElementsByClassName('tab-button');\n    for (i = 0; i < tablinks.length; i++) {\n        tablinks[i].className = tablinks[i].className.replace(' active', '');\n    }\n    document.getElementById(tabName).classList.add('active');\n    evt.currentTarget.className += ' active';\n}"
+        },
+        "reason": "JavaScript file to handle the logic for opening tabs."
+    }
+]
+```

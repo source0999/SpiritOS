@@ -1,0 +1,27 @@
+{
+  "opened": true,
+  "path": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10b-repair-rerun-runs\\07-make-a-glass-water-counter\\workspace\\index.html",
+  "title": "Water Counter",
+  "bodyText": "Water Counter\n\n0\n\nAdd Water",
+  "elementCounts": {
+    "buttons": 1,
+    "inputs": 0,
+    "links": 0,
+    "canvas": 0,
+    "scripts": 1,
+    "stylesheets": 1
+  },
+  "consoleMessages": [
+    {
+      "type": "error",
+      "text": "Failed to load resource: net::ERR_FILE_NOT_FOUND"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: net::ERR_FILE_NOT_FOUND"
+    }
+  ],
+  "pageErrors": [
+    "incrementCounter is not defined"
+  ]
+}

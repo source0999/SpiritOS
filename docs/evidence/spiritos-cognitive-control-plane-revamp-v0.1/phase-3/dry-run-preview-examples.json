@@ -1,0 +1,110 @@
+{
+  "phase": "Phase 3",
+  "examples": [
+    {
+      "example_id": "docs-evidence-truth-contract-lookup",
+      "request_summary": "Find the canonical truth rules for product PASS.",
+      "request_type": "evidence_lookup",
+      "target_kind": "docs_evidence",
+      "explicit_targets": [
+        "docs/evidence/spiritos-cognitive-control-plane-revamp-v0.1/phase-1/canonical-truth-contract.json"
+      ],
+      "target_confidence": "explicit",
+      "context_sources_selected": [
+        {
+          "source_type": "truth_contract",
+          "source_path": "docs/evidence/spiritos-cognitive-control-plane-revamp-v0.1/phase-1/canonical-truth-contract.json",
+          "source_anchor": "labels.PASS",
+          "summary": "Product PASS requires direct behavior proof against acceptance criteria.",
+          "privacy_level": "internal",
+          "evidence_strength": "contract",
+          "truth_label": null,
+          "read_only": true
+        }
+      ],
+      "preview_decision": "preview_ready",
+      "reason_codes": ["explicit_evidence_target", "read_only_context_only"],
+      "unverified_checks": [],
+      "non_authority": [
+        "would_execute=false",
+        "would_write=false",
+        "product_pass_claimed=false"
+      ],
+      "phase_4_handoff": []
+    },
+    {
+      "example_id": "ambiguous-implementation-target",
+      "request_summary": "Fix the coding page.",
+      "request_type": "implementation_request",
+      "target_kind": "route",
+      "explicit_targets": [],
+      "target_confidence": "ambiguous",
+      "context_sources_selected": [],
+      "context_sources_skipped": [
+        {
+          "source_type": "repo",
+          "reason": "Target route/file is ambiguous; do not gather broad context yet."
+        }
+      ],
+      "preview_decision": "needs_clarification",
+      "reason_codes": ["target_ambiguous", "needs_operator_target"],
+      "unverified_checks": ["repo_context_selection"],
+      "non_authority": [
+        "would_execute=false",
+        "would_write=false",
+        "would_call_provider=false"
+      ],
+      "phase_4_handoff": ["Ask whether target is /coding UI, Source Proxy route, tests, or evidence docs."]
+    },
+    {
+      "example_id": "blocked-provider-call-request",
+      "request_summary": "Call the best model to decide the route.",
+      "request_type": "plan",
+      "target_kind": "unknown",
+      "explicit_targets": [],
+      "target_confidence": "missing",
+      "context_sources_selected": [],
+      "risk_flags": ["provider_spend_possible"],
+      "preview_decision": "blocked_preview",
+      "reason_codes": ["provider_model_call_forbidden_in_phase_3"],
+      "unverified_checks": ["model_recommendation_runtime"],
+      "non_authority": [
+        "would_call_provider=false",
+        "would_start_worker=false",
+        "product_pass_claimed=false"
+      ],
+      "phase_4_handoff": ["Risk/permission preview must decide provider-spend gates in Phase 4."]
+    },
+    {
+      "example_id": "june-12-fixture-context",
+      "request_summary": "Prepare verifier context for the calculator false positive.",
+      "request_type": "verification_request",
+      "target_kind": "docs_evidence",
+      "explicit_targets": ["calculator-false-positive"],
+      "target_confidence": "explicit",
+      "context_sources_selected": [
+        {
+          "source_type": "fixture",
+          "source_path": "docs/evidence/spiritos-cognitive-control-plane-revamp-v0.1/phase-1/truth-fixture-requirements.json",
+          "source_anchor": "calculator-false-positive",
+          "summary": "Calculator must fail if `2 + 3 =` returns 0 instead of 5.",
+          "privacy_level": "internal",
+          "evidence_strength": "behavior_requirement",
+          "truth_label": "FAIL",
+          "read_only": true
+        }
+      ],
+      "preview_decision": "preview_ready",
+      "reason_codes": ["fixture_context_selected", "truth_label_carried_forward"],
+      "unverified_checks": ["fixture_execution"],
+      "non_authority": [
+        "would_execute=false",
+        "would_write=false",
+        "product_pass_claimed=false"
+      ],
+      "phase_4_handoff": ["Phase 4 should flag fake-green risk before Phase 6 verifier execution."]
+    }
+  ],
+  "verdict": "GO"
+}
+

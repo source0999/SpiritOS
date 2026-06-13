@@ -1,0 +1,53 @@
+{
+  "schema_id": "spiritos-cognitive-control-plane-revamp-v0.1.phase-3.context-router-preview-packet",
+  "phase": "Phase 3",
+  "status": "evidence-only",
+  "packet_fields": {
+    "packet_id": "stable identifier for preview packet",
+    "created_at": "ISO-8601 timestamp when generated",
+    "request_summary": "short normalized operator request summary",
+    "request_type": "one Phase 3 request type",
+    "target_kind": "one Phase 3 target kind",
+    "explicit_targets": "array of normalized targets or identifiers",
+    "target_confidence": "explicit, inferred, ambiguous, or missing",
+    "context_sources_selected": "array of selected read-only context sources",
+    "context_sources_skipped": "array of skipped or unavailable sources with reasons",
+    "memory_refs": "Phase 2 memory source references",
+    "truth_refs": "Phase 1 truth contract or fixture references",
+    "risk_flags": "array of early risk flags for Phase 4",
+    "preview_decision": "preview_ready, needs_clarification, blocked_preview, or unverified_context",
+    "reason_codes": "stable machine-readable reasons",
+    "unverified_checks": "checks/sources not run or unavailable",
+    "non_authority": "rules stating this packet does not approve, execute, or prove PASS",
+    "phase_4_handoff": "risk/permission questions for the next phase"
+  },
+  "context_source_record": {
+    "source_type": "repo, evidence_doc, obsidian, durable_run, truth_contract, route_manifest",
+    "source_path": "repo-relative path or safe descriptor",
+    "source_anchor": "line, heading, run ID, fixture ID, endpoint, or manifest section",
+    "summary": "short safe summary",
+    "privacy_level": "public, internal, sensitive, redacted",
+    "evidence_strength": "Phase 1 evidence strength where applicable",
+    "truth_label": "optional Phase 1 canonical label",
+    "read_only": true
+  },
+  "required_non_authority": [
+    "would_execute=false",
+    "would_write=false",
+    "would_call_provider=false",
+    "would_start_worker=false",
+    "would_write_obsidian=false",
+    "product_pass_claimed=false"
+  ],
+  "blocked_if": [
+    "secrets_scope",
+    "broad_filesystem_scope",
+    "provider/model call requested in Phase 3",
+    "worker start requested in Phase 3",
+    "Obsidian write requested",
+    "git mutation requested",
+    "generated artifact mutation requested"
+  ],
+  "verdict": "GO"
+}
+

@@ -1,0 +1,15 @@
+{
+  "test": "make a pretend weekend forecast card-forecast-fields-or-update",
+  "verdict": "PASS",
+  "passed": true,
+  "expected": "weather-like fields render and control changes content if present",
+  "primary_behavior_failure_bucket": "",
+  "failureBucket": "",
+  "actual": {
+    "before": "City\n\nTemperature: 0°C\n\nCondition: Sunny\n\n Update Weather",
+    "after": "Codexville\n\nTemperature: 20°C\n\nCondition: Cloudy\n\n Update Weather",
+    "clicked": true,
+    "hasWeatherTerms": true
+  },
+  "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10d-runs\\05-make-a-pretend-weekend-forecast-card\\workspace\\weather-card.html"
+}

@@ -1,0 +1,18 @@
+{
+  "opened": true,
+  "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\05-make-a-pretend-balcony-forecast-tile\\workspace\\index.html",
+  "title": "Balcony Weather Forecast",
+  "bodyText": "City: San Francisco\n\nTemperature: 68°F\n\nCondition: Sunny\n\nChange Weather to New York",
+  "elementCounts": {
+    "buttons": 1,
+    "inputs": 0,
+    "links": 0,
+    "canvas": 0,
+    "scripts": 1,
+    "stylesheets": 1
+  },
+  "consoleMessages": [],
+  "pageErrors": [
+    "Cannot set properties of null (setting 'innerText')"
+  ]
+}

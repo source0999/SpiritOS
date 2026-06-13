@@ -1,0 +1,10 @@
+```json
+{
+  "action_type": "WriteFile",
+  "target": "password-generator.js",
+  "arguments": {
+    "content": "function generatePassword(length) {\n  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+~`|}{[]:;?><,./-=\\';\n  let password = '';\n  for (let i = 0; i < length; i++) {\n    const randomIndex = Math.floor(Math.random() * characters.length);\n    password += characters.charAt(randomIndex);\n  }\n  return password;\n}\n\nconsole.log(generatePassword(12));"
+  },
+  "reason": "A simple JavaScript function to generate a random password."
+}
+```

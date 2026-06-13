@@ -1,0 +1,43 @@
+--- a/index.html
++++ b/index.html
+@@ -0,0 +1,15 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Cup Counter</title>
++    <link rel="stylesheet" href="styles.css">
++</head>
++<body>
++    <h1>Cup Counter</h1>
++    <div id="counter">0</div>
++    <button onclick="incrementCounter()">Add Cup</button>
++    <script src="script.js"></script>
++</body>
++</html>--- a/script.js
++++ b/script.js
+@@ -0,0 +1,6 @@
++let count = 0;
++
++function incrementCounter() {
++    count++;
++    document.getElementById('counter').innerText = count;
++}--- a/styles.css
++++ b/styles.css
+@@ -0,0 +1,15 @@
++body {
++    font-family: Arial, sans-serif;
++    text-align: center;
++    margin-top: 50px;
++}
++
++#counter {
++    font-size: 48px;
++    margin-bottom: 20px;
++}
++
++button {
++    padding: 10px 20px;
++    font-size: 16px;
++}

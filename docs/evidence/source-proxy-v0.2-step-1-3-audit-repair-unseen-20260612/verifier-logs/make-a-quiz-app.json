@@ -1,0 +1,32 @@
+{
+  "actual": {
+    "after": "Which planet is closest to the Sun?\nMars\nVenus\nEarth\nMercury\nNext",
+    "before": "What is the capital of France?\nParis\nLondon\nBerlin\nMadrid\nNext",
+    "changed": true,
+    "clicked": "button"
+  },
+  "contract_probe": {
+    "acceptance_criterion": "Question/answer app changes visible state after answer/reveal/next interaction.",
+    "expected_observation": "Visible question, answer, score, or feedback changes.",
+    "minimum_proof_tier": 2,
+    "observable_actions": [
+      "activate answer, reveal, or next controls"
+    ],
+    "probe_id": "question-answer-state-change"
+  },
+  "expected": {
+    "expectation": "visible state changes after interaction"
+  },
+  "observed": {
+    "after": "Which planet is closest to the Sun?\nMars\nVenus\nEarth\nMercury\nNext",
+    "before": "What is the capital of France?\nParis\nLondon\nBerlin\nMadrid\nNext",
+    "changed": true,
+    "clicked": "button"
+  },
+  "passed": true,
+  "path": "Z:\\docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\11-make-a-quiz-app\\workspace\\quiz.html",
+  "reason": "",
+  "reason_codes": [],
+  "test": "question-answer-state-change",
+  "verdict": "PASS"
+}

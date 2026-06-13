@@ -1,0 +1,63 @@
+--- a/index.html
++++ b/index.html
+@@ -0,0 +1,20 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Flashcard App</title>
++    <link rel="stylesheet" href="styles.css">
++</head>
++<body>
++    <div class="container">
++        <h1>Flashcard App</h1>
++        <div id="flashcard">
++            <p id="question"></p>
++            <button onclick="showAnswer()">Show Answer</button>
++            <p id="answer" style="display:none;"></p>
++        </div>
++    </div>
++    <script src="script.js"></script>
++</body>
++</html>--- a/script.js
++++ b/script.js
+@@ -0,0 +1,23 @@
++const questions = [
++    { question: 'What is 2 + 2?', answer: '4' },
++    { question: 'What is the capital of France?', answer: 'Paris' }
++];
++
++let currentQuestionIndex = 0;
++
++function showAnswer() {
++    const flashcard = document.getElementById('flashcard');
++    const questionElement = document.getElementById('question');
++    const answerElement = document.getElementById('answer');
++
++    if (currentQuestionIndex < questions.length) {
++        questionElement.textContent = questions[currentQuestionIndex].question;
++        answerElement.textContent = questions[currentQuestionIndex].answer;
++        answerElement.style.display = 'block';
++        currentQuestionIndex++;
++    } else {
++        flashcard.innerHTML = '<p>No more questions!</p>';
++    }
++}
++
++showAnswer();--- a/styles.css
++++ b/styles.css
+@@ -0,0 +1,13 @@
++body {
++    font-family: Arial, sans-serif;
++    text-align: center;
++}
++.container {
++    max-width: 600px;
++    margin: 0 auto;
++}
++#flashcard {
++    border: 1px solid #ccc;
++    padding: 20px;
++    margin-top: 20px;
++}

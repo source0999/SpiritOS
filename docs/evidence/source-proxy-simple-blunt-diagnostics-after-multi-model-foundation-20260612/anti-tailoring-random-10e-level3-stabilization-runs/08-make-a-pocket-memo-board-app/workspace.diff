@@ -1,0 +1,80 @@
+--- a/index.html
++++ b/index.html
+@@ -0,0 +1,18 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Pocket Memo Board</title>
++    <link rel="stylesheet" href="styles.css">
++</head>
++<body>
++    <div id="app">
++        <h1>Pocket Memo Board</h1>
++        <textarea id="note-input" placeholder="Type your memo here..."></textarea>
++        <button id="save-button">Save Memo</button>
++        <ul id="memo-list"></ul>
++    </div>
++    <script src="script.js"></script>
++</body>
++</html>--- a/script.js
++++ b/script.js
+@@ -0,0 +1,9 @@
++document.getElementById('save-button').addEventListener('click', function() {
++    const noteInput = document.getElementById('note-input');
++    const memoList = document.getElementById('memo-list');
++    const newMemo = document.createElement('li');
++    newMemo.className = 'memo-item';
++    newMemo.textContent = noteInput.value;
++    memoList.appendChild(newMemo);
++    noteInput.value = '';
++});--- a/styles.css
++++ b/styles.css
+@@ -0,0 +1,46 @@
++body {
++    font-family: Arial, sans-serif;
++    background-color: #f4f4f9;
++    margin: 0;
++    padding: 20px;
++}
++
++#app {
++    max-width: 600px;
++    margin: auto;
++    background-color: #fff;
++    padding: 20px;
++    border-radius: 5px;
++    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
++}
++
++#note-input {
++    width: 100%;
++    height: 100px;
++    margin-bottom: 10px;
++    padding: 10px;
++    border: 1px solid #ccc;
++    border-radius: 5px;
++}
++
++#save-button {
++    padding: 10px 20px;
++    background-color: #28a745;
++    color: white;
++    border: none;
++    border-radius: 5px;
++    cursor: pointer;
++}
++
++#memo-list {
++    list-style-type: none;
++    padding: 0;
++}
++
++.memo-item {
++    background-color: #f9f9f9;
++    margin-bottom: 10px;
++    padding: 10px;
++    border-radius: 5px;
++    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
++}

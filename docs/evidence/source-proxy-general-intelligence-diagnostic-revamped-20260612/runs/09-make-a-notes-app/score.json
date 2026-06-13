@@ -1,0 +1,65 @@
+{
+  "actions_seen": 1,
+  "adapter_source": "ollama_generate/tool_action_runtime_v1",
+  "allowed_files_source": "artifact_class_extensions",
+  "allowed_scope_source": "artifact_class_extensions",
+  "artifact_class": "markdown_document",
+  "artifact_score_kind": "product_artifact_go",
+  "artifact_specific_ok": true,
+  "backend_created_content": false,
+  "benchmark_eligibility_reason": "product_route_uses_proxy_orchestration",
+  "benchmark_eligible": false,
+  "blocked_reasons": [],
+  "content_byte_match_by_target": {
+    "notes_app.md": true
+  },
+  "deterministic_scaffold_used": false,
+  "dummy_fixture_used": false,
+  "elapsed_seconds": 2.464,
+  "expected_blocked": false,
+  "fallback_used": false,
+  "file_equals_model_action_content": true,
+  "files_changed": [
+    "notes_app.md"
+  ],
+  "files_touched": [
+    "notes_app.md"
+  ],
+  "final_state": "completed",
+  "mode": "product",
+  "model_authored_content_hashes": {
+    "notes_app.md": "d0dc6bb757b6136239e92aaf2a5b9b483b461a95cf1735ecc6b3ccc0bee765e2"
+  },
+  "model_authored_targets": [
+    "notes_app.md"
+  ],
+  "model_chose_target": true,
+  "model_id": "qwen2.5-coder:7b",
+  "openable_homepage": false,
+  "openable_homepage_paths": [],
+  "parsed_action_count": 1,
+  "path_selection_mode": "model_chosen",
+  "preview_url": "",
+  "product_helper_used": true,
+  "prompt": "make a notes app",
+  "proxy_exact_target_suggested": "",
+  "proxy_orchestration_used": true,
+  "pure_mode": false,
+  "raw_model_transcript_count": 1,
+  "raw_transcript_path": "docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/09-make-a-notes-app/transcript.txt",
+  "real_app_touched": false,
+  "reason_codes": [],
+  "receipt_path": "docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/09-make-a-notes-app/receipt.json",
+  "route_type": "product",
+  "status": "GO",
+  "system_preselected_target": false,
+  "target_path_source": "model_action",
+  "task_shape": "disposable_single_file_artifact",
+  "task_shape_source": "generic_artifact_resolver",
+  "transparent_default_target_used": false,
+  "workspace_decision_source": "generic_artifact_resolver",
+  "workspace_files": [
+    "notes_app.md"
+  ],
+  "workspace_path": "docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/09-make-a-notes-app/workspace"
+}

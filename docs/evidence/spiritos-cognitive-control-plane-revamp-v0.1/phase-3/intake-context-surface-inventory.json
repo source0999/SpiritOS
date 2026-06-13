@@ -1,0 +1,86 @@
+{
+  "phase": "Phase 3",
+  "repo_path": "\\\\10.0.0.186\\SpiritOS\\",
+  "inspection_mode": "read-only",
+  "surfaces": [
+    {
+      "path": "source_proxy/self_status.py",
+      "role": "Builds self-status, tools manifest, context index manifest, and action preview classification.",
+      "future_use": "Reuse manifest/action-preview patterns for intake/context preview language.",
+      "recommendation": "wrap",
+      "proof_level": "real-code"
+    },
+    {
+      "path": "source_proxy/context/inventory.py",
+      "role": "Builds safe context inventory without reading file contents or expanding directories.",
+      "future_use": "Use as context source registry for preview packets.",
+      "recommendation": "wrap",
+      "proof_level": "real-code"
+    },
+    {
+      "path": "source_proxy/context/obsidian.py",
+      "role": "Read-only Obsidian note selection with safe excerpts and redaction.",
+      "future_use": "Optional read-only memory source for context preview.",
+      "recommendation": "wrap",
+      "proof_level": "real-code"
+    },
+    {
+      "path": "source_proxy/api/context_index.py",
+      "role": "GET /v1/context/index read-only context index route.",
+      "future_use": "Future runtime adapter target if Phase 3 preview later becomes an endpoint.",
+      "recommendation": "wrap",
+      "proof_level": "real-code"
+    },
+    {
+      "path": "source_proxy/api/context_inventory.py",
+      "role": "GET /v1/context/inventory read-only source inventory route.",
+      "future_use": "Future runtime adapter target for available sources.",
+      "recommendation": "wrap",
+      "proof_level": "real-code"
+    },
+    {
+      "path": "source_proxy/api/obsidian_context.py",
+      "role": "POST /v1/context/obsidian/query read-only note query route.",
+      "future_use": "Future runtime adapter target for memory-assisted context preview.",
+      "recommendation": "wrap",
+      "proof_level": "real-code"
+    },
+    {
+      "path": "source_proxy/api/decision.py",
+      "role": "Decision and prompt-packet API implementation surface.",
+      "future_use": "Future adapter must preserve prompt-packet behavior and avoid provider/model calls during preview.",
+      "recommendation": "wrap",
+      "proof_level": "real-code"
+    },
+    {
+      "path": "source_proxy/decision/router.py",
+      "role": "Route decision and target-resolution logic.",
+      "future_use": "Use for intake task class and route hints; do not duplicate routing decisions.",
+      "recommendation": "wrap",
+      "proof_level": "real-code"
+    },
+    {
+      "path": "source_proxy/planning/architect.py",
+      "role": "Planning packet, target context slice, and explicit target handling.",
+      "future_use": "Use as reference for context slice shape and bounded target handling.",
+      "recommendation": "wrap",
+      "proof_level": "real-code"
+    },
+    {
+      "path": "source_proxy/safety/paths.py",
+      "role": "Explicit target and unsafe path detection helpers.",
+      "future_use": "Use for preview reason codes around target ambiguity, broad paths, and unsafe targets.",
+      "recommendation": "wrap",
+      "proof_level": "real-code"
+    },
+    {
+      "path": "src/components/coding/approval-gate-binding.ts",
+      "role": "Client prompt-packet/target/diff approval binding.",
+      "future_use": "Keep intake preview compatible with existing /coding target and blocker states.",
+      "recommendation": "wrap",
+      "proof_level": "real-code"
+    }
+  ],
+  "verdict": "GO"
+}
+

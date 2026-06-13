@@ -1,0 +1,14 @@
+{
+  "test": "build a tiny tip splittr-visible-state-change",
+  "verdict": "PASS",
+  "passed": true,
+  "expected": "input plus action creates visible state change",
+  "actual": {
+    "before": "Tiny Tip Splittr\n  Calculate Tip\n\nTip:",
+    "after": "Tiny Tip Splittr\n  Calculate Tip\n\nTip: $1.26",
+    "filled": 2,
+    "clicked": true,
+    "appears": false
+  },
+  "path": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10-rerun-runs\\02-build-a-tiny-tip-splittr\\workspace\\index.html"
+}

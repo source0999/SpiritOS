@@ -1,0 +1,66 @@
+{
+  "behavior_contract_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\23-make-a-progress-bar-demo\\behavior-contract.json",
+  "behavior_probe": {
+    "actual": {
+      "after": "Increment Progress",
+      "before": "Increment Progress",
+      "changed": false,
+      "clicked": "button"
+    },
+    "contract_probe": {
+      "acceptance_criterion": "Progress bar demo renders a visible progress value and changes if controls are present.",
+      "expected_observation": "A non-empty progress value is visible; controls change it when provided.",
+      "minimum_proof_tier": 2,
+      "observable_actions": [
+        "inspect progress value",
+        "activate progress control if present"
+      ],
+      "probe_id": "progress-bar-visible-value"
+    },
+    "expected": {
+      "behavior": "progress-bar-visible-value",
+      "proof": "expected/actual/passed recorded by browser probe"
+    },
+    "observed": {
+      "after": "Increment Progress",
+      "before": "Increment Progress",
+      "changed": false,
+      "clicked": "button"
+    },
+    "passed": false,
+    "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\23-make-a-progress-bar-demo\\workspace\\index.html",
+    "reason": "visible state did not change after interaction",
+    "reason_codes": [
+      "visible_state_change_missing"
+    ],
+    "test": "progress-bar-visible-value",
+    "verdict": "FAIL"
+  },
+  "canonical_final_verdict_after_behavior": "FAIL",
+  "diff_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\23-make-a-progress-bar-demo\\workspace.diff",
+  "evidence_packet_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\23-make-a-progress-bar-demo\\evidence-packet.json",
+  "preview_resolution": {
+    "candidate_paths": [
+      "index.html"
+    ],
+    "explicit_path": "/home/source/SpiritOS/docs/evidence/source-proxy-v0.2-unseen-stabilization-20260612/step-6-full-unseen-reruns/23-make-a-progress-bar-demo/workspace/index.html",
+    "reason_codes": [
+      "index_html_selected",
+      "explicit_preview_path_invalid_fallback_used"
+    ],
+    "selected_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\23-make-a-progress-bar-demo\\workspace\\index.html",
+    "selection_reason": "index_html_present_after_invalid_explicit",
+    "status": "ready"
+  },
+  "preview_selection_reason": "index_html_present_after_invalid_explicit",
+  "product_pass_after_behavior": false,
+  "prompt": "make a progress bar demo",
+  "receipt_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\23-make-a-progress-bar-demo\\receipt.json",
+  "retest_result_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\23-make-a-progress-bar-demo\\retest-result.json",
+  "run_dir": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\23-make-a-progress-bar-demo",
+  "score_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\23-make-a-progress-bar-demo\\score.json",
+  "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\23-make-a-progress-bar-demo\\workspace\\index.html",
+  "source_proxy_status": "GO",
+  "transcript_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\23-make-a-progress-bar-demo\\transcript.txt",
+  "workspace_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\23-make-a-progress-bar-demo\\workspace"
+}

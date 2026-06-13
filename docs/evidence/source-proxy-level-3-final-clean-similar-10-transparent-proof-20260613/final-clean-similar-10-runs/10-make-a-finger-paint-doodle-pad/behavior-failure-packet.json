@@ -1,0 +1,197 @@
+{
+  "allowed_workspace": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\10-make-a-finger-paint-doodle-pad\\workspace",
+  "artifact_class": "static_ui_artifact",
+  "artifact_paths": [
+    "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\10-make-a-finger-paint-doodle-pad\\workspace\\index.html"
+  ],
+  "attempt_count": 0,
+  "behavior_contract": {
+    "artifact_class": "static_ui_artifact",
+    "behavior_required": true,
+    "contract_status": "ready",
+    "contract_version": "source-proxy-artifact-behavior-contract-v0.2.phase-3",
+    "final_pass_rule": "Final PASS requires every required behavior probe to pass against the generated artifact.",
+    "generic_behavior_requirement_examples": [
+      "timer/countdown: Start uses local interval/state mutation and visible time/count text changes after start",
+      "bill/tip/splitter/calculator: entered numbers visibly update result",
+      "checklist/list/notes: entered text appears visibly after add/save",
+      "theme/toggle/day/night: computed class/color/theme state visibly changes",
+      "weather/player/tracker/password/canvas: the primary control visibly changes state, feedback, track/status, or pixels"
+    ],
+    "generic_interactive_requirement": "Interactive static UI artifacts must include visible state mutation tied to the behavior contract; static controls, decorative DOM, and unchanged labels are not enough.",
+    "non_pass_signals": [
+      "route_go",
+      "artifact_exists",
+      "preview_opens",
+      "static_dom_presence",
+      "model_self_report"
+    ],
+    "preview_requirement": "Openable HTML artifact is required before behavior can be evaluated.",
+    "probe_targets": [
+      {
+        "acceptance_criterion": "Pointer or mouse interaction draws on a canvas or equivalent visible surface.",
+        "expected_observation": "Canvas pixels or equivalent drawing marks change after the drag; static canvas markup is not enough.",
+        "minimum_proof_tier": 2,
+        "observable_actions": [
+          "drag on the drawing surface"
+        ],
+        "probe_id": "drawing-surface-changes"
+      }
+    ],
+    "prompt": "make a finger paint doodle pad",
+    "task_shape": "disposable_small_file_bundle"
+  },
+  "behavior_contract_id": "source-proxy-artifact-behavior-contract-v0.2.phase-3",
+  "behavior_probe_evidence": {
+    "actual_values": {
+      "box": {
+        "height": 604,
+        "width": 804,
+        "x": 238,
+        "y": 98
+      },
+      "canvas": true,
+      "changed": false
+    },
+    "after": null,
+    "before": null,
+    "canvas": true,
+    "clicked": null,
+    "expected_values": "mouse drag changes canvas pixels",
+    "filled": null,
+    "probe_id": "make a finger paint doodle pad-drawing-surface-change",
+    "reason_codes": []
+  },
+  "console_details": {
+    "bodyText": "",
+    "consoleMessages": [],
+    "elementCounts": {
+      "buttons": 0,
+      "canvas": 1,
+      "inputs": 0,
+      "links": 0,
+      "scripts": 1,
+      "stylesheets": 1
+    },
+    "opened": true,
+    "pageErrors": [],
+    "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\10-make-a-finger-paint-doodle-pad\\workspace\\index.html",
+    "title": "Finger Paint Doodle Pad"
+  },
+  "console_open_summary": {
+    "console": {
+      "bodyText": "",
+      "consoleMessages": [],
+      "elementCounts": {
+        "buttons": 0,
+        "canvas": 1,
+        "inputs": 0,
+        "links": 0,
+        "scripts": 1,
+        "stylesheets": 1
+      },
+      "opened": true,
+      "pageErrors": [],
+      "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\10-make-a-finger-paint-doodle-pad\\workspace\\index.html",
+      "title": "Finger Paint Doodle Pad"
+    },
+    "open_status": ""
+  },
+  "current_final_reason_codes": [
+    "behavior_required_but_unverified"
+  ],
+  "expected_behavior": {
+    "acceptance_criterion": "Pointer or mouse interaction draws on a canvas or equivalent visible surface.",
+    "expected_observation": "Canvas pixels or equivalent drawing marks change after the drag; static canvas markup is not enough.",
+    "minimum_proof_tier": 2,
+    "observable_actions": [
+      "drag on the drawing surface"
+    ],
+    "probe_id": "drawing-surface-changes"
+  },
+  "expected_observable_behavior": "Canvas pixels or equivalent drawing marks change after the drag; static canvas markup is not enough.",
+  "failure_kind": "post_behavior_probe_failure",
+  "file_list": [
+    "index.html",
+    "script.js",
+    "styles.css"
+  ],
+  "forbidden_paths": [
+    ".env",
+    ".env.*",
+    "*.pem",
+    "*.key",
+    "certificates/*",
+    "source_proxy/**",
+    "src/**",
+    "app/**",
+    "pages/**",
+    "scripts/**"
+  ],
+  "generated_files": [
+    "index.html",
+    "script.js",
+    "styles.css"
+  ],
+  "handoff_reasons": [],
+  "handoff_required": false,
+  "max_attempts_hint": 1,
+  "model_authored_targets": [
+    "index.html",
+    "script.js",
+    "styles.css"
+  ],
+  "observed_behavior": {
+    "actual": {
+      "box": {
+        "height": 604,
+        "width": 804,
+        "x": 238,
+        "y": 98
+      },
+      "canvas": true,
+      "changed": false
+    },
+    "after": null,
+    "before": null,
+    "expected": "mouse drag changes canvas pixels",
+    "observed": {
+      "box": {
+        "height": 604,
+        "width": 804,
+        "x": 238,
+        "y": 98
+      },
+      "canvas": true,
+      "changed": false
+    },
+    "reason": "",
+    "test": "make a finger paint doodle pad-drawing-surface-change",
+    "verdict": "FAIL"
+  },
+  "packet_version": "source-proxy-artifact-failure-packet-v0.2.phase-4",
+  "primary_behavior_failure_bucket": "drawing_canvas_no_pixel_change",
+  "probe_id": "make a finger paint doodle pad-drawing-surface-change",
+  "prompt": "make a finger paint doodle pad",
+  "reason_codes": [
+    "behavior_failed_verified",
+    "behavior_probe_failed:make a finger paint doodle pad-drawing-surface-change"
+  ],
+  "repair_attempt_count": 0,
+  "repair_scope": {
+    "allowed_extensions": [
+      ".html",
+      ".css",
+      ".js"
+    ],
+    "disposable_workspace_only": true,
+    "full_solution_in_prompt_allowed": false,
+    "local_only": true,
+    "max_attempts": 1,
+    "production_paths_allowed": false,
+    "provider_api_allowed": false
+  },
+  "secondary_behavior_failure_bucket": "",
+  "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\10-make-a-finger-paint-doodle-pad\\workspace\\index.html",
+  "status": "READY_FOR_LOCAL_REPAIR"
+}

@@ -1,0 +1,16 @@
+{
+  "test": "make a pocket memo board app-visible-state-change",
+  "verdict": "PASS",
+  "passed": true,
+  "expected": "entered note text remains visible after action",
+  "primary_behavior_failure_bucket": "",
+  "failureBucket": "",
+  "actual": {
+    "before": "Add Memo",
+    "after": "scratch proof note\nAdd Memo",
+    "filled": 1,
+    "clicked": true,
+    "appears": true
+  },
+  "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-runs\\08-make-a-pocket-memo-board-app\\workspace\\index.html"
+}

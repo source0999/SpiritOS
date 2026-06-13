@@ -1,0 +1,348 @@
+{
+  "results": [
+    {
+      "run": "01-make-a-laundry-flip-countdown",
+      "prompt": "make a laundry flip countdown",
+      "route_status": "GO",
+      "canonical_final_verdict": "UNVERIFIED",
+      "preview_path_local": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\01-make-a-laundry-flip-countdown\\workspace\\index.html",
+      "open_probe": {
+        "opened": true,
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\01-make-a-laundry-flip-countdown\\workspace\\index.html",
+        "title": "Laundry Flip Countdown",
+        "bodyText": "60\nStart Stop Reset",
+        "elementCounts": {
+          "buttons": 3,
+          "inputs": 0,
+          "links": 0,
+          "canvas": 0,
+          "scripts": 1,
+          "stylesheets": 1
+        },
+        "consoleMessages": [],
+        "pageErrors": []
+      },
+      "behavior_probe": {
+        "test": "make a laundry flip countdown-timer-change",
+        "verdict": "PASS",
+        "passed": true,
+        "expected": "timer text changes after start",
+        "primary_behavior_failure_bucket": "",
+        "secondary_behavior_failure_bucket": "",
+        "failureBucket": "",
+        "actual": {
+          "before": "60\nStart Stop Reset",
+          "afterStart": "59\nStart Stop Reset",
+          "afterStop": "59\nStart Stop Reset",
+          "clickedStop": true
+        },
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\01-make-a-laundry-flip-countdown\\workspace\\index.html"
+      }
+    },
+    {
+      "run": "02-make-a-parking-garage-cost-sharer",
+      "prompt": "make a parking garage cost sharer",
+      "route_status": "EXPECTED-BLOCKED",
+      "canonical_final_verdict": "BLOCKED",
+      "preview_path_local": "",
+      "open_probe": {
+        "opened": false,
+        "reason": "no_browser_viewable_html_artifact",
+        "selected_preview_path": ""
+      },
+      "behavior_probe": {
+        "test": "make a parking garage cost sharer-missing-preview",
+        "verdict": "FAIL",
+        "passed": false,
+        "expected": "openable generated preview exists before behavior probe",
+        "primary_behavior_failure_bucket": "route_blocked_no_preview",
+        "failureBucket": "route_blocked_no_preview",
+        "actual": {
+          "selected_preview_path": ""
+        }
+      }
+    },
+    {
+      "run": "03-make-a-dusk-dawn-palette-switch",
+      "prompt": "make a dusk dawn palette switch",
+      "route_status": "EXPECTED-BLOCKED",
+      "canonical_final_verdict": "BLOCKED",
+      "preview_path_local": "",
+      "open_probe": {
+        "opened": false,
+        "reason": "no_browser_viewable_html_artifact",
+        "selected_preview_path": ""
+      },
+      "behavior_probe": {
+        "test": "make a dusk dawn palette switch-missing-preview",
+        "verdict": "FAIL",
+        "passed": false,
+        "expected": "openable generated preview exists before behavior probe",
+        "primary_behavior_failure_bucket": "route_blocked_no_preview",
+        "failureBucket": "route_blocked_no_preview",
+        "actual": {
+          "selected_preview_path": ""
+        }
+      }
+    },
+    {
+      "run": "04-make-a-beach-bag-checklist-app",
+      "prompt": "make a beach bag checklist app",
+      "route_status": "GO",
+      "canonical_final_verdict": "UNVERIFIED",
+      "preview_path_local": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\04-make-a-beach-bag-checklist-app\\workspace\\index.html",
+      "open_probe": {
+        "opened": true,
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\04-make-a-beach-bag-checklist-app\\workspace\\index.html",
+        "title": "Beach Bag Checklist",
+        "bodyText": "Beach Bag Checklist\n Add Item",
+        "elementCounts": {
+          "buttons": 1,
+          "inputs": 1,
+          "links": 0,
+          "canvas": 0,
+          "scripts": 1,
+          "stylesheets": 1
+        },
+        "consoleMessages": [],
+        "pageErrors": []
+      },
+      "behavior_probe": {
+        "test": "make a beach bag checklist app-visible-state-change",
+        "verdict": "PASS",
+        "passed": true,
+        "expected": "entered checklist/list text remains visible after action",
+        "primary_behavior_failure_bucket": "",
+        "failureBucket": "",
+        "actual": {
+          "before": "Beach Bag Checklist\n Add Item",
+          "after": "Beach Bag Checklist\n Add Item\nbananas",
+          "filled": 1,
+          "clicked": true,
+          "appears": true
+        },
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\04-make-a-beach-bag-checklist-app\\workspace\\index.html"
+      }
+    },
+    {
+      "run": "05-make-a-pretend-balcony-forecast-tile",
+      "prompt": "make a pretend balcony forecast tile",
+      "route_status": "GO",
+      "canonical_final_verdict": "UNVERIFIED",
+      "preview_path_local": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\05-make-a-pretend-balcony-forecast-tile\\workspace\\index.html",
+      "open_probe": {
+        "opened": true,
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\05-make-a-pretend-balcony-forecast-tile\\workspace\\index.html",
+        "title": "Balcony Weather Forecast",
+        "bodyText": "City: San Francisco\n\nTemperature: 68°F\n\nCondition: Sunny\n\nChange Weather to New York",
+        "elementCounts": {
+          "buttons": 1,
+          "inputs": 0,
+          "links": 0,
+          "canvas": 0,
+          "scripts": 1,
+          "stylesheets": 1
+        },
+        "consoleMessages": [],
+        "pageErrors": [
+          "Cannot set properties of null (setting 'innerText')"
+        ]
+      },
+      "behavior_probe": {
+        "test": "make a pretend balcony forecast tile-forecast-fields-or-update",
+        "verdict": "FAIL",
+        "passed": false,
+        "expected": "weather-like fields render and control changes content if present",
+        "primary_behavior_failure_bucket": "weather_static_when_update_expected",
+        "failureBucket": "weather_static_when_update_expected",
+        "actual": {
+          "before": "City: San Francisco\n\nTemperature: 68°F\n\nCondition: Sunny\n\nChange Weather to New York",
+          "after": "City: San Francisco\n\nTemperature: 68°F\n\nCondition: Sunny\n\nChange Weather to New York",
+          "clicked": true,
+          "hasWeatherTerms": true
+        },
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\05-make-a-pretend-balcony-forecast-tile\\workspace\\index.html"
+      }
+    },
+    {
+      "run": "06-make-a-campfire-podcast-mini-player",
+      "prompt": "make a campfire podcast mini player",
+      "route_status": "GO",
+      "canonical_final_verdict": "UNVERIFIED",
+      "preview_path_local": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\06-make-a-campfire-podcast-mini-player\\workspace\\index.html",
+      "open_probe": {
+        "opened": true,
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\06-make-a-campfire-podcast-mini-player\\workspace\\index.html",
+        "title": "Campfire Podcast Mini Player",
+        "bodyText": "Track Title\nPlay Skip",
+        "elementCounts": {
+          "buttons": 2,
+          "inputs": 0,
+          "links": 0,
+          "canvas": 0,
+          "scripts": 1,
+          "stylesheets": 1
+        },
+        "consoleMessages": [],
+        "pageErrors": []
+      },
+      "behavior_probe": {
+        "test": "make a campfire podcast mini player-player-control-change",
+        "verdict": "PASS",
+        "passed": true,
+        "expected": "play/pause or player control visibly changes state",
+        "primary_behavior_failure_bucket": "",
+        "failureBucket": "",
+        "actual": {
+          "before": "Track Title\nPlay Skip",
+          "after": "Track Title\nPause Skip",
+          "clicked": true
+        },
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\06-make-a-campfire-podcast-mini-player\\workspace\\index.html"
+      }
+    },
+    {
+      "run": "07-make-a-stair-step-tally-counter",
+      "prompt": "make a stair step tally counter",
+      "route_status": "GO",
+      "canonical_final_verdict": "UNVERIFIED",
+      "preview_path_local": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\07-make-a-stair-step-tally-counter\\workspace\\index.html",
+      "open_probe": {
+        "opened": true,
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\07-make-a-stair-step-tally-counter\\workspace\\index.html",
+        "title": "Stair Step Tally Counter",
+        "bodyText": "0\nIncrement",
+        "elementCounts": {
+          "buttons": 1,
+          "inputs": 0,
+          "links": 0,
+          "canvas": 0,
+          "scripts": 1,
+          "stylesheets": 1
+        },
+        "consoleMessages": [],
+        "pageErrors": []
+      },
+      "behavior_probe": {
+        "test": "make a stair step tally counter-click-tracker-state-change",
+        "verdict": "PASS",
+        "passed": true,
+        "expected": "tracker control visibly changes progress state",
+        "primary_behavior_failure_bucket": "",
+        "failureBucket": "",
+        "actual": {
+          "before": "0\nIncrement",
+          "after": "1\nIncrement",
+          "clicked": true
+        },
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\07-make-a-stair-step-tally-counter\\workspace\\index.html"
+      }
+    },
+    {
+      "run": "08-make-a-sticky-thought-memo-board",
+      "prompt": "make a sticky thought memo board",
+      "route_status": "GO",
+      "canonical_final_verdict": "UNVERIFIED",
+      "preview_path_local": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\08-make-a-sticky-thought-memo-board\\workspace\\index.html",
+      "open_probe": {
+        "opened": true,
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\08-make-a-sticky-thought-memo-board\\workspace\\index.html",
+        "title": "Sticky Thought Memo Board",
+        "bodyText": " Add Memo",
+        "elementCounts": {
+          "buttons": 1,
+          "inputs": 1,
+          "links": 0,
+          "canvas": 0,
+          "scripts": 1,
+          "stylesheets": 1
+        },
+        "consoleMessages": [],
+        "pageErrors": []
+      },
+      "behavior_probe": {
+        "test": "make a sticky thought memo board-visible-state-change",
+        "verdict": "PASS",
+        "passed": true,
+        "expected": "entered note text remains visible after action",
+        "primary_behavior_failure_bucket": "",
+        "failureBucket": "",
+        "actual": {
+          "before": " Add Memo",
+          "after": "scratch proof note\n Add Memo",
+          "filled": 1,
+          "clicked": true,
+          "appears": true
+        },
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\08-make-a-sticky-thought-memo-board\\workspace\\index.html"
+      }
+    },
+    {
+      "run": "09-make-a-secret-phrase-strength-gauge",
+      "prompt": "make a secret phrase strength gauge",
+      "route_status": "EXPECTED-BLOCKED",
+      "canonical_final_verdict": "BLOCKED",
+      "preview_path_local": "",
+      "open_probe": {
+        "opened": false,
+        "reason": "no_browser_viewable_html_artifact",
+        "selected_preview_path": ""
+      },
+      "behavior_probe": {
+        "test": "make a secret phrase strength gauge-missing-preview",
+        "verdict": "FAIL",
+        "passed": false,
+        "expected": "openable generated preview exists before behavior probe",
+        "primary_behavior_failure_bucket": "route_blocked_no_preview",
+        "failureBucket": "route_blocked_no_preview",
+        "actual": {
+          "selected_preview_path": ""
+        }
+      }
+    },
+    {
+      "run": "10-make-a-finger-paint-doodle-pad",
+      "prompt": "make a finger paint doodle pad",
+      "route_status": "GO",
+      "canonical_final_verdict": "UNVERIFIED",
+      "preview_path_local": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\10-make-a-finger-paint-doodle-pad\\workspace\\index.html",
+      "open_probe": {
+        "opened": true,
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\10-make-a-finger-paint-doodle-pad\\workspace\\index.html",
+        "title": "Finger Paint Doodle Pad",
+        "bodyText": "",
+        "elementCounts": {
+          "buttons": 0,
+          "inputs": 0,
+          "links": 0,
+          "canvas": 1,
+          "scripts": 1,
+          "stylesheets": 0
+        },
+        "consoleMessages": [],
+        "pageErrors": [
+          "Cannot read properties of null (reading 'addEventListener')"
+        ]
+      },
+      "behavior_probe": {
+        "test": "make a finger paint doodle pad-drawing-surface-change",
+        "verdict": "FAIL",
+        "passed": false,
+        "expected": "mouse drag changes canvas pixels",
+        "primary_behavior_failure_bucket": "drawing_canvas_no_pixel_change",
+        "failureBucket": "drawing_canvas_no_pixel_change",
+        "actual": {
+          "canvas": true,
+          "box": {
+            "x": 8,
+            "y": 8,
+            "width": 808,
+            "height": 608
+          },
+          "changed": false
+        },
+        "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\10-make-a-finger-paint-doodle-pad\\workspace\\index.html"
+      }
+    }
+  ]
+}

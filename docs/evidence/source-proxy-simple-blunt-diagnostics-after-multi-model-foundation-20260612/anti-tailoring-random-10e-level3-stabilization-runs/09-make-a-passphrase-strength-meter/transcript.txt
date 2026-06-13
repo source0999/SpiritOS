@@ -1,0 +1,28 @@
+```json
+[
+    {
+        "action_type": "WriteFile",
+        "target": "passphrase_strength_meter.html",
+        "arguments": {
+            "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Passphrase Strength Meter</title>\n    <link rel=\"stylesheet\" href=\"passphrase_strength_meter.css\">\n</head>\n<body>\n    <h1>Passphrase Strength Meter</h1>\n    <input type=\"password\" id=\"passphraseInput\" placeholder=\"Enter your passphrase\">\n    <div id=\"strengthFeedback\"></div>\n    <script src=\"passphrase_strength_meter.js\"></script>\n</body>\n</html>"
+        },
+        "reason": "HTML file to host the passphrase strength meter UI."
+    },
+    {
+        "action_type": "WriteFile",
+        "target": "passphrase_strength_meter.css",
+        "arguments": {
+            "content": "body {\n    font-family: Arial, sans-serif;\n}\n#strengthFeedback {\n    margin-top: 20px;\n    padding: 10px;\n    border-radius: 5px;\n}\n.weak { background-color: #ffcccc; }\n.medium { background-color: #ffff99; }\n.strong { background-color: #ccffcc; }"
+        },
+        "reason": "CSS file to style the passphrase strength meter feedback."
+    },
+    {
+        "action_type": "WriteFile",
+        "target": "passphrase_strength_meter.js",
+        "arguments": {
+            "content": "document.getElementById('passphraseInput').addEventListener('input', function() {\n    const passphrase = this.value;\n    const strengthFeedback = document.getElementById('strengthFeedback');\n    if (passphrase.length < 8) {\n        strengthFeedback.textContent = 'Weak';\n        strengthFeedback.className = 'weak';\n    } else if (passphrase.length >= 8 && passphrase.length < 12) {\n        strengthFeedback.textContent = 'Medium';\n        strengthFeedback.className = 'medium';\n    } else {\n        strengthFeedback.textContent = 'Strong';\n        strengthFeedback.className = 'strong';\n    }\n});"
+        },
+        "reason": "JavaScript file to handle the input event and update the passphrase strength feedback."
+    }
+]
+```

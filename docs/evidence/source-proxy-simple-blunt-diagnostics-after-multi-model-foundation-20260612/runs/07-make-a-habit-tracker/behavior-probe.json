@@ -1,0 +1,35 @@
+{
+  "actual": {
+    "after": "Habit Tracker\n Add Habit\nv0.2 proof item",
+    "appears": true,
+    "before": "Habit Tracker\n Add Habit",
+    "changed": true,
+    "filled": true
+  },
+  "contract_probe": {
+    "acceptance_criterion": "User can add, complete, edit, remove, or otherwise change habit state.",
+    "expected_observation": "Habit state changes after user action; static hard-coded habits are not enough.",
+    "minimum_proof_tier": 2,
+    "observable_actions": [
+      "inspect for input/buttons/checkboxes",
+      "add or toggle a habit"
+    ],
+    "probe_id": "habit-state-change"
+  },
+  "expected": {
+    "itemAppearsOrStateChanges": true
+  },
+  "observed": {
+    "after": "Habit Tracker\n Add Habit\nv0.2 proof item",
+    "appears": true,
+    "before": "Habit Tracker\n Add Habit",
+    "changed": true,
+    "filled": true
+  },
+  "passed": true,
+  "path": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\runs\\07-make-a-habit-tracker\\workspace\\index.html",
+  "reason": "",
+  "reason_codes": [],
+  "test": "habit-state-change",
+  "verdict": "PASS"
+}

@@ -1,0 +1,66 @@
+{
+  "behavior_contract_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-4-needs-fix-reruns\\13-make-a-stopwatch\\behavior-contract.json",
+  "behavior_probe": {
+    "actual": {
+      "after": "00:00:00\nStart Stop Reset",
+      "before": "00:00:00\nStart Stop Reset",
+      "changed": false,
+      "clicked": "button"
+    },
+    "contract_probe": {
+      "acceptance_criterion": "Counter or timer controls visibly change numeric/time state.",
+      "expected_observation": "Displayed numeric or time state changes after interaction.",
+      "minimum_proof_tier": 2,
+      "observable_actions": [
+        "activate the primary start/increment control",
+        "activate reset/decrement if present"
+      ],
+      "probe_id": "counter-or-time-state-change"
+    },
+    "expected": {
+      "behavior": "counter-or-time-state-change",
+      "proof": "expected/actual/passed recorded by browser probe"
+    },
+    "observed": {
+      "after": "00:00:00\nStart Stop Reset",
+      "before": "00:00:00\nStart Stop Reset",
+      "changed": false,
+      "clicked": "button"
+    },
+    "passed": false,
+    "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-4-needs-fix-reruns\\13-make-a-stopwatch\\workspace\\stopwatch.html",
+    "reason": "visible state did not change after interaction",
+    "reason_codes": [
+      "visible_state_change_missing"
+    ],
+    "test": "counter-or-time-state-change",
+    "verdict": "FAIL"
+  },
+  "canonical_final_verdict_after_behavior": "FAIL",
+  "diff_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-4-needs-fix-reruns\\13-make-a-stopwatch\\workspace.diff",
+  "evidence_packet_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-4-needs-fix-reruns\\13-make-a-stopwatch\\evidence-packet.json",
+  "preview_resolution": {
+    "candidate_paths": [
+      "stopwatch.html"
+    ],
+    "explicit_path": "/home/source/SpiritOS/docs/evidence/source-proxy-v0.2-unseen-stabilization-20260612/step-4-needs-fix-reruns/13-make-a-stopwatch/workspace/stopwatch.html",
+    "reason_codes": [
+      "single_html_entrypoint_selected",
+      "explicit_preview_path_invalid_fallback_used"
+    ],
+    "selected_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-4-needs-fix-reruns\\13-make-a-stopwatch\\workspace\\stopwatch.html",
+    "selection_reason": "single_html_entrypoint_after_invalid_explicit",
+    "status": "ready"
+  },
+  "preview_selection_reason": "single_html_entrypoint_after_invalid_explicit",
+  "product_pass_after_behavior": false,
+  "prompt": "make a stopwatch",
+  "receipt_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-4-needs-fix-reruns\\13-make-a-stopwatch\\receipt.json",
+  "retest_result_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-4-needs-fix-reruns\\13-make-a-stopwatch\\retest-result.json",
+  "run_dir": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-4-needs-fix-reruns\\13-make-a-stopwatch",
+  "score_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-4-needs-fix-reruns\\13-make-a-stopwatch\\score.json",
+  "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-4-needs-fix-reruns\\13-make-a-stopwatch\\workspace\\stopwatch.html",
+  "source_proxy_status": "GO",
+  "transcript_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-4-needs-fix-reruns\\13-make-a-stopwatch\\transcript.txt",
+  "workspace_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-4-needs-fix-reruns\\13-make-a-stopwatch\\workspace"
+}

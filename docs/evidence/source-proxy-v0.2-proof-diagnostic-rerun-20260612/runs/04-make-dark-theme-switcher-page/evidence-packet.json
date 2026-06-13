@@ -1,0 +1,55 @@
+{
+  "artifact_readiness": "READY",
+  "behavior_contract_path": "docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/runs/04-make-dark-theme-switcher-page/behavior-contract.json",
+  "behavior_probe": {
+    "observed": {
+      "after": {
+        "bg": "rgb(51, 51, 51)",
+        "cls": " dark-theme",
+        "color": "rgb(255, 255, 255)"
+      },
+      "before": {
+        "bg": "rgb(255, 255, 255)",
+        "cls": " light-theme",
+        "color": "rgb(0, 0, 0)"
+      },
+      "toggled": true
+    },
+    "path": "docs\\evidence\\source-proxy-v0.2-proof-diagnostic-rerun-20260612\\runs\\04-make-dark-theme-switcher-page\\workspace\\index.html",
+    "prompt": "make dark theme switcher page",
+    "reason": "",
+    "reason_codes": [],
+    "slug": "04-make-dark-theme-switcher-page",
+    "test": "theme-computed-color-change",
+    "verdict": "PASS"
+  },
+  "behavior_required_for_final_pass": true,
+  "browser_behavior_verdict": "PASS",
+  "canonical_final_verdict": "UNVERIFIED",
+  "canonical_final_verdict_after_behavior": "PASS",
+  "diff_path": "docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/runs/04-make-dark-theme-switcher-page/workspace.diff",
+  "failure_packet_path": "",
+  "files": [
+    "index.html",
+    "script.js",
+    "styles.css"
+  ],
+  "generation_error": "",
+  "handoff_packet_path": "",
+  "html_paths": [
+    "index.html"
+  ],
+  "product_pass": false,
+  "product_pass_after_behavior": true,
+  "prompt": "make dark theme switcher page",
+  "reason_codes": [],
+  "receipt_path": "docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/runs/04-make-dark-theme-switcher-page/receipt.json",
+  "repair_attempts_path": "docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/runs/04-make-dark-theme-switcher-page/repair-attempts.json",
+  "retest_result_path": "docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/runs/04-make-dark-theme-switcher-page/retest-result.json",
+  "run_dir": "docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/runs/04-make-dark-theme-switcher-page",
+  "score_path": "docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/runs/04-make-dark-theme-switcher-page/score.json",
+  "slug": "04-make-dark-theme-switcher-page",
+  "source_proxy_status": "GO",
+  "transcript_path": "docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/runs/04-make-dark-theme-switcher-page/transcript.txt",
+  "workspace_path": "docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/runs/04-make-dark-theme-switcher-page/workspace"
+}

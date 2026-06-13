@@ -1,0 +1,160 @@
+{
+  "apply_approval_state": "approved_by_user_for_phase_3a_fix_task_a_only",
+  "content_after_apply": "# Sandbox Approved Doc\n\nLevel 3 Phase 3A fixed rerun marker.\n",
+  "context_packet": {
+    "allowed_files": [
+      "docs/evidence/source-proxy-remaining-levels-daily-driver-readiness-20260612/level-3/sandbox-approved-doc.md"
+    ],
+    "approval_level": "manual_apply_required",
+    "forbidden_files": [
+      ".env",
+      ".env.*",
+      "*.pem",
+      "*.key",
+      "certificates/*"
+    ],
+    "manual_gate": "approved_phase_3a_fix_only",
+    "phase": "3A fix rerun",
+    "task_id": "A",
+    "workspace_mode": "real_repo_supervised"
+  },
+  "execution_receipt_scope": {
+    "allowed_files": [
+      "docs/evidence/source-proxy-remaining-levels-daily-driver-readiness-20260612/level-3/sandbox-approved-doc.md"
+    ],
+    "attempted_action_paths": [
+      "docs/evidence/source-proxy-remaining-levels-daily-driver-readiness-20260612/level-3/sandbox-approved-doc.md"
+    ],
+    "blocked_paths": [],
+    "changed_paths": [
+      "docs/evidence/source-proxy-remaining-levels-daily-driver-readiness-20260612/level-3/sandbox-approved-doc.md"
+    ],
+    "scope_root": "/home/source/SpiritOS",
+    "target_exists_after": true,
+    "target_exists_before": false,
+    "whole_repo_file_count_not_used": true,
+    "workspace_mode": "real_repo_supervised"
+  },
+  "execution_result": {
+    "blocked_reason": "",
+    "diff_summary": "--- a/docs/evidence/source-proxy-remaining-levels-daily-driver-readiness-20260612/level-3/sandbox-approved-doc.md\n+++ b/docs/evidence/source-proxy-remaining-levels-daily-driver-readiness-20260612/level-3/sandbox-approved-doc.md\n@@ -0,0 +1,3 @@\n+# Sandbox Approved Doc\n+\n+Level 3 Phase 3A fixed rerun marker.\n",
+    "error_code": "",
+    "files_touched": [
+      "docs/evidence/source-proxy-remaining-levels-daily-driver-readiness-20260612/level-3/sandbox-approved-doc.md"
+    ],
+    "status": "completed"
+  },
+  "exists_after_apply": true,
+  "exists_after_revert": false,
+  "parse_result": {
+    "actions": [
+      {
+        "action_id": "level-3-phase-3a-fix-task-a:1:WriteFile",
+        "action_type": "WriteFile",
+        "adapter_source": "deterministic_no_model_phase_3a_fix",
+        "allowed_files_snapshot": [
+          "docs/evidence/source-proxy-remaining-levels-daily-driver-readiness-20260612/level-3/sandbox-approved-doc.md"
+        ],
+        "arguments": {
+          "content": "# Sandbox Approved Doc\n\nLevel 3 Phase 3A fixed rerun marker.\n"
+        },
+        "authorship": "model_authored",
+        "created_at": "",
+        "execution_state": "blocked_until_plan_3",
+        "model_id": "no_model_phase_3a_fix_rerun",
+        "reason": "Create the explicitly approved evidence-only doc for Phase 3A fix rerun apply/revert proof.",
+        "requires_approval": true,
+        "schema_version": 1,
+        "source_message_id": "level-3-phase-3a-fix-task-a",
+        "target": "docs/evidence/source-proxy-remaining-levels-daily-driver-readiness-20260612/level-3/sandbox-approved-doc.md"
+      }
+    ],
+    "decisions": [
+      {
+        "action_id": "level-3-phase-3a-fix-task-a:1:WriteFile",
+        "adapter_source": "deterministic_no_model_phase_3a_fix",
+        "detail": "",
+        "error_code": "",
+        "parser": "strict_json",
+        "status": "accepted"
+      }
+    ],
+    "error_code": "",
+    "ok": true
+  },
+  "proposed_diff_before_apply": {
+    "action_id": "level-3-phase-3a-fix-task-a:1:WriteFile",
+    "action_type": "WriteFile",
+    "adapter_source": "deterministic_no_model_phase_3a_fix",
+    "allowed_files_snapshot": [
+      "docs/evidence/source-proxy-remaining-levels-daily-driver-readiness-20260612/level-3/sandbox-approved-doc.md"
+    ],
+    "arguments": {
+      "content": "# Sandbox Approved Doc\n\nLevel 3 Phase 3A fixed rerun marker.\n"
+    },
+    "authorship": "model_authored",
+    "created_at": "",
+    "execution_state": "blocked_until_plan_3",
+    "model_id": "no_model_phase_3a_fix_rerun",
+    "reason": "Create the explicitly approved evidence-only doc for Phase 3A fix rerun apply/revert proof.",
+    "requires_approval": true,
+    "schema_version": 1,
+    "source_message_id": "level-3-phase-3a-fix-task-a",
+    "target": "docs/evidence/source-proxy-remaining-levels-daily-driver-readiness-20260612/level-3/sandbox-approved-doc.md"
+  },
+  "raw_transcript": "{\"action_type\": \"WriteFile\", \"arguments\": {\"content\": \"# Sandbox Approved Doc\\n\\nLevel 3 Phase 3A fixed rerun marker.\\n\"}, \"reason\": \"Create the explicitly approved evidence-only doc for Phase 3A fix rerun apply/revert proof.\", \"target\": \"docs/evidence/source-proxy-remaining-levels-daily-driver-readiness-20260612/level-3/sandbox-approved-doc.md\"}",
+  "revert_status": "reverted_by_path_scoped_unlink",
+  "task": "Task A Phase 3A fixed rerun",
+  "task_spec_intake": {
+    "allowed_extensions": [],
+    "allowed_files": [
+      "docs/evidence/source-proxy-remaining-levels-daily-driver-readiness-20260612/level-3/sandbox-approved-doc.md"
+    ],
+    "allowed_scope_source": "explicit_allowed_file_scope",
+    "approval_level": "manual_apply_required",
+    "artifact_class": "markdown_document",
+    "clarification_prompt": "",
+    "clarification_state": "not_needed",
+    "context_sources": [
+      "target_path",
+      "repo_map"
+    ],
+    "forbidden_files": [
+      ".env",
+      ".env.*",
+      "*.pem",
+      "*.key",
+      "certificates/*"
+    ],
+    "intent": "modify",
+    "max_file_count": 8,
+    "model_lane": "no_model_phase_3a_fix_rerun",
+    "protected_paths": [],
+    "reason_codes": [
+      "prefer_free_or_subscription_route",
+      "repo_first_research",
+      "implementation_requested",
+      "explicit_target_present",
+      "explicit_allowed_file_scope",
+      "new_file_allowed_by_manual_scope",
+      "real_repo_supervised_create"
+    ],
+    "risk_level": "medium",
+    "schema_version": 1,
+    "summary": "TaskSpec ready: create_new_file for docs/evidence/source-proxy-remaining-levels-daily-driver-readiness-20260612/level-3/sandbox-approved-doc.md.",
+    "target_paths": [
+      "docs/evidence/source-proxy-remaining-levels-daily-driver-readiness-20260612/level-3/sandbox-approved-doc.md"
+    ],
+    "target_source": "user_explicit",
+    "task_kind": "create_new_file",
+    "task_shape": "explicit_docs_or_config_edit",
+    "task_shape_source": "explicit_user_target",
+    "user_prompt": "Update one approved markdown evidence note with a one-line Level 3 marker.\nTarget file: docs/evidence/source-proxy-remaining-levels-daily-driver-readiness-20260612/level-3/sandbox-approved-doc.md\nAllowed files: docs/evidence/source-proxy-remaining-levels-daily-driver-readiness-20260612/level-3/sandbox-approved-doc.md",
+    "verification_policy": [
+      "git diff --check"
+    ],
+    "workspace_decision_source": "manual_supervised_scope",
+    "workspace_mode": "real_repo_supervised"
+  },
+  "verdict": "GO"
+}

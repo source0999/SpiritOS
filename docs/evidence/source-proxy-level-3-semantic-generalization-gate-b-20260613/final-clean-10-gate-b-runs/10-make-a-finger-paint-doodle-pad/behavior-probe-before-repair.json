@@ -1,0 +1,19 @@
+{
+  "test": "make a finger paint doodle pad-drawing-surface-change",
+  "verdict": "FAIL",
+  "passed": false,
+  "expected": "mouse drag changes canvas pixels",
+  "primary_behavior_failure_bucket": "drawing_canvas_no_pixel_change",
+  "failureBucket": "drawing_canvas_no_pixel_change",
+  "actual": {
+    "canvas": true,
+    "box": {
+      "x": -2,
+      "y": -22.5,
+      "width": 1284,
+      "height": 804
+    },
+    "changed": false
+  },
+  "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-semantic-generalization-gate-b-20260613\\final-clean-10-gate-b-runs\\10-make-a-finger-paint-doodle-pad\\workspace\\index.html"
+}

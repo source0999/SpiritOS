@@ -1,0 +1,16 @@
+{
+  "test": "make a parking garage cost sharer-visible-state-change",
+  "verdict": "PASS",
+  "passed": true,
+  "expected": "numeric input creates a visible numeric result update",
+  "primary_behavior_failure_bucket": "",
+  "failureBucket": "",
+  "actual": {
+    "before": "Parking Garage Cost Sharer\n Calculate Total\n\nTotal: $",
+    "after": "Parking Garage Cost Sharer\n Calculate Total\n\nTotal: $42.00",
+    "filled": 1,
+    "clicked": true,
+    "appears": true
+  },
+  "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-semantic-generalization-gate-b-20260613\\final-clean-10-gate-b-runs\\02-make-a-parking-garage-cost-sharer\\workspace\\index.html"
+}

@@ -1,0 +1,120 @@
+{
+  "allowed_workspace": "/home/source/SpiritOS/docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10b-repair-rerun-runs/06-make-a-mini-episode-player/workspace",
+  "artifact_class": "static_ui_artifact",
+  "artifact_paths": [
+    "/home/source/SpiritOS/docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10b-repair-rerun-runs/06-make-a-mini-episode-player/workspace/index.html"
+  ],
+  "attempt_count": 0,
+  "behavior_contract": {
+    "artifact_class": "static_ui_artifact",
+    "behavior_required": false,
+    "contract_status": "unverified_requirements",
+    "contract_version": "source-proxy-artifact-behavior-contract-v0.2.phase-3",
+    "final_pass_rule": "Final PASS requires later verifier approval; product behavior remains UNVERIFIED before generation.",
+    "non_pass_signals": [
+      "route_go",
+      "artifact_exists",
+      "preview_opens",
+      "static_dom_presence",
+      "model_self_report"
+    ],
+    "preview_requirement": "A later verifier must define artifact readiness for this artifact.",
+    "probe_targets": [],
+    "prompt": "make a mini episode player",
+    "task_shape": "disposable_small_file_bundle"
+  },
+  "behavior_contract_id": "source-proxy-artifact-behavior-contract-v0.2.phase-3",
+  "console_details": {
+    "bodyText": "Episode Player\n Play ",
+    "consoleMessages": [],
+    "elementCounts": {
+      "buttons": 1,
+      "canvas": 0,
+      "inputs": 1,
+      "links": 0,
+      "scripts": 1,
+      "stylesheets": 1
+    },
+    "opened": true,
+    "pageErrors": [],
+    "path": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10b-repair-rerun-runs\\06-make-a-mini-episode-player\\workspace\\index.html",
+    "title": "Mini Episode Player"
+  },
+  "current_final_reason_codes": [
+    "behavior_required_but_unverified"
+  ],
+  "expected_behavior": {
+    "acceptance_criterion": "",
+    "expected_observation": "",
+    "minimum_proof_tier": 2,
+    "observable_actions": [],
+    "probe_id": ""
+  },
+  "failure_kind": "post_behavior_probe_failure",
+  "forbidden_paths": [
+    ".env",
+    ".env.*",
+    "*.pem",
+    "*.key",
+    "certificates/*",
+    "source_proxy/**",
+    "src/**",
+    "app/**",
+    "pages/**",
+    "scripts/**"
+  ],
+  "generated_files": [
+    "index.html",
+    "script.js",
+    "styles.css"
+  ],
+  "handoff_reasons": [
+    "behavior_contract_probe_missing"
+  ],
+  "handoff_required": true,
+  "max_attempts_hint": 1,
+  "model_authored_targets": [
+    "index.html",
+    "script.js",
+    "styles.css"
+  ],
+  "observed_behavior": {
+    "actual": {
+      "after": "Episode Player\n Play ",
+      "before": "Episode Player\n Play ",
+      "clicked": true
+    },
+    "expected": {},
+    "observed": {
+      "after": "Episode Player\n Play ",
+      "before": "Episode Player\n Play ",
+      "clicked": true
+    },
+    "reason": "",
+    "test": "make a mini episode player-player-control-change",
+    "verdict": "FAIL"
+  },
+  "packet_version": "source-proxy-artifact-failure-packet-v0.2.phase-4",
+  "probe_id": "make a mini episode player-player-control-change",
+  "prompt": "make a mini episode player",
+  "reason_codes": [
+    "behavior_contract_probe_missing",
+    "behavior_failed_verified",
+    "behavior_probe_failed:make a mini episode player-player-control-change"
+  ],
+  "repair_scope": {
+    "allowed_extensions": [
+      ".html",
+      ".css",
+      ".js"
+    ],
+    "disposable_workspace_only": true,
+    "full_solution_in_prompt_allowed": false,
+    "local_only": true,
+    "max_attempts": 1,
+    "production_paths_allowed": false,
+    "provider_api_allowed": false
+  },
+  "selected_preview_path": "/home/source/SpiritOS/docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10b-repair-rerun-runs/06-make-a-mini-episode-player/workspace/index.html",
+  "status": "HANDOFF"
+}

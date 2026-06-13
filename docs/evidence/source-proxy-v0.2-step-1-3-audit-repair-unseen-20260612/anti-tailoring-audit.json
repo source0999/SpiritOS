@@ -1,0 +1,10 @@
+{
+  "benchmark_special_case_findings": [],
+  "exact_prompt_branch_findings": [],
+  "full_solution_injection_findings": [],
+  "notes": [
+    "source_proxy\\decision\\human_messy_homepage.py contains schema instruction text, not a finished app injection.",
+    "Behavior contracts use broad keyword categories and probe ids; no exact full-prompt branch was found in inspected Source Proxy files."
+  ],
+  "verdict": "PASS"
+}

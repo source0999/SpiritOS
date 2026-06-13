@@ -1,0 +1,59 @@
+--- a/index.html
++++ b/index.html
+@@ -0,0 +1,17 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Password Strength Checker</title>
++    <link rel="stylesheet" href="styles.css">
++</head>
++<body>
++    <div class="container">
++        <h1>Password Strength Checker</h1>
++        <input type="password" id="passwordInput" placeholder="Enter your password">
++        <p id="strengthFeedback"></p>
++    </div>
++    <script src="script.js"></script>
++</body>
++</html>--- a/script.js
++++ b/script.js
+@@ -0,0 +1,11 @@
++document.getElementById('passwordInput').addEventListener('input', function() {
++    const password = this.value;
++    let feedback = 'Weak';
++    if (password.length >= 8) {
++        feedback = 'Moderate';
++        if (/[a-z]/.test(password) && /[A-Z]/.test(password) && /[0-9]/.test(password)) {
++            feedback = 'Strong';
++        }
++    }
++    document.getElementById('strengthFeedback').textContent = feedback;
++});--- a/styles.css
++++ b/styles.css
+@@ -0,0 +1,24 @@
++body {
++    font-family: Arial, sans-serif;
++    display: flex;
++    justify-content: center;
++    align-items: center;
++    height: 100vh;
++    margin: 0;
++}
++.container {
++    text-align: center;
++}
++h1 {
++    color: #333;
++}
++input[type="password"] {
++    padding: 10px;
++    font-size: 16px;
++    border: 1px solid #ccc;
++    border-radius: 5px;
++}
++p#strengthFeedback {
++    margin-top: 20px;
++    color: red;
++}

@@ -1,0 +1,12 @@
+{
+  "test": "make a cup counter for water-click-tracker-state-change",
+  "verdict": "PASS",
+  "passed": true,
+  "expected": "tracker control visibly changes progress state",
+  "actual": {
+    "before": "Cup Counter\n0\nAdd Cup",
+    "after": "Cup Counter\n1\nAdd Cup",
+    "clicked": true
+  },
+  "path": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10c-runs\\07-make-a-cup-counter-for-water\\workspace\\index.html"
+}

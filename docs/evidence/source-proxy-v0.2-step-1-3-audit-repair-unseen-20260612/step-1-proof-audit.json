@@ -1,0 +1,179 @@
+{
+  "anti_tailoring": {
+    "benchmark_special_case_findings": [],
+    "exact_prompt_branch_findings": [],
+    "full_solution_injection_findings": [],
+    "notes": [
+      "source_proxy\\decision\\human_messy_homepage.py contains schema instruction text, not a finished app injection.",
+      "Behavior contracts use broad keyword categories and probe ids; no exact full-prompt branch was found in inspected Source Proxy files."
+    ],
+    "verdict": "PASS"
+  },
+  "behavior_results_schema": "source-proxy-v0.2-proof-browser-behavior.v1",
+  "calculator": {
+    "fresh_browser_result": {
+      "actual": {
+        "bodyText": "7\n8\n9\n=\n+\n4\n5\n6\nC\n-\n1\n2\n3\n*\n0\n.\n/",
+        "displayIncludesFive": true
+      },
+      "contract_probe": {
+        "acceptance_criterion": "Basic arithmetic computes correctly.",
+        "expected_observation": "The calculator displays 5 for 2 + 3.",
+        "minimum_proof_tier": 2,
+        "observable_actions": [
+          "enter or click 2 + 3 ="
+        ],
+        "probe_id": "calculator-basic-arithmetic"
+      },
+      "expected": {
+        "expression": "2 + 3",
+        "result": "5"
+      },
+      "observed": {
+        "bodyText": "7\n8\n9\n=\n+\n4\n5\n6\nC\n-\n1\n2\n3\n*\n0\n.\n/",
+        "clicked": [
+          "2",
+          "+",
+          "3",
+          "="
+        ]
+      },
+      "passed": true,
+      "path": "Z:\\docs\\evidence\\source-proxy-v0.2-proof-diagnostic-rerun-20260612\\runs\\03-make-a-calculator-app\\workspace\\index.html",
+      "reason": "",
+      "reason_codes": [],
+      "test": "calculator-basic-arithmetic",
+      "verdict": "PASS"
+    },
+    "fresh_browser_strength": "STRONG",
+    "old_observed": {
+      "bodyText": "7\n8\n9\n=\n+\n4\n5\n6\nC\n-\n1\n2\n3\n*\n0\n.\n/",
+      "clicked": true
+    },
+    "old_report_strength": "WEAK"
+  },
+  "fail_prompts": [
+    "make a weather card demo",
+    "make a habit tracker"
+  ],
+  "go": true,
+  "old_root": "docs\\evidence\\source-proxy-v0.2-proof-diagnostic-rerun-20260612",
+  "pass_evidence": [
+    {
+      "evidence_strength": "STRONG",
+      "observed_keys": [
+        "bodyText",
+        "hasAgent",
+        "hasExperiment",
+        "hasLab"
+      ],
+      "prompt": "init a repo and make homepage for agent lab expermients",
+      "test": "homepage-visible-intent",
+      "verdict": "PASS"
+    },
+    {
+      "evidence_strength": "STRONG",
+      "observed_keys": [
+        "afterStart",
+        "afterStop",
+        "afterWait",
+        "initial",
+        "started",
+        "stopped"
+      ],
+      "prompt": "make a timer app",
+      "test": "timer-start-stop-freeze",
+      "verdict": "PASS"
+    },
+    {
+      "evidence_strength": "STRONG",
+      "observed_keys": [
+        "bodyText",
+        "clicked"
+      ],
+      "prompt": "make a calculator app",
+      "test": "calculator-basic-arithmetic",
+      "verdict": "PASS"
+    },
+    {
+      "evidence_strength": "STRONG",
+      "observed_keys": [
+        "after",
+        "before",
+        "toggled"
+      ],
+      "prompt": "make dark theme switcher page",
+      "test": "theme-computed-color-change",
+      "verdict": "PASS"
+    },
+    {
+      "evidence_strength": "STRONG",
+      "observed_keys": [
+        "added",
+        "afterAdd",
+        "appears",
+        "before",
+        "changed",
+        "filled"
+      ],
+      "prompt": "make a todo list app",
+      "test": "todo-add-and-change-item",
+      "verdict": "PASS"
+    },
+    {
+      "evidence_strength": "STRONG",
+      "observed_keys": [
+        "after",
+        "before",
+        "buttons",
+        "clicked",
+        "hasControls"
+      ],
+      "prompt": "make a music player mockup",
+      "test": "music-player-control-state",
+      "verdict": "PASS"
+    },
+    {
+      "evidence_strength": "STRONG",
+      "observed_keys": [
+        "after",
+        "before",
+        "filled",
+        "saved"
+      ],
+      "prompt": "make a notes app",
+      "test": "notes-create-edit-visible-note",
+      "verdict": "PASS"
+    },
+    {
+      "evidence_strength": "STRONG",
+      "observed_keys": [
+        "changed",
+        "hasFeedback",
+        "strong",
+        "weak"
+      ],
+      "prompt": "make a password strength checker",
+      "test": "password-strength-feedback-change",
+      "verdict": "PASS"
+    },
+    {
+      "evidence_strength": "STRONG",
+      "observed_keys": [
+        "box",
+        "canvas",
+        "changed"
+      ],
+      "prompt": "make a simple drawing pad",
+      "test": "drawing-surface-changes",
+      "verdict": "PASS"
+    }
+  ],
+  "schema": "source-proxy-v0.2-step1-proof-audit.v1",
+  "summary_confirmed": {
+    "fail_count": 2,
+    "known_false_positives": 0,
+    "matches_requested_baseline": true,
+    "pass_count": 9
+  }
+}

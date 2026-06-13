@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<context_pack>
+  <metadata>
+    <gate>A</gate>
+    <date>2026-06-13</date>
+    <verdict>PACK_READY</verdict>
+    <runtime_source_code_changed>false</runtime_source_code_changed>
+    <browser_holdout_rerun>false</browser_holdout_rerun>
+    <model_calls>false</model_calls>
+    <new_prompt_batches>false</new_prompt_batches>
+  </metadata>
+  <current_status>
+    <final_clean_similar_10>5/10 behavior PASS, 5 FAIL, threshold 8/10, verdict NO-GO</final_clean_similar_10>
+    <anti_tailoring>No exact new prompt tailoring found in searched source/runtime scopes.</anti_tailoring>
+    <anti_cheat>No fallback, deterministic scaffold, backend rescue content, cloud fallback, real app mutation, or scorer padding found.</anti_cheat>
+  </current_status>
+  <what_was_read>
+    <item>prior ChatGPT mini context pack markdown/xml/json</item>
+    <item>final-proof-results.json</item>
+    <item>transparent-proxy-trace-index.md</item>
+    <item>failing per-prompt trace json/md files</item>
+    <item>failed run receipts, scores, transcripts, probes, failure packets, repair results, and workspace diffs where available</item>
+    <item>root-cause-matrix.md</item>
+    <item>failure-family stabilization index.md</item>
+    <item>primary intake/routing/behavior/repair/final-verdict source files</item>
+  </what_was_read>
+  <source_files_reviewed>
+    <file>source_proxy/decision/task_spec_intake.py</file>
+    <file>source_proxy/decision/human_messy_homepage.py</file>
+    <file>source_proxy/decision/artifact_behavior_contract.py</file>
+    <file>source_proxy/decision/artifact_repair_loop.py</file>
+    <file>source_proxy/decision/artifact_repair_contract.py</file>
+    <file>source_proxy/decision/artifact_final_verdict.py</file>
+    <file>docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti_tailoring_run_batch.py</file>
+    <file>docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti_tailoring_behavior_probe.mjs</file>
+  </source_files_reviewed>
+  <failure_diagnosis>
+    <route_intake>
+      <item id="final-l3-clean-02">calculator contract succeeded, but disposable resolver missed cost sharer/share semantics.</item>
+      <item id="final-l3-clean-03">standalone theme wording missed palette switch/dusk dawn resolver and contract coverage.</item>
+      <item id="final-l3-clean-09">password contract succeeded, but resolver missed phrase/passphrase/strength/gauge semantics.</item>
+    </route_intake>
+    <behavior_repair>
+      <item id="final-l3-clean-05">weather click did not mutate visible text; repair preserved city selector mismatch.</item>
+      <item id="final-l3-clean-10">canvas drag did not mutate pixels; repair changed canvas id without matching script selector.</item>
+    </behavior_repair>
+  </failure_diagnosis>
+  <decision_boundary>
+    <finding>Family/probe inference can succeed while normalized intent still blocks.</finding>
+    <safe_rule>Standalone creation verb plus small tool/widget/app noun or interactive family signal plus no explicit repo/file/component target should become disposable; existing app/component/src/file/dashboard/production/repo wording should stay real-repo scoped.</safe_rule>
+  </decision_boundary>
+  <proposed_tests>
+    <positive>cost sharer; parking cost splitter; garage cost sharer; split parking fee tool; share a garage bill widget; make something that splits parking costs; palette switch; dusk dawn switch; theme palette flipper; sunrise sunset mode switch; make the screen change when it gets dark; color mood switcher; phrase strength gauge; secret phrase meter; passphrase strength checker; login phrase safety gauge; show me how strong this passphrase is; password safety meter</positive>
+    <negative>add a parking cost sharer to the existing dashboard; update the login safety gauge component in src; modify the production theme switcher; fix the existing drawing canvas bug in the repo; change the real weather tile in the app; edit src/components/ThemeSwitcher.tsx to use dawn colors; update the existing password meter test file; repair the dashboard's forecast tile component; modify the app's real billing splitter route</negative>
+  </proposed_tests>
+  <proposed_gate_b_source_changes>
+    <item>Expand generic disposable resolver concept groups in task_spec_intake.py.</item>
+    <item>Align behavior contract coverage for dusk/dawn/palette switch terms.</item>
+    <item>Add weather first-pass generation checklist.</item>
+    <item>Strengthen drawing generation wording.</item>
+    <item>Upgrade repair prompt structure with explicit failure deltas and path-bound output requirements.</item>
+    <item>Add non-breaking route trace sidecars.</item>
+  </proposed_gate_b_source_changes>
+  <anti_cheat_boundary>
+    <allowed>generic routing, behavior contract coverage, family-keyed model packet wording, repair packet wording, focused tests, additive traces</allowed>
+    <forbidden>Level 4, new batches, scorer green-padding, exact prompt branches, cloud fallback, backend rescue content, hidden deterministic scaffold</forbidden>
+  </anti_cheat_boundary>
+  <next_recommended_action>Review implementation-gate-b-plan.md and approve or revise Gate B before implementation.</next_recommended_action>
+  <upload_next>docs/evidence/source-proxy-level-3-semantic-generalization-gate-a-20260613/mini-context-pack.md</upload_next>
+</context_pack>

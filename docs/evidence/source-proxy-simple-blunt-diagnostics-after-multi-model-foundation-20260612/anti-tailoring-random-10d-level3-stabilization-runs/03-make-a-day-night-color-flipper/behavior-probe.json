@@ -1,0 +1,21 @@
+{
+  "test": "make a day night color flipper-theme-computed-change",
+  "verdict": "PASS",
+  "passed": true,
+  "expected": "computed color or theme class changes",
+  "primary_behavior_failure_bucket": "",
+  "failureBucket": "",
+  "actual": {
+    "before": {
+      "bg": "rgba(0, 0, 0, 0)",
+      "color": "rgb(0, 0, 0)",
+      "cls": ""
+    },
+    "after": {
+      "bg": "rgb(0, 0, 0)",
+      "color": "rgb(255, 255, 255)",
+      "cls": "day night"
+    }
+  },
+  "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10d-level3-stabilization-runs\\03-make-a-day-night-color-flipper\\workspace\\index.html"
+}

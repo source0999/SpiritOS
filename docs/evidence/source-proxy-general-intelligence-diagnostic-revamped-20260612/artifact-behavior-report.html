@@ -1,0 +1,1474 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Source Proxy Revamped Artifact Review 2026-06-12</title>
+<style>
+:root{font-family:Arial,Helvetica,sans-serif;color:#162033;background:#f5f7fb}body{margin:0}.wrap{max-width:1180px;margin:0 auto;padding:24px}header{background:#111827;color:white;padding:22px 0;margin-bottom:18px}h1{font-size:24px;margin:0 0 8px}h2{margin-top:34px;border-bottom:1px solid #ccd4e0;padding-bottom:8px}.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}.metric,.card{background:white;border:1px solid #d7deea;border-radius:8px;padding:14px}.card{margin:18px 0;overflow:hidden}.card h3{margin:0 0 8px}.badges{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px}.badge{display:inline-block;border:1px solid #cbd5e1;background:#eef2f7;border-radius:999px;padding:4px 8px;font-size:12px;font-weight:700}.badge.pass{background:#e7f8ed;border-color:#9fd6ae;color:#076423}.badge.fail{background:#ffeceb;border-color:#ffb4aa;color:#9b1c12}.badge.blocked{background:#fff7db;border-color:#e8d37e;color:#735600}.card.pass{border-left:5px solid #16a34a}.card.fail{border-left:5px solid #dc2626}.card.blocked{border-left:5px solid #ca8a04}iframe{width:100%;height:230px;border:1px solid #cbd5e1;background:white;margin:8px 0 14px}.no-preview{height:90px;background:#303030;color:white;display:flex;align-items:center;justify-content:center;margin:8px 0 14px}dl{display:grid;grid-template-columns:160px 1fr;gap:8px 14px}dt{font-weight:700;color:#475569}dd{margin:0}.links a{margin-right:10px}pre{white-space:pre-wrap;overflow:auto;background:#f8fafc;border:1px solid #e2e8f0;padding:10px;border-radius:6px;font-size:12px}details{margin-top:10px}summary{cursor:pointer;font-weight:700}.note{background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:12px;margin:14px 0}a{color:#075fd8}@media(max-width:700px){.wrap{padding:14px}dl{grid-template-columns:1fr}iframe{height:190px}}
+</style></head><body><header><div class="wrap"><h1>Source Proxy Revamped Artifact Review - 2026-06-12</h1><div>New revamped product-path results are first. Old corrected results are separated below. Full receipts, transcripts, diffs, evidence packets, and previews are linked per prompt.</div></div></header><main class="wrap">
+<section class="summary"><div class="metric"><strong>New prompts</strong><br>11</div><div class="metric"><strong>Corrected PASS</strong><br>4</div><div class="metric"><strong>Corrected FAIL</strong><br>7</div><div class="metric"><strong>Model route</strong><br>human_messy_homepage product</div></section>
+<div class="note"><strong>Truth rule:</strong> raw GO, generated files, and openable previews are not product PASS. Behavior checks override route-level scores where available. Browser checks were run for homepage, timer, calculator, dark theme, and habit tracker; other prompts use artifact existence/static diagnostics and expose raw evidence for review.</div>
+<h2>New Revamped Results First</h2>
+<article class="card pass">
+      <h3>init a repo and make homepage for agent lab expermients</h3>
+      <div class="badges"><span class="badge pass">New corrected PASS</span><span class="badge">Source Proxy GO</span><span class="badge">disposable_single_file_artifact</span></div>
+      <iframe src="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/01-init-a-repo-and-make-homepage-for-agent-lab-expermients/workspace/index.html" loading="lazy"></iframe>
+      <dl><dt>Behavior test</dt><dd>open homepage and inspect visible text</dd><dt>Observed</dt><dd><pre>{
+  &quot;hasAgent&quot;: true,
+  &quot;hasLab&quot;: true,
+  &quot;hasExperiment&quot;: true,
+  &quot;bodyText&quot;: &quot;welcome to agent lab experiments\n\nthis is the homepage for your agent lab experiments.&quot;
+}</pre></dd><dt>Failure / note</dt><dd>None recorded</dd><dt>Files</dt><dd>index.html</dd><dt>Diagnostics</dt><dd><div class="links"><a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/01-init-a-repo-and-make-homepage-for-agent-lab-expermients/receipt.json">receipt</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/01-init-a-repo-and-make-homepage-for-agent-lab-expermients/score.json">score</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/01-init-a-repo-and-make-homepage-for-agent-lab-expermients/evidence-packet.json">evidence</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/01-init-a-repo-and-make-homepage-for-agent-lab-expermients/transcript.txt">transcript</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/01-init-a-repo-and-make-homepage-for-agent-lab-expermients/workspace.diff">diff</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/01-init-a-repo-and-make-homepage-for-agent-lab-expermients/workspace/index.html">preview: index.html</a></div></dd></dl>
+      <details><summary>Anti-cheat / hand-holding diagnostics</summary><pre>{
+  &quot;route_type&quot;: &quot;product&quot;,
+  &quot;task_shape&quot;: &quot;disposable_single_file_artifact&quot;,
+  &quot;artifact_class&quot;: &quot;html_static_page&quot;,
+  &quot;allowed_extensions&quot;: [],
+  &quot;exact_allowed_files_if_any&quot;: [],
+  &quot;source_proxy_score_status&quot;: &quot;GO&quot;,
+  &quot;parsed_action_count&quot;: 1,
+  &quot;model_context_packet_summary&quot;: [
+    {
+      &quot;allowed_extensions&quot;: [
+        &quot;.html&quot;
+      ],
+      &quot;allowed_files&quot;: [],
+      &quot;allowed_scope_source&quot;: &quot;artifact_class_extensions&quot;,
+      &quot;artifact_class&quot;: &quot;html_static_page&quot;,
+      &quot;benchmark_eligibility_reason&quot;: &quot;product_route_uses_proxy_orchestration&quot;,
+      &quot;benchmark_eligible&quot;: false,
+      &quot;clarification_or_block_reason&quot;: &quot;&quot;,
+      &quot;forbidden_files&quot;: [
+        &quot;.env&quot;,
+        &quot;.env.*&quot;,
+        &quot;*.pem&quot;,
+        &quot;*.key&quot;,
+        &quot;certificates/*&quot;
+      ],
+      &quot;forbidden_real_repo_mutation&quot;: true,
+      &quot;max_file_count&quot;: 1,
+      &quot;mode&quot;: &quot;product&quot;,
+      &quot;model_may_choose_paths&quot;: false,
+      &quot;model_requirements&quot;: [
+        &quot;explicit model-authored target path&quot;,
+        &quot;explicit model-authored file content&quot;,
+        &quot;supported Source Proxy action JSON or path-bound file block&quot;
+      ],
+      &quot;network_allowed&quot;: false,
+      &quot;protected_paths&quot;: [],
+      &quot;proxy_artifact_class_suggested&quot;: true,
+      &quot;proxy_exact_target_suggested&quot;: &quot;&quot;,
+      &quot;route_type&quot;: &quot;product&quot;,
+      &quot;target_source&quot;: &quot;model_authored_required&quot;,
+      &quot;task_shape&quot;: &quot;disposable_single_file_artifact&quot;,
+      &quot;task_shape_source&quot;: &quot;generic_artifact_resolver&quot;,
+      &quot;user_prompt&quot;: &quot;init a repo and make homepage for agent lab expermients&quot;,
+      &quot;workspace_decision_source&quot;: &quot;generic_artifact_resolver&quot;,
+      &quot;workspace_mode&quot;: &quot;disposable_workspace&quot;
+    }
+  ],
+  &quot;raw_model_transcript_count&quot;: 1,
+  &quot;byte_match&quot;: {
+    &quot;index.html&quot;: true
+  },
+  &quot;backend_created_any_content&quot;: false,
+  &quot;real_app_files_touched&quot;: false
+}</pre></details>
+      <details><summary>Raw model transcript preview</summary><pre>{&quot;action_type&quot;:&quot;WriteFile&quot;,&quot;target&quot;:&quot;index.html&quot;,&quot;arguments&quot;:{&quot;content&quot;:&quot;&lt;!DOCTYPE html&gt;\n&lt;html lang=\&quot;en\&quot;&gt;\n&lt;head&gt;\n    &lt;meta charset=\&quot;UTF-8\&quot;&gt;\n    &lt;meta name=\&quot;viewport\&quot; content=\&quot;width=device-width, initial-scale=1.0\&quot;&gt;\n    &lt;title&gt;Agent Lab Experiments&lt;/title&gt;\n&lt;/head&gt;\n&lt;body&gt;\n    &lt;h1&gt;Welcome to Agent Lab Experiments&lt;/h1&gt;\n    &lt;p&gt;This is the homepage for your agent lab experiments.&lt;/p&gt;\n&lt;/body&gt;\n&lt;/html&gt;&quot;}}</pre></details>
+    </article>
+<article class="card pass">
+      <h3>make a timer app</h3>
+      <div class="badges"><span class="badge pass">New corrected PASS</span><span class="badge">Source Proxy GO</span><span class="badge">disposable_small_file_bundle</span></div>
+      <iframe src="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/02-make-a-timer-app/workspace/index.html" loading="lazy"></iframe>
+      <dl><dt>Behavior test</dt><dd>start timer, wait, stop, verify display freezes</dd><dt>Observed</dt><dd><pre>{
+  &quot;initial&quot;: &quot;00:00&quot;,
+  &quot;afterStart&quot;: &quot;00:02&quot;,
+  &quot;afterStop&quot;: &quot;00:02&quot;,
+  &quot;afterWait&quot;: &quot;00:02&quot;
+}</pre></dd><dt>Failure / note</dt><dd>None recorded</dd><dt>Files</dt><dd>index.html, script.js, styles.css</dd><dt>Diagnostics</dt><dd><div class="links"><a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/02-make-a-timer-app/receipt.json">receipt</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/02-make-a-timer-app/score.json">score</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/02-make-a-timer-app/evidence-packet.json">evidence</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/02-make-a-timer-app/transcript.txt">transcript</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/02-make-a-timer-app/workspace.diff">diff</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/02-make-a-timer-app/workspace/index.html">preview: index.html</a></div></dd></dl>
+      <details><summary>Anti-cheat / hand-holding diagnostics</summary><pre>{
+  &quot;route_type&quot;: &quot;product&quot;,
+  &quot;task_shape&quot;: &quot;disposable_small_file_bundle&quot;,
+  &quot;artifact_class&quot;: &quot;static_ui_artifact&quot;,
+  &quot;allowed_extensions&quot;: [],
+  &quot;exact_allowed_files_if_any&quot;: [],
+  &quot;source_proxy_score_status&quot;: &quot;GO&quot;,
+  &quot;parsed_action_count&quot;: 3,
+  &quot;model_context_packet_summary&quot;: [
+    {
+      &quot;allowed_extensions&quot;: [
+        &quot;.html&quot;,
+        &quot;.css&quot;,
+        &quot;.js&quot;
+      ],
+      &quot;allowed_files&quot;: [],
+      &quot;allowed_scope_source&quot;: &quot;artifact_class_extensions&quot;,
+      &quot;artifact_class&quot;: &quot;static_ui_artifact&quot;,
+      &quot;benchmark_eligibility_reason&quot;: &quot;product_route_uses_proxy_orchestration&quot;,
+      &quot;benchmark_eligible&quot;: false,
+      &quot;clarification_or_block_reason&quot;: &quot;&quot;,
+      &quot;forbidden_files&quot;: [
+        &quot;.env&quot;,
+        &quot;.env.*&quot;,
+        &quot;*.pem&quot;,
+        &quot;*.key&quot;,
+        &quot;certificates/*&quot;
+      ],
+      &quot;forbidden_real_repo_mutation&quot;: true,
+      &quot;max_file_count&quot;: 3,
+      &quot;mode&quot;: &quot;product&quot;,
+      &quot;model_may_choose_paths&quot;: false,
+      &quot;model_requirements&quot;: [
+        &quot;explicit model-authored target path&quot;,
+        &quot;explicit model-authored file content&quot;,
+        &quot;supported Source Proxy action JSON or path-bound file block&quot;
+      ],
+      &quot;network_allowed&quot;: false,
+      &quot;protected_paths&quot;: [],
+      &quot;proxy_artifact_class_suggested&quot;: true,
+      &quot;proxy_exact_target_suggested&quot;: &quot;&quot;,
+      &quot;route_type&quot;: &quot;product&quot;,
+      &quot;target_source&quot;: &quot;model_authored_required&quot;,
+      &quot;task_shape&quot;: &quot;disposable_small_file_bundle&quot;,
+      &quot;task_shape_source&quot;: &quot;generic_artifact_resolver&quot;,
+      &quot;user_prompt&quot;: &quot;make a timer app&quot;,
+      &quot;workspace_decision_source&quot;: &quot;generic_artifact_resolver&quot;,
+      &quot;workspace_mode&quot;: &quot;disposable_workspace&quot;
+    }
+  ],
+  &quot;raw_model_transcript_count&quot;: 1,
+  &quot;byte_match&quot;: {
+    &quot;index.html&quot;: true,
+    &quot;script.js&quot;: true,
+    &quot;styles.css&quot;: true
+  },
+  &quot;backend_created_any_content&quot;: false,
+  &quot;real_app_files_touched&quot;: false
+}</pre></details>
+      <details><summary>Raw model transcript preview</summary><pre>{&quot;action_type&quot;:&quot;WriteFile&quot;,&quot;target&quot;:&quot;index.html&quot;,&quot;arguments&quot;:{&quot;content&quot;:&quot;&lt;!DOCTYPE html&gt;\n&lt;html lang=\&quot;en\&quot;&gt;\n&lt;head&gt;\n    &lt;meta charset=\&quot;UTF-8\&quot;&gt;\n    &lt;meta name=\&quot;viewport\&quot; content=\&quot;width=device-width, initial-scale=1.0\&quot;&gt;\n    &lt;title&gt;Timer App&lt;/title&gt;\n    &lt;link rel=\&quot;stylesheet\&quot; href=\&quot;styles.css\&quot;&gt;\n&lt;/head&gt;\n&lt;body&gt;\n    &lt;div class=\&quot;timer-container\&quot;&gt;\n        &lt;h1 id=\&quot;timer\&quot;&gt;00:00&lt;/h1&gt;\n        &lt;button id=\&quot;startBtn\&quot;&gt;Start&lt;/button&gt;\n        &lt;button id=\&quot;stopBtn\&quot;&gt;Stop&lt;/button&gt;\n    &lt;/div&gt;\n    &lt;script src=\&quot;script.js\&quot;&gt;&lt;/script&gt;\n&lt;/body&gt;\n&lt;/html&gt;&quot;},&quot;reason&quot;:&quot;HTML structure for the timer app.&quot;}
+
+{&quot;action_type&quot;:&quot;WriteFile&quot;,&quot;target&quot;:&quot;styles.css&quot;,&quot;arguments&quot;:{&quot;content&quot;:&quot;body {\n    display: flex;\n    justify-content: center;\n    align-items: center;\n    height: 100vh;\n    background-color: #f0f0f0;\n}\n\n.timer-container {\n    text-align: center;\n}\n\n#timer {\n    font-size: 48px;\n    margin-bottom: 20px;\n}\n\nbutton {\n    padding: 10px 20px;\n    font-size: 16px;\n    cursor: pointer;\n}&quot;},&quot;reason&quot;:&quot;CSS styles for the timer app.&quot;}
+
+{&quot;action_type&quot;:&quot;WriteFile&quot;,&quot;target&quot;:&quot;script.js&quot;,&quot;arguments&quot;:{&quot;content&quot;:&quot;let timer = document.getElementById(&#39;timer&#39;);\nlet startBtn = document.getElementById(&#39;startBtn&#39;);\nlet stopBtn = document.getElementById(&#39;stopBtn&#39;);\n\nlet interval;\nlet time = 0;\n\nfunction updateTimer() {\n    let minutes = Math.floor(time / 60);\n    let seconds = time % 60;\n    timer.textContent = `${minutes.toString().padStart(2, &#39;0&#39;)}:${seconds.toString().padStart(2, &#39;0&#39;)}`;\n}\n\nstartBtn.addEventListener(&#39;click&#39;, () =&gt; {\n    interval = setInterval(() =&gt; {\n        time++;\n        updateTimer();\n    }, 1000);\n});\n\nstopBtn.addEventListener(&#39;click&#39;, () =&gt; {\n    clearInterval(interval);\n});&quot;},&quot;reason&quot;:&quot;JavaScript functionality for the timer app.&quot;}</pre></details>
+    </article>
+<article class="card fail">
+      <h3>make a calculator app</h3>
+      <div class="badges"><span class="badge fail">New corrected FAIL</span><span class="badge">Source Proxy GO</span><span class="badge">disposable_small_file_bundle</span></div>
+      <iframe src="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/03-make-a-calculator-app/workspace/index.html" loading="lazy"></iframe>
+      <dl><dt>Behavior test</dt><dd>click 2 + 3 =</dd><dt>Observed</dt><dd><pre>{
+  &quot;display&quot;: &quot;0&quot;
+}</pre></dd><dt>Failure / note</dt><dd>display did not equal 5</dd><dt>Files</dt><dd>index.html, script.js, styles.css</dd><dt>Diagnostics</dt><dd><div class="links"><a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/03-make-a-calculator-app/receipt.json">receipt</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/03-make-a-calculator-app/score.json">score</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/03-make-a-calculator-app/evidence-packet.json">evidence</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/03-make-a-calculator-app/transcript.txt">transcript</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/03-make-a-calculator-app/workspace.diff">diff</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/03-make-a-calculator-app/workspace/index.html">preview: index.html</a></div></dd></dl>
+      <details><summary>Anti-cheat / hand-holding diagnostics</summary><pre>{
+  &quot;route_type&quot;: &quot;product&quot;,
+  &quot;task_shape&quot;: &quot;disposable_small_file_bundle&quot;,
+  &quot;artifact_class&quot;: &quot;static_ui_artifact&quot;,
+  &quot;allowed_extensions&quot;: [],
+  &quot;exact_allowed_files_if_any&quot;: [],
+  &quot;source_proxy_score_status&quot;: &quot;GO&quot;,
+  &quot;parsed_action_count&quot;: 3,
+  &quot;model_context_packet_summary&quot;: [
+    {
+      &quot;allowed_extensions&quot;: [
+        &quot;.html&quot;,
+        &quot;.css&quot;,
+        &quot;.js&quot;
+      ],
+      &quot;allowed_files&quot;: [],
+      &quot;allowed_scope_source&quot;: &quot;artifact_class_extensions&quot;,
+      &quot;artifact_class&quot;: &quot;static_ui_artifact&quot;,
+      &quot;benchmark_eligibility_reason&quot;: &quot;product_route_uses_proxy_orchestration&quot;,
+      &quot;benchmark_eligible&quot;: false,
+      &quot;clarification_or_block_reason&quot;: &quot;&quot;,
+      &quot;forbidden_files&quot;: [
+        &quot;.env&quot;,
+        &quot;.env.*&quot;,
+        &quot;*.pem&quot;,
+        &quot;*.key&quot;,
+        &quot;certificates/*&quot;
+      ],
+      &quot;forbidden_real_repo_mutation&quot;: true,
+      &quot;max_file_count&quot;: 3,
+      &quot;mode&quot;: &quot;product&quot;,
+      &quot;model_may_choose_paths&quot;: false,
+      &quot;model_requirements&quot;: [
+        &quot;explicit model-authored target path&quot;,
+        &quot;explicit model-authored file content&quot;,
+        &quot;supported Source Proxy action JSON or path-bound file block&quot;
+      ],
+      &quot;network_allowed&quot;: false,
+      &quot;protected_paths&quot;: [],
+      &quot;proxy_artifact_class_suggested&quot;: true,
+      &quot;proxy_exact_target_suggested&quot;: &quot;&quot;,
+      &quot;route_type&quot;: &quot;product&quot;,
+      &quot;target_source&quot;: &quot;model_authored_required&quot;,
+      &quot;task_shape&quot;: &quot;disposable_small_file_bundle&quot;,
+      &quot;task_shape_source&quot;: &quot;generic_artifact_resolver&quot;,
+      &quot;user_prompt&quot;: &quot;make a calculator app&quot;,
+      &quot;workspace_decision_source&quot;: &quot;generic_artifact_resolver&quot;,
+      &quot;workspace_mode&quot;: &quot;disposable_workspace&quot;
+    }
+  ],
+  &quot;raw_model_transcript_count&quot;: 1,
+  &quot;byte_match&quot;: {
+    &quot;index.html&quot;: true,
+    &quot;script.js&quot;: true,
+    &quot;styles.css&quot;: true
+  },
+  &quot;backend_created_any_content&quot;: false,
+  &quot;real_app_files_touched&quot;: false
+}</pre></details>
+      <details><summary>Raw model transcript preview</summary><pre>```json
+[
+    {
+        &quot;action_type&quot;: &quot;WriteFile&quot;,
+        &quot;target&quot;: &quot;index.html&quot;,
+        &quot;arguments&quot;: {
+            &quot;content&quot;: &quot;&lt;!DOCTYPE html&gt;\n&lt;html lang=\&quot;en\&quot;&gt;\n&lt;head&gt;\n    &lt;meta charset=\&quot;UTF-8\&quot;&gt;\n    &lt;meta name=\&quot;viewport\&quot; content=\&quot;width=device-width, initial-scale=1.0\&quot;&gt;\n    &lt;title&gt;Calculator&lt;/title&gt;\n    &lt;link rel=\&quot;stylesheet\&quot; href=\&quot;styles.css\&quot;&gt;\n&lt;/head&gt;\n&lt;body&gt;\n    &lt;div class=\&quot;calculator\&quot;&gt;\n        &lt;input type=\&quot;text\&quot; id=\&quot;display\&quot; disabled&gt;\n        &lt;button onclick=\&quot;append(&#39;7&#39;)\&quot;&gt;7&lt;/button&gt;\n        &lt;button onclick=\&quot;append(&#39;8&#39;)\&quot;&gt;8&lt;/button&gt;\n        &lt;button onclick=\&quot;append(&#39;9&#39;)\&quot;&gt;9&lt;/button&gt;\n        &lt;button onclick=\&quot;calculate(&#39;/&#39;)\&quot;&gt;/&lt;/button&gt;\n        &lt;button onclick=\&quot;append(&#39;4&#39;)\&quot;&gt;4&lt;/button&gt;\n        &lt;button onclick=\&quot;append(&#39;5&#39;)\&quot;&gt;5&lt;/button&gt;\n        &lt;button onclick=\&quot;append(&#39;6&#39;)\&quot;&gt;6&lt;/button&gt;\n        &lt;button onclick=\&quot;calculate(&#39;*&#39;)\&quot;&gt;*&lt;/button&gt;\n        &lt;button onclick=\&quot;append(&#39;1&#39;)\&quot;&gt;1&lt;/button&gt;\n        &lt;button onclick=\&quot;append(&#39;2&#39;)\&quot;&gt;2&lt;/button&gt;\n        &lt;button onclick=\&quot;append(&#39;3&#39;)\&quot;&gt;3&lt;/button&gt;\n        &lt;button onclick=\&quot;calculate(&#39;-&#39;)\&quot;&gt;-&lt;/button&gt;\n        &lt;button onclick=\&quot;append(&#39;0&#39;)\&quot;&gt;0&lt;/button&gt;\n        &lt;button onclick=\&quot;append(&#39;.&#39;)\&quot;&gt;.&lt;/button&gt;\n        &lt;button onclick=\&quot;calculate(&#39;+&#39;)\&quot;&gt;+&lt;/button&gt;\n        &lt;button onclick=\&quot;clearDisplay()\&quot;&gt;C&lt;/button&gt;\n        &lt;button onclick=\&quot;calculate(&#39;=&#39;)\&quot;&gt;=&lt;/button&gt;\n    &lt;/div&gt;\n    &lt;script src=\&quot;script.js\&quot;&gt;&lt;/script&gt;\n&lt;/body&gt;\n&lt;/html&gt;&quot;
+        },
+        &quot;reason&quot;: &quot;HTML structure for the calculator app.&quot;
+    },
+    {
+        &quot;action_type&quot;: &quot;WriteFile&quot;,
+        &quot;target&quot;: &quot;styles.css&quot;,
+        &quot;arguments&quot;: {
+            &quot;content&quot;: &quot;.calculator {\n    display: flex;\n    flex-direction: column;\n    align-items: center;\n    margin-top: 50px;\n}\n\n#display {\n    width: 200px;\n    height: 40px;\n    font-size: 24px;\n    text-align: right;\n    padding: 10px;\n    border: 1px solid #ccc;\n}\n\nbutton {\n    width: 50px;\n    height: 50px;\n    margin: 5px;\n    font-size: 24px;\n    cursor: pointer;\n}\n&quot;
+        },
+        &quot;reason&quot;: &quot;CSS styles for the calculator app.&quot;
+    },
+    {
+        &quot;action_type&quot;: &quot;WriteFile&quot;,
+        &quot;target&quot;: &quot;script.js&quot;,
+        &quot;arguments&quot;: {
+            &quot;content&quot;: &quot;let display = document.getElementById(&#39;display&#39;);\nlet currentInput = &#39;&#39;;\nlet operator = null;\nlet firstOperand = null;\n\nfunction append(number) {\n    currentInput += number;\n    display.value = currentInput;\n}\n\nfunction calculate(op) {\n    if (firstOperand === null) {\n        firstOperand = parseFloat(currentInput);\n    } else {\n        let result = 0;\n        switch (operator) {\n            case &#39;+&#39;:\n                result = firstOperand + parseFloat(currentInput);\n                break;\n            case &#39;-&#39;:\n                result = firstOperand - parseFloat(currentInput);\n                break;\n            case &#39;*&#39;:\n                result = firstOperand * parseFloat(currentInput);\n                break;\n            case &#39;/&#39;:\n                re</pre></details>
+    </article>
+<article class="card fail">
+      <h3>make dark theme switcher page</h3>
+      <div class="badges"><span class="badge fail">New corrected FAIL</span><span class="badge">Source Proxy GO</span><span class="badge">disposable_small_file_bundle</span></div>
+      <iframe src="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/04-make-dark-theme-switcher-page/workspace/dark-theme-switcher.html" loading="lazy"></iframe>
+      <dl><dt>Behavior test</dt><dd>capture computed body colors, click toggle, capture again</dd><dt>Observed</dt><dd><pre>{
+  &quot;before&quot;: {
+    &quot;cls&quot;: &quot;light-mode&quot;,
+    &quot;bg&quot;: &quot;rgb(51, 51, 51)&quot;,
+    &quot;color&quot;: &quot;rgb(255, 255, 255)&quot;
+  },
+  &quot;after&quot;: {
+    &quot;cls&quot;: &quot;light-mode dark-mode&quot;,
+    &quot;bg&quot;: &quot;rgb(51, 51, 51)&quot;,
+    &quot;color&quot;: &quot;rgb(255, 255, 255)&quot;
+  }
+}</pre></dd><dt>Failure / note</dt><dd>computed colors did not change</dd><dt>Files</dt><dd>dark-theme-switcher.html, dark-theme.css, dark-theme.js</dd><dt>Diagnostics</dt><dd><div class="links"><a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/04-make-dark-theme-switcher-page/receipt.json">receipt</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/04-make-dark-theme-switcher-page/score.json">score</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/04-make-dark-theme-switcher-page/evidence-packet.json">evidence</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/04-make-dark-theme-switcher-page/transcript.txt">transcript</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/04-make-dark-theme-switcher-page/workspace.diff">diff</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/04-make-dark-theme-switcher-page/workspace/dark-theme-switcher.html">preview: dark-theme-switcher.html</a></div></dd></dl>
+      <details><summary>Anti-cheat / hand-holding diagnostics</summary><pre>{
+  &quot;route_type&quot;: &quot;product&quot;,
+  &quot;task_shape&quot;: &quot;disposable_small_file_bundle&quot;,
+  &quot;artifact_class&quot;: &quot;static_ui_artifact&quot;,
+  &quot;allowed_extensions&quot;: [],
+  &quot;exact_allowed_files_if_any&quot;: [],
+  &quot;source_proxy_score_status&quot;: &quot;GO&quot;,
+  &quot;parsed_action_count&quot;: 3,
+  &quot;model_context_packet_summary&quot;: [
+    {
+      &quot;allowed_extensions&quot;: [
+        &quot;.html&quot;,
+        &quot;.css&quot;,
+        &quot;.js&quot;
+      ],
+      &quot;allowed_files&quot;: [],
+      &quot;allowed_scope_source&quot;: &quot;artifact_class_extensions&quot;,
+      &quot;artifact_class&quot;: &quot;static_ui_artifact&quot;,
+      &quot;benchmark_eligibility_reason&quot;: &quot;product_route_uses_proxy_orchestration&quot;,
+      &quot;benchmark_eligible&quot;: false,
+      &quot;clarification_or_block_reason&quot;: &quot;&quot;,
+      &quot;forbidden_files&quot;: [
+        &quot;.env&quot;,
+        &quot;.env.*&quot;,
+        &quot;*.pem&quot;,
+        &quot;*.key&quot;,
+        &quot;certificates/*&quot;
+      ],
+      &quot;forbidden_real_repo_mutation&quot;: true,
+      &quot;max_file_count&quot;: 3,
+      &quot;mode&quot;: &quot;product&quot;,
+      &quot;model_may_choose_paths&quot;: false,
+      &quot;model_requirements&quot;: [
+        &quot;explicit model-authored target path&quot;,
+        &quot;explicit model-authored file content&quot;,
+        &quot;supported Source Proxy action JSON or path-bound file block&quot;
+      ],
+      &quot;network_allowed&quot;: false,
+      &quot;protected_paths&quot;: [],
+      &quot;proxy_artifact_class_suggested&quot;: true,
+      &quot;proxy_exact_target_suggested&quot;: &quot;&quot;,
+      &quot;route_type&quot;: &quot;product&quot;,
+      &quot;target_source&quot;: &quot;model_authored_required&quot;,
+      &quot;task_shape&quot;: &quot;disposable_small_file_bundle&quot;,
+      &quot;task_shape_source&quot;: &quot;generic_artifact_resolver&quot;,
+      &quot;user_prompt&quot;: &quot;make dark theme switcher page&quot;,
+      &quot;workspace_decision_source&quot;: &quot;generic_artifact_resolver&quot;,
+      &quot;workspace_mode&quot;: &quot;disposable_workspace&quot;
+    }
+  ],
+  &quot;raw_model_transcript_count&quot;: 1,
+  &quot;byte_match&quot;: {
+    &quot;dark-theme-switcher.html&quot;: true,
+    &quot;dark-theme.css&quot;: true,
+    &quot;dark-theme.js&quot;: true
+  },
+  &quot;backend_created_any_content&quot;: false,
+  &quot;real_app_files_touched&quot;: false
+}</pre></details>
+      <details><summary>Raw model transcript preview</summary><pre>{&quot;action_type&quot;:&quot;WriteFile&quot;,&quot;target&quot;:&quot;dark-theme-switcher.html&quot;,&quot;arguments&quot;:{&quot;content&quot;:&quot;&lt;!DOCTYPE html&gt;\n&lt;html lang=\&quot;en\&quot;&gt;\n&lt;head&gt;\n    &lt;meta charset=\&quot;UTF-8\&quot;&gt;\n    &lt;meta name=\&quot;viewport\&quot; content=\&quot;width=device-width, initial-scale=1.0\&quot;&gt;\n    &lt;title&gt;Dark Theme Switcher&lt;/title&gt;\n    &lt;link rel=\&quot;stylesheet\&quot; href=\&quot;dark-theme.css\&quot;&gt;\n&lt;/head&gt;\n&lt;body&gt;\n    &lt;h1&gt;Welcome to the Dark Theme Switcher&lt;/h1&gt;\n    &lt;button id=\&quot;toggleTheme\&quot;&gt;Toggle Dark Mode&lt;/button&gt;\n    &lt;script src=\&quot;dark-theme.js\&quot;&gt;&lt;/script&gt;\n&lt;/body&gt;\n&lt;/html&gt;&quot;},&quot;reason&quot;:&quot;This HTML file provides the structure for the dark theme switcher page.&quot;}
+
+{&quot;action_type&quot;:&quot;WriteFile&quot;,&quot;target&quot;:&quot;dark-theme.css&quot;,&quot;arguments&quot;:{&quot;content&quot;:&quot;body {\n    background-color: #333;\n    color: #fff;\n}\nbutton {\n    background-color: #555;\n    border: none;\n    padding: 10px 20px;\n    cursor: pointer;\n}\nbutton:hover {\n    background-color: #777;\n}&quot;},&quot;reason&quot;:&quot;This CSS file defines the styles for the dark theme.&quot;}
+
+{&quot;action_type&quot;:&quot;WriteFile&quot;,&quot;target&quot;:&quot;dark-theme.js&quot;,&quot;arguments&quot;:{&quot;content&quot;:&quot;document.getElementById(&#39;toggleTheme&#39;).addEventListener(&#39;click&#39;, function() {\n    document.body.classList.toggle(&#39;dark-mode&#39;);\n});\ndocument.body.classList.add(&#39;light-mode&#39;);&quot;},&quot;reason&quot;:&quot;This JavaScript file adds functionality to toggle the dark theme.&quot;}</pre></details>
+    </article>
+<article class="card pass">
+      <h3>make a todo list app</h3>
+      <div class="badges"><span class="badge pass">New corrected PASS</span><span class="badge">Source Proxy GO</span><span class="badge">disposable_small_file_bundle</span></div>
+      <iframe src="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/05-make-a-todo-list-app/workspace/index.html" loading="lazy"></iframe>
+      <dl><dt>Behavior test</dt><dd>static todo state-changing affordance scan</dd><dt>Observed</dt><dd><pre>[
+  &quot;html=True&quot;,
+  &quot;input=True&quot;,
+  &quot;button=True&quot;,
+  &quot;stateMutation=True&quot;
+]</pre></dd><dt>Failure / note</dt><dd>None recorded</dd><dt>Files</dt><dd>index.html, script.js, styles.css</dd><dt>Diagnostics</dt><dd><div class="links"><a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/05-make-a-todo-list-app/receipt.json">receipt</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/05-make-a-todo-list-app/score.json">score</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/05-make-a-todo-list-app/evidence-packet.json">evidence</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/05-make-a-todo-list-app/transcript.txt">transcript</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/05-make-a-todo-list-app/workspace.diff">diff</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/05-make-a-todo-list-app/workspace/index.html">preview: index.html</a></div></dd></dl>
+      <details><summary>Anti-cheat / hand-holding diagnostics</summary><pre>{
+  &quot;route_type&quot;: &quot;product&quot;,
+  &quot;task_shape&quot;: &quot;disposable_small_file_bundle&quot;,
+  &quot;artifact_class&quot;: &quot;static_ui_artifact&quot;,
+  &quot;allowed_extensions&quot;: [],
+  &quot;exact_allowed_files_if_any&quot;: [],
+  &quot;source_proxy_score_status&quot;: &quot;GO&quot;,
+  &quot;parsed_action_count&quot;: 3,
+  &quot;model_context_packet_summary&quot;: [
+    {
+      &quot;allowed_extensions&quot;: [
+        &quot;.html&quot;,
+        &quot;.css&quot;,
+        &quot;.js&quot;
+      ],
+      &quot;allowed_files&quot;: [],
+      &quot;allowed_scope_source&quot;: &quot;artifact_class_extensions&quot;,
+      &quot;artifact_class&quot;: &quot;static_ui_artifact&quot;,
+      &quot;benchmark_eligibility_reason&quot;: &quot;product_route_uses_proxy_orchestration&quot;,
+      &quot;benchmark_eligible&quot;: false,
+      &quot;clarification_or_block_reason&quot;: &quot;&quot;,
+      &quot;forbidden_files&quot;: [
+        &quot;.env&quot;,
+        &quot;.env.*&quot;,
+        &quot;*.pem&quot;,
+        &quot;*.key&quot;,
+        &quot;certificates/*&quot;
+      ],
+      &quot;forbidden_real_repo_mutation&quot;: true,
+      &quot;max_file_count&quot;: 3,
+      &quot;mode&quot;: &quot;product&quot;,
+      &quot;model_may_choose_paths&quot;: false,
+      &quot;model_requirements&quot;: [
+        &quot;explicit model-authored target path&quot;,
+        &quot;explicit model-authored file content&quot;,
+        &quot;supported Source Proxy action JSON or path-bound file block&quot;
+      ],
+      &quot;network_allowed&quot;: false,
+      &quot;protected_paths&quot;: [],
+      &quot;proxy_artifact_class_suggested&quot;: true,
+      &quot;proxy_exact_target_suggested&quot;: &quot;&quot;,
+      &quot;route_type&quot;: &quot;product&quot;,
+      &quot;target_source&quot;: &quot;model_authored_required&quot;,
+      &quot;task_shape&quot;: &quot;disposable_small_file_bundle&quot;,
+      &quot;task_shape_source&quot;: &quot;generic_artifact_resolver&quot;,
+      &quot;user_prompt&quot;: &quot;make a todo list app&quot;,
+      &quot;workspace_decision_source&quot;: &quot;generic_artifact_resolver&quot;,
+      &quot;workspace_mode&quot;: &quot;disposable_workspace&quot;
+    }
+  ],
+  &quot;raw_model_transcript_count&quot;: 1,
+  &quot;byte_match&quot;: {
+    &quot;index.html&quot;: true,
+    &quot;script.js&quot;: true,
+    &quot;styles.css&quot;: true
+  },
+  &quot;backend_created_any_content&quot;: false,
+  &quot;real_app_files_touched&quot;: false
+}</pre></details>
+      <details><summary>Raw model transcript preview</summary><pre>```json
+[
+    {
+        &quot;action_type&quot;: &quot;WriteFile&quot;,
+        &quot;target&quot;: &quot;index.html&quot;,
+        &quot;arguments&quot;: {
+            &quot;content&quot;: &quot;&lt;!DOCTYPE html&gt;\n&lt;html lang=\&quot;en\&quot;&gt;\n&lt;head&gt;\n    &lt;meta charset=\&quot;UTF-8\&quot;&gt;\n    &lt;meta name=\&quot;viewport\&quot; content=\&quot;width=device-width, initial-scale=1.0\&quot;&gt;\n    &lt;title&gt;Todo List&lt;/title&gt;\n    &lt;link rel=\&quot;stylesheet\&quot; href=\&quot;styles.css\&quot;&gt;\n&lt;/head&gt;\n&lt;body&gt;\n    &lt;h1&gt;Todo List&lt;/h1&gt;\n    &lt;input type=\&quot;text\&quot; id=\&quot;new-task\&quot; placeholder=\&quot;Add a new task...\&quot;&gt;\n    &lt;button onclick=\&quot;addTask()\&quot;&gt;Add Task&lt;/button&gt;\n    &lt;ul id=\&quot;task-list\&quot;&gt;&lt;/ul&gt;\n    &lt;script src=\&quot;script.js\&quot;&gt;&lt;/script&gt;\n&lt;/body&gt;\n&lt;/html&gt;&quot;
+        },
+        &quot;reason&quot;: &quot;HTML structure for the todo list app.&quot;
+    },
+    {
+        &quot;action_type&quot;: &quot;WriteFile&quot;,
+        &quot;target&quot;: &quot;styles.css&quot;,
+        &quot;arguments&quot;: {
+            &quot;content&quot;: &quot;body {\n    font-family: Arial, sans-serif;\n}\n#task-list {\n    list-style-type: none;\n    padding: 0;\n}\nli {\n    background-color: #f4f4f4;\n    margin: 5px 0;\n    padding: 10px;\n    border-radius: 5px;\n}\n&quot;
+        },
+        &quot;reason&quot;: &quot;Styling for the todo list app.&quot;
+    },
+    {
+        &quot;action_type&quot;: &quot;WriteFile&quot;,
+        &quot;target&quot;: &quot;script.js&quot;,
+        &quot;arguments&quot;: {
+            &quot;content&quot;: &quot;function addTask() {\n    const taskInput = document.getElementById(&#39;new-task&#39;);\n    const taskText = taskInput.value.trim();\n    if (taskText !== &#39;&#39;) {\n        const li = document.createElement(&#39;li&#39;);\n        li.textContent = taskText;\n        document.getElementById(&#39;task-list&#39;).appendChild(li);\n        taskInput.value = &#39;&#39;;\n    }\n}\n&quot;
+        },
+        &quot;reason&quot;: &quot;JavaScript functionality to add tasks to the list.&quot;
+    }
+]
+```</pre></details>
+    </article>
+<article class="card pass">
+      <h3>make a weather card demo</h3>
+      <div class="badges"><span class="badge pass">New corrected PASS</span><span class="badge">Source Proxy GO</span><span class="badge">disposable_small_file_bundle</span></div>
+      <iframe src="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/06-make-a-weather-card-demo/workspace/weather-card.html" loading="lazy"></iframe>
+      <dl><dt>Behavior test</dt><dd>static weather-card content scan</dd><dt>Observed</dt><dd><pre>[
+  &quot;html=True&quot;,
+  &quot;weatherTerms=True&quot;
+]</pre></dd><dt>Failure / note</dt><dd>None recorded</dd><dt>Files</dt><dd>weather-card.css, weather-card.html, weather-card.js</dd><dt>Diagnostics</dt><dd><div class="links"><a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/06-make-a-weather-card-demo/receipt.json">receipt</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/06-make-a-weather-card-demo/score.json">score</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/06-make-a-weather-card-demo/evidence-packet.json">evidence</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/06-make-a-weather-card-demo/transcript.txt">transcript</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/06-make-a-weather-card-demo/workspace.diff">diff</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/06-make-a-weather-card-demo/workspace/weather-card.html">preview: weather-card.html</a></div></dd></dl>
+      <details><summary>Anti-cheat / hand-holding diagnostics</summary><pre>{
+  &quot;route_type&quot;: &quot;product&quot;,
+  &quot;task_shape&quot;: &quot;disposable_small_file_bundle&quot;,
+  &quot;artifact_class&quot;: &quot;static_ui_artifact&quot;,
+  &quot;allowed_extensions&quot;: [],
+  &quot;exact_allowed_files_if_any&quot;: [],
+  &quot;source_proxy_score_status&quot;: &quot;GO&quot;,
+  &quot;parsed_action_count&quot;: 3,
+  &quot;model_context_packet_summary&quot;: [
+    {
+      &quot;allowed_extensions&quot;: [
+        &quot;.html&quot;,
+        &quot;.css&quot;,
+        &quot;.js&quot;
+      ],
+      &quot;allowed_files&quot;: [],
+      &quot;allowed_scope_source&quot;: &quot;artifact_class_extensions&quot;,
+      &quot;artifact_class&quot;: &quot;static_ui_artifact&quot;,
+      &quot;benchmark_eligibility_reason&quot;: &quot;product_route_uses_proxy_orchestration&quot;,
+      &quot;benchmark_eligible&quot;: false,
+      &quot;clarification_or_block_reason&quot;: &quot;&quot;,
+      &quot;forbidden_files&quot;: [
+        &quot;.env&quot;,
+        &quot;.env.*&quot;,
+        &quot;*.pem&quot;,
+        &quot;*.key&quot;,
+        &quot;certificates/*&quot;
+      ],
+      &quot;forbidden_real_repo_mutation&quot;: true,
+      &quot;max_file_count&quot;: 3,
+      &quot;mode&quot;: &quot;product&quot;,
+      &quot;model_may_choose_paths&quot;: false,
+      &quot;model_requirements&quot;: [
+        &quot;explicit model-authored target path&quot;,
+        &quot;explicit model-authored file content&quot;,
+        &quot;supported Source Proxy action JSON or path-bound file block&quot;
+      ],
+      &quot;network_allowed&quot;: false,
+      &quot;protected_paths&quot;: [],
+      &quot;proxy_artifact_class_suggested&quot;: true,
+      &quot;proxy_exact_target_suggested&quot;: &quot;&quot;,
+      &quot;route_type&quot;: &quot;product&quot;,
+      &quot;target_source&quot;: &quot;model_authored_required&quot;,
+      &quot;task_shape&quot;: &quot;disposable_small_file_bundle&quot;,
+      &quot;task_shape_source&quot;: &quot;generic_artifact_resolver&quot;,
+      &quot;user_prompt&quot;: &quot;make a weather card demo&quot;,
+      &quot;workspace_decision_source&quot;: &quot;generic_artifact_resolver&quot;,
+      &quot;workspace_mode&quot;: &quot;disposable_workspace&quot;
+    }
+  ],
+  &quot;raw_model_transcript_count&quot;: 1,
+  &quot;byte_match&quot;: {
+    &quot;weather-card.css&quot;: true,
+    &quot;weather-card.html&quot;: true,
+    &quot;weather-card.js&quot;: true
+  },
+  &quot;backend_created_any_content&quot;: false,
+  &quot;real_app_files_touched&quot;: false
+}</pre></details>
+      <details><summary>Raw model transcript preview</summary><pre>{&quot;action_type&quot;:&quot;WriteFile&quot;,&quot;target&quot;:&quot;weather-card.html&quot;,&quot;arguments&quot;:{&quot;content&quot;:&quot;&lt;!DOCTYPE html&gt;\n&lt;html lang=\&quot;en\&quot;&gt;\n&lt;head&gt;\n    &lt;meta charset=\&quot;UTF-8\&quot;&gt;\n    &lt;meta name=\&quot;viewport\&quot; content=\&quot;width=device-width, initial-scale=1.0\&quot;&gt;\n    &lt;title&gt;Weather Card&lt;/title&gt;\n    &lt;link rel=\&quot;stylesheet\&quot; href=\&quot;weather-card.css\&quot;&gt;\n&lt;/head&gt;\n&lt;body&gt;\n    &lt;div class=\&quot;weather-card\&quot;&gt;\n        &lt;h2 id=\&quot;city\&quot;&gt;City&lt;/h2&gt;\n        &lt;p id=\&quot;temperature\&quot;&gt;Temperature: 0°C&lt;/p&gt;\n        &lt;p id=\&quot;description\&quot;&gt;Description: Clear sky&lt;/p&gt;\n    &lt;/div&gt;\n    &lt;script src=\&quot;weather-card.js\&quot;&gt;&lt;/script&gt;\n&lt;/body&gt;\n&lt;/html&gt;&quot;},&quot;reason&quot;:&quot;HTML structure for the weather card.&quot;}
+
+{&quot;action_type&quot;:&quot;WriteFile&quot;,&quot;target&quot;:&quot;weather-card.css&quot;,&quot;arguments&quot;:{&quot;content&quot;:&quot;.weather-card {\n    width: 300px;\n    padding: 20px;\n    border: 1px solid #ccc;\n    border-radius: 5px;\n    background-color: #f9f9f9;\n}\n\n.weather-card h2 {\n    margin-top: 0;\n}\n\n.weather-card p {\n    margin: 5px 0;\n}&quot;},&quot;reason&quot;:&quot;CSS styling for the weather card.&quot;}
+
+{&quot;action_type&quot;:&quot;WriteFile&quot;,&quot;target&quot;:&quot;weather-card.js&quot;,&quot;arguments&quot;:{&quot;content&quot;:&quot;document.addEventListener(&#39;DOMContentLoaded&#39;, function() {\n    const cityElement = document.getElementById(&#39;city&#39;);\n    const temperatureElement = document.getElementById(&#39;temperature&#39;);\n    const descriptionElement = document.getElementById(&#39;description&#39;);\n\n    // Example data\n    cityElement.textContent = &#39;New York&#39;;\n    temperatureElement.textContent = &#39;15°C&#39;;\n    descriptionElement.textContent = &#39;Partly cloudy&#39;;\n});&quot;},&quot;reason&quot;:&quot;JavaScript to populate the weather card with example data.&quot;}</pre></details>
+    </article>
+<article class="card fail">
+      <h3>make a music player mockup</h3>
+      <div class="badges"><span class="badge fail">New corrected FAIL</span><span class="badge">Source Proxy EXPECTED-BLOCKED</span><span class="badge">clarification_required_real_repo_implementation</span></div>
+      <div class="no-preview">No openable HTML preview produced.</div>
+      <dl><dt>Behavior test</dt><dd>workspace file existence</dd><dt>Observed</dt><dd><pre>[
+  &quot;no files created&quot;
+]</pre></dd><dt>Failure / note</dt><dd>no_artifact_files</dd><dt>Files</dt><dd>none</dd><dt>Diagnostics</dt><dd><div class="links"><a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/07-make-a-music-player-mockup/receipt.json">receipt</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/07-make-a-music-player-mockup/score.json">score</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/07-make-a-music-player-mockup/evidence-packet.json">evidence</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/07-make-a-music-player-mockup/transcript.txt">transcript</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/07-make-a-music-player-mockup/workspace.diff">diff</a> </div></dd></dl>
+      <details><summary>Anti-cheat / hand-holding diagnostics</summary><pre>{
+  &quot;route_type&quot;: &quot;product&quot;,
+  &quot;task_shape&quot;: &quot;clarification_required_real_repo_implementation&quot;,
+  &quot;artifact_class&quot;: &quot;&quot;,
+  &quot;allowed_extensions&quot;: [],
+  &quot;exact_allowed_files_if_any&quot;: [],
+  &quot;source_proxy_score_status&quot;: &quot;EXPECTED-BLOCKED&quot;,
+  &quot;parsed_action_count&quot;: 1,
+  &quot;model_context_packet_summary&quot;: [
+    {
+      &quot;allowed_extensions&quot;: [],
+      &quot;allowed_files&quot;: [],
+      &quot;allowed_scope_source&quot;: &quot;none&quot;,
+      &quot;artifact_class&quot;: &quot;&quot;,
+      &quot;benchmark_eligibility_reason&quot;: &quot;product_route_uses_proxy_orchestration&quot;,
+      &quot;benchmark_eligible&quot;: false,
+      &quot;clarification_or_block_reason&quot;: &quot;Add one repo-relative Target file line or choose a disposable workspace create target before any model-action run.&quot;,
+      &quot;forbidden_files&quot;: [
+        &quot;.env&quot;,
+        &quot;.env.*&quot;,
+        &quot;*.pem&quot;,
+        &quot;*.key&quot;,
+        &quot;certificates/*&quot;
+      ],
+      &quot;forbidden_real_repo_mutation&quot;: true,
+      &quot;max_file_count&quot;: 8,
+      &quot;mode&quot;: &quot;product&quot;,
+      &quot;model_may_choose_paths&quot;: false,
+      &quot;model_requirements&quot;: [
+        &quot;explicit model-authored target path&quot;,
+        &quot;explicit model-authored file content&quot;,
+        &quot;supported Source Proxy action JSON or path-bound file block&quot;
+      ],
+      &quot;network_allowed&quot;: false,
+      &quot;protected_paths&quot;: [],
+      &quot;proxy_artifact_class_suggested&quot;: false,
+      &quot;proxy_exact_target_suggested&quot;: &quot;&quot;,
+      &quot;route_type&quot;: &quot;product&quot;,
+      &quot;target_source&quot;: &quot;none&quot;,
+      &quot;task_shape&quot;: &quot;clarification_required_real_repo_implementation&quot;,
+      &quot;task_shape_source&quot;: &quot;target_resolution&quot;,
+      &quot;user_prompt&quot;: &quot;make a music player mockup&quot;,
+      &quot;workspace_decision_source&quot;: &quot;target_resolution&quot;,
+      &quot;workspace_mode&quot;: &quot;disposable_workspace&quot;
+    }
+  ],
+  &quot;raw_model_transcript_count&quot;: 1,
+  &quot;byte_match&quot;: {},
+  &quot;backend_created_any_content&quot;: false,
+  &quot;real_app_files_touched&quot;: false
+}</pre></details>
+      <details><summary>Raw model transcript preview</summary><pre>```json
+{
+  &quot;action_type&quot;: &quot;WriteFile&quot;,
+  &quot;target&quot;: &quot;src/components/MusicPlayer.js&quot;,
+  &quot;arguments&quot;: {
+    &quot;content&quot;: &quot;// MusicPlayer.js\nimport React, { useState } from &#39;react&#39;;\n\nconst MusicPlayer = () =&gt; {\n  const [isPlaying, setIsPlaying] = useState(false);\n  const [currentTrack, setCurrentTrack] = useState(&#39;Song Title&#39;);\n\n  const togglePlayPause = () =&gt; {\n    setIsPlaying(!isPlaying);\n  };\n\n  return (\n    &lt;div className=&#39;music-player&#39;&gt;\n      &lt;h3&gt;{currentTrack}&lt;/h3&gt;\n      &lt;button onClick={togglePlayPause}&gt;{isPlaying ? &#39;Pause&#39; : &#39;Play&#39;}&lt;/button&gt;\n    &lt;/div&gt;\n  );\n};\n\nexport default MusicPlayer;&quot;
+  },
+  &quot;reason&quot;: &quot;A basic music player component to be used in the mockup.&quot;
+}
+```</pre></details>
+    </article>
+<article class="card fail">
+      <h3>make a habit tracker</h3>
+      <div class="badges"><span class="badge fail">New corrected FAIL</span><span class="badge">Source Proxy GO</span><span class="badge">disposable_small_file_bundle</span></div>
+      <iframe src="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/08-make-a-habit-tracker/workspace/habit_tracker.html" loading="lazy"></iframe>
+      <dl><dt>Behavior test</dt><dd>inspect for input/buttons/state-changing controls</dd><dt>Observed</dt><dd><pre>{
+  &quot;inputs&quot;: 0,
+  &quot;buttons&quot;: 0,
+  &quot;checkboxes&quot;: 0,
+  &quot;bodyText&quot;: &quot;Habit Tracker\nDrink Water\nRead a Book&quot;
+}</pre></dd><dt>Failure / note</dt><dd>static hard-coded habits, no controls</dd><dt>Files</dt><dd>habit_tracker.css, habit_tracker.html, habit_tracker.js</dd><dt>Diagnostics</dt><dd><div class="links"><a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/08-make-a-habit-tracker/receipt.json">receipt</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/08-make-a-habit-tracker/score.json">score</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/08-make-a-habit-tracker/evidence-packet.json">evidence</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/08-make-a-habit-tracker/transcript.txt">transcript</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/08-make-a-habit-tracker/workspace.diff">diff</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/08-make-a-habit-tracker/workspace/habit_tracker.html">preview: habit_tracker.html</a></div></dd></dl>
+      <details><summary>Anti-cheat / hand-holding diagnostics</summary><pre>{
+  &quot;route_type&quot;: &quot;product&quot;,
+  &quot;task_shape&quot;: &quot;disposable_small_file_bundle&quot;,
+  &quot;artifact_class&quot;: &quot;static_ui_artifact&quot;,
+  &quot;allowed_extensions&quot;: [],
+  &quot;exact_allowed_files_if_any&quot;: [],
+  &quot;source_proxy_score_status&quot;: &quot;GO&quot;,
+  &quot;parsed_action_count&quot;: 3,
+  &quot;model_context_packet_summary&quot;: [
+    {
+      &quot;allowed_extensions&quot;: [
+        &quot;.html&quot;,
+        &quot;.css&quot;,
+        &quot;.js&quot;
+      ],
+      &quot;allowed_files&quot;: [],
+      &quot;allowed_scope_source&quot;: &quot;artifact_class_extensions&quot;,
+      &quot;artifact_class&quot;: &quot;static_ui_artifact&quot;,
+      &quot;benchmark_eligibility_reason&quot;: &quot;product_route_uses_proxy_orchestration&quot;,
+      &quot;benchmark_eligible&quot;: false,
+      &quot;clarification_or_block_reason&quot;: &quot;&quot;,
+      &quot;forbidden_files&quot;: [
+        &quot;.env&quot;,
+        &quot;.env.*&quot;,
+        &quot;*.pem&quot;,
+        &quot;*.key&quot;,
+        &quot;certificates/*&quot;
+      ],
+      &quot;forbidden_real_repo_mutation&quot;: true,
+      &quot;max_file_count&quot;: 3,
+      &quot;mode&quot;: &quot;product&quot;,
+      &quot;model_may_choose_paths&quot;: false,
+      &quot;model_requirements&quot;: [
+        &quot;explicit model-authored target path&quot;,
+        &quot;explicit model-authored file content&quot;,
+        &quot;supported Source Proxy action JSON or path-bound file block&quot;
+      ],
+      &quot;network_allowed&quot;: false,
+      &quot;protected_paths&quot;: [],
+      &quot;proxy_artifact_class_suggested&quot;: true,
+      &quot;proxy_exact_target_suggested&quot;: &quot;&quot;,
+      &quot;route_type&quot;: &quot;product&quot;,
+      &quot;target_source&quot;: &quot;model_authored_required&quot;,
+      &quot;task_shape&quot;: &quot;disposable_small_file_bundle&quot;,
+      &quot;task_shape_source&quot;: &quot;generic_artifact_resolver&quot;,
+      &quot;user_prompt&quot;: &quot;make a habit tracker&quot;,
+      &quot;workspace_decision_source&quot;: &quot;generic_artifact_resolver&quot;,
+      &quot;workspace_mode&quot;: &quot;disposable_workspace&quot;
+    }
+  ],
+  &quot;raw_model_transcript_count&quot;: 1,
+  &quot;byte_match&quot;: {
+    &quot;habit_tracker.css&quot;: true,
+    &quot;habit_tracker.html&quot;: true,
+    &quot;habit_tracker.js&quot;: true
+  },
+  &quot;backend_created_any_content&quot;: false,
+  &quot;real_app_files_touched&quot;: false
+}</pre></details>
+      <details><summary>Raw model transcript preview</summary><pre>{&quot;action_type&quot;:&quot;WriteFile&quot;,&quot;target&quot;:&quot;habit_tracker.html&quot;,&quot;arguments&quot;:{&quot;content&quot;:&quot;&lt;!DOCTYPE html&gt;\n&lt;html lang=\&quot;en\&quot;&gt;\n&lt;head&gt;\n    &lt;meta charset=\&quot;UTF-8\&quot;&gt;\n    &lt;meta name=\&quot;viewport\&quot; content=\&quot;width=device-width, initial-scale=1.0\&quot;&gt;\n    &lt;title&gt;Habit Tracker&lt;/title&gt;\n    &lt;link rel=\&quot;stylesheet\&quot; href=\&quot;habit_tracker.css\&quot;&gt;\n&lt;/head&gt;\n&lt;body&gt;\n    &lt;h1&gt;Habit Tracker&lt;/h1&gt;\n    &lt;div id=\&quot;habits\&quot;&gt;&lt;/div&gt;\n    &lt;script src=\&quot;habit_tracker.js\&quot;&gt;&lt;/script&gt;\n&lt;/body&gt;\n&lt;/html&gt;&quot;},&quot;reason&quot;:&quot;HTML structure for the habit tracker.&quot;}
+
+{&quot;action_type&quot;:&quot;WriteFile&quot;,&quot;target&quot;:&quot;habit_tracker.css&quot;,&quot;arguments&quot;:{&quot;content&quot;:&quot;body {\n    font-family: Arial, sans-serif;\n}\n\nh1 {\n    text-align: center;\n}\n\ndiv#habits {\n    display: flex;\n    justify-content: center;\n    align-items: center;\n    height: 300px;\n}\n&quot;},&quot;reason&quot;:&quot;CSS styling for the habit tracker.&quot;}
+
+{&quot;action_type&quot;:&quot;WriteFile&quot;,&quot;target&quot;:&quot;habit_tracker.js&quot;,&quot;arguments&quot;:{&quot;content&quot;:&quot;document.addEventListener(&#39;DOMContentLoaded&#39;, function() {\n    const habitsContainer = document.getElementById(&#39;habits&#39;);\n\n    // Example habits\n    const habits = [\n        { name: &#39;Drink Water&#39;, completed: false },\n        { name: &#39;Read a Book&#39;, completed: true }\n    ];\n\n    habits.forEach(habit =&gt; {\n        const habitElement = document.createElement(&#39;div&#39;);\n        habitElement.className = &#39;habit&#39;;\n        habitElement.textContent = habit.name;\n\n        if (habit.completed) {\n            habitElement.classList.add(&#39;completed&#39;);\n        }\n\n        habitsContainer.appendChild(habitElement);\n    });\n});&quot;},&quot;reason&quot;:&quot;JavaScript logic for the habit tracker.&quot;}</pre></details>
+    </article>
+<article class="card fail">
+      <h3>make a notes app</h3>
+      <div class="badges"><span class="badge fail">New corrected FAIL</span><span class="badge">Source Proxy GO</span><span class="badge">disposable_single_file_artifact</span></div>
+      <div class="no-preview">No openable HTML preview produced.</div>
+      <dl><dt>Behavior test</dt><dd>static notes app affordance scan</dd><dt>Observed</dt><dd><pre>[
+  &quot;html=False&quot;,
+  &quot;editor=False&quot;,
+  &quot;saveOrState=True&quot;
+]</pre></dd><dt>Failure / note</dt><dd>notes_create_edit_interaction_missing</dd><dt>Files</dt><dd>notes_app.md</dd><dt>Diagnostics</dt><dd><div class="links"><a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/09-make-a-notes-app/receipt.json">receipt</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/09-make-a-notes-app/score.json">score</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/09-make-a-notes-app/evidence-packet.json">evidence</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/09-make-a-notes-app/transcript.txt">transcript</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/09-make-a-notes-app/workspace.diff">diff</a> </div></dd></dl>
+      <details><summary>Anti-cheat / hand-holding diagnostics</summary><pre>{
+  &quot;route_type&quot;: &quot;product&quot;,
+  &quot;task_shape&quot;: &quot;disposable_single_file_artifact&quot;,
+  &quot;artifact_class&quot;: &quot;markdown_document&quot;,
+  &quot;allowed_extensions&quot;: [],
+  &quot;exact_allowed_files_if_any&quot;: [],
+  &quot;source_proxy_score_status&quot;: &quot;GO&quot;,
+  &quot;parsed_action_count&quot;: 1,
+  &quot;model_context_packet_summary&quot;: [
+    {
+      &quot;allowed_extensions&quot;: [
+        &quot;.md&quot;
+      ],
+      &quot;allowed_files&quot;: [],
+      &quot;allowed_scope_source&quot;: &quot;artifact_class_extensions&quot;,
+      &quot;artifact_class&quot;: &quot;markdown_document&quot;,
+      &quot;benchmark_eligibility_reason&quot;: &quot;product_route_uses_proxy_orchestration&quot;,
+      &quot;benchmark_eligible&quot;: false,
+      &quot;clarification_or_block_reason&quot;: &quot;&quot;,
+      &quot;forbidden_files&quot;: [
+        &quot;.env&quot;,
+        &quot;.env.*&quot;,
+        &quot;*.pem&quot;,
+        &quot;*.key&quot;,
+        &quot;certificates/*&quot;
+      ],
+      &quot;forbidden_real_repo_mutation&quot;: true,
+      &quot;max_file_count&quot;: 1,
+      &quot;mode&quot;: &quot;product&quot;,
+      &quot;model_may_choose_paths&quot;: false,
+      &quot;model_requirements&quot;: [
+        &quot;explicit model-authored target path&quot;,
+        &quot;explicit model-authored file content&quot;,
+        &quot;supported Source Proxy action JSON or path-bound file block&quot;
+      ],
+      &quot;network_allowed&quot;: false,
+      &quot;protected_paths&quot;: [],
+      &quot;proxy_artifact_class_suggested&quot;: true,
+      &quot;proxy_exact_target_suggested&quot;: &quot;&quot;,
+      &quot;route_type&quot;: &quot;product&quot;,
+      &quot;target_source&quot;: &quot;model_authored_required&quot;,
+      &quot;task_shape&quot;: &quot;disposable_single_file_artifact&quot;,
+      &quot;task_shape_source&quot;: &quot;generic_artifact_resolver&quot;,
+      &quot;user_prompt&quot;: &quot;make a notes app&quot;,
+      &quot;workspace_decision_source&quot;: &quot;generic_artifact_resolver&quot;,
+      &quot;workspace_mode&quot;: &quot;disposable_workspace&quot;
+    }
+  ],
+  &quot;raw_model_transcript_count&quot;: 1,
+  &quot;byte_match&quot;: {
+    &quot;notes_app.md&quot;: true
+  },
+  &quot;backend_created_any_content&quot;: false,
+  &quot;real_app_files_touched&quot;: false
+}</pre></details>
+      <details><summary>Raw model transcript preview</summary><pre>{&quot;action_type&quot;:&quot;WriteFile&quot;,&quot;target&quot;:&quot;notes_app.md&quot;,&quot;arguments&quot;:{&quot;content&quot;:&quot;# Notes App\n\n## Features\n- Add notes\n- Edit notes\n- Delete notes\n- Search notes\n\n## How to Use\n1. Open the app.\n2. Click &#39;Add Note&#39; to create a new note.\n3. Enter your note and click &#39;Save&#39;.\n4. To edit a note, click on it and make changes.\n5. Click &#39;Delete&#39; to remove a note.\n6. Use the search bar to find specific notes.&quot;},&quot;reason&quot;:&quot;A simple markdown document outlining the features and usage of a notes app.&quot;}</pre></details>
+    </article>
+<article class="card fail">
+      <h3>make a password strength checker</h3>
+      <div class="badges"><span class="badge fail">New corrected FAIL</span><span class="badge">Source Proxy EXPECTED-BLOCKED</span><span class="badge">clarification_required_real_repo_implementation</span></div>
+      <div class="no-preview">No openable HTML preview produced.</div>
+      <dl><dt>Behavior test</dt><dd>workspace file existence</dd><dt>Observed</dt><dd><pre>[
+  &quot;no files created&quot;
+]</pre></dd><dt>Failure / note</dt><dd>no_artifact_files</dd><dt>Files</dt><dd>none</dd><dt>Diagnostics</dt><dd><div class="links"><a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/10-make-a-password-strength-checker/receipt.json">receipt</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/10-make-a-password-strength-checker/score.json">score</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/10-make-a-password-strength-checker/evidence-packet.json">evidence</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/10-make-a-password-strength-checker/transcript.txt">transcript</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/10-make-a-password-strength-checker/workspace.diff">diff</a> </div></dd></dl>
+      <details><summary>Anti-cheat / hand-holding diagnostics</summary><pre>{
+  &quot;route_type&quot;: &quot;product&quot;,
+  &quot;task_shape&quot;: &quot;clarification_required_real_repo_implementation&quot;,
+  &quot;artifact_class&quot;: &quot;&quot;,
+  &quot;allowed_extensions&quot;: [],
+  &quot;exact_allowed_files_if_any&quot;: [],
+  &quot;source_proxy_score_status&quot;: &quot;EXPECTED-BLOCKED&quot;,
+  &quot;parsed_action_count&quot;: 1,
+  &quot;model_context_packet_summary&quot;: [
+    {
+      &quot;allowed_extensions&quot;: [],
+      &quot;allowed_files&quot;: [],
+      &quot;allowed_scope_source&quot;: &quot;none&quot;,
+      &quot;artifact_class&quot;: &quot;&quot;,
+      &quot;benchmark_eligibility_reason&quot;: &quot;product_route_uses_proxy_orchestration&quot;,
+      &quot;benchmark_eligible&quot;: false,
+      &quot;clarification_or_block_reason&quot;: &quot;Add one repo-relative Target file line or choose a disposable workspace create target before any model-action run.&quot;,
+      &quot;forbidden_files&quot;: [
+        &quot;.env&quot;,
+        &quot;.env.*&quot;,
+        &quot;*.pem&quot;,
+        &quot;*.key&quot;,
+        &quot;certificates/*&quot;
+      ],
+      &quot;forbidden_real_repo_mutation&quot;: true,
+      &quot;max_file_count&quot;: 8,
+      &quot;mode&quot;: &quot;product&quot;,
+      &quot;model_may_choose_paths&quot;: false,
+      &quot;model_requirements&quot;: [
+        &quot;explicit model-authored target path&quot;,
+        &quot;explicit model-authored file content&quot;,
+        &quot;supported Source Proxy action JSON or path-bound file block&quot;
+      ],
+      &quot;network_allowed&quot;: false,
+      &quot;protected_paths&quot;: [],
+      &quot;proxy_artifact_class_suggested&quot;: false,
+      &quot;proxy_exact_target_suggested&quot;: &quot;&quot;,
+      &quot;route_type&quot;: &quot;product&quot;,
+      &quot;target_source&quot;: &quot;none&quot;,
+      &quot;task_shape&quot;: &quot;clarification_required_real_repo_implementation&quot;,
+      &quot;task_shape_source&quot;: &quot;target_resolution&quot;,
+      &quot;user_prompt&quot;: &quot;make a password strength checker&quot;,
+      &quot;workspace_decision_source&quot;: &quot;target_resolution&quot;,
+      &quot;workspace_mode&quot;: &quot;disposable_workspace&quot;
+    },
+    {
+      &quot;allowed_extensions&quot;: [],
+      &quot;allowed_files&quot;: [],
+      &quot;allowed_scope_source&quot;: &quot;none&quot;,
+      &quot;artifact_class&quot;: &quot;&quot;,
+      &quot;benchmark_eligibility_reason&quot;: &quot;product_route_uses_proxy_orchestration&quot;,
+      &quot;benchmark_eligible&quot;: false,
+      &quot;clarification_or_block_reason&quot;: &quot;Add one repo-relative Target file line or choose a disposable workspace create target before any model-action run.&quot;,
+      &quot;forbidden_files&quot;: [
+        &quot;.env&quot;,
+        &quot;.env.*&quot;,
+        &quot;*.pem&quot;,
+        &quot;*.key&quot;,
+        &quot;certificates/*&quot;
+      ],
+      &quot;forbidden_real_repo_mutation&quot;: true,
+      &quot;max_file_count&quot;: 8,
+      &quot;mode&quot;: &quot;product&quot;,
+      &quot;model_may_choose_paths&quot;: false,
+      &quot;model_requirements&quot;: [
+        &quot;explicit model-authored target path&quot;,
+        &quot;explicit model-authored file content&quot;,
+        &quot;supported Source Proxy action JSON or path-bound file block&quot;
+      ],
+      &quot;network_allowed&quot;: false,
+      &quot;protected_paths&quot;: [],
+      &quot;proxy_artifact_class_suggested&quot;: false,
+      &quot;proxy_exact_target_suggested&quot;: &quot;&quot;,
+      &quot;route_type&quot;: &quot;product&quot;,
+      &quot;target_source&quot;: &quot;none&quot;,
+      &quot;task_shape&quot;: &quot;clarification_required_real_repo_implementation&quot;,
+      &quot;task_shape_source&quot;: &quot;target_resolution&quot;,
+      &quot;user_prompt&quot;: &quot;make a password strength checker&quot;,
+      &quot;workspace_decision_source&quot;: &quot;target_resolution&quot;,
+      &quot;workspace_mode&quot;: &quot;disposable_workspace&quot;
+    }
+  ],
+  &quot;raw_model_transcript_count&quot;: 2,
+  &quot;byte_match&quot;: {},
+  &quot;backend_created_any_content&quot;: false,
+  &quot;real_app_files_touched&quot;: false
+}</pre></details>
+      <details><summary>Raw model transcript preview</summary><pre>```json
+{
+  &quot;action_type&quot;: &quot;WriteFile&quot;,
+  &quot;target&quot;: &quot;password_strength_checker.py&quot;,
+  &quot;arguments&quot;: {
+    &quot;content&quot;: &quot;#!/usr/bin/env python3\n\nimport re\n\ndef check_password_strength(password):\n    if len(password) &lt; 8:\n        return &#39;Weak: Password is too short.&#39;\n    if not re.search(r&#39;[a-z]&#39;, password):\n        return &#39;Weak: No lowercase letters.&#39;\n    if not re.search(r&#39;[A-Z]&#39;, password):\n        return &#39;Weak: No uppercase letters.&#39;\n    if not re.search(r&#39;\\d&#39;, password):\n        return &#39;Weak: No digits.&#39;\n    if not re.search(r&#39;[!@#$%^&amp;*(),.?&quot;:{}|&lt;&gt;]&#39;, password):\n        return &#39;Weak: No special characters.&#39;\n    return &#39;Strong: Password meets all criteria.&#39;&quot;
+  },
+  &quot;reason&quot;: &quot;A simple Python script to check the strength of a password.&quot;
+}
+```
+
+--- MODEL CALL ---
+
+{&quot;action_type&quot;:&quot;WriteFile&quot;,&quot;target&quot;:&quot;src/password_strength_checker.py&quot;,&quot;arguments&quot;:{&quot;content&quot;:&quot;def check_password_strength(password):\n    if len(password) &lt; 8:\n        return False\n    if not any(char.isdigit() for char in password):\n        return False\n    if not any(char.isupper() for char in password):\n        return False\n    if not any(char.islower() for char in password):\n        return False\n    return True&quot;},&quot;reason&quot;:&quot;This Python function checks the strength of a password based on length, digit presence, uppercase letter presence, and lowercase letter presence.&quot;}</pre></details>
+    </article>
+<article class="card fail">
+      <h3>make a simple drawing pad</h3>
+      <div class="badges"><span class="badge fail">New corrected FAIL</span><span class="badge">Source Proxy EXPECTED-BLOCKED</span><span class="badge">clarification_required_real_repo_implementation</span></div>
+      <div class="no-preview">No openable HTML preview produced.</div>
+      <dl><dt>Behavior test</dt><dd>workspace file existence</dd><dt>Observed</dt><dd><pre>[
+  &quot;no files created&quot;
+]</pre></dd><dt>Failure / note</dt><dd>no_artifact_files</dd><dt>Files</dt><dd>none</dd><dt>Diagnostics</dt><dd><div class="links"><a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/11-make-a-simple-drawing-pad/receipt.json">receipt</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/11-make-a-simple-drawing-pad/score.json">score</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/11-make-a-simple-drawing-pad/evidence-packet.json">evidence</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/11-make-a-simple-drawing-pad/transcript.txt">transcript</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/runs/11-make-a-simple-drawing-pad/workspace.diff">diff</a> </div></dd></dl>
+      <details><summary>Anti-cheat / hand-holding diagnostics</summary><pre>{
+  &quot;route_type&quot;: &quot;product&quot;,
+  &quot;task_shape&quot;: &quot;clarification_required_real_repo_implementation&quot;,
+  &quot;artifact_class&quot;: &quot;&quot;,
+  &quot;allowed_extensions&quot;: [],
+  &quot;exact_allowed_files_if_any&quot;: [],
+  &quot;source_proxy_score_status&quot;: &quot;EXPECTED-BLOCKED&quot;,
+  &quot;parsed_action_count&quot;: 1,
+  &quot;model_context_packet_summary&quot;: [
+    {
+      &quot;allowed_extensions&quot;: [],
+      &quot;allowed_files&quot;: [],
+      &quot;allowed_scope_source&quot;: &quot;none&quot;,
+      &quot;artifact_class&quot;: &quot;&quot;,
+      &quot;benchmark_eligibility_reason&quot;: &quot;product_route_uses_proxy_orchestration&quot;,
+      &quot;benchmark_eligible&quot;: false,
+      &quot;clarification_or_block_reason&quot;: &quot;Add one repo-relative Target file line or choose a disposable workspace create target before any model-action run.&quot;,
+      &quot;forbidden_files&quot;: [
+        &quot;.env&quot;,
+        &quot;.env.*&quot;,
+        &quot;*.pem&quot;,
+        &quot;*.key&quot;,
+        &quot;certificates/*&quot;
+      ],
+      &quot;forbidden_real_repo_mutation&quot;: true,
+      &quot;max_file_count&quot;: 8,
+      &quot;mode&quot;: &quot;product&quot;,
+      &quot;model_may_choose_paths&quot;: false,
+      &quot;model_requirements&quot;: [
+        &quot;explicit model-authored target path&quot;,
+        &quot;explicit model-authored file content&quot;,
+        &quot;supported Source Proxy action JSON or path-bound file block&quot;
+      ],
+      &quot;network_allowed&quot;: false,
+      &quot;protected_paths&quot;: [],
+      &quot;proxy_artifact_class_suggested&quot;: false,
+      &quot;proxy_exact_target_suggested&quot;: &quot;&quot;,
+      &quot;route_type&quot;: &quot;product&quot;,
+      &quot;target_source&quot;: &quot;none&quot;,
+      &quot;task_shape&quot;: &quot;clarification_required_real_repo_implementation&quot;,
+      &quot;task_shape_source&quot;: &quot;target_resolution&quot;,
+      &quot;user_prompt&quot;: &quot;make a simple drawing pad&quot;,
+      &quot;workspace_decision_source&quot;: &quot;target_resolution&quot;,
+      &quot;workspace_mode&quot;: &quot;disposable_workspace&quot;
+    }
+  ],
+  &quot;raw_model_transcript_count&quot;: 1,
+  &quot;byte_match&quot;: {},
+  &quot;backend_created_any_content&quot;: false,
+  &quot;real_app_files_touched&quot;: false
+}</pre></details>
+      <details><summary>Raw model transcript preview</summary><pre>```json
+{
+  &quot;action_type&quot;: &quot;WriteFile&quot;,
+  &quot;target&quot;: &quot;drawing_pad.html&quot;,
+  &quot;arguments&quot;: {
+    &quot;content&quot;: &quot;&lt;html&gt;&lt;head&gt;&lt;title&gt;Drawing Pad&lt;/title&gt;&lt;/head&gt;&lt;body&gt;&lt;canvas id=&#39;myCanvas&#39; width=&#39;500&#39; height=&#39;500&#39; style=&#39;border:1px solid #d3d3d3;&#39;&gt;&lt;/canvas&gt;&lt;script&gt;var canvas = document.getElementById(&#39;myCanvas&#39;);var ctx = canvas.getContext(&#39;2d&#39;);&lt;/script&gt;&lt;/body&gt;&lt;/html&gt;&quot;
+  },
+  &quot;reason&quot;: &quot;A simple HTML file to create a drawing pad.&quot;
+}
+```</pre></details>
+    </article>
+<h2>Old Corrected Results - Separate Baseline</h2>
+<article class="card old pass">
+      <h3>make a timer app</h3>
+      <div class="badges"><span class="badge pass">Old corrected PASS</span><span class="badge">Old raw FAIL</span><span class="badge">Source Proxy GO</span></div>
+      <iframe src="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/01-make-a-timer-app/workspace/index.html" loading="lazy"></iframe>
+      <dl><dt>Behavior test</dt><dd>start timer, wait, stop, verify time freezes</dd><dt>Observed</dt><dd>timer changed from `00:00` to `00:02` and stayed after Stop</dd><dt>Diagnostics</dt><dd><div class="links"><a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/01-make-a-timer-app/receipt.json">receipt</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/01-make-a-timer-app/score.json">score</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/01-make-a-timer-app/evidence-packet.json">evidence</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/01-make-a-timer-app/transcript.txt">transcript</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/01-make-a-timer-app/workspace.diff">diff</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/01-make-a-timer-app/workspace/index.html">preview: index.html</a></div></dd></dl>
+      <details><summary>Old anti-cheat / hand-holding diagnostics</summary><pre>{
+  &quot;task_shape&quot;: &quot;disposable_small_file_bundle&quot;,
+  &quot;artifact_class&quot;: &quot;static_ui_artifact&quot;,
+  &quot;allowed_extensions&quot;: [
+    &quot;.html&quot;,
+    &quot;.css&quot;,
+    &quot;.js&quot;
+  ],
+  &quot;exact_allowed_files_if_any&quot;: [],
+  &quot;source_proxy_score_status&quot;: &quot;GO&quot;,
+  &quot;parsed_action_count&quot;: 3,
+  &quot;model_context_packet_summary&quot;: [
+    {
+      &quot;allowed_extensions&quot;: [
+        &quot;.html&quot;,
+        &quot;.css&quot;,
+        &quot;.js&quot;
+      ],
+      &quot;allowed_files&quot;: [],
+      &quot;artifact_class&quot;: &quot;static_ui_artifact&quot;,
+      &quot;benchmark_eligible&quot;: false,
+      &quot;max_file_count&quot;: 3,
+      &quot;mode&quot;: &quot;product&quot;,
+      &quot;model_may_choose_paths&quot;: false,
+      &quot;model_requirements&quot;: [
+        &quot;explicit model-authored target path&quot;,
+        &quot;explicit model-authored file content&quot;,
+        &quot;supported Source Proxy action JSON or path-bound file block&quot;
+      ],
+      &quot;network_allowed&quot;: false,
+      &quot;route_type&quot;: &quot;product&quot;,
+      &quot;task_shape&quot;: &quot;disposable_small_file_bundle&quot;
+    }
+  ],
+  &quot;byte_match&quot;: {
+    &quot;index.html&quot;: true,
+    &quot;script.js&quot;: true,
+    &quot;styles.css&quot;: true
+  },
+  &quot;backend_created_any_content&quot;: false,
+  &quot;real_app_files_touched&quot;: false
+}</pre></details>
+      <details><summary>Old raw model transcript preview</summary><pre>{&quot;action_type&quot;:&quot;WriteFile&quot;,&quot;target&quot;:&quot;index.html&quot;,&quot;arguments&quot;:{&quot;content&quot;:&quot;&lt;!DOCTYPE html&gt;\n&lt;html lang=\&quot;en\&quot;&gt;\n&lt;head&gt;\n    &lt;meta charset=\&quot;UTF-8\&quot;&gt;\n    &lt;meta name=\&quot;viewport\&quot; content=\&quot;width=device-width, initial-scale=1.0\&quot;&gt;\n    &lt;title&gt;Timer App&lt;/title&gt;\n    &lt;link rel=\&quot;stylesheet\&quot; href=\&quot;styles.css\&quot;&gt;\n&lt;/head&gt;\n&lt;body&gt;\n    &lt;div class=\&quot;timer-container\&quot;&gt;\n        &lt;h1 id=\&quot;timer\&quot;&gt;00:00&lt;/h1&gt;\n        &lt;button id=\&quot;startBtn\&quot;&gt;Start&lt;/button&gt;\n        &lt;button id=\&quot;stopBtn\&quot;&gt;Stop&lt;/button&gt;\n    &lt;/div&gt;\n    &lt;script src=\&quot;script.js\&quot;&gt;&lt;/script&gt;\n&lt;/body&gt;\n&lt;/html&gt;&quot;},&quot;reason&quot;:&quot;HTML structure for the timer app.&quot;}
+
+{&quot;action_type&quot;:&quot;WriteFile&quot;,&quot;target&quot;:&quot;styles.css&quot;,&quot;arguments&quot;:{&quot;content&quot;:&quot;body {\n    display: flex;\n    justify-content: center;\n    align-items: center;\n    height: 100vh;\n    background-color: #f0f0f0;\n}\n\n.timer-container {\n    text-align: center;\n}\n\n#timer {\n    font-size: 48px;\n    margin-bottom: 20px;\n}\n\nbutton {\n    padding: 10px 20px;\n    font-size: 16px;\n    cursor: pointer;\n}&quot;},&quot;reason&quot;:&quot;CSS styles for the timer app.&quot;}
+
+{&quot;action_type&quot;:&quot;WriteFile&quot;,&quot;target&quot;:&quot;script.js&quot;,&quot;arguments&quot;:{&quot;content&quot;:&quot;let timer = document.getElementById(&#39;timer&#39;);\nlet startBtn = document.getElementById(&#39;startBtn&#39;);\nlet stopBtn = document.getElementById(&#39;stopBtn&#39;);\n\nlet interval;\nlet time = 0;\n\nfunction formatTime(seconds) {\n    const minutes = Math.floor(seconds / 60);\n    const remainingSeconds = seconds % 60;\n    return `${String(minutes).padStart(2, &#39;0&#39;)}:${String(remainingSeconds).padStart(2, &#39;0&#39;)}`;\n}\n\nfunction startTimer() {\n    interval = setInterval(() =&gt; {\n        time++;\n        timer.textContent = formatTime(time);\n    }, 1000);\n}\n\nfunction stopTimer() {\n    clearInterval(interval);\n}\n\nstartBtn.addEventListener(&#39;click&#39;, startTimer);\nstopBtn.addEventListener(&#39;click&#39;, stopTimer);&quot;},&quot;reason&quot;:&quot;JavaScript logic for the timer app.&quot;}</pre></details>
+    </article>
+<article class="card old fail">
+      <h3>make a calculator app</h3>
+      <div class="badges"><span class="badge fail">Old corrected FAIL</span><span class="badge">Old raw PASS</span><span class="badge">Source Proxy GO</span></div>
+      <iframe src="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/02-make-a-calculator-app/workspace/index.html" loading="lazy"></iframe>
+      <dl><dt>Behavior test</dt><dd>click/type `2 + 3 =`</dd><dt>Observed</dt><dd>display returned `0` instead of `5`</dd><dt>Diagnostics</dt><dd><div class="links"><a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/02-make-a-calculator-app/receipt.json">receipt</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/02-make-a-calculator-app/score.json">score</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/02-make-a-calculator-app/evidence-packet.json">evidence</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/02-make-a-calculator-app/transcript.txt">transcript</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/02-make-a-calculator-app/workspace.diff">diff</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/02-make-a-calculator-app/workspace/index.html">preview: index.html</a></div></dd></dl>
+      <details><summary>Old anti-cheat / hand-holding diagnostics</summary><pre>{
+  &quot;task_shape&quot;: &quot;disposable_small_file_bundle&quot;,
+  &quot;artifact_class&quot;: &quot;static_ui_artifact&quot;,
+  &quot;allowed_extensions&quot;: [
+    &quot;.html&quot;,
+    &quot;.css&quot;,
+    &quot;.js&quot;
+  ],
+  &quot;exact_allowed_files_if_any&quot;: [],
+  &quot;source_proxy_score_status&quot;: &quot;GO&quot;,
+  &quot;parsed_action_count&quot;: 3,
+  &quot;model_context_packet_summary&quot;: [
+    {
+      &quot;allowed_extensions&quot;: [
+        &quot;.html&quot;,
+        &quot;.css&quot;,
+        &quot;.js&quot;
+      ],
+      &quot;allowed_files&quot;: [],
+      &quot;artifact_class&quot;: &quot;static_ui_artifact&quot;,
+      &quot;benchmark_eligible&quot;: false,
+      &quot;max_file_count&quot;: 3,
+      &quot;mode&quot;: &quot;product&quot;,
+      &quot;model_may_choose_paths&quot;: false,
+      &quot;model_requirements&quot;: [
+        &quot;explicit model-authored target path&quot;,
+        &quot;explicit model-authored file content&quot;,
+        &quot;supported Source Proxy action JSON or path-bound file block&quot;
+      ],
+      &quot;network_allowed&quot;: false,
+      &quot;route_type&quot;: &quot;product&quot;,
+      &quot;task_shape&quot;: &quot;disposable_small_file_bundle&quot;
+    }
+  ],
+  &quot;byte_match&quot;: {
+    &quot;index.html&quot;: true,
+    &quot;script.js&quot;: true,
+    &quot;styles.css&quot;: true
+  },
+  &quot;backend_created_any_content&quot;: false,
+  &quot;real_app_files_touched&quot;: false
+}</pre></details>
+      <details><summary>Old raw model transcript preview</summary><pre>```json
+[
+    {
+        &quot;action_type&quot;: &quot;WriteFile&quot;,
+        &quot;target&quot;: &quot;index.html&quot;,
+        &quot;arguments&quot;: {
+            &quot;content&quot;: &quot;&lt;!DOCTYPE html&gt;\n&lt;html lang=\&quot;en\&quot;&gt;\n&lt;head&gt;\n    &lt;meta charset=\&quot;UTF-8\&quot;&gt;\n    &lt;meta name=\&quot;viewport\&quot; content=\&quot;width=device-width, initial-scale=1.0\&quot;&gt;\n    &lt;title&gt;Calculator&lt;/title&gt;\n    &lt;link rel=\&quot;stylesheet\&quot; href=\&quot;styles.css\&quot;&gt;\n&lt;/head&gt;\n&lt;body&gt;\n    &lt;div class=\&quot;calculator\&quot;&gt;\n        &lt;input type=\&quot;text\&quot; id=\&quot;display\&quot; disabled&gt;\n        &lt;button onclick=\&quot;append(&#39;7&#39;)\&quot;&gt;7&lt;/button&gt;\n        &lt;button onclick=\&quot;append(&#39;8&#39;)\&quot;&gt;8&lt;/button&gt;\n        &lt;button onclick=\&quot;append(&#39;9&#39;)\&quot;&gt;9&lt;/button&gt;\n        &lt;button onclick=\&quot;calculate(&#39;/&#39;)\&quot;&gt;/&lt;/button&gt;\n        &lt;button onclick=\&quot;append(&#39;4&#39;)\&quot;&gt;4&lt;/button&gt;\n        &lt;button onclick=\&quot;append(&#39;5&#39;)\&quot;&gt;5&lt;/button&gt;\n        &lt;button onclick=\&quot;append(&#39;6&#39;)\&quot;&gt;6&lt;/button&gt;\n        &lt;button onclick=\&quot;calculate(&#39;*&#39;)\&quot;&gt;*&lt;/button&gt;\n        &lt;button onclick=\&quot;append(&#39;1&#39;)\&quot;&gt;1&lt;/button&gt;\n        &lt;button onclick=\&quot;append(&#39;2&#39;)\&quot;&gt;2&lt;/button&gt;\n        &lt;button onclick=\&quot;append(&#39;3&#39;)\&quot;&gt;3&lt;/button&gt;\n        &lt;button onclick=\&quot;calculate(&#39;-&#39;)\&quot;&gt;-&lt;/button&gt;\n        &lt;button onclick=\&quot;append(&#39;0&#39;)\&quot;&gt;0&lt;/button&gt;\n        &lt;button onclick=\&quot;append(&#39;.&#39;)\&quot;&gt;.&lt;/button&gt;\n        &lt;button onclick=\&quot;calculate(&#39;+&#39;)\&quot;&gt;+&lt;/button&gt;\n        &lt;button onclick=\&quot;clearDisplay()\&quot;&gt;C&lt;/button&gt;\n        &lt;button onclick=\&quot;calculate(&#39;=&#39;)\&quot;&gt;=&lt;/button&gt;\n    &lt;/div&gt;\n    &lt;script src=\&quot;script.js\&quot;&gt;&lt;/script&gt;\n&lt;/body&gt;\n&lt;/html&gt;&quot;
+        },
+        &quot;reason&quot;: &quot;HTML structure for the calculator app.&quot;
+    },
+    {
+        &quot;action_type&quot;: &quot;WriteFile&quot;,
+        &quot;target&quot;: &quot;styles.css&quot;,
+        &quot;arguments&quot;: {
+            &quot;content&quot;: &quot;.calculator {\n    display: flex;\n    flex-direction: column;\n    align-items: center;\n    margin-top: 50px;\n}\n\n#display {\n    width: 200px;\n    height: 40px;\n    font-size: 24px;\n    text-align: right;\n    padding: 10px;\n    border: 1px solid #ccc;\n}\n\nbutton {\n    width: 50px;\n    height: 50px;\n    margin: 5px;\n    font-size: 24px;\n    cursor: pointer;\n}\n&quot;
+        },
+        &quot;reason&quot;: &quot;CSS styles for the calculator app.&quot;
+    },
+    {
+        &quot;action_type&quot;: &quot;WriteFile&quot;,
+        &quot;target&quot;: &quot;script.js&quot;,
+        &quot;arguments&quot;: {
+            &quot;content&quot;: &quot;let display = document.getElementById(&#39;display&#39;);\nlet currentInput = &#39;&#39;;\nlet operator = null;\nlet firstOperand = null;\n\nfunction append(number) {\n    currentInput += number;\n    display.value = currentInput;\n}\n\nfunction calculate(op) {\n    if (firstOperand === null) {\n        firstOperand = parseFloat(currentInput);\n    } else {\n        let result = 0;\n        switch (operator) {\n            case &#39;+&#39;:\n                result = firstOperand + parseFloat(currentInput);\n                break;\n            case &#39;-&#39;:\n                result = firstOperand - parseFloat(currentInput);\n                break;\n            case &#39;*&#39;:\n                result = firstOperand * parseFloat(currentInput);\n                break;\n            case &#39;/&#39;:\n                re</pre></details>
+    </article>
+<article class="card old fail">
+      <h3>make dark theme switcher page</h3>
+      <div class="badges"><span class="badge fail">Old corrected FAIL</span><span class="badge">Old raw PASS</span><span class="badge">Source Proxy GO</span></div>
+      <iframe src="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/03-make-dark-theme-switcher-page/workspace/dark-theme-switcher.html" loading="lazy"></iframe>
+      <dl><dt>Behavior test</dt><dd>capture computed body colors, click toggle, capture again</dd><dt>Observed</dt><dd>class changed but background/text colors stayed the same</dd><dt>Diagnostics</dt><dd><div class="links"><a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/03-make-dark-theme-switcher-page/receipt.json">receipt</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/03-make-dark-theme-switcher-page/score.json">score</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/03-make-dark-theme-switcher-page/evidence-packet.json">evidence</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/03-make-dark-theme-switcher-page/transcript.txt">transcript</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/03-make-dark-theme-switcher-page/workspace.diff">diff</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/03-make-dark-theme-switcher-page/workspace/dark-theme-switcher.html">preview: dark-theme-switcher.html</a></div></dd></dl>
+      <details><summary>Old anti-cheat / hand-holding diagnostics</summary><pre>{
+  &quot;task_shape&quot;: &quot;disposable_small_file_bundle&quot;,
+  &quot;artifact_class&quot;: &quot;static_ui_artifact&quot;,
+  &quot;allowed_extensions&quot;: [
+    &quot;.html&quot;,
+    &quot;.css&quot;,
+    &quot;.js&quot;
+  ],
+  &quot;exact_allowed_files_if_any&quot;: [],
+  &quot;source_proxy_score_status&quot;: &quot;GO&quot;,
+  &quot;parsed_action_count&quot;: 3,
+  &quot;model_context_packet_summary&quot;: [
+    {
+      &quot;allowed_extensions&quot;: [
+        &quot;.html&quot;,
+        &quot;.css&quot;,
+        &quot;.js&quot;
+      ],
+      &quot;allowed_files&quot;: [],
+      &quot;artifact_class&quot;: &quot;static_ui_artifact&quot;,
+      &quot;benchmark_eligible&quot;: false,
+      &quot;max_file_count&quot;: 3,
+      &quot;mode&quot;: &quot;product&quot;,
+      &quot;model_may_choose_paths&quot;: false,
+      &quot;model_requirements&quot;: [
+        &quot;explicit model-authored target path&quot;,
+        &quot;explicit model-authored file content&quot;,
+        &quot;supported Source Proxy action JSON or path-bound file block&quot;
+      ],
+      &quot;network_allowed&quot;: false,
+      &quot;route_type&quot;: &quot;product&quot;,
+      &quot;task_shape&quot;: &quot;disposable_small_file_bundle&quot;
+    }
+  ],
+  &quot;byte_match&quot;: {
+    &quot;dark-theme-switcher.css&quot;: true,
+    &quot;dark-theme-switcher.html&quot;: true,
+    &quot;dark-theme-switcher.js&quot;: true
+  },
+  &quot;backend_created_any_content&quot;: false,
+  &quot;real_app_files_touched&quot;: false
+}</pre></details>
+      <details><summary>Old raw model transcript preview</summary><pre>```json
+[
+    {
+        &quot;action_type&quot;: &quot;WriteFile&quot;,
+        &quot;target&quot;: &quot;dark-theme-switcher.html&quot;,
+        &quot;arguments&quot;: {
+            &quot;content&quot;: &quot;&lt;!DOCTYPE html&gt;\n&lt;html lang=\&quot;en\&quot;&gt;\n&lt;head&gt;\n    &lt;meta charset=\&quot;UTF-8\&quot;&gt;\n    &lt;meta name=\&quot;viewport\&quot; content=\&quot;width=device-width, initial-scale=1.0\&quot;&gt;\n    &lt;title&gt;Dark Theme Switcher&lt;/title&gt;\n    &lt;link rel=\&quot;stylesheet\&quot; href=\&quot;dark-theme-switcher.css\&quot;&gt;\n&lt;/head&gt;\n&lt;body&gt;\n    &lt;button id=\&quot;theme-toggle\&quot;&gt;Toggle Dark Mode&lt;/button&gt;\n    &lt;script src=\&quot;dark-theme-switcher.js\&quot;&gt;&lt;/script&gt;\n&lt;/body&gt;\n&lt;/html&gt;&quot;
+        },
+        &quot;reason&quot;: &quot;HTML file for the dark theme switcher page.&quot;
+    },
+    {
+        &quot;action_type&quot;: &quot;WriteFile&quot;,
+        &quot;target&quot;: &quot;dark-theme-switcher.css&quot;,
+        &quot;arguments&quot;: {
+            &quot;content&quot;: &quot;body {\n    background-color: #333;\n    color: #fff;\n}\nbutton {\n    background-color: #555;\n    border: none;\n    padding: 10px 20px;\n    cursor: pointer;\n}\nbutton:hover {\n    background-color: #777;\n}&quot;
+        },
+        &quot;reason&quot;: &quot;CSS file for styling the dark theme switcher page.&quot;
+    },
+    {
+        &quot;action_type&quot;: &quot;WriteFile&quot;,
+        &quot;target&quot;: &quot;dark-theme-switcher.js&quot;,
+        &quot;arguments&quot;: {
+            &quot;content&quot;: &quot;document.getElementById(&#39;theme-toggle&#39;).addEventListener(&#39;click&#39;, function() {\n    document.body.classList.toggle(&#39;dark-mode&#39;);\n});&quot;
+        },
+        &quot;reason&quot;: &quot;JavaScript file for handling the theme toggle functionality.&quot;
+    }
+]
+```</pre></details>
+    </article>
+<article class="card old pass">
+      <h3>make a todo list app</h3>
+      <div class="badges"><span class="badge pass">Old corrected PASS</span><span class="badge">Old raw PASS</span><span class="badge">Source Proxy GO</span></div>
+      <iframe src="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/04-make-a-todo-list-app/workspace/index.html" loading="lazy"></iframe>
+      <dl><dt>Behavior test</dt><dd>Old corrected behavior test not recorded for this prompt.</dd><dt>Observed</dt><dd>See old evidence packet and diagnostic summary.</dd><dt>Diagnostics</dt><dd><div class="links"><a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/04-make-a-todo-list-app/receipt.json">receipt</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/04-make-a-todo-list-app/score.json">score</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/04-make-a-todo-list-app/evidence-packet.json">evidence</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/04-make-a-todo-list-app/transcript.txt">transcript</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/04-make-a-todo-list-app/workspace.diff">diff</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/04-make-a-todo-list-app/workspace/index.html">preview: index.html</a></div></dd></dl>
+      <details><summary>Old anti-cheat / hand-holding diagnostics</summary><pre>{
+  &quot;task_shape&quot;: &quot;disposable_small_file_bundle&quot;,
+  &quot;artifact_class&quot;: &quot;static_ui_artifact&quot;,
+  &quot;allowed_extensions&quot;: [
+    &quot;.html&quot;,
+    &quot;.css&quot;,
+    &quot;.js&quot;
+  ],
+  &quot;exact_allowed_files_if_any&quot;: [],
+  &quot;source_proxy_score_status&quot;: &quot;GO&quot;,
+  &quot;parsed_action_count&quot;: 3,
+  &quot;model_context_packet_summary&quot;: [
+    {
+      &quot;allowed_extensions&quot;: [
+        &quot;.html&quot;,
+        &quot;.css&quot;,
+        &quot;.js&quot;
+      ],
+      &quot;allowed_files&quot;: [],
+      &quot;artifact_class&quot;: &quot;static_ui_artifact&quot;,
+      &quot;benchmark_eligible&quot;: false,
+      &quot;max_file_count&quot;: 3,
+      &quot;mode&quot;: &quot;product&quot;,
+      &quot;model_may_choose_paths&quot;: false,
+      &quot;model_requirements&quot;: [
+        &quot;explicit model-authored target path&quot;,
+        &quot;explicit model-authored file content&quot;,
+        &quot;supported Source Proxy action JSON or path-bound file block&quot;
+      ],
+      &quot;network_allowed&quot;: false,
+      &quot;route_type&quot;: &quot;product&quot;,
+      &quot;task_shape&quot;: &quot;disposable_small_file_bundle&quot;
+    }
+  ],
+  &quot;byte_match&quot;: {
+    &quot;index.html&quot;: true,
+    &quot;script.js&quot;: true,
+    &quot;styles.css&quot;: true
+  },
+  &quot;backend_created_any_content&quot;: false,
+  &quot;real_app_files_touched&quot;: false
+}</pre></details>
+      <details><summary>Old raw model transcript preview</summary><pre>```json
+[
+    {
+        &quot;action_type&quot;: &quot;WriteFile&quot;,
+        &quot;target&quot;: &quot;index.html&quot;,
+        &quot;arguments&quot;: {
+            &quot;content&quot;: &quot;&lt;!DOCTYPE html&gt;\n&lt;html lang=\&quot;en\&quot;&gt;\n&lt;head&gt;\n    &lt;meta charset=\&quot;UTF-8\&quot;&gt;\n    &lt;meta name=\&quot;viewport\&quot; content=\&quot;width=device-width, initial-scale=1.0\&quot;&gt;\n    &lt;title&gt;Todo List&lt;/title&gt;\n    &lt;link rel=\&quot;stylesheet\&quot; href=\&quot;styles.css\&quot;&gt;\n&lt;/head&gt;\n&lt;body&gt;\n    &lt;h1&gt;Todo List&lt;/h1&gt;\n    &lt;input type=\&quot;text\&quot; id=\&quot;new-task\&quot; placeholder=\&quot;Add a new task...\&quot;&gt;\n    &lt;button onclick=\&quot;addTask()\&quot;&gt;Add Task&lt;/button&gt;\n    &lt;ul id=\&quot;task-list\&quot;&gt;&lt;/ul&gt;\n    &lt;script src=\&quot;script.js\&quot;&gt;&lt;/script&gt;\n&lt;/body&gt;\n&lt;/html&gt;&quot;
+        },
+        &quot;reason&quot;: &quot;HTML structure for the todo list app.&quot;
+    },
+    {
+        &quot;action_type&quot;: &quot;WriteFile&quot;,
+        &quot;target&quot;: &quot;styles.css&quot;,
+        &quot;arguments&quot;: {
+            &quot;content&quot;: &quot;body {\n    font-family: Arial, sans-serif;\n}\n#task-list {\n    list-style-type: none;\n    padding: 0;\n}\nli {\n    background-color: #f4f4f4;\n    margin-bottom: 5px;\n    padding: 10px;\n    border-radius: 5px;\n}\n&quot;
+        },
+        &quot;reason&quot;: &quot;Styling for the todo list app.&quot;
+    },
+    {
+        &quot;action_type&quot;: &quot;WriteFile&quot;,
+        &quot;target&quot;: &quot;script.js&quot;,
+        &quot;arguments&quot;: {
+            &quot;content&quot;: &quot;function addTask() {\n    const taskInput = document.getElementById(&#39;new-task&#39;);\n    const taskText = taskInput.value.trim();\n    if (taskText !== &#39;&#39;) {\n        const li = document.createElement(&#39;li&#39;);\n        li.textContent = taskText;\n        document.getElementById(&#39;task-list&#39;).appendChild(li);\n        taskInput.value = &#39;&#39;;\n    }\n}\n&quot;
+        },
+        &quot;reason&quot;: &quot;JavaScript functionality to add tasks to the list.&quot;
+    }
+]
+```</pre></details>
+    </article>
+<article class="card old pass">
+      <h3>make a weather card demo</h3>
+      <div class="badges"><span class="badge pass">Old corrected PASS</span><span class="badge">Old raw PASS</span><span class="badge">Source Proxy GO</span></div>
+      <iframe src="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/05-make-a-weather-card-demo/workspace/weather-card.html" loading="lazy"></iframe>
+      <dl><dt>Behavior test</dt><dd>Old corrected behavior test not recorded for this prompt.</dd><dt>Observed</dt><dd>See old evidence packet and diagnostic summary.</dd><dt>Diagnostics</dt><dd><div class="links"><a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/05-make-a-weather-card-demo/receipt.json">receipt</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/05-make-a-weather-card-demo/score.json">score</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/05-make-a-weather-card-demo/evidence-packet.json">evidence</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/05-make-a-weather-card-demo/transcript.txt">transcript</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/05-make-a-weather-card-demo/workspace.diff">diff</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/05-make-a-weather-card-demo/workspace/weather-card.html">preview: weather-card.html</a></div></dd></dl>
+      <details><summary>Old anti-cheat / hand-holding diagnostics</summary><pre>{
+  &quot;task_shape&quot;: &quot;disposable_small_file_bundle&quot;,
+  &quot;artifact_class&quot;: &quot;static_ui_artifact&quot;,
+  &quot;allowed_extensions&quot;: [
+    &quot;.html&quot;,
+    &quot;.css&quot;,
+    &quot;.js&quot;
+  ],
+  &quot;exact_allowed_files_if_any&quot;: [],
+  &quot;source_proxy_score_status&quot;: &quot;GO&quot;,
+  &quot;parsed_action_count&quot;: 3,
+  &quot;model_context_packet_summary&quot;: [
+    {
+      &quot;allowed_extensions&quot;: [
+        &quot;.html&quot;,
+        &quot;.css&quot;,
+        &quot;.js&quot;
+      ],
+      &quot;allowed_files&quot;: [],
+      &quot;artifact_class&quot;: &quot;static_ui_artifact&quot;,
+      &quot;benchmark_eligible&quot;: false,
+      &quot;max_file_count&quot;: 3,
+      &quot;mode&quot;: &quot;product&quot;,
+      &quot;model_may_choose_paths&quot;: false,
+      &quot;model_requirements&quot;: [
+        &quot;explicit model-authored target path&quot;,
+        &quot;explicit model-authored file content&quot;,
+        &quot;supported Source Proxy action JSON or path-bound file block&quot;
+      ],
+      &quot;network_allowed&quot;: false,
+      &quot;route_type&quot;: &quot;product&quot;,
+      &quot;task_shape&quot;: &quot;disposable_small_file_bundle&quot;
+    }
+  ],
+  &quot;byte_match&quot;: {
+    &quot;weather-card.css&quot;: true,
+    &quot;weather-card.html&quot;: true,
+    &quot;weather-card.js&quot;: true
+  },
+  &quot;backend_created_any_content&quot;: false,
+  &quot;real_app_files_touched&quot;: false
+}</pre></details>
+      <details><summary>Old raw model transcript preview</summary><pre>{&quot;action_type&quot;:&quot;WriteFile&quot;,&quot;target&quot;:&quot;weather-card.html&quot;,&quot;arguments&quot;:{&quot;content&quot;:&quot;&lt;!DOCTYPE html&gt;\n&lt;html lang=\&quot;en\&quot;&gt;\n&lt;head&gt;\n    &lt;meta charset=\&quot;UTF-8\&quot;&gt;\n    &lt;meta name=\&quot;viewport\&quot; content=\&quot;width=device-width, initial-scale=1.0\&quot;&gt;\n    &lt;title&gt;Weather Card&lt;/title&gt;\n    &lt;link rel=\&quot;stylesheet\&quot; href=\&quot;weather-card.css\&quot;&gt;\n&lt;/head&gt;\n&lt;body&gt;\n    &lt;div class=\&quot;weather-card\&quot;&gt;\n        &lt;h2 id=\&quot;city\&quot;&gt;City&lt;/h2&gt;\n        &lt;p id=\&quot;temperature\&quot;&gt;Temperature: 0°C&lt;/p&gt;\n        &lt;p id=\&quot;description\&quot;&gt;Description: Clear sky&lt;/p&gt;\n    &lt;/div&gt;\n    &lt;script src=\&quot;weather-card.js\&quot;&gt;&lt;/script&gt;\n&lt;/body&gt;\n&lt;/html&gt;&quot;},&quot;reason&quot;:&quot;HTML structure for the weather card.&quot;}
+
+{&quot;action_type&quot;:&quot;WriteFile&quot;,&quot;target&quot;:&quot;weather-card.css&quot;,&quot;arguments&quot;:{&quot;content&quot;:&quot;.weather-card {\n    width: 300px;\n    padding: 20px;\n    border: 1px solid #ccc;\n    border-radius: 5px;\n    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);\n}\n\n.weather-card h2 {\n    margin-top: 0;\n}\n\n.weather-card p {\n    margin: 5px 0;\n}&quot;},&quot;reason&quot;:&quot;CSS styling for the weather card.&quot;}
+
+{&quot;action_type&quot;:&quot;WriteFile&quot;,&quot;target&quot;:&quot;weather-card.js&quot;,&quot;arguments&quot;:{&quot;content&quot;:&quot;document.addEventListener(&#39;DOMContentLoaded&#39;, function() {\n    const cityElement = document.getElementById(&#39;city&#39;);\n    const temperatureElement = document.getElementById(&#39;temperature&#39;);\n    const descriptionElement = document.getElementById(&#39;description&#39;);\n\n    // Example data\n    cityElement.textContent = &#39;New York&#39;;\n    temperatureElement.textContent = &#39;15°C&#39;;\n    descriptionElement.textContent = &#39;Partly cloudy&#39;;\n});&quot;},&quot;reason&quot;:&quot;JavaScript to populate the weather card with example data.&quot;}</pre></details>
+    </article>
+<article class="card old fail">
+      <h3>make a music player mockup</h3>
+      <div class="badges"><span class="badge fail">Old corrected FAIL</span><span class="badge">Old raw not specified</span><span class="badge">Source Proxy EXPECTED-BLOCKED</span></div>
+      <div class="no-preview">No openable HTML preview produced.</div>
+      <dl><dt>Behavior test</dt><dd>verify preview files exist before behavior evaluation</dd><dt>Observed</dt><dd>no preview files</dd><dt>Diagnostics</dt><dd><div class="links"><a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/06-make-a-music-player-mockup/receipt.json">receipt</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/06-make-a-music-player-mockup/score.json">score</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/06-make-a-music-player-mockup/evidence-packet.json">evidence</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/06-make-a-music-player-mockup/transcript.txt">transcript</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/06-make-a-music-player-mockup/workspace.diff">diff</a> </div></dd></dl>
+      <details><summary>Old anti-cheat / hand-holding diagnostics</summary><pre>{
+  &quot;task_shape&quot;: &quot;clarification_required_real_repo_implementation&quot;,
+  &quot;artifact_class&quot;: &quot;&quot;,
+  &quot;allowed_extensions&quot;: [],
+  &quot;exact_allowed_files_if_any&quot;: [],
+  &quot;source_proxy_score_status&quot;: &quot;EXPECTED-BLOCKED&quot;,
+  &quot;parsed_action_count&quot;: 1,
+  &quot;model_context_packet_summary&quot;: [
+    {
+      &quot;allowed_extensions&quot;: [],
+      &quot;allowed_files&quot;: [],
+      &quot;artifact_class&quot;: &quot;&quot;,
+      &quot;benchmark_eligible&quot;: false,
+      &quot;max_file_count&quot;: 8,
+      &quot;mode&quot;: &quot;product&quot;,
+      &quot;model_may_choose_paths&quot;: false,
+      &quot;model_requirements&quot;: [
+        &quot;explicit model-authored target path&quot;,
+        &quot;explicit model-authored file content&quot;,
+        &quot;supported Source Proxy action JSON or path-bound file block&quot;
+      ],
+      &quot;network_allowed&quot;: false,
+      &quot;route_type&quot;: &quot;product&quot;,
+      &quot;task_shape&quot;: &quot;clarification_required_real_repo_implementation&quot;
+    }
+  ],
+  &quot;byte_match&quot;: {
+    &quot;src/components/MusicPlayer.js&quot;: false
+  },
+  &quot;backend_created_any_content&quot;: false,
+  &quot;real_app_files_touched&quot;: false
+}</pre></details>
+      <details><summary>Old raw model transcript preview</summary><pre>```json
+{
+  &quot;action_type&quot;: &quot;WriteFile&quot;,
+  &quot;target&quot;: &quot;src/components/MusicPlayer.js&quot;,
+  &quot;arguments&quot;: {
+    &quot;content&quot;: &quot;// MusicPlayer.js\nimport React, { useState } from &#39;react&#39;;\n\nconst MusicPlayer = () =&gt; {\n  const [isPlaying, setIsPlaying] = useState(false);\n  const [currentTrack, setCurrentTrack] = useState(&#39;Song Title&#39;);\n\n  const togglePlayPause = () =&gt; {\n    setIsPlaying(!isPlaying);\n  };\n\n  return (\n    &lt;div className=&#39;music-player&#39;&gt;\n      &lt;h3&gt;{currentTrack}&lt;/h3&gt;\n      &lt;button onClick={togglePlayPause}&gt;{isPlaying ? &#39;Pause&#39; : &#39;Play&#39;}&lt;/button&gt;\n    &lt;/div&gt;\n  );\n};\n\nexport default MusicPlayer;&quot;
+  },
+  &quot;reason&quot;: &quot;A basic music player component to be used in the mockup.&quot;
+}
+```</pre></details>
+    </article>
+<article class="card old fail">
+      <h3>make a habit tracker</h3>
+      <div class="badges"><span class="badge fail">Old corrected FAIL</span><span class="badge">Old raw PASS</span><span class="badge">Source Proxy GO</span></div>
+      <iframe src="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/07-make-a-habit-tracker/workspace/habit_tracker.html" loading="lazy"></iframe>
+      <dl><dt>Behavior test</dt><dd>inspect for input/buttons/state-changing controls</dd><dt>Observed</dt><dd>static hard-coded habits, no controls</dd><dt>Diagnostics</dt><dd><div class="links"><a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/07-make-a-habit-tracker/receipt.json">receipt</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/07-make-a-habit-tracker/score.json">score</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/07-make-a-habit-tracker/evidence-packet.json">evidence</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/07-make-a-habit-tracker/transcript.txt">transcript</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/07-make-a-habit-tracker/workspace.diff">diff</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/07-make-a-habit-tracker/workspace/habit_tracker.html">preview: habit_tracker.html</a></div></dd></dl>
+      <details><summary>Old anti-cheat / hand-holding diagnostics</summary><pre>{
+  &quot;task_shape&quot;: &quot;disposable_small_file_bundle&quot;,
+  &quot;artifact_class&quot;: &quot;static_ui_artifact&quot;,
+  &quot;allowed_extensions&quot;: [
+    &quot;.html&quot;,
+    &quot;.css&quot;,
+    &quot;.js&quot;
+  ],
+  &quot;exact_allowed_files_if_any&quot;: [],
+  &quot;source_proxy_score_status&quot;: &quot;GO&quot;,
+  &quot;parsed_action_count&quot;: 3,
+  &quot;model_context_packet_summary&quot;: [
+    {
+      &quot;allowed_extensions&quot;: [
+        &quot;.html&quot;,
+        &quot;.css&quot;,
+        &quot;.js&quot;
+      ],
+      &quot;allowed_files&quot;: [],
+      &quot;artifact_class&quot;: &quot;static_ui_artifact&quot;,
+      &quot;benchmark_eligible&quot;: false,
+      &quot;max_file_count&quot;: 3,
+      &quot;mode&quot;: &quot;product&quot;,
+      &quot;model_may_choose_paths&quot;: false,
+      &quot;model_requirements&quot;: [
+        &quot;explicit model-authored target path&quot;,
+        &quot;explicit model-authored file content&quot;,
+        &quot;supported Source Proxy action JSON or path-bound file block&quot;
+      ],
+      &quot;network_allowed&quot;: false,
+      &quot;route_type&quot;: &quot;product&quot;,
+      &quot;task_shape&quot;: &quot;disposable_small_file_bundle&quot;
+    }
+  ],
+  &quot;byte_match&quot;: {
+    &quot;habit_tracker.css&quot;: true,
+    &quot;habit_tracker.html&quot;: true,
+    &quot;habit_tracker.js&quot;: true
+  },
+  &quot;backend_created_any_content&quot;: false,
+  &quot;real_app_files_touched&quot;: false
+}</pre></details>
+      <details><summary>Old raw model transcript preview</summary><pre>{&quot;action_type&quot;:&quot;WriteFile&quot;,&quot;target&quot;:&quot;habit_tracker.html&quot;,&quot;arguments&quot;:{&quot;content&quot;:&quot;&lt;!DOCTYPE html&gt;\n&lt;html lang=\&quot;en\&quot;&gt;\n&lt;head&gt;\n    &lt;meta charset=\&quot;UTF-8\&quot;&gt;\n    &lt;meta name=\&quot;viewport\&quot; content=\&quot;width=device-width, initial-scale=1.0\&quot;&gt;\n    &lt;title&gt;Habit Tracker&lt;/title&gt;\n    &lt;link rel=\&quot;stylesheet\&quot; href=\&quot;habit_tracker.css\&quot;&gt;\n&lt;/head&gt;\n&lt;body&gt;\n    &lt;h1&gt;Habit Tracker&lt;/h1&gt;\n    &lt;div id=\&quot;habits\&quot;&gt;&lt;/div&gt;\n    &lt;script src=\&quot;habit_tracker.js\&quot;&gt;&lt;/script&gt;\n&lt;/body&gt;\n&lt;/html&gt;&quot;},&quot;reason&quot;:&quot;HTML structure for the habit tracker.&quot;}
+
+{&quot;action_type&quot;:&quot;WriteFile&quot;,&quot;target&quot;:&quot;habit_tracker.css&quot;,&quot;arguments&quot;:{&quot;content&quot;:&quot;body {\n    font-family: Arial, sans-serif;\n}\n\nh1 {\n    text-align: center;\n}\n\ndiv#habits {\n    display: flex;\n    justify-content: center;\n    align-items: center;\n    height: 300px;\n}\n&quot;},&quot;reason&quot;:&quot;CSS styling for the habit tracker.&quot;}
+
+{&quot;action_type&quot;:&quot;WriteFile&quot;,&quot;target&quot;:&quot;habit_tracker.js&quot;,&quot;arguments&quot;:{&quot;content&quot;:&quot;document.addEventListener(&#39;DOMContentLoaded&#39;, function() {\n    const habitsContainer = document.getElementById(&#39;habits&#39;);\n\n    // Example habits\n    const habits = [\n        { name: &#39;Drink Water&#39;, completed: false },\n        { name: &#39;Read a Book&#39;, completed: true }\n    ];\n\n    habits.forEach(habit =&gt; {\n        const habitElement = document.createElement(&#39;div&#39;);\n        habitElement.className = &#39;habit&#39;;\n        habitElement.textContent = habit.name;\n\n        if (habit.completed) {\n            habitElement.classList.add(&#39;completed&#39;);\n        }\n\n        habitsContainer.appendChild(habitElement);\n    });\n});&quot;},&quot;reason&quot;:&quot;JavaScript logic for the habit tracker.&quot;}</pre></details>
+    </article>
+<article class="card old fail">
+      <h3>make a notes app</h3>
+      <div class="badges"><span class="badge fail">Old corrected FAIL</span><span class="badge">Old raw not specified</span><span class="badge">Source Proxy GO</span></div>
+      <div class="no-preview">No openable HTML preview produced.</div>
+      <dl><dt>Behavior test</dt><dd>verify generated artifact is an interactive app, not markdown-only output</dd><dt>Observed</dt><dd>markdown only, not app</dd><dt>Diagnostics</dt><dd><div class="links"><a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/08-make-a-notes-app/receipt.json">receipt</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/08-make-a-notes-app/score.json">score</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/08-make-a-notes-app/evidence-packet.json">evidence</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/08-make-a-notes-app/transcript.txt">transcript</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/08-make-a-notes-app/workspace.diff">diff</a> </div></dd></dl>
+      <details><summary>Old anti-cheat / hand-holding diagnostics</summary><pre>{
+  &quot;task_shape&quot;: &quot;disposable_single_file_artifact&quot;,
+  &quot;artifact_class&quot;: &quot;markdown_document&quot;,
+  &quot;allowed_extensions&quot;: [
+    &quot;.md&quot;
+  ],
+  &quot;exact_allowed_files_if_any&quot;: [],
+  &quot;source_proxy_score_status&quot;: &quot;GO&quot;,
+  &quot;parsed_action_count&quot;: 1,
+  &quot;model_context_packet_summary&quot;: [
+    {
+      &quot;allowed_extensions&quot;: [
+        &quot;.md&quot;
+      ],
+      &quot;allowed_files&quot;: [],
+      &quot;artifact_class&quot;: &quot;markdown_document&quot;,
+      &quot;benchmark_eligible&quot;: false,
+      &quot;max_file_count&quot;: 1,
+      &quot;mode&quot;: &quot;product&quot;,
+      &quot;model_may_choose_paths&quot;: false,
+      &quot;model_requirements&quot;: [
+        &quot;explicit model-authored target path&quot;,
+        &quot;explicit model-authored file content&quot;,
+        &quot;supported Source Proxy action JSON or path-bound file block&quot;
+      ],
+      &quot;network_allowed&quot;: false,
+      &quot;route_type&quot;: &quot;product&quot;,
+      &quot;task_shape&quot;: &quot;disposable_single_file_artifact&quot;
+    }
+  ],
+  &quot;byte_match&quot;: {
+    &quot;notes_app.md&quot;: true
+  },
+  &quot;backend_created_any_content&quot;: false,
+  &quot;real_app_files_touched&quot;: false
+}</pre></details>
+      <details><summary>Old raw model transcript preview</summary><pre>{&quot;action_type&quot;:&quot;WriteFile&quot;,&quot;target&quot;:&quot;notes_app.md&quot;,&quot;arguments&quot;:{&quot;content&quot;:&quot;# Notes App\n\n## Features\n- Add notes\n- Edit notes\n- Delete notes\n- Search notes\n\n## How to Use\n1. Open the app.\n2. Click &#39;Add Note&#39; to create a new note.\n3. Enter your note and click &#39;Save&#39;.\n4. To edit a note, click on it and make changes.\n5. Click &#39;Delete&#39; to remove a note.\n6. Use the search bar to find specific notes.&quot;},&quot;reason&quot;:&quot;A simple markdown document outlining the features and usage of a notes app.&quot;}</pre></details>
+    </article>
+<article class="card old fail">
+      <h3>make a password strength checker</h3>
+      <div class="badges"><span class="badge fail">Old corrected FAIL</span><span class="badge">Old raw not specified</span><span class="badge">Source Proxy EXPECTED-BLOCKED</span></div>
+      <div class="no-preview">No openable HTML preview produced.</div>
+      <dl><dt>Behavior test</dt><dd>verify preview files exist before behavior evaluation</dd><dt>Observed</dt><dd>no preview files</dd><dt>Diagnostics</dt><dd><div class="links"><a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/09-make-a-password-strength-checker/receipt.json">receipt</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/09-make-a-password-strength-checker/score.json">score</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/09-make-a-password-strength-checker/evidence-packet.json">evidence</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/09-make-a-password-strength-checker/transcript.txt">transcript</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/09-make-a-password-strength-checker/workspace.diff">diff</a> </div></dd></dl>
+      <details><summary>Old anti-cheat / hand-holding diagnostics</summary><pre>{
+  &quot;task_shape&quot;: &quot;clarification_required_real_repo_implementation&quot;,
+  &quot;artifact_class&quot;: &quot;&quot;,
+  &quot;allowed_extensions&quot;: [],
+  &quot;exact_allowed_files_if_any&quot;: [],
+  &quot;source_proxy_score_status&quot;: &quot;EXPECTED-BLOCKED&quot;,
+  &quot;parsed_action_count&quot;: 1,
+  &quot;model_context_packet_summary&quot;: [
+    {
+      &quot;allowed_extensions&quot;: [],
+      &quot;allowed_files&quot;: [],
+      &quot;artifact_class&quot;: &quot;&quot;,
+      &quot;benchmark_eligible&quot;: false,
+      &quot;max_file_count&quot;: 8,
+      &quot;mode&quot;: &quot;product&quot;,
+      &quot;model_may_choose_paths&quot;: false,
+      &quot;model_requirements&quot;: [
+        &quot;explicit model-authored target path&quot;,
+        &quot;explicit model-authored file content&quot;,
+        &quot;supported Source Proxy action JSON or path-bound file block&quot;
+      ],
+      &quot;network_allowed&quot;: false,
+      &quot;route_type&quot;: &quot;product&quot;,
+      &quot;task_shape&quot;: &quot;clarification_required_real_repo_implementation&quot;
+    },
+    {
+      &quot;allowed_extensions&quot;: [],
+      &quot;allowed_files&quot;: [],
+      &quot;artifact_class&quot;: &quot;&quot;,
+      &quot;benchmark_eligible&quot;: false,
+      &quot;max_file_count&quot;: 8,
+      &quot;mode&quot;: &quot;product&quot;,
+      &quot;model_may_choose_paths&quot;: false,
+      &quot;model_requirements&quot;: [
+        &quot;explicit model-authored target path&quot;,
+        &quot;explicit model-authored file content&quot;,
+        &quot;supported Source Proxy action JSON or path-bound file block&quot;
+      ],
+      &quot;network_allowed&quot;: false,
+      &quot;route_type&quot;: &quot;product&quot;,
+      &quot;task_shape&quot;: &quot;clarification_required_real_repo_implementation&quot;
+    }
+  ],
+  &quot;byte_match&quot;: {
+    &quot;src/password_strength_checker.py&quot;: false
+  },
+  &quot;backend_created_any_content&quot;: false,
+  &quot;real_app_files_touched&quot;: false
+}</pre></details>
+      <details><summary>Old raw model transcript preview</summary><pre>```json
+{
+  &quot;action_type&quot;: &quot;WriteFile&quot;,
+  &quot;target&quot;: &quot;password_strength_checker.py&quot;,
+  &quot;arguments&quot;: {
+    &quot;content&quot;: &quot;#!/usr/bin/env python3\n\nimport re\n\ndef check_password_strength(password):\n    if len(password) &lt; 8:\n        return &#39;Weak: Password is too short.&#39;\n    if not re.search(r&#39;[a-z]&#39;, password):\n        return &#39;Weak: No lowercase letters.&#39;\n    if not re.search(r&#39;[A-Z]&#39;, password):\n        return &#39;Weak: No uppercase letters.&#39;\n    if not re.search(r&#39;\\d&#39;, password):\n        return &#39;Weak: No digits.&#39;\n    if not re.search(r&#39;[!@#$%^&amp;*(),.?&quot;:{}|&lt;&gt;]&#39;, password):\n        return &#39;Weak: No special characters.&#39;\n    return &#39;Strong: Password meets all criteria.&#39;&quot;
+  },
+  &quot;reason&quot;: &quot;A simple Python script to check the strength of a password.&quot;
+}
+```
+
+--- MODEL CALL ---
+
+{&quot;action_type&quot;:&quot;WriteFile&quot;,&quot;target&quot;:&quot;src/password_strength_checker.py&quot;,&quot;arguments&quot;:{&quot;content&quot;:&quot;def check_password_strength(password):\n    if len(password) &lt; 8:\n        return False\n    if not any(char.isdigit() for char in password):\n        return False\n    if not any(char.isupper() for char in password):\n        return False\n    if not any(char.islower() for char in password):\n        return False\n    return True&quot;},&quot;reason&quot;:&quot;This Python function checks the strength of a password based on length, digit presence, uppercase letter presence, and lowercase letter presence.&quot;}</pre></details>
+    </article>
+<article class="card old fail">
+      <h3>make a simple drawing pad</h3>
+      <div class="badges"><span class="badge fail">Old corrected FAIL</span><span class="badge">Old raw not specified</span><span class="badge">Source Proxy EXPECTED-BLOCKED</span></div>
+      <div class="no-preview">No openable HTML preview produced.</div>
+      <dl><dt>Behavior test</dt><dd>verify preview files exist before behavior evaluation</dd><dt>Observed</dt><dd>no preview files</dd><dt>Diagnostics</dt><dd><div class="links"><a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/10-make-a-simple-drawing-pad/receipt.json">receipt</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/10-make-a-simple-drawing-pad/score.json">score</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/10-make-a-simple-drawing-pad/evidence-packet.json">evidence</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/10-make-a-simple-drawing-pad/transcript.txt">transcript</a> <a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/10-make-a-simple-drawing-pad/workspace.diff">diff</a> </div></dd></dl>
+      <details><summary>Old anti-cheat / hand-holding diagnostics</summary><pre>{
+  &quot;task_shape&quot;: &quot;clarification_required_real_repo_implementation&quot;,
+  &quot;artifact_class&quot;: &quot;&quot;,
+  &quot;allowed_extensions&quot;: [],
+  &quot;exact_allowed_files_if_any&quot;: [],
+  &quot;source_proxy_score_status&quot;: &quot;EXPECTED-BLOCKED&quot;,
+  &quot;parsed_action_count&quot;: 1,
+  &quot;model_context_packet_summary&quot;: [
+    {
+      &quot;allowed_extensions&quot;: [],
+      &quot;allowed_files&quot;: [],
+      &quot;artifact_class&quot;: &quot;&quot;,
+      &quot;benchmark_eligible&quot;: false,
+      &quot;max_file_count&quot;: 8,
+      &quot;mode&quot;: &quot;product&quot;,
+      &quot;model_may_choose_paths&quot;: false,
+      &quot;model_requirements&quot;: [
+        &quot;explicit model-authored target path&quot;,
+        &quot;explicit model-authored file content&quot;,
+        &quot;supported Source Proxy action JSON or path-bound file block&quot;
+      ],
+      &quot;network_allowed&quot;: false,
+      &quot;route_type&quot;: &quot;product&quot;,
+      &quot;task_shape&quot;: &quot;clarification_required_real_repo_implementation&quot;
+    }
+  ],
+  &quot;byte_match&quot;: {
+    &quot;drawing_pad.html&quot;: false
+  },
+  &quot;backend_created_any_content&quot;: false,
+  &quot;real_app_files_touched&quot;: false
+}</pre></details>
+      <details><summary>Old raw model transcript preview</summary><pre>```json
+{
+  &quot;action_type&quot;: &quot;WriteFile&quot;,
+  &quot;target&quot;: &quot;drawing_pad.html&quot;,
+  &quot;arguments&quot;: {
+    &quot;content&quot;: &quot;&lt;html&gt;&lt;head&gt;&lt;title&gt;Drawing Pad&lt;/title&gt;&lt;/head&gt;&lt;body&gt;&lt;canvas id=&#39;myCanvas&#39; width=&#39;500&#39; height=&#39;500&#39; style=&#39;border:1px solid #d3d3d3;&#39;&gt;&lt;/canvas&gt;&lt;script&gt;var canvas = document.getElementById(&#39;myCanvas&#39;);var ctx = canvas.getContext(&#39;2d&#39;);&lt;/script&gt;&lt;/body&gt;&lt;/html&gt;&quot;
+  },
+  &quot;reason&quot;: &quot;A simple HTML file to create a drawing pad.&quot;
+}
+```</pre></details>
+    </article>
+<h2>Top-Level Evidence</h2>
+<ul><li><a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/manifest.json">New manifest.json</a></li><li><a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/diagnostic-summary.md">New diagnostic-summary.md</a></li><li><a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/behavior-check-results.json">New behavior-check-results.json</a></li><li><a href="file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/diagnostic-summary.md">Old diagnostic-summary.md</a></li><li><a href="file:///Z:/docs/evidence/spiritos-cognitive-control-plane-revamp-v0.1/phase-0/june-12-false-positive-fixtures.json">Old corrected fixture packet</a></li></ul>
+</main></body></html>

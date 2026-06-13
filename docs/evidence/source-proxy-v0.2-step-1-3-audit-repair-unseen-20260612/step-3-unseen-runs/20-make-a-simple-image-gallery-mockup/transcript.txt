@@ -1,0 +1,28 @@
+```json
+[
+    {
+        "action_type": "WriteFile",
+        "target": "gallery.html",
+        "arguments": {
+            "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Image Gallery</title>\n    <link rel=\"stylesheet\" href=\"gallery.css\">\n</head>\n<body>\n    <div class=\"gallery-container\">\n        <img src=\"image1.jpg\" alt=\"Image 1\" class=\"gallery-item active\">\n        <img src=\"image2.jpg\" alt=\"Image 2\" class=\"gallery-item\">\n        <img src=\"image3.jpg\" alt=\"Image 3\" class=\"gallery-item\">\n    </div>\n    <script src=\"gallery.js\"></script>\n</body>\n</html>"
+        },
+        "reason": "HTML structure for the image gallery mockup."
+    },
+    {
+        "action_type": "WriteFile",
+        "target": "gallery.css",
+        "arguments": {
+            "content": ".gallery-container {\n    display: flex;\n    justify-content: center;\n}\n.gallery-item {\n    width: 200px;\n    height: 200px;\n    object-fit: cover;\n    margin: 10px;\n    cursor: pointer;\n}\n.gallery-item.active {\n    border: 2px solid #007bff;\n}"
+        },
+        "reason": "CSS styles for the image gallery mockup."
+    },
+    {
+        "action_type": "WriteFile",
+        "target": "gallery.js",
+        "arguments": {
+            "content": "document.addEventListener('DOMContentLoaded', function() {\n    const items = document.querySelectorAll('.gallery-item');\n    items.forEach(item => {\n        item.addEventListener('click', () => {\n            items.forEach(i => i.classList.remove('active'));\n            item.classList.add('active');\n        });\n    });\n});"
+        },
+        "reason": "JavaScript for handling image selection in the gallery mockup."
+    }
+]
+```

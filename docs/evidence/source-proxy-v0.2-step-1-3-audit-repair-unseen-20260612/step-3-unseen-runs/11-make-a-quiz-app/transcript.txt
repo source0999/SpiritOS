@@ -1,0 +1,28 @@
+```json
+[
+    {
+        "action_type": "WriteFile",
+        "target": "quiz.html",
+        "arguments": {
+            "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Quiz App</title>\n    <link rel=\"stylesheet\" href=\"quiz.css\">\n</head>\n<body>\n    <div id=\"quiz-container\">\n        <h1 id=\"question\"></h1>\n        <ul id=\"options\"></ul>\n        <button id=\"next-btn\">Next</button>\n    </div>\n    <script src=\"quiz.js\"></script>\n</body>\n</html>"
+        },
+        "reason": "HTML structure for the quiz app."
+    },
+    {
+        "action_type": "WriteFile",
+        "target": "quiz.css",
+        "arguments": {
+            "content": "body {\n    font-family: Arial, sans-serif;\n}\n#quiz-container {\n    max-width: 600px;\n    margin: 50px auto;\n    text-align: center;\n}\nul {\n    list-style-type: none;\n    padding: 0;\n}\nli {\n    margin: 10px 0;\n}\nbutton {\n    padding: 10px 20px;\n    font-size: 16px;\n}"
+        },
+        "reason": "Styling for the quiz app."
+    },
+    {
+        "action_type": "WriteFile",
+        "target": "quiz.js",
+        "arguments": {
+            "content": "const questions = [\n    {\n        question: 'What is the capital of France?',\n        options: ['Paris', 'London', 'Berlin', 'Madrid'],\n        answer: 0\n    },\n    {\n        question: 'Which planet is closest to the Sun?',\n        options: ['Mars', 'Venus', 'Earth', 'Mercury'],\n        answer: 3\n    }\n];\nlet currentQuestionIndex = 0;\ndocument.getElementById('next-btn').addEventListener('click', function() {\n    if (currentQuestionIndex < questions.length - 1) {\n        currentQuestionIndex++;\n        displayQuestion();\n    } else {\n        alert('Quiz completed!');\n    }\n});\nfunction displayQuestion() {\n    const question = questions[currentQuestionIndex];\n    document.getElementById('question').textContent = question.question;\n    const optionsContainer = document.getElementById('options');\n    optionsContainer.innerHTML = '';\n    question.options.forEach((option, index) => {\n        const li = document.createElement('li');\n        li.textContent = option;\n        li.addEventListener('click', function() {\n            if (index === question.answer) {\n                alert('Correct!');\n            } else {\n                alert('Wrong!');\n            }\n        });\n        optionsContainer.appendChild(li);\n    });\n}\ndisplayQuestion();"
+        },
+        "reason": "JavaScript logic for the quiz app."
+    }
+]
+```

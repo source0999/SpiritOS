@@ -1,0 +1,35 @@
+{
+  "actual": {
+    "after": "Panel 1\nPanel 2\nPanel 3\nContent of Panel 1\n\nThis is the content for panel 1.",
+    "before": "Panel 1\nPanel 2\nPanel 3\nContent of Panel 1\n\nThis is the content for panel 1.",
+    "changed": false,
+    "clicked": "button"
+  },
+  "contract_probe": {
+    "acceptance_criterion": "Tabs component changes active panel after selecting another tab.",
+    "expected_observation": "Active tab or panel content changes.",
+    "minimum_proof_tier": 2,
+    "observable_actions": [
+      "click a non-active tab"
+    ],
+    "probe_id": "tabs-active-panel-change"
+  },
+  "expected": {
+    "behavior": "tabs-active-panel-change",
+    "proof": "expected/actual/passed recorded by browser probe"
+  },
+  "observed": {
+    "after": "Panel 1\nPanel 2\nPanel 3\nContent of Panel 1\n\nThis is the content for panel 1.",
+    "before": "Panel 1\nPanel 2\nPanel 3\nContent of Panel 1\n\nThis is the content for panel 1.",
+    "changed": false,
+    "clicked": "button"
+  },
+  "passed": false,
+  "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\21-make-a-tabs-component-demo\\workspace\\index.html",
+  "reason": "visible state did not change after interaction",
+  "reason_codes": [
+    "visible_state_change_missing"
+  ],
+  "test": "tabs-active-panel-change",
+  "verdict": "FAIL"
+}

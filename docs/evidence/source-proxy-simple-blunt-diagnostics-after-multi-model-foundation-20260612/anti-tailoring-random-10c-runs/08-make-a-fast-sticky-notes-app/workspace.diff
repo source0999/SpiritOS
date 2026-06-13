@@ -1,0 +1,53 @@
+--- a/index.html
++++ b/index.html
+@@ -0,0 +1,15 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Fast Sticky Notes</title>
++    <link rel="stylesheet" href="styles.css">
++</head>
++<body>
++    <div id="notes-container"></div>
++    <input type="text" id="note-input" placeholder="Add a note...">
++    <button id="add-note-btn">Add Note</button>
++    <script src="script.js"></script>
++</body>
++</html>--- a/script.js
++++ b/script.js
+@@ -0,0 +1,14 @@
++document.getElementById('add-note-btn').addEventListener('click', function() {
++    const input = document.getElementById('note-input');
++    const noteText = input.value.trim();
++    if (noteText) {
++        const noteElement = document.createElement('div');
++        noteElement.className = 'note';
++        noteElement.textContent = noteText;
++        noteElement.addEventListener('click', function() {
++            this.remove();
++        });
++        document.getElementById('notes-container').appendChild(noteElement);
++        input.value = '';
++    }
++});--- a/styles.css
++++ b/styles.css
+@@ -0,0 +1,17 @@
++body {
++    font-family: Arial, sans-serif;
++}
++#notes-container {
++    display: flex;
++    flex-direction: column;
++}
++.note {
++    background-color: #f0f0f0;
++    border: 1px solid #ccc;
++    padding: 10px;
++    margin-bottom: 5px;
++    cursor: pointer;
++}
++#note-input, #add-note-btn {
++    margin-top: 20px;
++}

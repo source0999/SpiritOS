@@ -1,0 +1,270 @@
+{
+  "findings": {
+    "autonomy_recommendation": "Level 3: handoff packet when local fails",
+    "calculator_proof_strength": "STRONG",
+    "frozen_after_step_2": {
+      "FAIL": 0,
+      "HANDOFF": 0,
+      "NEEDS_FIX": 0,
+      "PASS": 2,
+      "UNVERIFIED": 0,
+      "known_false_positives": 0
+    },
+    "habit_result": "PASS",
+    "hardcoding_tailoring_audit": "PASS",
+    "known_false_negatives": 1,
+    "known_false_positives": 0,
+    "step_1_audit_verdict": "GO",
+    "step_2_repair_verdict": "GO",
+    "step_3_unseen_gauntlet_verdict": "PARTIAL",
+    "unseen_25": {
+      "FAIL": 5,
+      "HANDOFF": 0,
+      "NEEDS_FIX": 12,
+      "PASS": 8,
+      "UNVERIFIED": 0,
+      "known_false_positives": 0
+    },
+    "weather_result": "PASS"
+  },
+  "receipt": {
+    "allowed_files": [
+      "source_proxy/**",
+      "source_proxy/tests/**",
+      "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\**"
+    ],
+    "commands_run": [
+      {
+        "cmd": "node docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\tools\\browser_behavior_verifier.mjs docs\\evidence\\source-proxy-v0.2-proof-diagnostic-rerun-20260612\\runs\\03-make-a-calculator-app\\workspace\\index.html docs\\evidence\\source-proxy-v0.2-proof-diagnostic-rerun-20260612\\runs\\03-make-a-calculator-app\\behavior-contract.json",
+        "returncode": 0
+      },
+      {
+        "cmd": "ssh source@10.0.0.186 cd /home/source/SpiritOS && .venv-source-proxy/bin/python /home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/tools/run_source_proxy_prompt.py --prompt 'make a weather card demo' --run-dir '/home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/step-2-reruns/01-make-a-weather-card-demo'",
+        "returncode": 0
+      },
+      {
+        "cmd": "node docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\tools\\browser_behavior_verifier.mjs docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-2-reruns\\01-make-a-weather-card-demo\\workspace\\weather-card.html docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-2-reruns\\01-make-a-weather-card-demo\\behavior-contract.json",
+        "returncode": 0
+      },
+      {
+        "cmd": "ssh source@10.0.0.186 cd /home/source/SpiritOS && .venv-source-proxy/bin/python /home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/tools/run_source_proxy_prompt.py --prompt 'make a habit tracker' --run-dir '/home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/step-2-reruns/02-make-a-habit-tracker'",
+        "returncode": 0
+      },
+      {
+        "cmd": "node docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\tools\\browser_behavior_verifier.mjs docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-2-reruns\\02-make-a-habit-tracker\\workspace\\habit-tracker.html docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-2-reruns\\02-make-a-habit-tracker\\behavior-contract.json",
+        "returncode": 0
+      },
+      {
+        "cmd": "ssh source@10.0.0.186 cd /home/source/SpiritOS && .venv-source-proxy/bin/python /home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/tools/run_source_proxy_prompt.py --prompt 'make a tip calculator' --run-dir '/home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/step-3-unseen-runs/01-make-a-tip-calculator'",
+        "returncode": 0
+      },
+      {
+        "cmd": "node docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\tools\\browser_behavior_verifier.mjs docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\01-make-a-tip-calculator\\workspace\\index.html docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\01-make-a-tip-calculator\\behavior-contract.json",
+        "returncode": 0
+      },
+      {
+        "cmd": "ssh source@10.0.0.186 cd /home/source/SpiritOS && .venv-source-proxy/bin/python /home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/tools/run_source_proxy_prompt.py --prompt 'make a pomodoro timer' --run-dir '/home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/step-3-unseen-runs/02-make-a-pomodoro-timer'",
+        "returncode": 0
+      },
+      {
+        "cmd": "node docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\tools\\browser_behavior_verifier.mjs docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\02-make-a-pomodoro-timer\\workspace\\index.html docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\02-make-a-pomodoro-timer\\behavior-contract.json",
+        "returncode": 0
+      },
+      {
+        "cmd": "ssh source@10.0.0.186 cd /home/source/SpiritOS && .venv-source-proxy/bin/python /home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/tools/run_source_proxy_prompt.py --prompt 'make a budget splitter' --run-dir '/home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/step-3-unseen-runs/03-make-a-budget-splitter'",
+        "returncode": 0
+      },
+      {
+        "cmd": "node docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\tools\\browser_behavior_verifier.mjs docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\03-make-a-budget-splitter\\workspace\\index.html docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\03-make-a-budget-splitter\\behavior-contract.json",
+        "returncode": 0
+      },
+      {
+        "cmd": "ssh source@10.0.0.186 cd /home/source/SpiritOS && .venv-source-proxy/bin/python /home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/tools/run_source_proxy_prompt.py --prompt 'make a flashcard app' --run-dir '/home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/step-3-unseen-runs/04-make-a-flashcard-app'",
+        "returncode": 0
+      },
+      {
+        "cmd": "node docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\tools\\browser_behavior_verifier.mjs docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\04-make-a-flashcard-app\\workspace\\index.html docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\04-make-a-flashcard-app\\behavior-contract.json",
+        "returncode": 0
+      },
+      {
+        "cmd": "ssh source@10.0.0.186 cd /home/source/SpiritOS && .venv-source-proxy/bin/python /home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/tools/run_source_proxy_prompt.py --prompt 'make a unit converter' --run-dir '/home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/step-3-unseen-runs/05-make-a-unit-converter'",
+        "returncode": 0
+      },
+      {
+        "cmd": "node docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\tools\\browser_behavior_verifier.mjs docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\05-make-a-unit-converter\\workspace\\index.html docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\05-make-a-unit-converter\\behavior-contract.json",
+        "returncode": 0
+      },
+      {
+        "cmd": "ssh source@10.0.0.186 cd /home/source/SpiritOS && .venv-source-proxy/bin/python /home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/tools/run_source_proxy_prompt.py --prompt 'make a mood tracker' --run-dir '/home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/step-3-unseen-runs/06-make-a-mood-tracker'",
+        "returncode": 0
+      },
+      {
+        "cmd": "node docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\tools\\browser_behavior_verifier.mjs docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\06-make-a-mood-tracker\\workspace\\mood_tracker.html docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\06-make-a-mood-tracker\\behavior-contract.json",
+        "returncode": 0
+      },
+      {
+        "cmd": "ssh source@10.0.0.186 cd /home/source/SpiritOS && .venv-source-proxy/bin/python /home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/tools/run_source_proxy_prompt.py --prompt 'make a quote generator' --run-dir '/home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/step-3-unseen-runs/07-make-a-quote-generator'",
+        "returncode": 0
+      },
+      {
+        "cmd": "node docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\tools\\browser_behavior_verifier.mjs docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\07-make-a-quote-generator\\workspace\\index.html docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\07-make-a-quote-generator\\behavior-contract.json",
+        "returncode": 0
+      },
+      {
+        "cmd": "ssh source@10.0.0.186 cd /home/source/SpiritOS && .venv-source-proxy/bin/python /home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/tools/run_source_proxy_prompt.py --prompt 'make a counter app' --run-dir '/home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/step-3-unseen-runs/08-make-a-counter-app'",
+        "returncode": 0
+      },
+      {
+        "cmd": "node docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\tools\\browser_behavior_verifier.mjs docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\08-make-a-counter-app\\workspace\\index.html docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\08-make-a-counter-app\\behavior-contract.json",
+        "returncode": 0
+      },
+      {
+        "cmd": "ssh source@10.0.0.186 cd /home/source/SpiritOS && .venv-source-proxy/bin/python /home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/tools/run_source_proxy_prompt.py --prompt 'make a simple calendar widget' --run-dir '/home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/step-3-unseen-runs/09-make-a-simple-calendar-widget'",
+        "returncode": 0
+      },
+      {
+        "cmd": "node docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\tools\\browser_behavior_verifier.mjs docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\09-make-a-simple-calendar-widget\\workspace\\index.html docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\09-make-a-simple-calendar-widget\\behavior-contract.json",
+        "returncode": 0
+      },
+      {
+        "cmd": "ssh source@10.0.0.186 cd /home/source/SpiritOS && .venv-source-proxy/bin/python /home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/tools/run_source_proxy_prompt.py --prompt 'make a color palette picker' --run-dir '/home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/step-3-unseen-runs/10-make-a-color-palette-picker'",
+        "returncode": 0
+      },
+      {
+        "cmd": "node docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\tools\\browser_behavior_verifier.mjs docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\10-make-a-color-palette-picker\\workspace\\index.html docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\10-make-a-color-palette-picker\\behavior-contract.json",
+        "returncode": 0
+      },
+      {
+        "cmd": "ssh source@10.0.0.186 cd /home/source/SpiritOS && .venv-source-proxy/bin/python /home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/tools/run_source_proxy_prompt.py --prompt 'make a quiz app' --run-dir '/home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/step-3-unseen-runs/11-make-a-quiz-app'",
+        "returncode": 0
+      },
+      {
+        "cmd": "node docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\tools\\browser_behavior_verifier.mjs docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\11-make-a-quiz-app\\workspace\\quiz.html docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\11-make-a-quiz-app\\behavior-contract.json",
+        "returncode": 0
+      },
+      {
+        "cmd": "ssh source@10.0.0.186 cd /home/source/SpiritOS && .venv-source-proxy/bin/python /home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/tools/run_source_proxy_prompt.py --prompt 'make a grocery list app' --run-dir '/home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/step-3-unseen-runs/12-make-a-grocery-list-app'",
+        "returncode": 0
+      },
+      {
+        "cmd": "node docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\tools\\browser_behavior_verifier.mjs docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\12-make-a-grocery-list-app\\workspace\\index.html docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\12-make-a-grocery-list-app\\behavior-contract.json",
+        "returncode": 0
+      },
+      {
+        "cmd": "ssh source@10.0.0.186 cd /home/source/SpiritOS && .venv-source-proxy/bin/python /home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/tools/run_source_proxy_prompt.py --prompt 'make a stopwatch' --run-dir '/home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/step-3-unseen-runs/13-make-a-stopwatch'",
+        "returncode": 0
+      },
+      {
+        "cmd": "node docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\tools\\browser_behavior_verifier.mjs docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\13-make-a-stopwatch\\workspace\\index.html docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\13-make-a-stopwatch\\behavior-contract.json",
+        "returncode": 0
+      },
+      {
+        "cmd": "ssh source@10.0.0.186 cd /home/source/SpiritOS && .venv-source-proxy/bin/python /home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/tools/run_source_proxy_prompt.py --prompt 'make a BMI calculator' --run-dir '/home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/step-3-unseen-runs/14-make-a-bmi-calculator'",
+        "returncode": 0
+      },
+      {
+        "cmd": "node docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\tools\\browser_behavior_verifier.mjs docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\14-make-a-bmi-calculator\\workspace\\index.html docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\14-make-a-bmi-calculator\\behavior-contract.json",
+        "returncode": 0
+      },
+      {
+        "cmd": "ssh source@10.0.0.186 cd /home/source/SpiritOS && .venv-source-proxy/bin/python /home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/tools/run_source_proxy_prompt.py --prompt 'make a random password generator' --run-dir '/home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/step-3-unseen-runs/15-make-a-random-password-generator'",
+        "returncode": 0
+      },
+      {
+        "cmd": "node docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\tools\\browser_behavior_verifier.mjs docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\15-make-a-random-password-generator\\workspace\\index.html docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\15-make-a-random-password-generator\\behavior-contract.json",
+        "returncode": 0
+      },
+      {
+        "cmd": "ssh source@10.0.0.186 cd /home/source/SpiritOS && .venv-source-proxy/bin/python /home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/tools/run_source_proxy_prompt.py --prompt 'make a markdown previewer' --run-dir '/home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/step-3-unseen-runs/16-make-a-markdown-previewer'",
+        "returncode": 0
+      },
+      {
+        "cmd": "node docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\tools\\browser_behavior_verifier.mjs docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\16-make-a-markdown-previewer\\workspace\\index.html docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\16-make-a-markdown-previewer\\behavior-contract.json",
+        "returncode": 0
+      },
+      {
+        "cmd": "ssh source@10.0.0.186 cd /home/source/SpiritOS && .venv-source-proxy/bin/python /home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/tools/run_source_proxy_prompt.py --prompt 'make a simple expense tracker' --run-dir '/home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/step-3-unseen-runs/17-make-a-simple-expense-tracker'",
+        "returncode": 0
+      },
+      {
+        "cmd": "node docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\tools\\browser_behavior_verifier.mjs docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\17-make-a-simple-expense-tracker\\workspace\\index.html docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\17-make-a-simple-expense-tracker\\behavior-contract.json",
+        "returncode": 0
+      },
+      {
+        "cmd": "ssh source@10.0.0.186 cd /home/source/SpiritOS && .venv-source-proxy/bin/python /home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/tools/run_source_proxy_prompt.py --prompt 'make a water intake tracker' --run-dir '/home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/step-3-unseen-runs/18-make-a-water-intake-tracker'",
+        "returncode": 0
+      },
+      {
+        "cmd": "node docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\tools\\browser_behavior_verifier.mjs docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\18-make-a-water-intake-tracker\\workspace\\water_intake_tracker.html docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\18-make-a-water-intake-tracker\\behavior-contract.json",
+        "returncode": 0
+      },
+      {
+        "cmd": "ssh source@10.0.0.186 cd /home/source/SpiritOS && .venv-source-proxy/bin/python /home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/tools/run_source_proxy_prompt.py --prompt 'make a workout set counter' --run-dir '/home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/step-3-unseen-runs/19-make-a-workout-set-counter'",
+        "returncode": 0
+      },
+      {
+        "cmd": "node docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\tools\\browser_behavior_verifier.mjs docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\19-make-a-workout-set-counter\\workspace\\index.html docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\19-make-a-workout-set-counter\\behavior-contract.json",
+        "returncode": 0
+      },
+      {
+        "cmd": "ssh source@10.0.0.186 cd /home/source/SpiritOS && .venv-source-proxy/bin/python /home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/tools/run_source_proxy_prompt.py --prompt 'make a simple image gallery mockup' --run-dir '/home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/step-3-unseen-runs/20-make-a-simple-image-gallery-mockup'",
+        "returncode": 0
+      },
+      {
+        "cmd": "node docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\tools\\browser_behavior_verifier.mjs docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\20-make-a-simple-image-gallery-mockup\\workspace\\gallery.html docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\20-make-a-simple-image-gallery-mockup\\behavior-contract.json",
+        "returncode": 0
+      },
+      {
+        "cmd": "ssh source@10.0.0.186 cd /home/source/SpiritOS && .venv-source-proxy/bin/python /home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/tools/run_source_proxy_prompt.py --prompt 'make a tabs component demo' --run-dir '/home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/step-3-unseen-runs/21-make-a-tabs-component-demo'",
+        "returncode": 0
+      },
+      {
+        "cmd": "node docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\tools\\browser_behavior_verifier.mjs docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\21-make-a-tabs-component-demo\\workspace\\index.html docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\21-make-a-tabs-component-demo\\behavior-contract.json",
+        "returncode": 0
+      },
+      {
+        "cmd": "ssh source@10.0.0.186 cd /home/source/SpiritOS && .venv-source-proxy/bin/python /home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/tools/run_source_proxy_prompt.py --prompt 'make an accordion FAQ page' --run-dir '/home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/step-3-unseen-runs/22-make-an-accordion-faq-page'",
+        "returncode": 0
+      },
+      {
+        "cmd": "node docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\tools\\browser_behavior_verifier.mjs docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\22-make-an-accordion-faq-page\\workspace\\index.html docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\22-make-an-accordion-faq-page\\behavior-contract.json",
+        "returncode": 0
+      },
+      {
+        "cmd": "ssh source@10.0.0.186 cd /home/source/SpiritOS && .venv-source-proxy/bin/python /home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/tools/run_source_proxy_prompt.py --prompt 'make a progress bar demo' --run-dir '/home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/step-3-unseen-runs/23-make-a-progress-bar-demo'",
+        "returncode": 0
+      },
+      {
+        "cmd": "node docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\tools\\browser_behavior_verifier.mjs docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\23-make-a-progress-bar-demo\\workspace\\progress-bar-demo.html docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\23-make-a-progress-bar-demo\\behavior-contract.json",
+        "returncode": 0
+      },
+      {
+        "cmd": "ssh source@10.0.0.186 cd /home/source/SpiritOS && .venv-source-proxy/bin/python /home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/tools/run_source_proxy_prompt.py --prompt 'make a star rating widget' --run-dir '/home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/step-3-unseen-runs/24-make-a-star-rating-widget'",
+        "returncode": 0
+      },
+      {
+        "cmd": "node docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\tools\\browser_behavior_verifier.mjs docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\24-make-a-star-rating-widget\\workspace\\index.html docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\24-make-a-star-rating-widget\\behavior-contract.json",
+        "returncode": 0
+      },
+      {
+        "cmd": "ssh source@10.0.0.186 cd /home/source/SpiritOS && .venv-source-proxy/bin/python /home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/tools/run_source_proxy_prompt.py --prompt 'make a simple habit streak tracker' --run-dir '/home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/step-3-unseen-runs/25-make-a-simple-habit-streak-tracker'",
+        "returncode": 0
+      },
+      {
+        "cmd": "node docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\tools\\browser_behavior_verifier.mjs docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\25-make-a-simple-habit-streak-tracker\\workspace\\streak-tracker.html docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\25-make-a-simple-habit-streak-tracker\\behavior-contract.json",
+        "returncode": 0
+      }
+    ],
+    "created_at": "2026-06-13T00:39:53.267092+00:00",
+    "forbidden_files_actions": [
+      "production frontend UI rewrites",
+      "/coding UI changes",
+      "Obsidian writes",
+      "provider/API config",
+      "secrets/env files",
+      "git branch/commit/push/stash/reset/checkout/clean/stage",
+      "old generated artifact manual patches"
+    ],
+    "repo_path": "Z:\\"
+  }
+}

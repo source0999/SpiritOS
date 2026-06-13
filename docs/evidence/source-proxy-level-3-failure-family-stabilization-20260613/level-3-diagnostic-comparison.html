@@ -1,0 +1,839 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Level 3 Evidence Consistency Diagnostic Comparison</title>
+<style>
+body { font-family: Segoe UI, Arial, sans-serif; margin: 24px; color: #17202a; background: #f6f8fb; }
+h1, h2 { margin-bottom: 8px; }
+.summary, section { margin: 18px 0 28px; }
+table { border-collapse: collapse; width: 100%; background: white; }
+th, td { border: 1px solid #cfd7e3; padding: 7px; vertical-align: top; font-size: 13px; }
+th { background: #e9eef6; text-align: left; }
+tr.pass td { background: #f5fff7; }
+tr.fail td { background: #fff8f7; }
+a { display: inline-block; margin: 0 6px 4px 0; color: #1d4f91; }
+code, pre { white-space: pre-wrap; background: #eef2f7; border-radius: 4px; padding: 6px; }
+.notice { background: #fff; border-left: 4px solid #2272b9; padding: 10px 12px; }
+.clean { color: #0b6b2b; font-weight: 600; }
+</style>
+</head>
+<body>
+<h1>Level 3 Evidence Consistency Diagnostic Comparison</h1>
+<div class="notice">
+<p>This evidence-only dashboard compares the locked 10d/10e score-integrity reports against the Level 3 stabilization reruns. It exposes prompt-to-proxy artifacts: score, receipt, transcript, workspace diff, browser behavior probe, failure packet, repair result, and preview links when present.</p>
+<p><strong>Model/process note:</strong> these batch runs use the local coder model recorded in per-row score files, normally <code>qwen2.5-coder:7b</code>. Sidecar/cloud fallback indicators are shown per row; clean rows have no fallback/scaffold/backend/cloud/real-app-touch flags. Gemma/sidecar lanes were not used in these locked product reruns when the anti-cheat flags are clean.</p>
+</div>
+<section class="summary">
+<h2>Set Summary</h2>
+<table><thead><tr><th>Set</th><th>PASS</th><th>FAIL</th><th>Verdict</th><th>Threshold</th><th>Score warnings</th><th>False +</th><th>False -</th><th>Repairs</th><th>Handoffs</th><th>Files</th></tr></thead><tbody><tr>
+<td>10d score-integrity rerun</td>
+<td>5/10</td>
+<td>5</td>
+<td>NO-GO</td>
+<td>8/10 behavior PASS required for this batch</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>2</td>
+<td><a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-results.json">json</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d.html">html</a></td>
+</tr><tr>
+<td>10e fresh score-integrity run</td>
+<td>6/10</td>
+<td>4</td>
+<td>NO-GO</td>
+<td>8/10 behavior PASS required for this batch</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>2</td>
+<td>1</td>
+<td><a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-results.json">json</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e.html">html</a></td>
+</tr><tr>
+<td>10d Level 3 stabilization rerun</td>
+<td>10/10</td>
+<td>0</td>
+<td>GREEN_READY_FOR_BRITTON_REVIEW</td>
+<td>8/10 behavior PASS required for this batch</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td><a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-results.json">json</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization.html">html</a></td>
+</tr><tr>
+<td>10e Level 3 stabilization rerun</td>
+<td>10/10</td>
+<td>0</td>
+<td>GREEN_READY_FOR_BRITTON_REVIEW</td>
+<td>8/10 behavior PASS required for this batch</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td><a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-results.json">json</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization.html">html</a></td>
+</tr></tbody></table>
+</section>
+<section>
+<h2>10d score-integrity rerun</h2>
+<p><strong>Result:</strong> 5/10 PASS, 5 FAIL, NO-GO. <strong>Report:</strong> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d.html">HTML</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-results.json">JSON</a></p>
+<table><thead><tr><th>Run</th><th>Prompt</th><th>Route</th><th>Open</th><th>Raw final</th><th>Strict final</th><th>Score class</th><th>Behavior bucket</th><th>Repair bucket</th><th>Anti-cheat</th><th>Proxy process links</th><th>Observed behavior</th></tr></thead><tbody><tr class="fail">
+<td>01-build-me-a-snack-break-countdown</td>
+<td>build me a snack break countdown</td>
+<td>GO</td>
+<td>PASS</td>
+<td>FAIL</td>
+<td>FAIL</td>
+<td>verified_fail</td>
+<td>timer_no_visible_change_after_start</td>
+<td>repair_handoff_missing_probe_metadata</td>
+<td>clean</td>
+<td><a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/01-build-me-a-snack-break-countdown/workspace/index.html">preview</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/01-build-me-a-snack-break-countdown/score.json">score</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/01-build-me-a-snack-break-countdown/receipt.json">receipt</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/01-build-me-a-snack-break-countdown/transcript.txt">transcript</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/01-build-me-a-snack-break-countdown/workspace.diff">diff</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/01-build-me-a-snack-break-countdown/behavior-probe.json">probe</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/01-build-me-a-snack-break-countdown/behavior-failure-packet.json">failure packet</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/01-build-me-a-snack-break-countdown/post-behavior-repair-result.json">repair</a></td>
+<td><details><summary>actual</summary><pre>{
+  &quot;afterStart&quot;: &quot;25:00\nStart CountDown&quot;,
+  &quot;afterStop&quot;: &quot;24:59\nStart CountDown&quot;,
+  &quot;before&quot;: &quot;25:00\nStart CountDown&quot;,
+  &quot;clickedStop&quot;: false
+}</pre></details></td>
+</tr><tr class="pass">
+<td>02-make-a-pizza-money-splitter</td>
+<td>make a pizza money splitter</td>
+<td>GO</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>verified_pass</td>
+<td></td>
+<td></td>
+<td>clean</td>
+<td><a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/02-make-a-pizza-money-splitter/workspace/index.html">preview</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/02-make-a-pizza-money-splitter/score.json">score</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/02-make-a-pizza-money-splitter/receipt.json">receipt</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/02-make-a-pizza-money-splitter/transcript.txt">transcript</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/02-make-a-pizza-money-splitter/workspace.diff">diff</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/02-make-a-pizza-money-splitter/behavior-probe.json">probe</a>  </td>
+<td><details><summary>actual</summary><pre>{
+  &quot;after&quot;: &quot;Pizza Money Splitter\n Split Money\n\nTotal per person: 21.00&quot;,
+  &quot;appears&quot;: false,
+  &quot;before&quot;: &quot;Pizza Money Splitter\n Split Money\n\nTotal per person:&quot;,
+  &quot;clicked&quot;: true,
+  &quot;filled&quot;: 1
+}</pre></details></td>
+</tr><tr class="fail">
+<td>03-make-a-day-night-color-flipper</td>
+<td>make a day night color flipper</td>
+<td>EXPECTED-BLOCKED</td>
+<td>FAIL</td>
+<td>FAIL</td>
+<td>FAIL</td>
+<td>verified_fail</td>
+<td>route_blocked_no_preview</td>
+<td></td>
+<td>clean</td>
+<td> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/03-make-a-day-night-color-flipper/score.json">score</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/03-make-a-day-night-color-flipper/receipt.json">receipt</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/03-make-a-day-night-color-flipper/transcript.txt">transcript</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/03-make-a-day-night-color-flipper/workspace.diff">diff</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/03-make-a-day-night-color-flipper/behavior-probe.json">probe</a>  </td>
+<td><details><summary>actual</summary><pre>{
+  &quot;selected_preview_path&quot;: &quot;&quot;
+}</pre></details></td>
+</tr><tr class="pass">
+<td>04-make-a-farmers-market-checklist-app</td>
+<td>make a farmers market checklist app</td>
+<td>GO</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>verified_pass</td>
+<td></td>
+<td></td>
+<td>clean</td>
+<td><a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/04-make-a-farmers-market-checklist-app/workspace/index.html">preview</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/04-make-a-farmers-market-checklist-app/score.json">score</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/04-make-a-farmers-market-checklist-app/receipt.json">receipt</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/04-make-a-farmers-market-checklist-app/transcript.txt">transcript</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/04-make-a-farmers-market-checklist-app/workspace.diff">diff</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/04-make-a-farmers-market-checklist-app/behavior-probe.json">probe</a>  </td>
+<td><details><summary>actual</summary><pre>{
+  &quot;after&quot;: &quot;Farmer&#x27;s Market Checklist\n Add Item\nbananas&quot;,
+  &quot;appears&quot;: true,
+  &quot;before&quot;: &quot;Farmer&#x27;s Market Checklist\n Add Item&quot;,
+  &quot;clicked&quot;: true,
+  &quot;filled&quot;: 1
+}</pre></details></td>
+</tr><tr class="pass">
+<td>05-make-a-pretend-weekend-forecast-card</td>
+<td>make a pretend weekend forecast card</td>
+<td>GO</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>verified_pass</td>
+<td></td>
+<td></td>
+<td>clean</td>
+<td><a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/05-make-a-pretend-weekend-forecast-card/workspace/weather-card.html">preview</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/05-make-a-pretend-weekend-forecast-card/score.json">score</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/05-make-a-pretend-weekend-forecast-card/receipt.json">receipt</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/05-make-a-pretend-weekend-forecast-card/transcript.txt">transcript</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/05-make-a-pretend-weekend-forecast-card/workspace.diff">diff</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/05-make-a-pretend-weekend-forecast-card/behavior-probe.json">probe</a>  </td>
+<td><details><summary>actual</summary><pre>{
+  &quot;after&quot;: &quot;Codexville\n\nTemperature: 20°C\n\nCondition: Cloudy\n\n Update Weather&quot;,
+  &quot;before&quot;: &quot;City\n\nTemperature: 0°C\n\nCondition: Sunny\n\n Update Weather&quot;,
+  &quot;clicked&quot;: true,
+  &quot;hasWeatherTerms&quot;: true
+}</pre></details></td>
+</tr><tr class="pass">
+<td>06-make-a-tiny-mixtape-player</td>
+<td>make a tiny mixtape player</td>
+<td>GO</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>verified_pass</td>
+<td></td>
+<td></td>
+<td>clean</td>
+<td><a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/06-make-a-tiny-mixtape-player/workspace/mixtape-player.html">preview</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/06-make-a-tiny-mixtape-player/score.json">score</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/06-make-a-tiny-mixtape-player/receipt.json">receipt</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/06-make-a-tiny-mixtape-player/transcript.txt">transcript</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/06-make-a-tiny-mixtape-player/workspace.diff">diff</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/06-make-a-tiny-mixtape-player/behavior-probe.json">probe</a>  </td>
+<td><details><summary>actual</summary><pre>{
+  &quot;after&quot;: &quot;My Mixtape\nPause &quot;,
+  &quot;before&quot;: &quot;My Mixtape\nPlay &quot;,
+  &quot;clicked&quot;: true
+}</pre></details></td>
+</tr><tr class="pass">
+<td>07-make-a-coffee-cup-counter</td>
+<td>make a coffee cup counter</td>
+<td>GO</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>verified_pass</td>
+<td></td>
+<td></td>
+<td>clean</td>
+<td><a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/07-make-a-coffee-cup-counter/workspace/index.html">preview</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/07-make-a-coffee-cup-counter/score.json">score</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/07-make-a-coffee-cup-counter/receipt.json">receipt</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/07-make-a-coffee-cup-counter/transcript.txt">transcript</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/07-make-a-coffee-cup-counter/workspace.diff">diff</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/07-make-a-coffee-cup-counter/behavior-probe.json">probe</a>  </td>
+<td><details><summary>actual</summary><pre>{
+  &quot;after&quot;: &quot;Coffee Cups Sold: 1\nSell Another Cup&quot;,
+  &quot;before&quot;: &quot;Coffee Cups Sold: 0\nSell Another Cup&quot;,
+  &quot;clicked&quot;: true
+}</pre></details></td>
+</tr><tr class="fail">
+<td>08-make-a-quick-jot-pad-app</td>
+<td>make a quick jot pad app</td>
+<td>GO</td>
+<td>PASS</td>
+<td>FAIL</td>
+<td>FAIL</td>
+<td>verified_fail</td>
+<td>notes_saved_status_without_note_text</td>
+<td></td>
+<td>clean</td>
+<td><a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/08-make-a-quick-jot-pad-app/workspace/index.html">preview</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/08-make-a-quick-jot-pad-app/score.json">score</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/08-make-a-quick-jot-pad-app/receipt.json">receipt</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/08-make-a-quick-jot-pad-app/transcript.txt">transcript</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/08-make-a-quick-jot-pad-app/workspace.diff">diff</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/08-make-a-quick-jot-pad-app/behavior-probe.json">probe</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/08-make-a-quick-jot-pad-app/behavior-failure-packet.json">failure packet</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/08-make-a-quick-jot-pad-app/post-behavior-repair-result.json">repair</a></td>
+<td><details><summary>actual</summary><pre>{
+  &quot;after&quot;: &quot;Quick Jot Pad\n Save Note\n\nNote saved successfully.&quot;,
+  &quot;appears&quot;: false,
+  &quot;before&quot;: &quot;Quick Jot Pad\n Save Note&quot;,
+  &quot;clicked&quot;: true,
+  &quot;filled&quot;: 1
+}</pre></details></td>
+</tr><tr class="fail">
+<td>09-make-a-login-safety-gauge</td>
+<td>make a login safety gauge</td>
+<td>GO</td>
+<td>PASS</td>
+<td>FAIL</td>
+<td>FAIL</td>
+<td>verified_fail</td>
+<td>password_no_visible_strength_text_change</td>
+<td>repair_handoff_missing_probe_metadata</td>
+<td>clean</td>
+<td><a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/09-make-a-login-safety-gauge/workspace/login_safety_gauge.html">preview</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/09-make-a-login-safety-gauge/score.json">score</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/09-make-a-login-safety-gauge/receipt.json">receipt</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/09-make-a-login-safety-gauge/transcript.txt">transcript</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/09-make-a-login-safety-gauge/workspace.diff">diff</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/09-make-a-login-safety-gauge/behavior-probe.json">probe</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/09-make-a-login-safety-gauge/behavior-failure-packet.json">failure packet</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/09-make-a-login-safety-gauge/post-behavior-repair-result.json">repair</a></td>
+<td><details><summary>actual</summary><pre>{
+  &quot;changed&quot;: false,
+  &quot;strong&quot;: &quot;Login Safety Gauge\n Check Safety&quot;,
+  &quot;weak&quot;: &quot;Login Safety Gauge\n Check Safety&quot;
+}</pre></details></td>
+</tr><tr class="fail">
+<td>10-make-a-scribble-sketch-pad</td>
+<td>make a scribble sketch pad</td>
+<td>GO</td>
+<td>PASS</td>
+<td>FAIL</td>
+<td>FAIL</td>
+<td>verified_fail</td>
+<td>drawing_canvas_no_pixel_change</td>
+<td>repair_free_floating_code_no_path_action</td>
+<td>clean</td>
+<td><a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/10-make-a-scribble-sketch-pad/workspace/index.html">preview</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/10-make-a-scribble-sketch-pad/score.json">score</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/10-make-a-scribble-sketch-pad/receipt.json">receipt</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/10-make-a-scribble-sketch-pad/transcript.txt">transcript</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/10-make-a-scribble-sketch-pad/workspace.diff">diff</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/10-make-a-scribble-sketch-pad/behavior-probe.json">probe</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/10-make-a-scribble-sketch-pad/behavior-failure-packet.json">failure packet</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-runs/10-make-a-scribble-sketch-pad/post-behavior-repair-result.json">repair</a></td>
+<td><details><summary>actual</summary><pre>{
+  &quot;box&quot;: {
+    &quot;height&quot;: 604,
+    &quot;width&quot;: 804,
+    &quot;x&quot;: 238,
+    &quot;y&quot;: 98
+  },
+  &quot;canvas&quot;: true,
+  &quot;changed&quot;: false
+}</pre></details></td>
+</tr></tbody></table>
+</section><section>
+<h2>10e fresh score-integrity run</h2>
+<p><strong>Result:</strong> 6/10 PASS, 4 FAIL, NO-GO. <strong>Report:</strong> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e.html">HTML</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-results.json">JSON</a></p>
+<table><thead><tr><th>Run</th><th>Prompt</th><th>Route</th><th>Open</th><th>Raw final</th><th>Strict final</th><th>Score class</th><th>Behavior bucket</th><th>Repair bucket</th><th>Anti-cheat</th><th>Proxy process links</th><th>Observed behavior</th></tr></thead><tbody><tr class="fail">
+<td>01-make-a-tea-steep-timer</td>
+<td>make a tea steep timer</td>
+<td>GO</td>
+<td>PASS</td>
+<td>FAIL</td>
+<td>FAIL</td>
+<td>verified_fail</td>
+<td>timer_no_visible_change_after_start</td>
+<td>repair_free_floating_code_no_path_action</td>
+<td>clean</td>
+<td><a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/01-make-a-tea-steep-timer/workspace/index.html">preview</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/01-make-a-tea-steep-timer/score.json">score</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/01-make-a-tea-steep-timer/receipt.json">receipt</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/01-make-a-tea-steep-timer/transcript.txt">transcript</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/01-make-a-tea-steep-timer/workspace.diff">diff</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/01-make-a-tea-steep-timer/behavior-probe.json">probe</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/01-make-a-tea-steep-timer/behavior-failure-packet.json">failure packet</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/01-make-a-tea-steep-timer/post-behavior-repair-result.json">repair</a></td>
+<td><details><summary>actual</summary><pre>{
+  &quot;afterStart&quot;: &quot;Tea Steep Timer\n Start Timer&quot;,
+  &quot;afterStop&quot;: &quot;Tea Steep Timer\n Start Timer&quot;,
+  &quot;before&quot;: &quot;Tea Steep Timer\n Start Timer&quot;,
+  &quot;clickedStop&quot;: false
+}</pre></details></td>
+</tr><tr class="pass">
+<td>02-make-a-road-trip-gas-split-tool</td>
+<td>make a road trip gas split tool</td>
+<td>GO</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>verified_pass</td>
+<td></td>
+<td></td>
+<td>clean</td>
+<td><a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/02-make-a-road-trip-gas-split-tool/workspace/index.html">preview</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/02-make-a-road-trip-gas-split-tool/score.json">score</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/02-make-a-road-trip-gas-split-tool/receipt.json">receipt</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/02-make-a-road-trip-gas-split-tool/transcript.txt">transcript</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/02-make-a-road-trip-gas-split-tool/workspace.diff">diff</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/02-make-a-road-trip-gas-split-tool/behavior-probe.json">probe</a>  </td>
+<td><details><summary>actual</summary><pre>{
+  &quot;after&quot;: &quot;Road Trip Gas Split Tool\nTotal Gas (in gallons):\n\n\n\nNumber of Cars:\n\n\nCalculate Gas Split\n\n\n\nGas per Car: 14.00&quot;,
+  &quot;appears&quot;: false,
+  &quot;before&quot;: &quot;Road Trip Gas Split Tool\nTotal Gas (in gallons):\n\n\n\nNumber of Cars:\n\n\nCalculate Gas Split\n\n\n\nGas per Car:&quot;,
+  &quot;clicked&quot;: true,
+  &quot;filled&quot;: 2
+}</pre></details></td>
+</tr><tr class="fail">
+<td>03-make-a-sunrise-midnight-mode-toggle</td>
+<td>make a sunrise midnight mode toggle</td>
+<td>EXPECTED-BLOCKED</td>
+<td>FAIL</td>
+<td>FAIL</td>
+<td>FAIL</td>
+<td>verified_fail</td>
+<td>route_blocked_no_preview</td>
+<td></td>
+<td>clean</td>
+<td> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/03-make-a-sunrise-midnight-mode-toggle/score.json">score</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/03-make-a-sunrise-midnight-mode-toggle/receipt.json">receipt</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/03-make-a-sunrise-midnight-mode-toggle/transcript.txt">transcript</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/03-make-a-sunrise-midnight-mode-toggle/workspace.diff">diff</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/03-make-a-sunrise-midnight-mode-toggle/behavior-probe.json">probe</a>  </td>
+<td><details><summary>actual</summary><pre>{
+  &quot;selected_preview_path&quot;: &quot;&quot;
+}</pre></details></td>
+</tr><tr class="pass">
+<td>04-make-a-camping-packing-list-app</td>
+<td>make a camping packing list app</td>
+<td>GO</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>verified_pass</td>
+<td></td>
+<td></td>
+<td>clean</td>
+<td><a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/04-make-a-camping-packing-list-app/workspace/index.html">preview</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/04-make-a-camping-packing-list-app/score.json">score</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/04-make-a-camping-packing-list-app/receipt.json">receipt</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/04-make-a-camping-packing-list-app/transcript.txt">transcript</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/04-make-a-camping-packing-list-app/workspace.diff">diff</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/04-make-a-camping-packing-list-app/behavior-probe.json">probe</a>  </td>
+<td><details><summary>actual</summary><pre>{
+  &quot;after&quot;: &quot;Camping Packing List\n Add Item\nbananas&quot;,
+  &quot;appears&quot;: true,
+  &quot;before&quot;: &quot;Camping Packing List\n Add Item&quot;,
+  &quot;clicked&quot;: true,
+  &quot;filled&quot;: 1
+}</pre></details></td>
+</tr><tr class="pass">
+<td>05-make-a-pretend-porch-weather-tile</td>
+<td>make a pretend porch weather tile</td>
+<td>GO</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>verified_pass</td>
+<td></td>
+<td></td>
+<td>clean</td>
+<td><a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/05-make-a-pretend-porch-weather-tile/workspace/weather-card.html">preview</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/05-make-a-pretend-porch-weather-tile/score.json">score</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/05-make-a-pretend-porch-weather-tile/receipt.json">receipt</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/05-make-a-pretend-porch-weather-tile/transcript.txt">transcript</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/05-make-a-pretend-porch-weather-tile/workspace.diff">diff</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/05-make-a-pretend-porch-weather-tile/behavior-probe.json">probe</a>  </td>
+<td><details><summary>actual</summary><pre>{
+  &quot;after&quot;: &quot;Codexville\n\nTemperature: 25°C\n\nCondition: Cloudy\n\n Update Weather&quot;,
+  &quot;before&quot;: &quot;City\n\nTemperature: 0°C\n\nCondition: Sunny\n\n Update Weather&quot;,
+  &quot;clicked&quot;: true,
+  &quot;hasWeatherTerms&quot;: true
+}</pre></details></td>
+</tr><tr class="fail">
+<td>06-make-a-tiny-radio-show-player</td>
+<td>make a tiny radio show player</td>
+<td>GO</td>
+<td>PASS</td>
+<td>FAIL</td>
+<td>FAIL</td>
+<td>verified_fail</td>
+<td>player_control_no_visible_state_change</td>
+<td>repair_handoff_missing_probe_metadata</td>
+<td>clean</td>
+<td><a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/06-make-a-tiny-radio-show-player/workspace/index.html">preview</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/06-make-a-tiny-radio-show-player/score.json">score</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/06-make-a-tiny-radio-show-player/receipt.json">receipt</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/06-make-a-tiny-radio-show-player/transcript.txt">transcript</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/06-make-a-tiny-radio-show-player/workspace.diff">diff</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/06-make-a-tiny-radio-show-player/behavior-probe.json">probe</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/06-make-a-tiny-radio-show-player/behavior-failure-packet.json">failure packet</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/06-make-a-tiny-radio-show-player/post-behavior-repair-result.json">repair</a></td>
+<td><details><summary>actual</summary><pre>{
+  &quot;after&quot;: &quot;Radio Show Player\n Play &quot;,
+  &quot;before&quot;: &quot;Radio Show Player\n Play &quot;,
+  &quot;clicked&quot;: true
+}</pre></details></td>
+</tr><tr class="pass">
+<td>07-make-a-pushup-rep-counter</td>
+<td>make a pushup rep counter</td>
+<td>GO</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>verified_pass</td>
+<td></td>
+<td></td>
+<td>clean</td>
+<td><a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/07-make-a-pushup-rep-counter/workspace/pushup_counter.html">preview</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/07-make-a-pushup-rep-counter/score.json">score</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/07-make-a-pushup-rep-counter/receipt.json">receipt</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/07-make-a-pushup-rep-counter/transcript.txt">transcript</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/07-make-a-pushup-rep-counter/workspace.diff">diff</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/07-make-a-pushup-rep-counter/behavior-probe.json">probe</a>  </td>
+<td><details><summary>actual</summary><pre>{
+  &quot;after&quot;: &quot;Pushup Counter\n\n1\n\nDo Pushup&quot;,
+  &quot;before&quot;: &quot;Pushup Counter\n\n0\n\nDo Pushup&quot;,
+  &quot;clicked&quot;: true
+}</pre></details></td>
+</tr><tr class="pass">
+<td>08-make-a-pocket-memo-board-app</td>
+<td>make a pocket memo board app</td>
+<td>GO</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>verified_pass</td>
+<td></td>
+<td></td>
+<td>clean</td>
+<td><a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/08-make-a-pocket-memo-board-app/workspace/index.html">preview</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/08-make-a-pocket-memo-board-app/score.json">score</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/08-make-a-pocket-memo-board-app/receipt.json">receipt</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/08-make-a-pocket-memo-board-app/transcript.txt">transcript</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/08-make-a-pocket-memo-board-app/workspace.diff">diff</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/08-make-a-pocket-memo-board-app/behavior-probe.json">probe</a>  </td>
+<td><details><summary>actual</summary><pre>{
+  &quot;after&quot;: &quot;scratch proof note\nAdd Memo&quot;,
+  &quot;appears&quot;: true,
+  &quot;before&quot;: &quot;Add Memo&quot;,
+  &quot;clicked&quot;: true,
+  &quot;filled&quot;: 1
+}</pre></details></td>
+</tr><tr class="fail">
+<td>09-make-a-passphrase-strength-meter</td>
+<td>make a passphrase strength meter</td>
+<td>GO</td>
+<td>PASS</td>
+<td>FAIL</td>
+<td>FAIL</td>
+<td>verified_fail</td>
+<td>password_no_visible_strength_text_change</td>
+<td>repair_free_floating_code_no_path_action</td>
+<td>clean</td>
+<td><a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/09-make-a-passphrase-strength-meter/workspace/index.html">preview</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/09-make-a-passphrase-strength-meter/score.json">score</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/09-make-a-passphrase-strength-meter/receipt.json">receipt</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/09-make-a-passphrase-strength-meter/transcript.txt">transcript</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/09-make-a-passphrase-strength-meter/workspace.diff">diff</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/09-make-a-passphrase-strength-meter/behavior-probe.json">probe</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/09-make-a-passphrase-strength-meter/behavior-failure-packet.json">failure packet</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/09-make-a-passphrase-strength-meter/post-behavior-repair-result.json">repair</a></td>
+<td><details><summary>actual</summary><pre>{
+  &quot;changed&quot;: false,
+  &quot;strong&quot;: &quot;Password Strength Meter&quot;,
+  &quot;weak&quot;: &quot;Password Strength Meter&quot;
+}</pre></details></td>
+</tr><tr class="pass">
+<td>10-make-a-doodle-canvas-notebook</td>
+<td>make a doodle canvas notebook</td>
+<td>GO</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>verified_pass</td>
+<td></td>
+<td></td>
+<td>clean</td>
+<td><a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/10-make-a-doodle-canvas-notebook/workspace/index.html">preview</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/10-make-a-doodle-canvas-notebook/score.json">score</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/10-make-a-doodle-canvas-notebook/receipt.json">receipt</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/10-make-a-doodle-canvas-notebook/transcript.txt">transcript</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/10-make-a-doodle-canvas-notebook/workspace.diff">diff</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-runs/10-make-a-doodle-canvas-notebook/behavior-probe.json">probe</a>  </td>
+<td><details><summary>actual</summary><pre>{
+  &quot;box&quot;: {
+    &quot;height&quot;: 602,
+    &quot;width&quot;: 802,
+    &quot;x&quot;: 8,
+    &quot;y&quot;: 79.875
+  },
+  &quot;canvas&quot;: true,
+  &quot;changed&quot;: true
+}</pre></details></td>
+</tr></tbody></table>
+</section><section>
+<h2>10d Level 3 stabilization rerun</h2>
+<p><strong>Result:</strong> 10/10 PASS, 0 FAIL, GREEN_READY_FOR_BRITTON_REVIEW. <strong>Report:</strong> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization.html">HTML</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-results.json">JSON</a></p>
+<table><thead><tr><th>Run</th><th>Prompt</th><th>Route</th><th>Open</th><th>Raw final</th><th>Strict final</th><th>Score class</th><th>Behavior bucket</th><th>Repair bucket</th><th>Anti-cheat</th><th>Proxy process links</th><th>Observed behavior</th></tr></thead><tbody><tr class="pass">
+<td>01-build-me-a-snack-break-countdown</td>
+<td>build me a snack break countdown</td>
+<td>GO</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>verified_pass</td>
+<td></td>
+<td></td>
+<td>clean</td>
+<td><a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/01-build-me-a-snack-break-countdown/workspace/index.html">preview</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/01-build-me-a-snack-break-countdown/score.json">score</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/01-build-me-a-snack-break-countdown/receipt.json">receipt</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/01-build-me-a-snack-break-countdown/transcript.txt">transcript</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/01-build-me-a-snack-break-countdown/workspace.diff">diff</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/01-build-me-a-snack-break-countdown/behavior-probe.json">probe</a>  </td>
+<td><details><summary>actual</summary><pre>{
+  &quot;afterStart&quot;: &quot;24:59\nStart Stop Reset&quot;,
+  &quot;afterStop&quot;: &quot;24:59\nStart Stop Reset&quot;,
+  &quot;before&quot;: &quot;25:00\nStart Stop Reset&quot;,
+  &quot;clickedStop&quot;: true
+}</pre></details></td>
+</tr><tr class="pass">
+<td>02-make-a-pizza-money-splitter</td>
+<td>make a pizza money splitter</td>
+<td>GO</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>verified_pass</td>
+<td></td>
+<td></td>
+<td>clean</td>
+<td><a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/02-make-a-pizza-money-splitter/workspace/index.html">preview</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/02-make-a-pizza-money-splitter/score.json">score</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/02-make-a-pizza-money-splitter/receipt.json">receipt</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/02-make-a-pizza-money-splitter/transcript.txt">transcript</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/02-make-a-pizza-money-splitter/workspace.diff">diff</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/02-make-a-pizza-money-splitter/behavior-probe.json">probe</a>  </td>
+<td><details><summary>actual</summary><pre>{
+  &quot;after&quot;: &quot;Pizza Money Splitter\n Split Money\n\nTotal per person: 21.00&quot;,
+  &quot;appears&quot;: false,
+  &quot;before&quot;: &quot;Pizza Money Splitter\n Split Money\n\nTotal per person:&quot;,
+  &quot;clicked&quot;: true,
+  &quot;filled&quot;: 1
+}</pre></details></td>
+</tr><tr class="pass">
+<td>03-make-a-day-night-color-flipper</td>
+<td>make a day night color flipper</td>
+<td>GO</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>verified_pass</td>
+<td></td>
+<td></td>
+<td>clean</td>
+<td><a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/03-make-a-day-night-color-flipper/workspace/index.html">preview</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/03-make-a-day-night-color-flipper/score.json">score</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/03-make-a-day-night-color-flipper/receipt.json">receipt</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/03-make-a-day-night-color-flipper/transcript.txt">transcript</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/03-make-a-day-night-color-flipper/workspace.diff">diff</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/03-make-a-day-night-color-flipper/behavior-probe.json">probe</a>  </td>
+<td><details><summary>actual</summary><pre>{
+  &quot;after&quot;: {
+    &quot;bg&quot;: &quot;rgb(0, 0, 0)&quot;,
+    &quot;cls&quot;: &quot;day night&quot;,
+    &quot;color&quot;: &quot;rgb(255, 255, 255)&quot;
+  },
+  &quot;before&quot;: {
+    &quot;bg&quot;: &quot;rgba(0, 0, 0, 0)&quot;,
+    &quot;cls&quot;: &quot;&quot;,
+    &quot;color&quot;: &quot;rgb(0, 0, 0)&quot;
+  }
+}</pre></details></td>
+</tr><tr class="pass">
+<td>04-make-a-farmers-market-checklist-app</td>
+<td>make a farmers market checklist app</td>
+<td>GO</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>verified_pass</td>
+<td></td>
+<td></td>
+<td>clean</td>
+<td><a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/04-make-a-farmers-market-checklist-app/workspace/index.html">preview</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/04-make-a-farmers-market-checklist-app/score.json">score</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/04-make-a-farmers-market-checklist-app/receipt.json">receipt</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/04-make-a-farmers-market-checklist-app/transcript.txt">transcript</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/04-make-a-farmers-market-checklist-app/workspace.diff">diff</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/04-make-a-farmers-market-checklist-app/behavior-probe.json">probe</a>  </td>
+<td><details><summary>actual</summary><pre>{
+  &quot;after&quot;: &quot;Farmer&#x27;s Market Checklist\n Add Item\nbananas&quot;,
+  &quot;appears&quot;: true,
+  &quot;before&quot;: &quot;Farmer&#x27;s Market Checklist\n Add Item&quot;,
+  &quot;clicked&quot;: true,
+  &quot;filled&quot;: 1
+}</pre></details></td>
+</tr><tr class="pass">
+<td>05-make-a-pretend-weekend-forecast-card</td>
+<td>make a pretend weekend forecast card</td>
+<td>GO</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>verified_pass</td>
+<td></td>
+<td></td>
+<td>clean</td>
+<td><a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/05-make-a-pretend-weekend-forecast-card/workspace/weather-card.html">preview</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/05-make-a-pretend-weekend-forecast-card/score.json">score</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/05-make-a-pretend-weekend-forecast-card/receipt.json">receipt</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/05-make-a-pretend-weekend-forecast-card/transcript.txt">transcript</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/05-make-a-pretend-weekend-forecast-card/workspace.diff">diff</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/05-make-a-pretend-weekend-forecast-card/behavior-probe.json">probe</a>  </td>
+<td><details><summary>actual</summary><pre>{
+  &quot;after&quot;: &quot;Codexville\n\nTemperature: 20°C\n\nCondition: Cloudy\n\n Update Weather&quot;,
+  &quot;before&quot;: &quot;City\n\nTemperature: 0°C\n\nCondition: Sunny\n\n Update Weather&quot;,
+  &quot;clicked&quot;: true,
+  &quot;hasWeatherTerms&quot;: true
+}</pre></details></td>
+</tr><tr class="pass">
+<td>06-make-a-tiny-mixtape-player</td>
+<td>make a tiny mixtape player</td>
+<td>GO</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>verified_pass</td>
+<td></td>
+<td></td>
+<td>clean</td>
+<td><a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/06-make-a-tiny-mixtape-player/workspace/index.html">preview</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/06-make-a-tiny-mixtape-player/score.json">score</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/06-make-a-tiny-mixtape-player/receipt.json">receipt</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/06-make-a-tiny-mixtape-player/transcript.txt">transcript</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/06-make-a-tiny-mixtape-player/workspace.diff">diff</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/06-make-a-tiny-mixtape-player/behavior-probe.json">probe</a>  </td>
+<td><details><summary>actual</summary><pre>{
+  &quot;after&quot;: &quot;Track 1 - Artist Name\nPause Next&quot;,
+  &quot;before&quot;: &quot;Track 1 - Artist Name\nPlay Next&quot;,
+  &quot;clicked&quot;: true
+}</pre></details></td>
+</tr><tr class="pass">
+<td>07-make-a-coffee-cup-counter</td>
+<td>make a coffee cup counter</td>
+<td>GO</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>verified_pass</td>
+<td></td>
+<td></td>
+<td>clean</td>
+<td><a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/07-make-a-coffee-cup-counter/workspace/index.html">preview</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/07-make-a-coffee-cup-counter/score.json">score</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/07-make-a-coffee-cup-counter/receipt.json">receipt</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/07-make-a-coffee-cup-counter/transcript.txt">transcript</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/07-make-a-coffee-cup-counter/workspace.diff">diff</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/07-make-a-coffee-cup-counter/behavior-probe.json">probe</a>  </td>
+<td><details><summary>actual</summary><pre>{
+  &quot;after&quot;: &quot;Coffee Cups Sold: 1\nSell a Cup&quot;,
+  &quot;before&quot;: &quot;Coffee Cups Sold: 0\nSell a Cup&quot;,
+  &quot;clicked&quot;: true
+}</pre></details></td>
+</tr><tr class="pass">
+<td>08-make-a-quick-jot-pad-app</td>
+<td>make a quick jot pad app</td>
+<td>GO</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>verified_pass</td>
+<td></td>
+<td></td>
+<td>clean</td>
+<td><a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/08-make-a-quick-jot-pad-app/workspace/index.html">preview</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/08-make-a-quick-jot-pad-app/score.json">score</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/08-make-a-quick-jot-pad-app/receipt.json">receipt</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/08-make-a-quick-jot-pad-app/transcript.txt">transcript</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/08-make-a-quick-jot-pad-app/workspace.diff">diff</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/08-make-a-quick-jot-pad-app/behavior-probe.json">probe</a>  </td>
+<td><details><summary>actual</summary><pre>{
+  &quot;after&quot;: &quot;Quick Jot Pad\nSave Note\nscratch proof note&quot;,
+  &quot;appears&quot;: true,
+  &quot;before&quot;: &quot;Quick Jot Pad\nSave Note&quot;,
+  &quot;clicked&quot;: true,
+  &quot;filled&quot;: 1
+}</pre></details></td>
+</tr><tr class="pass">
+<td>09-make-a-login-safety-gauge</td>
+<td>make a login safety gauge</td>
+<td>GO</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>verified_pass</td>
+<td></td>
+<td></td>
+<td>clean</td>
+<td><a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/09-make-a-login-safety-gauge/workspace/login.html">preview</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/09-make-a-login-safety-gauge/score.json">score</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/09-make-a-login-safety-gauge/receipt.json">receipt</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/09-make-a-login-safety-gauge/transcript.txt">transcript</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/09-make-a-login-safety-gauge/workspace.diff">diff</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/09-make-a-login-safety-gauge/behavior-probe.json">probe</a>  </td>
+<td><details><summary>actual</summary><pre>{
+  &quot;changed&quot;: true,
+  &quot;strong&quot;: &quot;Login\n\nStrong&quot;,
+  &quot;weak&quot;: &quot;Login\n\nWeak&quot;
+}</pre></details></td>
+</tr><tr class="pass">
+<td>10-make-a-scribble-sketch-pad</td>
+<td>make a scribble sketch pad</td>
+<td>GO</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>verified_pass</td>
+<td></td>
+<td></td>
+<td>clean</td>
+<td><a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/10-make-a-scribble-sketch-pad/workspace/index.html">preview</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/10-make-a-scribble-sketch-pad/score.json">score</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/10-make-a-scribble-sketch-pad/receipt.json">receipt</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/10-make-a-scribble-sketch-pad/transcript.txt">transcript</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/10-make-a-scribble-sketch-pad/workspace.diff">diff</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10d-level3-stabilization-runs/10-make-a-scribble-sketch-pad/behavior-probe.json">probe</a>  </td>
+<td><details><summary>actual</summary><pre>{
+  &quot;box&quot;: {
+    &quot;height&quot;: 604,
+    &quot;width&quot;: 804,
+    &quot;x&quot;: 238,
+    &quot;y&quot;: 98
+  },
+  &quot;canvas&quot;: true,
+  &quot;changed&quot;: true
+}</pre></details></td>
+</tr></tbody></table>
+</section><section>
+<h2>10e Level 3 stabilization rerun</h2>
+<p><strong>Result:</strong> 10/10 PASS, 0 FAIL, GREEN_READY_FOR_BRITTON_REVIEW. <strong>Report:</strong> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization.html">HTML</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-results.json">JSON</a></p>
+<table><thead><tr><th>Run</th><th>Prompt</th><th>Route</th><th>Open</th><th>Raw final</th><th>Strict final</th><th>Score class</th><th>Behavior bucket</th><th>Repair bucket</th><th>Anti-cheat</th><th>Proxy process links</th><th>Observed behavior</th></tr></thead><tbody><tr class="pass">
+<td>01-make-a-tea-steep-timer</td>
+<td>make a tea steep timer</td>
+<td>GO</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>verified_pass</td>
+<td></td>
+<td></td>
+<td>clean</td>
+<td><a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/01-make-a-tea-steep-timer/workspace/index.html">preview</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/01-make-a-tea-steep-timer/score.json">score</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/01-make-a-tea-steep-timer/receipt.json">receipt</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/01-make-a-tea-steep-timer/transcript.txt">transcript</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/01-make-a-tea-steep-timer/workspace.diff">diff</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/01-make-a-tea-steep-timer/behavior-probe.json">probe</a>  </td>
+<td><details><summary>actual</summary><pre>{
+  &quot;afterStart&quot;: &quot;0:01\nStart Stop Reset&quot;,
+  &quot;afterStop&quot;: &quot;0:01\nStart Stop Reset&quot;,
+  &quot;before&quot;: &quot;0:00\nStart Stop Reset&quot;,
+  &quot;clickedStop&quot;: true
+}</pre></details></td>
+</tr><tr class="pass">
+<td>02-make-a-road-trip-gas-split-tool</td>
+<td>make a road trip gas split tool</td>
+<td>GO</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>verified_pass</td>
+<td></td>
+<td></td>
+<td>clean</td>
+<td><a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/02-make-a-road-trip-gas-split-tool/workspace/index.html">preview</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/02-make-a-road-trip-gas-split-tool/score.json">score</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/02-make-a-road-trip-gas-split-tool/receipt.json">receipt</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/02-make-a-road-trip-gas-split-tool/transcript.txt">transcript</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/02-make-a-road-trip-gas-split-tool/workspace.diff">diff</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/02-make-a-road-trip-gas-split-tool/behavior-probe.json">probe</a>  </td>
+<td><details><summary>actual</summary><pre>{
+  &quot;after&quot;: &quot;Road Trip Gas Split Tool\nTotal Gas (in gallons): \n\nNumber of Cars: \n\nCalculate Gas Split\n\n\n\nGas per Car: 14.00&quot;,
+  &quot;appears&quot;: false,
+  &quot;before&quot;: &quot;Road Trip Gas Split Tool\nTotal Gas (in gallons): \n\nNumber of Cars: \n\nCalculate Gas Split\n\n\n\nGas per Car:&quot;,
+  &quot;clicked&quot;: true,
+  &quot;filled&quot;: 2
+}</pre></details></td>
+</tr><tr class="pass">
+<td>03-make-a-sunrise-midnight-mode-toggle</td>
+<td>make a sunrise midnight mode toggle</td>
+<td>GO</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>verified_pass</td>
+<td></td>
+<td></td>
+<td>clean</td>
+<td><a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/03-make-a-sunrise-midnight-mode-toggle/workspace/index.html">preview</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/03-make-a-sunrise-midnight-mode-toggle/score.json">score</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/03-make-a-sunrise-midnight-mode-toggle/receipt.json">receipt</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/03-make-a-sunrise-midnight-mode-toggle/transcript.txt">transcript</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/03-make-a-sunrise-midnight-mode-toggle/workspace.diff">diff</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/03-make-a-sunrise-midnight-mode-toggle/behavior-probe.json">probe</a>  </td>
+<td><details><summary>actual</summary><pre>{
+  &quot;after&quot;: {
+    &quot;bg&quot;: &quot;rgb(18, 18, 18)&quot;,
+    &quot;cls&quot;: &quot;light-theme midnight-mode&quot;,
+    &quot;color&quot;: &quot;rgb(255, 255, 255)&quot;
+  },
+  &quot;before&quot;: {
+    &quot;bg&quot;: &quot;rgb(255, 255, 255)&quot;,
+    &quot;cls&quot;: &quot;light-theme&quot;,
+    &quot;color&quot;: &quot;rgb(0, 0, 0)&quot;
+  }
+}</pre></details></td>
+</tr><tr class="pass">
+<td>04-make-a-camping-packing-list-app</td>
+<td>make a camping packing list app</td>
+<td>GO</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>verified_pass</td>
+<td></td>
+<td></td>
+<td>clean</td>
+<td><a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/04-make-a-camping-packing-list-app/workspace/index.html">preview</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/04-make-a-camping-packing-list-app/score.json">score</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/04-make-a-camping-packing-list-app/receipt.json">receipt</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/04-make-a-camping-packing-list-app/transcript.txt">transcript</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/04-make-a-camping-packing-list-app/workspace.diff">diff</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/04-make-a-camping-packing-list-app/behavior-probe.json">probe</a>  </td>
+<td><details><summary>actual</summary><pre>{
+  &quot;after&quot;: &quot;Camping Packing List\n Add Item\nbananas&quot;,
+  &quot;appears&quot;: true,
+  &quot;before&quot;: &quot;Camping Packing List\n Add Item&quot;,
+  &quot;clicked&quot;: true,
+  &quot;filled&quot;: 1
+}</pre></details></td>
+</tr><tr class="pass">
+<td>05-make-a-pretend-porch-weather-tile</td>
+<td>make a pretend porch weather tile</td>
+<td>GO</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>verified_pass</td>
+<td></td>
+<td></td>
+<td>clean</td>
+<td><a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/05-make-a-pretend-porch-weather-tile/workspace/weather-card.html">preview</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/05-make-a-pretend-porch-weather-tile/score.json">score</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/05-make-a-pretend-porch-weather-tile/receipt.json">receipt</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/05-make-a-pretend-porch-weather-tile/transcript.txt">transcript</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/05-make-a-pretend-porch-weather-tile/workspace.diff">diff</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/05-make-a-pretend-porch-weather-tile/behavior-probe.json">probe</a>  </td>
+<td><details><summary>actual</summary><pre>{
+  &quot;after&quot;: &quot;Codexville\n\nTemperature: 25°C\n\nCondition: Cloudy\n\n Update Weather&quot;,
+  &quot;before&quot;: &quot;City\n\nTemperature: 0°C\n\nCondition: Sunny\n\n Update Weather&quot;,
+  &quot;clicked&quot;: true,
+  &quot;hasWeatherTerms&quot;: true
+}</pre></details></td>
+</tr><tr class="pass">
+<td>06-make-a-tiny-radio-show-player</td>
+<td>make a tiny radio show player</td>
+<td>GO</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>verified_pass</td>
+<td></td>
+<td></td>
+<td>clean</td>
+<td><a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/06-make-a-tiny-radio-show-player/workspace/index.html">preview</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/06-make-a-tiny-radio-show-player/score.json">score</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/06-make-a-tiny-radio-show-player/receipt.json">receipt</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/06-make-a-tiny-radio-show-player/transcript.txt">transcript</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/06-make-a-tiny-radio-show-player/workspace.diff">diff</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/06-make-a-tiny-radio-show-player/behavior-probe.json">probe</a>  </td>
+<td><details><summary>actual</summary><pre>{
+  &quot;after&quot;: &quot;Track 1\nPause Skip&quot;,
+  &quot;before&quot;: &quot;Track 1\nPlay Skip&quot;,
+  &quot;clicked&quot;: true
+}</pre></details></td>
+</tr><tr class="pass">
+<td>07-make-a-pushup-rep-counter</td>
+<td>make a pushup rep counter</td>
+<td>GO</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>verified_pass</td>
+<td></td>
+<td></td>
+<td>clean</td>
+<td><a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/07-make-a-pushup-rep-counter/workspace/pushup_counter.html">preview</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/07-make-a-pushup-rep-counter/score.json">score</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/07-make-a-pushup-rep-counter/receipt.json">receipt</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/07-make-a-pushup-rep-counter/transcript.txt">transcript</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/07-make-a-pushup-rep-counter/workspace.diff">diff</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/07-make-a-pushup-rep-counter/behavior-probe.json">probe</a>  </td>
+<td><details><summary>actual</summary><pre>{
+  &quot;after&quot;: &quot;Pushup Counter\n\n1\n\nDo Pushup&quot;,
+  &quot;before&quot;: &quot;Pushup Counter\n\n0\n\nDo Pushup&quot;,
+  &quot;clicked&quot;: true
+}</pre></details></td>
+</tr><tr class="pass">
+<td>08-make-a-pocket-memo-board-app</td>
+<td>make a pocket memo board app</td>
+<td>GO</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>verified_pass</td>
+<td></td>
+<td></td>
+<td>clean</td>
+<td><a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/08-make-a-pocket-memo-board-app/workspace/index.html">preview</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/08-make-a-pocket-memo-board-app/score.json">score</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/08-make-a-pocket-memo-board-app/receipt.json">receipt</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/08-make-a-pocket-memo-board-app/transcript.txt">transcript</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/08-make-a-pocket-memo-board-app/workspace.diff">diff</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/08-make-a-pocket-memo-board-app/behavior-probe.json">probe</a>  </td>
+<td><details><summary>actual</summary><pre>{
+  &quot;after&quot;: &quot;Pocket Memo Board\n Save Memo\nscratch proof note&quot;,
+  &quot;appears&quot;: true,
+  &quot;before&quot;: &quot;Pocket Memo Board\n Save Memo&quot;,
+  &quot;clicked&quot;: true,
+  &quot;filled&quot;: 1
+}</pre></details></td>
+</tr><tr class="pass">
+<td>09-make-a-passphrase-strength-meter</td>
+<td>make a passphrase strength meter</td>
+<td>GO</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>verified_pass</td>
+<td></td>
+<td></td>
+<td>clean</td>
+<td><a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/09-make-a-passphrase-strength-meter/workspace/passphrase_strength_meter.html">preview</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/09-make-a-passphrase-strength-meter/score.json">score</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/09-make-a-passphrase-strength-meter/receipt.json">receipt</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/09-make-a-passphrase-strength-meter/transcript.txt">transcript</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/09-make-a-passphrase-strength-meter/workspace.diff">diff</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/09-make-a-passphrase-strength-meter/behavior-probe.json">probe</a>  </td>
+<td><details><summary>actual</summary><pre>{
+  &quot;changed&quot;: true,
+  &quot;strong&quot;: &quot;Passphrase Strength Meter\nStrong&quot;,
+  &quot;weak&quot;: &quot;Passphrase Strength Meter\nWeak&quot;
+}</pre></details></td>
+</tr><tr class="pass">
+<td>10-make-a-doodle-canvas-notebook</td>
+<td>make a doodle canvas notebook</td>
+<td>GO</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>verified_pass</td>
+<td></td>
+<td></td>
+<td>clean</td>
+<td><a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/10-make-a-doodle-canvas-notebook/workspace/index.html">preview</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/10-make-a-doodle-canvas-notebook/score.json">score</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/10-make-a-doodle-canvas-notebook/receipt.json">receipt</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/10-make-a-doodle-canvas-notebook/transcript.txt">transcript</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/10-make-a-doodle-canvas-notebook/workspace.diff">diff</a> <a href="../source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10e-level3-stabilization-runs/10-make-a-doodle-canvas-notebook/behavior-probe.json">probe</a>  </td>
+<td><details><summary>actual</summary><pre>{
+  &quot;box&quot;: {
+    &quot;height&quot;: 602,
+    &quot;width&quot;: 802,
+    &quot;x&quot;: 8,
+    &quot;y&quot;: 79.875
+  },
+  &quot;canvas&quot;: true,
+  &quot;changed&quot;: true
+}</pre></details></td>
+</tr></tbody></table>
+</section>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "test": "make a campfire podcast mini player-player-control-change",
+  "verdict": "PASS",
+  "passed": true,
+  "expected": "play/pause or player control visibly changes state",
+  "primary_behavior_failure_bucket": "",
+  "failureBucket": "",
+  "actual": {
+    "before": "Track Title\nPlay Skip",
+    "after": "Track Title\nPause Skip",
+    "clicked": true
+  },
+  "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-semantic-generalization-gate-b-20260613\\final-clean-10-gate-b-runs\\06-make-a-campfire-podcast-mini-player\\workspace\\index.html"
+}

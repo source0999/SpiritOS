@@ -1,0 +1,86 @@
+--- a/index.html
++++ b/index.html
+@@ -0,0 +1,18 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Laundry Flip Countdown</title>
++    <link rel="stylesheet" href="styles.css">
++</head>
++<body>
++    <div class="countdown-container">
++        <h1 id="countdown">60</h1>
++        <button id="startBtn">Start</button>
++        <button id="stopBtn" disabled>Stop</button>
++        <button id="resetBtn" disabled>Reset</button>
++    </div>
++    <script src="script.js"></script>
++</body>
++</html>--- a/script.js
++++ b/script.js
+@@ -0,0 +1,45 @@
++let countdown = 60;
++let intervalId;
++
++const countdownElement = document.getElementById('countdown');
++const startBtn = document.getElementById('startBtn');
++const stopBtn = document.getElementById('stopBtn');
++const resetBtn = document.getElementById('resetBtn');
++
++function updateCountdown() {
++    countdownElement.textContent = countdown;
++}
++
++function startCountdown() {
++    intervalId = setInterval(() => {
++        if (countdown > 0) {
++            countdown--;
++            updateCountdown();
++        } else {
++            clearInterval(intervalId);
++            stopBtn.disabled = true;
++            resetBtn.disabled = false;
++        }
++    }, 1000);
++    startBtn.disabled = true;
++    stopBtn.disabled = false;
++}
++
++function stopCountdown() {
++    clearInterval(intervalId);
++    startBtn.disabled = false;
++    stopBtn.disabled = true;
++}
++
++function resetCountdown() {
++    countdown = 60;
++    updateCountdown();
++    clearInterval(intervalId);
++    startBtn.disabled = false;
++    stopBtn.disabled = true;
++    resetBtn.disabled = true;
++}
++
++startBtn.addEventListener('click', startCountdown);
++stopBtn.addEventListener('click', stopCountdown);
++resetBtn.addEventListener('click', resetCountdown);--- a/styles.css
++++ b/styles.css
+@@ -0,0 +1,16 @@
++body {
++    font-family: Arial, sans-serif;
++    display: flex;
++    justify-content: center;
++    align-items: center;
++    height: 100vh;
++    margin: 0;
++}
++
++.countdown-container {
++    text-align: center;
++}
++
++button {
++    margin: 5px;
++}

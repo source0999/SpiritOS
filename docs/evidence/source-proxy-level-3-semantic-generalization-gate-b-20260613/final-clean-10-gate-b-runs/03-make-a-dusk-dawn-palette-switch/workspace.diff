@@ -1,0 +1,27 @@
+--- a/index.html
++++ b/index.html
+@@ -0,0 +1,14 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Dusk Dawn Palette Switch</title>
++    <link rel="stylesheet" href="styles.css">
++</head>
++<body class="dawn">
++    <h1>Dusk Dawn Palette Switch</h1>
++    <button id="toggleButton">Toggle Dusk/Dawn</button>
++    <script src="script.js"></script>
++</body>
++</html>--- a/script.js
++++ b/script.js
+@@ -0,0 +1,4 @@
++document.getElementById('toggleButton').addEventListener('click', function() {
++    document.body.classList.toggle('dawn');
++    document.body.classList.toggle('night');
++});--- a/styles.css
++++ b/styles.css
+@@ -0,0 +1,2 @@
++.dawn { background-color: #f0e68c; color: #2f4f4f; }
++.night { background-color: #191970; color: #ffffff; }

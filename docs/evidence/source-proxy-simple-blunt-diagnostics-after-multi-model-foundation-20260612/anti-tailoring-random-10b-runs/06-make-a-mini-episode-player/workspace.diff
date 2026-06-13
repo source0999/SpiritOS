@@ -1,0 +1,47 @@
+--- a/index.html
++++ b/index.html
+@@ -0,0 +1,18 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Mini Episode Player</title>
++    <link rel="stylesheet" href="styles.css">
++</head>
++<body>
++    <div class="player-container">
++        <h1>Episode Player</h1>
++        <input type="file" id="episode-file" accept="video/*">
++        <button id="play-button">Play</button>
++        <video id="video-player" controls></video>
++    </div>
++    <script src="script.js"></script>
++</body>
++</html>--- a/script.js
++++ b/script.js
+@@ -0,0 +1,11 @@
++document.getElementById('play-button').addEventListener('click', function() {
++    var videoPlayer = document.getElementById('video-player');
++    var fileInput = document.getElementById('episode-file');
++    if (fileInput.files.length > 0) {
++        videoPlayer.src = URL.createObjectURL(fileInput.files[0]);
++        videoPlayer.load();
++        videoPlayer.play();
++    } else {
++        alert('Please select a video file.');
++    }
++});--- a/styles.css
++++ b/styles.css
+@@ -0,0 +1,11 @@
++body {
++    font-family: Arial, sans-serif;
++}
++.player-container {
++    text-align: center;
++    margin-top: 50px;
++}
++#video-player {
++    width: 80%;
++    margin: 20px auto;
++}

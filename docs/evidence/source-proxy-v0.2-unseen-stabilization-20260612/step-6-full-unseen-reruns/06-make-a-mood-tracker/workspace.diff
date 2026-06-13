@@ -1,0 +1,47 @@
+--- a/mood_tracker.css
++++ b/mood_tracker.css
+@@ -0,0 +1,18 @@
++body {
++    font-family: Arial, sans-serif;
++    display: flex;
++    flex-direction: column;
++    align-items: center;
++    justify-content: center;
++    height: 100vh;
++    margin: 0;
++}
++#mood-container button {
++    margin: 5px;
++    padding: 10px 20px;
++    font-size: 16px;
++}
++#mood-display {
++    margin-top: 20px;
++    font-size: 24px;
++}--- a/mood_tracker.html
++++ b/mood_tracker.html
+@@ -0,0 +1,19 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Mood Tracker</title>
++    <link rel="stylesheet" href="mood_tracker.css">
++</head>
++<body>
++    <h1>Mood Tracker</h1>
++    <div id="mood-container">
++        <button onclick="updateMood('happy')">😊</button>
++        <button onclick="updateMood('sad')">😔</button>
++        <button onclick="updateMood('neutral')">😐</button>
++    </div>
++    <p id="mood-display"></p>
++    <script src="mood_tracker.js"></script>
++</body>
++</html>--- a/mood_tracker.js
++++ b/mood_tracker.js
+@@ -0,0 +1,3 @@
++function updateMood(mood) {
++    document.getElementById('mood-display').innerText = 'Current Mood: ' + mood;
++}

@@ -1,0 +1,28 @@
+```json
+[
+    {
+        "action_type": "WriteFile",
+        "target": "index.html",
+        "arguments": {
+            "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Snack Break Countdown</title>\n    <link rel=\"stylesheet\" href=\"styles.css\">\n</head>\n<body>\n    <div class=\"container\">\n        <h1 id=\"countdown\">25:00</h1>\n        <button id=\"startBtn\">Start</button>\n        <button id=\"stopBtn\" disabled>Stop</button>\n        <button id=\"resetBtn\">Reset</button>\n    </div>\n    <script src=\"script.js\"></script>\n</body>\n</html>"
+        },
+        "reason": "HTML structure for the countdown timer with start, stop, and reset buttons."
+    },
+    {
+        "action_type": "WriteFile",
+        "target": "styles.css",
+        "arguments": {
+            "content": "body {\n    display: flex;\n    justify-content: center;\n    align-items: center;\n    height: 100vh;\n    background-color: #f0f0f0;\n}\n.container {\n    text-align: center;\n}\nh1 {\n    font-size: 48px;\n    margin-bottom: 20px;\n}\nbutton {\n    padding: 10px 20px;\n    margin: 5px;\n    cursor: pointer;\n}"
+        },
+        "reason": "CSS for styling the countdown timer and buttons."
+    },
+    {
+        "action_type": "WriteFile",
+        "target": "script.js",
+        "arguments": {
+            "content": "let countdownTime = 25 * 60; // 25 minutes in seconds\nlet intervalId;\nconst countdownElement = document.getElementById('countdown');\nconst startBtn = document.getElementById('startBtn');\nconst stopBtn = document.getElementById('stopBtn');\nconst resetBtn = document.getElementById('resetBtn');\n\nfunction updateCountdown() {\n    const minutes = Math.floor(countdownTime / 60);\n    let seconds = countdownTime % 60;\n    if (seconds < 10) seconds = '0' + seconds;\n    countdownElement.textContent = `${minutes}:${seconds}`;\n    if (countdownTime <= 0) {\n        clearInterval(intervalId);\n        alert('Snack break time is over!');\n    }\n}\n\nstartBtn.addEventListener('click', () => {\n    startBtn.disabled = true;\n    stopBtn.disabled = false;\n    intervalId = setInterval(() => {\n        countdownTime--;\n        updateCountdown();\n    }, 1000);\n});\n\nstopBtn.addEventListener('click', () => {\n    clearInterval(intervalId);\n    startBtn.disabled = false;\n    stopBtn.disabled = true;\n});\n\nresetBtn.addEventListener('click', () => {\n    clearInterval(intervalId);\n    countdownTime = 25 * 60;\n    updateCountdown();\n    startBtn.disabled = false;\n    stopBtn.disabled = true;\n});\n\nupdateCountdown();"
+        },
+        "reason": "JavaScript for handling the countdown logic, including start, stop, and reset functionality."
+    }
+]
+```

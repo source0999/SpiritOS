@@ -1,0 +1,28 @@
+{
+  "autonomy_recommendation": "Level 3: handoff packet when local fails",
+  "calculator_proof_strength": "STRONG",
+  "frozen_after_step_2": {
+    "FAIL": 0,
+    "HANDOFF": 0,
+    "NEEDS_FIX": 0,
+    "PASS": 2,
+    "UNVERIFIED": 0,
+    "known_false_positives": 0
+  },
+  "habit_result": "PASS",
+  "hardcoding_tailoring_audit": "PASS",
+  "known_false_negatives": 1,
+  "known_false_positives": 0,
+  "step_1_audit_verdict": "GO",
+  "step_2_repair_verdict": "GO",
+  "step_3_unseen_gauntlet_verdict": "PARTIAL",
+  "unseen_25": {
+    "FAIL": 5,
+    "HANDOFF": 0,
+    "NEEDS_FIX": 12,
+    "PASS": 8,
+    "UNVERIFIED": 0,
+    "known_false_positives": 0
+  },
+  "weather_result": "PASS"
+}

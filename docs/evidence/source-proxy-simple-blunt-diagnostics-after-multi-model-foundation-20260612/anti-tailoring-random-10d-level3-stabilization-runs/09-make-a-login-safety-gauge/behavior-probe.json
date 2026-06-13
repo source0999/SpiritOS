@@ -1,0 +1,14 @@
+{
+  "test": "make a login safety gauge-password-feedback",
+  "verdict": "PASS",
+  "passed": true,
+  "expected": "weak and stronger inputs change safety text",
+  "primary_behavior_failure_bucket": "",
+  "failureBucket": "",
+  "actual": {
+    "weak": "Login\n\nWeak",
+    "strong": "Login\n\nStrong",
+    "changed": true
+  },
+  "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10d-level3-stabilization-runs\\09-make-a-login-safety-gauge\\workspace\\login.html"
+}

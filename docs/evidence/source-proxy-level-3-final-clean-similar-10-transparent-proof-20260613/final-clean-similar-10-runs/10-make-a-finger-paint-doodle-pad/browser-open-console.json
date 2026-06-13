@@ -1,0 +1,18 @@
+{
+  "opened": true,
+  "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\\final-clean-similar-10-runs\\10-make-a-finger-paint-doodle-pad\\workspace\\index.html",
+  "title": "Finger Paint Doodle Pad",
+  "bodyText": "",
+  "elementCounts": {
+    "buttons": 0,
+    "inputs": 0,
+    "links": 0,
+    "canvas": 1,
+    "scripts": 1,
+    "stylesheets": 0
+  },
+  "consoleMessages": [],
+  "pageErrors": [
+    "Cannot read properties of null (reading 'addEventListener')"
+  ]
+}

@@ -1,0 +1,67 @@
+--- a/index.html
++++ b/index.html
+@@ -0,0 +1,18 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Tea Steep Timer</title>
++    <link rel="stylesheet" href="styles.css">
++</head>
++<body>
++    <div class="timer-container">
++        <h1>Tea Steep Timer</h1>
++        <input type="number" id="steep-time" placeholder="Enter steep time in minutes">
++        <button onclick="startTimer()">Start Timer</button>
++        <p id="time-left"></p>
++    </div>
++    <script src="script.js"></script>
++</body>
++</html>--- a/script.js
++++ b/script.js
+@@ -0,0 +1,22 @@
++let timerInterval;
++
++function startTimer() {
++    const steepTime = parseInt(document.getElementById('steep-time').value) * 60;
++    if (isNaN(steepTime) || steepTime <= 0) {
++        alert('Please enter a valid time.');
++        return;
++    }
++    document.getElementById('time-left').textContent = `${steepTime} seconds left`;
++    timerInterval = setInterval(() => {
++        steepTime--;
++        document.getElementById('time-left').textContent = `${steepTime} seconds left`;
++        if (steepTime <= 0) {
++            clearInterval(timerInterval);
++            alert('Timer finished!');
++        }
++    }, 1000);
++}
++
++function stopTimer() {
++    clearInterval(timerInterval);
++}--- a/styles.css
++++ b/styles.css
+@@ -0,0 +1,20 @@
++body {
++    font-family: Arial, sans-serif;
++    display: flex;
++    justify-content: center;
++    align-items: center;
++    height: 100vh;
++    margin: 0;
++}
++.timer-container {
++    text-align: center;
++}
++input[type="number"] {
++    padding: 10px;
++    font-size: 16px;
++}
++button {
++    padding: 10px 20px;
++    font-size: 16px;
++    cursor: pointer;
++}

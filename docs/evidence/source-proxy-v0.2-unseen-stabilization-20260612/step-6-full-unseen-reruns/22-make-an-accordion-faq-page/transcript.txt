@@ -1,0 +1,28 @@
+```json
+[
+    {
+        "action_type": "WriteFile",
+        "target": "index.html",
+        "arguments": {
+            "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>FAQ</title>\n    <link rel=\"stylesheet\" href=\"styles.css\">\n</head>\n<body>\n    <div class=\"accordion\">\n        <div class=\"accordion-item\">\n            <button class=\"accordion-button\">What is an accordion?</button>\n            <div class=\"accordion-content\">\n                An accordion is a vertically stacked set of interactive headings that each contain a title and a body. When a heading is clicked, the corresponding content area expands or collapses.\n            </div>\n        </div>\n        <div class=\"accordion-item\">\n            <button class=\"accordion-button\">How does an accordion work?</button>\n            <div class=\"accordion-content\">\n                An accordion works by toggling the visibility of its content area when a heading is clicked. This is typically done using JavaScript to add or remove CSS classes that control the height and display properties of the content.\n            </div>\n        </div>\n    </div>\n    <script src=\"script.js\"></script>\n</body>\n</html>"
+        },
+        "reason": "HTML file for the accordion FAQ page."
+    },
+    {
+        "action_type": "WriteFile",
+        "target": "styles.css",
+        "arguments": {
+            "content": ".accordion {\n    width: 100%;\n}\n\n.accordion-item {\n    border-bottom: 1px solid #ccc;\n}\n\n.accordion-button {\n    background-color: #f1f1f1;\n    color: #444;\n    padding: 12px;\n    width: 100%;\n    text-align: left;\n    border: none;\n    outline: none;\n    cursor: pointer;\n}\n\n.accordion-content {\n    padding: 0 18px;\n    display: none;\n    overflow: hidden;\n    background-color: #f9f9f9;\n}"
+        },
+        "reason": "CSS file to style the accordion FAQ page."
+    },
+    {
+        "action_type": "WriteFile",
+        "target": "script.js",
+        "arguments": {
+            "content": "document.addEventListener('DOMContentLoaded', function() {\n    var acc = document.getElementsByClassName('accordion-button');\n    for (var i = 0; i < acc.length; i++) {\n        acc[i].addEventListener('click', function() {\n            this.classList.toggle('active');\n            var panel = this.nextElementSibling;\n            if (panel.style.display === 'block') {\n                panel.style.display = 'none';\n            } else {\n                panel.style.display = 'block';\n            }\n        });\n    }\n});"
+        },
+        "reason": "JavaScript file to handle the accordion functionality."
+    }
+]
+```

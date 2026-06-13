@@ -1,0 +1,137 @@
+{
+  "contract_version": "phase-6.2-v0.1",
+  "product_pass_rule": "Product PASS requires direct behavior proof against explicit acceptance criteria.",
+  "non_pass_signals": [
+    "artifact_exists",
+    "preview_opens",
+    "route_200",
+    "generated_markdown",
+    "static_hard_coded_content",
+    "class_toggle_without_computed_visual_change",
+    "clean_diff_preview",
+    "passing_unit_tests_without_behavior_coverage"
+  ],
+  "required_guardrails": {
+    "artifact_existence_does_not_imply_product_pass": true,
+    "preview_opens_does_not_imply_behavior_pass": true,
+    "static_content_does_not_imply_app_behavior": true,
+    "corrected_behavior_diagnostics_are_future_proof_inputs": true
+  },
+  "proof_tiers": [
+    {
+      "tier": 0,
+      "name": "artifact_readiness",
+      "product_pass_eligible": false,
+      "description": "Artifact exists, file type is plausible, preview file path is present."
+    },
+    {
+      "tier": 1,
+      "name": "static_dom_contract",
+      "product_pass_eligible": false,
+      "description": "Expected elements, labels, or CSS classes exist without interaction proof."
+    },
+    {
+      "tier": 2,
+      "name": "behavior_interaction_computed_state",
+      "product_pass_eligible": true,
+      "description": "Interaction is executed and observed result matches acceptance criteria."
+    },
+    {
+      "tier": 3,
+      "name": "route_browser_screenshot_manual_proof",
+      "product_pass_eligible": true,
+      "description": "End-to-end proof covers requested user behavior and records receipts."
+    },
+    {
+      "tier": 4,
+      "name": "regression_repeatability",
+      "product_pass_eligible": true,
+      "description": "Behavior proof is repeatable and tied to tests or durable evidence."
+    }
+  ],
+  "fixtures": [
+    {
+      "fixture_id": "calculator-false-positive",
+      "previous_result": "PASS",
+      "corrected_result": "FAIL",
+      "required_behavior_test": "click_or_type_2_plus_3_equals",
+      "observed": "display returned 0 instead of 5",
+      "pass_condition": "display returns 5",
+      "future_required_use": ["Phase 1.3", "Phase 6.2"],
+      "phase_6_expected_verdict_without_new_behavior_proof": "FAIL"
+    },
+    {
+      "fixture_id": "dark-theme-false-positive",
+      "previous_result": "PASS",
+      "corrected_result": "FAIL",
+      "required_behavior_test": "capture computed body colors, click toggle, capture again",
+      "observed": "class changed but background and text colors stayed the same",
+      "pass_condition": "computed background or text colors visibly change in the expected direction",
+      "future_required_use": ["Phase 1.3", "Phase 6.2"],
+      "phase_6_expected_verdict_without_new_behavior_proof": "FAIL"
+    },
+    {
+      "fixture_id": "habit-tracker-false-positive",
+      "previous_result": "PASS",
+      "corrected_result": "FAIL",
+      "required_behavior_test": "inspect for input, buttons, and state-changing controls",
+      "observed": "static hard-coded habits with no controls",
+      "pass_condition": "user can change habit state according to prompt",
+      "future_required_use": ["Phase 1.3", "Phase 6.2"],
+      "phase_6_expected_verdict_without_new_behavior_proof": "FAIL"
+    },
+    {
+      "fixture_id": "timer-false-negative",
+      "previous_result": "FAIL",
+      "corrected_result": "PASS",
+      "required_behavior_test": "start timer, wait, stop, verify time freezes",
+      "observed": "timer changed from 00:00 to 00:02 and stayed after Stop",
+      "pass_condition": "start, count, stop, and freeze behavior works",
+      "future_required_use": ["Phase 6.2 pass-preservation fixture"],
+      "phase_6_expected_verdict_with_preserved_behavior_proof": "PASS"
+    },
+    {
+      "fixture_id": "notes-markdown-only",
+      "previous_result": "PASS",
+      "corrected_result": "FAIL",
+      "required_behavior_test": "verify an app exists, not just markdown content",
+      "observed": "notes app generated markdown only instead of an app",
+      "pass_condition": "interactive notes app exists and supports requested notes behavior",
+      "future_required_use": ["truth contract negative case", "behavior verifier negative case"],
+      "phase_6_expected_verdict_without_new_behavior_proof": "FAIL"
+    },
+    {
+      "fixture_id": "password-checker-missing-preview",
+      "previous_result": "PASS",
+      "corrected_result": "FAIL",
+      "required_behavior_test": "preview artifact must exist before behavior can be evaluated",
+      "observed": "no preview files",
+      "pass_condition": "preview exists and password checking behavior is proven",
+      "future_required_use": ["truth contract negative case", "behavior verifier negative case"],
+      "phase_6_expected_verdict_without_artifact": "FAIL",
+      "behavior_status_without_artifact": "UNVERIFIED"
+    },
+    {
+      "fixture_id": "drawing-pad-missing-preview",
+      "previous_result": "PASS",
+      "corrected_result": "FAIL",
+      "required_behavior_test": "preview artifact must exist before behavior can be evaluated",
+      "observed": "no preview files",
+      "pass_condition": "preview exists and drawing behavior is proven",
+      "future_required_use": ["truth contract negative case", "behavior verifier negative case"],
+      "phase_6_expected_verdict_without_artifact": "FAIL",
+      "behavior_status_without_artifact": "UNVERIFIED"
+    },
+    {
+      "fixture_id": "music-player-mockup-missing-preview",
+      "previous_result": "PASS",
+      "corrected_result": "FAIL",
+      "required_behavior_test": "preview artifact must exist before behavior can be evaluated",
+      "observed": "no preview files",
+      "pass_condition": "preview exists and music player mockup behavior is proven",
+      "future_required_use": ["truth contract negative case", "behavior verifier negative case"],
+      "phase_6_expected_verdict_without_artifact": "FAIL",
+      "behavior_status_without_artifact": "UNVERIFIED"
+    }
+  ]
+}

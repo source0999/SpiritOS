@@ -1,0 +1,46 @@
+--- a/index.html
++++ b/index.html
+@@ -0,0 +1,17 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Podcast Player</title>
++    <link rel="stylesheet" href="styles.css">
++</head>
++<body>
++    <div class="player-container">
++        <h1>Podcast Player</h1>
++        <audio id="podcast-player" controls></audio>
++        <input type="file" id="upload-button" accept="audio/*">
++    </div>
++    <script src="script.js"></script>
++</body>
++</html>--- a/script.js
++++ b/script.js
+@@ -0,0 +1,8 @@
++document.getElementById('upload-button').addEventListener('change', function(event) {
++    const file = event.target.files[0];
++    if (file) {
++        const audioPlayer = document.getElementById('podcast-player');
++        audioPlayer.src = URL.createObjectURL(file);
++        audioPlayer.load();
++    }
++});--- a/styles.css
++++ b/styles.css
+@@ -0,0 +1,14 @@
++body {
++    font-family: Arial, sans-serif;
++}
++.player-container {
++    width: 80%;
++    margin: auto;
++    text-align: center;
++}
++audio {
++    width: 100%;
++}
++input[type="file"] {
++    margin-top: 20px;
++}

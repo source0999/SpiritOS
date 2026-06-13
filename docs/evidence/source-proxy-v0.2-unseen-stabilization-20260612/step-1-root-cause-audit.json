@@ -1,0 +1,567 @@
+{
+  "classifications": [
+    {
+      "behavior_contract_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\01-make-a-tip-calculator\\behavior-contract.json",
+      "evidence_packet_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\01-make-a-tip-calculator\\evidence-packet.json",
+      "html_files": [],
+      "old_final_verdict": "NEEDS_FIX",
+      "old_preview_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\01-make-a-tip-calculator\\workspace\\index.html",
+      "old_route_status": "EXPECTED-BLOCKED",
+      "preview_selection_reason": "no_browser_viewable_html_artifact",
+      "prompt": "make a tip calculator",
+      "receipt_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\01-make-a-tip-calculator\\receipt.json",
+      "resolved_preview_path": "",
+      "retest_result_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\01-make-a-tip-calculator\\retest-result.json",
+      "root_cause": "missing_artifact",
+      "score_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\01-make-a-tip-calculator\\score.json",
+      "transcript_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\01-make-a-tip-calculator\\transcript.txt",
+      "workspace_diff_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\01-make-a-tip-calculator\\workspace.diff",
+      "workspace_files": []
+    },
+    {
+      "behavior_contract_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\02-make-a-pomodoro-timer\\behavior-contract.json",
+      "evidence_packet_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\02-make-a-pomodoro-timer\\evidence-packet.json",
+      "html_files": [],
+      "old_final_verdict": "NEEDS_FIX",
+      "old_preview_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\02-make-a-pomodoro-timer\\workspace\\index.html",
+      "old_route_status": "EXPECTED-BLOCKED",
+      "preview_selection_reason": "no_browser_viewable_html_artifact",
+      "prompt": "make a pomodoro timer",
+      "receipt_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\02-make-a-pomodoro-timer\\receipt.json",
+      "resolved_preview_path": "",
+      "retest_result_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\02-make-a-pomodoro-timer\\retest-result.json",
+      "root_cause": "missing_artifact",
+      "score_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\02-make-a-pomodoro-timer\\score.json",
+      "transcript_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\02-make-a-pomodoro-timer\\transcript.txt",
+      "workspace_diff_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\02-make-a-pomodoro-timer\\workspace.diff",
+      "workspace_files": []
+    },
+    {
+      "behavior_contract_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\03-make-a-budget-splitter\\behavior-contract.json",
+      "evidence_packet_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\03-make-a-budget-splitter\\evidence-packet.json",
+      "html_files": [],
+      "old_final_verdict": "NEEDS_FIX",
+      "old_preview_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\03-make-a-budget-splitter\\workspace\\index.html",
+      "old_route_status": "EXPECTED-BLOCKED",
+      "preview_selection_reason": "no_browser_viewable_html_artifact",
+      "prompt": "make a budget splitter",
+      "receipt_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\03-make-a-budget-splitter\\receipt.json",
+      "resolved_preview_path": "",
+      "retest_result_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\03-make-a-budget-splitter\\retest-result.json",
+      "root_cause": "missing_artifact",
+      "score_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\03-make-a-budget-splitter\\score.json",
+      "transcript_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\03-make-a-budget-splitter\\transcript.txt",
+      "workspace_diff_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\03-make-a-budget-splitter\\workspace.diff",
+      "workspace_files": []
+    },
+    {
+      "behavior_contract_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\04-make-a-flashcard-app\\behavior-contract.json",
+      "evidence_packet_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\04-make-a-flashcard-app\\evidence-packet.json",
+      "html_files": [
+        "index.html"
+      ],
+      "old_final_verdict": "PASS",
+      "old_preview_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\04-make-a-flashcard-app\\workspace\\index.html",
+      "old_route_status": "GO",
+      "preview_selection_reason": "explicit_preview_path",
+      "prompt": "make a flashcard app",
+      "receipt_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\04-make-a-flashcard-app\\receipt.json",
+      "resolved_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\04-make-a-flashcard-app\\workspace\\index.html",
+      "retest_result_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\04-make-a-flashcard-app\\retest-result.json",
+      "root_cause": "none",
+      "score_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\04-make-a-flashcard-app\\score.json",
+      "transcript_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\04-make-a-flashcard-app\\transcript.txt",
+      "workspace_diff_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\04-make-a-flashcard-app\\workspace.diff",
+      "workspace_files": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ]
+    },
+    {
+      "behavior_contract_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\05-make-a-unit-converter\\behavior-contract.json",
+      "evidence_packet_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\05-make-a-unit-converter\\evidence-packet.json",
+      "html_files": [],
+      "old_final_verdict": "NEEDS_FIX",
+      "old_preview_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\05-make-a-unit-converter\\workspace\\index.html",
+      "old_route_status": "EXPECTED-BLOCKED",
+      "preview_selection_reason": "no_browser_viewable_html_artifact",
+      "prompt": "make a unit converter",
+      "receipt_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\05-make-a-unit-converter\\receipt.json",
+      "resolved_preview_path": "",
+      "retest_result_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\05-make-a-unit-converter\\retest-result.json",
+      "root_cause": "missing_artifact",
+      "score_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\05-make-a-unit-converter\\score.json",
+      "transcript_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\05-make-a-unit-converter\\transcript.txt",
+      "workspace_diff_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\05-make-a-unit-converter\\workspace.diff",
+      "workspace_files": []
+    },
+    {
+      "behavior_contract_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\06-make-a-mood-tracker\\behavior-contract.json",
+      "evidence_packet_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\06-make-a-mood-tracker\\evidence-packet.json",
+      "html_files": [
+        "mood_tracker.html"
+      ],
+      "old_final_verdict": "FAIL",
+      "old_preview_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\06-make-a-mood-tracker\\workspace\\mood_tracker.html",
+      "old_route_status": "GO",
+      "preview_selection_reason": "explicit_preview_path",
+      "prompt": "make a mood tracker",
+      "receipt_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\06-make-a-mood-tracker\\receipt.json",
+      "resolved_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\06-make-a-mood-tracker\\workspace\\mood_tracker.html",
+      "retest_result_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\06-make-a-mood-tracker\\retest-result.json",
+      "root_cause": "true_behavior_failure",
+      "score_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\06-make-a-mood-tracker\\score.json",
+      "transcript_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\06-make-a-mood-tracker\\transcript.txt",
+      "workspace_diff_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\06-make-a-mood-tracker\\workspace.diff",
+      "workspace_files": [
+        "mood_tracker.css",
+        "mood_tracker.html",
+        "mood_tracker.js"
+      ]
+    },
+    {
+      "behavior_contract_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\07-make-a-quote-generator\\behavior-contract.json",
+      "evidence_packet_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\07-make-a-quote-generator\\evidence-packet.json",
+      "html_files": [],
+      "old_final_verdict": "NEEDS_FIX",
+      "old_preview_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\07-make-a-quote-generator\\workspace\\index.html",
+      "old_route_status": "EXPECTED-BLOCKED",
+      "preview_selection_reason": "no_browser_viewable_html_artifact",
+      "prompt": "make a quote generator",
+      "receipt_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\07-make-a-quote-generator\\receipt.json",
+      "resolved_preview_path": "",
+      "retest_result_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\07-make-a-quote-generator\\retest-result.json",
+      "root_cause": "missing_artifact",
+      "score_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\07-make-a-quote-generator\\score.json",
+      "transcript_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\07-make-a-quote-generator\\transcript.txt",
+      "workspace_diff_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\07-make-a-quote-generator\\workspace.diff",
+      "workspace_files": []
+    },
+    {
+      "behavior_contract_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\08-make-a-counter-app\\behavior-contract.json",
+      "evidence_packet_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\08-make-a-counter-app\\evidence-packet.json",
+      "html_files": [
+        "index.html"
+      ],
+      "old_final_verdict": "PASS",
+      "old_preview_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\08-make-a-counter-app\\workspace\\index.html",
+      "old_route_status": "GO",
+      "preview_selection_reason": "explicit_preview_path",
+      "prompt": "make a counter app",
+      "receipt_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\08-make-a-counter-app\\receipt.json",
+      "resolved_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\08-make-a-counter-app\\workspace\\index.html",
+      "retest_result_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\08-make-a-counter-app\\retest-result.json",
+      "root_cause": "none",
+      "score_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\08-make-a-counter-app\\score.json",
+      "transcript_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\08-make-a-counter-app\\transcript.txt",
+      "workspace_diff_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\08-make-a-counter-app\\workspace.diff",
+      "workspace_files": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ]
+    },
+    {
+      "behavior_contract_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\09-make-a-simple-calendar-widget\\behavior-contract.json",
+      "evidence_packet_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\09-make-a-simple-calendar-widget\\evidence-packet.json",
+      "html_files": [
+        "index.html"
+      ],
+      "old_final_verdict": "PASS",
+      "old_preview_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\09-make-a-simple-calendar-widget\\workspace\\index.html",
+      "old_route_status": "GO",
+      "preview_selection_reason": "explicit_preview_path",
+      "prompt": "make a simple calendar widget",
+      "receipt_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\09-make-a-simple-calendar-widget\\receipt.json",
+      "resolved_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\09-make-a-simple-calendar-widget\\workspace\\index.html",
+      "retest_result_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\09-make-a-simple-calendar-widget\\retest-result.json",
+      "root_cause": "none",
+      "score_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\09-make-a-simple-calendar-widget\\score.json",
+      "transcript_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\09-make-a-simple-calendar-widget\\transcript.txt",
+      "workspace_diff_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\09-make-a-simple-calendar-widget\\workspace.diff",
+      "workspace_files": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ]
+    },
+    {
+      "behavior_contract_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\10-make-a-color-palette-picker\\behavior-contract.json",
+      "evidence_packet_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\10-make-a-color-palette-picker\\evidence-packet.json",
+      "html_files": [],
+      "old_final_verdict": "NEEDS_FIX",
+      "old_preview_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\10-make-a-color-palette-picker\\workspace\\index.html",
+      "old_route_status": "EXPECTED-BLOCKED",
+      "preview_selection_reason": "no_browser_viewable_html_artifact",
+      "prompt": "make a color palette picker",
+      "receipt_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\10-make-a-color-palette-picker\\receipt.json",
+      "resolved_preview_path": "",
+      "retest_result_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\10-make-a-color-palette-picker\\retest-result.json",
+      "root_cause": "missing_artifact",
+      "score_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\10-make-a-color-palette-picker\\score.json",
+      "transcript_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\10-make-a-color-palette-picker\\transcript.txt",
+      "workspace_diff_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\10-make-a-color-palette-picker\\workspace.diff",
+      "workspace_files": []
+    },
+    {
+      "behavior_contract_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\11-make-a-quiz-app\\behavior-contract.json",
+      "evidence_packet_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\11-make-a-quiz-app\\evidence-packet.json",
+      "html_files": [
+        "quiz.html"
+      ],
+      "old_final_verdict": "PASS",
+      "old_preview_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\11-make-a-quiz-app\\workspace\\quiz.html",
+      "old_route_status": "GO",
+      "preview_selection_reason": "explicit_preview_path",
+      "prompt": "make a quiz app",
+      "receipt_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\11-make-a-quiz-app\\receipt.json",
+      "resolved_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\11-make-a-quiz-app\\workspace\\quiz.html",
+      "retest_result_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\11-make-a-quiz-app\\retest-result.json",
+      "root_cause": "none",
+      "score_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\11-make-a-quiz-app\\score.json",
+      "transcript_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\11-make-a-quiz-app\\transcript.txt",
+      "workspace_diff_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\11-make-a-quiz-app\\workspace.diff",
+      "workspace_files": [
+        "quiz.css",
+        "quiz.html",
+        "quiz.js"
+      ]
+    },
+    {
+      "behavior_contract_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\12-make-a-grocery-list-app\\behavior-contract.json",
+      "evidence_packet_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\12-make-a-grocery-list-app\\evidence-packet.json",
+      "html_files": [
+        "index.html"
+      ],
+      "old_final_verdict": "PASS",
+      "old_preview_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\12-make-a-grocery-list-app\\workspace\\index.html",
+      "old_route_status": "GO",
+      "preview_selection_reason": "explicit_preview_path",
+      "prompt": "make a grocery list app",
+      "receipt_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\12-make-a-grocery-list-app\\receipt.json",
+      "resolved_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\12-make-a-grocery-list-app\\workspace\\index.html",
+      "retest_result_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\12-make-a-grocery-list-app\\retest-result.json",
+      "root_cause": "none",
+      "score_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\12-make-a-grocery-list-app\\score.json",
+      "transcript_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\12-make-a-grocery-list-app\\transcript.txt",
+      "workspace_diff_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\12-make-a-grocery-list-app\\workspace.diff",
+      "workspace_files": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ]
+    },
+    {
+      "behavior_contract_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\13-make-a-stopwatch\\behavior-contract.json",
+      "evidence_packet_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\13-make-a-stopwatch\\evidence-packet.json",
+      "html_files": [],
+      "old_final_verdict": "NEEDS_FIX",
+      "old_preview_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\13-make-a-stopwatch\\workspace\\index.html",
+      "old_route_status": "EXPECTED-BLOCKED",
+      "preview_selection_reason": "no_browser_viewable_html_artifact",
+      "prompt": "make a stopwatch",
+      "receipt_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\13-make-a-stopwatch\\receipt.json",
+      "resolved_preview_path": "",
+      "retest_result_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\13-make-a-stopwatch\\retest-result.json",
+      "root_cause": "missing_artifact",
+      "score_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\13-make-a-stopwatch\\score.json",
+      "transcript_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\13-make-a-stopwatch\\transcript.txt",
+      "workspace_diff_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\13-make-a-stopwatch\\workspace.diff",
+      "workspace_files": []
+    },
+    {
+      "behavior_contract_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\14-make-a-bmi-calculator\\behavior-contract.json",
+      "evidence_packet_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\14-make-a-bmi-calculator\\evidence-packet.json",
+      "html_files": [],
+      "old_final_verdict": "NEEDS_FIX",
+      "old_preview_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\14-make-a-bmi-calculator\\workspace\\index.html",
+      "old_route_status": "EXPECTED-BLOCKED",
+      "preview_selection_reason": "no_browser_viewable_html_artifact",
+      "prompt": "make a BMI calculator",
+      "receipt_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\14-make-a-bmi-calculator\\receipt.json",
+      "resolved_preview_path": "",
+      "retest_result_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\14-make-a-bmi-calculator\\retest-result.json",
+      "root_cause": "missing_artifact",
+      "score_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\14-make-a-bmi-calculator\\score.json",
+      "transcript_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\14-make-a-bmi-calculator\\transcript.txt",
+      "workspace_diff_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\14-make-a-bmi-calculator\\workspace.diff",
+      "workspace_files": []
+    },
+    {
+      "behavior_contract_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\15-make-a-random-password-generator\\behavior-contract.json",
+      "evidence_packet_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\15-make-a-random-password-generator\\evidence-packet.json",
+      "html_files": [],
+      "old_final_verdict": "NEEDS_FIX",
+      "old_preview_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\15-make-a-random-password-generator\\workspace\\index.html",
+      "old_route_status": "EXPECTED-BLOCKED",
+      "preview_selection_reason": "no_browser_viewable_html_artifact",
+      "prompt": "make a random password generator",
+      "receipt_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\15-make-a-random-password-generator\\receipt.json",
+      "resolved_preview_path": "",
+      "retest_result_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\15-make-a-random-password-generator\\retest-result.json",
+      "root_cause": "missing_artifact",
+      "score_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\15-make-a-random-password-generator\\score.json",
+      "transcript_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\15-make-a-random-password-generator\\transcript.txt",
+      "workspace_diff_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\15-make-a-random-password-generator\\workspace.diff",
+      "workspace_files": []
+    },
+    {
+      "behavior_contract_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\16-make-a-markdown-previewer\\behavior-contract.json",
+      "evidence_packet_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\16-make-a-markdown-previewer\\evidence-packet.json",
+      "html_files": [],
+      "old_final_verdict": "NEEDS_FIX",
+      "old_preview_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\16-make-a-markdown-previewer\\workspace\\index.html",
+      "old_route_status": "GO",
+      "preview_selection_reason": "no_browser_viewable_html_artifact",
+      "prompt": "make a markdown previewer",
+      "receipt_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\16-make-a-markdown-previewer\\receipt.json",
+      "resolved_preview_path": "",
+      "retest_result_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\16-make-a-markdown-previewer\\retest-result.json",
+      "root_cause": "missing_artifact",
+      "score_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\16-make-a-markdown-previewer\\score.json",
+      "transcript_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\16-make-a-markdown-previewer\\transcript.txt",
+      "workspace_diff_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\16-make-a-markdown-previewer\\workspace.diff",
+      "workspace_files": [
+        "markdown_preview.md"
+      ]
+    },
+    {
+      "behavior_contract_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\17-make-a-simple-expense-tracker\\behavior-contract.json",
+      "evidence_packet_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\17-make-a-simple-expense-tracker\\evidence-packet.json",
+      "html_files": [
+        "index.html"
+      ],
+      "old_final_verdict": "FAIL",
+      "old_preview_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\17-make-a-simple-expense-tracker\\workspace\\index.html",
+      "old_route_status": "GO",
+      "preview_selection_reason": "explicit_preview_path",
+      "prompt": "make a simple expense tracker",
+      "receipt_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\17-make-a-simple-expense-tracker\\receipt.json",
+      "resolved_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\17-make-a-simple-expense-tracker\\workspace\\index.html",
+      "retest_result_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\17-make-a-simple-expense-tracker\\retest-result.json",
+      "root_cause": "true_behavior_failure",
+      "score_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\17-make-a-simple-expense-tracker\\score.json",
+      "transcript_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\17-make-a-simple-expense-tracker\\transcript.txt",
+      "workspace_diff_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\17-make-a-simple-expense-tracker\\workspace.diff",
+      "workspace_files": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ]
+    },
+    {
+      "behavior_contract_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\18-make-a-water-intake-tracker\\behavior-contract.json",
+      "evidence_packet_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\18-make-a-water-intake-tracker\\evidence-packet.json",
+      "html_files": [
+        "water_intake_tracker.html"
+      ],
+      "old_final_verdict": "FAIL",
+      "old_preview_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\18-make-a-water-intake-tracker\\workspace\\water_intake_tracker.html",
+      "old_route_status": "GO",
+      "preview_selection_reason": "explicit_preview_path",
+      "prompt": "make a water intake tracker",
+      "receipt_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\18-make-a-water-intake-tracker\\receipt.json",
+      "resolved_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\18-make-a-water-intake-tracker\\workspace\\water_intake_tracker.html",
+      "retest_result_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\18-make-a-water-intake-tracker\\retest-result.json",
+      "root_cause": "true_behavior_failure",
+      "score_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\18-make-a-water-intake-tracker\\score.json",
+      "transcript_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\18-make-a-water-intake-tracker\\transcript.txt",
+      "workspace_diff_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\18-make-a-water-intake-tracker\\workspace.diff",
+      "workspace_files": [
+        "water_intake_tracker.css",
+        "water_intake_tracker.html",
+        "water_intake_tracker.js"
+      ]
+    },
+    {
+      "behavior_contract_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\19-make-a-workout-set-counter\\behavior-contract.json",
+      "evidence_packet_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\19-make-a-workout-set-counter\\evidence-packet.json",
+      "html_files": [],
+      "old_final_verdict": "NEEDS_FIX",
+      "old_preview_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\19-make-a-workout-set-counter\\workspace\\index.html",
+      "old_route_status": "EXPECTED-BLOCKED",
+      "preview_selection_reason": "no_browser_viewable_html_artifact",
+      "prompt": "make a workout set counter",
+      "receipt_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\19-make-a-workout-set-counter\\receipt.json",
+      "resolved_preview_path": "",
+      "retest_result_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\19-make-a-workout-set-counter\\retest-result.json",
+      "root_cause": "missing_artifact",
+      "score_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\19-make-a-workout-set-counter\\score.json",
+      "transcript_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\19-make-a-workout-set-counter\\transcript.txt",
+      "workspace_diff_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\19-make-a-workout-set-counter\\workspace.diff",
+      "workspace_files": []
+    },
+    {
+      "behavior_contract_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\20-make-a-simple-image-gallery-mockup\\behavior-contract.json",
+      "evidence_packet_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\20-make-a-simple-image-gallery-mockup\\evidence-packet.json",
+      "html_files": [
+        "gallery.html"
+      ],
+      "old_final_verdict": "PASS",
+      "old_preview_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\20-make-a-simple-image-gallery-mockup\\workspace\\gallery.html",
+      "old_route_status": "GO",
+      "preview_selection_reason": "explicit_preview_path",
+      "prompt": "make a simple image gallery mockup",
+      "receipt_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\20-make-a-simple-image-gallery-mockup\\receipt.json",
+      "resolved_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\20-make-a-simple-image-gallery-mockup\\workspace\\gallery.html",
+      "retest_result_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\20-make-a-simple-image-gallery-mockup\\retest-result.json",
+      "root_cause": "none",
+      "score_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\20-make-a-simple-image-gallery-mockup\\score.json",
+      "transcript_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\20-make-a-simple-image-gallery-mockup\\transcript.txt",
+      "workspace_diff_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\20-make-a-simple-image-gallery-mockup\\workspace.diff",
+      "workspace_files": [
+        "gallery.css",
+        "gallery.html",
+        "gallery.js"
+      ]
+    },
+    {
+      "behavior_contract_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\21-make-a-tabs-component-demo\\behavior-contract.json",
+      "evidence_packet_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\21-make-a-tabs-component-demo\\evidence-packet.json",
+      "html_files": [
+        "index.html"
+      ],
+      "old_final_verdict": "FAIL",
+      "old_preview_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\21-make-a-tabs-component-demo\\workspace\\index.html",
+      "old_route_status": "GO",
+      "preview_selection_reason": "explicit_preview_path",
+      "prompt": "make a tabs component demo",
+      "receipt_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\21-make-a-tabs-component-demo\\receipt.json",
+      "resolved_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\21-make-a-tabs-component-demo\\workspace\\index.html",
+      "retest_result_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\21-make-a-tabs-component-demo\\retest-result.json",
+      "root_cause": "true_behavior_failure",
+      "score_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\21-make-a-tabs-component-demo\\score.json",
+      "transcript_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\21-make-a-tabs-component-demo\\transcript.txt",
+      "workspace_diff_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\21-make-a-tabs-component-demo\\workspace.diff",
+      "workspace_files": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ]
+    },
+    {
+      "behavior_contract_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\22-make-an-accordion-faq-page\\behavior-contract.json",
+      "evidence_packet_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\22-make-an-accordion-faq-page\\evidence-packet.json",
+      "html_files": [
+        "index.html"
+      ],
+      "old_final_verdict": "PASS",
+      "old_preview_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\22-make-an-accordion-faq-page\\workspace\\index.html",
+      "old_route_status": "GO",
+      "preview_selection_reason": "explicit_preview_path",
+      "prompt": "make an accordion FAQ page",
+      "receipt_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\22-make-an-accordion-faq-page\\receipt.json",
+      "resolved_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\22-make-an-accordion-faq-page\\workspace\\index.html",
+      "retest_result_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\22-make-an-accordion-faq-page\\retest-result.json",
+      "root_cause": "none",
+      "score_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\22-make-an-accordion-faq-page\\score.json",
+      "transcript_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\22-make-an-accordion-faq-page\\transcript.txt",
+      "workspace_diff_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\22-make-an-accordion-faq-page\\workspace.diff",
+      "workspace_files": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ]
+    },
+    {
+      "behavior_contract_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\23-make-a-progress-bar-demo\\behavior-contract.json",
+      "evidence_packet_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\23-make-a-progress-bar-demo\\evidence-packet.json",
+      "html_files": [
+        "progress-bar-demo.html"
+      ],
+      "old_final_verdict": "FAIL",
+      "old_preview_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\23-make-a-progress-bar-demo\\workspace\\progress-bar-demo.html",
+      "old_route_status": "GO",
+      "preview_selection_reason": "explicit_preview_path",
+      "prompt": "make a progress bar demo",
+      "receipt_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\23-make-a-progress-bar-demo\\receipt.json",
+      "resolved_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\23-make-a-progress-bar-demo\\workspace\\progress-bar-demo.html",
+      "retest_result_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\23-make-a-progress-bar-demo\\retest-result.json",
+      "root_cause": "true_behavior_failure",
+      "score_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\23-make-a-progress-bar-demo\\score.json",
+      "transcript_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\23-make-a-progress-bar-demo\\transcript.txt",
+      "workspace_diff_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\23-make-a-progress-bar-demo\\workspace.diff",
+      "workspace_files": [
+        "progress-bar-demo.css",
+        "progress-bar-demo.html",
+        "progress-bar-demo.js"
+      ]
+    },
+    {
+      "behavior_contract_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\24-make-a-star-rating-widget\\behavior-contract.json",
+      "evidence_packet_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\24-make-a-star-rating-widget\\evidence-packet.json",
+      "html_files": [
+        "src/components/StarRatingWidget.html"
+      ],
+      "old_final_verdict": "NEEDS_FIX",
+      "old_preview_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\24-make-a-star-rating-widget\\workspace\\index.html",
+      "old_route_status": "NO-GO",
+      "preview_selection_reason": "single_html_entrypoint",
+      "prompt": "make a star rating widget",
+      "receipt_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\24-make-a-star-rating-widget\\receipt.json",
+      "resolved_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\24-make-a-star-rating-widget\\workspace\\src\\components\\StarRatingWidget.html",
+      "retest_result_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\24-make-a-star-rating-widget\\retest-result.json",
+      "root_cause": "target_preview_resolution_issue",
+      "score_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\24-make-a-star-rating-widget\\score.json",
+      "transcript_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\24-make-a-star-rating-widget\\transcript.txt",
+      "workspace_diff_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\24-make-a-star-rating-widget\\workspace.diff",
+      "workspace_files": [
+        "src/components/StarRatingWidget.html"
+      ]
+    },
+    {
+      "behavior_contract_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\25-make-a-simple-habit-streak-tracker\\behavior-contract.json",
+      "evidence_packet_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\25-make-a-simple-habit-streak-tracker\\evidence-packet.json",
+      "html_files": [
+        "streak-tracker.html"
+      ],
+      "old_final_verdict": "PASS",
+      "old_preview_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\25-make-a-simple-habit-streak-tracker\\workspace\\streak-tracker.html",
+      "old_route_status": "GO",
+      "preview_selection_reason": "explicit_preview_path",
+      "prompt": "make a simple habit streak tracker",
+      "receipt_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\25-make-a-simple-habit-streak-tracker\\receipt.json",
+      "resolved_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\25-make-a-simple-habit-streak-tracker\\workspace\\streak-tracker.html",
+      "retest_result_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\25-make-a-simple-habit-streak-tracker\\retest-result.json",
+      "root_cause": "none",
+      "score_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\25-make-a-simple-habit-streak-tracker\\score.json",
+      "transcript_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\25-make-a-simple-habit-streak-tracker\\transcript.txt",
+      "workspace_diff_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\25-make-a-simple-habit-streak-tracker\\workspace.diff",
+      "workspace_files": [
+        "streak-tracker.css",
+        "streak-tracker.html",
+        "streak-tracker.js"
+      ]
+    }
+  ],
+  "counts_by_root_cause": {
+    "missing_artifact": 11,
+    "none": 8,
+    "target_preview_resolution_issue": 1,
+    "true_behavior_failure": 5
+  },
+  "fail_root_causes": {
+    "make a mood tracker": "true_behavior_failure",
+    "make a progress bar demo": "true_behavior_failure",
+    "make a simple expense tracker": "true_behavior_failure",
+    "make a tabs component demo": "true_behavior_failure",
+    "make a water intake tracker": "true_behavior_failure"
+  },
+  "needs_fix_root_causes": {
+    "make a BMI calculator": "missing_artifact",
+    "make a budget splitter": "missing_artifact",
+    "make a color palette picker": "missing_artifact",
+    "make a markdown previewer": "missing_artifact",
+    "make a pomodoro timer": "missing_artifact",
+    "make a quote generator": "missing_artifact",
+    "make a random password generator": "missing_artifact",
+    "make a star rating widget": "target_preview_resolution_issue",
+    "make a stopwatch": "missing_artifact",
+    "make a tip calculator": "missing_artifact",
+    "make a unit converter": "missing_artifact",
+    "make a workout set counter": "missing_artifact"
+  },
+  "schema": "source-proxy-v0.2-step-1-root-cause-audit.v1",
+  "status": "GO"
+}

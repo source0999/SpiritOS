@@ -1,0 +1,17 @@
+{
+  "test": "make a doodle board-drawing-surface-change",
+  "verdict": "PASS",
+  "passed": true,
+  "expected": "mouse drag changes canvas pixels",
+  "actual": {
+    "canvas": true,
+    "box": {
+      "x": 238,
+      "y": 98,
+      "width": 804,
+      "height": 604
+    },
+    "changed": true
+  },
+  "path": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10-repair-rerun-runs\\10-make-a-doodle-board\\workspace\\index.html"
+}

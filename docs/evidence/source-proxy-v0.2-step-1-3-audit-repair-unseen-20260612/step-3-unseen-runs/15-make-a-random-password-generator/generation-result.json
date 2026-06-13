@@ -1,0 +1,103 @@
+{
+  "prompt": "make a random password generator",
+  "score": {
+    "actions_seen": 1,
+    "adapter_source": "ollama_generate/tool_action_runtime_v1",
+    "allowed_files_source": "none",
+    "allowed_scope_source": "none",
+    "artifact_class": "",
+    "artifact_score_kind": "expected_blocked",
+    "artifact_specific_ok": false,
+    "backend_created_content": false,
+    "behavior_contract": {
+      "artifact_class": "",
+      "behavior_required": true,
+      "contract_status": "ready",
+      "contract_version": "source-proxy-artifact-behavior-contract-v0.2.phase-3",
+      "final_pass_rule": "Final PASS requires every required behavior probe to pass against the generated artifact.",
+      "non_pass_signals": [
+        "route_go",
+        "artifact_exists",
+        "preview_opens",
+        "static_dom_presence",
+        "model_self_report"
+      ],
+      "preview_requirement": "Openable HTML artifact is required before behavior can be evaluated.",
+      "probe_targets": [
+        {
+          "acceptance_criterion": "Password generator creates a visible password value on demand.",
+          "expected_observation": "A generated password appears and can change on a later generation.",
+          "minimum_proof_tier": 2,
+          "observable_actions": [
+            "click generate or adjust available controls"
+          ],
+          "probe_id": "password-generator-output"
+        }
+      ],
+      "prompt": "make a random password generator",
+      "task_shape": "clarification_required_real_repo_implementation"
+    },
+    "behavior_required_for_final_pass": true,
+    "behavior_verdict": "UNVERIFIED",
+    "benchmark_eligibility_reason": "product_route_uses_proxy_orchestration",
+    "benchmark_eligible": false,
+    "blocked_reasons": [
+      "Action target is outside the allowed file snapshot."
+    ],
+    "canonical_final_verdict": "BLOCKED",
+    "content_byte_match_by_target": {},
+    "deterministic_scaffold_used": false,
+    "dummy_fixture_used": false,
+    "elapsed_seconds": 3.093,
+    "expected_blocked": true,
+    "fallback_used": false,
+    "file_equals_model_action_content": false,
+    "files_changed": [],
+    "files_touched": [],
+    "final_state": "blocked",
+    "final_verdict_reason_codes": [
+      "blocked_by_scope_or_permission",
+      "expected_blocked_result",
+      "target_not_allowed"
+    ],
+    "mode": "product",
+    "model_authored_content_hashes": {
+      "password-generator.js": "b9700bbdd56699ca0a3c4edf54fc459cb07260f8b014d1cec6c2f5da031dd9d2"
+    },
+    "model_authored_targets": [
+      "password-generator.js"
+    ],
+    "model_chose_target": true,
+    "model_id": "qwen2.5-coder:7b",
+    "openable_homepage": false,
+    "openable_homepage_paths": [],
+    "parsed_action_count": 1,
+    "path_selection_mode": "model_chosen",
+    "preview_url": "",
+    "product_helper_used": true,
+    "product_pass": false,
+    "prompt": "make a random password generator",
+    "proxy_exact_target_suggested": "",
+    "proxy_orchestration_used": true,
+    "pure_mode": false,
+    "raw_model_transcript_count": 1,
+    "raw_transcript_path": "/home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/step-3-unseen-runs/15-make-a-random-password-generator/transcript.txt",
+    "real_app_touched": false,
+    "reason_codes": [
+      "expected_blocked_result",
+      "target_not_allowed"
+    ],
+    "receipt_path": "/home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/step-3-unseen-runs/15-make-a-random-password-generator/receipt.json",
+    "route_status": "EXPECTED-BLOCKED",
+    "route_type": "product",
+    "status": "EXPECTED-BLOCKED",
+    "system_preselected_target": false,
+    "target_path_source": "model_action",
+    "task_shape": "clarification_required_real_repo_implementation",
+    "task_shape_source": "target_resolution",
+    "transparent_default_target_used": false,
+    "workspace_decision_source": "target_resolution",
+    "workspace_files": [],
+    "workspace_path": "/home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/step-3-unseen-runs/15-make-a-random-password-generator/workspace"
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "phase": "Phase 2",
+  "selection_policy": {
+    "prefer": [
+      "current repo evidence over stale memory when cheap to verify",
+      "directly relevant receipts over broad historical summaries",
+      "Phase 1 canonical truth labels over ad hoc PASS language",
+      "raw evidence references over copied large payloads",
+      "safe excerpts over full notes"
+    ],
+    "avoid": [
+      "secret-shaped values in summaries",
+      "private Obsidian paths",
+      "archive notes unless explicitly relevant and approved",
+      "treating memory as proof",
+      "treating memory as approval",
+      "using memory to start workers or provider calls"
+    ]
+  },
+  "source_rules": [
+    {
+      "source_type": "obsidian",
+      "include": ["*.md"],
+      "exclude": [".obsidian/**", "private/**", "secrets/**", "archive/**"],
+      "max_notes_default": 8,
+      "max_chars_per_note_default": 1200,
+      "redaction_required": true,
+      "read_only": true
+    },
+    {
+      "source_type": "evidence_doc",
+      "include": ["docs/evidence/**"],
+      "exclude": ["generated diagnostic artifact mutation"],
+      "redaction_required": true,
+      "read_only_except_current_authorized_evidence_root": true
+    },
+    {
+      "source_type": "durable_run",
+      "include": ["data/coding-runs.json"],
+      "redaction_required": true,
+      "read_only": true,
+      "raw_payload_handling": "reference_by_run_id_or_summary_only"
+    },
+    {
+      "source_type": "truth_contract",
+      "include": [
+        "docs/evidence/spiritos-cognitive-control-plane-revamp-v0.1/phase-1/canonical-truth-contract.json",
+        "docs/evidence/spiritos-cognitive-control-plane-revamp-v0.1/phase-1/truth-fixture-requirements.json"
+      ],
+      "redaction_required": false,
+      "read_only": true
+    }
+  ],
+  "truth_carry_forward": {
+    "allowed": [
+      "truth_label",
+      "reason_codes",
+      "evidence_strength",
+      "fixture_id",
+      "raw_diagnostics_ref",
+      "unverified_checks"
+    ],
+    "not_allowed": [
+      "promote weak evidence to PASS",
+      "drop no-diff diagnostics",
+      "turn missing artifact behavior into PASS",
+      "treat route liveness as product proof"
+    ]
+  },
+  "unavailable_memory_rule": "If a memory source is unavailable, mark that source UNVERIFIED with the reason; do not block the whole flow unless the phase requires it.",
+  "verdict": "GO"
+}
+

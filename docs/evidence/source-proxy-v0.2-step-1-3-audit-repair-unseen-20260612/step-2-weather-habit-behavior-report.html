@@ -1,0 +1,19 @@
+<!doctype html><html><head><meta charset='utf-8'><title>Step 2 Weather/Habit Behavior Report</title><style>body{font-family:Segoe UI,Arial,sans-serif;margin:24px;background:#f7f7f4;color:#1f2933}.summary{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}.summary span{background:#fff;border:1px solid #d5d9df;border-radius:6px;padding:7px 9px}.card{background:#fff;border:1px solid #ddd;border-radius:8px;margin:14px 0;padding:14px}.PASS{border-left:6px solid #16833a}.FAIL,.HANDOFF{border-left:6px solid #b42318}.UNVERIFIED,.NEEDS_FIX{border-left:6px solid #b7791f}pre{white-space:pre-wrap;background:#f1f5f9;padding:10px;overflow:auto}a{margin-right:10px;color:#075985}code{background:#eef2f7;padding:2px 5px;border-radius:4px}</style></head><body><h1>Step 2 Weather/Habit Behavior Report</h1><div class='summary'><span>PASS 2</span><span>FAIL 0</span><span>HANDOFF 0</span><span>NEEDS_FIX 0</span><span>UNVERIFIED 0</span><span>Known false positives 0</span></div><section class='card PASS'><h2>make a weather card demo <span>PASS</span></h2><p>Route: GO | Behavior: PASS</p><p>Test: <code>weather-card-fields</code></p><p>Reason: </p><p><a href='step-2-reruns/01-make-a-weather-card-demo/workspace/weather-card.html'>Preview</a> <a href='step-2-reruns/01-make-a-weather-card-demo/receipt.json'>Receipt</a> <a href='step-2-reruns/01-make-a-weather-card-demo/transcript.txt'>Transcript</a> <a href='step-2-reruns/01-make-a-weather-card-demo/score.json'>Score</a> <a href='step-2-reruns/01-make-a-weather-card-demo/retest-result.json'>Retest</a> <a href='step-2-reruns/01-make-a-weather-card-demo/evidence-packet.json'>Evidence</a></p><h3>Expected</h3><pre>{
+  &quot;populatedCityTemperatureCondition&quot;: true
+}</pre><h3>Observed</h3><pre>{
+  &quot;bodyText&quot;: &quot;New City\n\n25\u00b0C\n\nSunny\n\nChange Weather&quot;,
+  &quot;buttonCount&quot;: 1,
+  &quot;changedAfterControl&quot;: true,
+  &quot;hasCity&quot;: true,
+  &quot;hasCondition&quot;: true,
+  &quot;hasTemp&quot;: true
+}</pre></section>
+<section class='card PASS'><h2>make a habit tracker <span>PASS</span></h2><p>Route: GO | Behavior: PASS</p><p>Test: <code>habit-state-change</code></p><p>Reason: </p><p><a href='step-2-reruns/02-make-a-habit-tracker/workspace/habit-tracker.html'>Preview</a> <a href='step-2-reruns/02-make-a-habit-tracker/receipt.json'>Receipt</a> <a href='step-2-reruns/02-make-a-habit-tracker/transcript.txt'>Transcript</a> <a href='step-2-reruns/02-make-a-habit-tracker/score.json'>Score</a> <a href='step-2-reruns/02-make-a-habit-tracker/retest-result.json'>Retest</a> <a href='step-2-reruns/02-make-a-habit-tracker/evidence-packet.json'>Evidence</a></p><h3>Expected</h3><pre>{
+  &quot;checkedStateChanges&quot;: true
+}</pre><h3>Observed</h3><pre>{
+  &quot;after&quot;: &quot;Habit Tracker\nDrink water \nRead a book&quot;,
+  &quot;afterChecked&quot;: true,
+  &quot;before&quot;: &quot;Habit Tracker\nDrink water \nRead a book&quot;,
+  &quot;beforeChecked&quot;: false,
+  &quot;checkedChanged&quot;: true
+}</pre></section></body></html>

@@ -1,0 +1,171 @@
+{
+  "initial_verdict_counts": {
+    "WEAK_PASS": 10
+  },
+  "report_version": "source-proxy-level-2-expectation-report-v0.1",
+  "rows": [
+    {
+      "behavior_evidence_attached": true,
+      "context_search_used": false,
+      "external_resources": 0,
+      "files_created": 3,
+      "final_verdict": "PASS",
+      "initial_verdict": "WEAK_PASS",
+      "key_reason_codes": [
+        "behavior_pass",
+        "safety_pass"
+      ],
+      "lane_selected": "qwen_local_coder",
+      "missing_refs": 0,
+      "product_verdict": "PASS",
+      "prompt": "make a timer app"
+    },
+    {
+      "behavior_evidence_attached": true,
+      "context_search_used": false,
+      "external_resources": 0,
+      "files_created": 3,
+      "final_verdict": "PASS",
+      "initial_verdict": "WEAK_PASS",
+      "key_reason_codes": [
+        "behavior_pass",
+        "safety_pass"
+      ],
+      "lane_selected": "qwen_local_coder",
+      "missing_refs": 0,
+      "product_verdict": "PASS",
+      "prompt": "make a calculator app"
+    },
+    {
+      "behavior_evidence_attached": true,
+      "context_search_used": false,
+      "external_resources": 0,
+      "files_created": 3,
+      "final_verdict": "PASS",
+      "initial_verdict": "WEAK_PASS",
+      "key_reason_codes": [
+        "behavior_pass",
+        "safety_pass"
+      ],
+      "lane_selected": "qwen_local_coder",
+      "missing_refs": 0,
+      "product_verdict": "PASS",
+      "prompt": "make dark theme switcher page"
+    },
+    {
+      "behavior_evidence_attached": true,
+      "context_search_used": false,
+      "external_resources": 0,
+      "files_created": 3,
+      "final_verdict": "PASS",
+      "initial_verdict": "WEAK_PASS",
+      "key_reason_codes": [
+        "behavior_pass",
+        "safety_pass"
+      ],
+      "lane_selected": "qwen_local_coder",
+      "missing_refs": 0,
+      "product_verdict": "PASS",
+      "prompt": "make a todo list app"
+    },
+    {
+      "behavior_evidence_attached": true,
+      "context_search_used": false,
+      "external_resources": 0,
+      "files_created": 3,
+      "final_verdict": "PASS",
+      "initial_verdict": "WEAK_PASS",
+      "key_reason_codes": [
+        "behavior_pass",
+        "safety_pass"
+      ],
+      "lane_selected": "qwen_local_coder",
+      "missing_refs": 0,
+      "product_verdict": "PASS",
+      "prompt": "make a weather card demo"
+    },
+    {
+      "behavior_evidence_attached": true,
+      "context_search_used": false,
+      "external_resources": 0,
+      "files_created": 3,
+      "final_verdict": "PASS",
+      "initial_verdict": "WEAK_PASS",
+      "key_reason_codes": [
+        "behavior_pass",
+        "safety_pass"
+      ],
+      "lane_selected": "qwen_local_coder",
+      "missing_refs": 0,
+      "product_verdict": "PASS",
+      "prompt": "make a music player mockup"
+    },
+    {
+      "behavior_evidence_attached": true,
+      "context_search_used": false,
+      "external_resources": 0,
+      "files_created": 3,
+      "final_verdict": "PASS",
+      "initial_verdict": "WEAK_PASS",
+      "key_reason_codes": [
+        "behavior_pass",
+        "safety_pass"
+      ],
+      "lane_selected": "qwen_local_coder",
+      "missing_refs": 0,
+      "product_verdict": "PASS",
+      "prompt": "make a habit tracker"
+    },
+    {
+      "behavior_evidence_attached": true,
+      "context_search_used": false,
+      "external_resources": 0,
+      "files_created": 3,
+      "final_verdict": "PASS",
+      "initial_verdict": "WEAK_PASS",
+      "key_reason_codes": [
+        "behavior_pass",
+        "safety_pass"
+      ],
+      "lane_selected": "qwen_local_coder",
+      "missing_refs": 0,
+      "product_verdict": "PASS",
+      "prompt": "make a notes app"
+    },
+    {
+      "behavior_evidence_attached": true,
+      "context_search_used": false,
+      "external_resources": 0,
+      "files_created": 3,
+      "final_verdict": "PASS",
+      "initial_verdict": "WEAK_PASS",
+      "key_reason_codes": [
+        "behavior_pass",
+        "safety_pass"
+      ],
+      "lane_selected": "qwen_local_coder",
+      "missing_refs": 0,
+      "product_verdict": "PASS",
+      "prompt": "make a password strength checker"
+    },
+    {
+      "behavior_evidence_attached": true,
+      "context_search_used": false,
+      "external_resources": 0,
+      "files_created": 3,
+      "final_verdict": "PASS",
+      "initial_verdict": "WEAK_PASS",
+      "key_reason_codes": [
+        "behavior_pass",
+        "safety_pass"
+      ],
+      "lane_selected": "qwen_local_coder",
+      "missing_refs": 0,
+      "product_verdict": "PASS",
+      "prompt": "make a simple drawing pad"
+    }
+  ],
+  "verified_verdict_counts": {
+    "PASS": 10
+  }
+}

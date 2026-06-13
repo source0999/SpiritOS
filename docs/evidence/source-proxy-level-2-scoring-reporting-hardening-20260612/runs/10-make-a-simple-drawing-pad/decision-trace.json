@@ -1,0 +1,97 @@
+{
+  "artifact_class": "static_ui_artifact",
+  "backend_authored_content_detected": false,
+  "behavior_evidence_attached": true,
+  "behavior_probe_result": {
+    "passed": true,
+    "reason": "",
+    "verdict": "PASS"
+  },
+  "browser_open_result": {
+    "opened": true,
+    "verdict": "PASS"
+  },
+  "console_error_count": 0,
+  "context_decision": {
+    "context_sources_used": [
+      "behavior_contract",
+      "model_lane_observability",
+      "task_spec_intake"
+    ],
+    "local_context_needed": false,
+    "reason_codes": [
+      "blunt_local_artifact_prompt",
+      "repo_context_not_required"
+    ],
+    "web_search_needed": false,
+    "web_search_used": false
+  },
+  "entrypoint_reason": "explicit_preview_path",
+  "evidence_refs": {
+    "asset_gap_diagnostics": "runs/10-make-a-simple-drawing-pad/asset-gap-diagnostics.json",
+    "behavior_probe": "docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/10-make-a-simple-drawing-pad/behavior-probe.json",
+    "browser_diagnostics": "docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/10-make-a-simple-drawing-pad/browser-open-console.json",
+    "expectation_score_json": "runs/10-make-a-simple-drawing-pad/verified-expectation-score.json",
+    "receipt": "docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/10-make-a-simple-drawing-pad/receipt.json",
+    "score": "docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/10-make-a-simple-drawing-pad/score.json",
+    "transcript": "docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/10-make-a-simple-drawing-pad/transcript.txt",
+    "workspace_diff": "docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/10-make-a-simple-drawing-pad/workspace.diff"
+  },
+  "expected_artifact_kind": "browser_viewable_static_ui",
+  "expected_interaction_level": "canvas_mutation",
+  "external_resources": [],
+  "final_product_verdict": "PASS",
+  "final_verified_expectation_verdict": "PASS",
+  "inferred_intent": "disposable_small_file_bundle",
+  "initial_live_expectation_verdict": "WEAK_PASS",
+  "intent_fit_score": 100,
+  "local_intelligence_decision": {
+    "context_sources": [
+      "behavior_contract",
+      "model_lane_observability",
+      "task_spec_intake"
+    ],
+    "used": [
+      "behavior_contract",
+      "task_spec_intake",
+      "model_lane_observability"
+    ]
+  },
+  "missing_local_references": [],
+  "model_authored_files": [
+    "drawing-pad.css",
+    "drawing-pad.html",
+    "drawing-pad.js"
+  ],
+  "model_lane_selected": "qwen_local_coder",
+  "original_prompt": "make a simple drawing pad",
+  "page_error_count": 0,
+  "proxy_suggested_files": [],
+  "reason_codes": [
+    "artifact_pass",
+    "behavior_pass",
+    "browser_open_pass",
+    "context_pass",
+    "lane_pass",
+    "model_authorship_pass",
+    "no_external_resources_detected",
+    "route_pass",
+    "safety_pass",
+    "sidecar_lanes_preview_only",
+    "usability_pass",
+    "web_search_correctly_not_used"
+  ],
+  "report_version": "source-proxy-level-2-expectation-report-v0.1",
+  "route_type": "product",
+  "selected_entrypoint": "/home/source/SpiritOS/docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/10-make-a-simple-drawing-pad/workspace/drawing-pad.html",
+  "sidecar_lane_status": {
+    "considered": [
+      "hermes_sidecar_verifier_preview",
+      "gemma_sidecar_context_preview"
+    ],
+    "live": false
+  },
+  "task_shape": "disposable_small_file_bundle",
+  "usability_score": 100,
+  "web_search_decision": "not_needed"
+}

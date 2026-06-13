@@ -1,0 +1,16 @@
+{
+  "test": "make a quick jot pad app-visible-state-change",
+  "verdict": "FAIL",
+  "passed": false,
+  "expected": "entered note text remains visible after action",
+  "primary_behavior_failure_bucket": "notes_saved_status_without_note_text",
+  "failureBucket": "notes_saved_status_without_note_text",
+  "actual": {
+    "before": "Quick Jot Pad\n Save Note",
+    "after": "Quick Jot Pad\n Save Note\n\nNote saved successfully.",
+    "filled": 1,
+    "clicked": true,
+    "appears": false
+  },
+  "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10d-runs\\08-make-a-quick-jot-pad-app\\workspace\\index.html"
+}

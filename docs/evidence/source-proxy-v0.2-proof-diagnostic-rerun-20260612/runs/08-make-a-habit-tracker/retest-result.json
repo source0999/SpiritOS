@@ -1,0 +1,47 @@
+{
+  "artifact_ready": true,
+  "attempts_used": 0,
+  "behavior_required": true,
+  "behavior_result": {
+    "observed": {
+      "addAttempt": false,
+      "after": "Habit Tracker\nDrink water\nRead a book",
+      "before": "Habit Tracker\nDrink water\nRead a book",
+      "buttons": [],
+      "inputs": [
+        {
+          "i": 0,
+          "placeholder": "",
+          "tag": "INPUT",
+          "type": "checkbox",
+          "value": "on"
+        },
+        {
+          "i": 1,
+          "placeholder": "",
+          "tag": "INPUT",
+          "type": "checkbox",
+          "value": "on"
+        }
+      ],
+      "toggled": true
+    },
+    "reason": "habit state change missing or static hard-coded habits",
+    "test": "habit-state-change",
+    "verdict": "FAIL"
+  },
+  "canonical_final_verdict": "HANDOFF",
+  "changed_files": [],
+  "diffs": [],
+  "final_reason_codes": [
+    "habit_state_change_missing_or_static_hard_coded_habits",
+    "handoff_required",
+    "post_repair_behavior_fail",
+    "proof_rerun_no_local_repair_attempted"
+  ],
+  "handoff_reason": "habit state change missing or static hard-coded habits",
+  "handoff_required": true,
+  "product_pass": false,
+  "repair_status": "HANDOFF",
+  "result_version": "source-proxy-artifact-retest-result-v0.2.phase-6"
+}

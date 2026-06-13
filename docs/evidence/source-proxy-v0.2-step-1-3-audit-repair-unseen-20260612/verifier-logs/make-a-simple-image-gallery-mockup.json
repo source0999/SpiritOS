@@ -1,0 +1,30 @@
+{
+  "actual": {
+    "imageCount": 4
+  },
+  "contract_probe": {
+    "acceptance_criterion": "Image gallery mockup shows image items and supports selection or navigation when controls exist.",
+    "expected_observation": "Main image, selected item, or navigation state changes; static image items are acceptable for a mockup.",
+    "minimum_proof_tier": 2,
+    "observable_actions": [
+      "click thumbnail or next/previous control if present"
+    ],
+    "probe_id": "gallery-navigation-or-selection"
+  },
+  "expected": {
+    "mockupImagesVisible": true
+  },
+  "observed": {
+    "after": "",
+    "before": "",
+    "changed": false,
+    "clicked": "",
+    "imageCount": 4
+  },
+  "passed": true,
+  "path": "Z:\\docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\20-make-a-simple-image-gallery-mockup\\workspace\\gallery.html",
+  "reason": "",
+  "reason_codes": [],
+  "test": "gallery-navigation-or-selection",
+  "verdict": "PASS"
+}

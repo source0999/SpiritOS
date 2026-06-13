@@ -1,0 +1,94 @@
+{
+  "browser_results": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-browser-behavior-results-before-repair.json",
+  "model_id": "qwen2.5-coder:7b",
+  "repair_summary_version": "anti-tailoring-post-behavior-repair-v1",
+  "repairs": [
+    {
+      "attempts_used": 1,
+      "eligible": true,
+      "file_equals_model_action_content": false,
+      "prompt": "make a tea steep timer",
+      "reason_codes": [
+        "free_floating_code_no_path_action",
+        "repair_attempts_exhausted"
+      ],
+      "repair_model_authored_targets": [],
+      "repair_status": "HANDOFF",
+      "repaired_files": [],
+      "run": "01-make-a-tea-steep-timer"
+    },
+    {
+      "eligible": false,
+      "prompt": "make a road trip gas split tool",
+      "run": "02-make-a-road-trip-gas-split-tool",
+      "skip_reason": "behavior_not_failed"
+    },
+    {
+      "eligible": false,
+      "prompt": "make a sunrise midnight mode toggle",
+      "run": "03-make-a-sunrise-midnight-mode-toggle",
+      "skip_reason": "not_eligible_for_behavior_repair"
+    },
+    {
+      "eligible": false,
+      "prompt": "make a camping packing list app",
+      "run": "04-make-a-camping-packing-list-app",
+      "skip_reason": "behavior_not_failed"
+    },
+    {
+      "eligible": false,
+      "prompt": "make a pretend porch weather tile",
+      "run": "05-make-a-pretend-porch-weather-tile",
+      "skip_reason": "behavior_not_failed"
+    },
+    {
+      "attempts_used": 0,
+      "eligible": true,
+      "file_equals_model_action_content": null,
+      "prompt": "make a tiny radio show player",
+      "reason_codes": [
+        "behavior_failed_verified",
+        "behavior_probe_failed:make a tiny radio show player-player-control-change",
+        "missing_probe_metadata",
+        "repair_metadata_incomplete"
+      ],
+      "repair_model_authored_targets": [],
+      "repair_status": "HANDOFF",
+      "repaired_files": [],
+      "run": "06-make-a-tiny-radio-show-player"
+    },
+    {
+      "eligible": false,
+      "prompt": "make a pushup rep counter",
+      "run": "07-make-a-pushup-rep-counter",
+      "skip_reason": "behavior_not_failed"
+    },
+    {
+      "eligible": false,
+      "prompt": "make a pocket memo board app",
+      "run": "08-make-a-pocket-memo-board-app",
+      "skip_reason": "behavior_not_failed"
+    },
+    {
+      "attempts_used": 1,
+      "eligible": true,
+      "file_equals_model_action_content": false,
+      "prompt": "make a passphrase strength meter",
+      "reason_codes": [
+        "free_floating_code_no_path_action",
+        "repair_attempts_exhausted"
+      ],
+      "repair_model_authored_targets": [],
+      "repair_status": "HANDOFF",
+      "repaired_files": [],
+      "run": "09-make-a-passphrase-strength-meter"
+    },
+    {
+      "eligible": false,
+      "prompt": "make a doodle canvas notebook",
+      "run": "10-make-a-doodle-canvas-notebook",
+      "skip_reason": "behavior_not_failed"
+    }
+  ],
+  "run_root": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-runs"
+}

@@ -1,0 +1,62 @@
+{
+  "schema_id": "spiritos-cognitive-control-plane-revamp-v0.1.phase-4.executive-preview-packet",
+  "phase": "Phase 4",
+  "status": "evidence-only",
+  "packet_fields": {
+    "packet_id": "stable identifier for executive preview packet",
+    "created_at": "ISO-8601 timestamp when generated",
+    "input_packet_ref": "Phase 3 context router preview packet id or path",
+    "request_summary": "short normalized operator request summary",
+    "permission_decision": "preview_only, requires_human_approval, blocked, needs_clarification, or unverified_gate",
+    "risk_classes": "array of Phase 4 risk classes",
+    "reason_codes": "stable machine-readable reasons",
+    "required_human_approval": "boolean",
+    "required_gate_refs": "central gate, spend gate, approval token, route gate, or manual operator gate refs",
+    "blocked_actions": "actions that must not run",
+    "allowed_preview_actions": "read-only preview actions still allowed",
+    "would_execute": false,
+    "would_write": false,
+    "would_call_provider": false,
+    "would_start_worker": false,
+    "would_write_obsidian": false,
+    "would_mutate_git": false,
+    "product_pass_claimed": false,
+    "truth_contract_refs": "Phase 1 truth labels or fixture refs",
+    "memory_refs": "Phase 2 read-only memory refs",
+    "unverified_gates": "gates not checked, with reason",
+    "phase_5_handoff": "worker selector constraints for next phase"
+  },
+  "decision_rules": [
+    {
+      "if_any_risk_class": ["secret_or_credential_scope", "broad_filesystem_scope", "path_escape_or_absolute_target"],
+      "permission_decision": "blocked"
+    },
+    {
+      "if_any_risk_class": ["provider_spend", "model_call", "worker_start", "apply_or_execute", "git_mutation", "obsidian_write"],
+      "permission_decision": "requires_human_approval_or_blocked_by_phase_boundary"
+    },
+    {
+      "if_any_risk_class": ["ambiguous_target", "missing_target"],
+      "permission_decision": "needs_clarification"
+    },
+    {
+      "if_any_risk_class": ["unavailable_gate"],
+      "permission_decision": "unverified_gate"
+    },
+    {
+      "if_any_risk_class": ["fake_green_risk", "truth_contract_gap"],
+      "permission_decision": "requires_human_approval"
+    }
+  ],
+  "required_non_authority": [
+    "would_execute=false",
+    "would_write=false",
+    "would_call_provider=false",
+    "would_start_worker=false",
+    "would_write_obsidian=false",
+    "would_mutate_git=false",
+    "product_pass_claimed=false"
+  ],
+  "verdict": "GO"
+}
+

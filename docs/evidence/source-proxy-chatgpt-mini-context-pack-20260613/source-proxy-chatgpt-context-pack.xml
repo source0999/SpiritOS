@@ -1,0 +1,453 @@
+<?xml version='1.0' encoding='utf-8'?>
+<context_pack>
+  <metadata>
+    <title>Self-contained Source Proxy ChatGPT mini context pack</title>
+    <created_at>2026-06-13T15:43:57.991952+00:00</created_at>
+    <repo_path>Z:/</repo_path>
+    <evidence_folders>["docs/evidence/source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613", "docs/evidence/source-proxy-level-3-failure-family-stabilization-20260613"]</evidence_folders>
+    <current_phase_name>Level 3 semantic intake and behavior generalization review</current_phase_name>
+    <current_verdict>NO-GO</current_verdict>
+  </metadata>
+  <current_status>
+    <current_grade_recommendation>Do not accept Level 3 as GO; keep Level 3 NEEDS-FIX/NO-GO until fresh similar wording clears at least 8/10.</current_grade_recommendation>
+    <level_3_status>NO-GO for final acceptance: fresh similar holdout reached 5/10 behavior PASS against an 8/10 threshold.</level_3_status>
+    <why_not_final_go>Locked 10d/10e reruns went green after stabilization, but fresh nearby wording exposed route/intake brittleness and two behavior/repair failures.</why_not_final_go>
+    <cheated_or_tailored>No exact prompt tailoring found in the searched source/runtime scopes.</cheated_or_tailored>
+    <failure_clean_honest>Yes. The run recorded failures as FAIL/NO-GO with no score warnings, false-positive corrections, fallback, scaffold, backend-authored rescue, cloud fallback, or real app mutation.</failure_clean_honest>
+    <best_next_step>Level 3 semantic intake and behavior generalization repair, no new batches.</best_next_step>
+    <what_not_to_do_next>Do not proceed to Level 4, scale batch size, hard-code failed prompts, patch the scorer green, or claim inactive lanes are active.</what_not_to_do_next>
+    <verdict>NO-GO</verdict>
+  </current_status>
+  <timeline>
+    <entry>
+      <event>10d before stabilization</event>
+      <behavior>5/10 behavior PASS, 5 FAIL</behavior>
+      <threshold>8/10</threshold>
+      <verdict>NO-GO before stabilization</verdict>
+      <prompt_set>old locked 10d</prompt_set>
+      <change_scope>pre-stabilization evidence</change_scope>
+      <evidence>docs/evidence/source-proxy-level-3-failure-family-stabilization-20260613/index.md</evidence>
+    </entry>
+    <entry>
+      <event>10e before stabilization</event>
+      <behavior>6/10 behavior PASS, 4 FAIL</behavior>
+      <threshold>8/10</threshold>
+      <verdict>NO-GO before stabilization</verdict>
+      <prompt_set>old locked 10e</prompt_set>
+      <change_scope>pre-stabilization evidence</change_scope>
+      <evidence>docs/evidence/source-proxy-level-3-failure-family-stabilization-20260613/index.md</evidence>
+    </entry>
+    <entry>
+      <event>failure-family stabilization rerun</event>
+      <behavior>10d 10/10 PASS; 10e 10/10 PASS</behavior>
+      <threshold>8/10</threshold>
+      <verdict>GO on locked reruns</verdict>
+      <prompt_set>old locked 10d/10e</prompt_set>
+      <change_scope>source patches had happened in prior stabilization work; no new large batch</change_scope>
+      <evidence>docs/evidence/source-proxy-level-3-failure-family-stabilization-20260613/</evidence>
+    </entry>
+    <entry>
+      <event>evidence consistency audit</event>
+      <behavior>anti-cheat clean; remaining locked failures none</behavior>
+      <threshold>not a behavior batch</threshold>
+      <verdict>clean evidence for locked stabilization</verdict>
+      <prompt_set>locked 10d/10e evidence</prompt_set>
+      <change_scope>reporting/evidence review</change_scope>
+      <evidence>docs/evidence/source-proxy-level-3-failure-family-stabilization-20260613/anti-cheat-integrity.md</evidence>
+    </entry>
+    <entry>
+      <event>final clean similar 10</event>
+      <behavior>5/10 behavior PASS, 5 FAIL</behavior>
+      <threshold>8/10</threshold>
+      <verdict>NO-GO</verdict>
+      <prompt_set>fresh similar 10 locked before run</prompt_set>
+      <change_scope>evidence-only final proof; no fixes after seeing prompt set</change_scope>
+      <evidence>docs/evidence/source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613/</evidence>
+    </entry>
+  </timeline>
+  <prompt_results>
+    <prompt>
+      <id>final-l3-clean-01</id>
+      <prompt>make a laundry flip countdown</prompt>
+      <family>timer/countdown</family>
+      <route_status>GO</route_status>
+      <open_status>PASS</open_status>
+      <final>PASS</final>
+      <failure_bucket />
+      <repair_attempts>0</repair_attempts>
+      <model>qwen2.5-coder:7b</model>
+    </prompt>
+    <prompt>
+      <id>final-l3-clean-02</id>
+      <prompt>make a parking garage cost sharer</prompt>
+      <family>calculator/splitter</family>
+      <route_status>EXPECTED-BLOCKED</route_status>
+      <open_status>FAIL</open_status>
+      <final>FAIL</final>
+      <failure_bucket>route_blocked_no_preview</failure_bucket>
+      <repair_attempts>0</repair_attempts>
+      <model>qwen2.5-coder:7b</model>
+    </prompt>
+    <prompt>
+      <id>final-l3-clean-03</id>
+      <prompt>make a dusk dawn palette switch</prompt>
+      <family>theme/mode toggle</family>
+      <route_status>EXPECTED-BLOCKED</route_status>
+      <open_status>FAIL</open_status>
+      <final>FAIL</final>
+      <failure_bucket>route_blocked_no_preview</failure_bucket>
+      <repair_attempts>0</repair_attempts>
+      <model>qwen2.5-coder:7b</model>
+    </prompt>
+    <prompt>
+      <id>final-l3-clean-04</id>
+      <prompt>make a beach bag checklist app</prompt>
+      <family>checklist/list</family>
+      <route_status>GO</route_status>
+      <open_status>PASS</open_status>
+      <final>PASS</final>
+      <failure_bucket />
+      <repair_attempts>0</repair_attempts>
+      <model>qwen2.5-coder:7b</model>
+    </prompt>
+    <prompt>
+      <id>final-l3-clean-05</id>
+      <prompt>make a pretend balcony forecast tile</prompt>
+      <family>weather/forecast/tile</family>
+      <route_status>GO</route_status>
+      <open_status>PASS</open_status>
+      <final>FAIL</final>
+      <failure_bucket>weather_static_when_update_expected</failure_bucket>
+      <repair_attempts>1</repair_attempts>
+      <model>qwen2.5-coder:7b</model>
+    </prompt>
+    <prompt>
+      <id>final-l3-clean-06</id>
+      <prompt>make a campfire podcast mini player</prompt>
+      <family>player/radio/audio</family>
+      <route_status>GO</route_status>
+      <open_status>PASS</open_status>
+      <final>PASS</final>
+      <failure_bucket />
+      <repair_attempts>0</repair_attempts>
+      <model>qwen2.5-coder:7b</model>
+    </prompt>
+    <prompt>
+      <id>final-l3-clean-07</id>
+      <prompt>make a stair step tally counter</prompt>
+      <family>counter/tracker</family>
+      <route_status>GO</route_status>
+      <open_status>PASS</open_status>
+      <final>PASS</final>
+      <failure_bucket />
+      <repair_attempts>0</repair_attempts>
+      <model>qwen2.5-coder:7b</model>
+    </prompt>
+    <prompt>
+      <id>final-l3-clean-08</id>
+      <prompt>make a sticky thought memo board</prompt>
+      <family>notes/memo</family>
+      <route_status>GO</route_status>
+      <open_status>PASS</open_status>
+      <final>PASS</final>
+      <failure_bucket />
+      <repair_attempts>0</repair_attempts>
+      <model>qwen2.5-coder:7b</model>
+    </prompt>
+    <prompt>
+      <id>final-l3-clean-09</id>
+      <prompt>make a secret phrase strength gauge</prompt>
+      <family>password/passphrase strength</family>
+      <route_status>EXPECTED-BLOCKED</route_status>
+      <open_status>FAIL</open_status>
+      <final>FAIL</final>
+      <failure_bucket>route_blocked_no_preview</failure_bucket>
+      <repair_attempts>0</repair_attempts>
+      <model>qwen2.5-coder:7b</model>
+    </prompt>
+    <prompt>
+      <id>final-l3-clean-10</id>
+      <prompt>make a finger paint doodle pad</prompt>
+      <family>drawing/canvas/sketch</family>
+      <route_status>GO</route_status>
+      <open_status>PASS</open_status>
+      <final>FAIL</final>
+      <failure_bucket>drawing_canvas_no_pixel_change</failure_bucket>
+      <repair_attempts>1</repair_attempts>
+      <model>qwen2.5-coder:7b</model>
+    </prompt>
+  </prompt_results>
+  <failed_prompt_deep_dives>
+    <failure>
+      <id>final-l3-clean-02</id>
+      <original_prompt>make a parking garage cost sharer</original_prompt>
+      <expected_behavior>Entered cost/share values visibly change a calculated result.</expected_behavior>
+      <inferred_family>calculator/splitter</inferred_family>
+      <normalized_intent>clarification_required_real_repo_implementation</normalized_intent>
+      <route_decision>EXPECTED-BLOCKED</route_decision>
+      <selected_preview_path>NO_PREVIEW</selected_preview_path>
+      <route_blocked_before_model_app_proof>True</route_blocked_before_model_app_proof>
+      <behavior_contract_probe_id>calculator-derived-total</behavior_contract_probe_id>
+      <observed_before>{"reason": "behavior probe did not record before", "value": "NOT_RECORDED"}</observed_before>
+      <observed_after>{"reason": "behavior probe did not record a standard after value", "value": "NOT_RECORDED"}</observed_after>
+      <primary_failure_bucket>route_blocked_no_preview</primary_failure_bucket>
+      <secondary_failure_bucket />
+      <repair_ran>False</repair_ran>
+      <repair_result>SKIPPED</repair_result>
+      <model_transcript_path>final-clean-similar-10-runs/02-make-a-parking-garage-cost-sharer/transcript.txt</model_transcript_path>
+      <behavior_probe_path>final-clean-similar-10-runs/02-make-a-parking-garage-cost-sharer/behavior-probe.json</behavior_probe_path>
+      <score_path>final-clean-similar-10-runs/02-make-a-parking-garage-cost-sharer/score.json</score_path>
+      <receipt_path>final-clean-similar-10-runs/02-make-a-parking-garage-cost-sharer/receipt.json</receipt_path>
+      <workspace_diff_path>final-clean-similar-10-runs/02-make-a-parking-garage-cost-sharer/workspace.diff</workspace_diff_path>
+      <likely_root_cause>Intake/router treated cost sharer as target-unresolved real repo work instead of disposable calculator artifact.</likely_root_cause>
+      <issue_type>route/intake</issue_type>
+      <files_codex_should_inspect_next>["source_proxy/decision/task_spec_intake.py", "source_proxy/decision/human_messy_homepage.py", "source_proxy/decision/artifact_behavior_contract.py", "docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti_tailoring_behavior_probe.mjs"]</files_codex_should_inspect_next>
+    </failure>
+    <failure>
+      <id>final-l3-clean-03</id>
+      <original_prompt>make a dusk dawn palette switch</original_prompt>
+      <expected_behavior>A control visibly changes theme, palette, color, class, or computed body colors.</expected_behavior>
+      <inferred_family>theme/mode toggle</inferred_family>
+      <normalized_intent>clarification_required_real_repo_implementation</normalized_intent>
+      <route_decision>EXPECTED-BLOCKED</route_decision>
+      <selected_preview_path>NO_PREVIEW</selected_preview_path>
+      <route_blocked_before_model_app_proof>True</route_blocked_before_model_app_proof>
+      <behavior_contract_probe_id>{"reason": "behavior contract did not record a probe target", "value": "NOT_RECORDED"}</behavior_contract_probe_id>
+      <observed_before>{"reason": "behavior probe did not record before", "value": "NOT_RECORDED"}</observed_before>
+      <observed_after>{"reason": "behavior probe did not record a standard after value", "value": "NOT_RECORDED"}</observed_after>
+      <primary_failure_bucket>route_blocked_no_preview</primary_failure_bucket>
+      <secondary_failure_bucket />
+      <repair_ran>False</repair_ran>
+      <repair_result>SKIPPED</repair_result>
+      <model_transcript_path>final-clean-similar-10-runs/03-make-a-dusk-dawn-palette-switch/transcript.txt</model_transcript_path>
+      <behavior_probe_path>final-clean-similar-10-runs/03-make-a-dusk-dawn-palette-switch/behavior-probe.json</behavior_probe_path>
+      <score_path>final-clean-similar-10-runs/03-make-a-dusk-dawn-palette-switch/score.json</score_path>
+      <receipt_path>final-clean-similar-10-runs/03-make-a-dusk-dawn-palette-switch/receipt.json</receipt_path>
+      <workspace_diff_path>final-clean-similar-10-runs/03-make-a-dusk-dawn-palette-switch/workspace.diff</workspace_diff_path>
+      <likely_root_cause>Intake/router treated palette switch as target-unresolved real repo work; probe id was not recorded on the blocked path.</likely_root_cause>
+      <issue_type>route/intake</issue_type>
+      <files_codex_should_inspect_next>["source_proxy/decision/task_spec_intake.py", "source_proxy/decision/human_messy_homepage.py", "source_proxy/decision/artifact_behavior_contract.py", "docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti_tailoring_behavior_probe.mjs"]</files_codex_should_inspect_next>
+    </failure>
+    <failure>
+      <id>final-l3-clean-05</id>
+      <original_prompt>make a pretend balcony forecast tile</original_prompt>
+      <expected_behavior>Weather-like fields are visible, and any provided local demo control changes forecast/weather state.</expected_behavior>
+      <inferred_family>weather/forecast/tile</inferred_family>
+      <normalized_intent>disposable_small_file_bundle</normalized_intent>
+      <route_decision>GO</route_decision>
+      <selected_preview_path>\\10.0.0.186\SpiritOS\docs\evidence\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\final-clean-similar-10-runs\05-make-a-pretend-balcony-forecast-tile\workspace\index.html</selected_preview_path>
+      <route_blocked_before_model_app_proof>False</route_blocked_before_model_app_proof>
+      <behavior_contract_probe_id>weather-card-fields</behavior_contract_probe_id>
+      <observed_before>City: San Francisco
+
+Temperature: 68°F
+
+Condition: Sunny
+
+Change Weather to New York</observed_before>
+      <observed_after>City: San Francisco
+
+Temperature: 68°F
+
+Condition: Sunny
+
+Change Weather to New York</observed_after>
+      <primary_failure_bucket>weather_static_when_update_expected</primary_failure_bucket>
+      <secondary_failure_bucket />
+      <repair_ran>True</repair_ran>
+      <repair_result>READY_FOR_RETEST</repair_result>
+      <model_transcript_path>final-clean-similar-10-runs/05-make-a-pretend-balcony-forecast-tile/transcript.txt</model_transcript_path>
+      <behavior_probe_path>final-clean-similar-10-runs/05-make-a-pretend-balcony-forecast-tile/behavior-probe.json</behavior_probe_path>
+      <score_path>final-clean-similar-10-runs/05-make-a-pretend-balcony-forecast-tile/score.json</score_path>
+      <receipt_path>final-clean-similar-10-runs/05-make-a-pretend-balcony-forecast-tile/receipt.json</receipt_path>
+      <workspace_diff_path>final-clean-similar-10-runs/05-make-a-pretend-balcony-forecast-tile/workspace.diff</workspace_diff_path>
+      <likely_root_cause>Generated forecast preview opened, but click did not change DOM; repair wrote files but still left observed text unchanged.</likely_root_cause>
+      <issue_type>repair</issue_type>
+      <files_codex_should_inspect_next>["source_proxy/decision/task_spec_intake.py", "source_proxy/decision/human_messy_homepage.py", "source_proxy/decision/artifact_behavior_contract.py", "docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti_tailoring_behavior_probe.mjs", "source_proxy/decision/artifact_repair_loop.py", "source_proxy/decision/artifact_repair_contract.py"]</files_codex_should_inspect_next>
+    </failure>
+    <failure>
+      <id>final-l3-clean-09</id>
+      <original_prompt>make a secret phrase strength gauge</original_prompt>
+      <expected_behavior>Weak and stronger phrase inputs visibly change strength feedback.</expected_behavior>
+      <inferred_family>password/passphrase strength</inferred_family>
+      <normalized_intent>clarification_required_real_repo_implementation</normalized_intent>
+      <route_decision>EXPECTED-BLOCKED</route_decision>
+      <selected_preview_path>NO_PREVIEW</selected_preview_path>
+      <route_blocked_before_model_app_proof>True</route_blocked_before_model_app_proof>
+      <behavior_contract_probe_id>password-strength-feedback-change</behavior_contract_probe_id>
+      <observed_before>{"reason": "behavior probe did not record before", "value": "NOT_RECORDED"}</observed_before>
+      <observed_after>{"reason": "behavior probe did not record a standard after value", "value": "NOT_RECORDED"}</observed_after>
+      <primary_failure_bucket>route_blocked_no_preview</primary_failure_bucket>
+      <secondary_failure_bucket />
+      <repair_ran>False</repair_ran>
+      <repair_result>SKIPPED</repair_result>
+      <model_transcript_path>final-clean-similar-10-runs/09-make-a-secret-phrase-strength-gauge/transcript.txt</model_transcript_path>
+      <behavior_probe_path>final-clean-similar-10-runs/09-make-a-secret-phrase-strength-gauge/behavior-probe.json</behavior_probe_path>
+      <score_path>final-clean-similar-10-runs/09-make-a-secret-phrase-strength-gauge/score.json</score_path>
+      <receipt_path>final-clean-similar-10-runs/09-make-a-secret-phrase-strength-gauge/receipt.json</receipt_path>
+      <workspace_diff_path>final-clean-similar-10-runs/09-make-a-secret-phrase-strength-gauge/workspace.diff</workspace_diff_path>
+      <likely_root_cause>Intake/router treated secret phrase strength gauge as target-unresolved real repo component work instead of disposable password/passphrase artifact.</likely_root_cause>
+      <issue_type>route/intake</issue_type>
+      <files_codex_should_inspect_next>["source_proxy/decision/task_spec_intake.py", "source_proxy/decision/human_messy_homepage.py", "source_proxy/decision/artifact_behavior_contract.py", "docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti_tailoring_behavior_probe.mjs"]</files_codex_should_inspect_next>
+    </failure>
+    <failure>
+      <id>final-l3-clean-10</id>
+      <original_prompt>make a finger paint doodle pad</original_prompt>
+      <expected_behavior>Pointer or mouse interaction visibly marks the drawing surface, canvas, or equivalent sketch area.</expected_behavior>
+      <inferred_family>drawing/canvas/sketch</inferred_family>
+      <normalized_intent>disposable_small_file_bundle</normalized_intent>
+      <route_decision>GO</route_decision>
+      <selected_preview_path>\\10.0.0.186\SpiritOS\docs\evidence\source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613\final-clean-similar-10-runs\10-make-a-finger-paint-doodle-pad\workspace\index.html</selected_preview_path>
+      <route_blocked_before_model_app_proof>False</route_blocked_before_model_app_proof>
+      <behavior_contract_probe_id>drawing-surface-changes</behavior_contract_probe_id>
+      <observed_before>{"reason": "behavior probe did not record before", "value": "NOT_RECORDED"}</observed_before>
+      <observed_after>{"reason": "behavior probe did not record a standard after value", "value": "NOT_RECORDED"}</observed_after>
+      <primary_failure_bucket>drawing_canvas_no_pixel_change</primary_failure_bucket>
+      <secondary_failure_bucket />
+      <repair_ran>True</repair_ran>
+      <repair_result>READY_FOR_RETEST</repair_result>
+      <model_transcript_path>final-clean-similar-10-runs/10-make-a-finger-paint-doodle-pad/transcript.txt</model_transcript_path>
+      <behavior_probe_path>final-clean-similar-10-runs/10-make-a-finger-paint-doodle-pad/behavior-probe.json</behavior_probe_path>
+      <score_path>final-clean-similar-10-runs/10-make-a-finger-paint-doodle-pad/score.json</score_path>
+      <receipt_path>final-clean-similar-10-runs/10-make-a-finger-paint-doodle-pad/receipt.json</receipt_path>
+      <workspace_diff_path>final-clean-similar-10-runs/10-make-a-finger-paint-doodle-pad/workspace.diff</workspace_diff_path>
+      <likely_root_cause>Canvas preview opened, but pointer/mouse interaction did not mutate pixels; repair changed markup but not working drawing behavior.</likely_root_cause>
+      <issue_type>repair</issue_type>
+      <files_codex_should_inspect_next>["source_proxy/decision/task_spec_intake.py", "source_proxy/decision/human_messy_homepage.py", "source_proxy/decision/artifact_behavior_contract.py", "docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti_tailoring_behavior_probe.mjs", "source_proxy/decision/artifact_repair_loop.py", "source_proxy/decision/artifact_repair_contract.py", "source_proxy/decision/artifact_final_verdict.py"]</files_codex_should_inspect_next>
+    </failure>
+  </failed_prompt_deep_dives>
+  <anti_tailoring>
+    <summary>No exact new prompt tailoring found in searched source/runtime scopes; new prompt strings exist only in this evidence folder.</summary>
+    <searched_paths>["source_proxy/", "src/", "apps/", "scripts/", "docs/evidence/source-proxy-level-3-final-clean-similar-10-transparent-proof-20260613", "batch runner scripts under docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/"]</searched_paths>
+    <exact_prompt_string_search_result>No runtime/source/runner matches before or after run; evidence-folder matches expected after lock/run.</exact_prompt_string_search_result>
+    <prompt_id_search_result>No runtime/source/runner matches before run; evidence-folder matches expected.</prompt_id_search_result>
+    <old_10d_10e_string_search_result>No matches in runtime decision/app/script scopes; YES in tests as historical regression fixtures.</old_10d_10e_string_search_result>
+    <runtime_source_result>No exact prompt tailoring found in the searched source/runtime scopes.</runtime_source_result>
+    <evidence_only_result>New prompt strings and ids are present in prompt lock, receipts, transcripts, scores, traces, and reports as expected evidence.</evidence_only_result>
+    <suspicious_branch_search_result>NO exact prompt branches found.</suspicious_branch_search_result>
+    <canned_artifact_output_search_result>NO exact new prompt-coupled canned outputs found.</canned_artifact_output_search_result>
+    <backend_authored_rescue_content_result>NO</backend_authored_rescue_content_result>
+    <deterministic_scaffold_result>NO</deterministic_scaffold_result>
+    <fallback_result>NO</fallback_result>
+    <cloud_fallback_result>NO</cloud_fallback_result>
+    <real_app_touch_result>NO</real_app_touch_result>
+  </anti_tailoring>
+  <anti_cheat>
+    <backend_created_content>False</backend_created_content>
+    <cloud_api_fallback_used>False</cloud_api_fallback_used>
+    <deterministic_scaffold_used>False</deterministic_scaffold_used>
+    <fallback_used>False</fallback_used>
+    <false_negative_corrections>0</false_negative_corrections>
+    <false_positive_corrections>0</false_positive_corrections>
+    <missing_behavior_evidence>False</missing_behavior_evidence>
+    <missing_transcript>False</missing_transcript>
+    <real_app_touched>False</real_app_touched>
+    <repair_attempts_used>2</repair_attempts_used>
+    <report_verdict_mismatch>False</report_verdict_mismatch>
+    <score_integrity_failure>False</score_integrity_failure>
+  </anti_cheat>
+  <proxy_process>
+    <pipeline>["human prompt", "task intake", "intent/family inference", "route decision", "context packet", "model lane decision", "Qwen invocation", "model output", "action/file-block parse", "sandbox writes", "preview selection", "browser behavior probe", "repair if needed", "final verdict", "anti-cheat audit"]</pipeline>
+    <real_steps>["task intake", "behavior contract", "Qwen invocation", "tool-action parsing", "disposable workspace writes or blocked execution", "browser probe", "limited repair on eligible failures", "strict final verdict"]</real_steps>
+    <preview_only_steps>["Gemma sidecar context/verifier", "Hermes sidecar verifier", "Cartographer routing ownership"]</preview_only_steps>
+  </proxy_process>
+  <model_lanes>
+    <qwen_status>INVOKED for all 10 prompts via qwen2.5-coder:7b</qwen_status>
+    <gemma_status>NOT_INVOKED / PREVIEW_ONLY; no Gemma transcript exists.</gemma_status>
+    <hermes_status>NOT_INVOKED / PREVIEW_ONLY; no Hermes verifier transcript exists.</hermes_status>
+    <cartographer_routing_status>PREVIEW_ONLY metadata/status only; no live Cartographer route ownership invocation recorded.</cartographer_routing_status>
+    <verifier_lane>NOT active unless a real transcript/log exists; this pack found none.</verifier_lane>
+  </model_lanes>
+  <relevant_files>
+    <file>
+      <area>task spec intake</area>
+      <path>source_proxy/decision/task_spec_intake.py</path>
+      <confidence>likely relevant</confidence>
+    </file>
+    <file>
+      <area>disposable artifact routing</area>
+      <path>source_proxy/decision/human_messy_homepage.py</path>
+      <confidence>likely relevant</confidence>
+    </file>
+    <file>
+      <area>behavior contract</area>
+      <path>source_proxy/decision/artifact_behavior_contract.py</path>
+      <confidence>likely relevant</confidence>
+    </file>
+    <file>
+      <area>final verdict/scoring</area>
+      <path>source_proxy/decision/artifact_final_verdict.py</path>
+      <confidence>likely relevant</confidence>
+    </file>
+    <file>
+      <area>repair loop</area>
+      <path>source_proxy/decision/artifact_repair_loop.py</path>
+      <confidence>likely relevant</confidence>
+    </file>
+    <file>
+      <area>repair contract</area>
+      <path>source_proxy/decision/artifact_repair_contract.py</path>
+      <confidence>likely relevant</confidence>
+    </file>
+    <file>
+      <area>model lane registry</area>
+      <path>source_proxy/decision/model_lanes.py</path>
+      <confidence>likely relevant</confidence>
+    </file>
+    <file>
+      <area>verifier lane</area>
+      <path>source_proxy/decision/verifier_lane.py</path>
+      <confidence>likely relevant</confidence>
+    </file>
+    <file>
+      <area>Cartographer routing preview</area>
+      <path>source_proxy/decision/cartographer_routing.py</path>
+      <confidence>likely relevant</confidence>
+    </file>
+    <file>
+      <area>anti-tailoring runner</area>
+      <path>docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti_tailoring_run_batch.py</path>
+      <confidence>likely relevant</confidence>
+    </file>
+    <file>
+      <area>behavior probe</area>
+      <path>docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti_tailoring_behavior_probe.mjs</path>
+      <confidence>likely relevant</confidence>
+    </file>
+  </relevant_files>
+  <next_action>
+    <recommended_next_task_name>Level 3 semantic intake and behavior generalization repair, no new batches.</recommended_next_task_name>
+    <goal>Fix semantic intake/router coverage and behavior-generation/repair robustness for the observed failure families without hard-coding the five failed prompts.</goal>
+    <non_negotiables>["no Level 4", "no new batches", "no scorer-only green", "no exact prompt branches", "no cloud fallback"]</non_negotiables>
+    <likely_files_to_inspect>["source_proxy/decision/task_spec_intake.py", "source_proxy/decision/human_messy_homepage.py", "source_proxy/decision/artifact_behavior_contract.py", "source_proxy/decision/artifact_final_verdict.py", "source_proxy/decision/artifact_repair_loop.py", "source_proxy/decision/artifact_repair_contract.py", "source_proxy/decision/model_lanes.py", "source_proxy/decision/verifier_lane.py", "source_proxy/decision/cartographer_routing.py", "docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti_tailoring_run_batch.py", "docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti_tailoring_behavior_probe.mjs"]</likely_files_to_inspect>
+    <expected_evidence>["focused unit tests for synonym intake", "targeted behavior-contract/repair tests", "rerun only the existing final clean 10 after fixes are approved"]</expected_evidence>
+    <stop_condition>Stop after a focused repair plan/evidence gate; do not write the next implementation prompt in this pack.</stop_condition>
+  </next_action>
+  <do_not_do>
+    <item>
+      <value>Do not proceed to Level 4</value>
+    </item>
+    <item>
+      <value>Do not create 25/50/100 batches</value>
+    </item>
+    <item>
+      <value>Do not patch scorer to green</value>
+    </item>
+    <item>
+      <value>Do not hard-code the five failed prompts</value>
+    </item>
+    <item>
+      <value>Do not activate cloud fallback to hide local weakness</value>
+    </item>
+    <item>
+      <value>Do not claim Gemma/Cartographer are active until transcripts prove it</value>
+    </item>
+    <item>
+      <value>Do not accept Level 3 GO until a fresh similar holdout passes</value>
+    </item>
+  </do_not_do>
+  <upload_guidance>
+    <upload_first>docs/evidence/source-proxy-chatgpt-mini-context-pack-20260613/source-proxy-chatgpt-context-pack.md</upload_first>
+    <optional_extras_only_if_asked>["source-proxy-chatgpt-context-pack.json", "source-proxy-chatgpt-context-pack.xml", "final-proof-results.json", "failing per-prompt trace JSONs"]</optional_extras_only_if_asked>
+  </upload_guidance>
+</context_pack>

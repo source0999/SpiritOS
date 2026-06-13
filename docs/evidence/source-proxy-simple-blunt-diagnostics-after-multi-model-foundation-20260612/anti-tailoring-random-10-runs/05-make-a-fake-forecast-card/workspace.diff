@@ -1,0 +1,53 @@
+--- a/forecast-card.css
++++ b/forecast-card.css
+@@ -0,0 +1,18 @@
++.forecast-card {
++    border: 1px solid #ccc;
++    padding: 20px;
++    margin: 20px;
++    text-align: center;
++}
++
++button {
++    padding: 10px 20px;
++    background-color: #007bff;
++    color: white;
++    border: none;
++    cursor: pointer;
++}
++
++button:hover {
++    background-color: #0056b3;
++}--- a/forecast-card.html
++++ b/forecast-card.html
+@@ -0,0 +1,18 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Weather Forecast</title>
++    <link rel="stylesheet" href="forecast-card.css">
++</head>
++<body>
++    <div class="forecast-card">
++        <h2 id="location">Location</h2>
++        <p id="temperature">Temperature: 0°C</p>
++        <p id="condition">Condition: Sunny</p>
++        <button onclick="updateForecast()">Update Forecast</button>
++    </div>
++    <script src="forecast-card.js"></script>
++</body>
++</html>--- a/forecast-card.js
++++ b/forecast-card.js
+@@ -0,0 +1,10 @@
++function updateForecast() {
++    const location = document.getElementById('location');
++    const temperature = document.getElementById('temperature');
++    const condition = document.getElementById('condition');
++
++    // Simulate fetching new data
++    location.textContent = 'New Location';
++    temperature.textContent = 'Temperature: 25°C';
++    condition.textContent = 'Condition: Cloudy';
++}

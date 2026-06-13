@@ -1,0 +1,11 @@
+{
+  "attempts_used": 0,
+  "handoff_reason": "failure_packet_requires_handoff",
+  "handoff_required": true,
+  "reason_codes": [
+    "behavior_contract_probe_missing",
+    "behavior_failed_verified",
+    "behavior_probe_failed:make a small audio show player-player-control-change"
+  ],
+  "status": "HANDOFF"
+}

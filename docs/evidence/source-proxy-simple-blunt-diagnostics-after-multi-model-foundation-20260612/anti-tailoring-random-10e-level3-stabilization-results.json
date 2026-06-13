@@ -1,0 +1,851 @@
+{
+  "created_at": "2026-06-13T14:48:05.999240+00:00",
+  "fail_count": 0,
+  "false_negative_corrections_count": 0,
+  "false_positive_corrections_count": 0,
+  "green_threshold": "8/10 behavior PASS required for this batch",
+  "old_result_context": {
+    "source_status": "READY_TO_RUN",
+    "source_title": "Anti-tailoring random 10e blunt prompt challenge"
+  },
+  "overall_verdict": "GREEN_READY_FOR_BRITTON_REVIEW",
+  "pass_count": 10,
+  "repair_attempt_count": 0,
+  "repair_handoff_without_attempt_count": 0,
+  "report_verdict_mismatch_count": 0,
+  "rows": [
+    {
+      "anti_cheat_flags": {
+        "backend_created_content": false,
+        "behavior_failed_marked_pass": false,
+        "cloud_api_fallback_used": false,
+        "deterministic_scaffold_used": false,
+        "fallback_used": false,
+        "missing_behavior_evidence": false,
+        "missing_transcript": false,
+        "real_app_touched": false,
+        "repair_attempts_used": 0,
+        "report_verdict_mismatch": false,
+        "score_integrity_failure": false
+      },
+      "baseline_neighbor": "timer",
+      "behavior_actual": {
+        "afterStart": "0:01\nStart Stop Reset",
+        "afterStop": "0:01\nStart Stop Reset",
+        "before": "0:00\nStart Stop Reset",
+        "clickedStop": true
+      },
+      "behavior_expected": "timer text changes after start",
+      "behavior_status": "PASS",
+      "behavior_test": "make a tea steep timer-timer-change",
+      "evidence_links": {
+        "behavior_failure_packet": "",
+        "behavior_probe": "anti-tailoring-random-10e-level3-stabilization-runs/01-make-a-tea-steep-timer/behavior-probe.json",
+        "behavior_probe_before_repair": "",
+        "post_behavior_repair_result": "",
+        "preview": "anti-tailoring-random-10e-level3-stabilization-runs/01-make-a-tea-steep-timer/workspace/index.html",
+        "receipt": "anti-tailoring-random-10e-level3-stabilization-runs/01-make-a-tea-steep-timer/receipt.json",
+        "score": "anti-tailoring-random-10e-level3-stabilization-runs/01-make-a-tea-steep-timer/score.json",
+        "transcript": "anti-tailoring-random-10e-level3-stabilization-runs/01-make-a-tea-steep-timer/transcript.txt",
+        "workspace_diff": "anti-tailoring-random-10e-level3-stabilization-runs/01-make-a-tea-steep-timer/workspace.diff"
+      },
+      "expected_behavior": "Starting the timer visibly changes time.",
+      "failure_bucket": "",
+      "files_changed": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ],
+      "final_behavior_verdict": "PASS",
+      "final_reason_codes": [
+        "behavior_pass_verified"
+      ],
+      "final_verdict": "PASS",
+      "model_authored_targets": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ],
+      "open_status": "PASS",
+      "post_behavior_final_verdict": "PASS",
+      "post_behavior_reason_codes": [
+        "behavior_pass_verified"
+      ],
+      "preview_link": "anti-tailoring-random-10e-level3-stabilization-runs/01-make-a-tea-steep-timer/workspace/index.html",
+      "primary_behavior_failure_bucket": "",
+      "prompt": "make a tea steep timer",
+      "raw_behavior_pass": true,
+      "raw_final_verdict": "PASS",
+      "repair_attempts": 0,
+      "repair_eligible": false,
+      "repair_failure_bucket": "",
+      "repair_skip_reason": "behavior_not_failed",
+      "repair_status": "SKIPPED",
+      "report_verdict_mismatch": false,
+      "route_status": "GO",
+      "run": "01-make-a-tea-steep-timer",
+      "score_integrity_classification": "verified_pass",
+      "score_integrity_failure": false,
+      "secondary_behavior_failure_bucket": "",
+      "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-level3-stabilization-runs\\01-make-a-tea-steep-timer\\workspace\\index.html",
+      "strict_human_final_verdict": "PASS",
+      "strict_reason": "timer must visibly change after the start action",
+      "workspace_files": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ]
+    },
+    {
+      "anti_cheat_flags": {
+        "backend_created_content": false,
+        "behavior_failed_marked_pass": false,
+        "cloud_api_fallback_used": false,
+        "deterministic_scaffold_used": false,
+        "fallback_used": false,
+        "missing_behavior_evidence": false,
+        "missing_transcript": false,
+        "real_app_touched": false,
+        "repair_attempts_used": 0,
+        "report_verdict_mismatch": false,
+        "score_integrity_failure": false
+      },
+      "baseline_neighbor": "calculator/splitter",
+      "behavior_actual": {
+        "after": "Road Trip Gas Split Tool\nTotal Gas (in gallons): \n\nNumber of Cars: \n\nCalculate Gas Split\n\n\n\nGas per Car: 14.00",
+        "appears": false,
+        "before": "Road Trip Gas Split Tool\nTotal Gas (in gallons): \n\nNumber of Cars: \n\nCalculate Gas Split\n\n\n\nGas per Car:",
+        "clicked": true,
+        "filled": 2
+      },
+      "behavior_expected": "numeric input creates a visible numeric result update",
+      "behavior_status": "PASS",
+      "behavior_test": "make a road trip gas split tool-visible-state-change",
+      "evidence_links": {
+        "behavior_failure_packet": "",
+        "behavior_probe": "anti-tailoring-random-10e-level3-stabilization-runs/02-make-a-road-trip-gas-split-tool/behavior-probe.json",
+        "behavior_probe_before_repair": "",
+        "post_behavior_repair_result": "",
+        "preview": "anti-tailoring-random-10e-level3-stabilization-runs/02-make-a-road-trip-gas-split-tool/workspace/index.html",
+        "receipt": "anti-tailoring-random-10e-level3-stabilization-runs/02-make-a-road-trip-gas-split-tool/receipt.json",
+        "score": "anti-tailoring-random-10e-level3-stabilization-runs/02-make-a-road-trip-gas-split-tool/score.json",
+        "transcript": "anti-tailoring-random-10e-level3-stabilization-runs/02-make-a-road-trip-gas-split-tool/transcript.txt",
+        "workspace_diff": "anti-tailoring-random-10e-level3-stabilization-runs/02-make-a-road-trip-gas-split-tool/workspace.diff"
+      },
+      "expected_behavior": "Entered trip cost/share numbers visibly change a result.",
+      "failure_bucket": "",
+      "files_changed": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ],
+      "final_behavior_verdict": "PASS",
+      "final_reason_codes": [
+        "behavior_pass_verified"
+      ],
+      "final_verdict": "PASS",
+      "model_authored_targets": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ],
+      "open_status": "PASS",
+      "post_behavior_final_verdict": "PASS",
+      "post_behavior_reason_codes": [
+        "behavior_pass_verified"
+      ],
+      "preview_link": "anti-tailoring-random-10e-level3-stabilization-runs/02-make-a-road-trip-gas-split-tool/workspace/index.html",
+      "primary_behavior_failure_bucket": "",
+      "prompt": "make a road trip gas split tool",
+      "raw_behavior_pass": true,
+      "raw_final_verdict": "PASS",
+      "repair_attempts": 0,
+      "repair_eligible": false,
+      "repair_failure_bucket": "",
+      "repair_skip_reason": "behavior_not_failed",
+      "repair_status": "SKIPPED",
+      "report_verdict_mismatch": false,
+      "route_status": "GO",
+      "run": "02-make-a-road-trip-gas-split-tool",
+      "score_integrity_classification": "verified_pass",
+      "score_integrity_failure": false,
+      "secondary_behavior_failure_bucket": "",
+      "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-level3-stabilization-runs\\02-make-a-road-trip-gas-split-tool\\workspace\\index.html",
+      "strict_human_final_verdict": "PASS",
+      "strict_reason": "numeric inputs must produce a visible numeric result update",
+      "workspace_files": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ]
+    },
+    {
+      "anti_cheat_flags": {
+        "backend_created_content": false,
+        "behavior_failed_marked_pass": false,
+        "cloud_api_fallback_used": false,
+        "deterministic_scaffold_used": false,
+        "fallback_used": false,
+        "missing_behavior_evidence": false,
+        "missing_transcript": false,
+        "real_app_touched": false,
+        "repair_attempts_used": 0,
+        "report_verdict_mismatch": false,
+        "score_integrity_failure": false
+      },
+      "baseline_neighbor": "theme toggle",
+      "behavior_actual": {
+        "after": {
+          "bg": "rgb(18, 18, 18)",
+          "cls": "light-theme midnight-mode",
+          "color": "rgb(255, 255, 255)"
+        },
+        "before": {
+          "bg": "rgb(255, 255, 255)",
+          "cls": "light-theme",
+          "color": "rgb(0, 0, 0)"
+        }
+      },
+      "behavior_expected": "computed color or theme class changes",
+      "behavior_status": "PASS",
+      "behavior_test": "make a sunrise midnight mode toggle-theme-computed-change",
+      "evidence_links": {
+        "behavior_failure_packet": "",
+        "behavior_probe": "anti-tailoring-random-10e-level3-stabilization-runs/03-make-a-sunrise-midnight-mode-toggle/behavior-probe.json",
+        "behavior_probe_before_repair": "",
+        "post_behavior_repair_result": "",
+        "preview": "anti-tailoring-random-10e-level3-stabilization-runs/03-make-a-sunrise-midnight-mode-toggle/workspace/index.html",
+        "receipt": "anti-tailoring-random-10e-level3-stabilization-runs/03-make-a-sunrise-midnight-mode-toggle/receipt.json",
+        "score": "anti-tailoring-random-10e-level3-stabilization-runs/03-make-a-sunrise-midnight-mode-toggle/score.json",
+        "transcript": "anti-tailoring-random-10e-level3-stabilization-runs/03-make-a-sunrise-midnight-mode-toggle/transcript.txt",
+        "workspace_diff": "anti-tailoring-random-10e-level3-stabilization-runs/03-make-a-sunrise-midnight-mode-toggle/workspace.diff"
+      },
+      "expected_behavior": "A control visibly changes sunrise/midnight or theme colors.",
+      "failure_bucket": "",
+      "files_changed": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ],
+      "final_behavior_verdict": "PASS",
+      "final_reason_codes": [
+        "behavior_pass_verified"
+      ],
+      "final_verdict": "PASS",
+      "model_authored_targets": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ],
+      "open_status": "PASS",
+      "post_behavior_final_verdict": "PASS",
+      "post_behavior_reason_codes": [
+        "behavior_pass_verified"
+      ],
+      "preview_link": "anti-tailoring-random-10e-level3-stabilization-runs/03-make-a-sunrise-midnight-mode-toggle/workspace/index.html",
+      "primary_behavior_failure_bucket": "",
+      "prompt": "make a sunrise midnight mode toggle",
+      "raw_behavior_pass": true,
+      "raw_final_verdict": "PASS",
+      "repair_attempts": 0,
+      "repair_eligible": false,
+      "repair_failure_bucket": "",
+      "repair_skip_reason": "behavior_not_failed",
+      "repair_status": "SKIPPED",
+      "report_verdict_mismatch": false,
+      "route_status": "GO",
+      "run": "03-make-a-sunrise-midnight-mode-toggle",
+      "score_integrity_classification": "verified_pass",
+      "score_integrity_failure": false,
+      "secondary_behavior_failure_bucket": "",
+      "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-level3-stabilization-runs\\03-make-a-sunrise-midnight-mode-toggle\\workspace\\index.html",
+      "strict_human_final_verdict": "PASS",
+      "strict_reason": "theme toggle must change computed color or class state",
+      "workspace_files": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ]
+    },
+    {
+      "anti_cheat_flags": {
+        "backend_created_content": false,
+        "behavior_failed_marked_pass": false,
+        "cloud_api_fallback_used": false,
+        "deterministic_scaffold_used": false,
+        "fallback_used": false,
+        "missing_behavior_evidence": false,
+        "missing_transcript": false,
+        "real_app_touched": false,
+        "repair_attempts_used": 0,
+        "report_verdict_mismatch": false,
+        "score_integrity_failure": false
+      },
+      "baseline_neighbor": "checklist/list",
+      "behavior_actual": {
+        "after": "Camping Packing List\n Add Item\nbananas",
+        "appears": true,
+        "before": "Camping Packing List\n Add Item",
+        "clicked": true,
+        "filled": 1
+      },
+      "behavior_expected": "entered checklist/list text remains visible after action",
+      "behavior_status": "PASS",
+      "behavior_test": "make a camping packing list app-visible-state-change",
+      "evidence_links": {
+        "behavior_failure_packet": "",
+        "behavior_probe": "anti-tailoring-random-10e-level3-stabilization-runs/04-make-a-camping-packing-list-app/behavior-probe.json",
+        "behavior_probe_before_repair": "",
+        "post_behavior_repair_result": "",
+        "preview": "anti-tailoring-random-10e-level3-stabilization-runs/04-make-a-camping-packing-list-app/workspace/index.html",
+        "receipt": "anti-tailoring-random-10e-level3-stabilization-runs/04-make-a-camping-packing-list-app/receipt.json",
+        "score": "anti-tailoring-random-10e-level3-stabilization-runs/04-make-a-camping-packing-list-app/score.json",
+        "transcript": "anti-tailoring-random-10e-level3-stabilization-runs/04-make-a-camping-packing-list-app/transcript.txt",
+        "workspace_diff": "anti-tailoring-random-10e-level3-stabilization-runs/04-make-a-camping-packing-list-app/workspace.diff"
+      },
+      "expected_behavior": "A typed packing item appears visibly.",
+      "failure_bucket": "",
+      "files_changed": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ],
+      "final_behavior_verdict": "PASS",
+      "final_reason_codes": [
+        "behavior_pass_verified"
+      ],
+      "final_verdict": "PASS",
+      "model_authored_targets": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ],
+      "open_status": "PASS",
+      "post_behavior_final_verdict": "PASS",
+      "post_behavior_reason_codes": [
+        "behavior_pass_verified"
+      ],
+      "preview_link": "anti-tailoring-random-10e-level3-stabilization-runs/04-make-a-camping-packing-list-app/workspace/index.html",
+      "primary_behavior_failure_bucket": "",
+      "prompt": "make a camping packing list app",
+      "raw_behavior_pass": true,
+      "raw_final_verdict": "PASS",
+      "repair_attempts": 0,
+      "repair_eligible": false,
+      "repair_failure_bucket": "",
+      "repair_skip_reason": "behavior_not_failed",
+      "repair_status": "SKIPPED",
+      "report_verdict_mismatch": false,
+      "route_status": "GO",
+      "run": "04-make-a-camping-packing-list-app",
+      "score_integrity_classification": "verified_pass",
+      "score_integrity_failure": false,
+      "secondary_behavior_failure_bucket": "",
+      "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-level3-stabilization-runs\\04-make-a-camping-packing-list-app\\workspace\\index.html",
+      "strict_human_final_verdict": "PASS",
+      "strict_reason": "entered checklist/list text must appear visibly",
+      "workspace_files": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ]
+    },
+    {
+      "anti_cheat_flags": {
+        "backend_created_content": false,
+        "behavior_failed_marked_pass": false,
+        "cloud_api_fallback_used": false,
+        "deterministic_scaffold_used": false,
+        "fallback_used": false,
+        "missing_behavior_evidence": false,
+        "missing_transcript": false,
+        "real_app_touched": false,
+        "repair_attempts_used": 0,
+        "report_verdict_mismatch": false,
+        "score_integrity_failure": false
+      },
+      "baseline_neighbor": "weather/forecast/card",
+      "behavior_actual": {
+        "after": "Codexville\n\nTemperature: 25\u00b0C\n\nCondition: Cloudy\n\n Update Weather",
+        "before": "City\n\nTemperature: 0\u00b0C\n\nCondition: Sunny\n\n Update Weather",
+        "clicked": true,
+        "hasWeatherTerms": true
+      },
+      "behavior_expected": "weather-like fields render and control changes content if present",
+      "behavior_status": "PASS",
+      "behavior_test": "make a pretend porch weather tile-forecast-fields-or-update",
+      "evidence_links": {
+        "behavior_failure_packet": "",
+        "behavior_probe": "anti-tailoring-random-10e-level3-stabilization-runs/05-make-a-pretend-porch-weather-tile/behavior-probe.json",
+        "behavior_probe_before_repair": "",
+        "post_behavior_repair_result": "",
+        "preview": "anti-tailoring-random-10e-level3-stabilization-runs/05-make-a-pretend-porch-weather-tile/workspace/weather-card.html",
+        "receipt": "anti-tailoring-random-10e-level3-stabilization-runs/05-make-a-pretend-porch-weather-tile/receipt.json",
+        "score": "anti-tailoring-random-10e-level3-stabilization-runs/05-make-a-pretend-porch-weather-tile/score.json",
+        "transcript": "anti-tailoring-random-10e-level3-stabilization-runs/05-make-a-pretend-porch-weather-tile/transcript.txt",
+        "workspace_diff": "anti-tailoring-random-10e-level3-stabilization-runs/05-make-a-pretend-porch-weather-tile/workspace.diff"
+      },
+      "expected_behavior": "Weather fields appear and a local control changes forecast state if present.",
+      "failure_bucket": "",
+      "files_changed": [
+        "weather-card.css",
+        "weather-card.html",
+        "weather-card.js"
+      ],
+      "final_behavior_verdict": "PASS",
+      "final_reason_codes": [
+        "behavior_pass_verified"
+      ],
+      "final_verdict": "PASS",
+      "model_authored_targets": [
+        "weather-card.css",
+        "weather-card.html",
+        "weather-card.js"
+      ],
+      "open_status": "PASS",
+      "post_behavior_final_verdict": "PASS",
+      "post_behavior_reason_codes": [
+        "behavior_pass_verified"
+      ],
+      "preview_link": "anti-tailoring-random-10e-level3-stabilization-runs/05-make-a-pretend-porch-weather-tile/workspace/weather-card.html",
+      "primary_behavior_failure_bucket": "",
+      "prompt": "make a pretend porch weather tile",
+      "raw_behavior_pass": true,
+      "raw_final_verdict": "PASS",
+      "repair_attempts": 0,
+      "repair_eligible": false,
+      "repair_failure_bucket": "",
+      "repair_skip_reason": "behavior_not_failed",
+      "repair_status": "SKIPPED",
+      "report_verdict_mismatch": false,
+      "route_status": "GO",
+      "run": "05-make-a-pretend-porch-weather-tile",
+      "score_integrity_classification": "verified_pass",
+      "score_integrity_failure": false,
+      "secondary_behavior_failure_bucket": "",
+      "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-level3-stabilization-runs\\05-make-a-pretend-porch-weather-tile\\workspace\\weather-card.html",
+      "strict_human_final_verdict": "PASS",
+      "strict_reason": "weather artifact must show weather fields and update when a control is present",
+      "workspace_files": [
+        "weather-card.css",
+        "weather-card.html",
+        "weather-card.js"
+      ]
+    },
+    {
+      "anti_cheat_flags": {
+        "backend_created_content": false,
+        "behavior_failed_marked_pass": false,
+        "cloud_api_fallback_used": false,
+        "deterministic_scaffold_used": false,
+        "fallback_used": false,
+        "missing_behavior_evidence": false,
+        "missing_transcript": false,
+        "real_app_touched": false,
+        "repair_attempts_used": 0,
+        "report_verdict_mismatch": false,
+        "score_integrity_failure": false
+      },
+      "baseline_neighbor": "player/podcast/music",
+      "behavior_actual": {
+        "after": "Track 1\nPause Skip",
+        "before": "Track 1\nPlay Skip",
+        "clicked": true
+      },
+      "behavior_expected": "play/pause or player control visibly changes state",
+      "behavior_status": "PASS",
+      "behavior_test": "make a tiny radio show player-player-control-change",
+      "evidence_links": {
+        "behavior_failure_packet": "",
+        "behavior_probe": "anti-tailoring-random-10e-level3-stabilization-runs/06-make-a-tiny-radio-show-player/behavior-probe.json",
+        "behavior_probe_before_repair": "",
+        "post_behavior_repair_result": "",
+        "preview": "anti-tailoring-random-10e-level3-stabilization-runs/06-make-a-tiny-radio-show-player/workspace/index.html",
+        "receipt": "anti-tailoring-random-10e-level3-stabilization-runs/06-make-a-tiny-radio-show-player/receipt.json",
+        "score": "anti-tailoring-random-10e-level3-stabilization-runs/06-make-a-tiny-radio-show-player/score.json",
+        "transcript": "anti-tailoring-random-10e-level3-stabilization-runs/06-make-a-tiny-radio-show-player/transcript.txt",
+        "workspace_diff": "anti-tailoring-random-10e-level3-stabilization-runs/06-make-a-tiny-radio-show-player/workspace.diff"
+      },
+      "expected_behavior": "Play/pause or next visibly changes player state.",
+      "failure_bucket": "",
+      "files_changed": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ],
+      "final_behavior_verdict": "PASS",
+      "final_reason_codes": [
+        "behavior_pass_verified"
+      ],
+      "final_verdict": "PASS",
+      "model_authored_targets": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ],
+      "open_status": "PASS",
+      "post_behavior_final_verdict": "PASS",
+      "post_behavior_reason_codes": [
+        "behavior_pass_verified"
+      ],
+      "preview_link": "anti-tailoring-random-10e-level3-stabilization-runs/06-make-a-tiny-radio-show-player/workspace/index.html",
+      "primary_behavior_failure_bucket": "",
+      "prompt": "make a tiny radio show player",
+      "raw_behavior_pass": true,
+      "raw_final_verdict": "PASS",
+      "repair_attempts": 0,
+      "repair_eligible": false,
+      "repair_failure_bucket": "",
+      "repair_skip_reason": "behavior_not_failed",
+      "repair_status": "SKIPPED",
+      "report_verdict_mismatch": false,
+      "route_status": "GO",
+      "run": "06-make-a-tiny-radio-show-player",
+      "score_integrity_classification": "verified_pass",
+      "score_integrity_failure": false,
+      "secondary_behavior_failure_bucket": "",
+      "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-level3-stabilization-runs\\06-make-a-tiny-radio-show-player\\workspace\\index.html",
+      "strict_human_final_verdict": "PASS",
+      "strict_reason": "player control must visibly change state",
+      "workspace_files": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ]
+    },
+    {
+      "anti_cheat_flags": {
+        "backend_created_content": false,
+        "behavior_failed_marked_pass": false,
+        "cloud_api_fallback_used": false,
+        "deterministic_scaffold_used": false,
+        "fallback_used": false,
+        "missing_behavior_evidence": false,
+        "missing_transcript": false,
+        "real_app_touched": false,
+        "repair_attempts_used": 0,
+        "report_verdict_mismatch": false,
+        "score_integrity_failure": false
+      },
+      "baseline_neighbor": "tracker/counter",
+      "behavior_actual": {
+        "after": "Pushup Counter\n\n1\n\nDo Pushup",
+        "before": "Pushup Counter\n\n0\n\nDo Pushup",
+        "clicked": true
+      },
+      "behavior_expected": "tracker control visibly changes progress state",
+      "behavior_status": "PASS",
+      "behavior_test": "make a pushup rep counter-click-tracker-state-change",
+      "evidence_links": {
+        "behavior_failure_packet": "",
+        "behavior_probe": "anti-tailoring-random-10e-level3-stabilization-runs/07-make-a-pushup-rep-counter/behavior-probe.json",
+        "behavior_probe_before_repair": "",
+        "post_behavior_repair_result": "",
+        "preview": "anti-tailoring-random-10e-level3-stabilization-runs/07-make-a-pushup-rep-counter/workspace/pushup_counter.html",
+        "receipt": "anti-tailoring-random-10e-level3-stabilization-runs/07-make-a-pushup-rep-counter/receipt.json",
+        "score": "anti-tailoring-random-10e-level3-stabilization-runs/07-make-a-pushup-rep-counter/score.json",
+        "transcript": "anti-tailoring-random-10e-level3-stabilization-runs/07-make-a-pushup-rep-counter/transcript.txt",
+        "workspace_diff": "anti-tailoring-random-10e-level3-stabilization-runs/07-make-a-pushup-rep-counter/workspace.diff"
+      },
+      "expected_behavior": "A button visibly increments or changes progress.",
+      "failure_bucket": "",
+      "files_changed": [
+        "pushup_counter.css",
+        "pushup_counter.html",
+        "pushup_counter.js"
+      ],
+      "final_behavior_verdict": "PASS",
+      "final_reason_codes": [
+        "behavior_pass_verified"
+      ],
+      "final_verdict": "PASS",
+      "model_authored_targets": [
+        "pushup_counter.css",
+        "pushup_counter.html",
+        "pushup_counter.js"
+      ],
+      "open_status": "PASS",
+      "post_behavior_final_verdict": "PASS",
+      "post_behavior_reason_codes": [
+        "behavior_pass_verified"
+      ],
+      "preview_link": "anti-tailoring-random-10e-level3-stabilization-runs/07-make-a-pushup-rep-counter/workspace/pushup_counter.html",
+      "primary_behavior_failure_bucket": "",
+      "prompt": "make a pushup rep counter",
+      "raw_behavior_pass": true,
+      "raw_final_verdict": "PASS",
+      "repair_attempts": 0,
+      "repair_eligible": false,
+      "repair_failure_bucket": "",
+      "repair_skip_reason": "behavior_not_failed",
+      "repair_status": "SKIPPED",
+      "report_verdict_mismatch": false,
+      "route_status": "GO",
+      "run": "07-make-a-pushup-rep-counter",
+      "score_integrity_classification": "verified_pass",
+      "score_integrity_failure": false,
+      "secondary_behavior_failure_bucket": "",
+      "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-level3-stabilization-runs\\07-make-a-pushup-rep-counter\\workspace\\pushup_counter.html",
+      "strict_human_final_verdict": "PASS",
+      "strict_reason": "tracker/counter control must visibly change progress or count",
+      "workspace_files": [
+        "pushup_counter.css",
+        "pushup_counter.html",
+        "pushup_counter.js"
+      ]
+    },
+    {
+      "anti_cheat_flags": {
+        "backend_created_content": false,
+        "behavior_failed_marked_pass": false,
+        "cloud_api_fallback_used": false,
+        "deterministic_scaffold_used": false,
+        "fallback_used": false,
+        "missing_behavior_evidence": false,
+        "missing_transcript": false,
+        "real_app_touched": false,
+        "repair_attempts_used": 0,
+        "report_verdict_mismatch": false,
+        "score_integrity_failure": false
+      },
+      "baseline_neighbor": "notes app",
+      "behavior_actual": {
+        "after": "Pocket Memo Board\n Save Memo\nscratch proof note",
+        "appears": true,
+        "before": "Pocket Memo Board\n Save Memo",
+        "clicked": true,
+        "filled": 1
+      },
+      "behavior_expected": "entered note text remains visible after action",
+      "behavior_status": "PASS",
+      "behavior_test": "make a pocket memo board app-visible-state-change",
+      "evidence_links": {
+        "behavior_failure_packet": "",
+        "behavior_probe": "anti-tailoring-random-10e-level3-stabilization-runs/08-make-a-pocket-memo-board-app/behavior-probe.json",
+        "behavior_probe_before_repair": "",
+        "post_behavior_repair_result": "",
+        "preview": "anti-tailoring-random-10e-level3-stabilization-runs/08-make-a-pocket-memo-board-app/workspace/index.html",
+        "receipt": "anti-tailoring-random-10e-level3-stabilization-runs/08-make-a-pocket-memo-board-app/receipt.json",
+        "score": "anti-tailoring-random-10e-level3-stabilization-runs/08-make-a-pocket-memo-board-app/score.json",
+        "transcript": "anti-tailoring-random-10e-level3-stabilization-runs/08-make-a-pocket-memo-board-app/transcript.txt",
+        "workspace_diff": "anti-tailoring-random-10e-level3-stabilization-runs/08-make-a-pocket-memo-board-app/workspace.diff"
+      },
+      "expected_behavior": "Typed note text appears visibly after add/save.",
+      "failure_bucket": "",
+      "files_changed": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ],
+      "final_behavior_verdict": "PASS",
+      "final_reason_codes": [
+        "behavior_pass_verified"
+      ],
+      "final_verdict": "PASS",
+      "model_authored_targets": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ],
+      "open_status": "PASS",
+      "post_behavior_final_verdict": "PASS",
+      "post_behavior_reason_codes": [
+        "behavior_pass_verified"
+      ],
+      "preview_link": "anti-tailoring-random-10e-level3-stabilization-runs/08-make-a-pocket-memo-board-app/workspace/index.html",
+      "primary_behavior_failure_bucket": "",
+      "prompt": "make a pocket memo board app",
+      "raw_behavior_pass": true,
+      "raw_final_verdict": "PASS",
+      "repair_attempts": 0,
+      "repair_eligible": false,
+      "repair_failure_bucket": "",
+      "repair_skip_reason": "behavior_not_failed",
+      "repair_status": "SKIPPED",
+      "report_verdict_mismatch": false,
+      "route_status": "GO",
+      "run": "08-make-a-pocket-memo-board-app",
+      "score_integrity_classification": "verified_pass",
+      "score_integrity_failure": false,
+      "secondary_behavior_failure_bucket": "",
+      "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-level3-stabilization-runs\\08-make-a-pocket-memo-board-app\\workspace\\index.html",
+      "strict_human_final_verdict": "PASS",
+      "strict_reason": "entered note text must remain visible after save",
+      "workspace_files": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ]
+    },
+    {
+      "anti_cheat_flags": {
+        "backend_created_content": false,
+        "behavior_failed_marked_pass": false,
+        "cloud_api_fallback_used": false,
+        "deterministic_scaffold_used": false,
+        "fallback_used": false,
+        "missing_behavior_evidence": false,
+        "missing_transcript": false,
+        "real_app_touched": false,
+        "repair_attempts_used": 0,
+        "report_verdict_mismatch": false,
+        "score_integrity_failure": false
+      },
+      "baseline_neighbor": "password meter/checker",
+      "behavior_actual": {
+        "changed": true,
+        "strong": "Passphrase Strength Meter\nStrong",
+        "weak": "Passphrase Strength Meter\nWeak"
+      },
+      "behavior_expected": "weak and stronger inputs change safety text",
+      "behavior_status": "PASS",
+      "behavior_test": "make a passphrase strength meter-password-feedback",
+      "evidence_links": {
+        "behavior_failure_packet": "",
+        "behavior_probe": "anti-tailoring-random-10e-level3-stabilization-runs/09-make-a-passphrase-strength-meter/behavior-probe.json",
+        "behavior_probe_before_repair": "",
+        "post_behavior_repair_result": "",
+        "preview": "anti-tailoring-random-10e-level3-stabilization-runs/09-make-a-passphrase-strength-meter/workspace/passphrase_strength_meter.html",
+        "receipt": "anti-tailoring-random-10e-level3-stabilization-runs/09-make-a-passphrase-strength-meter/receipt.json",
+        "score": "anti-tailoring-random-10e-level3-stabilization-runs/09-make-a-passphrase-strength-meter/score.json",
+        "transcript": "anti-tailoring-random-10e-level3-stabilization-runs/09-make-a-passphrase-strength-meter/transcript.txt",
+        "workspace_diff": "anti-tailoring-random-10e-level3-stabilization-runs/09-make-a-passphrase-strength-meter/workspace.diff"
+      },
+      "expected_behavior": "Weak and stronger passphrases visibly change feedback.",
+      "failure_bucket": "",
+      "files_changed": [
+        "passphrase_strength_meter.css",
+        "passphrase_strength_meter.html",
+        "passphrase_strength_meter.js"
+      ],
+      "final_behavior_verdict": "PASS",
+      "final_reason_codes": [
+        "behavior_pass_verified"
+      ],
+      "final_verdict": "PASS",
+      "model_authored_targets": [
+        "passphrase_strength_meter.css",
+        "passphrase_strength_meter.html",
+        "passphrase_strength_meter.js"
+      ],
+      "open_status": "PASS",
+      "post_behavior_final_verdict": "PASS",
+      "post_behavior_reason_codes": [
+        "behavior_pass_verified"
+      ],
+      "preview_link": "anti-tailoring-random-10e-level3-stabilization-runs/09-make-a-passphrase-strength-meter/workspace/passphrase_strength_meter.html",
+      "primary_behavior_failure_bucket": "",
+      "prompt": "make a passphrase strength meter",
+      "raw_behavior_pass": true,
+      "raw_final_verdict": "PASS",
+      "repair_attempts": 0,
+      "repair_eligible": false,
+      "repair_failure_bucket": "",
+      "repair_skip_reason": "behavior_not_failed",
+      "repair_status": "SKIPPED",
+      "report_verdict_mismatch": false,
+      "route_status": "GO",
+      "run": "09-make-a-passphrase-strength-meter",
+      "score_integrity_classification": "verified_pass",
+      "score_integrity_failure": false,
+      "secondary_behavior_failure_bucket": "",
+      "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-level3-stabilization-runs\\09-make-a-passphrase-strength-meter\\workspace\\passphrase_strength_meter.html",
+      "strict_human_final_verdict": "PASS",
+      "strict_reason": "weak and stronger password inputs must change visible strength feedback",
+      "workspace_files": [
+        "passphrase_strength_meter.css",
+        "passphrase_strength_meter.html",
+        "passphrase_strength_meter.js"
+      ]
+    },
+    {
+      "anti_cheat_flags": {
+        "backend_created_content": false,
+        "behavior_failed_marked_pass": false,
+        "cloud_api_fallback_used": false,
+        "deterministic_scaffold_used": false,
+        "fallback_used": false,
+        "missing_behavior_evidence": false,
+        "missing_transcript": false,
+        "real_app_touched": false,
+        "repair_attempts_used": 0,
+        "report_verdict_mismatch": false,
+        "score_integrity_failure": false
+      },
+      "baseline_neighbor": "drawing/canvas/sketch",
+      "behavior_actual": {
+        "box": {
+          "height": 602,
+          "width": 802,
+          "x": 8,
+          "y": 79.875
+        },
+        "canvas": true,
+        "changed": true
+      },
+      "behavior_expected": "mouse drag changes canvas pixels",
+      "behavior_status": "PASS",
+      "behavior_test": "make a doodle canvas notebook-drawing-surface-change",
+      "evidence_links": {
+        "behavior_failure_packet": "",
+        "behavior_probe": "anti-tailoring-random-10e-level3-stabilization-runs/10-make-a-doodle-canvas-notebook/behavior-probe.json",
+        "behavior_probe_before_repair": "",
+        "post_behavior_repair_result": "",
+        "preview": "anti-tailoring-random-10e-level3-stabilization-runs/10-make-a-doodle-canvas-notebook/workspace/index.html",
+        "receipt": "anti-tailoring-random-10e-level3-stabilization-runs/10-make-a-doodle-canvas-notebook/receipt.json",
+        "score": "anti-tailoring-random-10e-level3-stabilization-runs/10-make-a-doodle-canvas-notebook/score.json",
+        "transcript": "anti-tailoring-random-10e-level3-stabilization-runs/10-make-a-doodle-canvas-notebook/transcript.txt",
+        "workspace_diff": "anti-tailoring-random-10e-level3-stabilization-runs/10-make-a-doodle-canvas-notebook/workspace.diff"
+      },
+      "expected_behavior": "Pointer input visibly marks a canvas or sketch surface.",
+      "failure_bucket": "",
+      "files_changed": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ],
+      "final_behavior_verdict": "PASS",
+      "final_reason_codes": [
+        "behavior_pass_verified"
+      ],
+      "final_verdict": "PASS",
+      "model_authored_targets": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ],
+      "open_status": "PASS",
+      "post_behavior_final_verdict": "PASS",
+      "post_behavior_reason_codes": [
+        "behavior_pass_verified"
+      ],
+      "preview_link": "anti-tailoring-random-10e-level3-stabilization-runs/10-make-a-doodle-canvas-notebook/workspace/index.html",
+      "primary_behavior_failure_bucket": "",
+      "prompt": "make a doodle canvas notebook",
+      "raw_behavior_pass": true,
+      "raw_final_verdict": "PASS",
+      "repair_attempts": 0,
+      "repair_eligible": false,
+      "repair_failure_bucket": "",
+      "repair_skip_reason": "behavior_not_failed",
+      "repair_status": "SKIPPED",
+      "report_verdict_mismatch": false,
+      "route_status": "GO",
+      "run": "10-make-a-doodle-canvas-notebook",
+      "score_integrity_classification": "verified_pass",
+      "score_integrity_failure": false,
+      "secondary_behavior_failure_bucket": "",
+      "selected_preview_path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-level3-stabilization-runs\\10-make-a-doodle-canvas-notebook\\workspace\\index.html",
+      "strict_human_final_verdict": "PASS",
+      "strict_reason": "drawing interaction must change canvas pixels",
+      "workspace_files": [
+        "index.html",
+        "script.js",
+        "styles.css"
+      ]
+    }
+  ],
+  "score_integrity_warnings_count": 0,
+  "title": "Anti-tailoring random 10e Level 3 failure-family stabilization rerun",
+  "total_count": 10
+}

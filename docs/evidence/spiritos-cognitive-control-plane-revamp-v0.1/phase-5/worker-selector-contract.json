@@ -1,0 +1,50 @@
+{
+  "contract_id": "spiritos-cognitive-control-plane-revamp-v0.1.phase-5.worker-selector-contract",
+  "phase": "Phase 5",
+  "status": "evidence-only",
+  "runtime_behavior_changed": false,
+  "core_rule": "Worker selection is recommendation-only. If Phase 4 decision is blocked, needs_clarification, or unverified_gate, Phase 5 must return selection_blocked.",
+  "selector_decisions": {
+    "recommendation_ready": "A recommendation-only worker/lane/provider candidate can be named for later review.",
+    "selection_blocked": "Permission, risk, target, authority, dirty-tree, or gate state blocks selection.",
+    "needs_clarification": "More target, task, acceptance, lane, or permission detail is needed before selecting.",
+    "no_suitable_worker": "No known worker/provider/lane satisfies the requested capability and authority constraints.",
+    "unverified_capability": "Required route, provider, worker, or lane capability was not checked or is unavailable."
+  },
+  "required_output_fields": [
+    "input_packet_ref",
+    "permission_packet_ref",
+    "selector_decision",
+    "recommended_worker_role",
+    "recommended_provider_id",
+    "recommended_lane_id",
+    "capability_match",
+    "authority_flags",
+    "blocked_authorities",
+    "required_human_approval",
+    "required_gate_refs",
+    "risk_classes_carried_forward",
+    "truth_refs",
+    "memory_refs",
+    "handoff_preview_ref",
+    "phase_6_verifier_needs",
+    "would_dispatch_worker",
+    "would_start_worker",
+    "would_call_provider",
+    "would_execute",
+    "would_write",
+    "would_mutate_git"
+  ],
+  "fail_closed_rules": [
+    "blocked, needs_clarification, or unverified_gate from Phase 4 blocks worker selection",
+    "provider/model candidates are recommendation-only unless a later phase approves calls",
+    "local worker/model candidates are recommendation-only unless a later phase approves starts/calls",
+    "no worker/provider can grant approval, apply, commit, push, or self-approve",
+    "handoff preview packets are data-only and cannot dispatch",
+    "dirty-tree conflict, protected lane overlap, or broad file zone blocks selection",
+    "fake-green risk must be carried into Phase 6 verifier needs",
+    "capability mismatch returns no_suitable_worker, not a forced selection"
+  ],
+  "verdict": "GO"
+}
+

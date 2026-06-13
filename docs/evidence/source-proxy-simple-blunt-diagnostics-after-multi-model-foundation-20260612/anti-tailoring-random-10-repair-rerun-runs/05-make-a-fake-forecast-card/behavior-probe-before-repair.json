@@ -1,0 +1,13 @@
+{
+  "test": "make a fake forecast card-forecast-fields-or-update",
+  "verdict": "FAIL",
+  "passed": false,
+  "expected": "weather-like fields render and control changes content if present",
+  "actual": {
+    "before": "City\n\nTemperature: 0°C\n\nCondition: Clear\n\n Update Weather",
+    "after": "City\n\nTemperature: 0°C\n\nCondition: Clear\n\n Update Weather",
+    "clicked": true,
+    "hasWeatherTerms": true
+  },
+  "path": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10-repair-rerun-runs\\05-make-a-fake-forecast-card\\workspace\\index.html"
+}

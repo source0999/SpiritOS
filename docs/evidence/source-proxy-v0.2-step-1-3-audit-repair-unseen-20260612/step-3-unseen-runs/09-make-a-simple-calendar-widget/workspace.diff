@@ -1,0 +1,52 @@
+--- a/index.html
++++ b/index.html
+@@ -0,0 +1,13 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Simple Calendar Widget</title>
++    <link rel="stylesheet" href="styles.css">
++</head>
++<body>
++    <div id="calendar"></div>
++    <script src="script.js"></script>
++</body>
++</html>--- a/script.js
++++ b/script.js
+@@ -0,0 +1,19 @@
++document.addEventListener('DOMContentLoaded', function() {
++    const calendar = document.getElementById('calendar');
++    const today = new Date();
++    const year = today.getFullYear();
++    const month = today.getMonth();
++
++    const firstDay = new Date(year, month, 1);
++    const lastDay = new Date(year, month + 1, 0);
++
++    for (let i = 0; i < firstDay.getDay(); i++) {
++        calendar.innerHTML += '<day-cell></day-cell>';
++    }
++
++    for (let day = 1; day <= lastDay.getDate(); day++) {
++        const dateCell = document.createElement('day-cell');
++        dateCell.textContent = day;
++        calendar.appendChild(dateCell);
++    }
++});--- a/styles.css
++++ b/styles.css
+@@ -0,0 +1,13 @@
++body {
++    font-family: Arial, sans-serif;
++}
++#calendar {
++    display: grid;
++    grid-template-columns: repeat(7, 1fr);
++    gap: 5px;
++}
++day-cell {
++    padding: 20px;
++    border: 1px solid #ccc;
++    text-align: center;
++}

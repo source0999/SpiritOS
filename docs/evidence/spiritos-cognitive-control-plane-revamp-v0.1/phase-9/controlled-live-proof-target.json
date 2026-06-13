@@ -1,0 +1,32 @@
+{
+  "phase": "Phase 9 - Controlled live proof",
+  "target_id": "phase9-timer-pass-preservation",
+  "fixture_id": "timer-false-negative",
+  "artifact_path": "docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/01-make-a-timer-app/workspace/index.html",
+  "supporting_files": [
+    "docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/01-make-a-timer-app/workspace/script.js",
+    "docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/01-make-a-timer-app/workspace/styles.css"
+  ],
+  "acceptance_criteria": [
+    "Timer starts from 00:00.",
+    "Clicking Start causes timer to count upward.",
+    "Clicking Stop freezes the timer display."
+  ],
+  "proof_method": "Playwright loads static file URL, clicks Start, waits, clicks Stop, waits, and records displayed timer values.",
+  "mutation_boundary": {
+    "artifact_mutation_allowed": false,
+    "source_mutation_allowed": false,
+    "provider_calls_allowed": false,
+    "worker_starts_allowed": false,
+    "git_mutation_allowed": false,
+    "obsidian_writes_allowed": false
+  },
+  "stop_conditions": [
+    "artifact_missing",
+    "browser_toolchain_unavailable",
+    "timer_controls_missing",
+    "timer_does_not_count_after_start",
+    "timer_does_not_freeze_after_stop",
+    "proof_requires_mutation"
+  ]
+}

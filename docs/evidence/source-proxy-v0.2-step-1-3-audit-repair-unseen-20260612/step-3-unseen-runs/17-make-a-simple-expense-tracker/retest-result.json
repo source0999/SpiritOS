@@ -1,0 +1,44 @@
+{
+  "artifact_ready": true,
+  "attempts_used": 0,
+  "behavior_required": true,
+  "behavior_result": {
+    "actual": {
+      "after": "Expense Tracker\n  Add Expense",
+      "appears": false,
+      "before": "Expense Tracker\n  Add Expense",
+      "changed": false,
+      "filled": true
+    },
+    "expected": {
+      "behavior": "list-or-ledger-state-change",
+      "proof": "expected/actual/passed recorded by browser probe"
+    },
+    "observed": {
+      "after": "Expense Tracker\n  Add Expense",
+      "appears": false,
+      "before": "Expense Tracker\n  Add Expense",
+      "changed": false,
+      "filled": true
+    },
+    "passed": false,
+    "reason": "entered item did not appear or change state",
+    "test": "list-or-ledger-state-change",
+    "verdict": "FAIL"
+  },
+  "canonical_final_verdict": "FAIL",
+  "changed_files": [],
+  "diffs": [],
+  "final_reason_codes": [
+    "behavior_failed",
+    "post_repair_behavior_fail",
+    "repair_ready_for_retest",
+    "step_1_3_local_product_rerun_no_manual_artifact_patch",
+    "text_entry_state_change_missing"
+  ],
+  "handoff_reason": "",
+  "handoff_required": false,
+  "product_pass": false,
+  "repair_status": "READY_FOR_RETEST",
+  "result_version": "source-proxy-artifact-retest-result-v0.2.phase-6"
+}

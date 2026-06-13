@@ -1,0 +1,51 @@
+--- a/index.html
++++ b/index.html
+@@ -0,0 +1,15 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Pocket Memo Board</title>
++    <link rel="stylesheet" href="styles.css">
++</head>
++<body>
++    <div id="memo-board"></div>
++    <input type="text" id="memo-input" placeholder="Add a new memo...">
++    <button id="add-memo-btn">Add Memo</button>
++    <script src="script.js"></script>
++</body>
++</html>--- a/script.js
++++ b/script.js
+@@ -0,0 +1,11 @@
++document.getElementById('add-memo-btn').addEventListener('click', function() {
++    const input = document.getElementById('memo-input');
++    const memoText = input.value.trim();
++    if (memoText) {
++        const memoBoard = document.getElementById('memo-board');
++        const memoItem = document.createElement('div');
++        memoItem.textContent = memoText;
++        memoBoard.appendChild(memoItem);
++        input.value = '';
++    }
++});--- a/styles.css
++++ b/styles.css
+@@ -0,0 +1,18 @@
++body {
++    font-family: Arial, sans-serif;
++    display: flex;
++    flex-direction: column;
++    align-items: center;
++    justify-content: center;
++    height: 100vh;
++    margin: 0;
++}
++#memo-board {
++    width: 300px;
++    border: 1px solid #ccc;
++    padding: 10px;
++    margin-bottom: 20px;
++}
++#memo-input, #add-memo-btn {
++    padding: 5px;
++}

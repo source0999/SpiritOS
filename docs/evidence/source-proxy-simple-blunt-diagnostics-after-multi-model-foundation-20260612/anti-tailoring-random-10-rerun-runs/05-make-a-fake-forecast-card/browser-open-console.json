@@ -1,0 +1,27 @@
+{
+  "opened": true,
+  "path": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10-rerun-runs\\05-make-a-fake-forecast-card\\workspace\\index.html",
+  "title": "Weather Forecast",
+  "bodyText": "City\n\nTemperature: 0°C\n\nCondition: Clear\n\n Update Weather",
+  "elementCounts": {
+    "buttons": 1,
+    "inputs": 1,
+    "links": 0,
+    "canvas": 0,
+    "scripts": 1,
+    "stylesheets": 1
+  },
+  "consoleMessages": [
+    {
+      "type": "error",
+      "text": "Failed to load resource: net::ERR_FILE_NOT_FOUND"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: net::ERR_FILE_NOT_FOUND"
+    }
+  ],
+  "pageErrors": [
+    "updateWeather is not defined"
+  ]
+}

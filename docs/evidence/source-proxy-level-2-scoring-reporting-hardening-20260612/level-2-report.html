@@ -1,0 +1,870 @@
+<!doctype html><html><head><meta charset='utf-8'><title>Source Proxy Level 2 Scoring/Reporting Hardening</title><style>body{font-family:Segoe UI,Arial,sans-serif;margin:24px;background:#f8fafc;color:#111827}table{border-collapse:collapse;width:100%;background:white}td,th{border:1px solid #d1d5db;padding:7px;vertical-align:top}.counts{display:flex;gap:12px;flex-wrap:wrap;margin:16px 0}.counts div,.card{background:white;border:1px solid #d1d5db;border-radius:8px;padding:12px;margin:12px 0}.weak{border-left:6px solid #b45309}.pass{border-left:6px solid #15803d}.fail{border-left:6px solid #b91c1c}pre{white-space:pre-wrap;background:#f1f5f9;padding:8px;overflow:auto}code{background:#eef2f7;padding:1px 4px;border-radius:4px}</style></head><body><h1>Source Proxy Level 2 Scoring/Reporting Hardening</h1><div class='counts'><div><strong>Initial</strong><pre>{
+  &quot;WEAK_PASS&quot;: 10
+}</pre></div><div><strong>Verified</strong><pre>{
+  &quot;PASS&quot;: 10
+}</pre></div></div><h2>Scorer Summary Rollup</h2><table><thead><tr><th>Prompt</th><th>Initial</th><th>Verified</th><th>Behavior evidence</th><th>Files</th><th>Missing refs</th><th>External</th><th>Search used</th><th>Lane</th><th>Key reasons</th></tr></thead><tbody><tr><td>make a timer app</td><td>WEAK_PASS</td><td>PASS</td><td>True</td><td>3</td><td>0</td><td>0</td><td>False</td><td>qwen_local_coder</td><td><code>behavior_pass, safety_pass</code></td></tr>
+<tr><td>make a calculator app</td><td>WEAK_PASS</td><td>PASS</td><td>True</td><td>3</td><td>0</td><td>0</td><td>False</td><td>qwen_local_coder</td><td><code>behavior_pass, safety_pass</code></td></tr>
+<tr><td>make dark theme switcher page</td><td>WEAK_PASS</td><td>PASS</td><td>True</td><td>3</td><td>0</td><td>0</td><td>False</td><td>qwen_local_coder</td><td><code>behavior_pass, safety_pass</code></td></tr>
+<tr><td>make a todo list app</td><td>WEAK_PASS</td><td>PASS</td><td>True</td><td>3</td><td>0</td><td>0</td><td>False</td><td>qwen_local_coder</td><td><code>behavior_pass, safety_pass</code></td></tr>
+<tr><td>make a weather card demo</td><td>WEAK_PASS</td><td>PASS</td><td>True</td><td>3</td><td>0</td><td>0</td><td>False</td><td>qwen_local_coder</td><td><code>behavior_pass, safety_pass</code></td></tr>
+<tr><td>make a music player mockup</td><td>WEAK_PASS</td><td>PASS</td><td>True</td><td>3</td><td>0</td><td>0</td><td>False</td><td>qwen_local_coder</td><td><code>behavior_pass, safety_pass</code></td></tr>
+<tr><td>make a habit tracker</td><td>WEAK_PASS</td><td>PASS</td><td>True</td><td>3</td><td>0</td><td>0</td><td>False</td><td>qwen_local_coder</td><td><code>behavior_pass, safety_pass</code></td></tr>
+<tr><td>make a notes app</td><td>WEAK_PASS</td><td>PASS</td><td>True</td><td>3</td><td>0</td><td>0</td><td>False</td><td>qwen_local_coder</td><td><code>behavior_pass, safety_pass</code></td></tr>
+<tr><td>make a password strength checker</td><td>WEAK_PASS</td><td>PASS</td><td>True</td><td>3</td><td>0</td><td>0</td><td>False</td><td>qwen_local_coder</td><td><code>behavior_pass, safety_pass</code></td></tr>
+<tr><td>make a simple drawing pad</td><td>WEAK_PASS</td><td>PASS</td><td>True</td><td>3</td><td>0</td><td>0</td><td>False</td><td>qwen_local_coder</td><td><code>behavior_pass, safety_pass</code></td></tr></tbody></table><h2>Per-Run Decision Traces</h2><section class='card pass'><h3>make a timer app</h3><p><strong>Initial:</strong> WEAK_PASS <strong>Verified:</strong> PASS <strong>Behavior evidence:</strong> True</p><p><a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/01-make-a-timer-app/receipt.json'>receipt</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/01-make-a-timer-app/score.json'>score</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/01-make-a-timer-app/transcript.txt'>transcript</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/01-make-a-timer-app/workspace.diff'>workspace_diff</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/01-make-a-timer-app/browser-open-console.json'>browser_diagnostics</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/01-make-a-timer-app/behavior-probe.json'>behavior_probe</a> <a href='runs/01-make-a-timer-app/verified-expectation-score.json'>expectation_score_json</a> <a href='runs/01-make-a-timer-app/asset-gap-diagnostics.json'>asset_gap_diagnostics</a></p><pre>{
+  &quot;artifact_class&quot;: &quot;static_ui_artifact&quot;,
+  &quot;backend_authored_content_detected&quot;: false,
+  &quot;behavior_probe_result&quot;: {
+    &quot;passed&quot;: true,
+    &quot;reason&quot;: &quot;&quot;,
+    &quot;verdict&quot;: &quot;PASS&quot;
+  },
+  &quot;browser_open_result&quot;: {
+    &quot;opened&quot;: true,
+    &quot;verdict&quot;: &quot;PASS&quot;
+  },
+  &quot;console_error_count&quot;: 0,
+  &quot;context_decision&quot;: {
+    &quot;context_sources_used&quot;: [
+      &quot;behavior_contract&quot;,
+      &quot;model_lane_observability&quot;,
+      &quot;task_spec_intake&quot;
+    ],
+    &quot;local_context_needed&quot;: false,
+    &quot;reason_codes&quot;: [
+      &quot;blunt_local_artifact_prompt&quot;,
+      &quot;repo_context_not_required&quot;
+    ],
+    &quot;web_search_needed&quot;: false,
+    &quot;web_search_used&quot;: false
+  },
+  &quot;entrypoint_reason&quot;: &quot;explicit_preview_path&quot;,
+  &quot;expected_artifact_kind&quot;: &quot;browser_viewable_static_ui&quot;,
+  &quot;expected_interaction_level&quot;: &quot;stateful_controls&quot;,
+  &quot;external_resources&quot;: [],
+  &quot;final_verified_expectation_verdict&quot;: &quot;PASS&quot;,
+  &quot;inferred_intent&quot;: &quot;disposable_small_file_bundle&quot;,
+  &quot;initial_live_expectation_verdict&quot;: &quot;WEAK_PASS&quot;,
+  &quot;intent_fit_score&quot;: 100,
+  &quot;local_intelligence_decision&quot;: {
+    &quot;context_sources&quot;: [
+      &quot;behavior_contract&quot;,
+      &quot;model_lane_observability&quot;,
+      &quot;task_spec_intake&quot;
+    ],
+    &quot;used&quot;: [
+      &quot;behavior_contract&quot;,
+      &quot;task_spec_intake&quot;,
+      &quot;model_lane_observability&quot;
+    ]
+  },
+  &quot;missing_local_references&quot;: [],
+  &quot;model_authored_files&quot;: [
+    &quot;index.html&quot;,
+    &quot;script.js&quot;,
+    &quot;styles.css&quot;
+  ],
+  &quot;model_lane_selected&quot;: &quot;qwen_local_coder&quot;,
+  &quot;page_error_count&quot;: 0,
+  &quot;proxy_suggested_files&quot;: [],
+  &quot;reason_codes&quot;: [
+    &quot;artifact_pass&quot;,
+    &quot;behavior_pass&quot;,
+    &quot;browser_open_pass&quot;,
+    &quot;context_pass&quot;,
+    &quot;lane_pass&quot;,
+    &quot;model_authorship_pass&quot;,
+    &quot;no_external_resources_detected&quot;,
+    &quot;route_pass&quot;,
+    &quot;safety_pass&quot;,
+    &quot;sidecar_lanes_preview_only&quot;,
+    &quot;usability_pass&quot;,
+    &quot;web_search_correctly_not_used&quot;
+  ],
+  &quot;route_type&quot;: &quot;product&quot;,
+  &quot;selected_entrypoint&quot;: &quot;/home/source/SpiritOS/docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/01-make-a-timer-app/workspace/index.html&quot;,
+  &quot;sidecar_lane_status&quot;: {
+    &quot;considered&quot;: [
+      &quot;hermes_sidecar_verifier_preview&quot;,
+      &quot;gemma_sidecar_context_preview&quot;
+    ],
+    &quot;live&quot;: false
+  },
+  &quot;task_shape&quot;: &quot;disposable_small_file_bundle&quot;,
+  &quot;usability_score&quot;: 100,
+  &quot;web_search_decision&quot;: &quot;not_needed&quot;
+}</pre></section>
+<section class='card pass'><h3>make a calculator app</h3><p><strong>Initial:</strong> WEAK_PASS <strong>Verified:</strong> PASS <strong>Behavior evidence:</strong> True</p><p><a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/02-make-a-calculator-app/receipt.json'>receipt</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/02-make-a-calculator-app/score.json'>score</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/02-make-a-calculator-app/transcript.txt'>transcript</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/02-make-a-calculator-app/workspace.diff'>workspace_diff</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/02-make-a-calculator-app/browser-open-console.json'>browser_diagnostics</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/02-make-a-calculator-app/behavior-probe.json'>behavior_probe</a> <a href='runs/02-make-a-calculator-app/verified-expectation-score.json'>expectation_score_json</a> <a href='runs/02-make-a-calculator-app/asset-gap-diagnostics.json'>asset_gap_diagnostics</a></p><pre>{
+  &quot;artifact_class&quot;: &quot;static_ui_artifact&quot;,
+  &quot;backend_authored_content_detected&quot;: false,
+  &quot;behavior_probe_result&quot;: {
+    &quot;passed&quot;: true,
+    &quot;reason&quot;: &quot;&quot;,
+    &quot;verdict&quot;: &quot;PASS&quot;
+  },
+  &quot;browser_open_result&quot;: {
+    &quot;opened&quot;: true,
+    &quot;verdict&quot;: &quot;PASS&quot;
+  },
+  &quot;console_error_count&quot;: 0,
+  &quot;context_decision&quot;: {
+    &quot;context_sources_used&quot;: [
+      &quot;behavior_contract&quot;,
+      &quot;model_lane_observability&quot;,
+      &quot;task_spec_intake&quot;
+    ],
+    &quot;local_context_needed&quot;: false,
+    &quot;reason_codes&quot;: [
+      &quot;blunt_local_artifact_prompt&quot;,
+      &quot;repo_context_not_required&quot;
+    ],
+    &quot;web_search_needed&quot;: false,
+    &quot;web_search_used&quot;: false
+  },
+  &quot;entrypoint_reason&quot;: &quot;explicit_preview_path&quot;,
+  &quot;expected_artifact_kind&quot;: &quot;browser_viewable_static_ui&quot;,
+  &quot;expected_interaction_level&quot;: &quot;numeric_result&quot;,
+  &quot;external_resources&quot;: [],
+  &quot;final_verified_expectation_verdict&quot;: &quot;PASS&quot;,
+  &quot;inferred_intent&quot;: &quot;disposable_small_file_bundle&quot;,
+  &quot;initial_live_expectation_verdict&quot;: &quot;WEAK_PASS&quot;,
+  &quot;intent_fit_score&quot;: 100,
+  &quot;local_intelligence_decision&quot;: {
+    &quot;context_sources&quot;: [
+      &quot;behavior_contract&quot;,
+      &quot;model_lane_observability&quot;,
+      &quot;task_spec_intake&quot;
+    ],
+    &quot;used&quot;: [
+      &quot;behavior_contract&quot;,
+      &quot;task_spec_intake&quot;,
+      &quot;model_lane_observability&quot;
+    ]
+  },
+  &quot;missing_local_references&quot;: [],
+  &quot;model_authored_files&quot;: [
+    &quot;index.html&quot;,
+    &quot;script.js&quot;,
+    &quot;styles.css&quot;
+  ],
+  &quot;model_lane_selected&quot;: &quot;qwen_local_coder&quot;,
+  &quot;page_error_count&quot;: 0,
+  &quot;proxy_suggested_files&quot;: [],
+  &quot;reason_codes&quot;: [
+    &quot;artifact_pass&quot;,
+    &quot;behavior_pass&quot;,
+    &quot;browser_open_pass&quot;,
+    &quot;context_pass&quot;,
+    &quot;lane_pass&quot;,
+    &quot;model_authorship_pass&quot;,
+    &quot;no_external_resources_detected&quot;,
+    &quot;route_pass&quot;,
+    &quot;safety_pass&quot;,
+    &quot;sidecar_lanes_preview_only&quot;,
+    &quot;usability_pass&quot;,
+    &quot;web_search_correctly_not_used&quot;
+  ],
+  &quot;route_type&quot;: &quot;product&quot;,
+  &quot;selected_entrypoint&quot;: &quot;/home/source/SpiritOS/docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/02-make-a-calculator-app/workspace/index.html&quot;,
+  &quot;sidecar_lane_status&quot;: {
+    &quot;considered&quot;: [
+      &quot;hermes_sidecar_verifier_preview&quot;,
+      &quot;gemma_sidecar_context_preview&quot;
+    ],
+    &quot;live&quot;: false
+  },
+  &quot;task_shape&quot;: &quot;disposable_small_file_bundle&quot;,
+  &quot;usability_score&quot;: 100,
+  &quot;web_search_decision&quot;: &quot;not_needed&quot;
+}</pre></section>
+<section class='card pass'><h3>make dark theme switcher page</h3><p><strong>Initial:</strong> WEAK_PASS <strong>Verified:</strong> PASS <strong>Behavior evidence:</strong> True</p><p><a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/03-make-dark-theme-switcher-page/receipt.json'>receipt</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/03-make-dark-theme-switcher-page/score.json'>score</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/03-make-dark-theme-switcher-page/transcript.txt'>transcript</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/03-make-dark-theme-switcher-page/workspace.diff'>workspace_diff</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/03-make-dark-theme-switcher-page/browser-open-console.json'>browser_diagnostics</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/03-make-dark-theme-switcher-page/behavior-probe.json'>behavior_probe</a> <a href='runs/03-make-dark-theme-switcher-page/verified-expectation-score.json'>expectation_score_json</a> <a href='runs/03-make-dark-theme-switcher-page/asset-gap-diagnostics.json'>asset_gap_diagnostics</a></p><pre>{
+  &quot;artifact_class&quot;: &quot;static_ui_artifact&quot;,
+  &quot;backend_authored_content_detected&quot;: false,
+  &quot;behavior_probe_result&quot;: {
+    &quot;passed&quot;: true,
+    &quot;reason&quot;: &quot;&quot;,
+    &quot;verdict&quot;: &quot;PASS&quot;
+  },
+  &quot;browser_open_result&quot;: {
+    &quot;opened&quot;: true,
+    &quot;verdict&quot;: &quot;PASS&quot;
+  },
+  &quot;console_error_count&quot;: 0,
+  &quot;context_decision&quot;: {
+    &quot;context_sources_used&quot;: [
+      &quot;behavior_contract&quot;,
+      &quot;model_lane_observability&quot;,
+      &quot;task_spec_intake&quot;
+    ],
+    &quot;local_context_needed&quot;: false,
+    &quot;reason_codes&quot;: [
+      &quot;blunt_local_artifact_prompt&quot;,
+      &quot;repo_context_not_required&quot;
+    ],
+    &quot;web_search_needed&quot;: false,
+    &quot;web_search_used&quot;: false
+  },
+  &quot;entrypoint_reason&quot;: &quot;explicit_preview_path&quot;,
+  &quot;expected_artifact_kind&quot;: &quot;browser_viewable_static_ui&quot;,
+  &quot;expected_interaction_level&quot;: &quot;visual_state_toggle&quot;,
+  &quot;external_resources&quot;: [],
+  &quot;final_verified_expectation_verdict&quot;: &quot;PASS&quot;,
+  &quot;inferred_intent&quot;: &quot;disposable_small_file_bundle&quot;,
+  &quot;initial_live_expectation_verdict&quot;: &quot;WEAK_PASS&quot;,
+  &quot;intent_fit_score&quot;: 100,
+  &quot;local_intelligence_decision&quot;: {
+    &quot;context_sources&quot;: [
+      &quot;behavior_contract&quot;,
+      &quot;model_lane_observability&quot;,
+      &quot;task_spec_intake&quot;
+    ],
+    &quot;used&quot;: [
+      &quot;behavior_contract&quot;,
+      &quot;task_spec_intake&quot;,
+      &quot;model_lane_observability&quot;
+    ]
+  },
+  &quot;missing_local_references&quot;: [],
+  &quot;model_authored_files&quot;: [
+    &quot;index.html&quot;,
+    &quot;script.js&quot;,
+    &quot;styles.css&quot;
+  ],
+  &quot;model_lane_selected&quot;: &quot;qwen_local_coder&quot;,
+  &quot;page_error_count&quot;: 0,
+  &quot;proxy_suggested_files&quot;: [],
+  &quot;reason_codes&quot;: [
+    &quot;artifact_pass&quot;,
+    &quot;behavior_pass&quot;,
+    &quot;browser_open_pass&quot;,
+    &quot;context_pass&quot;,
+    &quot;lane_pass&quot;,
+    &quot;model_authorship_pass&quot;,
+    &quot;no_external_resources_detected&quot;,
+    &quot;route_pass&quot;,
+    &quot;safety_pass&quot;,
+    &quot;sidecar_lanes_preview_only&quot;,
+    &quot;usability_pass&quot;,
+    &quot;web_search_correctly_not_used&quot;
+  ],
+  &quot;route_type&quot;: &quot;product&quot;,
+  &quot;selected_entrypoint&quot;: &quot;/home/source/SpiritOS/docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/03-make-dark-theme-switcher-page/workspace/index.html&quot;,
+  &quot;sidecar_lane_status&quot;: {
+    &quot;considered&quot;: [
+      &quot;hermes_sidecar_verifier_preview&quot;,
+      &quot;gemma_sidecar_context_preview&quot;
+    ],
+    &quot;live&quot;: false
+  },
+  &quot;task_shape&quot;: &quot;disposable_small_file_bundle&quot;,
+  &quot;usability_score&quot;: 100,
+  &quot;web_search_decision&quot;: &quot;not_needed&quot;
+}</pre></section>
+<section class='card pass'><h3>make a todo list app</h3><p><strong>Initial:</strong> WEAK_PASS <strong>Verified:</strong> PASS <strong>Behavior evidence:</strong> True</p><p><a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/04-make-a-todo-list-app/receipt.json'>receipt</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/04-make-a-todo-list-app/score.json'>score</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/04-make-a-todo-list-app/transcript.txt'>transcript</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/04-make-a-todo-list-app/workspace.diff'>workspace_diff</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/04-make-a-todo-list-app/browser-open-console.json'>browser_diagnostics</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/04-make-a-todo-list-app/behavior-probe.json'>behavior_probe</a> <a href='runs/04-make-a-todo-list-app/verified-expectation-score.json'>expectation_score_json</a> <a href='runs/04-make-a-todo-list-app/asset-gap-diagnostics.json'>asset_gap_diagnostics</a></p><pre>{
+  &quot;artifact_class&quot;: &quot;static_ui_artifact&quot;,
+  &quot;backend_authored_content_detected&quot;: false,
+  &quot;behavior_probe_result&quot;: {
+    &quot;passed&quot;: true,
+    &quot;reason&quot;: &quot;&quot;,
+    &quot;verdict&quot;: &quot;PASS&quot;
+  },
+  &quot;browser_open_result&quot;: {
+    &quot;opened&quot;: true,
+    &quot;verdict&quot;: &quot;PASS&quot;
+  },
+  &quot;console_error_count&quot;: 0,
+  &quot;context_decision&quot;: {
+    &quot;context_sources_used&quot;: [
+      &quot;behavior_contract&quot;,
+      &quot;model_lane_observability&quot;,
+      &quot;task_spec_intake&quot;
+    ],
+    &quot;local_context_needed&quot;: false,
+    &quot;reason_codes&quot;: [
+      &quot;blunt_local_artifact_prompt&quot;,
+      &quot;repo_context_not_required&quot;
+    ],
+    &quot;web_search_needed&quot;: false,
+    &quot;web_search_used&quot;: false
+  },
+  &quot;entrypoint_reason&quot;: &quot;explicit_preview_path&quot;,
+  &quot;expected_artifact_kind&quot;: &quot;browser_viewable_static_ui&quot;,
+  &quot;expected_interaction_level&quot;: &quot;list_mutation&quot;,
+  &quot;external_resources&quot;: [],
+  &quot;final_verified_expectation_verdict&quot;: &quot;PASS&quot;,
+  &quot;inferred_intent&quot;: &quot;disposable_small_file_bundle&quot;,
+  &quot;initial_live_expectation_verdict&quot;: &quot;WEAK_PASS&quot;,
+  &quot;intent_fit_score&quot;: 100,
+  &quot;local_intelligence_decision&quot;: {
+    &quot;context_sources&quot;: [
+      &quot;behavior_contract&quot;,
+      &quot;model_lane_observability&quot;,
+      &quot;task_spec_intake&quot;
+    ],
+    &quot;used&quot;: [
+      &quot;behavior_contract&quot;,
+      &quot;task_spec_intake&quot;,
+      &quot;model_lane_observability&quot;
+    ]
+  },
+  &quot;missing_local_references&quot;: [],
+  &quot;model_authored_files&quot;: [
+    &quot;index.html&quot;,
+    &quot;script.js&quot;,
+    &quot;styles.css&quot;
+  ],
+  &quot;model_lane_selected&quot;: &quot;qwen_local_coder&quot;,
+  &quot;page_error_count&quot;: 0,
+  &quot;proxy_suggested_files&quot;: [],
+  &quot;reason_codes&quot;: [
+    &quot;artifact_pass&quot;,
+    &quot;behavior_pass&quot;,
+    &quot;browser_open_pass&quot;,
+    &quot;context_pass&quot;,
+    &quot;lane_pass&quot;,
+    &quot;model_authorship_pass&quot;,
+    &quot;no_external_resources_detected&quot;,
+    &quot;route_pass&quot;,
+    &quot;safety_pass&quot;,
+    &quot;sidecar_lanes_preview_only&quot;,
+    &quot;usability_pass&quot;,
+    &quot;web_search_correctly_not_used&quot;
+  ],
+  &quot;route_type&quot;: &quot;product&quot;,
+  &quot;selected_entrypoint&quot;: &quot;/home/source/SpiritOS/docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/04-make-a-todo-list-app/workspace/index.html&quot;,
+  &quot;sidecar_lane_status&quot;: {
+    &quot;considered&quot;: [
+      &quot;hermes_sidecar_verifier_preview&quot;,
+      &quot;gemma_sidecar_context_preview&quot;
+    ],
+    &quot;live&quot;: false
+  },
+  &quot;task_shape&quot;: &quot;disposable_small_file_bundle&quot;,
+  &quot;usability_score&quot;: 100,
+  &quot;web_search_decision&quot;: &quot;not_needed&quot;
+}</pre></section>
+<section class='card pass'><h3>make a weather card demo</h3><p><strong>Initial:</strong> WEAK_PASS <strong>Verified:</strong> PASS <strong>Behavior evidence:</strong> True</p><p><a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/05-make-a-weather-card-demo/receipt.json'>receipt</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/05-make-a-weather-card-demo/score.json'>score</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/05-make-a-weather-card-demo/transcript.txt'>transcript</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/05-make-a-weather-card-demo/workspace.diff'>workspace_diff</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/05-make-a-weather-card-demo/browser-open-console.json'>browser_diagnostics</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/05-make-a-weather-card-demo/behavior-probe.json'>behavior_probe</a> <a href='runs/05-make-a-weather-card-demo/verified-expectation-score.json'>expectation_score_json</a> <a href='runs/05-make-a-weather-card-demo/asset-gap-diagnostics.json'>asset_gap_diagnostics</a></p><pre>{
+  &quot;artifact_class&quot;: &quot;static_ui_artifact&quot;,
+  &quot;backend_authored_content_detected&quot;: false,
+  &quot;behavior_probe_result&quot;: {
+    &quot;passed&quot;: true,
+    &quot;reason&quot;: &quot;&quot;,
+    &quot;verdict&quot;: &quot;PASS&quot;
+  },
+  &quot;browser_open_result&quot;: {
+    &quot;opened&quot;: true,
+    &quot;verdict&quot;: &quot;PASS&quot;
+  },
+  &quot;console_error_count&quot;: 0,
+  &quot;context_decision&quot;: {
+    &quot;context_sources_used&quot;: [
+      &quot;behavior_contract&quot;,
+      &quot;model_lane_observability&quot;,
+      &quot;task_spec_intake&quot;
+    ],
+    &quot;local_context_needed&quot;: false,
+    &quot;reason_codes&quot;: [
+      &quot;blunt_local_artifact_prompt&quot;,
+      &quot;repo_context_not_required&quot;
+    ],
+    &quot;web_search_needed&quot;: false,
+    &quot;web_search_used&quot;: false
+  },
+  &quot;entrypoint_reason&quot;: &quot;explicit_preview_path&quot;,
+  &quot;expected_artifact_kind&quot;: &quot;browser_viewable_static_ui&quot;,
+  &quot;expected_interaction_level&quot;: &quot;demo_data_display&quot;,
+  &quot;external_resources&quot;: [],
+  &quot;final_verified_expectation_verdict&quot;: &quot;PASS&quot;,
+  &quot;inferred_intent&quot;: &quot;disposable_small_file_bundle&quot;,
+  &quot;initial_live_expectation_verdict&quot;: &quot;WEAK_PASS&quot;,
+  &quot;intent_fit_score&quot;: 100,
+  &quot;local_intelligence_decision&quot;: {
+    &quot;context_sources&quot;: [
+      &quot;behavior_contract&quot;,
+      &quot;model_lane_observability&quot;,
+      &quot;task_spec_intake&quot;
+    ],
+    &quot;used&quot;: [
+      &quot;behavior_contract&quot;,
+      &quot;task_spec_intake&quot;,
+      &quot;model_lane_observability&quot;
+    ]
+  },
+  &quot;missing_local_references&quot;: [],
+  &quot;model_authored_files&quot;: [
+    &quot;weather-card.css&quot;,
+    &quot;weather-card.html&quot;,
+    &quot;weather-card.js&quot;
+  ],
+  &quot;model_lane_selected&quot;: &quot;qwen_local_coder&quot;,
+  &quot;page_error_count&quot;: 0,
+  &quot;proxy_suggested_files&quot;: [],
+  &quot;reason_codes&quot;: [
+    &quot;artifact_pass&quot;,
+    &quot;behavior_pass&quot;,
+    &quot;browser_open_pass&quot;,
+    &quot;context_pass&quot;,
+    &quot;lane_pass&quot;,
+    &quot;model_authorship_pass&quot;,
+    &quot;no_external_resources_detected&quot;,
+    &quot;route_pass&quot;,
+    &quot;safety_pass&quot;,
+    &quot;sidecar_lanes_preview_only&quot;,
+    &quot;usability_pass&quot;,
+    &quot;web_search_correctly_not_used&quot;
+  ],
+  &quot;route_type&quot;: &quot;product&quot;,
+  &quot;selected_entrypoint&quot;: &quot;/home/source/SpiritOS/docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/05-make-a-weather-card-demo/workspace/weather-card.html&quot;,
+  &quot;sidecar_lane_status&quot;: {
+    &quot;considered&quot;: [
+      &quot;hermes_sidecar_verifier_preview&quot;,
+      &quot;gemma_sidecar_context_preview&quot;
+    ],
+    &quot;live&quot;: false
+  },
+  &quot;task_shape&quot;: &quot;disposable_small_file_bundle&quot;,
+  &quot;usability_score&quot;: 100,
+  &quot;web_search_decision&quot;: &quot;not_needed&quot;
+}</pre></section>
+<section class='card pass'><h3>make a music player mockup</h3><p><strong>Initial:</strong> WEAK_PASS <strong>Verified:</strong> PASS <strong>Behavior evidence:</strong> True</p><p><a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/06-make-a-music-player-mockup/receipt.json'>receipt</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/06-make-a-music-player-mockup/score.json'>score</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/06-make-a-music-player-mockup/transcript.txt'>transcript</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/06-make-a-music-player-mockup/workspace.diff'>workspace_diff</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/06-make-a-music-player-mockup/browser-open-console.json'>browser_diagnostics</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/06-make-a-music-player-mockup/behavior-probe.json'>behavior_probe</a> <a href='runs/06-make-a-music-player-mockup/verified-expectation-score.json'>expectation_score_json</a> <a href='runs/06-make-a-music-player-mockup/asset-gap-diagnostics.json'>asset_gap_diagnostics</a></p><pre>{
+  &quot;artifact_class&quot;: &quot;static_ui_artifact&quot;,
+  &quot;backend_authored_content_detected&quot;: false,
+  &quot;behavior_probe_result&quot;: {
+    &quot;passed&quot;: true,
+    &quot;reason&quot;: &quot;&quot;,
+    &quot;verdict&quot;: &quot;PASS&quot;
+  },
+  &quot;browser_open_result&quot;: {
+    &quot;opened&quot;: true,
+    &quot;verdict&quot;: &quot;PASS&quot;
+  },
+  &quot;console_error_count&quot;: 0,
+  &quot;context_decision&quot;: {
+    &quot;context_sources_used&quot;: [
+      &quot;behavior_contract&quot;,
+      &quot;model_lane_observability&quot;,
+      &quot;task_spec_intake&quot;
+    ],
+    &quot;local_context_needed&quot;: false,
+    &quot;reason_codes&quot;: [
+      &quot;blunt_local_artifact_prompt&quot;,
+      &quot;repo_context_not_required&quot;
+    ],
+    &quot;web_search_needed&quot;: false,
+    &quot;web_search_used&quot;: false
+  },
+  &quot;entrypoint_reason&quot;: &quot;explicit_preview_path&quot;,
+  &quot;expected_artifact_kind&quot;: &quot;browser_viewable_static_ui&quot;,
+  &quot;expected_interaction_level&quot;: &quot;control_state_change&quot;,
+  &quot;external_resources&quot;: [],
+  &quot;final_verified_expectation_verdict&quot;: &quot;PASS&quot;,
+  &quot;inferred_intent&quot;: &quot;disposable_small_file_bundle&quot;,
+  &quot;initial_live_expectation_verdict&quot;: &quot;WEAK_PASS&quot;,
+  &quot;intent_fit_score&quot;: 100,
+  &quot;local_intelligence_decision&quot;: {
+    &quot;context_sources&quot;: [
+      &quot;behavior_contract&quot;,
+      &quot;model_lane_observability&quot;,
+      &quot;task_spec_intake&quot;
+    ],
+    &quot;used&quot;: [
+      &quot;behavior_contract&quot;,
+      &quot;task_spec_intake&quot;,
+      &quot;model_lane_observability&quot;
+    ]
+  },
+  &quot;missing_local_references&quot;: [],
+  &quot;model_authored_files&quot;: [
+    &quot;index.html&quot;,
+    &quot;script.js&quot;,
+    &quot;styles.css&quot;
+  ],
+  &quot;model_lane_selected&quot;: &quot;qwen_local_coder&quot;,
+  &quot;page_error_count&quot;: 0,
+  &quot;proxy_suggested_files&quot;: [],
+  &quot;reason_codes&quot;: [
+    &quot;artifact_pass&quot;,
+    &quot;behavior_pass&quot;,
+    &quot;browser_open_pass&quot;,
+    &quot;context_pass&quot;,
+    &quot;lane_pass&quot;,
+    &quot;model_authorship_pass&quot;,
+    &quot;no_external_resources_detected&quot;,
+    &quot;route_pass&quot;,
+    &quot;safety_pass&quot;,
+    &quot;sidecar_lanes_preview_only&quot;,
+    &quot;usability_pass&quot;,
+    &quot;web_search_correctly_not_used&quot;
+  ],
+  &quot;route_type&quot;: &quot;product&quot;,
+  &quot;selected_entrypoint&quot;: &quot;/home/source/SpiritOS/docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/06-make-a-music-player-mockup/workspace/index.html&quot;,
+  &quot;sidecar_lane_status&quot;: {
+    &quot;considered&quot;: [
+      &quot;hermes_sidecar_verifier_preview&quot;,
+      &quot;gemma_sidecar_context_preview&quot;
+    ],
+    &quot;live&quot;: false
+  },
+  &quot;task_shape&quot;: &quot;disposable_small_file_bundle&quot;,
+  &quot;usability_score&quot;: 100,
+  &quot;web_search_decision&quot;: &quot;not_needed&quot;
+}</pre></section>
+<section class='card pass'><h3>make a habit tracker</h3><p><strong>Initial:</strong> WEAK_PASS <strong>Verified:</strong> PASS <strong>Behavior evidence:</strong> True</p><p><a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/07-make-a-habit-tracker/receipt.json'>receipt</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/07-make-a-habit-tracker/score.json'>score</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/07-make-a-habit-tracker/transcript.txt'>transcript</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/07-make-a-habit-tracker/workspace.diff'>workspace_diff</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/07-make-a-habit-tracker/browser-open-console.json'>browser_diagnostics</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/07-make-a-habit-tracker/behavior-probe.json'>behavior_probe</a> <a href='runs/07-make-a-habit-tracker/verified-expectation-score.json'>expectation_score_json</a> <a href='runs/07-make-a-habit-tracker/asset-gap-diagnostics.json'>asset_gap_diagnostics</a></p><pre>{
+  &quot;artifact_class&quot;: &quot;static_ui_artifact&quot;,
+  &quot;backend_authored_content_detected&quot;: false,
+  &quot;behavior_probe_result&quot;: {
+    &quot;passed&quot;: true,
+    &quot;reason&quot;: &quot;&quot;,
+    &quot;verdict&quot;: &quot;PASS&quot;
+  },
+  &quot;browser_open_result&quot;: {
+    &quot;opened&quot;: true,
+    &quot;verdict&quot;: &quot;PASS&quot;
+  },
+  &quot;console_error_count&quot;: 0,
+  &quot;context_decision&quot;: {
+    &quot;context_sources_used&quot;: [
+      &quot;behavior_contract&quot;,
+      &quot;model_lane_observability&quot;,
+      &quot;task_spec_intake&quot;
+    ],
+    &quot;local_context_needed&quot;: false,
+    &quot;reason_codes&quot;: [
+      &quot;blunt_local_artifact_prompt&quot;,
+      &quot;repo_context_not_required&quot;
+    ],
+    &quot;web_search_needed&quot;: false,
+    &quot;web_search_used&quot;: false
+  },
+  &quot;entrypoint_reason&quot;: &quot;explicit_preview_path&quot;,
+  &quot;expected_artifact_kind&quot;: &quot;browser_viewable_static_ui&quot;,
+  &quot;expected_interaction_level&quot;: &quot;tracker_mutation&quot;,
+  &quot;external_resources&quot;: [],
+  &quot;final_verified_expectation_verdict&quot;: &quot;PASS&quot;,
+  &quot;inferred_intent&quot;: &quot;disposable_small_file_bundle&quot;,
+  &quot;initial_live_expectation_verdict&quot;: &quot;WEAK_PASS&quot;,
+  &quot;intent_fit_score&quot;: 100,
+  &quot;local_intelligence_decision&quot;: {
+    &quot;context_sources&quot;: [
+      &quot;behavior_contract&quot;,
+      &quot;model_lane_observability&quot;,
+      &quot;task_spec_intake&quot;
+    ],
+    &quot;used&quot;: [
+      &quot;behavior_contract&quot;,
+      &quot;task_spec_intake&quot;,
+      &quot;model_lane_observability&quot;
+    ]
+  },
+  &quot;missing_local_references&quot;: [],
+  &quot;model_authored_files&quot;: [
+    &quot;index.html&quot;,
+    &quot;script.js&quot;,
+    &quot;styles.css&quot;
+  ],
+  &quot;model_lane_selected&quot;: &quot;qwen_local_coder&quot;,
+  &quot;page_error_count&quot;: 0,
+  &quot;proxy_suggested_files&quot;: [],
+  &quot;reason_codes&quot;: [
+    &quot;artifact_pass&quot;,
+    &quot;behavior_pass&quot;,
+    &quot;browser_open_pass&quot;,
+    &quot;context_pass&quot;,
+    &quot;lane_pass&quot;,
+    &quot;model_authorship_pass&quot;,
+    &quot;no_external_resources_detected&quot;,
+    &quot;route_pass&quot;,
+    &quot;safety_pass&quot;,
+    &quot;sidecar_lanes_preview_only&quot;,
+    &quot;usability_pass&quot;,
+    &quot;web_search_correctly_not_used&quot;
+  ],
+  &quot;route_type&quot;: &quot;product&quot;,
+  &quot;selected_entrypoint&quot;: &quot;/home/source/SpiritOS/docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/07-make-a-habit-tracker/workspace/index.html&quot;,
+  &quot;sidecar_lane_status&quot;: {
+    &quot;considered&quot;: [
+      &quot;hermes_sidecar_verifier_preview&quot;,
+      &quot;gemma_sidecar_context_preview&quot;
+    ],
+    &quot;live&quot;: false
+  },
+  &quot;task_shape&quot;: &quot;disposable_small_file_bundle&quot;,
+  &quot;usability_score&quot;: 100,
+  &quot;web_search_decision&quot;: &quot;not_needed&quot;
+}</pre></section>
+<section class='card pass'><h3>make a notes app</h3><p><strong>Initial:</strong> WEAK_PASS <strong>Verified:</strong> PASS <strong>Behavior evidence:</strong> True</p><p><a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/08-make-a-notes-app/receipt.json'>receipt</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/08-make-a-notes-app/score.json'>score</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/08-make-a-notes-app/transcript.txt'>transcript</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/08-make-a-notes-app/workspace.diff'>workspace_diff</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/08-make-a-notes-app/browser-open-console.json'>browser_diagnostics</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/08-make-a-notes-app/behavior-probe.json'>behavior_probe</a> <a href='runs/08-make-a-notes-app/verified-expectation-score.json'>expectation_score_json</a> <a href='runs/08-make-a-notes-app/asset-gap-diagnostics.json'>asset_gap_diagnostics</a></p><pre>{
+  &quot;artifact_class&quot;: &quot;static_ui_artifact&quot;,
+  &quot;backend_authored_content_detected&quot;: false,
+  &quot;behavior_probe_result&quot;: {
+    &quot;passed&quot;: true,
+    &quot;reason&quot;: &quot;&quot;,
+    &quot;verdict&quot;: &quot;PASS&quot;
+  },
+  &quot;browser_open_result&quot;: {
+    &quot;opened&quot;: true,
+    &quot;verdict&quot;: &quot;PASS&quot;
+  },
+  &quot;console_error_count&quot;: 0,
+  &quot;context_decision&quot;: {
+    &quot;context_sources_used&quot;: [
+      &quot;behavior_contract&quot;,
+      &quot;model_lane_observability&quot;,
+      &quot;task_spec_intake&quot;
+    ],
+    &quot;local_context_needed&quot;: false,
+    &quot;reason_codes&quot;: [
+      &quot;blunt_local_artifact_prompt&quot;,
+      &quot;repo_context_not_required&quot;
+    ],
+    &quot;web_search_needed&quot;: false,
+    &quot;web_search_used&quot;: false
+  },
+  &quot;entrypoint_reason&quot;: &quot;explicit_preview_path&quot;,
+  &quot;expected_artifact_kind&quot;: &quot;browser_viewable_static_ui&quot;,
+  &quot;expected_interaction_level&quot;: &quot;text_create_or_update&quot;,
+  &quot;external_resources&quot;: [],
+  &quot;final_verified_expectation_verdict&quot;: &quot;PASS&quot;,
+  &quot;inferred_intent&quot;: &quot;disposable_small_file_bundle&quot;,
+  &quot;initial_live_expectation_verdict&quot;: &quot;WEAK_PASS&quot;,
+  &quot;intent_fit_score&quot;: 100,
+  &quot;local_intelligence_decision&quot;: {
+    &quot;context_sources&quot;: [
+      &quot;behavior_contract&quot;,
+      &quot;model_lane_observability&quot;,
+      &quot;task_spec_intake&quot;
+    ],
+    &quot;used&quot;: [
+      &quot;behavior_contract&quot;,
+      &quot;task_spec_intake&quot;,
+      &quot;model_lane_observability&quot;
+    ]
+  },
+  &quot;missing_local_references&quot;: [],
+  &quot;model_authored_files&quot;: [
+    &quot;index.html&quot;,
+    &quot;script.js&quot;,
+    &quot;styles.css&quot;
+  ],
+  &quot;model_lane_selected&quot;: &quot;qwen_local_coder&quot;,
+  &quot;page_error_count&quot;: 0,
+  &quot;proxy_suggested_files&quot;: [],
+  &quot;reason_codes&quot;: [
+    &quot;artifact_pass&quot;,
+    &quot;behavior_pass&quot;,
+    &quot;browser_open_pass&quot;,
+    &quot;context_pass&quot;,
+    &quot;lane_pass&quot;,
+    &quot;model_authorship_pass&quot;,
+    &quot;no_external_resources_detected&quot;,
+    &quot;route_pass&quot;,
+    &quot;safety_pass&quot;,
+    &quot;sidecar_lanes_preview_only&quot;,
+    &quot;usability_pass&quot;,
+    &quot;web_search_correctly_not_used&quot;
+  ],
+  &quot;route_type&quot;: &quot;product&quot;,
+  &quot;selected_entrypoint&quot;: &quot;/home/source/SpiritOS/docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/08-make-a-notes-app/workspace/index.html&quot;,
+  &quot;sidecar_lane_status&quot;: {
+    &quot;considered&quot;: [
+      &quot;hermes_sidecar_verifier_preview&quot;,
+      &quot;gemma_sidecar_context_preview&quot;
+    ],
+    &quot;live&quot;: false
+  },
+  &quot;task_shape&quot;: &quot;disposable_small_file_bundle&quot;,
+  &quot;usability_score&quot;: 100,
+  &quot;web_search_decision&quot;: &quot;not_needed&quot;
+}</pre></section>
+<section class='card pass'><h3>make a password strength checker</h3><p><strong>Initial:</strong> WEAK_PASS <strong>Verified:</strong> PASS <strong>Behavior evidence:</strong> True</p><p><a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/09-make-a-password-strength-checker/receipt.json'>receipt</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/09-make-a-password-strength-checker/score.json'>score</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/09-make-a-password-strength-checker/transcript.txt'>transcript</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/09-make-a-password-strength-checker/workspace.diff'>workspace_diff</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/09-make-a-password-strength-checker/browser-open-console.json'>browser_diagnostics</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/09-make-a-password-strength-checker/behavior-probe.json'>behavior_probe</a> <a href='runs/09-make-a-password-strength-checker/verified-expectation-score.json'>expectation_score_json</a> <a href='runs/09-make-a-password-strength-checker/asset-gap-diagnostics.json'>asset_gap_diagnostics</a></p><pre>{
+  &quot;artifact_class&quot;: &quot;static_ui_artifact&quot;,
+  &quot;backend_authored_content_detected&quot;: false,
+  &quot;behavior_probe_result&quot;: {
+    &quot;passed&quot;: true,
+    &quot;reason&quot;: &quot;&quot;,
+    &quot;verdict&quot;: &quot;PASS&quot;
+  },
+  &quot;browser_open_result&quot;: {
+    &quot;opened&quot;: true,
+    &quot;verdict&quot;: &quot;PASS&quot;
+  },
+  &quot;console_error_count&quot;: 0,
+  &quot;context_decision&quot;: {
+    &quot;context_sources_used&quot;: [
+      &quot;behavior_contract&quot;,
+      &quot;model_lane_observability&quot;,
+      &quot;task_spec_intake&quot;
+    ],
+    &quot;local_context_needed&quot;: false,
+    &quot;reason_codes&quot;: [
+      &quot;blunt_local_artifact_prompt&quot;,
+      &quot;repo_context_not_required&quot;
+    ],
+    &quot;web_search_needed&quot;: false,
+    &quot;web_search_used&quot;: false
+  },
+  &quot;entrypoint_reason&quot;: &quot;explicit_preview_path&quot;,
+  &quot;expected_artifact_kind&quot;: &quot;browser_viewable_static_ui&quot;,
+  &quot;expected_interaction_level&quot;: &quot;input_feedback&quot;,
+  &quot;external_resources&quot;: [],
+  &quot;final_verified_expectation_verdict&quot;: &quot;PASS&quot;,
+  &quot;inferred_intent&quot;: &quot;disposable_small_file_bundle&quot;,
+  &quot;initial_live_expectation_verdict&quot;: &quot;WEAK_PASS&quot;,
+  &quot;intent_fit_score&quot;: 100,
+  &quot;local_intelligence_decision&quot;: {
+    &quot;context_sources&quot;: [
+      &quot;behavior_contract&quot;,
+      &quot;model_lane_observability&quot;,
+      &quot;task_spec_intake&quot;
+    ],
+    &quot;used&quot;: [
+      &quot;behavior_contract&quot;,
+      &quot;task_spec_intake&quot;,
+      &quot;model_lane_observability&quot;
+    ]
+  },
+  &quot;missing_local_references&quot;: [],
+  &quot;model_authored_files&quot;: [
+    &quot;index.html&quot;,
+    &quot;script.js&quot;,
+    &quot;styles.css&quot;
+  ],
+  &quot;model_lane_selected&quot;: &quot;qwen_local_coder&quot;,
+  &quot;page_error_count&quot;: 0,
+  &quot;proxy_suggested_files&quot;: [],
+  &quot;reason_codes&quot;: [
+    &quot;artifact_pass&quot;,
+    &quot;behavior_pass&quot;,
+    &quot;browser_open_pass&quot;,
+    &quot;context_pass&quot;,
+    &quot;lane_pass&quot;,
+    &quot;model_authorship_pass&quot;,
+    &quot;no_external_resources_detected&quot;,
+    &quot;route_pass&quot;,
+    &quot;safety_pass&quot;,
+    &quot;sidecar_lanes_preview_only&quot;,
+    &quot;usability_pass&quot;,
+    &quot;web_search_correctly_not_used&quot;
+  ],
+  &quot;route_type&quot;: &quot;product&quot;,
+  &quot;selected_entrypoint&quot;: &quot;/home/source/SpiritOS/docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/09-make-a-password-strength-checker/workspace/index.html&quot;,
+  &quot;sidecar_lane_status&quot;: {
+    &quot;considered&quot;: [
+      &quot;hermes_sidecar_verifier_preview&quot;,
+      &quot;gemma_sidecar_context_preview&quot;
+    ],
+    &quot;live&quot;: false
+  },
+  &quot;task_shape&quot;: &quot;disposable_small_file_bundle&quot;,
+  &quot;usability_score&quot;: 100,
+  &quot;web_search_decision&quot;: &quot;not_needed&quot;
+}</pre></section>
+<section class='card pass'><h3>make a simple drawing pad</h3><p><strong>Initial:</strong> WEAK_PASS <strong>Verified:</strong> PASS <strong>Behavior evidence:</strong> True</p><p><a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/10-make-a-simple-drawing-pad/receipt.json'>receipt</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/10-make-a-simple-drawing-pad/score.json'>score</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/10-make-a-simple-drawing-pad/transcript.txt'>transcript</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/10-make-a-simple-drawing-pad/workspace.diff'>workspace_diff</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/10-make-a-simple-drawing-pad/browser-open-console.json'>browser_diagnostics</a> <a href='docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/10-make-a-simple-drawing-pad/behavior-probe.json'>behavior_probe</a> <a href='runs/10-make-a-simple-drawing-pad/verified-expectation-score.json'>expectation_score_json</a> <a href='runs/10-make-a-simple-drawing-pad/asset-gap-diagnostics.json'>asset_gap_diagnostics</a></p><pre>{
+  &quot;artifact_class&quot;: &quot;static_ui_artifact&quot;,
+  &quot;backend_authored_content_detected&quot;: false,
+  &quot;behavior_probe_result&quot;: {
+    &quot;passed&quot;: true,
+    &quot;reason&quot;: &quot;&quot;,
+    &quot;verdict&quot;: &quot;PASS&quot;
+  },
+  &quot;browser_open_result&quot;: {
+    &quot;opened&quot;: true,
+    &quot;verdict&quot;: &quot;PASS&quot;
+  },
+  &quot;console_error_count&quot;: 0,
+  &quot;context_decision&quot;: {
+    &quot;context_sources_used&quot;: [
+      &quot;behavior_contract&quot;,
+      &quot;model_lane_observability&quot;,
+      &quot;task_spec_intake&quot;
+    ],
+    &quot;local_context_needed&quot;: false,
+    &quot;reason_codes&quot;: [
+      &quot;blunt_local_artifact_prompt&quot;,
+      &quot;repo_context_not_required&quot;
+    ],
+    &quot;web_search_needed&quot;: false,
+    &quot;web_search_used&quot;: false
+  },
+  &quot;entrypoint_reason&quot;: &quot;explicit_preview_path&quot;,
+  &quot;expected_artifact_kind&quot;: &quot;browser_viewable_static_ui&quot;,
+  &quot;expected_interaction_level&quot;: &quot;canvas_mutation&quot;,
+  &quot;external_resources&quot;: [],
+  &quot;final_verified_expectation_verdict&quot;: &quot;PASS&quot;,
+  &quot;inferred_intent&quot;: &quot;disposable_small_file_bundle&quot;,
+  &quot;initial_live_expectation_verdict&quot;: &quot;WEAK_PASS&quot;,
+  &quot;intent_fit_score&quot;: 100,
+  &quot;local_intelligence_decision&quot;: {
+    &quot;context_sources&quot;: [
+      &quot;behavior_contract&quot;,
+      &quot;model_lane_observability&quot;,
+      &quot;task_spec_intake&quot;
+    ],
+    &quot;used&quot;: [
+      &quot;behavior_contract&quot;,
+      &quot;task_spec_intake&quot;,
+      &quot;model_lane_observability&quot;
+    ]
+  },
+  &quot;missing_local_references&quot;: [],
+  &quot;model_authored_files&quot;: [
+    &quot;drawing-pad.css&quot;,
+    &quot;drawing-pad.html&quot;,
+    &quot;drawing-pad.js&quot;
+  ],
+  &quot;model_lane_selected&quot;: &quot;qwen_local_coder&quot;,
+  &quot;page_error_count&quot;: 0,
+  &quot;proxy_suggested_files&quot;: [],
+  &quot;reason_codes&quot;: [
+    &quot;artifact_pass&quot;,
+    &quot;behavior_pass&quot;,
+    &quot;browser_open_pass&quot;,
+    &quot;context_pass&quot;,
+    &quot;lane_pass&quot;,
+    &quot;model_authorship_pass&quot;,
+    &quot;no_external_resources_detected&quot;,
+    &quot;route_pass&quot;,
+    &quot;safety_pass&quot;,
+    &quot;sidecar_lanes_preview_only&quot;,
+    &quot;usability_pass&quot;,
+    &quot;web_search_correctly_not_used&quot;
+  ],
+  &quot;route_type&quot;: &quot;product&quot;,
+  &quot;selected_entrypoint&quot;: &quot;/home/source/SpiritOS/docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/10-make-a-simple-drawing-pad/workspace/drawing-pad.html&quot;,
+  &quot;sidecar_lane_status&quot;: {
+    &quot;considered&quot;: [
+      &quot;hermes_sidecar_verifier_preview&quot;,
+      &quot;gemma_sidecar_context_preview&quot;
+    ],
+    &quot;live&quot;: false
+  },
+  &quot;task_shape&quot;: &quot;disposable_small_file_bundle&quot;,
+  &quot;usability_score&quot;: 100,
+  &quot;web_search_decision&quot;: &quot;not_needed&quot;
+}</pre></section><h2>Reason-Code Explanations</h2><ul><li><code>artifact_fail</code>: artifact files were missing</li>
+<li><code>artifact_pass</code>: artifact files were created</li>
+<li><code>backend_authored_content_detected</code>: artifact content appears to have been backend-authored rather than model-authored</li>
+<li><code>behavior_evidence_missing</code>: browser behavior evidence is not attached yet</li>
+<li><code>behavior_fail</code>: browser behavior probe failed</li>
+<li><code>behavior_pass</code>: browser behavior probe passed</li>
+<li><code>behavior_unverified</code>: behavior evidence is missing or not authoritative yet</li>
+<li><code>browser_console_errors_present</code>: browser console produced error or warning messages</li>
+<li><code>browser_open_fail</code>: selected entrypoint did not open</li>
+<li><code>browser_open_pass</code>: selected entrypoint opened in a browser</li>
+<li><code>browser_page_errors_present</code>: browser reported page runtime errors</li>
+<li><code>context_pass</code>: context/search choices match the prompt</li>
+<li><code>controls_present_but_no_state_change</code>: controls existed but the browser probe did not observe visible state change</li>
+<li><code>external_resources_present_review_reasonability</code>: external resources are present and should be reviewed against inferred intent</li>
+<li><code>final_pass_without_browser_evidence</code>: final PASS was blocked because browser behavior evidence was missing</li>
+<li><code>lane_pass</code>: Qwen primary lane and preview-only sidecar policy were preserved</li>
+<li><code>missing_linked_local_files</code>: generated HTML references local scripts, styles, images, or media that were not created</li>
+<li><code>model_authorship_fail</code>: model authorship or byte integrity is missing</li>
+<li><code>model_authorship_pass</code>: files and bytes match model-authored actions</li>
+<li><code>route_fail</code>: route did not complete safely</li>
+<li><code>route_pass</code>: route and safety gates completed</li>
+<li><code>route_weak</code>: route completed but not strongly</li>
+<li><code>safety_pass</code>: no real app mutation, backend content, or hidden escalation detected</li>
+<li><code>sidecar_lane_live_requires_approval</code>: a sidecar lane was live despite preview-only policy</li>
+<li><code>usability_pass</code>: visible interaction and runtime quality are acceptable for this probe</li>
+<li><code>usability_weak</code>: basic behavior may work but usability evidence is shallow</li>
+<li><code>web_search_correctly_not_used</code>: web search was not used for a local/artifact prompt</li>
+<li><code>web_search_unnecessary_for_local_artifact_prompt</code>: web search was used even though the prompt looked local/artifact-only</li></ul></body></html>

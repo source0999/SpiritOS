@@ -1,0 +1,88 @@
+{
+  "anti_cheat": {
+    "backend_created_content": false,
+    "cloud_api_fallback_used": false,
+    "deterministic_scaffold_used": false,
+    "fallback_used": false,
+    "false_negative_corrections": 0,
+    "false_positive_corrections": 0,
+    "missing_behavior_evidence": false,
+    "missing_transcript": false,
+    "real_app_touched": false,
+    "repair_attempts_used": 2,
+    "report_verdict_mismatch": false,
+    "score_integrity_failure": false,
+    "score_warnings": 0
+  },
+  "anti_tailoring": {
+    "claim": "No exact prompt tailoring found in searched runtime/source scopes.",
+    "exact_failed_prompt_ids_in_runtime_source": false,
+    "exact_failed_prompt_strings_in_runtime_source": false,
+    "notes": "Prompt strings are present in evidence outputs and tests as expected fixtures/evidence."
+  },
+  "evidence_folder": "docs/evidence/source-proxy-level-3-semantic-generalization-gate-b-20260613",
+  "final_clean_10_rerun": {
+    "fail_count": 1,
+    "false_negative_corrections": 0,
+    "false_positive_corrections": 0,
+    "overall_verdict": "GREEN_READY_FOR_BRITTON_REVIEW",
+    "pass_count": 9,
+    "repair_attempts": 2,
+    "score_warnings": 0,
+    "threshold": "8/10 behavior PASS"
+  },
+  "focused_tests": {
+    "artifact_behavior_final_retest_repair": "47 passed",
+    "intake": "13 passed",
+    "py_compile": "passed",
+    "selected_regression": "20 passed, 99 deselected"
+  },
+  "gate": "B",
+  "gate_b_verdict": "GO",
+  "level_3_recommendation": "GO",
+  "model_lane_truth": {
+    "cartographer_live_route_ownership": false,
+    "gemma_hermes_live_verifier": false,
+    "qwen_invoked": true,
+    "qwen_model": "qwen2.5-coder:7b"
+  },
+  "remaining_failures": [
+    {
+      "failure": "theme_no_computed_state_change",
+      "prompt": "make a dusk dawn palette switch",
+      "route": "GO",
+      "summary": "Route and preview are fixed; behavior remains failed after one repair attempt."
+    }
+  ],
+  "source_files_touched": [
+    "source_proxy/decision/task_spec_intake.py",
+    "source_proxy/decision/artifact_behavior_contract.py",
+    "source_proxy/decision/human_messy_homepage.py",
+    "source_proxy/decision/artifact_repair_contract.py",
+    "docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti_tailoring_run_batch.py",
+    "source_proxy/tests/test_task_spec_intake_unseen_artifacts.py",
+    "source_proxy/tests/test_artifact_behavior_contract.py",
+    "source_proxy/tests/test_artifact_repair_contract.py"
+  ],
+  "what_changed": [
+    "generic disposable resolver semantic terms",
+    "real-repo override signals",
+    "behavior contract synonym coverage",
+    "weather/drawing/theme/password generation wording",
+    "structured repair packet and prompt",
+    "route_trace.json sidecars",
+    "focused positive and negative tests"
+  ],
+  "what_did_not_change": [
+    "scorer green-padding",
+    "final verdict loosening",
+    "exact failed-prompt branches",
+    "prompt-id branches",
+    "cloud fallback",
+    "backend-authored rescue content",
+    "hidden deterministic scaffold",
+    "Level 4",
+    "new prompt batch"
+  ],
+  "upload_next": "docs/evidence/source-proxy-level-3-semantic-generalization-gate-b-20260613/mini-context-pack.md"
+}

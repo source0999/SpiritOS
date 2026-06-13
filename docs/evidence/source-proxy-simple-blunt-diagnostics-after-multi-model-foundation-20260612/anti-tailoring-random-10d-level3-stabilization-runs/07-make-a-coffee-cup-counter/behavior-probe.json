@@ -1,0 +1,14 @@
+{
+  "test": "make a coffee cup counter-click-tracker-state-change",
+  "verdict": "PASS",
+  "passed": true,
+  "expected": "tracker control visibly changes progress state",
+  "primary_behavior_failure_bucket": "",
+  "failureBucket": "",
+  "actual": {
+    "before": "Coffee Cups Sold: 0\nSell a Cup",
+    "after": "Coffee Cups Sold: 1\nSell a Cup",
+    "clicked": true
+  },
+  "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10d-level3-stabilization-runs\\07-make-a-coffee-cup-counter\\workspace\\index.html"
+}

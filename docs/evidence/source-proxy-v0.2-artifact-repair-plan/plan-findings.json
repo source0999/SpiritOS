@@ -1,0 +1,97 @@
+{
+  "plan_name": "Source Proxy v0.2 Artifact Repair Intelligence",
+  "output_directory": "docs/evidence/source-proxy-v0.2-artifact-repair-plan/",
+  "evidence_inspected": [
+    {
+      "path": "docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/",
+      "found": true,
+      "summary": "Original 10-prompt diagnostic with receipts, scores, transcripts, diffs, evidence packets, and heuristic PASS/FAIL labels."
+    },
+    {
+      "path": "docs/evidence/source-proxy-general-intelligence-diagnostic-20260612-real-behavior-audit/",
+      "found": false,
+      "summary": "Requested evidence directory was not present."
+    },
+    {
+      "path": "docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/",
+      "found": true,
+      "summary": "Revamped 11-prompt diagnostic with manifest, summary, browser behavior checks, artifact review summary, report, and all per-run evidence files."
+    },
+    {
+      "path": "docs/evidence/spiritos-cognitive-control-plane-revamp-v0.1/",
+      "found": true,
+      "summary": "v0.1 truth, behavior fixture, permission, worker, verifier, dry-run, timer proof, and readiness evidence."
+    }
+  ],
+  "current_baseline_pass_count": {
+    "estimate": 4,
+    "out_of": 11,
+    "basis": "Browser-confirmed PASS for homepage and timer, plus diagnostic-summary useful PASS candidates todo and weather that still need durable behavior probes. Calculator, dark theme, and habit tracker are corrected behavior FAIL despite route GO/PASS summaries."
+  },
+  "target_v0_2_pass_count": {
+    "goal": "7/11 or 8/11 useful PASS with repair loop",
+    "stretch": "9/11 if local repair works well",
+    "truth_target": "0 known false positives"
+  },
+  "known_failures": [
+    "calculator opens but 2 + 3 = returns 0 instead of 5",
+    "dark theme toggles class but computed colors do not change",
+    "habit tracker is static hard-coded habits with no input, buttons, checkboxes, or state changes",
+    "notes app generated markdown only instead of an app",
+    "music player mockup produced no usable preview artifact",
+    "password strength checker produced no usable preview artifact",
+    "simple drawing pad produced no usable preview artifact"
+  ],
+  "proposed_phases": [
+    "Phase 0 - Planning baseline and evidence inventory",
+    "Phase 1 - Canonical final verdict cleanup",
+    "Phase 2 - Interactive artifact intent resolver",
+    "Phase 3 - Behavior contract before generation",
+    "Phase 4 - Failure packet and repair prompt contract",
+    "Phase 5 - Limited local repair loop",
+    "Phase 6 - Re-test and final verdict integration",
+    "Phase 7 - Handoff packet for failed or out-of-scope local tasks",
+    "Phase 8 - Advisory model limitation memory",
+    "Phase 9 - v0.2 proof diagnostic rerun plan",
+    "Phase 10 - v0.2 closeout and next-step packet"
+  ],
+  "deferred_items": [
+    "automatic Obsidian write-back",
+    "broad autonomous learning loop",
+    "full multi-lane benchmark execution",
+    "automatic high-cost API/provider usage",
+    "hidden worker starts",
+    "broad /coding UI rebuild",
+    "full repo-wide brain revamp"
+  ],
+  "permission_boundaries": [
+    "no Source Proxy patch in this planning task",
+    "no generated artifact patch in this planning task",
+    "local repair only in disposable workspaces after approval",
+    "no production file repair without explicit approval",
+    "no provider/API usage without approval",
+    "no Codex live worker start without approval",
+    "no Obsidian writes",
+    "no git operations",
+    "no hidden background jobs",
+    "no automatic high-usage escalation",
+    "handoff packet allowed when local work is out of scope"
+  ],
+  "recommended_first_phase": "Phase 0 - Planning baseline and evidence inventory",
+  "created_files": [
+    "README.md",
+    "v0.2-plan.md",
+    "evidence-inventory.md",
+    "phase-index.md",
+    "implementation-increments.md",
+    "acceptance-criteria.md",
+    "diagnostic-lessons.md",
+    "qwen-local-limitations.md",
+    "verification-matrix.md",
+    "risk-and-permission-rules.md",
+    "new-chat-handoff.md",
+    "plan-closeout.md",
+    "plan-findings.json"
+  ],
+  "plan_verdict": "GO for planning review only; implementation started: No"
+}

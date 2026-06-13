@@ -1,0 +1,239 @@
+{
+  "counts": {
+    "PASS": 10
+  },
+  "results": [
+    {
+      "behavior_score": 100,
+      "expectation_score_path": "docs\\evidence\\source-proxy-expectation-scoring-advanced-diagnostics-20260612\\replay-existing-10\\01-make-a-timer-app\\expectation-score.json",
+      "intent_fit_score": 100,
+      "product_verdict": "PASS",
+      "prompt": "make a timer app",
+      "reason_codes": [
+        "artifact_pass",
+        "behavior_pass",
+        "browser_open_pass",
+        "context_pass",
+        "lane_pass",
+        "model_authorship_pass",
+        "no_external_resources_detected",
+        "route_pass",
+        "safety_pass",
+        "sidecar_lanes_preview_only",
+        "usability_pass",
+        "web_search_correctly_not_used"
+      ],
+      "run_dir": "docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\runs\\01-make-a-timer-app",
+      "usability_score": 100
+    },
+    {
+      "behavior_score": 100,
+      "expectation_score_path": "docs\\evidence\\source-proxy-expectation-scoring-advanced-diagnostics-20260612\\replay-existing-10\\02-make-a-calculator-app\\expectation-score.json",
+      "intent_fit_score": 100,
+      "product_verdict": "PASS",
+      "prompt": "make a calculator app",
+      "reason_codes": [
+        "artifact_pass",
+        "behavior_pass",
+        "browser_open_pass",
+        "context_pass",
+        "lane_pass",
+        "model_authorship_pass",
+        "no_external_resources_detected",
+        "route_pass",
+        "safety_pass",
+        "sidecar_lanes_preview_only",
+        "usability_pass",
+        "web_search_correctly_not_used"
+      ],
+      "run_dir": "docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\runs\\02-make-a-calculator-app",
+      "usability_score": 100
+    },
+    {
+      "behavior_score": 100,
+      "expectation_score_path": "docs\\evidence\\source-proxy-expectation-scoring-advanced-diagnostics-20260612\\replay-existing-10\\03-make-dark-theme-switcher-page\\expectation-score.json",
+      "intent_fit_score": 100,
+      "product_verdict": "PASS",
+      "prompt": "make dark theme switcher page",
+      "reason_codes": [
+        "artifact_pass",
+        "behavior_pass",
+        "browser_open_pass",
+        "context_pass",
+        "lane_pass",
+        "model_authorship_pass",
+        "no_external_resources_detected",
+        "route_pass",
+        "safety_pass",
+        "sidecar_lanes_preview_only",
+        "usability_pass",
+        "web_search_correctly_not_used"
+      ],
+      "run_dir": "docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\runs\\03-make-dark-theme-switcher-page",
+      "usability_score": 100
+    },
+    {
+      "behavior_score": 100,
+      "expectation_score_path": "docs\\evidence\\source-proxy-expectation-scoring-advanced-diagnostics-20260612\\replay-existing-10\\04-make-a-todo-list-app\\expectation-score.json",
+      "intent_fit_score": 100,
+      "product_verdict": "PASS",
+      "prompt": "make a todo list app",
+      "reason_codes": [
+        "artifact_pass",
+        "behavior_pass",
+        "browser_open_pass",
+        "context_pass",
+        "lane_pass",
+        "model_authorship_pass",
+        "no_external_resources_detected",
+        "route_pass",
+        "safety_pass",
+        "sidecar_lanes_preview_only",
+        "usability_pass",
+        "web_search_correctly_not_used"
+      ],
+      "run_dir": "docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\runs\\04-make-a-todo-list-app",
+      "usability_score": 100
+    },
+    {
+      "behavior_score": 100,
+      "expectation_score_path": "docs\\evidence\\source-proxy-expectation-scoring-advanced-diagnostics-20260612\\replay-existing-10\\05-make-a-weather-card-demo\\expectation-score.json",
+      "intent_fit_score": 100,
+      "product_verdict": "PASS",
+      "prompt": "make a weather card demo",
+      "reason_codes": [
+        "artifact_pass",
+        "behavior_pass",
+        "browser_open_pass",
+        "context_pass",
+        "lane_pass",
+        "model_authorship_pass",
+        "no_external_resources_detected",
+        "route_pass",
+        "safety_pass",
+        "sidecar_lanes_preview_only",
+        "usability_pass",
+        "web_search_correctly_not_used"
+      ],
+      "run_dir": "docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\runs\\05-make-a-weather-card-demo",
+      "usability_score": 100
+    },
+    {
+      "behavior_score": 100,
+      "expectation_score_path": "docs\\evidence\\source-proxy-expectation-scoring-advanced-diagnostics-20260612\\replay-existing-10\\06-make-a-music-player-mockup\\expectation-score.json",
+      "intent_fit_score": 100,
+      "product_verdict": "PASS",
+      "prompt": "make a music player mockup",
+      "reason_codes": [
+        "artifact_pass",
+        "behavior_pass",
+        "browser_open_pass",
+        "context_pass",
+        "lane_pass",
+        "model_authorship_pass",
+        "no_external_resources_detected",
+        "route_pass",
+        "safety_pass",
+        "sidecar_lanes_preview_only",
+        "usability_pass",
+        "web_search_correctly_not_used"
+      ],
+      "run_dir": "docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\runs\\06-make-a-music-player-mockup",
+      "usability_score": 100
+    },
+    {
+      "behavior_score": 100,
+      "expectation_score_path": "docs\\evidence\\source-proxy-expectation-scoring-advanced-diagnostics-20260612\\replay-existing-10\\07-make-a-habit-tracker\\expectation-score.json",
+      "intent_fit_score": 100,
+      "product_verdict": "PASS",
+      "prompt": "make a habit tracker",
+      "reason_codes": [
+        "artifact_pass",
+        "behavior_pass",
+        "browser_open_pass",
+        "context_pass",
+        "lane_pass",
+        "model_authorship_pass",
+        "no_external_resources_detected",
+        "route_pass",
+        "safety_pass",
+        "sidecar_lanes_preview_only",
+        "usability_pass",
+        "web_search_correctly_not_used"
+      ],
+      "run_dir": "docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\runs\\07-make-a-habit-tracker",
+      "usability_score": 100
+    },
+    {
+      "behavior_score": 100,
+      "expectation_score_path": "docs\\evidence\\source-proxy-expectation-scoring-advanced-diagnostics-20260612\\replay-existing-10\\08-make-a-notes-app\\expectation-score.json",
+      "intent_fit_score": 100,
+      "product_verdict": "PASS",
+      "prompt": "make a notes app",
+      "reason_codes": [
+        "artifact_pass",
+        "behavior_pass",
+        "browser_open_pass",
+        "context_pass",
+        "lane_pass",
+        "model_authorship_pass",
+        "no_external_resources_detected",
+        "route_pass",
+        "safety_pass",
+        "sidecar_lanes_preview_only",
+        "usability_pass",
+        "web_search_correctly_not_used"
+      ],
+      "run_dir": "docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\runs\\08-make-a-notes-app",
+      "usability_score": 100
+    },
+    {
+      "behavior_score": 100,
+      "expectation_score_path": "docs\\evidence\\source-proxy-expectation-scoring-advanced-diagnostics-20260612\\replay-existing-10\\09-make-a-password-strength-checker\\expectation-score.json",
+      "intent_fit_score": 100,
+      "product_verdict": "PASS",
+      "prompt": "make a password strength checker",
+      "reason_codes": [
+        "artifact_pass",
+        "behavior_pass",
+        "browser_open_pass",
+        "context_pass",
+        "lane_pass",
+        "model_authorship_pass",
+        "no_external_resources_detected",
+        "route_pass",
+        "safety_pass",
+        "sidecar_lanes_preview_only",
+        "usability_pass",
+        "web_search_correctly_not_used"
+      ],
+      "run_dir": "docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\runs\\09-make-a-password-strength-checker",
+      "usability_score": 100
+    },
+    {
+      "behavior_score": 100,
+      "expectation_score_path": "docs\\evidence\\source-proxy-expectation-scoring-advanced-diagnostics-20260612\\replay-existing-10\\10-make-a-simple-drawing-pad\\expectation-score.json",
+      "intent_fit_score": 100,
+      "product_verdict": "PASS",
+      "prompt": "make a simple drawing pad",
+      "reason_codes": [
+        "artifact_pass",
+        "behavior_pass",
+        "browser_open_pass",
+        "context_pass",
+        "lane_pass",
+        "model_authorship_pass",
+        "no_external_resources_detected",
+        "route_pass",
+        "safety_pass",
+        "sidecar_lanes_preview_only",
+        "usability_pass",
+        "web_search_correctly_not_used"
+      ],
+      "run_dir": "docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\runs\\10-make-a-simple-drawing-pad",
+      "usability_score": 100
+    }
+  ],
+  "schema": "source-proxy-expectation-scoring-replay-report.v1",
+  "source_evidence_root": "docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612"
+}

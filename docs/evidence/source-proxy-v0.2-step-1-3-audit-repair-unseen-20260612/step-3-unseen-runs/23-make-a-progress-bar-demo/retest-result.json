@@ -1,0 +1,42 @@
+{
+  "artifact_ready": true,
+  "attempts_used": 0,
+  "behavior_required": true,
+  "behavior_result": {
+    "actual": {
+      "after": "Increment Progress",
+      "before": "Increment Progress",
+      "changed": false,
+      "clicked": "button"
+    },
+    "expected": {
+      "behavior": "progress-bar-visible-value",
+      "proof": "expected/actual/passed recorded by browser probe"
+    },
+    "observed": {
+      "after": "Increment Progress",
+      "before": "Increment Progress",
+      "changed": false,
+      "clicked": "button"
+    },
+    "passed": false,
+    "reason": "visible state did not change after interaction",
+    "test": "progress-bar-visible-value",
+    "verdict": "FAIL"
+  },
+  "canonical_final_verdict": "FAIL",
+  "changed_files": [],
+  "diffs": [],
+  "final_reason_codes": [
+    "behavior_failed",
+    "post_repair_behavior_fail",
+    "repair_ready_for_retest",
+    "step_1_3_local_product_rerun_no_manual_artifact_patch",
+    "visible_state_change_missing"
+  ],
+  "handoff_reason": "",
+  "handoff_required": false,
+  "product_pass": false,
+  "repair_status": "READY_FOR_RETEST",
+  "result_version": "source-proxy-artifact-retest-result-v0.2.phase-6"
+}

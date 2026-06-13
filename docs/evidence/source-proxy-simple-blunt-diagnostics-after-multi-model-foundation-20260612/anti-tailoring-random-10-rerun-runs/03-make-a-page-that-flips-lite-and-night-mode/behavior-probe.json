@@ -1,0 +1,19 @@
+{
+  "test": "make a page that flips lite and night mode-theme-computed-change",
+  "verdict": "PASS",
+  "passed": true,
+  "expected": "computed color or theme class changes",
+  "actual": {
+    "before": {
+      "bg": "rgb(255, 255, 255)",
+      "color": "rgb(0, 0, 0)",
+      "cls": "light-theme"
+    },
+    "after": {
+      "bg": "rgb(51, 51, 51)",
+      "color": "rgb(255, 255, 255)",
+      "cls": "night-theme"
+    }
+  },
+  "path": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10-rerun-runs\\03-make-a-page-that-flips-lite-and-night-mode\\workspace\\index.html"
+}

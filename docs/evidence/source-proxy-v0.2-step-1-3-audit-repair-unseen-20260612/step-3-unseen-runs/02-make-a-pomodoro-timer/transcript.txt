@@ -1,0 +1,10 @@
+```json
+{
+  "action_type": "WriteFile",
+  "target": "pomodoro_timer.js",
+  "arguments": {
+    "content": "// pomodoro_timer.js\n(function() {\n  let timeLeft = 25 * 60; // 25 minutes in seconds\n  const timerElement = document.getElementById('timer');\n\n  function updateTimer() {\n    const minutes = Math.floor(timeLeft / 60);\n    let seconds = timeLeft % 60;\n    if (seconds < 10) { seconds = '0' + seconds; }\n    timerElement.textContent = `${minutes}:${seconds}`;\n    timeLeft--;\n\n    if (timeLeft < 0) {\n      alert('Pomodoro finished!');\n      timeLeft = 25 * 60;\n    }\n  }\n\n  setInterval(updateTimer, 1000);\n})();"
+  },
+  "reason": "A simple JavaScript file to create a pomodoro timer."
+}
+```

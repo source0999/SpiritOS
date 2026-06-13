@@ -1,0 +1,55 @@
+{
+  "schema_id": "spiritos-cognitive-control-plane-revamp-v0.1.phase-5.handoff-preview-packet",
+  "phase": "Phase 5",
+  "status": "evidence-only",
+  "packet_fields": {
+    "handoff_preview_id": "stable identifier for handoff preview packet",
+    "created_at": "ISO-8601 timestamp when generated",
+    "input_packet_ref": "Phase 3 preview packet id or path",
+    "permission_packet_ref": "Phase 4 executive preview packet id or path",
+    "selector_decision": "recommendation_ready, selection_blocked, needs_clarification, no_suitable_worker, or unverified_capability",
+    "recommended_worker_role": "architect, coder, reviewer, tester, documenter, researcher, blueprinter, cartographer, oracle, debugger, or null",
+    "recommended_provider_id": "codex_cli, local_ollama, gemini_cli, api_adapter, or null",
+    "recommended_lane_id": "lane id or null",
+    "capability_match": "matched capabilities and gaps",
+    "authority_flags": "approval/apply/commit/push/dispatch/provider-call/write authority flags, expected false",
+    "blocked_authorities": "authority names explicitly blocked",
+    "allowed_preview_actions": "read-only/proposal-only actions still allowed",
+    "forbidden_actions": "actions that must not run",
+    "required_human_approval": "boolean",
+    "required_gate_refs": "approval/spend/central/verification gates",
+    "risk_classes_carried_forward": "Phase 4 risk classes",
+    "truth_refs": "Phase 1 truth labels or fixture refs",
+    "memory_refs": "Phase 2 memory refs",
+    "phase_6_verifier_needs": "behavior proof needs to carry into verifier phase",
+    "would_dispatch_worker": false,
+    "would_start_worker": false,
+    "would_call_provider": false,
+    "would_execute": false,
+    "would_write": false,
+    "would_mutate_git": false,
+    "product_pass_claimed": false
+  },
+  "required_non_authority": [
+    "would_dispatch_worker=false",
+    "would_start_worker=false",
+    "would_call_provider=false",
+    "would_execute=false",
+    "would_write=false",
+    "would_mutate_git=false",
+    "product_pass_claimed=false"
+  ],
+  "blocked_if": [
+    "permission_decision is blocked",
+    "permission_decision is needs_clarification",
+    "permission_decision is unverified_gate",
+    "worker/provider has approval_authority true",
+    "worker/provider has apply_authority true without later approval",
+    "worker/provider has commit or push authority true",
+    "capability mismatch",
+    "dirty/protected lane conflict",
+    "required provider/model call would be needed in Phase 5"
+  ],
+  "verdict": "GO"
+}
+

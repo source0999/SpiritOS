@@ -1,0 +1,45 @@
+--- a/index.html
++++ b/index.html
+@@ -0,0 +1,19 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Balcony Forecast Tile</title>
++    <link rel="stylesheet" href="styles.css">
++</head>
++<body>
++    <div class="weather-card">
++        <h2 id="city">Local City</h2>
++        <p id="temperature">Temperature: 20°C</p>
++        <p id="condition">Condition: Sunny</p>
++        <p id="forecast">Forecast: Partly cloudy</p>
++        <button onclick="changeWeather()">Change Weather</button>
++    </div>
++    <script src="script.js"></script>
++</body>
++</html>--- a/script.js
++++ b/script.js
+@@ -0,0 +1,11 @@
++function changeWeather() {
++    const city = document.getElementById('city');
++    const temperature = document.getElementById('temperature');
++    const condition = document.getElementById('condition');
++    const forecast = document.getElementById('forecast');
++
++    city.textContent = 'New City';
++    temperature.textContent = 'Temperature: 25°C';
++    condition.textContent = 'Condition: Cloudy';
++    forecast.textContent = 'Forecast: Rainy';
++}--- a/styles.css
++++ b/styles.css
+@@ -0,0 +1,8 @@
++.weather-card {
++    border: 1px solid #ccc;
++    padding: 20px;
++    text-align: center;
++}
++button {
++    margin-top: 10px;
++}

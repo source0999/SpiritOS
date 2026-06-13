@@ -1,0 +1,28 @@
+```json
+[
+    {
+        "action_type": "WriteFile",
+        "target": "index.html",
+        "arguments": {
+            "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Image Gallery</title>\n    <link rel=\"stylesheet\" href=\"styles.css\">\n</head>\n<body>\n    <div class=\"gallery\">\n        <img src=\"image1.jpg\" alt=\"Image 1\" onclick=\"selectImage(this)\">\n        <img src=\"image2.jpg\" alt=\"Image 2\" onclick=\"selectImage(this)\">\n        <img src=\"image3.jpg\" alt=\"Image 3\" onclick=\"selectImage(this)\">\n    </div>\n    <div class=\"selected-image\">\n        <img id=\"selected\" src=\"image1.jpg\" alt=\"Selected Image\">\n    </div>\n    <script src=\"script.js\"></script>\n</body>\n</html>"
+        },
+        "reason": "HTML file to structure the image gallery and selected image display."
+    },
+    {
+        "action_type": "WriteFile",
+        "target": "styles.css",
+        "arguments": {
+            "content": ".gallery img {\n    width: 100px;\n    margin: 5px;\n    cursor: pointer;\n}\n\n.selected-image img {\n    max-width: 80%;\n    margin-top: 20px;\n}"
+        },
+        "reason": "CSS file to style the image gallery and selected image display."
+    },
+    {
+        "action_type": "WriteFile",
+        "target": "script.js",
+        "arguments": {
+            "content": "function selectImage(img) {\n    document.getElementById('selected').src = img.src;\n}"
+        },
+        "reason": "JavaScript file to handle image selection and update the selected image display."
+    }
+]
+```

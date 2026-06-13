@@ -1,0 +1,23 @@
+{
+  "opened": true,
+  "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10d-runs\\06-make-a-tiny-mixtape-player\\workspace\\mixtape-player.html",
+  "title": "Mixtape Player",
+  "bodyText": "My Mixtape\nPlay ",
+  "elementCounts": {
+    "buttons": 1,
+    "inputs": 1,
+    "links": 0,
+    "canvas": 0,
+    "scripts": 1,
+    "stylesheets": 1
+  },
+  "consoleMessages": [
+    {
+      "type": "error",
+      "text": "Failed to load resource: net::ERR_FILE_NOT_FOUND"
+    }
+  ],
+  "pageErrors": [
+    "Failed to load because no supported source was found."
+  ]
+}

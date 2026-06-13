@@ -1,0 +1,5 @@
+{
+  "do_not_implement_autonomy": true,
+  "level": "Level 2",
+  "reason": "unseen stabilization did not meet the Level 3 planning threshold"
+}

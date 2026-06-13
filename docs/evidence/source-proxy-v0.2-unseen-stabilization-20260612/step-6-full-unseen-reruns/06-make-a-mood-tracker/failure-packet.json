@@ -1,0 +1,97 @@
+{
+  "allowed_workspace": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\06-make-a-mood-tracker\\workspace",
+  "artifact_paths": [
+    "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\06-make-a-mood-tracker\\workspace\\mood_tracker.html"
+  ],
+  "attempt_count": 0,
+  "behavior_contract": {
+    "artifact_class": "static_ui_artifact",
+    "behavior_required": true,
+    "contract_status": "ready",
+    "contract_version": "source-proxy-artifact-behavior-contract-v0.2.phase-3",
+    "final_pass_rule": "Final PASS requires every required behavior probe to pass against the generated artifact.",
+    "non_pass_signals": [
+      "route_go",
+      "artifact_exists",
+      "preview_opens",
+      "static_dom_presence",
+      "model_self_report"
+    ],
+    "preview_requirement": "Openable HTML artifact is required before behavior can be evaluated.",
+    "probe_targets": [
+      {
+        "acceptance_criterion": "Tracker UI records or changes a visible item/count/completion state.",
+        "expected_observation": "A count, selected state, streak, or tracked item changes visibly.",
+        "minimum_proof_tier": 2,
+        "observable_actions": [
+          "add, toggle, increment, or select a tracker item"
+        ],
+        "probe_id": "tracker-state-change"
+      }
+    ],
+    "prompt": "make a mood tracker",
+    "task_shape": "disposable_small_file_bundle"
+  },
+  "evidence_refs": {
+    "diff_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\06-make-a-mood-tracker\\workspace.diff",
+    "evidence_packet_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\06-make-a-mood-tracker\\evidence-packet.json",
+    "logs": [],
+    "receipt_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\06-make-a-mood-tracker\\receipt.json",
+    "score_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\06-make-a-mood-tracker\\score.json",
+    "screenshots": [],
+    "transcript_path": "docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\06-make-a-mood-tracker\\transcript.txt"
+  },
+  "expected_behavior": {
+    "acceptance_criterion": "Tracker UI records or changes a visible item/count/completion state.",
+    "expected_observation": "A count, selected state, streak, or tracked item changes visibly.",
+    "minimum_proof_tier": 2,
+    "observable_actions": [
+      "add, toggle, increment, or select a tracker item"
+    ],
+    "probe_id": "tracker-state-change"
+  },
+  "forbidden_paths": [
+    ".env",
+    ".env.*",
+    "*.pem",
+    "*.key",
+    "certificates/*",
+    "source_proxy/**",
+    "src/**",
+    "app/**",
+    "pages/**",
+    "scripts/**"
+  ],
+  "handoff_reasons": [
+    "artifact_path_outside_allowed_workspace"
+  ],
+  "handoff_required": true,
+  "max_attempts_hint": 1,
+  "observed_behavior": {
+    "observed": {
+      "after": "Mood Tracker\n\ud83d\ude0a \ud83d\ude14 \ud83d\ude10\n\nCurrent Mood: happy",
+      "before": "Mood Tracker\n\ud83d\ude0a \ud83d\ude14 \ud83d\ude10\n\nCurrent Mood: happy",
+      "changed": false,
+      "clicked": "button"
+    },
+    "reason": "visible state did not change after interaction",
+    "test": "tracker-state-change",
+    "verdict": "FAIL"
+  },
+  "packet_version": "source-proxy-artifact-failure-packet-v0.2.phase-4",
+  "prompt": "make a mood tracker",
+  "reason_codes": [
+    "artifact_path_outside_allowed_workspace",
+    "behavior_probe_failed:tracker-state-change",
+    "behavior_verifier_failed",
+    "visible_state_change_missing"
+  ],
+  "repair_scope": {
+    "disposable_workspace_only": true,
+    "full_solution_in_prompt_allowed": false,
+    "local_only": true,
+    "production_paths_allowed": false,
+    "provider_api_allowed": false
+  },
+  "status": "HANDOFF"
+}

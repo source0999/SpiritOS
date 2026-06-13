@@ -1,0 +1,19 @@
+{
+  "test": "make a doodle canvas notebook-drawing-surface-change",
+  "verdict": "PASS",
+  "passed": true,
+  "expected": "mouse drag changes canvas pixels",
+  "primary_behavior_failure_bucket": "",
+  "failureBucket": "",
+  "actual": {
+    "canvas": true,
+    "box": {
+      "x": 8,
+      "y": 79.875,
+      "width": 802,
+      "height": 602
+    },
+    "changed": true
+  },
+  "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-runs\\10-make-a-doodle-canvas-notebook\\workspace\\index.html"
+}

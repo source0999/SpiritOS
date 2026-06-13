@@ -1,0 +1,35 @@
+{
+  "actual": {
+    "after": "Habit Tracker\nDrink water \nRead a book",
+    "afterChecked": true,
+    "before": "Habit Tracker\nDrink water \nRead a book",
+    "beforeChecked": false,
+    "checkedChanged": true
+  },
+  "contract_probe": {
+    "acceptance_criterion": "User can add, complete, edit, remove, or otherwise change habit state.",
+    "expected_observation": "Habit state changes after user action; static hard-coded habits are not enough.",
+    "minimum_proof_tier": 2,
+    "observable_actions": [
+      "inspect for input/buttons/checkboxes",
+      "add or toggle a habit"
+    ],
+    "probe_id": "habit-state-change"
+  },
+  "expected": {
+    "checkedStateChanges": true
+  },
+  "observed": {
+    "after": "Habit Tracker\nDrink water \nRead a book",
+    "afterChecked": true,
+    "before": "Habit Tracker\nDrink water \nRead a book",
+    "beforeChecked": false,
+    "checkedChanged": true
+  },
+  "passed": true,
+  "path": "Z:\\docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-2-reruns\\02-make-a-habit-tracker\\workspace\\habit-tracker.html",
+  "reason": "",
+  "reason_codes": [],
+  "test": "habit-state-change",
+  "verdict": "PASS"
+}

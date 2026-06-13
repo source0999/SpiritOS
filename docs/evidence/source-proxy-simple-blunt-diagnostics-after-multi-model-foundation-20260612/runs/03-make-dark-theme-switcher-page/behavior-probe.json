@@ -1,0 +1,48 @@
+{
+  "actual": {
+    "after": {
+      "bg": "rgb(51, 51, 51)",
+      "cls": "dark-theme",
+      "color": "rgb(255, 255, 255)"
+    },
+    "before": {
+      "bg": "rgb(255, 255, 255)",
+      "cls": "light-theme",
+      "color": "rgb(0, 0, 0)"
+    },
+    "changed": true
+  },
+  "contract_probe": {
+    "acceptance_criterion": "Theme toggle visibly changes computed colors.",
+    "expected_observation": "Background or text color changes after the toggle.",
+    "minimum_proof_tier": 2,
+    "observable_actions": [
+      "capture computed body colors",
+      "activate theme toggle",
+      "capture computed colors again"
+    ],
+    "probe_id": "theme-computed-color-change"
+  },
+  "expected": {
+    "computedColorChanges": true
+  },
+  "observed": {
+    "after": {
+      "bg": "rgb(51, 51, 51)",
+      "cls": "dark-theme",
+      "color": "rgb(255, 255, 255)"
+    },
+    "before": {
+      "bg": "rgb(255, 255, 255)",
+      "cls": "light-theme",
+      "color": "rgb(0, 0, 0)"
+    },
+    "changed": true
+  },
+  "passed": true,
+  "path": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\runs\\03-make-dark-theme-switcher-page\\workspace\\index.html",
+  "reason": "",
+  "reason_codes": [],
+  "test": "theme-computed-color-change",
+  "verdict": "PASS"
+}

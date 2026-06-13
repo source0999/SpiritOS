@@ -1,0 +1,50 @@
+{
+  "artifact_readiness": "READY",
+  "behavior_contract_path": "docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/runs/05-make-a-todo-list-app/behavior-contract.json",
+  "behavior_probe": {
+    "observed": {
+      "added": true,
+      "afterAdd": "Todo List\n Add\nv0.2 proof item",
+      "appears": true,
+      "before": "Todo List\n Add",
+      "changed": true,
+      "filled": true
+    },
+    "path": "docs\\evidence\\source-proxy-v0.2-proof-diagnostic-rerun-20260612\\runs\\05-make-a-todo-list-app\\workspace\\index.html",
+    "prompt": "make a todo list app",
+    "reason": "",
+    "reason_codes": [],
+    "slug": "05-make-a-todo-list-app",
+    "test": "todo-add-and-change-item",
+    "verdict": "PASS"
+  },
+  "behavior_required_for_final_pass": true,
+  "browser_behavior_verdict": "PASS",
+  "canonical_final_verdict": "UNVERIFIED",
+  "canonical_final_verdict_after_behavior": "PASS",
+  "diff_path": "docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/runs/05-make-a-todo-list-app/workspace.diff",
+  "failure_packet_path": "",
+  "files": [
+    "index.html",
+    "script.js",
+    "styles.css"
+  ],
+  "generation_error": "",
+  "handoff_packet_path": "",
+  "html_paths": [
+    "index.html"
+  ],
+  "product_pass": false,
+  "product_pass_after_behavior": true,
+  "prompt": "make a todo list app",
+  "reason_codes": [],
+  "receipt_path": "docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/runs/05-make-a-todo-list-app/receipt.json",
+  "repair_attempts_path": "docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/runs/05-make-a-todo-list-app/repair-attempts.json",
+  "retest_result_path": "docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/runs/05-make-a-todo-list-app/retest-result.json",
+  "run_dir": "docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/runs/05-make-a-todo-list-app",
+  "score_path": "docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/runs/05-make-a-todo-list-app/score.json",
+  "slug": "05-make-a-todo-list-app",
+  "source_proxy_status": "GO",
+  "transcript_path": "docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/runs/05-make-a-todo-list-app/transcript.txt",
+  "workspace_path": "docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/runs/05-make-a-todo-list-app/workspace"
+}

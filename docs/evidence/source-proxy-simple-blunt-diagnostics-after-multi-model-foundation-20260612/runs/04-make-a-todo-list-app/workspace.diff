@@ -1,0 +1,50 @@
+--- a/index.html
++++ b/index.html
+@@ -0,0 +1,16 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Todo List</title>
++    <link rel="stylesheet" href="styles.css">
++</head>
++<body>
++    <h1>Todo List</h1>
++    <input type="text" id="newItem" placeholder="Add new item">
++    <button onclick="addItem()">Add</button>
++    <ul id="todoList"></ul>
++    <script src="script.js"></script>
++</body>
++</html>--- a/script.js
++++ b/script.js
+@@ -0,0 +1,14 @@
++function addItem() {
++    const newItem = document.getElementById('newItem').value;
++    if (newItem) {
++        const li = document.createElement('li');
++        li.textContent = newItem;
++        li.innerHTML += '<button onclick="removeItem(this)">Remove</button>';
++        document.getElementById('todoList').appendChild(li);
++        document.getElementById('newItem').value = '';
++    }
++}
++
++function removeItem(button) {
++    button.parentElement.remove();
++}--- a/styles.css
++++ b/styles.css
+@@ -0,0 +1,13 @@
++ul {
++    list-style-type: none;
++    padding: 0;
++}
++li {
++    background-color: #f4f4f4;
++    margin-bottom: 5px;
++    padding: 10px;
++    border-radius: 5px;
++}
++button {
++    margin-left: 10px;
++}

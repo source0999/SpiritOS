@@ -1,0 +1,208 @@
+{
+  "active_primary_lane": "qwen_local_coder",
+  "approval_requirements": {
+    "cloud_or_api_route_future": "explicit_britton_approval_before_send",
+    "gemma_sidecar_context_preview": "future_operator_approval_before_live_call",
+    "hermes_sidecar_verifier_preview": "future_operator_approval_before_live_call",
+    "manual_handoff": "operator_review",
+    "qwen_local_coder": "normal_source_proxy_gate"
+  },
+  "available_lanes": [
+    {
+      "allowed_uses": [
+        "disposable artifact generation",
+        "bounded local coding/action lane"
+      ],
+      "approval_required": "normal_source_proxy_gate",
+      "cost_class": "local_compute",
+      "disallowed_uses": [
+        "unreviewed autonomy",
+        "provider/cloud escalation",
+        "declaring product PASS without verifier evidence"
+      ],
+      "display_name": "Qwen local coder",
+      "evidence_required_for_promotion": [
+        "behavior retest results",
+        "receipt evidence",
+        "false-positive audit"
+      ],
+      "known_failure_modes": [
+        "malformed action JSON",
+        "weak UI state changes",
+        "missing behavior evidence"
+      ],
+      "lane_id": "qwen_local_coder",
+      "privacy_class": "local",
+      "promotion_status": "primary_preserved_not_promoted_by_this_task",
+      "role": "coding/action",
+      "status": "active_primary_local_lane"
+    },
+    {
+      "allowed_uses": [
+        "future advisory verifier",
+        "risk and unknown extraction preview"
+      ],
+      "approval_required": "future_operator_approval_before_live_call",
+      "cost_class": "local_compute_if_available",
+      "disallowed_uses": [
+        "file editing",
+        "coding/action lane",
+        "product PASS override",
+        "hidden benchmark hints"
+      ],
+      "display_name": "Hermes sidecar verifier preview",
+      "evidence_required_for_promotion": [
+        "advisory accuracy samples",
+        "false-positive audit",
+        "no-PASS-inflation proof"
+      ],
+      "known_failure_modes": [
+        "overtrusting model claims",
+        "critic hallucination",
+        "missing browser evidence"
+      ],
+      "lane_id": "hermes_sidecar_verifier_preview",
+      "privacy_class": "local_if_available_runtime_explicit_required",
+      "promotion_status": "not_promoted_preview_only",
+      "role": "verifier/critic",
+      "status": "preview_future_only"
+    },
+    {
+      "allowed_uses": [
+        "future intent interpretation",
+        "context/spec packet preview",
+        "acceptance criteria preview"
+      ],
+      "approval_required": "future_operator_approval_before_live_call",
+      "cost_class": "runtime_dependent_must_be_explicit",
+      "disallowed_uses": [
+        "file editing",
+        "coding/action lane",
+        "success declaration without evidence",
+        "implicit cloud use"
+      ],
+      "display_name": "Gemma sidecar context preview",
+      "evidence_required_for_promotion": [
+        "context quality samples",
+        "privacy route proof",
+        "behavior-verifier comparison"
+      ],
+      "known_failure_modes": [
+        "scope drift",
+        "privacy ambiguity",
+        "over-specific acceptance criteria"
+      ],
+      "lane_id": "gemma_sidecar_context_preview",
+      "privacy_class": "local_or_cloud_runtime_must_be_explicit",
+      "promotion_status": "not_promoted_preview_only",
+      "role": "intent/context/spec/verifier",
+      "status": "preview_future_only"
+    },
+    {
+      "allowed_uses": [
+        "operator review",
+        "approval request",
+        "handoff packet routing"
+      ],
+      "approval_required": "operator_review",
+      "cost_class": "human_review",
+      "disallowed_uses": [
+        "automatic escalation",
+        "silent provider use"
+      ],
+      "display_name": "Manual handoff",
+      "evidence_required_for_promotion": [
+        "not applicable"
+      ],
+      "known_failure_modes": [
+        "insufficient evidence packet",
+        "ambiguous next route"
+      ],
+      "lane_id": "manual_handoff",
+      "privacy_class": "operator_visible",
+      "promotion_status": "fallback_active",
+      "role": "handoff",
+      "status": "active_fallback"
+    },
+    {
+      "allowed_uses": [
+        "future approved stronger-route comparison"
+      ],
+      "approval_required": "explicit_britton_approval_before_send",
+      "cost_class": "paid_or_metered",
+      "disallowed_uses": [
+        "default coding lane",
+        "silent execution",
+        "secret or private context without approval"
+      ],
+      "display_name": "Cloud/API route future",
+      "evidence_required_for_promotion": [
+        "spend approval",
+        "privacy review",
+        "comparative proof",
+        "false-positive audit"
+      ],
+      "known_failure_modes": [
+        "cost overrun",
+        "privacy leakage",
+        "overreliance on self-report"
+      ],
+      "lane_id": "cloud_or_api_route_future",
+      "privacy_class": "external_cloud",
+      "promotion_status": "not_promoted_future_only",
+      "role": "stronger external route",
+      "status": "future_approval_only"
+    }
+  ],
+  "cost_classes": {
+    "cloud_or_api_route_future": "paid_or_metered",
+    "gemma_sidecar_context_preview": "runtime_dependent_must_be_explicit",
+    "hermes_sidecar_verifier_preview": "local_compute_if_available",
+    "manual_handoff": "human_review",
+    "qwen_local_coder": "local_compute"
+  },
+  "future_sidecar_lanes": [
+    "hermes_sidecar_verifier_preview",
+    "gemma_sidecar_context_preview",
+    "cloud_or_api_route_future"
+  ],
+  "preview_only": true,
+  "preview_version": "source-proxy-model-lanes-preview-v0.1",
+  "privacy_classes": {
+    "cloud_or_api_route_future": "external_cloud",
+    "gemma_sidecar_context_preview": "local_or_cloud_runtime_must_be_explicit",
+    "hermes_sidecar_verifier_preview": "local_if_available_runtime_explicit_required",
+    "manual_handoff": "operator_visible",
+    "qwen_local_coder": "local"
+  },
+  "reason_codes": [
+    "preview_only",
+    "qwen_primary_local_coder_preserved",
+    "future_sidecars_not_executed",
+    "operator_approval_required_for_external_routes"
+  ],
+  "recommended_lane": {
+    "lane_approval_required": "normal_source_proxy_gate",
+    "lane_cost_class": "local_compute",
+    "lane_evidence_refs": [],
+    "lane_privacy_class": "local",
+    "lane_selection_reason_codes": [
+      "qwen_primary_local_coder_preserved",
+      "sidecar_lanes_preview_only",
+      "no_model_swap",
+      "no_live_sidecar_call"
+    ],
+    "selected_coder_lane": "qwen_local_coder",
+    "selected_coder_lane_display_name": "Qwen local coder",
+    "sidecar_lanes_considered": [
+      "hermes_sidecar_verifier_preview",
+      "gemma_sidecar_context_preview"
+    ],
+    "sidecar_lanes_live": false,
+    "verifier_lane_required": true
+  },
+  "verifier_requirement": true,
+  "would_call_models": false,
+  "would_mutate_state": false,
+  "would_start_workers": false
+}

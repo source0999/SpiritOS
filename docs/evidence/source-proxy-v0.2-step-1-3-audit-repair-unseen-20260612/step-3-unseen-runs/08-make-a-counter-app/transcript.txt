@@ -1,0 +1,5 @@
+{"action_type":"WriteFile","target":"index.html","arguments":{"content":"<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Counter App</title>\n    <link rel=\"stylesheet\" href=\"styles.css\">\n</head>\n<body>\n    <div class=\"counter-container\">\n        <h1 id=\"counter\">0</h1>\n        <button onclick=\"increment()\">Increment</button>\n    </div>\n    <script src=\"script.js\"></script>\n</body>\n</html>"},"reason":"HTML structure for the counter app."}
+
+{"action_type":"WriteFile","target":"styles.css","arguments":{"content":".counter-container {\n    text-align: center;\n    margin-top: 50px;\n}\n\nh1 {\n    font-size: 48px;\n}\n\nbutton {\n    padding: 10px 20px;\n    font-size: 16px;\n}"},"reason":"Styling for the counter app."}
+
+{"action_type":"WriteFile","target":"script.js","arguments":{"content":"let counter = 0;\n\ndocument.getElementById('counter').innerText = counter;\n\nfunction increment() {\n    counter++;\n    document.getElementById('counter').innerText = counter;\n}"},"reason":"JavaScript logic for the counter app."}

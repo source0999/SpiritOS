@@ -1,0 +1,94 @@
+{
+  "boundary": {
+    "benchmark_expanded": false,
+    "generated_artifacts_patched": false,
+    "generation_prompt_tuned": false,
+    "sidecars_live": false
+  },
+  "commands": [
+    {
+      "cmd": "ssh source@10.0.0.186 cd /home/source/SpiritOS && .venv-source-proxy/bin/python /home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/tools/run_source_proxy_prompt.py --prompt 'make a timer app' --run-dir '/home/source/SpiritOS/docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/01-make-a-timer-app'",
+      "elapsed_seconds": 35.837,
+      "prompt": "make a timer app",
+      "returncode": 0,
+      "run_dir": "docs\\evidence\\source-proxy-expectation-scoring-advanced-diagnostics-20260612\\fresh-scored-10\\runs\\01-make-a-timer-app"
+    },
+    {
+      "cmd": "ssh source@10.0.0.186 cd /home/source/SpiritOS && .venv-source-proxy/bin/python /home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/tools/run_source_proxy_prompt.py --prompt 'make a calculator app' --run-dir '/home/source/SpiritOS/docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/02-make-a-calculator-app'",
+      "elapsed_seconds": 14.357,
+      "prompt": "make a calculator app",
+      "returncode": 0,
+      "run_dir": "docs\\evidence\\source-proxy-expectation-scoring-advanced-diagnostics-20260612\\fresh-scored-10\\runs\\02-make-a-calculator-app"
+    },
+    {
+      "cmd": "ssh source@10.0.0.186 cd /home/source/SpiritOS && .venv-source-proxy/bin/python /home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/tools/run_source_proxy_prompt.py --prompt 'make dark theme switcher page' --run-dir '/home/source/SpiritOS/docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/03-make-dark-theme-switcher-page'",
+      "elapsed_seconds": 7.157,
+      "prompt": "make dark theme switcher page",
+      "returncode": 0,
+      "run_dir": "docs\\evidence\\source-proxy-expectation-scoring-advanced-diagnostics-20260612\\fresh-scored-10\\runs\\03-make-dark-theme-switcher-page"
+    },
+    {
+      "cmd": "ssh source@10.0.0.186 cd /home/source/SpiritOS && .venv-source-proxy/bin/python /home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/tools/run_source_proxy_prompt.py --prompt 'make a todo list app' --run-dir '/home/source/SpiritOS/docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/04-make-a-todo-list-app'",
+      "elapsed_seconds": 8.921,
+      "prompt": "make a todo list app",
+      "returncode": 0,
+      "run_dir": "docs\\evidence\\source-proxy-expectation-scoring-advanced-diagnostics-20260612\\fresh-scored-10\\runs\\04-make-a-todo-list-app"
+    },
+    {
+      "cmd": "ssh source@10.0.0.186 cd /home/source/SpiritOS && .venv-source-proxy/bin/python /home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/tools/run_source_proxy_prompt.py --prompt 'make a weather card demo' --run-dir '/home/source/SpiritOS/docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/05-make-a-weather-card-demo'",
+      "elapsed_seconds": 11.828,
+      "prompt": "make a weather card demo",
+      "returncode": 0,
+      "run_dir": "docs\\evidence\\source-proxy-expectation-scoring-advanced-diagnostics-20260612\\fresh-scored-10\\runs\\05-make-a-weather-card-demo"
+    },
+    {
+      "cmd": "ssh source@10.0.0.186 cd /home/source/SpiritOS && .venv-source-proxy/bin/python /home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/tools/run_source_proxy_prompt.py --prompt 'make a music player mockup' --run-dir '/home/source/SpiritOS/docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/06-make-a-music-player-mockup'",
+      "elapsed_seconds": 8.519,
+      "prompt": "make a music player mockup",
+      "returncode": 0,
+      "run_dir": "docs\\evidence\\source-proxy-expectation-scoring-advanced-diagnostics-20260612\\fresh-scored-10\\runs\\06-make-a-music-player-mockup"
+    },
+    {
+      "cmd": "ssh source@10.0.0.186 cd /home/source/SpiritOS && .venv-source-proxy/bin/python /home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/tools/run_source_proxy_prompt.py --prompt 'make a habit tracker' --run-dir '/home/source/SpiritOS/docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/07-make-a-habit-tracker'",
+      "elapsed_seconds": 10.51,
+      "prompt": "make a habit tracker",
+      "returncode": 0,
+      "run_dir": "docs\\evidence\\source-proxy-expectation-scoring-advanced-diagnostics-20260612\\fresh-scored-10\\runs\\07-make-a-habit-tracker"
+    },
+    {
+      "cmd": "ssh source@10.0.0.186 cd /home/source/SpiritOS && .venv-source-proxy/bin/python /home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/tools/run_source_proxy_prompt.py --prompt 'make a notes app' --run-dir '/home/source/SpiritOS/docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/08-make-a-notes-app'",
+      "elapsed_seconds": 11.438,
+      "prompt": "make a notes app",
+      "returncode": 0,
+      "run_dir": "docs\\evidence\\source-proxy-expectation-scoring-advanced-diagnostics-20260612\\fresh-scored-10\\runs\\08-make-a-notes-app"
+    },
+    {
+      "cmd": "ssh source@10.0.0.186 cd /home/source/SpiritOS && .venv-source-proxy/bin/python /home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/tools/run_source_proxy_prompt.py --prompt 'make a password strength checker' --run-dir '/home/source/SpiritOS/docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/09-make-a-password-strength-checker'",
+      "elapsed_seconds": 10.162,
+      "prompt": "make a password strength checker",
+      "returncode": 0,
+      "run_dir": "docs\\evidence\\source-proxy-expectation-scoring-advanced-diagnostics-20260612\\fresh-scored-10\\runs\\09-make-a-password-strength-checker"
+    },
+    {
+      "cmd": "ssh source@10.0.0.186 cd /home/source/SpiritOS && .venv-source-proxy/bin/python /home/source/SpiritOS/docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/tools/run_source_proxy_prompt.py --prompt 'make a simple drawing pad' --run-dir '/home/source/SpiritOS/docs/evidence/source-proxy-expectation-scoring-advanced-diagnostics-20260612/fresh-scored-10/runs/10-make-a-simple-drawing-pad'",
+      "elapsed_seconds": 8.374,
+      "prompt": "make a simple drawing pad",
+      "returncode": 0,
+      "run_dir": "docs\\evidence\\source-proxy-expectation-scoring-advanced-diagnostics-20260612\\fresh-scored-10\\runs\\10-make-a-simple-drawing-pad"
+    }
+  ],
+  "created_at": "2026-06-13T02:07:00.953665+00:00",
+  "prompts": [
+    "make a timer app",
+    "make a calculator app",
+    "make dark theme switcher page",
+    "make a todo list app",
+    "make a weather card demo",
+    "make a music player mockup",
+    "make a habit tracker",
+    "make a notes app",
+    "make a password strength checker",
+    "make a simple drawing pad"
+  ],
+  "schema": "source-proxy-expectation-scored-fresh-10.v1"
+}

@@ -1,0 +1,44 @@
+{
+  "anti_hardcoding_result": "PASS",
+  "current_autonomy_recommendation": "# Autonomy Readiness Recommendation\n\nLevel 3: handoff packet when local fails.\n\nThe system can produce disposable artifacts, retest behavior, and preserve handoff packets, but unseen generalization should be reviewed before queue autonomy.\n\nDo not implement autonomy levels from this packet. Britton reviews the evidence first.",
+  "existing_report_files": [
+    "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-gauntlet-results.json",
+    "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-artifact-behavior-report.html",
+    "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-gauntlet-summary.md",
+    "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\anti-tailoring-audit.json"
+  ],
+  "fail_prompts": [
+    "make a mood tracker",
+    "make a simple expense tracker",
+    "make a water intake tracker",
+    "make a tabs component demo",
+    "make a progress bar demo"
+  ],
+  "frozen_11_result": "PASS",
+  "git_status_short": "M source_proxy/decision/human_messy_homepage.py\n M source_proxy/decision/task_spec_intake.py\n M source_proxy/decision/tool_action_loop.py\n M source_proxy/tests/test_coding_regression_pack.py\n?? docs/evidence/source-proxy-general-intelligence-diagnostic-revamped-20260612/\n?? docs/evidence/source-proxy-v0.2-artifact-repair-plan/\n?? docs/evidence/source-proxy-v0.2-proof-diagnostic-rerun-20260612/\n?? docs/evidence/source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612/\n?? docs/evidence/spiritos-brain-control-plane-preflight-audit-20260612/\n?? docs/evidence/spiritos-cognitive-control-plane-revamp-v0.1/\n?? source_proxy/decision/artifact_behavior_contract.py\n?? source_proxy/decision/artifact_final_verdict.py\n?? source_proxy/decision/artifact_handoff_packet.py\n?? source_proxy/decision/artifact_preview_resolution.py\n?? source_proxy/decision/artifact_repair_contract.py\n?? source_proxy/decision/artifact_repair_loop.py\n?? source_proxy/decision/artifact_retest_result.py\n?? source_proxy/tests/test_artifact_behavior_contract.py\n?? source_proxy/tests/test_artifact_final_verdict.py\n?? source_proxy/tests/test_artifact_handoff_packet.py\n?? source_proxy/tests/test_artifact_preview_resolution.py\n?? source_proxy/tests/test_artifact_repair_contract.py\n?? source_proxy/tests/test_artifact_repair_loop.py\n?? source_proxy/tests/test_artifact_retest_result.py\n?? source_proxy/tests/test_task_spec_intake_unseen_artifacts.py",
+  "known_false_positives": 0,
+  "needs_fix_prompts": [
+    "make a tip calculator",
+    "make a pomodoro timer",
+    "make a budget splitter",
+    "make a unit converter",
+    "make a quote generator",
+    "make a color palette picker",
+    "make a stopwatch",
+    "make a BMI calculator",
+    "make a random password generator",
+    "make a markdown previewer",
+    "make a workout set counter",
+    "make a star rating widget"
+  ],
+  "repo_path": "Z:\\",
+  "schema": "source-proxy-v0.2-unseen-stabilization-baseline.v1",
+  "unseen_25_result": {
+    "FAIL": 5,
+    "HANDOFF": 0,
+    "NEEDS_FIX": 12,
+    "PASS": 8,
+    "UNVERIFIED": 0,
+    "known_false_positives": 0
+  }
+}

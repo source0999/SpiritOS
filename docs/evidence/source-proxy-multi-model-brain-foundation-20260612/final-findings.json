@@ -1,0 +1,13 @@
+{
+  "benchmark_rerun": false,
+  "cartographer_live_routing_enabled": false,
+  "current_autonomy_ceiling": "Level 2",
+  "gemma_direct_editing_enabled": false,
+  "hermes_direct_editing_enabled": false,
+  "implementation_started": true,
+  "model_calls_made": false,
+  "next_recommended_step": "Britton reviews this integration evidence and decides whether to approve Level 2 hardening, verifier-lane preview testing, or autonomy-level planning.",
+  "preview_only": true,
+  "qwen_primary_lane_preserved": true,
+  "verifier_lane_live_calls_enabled": false
+}

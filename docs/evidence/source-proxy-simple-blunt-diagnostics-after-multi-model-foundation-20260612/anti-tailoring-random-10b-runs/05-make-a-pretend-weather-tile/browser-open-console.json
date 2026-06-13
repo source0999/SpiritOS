@@ -1,0 +1,16 @@
+{
+  "opened": true,
+  "path": "Z:\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10b-runs\\05-make-a-pretend-weather-tile\\workspace\\weather-card.html",
+  "title": "Weather Card",
+  "bodyText": "City\n\nTemperature: 0°C\n\nCondition: Sunny\n\nUpdate Weather",
+  "elementCounts": {
+    "buttons": 1,
+    "inputs": 1,
+    "links": 0,
+    "canvas": 0,
+    "scripts": 1,
+    "stylesheets": 1
+  },
+  "consoleMessages": [],
+  "pageErrors": []
+}

@@ -1,0 +1,18 @@
+{
+  "opened": true,
+  "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612\\anti-tailoring-random-10e-runs\\06-make-a-tiny-radio-show-player\\workspace\\index.html",
+  "title": "Radio Show Player",
+  "bodyText": "Radio Show Player\n Play ",
+  "elementCounts": {
+    "buttons": 1,
+    "inputs": 1,
+    "links": 0,
+    "canvas": 0,
+    "scripts": 1,
+    "stylesheets": 1
+  },
+  "consoleMessages": [],
+  "pageErrors": [
+    "Failed to load because no supported source was found."
+  ]
+}

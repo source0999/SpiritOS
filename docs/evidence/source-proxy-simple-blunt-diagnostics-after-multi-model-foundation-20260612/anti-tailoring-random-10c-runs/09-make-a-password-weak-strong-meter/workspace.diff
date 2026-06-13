@@ -1,0 +1,37 @@
+--- a/password-strength-meter.css
++++ b/password-strength-meter.css
+@@ -0,0 +1,7 @@
++body {
++    font-family: Arial, sans-serif;
++}
++#strength-feedback {
++    margin-top: 20px;
++    color: #333;
++}--- a/password-strength-meter.html
++++ b/password-strength-meter.html
+@@ -0,0 +1,15 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Password Strength Meter</title>
++    <link rel="stylesheet" href="password-strength-meter.css">
++</head>
++<body>
++    <h1>Password Strength Meter</h1>
++    <input type="password" id="password-input" placeholder="Enter your password">
++    <div id="strength-feedback"></div>
++    <script src="password-strength-meter.js"></script>
++</body>
++</html>--- a/password-strength-meter.js
++++ b/password-strength-meter.js
+@@ -0,0 +1,8 @@
++document.getElementById('password-input').addEventListener('input', function() {
++    const password = this.value;
++    let feedback = 'Weak';
++    if (password.length >= 8) {
++        feedback = 'Strong';
++    }
++    document.getElementById('strength-feedback').textContent = feedback;
++});

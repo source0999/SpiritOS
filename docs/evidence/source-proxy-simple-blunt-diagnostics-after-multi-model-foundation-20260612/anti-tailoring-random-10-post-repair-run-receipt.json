@@ -1,0 +1,108 @@
+﻿{
+    "title":  "Anti-tailoring random 10 post-behavior-repair execution receipt",
+    "created_at":  "2026-06-13T08:07:03.1081024-04:00",
+    "run_root_local":  "docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10-post-repair-runs",
+    "run_root_remote":  "/home/source/SpiritOS/docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10-post-repair-runs",
+    "results":  [
+                    {
+                        "id":  "anti-01",
+                        "prompt":  "make a kichen timer thing",
+                        "slug":  "01-make-a-kichen-timer-thing",
+                        "exit_code":  0,
+                        "elapsed_seconds":  38.548,
+                        "started_at":  "2026-06-13T08:04:47.8096558-04:00",
+                        "ended_at":  "2026-06-13T08:05:26.3697971-04:00",
+                        "run_dir_local":  "docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10-post-repair-runs/01-make-a-kichen-timer-thing"
+                    },
+                    {
+                        "id":  "anti-02",
+                        "prompt":  "build a tiny tip splittr",
+                        "slug":  "02-build-a-tiny-tip-splittr",
+                        "exit_code":  0,
+                        "elapsed_seconds":  11.265,
+                        "started_at":  "2026-06-13T08:05:26.3877309-04:00",
+                        "ended_at":  "2026-06-13T08:05:37.6563857-04:00",
+                        "run_dir_local":  "docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10-post-repair-runs/02-build-a-tiny-tip-splittr"
+                    },
+                    {
+                        "id":  "anti-03",
+                        "prompt":  "make a page that flips lite and night mode",
+                        "slug":  "03-make-a-page-that-flips-lite-and-night-mode",
+                        "exit_code":  0,
+                        "elapsed_seconds":  7.059,
+                        "started_at":  "2026-06-13T08:05:37.6626659-04:00",
+                        "ended_at":  "2026-06-13T08:05:44.7296283-04:00",
+                        "run_dir_local":  "docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10-post-repair-runs/03-make-a-page-that-flips-lite-and-night-mode"
+                    },
+                    {
+                        "id":  "anti-04",
+                        "prompt":  "make me a grocery checklist",
+                        "slug":  "04-make-me-a-grocery-checklist",
+                        "exit_code":  0,
+                        "elapsed_seconds":  10.789,
+                        "started_at":  "2026-06-13T08:05:44.7371389-04:00",
+                        "ended_at":  "2026-06-13T08:05:55.5309727-04:00",
+                        "run_dir_local":  "docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10-post-repair-runs/04-make-me-a-grocery-checklist"
+                    },
+                    {
+                        "id":  "anti-05",
+                        "prompt":  "make a fake forecast card",
+                        "slug":  "05-make-a-fake-forecast-card",
+                        "exit_code":  0,
+                        "elapsed_seconds":  15.099,
+                        "started_at":  "2026-06-13T08:05:55.5393591-04:00",
+                        "ended_at":  "2026-06-13T08:06:10.6423650-04:00",
+                        "run_dir_local":  "docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10-post-repair-runs/05-make-a-fake-forecast-card"
+                    },
+                    {
+                        "id":  "anti-06",
+                        "prompt":  "make a little podcast player mock",
+                        "slug":  "06-make-a-little-podcast-player-mock",
+                        "exit_code":  0,
+                        "elapsed_seconds":  8.515,
+                        "started_at":  "2026-06-13T08:06:10.6498199-04:00",
+                        "ended_at":  "2026-06-13T08:06:19.1681956-04:00",
+                        "run_dir_local":  "docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10-post-repair-runs/06-make-a-little-podcast-player-mock"
+                    },
+                    {
+                        "id":  "anti-07",
+                        "prompt":  "make a water drinking tracker",
+                        "slug":  "07-make-a-water-drinking-tracker",
+                        "exit_code":  0,
+                        "elapsed_seconds":  8.11,
+                        "started_at":  "2026-06-13T08:06:19.1732005-04:00",
+                        "ended_at":  "2026-06-13T08:06:27.2865120-04:00",
+                        "run_dir_local":  "docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10-post-repair-runs/07-make-a-water-drinking-tracker"
+                    },
+                    {
+                        "id":  "anti-08",
+                        "prompt":  "make a scratch notes app",
+                        "slug":  "08-make-a-scratch-notes-app",
+                        "exit_code":  0,
+                        "elapsed_seconds":  12.695,
+                        "started_at":  "2026-06-13T08:06:27.2915318-04:00",
+                        "ended_at":  "2026-06-13T08:06:39.9897282-04:00",
+                        "run_dir_local":  "docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10-post-repair-runs/08-make-a-scratch-notes-app"
+                    },
+                    {
+                        "id":  "anti-09",
+                        "prompt":  "make a password safety meter",
+                        "slug":  "09-make-a-password-safety-meter",
+                        "exit_code":  0,
+                        "elapsed_seconds":  14.207,
+                        "started_at":  "2026-06-13T08:06:39.9975982-04:00",
+                        "ended_at":  "2026-06-13T08:06:54.2084518-04:00",
+                        "run_dir_local":  "docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10-post-repair-runs/09-make-a-password-safety-meter"
+                    },
+                    {
+                        "id":  "anti-10",
+                        "prompt":  "make a doodle board",
+                        "slug":  "10-make-a-doodle-board",
+                        "exit_code":  0,
+                        "elapsed_seconds":  8.891,
+                        "started_at":  "2026-06-13T08:06:54.2135149-04:00",
+                        "ended_at":  "2026-06-13T08:07:03.1081024-04:00",
+                        "run_dir_local":  "docs/evidence/source-proxy-simple-blunt-diagnostics-after-multi-model-foundation-20260612/anti-tailoring-random-10-post-repair-runs/10-make-a-doodle-board"
+                    }
+                ]
+}

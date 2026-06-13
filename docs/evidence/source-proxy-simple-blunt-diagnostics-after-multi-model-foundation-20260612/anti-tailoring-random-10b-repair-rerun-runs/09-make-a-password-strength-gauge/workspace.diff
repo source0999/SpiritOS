@@ -1,0 +1,57 @@
+--- a/password-strength-gauge.css
++++ b/password-strength-gauge.css
+@@ -0,0 +1,12 @@
++body {
++    font-family: Arial, sans-serif;
++}
++#strength-bar {
++    width: 100%;
++    height: 20px;
++    background-color: #ddd;
++}
++#strength-bar .bar {
++    height: 100%;
++    background-color: red;
++}--- a/password-strength-gauge.html
++++ b/password-strength-gauge.html
+@@ -0,0 +1,16 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Password Strength Gauge</title>
++    <link rel="stylesheet" href="password-strength-gauge.css">
++</head>
++<body>
++    <h1>Password Strength Gauge</h1>
++    <input type="password" id="password-input" placeholder="Enter your password">
++    <div id="strength-bar"></div>
++    <p id="strength-feedback">Password strength: Weak</p>
++    <script src="password-strength-gauge.js"></script>
++</body>
++</html>--- a/password-strength-gauge.js
++++ b/password-strength-gauge.js
+@@ -0,0 +1,22 @@
++document.getElementById('password-input').addEventListener('input', function() {
++    const password = this.value;
++    const strengthBar = document.getElementById('strength-bar');
++    const feedback = document.getElementById('strength-feedback');
++
++    if (password.length < 4) {
++        strengthBar.innerHTML = '<div class="bar" style="width: 20%;"></div>';
++        feedback.textContent = 'Password strength: Very Weak';
++    } else if (password.length < 8) {
++        strengthBar.innerHTML = '<div class="bar" style="width: 40%;"></div>';
++        feedback.textContent = 'Password strength: Weak';
++    } else if (password.length < 12) {
++        strengthBar.innerHTML = '<div class="bar" style="width: 60%;"></div>';
++        feedback.textContent = 'Password strength: Medium';
++    } else if (password.length < 16) {
++        strengthBar.innerHTML = '<div class="bar" style="width: 80%;"></div>';
++        feedback.textContent = 'Password strength: Strong';
++    } else {
++        strengthBar.innerHTML = '<div class="bar" style="width: 100%;"></div>';
++        feedback.textContent = 'Password strength: Very Strong';
++    }
++});

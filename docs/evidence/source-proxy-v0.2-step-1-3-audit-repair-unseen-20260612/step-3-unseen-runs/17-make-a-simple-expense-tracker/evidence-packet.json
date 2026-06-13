@@ -1,0 +1,53 @@
+{
+  "behavior_contract_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\17-make-a-simple-expense-tracker\\behavior-contract.json",
+  "behavior_probe": {
+    "actual": {
+      "after": "Expense Tracker\n  Add Expense",
+      "appears": false,
+      "before": "Expense Tracker\n  Add Expense",
+      "changed": false,
+      "filled": true
+    },
+    "contract_probe": {
+      "acceptance_criterion": "List or ledger app accepts a new item and shows it or updates totals.",
+      "expected_observation": "The entered item appears or a total changes visibly.",
+      "minimum_proof_tier": 2,
+      "observable_actions": [
+        "enter a new item or amount",
+        "click add/save/calculate if present"
+      ],
+      "probe_id": "list-or-ledger-state-change"
+    },
+    "expected": {
+      "behavior": "list-or-ledger-state-change",
+      "proof": "expected/actual/passed recorded by browser probe"
+    },
+    "observed": {
+      "after": "Expense Tracker\n  Add Expense",
+      "appears": false,
+      "before": "Expense Tracker\n  Add Expense",
+      "changed": false,
+      "filled": true
+    },
+    "passed": false,
+    "path": "Z:\\docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\17-make-a-simple-expense-tracker\\workspace\\index.html",
+    "reason": "entered item did not appear or change state",
+    "reason_codes": [
+      "text_entry_state_change_missing"
+    ],
+    "test": "list-or-ledger-state-change",
+    "verdict": "FAIL"
+  },
+  "canonical_final_verdict_after_behavior": "FAIL",
+  "diff_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\17-make-a-simple-expense-tracker\\workspace.diff",
+  "evidence_packet_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\17-make-a-simple-expense-tracker\\evidence-packet.json",
+  "product_pass_after_behavior": false,
+  "prompt": "make a simple expense tracker",
+  "receipt_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\17-make-a-simple-expense-tracker\\receipt.json",
+  "retest_result_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\17-make-a-simple-expense-tracker\\retest-result.json",
+  "run_dir": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\17-make-a-simple-expense-tracker",
+  "score_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\17-make-a-simple-expense-tracker\\score.json",
+  "source_proxy_status": "GO",
+  "transcript_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\17-make-a-simple-expense-tracker\\transcript.txt",
+  "workspace_path": "docs\\evidence\\source-proxy-v0.2-step-1-3-audit-repair-unseen-20260612\\step-3-unseen-runs\\17-make-a-simple-expense-tracker\\workspace"
+}

@@ -1,0 +1,73 @@
+--- a/index.html
++++ b/index.html
+@@ -0,0 +1,17 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Lunch Countdown Timer</title>
++    <link rel="stylesheet" href="styles.css">
++</head>
++<body>
++    <div class="timer-container">
++        <h1 id="timer">00:00</h1>
++        <button id="start-button">Start</button>
++        <button id="stop-button" disabled>Stop</button>
++    </div>
++    <script src="script.js"></script>
++</body>
++</html>--- a/script.js
++++ b/script.js
+@@ -0,0 +1,31 @@
++let countdownTime = 0;
++let intervalId;
++
++const timerElement = document.getElementById('timer');
++const startButton = document.getElementById('start-button');
++const stopButton = document.getElementById('stop-button');
++
++function updateTimer() {
++    const minutes = Math.floor(countdownTime / 60);
++    let seconds = countdownTime % 60;
++    if (seconds < 10) seconds = '0' + seconds;
++    timerElement.textContent = `${minutes}:${seconds}`;
++}
++
++function startTimer() {
++    intervalId = setInterval(() => {
++        countdownTime++;
++        updateTimer();
++    }, 1000);
++    startButton.disabled = true;
++    stopButton.disabled = false;
++}
++
++function stopTimer() {
++    clearInterval(intervalId);
++    startButton.disabled = false;
++    stopButton.disabled = true;
++}
++
++startButton.addEventListener('click', startTimer);
++stopButton.addEventListener('click', stopTimer);--- a/styles.css
++++ b/styles.css
+@@ -0,0 +1,18 @@
++body {
++    display: flex;
++    justify-content: center;
++    align-items: center;
++    height: 100vh;
++    background-color: #f0f0f0;
++}
++.timer-container {
++    text-align: center;
++}
++h1 {
++    font-size: 48px;
++}
++button {
++    margin: 10px;
++    padding: 10px 20px;
++    font-size: 16px;
++}

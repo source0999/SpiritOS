@@ -1,0 +1,64 @@
+{
+  "phase": "Phase 6 - Behavior verifier",
+  "map_version": "phase-6.5-v0.1",
+  "implementation_status": "not_implemented_phase_6_evidence_only",
+  "reuse_first_rules": [
+    "Wrap existing verifier surfaces before creating new modules.",
+    "Expose future verifier preview through tests, UI, or evidence reports.",
+    "Do not treat passing unit tests alone as integration proof.",
+    "Do not implement brain-metaphor classes that do not protect real flows."
+  ],
+  "adapters": [
+    {
+      "future_adapter": "behavior_verifier.diff_readiness_adapter",
+      "existing_surface": "source_proxy/verification/diff.py",
+      "role": "Import diff preview status and risk details as supporting readiness evidence.",
+      "integration_requirement": "Cannot produce product PASS without behavior check tier >= 2."
+    },
+    {
+      "future_adapter": "behavior_verifier.deterministic_readiness_adapter",
+      "existing_surface": "source_proxy/verification/deterministic.py",
+      "role": "Import syntax/static check receipts as technical readiness evidence.",
+      "integration_requirement": "Static checks must be labeled non-product-pass unless tied to behavior coverage."
+    },
+    {
+      "future_adapter": "behavior_verifier.command_runner_adapter",
+      "existing_surface": "source_proxy/cartographer/verification_runner.py",
+      "role": "Use exact allowlisted commands for focused verifier checks.",
+      "integration_requirement": "Command execution remains blocked unless Phase 7 grants safe execution preview authority."
+    },
+    {
+      "future_adapter": "behavior_verifier.self_test_profile_adapter",
+      "existing_surface": "source_proxy/api/coding_self_tests.py and source_proxy/testing/runner.py",
+      "role": "Attach profile receipts when approved focused tests cover acceptance behavior.",
+      "integration_requirement": "Profile PASS cannot override fixture-level behavior FAIL."
+    },
+    {
+      "future_adapter": "behavior_verifier.trial_diagnostic_adapter",
+      "existing_surface": "tests/ui-agent-trials/trial-result-schema.ts",
+      "role": "Reuse diagnostic fields for artifact paths, screenshots, traces, safety state, and no-fake-claim scoring.",
+      "integration_requirement": "Align product verdicts with Phase 1 truth labels."
+    },
+    {
+      "future_adapter": "behavior_verifier.coding_ui_preview_adapter",
+      "existing_surface": "src/components/coding/CodingAgentInterface.tsx and src/components/coding/approval-gate-binding.ts",
+      "role": "Show behavior verifier preview status beside existing diff and approval previews.",
+      "integration_requirement": "UI must not imply execution or approval authority from verifier preview alone."
+    }
+  ],
+  "phase_7_handoff": {
+    "next_phase": "Phase 7 - Safe execution preview",
+    "handoff_inputs": [
+      "behavior-verifier-result-schema.json",
+      "behavior-fixture-contract.json",
+      "dry-run-verifier-examples.json",
+      "behavior-verifier-adapter-map.json"
+    ],
+    "handoff_constraints": [
+      "Phase 7 may preview safe execution plans but must not auto-start workers.",
+      "Phase 7 must keep would_execute=false unless separately approved.",
+      "Phase 7 must preserve product PASS gating from Phase 6.",
+      "Phase 7 must not mutate generated benchmark artifacts."
+    ]
+  }
+}

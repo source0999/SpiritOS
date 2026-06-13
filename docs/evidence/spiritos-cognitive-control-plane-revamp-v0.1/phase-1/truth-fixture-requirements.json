@@ -1,0 +1,86 @@
+{
+  "contract_id": "phase-1.3.june-12-fixture-requirements",
+  "source_packet": "docs/evidence/spiritos-cognitive-control-plane-revamp-v0.1/phase-0/june-12-false-positive-fixtures.json",
+  "required_future_use": ["Phase 1.3", "Phase 6.2"],
+  "fixtures": [
+    {
+      "fixture_id": "calculator-false-positive",
+      "required_label": "FAIL",
+      "scope": "product_behavior",
+      "acceptance_criteria": "Calculator must produce 5 after input sequence `2 + 3 =`.",
+      "minimum_required_evidence": ["behavior_interaction_proof", "observed_display_value"],
+      "reason_codes": ["behavior_result_mismatch", "calculator_expected_5_returned_0"],
+      "fake_green_prevented": ["artifact_exists", "preview_opens"]
+    },
+    {
+      "fixture_id": "dark-theme-false-positive",
+      "required_label": "FAIL",
+      "scope": "product_behavior",
+      "acceptance_criteria": "Theme toggle must visibly or computedly change body background/text colors.",
+      "minimum_required_evidence": ["computed_state_before_after", "toggle_interaction"],
+      "reason_codes": ["computed_colors_unchanged", "class_change_without_visible_behavior"],
+      "fake_green_prevented": ["class_toggled_only", "preview_opens"]
+    },
+    {
+      "fixture_id": "habit-tracker-false-positive",
+      "required_label": "FAIL",
+      "scope": "product_behavior",
+      "acceptance_criteria": "Habit tracker must include input/buttons/state-changing controls for habit interaction.",
+      "minimum_required_evidence": ["dom_control_inspection", "state_change_attempt"],
+      "reason_codes": ["missing_interactive_controls", "static_hard_coded_content"],
+      "fake_green_prevented": ["static_content_renders"]
+    },
+    {
+      "fixture_id": "timer-false-negative",
+      "required_label": "PASS",
+      "scope": "product_behavior",
+      "acceptance_criteria": "Timer must start, count upward, stop, and freeze after Stop.",
+      "minimum_required_evidence": ["behavior_interaction_proof", "time_before_after_stop"],
+      "reason_codes": ["timer_started_counted_and_stopped"],
+      "pass_preservation": true
+    },
+    {
+      "fixture_id": "notes-app-non-app-failure",
+      "required_label": "FAIL",
+      "scope": "artifact_product_type",
+      "acceptance_criteria": "Requested notes app must be an app, not markdown-only output.",
+      "minimum_required_evidence": ["artifact_type_inspection"],
+      "reason_codes": ["generated_markdown_only", "requested_app_missing"]
+    },
+    {
+      "fixture_id": "password-checker-missing-preview",
+      "required_label": "FAIL",
+      "scope": "artifact_readiness",
+      "acceptance_criteria": "Password checker must have preview files before behavior evaluation.",
+      "minimum_required_evidence": ["artifact_presence_check"],
+      "reason_codes": ["preview_files_missing"],
+      "behavior_label_when_missing": "UNVERIFIED"
+    },
+    {
+      "fixture_id": "drawing-pad-missing-preview",
+      "required_label": "FAIL",
+      "scope": "artifact_readiness",
+      "acceptance_criteria": "Drawing pad must have preview files before behavior evaluation.",
+      "minimum_required_evidence": ["artifact_presence_check"],
+      "reason_codes": ["preview_files_missing"],
+      "behavior_label_when_missing": "UNVERIFIED"
+    },
+    {
+      "fixture_id": "music-player-mockup-missing-preview",
+      "required_label": "FAIL",
+      "scope": "artifact_readiness",
+      "acceptance_criteria": "Music player mockup must have preview files before behavior evaluation.",
+      "minimum_required_evidence": ["artifact_presence_check"],
+      "reason_codes": ["preview_files_missing"],
+      "behavior_label_when_missing": "UNVERIFIED"
+    }
+  ],
+  "global_fixture_rules": [
+    "artifact existence does not imply product PASS",
+    "preview opens does not imply behavior PASS",
+    "static content does not imply app behavior",
+    "corrected behavior diagnostics are proof inputs for future phases"
+  ],
+  "verdict": "GO"
+}
+

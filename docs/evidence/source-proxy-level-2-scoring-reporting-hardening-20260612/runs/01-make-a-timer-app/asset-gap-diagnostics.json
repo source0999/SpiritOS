@@ -1,0 +1,12 @@
+{
+  "entrypoint": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-expectation-scoring-advanced-diagnostics-20260612\\fresh-scored-10\\runs\\01-make-a-timer-app\\workspace\\index.html",
+  "external_resources": [],
+  "missing_local_references": [],
+  "reason_codes": [
+    "linked_local_files_resolved"
+  ],
+  "referenced_local_files": [
+    "script.js",
+    "styles.css"
+  ]
+}

@@ -1,0 +1,49 @@
+--- a/mixtape-player.css
++++ b/mixtape-player.css
+@@ -0,0 +1,8 @@
++.player-container {
++    text-align: center;
++    margin-top: 50px;
++}
++
++button, input[type="range"] {
++    margin: 10px;
++}--- a/mixtape-player.html
++++ b/mixtape-player.html
+@@ -0,0 +1,17 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Mixtape Player</title>
++    <link rel="stylesheet" href="mixtape-player.css">
++</head>
++<body>
++    <div class="player-container">
++        <h1>My Mixtape</h1>
++        <button id="play-pause">Play</button>
++        <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="0.5">
++    </div>
++    <script src="mixtape-player.js"></script>
++</body>
++</html>--- a/mixtape-player.js
++++ b/mixtape-player.js
+@@ -0,0 +1,17 @@
++document.getElementById('play-pause').addEventListener('click', function() {
++    var audio = document.createElement('audio');
++    audio.src = 'path/to/your/audio/file.mp3';
++    if (audio.paused) {
++        audio.play();
++        this.textContent = 'Pause';
++    } else {
++        audio.pause();
++        this.textContent = 'Play';
++    }
++});
++
++document.getElementById('volume-slider').addEventListener('input', function() {
++    var audio = document.createElement('audio');
++    audio.src = 'path/to/your/audio/file.mp3';
++    audio.volume = this.value;
++});

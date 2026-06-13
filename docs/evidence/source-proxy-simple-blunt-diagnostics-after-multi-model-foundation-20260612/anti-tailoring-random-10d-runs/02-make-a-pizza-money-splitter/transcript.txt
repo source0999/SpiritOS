@@ -1,0 +1,28 @@
+```json
+[
+    {
+        "action_type": "WriteFile",
+        "target": "index.html",
+        "arguments": {
+            "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Pizza Money Splitter</title>\n    <link rel=\"stylesheet\" href=\"styles.css\">\n</head>\n<body>\n    <h1>Pizza Money Splitter</h1>\n    <input type=\"number\" id=\"totalAmount\" placeholder=\"Total Pizza Cost\">\n    <button onclick=\"splitMoney()\">Split Money</button>\n    <p>Total per person: <span id=\"result\"></span></p>\n    <script src=\"script.js\"></script>\n</body>\n</html>"
+        },
+        "reason": "This is the main HTML file that includes the input field, button, and result display."
+    },
+    {
+        "action_type": "WriteFile",
+        "target": "styles.css",
+        "arguments": {
+            "content": "body {\n    font-family: Arial, sans-serif;\n    text-align: center;\n}\ninput[type=\"number\"] {\n    padding: 10px;\n    margin: 10px;\n}\nbutton {\n    padding: 10px 20px;\n    cursor: pointer;\n}\np {\n    font-size: 1.5em;\n}"
+        },
+        "reason": "This CSS file styles the basic layout and appearance of the UI elements."
+    },
+    {
+        "action_type": "WriteFile",
+        "target": "script.js",
+        "arguments": {
+            "content": "function splitMoney() {\n    const totalAmount = parseFloat(document.getElementById('totalAmount').value);\n    if (!isNaN(totalAmount)) {\n        const resultElement = document.getElementById('result');\n        resultElement.textContent = (totalAmount / 2).toFixed(2);\n    } else {\n        alert('Please enter a valid number.');\n    }\n}"
+        },
+        "reason": "This JavaScript file contains the logic to calculate and display the split amount."
+    }
+]
+```

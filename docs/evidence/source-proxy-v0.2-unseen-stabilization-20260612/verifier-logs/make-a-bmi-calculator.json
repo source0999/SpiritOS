@@ -1,0 +1,34 @@
+{
+  "actual": {
+    "changed": true,
+    "numbers": [
+      "0.00"
+    ]
+  },
+  "contract_probe": {
+    "acceptance_criterion": "BMI calculator computes a visible BMI from height and weight.",
+    "expected_observation": "A plausible BMI number appears.",
+    "minimum_proof_tier": 2,
+    "observable_actions": [
+      "enter height and weight",
+      "trigger calculation if required"
+    ],
+    "probe_id": "bmi-calculator-result"
+  },
+  "expected": {
+    "numericResultVisible": true
+  },
+  "observed": {
+    "after": "BMI Calculator\nHeight (m): \n\nWeight (kg): \n\nCalculate BMI\nYour BMI is: 0.00",
+    "before": "BMI Calculator\nHeight (m): \n\nWeight (kg): \n\nCalculate BMI",
+    "numbers": [
+      "0.00"
+    ]
+  },
+  "passed": true,
+  "path": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-v0.2-unseen-stabilization-20260612\\step-6-full-unseen-reruns\\14-make-a-bmi-calculator\\workspace\\index.html",
+  "reason": "",
+  "reason_codes": [],
+  "test": "bmi-calculator-result",
+  "verdict": "PASS"
+}

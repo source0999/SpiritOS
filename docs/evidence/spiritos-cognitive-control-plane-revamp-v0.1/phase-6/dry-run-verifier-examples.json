@@ -1,0 +1,140 @@
+{
+  "schema_version": "phase-6.4-v0.1",
+  "mode": "dry_run_examples_only",
+  "examples": [
+    {
+      "task_id": "calculator-false-positive",
+      "run_mode": "dry_run",
+      "requested_behavior": "Calculator should evaluate 2 + 3 = correctly.",
+      "acceptance_criteria": ["Typing or clicking 2 + 3 = displays 5."],
+      "proof_tier": 2,
+      "product_verdict": "FAIL",
+      "truth_label": "FAIL",
+      "reason_codes": ["behavior_mismatch", "prior_false_positive"],
+      "checks": [
+        {
+          "check_id": "calculator-2-plus-3",
+          "tier": 2,
+          "status": "FAIL",
+          "expected": "display returns 5",
+          "observed": "display returned 0 instead of 5",
+          "product_pass_eligible": true,
+          "evidence": ["phase-1/truth-fixture-requirements.json"]
+        }
+      ],
+      "unsupported_pass_reasons": ["preview_opens"],
+      "would_execute": false,
+      "mutated_anything": false,
+      "next_required_action": "Future implementation must preserve this fixture as FAIL until behavior proof shows 5."
+    },
+    {
+      "task_id": "dark-theme-false-positive",
+      "run_mode": "dry_run",
+      "requested_behavior": "Dark theme toggle should visibly change page colors.",
+      "acceptance_criteria": ["Computed body background or text colors change after toggle."],
+      "proof_tier": 2,
+      "product_verdict": "FAIL",
+      "truth_label": "FAIL",
+      "reason_codes": ["computed_style_unchanged", "prior_false_positive"],
+      "checks": [
+        {
+          "check_id": "dark-theme-computed-colors",
+          "tier": 2,
+          "status": "FAIL",
+          "expected": "computed colors change after toggle",
+          "observed": "body class changed but computed background/text colors stayed the same",
+          "product_pass_eligible": true,
+          "evidence": ["phase-1/truth-fixture-requirements.json"]
+        }
+      ],
+      "unsupported_pass_reasons": ["class_toggle_only", "preview_opens"],
+      "would_execute": false,
+      "mutated_anything": false,
+      "next_required_action": "Future verifier must inspect computed style, not just class names."
+    },
+    {
+      "task_id": "habit-tracker-false-positive",
+      "run_mode": "dry_run",
+      "requested_behavior": "Habit tracker should expose state-changing controls.",
+      "acceptance_criteria": ["User can add, complete, edit, remove, or otherwise change habit state."],
+      "proof_tier": 1,
+      "product_verdict": "FAIL",
+      "truth_label": "FAIL",
+      "reason_codes": ["static_content_only", "no_state_changing_controls", "prior_false_positive"],
+      "checks": [
+        {
+          "check_id": "habit-controls-present",
+          "tier": 1,
+          "status": "FAIL",
+          "expected": "input/buttons/state-changing controls exist",
+          "observed": "static hard-coded habits with no controls",
+          "product_pass_eligible": false,
+          "evidence": ["phase-1/truth-fixture-requirements.json"]
+        }
+      ],
+      "unsupported_pass_reasons": ["static_dom_only"],
+      "would_execute": false,
+      "mutated_anything": false,
+      "next_required_action": "Future verifier must require controls and state change before PASS."
+    },
+    {
+      "task_id": "timer-false-negative",
+      "run_mode": "dry_run",
+      "requested_behavior": "Timer should start, count, stop, and freeze.",
+      "acceptance_criteria": ["Timer increments after Start and remains fixed after Stop."],
+      "proof_tier": 2,
+      "product_verdict": "PASS",
+      "truth_label": "PASS",
+      "reason_codes": ["preserved_behavior_proof", "prior_false_negative_corrected"],
+      "checks": [
+        {
+          "check_id": "timer-start-stop-freeze",
+          "tier": 2,
+          "status": "PASS",
+          "expected": "timer changes from 00:00 to a later value and freezes after Stop",
+          "observed": "timer changed from 00:00 to 00:02 and stayed after Stop",
+          "product_pass_eligible": true,
+          "evidence": ["phase-1/truth-fixture-requirements.json"]
+        }
+      ],
+      "unsupported_pass_reasons": [],
+      "would_execute": false,
+      "mutated_anything": false,
+      "next_required_action": "Preserve PASS when future verifier observes equivalent start/stop/counting behavior."
+    },
+    {
+      "task_id": "password-checker-missing-preview",
+      "run_mode": "dry_run",
+      "requested_behavior": "Password checker should render and evaluate password strength.",
+      "acceptance_criteria": ["Preview exists.", "Password input changes strength result."],
+      "proof_tier": 0,
+      "product_verdict": "FAIL",
+      "truth_label": "FAIL",
+      "reason_codes": ["missing_preview_artifact", "behavior_unverified"],
+      "checks": [
+        {
+          "check_id": "preview-artifact-exists",
+          "tier": 0,
+          "status": "FAIL",
+          "expected": "preview artifact exists",
+          "observed": "no preview files",
+          "product_pass_eligible": false,
+          "evidence": ["phase-1/truth-fixture-requirements.json"]
+        },
+        {
+          "check_id": "password-strength-behavior",
+          "tier": 2,
+          "status": "UNVERIFIED",
+          "expected": "password input changes strength result",
+          "observed": "not runnable because preview artifact is missing",
+          "product_pass_eligible": true,
+          "evidence": ["phase-1/truth-fixture-requirements.json"]
+        }
+      ],
+      "unsupported_pass_reasons": [],
+      "would_execute": false,
+      "mutated_anything": false,
+      "next_required_action": "Create or locate preview artifact before behavior can be verified."
+    }
+  ]
+}

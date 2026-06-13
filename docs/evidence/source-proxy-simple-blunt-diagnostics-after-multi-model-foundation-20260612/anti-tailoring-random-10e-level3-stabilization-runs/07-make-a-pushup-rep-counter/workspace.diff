@@ -1,0 +1,47 @@
+--- a/pushup_counter.css
++++ b/pushup_counter.css
+@@ -0,0 +1,17 @@
++body {
++    font-family: Arial, sans-serif;
++    display: flex;
++    justify-content: center;
++    align-items: center;
++    height: 100vh;
++    margin: 0;
++}
++
++.counter-container {
++    text-align: center;
++}
++
++#count {
++    font-size: 2em;
++    margin: 20px 0;
++}--- a/pushup_counter.html
++++ b/pushup_counter.html
+@@ -0,0 +1,17 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Pushup Counter</title>
++    <link rel="stylesheet" href="pushup_counter.css">
++</head>
++<body>
++    <div class="counter-container">
++        <h1>Pushup Counter</h1>
++        <p id="count">0</p>
++        <button onclick="incrementCount()">Do Pushup</button>
++    </div>
++    <script src="pushup_counter.js"></script>
++</body>
++</html>--- a/pushup_counter.js
++++ b/pushup_counter.js
+@@ -0,0 +1,6 @@
++let count = 0;
++
++function incrementCount() {
++    count++;
++    document.getElementById('count').innerText = count;
++}

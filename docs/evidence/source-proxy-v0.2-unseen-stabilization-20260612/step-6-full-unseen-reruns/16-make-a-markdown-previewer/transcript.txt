@@ -1,0 +1,28 @@
+```json
+[
+    {
+        "action_type": "WriteFile",
+        "target": "index.html",
+        "arguments": {
+            "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Markdown Previewer</title>\n    <link rel=\"stylesheet\" href=\"styles.css\">\n</head>\n<body>\n    <textarea id=\"markdown-input\" placeholder=\"Enter markdown here...\"></textarea>\n    <div id=\"preview\"></div>\n    <script src=\"script.js\"></script>\n</body>\n</html>"
+        },
+        "reason": "HTML file to host the markdown input and preview."
+    },
+    {
+        "action_type": "WriteFile",
+        "target": "styles.css",
+        "arguments": {
+            "content": "body {\n    font-family: Arial, sans-serif;\n}\n#markdown-input {\n    width: 100%;\n    height: 200px;\n    margin-bottom: 10px;\n}\n#preview {\n    border: 1px solid #ccc;\n    padding: 10px;\n    min-height: 200px;\n}"
+        },
+        "reason": "CSS file to style the markdown previewer."
+    },
+    {
+        "action_type": "WriteFile",
+        "target": "script.js",
+        "arguments": {
+            "content": "document.getElementById('markdown-input').addEventListener('input', function() {\n    const markdown = this.value;\n    const html = marked(markdown);\n    document.getElementById('preview').innerHTML = html;\n});\n\nif (typeof marked === 'undefined') {\n    const script = document.createElement('script');\n    script.src = 'https://cdn.jsdelivr.net/npm/marked/marked.min.js';\n    document.head.appendChild(script);\n}"
+        },
+        "reason": "JavaScript file to handle markdown rendering."
+    }
+]
+```

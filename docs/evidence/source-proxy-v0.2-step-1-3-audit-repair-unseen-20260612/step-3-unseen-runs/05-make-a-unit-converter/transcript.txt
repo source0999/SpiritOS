@@ -1,0 +1,10 @@
+```json
+{
+  "action_type": "WriteFile",
+  "target": "src/components/UnitConverter.js",
+  "arguments": {
+    "content": "import React, { useState } from 'react';\n\nconst UnitConverter = () => {\n  const [inputValue, setInputValue] = useState('');\n  const [convertedValue, setConvertedValue] = useState('');\n  const [fromUnit, setFromUnit] = useState('meters');\n  const [toUnit, setToUnit] = useState('feet');\n\n  const handleConvert = () => {\n    let value = parseFloat(inputValue);\n    if (isNaN(value)) return;\n\n    switch (fromUnit) {\n      case 'meters':\n        switch (toUnit) {\n          case 'feet':\n            setConvertedValue((value * 3.28084).toString());\n            break;\n          default:\n            setConvertedValue(value.toString());\n        }\n        break;\n      // Add more unit conversions here\n      default:\n        setConvertedValue(value.toString());\n    }\n  };\n\n  return (\n    <div>\n      <input\n        type='number'\n        value={inputValue}\n        onChange={(e) => setInputValue(e.target.value)}\n      />\n      <select value={fromUnit} onChange={(e) => setFromUnit(e.target.value)}>\n        <option value='meters'>Meters</option>\n        <option value='feet'>Feet</option>\n        {/* Add more unit options here */}\n      </select>\n      <button onClick={handleConvert}>Convert</button>\n      <p>{convertedValue} {toUnit}</p>\n    </div>\n  );\n};\n\nexport default UnitConverter;"
+  },
+  "reason": "A React component for converting units."
+}
+```

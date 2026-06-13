@@ -1,0 +1,74 @@
+--- a/index.html
++++ b/index.html
+@@ -0,0 +1,28 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Unit Converter</title>
++    <link rel="stylesheet" href="styles.css">
++</head>
++<body>
++    <div class="container">
++        <h1>Unit Converter</h1>
++        <input type="number" id="inputValue" placeholder="Enter a value">
++        <select id="fromUnit">
++            <option value="m">Meters</option>
++            <option value="km">Kilometers</option>
++            <option value="cm">Centimeters</option>
++        </select>
++        <select id="toUnit">
++            <option value="m">Meters</option>
++            <option value="km">Kilometers</option>
++            <option value="cm">Centimeters</option>
++        </select>
++        <button onclick="convertUnits()">Convert</button>
++        <p id="result"></p>
++    </div>
++    <script src="script.js"></script>
++</body>
++</html>--- a/script.js
++++ b/script.js
+@@ -0,0 +1,24 @@
++function convertUnits() {
++    const inputValue = parseFloat(document.getElementById('inputValue').value);
++    const fromUnit = document.getElementById('fromUnit').value;
++    const toUnit = document.getElementById('toUnit').value;
++    let result;
++
++    if (fromUnit === 'm' && toUnit === 'km') {
++        result = inputValue * 0.001;
++    } else if (fromUnit === 'm' && toUnit === 'cm') {
++        result = inputValue * 100;
++    } else if (fromUnit === 'km' && toUnit === 'm') {
++        result = inputValue * 1000;
++    } else if (fromUnit === 'km' && toUnit === 'cm') {
++        result = inputValue * 100000;
++    } else if (fromUnit === 'cm' && toUnit === 'm') {
++        result = inputValue * 0.01;
++    } else if (fromUnit === 'cm' && toUnit === 'km') {
++        result = inputValue * 0.00001;
++    } else {
++        result = inputValue;
++    }
++
++    document.getElementById('result').innerText = `Result: ${result} ${toUnit}`;
++}--- a/styles.css
++++ b/styles.css
+@@ -0,0 +1,15 @@
++body {
++    font-family: Arial, sans-serif;
++    display: flex;
++    justify-content: center;
++    align-items: center;
++    height: 100vh;
++    margin: 0;
++}
++.container {
++    text-align: center;
++}
++input, select, button {
++    padding: 10px;
++    margin: 5px;
++}

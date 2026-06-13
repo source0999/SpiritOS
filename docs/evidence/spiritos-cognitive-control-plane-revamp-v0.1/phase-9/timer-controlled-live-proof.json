@@ -1,0 +1,50 @@
+{
+  "proof_id": "phase9-timer-controlled-live-proof",
+  "generated_at": "2026-06-12T22:19:08.479Z",
+  "artifact_path": "docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/01-make-a-timer-app/workspace/index.html",
+  "artifact_url": "file:///Z:/docs/evidence/source-proxy-general-intelligence-diagnostic-20260612/runs/01-make-a-timer-app/workspace/index.html",
+  "fixture_id": "timer-false-negative",
+  "acceptance_criteria": [
+    "Timer starts from 00:00.",
+    "Clicking Start causes timer to count upward.",
+    "Clicking Stop freezes the timer display."
+  ],
+  "actions": [
+    "load static artifact via file URL",
+    "read #timer initial text",
+    "click #startBtn",
+    "wait approximately 2.2 seconds",
+    "read #timer after start wait",
+    "click #stopBtn",
+    "read #timer immediately after Stop",
+    "wait approximately 1.4 seconds",
+    "read #timer after stop wait",
+    "capture screenshot"
+  ],
+  "observations": {
+    "initial": "00:00",
+    "controls": {
+      "startVisible": true,
+      "stopVisible": true
+    },
+    "afterStartWait": "00:02",
+    "immediatelyAfterStop": "00:02",
+    "afterStopWait": "00:02"
+  },
+  "timings": {
+    "startedAt": "2026-06-12T22:19:04.480Z",
+    "stoppedAt": "2026-06-12T22:19:06.978Z"
+  },
+  "verdict": "PASS",
+  "truth_label": "PASS",
+  "reason_codes": [
+    "timer_started_counted_and_stopped",
+    "controlled_live_proof_non_mutating"
+  ],
+  "mutated_artifact": false,
+  "provider_called": false,
+  "worker_started": false,
+  "git_mutation_performed": false,
+  "screenshot_path": "docs/evidence/spiritos-cognitive-control-plane-revamp-v0.1/phase-9/timer-controlled-live-proof.png",
+  "error": null
+}
