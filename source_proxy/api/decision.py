@@ -67,6 +67,7 @@ from source_proxy.decision.preview import (
     ApiVsManualPreviewInput,
     build_api_vs_manual_preview,
 )
+from source_proxy.decision.model_lanes import build_model_lanes_preview
 from source_proxy.decision.recommendation import (
     ModelRecommendationInput,
     recommend_model,
@@ -170,6 +171,10 @@ class PromptPacketRequest(RouteDecisionRequest):
 class ApiVsManualPreviewRequest(PromptPacketRequest):
     api_model_alias: str = "openai"
     max_completion_tokens: int = Field(default=1024, ge=0)
+
+
+class ModelLanesPreviewRequest(BaseModel):
+    task_type: str = "disposable_artifact"
 
 
 def _coder_sync_deadline_seconds() -> float:
@@ -3090,6 +3095,11 @@ async def api_vs_manual_preview(request: ApiVsManualPreviewRequest) -> dict[str,
             prefer_free=reset_request.prefer_free,
         )
     )
+
+
+@router.post("/model-lanes/preview")
+async def model_lanes_preview(request: ModelLanesPreviewRequest) -> dict[str, Any]:
+    return build_model_lanes_preview(task_type=request.task_type)
 
 
 def _request_with_cleared_file_focus(request: RouteDecisionRequest) -> RouteDecisionRequest:

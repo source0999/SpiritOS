@@ -854,6 +854,67 @@ class CodingRegressionPackTests(unittest.TestCase):
         self.assertEqual(intake["clarification_state"], "not_needed")
         self.assertIn("git diff --check", intake["verification_policy"])
 
+    def test_level_3_supervised_new_evidence_file_intake_is_ready(self) -> None:
+        target = (
+            "docs/evidence/source-proxy-remaining-levels-daily-driver-readiness-20260612/"
+            "level-3/sandbox-approved-doc.md"
+        )
+        intake = build_task_spec_intake(
+            "\n".join(
+                [
+                    "Update one approved markdown evidence note with a one-line Level 3 marker.",
+                    f"Target file: {target}",
+                    f"Allowed files: {target}",
+                ]
+            ),
+            workspace_root=self.root,
+            allowed_files=[target],
+            forbidden_files=[".env", ".env.*", "*.pem", "*.key", "certificates/*"],
+            wants_implementation=True,
+        ).to_dict()
+
+        self.assertEqual(intake["task_kind"], "create_new_file")
+        self.assertEqual(intake["allowed_files"], [target])
+        self.assertEqual(intake["workspace_mode"], "real_repo_supervised")
+        self.assertEqual(intake["approval_level"], "manual_apply_required")
+        self.assertEqual(intake["clarification_state"], "not_needed")
+        self.assertNotIn("target_missing", intake["reason_codes"])
+        self.assertIn("explicit_target_present", intake["reason_codes"])
+        self.assertIn("explicit_allowed_file_scope", intake["reason_codes"])
+        self.assertIn("new_file_allowed_by_manual_scope", intake["reason_codes"])
+        self.assertIn("real_repo_supervised_create", intake["reason_codes"])
+
+    def test_level_3_supervised_create_preserves_missing_target_guards(self) -> None:
+        target = (
+            "docs/evidence/source-proxy-remaining-levels-daily-driver-readiness-20260612/"
+            "level-3/sandbox-approved-doc.md"
+        )
+        no_allowed = build_task_spec_intake(
+            f"Target file: {target}\nUpdate the approved note.",
+            workspace_root=self.root,
+            wants_implementation=True,
+        ).to_dict()
+        wrong_allowed = build_task_spec_intake(
+            f"Target file: {target}\nUpdate the approved note.",
+            workspace_root=self.root,
+            allowed_files=["docs/evidence/not-this.md"],
+            wants_implementation=True,
+        ).to_dict()
+        source_create = build_task_spec_intake(
+            "Target file: source_proxy/new_runtime_file.py\nAllowed files: source_proxy/new_runtime_file.py\nCreate it.",
+            workspace_root=self.root,
+            allowed_files=["source_proxy/new_runtime_file.py"],
+            wants_implementation=True,
+        ).to_dict()
+
+        self.assertEqual(no_allowed["task_kind"], "ask_clarification")
+        self.assertEqual(no_allowed["workspace_mode"], "none")
+        self.assertIn("target_missing", no_allowed["reason_codes"])
+        self.assertEqual(wrong_allowed["task_kind"], "ask_clarification")
+        self.assertEqual(wrong_allowed["allowed_files"], [])
+        self.assertEqual(source_create["task_kind"], "ask_clarification")
+        self.assertNotEqual(source_create["workspace_mode"], "real_repo_supervised")
+
     def test_task_spec_intake_allows_disposable_workspace_create_only_when_bounded(self) -> None:
         task = "\n".join(
             [
@@ -1211,6 +1272,79 @@ class CodingRegressionPackTests(unittest.TestCase):
         self.assertIn(DOC_TARGET, executed["receipt"]["after_status"]["files"])
         self.assertEqual((self.root / DOC_TARGET).read_text(encoding="utf-8"), DOC_BASE + "\nPlan 3 executor proof.\n")
 
+    def test_tool_action_executor_real_repo_supervised_create_uses_approved_scope_count(self) -> None:
+        target = "docs/evidence/level-3/sandbox-approved-doc.md"
+        for index in range(12):
+            _write(self.root / f"existing/file-{index}.txt", "already here\n")
+        raw = json.dumps(
+            {
+                "action_type": "WriteFile",
+                "target": target,
+                "arguments": {"content": "# Sandbox Approved Doc\n\nLevel 3 marker.\n"},
+            }
+        )
+        action = parse_model_actions(raw, allowed_files_snapshot=[target]).actions[0]
+        contract = ToolActionWorkspaceContract(
+            workspace_root=self.root,
+            allowed_files=(target,),
+            protected_paths=(".env", ".env.local"),
+            workspace_mode="real_repo_supervised",
+            approval_level="manual_apply_required",
+            max_file_count=1,
+        )
+
+        executed = execute_tool_action(action, contract).to_dict()
+
+        self.assertEqual(executed["result"]["status"], "completed")
+        self.assertEqual(executed["result"]["files_touched"], [target])
+        self.assertTrue(executed["receipt"]["whole_repo_file_count_not_used"])
+        self.assertEqual(executed["receipt"]["workspace_mode"], "real_repo_supervised")
+        self.assertEqual(executed["receipt"]["allowed_files"], [target])
+        self.assertEqual(executed["receipt"]["attempted_action_paths"], [target])
+        self.assertEqual(executed["receipt"]["changed_paths"], [target])
+        self.assertEqual(executed["receipt"]["blocked_paths"], [])
+        self.assertFalse(executed["receipt"]["target_exists_before"])
+        self.assertTrue(executed["receipt"]["target_exists_after"])
+        self.assertTrue((self.root / target).exists())
+
+        (self.root / target).unlink()
+        self.assertFalse((self.root / target).exists())
+        self.assertEqual((self.root / "existing/file-0.txt").read_text(encoding="utf-8"), "already here\n")
+
+    def test_tool_action_executor_real_repo_supervised_blocks_wrong_protected_and_traversal_paths(self) -> None:
+        target = "docs/evidence/level-3/sandbox-approved-doc.md"
+        contract = ToolActionWorkspaceContract(
+            workspace_root=self.root,
+            allowed_files=(target,),
+            protected_paths=(".env",),
+            workspace_mode="real_repo_supervised",
+            approval_level="manual_apply_required",
+        )
+        wrong = parse_model_actions(
+            json.dumps({"action_type": "WriteFile", "target": "docs/evidence/wrong.md", "arguments": {"content": "x"}}),
+            allowed_files_snapshot=["docs/evidence/wrong.md"],
+        ).actions[0]
+        protected = parse_model_actions(
+            json.dumps({"action_type": "WriteFile", "target": ".env", "arguments": {"content": "TOKEN=bad"}}),
+            allowed_files_snapshot=[".env"],
+        ).actions[0]
+        traversal = parse_model_actions(
+            json.dumps({"action_type": "WriteFile", "target": "../outside.md", "arguments": {"content": "x"}})
+        ).actions[0]
+
+        wrong_result = execute_tool_action(wrong, contract).to_dict()
+        protected_result = execute_tool_action(protected, contract).to_dict()
+        traversal_result = execute_tool_action(traversal, contract).to_dict()
+
+        self.assertEqual(wrong_result["result"]["status"], "blocked")
+        self.assertEqual(wrong_result["result"]["error_code"], "target_not_allowed")
+        self.assertEqual(wrong_result["receipt"]["blocked_paths"], ["docs/evidence/wrong.md"])
+        self.assertEqual(protected_result["result"]["status"], "blocked")
+        self.assertIn(protected_result["result"]["error_code"], {"path_escape", "protected_path"})
+        self.assertEqual(traversal_result["result"]["status"], "blocked")
+        self.assertEqual(traversal_result["result"]["error_code"], "path_escape")
+        self.assertFalse((self.root / ".env").exists())
+
     def test_tool_action_executor_blocks_wrong_file_and_path_traversal(self) -> None:
         wrong_file = parse_model_actions(
             json.dumps(
@@ -1241,6 +1375,54 @@ class CodingRegressionPackTests(unittest.TestCase):
         self.assertFalse((self.root / "docs/not-approved.md").exists())
         self.assertEqual(escaped["result"]["status"], "blocked")
         self.assertEqual(escaped["result"]["error_code"], "path_escape")
+
+    def test_tool_action_executor_accepts_model_chosen_disposable_static_ui_extensions(self) -> None:
+        action = parse_model_actions(
+            json.dumps(
+                {
+                    "action_type": "WriteFile",
+                    "target": "semantic/app.html",
+                    "arguments": {"content": "<!doctype html><html><body>ok</body></html>"},
+                }
+            )
+        ).actions[0]
+        contract = ToolActionWorkspaceContract(
+            workspace_root=self.root / "model-chosen-static-ui",
+            allowed_file_extensions=(".html", ".css", ".js"),
+            model_may_choose_paths=True,
+            max_file_count=3,
+        )
+
+        executed = execute_tool_action(action, contract).to_dict()
+
+        self.assertEqual(executed["result"]["status"], "completed")
+        self.assertEqual(executed["result"]["files_touched"], ["semantic/app.html"])
+        self.assertTrue((self.root / "model-chosen-static-ui" / "semantic" / "app.html").exists())
+
+    def test_model_chosen_disposable_static_ui_still_blocks_secret_and_repo_scaffold_paths(self) -> None:
+        contract = ToolActionWorkspaceContract(
+            workspace_root=self.root / "model-chosen-static-ui-blocked",
+            allowed_file_extensions=(".html", ".css", ".js"),
+            protected_paths=(".env", ".env.*"),
+            model_may_choose_paths=True,
+            max_file_count=3,
+        )
+        secret = parse_model_actions(
+            json.dumps({"action_type": "WriteFile", "target": ".env", "arguments": {"content": "TOKEN=bad"}})
+        ).actions[0]
+        package = parse_model_actions(
+            json.dumps({"action_type": "WriteFile", "target": "package.json", "arguments": {"content": "{}"}})
+        ).actions[0]
+
+        secret_result = execute_tool_action(secret, contract).to_dict()
+        package_result = execute_tool_action(package, contract).to_dict()
+
+        self.assertEqual(secret_result["result"]["status"], "blocked")
+        self.assertIn(secret_result["result"]["error_code"], {"path_escape", "protected_path"})
+        self.assertEqual(package_result["result"]["status"], "blocked")
+        self.assertEqual(package_result["result"]["error_code"], "target_not_allowed")
+        self.assertFalse((self.root / "model-chosen-static-ui-blocked" / ".env").exists())
+        self.assertFalse((self.root / "model-chosen-static-ui-blocked" / "package.json").exists())
 
     def test_tool_action_executor_blocks_protected_paths_and_symlink_escapes(self) -> None:
         protected = parse_model_actions(
@@ -1490,6 +1672,101 @@ class CodingRegressionPackTests(unittest.TestCase):
             )
         )
 
+    def test_bounded_agent_loop_repairs_targetless_interactive_ui_once(self) -> None:
+        request = BoundedAgentLoopRequest(
+            task_spec={
+                "task_type": "create_file_bundle",
+                "artifact_class": "static_ui_artifact",
+                "target_source": "model_authored_required",
+            },
+            context_packet={
+                "mode": "product",
+                "artifact_class": "static_ui_artifact",
+                "task_shape": "disposable_small_file_bundle",
+            },
+            workspace_contract=ToolActionWorkspaceContract(
+                workspace_root=self.root / "interactive-targetless-workspace",
+                allowed_file_extensions=(".html", ".css", ".js"),
+                model_may_choose_paths=True,
+                max_file_count=3,
+            ),
+            source_message_id="interactive-targetless",
+            max_format_retries=1,
+            max_verification_repairs=1,
+        )
+        calls: list[dict[str, object]] = []
+        transcripts = [
+            json.dumps({"action_type": "WriteFile", "arguments": {"content": "<html></html>"}}),
+            json.dumps(
+                {
+                    "action_type": "WriteFile",
+                    "target": "app.html",
+                    "arguments": {"content": "<!doctype html><html><body>fixed</body></html>"},
+                }
+            ),
+        ]
+
+        def fake_model(packet: dict[str, object]) -> str:
+            calls.append(packet)
+            return transcripts[int(packet["call_index"])]
+
+        result = run_bounded_agent_loop(request, fake_model).to_dict()
+
+        self.assertEqual(result["final_state"], "completed")
+        self.assertEqual(len(calls), 2)
+        self.assertTrue((self.root / "interactive-targetless-workspace" / "app.html").exists())
+        self.assertIn("bounded_repair_contract", calls[1])
+        self.assertIn("Write at least one .html file", calls[1]["bounded_repair_contract"]["instructions"])
+
+    def test_bounded_agent_loop_repairs_non_previewable_interactive_ui_once(self) -> None:
+        request = BoundedAgentLoopRequest(
+            task_spec={
+                "task_type": "create_file_bundle",
+                "artifact_class": "static_ui_artifact",
+                "target_source": "model_authored_required",
+            },
+            context_packet={
+                "mode": "product",
+                "artifact_class": "static_ui_artifact",
+                "task_shape": "disposable_small_file_bundle",
+            },
+            workspace_contract=ToolActionWorkspaceContract(
+                workspace_root=self.root / "interactive-no-html-workspace",
+                allowed_file_extensions=(".html", ".css", ".js"),
+                model_may_choose_paths=True,
+                max_file_count=3,
+            ),
+            source_message_id="interactive-no-html",
+            max_format_retries=1,
+            max_verification_repairs=1,
+        )
+        transcripts = [
+            json.dumps({"action_type": "WriteFile", "target": "styles.css", "arguments": {"content": "body{}"}}),
+            json.dumps(
+                {
+                    "action_type": "WriteFile",
+                    "target": "index.html",
+                    "arguments": {"content": "<!doctype html><html><body>ok</body></html>"},
+                }
+            ),
+        ]
+
+        def fake_model(packet: dict[str, object]) -> str:
+            return transcripts[int(packet["call_index"])]
+
+        result = run_bounded_agent_loop(request, fake_model).to_dict()
+
+        self.assertEqual(result["final_state"], "completed")
+        self.assertEqual(result["receipt"]["diagnostics_packet"]["verification_repairs_used"], 1)
+        self.assertTrue((self.root / "interactive-no-html-workspace" / "index.html").exists())
+        self.assertTrue(
+            any(
+                observation["type"] == "artifact_contract_error"
+                for call in result["receipt"]["model_calls"]
+                for observation in call["packet"].get("observations", [])
+            )
+        )
+
     def test_messy_homepage_prompt_becomes_disposable_create_candidate(self) -> None:
         intake = build_task_spec_intake(
             DEFAULT_HUMAN_MESSY_HOMEPAGE_PROMPT,
@@ -1575,6 +1852,48 @@ class CodingRegressionPackTests(unittest.TestCase):
                 self.assertEqual(intake["allowed_files"], [])
                 self.assertIn("generic_static_ui_artifact_candidate", intake["reason_codes"])
 
+    def test_task_spec_intake_classifies_interactive_artifact_intent_without_exact_file_hints(self) -> None:
+        prompts = [
+            "make a notes app",
+            "make a music player mockup",
+            "make a password strength checker",
+            "make a simple drawing pad",
+            "make a weather card demo",
+        ]
+
+        for prompt in prompts:
+            with self.subTest(prompt=prompt):
+                intake = build_task_spec_intake(
+                    prompt,
+                    workspace_root=self.root,
+                    wants_implementation=True,
+                ).to_dict()
+
+                self.assertEqual(intake["task_kind"], "create_file_bundle")
+                self.assertEqual(intake["workspace_mode"], "disposable_workspace")
+                self.assertEqual(intake["task_shape"], "disposable_small_file_bundle")
+                self.assertEqual(intake["task_shape_source"], "generic_artifact_resolver")
+                self.assertEqual(intake["artifact_class"], "static_ui_artifact")
+                self.assertEqual(intake["allowed_extensions"], [".html", ".css", ".js"])
+                self.assertEqual(intake["max_file_count"], 3)
+                self.assertEqual(intake["target_source"], "model_authored_required")
+                self.assertEqual(intake["target_paths"], [])
+                self.assertEqual(intake["allowed_files"], [])
+                self.assertIn("generic_static_ui_artifact_candidate", intake["reason_codes"])
+
+    def test_task_spec_intake_keeps_explicit_notes_document_as_markdown(self) -> None:
+        intake = build_task_spec_intake(
+            "make notes for the release guide",
+            workspace_root=self.root,
+            wants_implementation=True,
+        ).to_dict()
+
+        self.assertEqual(intake["task_kind"], "create_new_file")
+        self.assertEqual(intake["workspace_mode"], "disposable_workspace")
+        self.assertEqual(intake["task_shape"], "disposable_single_file_artifact")
+        self.assertEqual(intake["artifact_class"], "markdown_document")
+        self.assertEqual(intake["allowed_extensions"], [".md"])
+
     def test_task_spec_intake_keeps_explicit_docs_config_target_exactly_bounded(self) -> None:
         intake = build_task_spec_intake(
             f"Target file: {DOC_TARGET}\n\nAdd a short config note.",
@@ -1640,6 +1959,13 @@ class CodingRegressionPackTests(unittest.TestCase):
         )
 
         self.assertEqual(score["status"], "GO")
+        self.assertEqual(score["route_status"], "GO")
+        self.assertEqual(score["canonical_final_verdict"], "UNVERIFIED")
+        self.assertFalse(score["product_pass"])
+        self.assertTrue(score["behavior_required_for_final_pass"])
+        self.assertEqual(score["behavior_verdict"], "UNVERIFIED")
+        self.assertEqual(score["behavior_contract"]["probe_targets"][0]["probe_id"], "homepage-visible-intent")
+        self.assertIn("behavior_required_but_unverified", score["final_verdict_reason_codes"])
         self.assertEqual(score["mode"], "product")
         self.assertFalse(score["benchmark_eligible"])
         self.assertTrue(score["product_helper_used"])
@@ -1668,6 +1994,11 @@ class CodingRegressionPackTests(unittest.TestCase):
         packet = receipt["model_calls"][0]["packet"]
         self.assertEqual(packet["context_packet"]["allowed_extensions"], [".html"])
         self.assertEqual(packet["context_packet"]["proxy_exact_target_suggested"], "")
+        self.assertEqual(
+            packet["context_packet"]["behavior_contract"]["probe_targets"][0]["probe_id"],
+            "homepage-visible-intent",
+        )
+        self.assertIn("Behavior contract before generation", packet["context_packet"]["behavior_contract_summary"])
         self.assertNotIn("transparent_default_target", packet["context_packet"])
         self.assertEqual(packet["workspace_contract"]["allowed_file_extensions"], [".html"])
 

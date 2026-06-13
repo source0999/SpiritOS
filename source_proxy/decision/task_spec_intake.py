@@ -30,7 +30,7 @@ TaskKind = Literal[
     "path_escape",
     "unsupported",
 ]
-WorkspaceMode = Literal["real_repo_preview", "disposable_workspace", "none"]
+WorkspaceMode = Literal["real_repo_preview", "real_repo_supervised", "disposable_workspace", "none"]
 ClarificationState = Literal["not_needed", "required", "blocked"]
 
 
@@ -163,7 +163,31 @@ def build_task_spec_intake(
             clarification_prompt = _proposal_clarification(blocked_reason, target)
             reason_codes = _dedupe([*reason_codes, blocked_reason or "bounded_create_not_allowed"])
     elif wants_implementation and target:
-        if "target_missing" in route_reasons:
+        if "target_missing" in route_reasons and _supervised_real_repo_create_allowed(
+            target=target,
+            allowed_files=allowed,
+            forbidden_files=explicit_forbidden,
+        ):
+            task_kind = "create_new_file"
+            workspace_mode = "real_repo_supervised"
+            allowed = [target]
+            task_shape = _explicit_target_shape(target)
+            task_shape_source = "explicit_user_target"
+            artifact_class = _artifact_class_for_path(target)
+            target_source = "user_explicit"
+            workspace_decision_source = "manual_supervised_scope"
+            allowed_scope_source = "explicit_allowed_file_scope"
+            clarification_state = "not_needed"
+            reason_codes = _dedupe(
+                [
+                    *_without(reason_codes, "target_missing", "target_unresolved"),
+                    "explicit_target_present",
+                    "explicit_allowed_file_scope",
+                    "new_file_allowed_by_manual_scope",
+                    "real_repo_supervised_create",
+                ]
+            )
+        elif "target_missing" in route_reasons:
             task_kind = "ask_clarification"
             clarification_state = "required"
             clarification_prompt = (
@@ -252,7 +276,7 @@ def build_task_spec_intake(
         workspace_decision_source=workspace_decision_source,
         allowed_scope_source=allowed_scope_source,
         workspace_mode=workspace_mode,
-        approval_level="preview_only_no_apply",
+        approval_level="manual_apply_required" if workspace_mode == "real_repo_supervised" else "preview_only_no_apply",
         model_lane=model_lane,
         context_sources=_context_sources_for(task_kind, target_paths),
         verification_policy=_verification_for(task_kind),
@@ -336,29 +360,74 @@ def _intent_for(task: str, wants_implementation: bool) -> str:
 
 def _resolve_disposable_artifact_create(task: str) -> ArtifactCreateResolution | None:
     normalized = (task or "").lower()
-    createish = re.search(r"\b(init|initialize|make|create|build|new|scaffold|start|draft)\b", normalized)
+    createish = re.search(
+        r"\b(init|initialize|make|create|build|new|scaffold|start|draft)\b|\bshow me\b",
+        normalized,
+    )
     if not createish:
         return None
-    markdownish = re.search(r"\b(markdown|readme|checklist|notes?|guide|document)\b", normalized)
+    explicit_target_path = bool(_target_candidates(task))
+    messy_homepage_diagnostic = bool(
+        re.search(r"\bhomepage\b", normalized)
+        and re.search(r"\bagent\s+lab\s+exper", normalized)
+    )
+    real_repoish = bool(
+        explicit_target_path
+        or re.search(
+            r"\b(existing|current app|production|repo|src|source tree|component|route|test file|"
+            r"edit|modify|fix|update|repair|refactor|integrate|migration|backend|server|auth|database|"
+            r"improve|improvement|docs)\b",
+            normalized,
+        )
+        or re.search(r"\bsrc[\\/]", normalized)
+    )
+    docs_editish = bool(
+        re.search(r"\bdocs\b", normalized)
+        and re.search(r"\b(improve|improvement|edit|modify|fix|update|explain|explaining)\b", normalized)
+    )
+    appish = re.search(
+        r"\b(app|application|tool|player|checker|meter|pad|board|tracker|calculator|timer|converter|generator|"
+        r"splitter|splittr|counter|calendar|picker|quiz|flashcard|stopwatch|countdown|gallery|tabs?|accordion|"
+        r"progress|rating|widget|switcher|switch|toggle|mode|flipper|canvas|gauge|sharer)\b",
+        normalized,
+    )
+    explicit_documentish = re.search(r"\b(markdown|readme|guide|document|doc|text file|txt)\b", normalized)
+    checklist_documentish = re.search(r"\bchecklist\b", normalized) and explicit_documentish
+    notes_documentish = re.search(r"\bnotes?\b", normalized) and explicit_documentish and not appish
+    markdown_previewerish = bool(re.search(r"\bmarkdown\b", normalized) and re.search(r"\b(previewer|viewer|editor)\b", normalized))
+    markdownish = bool(((explicit_documentish or checklist_documentish) and not markdown_previewerish) or notes_documentish)
     jsonish = re.search(r"\b(json|config example|configuration example|sample config|example config)\b", normalized)
     static_pageish = re.search(
         r"\b(homepage|home page|landing page|index\.html|html page|static page|website|web page)\b",
         normalized,
     )
     browser_uiish = re.search(
-        r"\b(page|site|app|demo|prototype|ui|interface|dashboard|panel|viewer|tracker|portal|screen|widget)\b",
+        r"\b(page|site|app|application|tool|demo|mockup|prototype|ui|interface|dashboard|panel|viewer|previewer|editor|"
+        r"tracker|portal|screen|widget|card|forecast|weather|player|podcast|radio|audio|checker|meter|password|safety|pad|board|"
+        r"canvas|doodle|drawing|draw|paint|calculator|budget|bill|fees?|costs?|share|shares|sharing|sharer|tip|timer|converter|generator|splits?|splitter|splittr|counter|"
+        r"calendar|picker|quiz|flashcard|stopwatch|countdown|gallery|tabs?|accordion|progress|rating|checklist|"
+        r"todo|to-do|list|notes?|switcher|switch|toggle|mode|flipper|color|palette|dusk|dawn|sunset|"
+        r"phrase|passphrase|strength|gauge)\b",
         normalized,
     )
     bundleish = re.search(r"\b(bundle|tiny project|small project|static demo|demo bundle)\b", normalized)
     textish = re.search(r"\b(text file|txt|artifact|example)\b", normalized)
-    implementationish = re.search(
-        r"\b(fix|refactor|wire|database|api|backend|server|component|route|auth|integrate|migration)\b",
-        normalized,
-    )
+    implementationish = re.search(r"\b(fix|refactor|wire|database|api|backend|server|component|route|auth|integrate|migration)\b", normalized)
     disposable_hint = re.search(
         r"\b(tiny|small|simple|standalone|static|demo|artifact|example|prototype|draft|mock|sample)\b",
         normalized,
     )
+    if (
+        real_repoish
+        and not messy_homepage_diagnostic
+        and not docs_editish
+        and not (disposable_hint and browser_uiish)
+        and not markdownish
+        and not jsonish
+    ):
+        return None
+    if docs_editish:
+        return None
     if implementationish and not (browser_uiish and disposable_hint) and not markdownish and not jsonish:
         return None
     if markdownish:
@@ -422,6 +491,22 @@ def _explicit_target_shape(target: str) -> str:
     if target.lower().endswith((".md", ".json", ".yaml", ".yml", ".toml", ".xml")):
         return "explicit_docs_or_config_edit"
     return "bounded_existing_repo_edit"
+
+
+def _supervised_real_repo_create_allowed(
+    *,
+    target: str,
+    allowed_files: list[str],
+    forbidden_files: list[str],
+) -> bool:
+    if not target or target not in allowed_files:
+        return False
+    if path_matches_forbidden(target, forbidden_files):
+        return False
+    lowered = target.lower()
+    if lowered.startswith(("src/", "source_proxy/", "scripts/", "app/", "pages/")):
+        return False
+    return True
 
 
 def _artifact_class_for_path(target: str) -> str:

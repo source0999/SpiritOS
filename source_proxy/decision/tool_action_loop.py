@@ -161,6 +161,15 @@ def run_bounded_agent_loop(
             final_state = action_state
             break
 
+        artifact_error = _artifact_output_contract_error(request, executions)
+        if artifact_error:
+            observations.append(artifact_error)
+            if verification_repairs < request.max_verification_repairs:
+                verification_repairs += 1
+                continue
+            final_state = "failed_verification"
+            break
+
         check_state = _run_or_skip_checks(request, executions, observations, skipped_checks)
         if check_state == "completed":
             final_state = "completed"
@@ -282,7 +291,63 @@ def _model_packet(
             "run_recommended_checks": request.run_recommended_checks,
             "recommended_checks": list(request.recommended_checks),
         },
+        "bounded_repair_contract": _bounded_repair_contract(request, observations),
     }
+
+
+def _artifact_output_contract_error(
+    request: BoundedAgentLoopRequest,
+    executions: list[dict[str, Any]],
+) -> dict[str, Any] | None:
+    context = request.context_packet
+    artifact_class = str(context.get("artifact_class") or context.get("proxy_artifact_class_suggested") or "")
+    if artifact_class not in {"static_ui_artifact", "html_static_page"}:
+        return None
+    changed = sorted(
+        {
+            str(path)
+            for execution in executions
+            if (execution.get("result") or {}).get("status") == "completed"
+            for path in (execution.get("result") or {}).get("files_touched") or []
+        }
+    )
+    html_changed = [path for path in changed if path.lower().endswith((".html", ".htm"))]
+    if html_changed:
+        return None
+    reason = "no_browser_viewable_html_artifact" if changed else "no_files_changed"
+    return {
+        "type": "artifact_contract_error",
+        "error_code": reason,
+        "repair_prompt": _interactive_artifact_repair_prompt(reason),
+        "changed_files": changed,
+    }
+
+
+def _bounded_repair_contract(
+    request: BoundedAgentLoopRequest,
+    observations: list[dict[str, Any]],
+) -> dict[str, Any]:
+    context = request.context_packet
+    artifact_class = str(context.get("artifact_class") or context.get("proxy_artifact_class_suggested") or "")
+    if artifact_class not in {"static_ui_artifact", "html_static_page"}:
+        return {}
+    if not observations:
+        return {}
+    return {
+        "scope": "disposable_interactive_artifact_only",
+        "instructions": _interactive_artifact_repair_prompt("previous_output_not_previewable"),
+        "max_repairs": request.max_verification_repairs,
+    }
+
+
+def _interactive_artifact_repair_prompt(reason: str) -> str:
+    return (
+        f"Previous output failed the disposable interactive artifact contract ({reason}). "
+        "Return Source Proxy action JSON only. Write at least one .html file; optional .css and .js files are allowed. "
+        "Use relative paths only inside the disposable workspace. Do not use real repo paths, absolute paths, path traversal, "
+        "protected/secret paths, shell commands, network, markdown-only output, or backend fallback content. "
+        "The model must author every target path and full file content."
+    )
 
 
 def _build_receipt(
@@ -313,6 +378,7 @@ def _build_receipt(
         or request.task_spec.get("allowed_scope_source")
         or "",
         "proxy_artifact_class_suggested": request.context_packet.get("artifact_class") or "",
+        "behavior_contract": request.context_packet.get("behavior_contract") or {},
         "proxy_exact_target_suggested": request.context_packet.get("proxy_exact_target_suggested") or "",
         "model_authored_targets": sorted(
             {

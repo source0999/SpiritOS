@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import difflib
+import fnmatch
 import os
 import re
 import shlex
@@ -54,6 +55,7 @@ class ToolActionWorkspaceContract:
     allowed_file_extensions: tuple[str, ...] = ()
     forbidden_files: tuple[str, ...] = ()
     protected_paths: tuple[str, ...] = ()
+    workspace_mode: str = "disposable_workspace"
     approval_level: str = "disposable_workspace"
     model_may_choose_paths: bool = False
     max_file_count: int = 8
@@ -102,6 +104,15 @@ class ToolActionExecutionReceipt:
     blocked_reason: str = ""
     error_code: str = ""
     adapter_source: str = "generic"
+    workspace_mode: str = "disposable_workspace"
+    scope_root: str = ""
+    allowed_files: tuple[str, ...] = ()
+    attempted_action_paths: tuple[str, ...] = ()
+    changed_paths: tuple[str, ...] = ()
+    blocked_paths: tuple[str, ...] = ()
+    target_exists_before: bool = False
+    target_exists_after: bool = False
+    whole_repo_file_count_not_used: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -119,6 +130,15 @@ class ToolActionExecutionReceipt:
             "blocked_reason": self.blocked_reason,
             "error_code": self.error_code,
             "adapter_source": self.adapter_source,
+            "workspace_mode": self.workspace_mode,
+            "scope_root": self.scope_root,
+            "allowed_files": list(self.allowed_files),
+            "attempted_action_paths": list(self.attempted_action_paths),
+            "changed_paths": list(self.changed_paths),
+            "blocked_paths": list(self.blocked_paths),
+            "target_exists_before": self.target_exists_before,
+            "target_exists_after": self.target_exists_after,
+            "whole_repo_file_count_not_used": self.whole_repo_file_count_not_used,
         }
 
 
@@ -199,7 +219,12 @@ def _execute_write_file(
     content = action.arguments.get("content")
     if not isinstance(content, str):
         return _blocked_execution(action, contract, before, before, "content_required", "WriteFile requires string content.")
-    if not resolved.path.exists() and before.file_count >= contract.max_file_count:
+    target_exists_before = resolved.path.exists()
+    if (
+        not _uses_supervised_real_repo_scope(contract)
+        and not target_exists_before
+        and before.file_count >= contract.max_file_count
+    ):
         return _blocked_execution(
             action,
             contract,
@@ -208,12 +233,31 @@ def _execute_write_file(
             "file_count_limit_exceeded",
             f"Disposable workspace file count limit exceeded: {contract.max_file_count}.",
         )
+    if _uses_supervised_real_repo_scope(contract) and len(contract.normalized_allowed_files()) > contract.max_file_count:
+        return _blocked_execution(
+            action,
+            contract,
+            before,
+            before,
+            "file_count_limit_exceeded",
+            f"Approved real-repo file count limit exceeded: {contract.max_file_count}.",
+        )
     old = _read_text_if_exists(resolved.path)
     resolved.path.parent.mkdir(parents=True, exist_ok=True)
     resolved.path.write_text(content, encoding="utf-8")
     after = workspace_status(contract.workspace_root)
     diff = _unified_diff(resolved.repo_path, old, content)
-    return _completed_execution(action, contract, resolved, before, after, files_touched=(resolved.repo_path,), diff_summary=diff)
+    return _completed_execution(
+        action,
+        contract,
+        resolved,
+        before,
+        after,
+        files_touched=(resolved.repo_path,),
+        diff_summary=diff,
+        target_exists_before=target_exists_before,
+        target_exists_after=resolved.path.exists(),
+    )
 
 
 def _execute_edit_file(
@@ -389,8 +433,9 @@ def _resolve_target(
     repo_path = normalize_repo_path_candidate(action.target or str(action.arguments.get("path") or "."))
     if not repo_path:
         raise _BlockedAction("target_required", "Action target is required.")
-    if repo_path != "." and unsafe_target_finding(repo_path, workspace_root=contract.workspace_root) is not None:
-        raise _BlockedAction("path_escape", "Action target is unsafe or protected.")
+    finding = unsafe_target_finding(repo_path, workspace_root=contract.workspace_root) if repo_path != "." else None
+    if finding is not None:
+        raise _BlockedAction(finding.reason_code, finding.message)
     if _is_protected_repo_path(repo_path, contract):
         raise _BlockedAction("protected_path", "Action target is protected or forbidden.")
     if require_allowed and not _is_allowed_repo_path(repo_path, action, contract):
@@ -424,9 +469,14 @@ def _blocked_command_reason(command: str, contract: ToolActionWorkspaceContract)
 
 
 def _is_allowed_repo_path(repo_path: str, action: SourceProxyAction, contract: ToolActionWorkspaceContract) -> bool:
-    if contract.model_may_choose_paths:
-        return True
     normalized = normalize_repo_path_candidate(repo_path)
+    extensions = {
+        extension.lower() if extension.startswith(".") else f".{extension.lower()}"
+        for extension in contract.allowed_file_extensions
+        if extension
+    }
+    if contract.model_may_choose_paths:
+        return not extensions or any(normalized.lower().endswith(extension) for extension in extensions)
     contract_allowed = set(contract.normalized_allowed_files())
     if contract_allowed:
         allowed = contract_allowed
@@ -438,11 +488,6 @@ def _is_allowed_repo_path(repo_path: str, action: SourceProxyAction, contract: T
         }
     if allowed:
         return normalized in allowed
-    extensions = {
-        extension.lower() if extension.startswith(".") else f".{extension.lower()}"
-        for extension in contract.allowed_file_extensions
-        if extension
-    }
     return bool(extensions) and any(normalized.lower().endswith(extension) for extension in extensions)
 
 
@@ -452,7 +497,17 @@ def _is_protected_repo_path(repo_path: str, contract: ToolActionWorkspaceContrac
         return False
     if normalized in contract.normalized_forbidden_files():
         return True
+    if any(fnmatch.fnmatchcase(normalized, pattern) for pattern in contract.normalized_forbidden_files()):
+        return True
     return unsafe_target_finding(normalized, workspace_root=contract.workspace_root) is not None
+
+
+def _uses_supervised_real_repo_scope(contract: ToolActionWorkspaceContract) -> bool:
+    return contract.workspace_mode == "real_repo_supervised" or contract.approval_level in {
+        "manual_apply_required",
+        "real_repo_supervised",
+        "explicit_phase_3a_apply_approved",
+    }
 
 
 def _assert_inside_workspace(candidate: Path, root: Path) -> None:
@@ -521,8 +576,24 @@ def _completed_execution(
     stdout: str = "",
     stderr: str = "",
     observation: str = "",
+    target_exists_before: bool | None = None,
+    target_exists_after: bool | None = None,
 ) -> ToolActionExecution:
-    return _execution(action, contract, resolved, before, after, status="completed", files_touched=files_touched, diff_summary=diff_summary, stdout=stdout, stderr=stderr, observation=observation)
+    return _execution(
+        action,
+        contract,
+        resolved,
+        before,
+        after,
+        status="completed",
+        files_touched=files_touched,
+        diff_summary=diff_summary,
+        stdout=stdout,
+        stderr=stderr,
+        observation=observation,
+        target_exists_before=target_exists_before,
+        target_exists_after=target_exists_after,
+    )
 
 
 def _execution(
@@ -540,7 +611,15 @@ def _execution(
     observation: str = "",
     error_code: str = "",
     blocked_reason: str = "",
+    target_exists_before: bool | None = None,
+    target_exists_after: bool | None = None,
 ) -> ToolActionExecution:
+    inferred_exists = resolved.path.exists() if resolved.path != contract.workspace_root.resolve() else False
+    exists_before = inferred_exists if target_exists_before is None else target_exists_before
+    exists_after = inferred_exists if target_exists_after is None else target_exists_after
+    attempted = tuple([resolved.repo_path] if resolved.repo_path else [])
+    changed = tuple(files_touched)
+    blocked = attempted if status == "blocked" else ()
     receipt = ToolActionExecutionReceipt(
         action_id=action.action_id,
         action_type=action.action_type,
@@ -556,6 +635,15 @@ def _execution(
         blocked_reason=blocked_reason,
         error_code=error_code,
         adapter_source=action.adapter_source,
+        workspace_mode=contract.workspace_mode,
+        scope_root=str(contract.workspace_root.resolve()),
+        allowed_files=tuple(sorted(contract.normalized_allowed_files())),
+        attempted_action_paths=attempted,
+        changed_paths=changed,
+        blocked_paths=blocked,
+        target_exists_before=exists_before,
+        target_exists_after=exists_after,
+        whole_repo_file_count_not_used=_uses_supervised_real_repo_scope(contract),
     )
     result = SourceProxyActionResult(
         action_id=action.action_id,

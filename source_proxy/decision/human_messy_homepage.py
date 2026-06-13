@@ -9,6 +9,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Literal
 
+from source_proxy.decision.artifact_behavior_contract import (
+    build_artifact_behavior_contract,
+    summarize_behavior_contract_for_prompt,
+)
+from source_proxy.decision.artifact_final_verdict import normalize_artifact_final_verdict
+from source_proxy.decision.artifact_preview_resolution import resolve_artifact_preview_path
+from source_proxy.decision.expectation_scoring import build_expectation_score
+from source_proxy.decision.model_lanes import lane_selection_observability
 from source_proxy.decision.task_spec_intake import (
     build_task_spec_intake,
     intake_as_legacy_task_spec,
@@ -75,7 +83,14 @@ def run_human_messy_homepage(
         forbidden_files=tuple(task_spec_intake.forbidden_files),
         protected_paths=tuple(task_spec_intake.protected_paths),
         approval_level="disposable_workspace",
-        model_may_choose_paths=(mode == "pure"),
+        model_may_choose_paths=(
+            mode == "pure"
+            or (
+                mode == "product"
+                and task_spec_intake.workspace_mode == "disposable_workspace"
+                and task_spec_intake.target_source == "model_authored_required"
+            )
+        ),
         max_file_count=task_spec_intake.max_file_count if mode == "product" else 8,
         network_allowed=False,
         run_timeout_seconds=10,
@@ -90,8 +105,8 @@ def run_human_messy_homepage(
         source_message_id="human-messy-homepage",
         recommended_checks=(),
         run_recommended_checks=False,
-        max_format_retries=2,
-        max_verification_repairs=0,
+        max_format_retries=1,
+        max_verification_repairs=1 if mode == "product" else 0,
     )
 
     def call_model(packet: dict[str, Any]) -> str:
@@ -132,6 +147,7 @@ def run_human_messy_homepage(
         raw_transcript_path=transcript_path,
         receipt_path=receipt_path,
     )
+    score["expectation_score"] = build_expectation_score(score=score, receipt=receipt)
     score_path.parent.mkdir(parents=True, exist_ok=True)
     score_path.write_text(json.dumps(score, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return score
@@ -185,9 +201,16 @@ def _context_packet_for_mode(
         else "product_route_uses_proxy_orchestration",
     }
     if mode == "product":
+        behavior_contract = build_artifact_behavior_contract(
+            prompt=prompt,
+            artifact_class=str(intake.get("artifact_class") or ""),
+            task_shape=str(intake.get("task_shape") or ""),
+        )
         packet["task_shape"] = intake.get("task_shape") or ""
         packet["task_shape_source"] = intake.get("task_shape_source") or ""
         packet["artifact_class"] = intake.get("artifact_class") or ""
+        packet["behavior_contract"] = behavior_contract
+        packet["behavior_contract_summary"] = summarize_behavior_contract_for_prompt(behavior_contract)
         packet["allowed_extensions"] = list(contract.allowed_file_extensions)
         packet["allowed_files"] = list(contract.allowed_files)
         packet["protected_paths"] = list(contract.protected_paths)
@@ -228,12 +251,18 @@ def score_human_messy_homepage_result(
     proxy_orchestration_used = _proxy_orchestration_used(receipt)
     diagnostics_task_shape = str(diagnostics.get("task_shape") or "")
     artifact_class = str(diagnostics.get("proxy_artifact_class_suggested") or "")
+    behavior_contract = dict(diagnostics.get("behavior_contract") or {})
     allowed_files_source = str(diagnostics.get("allowed_scope_source") or ("product_helper" if product_helper_used else "none"))
     target_path_source = "system_preselected" if system_preselected_target else "model_action"
     path_selection_mode = "model_chosen" if not system_preselected_target else "proxy_exact_target"
     model_authored_targets = list(diagnostics.get("model_authored_targets") or model_write_targets)
     model_chose_target = bool(model_authored_targets) and not system_preselected_target
     openable_homepage_paths = _openable_homepage_paths(workspace, files_changed)
+    preview_resolution = resolve_artifact_preview_path(
+        workspace=workspace,
+        prompt=prompt,
+        score={"openable_homepage_paths": openable_homepage_paths},
+    ).to_dict()
     openable_homepage = bool(openable_homepage_paths)
     content_byte_match_by_target = _content_byte_match_by_target(workspace, files_changed, parsed_actions)
     file_equals_model_action_content = _file_equals_model_action_content(
@@ -324,8 +353,39 @@ def score_human_messy_homepage_result(
         if pure_mode and not model_chose_target:
             reason_codes.append("model_target_not_proven")
 
+    behavior_required = bool(behavior_contract.get("behavior_required")) or (
+        (not pure_mode) and artifact_class in {"", "html_static_page", "static_ui_artifact"}
+    )
+    lane_observability = lane_selection_observability(
+        task_type="disposable_artifact" if not pure_mode else "pure_diagnostic",
+        evidence_refs=[str(receipt_path), str(raw_transcript_path)],
+    )
+    canonical_final_verdict = normalize_artifact_final_verdict(
+        route_status=status,
+        artifact_ready=product_artifact_ok if not pure_mode else pure_common_go,
+        behavior_required=behavior_required,
+        behavior_verdict=None,
+        reason_codes=reason_codes,
+    )
+
     return {
         "status": status,
+        "route_status": status,
+        "canonical_final_verdict": canonical_final_verdict["label"],
+        "product_pass": canonical_final_verdict["product_pass"],
+        "behavior_required_for_final_pass": behavior_required,
+        "behavior_contract": behavior_contract,
+        "behavior_verdict": canonical_final_verdict["behavior_verdict"],
+        "final_verdict_reason_codes": canonical_final_verdict["reason_codes"],
+        "model_lane_observability": lane_observability,
+        "selected_coder_lane": lane_observability["selected_coder_lane"],
+        "sidecar_lanes_considered": lane_observability["sidecar_lanes_considered"],
+        "verifier_lane_required": lane_observability["verifier_lane_required"],
+        "lane_privacy_class": lane_observability["lane_privacy_class"],
+        "lane_cost_class": lane_observability["lane_cost_class"],
+        "lane_approval_required": lane_observability["lane_approval_required"],
+        "lane_selection_reason_codes": lane_observability["lane_selection_reason_codes"],
+        "lane_evidence_refs": lane_observability["lane_evidence_refs"],
         "mode": mode,
         "path_selection_mode": path_selection_mode,
         "target_path_source": target_path_source,
@@ -364,6 +424,11 @@ def score_human_messy_homepage_result(
         "workspace_files": workspace_files,
         "openable_homepage": openable_homepage,
         "openable_homepage_paths": openable_homepage_paths,
+        "selected_preview_path": preview_resolution["selected_path"],
+        "preview_selection_reason": preview_resolution["selection_reason"],
+        "preview_resolution_status": preview_resolution["status"],
+        "preview_resolution_reason_codes": preview_resolution["reason_codes"],
+        "preview_candidate_paths": preview_resolution["candidate_paths"],
         "preview_url": preview_url,
         "real_app_touched": real_app_touched,
         "fallback_used": fallback_used,
@@ -385,9 +450,14 @@ def _render_model_prompt(packet: dict[str, Any]) -> str:
     observations = packet.get("observations") or []
     retry_note = ""
     if observations:
+        repair_contract = packet.get("bounded_repair_contract") or {}
+        repair_instructions = ""
+        if isinstance(repair_contract, dict) and repair_contract.get("instructions"):
+            repair_instructions = f"\n{repair_contract['instructions']}\n"
         retry_note = (
             "\nPrevious output could not be executed. Return only one supported action now. "
             f"Observations: {json.dumps(observations, ensure_ascii=False)}\n"
+            f"{repair_instructions}"
         )
     if mode == "pure":
         return (
@@ -415,6 +485,10 @@ def _render_model_prompt(packet: dict[str, Any]) -> str:
         f"Allowed extensions: {json.dumps(context.get('allowed_extensions') or [])}.\n"
         f"Exact allowed files, if any: {json.dumps(context.get('allowed_files') or [])}.\n"
         f"Maximum file count: {context.get('max_file_count', 1)}.\n"
+        f"{context.get('behavior_contract_summary') or ''}\n"
+        f"{_artifact_family_implementation_checklist(context)}"
+        "For interactive artifacts, include visible controls and visible state/output that changes after the required user action. "
+        "If you create multiple files, ensure the HTML links its CSS and JS using relative paths.\n"
         f"User prompt: {context['user_prompt']}\n"
         f"{retry_note}"
     )
@@ -422,6 +496,43 @@ def _render_model_prompt(packet: dict[str, Any]) -> str:
 
 def _default_forbidden_files() -> list[str]:
     return [".env", ".env.*", "*.pem", "*.key", "certificates/*"]
+
+
+def _artifact_family_implementation_checklist(context: dict[str, Any]) -> str:
+    contract = context.get("behavior_contract") if isinstance(context.get("behavior_contract"), dict) else {}
+    targets = contract.get("probe_targets") if isinstance(contract.get("probe_targets"), list) else []
+    probe_id = str((targets[0] if targets and isinstance(targets[0], dict) else {}).get("probe_id") or "")
+    if probe_id == "timer-start-stop-freeze":
+        return (
+            "Implementation checklist: create visible time/count text; wire Start to a local setInterval or equivalent state loop; "
+            "after a short wait the displayed value must differ; Stop freezes if present; Reset returns to the initial value if present.\n"
+        )
+    if probe_id == "music-player-control-state":
+        return (
+            "Implementation checklist: include visible player status or track text; play/pause must toggle visible label/status; "
+            "next/skip must change visible track/state if present.\n"
+        )
+    if probe_id == "password-strength-feedback-change":
+        return (
+            "Implementation checklist: wire input events locally; weak and stronger password, phrase, or passphrase values must produce different visible strength text, class, color, or status.\n"
+        )
+    if probe_id == "drawing-surface-changes":
+        return (
+            "Implementation checklist: prefer a real canvas element; wire pointer/mouse down/move/up handlers; dragging on the canvas/surface must visibly draw marks or change pixels; keep canvas ids and script selectors consistent; do not clear marks on mouseup unless a separate clear control is used.\n"
+        )
+    if probe_id == "notes-create-edit-visible-note":
+        return (
+            "Implementation checklist: after add/save/edit, render the actual typed note text in a visible note/list/card area; a saved-status message alone is not enough.\n"
+        )
+    if probe_id == "theme-computed-color-change":
+        return (
+            "Implementation checklist: include a browser-viewable HTML entrypoint and local control for dark/light, dusk/dawn, sunrise/sunset, palette, or color mood changes; interaction must change computed background/text color or body class.\n"
+        )
+    if probe_id == "weather-card-fields":
+        return (
+            "Implementation checklist: render visible city, temperature, condition, forecast, or status text; if a local demo control is present, clicking it must mutate visible weather/forecast DOM text.\n"
+        )
+    return ""
 
 
 def _ollama_generate(prompt: str, *, model_id: str, ollama_api: str) -> str:
