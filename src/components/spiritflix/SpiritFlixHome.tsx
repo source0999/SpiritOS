@@ -4,15 +4,18 @@
 // Face Organizer integration v1 - Model sorting from sidecars + known_performers - Z Fold optimized
 // Layout v2 - Model-centric + Grid/List toggle - Z Fold optimized - Codex executed 2026-06-04
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ChevronLeft,
   ChevronRight,
   Clock3,
   Grid2X2,
+  Images,
   List,
   LogOut,
+  Maximize2,
+  Pause,
   Play,
   RefreshCw,
   RotateCcw,
@@ -22,6 +25,8 @@ import {
   SlidersHorizontal,
   Shuffle,
   Sparkles,
+  Timer,
+  X,
 } from "lucide-react";
 import { formatRuntime, isPlayableItem, type JellyfinClient } from "@/lib/spiritflix-jellyfin-client";
 import {
@@ -36,6 +41,8 @@ import type {
   FaceOrganizerStatus,
   FaceOrganizerVideoMatch,
   JellyfinItem,
+  SpiritFlixGalleryItem,
+  SpiritFlixGalleryResponse,
   SpiritFlixHomeData,
   SpiritFlixServerInfo,
   SpiritFlixSession,
@@ -60,13 +67,15 @@ interface SpiritFlixHomeProps {
   onPlay: (item: JellyfinItem, queueItems?: JellyfinItem[], sourceTitle?: string, startPositionTicks?: number) => void;
 }
 
-type LibraryViewMode = "grid" | "list" | "history";
+type LibraryViewMode = "grid" | "list" | "history" | "gallery";
 type LibrarySortMode = "model" | "title" | "dateAdded" | "duration";
 type LibrarySortDirection = "asc" | "desc";
 
 interface ModelGroup {
   name: string;
   count: number;
+  indexedCount: number;
+  liveSourceCount?: number;
   items: JellyfinItem[];
   representative: JellyfinItem;
   source: "face-organizer" | "jellyfin";
@@ -77,7 +86,8 @@ interface ModelGroup {
 const LIBRARY_VIEW_MODE_KEY = "spiritflix_library_view_mode";
 const LIBRARY_SORT_MODE_KEY = "spiritflix_library_sort_mode";
 const LIBRARY_SORT_DIRECTION_KEY = "spiritflix_library_sort_direction";
-const FACE_METADATA_CACHE_KEY = "spiritflix_face_metadata_v1";
+const FACE_METADATA_CACHE_KEY = "spiritflix_face_metadata_v5";
+const GALLERY_INTERVAL_KEY = "spiritflix_gallery_interval_seconds";
 const TEMP_LIBRARY_NAME = "Home Videos and Photos";
 const MODEL_NAME_ALIASES: Record<string, string> = {
   aaliyahyasan: "Aaliyah Yasan",
@@ -127,6 +137,18 @@ function normalizeModelName(name: string): string {
   return MODEL_NAME_ALIASES[getModelAliasKey(name)] ?? name;
 }
 
+function getOrganizerModelName(name: string, faceMetadata: FaceOrganizerMetadataResponse | null): string | undefined {
+  return faceMetadata?.enrolledSources?.[getModelAliasKey(name)]?.name;
+}
+
+function getCanonicalModelName(name: string, faceMetadata: FaceOrganizerMetadataResponse | null): string {
+  return getOrganizerModelName(name, faceMetadata) ?? normalizeModelName(name);
+}
+
+function getLiveSourceCount(name: string, faceMetadata: FaceOrganizerMetadataResponse | null): number | undefined {
+  return faceMetadata?.enrolledSources?.[getModelAliasKey(name)]?.candidateVideos;
+}
+
 function isNonModelFolderName(name?: string): boolean {
   return Boolean(name && NON_MODEL_FOLDER_NAMES.has(getModelAliasKey(name)));
 }
@@ -156,8 +178,8 @@ function hasIdentifiedFace(match?: FaceOrganizerVideoMatch): boolean {
 
 function getDisplayModelName(item: JellyfinItem, faceMetadata: FaceOrganizerMetadataResponse | null): string {
   const faceMatch = getFaceMatch(item, faceMetadata);
-  if (hasIdentifiedFace(faceMatch)) return normalizeModelName(faceMatch?.primaryPerformer?.name ?? "Unknown");
-  return normalizeModelName(getModelName(item));
+  if (hasIdentifiedFace(faceMatch)) return getCanonicalModelName(faceMatch?.primaryPerformer?.name ?? "Unknown", faceMetadata);
+  return getCanonicalModelName(getModelName(item), faceMetadata);
 }
 
 function getStatusRank(status?: FaceOrganizerStatus): number {
@@ -175,7 +197,7 @@ function buildModelGroups(items: JellyfinItem[], faceMetadata: FaceOrganizerMeta
     const faceMatch = getFaceMatch(item, faceMetadata);
     const isFaceIdentified = hasIdentifiedFace(faceMatch);
     const rawModelName = isFaceIdentified ? faceMatch?.primaryPerformer?.name ?? getModelName(item) : getModelName(item);
-    const modelName = normalizeModelName(rawModelName);
+    const modelName = getCanonicalModelName(rawModelName, faceMetadata);
     groups.set(modelName, [...(groups.get(modelName) ?? []), item]);
     const current = metaByName.get(modelName);
     const next = {
@@ -189,20 +211,26 @@ function buildModelGroups(items: JellyfinItem[], faceMetadata: FaceOrganizerMeta
   });
 
   return Array.from(groups.entries())
-    .map(([name, modelItems]) => ({
-      name,
-      count: modelItems.length,
-      items: modelItems,
-      representative: modelItems.find((item) => item.ImageTags?.Primary || item.ImageTags?.Thumb) ?? modelItems[0],
-      source: metaByName.get(name)?.source ?? "jellyfin",
-      status: metaByName.get(name)?.status ?? "unscanned",
-      confidence: metaByName.get(name)?.confidence,
-    }))
+    .map(([name, modelItems]) => {
+      const indexedCount = modelItems.length;
+      const liveSourceCount = getLiveSourceCount(name, faceMetadata);
+      return {
+        name,
+        count: indexedCount,
+        indexedCount,
+        liveSourceCount,
+        items: modelItems,
+        representative: modelItems.find((item) => item.ImageTags?.Primary || item.ImageTags?.Thumb) ?? modelItems[0],
+        source: metaByName.get(name)?.source ?? "jellyfin",
+        status: metaByName.get(name)?.status ?? "unscanned",
+        confidence: metaByName.get(name)?.confidence,
+      };
+    })
     .sort(
       (left, right) =>
         getStatusRank(left.status) - getStatusRank(right.status) ||
         Number(right.source === "face-organizer") - Number(left.source === "face-organizer") ||
-        right.count - left.count ||
+        right.indexedCount - left.indexedCount ||
         left.name.localeCompare(right.name),
     );
 }
@@ -245,6 +273,26 @@ function getLastPlayedLabel(item: JellyfinItem): string {
     hour: "numeric",
     minute: "2-digit",
   }).format(new Date(playedAt));
+}
+
+function getModelSlug(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || getModelAliasKey(name);
+}
+
+function galleryItemMatchesModel(item: SpiritFlixGalleryItem, modelName: string): boolean {
+  const modelKey = getModelAliasKey(modelName);
+  const modelSlug = getModelSlug(modelName);
+  return item.modelKey === modelKey || item.modelSlug === modelSlug || getModelAliasKey(item.modelName) === modelKey;
+}
+
+function getGalleryDateLabel(item: SpiritFlixGalleryItem): string {
+  if (!item.uploadedAt) return "Gallery";
+  const value = new Date(item.uploadedAt).getTime();
+  if (!Number.isFinite(value)) return "Gallery";
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+  }).format(new Date(value));
 }
 
 function getDurationTicks(item: JellyfinItem): number {
@@ -329,6 +377,146 @@ function LibraryFeedCard({ client, item, playOnPrimaryTap, onOpenDetails, onPlay
   );
 }
 
+interface GalleryCardProps {
+  item: SpiritFlixGalleryItem;
+  onOpen: () => void;
+}
+
+function GalleryCard({ item, onOpen }: GalleryCardProps) {
+  return (
+    <motion.button
+      type="button"
+      className="spiritflix-gallery-card"
+      onClick={onOpen}
+      whileTap={{ scale: 0.985 }}
+    >
+      <img src={item.thumbnailSrc ?? item.src} alt={`${item.modelName} gallery`} loading="lazy" decoding="async" />
+      <span className="spiritflix-gallery-card__shade" aria-hidden="true" />
+      <span className="spiritflix-gallery-card__meta">
+        <strong>{item.modelName}</strong>
+        <small>{item.collection || getGalleryDateLabel(item)}</small>
+      </span>
+    </motion.button>
+  );
+}
+
+interface GalleryLightboxProps {
+  items: SpiritFlixGalleryItem[];
+  initialIndex: number;
+  onClose: () => void;
+}
+
+function GalleryLightbox({ items, initialIndex, onClose }: GalleryLightboxProps) {
+  const [activeIndex, setActiveIndex] = useState(initialIndex);
+  const [isPlaying, setIsPlaying] = useState(items.length > 1);
+  const [intervalSeconds, setIntervalSeconds] = useState(() => {
+    if (typeof window === "undefined") return 5;
+    const stored = window.localStorage.getItem(GALLERY_INTERVAL_KEY);
+    const value = stored ? Number(stored) : 5;
+    return Number.isFinite(value) ? Math.min(30, Math.max(2, value)) : 5;
+  });
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const activeItem = items[activeIndex] ?? items[0];
+
+  const goToOffset = useCallback(
+    (offset: number) => {
+      setActiveIndex((current) => {
+        if (!items.length) return 0;
+        return (current + offset + items.length) % items.length;
+      });
+    },
+    [items.length],
+  );
+
+  useEffect(() => {
+    setActiveIndex(Math.min(Math.max(initialIndex, 0), Math.max(0, items.length - 1)));
+    setIsPlaying(items.length > 1);
+  }, [initialIndex, items.length]);
+
+  useEffect(() => {
+    window.localStorage.setItem(GALLERY_INTERVAL_KEY, String(intervalSeconds));
+  }, [intervalSeconds]);
+
+  useEffect(() => {
+    if (!isPlaying || items.length <= 1) return undefined;
+    const timer = window.setInterval(() => goToOffset(1), intervalSeconds * 1000);
+    return () => window.clearInterval(timer);
+  }, [goToOffset, intervalSeconds, isPlaying, items.length]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+      if (event.key === "ArrowLeft") goToOffset(-1);
+      if (event.key === "ArrowRight") goToOffset(1);
+      if (event.key === " ") {
+        event.preventDefault();
+        setIsPlaying((current) => !current);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [goToOffset, onClose]);
+
+  const toggleFullscreen = async () => {
+    if (document.fullscreenElement) {
+      await document.exitFullscreen().catch(() => undefined);
+      return;
+    }
+    await rootRef.current?.requestFullscreen().catch(() => undefined);
+  };
+
+  if (!activeItem) return null;
+
+  return (
+    <div className="spiritflix-gallery-viewer" ref={rootRef} role="dialog" aria-modal="true">
+      <div className="spiritflix-gallery-viewer__stage">
+        <img src={activeItem.src} alt={`${activeItem.modelName} gallery picture`} />
+      </div>
+      <div className="spiritflix-gallery-viewer__top">
+        <button type="button" onClick={onClose} aria-label="Close gallery">
+          <X size={22} aria-hidden="true" />
+        </button>
+        <div className="spiritflix-gallery-viewer__title">
+          <strong>{activeItem.modelName}</strong>
+          <span>
+            {activeIndex + 1} / {items.length}
+            {activeItem.collection ? ` / ${activeItem.collection}` : ""}
+          </span>
+        </div>
+        <button type="button" onClick={toggleFullscreen} aria-label="Fullscreen gallery">
+          <Maximize2 size={21} aria-hidden="true" />
+        </button>
+      </div>
+      <div className="spiritflix-gallery-viewer__controls">
+        <button type="button" onClick={() => goToOffset(-1)} disabled={items.length <= 1} aria-label="Previous picture">
+          <ChevronLeft size={24} aria-hidden="true" />
+        </button>
+        <button type="button" onClick={() => setIsPlaying((current) => !current)} disabled={items.length <= 1} aria-label={isPlaying ? "Pause gallery" : "Play gallery"}>
+          {isPlaying ? <Pause size={22} aria-hidden="true" /> : <Play size={22} fill="currentColor" aria-hidden="true" />}
+        </button>
+        <label className="spiritflix-gallery-viewer__timer">
+          <Timer size={18} aria-hidden="true" />
+          <input
+            type="number"
+            min={2}
+            max={30}
+            step={1}
+            value={intervalSeconds}
+            onChange={(event) => {
+              const value = Number(event.target.value);
+              if (Number.isFinite(value)) setIntervalSeconds(Math.min(30, Math.max(2, value)));
+            }}
+            aria-label="Gallery seconds per picture"
+          />
+        </label>
+        <button type="button" onClick={() => goToOffset(1)} disabled={items.length <= 1} aria-label="Next picture">
+          <ChevronRight size={24} aria-hidden="true" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function SpiritFlixHome({
   client,
   data,
@@ -352,6 +540,9 @@ export function SpiritFlixHome({
   const [selectedModel, setSelectedModel] = useState<string | null>(null);
   const [faceMetadata, setFaceMetadata] = useState<FaceOrganizerMetadataResponse | null>(null);
   const [faceMetadataError, setFaceMetadataError] = useState("");
+  const [galleryData, setGalleryData] = useState<SpiritFlixGalleryResponse | null>(null);
+  const [galleryError, setGalleryError] = useState("");
+  const [galleryLightbox, setGalleryLightbox] = useState<{ items: SpiritFlixGalleryItem[]; index: number } | null>(null);
   const [playPrimaryTapOnMobile, setPlayPrimaryTapOnMobile] = useState(false);
   const longPressTimerRef = useRef<number | null>(null);
   const didLongPressShuffleRef = useRef(false);
@@ -366,6 +557,12 @@ export function SpiritFlixHome({
   const modelGroups = useMemo(() => buildModelGroups(data.libraryItems, faceMetadata), [data.libraryItems, faceMetadata]);
   const selectedModelGroup = selectedModel ? modelGroups.find((model) => model.name === selectedModel) : null;
   const playableLibraryItems = useMemo(() => data.libraryItems.filter(isPlayableItem), [data.libraryItems]);
+  const galleryItems = useMemo(() => galleryData?.items ?? [], [galleryData]);
+  const selectedModelGalleryItems = useMemo(
+    () => (selectedModelGroup ? galleryItems.filter((item) => galleryItemMatchesModel(item, selectedModelGroup.name)) : []),
+    [galleryItems, selectedModelGroup],
+  );
+  const visibleGalleryItems = selectedModelGroup ? selectedModelGalleryItems : galleryItems;
   const visibleLibraryItems = useMemo(() => {
     const sourceItems = selectedModelGroup?.items ?? playableLibraryItems;
     const direction = sortDirection === "asc" ? 1 : -1;
@@ -446,6 +643,7 @@ export function SpiritFlixHome({
     { label: "Videos", value: playableLibraryItems.length },
     { label: "Models", value: modelGroups.length },
     { label: "Selected", value: selectedModelGroup?.count ?? playableLibraryItems.length },
+    { label: "Pics", value: visibleGalleryItems.length },
     { label: "Identified", value: playableLibraryItems.filter((item) => hasIdentifiedFace(getFaceMatch(item, faceMetadata))).length },
     { label: "Review", value: playableLibraryItems.filter((item) => getFaceMatch(item, faceMetadata)?.status === "needs_review").length },
     { label: "Unscanned", value: playableLibraryItems.filter((item) => getFaceMatch(item, faceMetadata)?.status === "unscanned").length },
@@ -472,17 +670,34 @@ export function SpiritFlixHome({
         : libraryTitle;
   const canPlayHero = hero ? isPlayableItem(hero) : false;
 
+  const loadGallery = useCallback(async () => {
+    try {
+      const nextGallery = await client.getGallery();
+      setGalleryData(nextGallery);
+      setGalleryError("");
+    } catch {
+      setGalleryData(null);
+      setGalleryError("Gallery is unavailable; uploaded pictures will appear after the organizer gallery index is reachable.");
+    }
+  }, [client]);
+
+  const handleRefresh = () => {
+    onRefresh();
+    void loadGallery();
+  };
+
   useEffect(() => {
     const stored = window.localStorage.getItem(LIBRARY_VIEW_MODE_KEY);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (stored === "grid" || stored === "list" || stored === "history") setViewMode(stored);
+    if (stored === "grid" || stored === "list" || stored === "history" || stored === "gallery") setViewMode(stored);
     const storedSort = window.localStorage.getItem(LIBRARY_SORT_MODE_KEY);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (storedSort === "model" || storedSort === "title" || storedSort === "dateAdded" || storedSort === "duration") setSortMode(storedSort);
     const storedDirection = window.localStorage.getItem(LIBRARY_SORT_DIRECTION_KEY);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (storedDirection === "asc" || storedDirection === "desc") setSortDirection(storedDirection);
   }, []);
+
+  useEffect(() => {
+    void loadGallery();
+  }, [loadGallery]);
 
   useEffect(() => {
     const queries = [
@@ -509,15 +724,12 @@ export function SpiritFlixHome({
   }, [sortDirection]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedModel(null);
   }, [data.selectedLibraryId, searchTerm]);
 
   useEffect(() => {
     if (isHomeView || !playableLibraryItems.length) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFaceMetadata(null);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFaceMetadataError("");
       return undefined;
     }
@@ -624,11 +836,11 @@ export function SpiritFlixHome({
           />
         </div>
         <div className="spiritflix-topbar__controls">
-          <button className="spiritflix-source-pill" type="button" onClick={onRefresh} title="Refresh Jellyfin source">
+          <button className="spiritflix-source-pill" type="button" onClick={handleRefresh} title="Refresh Jellyfin source">
             <Server size={15} aria-hidden="true" />
             <span>{serverInfo?.ServerName ?? "Jellyfin"}</span>
           </button>
-          <button className="spiritflix-icon-button" type="button" onClick={onRefresh} aria-label="Refresh library">
+          <button className="spiritflix-icon-button" type="button" onClick={handleRefresh} aria-label="Refresh library">
             <RefreshCw size={18} aria-hidden="true" />
           </button>
           <button className="spiritflix-icon-button" type="button" onClick={onLogout} aria-label="Switch source or sign out">
@@ -695,7 +907,7 @@ export function SpiritFlixHome({
                   <Sparkles size={14} aria-hidden="true" />
                   {libraryTitle}
                 </span>
-                <h2>{selectedModelGroup?.name ?? "All Models"}</h2>
+                <h2>{viewMode === "gallery" ? (selectedModelGroup ? `${selectedModelGroup.name} Pics` : "Gallery") : selectedModelGroup?.name ?? "All Models"}</h2>
               </div>
               <div className="spiritflix-view-toggle" aria-label="Library view">
                 <button
@@ -725,8 +937,38 @@ export function SpiritFlixHome({
                   <Clock3 size={18} aria-hidden="true" />
                   <span>History</span>
                 </button>
+                <button
+                  type="button"
+                  className={viewMode === "gallery" ? "is-active" : undefined}
+                  aria-pressed={viewMode === "gallery"}
+                  onClick={() => setViewMode("gallery")}
+                >
+                  <Images size={18} aria-hidden="true" />
+                  <span>Gallery</span>
+                </button>
               </div>
             </div>
+
+            {selectedModelGroup && selectedModelGalleryItems.length ? (
+              <div className="spiritflix-model-tabs" aria-label={`${selectedModelGroup.name} media tabs`}>
+                <button
+                  type="button"
+                  className={viewMode !== "gallery" ? "is-active" : undefined}
+                  aria-pressed={viewMode !== "gallery"}
+                  onClick={() => setViewMode("grid")}
+                >
+                  Videos
+                </button>
+                <button
+                  type="button"
+                  className={viewMode === "gallery" ? "is-active" : undefined}
+                  aria-pressed={viewMode === "gallery"}
+                  onClick={() => setViewMode("gallery")}
+                >
+                  Pics
+                </button>
+              </div>
+            ) : null}
 
             <div className="spiritflix-library-modebar">
               <button
@@ -804,8 +1046,9 @@ export function SpiritFlixHome({
               ))}
             </div>
             {faceMetadataError ? <p className="spiritflix-face-note">{faceMetadataError}</p> : null}
+            {galleryError ? <p className="spiritflix-face-note">{galleryError}</p> : null}
 
-            {continueWatchingItems.length ? (
+            {viewMode !== "gallery" && continueWatchingItems.length ? (
               <section className="spiritflix-resume-section" aria-label="Continue Watching">
                 <div className="spiritflix-resume-section__header">
                   <div>
@@ -854,16 +1097,18 @@ export function SpiritFlixHome({
               </section>
             ) : null}
 
-            <SpiritFlixRail
-              title="Favorites"
-              variant="poster"
-              client={client}
-              items={favoriteItems}
-              playOnPrimaryTap={playPrimaryTapOnMobile}
-              onOpenDetails={onOpenDetails}
-              onPlay={onPlay}
-              emptyText={`No favorites in ${selectedModelGroup?.name ?? libraryTitle} yet.`}
-            />
+            {viewMode !== "gallery" ? (
+              <SpiritFlixRail
+                title="Favorites"
+                variant="poster"
+                client={client}
+                items={favoriteItems}
+                playOnPrimaryTap={playPrimaryTapOnMobile}
+                onOpenDetails={onOpenDetails}
+                onPlay={onPlay}
+                emptyText={`No favorites in ${selectedModelGroup?.name ?? libraryTitle} yet.`}
+              />
+            ) : null}
 
             <section className="spiritflix-model-section" aria-label="Model filters">
               <div className="spiritflix-model-section__header">
@@ -885,27 +1130,47 @@ export function SpiritFlixHome({
                 >
                   All Models
                 </button>
-                {modelGroups.map((model) => (
-                  <motion.button
-                    layout
-                    key={model.name}
-                    type="button"
-                    className={`spiritflix-model-card ${selectedModel === model.name ? "is-active" : ""}`}
-                    onClick={() => setSelectedModel(model.name)}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <SpiritFlixImage client={client} item={model.representative} type="Primary" width={260} alt="" />
-                    <span>
-                      <strong>{model.name}</strong>
-                      <small>{model.count} videos</small>
-                    </span>
-                  </motion.button>
-                ))}
+                {modelGroups.map((model) => {
+                  const galleryCount = galleryItems.filter((item) => galleryItemMatchesModel(item, model.name)).length;
+                  return (
+                    <motion.button
+                      layout
+                      key={model.name}
+                      type="button"
+                      className={`spiritflix-model-card ${selectedModel === model.name ? "is-active" : ""}`}
+                      onClick={() => setSelectedModel(model.name)}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <SpiritFlixImage client={client} item={model.representative} type="Primary" width={260} alt="" />
+                      <span>
+                        <strong>{model.name}</strong>
+                        <small>{model.indexedCount} videos{galleryCount ? ` / ${galleryCount} pics` : ""}</small>
+                      </span>
+                    </motion.button>
+                  );
+                })}
               </div>
             </section>
 
             <AnimatePresence mode="wait">
-              {viewMode === "grid" ? (
+              {viewMode === "gallery" ? (
+                <motion.div
+                  key="gallery"
+                  className="spiritflix-gallery-grid"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.18 }}
+                >
+                  {visibleGalleryItems.map((item, index) => (
+                    <GalleryCard
+                      key={item.id}
+                      item={item}
+                      onOpen={() => setGalleryLightbox({ items: visibleGalleryItems, index })}
+                    />
+                  ))}
+                </motion.div>
+              ) : viewMode === "grid" ? (
                 <motion.div
                   key="grid"
                   className="spiritflix-library-grid"
@@ -1047,37 +1312,41 @@ export function SpiritFlixHome({
               )}
             </AnimatePresence>
 
-            {viewMode === "history" && !historyItems.length ? (
+            {viewMode === "gallery" && !visibleGalleryItems.length ? (
+              <p className="spiritflix-empty">No gallery pictures found for {selectedModelGroup?.name ?? "any model"} yet.</p>
+            ) : viewMode === "history" && !historyItems.length ? (
               <p className="spiritflix-empty">No private watch history has synced for {selectedModelGroup?.name ?? libraryTitle} yet.</p>
             ) : viewMode !== "history" && !visibleLibraryItems.length ? (
               <p className="spiritflix-empty">{libraryTitle} has no indexed videos yet.</p>
             ) : null}
 
-            <motion.button
-              type="button"
-              className="spiritflix-shuffle-fab"
-              onClick={handleShuffleClick}
-              onPointerDown={startShuffleLongPress}
-              onPointerUp={clearLongPressTimer}
-              onPointerCancel={clearLongPressTimer}
-              onContextMenu={(event) => {
-                event.preventDefault();
-                if (selectedModelGroup) playShuffle("model");
-              }}
-              disabled={!playableLibraryItems.length}
-              whileTap={{ scale: 0.97 }}
-              aria-label={
-                selectedModelGroup
-                  ? `Shuffle ${libraryTitle}; long press to shuffle ${selectedModelGroup.name}`
-                  : `Shuffle ${libraryTitle}`
-              }
-            >
-              <Shuffle size={21} aria-hidden="true" />
-              <span>
-                <strong>Shuffle Gooner Mix</strong>
-                <small>{selectedModelGroup ? `Hold: ${selectedModelGroup.name}` : "Whole library"}</small>
-              </span>
-            </motion.button>
+            {viewMode !== "gallery" ? (
+              <motion.button
+                type="button"
+                className="spiritflix-shuffle-fab"
+                onClick={handleShuffleClick}
+                onPointerDown={startShuffleLongPress}
+                onPointerUp={clearLongPressTimer}
+                onPointerCancel={clearLongPressTimer}
+                onContextMenu={(event) => {
+                  event.preventDefault();
+                  if (selectedModelGroup) playShuffle("model");
+                }}
+                disabled={!playableLibraryItems.length}
+                whileTap={{ scale: 0.97 }}
+                aria-label={
+                  selectedModelGroup
+                    ? `Shuffle ${libraryTitle}; long press to shuffle ${selectedModelGroup.name}`
+                    : `Shuffle ${libraryTitle}`
+                }
+              >
+                <Shuffle size={21} aria-hidden="true" />
+                <span>
+                  <strong>Shuffle Gooner Mix</strong>
+                  <small>{selectedModelGroup ? `Hold: ${selectedModelGroup.name}` : "Whole library"}</small>
+                </span>
+              </motion.button>
+            ) : null}
           </section>
         ) : null}
         {isHomeView ? (
@@ -1115,6 +1384,13 @@ export function SpiritFlixHome({
           </>
         ) : null}
       </div>
+      {galleryLightbox ? (
+        <GalleryLightbox
+          items={galleryLightbox.items}
+          initialIndex={galleryLightbox.index}
+          onClose={() => setGalleryLightbox(null)}
+        />
+      ) : null}
     </section>
   );
 }

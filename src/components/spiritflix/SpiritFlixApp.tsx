@@ -492,7 +492,6 @@ export function SpiritFlixApp() {
 
       {playingItem ? (
         <SpiritFlixPlayer
-          key={playingItem.Id}
           client={client}
           item={playingItem}
           queue={playingQueue}

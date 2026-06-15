@@ -38,16 +38,22 @@ type RepeatMode = "off" | "queue" | "one";
 
 const FIT_STORAGE_KEY = "spiritflix_player_fit_mode";
 const REPEAT_STORAGE_KEY = "spiritflix_player_repeat_mode";
+const VOLUME_STORAGE_KEY = "spiritflix_player_volume";
+const MUTED_STORAGE_KEY = "spiritflix_player_muted";
 const TAP_MAX_MOVEMENT = 18;
 const TAP_MAX_MS = 420;
 const DOUBLE_TAP_MAX_MS = 320;
 const DOUBLE_TAP_MAX_DISTANCE = 48;
+const TOUCH_SEEK_ACTIVATION_PX = 24;
+const TOUCH_SEEK_VERTICAL_RATIO = 1.15;
+const TOUCH_SEEK_MAX_SECONDS = 240;
 const PINCH_TOGGLE_THRESHOLD = 0.08;
 const PINCH_GESTURE_SUPPRESS_MS = 450;
 const TOUCH_MOUSE_REVEAL_SUPPRESS_MS = 1200;
 const UI_TIME_UPDATE_MS = 500;
 const PLAYBACK_REPORT_MS = 15000;
 const DIAGNOSTIC_SAMPLE_MS = 2000;
+const DEFAULT_AUDIBLE_VOLUME = 0.8;
 
 interface PlaybackDiagnostics {
   bufferedAheadSeconds: number;
@@ -91,6 +97,17 @@ function getStoredRepeatMode(): RepeatMode {
   if (typeof window === "undefined") return "off";
   const stored = window.localStorage.getItem(REPEAT_STORAGE_KEY);
   return isRepeatMode(stored) ? stored : "off";
+}
+
+function getStoredVolume(): number {
+  if (typeof window === "undefined") return 1;
+  const stored = Number(window.localStorage.getItem(VOLUME_STORAGE_KEY));
+  return Number.isFinite(stored) ? Math.max(0, Math.min(1, stored)) : 1;
+}
+
+function getStoredMuted(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.localStorage.getItem(MUTED_STORAGE_KEY) === "true";
 }
 
 function isInteractiveTarget(target: EventTarget | null): boolean {
@@ -154,26 +171,28 @@ export function SpiritFlixPlayer({
   const stallCountRef = useRef(0);
   const totalStallMsRef = useRef(0);
   const serverDelayMsRef = useRef<number | null>(null);
+  const itemRef = useRef(item);
   const pointerStartRef = useRef<{ x: number; y: number; time: number; currentTime: number } | null>(null);
   const lastTapRef = useRef<{ time: number; x: number; y: number } | null>(null);
   const lastPointerTapAtRef = useRef(0);
-  const touchTapStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+  const touchTapStartRef = useRef<{ x: number; y: number; time: number; currentTime: number; isSeeking: boolean } | null>(null);
   const pinchStartRef = useRef<{ startDistance: number; currentDistance: number } | null>(null);
   const suppressPointerUntilRef = useRef(0);
   const suppressTouchUntilRef = useRef(0);
   const lastTouchInteractionAtRef = useRef(0);
-  const volumeRef = useRef(1);
-  const mutedRef = useRef(false);
+  const volumeRef = useRef(getStoredVolume());
+  const mutedRef = useRef(getStoredMuted());
   const repeatModeRef = useRef<RepeatMode>(getStoredRepeatMode());
 
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState(() => getStoredMuted());
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [controlsHiddenByUser, setControlsHiddenByUser] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [volume, setVolume] = useState(1);
+  const [volume, setVolume] = useState(() => getStoredVolume());
+  const [isVolumeOpen, setIsVolumeOpen] = useState(false);
   const [fitMode, setFitMode] = useState<FitMode>(() => getStoredFitMode());
   const [videoAspectRatio, setVideoAspectRatio] = useState(16 / 9);
   const [shellSize, setShellSize] = useState({ width: 0, height: 0 });
@@ -208,16 +227,20 @@ export function SpiritFlixPlayer({
   const repeatLabel =
     repeatMode === "one" ? "Repeat current video" : repeatMode === "queue" ? "Repeat queue" : "Repeat off";
 
+  useEffect(() => {
+    itemRef.current = item;
+  }, [item]);
+
   const emitPlaybackProgress = useCallback(
     (positionTicks: number, isEnded = false) => {
       onPlaybackProgress({
         itemId: item.Id,
-        item,
+        item: itemRef.current,
         positionTicks,
         isEnded,
       });
     },
-    [item, onPlaybackProgress],
+    [item.Id, onPlaybackProgress],
   );
 
   const flushPlaybackProgress = useCallback(
@@ -357,18 +380,54 @@ export function SpiritFlixPlayer({
     }
   };
 
-  const updateVolume = (nextVolume: number) => {
+  const updateVolume = useCallback((nextVolume: number) => {
     const video = videoRef.current;
     const clamped = Math.max(0, Math.min(1, nextVolume));
     setVolume(clamped);
     volumeRef.current = clamped;
+    window.localStorage.setItem(VOLUME_STORAGE_KEY, String(clamped));
     if (video) {
       video.volume = clamped;
       video.muted = clamped === 0;
       mutedRef.current = video.muted;
+      window.localStorage.setItem(MUTED_STORAGE_KEY, String(video.muted));
       setIsMuted(video.muted);
     }
-  };
+  }, []);
+
+  const updateMuted = useCallback((nextMuted: boolean) => {
+    const video = videoRef.current;
+    mutedRef.current = nextMuted;
+    window.localStorage.setItem(MUTED_STORAGE_KEY, String(nextMuted));
+    setIsMuted(nextMuted);
+    if (video) video.muted = nextMuted;
+  }, []);
+
+  const toggleMuted = useCallback(() => {
+    const video = videoRef.current;
+    const currentlySilent = (video?.muted ?? mutedRef.current) || volumeRef.current <= 0;
+    if (currentlySilent) {
+      const audibleVolume = volumeRef.current > 0 ? volumeRef.current : DEFAULT_AUDIBLE_VOLUME;
+      setVolume(audibleVolume);
+      volumeRef.current = audibleVolume;
+      window.localStorage.setItem(VOLUME_STORAGE_KEY, String(audibleVolume));
+      if (video) {
+        video.volume = audibleVolume;
+        video.muted = false;
+      }
+      mutedRef.current = false;
+      window.localStorage.setItem(MUTED_STORAGE_KEY, "false");
+      setIsMuted(false);
+      setIsVolumeOpen(true);
+      revealControls(true);
+      void video?.play().catch(() => undefined);
+      return;
+    }
+
+    updateMuted(true);
+    setIsVolumeOpen(true);
+    revealControls(true);
+  }, [revealControls, updateMuted]);
 
   const collectDiagnostics = useCallback(() => {
     const video = videoRef.current;
@@ -581,9 +640,7 @@ export function SpiritFlixPlayer({
         event.preventDefault();
         const video = videoRef.current;
         if (video) {
-          video.muted = !video.muted;
-          mutedRef.current = video.muted;
-          setIsMuted(video.muted);
+          updateMuted(!video.muted);
         }
       } else if (key === "f") {
         event.preventDefault();
@@ -599,7 +656,7 @@ export function SpiritFlixPlayer({
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose, seekBy, toggleFullscreen, togglePlay, volume]);
+  }, [onClose, seekBy, toggleFullscreen, togglePlay, updateMuted, updateVolume, volume]);
 
   const handlePointerDown = (event: React.PointerEvent<HTMLElement>) => {
     if (event.pointerType === "touch") {
@@ -764,17 +821,48 @@ export function SpiritFlixPlayer({
         } else if (event.touches.length === 1 && !isInteractiveTarget(event.target)) {
           const touch = getTouchAt(event.touches, 0);
           if (touch) {
-            touchTapStartRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
+            touchTapStartRef.current = {
+              x: touch.clientX,
+              y: touch.clientY,
+              time: Date.now(),
+              currentTime: videoRef.current?.currentTime ?? 0,
+              isSeeking: false,
+            };
           }
         }
       }}
       onTouchMove={(event) => {
         const pinch = pinchStartRef.current;
-        if (!pinch || event.touches.length !== 2) return;
-        const nextDistance = touchDistance(event.touches);
-        if (!nextDistance) return;
+        if (pinch && event.touches.length === 2) {
+          const nextDistance = touchDistance(event.touches);
+          if (!nextDistance) return;
+          event.preventDefault();
+          pinchStartRef.current = { ...pinch, currentDistance: nextDistance };
+          return;
+        }
+
+        const start = touchTapStartRef.current;
+        const touch = getTouchAt(event.touches, 0);
+        if (!start || !touch || event.touches.length !== 1 || Date.now() < suppressTouchUntilRef.current) return;
+
+        const dx = touch.clientX - start.x;
+        const dy = touch.clientY - start.y;
+        const absX = Math.abs(dx);
+        const absY = Math.abs(dy);
+        const isHorizontalSeek = start.isSeeking || (absX >= TOUCH_SEEK_ACTIVATION_PX && absX > absY * TOUCH_SEEK_VERTICAL_RATIO);
+        if (!isHorizontalSeek) return;
+
         event.preventDefault();
-        pinchStartRef.current = { ...pinch, currentDistance: nextDistance };
+        const video = videoRef.current;
+        const playableDuration = video?.duration || duration || ticksToSeconds(item.RunTimeTicks);
+        const shellWidth = Math.max(1, shellRef.current?.clientWidth ?? window.innerWidth);
+        const secondsDelta = Number.isFinite(playableDuration)
+          ? Math.max(-TOUCH_SEEK_MAX_SECONDS, Math.min(TOUCH_SEEK_MAX_SECONDS, (dx / shellWidth) * playableDuration))
+          : dx / 4;
+        touchTapStartRef.current = { ...start, isSeeking: true };
+        lastTapRef.current = null;
+        seekTo(start.currentTime + secondsDelta);
+        revealControls(true);
       }}
       onTouchEnd={(event) => {
         lastTouchInteractionAtRef.current = Date.now();
@@ -795,6 +883,12 @@ export function SpiritFlixPlayer({
           const start = touchTapStartRef.current;
           const touch = getTouchAt(event.changedTouches, 0);
           touchTapStartRef.current = null;
+          if (start?.isSeeking) {
+            suppressPointerUntilRef.current = Date.now() + PINCH_GESTURE_SUPPRESS_MS;
+            suppressTouchUntilRef.current = Date.now() + PINCH_GESTURE_SUPPRESS_MS;
+            revealControls();
+            return;
+          }
           if (
             start &&
             touch &&
@@ -1057,28 +1151,33 @@ export function SpiritFlixPlayer({
           </div>
 
           <div className="spiritflix-player__tools">
-            <div className="spiritflix-player__volume">
+            <div className={`spiritflix-player__volume ${isVolumeOpen ? "is-expanded" : ""}`}>
               <button
                 type="button"
-                onClick={() => {
-                  const video = videoRef.current;
-                  if (!video) return;
-                  video.muted = !video.muted;
-                  mutedRef.current = video.muted;
-                  setIsMuted(video.muted);
-                }}
+                onClick={toggleMuted}
                 aria-label={isMuted ? "Unmute" : "Mute"}
+                aria-controls="spiritflix-player-volume"
+                aria-expanded={isVolumeOpen}
                 title={isMuted ? "Unmute" : "Mute"}
               >
                 {isMuted ? <VolumeX size={20} aria-hidden="true" /> : <Volume2 size={20} aria-hidden="true" />}
               </button>
               <input
+                id="spiritflix-player-volume"
                 aria-label="Volume"
                 type="range"
                 min={0}
                 max={1}
                 step={0.01}
                 value={isMuted ? 0 : volume}
+                onPointerDown={() => {
+                  setIsVolumeOpen(true);
+                  revealControls(true);
+                }}
+                onFocus={() => {
+                  setIsVolumeOpen(true);
+                  revealControls(true);
+                }}
                 onChange={(event) => updateVolume(Number(event.target.value))}
               />
             </div>

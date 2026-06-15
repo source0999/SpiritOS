@@ -47,6 +47,7 @@ function touchList(touches: Array<{ clientX: number; clientY: number }>) {
 
 describe("SpiritFlixPlayer mobile controls", () => {
   beforeEach(() => {
+    window.localStorage.clear();
     Object.defineProperty(HTMLMediaElement.prototype, "load", {
       configurable: true,
       value: vi.fn(),
@@ -107,5 +108,22 @@ describe("SpiritFlixPlayer mobile controls", () => {
       expect(player).toHaveClass("is-awake");
       expect(player).not.toHaveClass("is-controls-hidden");
     });
+  });
+
+  it("unmutes mobile playback to an audible volume and opens the volume slider", async () => {
+    window.localStorage.setItem("spiritflix_player_muted", "true");
+    window.localStorage.setItem("spiritflix_player_volume", "0");
+    renderPlayer();
+
+    const player = screen.getByLabelText("Fold Tap Test player");
+    await waitFor(() => expect(player).toHaveClass("is-awake"));
+
+    fireEvent.click(screen.getByRole("button", { name: "Unmute" }));
+
+    const video = document.querySelector("video");
+    expect(video?.muted).toBe(false);
+    expect(video?.volume).toBe(0.8);
+    expect(screen.getByLabelText("Volume")).toHaveValue("0.8");
+    expect(screen.getByRole("button", { name: "Mute" })).toHaveAttribute("aria-expanded", "true");
   });
 });

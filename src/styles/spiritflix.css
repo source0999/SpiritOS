@@ -750,7 +750,7 @@
 
 .spiritflix-library-stats {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(5.8rem, 1fr));
   gap: 0.6rem;
 }
 
@@ -807,6 +807,32 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.spiritflix-model-tabs {
+  display: inline-flex;
+  justify-self: start;
+  gap: 0.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 0.7rem;
+  padding: 0.25rem;
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.spiritflix-model-tabs button {
+  min-height: 2.55rem;
+  border-color: transparent;
+  border-radius: 0.55rem;
+  padding: 0 0.9rem;
+  background: transparent;
+  color: rgba(226, 232, 240, 0.78);
+  font-weight: 900;
+}
+
+.spiritflix-model-tabs button.is-active {
+  border-color: rgba(34, 211, 238, 0.45);
+  background: rgba(34, 211, 238, 0.14);
+  color: #e0f2fe;
 }
 
 .spiritflix-filter-popout {
@@ -1217,6 +1243,82 @@
   gap: 0.9rem;
 }
 
+.spiritflix-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: start;
+  gap: 0.8rem;
+}
+
+.spiritflix-gallery-card {
+  position: relative;
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0.7rem;
+  padding: 0;
+  aspect-ratio: 3 / 4;
+  background: #11111b;
+  color: #fff;
+  cursor: pointer;
+  text-align: left;
+  box-shadow: 0 1rem 2.4rem rgba(0, 0, 0, 0.22);
+}
+
+.spiritflix-gallery-card:nth-child(5n + 2),
+.spiritflix-gallery-card:nth-child(5n + 5) {
+  aspect-ratio: 4 / 5;
+}
+
+.spiritflix-gallery-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 220ms ease, filter 220ms ease;
+}
+
+.spiritflix-gallery-card:hover img,
+.spiritflix-gallery-card:focus-visible img {
+  transform: scale(1.04);
+  filter: brightness(1.05) saturate(1.08);
+}
+
+.spiritflix-gallery-card__shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.72), rgba(0, 0, 0, 0.08) 46%, transparent);
+}
+
+.spiritflix-gallery-card__meta {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  min-width: 0;
+  gap: 0.16rem;
+  padding: 1.9rem 0.68rem 0.68rem;
+}
+
+.spiritflix-gallery-card__meta strong,
+.spiritflix-gallery-card__meta small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spiritflix-gallery-card__meta strong {
+  font-size: 0.86rem;
+  font-weight: 950;
+}
+
+.spiritflix-gallery-card__meta small {
+  color: rgba(226, 232, 240, 0.78);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
 .spiritflix-feed-card {
   position: relative;
   min-width: 0;
@@ -1467,6 +1569,126 @@
 .spiritflix-loading {
   color: #c4b5fd;
   font-weight: 750;
+}
+
+.spiritflix-gallery-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  display: grid;
+  overflow: hidden;
+  background: #000;
+  color: #fff;
+  touch-action: manipulation;
+}
+
+.spiritflix-gallery-viewer__stage {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.spiritflix-gallery-viewer__stage img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+}
+
+.spiritflix-gallery-viewer__top,
+.spiritflix-gallery-viewer__controls {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  display: grid;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.spiritflix-gallery-viewer__top {
+  top: 0;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  padding: max(0.85rem, env(safe-area-inset-top)) max(0.85rem, env(safe-area-inset-right)) 3.3rem max(0.85rem, env(safe-area-inset-left));
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.84), rgba(0, 0, 0, 0));
+}
+
+.spiritflix-gallery-viewer__controls {
+  bottom: 0;
+  grid-template-columns: auto auto minmax(7rem, 11rem) auto;
+  justify-content: center;
+  padding: 4rem max(0.85rem, env(safe-area-inset-right)) max(0.95rem, env(safe-area-inset-bottom)) max(0.85rem, env(safe-area-inset-left));
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.86), rgba(0, 0, 0, 0));
+}
+
+.spiritflix-gallery-viewer button {
+  display: grid;
+  min-width: 3.1rem;
+  min-height: 3.1rem;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  cursor: pointer;
+  backdrop-filter: blur(14px);
+}
+
+.spiritflix-gallery-viewer button:disabled {
+  cursor: default;
+  opacity: 0.42;
+}
+
+.spiritflix-gallery-viewer__title {
+  display: grid;
+  min-width: 0;
+  justify-items: center;
+}
+
+.spiritflix-gallery-viewer__title strong,
+.spiritflix-gallery-viewer__title span {
+  overflow: hidden;
+  max-width: 100%;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spiritflix-gallery-viewer__title strong {
+  font-size: clamp(1rem, 2vw, 1.35rem);
+  font-weight: 950;
+}
+
+.spiritflix-gallery-viewer__title span {
+  color: rgba(226, 232, 240, 0.76);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.spiritflix-gallery-viewer__timer {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 3.1rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  padding: 0 0.75rem;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(14px);
+}
+
+.spiritflix-gallery-viewer__timer input {
+  width: 3.4rem;
+  min-width: 0;
+  border: 0;
+  border-radius: 0.45rem;
+  padding: 0.35rem 0.2rem;
+  background: rgba(0, 0, 0, 0.32);
+  color: #fff;
+  font-weight: 900;
+  text-align: center;
 }
 
 .spiritflix-modal,
@@ -1917,6 +2139,7 @@
 .spiritflix-player__volume input {
   width: 5.5rem;
   min-width: 4rem;
+  touch-action: pan-x;
 }
 
 .spiritflix-player button:disabled {
@@ -2068,6 +2291,10 @@
   .spiritflix-library-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+
+  .spiritflix-gallery-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 760px) {
@@ -2117,6 +2344,33 @@
     margin-top: -3.4rem;
     padding-left: 0.9rem;
     padding-right: 0.9rem;
+  }
+
+  .spiritflix-library-v2__header {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .spiritflix-view-toggle,
+  .spiritflix-model-tabs {
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .spiritflix-view-toggle::-webkit-scrollbar,
+  .spiritflix-model-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .spiritflix-gallery-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.65rem;
+  }
+
+  .spiritflix-gallery-viewer__controls {
+    grid-template-columns: auto auto minmax(6.2rem, 9rem) auto;
+    gap: 0.45rem;
   }
 
   .spiritflix-library-v2 {
@@ -2315,7 +2569,25 @@
   }
 
   .spiritflix-player__volume input {
-    display: none;
+    width: 0;
+    min-width: 0;
+    max-width: 0;
+    opacity: 0;
+    pointer-events: none;
+    transition: max-width 160ms ease, opacity 160ms ease;
+  }
+
+  .spiritflix-player__volume.is-expanded {
+    min-width: 7.25rem;
+  }
+
+  .spiritflix-player__volume.is-expanded input,
+  .spiritflix-player__volume:focus-within input {
+    width: 4.4rem;
+    min-width: 4.4rem;
+    max-width: 4.4rem;
+    opacity: 1;
+    pointer-events: auto;
   }
 
   .spiritflix-player__button-row button span {
@@ -2377,6 +2649,15 @@
     gap: 0.65rem;
   }
 
+  .spiritflix-gallery-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.58rem;
+  }
+
+  .spiritflix-gallery-card__meta {
+    padding: 1.5rem 0.55rem 0.55rem;
+  }
+
   .spiritflix-feed-card__media,
   .spiritflix-feed-card:nth-child(4n + 2) .spiritflix-feed-card__media,
   .spiritflix-feed-card:nth-child(4n + 4) .spiritflix-feed-card__media {
@@ -2427,6 +2708,16 @@
     right: max(0.75rem, env(safe-area-inset-right));
     width: auto;
     max-width: none;
+  }
+
+  .spiritflix-gallery-viewer__controls {
+    grid-template-columns: auto auto auto;
+  }
+
+  .spiritflix-gallery-viewer__timer {
+    grid-column: 1 / -1;
+    justify-self: center;
+    width: min(10rem, calc(100vw - 2rem));
   }
 
   .spiritflix-player__title strong {
