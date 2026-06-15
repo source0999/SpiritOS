@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import re
+import time
 from pathlib import Path
 from typing import Any
 from urllib.parse import urljoin, urlparse
@@ -104,6 +105,135 @@ async def run_local_research_preview(query: str, max_results: int = 6) -> list[d
 
     web_sources = _normalize_sources(raw_results, bounded_max_results - len(combined_sources))
     return [*combined_sources, *web_sources]
+
+
+async def run_searxng_research_diagnostics(
+    query: str,
+    max_results: int = 6,
+) -> dict[str, Any]:
+    normalized_query = query.strip()
+    searxng_url = os.environ.get("SEARXNG_URL", "").strip()
+    base_packet: dict[str, Any] = {
+        "status": "skipped",
+        "reason": "search_not_needed",
+        "query": normalized_query,
+        "searxng_url": searxng_url,
+        "searxng_format_json_status": "not_checked",
+        "searxng_latency_ms": None,
+        "searxng_result_count": 0,
+        "searxng_sources": [],
+        "provider_call_made": False,
+        "provider_errors": [],
+        "fix_command": "",
+        "config_target": "SEARXNG_URL",
+    }
+    if not normalized_query:
+        return {
+            **base_packet,
+            "status": "skipped",
+            "reason": "empty_research_query",
+        }
+    if not searxng_url:
+        return {
+            **base_packet,
+            "status": "blocked",
+            "reason": "searxng_url_missing",
+            "fix_command": "Set SEARXNG_URL=http://127.0.0.1:8080 or the reachable local SearXNG base URL in config/source-proxy.env, then restart npm run proxy:https:lan.",
+            "config_target": "config/source-proxy.env:SEARXNG_URL",
+        }
+
+    timeout_seconds = _read_timeout_seconds()
+    search_url = urljoin(searxng_url.rstrip("/") + "/", "search")
+    started = time.monotonic()
+    try:
+        async with httpx.AsyncClient(timeout=timeout_seconds, follow_redirects=False) as client:
+            response = await client.get(
+                search_url,
+                params={"q": normalized_query, "format": "json"},
+                headers={
+                    "Accept": "application/json",
+                    "User-Agent": os.environ.get(
+                        "WEB_SEARCH_USER_AGENT",
+                        "SpiritOSLocalSearch/0.1",
+                    ),
+                },
+            )
+            latency_ms = int((time.monotonic() - started) * 1000)
+            response.raise_for_status()
+            try:
+                payload = response.json()
+            except ValueError as error:
+                return {
+                    **base_packet,
+                    "status": "blocked",
+                    "reason": "searxng_json_output_disabled_or_invalid",
+                    "searxng_format_json_status": "invalid_json",
+                    "searxng_latency_ms": latency_ms,
+                    "provider_call_made": True,
+                    "provider_errors": [f"{type(error).__name__}: {error}"],
+                    "fix_command": "Enable json in SearXNG settings.yml formats and restart the local SearXNG service.",
+                    "config_target": "searxng/settings.yml:search.formats",
+                }
+    except httpx.TimeoutException as error:
+        return {
+            **base_packet,
+            "status": "blocked",
+            "reason": "searxng_provider_timeout",
+            "searxng_latency_ms": int((time.monotonic() - started) * 1000),
+            "provider_call_made": True,
+            "provider_errors": [f"{type(error).__name__}: {error}"],
+            "fix_command": "Start or repair the local SearXNG service, verify SEARXNG_URL, then restart npm run proxy:https:lan.",
+        }
+    except httpx.HTTPStatusError as error:
+        return {
+            **base_packet,
+            "status": "failed",
+            "reason": "searxng_http_status_error",
+            "searxng_latency_ms": int((time.monotonic() - started) * 1000),
+            "provider_call_made": True,
+            "provider_errors": [f"HTTP {error.response.status_code}: {str(error)[:300]}"],
+            "fix_command": "Check the local SearXNG service status and allow /search?format=json.",
+        }
+    except httpx.HTTPError as error:
+        return {
+            **base_packet,
+            "status": "blocked",
+            "reason": "searxng_unreachable",
+            "searxng_latency_ms": int((time.monotonic() - started) * 1000),
+            "provider_call_made": True,
+            "provider_errors": [f"{type(error).__name__}: {error}"],
+            "fix_command": "Start local SearXNG and verify SEARXNG_URL points to the reachable service, then restart npm run proxy:https:lan.",
+        }
+
+    raw_results = payload.get("results", []) if isinstance(payload, dict) else []
+    if not isinstance(raw_results, list):
+        return {
+            **base_packet,
+            "status": "blocked",
+            "reason": "searxng_json_results_missing",
+            "searxng_format_json_status": "json_without_results",
+            "searxng_latency_ms": latency_ms,
+            "provider_call_made": True,
+            "fix_command": "Verify SearXNG JSON response includes a results array.",
+            "config_target": "searxng/settings.yml:search.formats",
+        }
+
+    web_sources = _normalize_sources(raw_results, min(max(1, int(max_results)), 12))
+    return {
+        **base_packet,
+        "status": "used" if web_sources else "blocked",
+        "reason": "live_searxng_provider_query_executed"
+        if web_sources
+        else "searxng_query_returned_no_usable_results",
+        "searxng_format_json_status": "enabled",
+        "searxng_latency_ms": latency_ms,
+        "searxng_result_count": len(web_sources),
+        "searxng_sources": web_sources,
+        "provider_call_made": True,
+        "fix_command": ""
+        if web_sources
+        else "Verify SearXNG engines return usable http/https results for this query.",
+    }
 
 
 def run_repo_research_preview(query: str, max_results: int = 6) -> list[dict[str, str]]:

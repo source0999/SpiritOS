@@ -8,10 +8,19 @@ from source_proxy.decision import scout_research
 
 
 class _FakeResponse:
-    def __init__(self, status_code: int = 200) -> None:
+    def __init__(
+        self,
+        status_code: int = 200,
+        payload: dict[str, object] | None = None,
+        text: str = "",
+    ) -> None:
         self.status_code = status_code
+        self._payload = payload
+        self.text = text
 
     def json(self) -> dict[str, object]:
+        if self._payload is not None:
+            return self._payload
         return {
             "packets": [
                 {
@@ -57,6 +66,8 @@ class _FakeResponse:
 
 class _FakeAsyncClient:
     status_code = 200
+    payload: dict[str, object] | None = None
+    response_text = ""
     raise_on_get: Exception | None = None
 
     def __init__(self, *args: object, **kwargs: object) -> None:
@@ -72,12 +83,14 @@ class _FakeAsyncClient:
     async def get(self, *args: object, **kwargs: object) -> _FakeResponse:
         if self.raise_on_get:
             raise self.raise_on_get
-        return _FakeResponse(self.status_code)
+        return _FakeResponse(self.status_code, self.payload, self.response_text)
 
 
 class ScoutResearchBridgeTests(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
         _FakeAsyncClient.status_code = 200
+        _FakeAsyncClient.payload = None
+        _FakeAsyncClient.response_text = ""
         _FakeAsyncClient.raise_on_get = None
 
     async def test_flag_off_returns_empty(self) -> None:
@@ -108,6 +121,64 @@ class ScoutResearchBridgeTests(unittest.IsolatedAsyncioTestCase):
                 await scout_research.run_scout_research_preview("fastapi"),
                 [],
             )
+
+    async def test_diagnostics_capture_http_status_body_and_request_shape(self) -> None:
+        _FakeAsyncClient.status_code = 422
+        _FakeAsyncClient.response_text = '{"detail":[{"loc":["query","q"],"msg":"Field required"}]}'
+        with (
+            patch.dict(os.environ, {"SOURCE_PROXY_SCOUT_RESEARCH_ENABLED": "1"}),
+            patch.object(scout_research.httpx, "AsyncClient", _FakeAsyncClient),
+        ):
+            diagnostics = await scout_research.run_scout_research_diagnostics("fastapi")
+
+        self.assertEqual(diagnostics["status"], "failed")
+        self.assertEqual(diagnostics["reason"], "scout_http_status_error")
+        self.assertEqual(diagnostics["http_status"], 422)
+        self.assertIn("Field required", diagnostics["response_body_excerpt"])
+        self.assertEqual(diagnostics["scout_request"]["params"]["q"], "fastapi")
+        self.assertEqual(diagnostics["config_target"], "SOURCE_PROXY_SCOUT_RESEARCH_URL")
+
+    async def test_diagnostics_truncates_query_to_scout_api_limit(self) -> None:
+        query = " ".join(["fastapi"] * 80)
+        with (
+            patch.dict(os.environ, {"SOURCE_PROXY_SCOUT_RESEARCH_ENABLED": "1"}),
+            patch.object(scout_research.httpx, "AsyncClient", _FakeAsyncClient),
+        ):
+            diagnostics = await scout_research.run_scout_research_diagnostics(query)
+
+        request = diagnostics["scout_request"]
+        self.assertEqual(request["query_length"], len(query))
+        self.assertTrue(request["query_truncated"])
+        self.assertEqual(request["submitted_query_length"], 200)
+        self.assertEqual(len(request["params"]["q"]), 200)
+
+    async def test_diagnostics_explain_no_allowed_packets_without_marking_used(self) -> None:
+        _FakeAsyncClient.payload = {
+            "packets": [
+                {
+                    "packet_id": "ignored_1",
+                    "summary": "Ignored packet summary",
+                    "impact_analysis": "Ignored packet impact",
+                    "source_uri": "https://example.com/ignored",
+                    "_verdict": {"decision": "ignored"},
+                }
+            ]
+        }
+        with (
+            patch.dict(os.environ, {"SOURCE_PROXY_SCOUT_RESEARCH_ENABLED": "1"}),
+            patch.object(scout_research.httpx, "AsyncClient", _FakeAsyncClient),
+        ):
+            diagnostics = await scout_research.run_scout_research_diagnostics("fastapi")
+
+        self.assertEqual(diagnostics["status"], "skipped")
+        self.assertEqual(diagnostics["reason"], "scout_returned_no_allowed_packets")
+        self.assertEqual(diagnostics["raw_packet_count"], 1)
+        self.assertEqual(diagnostics["filtered_packet_count"], 1)
+        self.assertEqual(
+            diagnostics["allowed_packet_filter_reason"],
+            "no_packets_with_allowed_scout_decisions",
+        )
+        self.assertEqual(diagnostics["scout_sources"], [])
 
     async def test_default_filters_to_surface_and_promote(self) -> None:
         with (
