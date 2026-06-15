@@ -1,0 +1,36 @@
+import { sourceProxyFetch } from "@/lib/source-proxy-origin";
+
+export async function GET() {
+  if (process.env.SPIRIT_CODING_USE_PROXY !== "true") {
+    return Response.json(
+      { error: "SPIRIT_CODING_USE_PROXY is not true" },
+      { status: 409 },
+    );
+  }
+
+  let response;
+  try {
+    response = await sourceProxyFetch("/v1/decisions/fip0-receipts/latest", {
+      method: "GET",
+    });
+  } catch (error) {
+    return Response.json(
+      {
+        error:
+          "The coding page could not reach the Source proxy receipt retrieval route.",
+        detail: error instanceof Error ? error.message : "Unknown connection error.",
+      },
+      { status: 502 },
+    );
+  }
+
+  const responseText = await response.text();
+  const contentType = response.headers.get("content-type") ?? "application/json";
+  return new Response(responseText, {
+    headers: {
+      "content-type": contentType,
+    },
+    status: response.status,
+    statusText: response.statusText,
+  });
+}

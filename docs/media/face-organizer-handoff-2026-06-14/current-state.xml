@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<handoffPack generatedAt="2026-06-14" project="SpiritOS" topic="media-face-organizer-spiritflix">
+  <purpose>
+    <summary>Compact context for Media Face Organizer, conversion/ingest, organization, and SpiritFlix 3001 lane.</summary>
+    <reason>Avoid requiring a whole repomix for the next model while preserving the important decisions, paths, and live truth.</reason>
+  </purpose>
+  <liveEndpoints>
+    <endpoint name="Face Organizer Enrolled" url="http://100.111.32.31:8765/face_enrolled_performers.html" status="verified-200"/>
+    <endpoint name="Face Organizer Queue" url="http://100.111.32.31:8765/face_enrollment_queue.html" status="verified-fast-after-patch"/>
+    <endpoint name="SpiritFlix 3001" url="http://10.0.0.186:3001/spiritflix" status="sidecar-lane"/>
+  </liveEndpoints>
+  <repoPaths>
+    <path role="windowsMappedRepo">Z:\</path>
+    <path role="dellRepo">/home/source/SpiritOS</path>
+    <path role="spiritflix3001WorkingCopy">/tmp/spiritos-spiritflix-stable-3001</path>
+    <path role="mediaRoot">/mnt/spirit-8tb/media</path>
+    <path role="faceOrganizerSource">/DATA/yes</path>
+    <path role="faceOrganizerLog">/tmp/face-organizer-8765.log</path>
+  </repoPaths>
+  <currentFaceOrganizerState>
+    <routeBehavior>
+      <item>Enrolled and enrollment queue routes serve static files instead of regenerating on GET.</item>
+      <item>Static files stream in chunks with Content-Length and no-store cache header.</item>
+      <item>Generated images use loading="lazy" and decoding="async".</item>
+      <item>Video match rows use responsive layout to prevent narrow-panel text collapse.</item>
+    </routeBehavior>
+    <matchingBehavior>
+      <item>Metadata collection resolves stale sidecars to actual video paths.</item>
+      <item>Duplicate sidecars for the same resolved video are deduped; the sidecar with strongest real face evidence wins.</item>
+      <item>Rows without supporting faces/crops/frames do not count as face-rec auto or review matches.</item>
+      <item>Run face-rec scan for this model targets linked model videos instead of blindly scanning first N videos in source root.</item>
+    </matchingBehavior>
+  </currentFaceOrganizerState>
+  <latestSavaTruth>
+    <summary>Targeted scan of Sava Schultz linked videos scanned 11 videos: 6 strong matches, 2 review-level matches, 3 not matched.</summary>
+    <video name="6513.mp4" facesDetected="11" bestSimilarity="0.4608" conclusion="not-sava-by-face-rec"/>
+    <video name="Sava.schultz Nude Solo Tease OnlyFans Video Leaked.mp4" facesDetected="18" supportingFaces="16" similarity="0.7721" conclusion="review-level-sava-match"/>
+    <video name="(19).mkv" facesDetected="36" supportingFaces="25" similarity="0.9005" conclusion="strong-sava-match"/>
+    <video name="(28).mkv" facesDetected="16" supportingFaces="13" similarity="0.8374" conclusion="strong-sava-match"/>
+    <video name="(31).mkv" facesDetected="17" supportingFaces="14" similarity="0.8308" conclusion="strong-sava-match"/>
+    <video name="169902_1080p.mkv" facesDetected="18" supportingFaces="10" similarity="0.8586" conclusion="strong-sava-match"/>
+    <video name="46783.mkv" facesDetected="13" supportingFaces="3" similarity="0.8028" conclusion="strong-sava-match"/>
+  </latestSavaTruth>
+  <doNotMisstate>
+    <item>Do not say 6513 is confirmed Sava by face recognition; it detected faces but similarity was too low.</item>
+    <item>Do not treat metadata/manual/OCR-only rows as face-rec confidence.</item>
+    <item>Do not assume SpiritFlix visible counts and organizer source counts must match; Jellyfin exposure can lag or differ.</item>
+  </doNotMisstate>
+</handoffPack>

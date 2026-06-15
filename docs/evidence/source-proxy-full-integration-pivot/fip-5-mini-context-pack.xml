@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fip5MiniContextPack status="GO">
+  <scope>FIP-5 required verifier and bounded repair loop</scope>
+  <truthPath>/coding / /v1/decisions/prompt-packet FIP-0 receipt path</truthPath>
+  <acceptedReceipts>
+    <receipt kind="clean-verifier-pass" runId="fip0-c7e5a81bb99be214" path="/home/source/SpiritOS/docs/evidence/source-proxy-full-integration-pivot/fip-0-receipts/fip0-c7e5a81bb99be214.json" />
+    <receipt kind="verifier-triggered-repair-pass" runId="fip0-988b78ba25538cea" path="/home/source/SpiritOS/docs/evidence/source-proxy-full-integration-pivot/fip-0-receipts/fip0-988b78ba25538cea.json" />
+    <receipt kind="max-repair-no-go" runId="fip0-ea5af7def160c78c" path="/home/source/SpiritOS/docs/evidence/source-proxy-full-integration-pivot/fip-0-receipts/fip0-ea5af7def160c78c.json" />
+    <receipt kind="browser-authority-no-go" runId="fip0-98cae88a9ca55a17" path="/home/source/SpiritOS/docs/evidence/source-proxy-full-integration-pivot/fip-0-receipts/fip0-98cae88a9ca55a17.json" />
+    <receipt kind="protected-path-regression" runId="fip0-122176b0aa824276" path="/home/source/SpiritOS/docs/evidence/source-proxy-full-integration-pivot/fip-0-receipts/fip0-122176b0aa824276.json" />
+  </acceptedReceipts>
+  <models>
+    <gemma model="gemma3n:e4b" role="pre-coder intent/spec/context/acceptance" />
+    <hermesCritic model="hermes3:8b-abliterated" role="pre-coder ambiguity/risk/conflict" />
+    <hermesVerifier model="hermes3:8b-abliterated" role="post-code verifier" />
+    <qwenCoder model="qwen2.5-coder:7b" role="coding/action and repair-as-coder only" />
+  </models>
+  <proofs>
+    <cleanPass runId="fip0-c7e5a81bb99be214" deterministicPassed="true" browserStatus="skipped" hermesVerifierStatus="used" hermesVerifierVerdict="PASS" repairAttempts="0" finalVerdict="GO: fip5_required_verifier_and_repair_complete" />
+    <repairPass runId="fip0-988b78ba25538cea" repairAttempts="1" repairPacketRole="qwen_repair_as_coder_only" hermesVerifierVerdict="PASS" finalVerdict="GO: fip5_required_verifier_and_repair_complete" />
+    <maxRepair runId="fip0-ea5af7def160c78c" repairAttempts="2" repairMaxAttempts="2" hermesVerifierVerdict="NEEDS_FIX" finalVerdict="NO-GO: fip5_repair_attempts_exhausted_operator_intervention_required" />
+    <browserAuthority runId="fip0-98cae88a9ca55a17" deterministicPassed="true" browserPassed="false" browserAuthoritative="true" hermesVerifierVerdict="FAIL" finalVerdict="NO-GO: fip5_browser_behavior_authority_blocks_pass" />
+    <protectedRegression runId="fip0-122176b0aa824276" qwenStatus="skipped" coderReceivedPacketHash="" changedFiles="0" finalVerdict="NO-GO" />
+  </proofs>
+  <preservedSemantics>
+    <item>Hermes verifier is distinct from Hermes critic.</item>
+    <item>Hermes verifier cannot manufacture PASS without deterministic/browser evidence.</item>
+    <item>Browser behavior evidence remains authoritative where relevant.</item>
+    <item>Qwen repair packets are coder-only and do not verify or decide PASS.</item>
+    <item>Repair loop is bounded and fully receipted.</item>
+    <item>No FIP-6 operator trace was wired.</item>
+    <item>TinyFish remains deferred; xersearch not created.</item>
+  </preservedSemantics>
+  <nextStopGate>Stop after FIP-5. FIP-6 requires Britton approval.</nextStopGate>
+</fip5MiniContextPack>

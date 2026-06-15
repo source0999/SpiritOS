@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mini_context_pack id="fip-0.1-universal-truth-receipt-foundation" created_utc="2026-06-13T00:00:00Z">
+  <purpose>
+    Give GPT or another model enough context to review the FIP-0.1 Source Proxy work without needing the full repo loaded.
+  </purpose>
+
+  <governance>
+    <active_plan>docs/evidence/source-proxy-full-integration-pivot/master-plan.md</active_plan>
+    <active_context>docs/evidence/source-proxy-full-integration-pivot/active-context.md</active_context>
+    <superseded_marker>docs/evidence/source-proxy-context-orchestration-master-plan/SUPERSEDED_BY_FIP.md</superseded_marker>
+    <preserved_contract>docs/evidence/source-proxy-context-orchestration-master-plan/acceptance-contract.md</preserved_contract>
+    <preserved_policy>docs/evidence/source-proxy-context-orchestration-master-plan/no-preview-only-integration-policy.md</preserved_policy>
+    <hard_stops>
+      <stop>Do not start FIP-1.</stop>
+      <stop>Do not wire context/search/model/coder/verifier lanes except to emit explicit used/skipped/blocked/failed receipt fields in FIP-0.</stop>
+      <stop>Do not resume Level 3/4/5.</stop>
+      <stop>Do not use artifact-only ladder as the driver.</stop>
+      <stop>Do not add TinyFish.</stop>
+      <stop>Do not create xersearch.</stop>
+      <stop>Do not use cloud providers.</stop>
+      <stop>Do not commit or push.</stop>
+    </hard_stops>
+  </governance>
+
+  <increment>
+    <plan>FIP-0 - Supersede + Universal Integration Truth Receipt Foundation</plan>
+    <phase>FIP-0 backend receipt foundation</phase>
+    <increment_id>FIP-0.1</increment_id>
+    <goal>
+      Add a durable universal integration truth receipt to real prompt-packet responses, with every required lane represented as used, skipped, blocked, or failed.
+    </goal>
+    <verdict>CONFIG-BLOCKED</verdict>
+    <verdict_reason>
+      Backend receipt foundation is implemented and tested, but full live /coding hot-path proof is blocked by current local lane access. HTTP /coding and /v1/decisions/prompt-packet on 127.0.0.1:3000 returned 401 Unauthorized; HTTPS probing failed at TLS negotiation.
+    </verdict_reason>
+  </increment>
+
+  <changed_files>
+    <file path="source_proxy/api/decision.py">
+      <summary>
+        Added FIP0_LANE_STATUS_FIELDS plus helper functions for hashing, receipt root selection, dirty tree summary, lane status objects, protected path checks, JSON receipt writing, and attaching fip0_truth_receipt to prompt-packet payloads.
+      </summary>
+      <important_symbols>
+        <symbol>FIP0_LANE_STATUS_FIELDS</symbol>
+        <symbol>_json_hash</symbol>
+        <symbol>_fip0_receipt_root</symbol>
+        <symbol>_safe_dirty_tree_status</symbol>
+        <symbol>_lane_status</symbol>
+        <symbol>_status_bucket</symbol>
+        <symbol>_safe_write_json</symbol>
+        <symbol>_protected_path_check</symbol>
+        <symbol>_attach_fip0_truth_receipt</symbol>
+        <symbol>prompt_packet</symbol>
+      </important_symbols>
+      <behavior>
+        Both prompt-packet response branches now return fip0_truth_receipt, fip0TruthReceipt, fip0_truth_receipt_path, and fip0TruthReceiptPath. Runtime receipts default to docs/evidence/source-proxy-full-integration-pivot/fip-0-receipts/.
+      </behavior>
+    </file>
+    <file path="source_proxy/tests/test_prompt_packet_context_metadata.py">
+      <summary>
+        Added temp receipt directory isolation and a focused endpoint test proving that /v1/decisions/prompt-packet writes a durable FIP-0 receipt with every required lane status field.
+      </summary>
+      <important_tests>
+        <test>PromptPacketContextMetadataTests.test_prompt_packet_endpoint_writes_fip0_universal_truth_receipt</test>
+      </important_tests>
+    </file>
+    <file path="docs/evidence/source-proxy-full-integration-pivot/fip-0.1-universal-truth-receipt-foundation.md">
+      <summary>
+        Increment receipt describing scope, commands, results, live access blockers, files changed, verdict, and Britton manual checks.
+      </summary>
+    </file>
+    <file path="docs/evidence/source-proxy-full-integration-pivot/fip-0-receipts/fip0-7bd4cbe532b9d21d.json">
+      <summary>
+        Backend-route durable receipt generated through FastAPI TestClient POST to /v1/decisions/prompt-packet without SOURCE_PROXY_FIP0_RECEIPT_DIR override.
+      </summary>
+    </file>
+  </changed_files>
+
+  <required_lanes>
+    <lane field="context_router_status" observed_status="used"/>
+    <lane field="obsidian_status" observed_status="skipped"/>
+    <lane field="cartographer_status" observed_status="skipped"/>
+    <lane field="design_status" observed_status="skipped"/>
+    <lane field="mac_worker_status" observed_status="skipped"/>
+    <lane field="scout_status" observed_status="skipped"/>
+    <lane field="searxng_status" observed_status="skipped"/>
+    <lane field="gemma_status" observed_status="skipped"/>
+    <lane field="hermes_critic_status" observed_status="skipped"/>
+    <lane field="qwen_coder_status" observed_status="skipped"/>
+    <lane field="hermes_verifier_status" observed_status="skipped"/>
+    <lane field="repair_loop_status" observed_status="skipped"/>
+    <lane field="browser_behavior_status" observed_status="skipped"/>
+    <lane field="deterministic_check_status" observed_status="skipped"/>
+    <lane field="output_contract_status" observed_status="skipped"/>
+    <lane field="anti_tailoring_status" observed_status="used"/>
+  </required_lanes>
+
+  <receipt_contract>
+    <required_field>run_id</required_field>
+    <required_field>timestamp</required_field>
+    <required_field>raw_prompt</required_field>
+    <required_field>normalized_task</required_field>
+    <required_field>route_type</required_field>
+    <required_field>workspace_mode</required_field>
+    <required_field>dirty_tree_status</required_field>
+    <required_field>allowed_files</required_field>
+    <required_field>forbidden_files</required_field>
+    <required_field>protected_path_check</required_field>
+    <required_field>all lane *_status fields</required_field>
+    <required_field>final_packet_hash</required_field>
+    <required_field>coder_received_packet_hash</required_field>
+    <required_field>used_sources</required_field>
+    <required_field>skipped_reasons</required_field>
+    <required_field>blocked_reasons</required_field>
+    <required_field>failed_reasons</required_field>
+    <required_field>provider_errors</required_field>
+    <required_field>model_errors</required_field>
+    <required_field>checks_run</required_field>
+    <required_field>diff_summary</required_field>
+    <required_field>final_verdict</required_field>
+  </receipt_contract>
+
+  <commands_run>
+    <command result="pass">python -m pytest source_proxy/tests/test_prompt_packet_context_metadata.py::PromptPacketContextMetadataTests::test_prompt_packet_endpoint_writes_fip0_universal_truth_receipt -q</command>
+    <command result="pass">python -m pytest source_proxy/tests/test_prompt_packet_context_metadata.py -q</command>
+    <command result="pass_with_line_ending_warnings">git diff --check</command>
+    <command result="config_blocked_401">Invoke-WebRequest -UseBasicParsing -Uri http://127.0.0.1:3000/coding -TimeoutSec 10</command>
+    <command result="config_blocked_401">Invoke-WebRequest -UseBasicParsing -Method Post -Uri http://127.0.0.1:3000/v1/decisions/prompt-packet</command>
+    <command result="not_source_proxy_decision_api_404">Invoke-WebRequest -UseBasicParsing -Method Post -Uri http://127.0.0.1:8000/v1/decisions/prompt-packet</command>
+    <command result="config_blocked_tls">curl.exe -k -i --max-time 15 https://127.0.0.1:3000/coding</command>
+    <command result="pass_backend_route_receipt_written">FastAPI TestClient POST /v1/decisions/prompt-packet</command>
+  </commands_run>
+
+  <manual_checks_for_britton>
+    <check>Open /coding in an authenticated browser session.</check>
+    <check>Submit a real prompt that reaches /v1/decisions/prompt-packet.</check>
+    <check>Confirm fip0_truth_receipt and fip0_truth_receipt_path are visible or retrievable.</check>
+    <check>Open the receipt JSON under docs/evidence/source-proxy-full-integration-pivot/fip-0-receipts/.</check>
+    <check>Confirm every lane has used, skipped, blocked, or failed.</check>
+    <check>Confirm final_packet_hash and coder_received_packet_hash exist.</check>
+    <check>Confirm final verdict does not claim FIP-1 or later integration.</check>
+  </manual_checks_for_britton>
+
+  <next_gate>
+    NEXT ACTION REQUIRES BRITTON APPROVAL:
+    BRITTON GO NEXT INCREMENT / BRITTON GO NEXT PHASE / BRITTON GO NEXT PLAN
+  </next_gate>
+</mini_context_pack>

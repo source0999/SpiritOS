@@ -1,0 +1,198 @@
+{
+  "schema": "media-known-db-audit/v1",
+  "generated_at": "2026-06-15T04:24:43+00:00",
+  "read_only": true,
+  "registry_count": 40,
+  "model_index_count": 40,
+  "known_performers_count": 4,
+  "embedding_shape": [
+    48,
+    512
+  ],
+  "performers_missing_known_record": [
+    {
+      "slug": "alannasworldx",
+      "name": "Alannasworldx",
+      "status": "in registry/model index, not face-enrolled"
+    },
+    {
+      "slug": "amburne",
+      "name": "Amburne",
+      "status": "in registry/model index, not face-enrolled"
+    },
+    {
+      "slug": "angela-white",
+      "name": "Angela White",
+      "status": "in registry/model index, not face-enrolled"
+    },
+    {
+      "slug": "azilia-hadid",
+      "name": "Azilia Hadid",
+      "status": "in registry/model index, not face-enrolled"
+    },
+    {
+      "slug": "bearuby",
+      "name": "Bearuby",
+      "status": "in registry/model index, not face-enrolled"
+    },
+    {
+      "slug": "brenda-trindade",
+      "name": "Brenda Trindade",
+      "status": "in registry/model index, not face-enrolled"
+    },
+    {
+      "slug": "chloe-lamb",
+      "name": "Chloe Lamb",
+      "status": "in registry/model index, not face-enrolled"
+    },
+    {
+      "slug": "cute-geekie",
+      "name": "Cute Geekie",
+      "status": "in registry/model index, not face-enrolled"
+    },
+    {
+      "slug": "gem-the-jewels",
+      "name": "Gem The Jewels",
+      "status": "in registry/model index, not face-enrolled"
+    },
+    {
+      "slug": "haylee-love",
+      "name": "Haylee Love",
+      "status": "in registry/model index, not face-enrolled"
+    },
+    {
+      "slug": "isabelle-eleanore",
+      "name": "Isabelle Eleanore",
+      "status": "in registry/model index, not face-enrolled"
+    },
+    {
+      "slug": "izzy-green",
+      "name": "Izzy Green",
+      "status": "in registry/model index, not face-enrolled"
+    },
+    {
+      "slug": "jazmen-jafar",
+      "name": "Jazmen Jafar",
+      "status": "in registry/model index, not face-enrolled"
+    },
+    {
+      "slug": "katianakayfree",
+      "name": "Katianakayfree",
+      "status": "in registry/model index, not face-enrolled"
+    },
+    {
+      "slug": "katievaynes",
+      "name": "Katievaynes",
+      "status": "in registry/model index, not face-enrolled"
+    },
+    {
+      "slug": "kinkykttn",
+      "name": "Kinkykttn",
+      "status": "in registry/model index, not face-enrolled"
+    },
+    {
+      "slug": "leighbunbun",
+      "name": "Leighbunbun",
+      "status": "in registry/model index, not face-enrolled"
+    },
+    {
+      "slug": "lustcnotal",
+      "name": "Lustcnotal",
+      "status": "in registry/model index, not face-enrolled"
+    },
+    {
+      "slug": "mackzjones",
+      "name": "Mackzjones",
+      "status": "in registry/model index, not face-enrolled"
+    },
+    {
+      "slug": "maditay",
+      "name": "Maditay",
+      "status": "in registry/model index, not face-enrolled"
+    },
+    {
+      "slug": "melissa-debling",
+      "name": "Melissa Debling",
+      "status": "in registry/model index, not face-enrolled"
+    },
+    {
+      "slug": "miss-lilu",
+      "name": "Miss LiLu",
+      "status": "in registry/model index, not face-enrolled"
+    },
+    {
+      "slug": "mulai",
+      "name": "Mulai",
+      "status": "in registry/model index, not face-enrolled"
+    },
+    {
+      "slug": "mulan-vuitton",
+      "name": "Mulan Vuitton",
+      "status": "in registry/model index, not face-enrolled"
+    },
+    {
+      "slug": "pinkychu",
+      "name": "Pinkychu",
+      "status": "in registry/model index, not face-enrolled"
+    },
+    {
+      "slug": "puffy-pink",
+      "name": "Puffy Pink",
+      "status": "in registry/model index, not face-enrolled"
+    },
+    {
+      "slug": "realtoxxxmaria",
+      "name": "Realtoxxxmaria",
+      "status": "in registry/model index, not face-enrolled"
+    },
+    {
+      "slug": "ruth-lee",
+      "name": "Ruth Lee",
+      "status": "in registry/model index, not face-enrolled"
+    },
+    {
+      "slug": "sakhovanski",
+      "name": "Sakhovanski",
+      "status": "in registry/model index, not face-enrolled"
+    },
+    {
+      "slug": "sendnudesx",
+      "name": "Sendnudesx",
+      "status": "in registry/model index, not face-enrolled"
+    },
+    {
+      "slug": "sienna",
+      "name": "Sienna",
+      "status": "in registry/model index, not face-enrolled"
+    },
+    {
+      "slug": "sienna-ababi",
+      "name": "Sienna Ababi",
+      "status": "in registry/model index, not face-enrolled"
+    },
+    {
+      "slug": "strawberrytabby",
+      "name": "Strawberrytabby",
+      "status": "in registry/model index, not face-enrolled"
+    },
+    {
+      "slug": "whoahannahjo",
+      "name": "Whoahannahjo",
+      "status": "in registry/model index, not face-enrolled"
+    },
+    {
+      "slug": "yummy-couple",
+      "name": "Yummy Couple",
+      "status": "in registry/model index, not face-enrolled"
+    },
+    {
+      "slug": "zoey-uso",
+      "name": "Zoey Uso",
+      "status": "in registry/model index, not face-enrolled"
+    }
+  ],
+  "known_performers_missing_embedding_rows": [],
+  "embedding_rows_without_performer_ids": [],
+  "alias_collisions": [],
+  "file_expectation_audit": []
+}

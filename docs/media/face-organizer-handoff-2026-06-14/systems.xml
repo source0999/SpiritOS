@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<systems generatedAt="2026-06-14">
+  <system name="Media Face Organizer">
+    <entryFile>scripts/media/face_organizer.py</entryFile>
+    <runtime>.venv-face-organizer</runtime>
+    <serverPort>8765</serverPort>
+    <sourceRoot>/DATA/yes</sourceRoot>
+    <knownPerformersDb>scripts/media/known_performers</knownPerformersDb>
+    <importantFunctions>
+      <function name="collect_metadata" lineApprox="2628">Reads sidecars, resolves actual video paths, then dedupes stale duplicate sidecars.</function>
+      <function name="dedupe_metadata_records" lineApprox="2666">Keeps the sidecar with strongest face evidence for each resolved video.</function>
+      <function name="resolve_metadata_video_path" lineApprox="2653">Maps stale sidecars to actual root/model videos via bounded search.</function>
+      <function name="enrolled_model_scan_videos" lineApprox="4804">Builds targeted scan list for an enrolled model from model-folder records and performer matches.</function>
+      <function name="scan_library_for_enrolled_model" lineApprox="4919">Runs real face-rec scan over the targeted videos and writes fresh sidecars.</function>
+      <function name="enrolled_video_matches" lineApprox="4722">Splits matches into library/missing/auto/pending for enrolled UI.</function>
+      <function name="render_enrolled_video_matches" lineApprox="6084">Renders the enrolled model match-review panel.</function>
+      <function name="generate_enrolled_page" lineApprox="6273">Writes face_enrolled_performers.html and JSON payload.</function>
+    </importantFunctions>
+    <uiRoutes>
+      <route path="/face_enrolled_performers.html" behavior="serve existing static file"/>
+      <route path="/face_enrollment_queue.html" behavior="serve existing static file"/>
+      <route path="/face_verification_report.html" behavior="serve existing static file; large payload"/>
+      <route path="/api/enrolled/scan-library-matches" behavior="POST; targeted face-rec scan for current enrolled model"/>
+      <route path="/api/enrolled/video-match-decision" behavior="POST; confirm/deny outside-library video match"/>
+      <route path="/api/enrolled/remove-sample" behavior="POST; remove accepted enrolled face samples"/>
+    </uiRoutes>
+  </system>
+  <system name="Conversion / Media Ingest Worker">
+    <entryFile>scripts/media-ingest-worker.mjs</entryFile>
+    <root>/mnt/spirit-8tb</root>
+    <stateFile>/mnt/spirit-8tb/media-processing/media-ingest-state.json</stateFile>
+    <logs>
+      <log>/mnt/spirit-8tb/media-processing/logs/worker.log</log>
+      <log>/mnt/spirit-8tb/media-processing/logs/worker.nohup.log</log>
+    </logs>
+    <importantEnvironment>
+      <var name="MEDIA_INGEST_LIBRARY_WATCH_ROOTS" default="/mnt/spirit-8tb/media/yes">Library roots to watch in addition to inbox.</var>
+      <var name="MEDIA_INGEST_DELETE_LIBRARY_ORIGINALS" default="0">Originals in library roots are preserved unless set to 1.</var>
+      <var name="MEDIA_INGEST_STOP_AFTER_DONE">Optional bounded run mode.</var>
+      <var name="MEDIA_INGEST_MAX_QUEUED">Optional queue cap.</var>
+    </importantEnvironment>
+    <safetyNotes>
+      <note>Earlier worker behavior moved uploaded files from yes into processing/failed when conversion output was rejected, making files appear deleted.</note>
+      <note>Current code preserves library originals by default and writes .media-ingest.json receipts beside final outputs.</note>
+      <note>When debugging disappearing files, check media-processing/failed, active, originals, and receipts before blaming SpiritFlix.</note>
+    </safetyNotes>
+  </system>
+  <system name="SpiritFlix 3001 Lane">
+    <workingCopy>/tmp/spiritos-spiritflix-stable-3001</workingCopy>
+    <url>http://10.0.0.186:3001/spiritflix</url>
+    <importantFiles>
+      <file path="src/app/api/spiritflix/face-metadata/route.ts">Reads Face Organizer sidecars and enrolled/model index data. POST-only route. Uses basename/stem matching and visual_confirmed decisions.</file>
+      <file path="src/components/spiritflix/SpiritFlixHome.tsx">Builds model groups and model card counts from visible Jellyfin items plus face metadata.</file>
+      <file path="src/lib/spiritflix-jellyfin-client.ts">Calls /api/spiritflix/face-metadata for playable library items.</file>
+    </importantFiles>
+    <countSemantics>
+      <note>SpiritFlix model cards should show visible Jellyfin item counts, not organizer-only sidecar/source counts.</note>
+      <note>Organizer can show more source/model-folder files than SpiritFlix if Jellyfin has not exposed the file or the file is outside the visible library query.</note>
+    </countSemantics>
+    <deployNotes>
+      <note>After editing source repo files, copy changed files into /tmp/spiritos-spiritflix-stable-3001, run npm build, then restart port 3001.</note>
+      <note>Do not assume the source repo change is live on 3001 until copied, built, and restarted.</note>
+    </deployNotes>
+  </system>
+</systems>

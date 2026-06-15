@@ -137,6 +137,27 @@ python3 scripts/media/spiritflix_anime_import.py \
 
 For downloader workflows, prefer `--send-to-converter`; otherwise the importer writes directly to the final Jellyfin library and bypasses conversion.
 
+## Auto-Optimize The Yes Library
+
+The media ingest worker also watches the existing SpiritFlix yes library:
+
+```text
+/mnt/spirit-8tb/media/yes
+```
+
+Files copied or uploaded directly into that folder are treated as library-source jobs. After the worker sees a stable file, it moves the file into active processing, creates the smaller MKV output under the same `media/yes` tree, writes a `.media-ingest.json` receipt beside the accepted output, and deletes the original large upload only after `ffprobe` verifies the converted output and the final move succeeds.
+
+The default watch root can be changed with `MEDIA_INGEST_LIBRARY_WATCH_ROOTS`. Use the platform path separator to watch more than one root.
+
+```bash
+cd /home/source/SpiritOS
+MEDIA_INGEST_ENCODER=mac-videotoolbox-hevc \
+MEDIA_INGEST_LIBRARY_WATCH_ROOTS=/mnt/spirit-8tb/media/yes \
+node ./scripts/media-ingest-worker.mjs
+```
+
+Set `MEDIA_INGEST_DELETE_LIBRARY_ORIGINALS=0` for a dry/holding run where library originals should not be deleted after successful conversion.
+
 Manifest columns:
 
 - `series`: Jellyfin series folder name, such as `Rurouni Kenshin (1996)`.

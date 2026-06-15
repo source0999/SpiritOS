@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<verification generatedAt="2026-06-14">
+  <liveChecks>
+    <check name="Face Organizer enrolled page over Tailscale">
+      <command>Invoke-WebRequest -Uri 'http://100.111.32.31:8765/face_enrolled_performers.html' -UseBasicParsing -TimeoutSec 20</command>
+      <result status="200" bytes="128017" hasButton="true" has6513="false" hasNewSavaUpload="true"/>
+    </check>
+    <check name="Face Organizer process">
+      <command>ss -ltnp | grep ":8765"; pgrep -af "face_organizer.py"</command>
+      <result>Review server listening on 0.0.0.0:8765, latest clean PID observed 1095455.</result>
+    </check>
+  </liveChecks>
+  <savaTargetedScan>
+    <command>scan_library_for_enrolled_model(config, {'performer_name':'Sava Schultz','performer_id':'sava-schultz','limit':20})</command>
+    <summary scanned="11" candidateVideos="11" autoMatches="6" pendingMatches="2" unknownMatches="3"/>
+    <videos>
+      <video path="/DATA/yes/models/sava-schultz/(116).mkv" facesDetected="0" status="no_target_match" bestSimilarity="0.0"/>
+      <video path="/DATA/yes/models/sava-schultz/(19).mkv" facesDetected="36" status="auto" similarity="0.9005" supportingFaces="25" faceCropSaved="true"/>
+      <video path="/DATA/yes/models/sava-schultz/(21).mkv" facesDetected="6" status="no_target_match" bestSimilarity="0.545"/>
+      <video path="/DATA/yes/models/sava-schultz/(28).mkv" facesDetected="16" status="auto" similarity="0.8374" supportingFaces="13" faceCropSaved="true"/>
+      <video path="/DATA/yes/models/sava-schultz/(31).mkv" facesDetected="17" status="auto" similarity="0.8308" supportingFaces="14" faceCropSaved="true"/>
+      <video path="/DATA/yes/models/sava-schultz/169901_1080p.mkv" facesDetected="33" status="possible" similarity="0.6572" supportingFaces="2" faceCropSaved="true"/>
+      <video path="/DATA/yes/models/sava-schultz/169902_1080p.mkv" facesDetected="18" status="auto" similarity="0.8586" supportingFaces="10" faceCropSaved="true"/>
+      <video path="/DATA/yes/models/sava-schultz/46783.mkv" facesDetected="13" status="auto" similarity="0.8028" supportingFaces="3" faceCropSaved="true"/>
+      <video path="/DATA/yes/6513.mp4" facesDetected="11" status="no_target_match" bestSimilarity="0.4608"/>
+      <video path="/DATA/yes/models/sava-schultz/Sava-Schultz-2.mkv" facesDetected="0" status="metadata-only" similarity="0.87" supportingFaces="0" faceCropSaved="false"/>
+      <video path="/DATA/yes/Sava.schultz Nude Solo Tease OnlyFans Video Leaked.mp4" facesDetected="18" status="possible" similarity="0.7721" supportingFaces="16" faceCropSaved="true"/>
+    </videos>
+  </savaTargetedScan>
+  <postDedupeSavaView>
+    <summary libraryMatches="7" pendingMatches="1" autoMatches="0"/>
+    <libraryMatch video="(19).mkv" confidence="0.9005" supportingFaces="25" hasFaceEvidence="true"/>
+    <libraryMatch video="(28).mkv" confidence="0.8374" supportingFaces="13" hasFaceEvidence="true"/>
+    <libraryMatch video="(31).mkv" confidence="0.8308" supportingFaces="14" hasFaceEvidence="true"/>
+    <libraryMatch video="169901_1080p.mkv" confidence="0.6572" supportingFaces="2" hasFaceEvidence="true"/>
+    <libraryMatch video="169902_1080p.mkv" confidence="0.8586" supportingFaces="10" hasFaceEvidence="true"/>
+    <libraryMatch video="46783.mkv" confidence="0.8028" supportingFaces="3" hasFaceEvidence="true"/>
+    <libraryMatch video="Sava-Schultz-2.mkv" confidence="0.0" supportingFaces="0" hasFaceEvidence="false"/>
+    <pendingMatch video="Sava.schultz Nude Solo Tease OnlyFans Video Leaked.mp4" confidence="0.7721" supportingFaces="16" hasFaceEvidence="true"/>
+  </postDedupeSavaView>
+  <importantConclusions>
+    <conclusion>6513.mp4 is visible in SpiritFlix but should not be confirmed as Sava by face-rec based on current embeddings.</conclusion>
+    <conclusion>Large numbers of 0-support rows came from stale duplicate sidecars and metadata/manual-only sidecars, not from actual face-rec proof.</conclusion>
+    <conclusion>The target scanner now detects and compares faces against enrolled embeddings; it is not just UI wording.</conclusion>
+  </importantConclusions>
+</verification>

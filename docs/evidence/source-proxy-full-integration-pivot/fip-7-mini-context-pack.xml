@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<context_pack id="fip-7" status="NO-GO">
+  <scope>Full integration messy-prompt gauntlet and integrated level-ladder resume packet.</scope>
+  <report>docs/evidence/source-proxy-full-integration-pivot/fip-7-integrated-gauntlet-report.md</report>
+  <artifacts>
+    <artifact>scripts/fip7_gauntlet_runner.py</artifact>
+    <artifact>docs/evidence/source-proxy-full-integration-pivot/fip-7-gauntlet/fip-7-gauntlet-results.json</artifact>
+    <artifact>docs/evidence/source-proxy-full-integration-pivot/fip-7-gauntlet/fip-7-gauntlet-rerun-results.json</artifact>
+    <artifact>docs/evidence/source-proxy-full-integration-pivot/fip-7-gauntlet/fip-7-gauntlet-rerun-raw.json</artifact>
+  </artifacts>
+  <summary>
+    <posted>10</posted>
+    <receipt_and_trace>10</receipt_and_trace>
+    <trace_matches_receipt>10</trace_matches_receipt>
+    <go_receipts>7</go_receipts>
+    <no_go_receipts>3</no_go_receipts>
+    <config_blocked>0</config_blocked>
+  </summary>
+  <blocking_failures>
+    <failure run_id="fip0-ad141659e71bffed">model/Qwen failure from local Ollama timeouts and empty Qwen output</failure>
+    <failure run_id="fip0-e26a0c6a5c048fc0">model/Qwen failure from local Ollama timeouts and empty Qwen output</failure>
+    <failure>Scout lane truth inconsistent; reachable API but receipts recorded HTTP 422 in several runs</failure>
+  </blocking_failures>
+  <expected_safety_block run_id="fip0-ad4816213197ea2a">Protected .env trap blocked before Qwen.</expected_safety_block>
+  <readiness>Integrated Level 3 is not ready.</readiness>
+  <hard_stops>
+    <stop>Did not start Integrated Level 3.</stop>
+    <stop>Did not start Level 4 or Level 5.</stop>
+    <stop>Did not run old artifact-only ladder as scoring authority.</stop>
+    <stop>Did not add TinyFish.</stop>
+    <stop>Did not create xersearch.</stop>
+    <stop>Did not commit or push.</stop>
+  </hard_stops>
+  <next_stop_gate>Stop after FIP-7. Integrated Level 3 requires separate Britton approval.</next_stop_gate>
+</context_pack>

@@ -1,0 +1,1 @@
+Integrated Level 5 protected-trap allowed fixture.

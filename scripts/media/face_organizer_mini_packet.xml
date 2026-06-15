@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<face_organizer_mini_packet generated="2026-06-13">
+  <paths>
+    <repo_windows>Z:\</repo_windows>
+    <repo_linux>/home/source/SpiritOS</repo_linux>
+    <media_source>/DATA/yes</media_source>
+    <main_script>scripts/media/face_organizer.py</main_script>
+    <report>scripts/media/face_verification_report.html</report>
+    <registry>scripts/media/performer_verification.json</registry>
+    <model_index>scripts/media/model_index.json</model_index>
+    <known_performers>scripts/media/known_performers</known_performers>
+  </paths>
+  <current_state>
+    <git modified="scripts/media/face_organizer.py" untracked="scripts/media/test_face_organizer_schema.py" />
+    <report generated_at="2026-06-13T22:58:23+00:00" bytes="38194857" />
+    <registry performers="37" aliases="46" updated_at="2026-06-05T21:01:44+00:00" />
+    <model_index models="37">
+      <status name="user-confirmed" count="7" />
+      <status name="local-auto" count="9" />
+      <status name="profile-url" count="21" />
+    </model_index>
+    <known_face_db performers="1" embedding_rows="1">
+      <performer>Sava Schultz</performer>
+    </known_face_db>
+    <media_snapshot video_files="134" face_meta_sidecars="105" unknown_video_files="14" model_dirs="37" />
+  </current_state>
+  <completed_plans>
+    <plan id="0" status="pass">Report refresh and current-state lock.</plan>
+    <plan id="1" status="pass">Optional evidence schema readers and defaults.</plan>
+    <plan id="2" status="pass">OCR candidate cleanup and deterministic text query generation.</plan>
+    <plan id="3" status="pass">Text-only provider abstraction and mocked normalization.</plan>
+    <plan id="4" status="pass">Pure assignment scorer with trace and decision output.</plan>
+    <plan id="5" status="pass">Report UI/audit surfaces and report-all mode.</plan>
+    <plan id="6" status="pass">Confirmed-crop enrollment metadata, safeguards, and audit trail.</plan>
+    <plan id="7" status="dry_run_pass_apply_not_started">Dry-run batch passed; small apply still gated.</plan>
+  </completed_plans>
+  <corrections>
+    <correction input="Angetawhite" canonical="Angela White" />
+  </corrections>
+  <verification>
+    <tests local="21 passed" dell="21 passed" />
+    <dry_run_batch sample_limit="2" apply="false">
+      <result file="334120.mp4">unknown performer - verification needed</result>
+      <result file="432038_720p.mp4">Angetawhite (89% combined confidence) before alias correction</result>
+      <no_writes>no sidecars, crops, NFO files, or organization changes written</no_writes>
+    </dry_run_batch>
+  </verification>
+  <boundaries>
+    <item>No internet face recognition.</item>
+    <item>No web image, video, media, thumbnail, or leak downloads.</item>
+    <item>No local face-to-web-image comparison.</item>
+    <item>No media move, rename, delete, organize, or real apply was performed.</item>
+    <item>No git branch, stash, stage, commit, push, checkout, reset, or clean was performed.</item>
+    <item>Plan 7 small apply batch requires explicit approval before any apply command begins.</item>
+  </boundaries>
+</face_organizer_mini_packet>

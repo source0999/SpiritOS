@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<spiritos_media_model_sorting_context generated="2026-06-13">
+  <paths>
+    <repo_windows>Z:\</repo_windows>
+    <repo_linux>/home/source/SpiritOS</repo_linux>
+    <media_source>/DATA/yes</media_source>
+    <main_script>scripts/media/face_organizer.py</main_script>
+    <registry>scripts/media/performer_verification.json</registry>
+    <model_index>scripts/media/model_index.json</model_index>
+    <report>scripts/media/face_verification_report.html</report>
+    <known_performers>scripts/media/known_performers</known_performers>
+  </paths>
+  <verdict>
+    <item>System scans local videos for faces and visible text/watermarks.</item>
+    <item>Face recognition is limited by the local known performer DB, currently one enrolled performer: Sava Schultz.</item>
+    <item>Most current model naming comes from OCR profile/watermark text, aliases, and user-confirmed registry cleanup.</item>
+    <item>No Yandex/private/browser/Coomer/PimpBunny web search runs during batch scanning today.</item>
+    <item>Only online provider hook is optional pAPI/RapidAPI with --online-metadata and PAPI_RAPIDAPI_KEY.</item>
+    <item>Report code now has manual Yandex/PimpBunny/Coomer text-verification links, but live HTML must be regenerated.</item>
+  </verdict>
+  <current_state>
+    <performer_registry generated_at="2026-06-05T20:58:47+00:00" updated_at="2026-06-05T21:01:44+00:00" performer_count="37" alias_count="46" online_metadata_requested="false" />
+    <model_index generated_at="2026-06-05T21:01:44+00:00" model_count="37">
+      <status name="user-confirmed" count="7" />
+      <status name="local-auto" count="9" />
+      <status name="profile-url" count="21" />
+      <models_with_profile_handles>21</models_with_profile_handles>
+    </model_index>
+    <known_face_db performers="1" embedding_rows="1" embedding_file_bytes="2176">
+      <performer id="sava-schultz" name="Sava Schultz" />
+    </known_face_db>
+    <report video_cards="15" needs_review_cards="15" contains_407017="true" has_new_text_verification_links="false" />
+  </current_state>
+  <batch_flow>
+    <step n="1">Load config, thresholds, known performer DB, and InsightFace model.</step>
+    <step n="2">Find videos under source, excluding review/output/model/unknown/backup folders.</step>
+    <step n="3">Skip fresh approved sidecars unless force; scan missing, stale, or verification-needed records.</step>
+    <step n="4">Use ffprobe and ffmpeg to extract sampled frames.</step>
+    <step n="5">Run InsightFace on frames; reject low-score or tiny faces.</step>
+    <step n="6">Compare accepted face embeddings to local known_performers/embeddings.npy.</step>
+    <step n="7">Classify face matches: auto if similarity >= 0.80, possible if >= 0.55, unknown otherwise.</step>
+    <step n="8">Run OCR on full frame plus top/bottom/left/right watermark-heavy crops.</step>
+    <step n="9">Parse profile handles and watermarks from OnlyFans, Fansly, Fanvue, stolen/leaked/from, and @handle text.</step>
+    <step n="10">Filter host/repost/noise strings and normalize aliases.</step>
+    <step n="11">Combine strong watermark/profile evidence with face agreement when possible.</step>
+    <step n="12">Write .face-meta.json sidecar and review images when --apply.</step>
+  </batch_flow>
+  <verification_flow>
+    <command>python scripts/media/face_organizer.py --source /DATA/yes --verify-performers --apply --ctx-id -1</command>
+    <does>Reads sidecars, canonicalizes aliases, rebuilds performer_verification.json, writes model_index.json, organizes videos, removes empty model folders.</does>
+    <does_not>Does not scan new frames and does not search Yandex/Coomer/PimpBunny/web.</does_not>
+    <statuses>
+      <status name="user-confirmed">User correction signal exists.</status>
+      <status name="profile-url">Trusted profile handle extracted from watermark/profile text.</status>
+      <status name="local-auto">Local face DB auto match exists.</status>
+      <status name="needs-review">No strong enough verification.</status>
+    </statuses>
+  </verification_flow>
+  <organize_flow>
+    <auto_destination>/DATA/yes/models/&lt;model-slug&gt;/</auto_destination>
+    <review_destination>/DATA/yes/unknown/</review_destination>
+    <side_effects>Moves video, .face-meta.json, optional .nfo; updates embedded paths; writes organize_manifest.json.</side_effects>
+  </organize_flow>
+  <report_flow>
+    <command>python scripts/media/face_organizer.py --source /DATA/yes --report --ctx-id -1</command>
+    <shows>Only verification_needed records; embeds review frames and crops; shows badges, metadata hints, actions.</shows>
+    <new_patch>Renders manual Yandex, Yandex site:pimpbunny.com, Yandex site:coomer.st, and Coomer links for top OCR candidates.</new_patch>
+  </report_flow>
+  <sample_407017>
+    <file>407017_720p.mp4</file>
+    <sidecar>/DATA/yes/unknown/407017_720p.mp4.face-meta.json</sidecar>
+    <status>needs-review</status>
+    <faces>0</faces>
+    <hint>M Anyuitio</hint>
+    <hint>M Anvuitio</hint>
+    <hint>Mulan T</hint>
+    <hint>M Muanvuitto</hint>
+    <hint>RETO</hint>
+    <interpretation>No usable face crop in report; best next path is text/watermark verification and improved OCR variants.</interpretation>
+  </sample_407017>
+  <important_files>
+    <file path="scripts/media/face_organizer.py">Main scan, OCR, face match, sidecar, registry, organization, report code.</file>
+    <file path="scripts/media/known_performers/index.json">Known performer records.</file>
+    <file path="scripts/media/known_performers/embeddings.npy">Local face embedding matrix.</file>
+    <file path="scripts/media/known_performers/performer_map.json">Embedding row to performer id.</file>
+    <file path="scripts/media/performer_verification.json">Canonical registry with aliases/evidence/statuses.</file>
+    <file path="scripts/media/model_index.json">SpiritFlix model-card index.</file>
+    <file path="scripts/media/face_verification_report.html">Review report.</file>
+    <file path="scripts/media/organize_manifest.json">Move manifest.</file>
+    <file path="scripts/media/rename_plan.json">Review-only rename proposals.</file>
+  </important_files>
+  <code_map>
+    <ref line="84">Constants, exclusions, thresholds.</ref>
+    <ref line="275">pAPI online provider hook.</ref>
+    <ref line="318">OCR region crops.</ref>
+    <ref line="359">OCR execution.</ref>
+    <ref line="585">Watermark parsing.</ref>
+    <ref line="647">Metadata hint build.</ref>
+    <ref line="690">Known performer DB.</ref>
+    <ref line="786">Face match thresholds.</ref>
+    <ref line="805">Seed aliases.</ref>
+    <ref line="856">Trusted profile handles.</ref>
+    <ref line="938">Profile-handle extraction.</ref>
+    <ref line="1113">Combined watermark/face identity.</ref>
+    <ref line="1177">InsightFace recognizer.</ref>
+    <ref line="1424">Per-video scan.</ref>
+    <ref line="1525">Batch scan.</ref>
+    <ref line="1854">Organization moves.</ref>
+    <ref line="1921">Verify performers/model index.</ref>
+    <ref line="2140">Manual verifier links.</ref>
+    <ref line="2181">Report rendering.</ref>
+    <ref line="2428">CLI args.</ref>
+  </code_map>
+  <boundaries>
+    <item>Do not perform internet face recognition or compare local faces to web images.</item>
+    <item>Use text watermarks, profile URLs, handles, filenames, local sidecars, and user corrections.</item>
+    <item>Do not let host/repost sites become model names.</item>
+    <item>Weak OCR noise remains review/unknown.</item>
+  </boundaries>
+  <patch_targets>
+    <target priority="1">Regenerate live report so verifier links appear.</target>
+    <target priority="2">Add text-only web evidence schema to sidecars and registry.</target>
+    <target priority="3">Add provider abstraction for Yandex URL generation, Coomer text/profile lookup, PimpBunny site-scoped query, and user-provided sites.</target>
+    <target priority="4">Improve OCR candidate variants, dedupe, and scoring.</target>
+    <target priority="5">Add model-index audit report for auto/profile-url records.</target>
+    <target priority="6">Build confirmed-crop enrollment workflow to grow known_performers safely.</target>
+  </patch_targets>
+  <commands>
+    <regenerate_report><![CDATA[
+cd /home/source/SpiritOS
+. .venv-face-organizer/bin/activate
+python scripts/media/face_organizer.py --source /DATA/yes --report --ctx-id -1
+]]></regenerate_report>
+    <small_batch><![CDATA[
+cd /home/source/SpiritOS
+. .venv-face-organizer/bin/activate
+python scripts/media/face_organizer.py --source /DATA/yes --sample-limit 30 --apply --ctx-id -1
+python scripts/media/face_organizer.py --source /DATA/yes --verify-performers --apply --ctx-id -1
+python scripts/media/face_organizer.py --source /DATA/yes --report --ctx-id -1
+]]></small_batch>
+    <serve_report><![CDATA[
+cd /home/source/SpiritOS/scripts/media
+python3 -m http.server 8765 --bind 0.0.0.0
+]]></serve_report>
+  </commands>
+</spiritos_media_model_sorting_context>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fileIndex generatedAt="2026-06-14">
+  <repo root="/home/source/SpiritOS" windowsRoot="Z:\">
+    <changedFile path="scripts/media/face_organizer.py" role="Face Organizer server, pages, scans, enrollment, match review"/>
+    <changedFile path="scripts/media-ingest-worker.mjs" role="Conversion/ingest worker and library-watch safety"/>
+    <changedFile path="src/app/api/spiritflix/face-metadata/route.ts" role="SpiritFlix API bridge to Face Organizer metadata"/>
+    <changedFile path="src/components/spiritflix/SpiritFlixHome.tsx" role="SpiritFlix UI model grouping and counts"/>
+    <changedFile path="src/lib/spiritflix-jellyfin-client.ts" role="SpiritFlix client call for face metadata"/>
+  </repo>
+  <generatedArtifacts>
+    <artifact path="scripts/media/face_enrolled_performers.html" role="static enrolled review page"/>
+    <artifact path="scripts/media/face_enrolled_performers.json" role="enrolled groups JSON payload"/>
+    <artifact path="scripts/media/face_enrollment_queue.html" role="static enrollment queue page"/>
+    <artifact path="scripts/media/face_verification_report.html" role="large verification report"/>
+    <artifact path="scripts/media/known_db_audit.html" role="known DB audit page"/>
+  </generatedArtifacts>
+  <sidecarExamples>
+    <sidecar path="/DATA/yes/6513.mp4.face-meta.json" note="fresh scan found 11 faces but no Sava match above threshold"/>
+    <sidecar path="/DATA/yes/Sava.schultz Nude Solo Tease OnlyFans Video Leaked.mp4.face-meta.json" note="fresh scan found 18 faces, Sava possible match, 16 supporting faces"/>
+    <sidecar path="/DATA/yes/models/sava-schultz/(19).mkv.face-meta.json" note="fresh scan has strong Sava face evidence"/>
+  </sidecarExamples>
+</fileIndex>

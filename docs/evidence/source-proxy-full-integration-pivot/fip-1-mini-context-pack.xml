@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mini_context_pack id="fip-1-context-lane-integration" created_utc="2026-06-13T23:59:00Z">
+  <purpose>
+    Give GPT or another model enough context to review the FIP-1 Source Proxy context lane integration without loading the full repo.
+  </purpose>
+
+  <governance>
+    <accepted_prior_plan>docs/evidence/source-proxy-full-integration-pivot/fip-0-closeout.md</accepted_prior_plan>
+    <active_context>docs/evidence/source-proxy-full-integration-pivot/active-context.md</active_context>
+    <preserved_contract>docs/evidence/source-proxy-context-orchestration-master-plan/acceptance-contract.md</preserved_contract>
+    <preserved_policy>docs/evidence/source-proxy-context-orchestration-master-plan/no-preview-only-integration-policy.md</preserved_policy>
+    <hard_stops>
+      <stop>Do not start FIP-2.</stop>
+      <stop>Do not wire Scout or live SearXNG.</stop>
+      <stop>Do not add TinyFish.</stop>
+      <stop>Do not create xersearch.</stop>
+      <stop>Do not resume Level 3/4/5.</stop>
+      <stop>Do not commit or push.</stop>
+    </hard_stops>
+  </governance>
+
+  <increment>
+    <plan>FIP-1</plan>
+    <phase>Context lane integration</phase>
+    <goal>
+      Wire only approved context lanes into the real Source Proxy /coding and /v1/decisions/prompt-packet truth receipt path while preserving FIP-0 receipt honesty and runtime restart discipline.
+    </goal>
+    <verdict>GO</verdict>
+    <verdict_reason>
+      Runtime receipt fip0-9610b1e29eef3633 shows the approved FIP-1 context lanes represented with valid statuses, Scout and SearXNG still skipped, no TinyFish or xersearch activity, final_packet_hash present, and empty coder_received_packet_hash allowed because Qwen coder stayed skipped.
+    </verdict_reason>
+  </increment>
+
+  <changed_files>
+    <file path="source_proxy/api/decision.py">
+      <summary>
+        Added FIP-1 context packet assembly for approved lanes only, source_readiness_status receipt coverage, and prompt-packet response metadata that is included before final packet hashing.
+      </summary>
+      <important_symbols>
+        <symbol>FIP0_LANE_STATUS_FIELDS</symbol>
+        <symbol>_valid_lane_status_value</symbol>
+        <symbol>_packet_lane_status</symbol>
+        <symbol>_blocked_context_packet</symbol>
+        <symbol>_build_fip1_context_lane_packet</symbol>
+        <symbol>_attach_fip0_truth_receipt</symbol>
+        <symbol>prompt_packet</symbol>
+      </important_symbols>
+      <behavior>
+        The FIP-1 packet calls only build_cartographer_context_packet, build_obsidian_context_packet, and build_design_context_packet. Mac worker is recorded as advisory skipped with worker_started false. Scout, live SearXNG, TinyFish, and xersearch remain not invoked.
+      </behavior>
+    </file>
+    <file path="source_proxy/tests/test_prompt_packet_context_metadata.py">
+      <summary>
+        Added focused FIP-1 receipt behavior coverage and kept legacy prompt-packet tests from repeatedly performing live context scans by disabling FIP-1 context in the shared test setup unless a test opts in.
+      </summary>
+      <important_tests>
+        <test>PromptPacketContextMetadataTests.test_prompt_packet_wires_fip1_approved_context_lanes_into_receipt</test>
+      </important_tests>
+    </file>
+  </changed_files>
+
+  <runtime_receipt>
+    <run_id>fip0-9610b1e29eef3633</run_id>
+    <path>/home/source/SpiritOS/docs/evidence/source-proxy-full-integration-pivot/fip-0-receipts/fip0-9610b1e29eef3633.json</path>
+    <runtime_checkout>/home/source/SpiritOS</runtime_checkout>
+    <runtime_url>https://127.0.0.1:8787</runtime_url>
+    <final_verdict>GO: fip1_context_lanes_integrated_runtime_future_lanes_not_wired</final_verdict>
+    <final_packet_hash_present>true</final_packet_hash_present>
+    <coder_received_packet_hash></coder_received_packet_hash>
+    <latest_retrieve_matched_post>true</latest_retrieve_matched_post>
+  </runtime_receipt>
+
+  <lane_statuses>
+    <lane field="context_router_status" observed_status="used" reason="prompt_packet_route_decision_executed"/>
+    <lane field="obsidian_status" observed_status="used" reason="used"/>
+    <lane field="cartographer_status" observed_status="used" reason="cartographer_packet_ready"/>
+    <lane field="design_status" observed_status="used" reason="design_context_ready"/>
+    <lane field="mac_worker_status" observed_status="skipped" reason="fip1_advisory_status_only_no_worker_invocation"/>
+    <lane field="source_readiness_status" observed_status="used" reason="fip1_source_readiness_packet_built_from_approved_context_lanes"/>
+    <lane field="scout_status" observed_status="skipped" reason="fip0_foundation_only_scout_not_wired_until_fip2"/>
+    <lane field="searxng_status" observed_status="skipped" reason="fip0_foundation_only_live_searxng_not_wired_until_fip2"/>
+    <lane field="qwen_coder_status" observed_status="skipped" reason="fip0_receipt_foundation_does_not_activate_qwen_coder"/>
+  </lane_statuses>
+
+  <truth_semantics>
+    <semantic>SearXNG must not be marked used unless a real live SearXNG provider query executes.</semantic>
+    <semantic>Repo/router research remains separate from live SearXNG.</semantic>
+    <semantic>Empty coder_received_packet_hash remains allowed only when qwen_coder_status is skipped.</semantic>
+    <semantic>Every context lane emits used, skipped, blocked, or failed.</semantic>
+    <semantic>Context is wired into the prompt-packet path, but Scout/search/model/coder/verifier/repair lanes remain future plans.</semantic>
+  </truth_semantics>
+
+  <commands_run>
+    <command result="pass">python -m pytest source_proxy/tests/test_prompt_packet_context_metadata.py -q</command>
+    <command result="pass">python -m pytest source_proxy/tests/test_prompt_packet_context_metadata.py::PromptPacketContextMetadataTests::test_prompt_packet_wires_fip1_approved_context_lanes_into_receipt -q</command>
+    <command result="pass">npm run typecheck -- --pretty false</command>
+    <command result="pass_with_line_ending_warnings">git diff --check</command>
+    <command result="pass_runtime_restart">ssh source@10.0.0.186 "cd /home/source/SpiritOS &amp;&amp; tmux new-session -d -s source-proxy-lan 'npm run proxy:https:lan'"</command>
+    <command result="pass_runtime_write">POST https://127.0.0.1:8787/v1/decisions/prompt-packet</command>
+    <command result="pass_runtime_latest_retrieve">GET https://127.0.0.1:8787/v1/decisions/fip0-receipts/latest</command>
+    <command result="pass_runtime_by_run_retrieve">GET https://127.0.0.1:8787/v1/decisions/fip0-receipts/fip0-9610b1e29eef3633</command>
+  </commands_run>
+
+  <manual_checks_for_britton>
+    <check>Open the authenticated app-origin latest receipt route if app-origin confirmation is desired.</check>
+    <check>Confirm latest receipt returns fip0-9610b1e29eef3633.</check>
+    <check>Confirm the final verdict remains FIP-1 and does not claim FIP-2.</check>
+  </manual_checks_for_britton>
+
+  <next_gate>
+    Stop after FIP-1. Wait for Britton approval before FIP-2.
+  </next_gate>
+</mini_context_pack>

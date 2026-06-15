@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fip4MiniContextPack status="GO">
+  <scope>FIP-4 final coder packet assembly and Qwen coding-only execution</scope>
+  <truthPath>/coding / /v1/decisions/prompt-packet FIP-0 receipt path</truthPath>
+  <duplicateWorkCheck activeRuntimeSessions="1" activeSession="source-proxy-lan" concurrentDuplicateWorkFound="false">Earlier nearby receipts were sequential proof attempts and are not all accepted.</duplicateWorkCheck>
+  <acceptedReceipts>
+    <receipt kind="no-search-coding" runId="fip0-36deb32ba4fdb2a0" path="/home/source/SpiritOS/docs/evidence/source-proxy-full-integration-pivot/fip-0-receipts/fip0-36deb32ba4fdb2a0.json" />
+    <receipt kind="search-needed-honesty" runId="fip0-52e787f2903ff57e" path="/home/source/SpiritOS/docs/evidence/source-proxy-full-integration-pivot/fip-0-receipts/fip0-52e787f2903ff57e.json" />
+    <receipt kind="protected-path-enforcement" runId="fip0-8a633b11eb895d6e" path="/home/source/SpiritOS/docs/evidence/source-proxy-full-integration-pivot/fip-0-receipts/fip0-8a633b11eb895d6e.json" />
+  </acceptedReceipts>
+  <models>
+    <gemma model="gemma3n:e4b" status="used" />
+    <hermesCritic model="hermes3:8b-abliterated" status="used" />
+    <qwenCoder model="qwen2.5-coder:7b" status="used" role="coding/action-only" />
+    <hermesVerifier status="skipped" roleReserved="true" authority="future_fip5_necessary_not_sufficient" />
+  </models>
+  <proofs>
+    <noSearch runId="fip0-36deb32ba4fdb2a0" finalVerdict="GO: fip4_qwen_coding_only_execution_complete" searchNeeded="false" searxngStatus="skipped" scoutStatus="skipped" qwenStatus="used" hashMatch="true" packetHash="cef2e9e42f022a01fa2c6240acefa412c8822b3c11f0bf9fe47afa32d05dfafc" changedFile="docs/fip4-runtime-target.txt" />
+    <searchNeeded runId="fip0-52e787f2903ff57e" finalVerdict="GO: fip4_qwen_coding_only_execution_complete" searchNeeded="true" searxngStatus="blocked" searxngReason="searxng_query_returned_no_usable_results" scoutStatus="blocked" scoutReason="scout_dependency_unreachable" researchPacketHash="3620e0435b7689a0bca759040d52387eed83a253badac281d8d2e3bfe18e6c0e" researchPacketIncludedInContext="true" hashMatch="true" packetHash="7f5fc879350c24e7b7e087b130fb4452c28fa3120b5fbf7ec2febbd130970d92" />
+    <parserRejection test="test_fip4_malformed_qwen_output_is_rejected" status="passed" parserRejected="true" />
+    <protectedPath runId="fip0-8a633b11eb895d6e" finalVerdict="NO-GO" protectedPathStatus="blocked" qwenStatus="skipped" coderReceivedPacketHash="" changedFiles="0" />
+  </proofs>
+  <preservedSemantics>
+    <item>Qwen is coding/action only.</item>
+    <item>Qwen receives the exact final coder packet before accepted coding receipts.</item>
+    <item>Malformed output is rejected without fake apply.</item>
+    <item>Protected and forbidden paths are blocked.</item>
+    <item>Hermes verifier remains skipped/reserved for FIP-5.</item>
+    <item>Repair loop remains skipped.</item>
+    <item>TinyFish remains deferred; xersearch not created.</item>
+  </preservedSemantics>
+  <checks>
+    <check command=".venv-source-proxy/bin/python -m pytest source_proxy/tests/test_prompt_packet_context_metadata.py -q" status="passed" detail="49 passed on Linux runtime checkout" />
+    <check command="focused FIP-2/FIP-4 pytest selection" status="passed" detail="10 passed" />
+    <check command="npm run typecheck -- --pretty false" status="passed" />
+    <check command="git diff --check" status="passed" detail="line-ending warnings only" />
+    <check command="Windows SMB full pytest" status="timed_out" detail="Linux runtime checkout full pytest passed" />
+  </checks>
+  <nextStopGate>Stop after FIP-4. FIP-5 requires Britton approval.</nextStopGate>
+</fip4MiniContextPack>

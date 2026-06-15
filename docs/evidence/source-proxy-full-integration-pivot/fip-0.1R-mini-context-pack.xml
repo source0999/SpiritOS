@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mini_context_pack id="fip-0.1R-authed-hot-path-proof" created_utc="2026-06-13T22:36:00Z">
+  <purpose>Give GPT or another model the complete context needed to analyze FIP-0.1R without loading the full repo.</purpose>
+  <scope>
+    <plan>FIP-0</plan>
+    <phase>Authenticated hot-path proof</phase>
+    <increment>FIP-0.1R</increment>
+    <verdict>CONFIG-BLOCKED</verdict>
+  </scope>
+  <hard_stops>
+    <stop>Do not start FIP-1.</stop>
+    <stop>Do not wire context/search/model/coder/verifier lanes yet.</stop>
+    <stop>Do not use cloud providers.</stop>
+    <stop>Do not commit or push.</stop>
+  </hard_stops>
+  <goal>Prove a real authenticated /coding prompt reaches /v1/decisions/prompt-packet and writes/retrieves the FIP-0 receipt.</goal>
+  <result>
+    <backend_receipt_retrieval>PASS</backend_receipt_retrieval>
+    <authenticated_coding_hot_path>CONFIG-BLOCKED</authenticated_coding_hot_path>
+    <blocker>App-origin routes return 401 without an authenticated browser session; in-app browser local navigation is blocked by ERR_BLOCKED_BY_CLIENT; Source Proxy default port 8787 is not reachable.</blocker>
+  </result>
+  <changed_files>
+    <file path="source_proxy/api/decision.py">Added FIP-0 receipt retrieval helpers and GET routes for latest and by-run-id receipts.</file>
+    <file path="source_proxy/tests/test_prompt_packet_context_metadata.py">Added backend retrieval route tests.</file>
+    <file path="src/app/v1/decisions/fip0-receipts/latest/route.ts">Added Next app-origin proxy for latest receipt retrieval.</file>
+    <file path="src/app/v1/decisions/fip0-receipts/[runId]/route.ts">Added Next app-origin proxy for by-run-id receipt retrieval.</file>
+    <file path="src/app/v1/decisions/fip0-receipts/__tests__/route.test.ts">Added Vitest route proxy tests; local collection is runner-blocked on Z:.</file>
+    <file path="docs/evidence/source-proxy-full-integration-pivot/fip-0.1R-authed-hot-path-proof.md">Increment evidence receipt.</file>
+    <file path="docs/evidence/source-proxy-full-integration-pivot/fip-0-receipts/fip0-0991f38b42f32eec.json">Backend receipt written and retrieved during FIP-0.1R.</file>
+  </changed_files>
+  <proof_receipt>
+    <path>docs/evidence/source-proxy-full-integration-pivot/fip-0-receipts/fip0-0991f38b42f32eec.json</path>
+    <run_id>fip0-0991f38b42f32eec</run_id>
+    <final_verdict>GO: fip0_receipt_foundation_complete_runtime_lanes_not_yet_wired</final_verdict>
+    <final_packet_hash_present>true</final_packet_hash_present>
+    <coder_received_packet_hash_field_present>true</coder_received_packet_hash_field_present>
+  </proof_receipt>
+  <commands>
+    <command result="PASS">python -m pytest source_proxy/tests/test_prompt_packet_context_metadata.py -q</command>
+    <command result="PASS_WITH_WARNINGS">git diff --check</command>
+    <command result="PASS">npm run typecheck -- --pretty false</command>
+    <command result="BLOCKED">npm test -- src/app/v1/decisions/fip0-receipts/__tests__/route.test.ts --run</command>
+    <command result="BLOCKED">npx vitest run src/app/v1/decisions/fip0-receipts/__tests__/route.test.ts</command>
+    <command result="CONFIG_BLOCKED_401">curl http://127.0.0.1:3000/coding</command>
+    <command result="CONFIG_BLOCKED_401">curl http://127.0.0.1:3000/v1/decisions/prompt-packet</command>
+    <command result="CONFIG_BLOCKED_401">curl http://127.0.0.1:3000/v1/decisions/fip0-receipts/latest</command>
+    <command result="UNREACHABLE">Invoke-WebRequest http://127.0.0.1:8787/v1/decisions/fip0-receipts/latest</command>
+    <command result="PASS">FastAPI TestClient write and retrieve FIP-0 receipt</command>
+  </commands>
+  <manual_proof_path>
+    <step>Open /coding in an authenticated browser session.</step>
+    <step>Submit a prompt that reaches /v1/decisions/prompt-packet.</step>
+    <step>Open /v1/decisions/fip0-receipts/latest in that same authenticated session.</step>
+    <step>Compare returned receipt fields with the durable JSON under docs/evidence/source-proxy-full-integration-pivot/fip-0-receipts/.</step>
+  </manual_proof_path>
+  <next_gate>NEXT ACTION REQUIRES BRITTON APPROVAL: BRITTON GO NEXT INCREMENT / BRITTON GO NEXT PHASE / BRITTON GO NEXT PLAN</next_gate>
+</mini_context_pack>
