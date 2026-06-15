@@ -94,9 +94,53 @@ export interface FaceOrganizerVideoMatch {
 
 export interface FaceOrganizerMetadataResponse {
   knownPerformers: FaceOrganizerPerformer[];
+  enrolledSources?: Record<
+    string,
+    {
+      name: string;
+      slug?: string;
+      candidateVideos: number;
+      enrolledScreens?: number;
+      recommendationSourceVideos?: string[];
+      refreshedAt?: string;
+      source?: "enrolled" | "model_index";
+    }
+  >;
   videos: Record<string, FaceOrganizerVideoMatch>;
   scannedCount: number;
   generatedAt: string;
+}
+
+export interface SpiritFlixGalleryItem {
+  id: string;
+  modelName: string;
+  modelKey: string;
+  modelSlug: string;
+  fileName: string;
+  src: string;
+  thumbnailSrc?: string;
+  collection?: string;
+  uploadedAt?: string;
+  sizeBytes?: number;
+  contentType?: string;
+}
+
+export interface SpiritFlixGalleryGroup {
+  name: string;
+  modelKey: string;
+  modelSlug: string;
+  itemCount: number;
+}
+
+export interface SpiritFlixGalleryResponse {
+  schema: "spiritflix-model-gallery/v1";
+  generatedAt: string;
+  items: SpiritFlixGalleryItem[];
+  groups: SpiritFlixGalleryGroup[];
+  summary: {
+    galleryItems: number;
+    modelsWithGallery: number;
+  };
 }
 
 export interface JellyfinLibrary {

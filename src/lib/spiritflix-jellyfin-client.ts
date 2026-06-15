@@ -4,6 +4,7 @@ import type {
   JellyfinItemsResponse,
   JellyfinLibrary,
   FaceOrganizerMetadataResponse,
+  SpiritFlixGalleryResponse,
   SpiritFlixServerInfo,
   SpiritFlixSession,
 } from "./spiritflix-types";
@@ -289,7 +290,7 @@ export class JellyfinClient {
   }
 
   async getFavorites(): Promise<JellyfinItem[]> {
-    return this.getItemsByQuery({ Filters: "IsFavorite", SortBy: "SortName", Limit: 18 });
+    return this.getItemsByQuery({ Filters: "IsFavorite", SortBy: "SortName", Limit: 200 });
   }
 
   async getLibraryFavoriteItems(parentId: string): Promise<JellyfinItem[]> {
@@ -304,7 +305,7 @@ export class JellyfinClient {
       EnableImageTypes: "Primary,Backdrop,Thumb,Logo",
       SortBy: "SortName",
       SortOrder: "Ascending",
-      Limit: 24,
+      Limit: 200,
     });
     const data = await this.request<JellyfinItemsResponse<JellyfinItem>>(
       `/Users/${this.userId}/Items?${query}`,
@@ -331,9 +332,11 @@ export class JellyfinClient {
 
     const response = await fetch("/api/spiritflix/face-metadata", {
       method: "POST",
+      cache: "no-store",
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
+        "Cache-Control": "no-cache",
       },
       body: JSON.stringify({
         items: items.map((item) => ({
@@ -349,6 +352,23 @@ export class JellyfinClient {
     }
 
     return (await response.json()) as FaceOrganizerMetadataResponse;
+  }
+
+  async getGallery(): Promise<SpiritFlixGalleryResponse> {
+    const response = await fetch("/api/spiritflix/gallery", {
+      method: "GET",
+      cache: "no-store",
+      headers: {
+        Accept: "application/json",
+        "Cache-Control": "no-cache",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("SpiritFlix gallery is unavailable.");
+    }
+
+    return (await response.json()) as SpiritFlixGalleryResponse;
   }
 
   private async getItemsByQuery(extra: Record<string, string | number>): Promise<JellyfinItem[]> {

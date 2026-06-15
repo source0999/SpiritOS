@@ -6,6 +6,10 @@ import path from "node:path";
 const ROOT = process.env.MEDIA_INGEST_ROOT || "/mnt/spirit-8tb";
 const INBOX_ROOT = process.env.MEDIA_INGEST_INBOX || path.join(ROOT, "media-inbox");
 const MEDIA_ROOT = process.env.MEDIA_INGEST_MEDIA || path.join(ROOT, "media");
+const LIBRARY_WATCH_ROOTS = (process.env.MEDIA_INGEST_LIBRARY_WATCH_ROOTS || path.join(MEDIA_ROOT, "yes"))
+  .split(path.delimiter)
+  .map((entry) => entry.trim())
+  .filter(Boolean);
 const ORIGINALS_ROOT =
   process.env.MEDIA_INGEST_ORIGINALS || path.join(ROOT, "media-originals", "keep-for-30-days");
 const PROCESSING_ROOT = process.env.MEDIA_INGEST_PROCESSING || path.join(ROOT, "media-processing");
@@ -25,6 +29,15 @@ const MAC_VIDEO_BITRATE = process.env.MEDIA_INGEST_MAC_VIDEO_BITRATE || "500k";
 const MAC_MAXRATE = process.env.MEDIA_INGEST_MAC_MAXRATE || "900k";
 const MAC_BUFSIZE = process.env.MEDIA_INGEST_MAC_BUFSIZE || "1800k";
 const MAC_PROFILE = process.env.MEDIA_INGEST_MAC_PROFILE || "main10";
+const DELETE_LIBRARY_ORIGINALS = process.env.MEDIA_INGEST_DELETE_LIBRARY_ORIGINALS === "1";
+const STOP_AFTER_DONE = Number(process.env.MEDIA_INGEST_STOP_AFTER_DONE || 0);
+const MAX_QUEUED = Number(process.env.MEDIA_INGEST_MAX_QUEUED || 0);
+const FACE_SCAN_ON_INGEST = process.env.MEDIA_INGEST_FACE_SCAN_ON_INGEST !== "0";
+const FACE_ORGANIZER_PYTHON = process.env.MEDIA_INGEST_FACE_ORGANIZER_PYTHON || ".venv-face-organizer/bin/python";
+const FACE_ORGANIZER_SCRIPT = process.env.MEDIA_INGEST_FACE_ORGANIZER_SCRIPT || "scripts/media/face_organizer.py";
+const FACE_ORGANIZER_SOURCE = process.env.MEDIA_INGEST_FACE_ORGANIZER_SOURCE || LIBRARY_WATCH_ROOTS[0] || path.join(MEDIA_ROOT, "yes");
+const FACE_ORGANIZER_CTX_ID = process.env.MEDIA_INGEST_FACE_ORGANIZER_CTX_ID || "0";
+const FACE_ORGANIZER_FRAME_COUNT = process.env.MEDIA_INGEST_FACE_ORGANIZER_FRAME_COUNT || "12";
 
 const state = {
   version: 2,
@@ -51,6 +64,9 @@ function jobLog(job, message) {
 async function ensureDirs() {
   await fs.mkdir(INBOX_ROOT, { recursive: true });
   await fs.mkdir(MEDIA_ROOT, { recursive: true });
+  for (const root of LIBRARY_WATCH_ROOTS) {
+    await fs.mkdir(root, { recursive: true });
+  }
   await fs.mkdir(ORIGINALS_ROOT, { recursive: true });
   await fs.mkdir(ACTIVE_ROOT, { recursive: true });
   await fs.mkdir(FAILED_ROOT, { recursive: true });
@@ -81,6 +97,51 @@ function run(command, args) {
       }
     });
   });
+}
+
+async function runFaceOrganizerScan(finalPath) {
+  if (!FACE_SCAN_ON_INGEST) {
+    return {
+      enabled: false,
+      status: "skipped",
+      reason: "MEDIA_INGEST_FACE_SCAN_ON_INGEST=0",
+      at: now(),
+    };
+  }
+  const args = [
+    FACE_ORGANIZER_SCRIPT,
+    "--scan-video",
+    finalPath,
+    "--source",
+    FACE_ORGANIZER_SOURCE,
+    "--apply",
+    "--force",
+    "--frame-count",
+    FACE_ORGANIZER_FRAME_COUNT,
+    "--ctx-id",
+    FACE_ORGANIZER_CTX_ID,
+  ];
+  try {
+    const result = await run(FACE_ORGANIZER_PYTHON, args);
+    return {
+      enabled: true,
+      status: "ok",
+      at: now(),
+      command: [FACE_ORGANIZER_PYTHON, ...args],
+      stdout: result.stdout.slice(-4000),
+      stderr: result.stderr.slice(-4000),
+      sidecarPath: `${finalPath}.face-meta.json`,
+    };
+  } catch (error) {
+    return {
+      enabled: true,
+      status: "failed",
+      at: now(),
+      command: [FACE_ORGANIZER_PYTHON, ...args],
+      error: error instanceof Error ? error.message : String(error),
+      sidecarPath: `${finalPath}.face-meta.json`,
+    };
+  }
 }
 
 async function ffprobe(file) {
@@ -114,6 +175,66 @@ async function walk(dir) {
   return files.sort();
 }
 
+function receiptPathFor(file) {
+  return `${file}.media-ingest.json`;
+}
+
+async function exists(file) {
+  return fs.access(file).then(() => true).catch(() => false);
+}
+
+async function movePath(source, target) {
+  try {
+    await fs.rename(source, target);
+  } catch (error) {
+    if (error?.code !== "EXDEV") {
+      throw error;
+    }
+    await fs.copyFile(source, target);
+    await fs.rm(source, { force: true });
+  }
+}
+
+async function hasIngestReceipt(file) {
+  return exists(receiptPathFor(file));
+}
+
+async function chooseFinalPath(relativeOutput, activePath) {
+  const requested = path.join(MEDIA_ROOT, relativeOutput);
+  const activeOriginalFinalPath = path.join(MEDIA_ROOT, relativeOutput.replace(/\.mkv$/, path.extname(activePath)));
+  if (!(await exists(requested)) || requested === activeOriginalFinalPath) {
+    return requested;
+  }
+
+  const parsed = path.parse(relativeOutput);
+  for (let attempt = 1; attempt <= 100; attempt += 1) {
+    const suffix = attempt === 1 ? ".optimized" : `.optimized-${attempt}`;
+    const candidate = path.join(MEDIA_ROOT, parsed.dir, `${parsed.name}${suffix}${parsed.ext}`);
+    if (!(await exists(candidate))) {
+      return candidate;
+    }
+  }
+
+  throw new Error(`Could not choose a non-conflicting final output path for ${relativeOutput}.`);
+}
+
+function libraryCategoryAndRelative(file, root) {
+  const relativeToMedia = path.relative(MEDIA_ROOT, file);
+  if (!relativeToMedia.startsWith("..") && !path.isAbsolute(relativeToMedia)) {
+    const [category, ...rest] = relativeToMedia.split(path.sep);
+    return {
+      category: category || path.basename(root),
+      relativeInCategory: rest.join(path.sep) || path.basename(file),
+    };
+  }
+
+  const relativeToRoot = path.relative(root, file);
+  return {
+    category: path.basename(root) || "yes",
+    relativeInCategory: relativeToRoot || path.basename(file),
+  };
+}
+
 async function isStable(file) {
   const first = await fs.stat(file);
   const age = Date.now() - first.mtimeMs;
@@ -126,16 +247,39 @@ async function isStable(file) {
   return first.size === second.size && first.mtimeMs === second.mtimeMs;
 }
 
-function makeJob(file) {
+function makeInboxJob(file) {
   const rel = path.relative(INBOX_ROOT, file);
   const [category, ...rest] = rel.split(path.sep);
   const relativeInCategory = rest.join(path.sep);
+  return makeJob({
+    file,
+    category: category || "other",
+    relativeInCategory: relativeInCategory || path.basename(file),
+    sourceKind: "inbox",
+    deleteOriginalOnSuccess: false,
+  });
+}
+
+function makeLibraryJob(file, root) {
+  const { category, relativeInCategory } = libraryCategoryAndRelative(file, root);
+  return makeJob({
+    file,
+    category,
+    relativeInCategory,
+    sourceKind: "library",
+    deleteOriginalOnSuccess: DELETE_LIBRARY_ORIGINALS,
+  });
+}
+
+function makeJob({ file, category, relativeInCategory, sourceKind, deleteOriginalOnSuccess }) {
   const id = `mi-${Date.now().toString(36)}-${Math.random().toString(16).slice(2, 10)}`;
   return {
     id,
     sourcePath: file,
-    category: category || "other",
-    relativeInCategory: relativeInCategory || path.basename(file),
+    sourceKind,
+    deleteOriginalOnSuccess,
+    category,
+    relativeInCategory,
     profile: "balanced_1080p",
     status: "queued",
     createdAt: now(),
@@ -144,12 +288,14 @@ function makeJob(file) {
   };
 }
 
-async function scan() {
-  const files = await walk(INBOX_ROOT);
-  await log(`Polling scan found ${files.length} filesystem entries under ${INBOX_ROOT}.`);
+async function enqueueStableCandidates(files, makeCandidateJob) {
   for (const file of files) {
     if (state.jobs.some((job) => job.sourcePath === file && job.status !== "failed")) {
       await log(`Skipped duplicate: ${file}`);
+      continue;
+    }
+    if (await hasIngestReceipt(file)) {
+      await log(`Skipped already-ingested output: ${file}`);
       continue;
     }
     await log(`Discovered candidate: ${file}`);
@@ -159,10 +305,26 @@ async function scan() {
       continue;
     }
     await log(`Stable: ${file}`);
-    const job = makeJob(file);
+    const job = makeCandidateJob(file);
     state.jobs.push(job);
     await log(`Queued job ${job.id}: ${file}`);
     await writeState();
+    if (MAX_QUEUED > 0 && state.jobs.filter((existingJob) => existingJob.status === "queued").length >= MAX_QUEUED) {
+      await log(`Max queued target reached: ${MAX_QUEUED} queued job(s).`);
+      break;
+    }
+  }
+}
+
+async function scan() {
+  const inboxFiles = await walk(INBOX_ROOT);
+  await log(`Polling scan found ${inboxFiles.length} filesystem entries under ${INBOX_ROOT}.`);
+  await enqueueStableCandidates(inboxFiles, makeInboxJob);
+
+  for (const root of LIBRARY_WATCH_ROOTS) {
+    const libraryFiles = await walk(root);
+    await log(`Polling scan found ${libraryFiles.length} filesystem entries under library watch root ${root}.`);
+    await enqueueStableCandidates(libraryFiles, (file) => makeLibraryJob(file, root));
   }
 }
 
@@ -174,7 +336,7 @@ async function processJob(job) {
   const activeDir = path.join(ACTIVE_ROOT, job.id);
   await fs.mkdir(activeDir, { recursive: true });
   const activePath = path.join(activeDir, path.basename(job.relativeInCategory));
-  await fs.rename(job.sourcePath, activePath);
+  await movePath(job.sourcePath, activePath);
   job.activePath = activePath;
   await jobLog(job, `Moved to active: ${activePath}`);
 
@@ -276,20 +438,49 @@ async function processJob(job) {
   }
   await jobLog(job, `Accepted output. Savings: ${savings.toFixed(2)}%.`);
 
-  const finalPath = path.join(MEDIA_ROOT, job.category, outputRelative);
+  const finalPath = await chooseFinalPath(path.join(job.category, outputRelative), activePath);
   const originalHoldingPath = path.join(ORIGINALS_ROOT, job.category, job.id, job.relativeInCategory);
   await fs.mkdir(path.dirname(finalPath), { recursive: true });
   await fs.mkdir(path.dirname(originalHoldingPath), { recursive: true });
-  await jobLog(job, "Moving output and original into final locations.");
-  await fs.rename(tempOutputPath, finalPath);
-  await fs.rename(activePath, originalHoldingPath);
+  await jobLog(job, "Moving output and handling original.");
+  await movePath(tempOutputPath, finalPath);
+  const receipt = {
+    at: now(),
+    jobId: job.id,
+    sourceKind: job.sourceKind,
+    sourcePath: job.sourcePath,
+    finalPath,
+    originalSize: job.originalSize,
+    outputSize,
+    savingsPercent: Number(savings.toFixed(2)),
+    profile: job.profile,
+    encoder: ENCODER,
+    deletedOriginal: Boolean(job.deleteOriginalOnSuccess),
+  };
+  await fs.writeFile(receiptPathFor(finalPath), `${JSON.stringify(receipt, null, 2)}\n`);
+  await jobLog(job, "Running face organizer scan for uploaded video.");
+  receipt.faceOrganizerScan = await runFaceOrganizerScan(finalPath);
+  await fs.writeFile(receiptPathFor(finalPath), `${JSON.stringify(receipt, null, 2)}\n`);
+  await jobLog(job, `Face organizer scan ${receipt.faceOrganizerScan.status}.`);
+  if (job.deleteOriginalOnSuccess) {
+    await fs.rm(activePath, { force: true });
+    job.originalDeleted = true;
+  } else {
+    await movePath(activePath, originalHoldingPath);
+    job.originalHoldingPath = originalHoldingPath;
+  }
   await fs.rm(activeDir, { recursive: true, force: true });
   job.finalPath = finalPath;
-  job.originalHoldingPath = originalHoldingPath;
+  job.receiptPath = receiptPathFor(finalPath);
   job.status = "done";
   job.progressPercent = 100;
   job.completedAt = now();
-  await jobLog(job, `Completed. Final: ${finalPath}. Original: ${originalHoldingPath}`);
+  await jobLog(
+    job,
+    job.deleteOriginalOnSuccess
+      ? `Completed. Final: ${finalPath}. Original deleted after successful conversion.`
+      : `Completed. Final: ${finalPath}. Original: ${originalHoldingPath}`,
+  );
   await jobLog(job, "Jellyfin scan not triggered: set JELLYFIN_URL and JELLYFIN_API_KEY to enable it.");
 }
 
@@ -315,6 +506,13 @@ async function main() {
   });
 
   await log(`Media ingest worker started. inbox=${INBOX_ROOT}`);
+  await log(`Library watch roots: ${LIBRARY_WATCH_ROOTS.join(", ") || "(none)"}`);
+  if (STOP_AFTER_DONE > 0) {
+    await log(`Stop-after mode enabled: worker exits after ${STOP_AFTER_DONE} completed job(s).`);
+  }
+  if (MAX_QUEUED > 0) {
+    await log(`Max-queued mode enabled: scan queues up to ${MAX_QUEUED} job(s).`);
+  }
   while (true) {
     await scan();
     const next = state.jobs.find((job) => job.status === "queued");
@@ -325,6 +523,10 @@ async function main() {
         await failJob(next, error);
       }
       await writeState();
+      if (STOP_AFTER_DONE > 0 && state.jobs.filter((job) => job.status === "done").length >= STOP_AFTER_DONE) {
+        await log(`Stop-after target reached: ${STOP_AFTER_DONE} completed job(s). Exiting.`);
+        break;
+      }
       continue;
     }
     await writeState();

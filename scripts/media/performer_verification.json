@@ -1,7 +1,7 @@
 {
   "schema": "media-performer-verification/v1",
   "generated_at": "2026-06-05T20:58:47+00:00",
-  "updated_at": "2026-06-05T21:01:44+00:00",
+  "updated_at": "2026-06-15T04:22:28+00:00",
   "performers": {
     "aaliyah-yasan": {
       "name": "Aaliyah Yasan",
@@ -65,9 +65,55 @@
           "raw": "uTlln",
           "confidence": 0.51,
           "frame_path": "/DATA/yes/.face-review/HkkzMtwQexuQzwkQMekM/frames/frame-06.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/unknown/Visit onlyshare.io for MORE 130.MP4",
+          "source": "manual_correction",
+          "name": "Aaliyah Yasan",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/unknown/Visit onlyshare.io for MORE 130.MP4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/unknown/Visit onlyshare.io for MORE 130.MP4",
+          "source": "manual_correction",
+          "name": "Aaliyah Yasan",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/unknown/Visit onlyshare.io for MORE 130.MP4.face-meta.json"
         }
       ],
-      "video_count": 2
+      "video_count": 2,
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-15T02:36:55+00:00",
+      "audit_events": [
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton notes 2026-06-14",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T02:35:34+00:00",
+          "corrected_at": "2026-06-15T02:35:34+00:00",
+          "source_file": "/DATA/yes/unknown/Visit onlyshare.io for MORE 130.MP4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Aaliyah Yasan",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton notes 2026-06-14",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T02:36:55+00:00",
+          "corrected_at": "2026-06-15T02:36:55+00:00",
+          "source_file": "/DATA/yes/unknown/Visit onlyshare.io for MORE 130.MP4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Aaliyah Yasan",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        }
+      ]
     },
     "alannasworldx": {
       "name": "Alannasworldx",
@@ -158,56 +204,6 @@
         }
       ],
       "video_count": 2
-    },
-    "alienland": {
-      "name": "Alienland",
-      "slug": "alienland",
-      "aliases": [],
-      "profile_handles": [],
-      "status": "local-auto",
-      "evidence": [
-        {
-          "video_path": "/DATA/yes/models/alienland/217809.mp4",
-          "source": "watermark_ocr_text",
-          "name": "Onlur",
-          "raw": "Onlur",
-          "confidence": 0.69,
-          "frame_path": "/DATA/yes/models/alienland/.face-review/217809/frames/frame-02.jpg"
-        },
-        {
-          "video_path": "/DATA/yes/models/alienland/217809.mp4",
-          "source": "watermark_ocr_text",
-          "name": "Viraixxxporn",
-          "raw": "Viraixxxporn!",
-          "confidence": 0.63,
-          "frame_path": "/DATA/yes/models/alienland/.face-review/217809/frames/frame-01.jpg"
-        },
-        {
-          "video_path": "/DATA/yes/models/alienland/217809.mp4",
-          "source": "watermark_ocr_text",
-          "name": "Niand",
-          "raw": "niand",
-          "confidence": 0.63,
-          "frame_path": "/DATA/yes/models/alienland/.face-review/217809/frames/frame-01.jpg"
-        },
-        {
-          "video_path": "/DATA/yes/models/alienland/217809.mp4",
-          "source": "watermark_ocr_text",
-          "name": "Nlamd",
-          "raw": "nlamd",
-          "confidence": 0.62,
-          "frame_path": "/DATA/yes/models/alienland/.face-review/217809/frames/frame-01.jpg"
-        },
-        {
-          "video_path": "/DATA/yes/models/alienland/217809.mp4",
-          "source": "watermark_ocr_text",
-          "name": "Onlvta",
-          "raw": "Onlvta",
-          "confidence": 0.6,
-          "frame_path": "/DATA/yes/models/alienland/.face-review/217809/frames/frame-01.jpg"
-        }
-      ],
-      "video_count": 1
     },
     "amburne": {
       "name": "Amburne",
@@ -614,7 +610,11 @@
     "cute-geekie": {
       "name": "Cute Geekie",
       "slug": "cute-geekie",
-      "aliases": [],
+      "aliases": [
+        "cutefru",
+        "Cutefru",
+        "cutefruit"
+      ],
       "profile_handles": [
         {
           "platform": "onlyfans",
@@ -636,9 +636,16 @@
           "url": "https://fansly.com/cutegeekie",
           "source": "watermark_ocr",
           "raw": "fansly.com/cutegeekie"
+        },
+        {
+          "platform": "onlyfans",
+          "handle": "cutefru",
+          "url": "https://onlyfans.com/cutefru",
+          "source": "watermark_ocr",
+          "raw": "onlyfans.com/cutefru"
         }
       ],
-      "status": "profile-url",
+      "status": "user-confirmed",
       "evidence": [
         {
           "video_path": "/DATA/yes/models/cute-geekie/@MLHUBOF Telegram 🌌🔥 - 793.M4V",
@@ -799,25 +806,7 @@
           "raw": "utegeekie",
           "confidence": 0.64,
           "frame_path": "/DATA/yes/.face-review/Visit onlyshare.io for MORE 05135/frames/frame-02.jpg"
-        }
-      ],
-      "video_count": 10
-    },
-    "cutefru": {
-      "name": "Cutefru",
-      "slug": "cutefru",
-      "aliases": [],
-      "profile_handles": [
-        {
-          "platform": "onlyfans",
-          "handle": "cutefru",
-          "url": "https://onlyfans.com/cutefru",
-          "source": "watermark_ocr",
-          "raw": "onlyfans.com/cutefru"
-        }
-      ],
-      "status": "profile-url",
-      "evidence": [
+        },
         {
           "video_path": "/DATA/yes/models/cutefru/Visit onlyshare.io for MORE 04419.MP4",
           "source": "watermark_ocr_text",
@@ -859,12 +848,32 @@
           "frame_path": "/DATA/yes/.face-review/Visit onlyshare.io for MORE 04419/frames/frame-01.jpg"
         }
       ],
-      "video_count": 1
+      "video_count": 11,
+      "enrolled_face_samples": [],
+      "audit_events": [
+        {
+          "event": "duplicate_creator_merged",
+          "source_name": "Cutefru",
+          "target_name": "Cute Geekie",
+          "confirmed_by": "Britton",
+          "at": "2026-06-14T00:52:44+00:00"
+        },
+        {
+          "event": "duplicate_creator_merged",
+          "source_name": "cutefruit",
+          "target_name": "Cute Geekie",
+          "confirmed_by": "Britton",
+          "at": "2026-06-14T03:54:06+00:00"
+        }
+      ]
     },
     "gem-the-jewels": {
       "name": "Gem The Jewels",
       "slug": "gem-the-jewels",
-      "aliases": [],
+      "aliases": [
+        "Alienland",
+        "alienland"
+      ],
       "profile_handles": [
         {
           "platform": "onlyfans",
@@ -874,7 +883,7 @@
           "raw": "OnlyFans.com/gemthejewels"
         }
       ],
-      "status": "profile-url",
+      "status": "user-confirmed",
       "evidence": [
         {
           "video_path": "/DATA/yes/models/gem-the-jewels/548555_720p.mp4",
@@ -915,9 +924,59 @@
           "raw": "nlyFans.coim/gem",
           "confidence": 0.6,
           "frame_path": "/DATA/yes/.face-review/548555_720p/frames/frame-03.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/models/alienland/217809.mp4",
+          "source": "watermark_ocr_text",
+          "name": "Onlur",
+          "raw": "Onlur",
+          "confidence": 0.69,
+          "frame_path": "/DATA/yes/models/alienland/.face-review/217809/frames/frame-02.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/models/alienland/217809.mp4",
+          "source": "watermark_ocr_text",
+          "name": "Viraixxxporn",
+          "raw": "Viraixxxporn!",
+          "confidence": 0.63,
+          "frame_path": "/DATA/yes/models/alienland/.face-review/217809/frames/frame-01.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/models/alienland/217809.mp4",
+          "source": "watermark_ocr_text",
+          "name": "Niand",
+          "raw": "niand",
+          "confidence": 0.63,
+          "frame_path": "/DATA/yes/models/alienland/.face-review/217809/frames/frame-01.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/models/alienland/217809.mp4",
+          "source": "watermark_ocr_text",
+          "name": "Nlamd",
+          "raw": "nlamd",
+          "confidence": 0.62,
+          "frame_path": "/DATA/yes/models/alienland/.face-review/217809/frames/frame-01.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/models/alienland/217809.mp4",
+          "source": "watermark_ocr_text",
+          "name": "Onlvta",
+          "raw": "Onlvta",
+          "confidence": 0.6,
+          "frame_path": "/DATA/yes/models/alienland/.face-review/217809/frames/frame-01.jpg"
         }
       ],
-      "video_count": 2
+      "video_count": 3,
+      "enrolled_face_samples": [],
+      "audit_events": [
+        {
+          "event": "duplicate_creator_merged",
+          "source_name": "Alienland",
+          "target_name": "Gem The Jewels",
+          "confirmed_by": "Britton",
+          "at": "2026-06-14T00:56:57+00:00"
+        }
+      ]
     },
     "haylee-love": {
       "name": "Haylee Love",
@@ -1038,7 +1097,7 @@
           "raw": "OnlyFans.com/izzygreen"
         }
       ],
-      "status": "profile-url",
+      "status": "user-confirmed",
       "evidence": [
         {
           "video_path": "/DATA/yes/models/izzy-green/Join ✨@ofxmega on [TELEGRAM] (218).MP4",
@@ -1111,9 +1170,76 @@
           "raw": "OnlyFans.com/izzyg",
           "confidence": 0.89,
           "frame_path": "/DATA/yes/.face-review/ScreenRecording_05-20-2026 23-16-39_1/frames/frame-02.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/unknown/ScreenRecording_05-20-2026 23-18-19_1.MP4",
+          "source": "manual_correction",
+          "name": "Izzy Green",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/unknown/ScreenRecording_05-20-2026 23-18-19_1.MP4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/unknown/ScreenRecording_05-20-2026 23-18-19_1.MP4",
+          "source": "manual_correction",
+          "name": "Izzy Green",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/unknown/ScreenRecording_05-20-2026 23-18-19_1.MP4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/unknown/ScreenRecording_05-20-2026 23-18-19_1.mkv",
+          "source": "manual_correction",
+          "name": "Izzy Green",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/unknown/ScreenRecording_05-20-2026 23-18-19_1.mkv.face-meta.json"
         }
       ],
-      "video_count": 3
+      "video_count": 3,
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-15T03:13:16+00:00",
+      "audit_events": [
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton notes 2026-06-14",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T02:35:34+00:00",
+          "corrected_at": "2026-06-15T02:35:34+00:00",
+          "source_file": "/DATA/yes/unknown/ScreenRecording_05-20-2026 23-18-19_1.MP4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Izzy Green",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton notes 2026-06-14",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T02:41:18+00:00",
+          "corrected_at": "2026-06-15T02:41:18+00:00",
+          "source_file": "/DATA/yes/unknown/ScreenRecording_05-20-2026 23-18-19_1.MP4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Izzy Green",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T03:13:16+00:00",
+          "corrected_at": "2026-06-15T03:13:16+00:00",
+          "source_file": "/DATA/yes/unknown/ScreenRecording_05-20-2026 23-18-19_1.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Izzy Green",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        }
+      ]
     },
     "jakara-mitchell": {
       "name": "Jakara Mitchell",
@@ -1128,7 +1254,7 @@
           "raw": "OnlyFans.com/jakarababy"
         }
       ],
-      "status": "profile-url",
+      "status": "user-confirmed",
       "evidence": [
         {
           "video_path": "/DATA/yes/models/jakara-mitchell/Fap__01cfdec15d25f9cd19397c0709e49162.mp4",
@@ -1281,9 +1407,76 @@
           "raw": "Onlvfs.cm",
           "confidence": 0.71,
           "frame_path": "/DATA/yes/.face-review/Jakara Mitchell Glasses Sex Tape Video Leaked - Fapptime/frames/frame-01.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/Jakara Mitchell Sexy Ass Tease and JOI.mp4",
+          "source": "manual_correction",
+          "name": "Jakara Mitchell",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Jakara Mitchell Sexy Ass Tease and JOI.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/models/jakara-mitchell/Fap__01cfdec15d25f9cd19397c0709e49162.mkv",
+          "source": "manual_correction",
+          "name": "Jakara Mitchell",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/models/jakara-mitchell/Fap__01cfdec15d25f9cd19397c0709e49162.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/models/jakara-mitchell/Jakara Mitchell Glasses Sex Tape Video Leaked - Fapptime.mkv",
+          "source": "manual_correction",
+          "name": "Jakara Mitchell",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/models/jakara-mitchell/Jakara Mitchell Glasses Sex Tape Video Leaked - Fapptime.mkv.face-meta.json"
         }
       ],
-      "video_count": 4
+      "video_count": 4,
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-15T03:10:36+00:00",
+      "audit_events": [
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T03:07:56+00:00",
+          "corrected_at": "2026-06-15T03:07:56+00:00",
+          "source_file": "/DATA/yes/Jakara Mitchell Sexy Ass Tease and JOI.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Jakara Mitchell",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T03:09:42+00:00",
+          "corrected_at": "2026-06-15T03:09:42+00:00",
+          "source_file": "/DATA/yes/models/jakara-mitchell/Fap__01cfdec15d25f9cd19397c0709e49162.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Jakara Mitchell",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T03:10:36+00:00",
+          "corrected_at": "2026-06-15T03:10:36+00:00",
+          "source_file": "/DATA/yes/models/jakara-mitchell/Jakara Mitchell Glasses Sex Tape Video Leaked - Fapptime.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Jakara Mitchell",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        }
+      ]
     },
     "jazmen-jafar": {
       "name": "Jazmen Jafar",
@@ -1520,7 +1713,7 @@
           "raw": "OnlyFans.com/kinkykttn"
         }
       ],
-      "status": "profile-url",
+      "status": "user-confirmed",
       "evidence": [
         {
           "video_path": "/DATA/yes/models/kinkykttn/444464.mp4",
@@ -1553,9 +1746,118 @@
           "raw": "OnlyFans.com/kinkykttn",
           "confidence": 0.78,
           "frame_path": "/DATA/yes/.face-review/OF4LM.COM is our home__297/frames/frame-01.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/unknown/OF4LM.COM is our home__315.MP4",
+          "source": "manual_correction",
+          "name": "Kinkykttn",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/unknown/OF4LM.COM is our home__315.MP4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/unknown/OF4LM.COM is our home__360.MP4",
+          "source": "manual_correction",
+          "name": "Kinkykttn",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/unknown/OF4LM.COM is our home__360.MP4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/unknown/OF4LM.COM is our home__377.MP4",
+          "source": "manual_correction",
+          "name": "Kinkykttn",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/unknown/OF4LM.COM is our home__377.MP4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/unknown/OF4LM.COM is our home__400.MP4",
+          "source": "manual_correction",
+          "name": "Kinkykttn",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/unknown/OF4LM.COM is our home__400.MP4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/unknown/OF4LM.COM is our home__406.MP4",
+          "source": "manual_correction",
+          "name": "Kinkykttn",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/unknown/OF4LM.COM is our home__406.MP4.face-meta.json"
         }
       ],
-      "video_count": 4
+      "video_count": 4,
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-15T03:22:21+00:00",
+      "audit_events": [
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T03:14:33+00:00",
+          "corrected_at": "2026-06-15T03:14:33+00:00",
+          "source_file": "/DATA/yes/unknown/OF4LM.COM is our home__315.MP4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Kinkykttn",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T03:14:37+00:00",
+          "corrected_at": "2026-06-15T03:14:37+00:00",
+          "source_file": "/DATA/yes/unknown/OF4LM.COM is our home__360.MP4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Kinkykttn",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T03:14:45+00:00",
+          "corrected_at": "2026-06-15T03:14:45+00:00",
+          "source_file": "/DATA/yes/unknown/OF4LM.COM is our home__377.MP4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Kinkykttn",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T03:15:59+00:00",
+          "corrected_at": "2026-06-15T03:15:59+00:00",
+          "source_file": "/DATA/yes/unknown/OF4LM.COM is our home__400.MP4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Kinkykttn",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T03:22:21+00:00",
+          "corrected_at": "2026-06-15T03:22:21+00:00",
+          "source_file": "/DATA/yes/unknown/OF4LM.COM is our home__406.MP4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Kinkykttn",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        }
+      ]
     },
     "leighbunbun": {
       "name": "Leighbunbun",
@@ -2039,176 +2341,928 @@
           "raw": "OnlyFans.com/savaschultz"
         }
       ],
-      "status": "profile-url",
+      "status": "user-confirmed",
       "evidence": [
         {
-          "video_path": "/DATA/yes/models/sava-schultz/169901_1080p.mp4",
-          "source": "watermark_ocr_text",
-          "name": "Viral Porn Hub",
-          "raw": "viralPornHub",
-          "confidence": 0.77,
-          "frame_path": "/DATA/yes/models/sava-schultz/.face-review/169901_1080p/frames/frame-01.jpg"
-        },
-        {
-          "video_path": "/DATA/yes/models/sava-schultz/169901_1080p.mp4",
-          "source": "watermark_ocr_text",
-          "name": "Virai Porn Hub",
-          "raw": "viraiPornHub",
-          "confidence": 0.77,
-          "frame_path": "/DATA/yes/models/sava-schultz/.face-review/169901_1080p/frames/frame-02.jpg"
-        },
-        {
-          "video_path": "/DATA/yes/models/sava-schultz/169901_1080p.mp4",
-          "source": "watermark_ocr_text",
-          "name": "Only Fans.cem Savaschultz",
-          "raw": "OnlyFans.cem/savaschultz",
-          "confidence": 0.63,
-          "frame_path": "/DATA/yes/models/sava-schultz/.face-review/169901_1080p/frames/frame-04.jpg"
-        },
-        {
-          "video_path": "/DATA/yes/models/sava-schultz/169902_1080p.mp4",
-          "source": "watermark_ocr_text",
-          "name": "Nly Fansa",
-          "raw": "nlyFansa",
-          "confidence": 0.68,
-          "frame_path": "/DATA/yes/.face-review/169902_1080p/frames/frame-01.jpg"
-        },
-        {
-          "video_path": "/DATA/yes/models/sava-schultz/169902_1080p.mp4",
-          "source": "watermark_ocr_text",
-          "name": "Gom Savasehurltz",
-          "raw": "gom/savasehurltz",
-          "confidence": 0.58,
-          "frame_path": "/DATA/yes/.face-review/169902_1080p/frames/frame-01.jpg"
-        },
-        {
-          "video_path": "/DATA/yes/models/sava-schultz/169902_1080p.mp4",
-          "source": "watermark_ocr_text",
-          "name": "Dnly Aom Savaschultz",
-          "raw": "DnlyFans:aom/savaschultz",
-          "confidence": 0.57,
-          "frame_path": "/DATA/yes/.face-review/169902_1080p/frames/frame-01.jpg"
-        },
-        {
-          "video_path": "/DATA/yes/models/sava-schultz/169902_1080p.mp4",
-          "source": "watermark_ocr_text",
-          "name": "Viralporn Hub",
-          "raw": "ViralpornHub!",
-          "confidence": 0.57,
-          "frame_path": "/DATA/yes/.face-review/169902_1080p/frames/frame-01.jpg"
-        },
-        {
-          "video_path": "/DATA/yes/models/sava-schultz/169902_1080p.mp4",
-          "source": "watermark_ocr_text",
-          "name": "Hly Aom Savasehurlt",
-          "raw": "hlyFans:aom/savasehurlt",
-          "confidence": 0.57,
-          "frame_path": "/DATA/yes/.face-review/169902_1080p/frames/frame-02.jpg"
-        },
-        {
-          "video_path": "/DATA/yes/models/sava-schultz/46783.mp4",
-          "source": "watermark_ocr",
-          "name": "Sava Schultz",
-          "raw": "lvEans.com/savaschultz",
-          "confidence": 0.78,
-          "frame_path": "/DATA/yes/.face-review/46783/frames/frame-01.jpg"
-        },
-        {
-          "video_path": "/DATA/yes/models/sava-schultz/46783.mp4",
-          "source": "watermark_ocr",
-          "name": "Savasc",
-          "raw": "nlvEans.com/savasc",
-          "confidence": 0.78,
-          "frame_path": "/DATA/yes/.face-review/46783/frames/frame-04.jpg"
-        },
-        {
-          "video_path": "/DATA/yes/models/sava-schultz/46783.mp4",
-          "source": "watermark_ocr",
-          "name": "Savascnultz",
-          "raw": "lvEans.com/savascnultz",
-          "confidence": 0.78,
-          "frame_path": "/DATA/yes/.face-review/46783/frames/frame-05.jpg"
-        },
-        {
-          "video_path": "/DATA/yes/models/sava-schultz/46783.mp4",
-          "source": "watermark_ocr",
-          "name": "Sayaschultz",
-          "raw": "lvEans.com/sayaschultz",
-          "confidence": 0.78,
-          "frame_path": "/DATA/yes/.face-review/46783/frames/frame-06.jpg"
-        },
-        {
-          "video_path": "/DATA/yes/models/sava-schultz/46783.mp4",
-          "source": "watermark_ocr_text",
-          "name": "Nlv Fans.c",
-          "raw": "nlvFans.c",
-          "confidence": 0.77,
-          "frame_path": "/DATA/yes/.face-review/46783/frames/frame-05.jpg"
-        },
-        {
-          "video_path": "/DATA/yes/models/sava-schultz/6513.mp4",
-          "source": "watermark_ocr_text",
-          "name": "Onlv",
-          "raw": "OnlvFans",
-          "confidence": 0.83,
-          "frame_path": "/DATA/yes/.face-review/6513/frames/frame-02.jpg"
-        },
-        {
-          "video_path": "/DATA/yes/models/sava-schultz/6513.mp4",
-          "source": "watermark_ocr_text",
-          "name": "Onlv Eans.c",
-          "raw": "OnlvEans.c",
-          "confidence": 0.82,
-          "frame_path": "/DATA/yes/.face-review/6513/frames/frame-02.jpg"
-        },
-        {
-          "video_path": "/DATA/yes/models/sava-schultz/6513.mp4",
-          "source": "watermark_ocr",
-          "name": "Sava Schultz",
-          "raw": "Oalv-ans.com/savaschultz",
-          "confidence": 0.78,
-          "frame_path": "/DATA/yes/.face-review/6513/frames/frame-03.jpg"
-        },
-        {
-          "video_path": "/DATA/yes/models/sava-schultz/6513.mp4",
-          "source": "watermark_ocr_text",
-          "name": "Onlv-ans.c",
-          "raw": "Onlv-ans.c",
-          "confidence": 0.78,
-          "frame_path": "/DATA/yes/.face-review/6513/frames/frame-03.jpg"
-        },
-        {
-          "video_path": "/DATA/yes/models/sava-schultz/6513.mp4",
-          "source": "watermark_ocr_text",
-          "name": "Avaschultz",
-          "raw": "avaschultz",
-          "confidence": 0.64,
-          "frame_path": "/DATA/yes/.face-review/6513/frames/frame-02.jpg"
-        },
-        {
-          "video_path": "/DATA/yes/models/sava-schultz/Sava-Schultz-2.mp4",
+          "video_path": "/DATA/yes/Sava Schultz Naked Big Ass POV Onlyfans Video.mp4",
           "source": "watermark_ocr",
           "name": "Sava Schultz",
           "raw": "OnlyFans.com/savaschultz",
-          "confidence": 0.78,
-          "frame_path": "/DATA/yes/.face-review/Sava-Schultz-2/frames/frame-01.jpg"
+          "confidence": 0.87,
+          "frame_path": "/DATA/yes/.face-review/Sava Schultz Naked Big Ass POV Onlyfans Video/frames/frame-01.jpg"
         },
         {
-          "video_path": "/DATA/yes/models/sava-schultz/Sava-Schultz-2.mp4",
+          "video_path": "/DATA/yes/Sava Schultz Naked Big Ass POV Onlyfans Video.mp4",
           "source": "watermark_ocr_text",
-          "name": "Savaschultz",
-          "raw": "com/savaschultz",
-          "confidence": 0.65,
-          "frame_path": "/DATA/yes/.face-review/Sava-Schultz-2/frames/frame-01.jpg"
+          "name": "Dnly",
+          "raw": "DnlyFans.com/savaschultz",
+          "confidence": 0.74,
+          "frame_path": "/DATA/yes/.face-review/Sava Schultz Naked Big Ass POV Onlyfans Video/frames/frame-02.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/Sava Schultz Naked Big Ass POV Onlyfans Video.mp4",
+          "source": "watermark_ocr_text",
+          "name": "Ans",
+          "raw": "ans.com/savaschultz",
+          "confidence": 0.54,
+          "frame_path": "/DATA/yes/.face-review/Sava Schultz Naked Big Ass POV Onlyfans Video/frames/frame-03.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/Sava Schultz Naked Big Ass POV Onlyfans Video.mp4",
+          "source": "watermark_ocr_text",
+          "name": "Hly",
+          "raw": "hlyFans.com/savaschultz",
+          "confidence": 0.54,
+          "frame_path": "/DATA/yes/.face-review/Sava Schultz Naked Big Ass POV Onlyfans Video/frames/frame-05.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/Sava Schultz Naked Big Ass POV Onlyfans Video.mp4",
+          "source": "watermark_ocr_text",
+          "name": "Nly",
+          "raw": "nlyFans.com/savaschultz",
+          "confidence": 0.46,
+          "frame_path": "/DATA/yes/.face-review/Sava Schultz Naked Big Ass POV Onlyfans Video/frames/frame-01.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(6).mp4",
+          "source": "watermark_ocr",
+          "name": "Sava Schultz",
+          "raw": "OnlyFans.com/savaschu",
+          "confidence": 0.87,
+          "frame_path": "/DATA/yes/.face-review/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(6)/frames/frame-02.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/models/sava-schultz/169901_1080p.mkv",
+          "source": "watermark_ocr_text",
+          "name": "Coin",
+          "raw": "Only/Fans.coin/savaschultz",
+          "confidence": 0.74,
+          "frame_path": "/DATA/yes/models/sava-schultz/.face-review/169901_1080p/frames/frame-05.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/models/sava-schultz/169901_1080p.mkv",
+          "source": "watermark_ocr_text",
+          "name": "Viral",
+          "raw": "ViralPornHub!",
+          "confidence": 0.74,
+          "frame_path": "/DATA/yes/models/sava-schultz/.face-review/169901_1080p/frames/frame-07.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/models/sava-schultz/169901_1080p.mkv",
+          "source": "watermark_ocr",
+          "name": "Savascnulltz",
+          "raw": "nlyFans.com/savascnulltz",
+          "confidence": 0.71,
+          "frame_path": "/DATA/yes/models/sava-schultz/.face-review/169901_1080p/frames/frame-04.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/models/sava-schultz/169901_1080p.mkv",
+          "source": "watermark_ocr_text",
+          "name": "Viraipormhun",
+          "raw": "Viraipormhun!",
+          "confidence": 0.61,
+          "frame_path": "/DATA/yes/models/sava-schultz/.face-review/169901_1080p/frames/frame-01.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/Sava Schultz Squeezy Nude Big Nature Boobs POV Onlyfans Video.mp4",
+          "source": "watermark_ocr",
+          "name": "Sava Schultz",
+          "raw": "OnlyFans.com/savaschultz",
+          "confidence": 0.87,
+          "frame_path": "/DATA/yes/.face-review/Sava Schultz Squeezy Nude Big Nature Boobs POV Onlyfans Video/frames/frame-01.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/Sava Schultz Squeezy Nude Big Nature Boobs POV Onlyfans Video.mp4",
+          "source": "watermark_ocr_text",
+          "name": "Oply C",
+          "raw": "OplyFans.c",
+          "confidence": 0.84,
+          "frame_path": "/DATA/yes/.face-review/Sava Schultz Squeezy Nude Big Nature Boobs POV Onlyfans Video/frames/frame-03.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/Sava Schultz Squeezy Nude Big Nature Boobs POV Onlyfans Video.mp4",
+          "source": "watermark_ocr_text",
+          "name": "Ans C",
+          "raw": "ans.c",
+          "confidence": 0.84,
+          "frame_path": "/DATA/yes/.face-review/Sava Schultz Squeezy Nude Big Nature Boobs POV Onlyfans Video/frames/frame-05.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/Sava Schultz Squeezy Nude Big Nature Boobs POV Onlyfans Video.mp4",
+          "source": "watermark_ocr_text",
+          "name": "Omv C",
+          "raw": "OmvFans.c",
+          "confidence": 0.84,
+          "frame_path": "/DATA/yes/.face-review/Sava Schultz Squeezy Nude Big Nature Boobs POV Onlyfans Video/frames/frame-08.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/Sava Schultz Squeezy Nude Big Nature Boobs POV Onlyfans Video.mp4",
+          "source": "watermark_ocr_text",
+          "name": "Oply",
+          "raw": "OplyFans.com/savaschultz",
+          "confidence": 0.74,
+          "frame_path": "/DATA/yes/.face-review/Sava Schultz Squeezy Nude Big Nature Boobs POV Onlyfans Video/frames/frame-03.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/Sava.schultz Onlyfans Butt Slap Red Tease Video Leaked.mp4",
+          "source": "watermark_ocr",
+          "name": "Sava Schultz",
+          "raw": "Fans.com/savaschultz",
+          "confidence": 0.87,
+          "frame_path": "/DATA/yes/.face-review/Sava.schultz Onlyfans Butt Slap Red Tease Video Leaked/frames/frame-01.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/Sava.schultz Onlyfans Butt Slap Red Tease Video Leaked.mp4",
+          "source": "watermark_ocr",
+          "name": "Nly Fams",
+          "raw": "@nlyFams.com/savaschult",
+          "confidence": 0.87,
+          "frame_path": "/DATA/yes/.face-review/Sava.schultz Onlyfans Butt Slap Red Tease Video Leaked/frames/frame-05.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/Sava.schultz Onlyfans Butt Slap Red Tease Video Leaked.mp4",
+          "source": "watermark_ocr_text",
+          "name": "Onil",
+          "raw": "Onil",
+          "confidence": 0.75,
+          "frame_path": "/DATA/yes/.face-review/Sava.schultz Onlyfans Butt Slap Red Tease Video Leaked/frames/frame-07.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/Sava.schultz Onlyfans Butt Slap Red Tease Video Leaked.mp4",
+          "source": "watermark_ocr_text",
+          "name": "Cnlyhwns",
+          "raw": "Cnlyhwns.com/savaschultz",
+          "confidence": 0.74,
+          "frame_path": "/DATA/yes/.face-review/Sava.schultz Onlyfans Butt Slap Red Tease Video Leaked/frames/frame-02.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/Sava.schultz Onlyfans Butt Slap Red Tease Video Leaked.mp4",
+          "source": "watermark_ocr_text",
+          "name": "Cnlyywns",
+          "raw": "Cnlyywns.com/savaschultz",
+          "confidence": 0.74,
+          "frame_path": "/DATA/yes/.face-review/Sava.schultz Onlyfans Butt Slap Red Tease Video Leaked/frames/frame-02.jpg"
+        },
+        {
+          "video_path": "/mnt/spirit-8tb/media/yes/6513.mp4",
+          "source": "manual_correction",
+          "name": "Sava Schultz",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/6513.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/mnt/spirit-8tb/media/yes/6513.mp4",
+          "source": "manual_correction",
+          "name": "Sava Schultz",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/6513.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/models/sava-schultz/6513.mp4",
+          "source": "manual_correction",
+          "name": "Sava Schultz",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/models/sava-schultz/6513.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Sava Schultz BDSM doggy fuck so hard.mp4",
+          "source": "manual_correction",
+          "name": "Sava Schultz",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Sava Schultz BDSM doggy fuck so hard.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Sava Schultz grinding BBC so lewd leak.mp4",
+          "source": "manual_correction",
+          "name": "Sava Schultz",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Sava Schultz grinding BBC so lewd leak.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Sava.schultz Ass PPV OnlyFans Video Leaked.mp4",
+          "source": "manual_correction",
+          "name": "Sava Schultz",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Sava.schultz Ass PPV OnlyFans Video Leaked.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Sava.schultz Horny Tease OnlyFans Video Leaked.mp4",
+          "source": "manual_correction",
+          "name": "Sava Schultz",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Sava.schultz Horny Tease OnlyFans Video Leaked.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(1).mp4",
+          "source": "manual_correction",
+          "name": "Sava Schultz",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(1).mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(9).mp4",
+          "source": "manual_correction",
+          "name": "Sava Schultz",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(9).mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/models/sava-schultz/(19).mkv",
+          "source": "manual_correction",
+          "name": "Sava Schultz",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/models/sava-schultz/(19).mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/models/sava-schultz/169901_1080p.mkv",
+          "source": "manual_correction",
+          "name": "Sava Schultz",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/models/sava-schultz/169901_1080p.mkv.face-meta.json"
+        },
+        {
+          "video_path": "",
+          "source": "manual_correction",
+          "name": "Sava Schultz",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Sava Schultz - Videos - leak stars nackt leaks download leaked(1).mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Sava Schultz - Videos - leak stars nackt leaks download leaked(5).mp4",
+          "source": "manual_correction",
+          "name": "Sava Schultz",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Sava Schultz - Videos - leak stars nackt leaks download leaked(5).mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Sava Schultz - Videos - leak stars nackt leaks download leaked(4).mp4",
+          "source": "manual_correction",
+          "name": "Sava Schultz",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Sava Schultz - Videos - leak stars nackt leaks download leaked(4).mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Sava Schultz - Videos - leak stars nackt leaks download leaked(3).mp4",
+          "source": "manual_correction",
+          "name": "Sava Schultz",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Sava Schultz - Videos - leak stars nackt leaks download leaked(3).mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Sava Schultz - Videos - leak stars nackt leaks download leaked(2).mp4",
+          "source": "manual_correction",
+          "name": "Sava Schultz",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Sava Schultz - Videos - leak stars nackt leaks download leaked(2).mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Sava Schultz - Videos - leak stars nackt leaks download leaked.mp4",
+          "source": "manual_correction",
+          "name": "Sava Schultz",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Sava Schultz - Videos - leak stars nackt leaks download leaked.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Sava schultz savaschultz 1 nectgbustytiktokteenpussybig boobshot(1).mp4",
+          "source": "manual_correction",
+          "name": "Sava Schultz",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Sava schultz savaschultz 1 nectgbustytiktokteenpussybig boobshot(1).mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Sava schultz savaschultz 1 nectgbustytiktokteenpussybig boobshot.mp4",
+          "source": "manual_correction",
+          "name": "Sava Schultz",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Sava schultz savaschultz 1 nectgbustytiktokteenpussybig boobshot.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Sava.Schultz - Sava Schultz Onlyfans Leaked Naked Video.mp4",
+          "source": "manual_correction",
+          "name": "Sava Schultz",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Sava.Schultz - Sava Schultz Onlyfans Leaked Naked Video.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(11).mp4",
+          "source": "manual_correction",
+          "name": "Sava Schultz",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(11).mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(12).mp4",
+          "source": "manual_correction",
+          "name": "Sava Schultz",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(12).mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(13).mp4",
+          "source": "manual_correction",
+          "name": "Sava Schultz",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(13).mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(14).mp4",
+          "source": "manual_correction",
+          "name": "Sava Schultz",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(14).mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(15).mp4",
+          "source": "manual_correction",
+          "name": "Sava Schultz",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(15).mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(16).mp4",
+          "source": "manual_correction",
+          "name": "Sava Schultz",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(16).mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(17).mp4",
+          "source": "manual_correction",
+          "name": "Sava Schultz",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(17).mp4.face-meta.json"
         }
       ],
-      "video_count": 10
+      "video_count": 24,
+      "web_text_evidence_summary": {
+        "schema": "media-web-text-evidence/v1",
+        "count": 0,
+        "providers": [],
+        "source_trust_counts": {},
+        "review_required": false
+      },
+      "identity_trace_summary": {
+        "schema": "media-identity-trace/v1",
+        "count": 0,
+        "review_required": true
+      },
+      "assignment_decision": {
+        "schema": "media-assignment-decision/v1",
+        "suggested_slug": null,
+        "suggested_name": null,
+        "confidence": 0.0,
+        "auto_assign_allowed": false,
+        "review_required": true,
+        "why": "",
+        "blocking_reasons": [],
+        "supporting_signal_ids": []
+      },
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-15T04:22:28+00:00",
+      "enrolled_face_samples": [],
+      "audit_events": [
+        {
+          "schema": "media-face-enrolled-video-match-decision/v1",
+          "decision": "accepted",
+          "performer_name": "Sava Schultz",
+          "performer_id": "sava-schultz",
+          "confidence": 0.6355,
+          "decided_by": "Britton",
+          "decided_at": "2026-06-14T12:18:08+00:00"
+        },
+        {
+          "schema": "media-face-enrolled-video-match-decision/v1",
+          "decision": "accepted",
+          "performer_name": "Sava Schultz",
+          "performer_id": "sava-schultz",
+          "confidence": 0.7721,
+          "visual_confirmed": true,
+          "decided_by": "Britton",
+          "decided_at": "2026-06-14T21:27:58+00:00"
+        },
+        {
+          "schema": "media-face-enrolled-video-match-decision/v1",
+          "decision": "accepted",
+          "performer_name": "Sava Schultz",
+          "performer_id": "sava-schultz",
+          "confidence": 0.7589,
+          "visual_confirmed": true,
+          "decided_by": "Britton",
+          "decided_at": "2026-06-15T00:54:41+00:00"
+        },
+        {
+          "schema": "media-face-enrolled-video-match-decision/v1",
+          "decision": "accepted",
+          "performer_name": "Sava Schultz",
+          "performer_id": "sava-schultz",
+          "confidence": 0.559,
+          "visual_confirmed": true,
+          "decided_by": "Britton",
+          "decided_at": "2026-06-15T00:54:49+00:00"
+        },
+        {
+          "schema": "media-face-enrolled-video-match-decision/v1",
+          "decision": "accepted",
+          "performer_name": "Sava Schultz",
+          "performer_id": "sava-schultz",
+          "confidence": 0.7589,
+          "visual_confirmed": true,
+          "decided_by": "Britton",
+          "decided_at": "2026-06-15T00:55:23+00:00"
+        },
+        {
+          "schema": "media-face-enrolled-video-match-decision/v1",
+          "decision": "accepted",
+          "performer_name": "Sava Schultz",
+          "performer_id": "sava-schultz",
+          "confidence": 0.7589,
+          "visual_confirmed": true,
+          "decided_by": "Britton",
+          "decided_at": "2026-06-15T00:56:07+00:00"
+        },
+        {
+          "schema": "media-face-enrolled-video-match-decision/v1",
+          "decision": "accepted",
+          "performer_name": "Sava Schultz",
+          "performer_id": "sava-schultz",
+          "confidence": 0.65,
+          "visual_confirmed": true,
+          "match_evidence_type": "metadata_only",
+          "decided_by": "Britton",
+          "decided_at": "2026-06-15T01:02:39+00:00"
+        },
+        {
+          "schema": "media-face-enrolled-video-match-decision/v1",
+          "decision": "accepted",
+          "performer_name": "Sava Schultz",
+          "performer_id": "sava-schultz",
+          "confidence": 0.65,
+          "visual_confirmed": true,
+          "match_evidence_type": "metadata_only",
+          "decided_by": "Britton",
+          "decided_at": "2026-06-15T01:36:00+00:00"
+        },
+        {
+          "schema": "media-face-enrolled-video-match-decision/v1",
+          "decision": "accepted",
+          "performer_name": "Sava Schultz",
+          "performer_id": "sava-schultz",
+          "confidence": 0.7721,
+          "visual_confirmed": true,
+          "match_evidence_type": "face_rec",
+          "decided_by": "Britton",
+          "decided_at": "2026-06-15T01:39:50+00:00"
+        },
+        {
+          "schema": "media-face-enrolled-video-match-decision/v1",
+          "decision": "accepted",
+          "performer_name": "Sava Schultz",
+          "performer_id": "sava-schultz",
+          "confidence": 0.5632,
+          "visual_confirmed": true,
+          "match_evidence_type": "face_rec",
+          "decided_by": "Britton",
+          "decided_at": "2026-06-15T02:23:13+00:00"
+        },
+        {
+          "schema": "media-face-enrolled-video-match-decision/v1",
+          "decision": "accepted",
+          "performer_name": "Sava Schultz",
+          "performer_id": "sava-schultz",
+          "confidence": 0.7421,
+          "visual_confirmed": true,
+          "match_evidence_type": "face_rec",
+          "decided_by": "Britton",
+          "decided_at": "2026-06-15T02:23:19+00:00"
+        },
+        {
+          "schema": "media-face-enrolled-video-match-decision/v1",
+          "decision": "accepted",
+          "performer_name": "Sava Schultz",
+          "performer_id": "sava-schultz",
+          "confidence": 0.74,
+          "visual_confirmed": true,
+          "match_evidence_type": "metadata_only",
+          "decided_by": "Britton",
+          "decided_at": "2026-06-15T02:34:15+00:00"
+        },
+        {
+          "schema": "media-face-enrolled-video-match-decision/v1",
+          "decision": "accepted",
+          "performer_name": "Sava Schultz",
+          "performer_id": "sava-schultz",
+          "confidence": 0.87,
+          "visual_confirmed": true,
+          "match_evidence_type": "metadata_only",
+          "decided_by": "Britton",
+          "decided_at": "2026-06-15T02:34:31+00:00"
+        },
+        {
+          "schema": "media-face-enrolled-video-match-decision/v1",
+          "decision": "accepted",
+          "performer_name": "Sava Schultz",
+          "performer_id": "sava-schultz",
+          "confidence": 0.87,
+          "visual_confirmed": true,
+          "match_evidence_type": "metadata_only",
+          "decided_by": "Britton",
+          "decided_at": "2026-06-15T02:34:50+00:00"
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton notes 2026-06-14",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T02:35:34+00:00",
+          "corrected_at": "2026-06-15T02:35:34+00:00",
+          "source_file": "/mnt/spirit-8tb/media/yes/6513.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Sava Schultz",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton notes 2026-06-14",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T02:36:55+00:00",
+          "corrected_at": "2026-06-15T02:36:55+00:00",
+          "source_file": "/mnt/spirit-8tb/media/yes/6513.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Sava Schultz",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton notes 2026-06-14",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T02:39:56+00:00",
+          "corrected_at": "2026-06-15T02:39:56+00:00",
+          "source_file": "/DATA/yes/models/sava-schultz/6513.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Sava Schultz",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T03:08:46+00:00",
+          "corrected_at": "2026-06-15T03:08:46+00:00",
+          "source_file": "/DATA/yes/Sava Schultz BDSM doggy fuck so hard.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Sava Schultz",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T03:09:11+00:00",
+          "corrected_at": "2026-06-15T03:09:11+00:00",
+          "source_file": "/DATA/yes/Sava Schultz grinding BBC so lewd leak.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Sava Schultz",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T03:09:17+00:00",
+          "corrected_at": "2026-06-15T03:09:17+00:00",
+          "source_file": "/DATA/yes/Sava.schultz Ass PPV OnlyFans Video Leaked.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Sava Schultz",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T03:09:24+00:00",
+          "corrected_at": "2026-06-15T03:09:24+00:00",
+          "source_file": "/DATA/yes/Sava.schultz Horny Tease OnlyFans Video Leaked.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Sava Schultz",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T03:09:29+00:00",
+          "corrected_at": "2026-06-15T03:09:29+00:00",
+          "source_file": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(1).mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Sava Schultz",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T03:09:33+00:00",
+          "corrected_at": "2026-06-15T03:09:33+00:00",
+          "source_file": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(9).mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Sava Schultz",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T03:10:46+00:00",
+          "corrected_at": "2026-06-15T03:10:46+00:00",
+          "source_file": "/DATA/yes/models/sava-schultz/(19).mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Sava Schultz",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T03:10:48+00:00",
+          "corrected_at": "2026-06-15T03:10:48+00:00",
+          "source_file": "/DATA/yes/models/sava-schultz/169901_1080p.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Sava Schultz",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T04:11:47+00:00",
+          "corrected_at": "2026-06-15T04:11:47+00:00",
+          "source_file": "/DATA/yes/Sava Schultz - Videos - leak stars nackt leaks download leaked(1).mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Sava Schultz",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T04:17:21+00:00",
+          "corrected_at": "2026-06-15T04:17:21+00:00",
+          "source_file": "/DATA/yes/Sava Schultz - Videos - leak stars nackt leaks download leaked(5).mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Sava Schultz",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T04:17:27+00:00",
+          "corrected_at": "2026-06-15T04:17:27+00:00",
+          "source_file": "/DATA/yes/Sava Schultz - Videos - leak stars nackt leaks download leaked(4).mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Sava Schultz",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T04:17:38+00:00",
+          "corrected_at": "2026-06-15T04:17:38+00:00",
+          "source_file": "/DATA/yes/Sava Schultz - Videos - leak stars nackt leaks download leaked(3).mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Sava Schultz",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T04:17:42+00:00",
+          "corrected_at": "2026-06-15T04:17:42+00:00",
+          "source_file": "/DATA/yes/Sava Schultz - Videos - leak stars nackt leaks download leaked(2).mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Sava Schultz",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T04:17:54+00:00",
+          "corrected_at": "2026-06-15T04:17:54+00:00",
+          "source_file": "/DATA/yes/Sava Schultz - Videos - leak stars nackt leaks download leaked.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Sava Schultz",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T04:17:58+00:00",
+          "corrected_at": "2026-06-15T04:17:58+00:00",
+          "source_file": "/DATA/yes/Sava schultz savaschultz 1 nectgbustytiktokteenpussybig boobshot(1).mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Sava Schultz",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T04:18:01+00:00",
+          "corrected_at": "2026-06-15T04:18:01+00:00",
+          "source_file": "/DATA/yes/Sava schultz savaschultz 1 nectgbustytiktokteenpussybig boobshot.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Sava Schultz",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T04:22:07+00:00",
+          "corrected_at": "2026-06-15T04:22:07+00:00",
+          "source_file": "/DATA/yes/Sava.Schultz - Sava Schultz Onlyfans Leaked Naked Video.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Sava Schultz",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T04:22:09+00:00",
+          "corrected_at": "2026-06-15T04:22:09+00:00",
+          "source_file": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(11).mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Sava Schultz",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T04:22:13+00:00",
+          "corrected_at": "2026-06-15T04:22:13+00:00",
+          "source_file": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(12).mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Sava Schultz",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T04:22:16+00:00",
+          "corrected_at": "2026-06-15T04:22:16+00:00",
+          "source_file": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(13).mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Sava Schultz",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T04:22:18+00:00",
+          "corrected_at": "2026-06-15T04:22:18+00:00",
+          "source_file": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(14).mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Sava Schultz",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T04:22:21+00:00",
+          "corrected_at": "2026-06-15T04:22:21+00:00",
+          "source_file": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(15).mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Sava Schultz",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T04:22:24+00:00",
+          "corrected_at": "2026-06-15T04:22:24+00:00",
+          "source_file": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(16).mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Sava Schultz",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T04:22:28+00:00",
+          "corrected_at": "2026-06-15T04:22:28+00:00",
+          "source_file": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(17).mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Sava Schultz",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        }
+      ]
     },
-    "sendnudes": {
-      "name": "Sendnudes",
-      "slug": "sendnudes",
-      "aliases": [],
+    "sendnudesx": {
+      "name": "Sendnudesx",
+      "slug": "sendnudesx",
+      "aliases": [
+        "Sendnudes",
+        "sendnudes"
+      ],
       "profile_handles": [
+        {
+          "platform": "onlyfans",
+          "handle": "sendnudesx",
+          "url": "https://onlyfans.com/sendnudesx",
+          "source": "watermark_ocr",
+          "raw": "OnlyFans.com/sendnudesx"
+        },
         {
           "platform": "onlyfans",
           "handle": "sendnudes",
@@ -2217,57 +3271,7 @@
           "raw": "OnlyFans.com/sendnudes"
         }
       ],
-      "status": "profile-url",
-      "evidence": [
-        {
-          "video_path": "/DATA/yes/models/sendnudes/169870_1080p.mp4",
-          "source": "watermark_ocr",
-          "name": "Sendnudes",
-          "raw": "OnlyFans.com/sendnudes",
-          "confidence": 0.78,
-          "frame_path": "/DATA/yes/unknown/.face-review/169870_1080p/frames/frame-01.jpg"
-        },
-        {
-          "video_path": "/DATA/yes/models/sendnudes/169870_1080p.mp4",
-          "source": "watermark_ocr_text",
-          "name": "Y087",
-          "raw": "Y087",
-          "confidence": 0.57,
-          "frame_path": "/DATA/yes/unknown/.face-review/169870_1080p/frames/frame-01.jpg"
-        },
-        {
-          "video_path": "/DATA/yes/models/sendnudes/169870_1080p.mp4",
-          "source": "watermark_ocr_text",
-          "name": "KAREEDRY AND",
-          "raw": "KAREEDRY AND",
-          "confidence": 0.45,
-          "frame_path": "/DATA/yes/unknown/.face-review/169870_1080p/frames/frame-01.jpg"
-        },
-        {
-          "video_path": "/DATA/yes/models/sendnudes/169870_1080p.mp4",
-          "source": "watermark_ocr_text",
-          "name": "TJ0T83183",
-          "raw": "家TJ0T83183",
-          "confidence": 0.42,
-          "frame_path": "/DATA/yes/unknown/.face-review/169870_1080p/frames/frame-01.jpg"
-        }
-      ],
-      "video_count": 1
-    },
-    "sendnudesx": {
-      "name": "Sendnudesx",
-      "slug": "sendnudesx",
-      "aliases": [],
-      "profile_handles": [
-        {
-          "platform": "onlyfans",
-          "handle": "sendnudesx",
-          "url": "https://onlyfans.com/sendnudesx",
-          "source": "watermark_ocr",
-          "raw": "OnlyFans.com/sendnudesx"
-        }
-      ],
-      "status": "profile-url",
+      "status": "user-confirmed",
       "evidence": [
         {
           "video_path": "/DATA/yes/models/sendnudesx/199989.mp4",
@@ -2428,9 +3432,51 @@
           "raw": "om/sendnudesx",
           "confidence": 0.65,
           "frame_path": "/DATA/yes/.face-review/PlugLeakz.net - Join Telegram @PlugLeaksHub (224)/frames/frame-06.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/models/sendnudes/169870_1080p.mp4",
+          "source": "watermark_ocr",
+          "name": "Sendnudes",
+          "raw": "OnlyFans.com/sendnudes",
+          "confidence": 0.78,
+          "frame_path": "/DATA/yes/unknown/.face-review/169870_1080p/frames/frame-01.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/models/sendnudes/169870_1080p.mp4",
+          "source": "watermark_ocr_text",
+          "name": "Y087",
+          "raw": "Y087",
+          "confidence": 0.57,
+          "frame_path": "/DATA/yes/unknown/.face-review/169870_1080p/frames/frame-01.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/models/sendnudes/169870_1080p.mp4",
+          "source": "watermark_ocr_text",
+          "name": "KAREEDRY AND",
+          "raw": "KAREEDRY AND",
+          "confidence": 0.45,
+          "frame_path": "/DATA/yes/unknown/.face-review/169870_1080p/frames/frame-01.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/models/sendnudes/169870_1080p.mp4",
+          "source": "watermark_ocr_text",
+          "name": "TJ0T83183",
+          "raw": "家TJ0T83183",
+          "confidence": 0.42,
+          "frame_path": "/DATA/yes/unknown/.face-review/169870_1080p/frames/frame-01.jpg"
         }
       ],
-      "video_count": 6
+      "video_count": 7,
+      "enrolled_face_samples": [],
+      "audit_events": [
+        {
+          "event": "duplicate_creator_merged",
+          "source_name": "Sendnudes",
+          "target_name": "Sendnudesx",
+          "confirmed_by": "Britton",
+          "at": "2026-06-14T11:19:36+00:00"
+        }
+      ]
     },
     "sienna": {
       "name": "Sienna",
@@ -2740,9 +3786,162 @@
           "raw": "OVOPPOSIm",
           "confidence": 0.5,
           "frame_path": "/DATA/yes/.face-review/Ayucpl/frames/frame-06.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/unknown/JoinUs @RisqueMega 184.mkv",
+          "source": "manual_correction",
+          "name": "Yummy Couple",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/unknown/JoinUs @RisqueMega 184.M4V.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/unknown/JoinUs @RisqueMega 233.MP4",
+          "source": "manual_correction",
+          "name": "Yummy Couple",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/unknown/JoinUs @RisqueMega 233.MP4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/unknown/JoinUs @RisqueMega 64.MP4",
+          "source": "manual_correction",
+          "name": "Yummy Couple",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/unknown/JoinUs @RisqueMega 64.MP4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/unknown/JoinUs @RisqueMega 184.mkv",
+          "source": "manual_correction",
+          "name": "Yummy Couple",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/unknown/JoinUs @RisqueMega 184.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/unknown/JoinUs @RisqueMega 233.mkv",
+          "source": "manual_correction",
+          "name": "Yummy Couple",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/unknown/JoinUs @RisqueMega 233.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/unknown/JoinUs @RisqueMega 64.mkv",
+          "source": "manual_correction",
+          "name": "Yummy Couple",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/unknown/JoinUs @RisqueMega 64.mkv.face-meta.json"
         }
       ],
-      "video_count": 1
+      "video_count": 1,
+      "enrolled_face_samples": [],
+      "audit_events": [
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T03:12:08+00:00",
+          "corrected_at": "2026-06-15T03:12:08+00:00",
+          "source_file": "/DATA/yes/unknown/JoinUs @RisqueMega 184.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Yummy Couple",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T03:12:17+00:00",
+          "corrected_at": "2026-06-15T03:12:17+00:00",
+          "source_file": "/DATA/yes/unknown/JoinUs @RisqueMega 233.MP4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Yummy Couple",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T03:12:27+00:00",
+          "corrected_at": "2026-06-15T03:12:27+00:00",
+          "source_file": "/DATA/yes/unknown/JoinUs @RisqueMega 64.MP4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Yummy Couple",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "duplicate_creator_merged",
+          "source_name": "Yummy Couple",
+          "target_name": "Yummy Couple",
+          "confirmed_by": "Britton",
+          "at": "2026-06-15T03:16:09+00:00"
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton typo cleanup",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T03:16:09+00:00",
+          "corrected_at": "2026-06-15T03:16:09+00:00",
+          "source_file": "/DATA/yes/unknown/JoinUs @RisqueMega 184.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Yummy Couple",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton typo cleanup",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T03:16:09+00:00",
+          "corrected_at": "2026-06-15T03:16:09+00:00",
+          "source_file": "/DATA/yes/unknown/JoinUs @RisqueMega 233.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Yummy Couple",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton typo cleanup",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T03:16:09+00:00",
+          "corrected_at": "2026-06-15T03:16:09+00:00",
+          "source_file": "/DATA/yes/unknown/JoinUs @RisqueMega 64.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Yummy Couple",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "duplicate_alias_deleted",
+          "source_name": "Yummy Couple",
+          "target_name": "Yummy Couple",
+          "confirmed_by": "Britton",
+          "at": "2026-06-15T03:16:09+00:00"
+        },
+        {
+          "event": "typo_history_scrubbed",
+          "from": "misspelled Yummy Couple",
+          "to": "Yummy Couple",
+          "confirmed_by": "Britton",
+          "at": "2026-06-15T03:17:40+00:00",
+          "fields_changed": 8
+        }
+      ],
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-15T03:16:09+00:00"
     },
     "zoey-uso": {
       "name": "Zoey Uso",
@@ -2777,6 +3976,1314 @@
         }
       ],
       "video_count": 1
+    },
+    "realtoxxxmaria": {
+      "name": "Realtoxxxmaria",
+      "slug": "realtoxxxmaria",
+      "aliases": [],
+      "profile_handles": [],
+      "status": "user-confirmed",
+      "evidence": [
+        {
+          "video_path": "/DATA/yes/unknown/3888823_hq.mkv",
+          "source": "manual_correction",
+          "name": "Realtoxxxmaria",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/unknown/3888823_hq.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/unknown/3888823_hq.mkv",
+          "source": "manual_correction",
+          "name": "Realtoxxxmaria",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/unknown/3888823_hq.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/unknown/3888823_hq.mkv",
+          "source": "manual_correction",
+          "name": "Realtoxxxmaria",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/unknown/3888823_hq.mkv.face-meta.json"
+        }
+      ],
+      "web_text_evidence_summary": {
+        "schema": "media-web-text-evidence/v1",
+        "count": 0,
+        "providers": [],
+        "source_trust_counts": {},
+        "review_required": false
+      },
+      "identity_trace_summary": {
+        "schema": "media-identity-trace/v1",
+        "count": 0,
+        "review_required": true
+      },
+      "assignment_decision": {
+        "schema": "media-assignment-decision/v1",
+        "suggested_slug": null,
+        "suggested_name": null,
+        "confidence": 0.0,
+        "auto_assign_allowed": false,
+        "review_required": true,
+        "why": "",
+        "blocking_reasons": [],
+        "supporting_signal_ids": []
+      },
+      "video_count": 0,
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-15T03:11:06+00:00",
+      "audit_events": [
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton notes 2026-06-14",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T02:35:34+00:00",
+          "corrected_at": "2026-06-15T02:35:34+00:00",
+          "source_file": "/DATA/yes/unknown/3888823_hq.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Realtoxxxmaria",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton notes 2026-06-14",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T02:41:18+00:00",
+          "corrected_at": "2026-06-15T02:41:18+00:00",
+          "source_file": "/DATA/yes/unknown/3888823_hq.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Realtoxxxmaria",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T03:11:06+00:00",
+          "corrected_at": "2026-06-15T03:11:06+00:00",
+          "source_file": "/DATA/yes/unknown/3888823_hq.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Realtoxxxmaria",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        }
+      ]
+    },
+    "mulan-vuitton": {
+      "name": "Mulan Vuitton",
+      "slug": "mulan-vuitton",
+      "aliases": [],
+      "profile_handles": [],
+      "status": "user-confirmed",
+      "evidence": [
+        {
+          "video_path": "/DATA/yes/unknown/407017_720p.mkv",
+          "source": "manual_correction",
+          "name": "Mulan Vuitton",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/unknown/407017_720p.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/unknown/407017_720p.mkv",
+          "source": "manual_correction",
+          "name": "Mulan Vuitton",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/unknown/407017_720p.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/unknown/407017_720p.mkv",
+          "source": "manual_correction",
+          "name": "Mulan Vuitton",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/unknown/407017_720p.mkv.face-meta.json"
+        }
+      ],
+      "web_text_evidence_summary": {
+        "schema": "media-web-text-evidence/v1",
+        "count": 0,
+        "providers": [],
+        "source_trust_counts": {},
+        "review_required": false
+      },
+      "identity_trace_summary": {
+        "schema": "media-identity-trace/v1",
+        "count": 0,
+        "review_required": true
+      },
+      "assignment_decision": {
+        "schema": "media-assignment-decision/v1",
+        "suggested_slug": null,
+        "suggested_name": null,
+        "confidence": 0.0,
+        "auto_assign_allowed": false,
+        "review_required": true,
+        "why": "",
+        "blocking_reasons": [],
+        "supporting_signal_ids": []
+      },
+      "video_count": 0,
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-15T03:11:21+00:00",
+      "audit_events": [
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton notes 2026-06-14",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T02:35:34+00:00",
+          "corrected_at": "2026-06-15T02:35:34+00:00",
+          "source_file": "/DATA/yes/unknown/407017_720p.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Mulan Vuitton",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton notes 2026-06-14",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T02:41:18+00:00",
+          "corrected_at": "2026-06-15T02:41:18+00:00",
+          "source_file": "/DATA/yes/unknown/407017_720p.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Mulan Vuitton",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T03:11:21+00:00",
+          "corrected_at": "2026-06-15T03:11:21+00:00",
+          "source_file": "/DATA/yes/unknown/407017_720p.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Mulan Vuitton",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        }
+      ]
+    },
+    "isabelle-eleanore": {
+      "name": "Isabelle Eleanore",
+      "slug": "isabelle-eleanore",
+      "aliases": [],
+      "profile_handles": [],
+      "status": "user-confirmed",
+      "evidence": [
+        {
+          "video_path": "/DATA/yes/unknown/97970164000c08f0fef549c141e1af0d5c2b4510c51.mkv",
+          "source": "manual_correction",
+          "name": "Isabelle Eleanore",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/unknown/97970164000c08f0fef549c141e1af0d5c2b4510c51.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/unknown/97970164000c08f0fef549c141e1af0d5c2b4510c51.mkv",
+          "source": "manual_correction",
+          "name": "Isabelle Eleanore",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/unknown/97970164000c08f0fef549c141e1af0d5c2b4510c51.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/unknown/97970164000c08f0fef549c141e1af0d5c2b4510c51.mkv",
+          "source": "manual_correction",
+          "name": "Isabelle Eleanore",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/unknown/97970164000c08f0fef549c141e1af0d5c2b4510c51.mkv.face-meta.json"
+        }
+      ],
+      "web_text_evidence_summary": {
+        "schema": "media-web-text-evidence/v1",
+        "count": 0,
+        "providers": [],
+        "source_trust_counts": {},
+        "review_required": false
+      },
+      "identity_trace_summary": {
+        "schema": "media-identity-trace/v1",
+        "count": 0,
+        "review_required": true
+      },
+      "assignment_decision": {
+        "schema": "media-assignment-decision/v1",
+        "suggested_slug": null,
+        "suggested_name": null,
+        "confidence": 0.0,
+        "auto_assign_allowed": false,
+        "review_required": true,
+        "why": "",
+        "blocking_reasons": [],
+        "supporting_signal_ids": []
+      },
+      "video_count": 0,
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-15T03:11:36+00:00",
+      "audit_events": [
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton notes 2026-06-14",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T02:35:34+00:00",
+          "corrected_at": "2026-06-15T02:35:34+00:00",
+          "source_file": "/DATA/yes/unknown/97970164000c08f0fef549c141e1af0d5c2b4510c51.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Isabelle Eleanore",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton notes 2026-06-14",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T02:41:18+00:00",
+          "corrected_at": "2026-06-15T02:41:18+00:00",
+          "source_file": "/DATA/yes/unknown/97970164000c08f0fef549c141e1af0d5c2b4510c51.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Isabelle Eleanore",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T03:11:36+00:00",
+          "corrected_at": "2026-06-15T03:11:36+00:00",
+          "source_file": "/DATA/yes/unknown/97970164000c08f0fef549c141e1af0d5c2b4510c51.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Isabelle Eleanore",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        }
+      ]
+    },
+    "angela-white": {
+      "name": "Angela White",
+      "slug": "angela-white",
+      "aliases": [],
+      "profile_handles": [],
+      "status": "user-confirmed",
+      "evidence": [
+        {
+          "video_path": "/DATA/yes/484374_720p.mkv",
+          "source": "manual_correction",
+          "name": "Angela White",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/484374_720p.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/432038_720p.mkv",
+          "source": "manual_correction",
+          "name": "Angela White",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/432038_720p.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/484374_720p.mkv",
+          "source": "manual_correction",
+          "name": "Angela White",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/484374_720p.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/432038_720p.mkv",
+          "source": "manual_correction",
+          "name": "Angela White",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/432038_720p.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/432038_720p.mkv",
+          "source": "manual_correction",
+          "name": "Angela White",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/432038_720p.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/484374_720p.mkv",
+          "source": "manual_correction",
+          "name": "Angela White",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/484374_720p.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/432038_720p.mkv",
+          "source": "manual_correction",
+          "name": "Ang Lawhite",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/432038_720p.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/432038_720p.mkv",
+          "source": "manual_correction",
+          "name": "Angela White",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/432038_720p.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/484374_720p.mkv",
+          "source": "manual_correction",
+          "name": "Angela White",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/484374_720p.mkv.face-meta.json"
+        }
+      ],
+      "web_text_evidence_summary": {
+        "schema": "media-web-text-evidence/v1",
+        "count": 0,
+        "providers": [],
+        "source_trust_counts": {},
+        "review_required": false
+      },
+      "identity_trace_summary": {
+        "schema": "media-identity-trace/v1",
+        "count": 0,
+        "review_required": true
+      },
+      "assignment_decision": {
+        "schema": "media-assignment-decision/v1",
+        "suggested_slug": null,
+        "suggested_name": null,
+        "confidence": 0.0,
+        "auto_assign_allowed": false,
+        "review_required": true,
+        "why": "",
+        "blocking_reasons": [],
+        "supporting_signal_ids": []
+      },
+      "video_count": 0,
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-15T02:57:19+00:00",
+      "audit_events": [
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton notes 2026-06-14",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T02:35:34+00:00",
+          "corrected_at": "2026-06-15T02:35:34+00:00",
+          "source_file": "/DATA/yes/484374_720p.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Angela White",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton notes 2026-06-14",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T02:35:34+00:00",
+          "corrected_at": "2026-06-15T02:35:34+00:00",
+          "source_file": "/DATA/yes/432038_720p.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Angela White",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton notes 2026-06-14",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T02:41:18+00:00",
+          "corrected_at": "2026-06-15T02:41:18+00:00",
+          "source_file": "/DATA/yes/484374_720p.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Angela White",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton notes 2026-06-14",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T02:41:18+00:00",
+          "corrected_at": "2026-06-15T02:41:18+00:00",
+          "source_file": "/DATA/yes/432038_720p.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Angela White",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T02:53:09+00:00",
+          "corrected_at": "2026-06-15T02:53:08+00:00",
+          "source_file": "/DATA/yes/432038_720p.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Angela White",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T02:54:10+00:00",
+          "corrected_at": "2026-06-15T02:54:10+00:00",
+          "source_file": "/DATA/yes/484374_720p.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Angela White",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T02:53:57+00:00",
+          "corrected_at": "2026-06-15T02:53:57+00:00",
+          "source_file": "/DATA/yes/432038_720p.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Ang Lawhite",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "duplicate_creator_merged",
+          "source_name": "Ang Lawhite",
+          "target_name": "Angela White",
+          "confirmed_by": "Britton",
+          "at": "2026-06-15T02:57:19+00:00"
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton duplicate cleanup",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T02:57:19+00:00",
+          "corrected_at": "2026-06-15T02:57:19+00:00",
+          "source_file": "/DATA/yes/432038_720p.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Angela White",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton duplicate cleanup",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T02:57:19+00:00",
+          "corrected_at": "2026-06-15T02:57:19+00:00",
+          "source_file": "/DATA/yes/484374_720p.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Angela White",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "duplicate_alias_deleted",
+          "source_name": "Ang Lawhite",
+          "target_name": "Angela White",
+          "confirmed_by": "Britton",
+          "at": "2026-06-15T02:59:09+00:00"
+        }
+      ],
+      "enrolled_face_samples": []
+    },
+    "strawberrytabby": {
+      "name": "Strawberrytabby",
+      "slug": "strawberrytabby",
+      "aliases": [],
+      "profile_handles": [],
+      "status": "user-confirmed",
+      "evidence": [
+        {
+          "video_path": "/DATA/yes/513329_720p.mkv",
+          "source": "manual_correction",
+          "name": "Strawberrytabby",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/513329_720p.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/513329_720p.mkv",
+          "source": "manual_correction",
+          "name": "Strawberrytabby",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/513329_720p.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/513329_720p.mkv",
+          "source": "manual_correction",
+          "name": "Strawberrytabby",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/513329_720p.mkv.face-meta.json"
+        }
+      ],
+      "web_text_evidence_summary": {
+        "schema": "media-web-text-evidence/v1",
+        "count": 0,
+        "providers": [],
+        "source_trust_counts": {},
+        "review_required": false
+      },
+      "identity_trace_summary": {
+        "schema": "media-identity-trace/v1",
+        "count": 0,
+        "review_required": true
+      },
+      "assignment_decision": {
+        "schema": "media-assignment-decision/v1",
+        "suggested_slug": null,
+        "suggested_name": null,
+        "confidence": 0.0,
+        "auto_assign_allowed": false,
+        "review_required": true,
+        "why": "",
+        "blocking_reasons": [],
+        "supporting_signal_ids": []
+      },
+      "video_count": 0,
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-15T03:07:16+00:00",
+      "audit_events": [
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton notes 2026-06-14",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T02:35:34+00:00",
+          "corrected_at": "2026-06-15T02:35:34+00:00",
+          "source_file": "/DATA/yes/513329_720p.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Strawberrytabby",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton notes 2026-06-14",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T02:41:18+00:00",
+          "corrected_at": "2026-06-15T02:41:18+00:00",
+          "source_file": "/DATA/yes/513329_720p.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Strawberrytabby",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T03:07:16+00:00",
+          "corrected_at": "2026-06-15T03:07:15+00:00",
+          "source_file": "/DATA/yes/513329_720p.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Strawberrytabby",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        }
+      ]
+    },
+    "devorah-roloff": {
+      "name": "Devorah Roloff",
+      "slug": "devorah-roloff",
+      "aliases": [],
+      "profile_handles": [],
+      "status": "user-confirmed",
+      "evidence": [
+        {
+          "video_path": "",
+          "source": "manual_correction",
+          "name": "Devorah Roloff",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Devorah Roloff Video 49 Newest Porn Leaks - OnlyFans Leak Video.mp4.face-meta.json"
+        },
+        {
+          "video_path": "",
+          "source": "manual_correction",
+          "name": "Devorah Roloff",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Devorah Roloff Video 48 Hd Leaked Content May-2025 - OnlyFans Le.mp4.face-meta.json"
+        },
+        {
+          "video_path": "",
+          "source": "manual_correction",
+          "name": "Devorah Roloff",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Devorah rollof Onlyfans Video.mp4.face-meta.json"
+        },
+        {
+          "video_path": "",
+          "source": "manual_correction",
+          "name": "Devorah Roloff",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Devorah rollof dildo 1.mp4.face-meta.json"
+        },
+        {
+          "video_path": "",
+          "source": "manual_correction",
+          "name": "Devorah Roloff",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Devorah Roloff Video 47 Newest Porn Leaks - OnlyFans Leak Video.mp4.face-meta.json"
+        },
+        {
+          "video_path": "",
+          "source": "manual_correction",
+          "name": "Devorah Roloff",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Devorah Roloff Pussy.mp4.face-meta.json"
+        },
+        {
+          "video_path": "",
+          "source": "manual_correction",
+          "name": "Devorah Roloff",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Devorah Roloff OnlyFans For Free May-2024 7.mp4.face-meta.json"
+        },
+        {
+          "video_path": "",
+          "source": "manual_correction",
+          "name": "Devorah Roloff",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Devorah Roloff ONLY FANS Licking Vibrating toy.mp4.face-meta.json"
+        },
+        {
+          "video_path": "",
+          "source": "manual_correction",
+          "name": "Devorah Roloff",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Devorah Roloff Nude Leaked OnlyFans Video 36 - Ibradome.m4v.face-meta.json"
+        },
+        {
+          "video_path": "",
+          "source": "manual_correction",
+          "name": "Devorah Roloff",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Devorah Roloff Nude Leaked OnlyFans Video 348 - Ibradome.m4v.face-meta.json"
+        },
+        {
+          "video_path": "",
+          "source": "manual_correction",
+          "name": "Devorah Roloff",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Devorah Roloff Nude Leaked OnlyFans Video 344 - Ibradome.m4v.face-meta.json"
+        },
+        {
+          "video_path": "",
+          "source": "manual_correction",
+          "name": "Devorah Roloff",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/DR 023.mp4.mp4.face-meta.json"
+        },
+        {
+          "video_path": "",
+          "source": "manual_correction",
+          "name": "Devorah Roloff",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/DR 025.mp4.mp4.face-meta.json"
+        },
+        {
+          "video_path": "",
+          "source": "manual_correction",
+          "name": "Devorah Roloff",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/DR 024.mp4.mp4.face-meta.json"
+        },
+        {
+          "video_path": "",
+          "source": "manual_correction",
+          "name": "Devorah Roloff",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Devdildo01.mp4.mp4.face-meta.json"
+        },
+        {
+          "video_path": "",
+          "source": "manual_correction",
+          "name": "Devorah Roloff",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Devdildo02.mp4.mp4.face-meta.json"
+        },
+        {
+          "video_path": "",
+          "source": "manual_correction",
+          "name": "Devorah Roloff",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Devorah - boobs.mp4.mp4.face-meta.json"
+        },
+        {
+          "video_path": "",
+          "source": "manual_correction",
+          "name": "Devorah Roloff",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Devorah Roloff Car Flashing Full Nude PPV.mp4.face-meta.json"
+        },
+        {
+          "video_path": "",
+          "source": "manual_correction",
+          "name": "Devorah Roloff",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Devorah Roloff Hot Onlyfans Video.mp4.face-meta.json"
+        },
+        {
+          "video_path": "",
+          "source": "manual_correction",
+          "name": "Devorah Roloff",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Devorah Roloff Nude Ass Tease PPV OnlyFans Video Leaked.mp4.face-meta.json"
+        },
+        {
+          "video_path": "",
+          "source": "manual_correction",
+          "name": "Devorah Roloff",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Devorah Roloff Nude Leaked OnlyFans Video 1 - Ibradome.mp4.face-meta.json"
+        },
+        {
+          "video_path": "",
+          "source": "manual_correction",
+          "name": "Devorah Roloff",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Devorah Roloff Nude Leaked OnlyFans Video 25 - Ibradome.m4v.face-meta.json"
+        },
+        {
+          "video_path": "",
+          "source": "manual_correction",
+          "name": "Devorah Roloff",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Devorah Roloff Nude Leaked OnlyFans Video 28 - Ibradome.m4v.face-meta.json"
+        },
+        {
+          "video_path": "",
+          "source": "manual_correction",
+          "name": "Devorah Roloff",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Devorah Roloff Grabs Her Boobs In The Mirror Devorah Roloff Only.mp4.face-meta.json"
+        },
+        {
+          "video_path": "",
+          "source": "manual_correction",
+          "name": "Devorah Roloff",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Devorah Roloff Gives A Vibrator A Good Sucking Devorah Roloff On.mp4.face-meta.json"
+        },
+        {
+          "video_path": "",
+          "source": "manual_correction",
+          "name": "Devorah Roloff",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Devorah Roloff Full Nude Tease Dildo Suck Onlyfans Leaked.mp4.face-meta.json"
+        },
+        {
+          "video_path": "",
+          "source": "manual_correction",
+          "name": "Devorah Roloff",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Devorah Roloff Flaunts And Massages Her Tits Devorah Roloff Only.mp4.face-meta.json"
+        },
+        {
+          "video_path": "",
+          "source": "manual_correction",
+          "name": "Devorah Roloff",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/OnlyFans_5 devorah2.mp4.mp4.face-meta.json"
+        },
+        {
+          "video_path": "",
+          "source": "manual_correction",
+          "name": "Devorah Roloff",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Onlyfans devorah roloff milk tits naked(1).mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/OnlyFans_5 devorah.mp4.mp4",
+          "source": "manual_correction",
+          "name": "Devorah Roloff",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/OnlyFans_5 devorah.mp4.mp4.face-meta.json"
+        }
+      ],
+      "web_text_evidence_summary": {
+        "schema": "media-web-text-evidence/v1",
+        "count": 0,
+        "providers": [],
+        "source_trust_counts": {},
+        "review_required": false
+      },
+      "identity_trace_summary": {
+        "schema": "media-identity-trace/v1",
+        "count": 0,
+        "review_required": true
+      },
+      "assignment_decision": {
+        "schema": "media-assignment-decision/v1",
+        "suggested_slug": null,
+        "suggested_name": null,
+        "confidence": 0.0,
+        "auto_assign_allowed": false,
+        "review_required": true,
+        "why": "",
+        "blocking_reasons": [],
+        "supporting_signal_ids": []
+      },
+      "video_count": 0,
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-15T04:21:53+00:00",
+      "audit_events": [
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T03:54:51+00:00",
+          "corrected_at": "2026-06-15T03:54:51+00:00",
+          "source_file": "/DATA/yes/Devorah Roloff Video 49 Newest Porn Leaks - OnlyFans Leak Video.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Devorah Roloff",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T03:56:25+00:00",
+          "corrected_at": "2026-06-15T03:56:25+00:00",
+          "source_file": "/DATA/yes/Devorah Roloff Video 48 Hd Leaked Content May-2025 - OnlyFans Le.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Devorah Roloff",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T03:56:37+00:00",
+          "corrected_at": "2026-06-15T03:56:37+00:00",
+          "source_file": "/DATA/yes/Devorah rollof Onlyfans Video.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Devorah Roloff",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T03:56:44+00:00",
+          "corrected_at": "2026-06-15T03:56:44+00:00",
+          "source_file": "/DATA/yes/Devorah rollof dildo 1.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Devorah Roloff",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T03:56:59+00:00",
+          "corrected_at": "2026-06-15T03:56:59+00:00",
+          "source_file": "/DATA/yes/Devorah Roloff Video 47 Newest Porn Leaks - OnlyFans Leak Video.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Devorah Roloff",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T03:57:04+00:00",
+          "corrected_at": "2026-06-15T03:57:04+00:00",
+          "source_file": "/DATA/yes/Devorah Roloff Pussy.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Devorah Roloff",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T03:57:10+00:00",
+          "corrected_at": "2026-06-15T03:57:10+00:00",
+          "source_file": "/DATA/yes/Devorah Roloff OnlyFans For Free May-2024 7.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Devorah Roloff",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T03:58:50+00:00",
+          "corrected_at": "2026-06-15T03:58:50+00:00",
+          "source_file": "/DATA/yes/Devorah Roloff ONLY FANS Licking Vibrating toy.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Devorah Roloff",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T03:58:54+00:00",
+          "corrected_at": "2026-06-15T03:58:54+00:00",
+          "source_file": "/DATA/yes/Devorah Roloff Nude Leaked OnlyFans Video 36 - Ibradome.m4v",
+          "previous_suggestion": null,
+          "new_canonical_name": "Devorah Roloff",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T03:58:57+00:00",
+          "corrected_at": "2026-06-15T03:58:57+00:00",
+          "source_file": "/DATA/yes/Devorah Roloff Nude Leaked OnlyFans Video 348 - Ibradome.m4v",
+          "previous_suggestion": null,
+          "new_canonical_name": "Devorah Roloff",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T03:59:02+00:00",
+          "corrected_at": "2026-06-15T03:59:02+00:00",
+          "source_file": "/DATA/yes/Devorah Roloff Nude Leaked OnlyFans Video 344 - Ibradome.m4v",
+          "previous_suggestion": null,
+          "new_canonical_name": "Devorah Roloff",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T04:06:48+00:00",
+          "corrected_at": "2026-06-15T04:06:47+00:00",
+          "source_file": "/DATA/yes/DR 023.mp4.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Devorah Roloff",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T04:06:58+00:00",
+          "corrected_at": "2026-06-15T04:06:58+00:00",
+          "source_file": "/DATA/yes/DR 025.mp4.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Devorah Roloff",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T04:07:02+00:00",
+          "corrected_at": "2026-06-15T04:07:02+00:00",
+          "source_file": "/DATA/yes/DR 024.mp4.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Devorah Roloff",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T04:07:08+00:00",
+          "corrected_at": "2026-06-15T04:07:08+00:00",
+          "source_file": "/DATA/yes/Devdildo01.mp4.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Devorah Roloff",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T04:07:14+00:00",
+          "corrected_at": "2026-06-15T04:07:14+00:00",
+          "source_file": "/DATA/yes/Devdildo02.mp4.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Devorah Roloff",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T04:08:01+00:00",
+          "corrected_at": "2026-06-15T04:08:01+00:00",
+          "source_file": "/DATA/yes/Devorah - boobs.mp4.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Devorah Roloff",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T04:08:12+00:00",
+          "corrected_at": "2026-06-15T04:08:12+00:00",
+          "source_file": "/DATA/yes/Devorah Roloff Car Flashing Full Nude PPV.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Devorah Roloff",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T04:08:41+00:00",
+          "corrected_at": "2026-06-15T04:08:41+00:00",
+          "source_file": "/DATA/yes/Devorah Roloff Hot Onlyfans Video.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Devorah Roloff",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T04:08:54+00:00",
+          "corrected_at": "2026-06-15T04:08:54+00:00",
+          "source_file": "/DATA/yes/Devorah Roloff Nude Ass Tease PPV OnlyFans Video Leaked.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Devorah Roloff",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T04:08:57+00:00",
+          "corrected_at": "2026-06-15T04:08:57+00:00",
+          "source_file": "/DATA/yes/Devorah Roloff Nude Leaked OnlyFans Video 1 - Ibradome.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Devorah Roloff",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T04:09:02+00:00",
+          "corrected_at": "2026-06-15T04:09:02+00:00",
+          "source_file": "/DATA/yes/Devorah Roloff Nude Leaked OnlyFans Video 25 - Ibradome.m4v",
+          "previous_suggestion": null,
+          "new_canonical_name": "Devorah Roloff",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T04:09:05+00:00",
+          "corrected_at": "2026-06-15T04:09:05+00:00",
+          "source_file": "/DATA/yes/Devorah Roloff Nude Leaked OnlyFans Video 28 - Ibradome.m4v",
+          "previous_suggestion": null,
+          "new_canonical_name": "Devorah Roloff",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T04:09:44+00:00",
+          "corrected_at": "2026-06-15T04:09:43+00:00",
+          "source_file": "/DATA/yes/Devorah Roloff Grabs Her Boobs In The Mirror Devorah Roloff Only.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Devorah Roloff",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T04:09:52+00:00",
+          "corrected_at": "2026-06-15T04:09:52+00:00",
+          "source_file": "/DATA/yes/Devorah Roloff Gives A Vibrator A Good Sucking Devorah Roloff On.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Devorah Roloff",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T04:09:57+00:00",
+          "corrected_at": "2026-06-15T04:09:57+00:00",
+          "source_file": "/DATA/yes/Devorah Roloff Full Nude Tease Dildo Suck Onlyfans Leaked.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Devorah Roloff",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T04:10:13+00:00",
+          "corrected_at": "2026-06-15T04:10:13+00:00",
+          "source_file": "/DATA/yes/Devorah Roloff Flaunts And Massages Her Tits Devorah Roloff Only.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Devorah Roloff",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T04:11:21+00:00",
+          "corrected_at": "2026-06-15T04:11:21+00:00",
+          "source_file": "/DATA/yes/OnlyFans_5 devorah2.mp4.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Devorah Roloff",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T04:11:25+00:00",
+          "corrected_at": "2026-06-15T04:11:25+00:00",
+          "source_file": "/DATA/yes/Onlyfans devorah roloff milk tits naked(1).mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Devorah Roloff",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T04:21:53+00:00",
+          "corrected_at": "2026-06-15T04:21:53+00:00",
+          "source_file": "/DATA/yes/OnlyFans_5 devorah.mp4.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Devorah Roloff",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        }
+      ]
     }
   },
   "aliases": {
@@ -2825,7 +5332,20 @@
     "olenfromalannasworldx": "Alannasworldx",
     "tolenfromalannasworldx": "Alannasworldx",
     "stolentromalannasworldx": "Alannasworldx",
-    "puffypink": "Puffy Pink"
+    "puffypink": "Puffy Pink",
+    "angetawhite": "Angela White",
+    "cutefru": "Cute Geekie",
+    "alienland": "Gem The Jewels",
+    "cutefruit": "Cute Geekie",
+    "sendnudes": "Sendnudesx",
+    "realtoxxxmaria": "Realtoxxxmaria",
+    "mulanvuitton": "Mulan Vuitton",
+    "isabelleeleanore": "Isabelle Eleanore",
+    "izzygreen": "Izzy Green",
+    "angelawhite": "Angela White",
+    "strawberrytabby": "Strawberrytabby",
+    "yummycouple": "Yummy Couple",
+    "devorahroloff": "Devorah Roloff"
   },
   "rules": {
     "verified_identity_sources": [
@@ -2841,5 +5361,10 @@
     "note": "This registry stores text/profile evidence only; it does not perform internet face identification."
   },
   "source_dir": "/DATA/yes",
-  "online_metadata_requested": false
+  "online_metadata_requested": false,
+  "optional_schemas": {
+    "web_text_evidence": "media-web-text-evidence/v1",
+    "identity_trace": "media-identity-trace/v1",
+    "assignment_decision": "media-assignment-decision/v1"
+  }
 }
