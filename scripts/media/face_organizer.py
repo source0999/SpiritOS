@@ -31,6 +31,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import urllib.error
 import urllib.parse
@@ -95,6 +96,9 @@ ENROLLMENT_MIN_SCREENS_PER_VIDEO = 5
 ENROLLMENT_SCAN_FRAMES_PER_VIDEO = 18
 ENROLLMENT_SINGLE_VIDEO_DEEP_SCAN_FRAMES = 48
 ENROLLMENT_MAX_CROPS_PER_VIDEO = 5
+ENROLLMENT_MIN_DET_SCORE = 0.72
+ENROLLMENT_FACE_ASPECT_MIN = 0.55
+ENROLLMENT_FACE_ASPECT_MAX = 1.75
 ENROLLMENT_UNIDENTIFIED_RESCAN_LIMIT = 80
 ENROLLMENT_CONFIDENCE_BASELINE_SCREENS = 10
 ENROLLMENT_CONFIDENCE_MAX_TARGET_SCREENS = 20
@@ -1315,6 +1319,44 @@ def json_dump(path: Path, payload: dict[str, Any]) -> None:
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
+def np_save_atomic(path: Path, payload: np.ndarray) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temp_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            dir=path.parent,
+            prefix=f".{path.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as handle:
+            temp_path = Path(handle.name)
+            np.save(handle, payload)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temp_path, path)
+        temp_path = None
+    finally:
+        if temp_path is not None:
+            try:
+                temp_path.unlink()
+            except FileNotFoundError:
+                pass
+
+
+def np_load_with_retry(path: Path, *, attempts: int = 5, delay_seconds: float = 0.08) -> np.ndarray:
+    last_exc: Exception | None = None
+    for attempt in range(attempts):
+        try:
+            return np.load(path)
+        except (EOFError, ValueError, OSError) as exc:
+            last_exc = exc
+            if attempt + 1 >= attempts:
+                break
+            time.sleep(delay_seconds)
+    assert last_exc is not None
+    raise last_exc
+
+
 def load_json(path: Path, default: Any) -> Any:
     if not path.exists():
         return default
@@ -1493,14 +1535,14 @@ class KnownPerformersDB:
         if not self.map_path.exists():
             json_dump(self.map_path, {})
         if not self.embeddings_path.exists():
-            np.save(self.embeddings_path, self.embeddings)
+            np_save_atomic(self.embeddings_path, self.embeddings)
 
     def load(self) -> None:
         self.ensure()
         self.index = load_json(self.index_path, {"performers": []})
         self.performer_map = load_json(self.map_path, {})
         try:
-            self.embeddings = np.load(self.embeddings_path)
+            self.embeddings = np_load_with_retry(self.embeddings_path)
         except Exception as exc:
             raise RuntimeError(f"Could not load embeddings index at {self.embeddings_path}: {exc}") from exc
         if self.embeddings.ndim != 2:
@@ -1608,7 +1650,7 @@ class KnownPerformersDB:
             self.embeddings = np.vstack([self.embeddings, embedding.reshape(1, -1)])
         row = str(len(self.embeddings) - 1)
         self.performer_map[row] = performer_id
-        np.save(self.embeddings_path, self.embeddings.astype(np.float32))
+        np_save_atomic(self.embeddings_path, self.embeddings.astype(np.float32))
         json_dump(self.map_path, self.performer_map)
         return int(row)
 
@@ -1663,7 +1705,7 @@ class KnownPerformersDB:
                 for old_row, performer_id_value in self.performer_map.items()
                 if str(old_row) in row_shift
             }
-            np.save(self.embeddings_path, self.embeddings.astype(np.float32))
+            np_save_atomic(self.embeddings_path, self.embeddings.astype(np.float32))
             json_dump(self.map_path, self.performer_map)
         json_dump(self.index_path, self.index)
         return {
@@ -2409,6 +2451,26 @@ def should_keep_face(face: Any, frame_size: tuple[int, int], config: OrganizerCo
     ratio = face_area / frame_area
     if ratio < config.min_face_area_ratio:
         return False, f"small face area {ratio:.4f} < {config.min_face_area_ratio:.4f}"
+    return True, "accepted"
+
+
+def face_bbox_aspect_ratio(face: Any) -> float:
+    left, top, right, bottom = [float(value) for value in face.bbox.tolist()]
+    width = max(1.0, right - left)
+    height = max(1.0, bottom - top)
+    return width / height
+
+
+def should_keep_enrollment_face(face: Any, frame_size: tuple[int, int], config: OrganizerConfig) -> tuple[bool, str]:
+    keep, reason = should_keep_face(face, frame_size, config)
+    if not keep:
+        return keep, reason
+    det_score = float(getattr(face, "det_score", 0.0))
+    if det_score < ENROLLMENT_MIN_DET_SCORE:
+        return False, f"enrollment detection score {det_score:.3f} < {ENROLLMENT_MIN_DET_SCORE:.3f}"
+    aspect = face_bbox_aspect_ratio(face)
+    if aspect < ENROLLMENT_FACE_ASPECT_MIN or aspect > ENROLLMENT_FACE_ASPECT_MAX:
+        return False, f"face bbox aspect ratio {aspect:.2f} outside enrollment range"
     return True, "accepted"
 
 
@@ -3816,7 +3878,7 @@ def known_db_summary(db_dir: Path) -> dict[str, Any]:
     performers = index.get("performers") if isinstance(index, dict) else []
     by_id = {str(item.get("id")): item for item in performers if isinstance(item, dict) and item.get("id")}
     try:
-        embeddings = np.load(db_dir / "embeddings.npy")
+        embeddings = np_load_with_retry(db_dir / "embeddings.npy")
         shape = tuple(int(value) for value in embeddings.shape)
         rows = int(embeddings.shape[0]) if embeddings.ndim >= 1 else 0
     except Exception as exc:
@@ -4464,9 +4526,10 @@ def collect_enrollment_source_records(config: OrganizerConfig, registry: dict[st
         confirmed_model = record.get("manual_confirmed_model")
         if isinstance(confirmed_model, dict) and confirmed_model.get("name"):
             names.append(str(confirmed_model.get("name")))
-        for correction in record.get("manual_corrections") or []:
-            if isinstance(correction, dict) and correction.get("status") == "confirmed" and correction.get("new_canonical_name"):
-                names.append(str(correction.get("new_canonical_name")))
+        elif not pending:
+            for correction in record.get("manual_corrections") or []:
+                if isinstance(correction, dict) and correction.get("status") == "confirmed" and correction.get("new_canonical_name"):
+                    names.append(str(correction.get("new_canonical_name")))
         decision = normalize_assignment_decision(record.get("assignment_decision"))
         if decision.get("suggested_name"):
             names.append(str(decision.get("suggested_name")))
@@ -4494,7 +4557,23 @@ def collect_enrollment_source_records(config: OrganizerConfig, registry: dict[st
                 if str(record.get("video_path") or "") not in existing_videos:
                     by_key.setdefault(key, []).append(record)
                     existing_videos.add(str(record.get("video_path") or ""))
-    return by_key
+    return {key: dedupe_enrollment_records(records) for key, records in by_key.items()}
+
+
+def dedupe_enrollment_records(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    deduped: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for record in records:
+        if not isinstance(record, dict):
+            continue
+        path = str(record.get("video_path") or record.get("path") or "")
+        meta = str(record.get("_meta_path") or "")
+        key = path or meta
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        deduped.append(record)
+    return deduped
 
 
 def merge_candidate_groups_by_canonical(candidate_payload: dict[str, Any], registry: dict[str, Any]) -> dict[str, dict[str, Any]]:
@@ -4528,7 +4607,7 @@ def enrollment_group_status(presence: dict[str, Any], records: list[dict[str, An
     if registry_entry.get("faceless") or registry_entry.get("face_enrollment_status") == "faceless":
         return "faceless performer", "Marked by user as a creator/model whose current content does not show a usable face."
     if presence.get("known_performers_record") and presence.get("embedding_row") is not None:
-        return "already face-enrolled performers", "Known performer has at least one embedding row."
+        return "face-enrolled", "Known performer has at least one embedding row."
     if presence.get("known_performers_record") and presence.get("embedding_row") is None:
         return "known_performers record present but missing embedding rows", "Known DB record exists without mapped embedding rows."
     if any(isinstance(record.get("manual_correction_pending"), dict) for record in records):
@@ -4616,6 +4695,7 @@ def build_enrollment_groups(config: OrganizerConfig) -> dict[str, Any]:
         blocked = str(candidate_group.get("blocked_reason") or "")
         if not blocked and not crops:
             blocked = "candidate generation not run yet or no associated videos found"
+        full_record_entries = [{"video_path": str(record.get("video_path") or record.get("path") or "")} for record in records]
         groups.append(
             {
                 "slug": slugify(name),
@@ -4631,6 +4711,7 @@ def build_enrollment_groups(config: OrganizerConfig) -> dict[str, Any]:
                 "candidate_face_crops": len(crops),
                 "blocked_reason": blocked,
                 "exists_because": sorted(set(reasons_by_key.get(key, []) + (["sidecar_evidence"] if records else []))),
+                "source_video_keys": group_source_video_keys({"records": full_record_entries}),
                 "records": [
                     {
                         "video_path": str(record.get("video_path") or ""),
@@ -4726,12 +4807,13 @@ def dedupe_candidate_crops(crops: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 def enrollable_candidate_crops(crops: list[dict[str, Any]], config: OrganizerConfig) -> list[dict[str, Any]]:
     filtered = []
+    min_score = max(float(config.min_face_score), ENROLLMENT_MIN_DET_SCORE)
     for crop in crops:
         try:
             detection_score = float(crop.get("enrollment_detection_score") or crop.get("detection_score") or 0)
         except Exception:
             detection_score = 0.0
-        if detection_score >= float(config.min_face_score):
+        if detection_score >= min_score:
             filtered.append(crop)
     return filtered
 
@@ -4761,13 +4843,23 @@ def balanced_candidate_crops(crops: list[dict[str, Any]], limit: int = 12, per_v
 
 
 def review_stills_by_video(stills: list[dict[str, Any]], per_video_limit: int = ENROLLMENT_MIN_SCREENS_PER_VIDEO) -> list[dict[str, Any]]:
+    manual_stills = [still for still in stills if str(still.get("status") or "") == "manual_crop_candidate"]
+    failed_stills = [still for still in stills if str(still.get("status") or "") == "still_candidate"]
     by_video: dict[str, list[dict[str, Any]]] = {}
-    for still in sorted(stills, key=lambda item: (str(item.get("source_video_name") or ""), float(item.get("timestamp") or 0))):
+    for still in sorted(manual_stills, key=lambda item: (str(item.get("source_video_name") or ""), float(item.get("timestamp") or 0))):
         key = str(still.get("source_video") or still.get("source_video_name") or "")
         by_video.setdefault(key, []).append(still)
     selected: list[dict[str, Any]] = []
     for key in sorted(by_video, key=lambda value: Path(value).name.lower()):
-        selected.extend(by_video[key][:per_video_limit])
+        selected.extend(by_video[key])
+    failed_by_video: dict[str, list[dict[str, Any]]] = {}
+    for still in sorted(failed_stills, key=lambda item: (str(item.get("source_video_name") or ""), float(item.get("timestamp") or 0))):
+        key = str(still.get("source_video") or still.get("source_video_name") or "")
+        failed_by_video.setdefault(key, []).append(still)
+    for key in sorted(failed_by_video, key=lambda value: Path(value).name.lower()):
+        remaining = max(0, per_video_limit - len([item for item in selected if str(item.get("source_video") or item.get("source_video_name") or "") == key]))
+        if remaining:
+            selected.extend(failed_by_video[key][:remaining])
     return selected
 
 
@@ -4792,6 +4884,16 @@ def crop_recommendation_signature(crop: dict[str, Any] | str) -> str:
     return f"crop-stem:{stable_stem}" if stable_stem else crop_path
 
 
+def video_path_key(video_path: Path | str) -> str:
+    path = Path(video_path)
+    if not path.is_absolute() and path.exists():
+        path = path.resolve()
+    try:
+        return f"{path}:{path.stat().st_mtime_ns if path.exists() else 0}"
+    except Exception:
+        return str(video_path)
+
+
 def group_source_video_keys(group: dict[str, Any]) -> list[str]:
     keys = []
     seen: set[str] = set()
@@ -4804,15 +4906,33 @@ def group_source_video_keys(group: dict[str, Any]) -> list[str]:
         raw_path = Path(raw)
         if raw_path.suffix.lower() in VIDEO_EXTENSIONS and not raw_path.exists():
             continue
-        try:
-            path = raw_path
-            key = f"{path}:{path.stat().st_mtime_ns if path.exists() else 0}"
-        except Exception:
-            key = raw
+        key = video_path_key(raw_path if raw_path.exists() else raw)
         if key not in seen:
             seen.add(key)
             keys.append(key)
     return sorted(keys)
+
+
+def scanned_video_keys(video_paths: list[Path]) -> list[str]:
+    keys: list[str] = []
+    seen: set[str] = set()
+    for video_path in video_paths:
+        key = video_path_key(video_path)
+        if key not in seen:
+            seen.add(key)
+            keys.append(key)
+    return sorted(keys)
+
+
+def prioritize_enrollment_videos(video_paths: list[Path], already_scanned_keys: set[str]) -> list[Path]:
+    unscanned: list[Path] = []
+    scanned: list[Path] = []
+    for path in video_paths:
+        if video_path_key(path) in already_scanned_keys:
+            scanned.append(path)
+        else:
+            unscanned.append(path)
+    return unscanned + scanned
 
 
 def live_candidate_video_count(records: list[dict[str, Any]]) -> int:
@@ -4839,7 +4959,11 @@ def recommendations_are_fresh(group: dict[str, Any], *, require_current_settings
             return False
         if int(settings.get("max_crops_per_video") or 0) < ENROLLMENT_MAX_CROPS_PER_VIDEO:
             return False
-    return sorted(str(item) for item in recommendation_meta) == group_source_video_keys(group)
+    required_keys = set(group.get("source_video_keys") or group_source_video_keys(group))
+    if not required_keys:
+        return bool(recommendation_meta)
+    scanned_keys = {str(item) for item in recommendation_meta}
+    return required_keys <= scanned_keys
 
 
 def blocked_reason_for_candidates(records: list[dict[str, Any]], crops: list[dict[str, Any]], failures: list[str]) -> str:
@@ -4891,7 +5015,7 @@ def generate_enrollment_candidates(
         records = records_by_key.get(key, [])
         video_paths: list[Path] = []
         for record in records:
-            video_path = Path(str(record.get("video_path") or ""))
+            video_path = resolve_media_path(str(record.get("_resolved_video_path") or record.get("video_path") or record.get("path") or ""), config)
             if video_path.exists() and video_path.suffix.lower() in VIDEO_EXTENSIONS and video_path not in video_paths:
                 video_paths.append(video_path)
         if not video_paths:
@@ -4900,6 +5024,11 @@ def generate_enrollment_candidates(
             group["blocked_reason"] = "text-known but no associated videos found"
             generated_groups.append(group)
             continue
+        slug = str(group.get("slug") or slugify(name))
+        existing_group = existing_by_slug.get(slug, {})
+        existing_crops = list(existing_group.get("recommended_crops") or [])
+        existing_stills = list(existing_group.get("recommended_stills") or [])
+        existing_scanned_keys = {str(item) for item in (existing_group.get("recommendation_source_videos") or [])}
         group_dir = out_dir / slugify(name)
         still_dir = group_dir / "stills"
         crop_dir = group_dir / "crops"
@@ -4910,8 +5039,11 @@ def generate_enrollment_candidates(
         failures: list[str] = []
         scan_summary: list[dict[str, Any]] = []
         video_limit = len(video_paths) if target_key else min(len(video_paths), 3)
+        ordered_video_paths = prioritize_enrollment_videos(video_paths, existing_scanned_keys) if not target_key else video_paths
+        scanned_video_paths = ordered_video_paths[:video_limit]
+        scanned_path_strings = {str(path) for path in scanned_video_paths}
         per_video = ENROLLMENT_SCAN_FRAMES_PER_VIDEO if target_key else max(ENROLLMENT_MIN_SCREENS_PER_VIDEO, int(np.ceil(frames_per_group / max(1, video_limit))))
-        for video_path in video_paths[:video_limit]:
+        for video_path in scanned_video_paths:
             duration = ffprobe_duration(video_path)
             video_summary = {
                 "source_video": str(video_path),
@@ -4927,21 +5059,21 @@ def generate_enrollment_candidates(
                     video_summary["frames_sampled"] += 1
                     if not still_path.exists():
                         extract_frame_at(video_path, still_path, timestamp)
-                    stills.append(
-                        {
-                            "id": still_path.stem,
-                            "still_path": str(still_path),
-                            "source_video": str(video_path),
-                            "source_video_name": video_path.name,
-                            "timestamp": round(float(timestamp), 2),
-                            "status": "still_candidate",
-                        }
-                    )
                     faces = recognizer.detect(still_path)
                     video_summary["faces_detected"] += len(faces)
                     if not faces:
                         failures.append("no face detected")
                         video_summary["failures"].append("no face detected")
+                        stills.append(
+                            {
+                                "id": still_path.stem,
+                                "still_path": str(still_path),
+                                "source_video": str(video_path),
+                                "source_video_name": video_path.name,
+                                "timestamp": round(float(timestamp), 2),
+                                "status": "still_candidate",
+                            }
+                        )
                         continue
                     try:
                         frame_image = recognizer.image_cls.open(still_path)
@@ -4955,13 +5087,23 @@ def generate_enrollment_candidates(
                     sharpness = image_sharpness(still_path)
                     valid_faces = []
                     for face in faces:
-                        keep, reason = should_keep_face(face, frame_size, config)
+                        keep, reason = should_keep_enrollment_face(face, frame_size, config)
                         if keep:
                             valid_faces.append(face)
                         else:
                             failures.append(reason)
                             video_summary["failures"].append(reason)
                     if not valid_faces:
+                        stills.append(
+                            {
+                                "id": still_path.stem,
+                                "still_path": str(still_path),
+                                "source_video": str(video_path),
+                                "source_video_name": video_path.name,
+                                "timestamp": round(float(timestamp), 2),
+                                "status": "still_candidate",
+                            }
+                        )
                         continue
                     face = max(valid_faces, key=lambda item: face_quality_score(item, frame_size, sharpness))
                     crop_path = crop_dir / f"{still_path.stem}-face-{uuid.uuid4().hex[:6]}.jpg"
@@ -4987,24 +5129,50 @@ def generate_enrollment_candidates(
                     video_summary["failures"].append(f"frame extraction failed: {exc}")
             video_summary["failures"] = sorted(set(str(item) for item in video_summary["failures"]))[:6]
             scan_summary.append(video_summary)
-        crop_limit = max(24, video_limit * ENROLLMENT_MAX_CROPS_PER_VIDEO)
+        if target_key:
+            preserved_crops = []
+            preserved_stills = []
+        else:
+            preserved_crops = [
+                crop
+                for crop in existing_crops
+                if isinstance(crop, dict) and str(crop.get("source_video") or "") not in scanned_path_strings
+            ]
+            preserved_stills = [
+                still
+                for still in existing_stills
+                if isinstance(still, dict) and str(still.get("source_video") or "") not in scanned_path_strings
+            ]
+        merged_crops = dedupe_candidate_crops([*preserved_crops, *crops])
+        merged_stills = [
+            still
+            for still in preserved_stills + stills
+            if isinstance(still, dict) and str(still.get("still_path") or "")
+        ]
+        crop_limit = max(24, len(video_paths) * ENROLLMENT_MAX_CROPS_PER_VIDEO)
         recommendations = balanced_candidate_crops(
-            enrollable_candidate_crops(dedupe_candidate_crops(crops), config),
+            enrollable_candidate_crops(merged_crops, config),
             limit=crop_limit,
             per_video_limit=ENROLLMENT_MAX_CROPS_PER_VIDEO,
         )
         group["recommended_crops"] = recommendations
-        group["recommended_stills"] = review_stills_by_video(stills, ENROLLMENT_MIN_SCREENS_PER_VIDEO)
+        group["recommended_stills"] = review_stills_by_video(merged_stills, ENROLLMENT_MIN_SCREENS_PER_VIDEO)
         group["candidate_face_crops"] = len(recommendations)
         group["blocked_reason"] = blocked_reason_for_candidates(records, recommendations, failures)
-        group["recommendation_source_videos"] = group_source_video_keys(group)
+        scanned_keys = sorted(set(existing_scanned_keys) | set(scanned_video_keys(scanned_video_paths)))
+        group["recommendation_source_videos"] = scanned_keys
+        group["source_video_keys"] = group_source_video_keys(
+            {"records": [{"video_path": str(record.get("video_path") or record.get("path") or "")} for record in records]}
+        )
         group["recommendations_refreshed_at"] = utc_now()
         group["recommendation_scan_summary"] = scan_summary
         group["recommendation_generation_settings"] = {
             "min_screens_per_video": ENROLLMENT_MIN_SCREENS_PER_VIDEO,
             "scan_frames_per_video": per_video,
             "max_crops_per_video": ENROLLMENT_MAX_CROPS_PER_VIDEO,
-            "video_limit": video_limit,
+            "video_limit": len(scanned_video_paths),
+            "videos_scanned_total": len(scanned_keys),
+            "videos_required_total": len(group["source_video_keys"]),
         }
         generated_groups.append(group)
     merged_by_slug = dict(existing_by_slug)
@@ -5036,17 +5204,39 @@ def generate_enrollment_candidates(
     return payload
 
 
-def refresh_stale_enrolled_recommendations(config: OrganizerConfig) -> dict[str, Any]:
+def enrollment_missing_video_count(group: dict[str, Any]) -> int:
+    required = set(group.get("source_video_keys") or group_source_video_keys(group))
+    scanned = {str(item) for item in (group.get("recommendation_source_videos") or [])}
+    return len(required - scanned)
+
+
+def refresh_stale_enrolled_recommendations(
+    config: OrganizerConfig,
+    *,
+    only_unenrolled: bool = False,
+    max_groups: int | None = None,
+) -> dict[str, Any]:
     payload = build_enrollment_groups(config)
     refreshed: list[str] = []
     checked = 0
+    stale_groups: list[dict[str, Any]] = []
     for group in payload.get("groups", []):
-        if not group.get("embedding_rows"):
+        if only_unenrolled and group.get("embedding_rows"):
             continue
         checked += 1
         has_recommendations = bool(group.get("recommended_crops") or group.get("recommended_stills"))
         if has_recommendations and recommendations_are_fresh(group, require_current_settings=False):
             continue
+        stale_groups.append(group)
+    stale_groups.sort(
+        key=lambda item: (
+            -enrollment_missing_video_count(item),
+            str(item.get("name") or "").lower(),
+        )
+    )
+    if max_groups is not None:
+        stale_groups = stale_groups[: max(0, int(max_groups))]
+    for group in stale_groups:
         generate_enrollment_candidates(
             config,
             max_groups=None,
@@ -5056,9 +5246,12 @@ def refresh_stale_enrolled_recommendations(config: OrganizerConfig) -> dict[str,
         refreshed.append(str(group.get("name") or ""))
     return {
         "schema": "media-face-enrolled-recommendation-refresh/v1",
-        "checked_enrolled_groups": checked,
+        "checked_groups": checked,
+        "checked_enrolled_groups": sum(1 for group in payload.get("groups", []) if group.get("embedding_rows")),
         "refreshed_groups": refreshed,
         "refreshed_count": len(refreshed),
+        "only_unenrolled": only_unenrolled,
+        "max_groups": max_groups,
     }
 
 
@@ -5413,7 +5606,7 @@ def phase3_reset_sava_stale_samples(config: OrganizerConfig, *, backup_root: str
                     for row in record.get("embedding_rows") or []
                     if str(row) in row_shift
                 ]
-        np.save(db.embeddings_path, db.embeddings.astype(np.float32))
+        np_save_atomic(db.embeddings_path, db.embeddings.astype(np.float32))
         json_dump(db.map_path, db.performer_map)
     json_dump(db.index_path, db.index)
 
@@ -5981,14 +6174,41 @@ def path_basename(value: str | Path) -> str:
     return text.rsplit("/", 1)[-1] if text else ""
 
 
+def media_root_candidates(config: OrganizerConfig) -> list[Path]:
+    roots: list[Path] = []
+    seen: set[str] = set()
+    for root in (config.source_dir, Path("/DATA/yes"), Path("/mnt/spirit-8tb/media/yes"), Path("M:/yes")):
+        key = path_key(root)
+        if key in seen:
+            continue
+        roots.append(root)
+        seen.add(key)
+    return roots
+
+
+def media_path_from_known_root(value: str | Path, config: OrganizerConfig) -> Path | None:
+    text = str(value or "")
+    if not text:
+        return None
+    normalized = text.replace("\\", "/")
+    for prefix in ("M:/yes/", "/mnt/spirit-8tb/media/yes/", "/DATA/yes/"):
+        if normalized.startswith(prefix):
+            relative = normalized.removeprefix(prefix)
+            candidates = [root / relative for root in media_root_candidates(config)]
+            for candidate in candidates:
+                if candidate.exists():
+                    return candidate
+            return candidates[0] if candidates else Path(text)
+    return None
+
+
 def ledger_resolved_path(value: str | Path, config: OrganizerConfig) -> Path:
     text = str(value or "")
     if not text:
         return Path("")
-    if text.startswith("/DATA/yes"):
-        return config.source_dir / text.removeprefix("/DATA/yes").lstrip("/")
-    if text.startswith("/mnt/spirit-8tb/media/yes"):
-        return config.source_dir / text.removeprefix("/mnt/spirit-8tb/media/yes").lstrip("/")
+    rooted = media_path_from_known_root(text, config)
+    if rooted is not None:
+        return rooted
     return Path(text)
 
 
@@ -5996,10 +6216,9 @@ def resolve_sidecar_path(value: str | Path, config: OrganizerConfig) -> Path:
     text = str(value or "")
     if not text:
         return Path("")
-    normalized = text.replace("\\", "/")
-    for prefix in ("M:/yes/", "/mnt/spirit-8tb/media/yes/", "/DATA/yes/"):
-        if normalized.startswith(prefix):
-            return config.source_dir / normalized.removeprefix(prefix)
+    rooted = media_path_from_known_root(text, config)
+    if rooted is not None:
+        return rooted
     return Path(text)
 
 
@@ -6007,10 +6226,12 @@ def resolve_media_path(value: str | Path, config: OrganizerConfig) -> Path:
     text = str(value or "")
     if not text:
         return Path("")
-    normalized = text.replace("\\", "/")
-    for prefix in ("M:/yes/", "/mnt/spirit-8tb/media/yes/", "/DATA/yes/"):
-        if normalized.startswith(prefix):
-            return config.source_dir / normalized.removeprefix(prefix)
+    direct = Path(text)
+    if direct.exists():
+        return direct
+    rooted = media_path_from_known_root(text, config)
+    if rooted is not None:
+        return rooted
     return Path(text)
 
 
@@ -7633,7 +7854,7 @@ def render_enrollment_still(still: dict[str, Any]) -> str:
         <img src="{html.escape(still_src, quote=True)}" alt="Candidate still frame" loading="lazy" decoding="async">
         <strong title="{html.escape(video_name, quote=True)}">{html.escape(video_name)}</strong>
         <span>{html.escape(str(still.get("timestamp") or "?"))}s</span>
-        <small>still frame candidate</small>
+        <small>no face found — manual crop</small>
         <a href="{html.escape(still_path, quote=True)}" target="_blank" rel="noopener noreferrer">Open still frame</a>
         <button type="button" class="small-action" data-action="manual-one" data-still="{html.escape(still_path, quote=True)}" data-video="{html.escape(str(still.get("source_video") or ""), quote=True)}" data-timestamp="{html.escape(str(still.get("timestamp") or ""), quote=True)}">Manual crop this still</button>
       </div>
@@ -7716,6 +7937,11 @@ def enrollment_page_css() -> str:
     .enroll-head { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; }
     .enroll-head p { margin: 0 0 .25rem; color: #a7f3d0; font-size: .75rem; text-transform: uppercase; }
     .enroll-head h2 { margin: 0; overflow-wrap: anywhere; letter-spacing: 0; }
+    .model-title { display: flex; align-items: center; gap: .85rem; min-width: 0; }
+    .model-title > div { min-width: 0; }
+    .model-avatar { flex: 0 0 4.5rem; width: 4.5rem; height: 5.8rem; display: block; overflow: hidden; border-radius: .35rem; background: rgba(0,0,0,.35); outline: 1px solid rgba(255,255,255,.12); }
+    .model-avatar img { width: 100%; height: 100%; display: block; object-fit: cover; }
+    .model-avatar-empty { background: linear-gradient(135deg, rgba(20,184,166,.16), rgba(59,130,246,.12)); }
     .mini-metrics, .presence, .button-row { display: flex; flex-wrap: wrap; gap: .45rem; }
     .presence { margin-top: .8rem; }
     .blocked { border-radius: .25rem; background: rgba(251,191,36,.12); color: #fef3c7; padding: .55rem; }
@@ -7797,6 +8023,8 @@ def enrollment_page_css() -> str:
     .video-match-row span { color: #a7f3d0; font-weight: 700; }
     .match-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: .35rem; justify-content: flex-start; }
     @media (max-width: 520px) {
+      .enroll-head { flex-direction: column; }
+      .model-avatar { flex-basis: 4rem; width: 4rem; height: 5.1rem; }
       .gallery-upload-form { grid-template-columns: 1fr; }
       .video-match-row { grid-template-columns: 1fr; }
       .match-previews { max-width: 12rem; }
@@ -7808,7 +8036,13 @@ def enrollment_page_script() -> str:
     return """
     async function postJson(url, payload) {
       const response = await fetch(url, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)});
-      const data = await response.json();
+      const text = await response.text();
+      let data = {};
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch (error) {
+        throw new Error(text || response.statusText || error.message);
+      }
       if (!response.ok) throw new Error(data.error || response.statusText);
       return data;
     }
@@ -7834,6 +8068,10 @@ def enrollment_page_script() -> str:
       if (button.dataset.originalText) button.textContent = button.dataset.originalText;
       buttons.forEach(item => item.disabled = false);
     }
+    function reloadAfterRefresh(result, delayMs = 2500) {
+      const delay = result?.refresh_deferred ? Math.max(delayMs, 12000) : delayMs;
+      setTimeout(() => location.reload(), delay);
+    }
     function persistCardStatus(card, message, kind = 'ok') {
       const performer = card?.dataset.performer || card?.querySelector('[name=performer_name]')?.value || '';
       if (!performer) return;
@@ -7858,9 +8096,41 @@ def enrollment_page_script() -> str:
       input.checked = !input.checked;
       input.dispatchEvent(new Event('change', {bubbles: true}));
     });
+    document.querySelectorAll('button[data-action="merge-creator"]').forEach((button) => {
+      button.addEventListener('click', async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const form = button.closest('form');
+        const card = button.closest('.enroll-card');
+        const buttons = [...(card?.querySelectorAll('button[data-action]') || [])];
+        try {
+          if (!form || !card) throw new Error('Merge form not found on this card');
+          const payload = {
+            source_name: form.querySelector('[name=merge_source]')?.value?.trim() || '',
+            target_name: form.querySelector('[name=merge_target]')?.value?.trim() || '',
+            confirmation: form.querySelector('[name=merge_confirmation]')?.value?.trim() || '',
+            confirmed_by: 'Britton'
+          };
+          if (!payload.source_name || !payload.target_name || !payload.confirmation) {
+            throw new Error('Fill duplicate/source, correct creator, and confirmation before merging.');
+          }
+          setCardStatus(card, 'Merging ' + payload.source_name + ' into ' + payload.target_name + '...', 'warn');
+          setBusy(button, buttons, 'Merging...');
+          const result = await postJson('/api/enrollment/merge-creator', payload);
+          setCardStatus(card, 'Merged ' + payload.source_name + ' into ' + payload.target_name + '. Refreshing the queue...', 'ok');
+          card.style.opacity = '0.55';
+          card.style.pointerEvents = 'none';
+          reloadAfterRefresh(result, 700);
+        } catch (error) {
+          clearBusy(button, buttons);
+          setCardStatus(card, 'NEEDS_FIX: ' + error.message, 'err');
+        }
+      });
+    });
     document.addEventListener('click', async (event) => {
       const button = event.target.closest('button[data-action]');
       if (!button) return;
+      if (button.dataset.action === 'merge-creator') return;
       const form = button.closest('form');
       const card = button.closest('.enroll-card');
       const performer = form?.querySelector('[name=performer_name]')?.value || button.dataset.performer || card?.dataset.performer || '';
@@ -7923,7 +8193,7 @@ def enrollment_page_script() -> str:
               cropCard.style.pointerEvents = 'none';
             }
           });
-          setTimeout(() => location.reload(), 1700);
+          reloadAfterRefresh(result, 1700);
         } else if (button.dataset.action === 'remove-accepted') {
           const samples = [...card.querySelectorAll('input[name=accepted_sample]:checked')].map(input => input.value);
           if (!samples.length) {
@@ -7967,7 +8237,8 @@ def enrollment_page_script() -> str:
           const result = await postJson('/api/enrollment/smart-accept', {
             performer_name: performer,
             confirmation,
-            confirmed_by: 'Britton'
+            confirmed_by: 'Britton',
+            target_count: 5
           });
           const added = (result.enrollment || {}).embedding_row_indexes_added?.length || 0;
           const picked = (result.selected_crops || []).length || 0;
@@ -7975,7 +8246,7 @@ def enrollment_page_script() -> str:
           const message = 'Smart accept picked ' + picked + ' screen(s), enrolled ' + added + ', skipped ' + skipped + ', removed ' + ((result.enrollment || {}).removed_recommendations || 0) + ' stale recommendation(s). Refreshing...';
           setCardStatus(card, message, skipped ? 'warn' : 'ok');
           persistCardStatus(card, message, skipped ? 'warn' : 'ok');
-          setTimeout(() => location.reload(), 2500);
+          reloadAfterRefresh(result, 2500);
         } else if (button.dataset.action === 'scan-library-matches') {
           setCardStatus(card, 'Running face-rec scan on linked videos for ' + performer + '. This can take a few minutes...', 'warn');
           setBusy(button, buttons, 'Scanning...');
@@ -8040,17 +8311,23 @@ def enrollment_page_script() -> str:
           if (button.dataset.timestamp) params.set('timestamp', button.dataset.timestamp);
           window.open('manual_crop.html?' + params.toString(), '_blank', 'noopener');
         } else if (button.dataset.action === 'merge-creator') {
+          if (!form || !card) throw new Error('Merge form not found on this card');
           const payload = {
-            source_name: form.querySelector('[name=merge_source]').value,
-            target_name: form.querySelector('[name=merge_target]').value,
-            confirmation: form.querySelector('[name=merge_confirmation]').value,
+            source_name: form.querySelector('[name=merge_source]')?.value?.trim() || '',
+            target_name: form.querySelector('[name=merge_target]')?.value?.trim() || '',
+            confirmation: form.querySelector('[name=merge_confirmation]')?.value?.trim() || '',
             confirmed_by: 'Britton'
           };
+          if (!payload.source_name || !payload.target_name || !payload.confirmation) {
+            throw new Error('Fill duplicate/source, correct creator, and confirmation before merging.');
+          }
+          setCardStatus(card, 'Merging ' + payload.source_name + ' into ' + payload.target_name + '...', 'warn');
+          setBusy(button, buttons, 'Merging...');
           const result = await postJson('/api/enrollment/merge-creator', payload);
           setCardStatus(card, 'Merged ' + payload.source_name + ' into ' + payload.target_name + '. Refreshing the queue...', 'ok');
           card.style.opacity = '0.55';
           card.style.pointerEvents = 'none';
-          setTimeout(() => location.reload(), 700);
+          reloadAfterRefresh(result, 700);
         } else if (button.dataset.action === 'faceless') {
           const confirmation = form.querySelector('[name=confirmation]')?.value || performer;
           setCardStatus(card, 'Marking ' + performer + ' as faceless...', 'warn');
@@ -8063,7 +8340,7 @@ def enrollment_page_script() -> str:
           setCardStatus(card, 'Marked ' + result.performer_name + ' as faceless. Refreshing the queue...', 'ok');
           card.style.opacity = '0.55';
           card.style.pointerEvents = 'none';
-          setTimeout(() => location.reload(), 800);
+          reloadAfterRefresh(result, 800);
         } else {
           alert(button.textContent + ' recorded for review.');
         }
@@ -8075,7 +8352,23 @@ def enrollment_page_script() -> str:
     """
 
 
-def generate_enrollment_queue_page(config: OrganizerConfig, payload: dict[str, Any] | None = None) -> dict[str, Any]:
+def generate_enrollment_queue_page(
+    config: OrganizerConfig,
+    payload: dict[str, Any] | None = None,
+    *,
+    refresh_stale: bool = True,
+) -> dict[str, Any]:
+    if refresh_stale and payload is None:
+        refresh_summary = refresh_stale_enrolled_recommendations(
+            config,
+            only_unenrolled=True,
+            max_groups=6,
+        )
+        if refresh_summary.get("refreshed_count"):
+            logging.info(
+                "Auto-refreshed stale enrollment recommendations for: %s",
+                ", ".join(refresh_summary.get("refreshed_groups") or []),
+            )
     payload = payload or build_enrollment_groups(config)
     visible_groups = [
         group
@@ -8265,6 +8558,24 @@ def render_enrolled_sample_row(record: dict[str, Any]) -> str:
     """
 
 
+def enrolled_group_header_image(group: dict[str, Any], samples: list[str]) -> str:
+    gallery_items = group.get("gallery_items") or []
+    image_src = ""
+    image_label = str(group.get("name") or "Model image")
+    if gallery_items:
+        first_gallery = gallery_items[0] if isinstance(gallery_items[0], dict) else {}
+        image_src = str(first_gallery.get("url") or first_gallery.get("path") or "")
+    if not image_src and samples:
+        image_src = display_image_src(str(samples[0]))
+    if not image_src:
+        return '<div class="model-avatar model-avatar-empty" aria-hidden="true"></div>'
+    return f"""
+      <a class="model-avatar" href="{html.escape(image_src, quote=True)}" target="_blank" rel="noopener noreferrer">
+        <img src="{html.escape(image_src, quote=True)}" alt="{html.escape(image_label, quote=True)}" loading="lazy" decoding="async">
+      </a>
+    """
+
+
 def render_recommendations_by_video(crops: list[dict[str, Any]], stills: list[dict[str, Any]]) -> str:
     groups: dict[str, list[str]] = {}
     counts: dict[str, int] = {}
@@ -8441,8 +8752,9 @@ def render_enrolled_video_matches(group: dict[str, Any]) -> str:
     auto_rows = "".join(render_video_match_row(match, allow_actions=True) for match in auto_matches[:24])
     pending_rows = "".join(render_video_match_row(match, allow_actions=True) for match in pending_matches[:24])
     actionable = len(auto_matches) + len(pending_matches)
+    panel_open = " open" if actionable else ""
     return f"""
-      <details class="video-match-panel" open>
+      <details class="video-match-panel"{panel_open}>
         <summary>Video match review ({actionable} need action, {len(physical_model_rows) or len(library_matches)} physical model-folder files, {len(face_rec_model_rows)} face-rec-supported, {len(missing_matches)} missing source)</summary>
         <p class="exists">SpiritFlix counts visible Jellyfin library videos. This panel counts organizer sidecars and physical files in the model folder, so it can be higher until Jellyfin exposes the same files.</p>
         <div class="video-match-actions">
@@ -8508,13 +8820,17 @@ def render_enrolled_group(group: dict[str, Any]) -> str:
     missing_match_count = len(group.get("missing_video_matches") or [])
     review_match_count = len(group.get("auto_video_matches") or []) + len(group.get("pending_video_matches") or [])
     gallery_count = len(group.get("gallery_items") or [])
+    header_image = enrolled_group_header_image(group, samples)
     return f"""
       <article class="enroll-card enrolled-card" data-performer="{html.escape(str(group.get("name") or ""), quote=True)}">
         <div class="enroll-head">
-          <div>
-            <p>{html.escape(card_state)}</p>
-            <h2>{html.escape(str(group.get("name") or ""))}</h2>
-            <small>{html.escape(str(group.get("known_performer_id") or ""))}</small>
+          <div class="model-title">
+            {header_image}
+            <div>
+              <p>{html.escape(card_state)}</p>
+              <h2>{html.escape(str(group.get("name") or ""))}</h2>
+              <small>{html.escape(str(group.get("known_performer_id") or ""))}</small>
+            </div>
           </div>
           <div class="mini-metrics">
             <span>{len(samples)} enrolled screens</span>
@@ -8541,7 +8857,7 @@ def render_enrolled_group(group: dict[str, Any]) -> str:
         <div class="action-status" aria-live="polite"></div>
         {render_gallery_upload_panel(group)}
         {render_enrolled_video_matches(group)}
-        <details class="accepted-panel" open>
+        <details class="accepted-panel">
           <summary>Accepted screens ({len(samples)})</summary>
           <div class="sample-grid">{sample_html or '<div class="empty-crop">No enrolled screen paths recorded yet.</div>'}</div>
           <div class="accepted-list">{sample_rows}</div>
@@ -8585,10 +8901,11 @@ def build_enrolled_groups(config: OrganizerConfig, *, refresh_recommendations: b
     known = known_db_summary(config.db_dir)
     known_by_id = known.get("by_id", {})
     groups = []
+    candidate_workbench_count = 0
     for group in payload.get("groups", []):
         has_enrollment = bool(group.get("embedding_rows"))
-        has_candidate_crops = bool(group.get("recommended_crops") or group.get("candidate_face_crops"))
-        if not has_enrollment and not has_candidate_crops:
+        if not has_enrollment:
+            candidate_workbench_count += 1
             continue
         performer_id = str(group.get("known_performer_id") or slugify(str(group.get("name") or "")))
         known_record = known_by_id.get(performer_id) or {}
@@ -8653,6 +8970,8 @@ def build_enrolled_groups(config: OrganizerConfig, *, refresh_recommendations: b
         "groups": groups,
         "summary": {
             "enrolled_performers": len(groups),
+            "candidate_workbench_groups": candidate_workbench_count,
+            "displayed_groups": len(groups),
             "ready_with_target_screens": sum(
                 1
                 for group in groups
@@ -9253,9 +9572,13 @@ def generate_report(config: OrganizerConfig) -> None:
           const result = await response.json();
           if (!response.ok) throw new Error(result.error || 'Correction failed');
           status.textContent = result.next_action === 'updated_existing_enrolled_model'
-            ? 'Updated under enrolled model. Refreshing...'
-            : 'Queued for face enrollment. Refreshing...';
-          setTimeout(() => window.location.reload(), 900);
+            ? 'Updated under enrolled model.'
+            : 'Queued for face enrollment.';
+          const card = button.closest('.record-card, article, section');
+          if (card) {{
+            card.style.opacity = '0.55';
+            card.style.pointerEvents = 'none';
+          }}
         }} catch (error) {{
           status.textContent = error instanceof Error ? error.message : 'Correction failed';
           status.classList.add('is-error');
@@ -9661,7 +9984,7 @@ def smart_accept_best_crops(config: OrganizerConfig, payload: dict[str, Any]) ->
             break
     group = candidate_group_for_name(config, performer_name)
     requested_count = int(payload.get("target_count") or 0)
-    target_count = requested_count if requested_count > 0 else max(0, ENROLLMENT_CONFIDENCE_MAX_TARGET_SCREENS - existing_sample_count)
+    target_count = min(requested_count, 5) if requested_count > 0 else max(0, min(5, ENROLLMENT_CONFIDENCE_MAX_TARGET_SCREENS - existing_sample_count))
     if target_count <= 0:
         raise RuntimeError(f"{performer_name} already has {existing_sample_count} accepted screen(s), which meets the current optimal cap.")
     selected = smart_candidate_crops(group, config, target_count=target_count)
@@ -9694,6 +10017,26 @@ def make_review_handler(config: OrganizerConfig) -> type[http.server.BaseHTTPReq
     report_dir = config.report_path.parent.resolve()
     source_dir = config.source_dir.resolve()
     db_dir = config.db_dir.resolve()
+
+    def refresh_review_outputs_async(reason: str, *, enrollment_target: str | None = None) -> None:
+        def worker() -> None:
+            try:
+                logging.info("Refreshing face organizer review outputs after %s", reason)
+                if enrollment_target:
+                    generate_enrollment_candidates(
+                        config,
+                        max_groups=None,
+                        target_name=enrollment_target,
+                        refresh_pages=False,
+                    )
+                generate_report(config)
+                generate_enrollment_queue_page(config)
+                generate_enrolled_page(config)
+                generate_known_db_audit_page(config)
+            except Exception as exc:
+                logging.warning("Deferred face organizer refresh after %s failed: %s", reason, exc)
+
+        threading.Thread(target=worker, name=f"face-organizer-refresh-{reason}", daemon=True).start()
 
     class ReviewHandler(http.server.BaseHTTPRequestHandler):
         server_version = "FaceOrganizerReview/1.0"
@@ -9820,17 +10163,11 @@ def make_review_handler(config: OrganizerConfig) -> type[http.server.BaseHTTPReq
                         confirmed_by=str(payload.get("confirmed_by") or "Britton"),
                         belongs_to_existing=bool(payload.get("belongs_to_existing")),
                     )
-                    generate_report(config)
-                    if requested_name.strip():
-                        result["enrollment_candidates"] = generate_enrollment_candidates(
-                            config,
-                            target_name=requested_name,
-                            frames_per_group=ENROLLMENT_SCAN_FRAMES_PER_VIDEO,
-                            refresh_pages=False,
-                        ).get("summary", {})
-                    generate_enrollment_queue_page(config)
-                    generate_enrolled_page(config)
-                    generate_known_db_audit_page(config)
+                    result["refresh_deferred"] = True
+                    refresh_review_outputs_async(
+                        "manual-model-correction",
+                        enrollment_target=str(result.get("name") or requested_name or ""),
+                    )
                     write_json_response(self, HTTPStatus.OK, result)
                     return
                 if parsed.path == "/api/verification/leave-unknown":
@@ -9848,16 +10185,14 @@ def make_review_handler(config: OrganizerConfig) -> type[http.server.BaseHTTPReq
                     return
                 if parsed.path == "/api/enrollment/enroll":
                     result = enroll_selected_crops(config, payload)
-                    generate_enrollment_queue_page(config)
-                    generate_enrolled_page(config)
-                    generate_gallery_page(config)
+                    result["refresh_deferred"] = True
+                    refresh_review_outputs_async("enrollment-enroll")
                     write_json_response(self, HTTPStatus.OK, result)
                     return
                 if parsed.path == "/api/enrollment/smart-accept":
                     result = smart_accept_best_crops(config, payload)
-                    generate_enrollment_queue_page(config)
-                    generate_enrolled_page(config)
-                    generate_gallery_page(config)
+                    result["refresh_deferred"] = True
+                    refresh_review_outputs_async("enrollment-smart-accept")
                     write_json_response(self, HTTPStatus.OK, result)
                     return
                 if parsed.path == "/api/enrolled/remove-sample":
@@ -9872,6 +10207,11 @@ def make_review_handler(config: OrganizerConfig) -> type[http.server.BaseHTTPReq
                     return
                 if parsed.path == "/api/enrolled/video-match-decision":
                     result = set_enrolled_video_match_decision(config, payload)
+                    if str(result.get("decision") or "") == "accepted":
+                        refresh_review_outputs_async(
+                            "video-match-accepted",
+                            enrollment_target=str(result.get("performer_name") or payload.get("performer_name") or ""),
+                        )
                     generate_enrolled_page(config)
                     write_json_response(self, HTTPStatus.OK, result)
                     return
@@ -9887,18 +10227,14 @@ def make_review_handler(config: OrganizerConfig) -> type[http.server.BaseHTTPReq
                     return
                 if parsed.path == "/api/enrollment/merge-creator":
                     result = merge_duplicate_creator(config, payload)
-                    generate_enrollment_queue_page(config)
-                    generate_enrolled_page(config)
-                    generate_gallery_page(config)
-                    generate_known_db_audit_page(config)
+                    result["refresh_deferred"] = True
+                    refresh_review_outputs_async("enrollment-merge-creator")
                     write_json_response(self, HTTPStatus.OK, result)
                     return
                 if parsed.path == "/api/enrollment/mark-faceless":
                     result = mark_performer_faceless(config, payload)
-                    generate_enrollment_queue_page(config)
-                    generate_enrolled_page(config)
-                    generate_gallery_page(config)
-                    generate_known_db_audit_page(config)
+                    result["refresh_deferred"] = True
+                    refresh_review_outputs_async("enrollment-mark-faceless")
                     write_json_response(self, HTTPStatus.OK, result)
                     return
                 if parsed.path == "/api/enrollment/reject-crop":
@@ -9990,6 +10326,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--recursive", action=argparse.BooleanOptionalAction, default=True, help="scan recursively")
     parser.add_argument("--frame-count", type=int, default=6, help="frames to sample per video")
     parser.add_argument("--sample-limit", type=int, help="limit scan to first N videos; use 2 or 3 for test mode")
+    parser.add_argument("--enrollment-target", metavar="NAME", help="limit --generate-enrollment-candidates to one performer and scan all of their videos")
     parser.add_argument("--model", default=DEFAULT_MODEL, help=f"InsightFace model name (default: {DEFAULT_MODEL})")
     parser.add_argument("--ctx-id", type=int, default=0, help="InsightFace ctx_id; 0 for first GPU, -1 for CPU")
     parser.add_argument("--det-size", default="640x640", help="detector size WIDTHxHEIGHT")
@@ -10077,7 +10414,10 @@ def main(argv: list[str] | None = None) -> int:
         generate_known_db_audit_page(config)
         return 0
     if args.generate_enrollment_candidates:
-        payload = generate_enrollment_candidates(config)
+        payload = generate_enrollment_candidates(
+            config,
+            target_name=str(args.enrollment_target or "") or None,
+        )
         print(json.dumps(payload.get("summary", {}), indent=2, ensure_ascii=False))
         return 0
     if args.serve_review:

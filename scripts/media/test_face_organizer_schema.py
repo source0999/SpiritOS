@@ -349,7 +349,7 @@ class FaceOrganizerSchemaTests(unittest.TestCase):
             groups = fo.build_enrollment_groups(config)
             self.assertTrue(any(group["name"] == "Mulan Vuitton" and group["candidate_videos"] == 1 for group in groups["groups"]))
 
-    def test_enrolled_groups_include_candidate_ready_unenrolled_performer(self) -> None:
+    def test_enrolled_groups_exclude_candidate_ready_unenrolled_performer(self) -> None:
         with tempfile.TemporaryDirectory() as temp_name:
             root = Path(temp_name)
             video = root / "Devorah Roloff sample.mp4"
@@ -410,9 +410,10 @@ class FaceOrganizerSchemaTests(unittest.TestCase):
             payload = fo.build_enrolled_groups(config)
 
         groups = [group for group in payload["groups"] if group["name"] == "Devorah Roloff"]
-        self.assertEqual(len(groups), 1)
-        self.assertEqual(groups[0]["candidate_face_crops"], 1)
-        self.assertEqual(groups[0]["embedding_rows"], [])
+        self.assertEqual(groups, [])
+        self.assertEqual(payload["summary"]["enrolled_performers"], 0)
+        self.assertEqual(payload["summary"]["candidate_workbench_groups"], 1)
+        self.assertEqual(payload["summary"]["displayed_groups"], 0)
 
     def test_manual_name_correction_reuses_existing_alias(self) -> None:
         with tempfile.TemporaryDirectory() as temp_name:
@@ -875,6 +876,40 @@ class FaceOrganizerSchemaTests(unittest.TestCase):
         self.assertGreaterEqual(len(payload["groups"][0]["recommended_crops"]), 5)
         self.assertFalse(payload["groups"][0]["blocked_reason"].startswith("only"))
 
+    def test_generate_enrollment_candidates_resolves_data_source_video_paths(self) -> None:
+        original_recognizer = fo.InsightFaceRecognizer
+        original_extract = fo.extract_frame_at
+        original_duration = fo.ffprobe_duration
+        try:
+            fo.InsightFaceRecognizer = FakeRecognizer
+            fo.extract_frame_at = lambda video, frame, timestamp: frame.write_bytes(b"fake-frame")
+            fo.ffprobe_duration = lambda video: 120.0
+            with tempfile.TemporaryDirectory() as temp_name:
+                root = Path(temp_name)
+                video = root / "source-video.mp4"
+                video.write_bytes(b"not-real-video")
+                (root / "source-video.mp4.face-meta.json").write_text(
+                    json.dumps(
+                        {
+                            "schema": "media-face-organizer/v1",
+                            "video_path": "/DATA/yes/source-video.mp4",
+                            "manual_correction_pending": {"new_canonical_name": "Public Stage", "status": "pending"},
+                            "verification_needed": True,
+                        }
+                    ),
+                    encoding="utf-8",
+                )
+                config = make_test_config(root, root / "performer_verification.json")
+
+                payload = fo.generate_enrollment_candidates(config, frames_per_group=6)
+        finally:
+            fo.InsightFaceRecognizer = original_recognizer
+            fo.extract_frame_at = original_extract
+            fo.ffprobe_duration = original_duration
+
+        self.assertGreaterEqual(len(payload["groups"][0]["recommended_crops"]), 5)
+        self.assertEqual(payload["groups"][0]["recommended_crops"][0]["source_video"], str(video))
+
     def test_blocked_reason_when_fewer_than_five_candidates_exist(self) -> None:
         reason = fo.blocked_reason_for_candidates([{"video_path": "one.mp4"}], [{"crop_path": "a.jpg"}, {"crop_path": "b.jpg"}], ["too blurry"])
 
@@ -1222,6 +1257,10 @@ class FaceOrganizerSchemaTests(unittest.TestCase):
         self.assertIn("Gallery Upload", gallery_html)
         self.assertIn("Launch Set", gallery_html)
         self.assertIn("Gallery pictures (1)", enrolled_html)
+        self.assertIn('class="model-avatar"', enrolled_html)
+        self.assertIn('alt="Public Stage"', enrolled_html)
+        self.assertIn('<details class="accepted-panel">', enrolled_html)
+        self.assertNotIn('<details class="accepted-panel" open>', enrolled_html)
 
     def test_model_video_ledger_names_sava_count_types_and_evidence_buckets(self) -> None:
         with tempfile.TemporaryDirectory() as temp_name:
@@ -1850,6 +1889,33 @@ class FaceOrganizerSchemaTests(unittest.TestCase):
         self.assertIn("manually confirmed metadata/title match", html)
         self.assertNotIn("Confirm video", html)
 
+    def test_video_match_panel_collapsed_when_no_action_needed(self) -> None:
+        html = fo.render_enrolled_video_matches(
+            {
+                "name": "Sava Schultz",
+                "known_performer_id": "sava-schultz",
+                "auto_video_matches": [],
+                "pending_video_matches": [],
+                "library_video_matches": [],
+                "missing_video_matches": [],
+                "source_of_truth_ledger": {
+                    "rows": [
+                        {
+                            "model_folder_path": "/DATA/yes/models/sava-schultz/sample.mkv",
+                            "sidecar_path": str(Path(tempfile.gettempdir()) / "missing-sample.mkv.face-meta.json"),
+                            "basename": "sample.mkv",
+                            "match_evidence_type": "metadata",
+                            "sync_mismatch_reasons": [],
+                        }
+                    ]
+                },
+            }
+        )
+
+        self.assertIn('<details class="video-match-panel">', html)
+        self.assertNotIn('<details class="video-match-panel" open>', html)
+        self.assertIn("0 need action", html)
+
     def test_scan_sidecar_write_preserves_user_video_decisions(self) -> None:
         with tempfile.TemporaryDirectory() as temp_name:
             root = Path(temp_name)
@@ -2314,7 +2380,7 @@ class FaceOrganizerSchemaTests(unittest.TestCase):
         self.assertEqual([item["crop_path"] for item in group["recommended_crops"]], [str(crop_b)])
         self.assertEqual(group["recommended_stills"], [])
 
-    def test_smart_accept_uses_optimal_remaining_screen_count(self) -> None:
+    def test_smart_accept_defaults_to_five_screen_batch(self) -> None:
         with tempfile.TemporaryDirectory() as temp_name:
             root = Path(temp_name)
             config = dataclasses.replace(make_test_config(root, root / "performer_verification.json"), apply=True)
@@ -2355,8 +2421,8 @@ class FaceOrganizerSchemaTests(unittest.TestCase):
                     {"performer_name": "Sava Schultz", "confirmation": "Sava Schultz"},
                 )
 
-        self.assertEqual(result["selection_count"], 12)
-        self.assertEqual(len(result["enrollment"]["embedding_row_indexes_added"]), 12)
+        self.assertEqual(result["selection_count"], 5)
+        self.assertEqual(len(result["enrollment"]["embedding_row_indexes_added"]), 5)
 
     def test_enrolled_groups_keep_recommendations_visible_after_optimal_screen_count(self) -> None:
         with tempfile.TemporaryDirectory() as temp_name:
@@ -2396,6 +2462,41 @@ class FaceOrganizerSchemaTests(unittest.TestCase):
         self.assertEqual(group["recommended_crops"], [stale_crop])
         self.assertEqual(group["recommended_stills"], [stale_still])
         self.assertEqual(result["summary"]["live_recommendations"], 1)
+
+    def test_recommendations_are_stale_when_new_video_is_added(self) -> None:
+        group = {
+            "source_video_keys": [
+                fo.video_path_key("/DATA/yes/old.mp4"),
+                fo.video_path_key("/DATA/yes/new.mp4"),
+            ],
+            "recommendation_source_videos": [fo.video_path_key("/DATA/yes/old.mp4")],
+            "recommendation_generation_settings": {
+                "min_screens_per_video": fo.ENROLLMENT_MIN_SCREENS_PER_VIDEO,
+                "max_crops_per_video": fo.ENROLLMENT_MAX_CROPS_PER_VIDEO,
+            },
+        }
+        self.assertFalse(fo.recommendations_are_fresh(group))
+
+    def test_should_keep_enrollment_face_rejects_body_like_bbox(self) -> None:
+        config = make_test_config(Path("/tmp"), Path("/tmp/performer_verification.json"))
+        body_like = type(
+            "BodyLikeFace",
+            (),
+            {"bbox": fo.np.array([0, 0, 220, 80], dtype=fo.np.float32), "det_score": 0.9},
+        )()
+        keep, reason = fo.should_keep_enrollment_face(body_like, (640, 480), config)
+        self.assertFalse(keep)
+        self.assertIn("aspect ratio", reason)
+
+    def test_review_stills_by_video_only_keeps_failed_detection_frames(self) -> None:
+        stills = [
+            {"source_video": "/v/a.mp4", "source_video_name": "a.mp4", "timestamp": 1.0, "status": "still_candidate"},
+            {"source_video": "/v/a.mp4", "source_video_name": "a.mp4", "timestamp": 2.0, "status": "still_candidate"},
+            {"source_video": "/v/a.mp4", "source_video_name": "a.mp4", "timestamp": 3.0, "status": "face_crop_source"},
+        ]
+        selected = fo.review_stills_by_video(stills, per_video_limit=5)
+        self.assertEqual(len(selected), 2)
+        self.assertTrue(all(item.get("status") == "still_candidate" for item in selected))
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 {
   "schema": "media-performer-verification/v1",
   "generated_at": "2026-06-05T20:58:47+00:00",
-  "updated_at": "2026-06-15T04:22:28+00:00",
+  "updated_at": "2026-06-17T01:23:06+00:00",
   "performers": {
     "aaliyah-yasan": {
       "name": "Aaliyah Yasan",
@@ -81,11 +81,67 @@
           "confidence": 1.0,
           "evidence_role": "user_confirmed_correction",
           "sidecar_path": "/DATA/yes/unknown/Visit onlyshare.io for MORE 130.MP4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Aaliyah Yasin Has Unprotected Sex With A Stranger.mkv",
+          "source": "manual_correction",
+          "name": "Aaliyah Yasan",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Aaliyah Yasin Has Unprotected Sex With A Stranger.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Visit onlyshare.io for MORE 50.mkv",
+          "source": "manual_correction",
+          "name": "Aaliyah Yasan",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Visit onlyshare.io for MORE 50.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Visit onlyshare.io for MORE 40.mkv",
+          "source": "manual_correction",
+          "name": "Aaliyah Yasan",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Visit onlyshare.io for MORE 40.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Visit onlyshare.io for MORE 62.mkv",
+          "source": "manual_correction",
+          "name": "Aaliyah Yasan",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Visit onlyshare.io for MORE 62.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Visit onlyshare.io for MORE 79.mkv",
+          "source": "manual_correction",
+          "name": "Aaliyah Yasan",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Visit onlyshare.io for MORE 79.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Visit onlyshare.io for MORE 86.mkv",
+          "source": "manual_correction",
+          "name": "Aaliyah Yasan",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Visit onlyshare.io for MORE 86.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Naughty Aaliyah Yasin Sucks A Big Cock While Smoking.mp4",
+          "source": "manual_correction",
+          "name": "Aaliyah Yasan",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Naughty Aaliyah Yasin Sucks A Big Cock While Smoking.mp4.face-meta.json"
         }
       ],
       "video_count": 2,
       "confirmed_by": "Britton",
-      "confirmed_at": "2026-06-15T02:36:55+00:00",
+      "confirmed_at": "2026-06-16T03:38:51+00:00",
       "audit_events": [
         {
           "event": "manual_correction_confirmed",
@@ -107,6 +163,97 @@
           "confirmed_at": "2026-06-15T02:36:55+00:00",
           "corrected_at": "2026-06-15T02:36:55+00:00",
           "source_file": "/DATA/yes/unknown/Visit onlyshare.io for MORE 130.MP4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Aaliyah Yasan",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T02:11:02+00:00",
+          "corrected_at": "2026-06-16T02:11:02+00:00",
+          "source_file": "/DATA/yes/Aaliyah Yasin Has Unprotected Sex With A Stranger.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Aaliyah Yasan",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:21:02+00:00",
+          "corrected_at": "2026-06-16T03:21:02+00:00",
+          "source_file": "/DATA/yes/Visit onlyshare.io for MORE 50.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Aaliyah Yasan",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:21:05+00:00",
+          "corrected_at": "2026-06-16T03:21:05+00:00",
+          "source_file": "/DATA/yes/Visit onlyshare.io for MORE 40.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Aaliyah Yasan",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:21:09+00:00",
+          "corrected_at": "2026-06-16T03:21:09+00:00",
+          "source_file": "/DATA/yes/Visit onlyshare.io for MORE 62.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Aaliyah Yasan",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:21:12+00:00",
+          "corrected_at": "2026-06-16T03:21:12+00:00",
+          "source_file": "/DATA/yes/Visit onlyshare.io for MORE 79.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Aaliyah Yasan",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:21:18+00:00",
+          "corrected_at": "2026-06-16T03:21:18+00:00",
+          "source_file": "/DATA/yes/Visit onlyshare.io for MORE 86.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Aaliyah Yasan",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:38:51+00:00",
+          "corrected_at": "2026-06-16T03:38:51+00:00",
+          "source_file": "/DATA/yes/Naughty Aaliyah Yasin Sucks A Big Cock While Smoking.mp4",
           "previous_suggestion": null,
           "new_canonical_name": "Aaliyah Yasan",
           "evidence_role": "user_confirmed_correction",
@@ -204,56 +351,6 @@
         }
       ],
       "video_count": 2
-    },
-    "amburne": {
-      "name": "Amburne",
-      "slug": "amburne",
-      "aliases": [],
-      "profile_handles": [],
-      "status": "local-auto",
-      "evidence": [
-        {
-          "video_path": "/DATA/yes/models/amburne/141711.mp4",
-          "source": "watermark_ocr",
-          "name": "Ambune",
-          "raw": "OnlyFans.com/ambune",
-          "confidence": 0.9,
-          "frame_path": "/DATA/yes/models/amburne/.face-review/141711/frames/frame-02.jpg"
-        },
-        {
-          "video_path": "/DATA/yes/models/amburne/141711.mp4",
-          "source": "watermark_ocr_text",
-          "name": "Only Fans.cor",
-          "raw": "OnlyFans.cor",
-          "confidence": 0.86,
-          "frame_path": "/DATA/yes/models/amburne/.face-review/141711/frames/frame-01.jpg"
-        },
-        {
-          "video_path": "/DATA/yes/models/amburne/141711.mp4",
-          "source": "watermark_ocr_text",
-          "name": "Only Fans.con",
-          "raw": "OnlyFans.con",
-          "confidence": 0.86,
-          "frame_path": "/DATA/yes/models/amburne/.face-review/141711/frames/frame-01.jpg"
-        },
-        {
-          "video_path": "/DATA/yes/models/amburne/141711.mp4",
-          "source": "watermark_ocr_text",
-          "name": "Amburne",
-          "raw": "amburne",
-          "confidence": 0.86,
-          "frame_path": "/DATA/yes/models/amburne/.face-review/141711/frames/frame-01.jpg"
-        },
-        {
-          "video_path": "/DATA/yes/models/amburne/141711.mp4",
-          "source": "watermark_ocr_text",
-          "name": "Only",
-          "raw": "Only",
-          "confidence": 0.86,
-          "frame_path": "/DATA/yes/models/amburne/.face-review/141711/frames/frame-04.jpg"
-        }
-      ],
-      "video_count": 1
     },
     "azilia-hadid": {
       "name": "Azilia Hadid",
@@ -498,7 +595,7 @@
           "raw": "OnlyFans.com/chloelamb"
         }
       ],
-      "status": "profile-url",
+      "status": "user-confirmed",
       "evidence": [
         {
           "video_path": "/DATA/yes/models/chloe-lamb/442642_720p.mp4",
@@ -603,9 +700,55 @@
           "raw": "hloelamb",
           "confidence": 0.64,
           "frame_path": "/DATA/yes/.face-review/JoinUs @RisqueMega 61/frames/frame-01.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/v 5.mkv",
+          "source": "manual_correction",
+          "name": "Chloe Lamb",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/v 5.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/vid_480p.mkv",
+          "source": "manual_correction",
+          "name": "Chloe Lamb",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/vid_480p.mkv.face-meta.json"
         }
       ],
-      "video_count": 3
+      "video_count": 3,
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-16T03:23:50+00:00",
+      "audit_events": [
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:23:39+00:00",
+          "corrected_at": "2026-06-16T03:23:39+00:00",
+          "source_file": "/DATA/yes/v 5.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Chloe Lamb",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:23:50+00:00",
+          "corrected_at": "2026-06-16T03:23:50+00:00",
+          "source_file": "/DATA/yes/vid_480p.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Chloe Lamb",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        }
+      ]
     },
     "cute-geekie": {
       "name": "Cute Geekie",
@@ -846,6 +989,14 @@
           "raw": "nicutefru",
           "confidence": 0.58,
           "frame_path": "/DATA/yes/.face-review/Visit onlyshare.io for MORE 04419/frames/frame-01.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/jvlrc49ddg~7KxkgZMm9j.mkv",
+          "source": "manual_correction",
+          "name": "Cute Geekie",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/jvlrc49ddg~7KxkgZMm9j.mkv.face-meta.json"
         }
       ],
       "video_count": 11,
@@ -864,8 +1015,34 @@
           "target_name": "Cute Geekie",
           "confirmed_by": "Britton",
           "at": "2026-06-14T03:54:06+00:00"
+        },
+        {
+          "event": "performer_marked_faceless",
+          "performer_name": "Cute Geekie",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-15T23:39:00+00:00",
+          "reason": "User confirmed current content does not show a usable face."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:39:20+00:00",
+          "corrected_at": "2026-06-16T03:39:20+00:00",
+          "source_file": "/DATA/yes/jvlrc49ddg~7KxkgZMm9j.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Cute Geekie",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
         }
-      ]
+      ],
+      "faceless": true,
+      "face_enrollment_status": "faceless",
+      "faceless_confirmed_by": "Britton",
+      "faceless_confirmed_at": "2026-06-15T23:39:00+00:00",
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-16T03:39:20+00:00"
     },
     "gem-the-jewels": {
       "name": "Gem The Jewels",
@@ -1194,11 +1371,43 @@
           "confidence": 1.0,
           "evidence_role": "user_confirmed_correction",
           "sidecar_path": "/DATA/yes/unknown/ScreenRecording_05-20-2026 23-18-19_1.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Izzy Green Finger And Dildo Fuck Pussy Squirt Everywhere For Her.mkv",
+          "source": "manual_correction",
+          "name": "Izzy Green",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Izzy Green Finger And Dildo Fuck Pussy Squirt Everywhere For Her.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Izzy Green New Titty Drop Joi Onlyfans.mp4",
+          "source": "manual_correction",
+          "name": "Izzy Green",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Izzy Green New Titty Drop Joi Onlyfans.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Izzy Green Squirt Compilation Leaked Sextape.mkv",
+          "source": "manual_correction",
+          "name": "Izzy Green",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Izzy Green Squirt Compilation Leaked Sextape.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Izzy Green Suck Till Mouth Got Filled With Cum Then Bounce On Th.mkv",
+          "source": "manual_correction",
+          "name": "Izzy Green",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Izzy Green Suck Till Mouth Got Filled With Cum Then Bounce On Th.mkv.face-meta.json"
         }
       ],
       "video_count": 3,
       "confirmed_by": "Britton",
-      "confirmed_at": "2026-06-15T03:13:16+00:00",
+      "confirmed_at": "2026-06-16T03:14:04+00:00",
       "audit_events": [
         {
           "event": "manual_correction_confirmed",
@@ -1233,6 +1442,58 @@
           "confirmed_at": "2026-06-15T03:13:16+00:00",
           "corrected_at": "2026-06-15T03:13:16+00:00",
           "source_file": "/DATA/yes/unknown/ScreenRecording_05-20-2026 23-18-19_1.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Izzy Green",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:13:48+00:00",
+          "corrected_at": "2026-06-16T03:13:48+00:00",
+          "source_file": "/DATA/yes/Izzy Green Finger And Dildo Fuck Pussy Squirt Everywhere For Her.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Izzy Green",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:13:53+00:00",
+          "corrected_at": "2026-06-16T03:13:53+00:00",
+          "source_file": "/DATA/yes/Izzy Green New Titty Drop Joi Onlyfans.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Izzy Green",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:13:59+00:00",
+          "corrected_at": "2026-06-16T03:13:59+00:00",
+          "source_file": "/DATA/yes/Izzy Green Squirt Compilation Leaked Sextape.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Izzy Green",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:14:04+00:00",
+          "corrected_at": "2026-06-16T03:14:04+00:00",
+          "source_file": "/DATA/yes/Izzy Green Suck Till Mouth Got Filled With Cum Then Bounce On Th.mkv",
           "previous_suggestion": null,
           "new_canonical_name": "Izzy Green",
           "evidence_role": "user_confirmed_correction",
@@ -1431,11 +1692,35 @@
           "confidence": 1.0,
           "evidence_role": "user_confirmed_correction",
           "sidecar_path": "/DATA/yes/models/jakara-mitchell/Jakara Mitchell Glasses Sex Tape Video Leaked - Fapptime.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/v 1.mkv",
+          "source": "manual_correction",
+          "name": "Jakara Mitchell",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/v 1.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/v.mkv",
+          "source": "manual_correction",
+          "name": "Jakara Mitchell",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/v.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Karamitch- gym bg.mkv",
+          "source": "manual_correction",
+          "name": "Jakara Mitchell",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Karamitch- gym bg.mkv.face-meta.json"
         }
       ],
       "video_count": 4,
       "confirmed_by": "Britton",
-      "confirmed_at": "2026-06-15T03:10:36+00:00",
+      "confirmed_at": "2026-06-16T03:38:32+00:00",
       "audit_events": [
         {
           "event": "manual_correction_confirmed",
@@ -1475,6 +1760,45 @@
           "evidence_role": "user_confirmed_correction",
           "face_enrollment_performed": false,
           "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:23:06+00:00",
+          "corrected_at": "2026-06-16T03:23:06+00:00",
+          "source_file": "/DATA/yes/v 1.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Jakara Mitchell",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:23:45+00:00",
+          "corrected_at": "2026-06-16T03:23:45+00:00",
+          "source_file": "/DATA/yes/v.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Jakara Mitchell",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:38:32+00:00",
+          "corrected_at": "2026-06-16T03:38:32+00:00",
+          "source_file": "/DATA/yes/Karamitch- gym bg.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Jakara Mitchell",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
         }
       ]
     },
@@ -1491,7 +1815,7 @@
           "raw": "fansly.com/jazmenjafar"
         }
       ],
-      "status": "profile-url",
+      "status": "user-confirmed",
       "evidence": [
         {
           "video_path": "/DATA/yes/models/jazmen-jafar/107774.mp4",
@@ -1604,67 +1928,223 @@
           "raw": "fanst",
           "confidence": 0.58,
           "frame_path": "/DATA/yes/.face-review/83397/frames/frame-04.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/✨@ofxmega on [TELEGRAM] (86).mkv",
+          "source": "manual_correction",
+          "name": "Jazmen Jafar",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/✨@ofxmega on [TELEGRAM] (86).mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/✨@ofxmega on [TELEGRAM] (299).mkv",
+          "source": "manual_correction",
+          "name": "Jazmen Jafar",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/✨@ofxmega on [TELEGRAM] (299).mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/✨@ofxmega on [TELEGRAM] (295).mkv",
+          "source": "manual_correction",
+          "name": "Jazmen Jafar",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/✨@ofxmega on [TELEGRAM] (295).mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/✨@ofxmega on [TELEGRAM] (288).mkv",
+          "source": "manual_correction",
+          "name": "Jazmen Jafar",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/✨@ofxmega on [TELEGRAM] (288).mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/✨@ofxmega on [TELEGRAM] (286).mkv",
+          "source": "manual_correction",
+          "name": "Jazmen Jafar",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/✨@ofxmega on [TELEGRAM] (286).mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/✨@ofxmega on [TELEGRAM] (279).mkv",
+          "source": "manual_correction",
+          "name": "Jazmen Jafar",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/✨@ofxmega on [TELEGRAM] (279).mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/✨@ofxmega on [TELEGRAM] (278).mkv",
+          "source": "manual_correction",
+          "name": "Jazmen Jafar",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/✨@ofxmega on [TELEGRAM] (278).mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/✨@ofxmega on [TELEGRAM] (276).mkv",
+          "source": "manual_correction",
+          "name": "Jazmen Jafar",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/✨@ofxmega on [TELEGRAM] (276).mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/✨@ofxmega on [TELEGRAM] (274).mkv",
+          "source": "manual_correction",
+          "name": "Jazmen Jafar",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/✨@ofxmega on [TELEGRAM] (274).mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/jazmen-jafar-hard-fuck-and-facial.mp4",
+          "source": "manual_correction",
+          "name": "Jazmen Jafar",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/jazmen-jafar-hard-fuck-and-facial.mp4.face-meta.json"
         }
       ],
-      "video_count": 4
-    },
-    "katianakayfree": {
-      "name": "Katianakayfree",
-      "slug": "katianakayfree",
-      "aliases": [],
-      "profile_handles": [
+      "video_count": 4,
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-16T03:39:13+00:00",
+      "audit_events": [
         {
-          "platform": "onlyfans",
-          "handle": "katianakayfree",
-          "url": "https://onlyfans.com/katianakayfree",
-          "source": "watermark_ocr",
-          "raw": "OnlyFans.com/katianakayfree"
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:24:53+00:00",
+          "corrected_at": "2026-06-16T03:24:52+00:00",
+          "source_file": "/DATA/yes/✨@ofxmega on [TELEGRAM] (86).mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Jazmen Jafar",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:24:55+00:00",
+          "corrected_at": "2026-06-16T03:24:55+00:00",
+          "source_file": "/DATA/yes/✨@ofxmega on [TELEGRAM] (299).mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Jazmen Jafar",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:24:57+00:00",
+          "corrected_at": "2026-06-16T03:24:57+00:00",
+          "source_file": "/DATA/yes/✨@ofxmega on [TELEGRAM] (295).mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Jazmen Jafar",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:24:59+00:00",
+          "corrected_at": "2026-06-16T03:24:59+00:00",
+          "source_file": "/DATA/yes/✨@ofxmega on [TELEGRAM] (288).mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Jazmen Jafar",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:25:02+00:00",
+          "corrected_at": "2026-06-16T03:25:02+00:00",
+          "source_file": "/DATA/yes/✨@ofxmega on [TELEGRAM] (286).mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Jazmen Jafar",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:25:05+00:00",
+          "corrected_at": "2026-06-16T03:25:05+00:00",
+          "source_file": "/DATA/yes/✨@ofxmega on [TELEGRAM] (279).mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Jazmen Jafar",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:25:07+00:00",
+          "corrected_at": "2026-06-16T03:25:07+00:00",
+          "source_file": "/DATA/yes/✨@ofxmega on [TELEGRAM] (278).mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Jazmen Jafar",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:25:10+00:00",
+          "corrected_at": "2026-06-16T03:25:10+00:00",
+          "source_file": "/DATA/yes/✨@ofxmega on [TELEGRAM] (276).mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Jazmen Jafar",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:25:14+00:00",
+          "corrected_at": "2026-06-16T03:25:14+00:00",
+          "source_file": "/DATA/yes/✨@ofxmega on [TELEGRAM] (274).mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Jazmen Jafar",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:39:13+00:00",
+          "corrected_at": "2026-06-16T03:39:13+00:00",
+          "source_file": "/DATA/yes/jazmen-jafar-hard-fuck-and-facial.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Jazmen Jafar",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
         }
-      ],
-      "status": "profile-url",
-      "evidence": [
-        {
-          "video_path": "/DATA/yes/models/katianakayfree/278848_720p.mp4",
-          "source": "watermark_ocr",
-          "name": "Katianakayfm",
-          "raw": "yFans.com/katianakayfm",
-          "confidence": 0.89,
-          "frame_path": "/DATA/yes/models/katianakayfree/.face-review/278848_720p/frames/frame-01.jpg"
-        },
-        {
-          "video_path": "/DATA/yes/models/katianakayfree/278848_720p.mp4",
-          "source": "watermark_ocr",
-          "name": "Katianakayfnu",
-          "raw": "yFans.com/katianakayfnu",
-          "confidence": 0.87,
-          "frame_path": "/DATA/yes/models/katianakayfree/.face-review/278848_720p/frames/frame-01.jpg"
-        },
-        {
-          "video_path": "/DATA/yes/models/katianakayfree/278848_720p.mp4",
-          "source": "watermark_ocr_text",
-          "name": "Thot HO",
-          "raw": "ThotHO",
-          "confidence": 0.82,
-          "frame_path": "/DATA/yes/models/katianakayfree/.face-review/278848_720p/frames/frame-03.jpg"
-        },
-        {
-          "video_path": "/DATA/yes/models/katianakayfree/278848_720p.mp4",
-          "source": "watermark_ocr",
-          "name": "Katianakayfn",
-          "raw": "Fans.com/katianakayfn",
-          "confidence": 0.78,
-          "frame_path": "/DATA/yes/models/katianakayfree/.face-review/278848_720p/frames/frame-01.jpg"
-        },
-        {
-          "video_path": "/DATA/yes/models/katianakayfree/278848_720p.mp4",
-          "source": "watermark_ocr",
-          "name": "Katianakayfree",
-          "raw": "OnlyFans.com/katianakayfree",
-          "confidence": 0.78,
-          "frame_path": "/DATA/yes/models/katianakayfree/.face-review/278848_720p/frames/frame-02.jpg"
-        }
-      ],
-      "video_count": 1
+      ]
     },
     "katievaynes": {
       "name": "Katievaynes",
@@ -1679,7 +2159,7 @@
           "raw": "OnlyFans.com/katievaynes"
         }
       ],
-      "status": "profile-url",
+      "status": "user-confirmed",
       "evidence": [
         {
           "video_path": "/DATA/yes/models/katievaynes/0c194b909a8200e58550eaff39154d1faaa821f417d6a10ca949c247c50fed94.mp4",
@@ -1696,9 +2176,55 @@
           "raw": "OnlyFan",
           "confidence": 0.63,
           "frame_path": "/DATA/yes/models/katievaynes/.face-review/0c194b909a8200e58550eaff39154d1faaa821f417d6a10ca949c247c50fed94/frames/frame-08.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/b4b6c2d0fc023a2f9bff6ffb4865c66444afe6ffb05a331d1fa29a3f50d181b4.mkv",
+          "source": "manual_correction",
+          "name": "Katievaynes",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/b4b6c2d0fc023a2f9bff6ffb4865c66444afe6ffb05a331d1fa29a3f50d181b4.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/c60133f91ac7a5f18769c96232cd4d9b03e85cc5ce8e0be365d73cf81d675d6e.mkv",
+          "source": "manual_correction",
+          "name": "Katievaynes",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/c60133f91ac7a5f18769c96232cd4d9b03e85cc5ce8e0be365d73cf81d675d6e.mkv.face-meta.json"
         }
       ],
-      "video_count": 1
+      "video_count": 1,
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-16T19:21:21+00:00",
+      "audit_events": [
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T19:21:18+00:00",
+          "corrected_at": "2026-06-16T19:21:18+00:00",
+          "source_file": "/DATA/yes/b4b6c2d0fc023a2f9bff6ffb4865c66444afe6ffb05a331d1fa29a3f50d181b4.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Katievaynes",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T19:21:21+00:00",
+          "corrected_at": "2026-06-16T19:21:21+00:00",
+          "source_file": "/DATA/yes/c60133f91ac7a5f18769c96232cd4d9b03e85cc5ce8e0be365d73cf81d675d6e.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Katievaynes",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        }
+      ]
     },
     "kinkykttn": {
       "name": "Kinkykttn",
@@ -1856,8 +2382,19 @@
           "evidence_role": "user_confirmed_correction",
           "face_enrollment_performed": false,
           "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "performer_marked_faceless",
+          "performer_name": "Kinkykttn",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T01:43:01+00:00",
+          "reason": "User confirmed current content does not show a usable face."
         }
-      ]
+      ],
+      "faceless": true,
+      "face_enrollment_status": "faceless",
+      "faceless_confirmed_by": "Britton",
+      "faceless_confirmed_at": "2026-06-16T01:43:01+00:00"
     },
     "leighbunbun": {
       "name": "Leighbunbun",
@@ -2249,7 +2786,7 @@
           "raw": "OnlyFans.com/ruth_lee"
         }
       ],
-      "status": "profile-url",
+      "status": "user-confirmed",
       "evidence": [
         {
           "video_path": "/DATA/yes/models/ruth-lee/362027_720p.mp4",
@@ -2274,9 +2811,34 @@
           "raw": "OnlyFans.com/ruth_lee",
           "confidence": 0.78,
           "frame_path": "/DATA/yes/models/ruth/.face-review/362027_720p/frames/frame-02.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/ruth-lee-after-gym-blowjob-titty-fuck-cumshot-video-leaked-480p.mkv",
+          "source": "manual_correction",
+          "name": "Ruth Lee",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/ruth-lee-after-gym-blowjob-titty-fuck-cumshot-video-leaked-480p.mkv.face-meta.json"
         }
       ],
-      "video_count": 1
+      "video_count": 1,
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-16T03:22:16+00:00",
+      "audit_events": [
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:22:16+00:00",
+          "corrected_at": "2026-06-16T03:22:16+00:00",
+          "source_file": "/DATA/yes/ruth-lee-after-gym-blowjob-titty-fuck-cumshot-video-leaked-480p.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Ruth Lee",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        }
+      ]
     },
     "sakhovanski": {
       "name": "Sakhovanski",
@@ -2718,6 +3280,78 @@
           "confidence": 1.0,
           "evidence_role": "user_confirmed_correction",
           "sidecar_path": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(17).mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(18).mp4",
+          "source": "manual_correction",
+          "name": "Sava Schultz",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(18).mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(19).mp4",
+          "source": "manual_correction",
+          "name": "Sava Schultz",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(19).mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(20).mp4",
+          "source": "manual_correction",
+          "name": "Sava Schultz",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(20).mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(21).mp4",
+          "source": "manual_correction",
+          "name": "Sava Schultz",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(21).mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(22).mp4",
+          "source": "manual_correction",
+          "name": "Sava Schultz",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(22).mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(23).mp4",
+          "source": "manual_correction",
+          "name": "Sava Schultz",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(23).mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(24).mp4",
+          "source": "manual_correction",
+          "name": "Sava Schultz",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(24).mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(25).mp4",
+          "source": "manual_correction",
+          "name": "Sava Schultz",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(25).mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/watermark_9744_savaschultz_81845478182.mp4",
+          "source": "manual_correction",
+          "name": "Sava Schultz",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/watermark_9744_savaschultz_81845478182.mp4.face-meta.json"
         }
       ],
       "video_count": 24,
@@ -2745,7 +3379,7 @@
         "supporting_signal_ids": []
       },
       "confirmed_by": "Britton",
-      "confirmed_at": "2026-06-15T04:22:28+00:00",
+      "confirmed_at": "2026-06-16T03:23:56+00:00",
       "enrolled_face_samples": [],
       "audit_events": [
         {
@@ -3245,6 +3879,123 @@
           "evidence_role": "user_confirmed_correction",
           "face_enrollment_performed": false,
           "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:19:12+00:00",
+          "corrected_at": "2026-06-16T03:19:12+00:00",
+          "source_file": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(18).mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Sava Schultz",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:19:16+00:00",
+          "corrected_at": "2026-06-16T03:19:16+00:00",
+          "source_file": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(19).mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Sava Schultz",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:19:20+00:00",
+          "corrected_at": "2026-06-16T03:19:20+00:00",
+          "source_file": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(20).mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Sava Schultz",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:19:24+00:00",
+          "corrected_at": "2026-06-16T03:19:24+00:00",
+          "source_file": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(21).mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Sava Schultz",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:19:28+00:00",
+          "corrected_at": "2026-06-16T03:19:28+00:00",
+          "source_file": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(22).mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Sava Schultz",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:19:34+00:00",
+          "corrected_at": "2026-06-16T03:19:34+00:00",
+          "source_file": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(23).mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Sava Schultz",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:20:28+00:00",
+          "corrected_at": "2026-06-16T03:20:28+00:00",
+          "source_file": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(24).mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Sava Schultz",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:20:32+00:00",
+          "corrected_at": "2026-06-16T03:20:32+00:00",
+          "source_file": "/DATA/yes/Savaschultz savaschulz savashultz Exclusive Leaked Nude OnlyFans(25).mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Sava Schultz",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:23:56+00:00",
+          "corrected_at": "2026-06-16T03:23:56+00:00",
+          "source_file": "/DATA/yes/watermark_9744_savaschultz_81845478182.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Sava Schultz",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
         }
       ]
     },
@@ -3478,11 +4229,23 @@
         }
       ]
     },
-    "sienna": {
-      "name": "Sienna",
-      "slug": "sienna",
-      "aliases": [],
+    "sienna-ababi": {
+      "name": "Sienna Ababi",
+      "slug": "sienna-ababi",
+      "aliases": [
+        "sienna",
+        "Sienna",
+        "Sienna Ababi",
+        "sienna-ababi"
+      ],
       "profile_handles": [
+        {
+          "platform": "onlyfans",
+          "handle": "siennaababi",
+          "url": "https://onlyfans.com/siennaababi",
+          "source": "watermark_ocr",
+          "raw": "OnlyFans.com/siennaababi"
+        },
         {
           "platform": "onlyfans",
           "handle": "sienna",
@@ -3491,49 +4254,7 @@
           "raw": "OnlyFans.com/sienna"
         }
       ],
-      "status": "profile-url",
-      "evidence": [
-        {
-          "video_path": "/DATA/yes/models/sienna/183438_720p.mp4",
-          "source": "watermark_ocr",
-          "name": "Sienna",
-          "raw": "OnlyFans.com/sienna",
-          "confidence": 0.89,
-          "frame_path": "/DATA/yes/.face-review/183438_720p/frames/frame-01.jpg"
-        },
-        {
-          "video_path": "/DATA/yes/models/sienna/183438_720p.mp4",
-          "source": "watermark_ocr",
-          "name": "Sien",
-          "raw": "OnlyFans.com/sien",
-          "confidence": 0.88,
-          "frame_path": "/DATA/yes/.face-review/183438_720p/frames/frame-02.jpg"
-        },
-        {
-          "video_path": "/DATA/yes/models/sienna/183438_720p.mp4",
-          "source": "watermark_ocr_text",
-          "name": "Thot",
-          "raw": "ThotHD",
-          "confidence": 0.64,
-          "frame_path": "/DATA/yes/.face-review/183438_720p/frames/frame-01.jpg"
-        }
-      ],
-      "video_count": 1
-    },
-    "sienna-ababi": {
-      "name": "Sienna Ababi",
-      "slug": "sienna-ababi",
-      "aliases": [],
-      "profile_handles": [
-        {
-          "platform": "onlyfans",
-          "handle": "siennaababi",
-          "url": "https://onlyfans.com/siennaababi",
-          "source": "watermark_ocr",
-          "raw": "OnlyFans.com/siennaababi"
-        }
-      ],
-      "status": "profile-url",
+      "status": "user-confirmed",
       "evidence": [
         {
           "video_path": "/DATA/yes/models/sienna-ababi/@DailyLeaksMain_5a6152622c58eb1a882b28ad94a5b92dbafc2eaa155bb35c1ce00b835156eba3.MP4",
@@ -3678,9 +4399,50 @@
           "raw": "OnlyFans.com/siennaabab",
           "confidence": 0.78,
           "frame_path": "/DATA/yes/.face-review/Visit onlyshare.io for MORE (7)/frames/frame-01.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/models/sienna/183438_720p.mp4",
+          "source": "watermark_ocr",
+          "name": "Sienna",
+          "raw": "OnlyFans.com/sienna",
+          "confidence": 0.89,
+          "frame_path": "/DATA/yes/.face-review/183438_720p/frames/frame-01.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/models/sienna/183438_720p.mp4",
+          "source": "watermark_ocr",
+          "name": "Sien",
+          "raw": "OnlyFans.com/sien",
+          "confidence": 0.88,
+          "frame_path": "/DATA/yes/.face-review/183438_720p/frames/frame-02.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/models/sienna/183438_720p.mp4",
+          "source": "watermark_ocr_text",
+          "name": "Thot",
+          "raw": "ThotHD",
+          "confidence": 0.64,
+          "frame_path": "/DATA/yes/.face-review/183438_720p/frames/frame-01.jpg"
         }
       ],
-      "video_count": 5
+      "video_count": 12,
+      "enrolled_face_samples": [],
+      "audit_events": [
+        {
+          "event": "duplicate_creator_merged",
+          "source_name": "Sienna",
+          "target_name": "Sienna Ababi",
+          "confirmed_by": "Britton",
+          "at": "2026-06-16T01:51:26+00:00"
+        },
+        {
+          "event": "duplicate_creator_merged",
+          "source_name": "Sienna",
+          "target_name": "Sienna Ababi",
+          "confirmed_by": "Britton",
+          "at": "2026-06-16T01:51:30+00:00"
+        }
+      ]
     },
     "whoahannahjo": {
       "name": "Whoahannahjo",
@@ -3695,7 +4457,7 @@
           "raw": "OnlyFans.com/whoahannahjo"
         }
       ],
-      "status": "profile-url",
+      "status": "user-confirmed",
       "evidence": [
         {
           "video_path": "/DATA/yes/models/whoahannahjo/223120.mp4",
@@ -3744,9 +4506,76 @@
           "raw": "OnlyFans.com/whoahannahjo",
           "confidence": 0.78,
           "frame_path": "/DATA/yes/.face-review/HkxQxzewMkuQzwkQneee/frames/frame-01.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/n6utt4v0th~oBjJ4OdyPb.mkv",
+          "source": "manual_correction",
+          "name": "Whoahannahjo",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/n6utt4v0th~oBjJ4OdyPb.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/v 3.mkv",
+          "source": "manual_correction",
+          "name": "Whoahannahjo",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/v 3.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/v 4.mkv",
+          "source": "manual_correction",
+          "name": "Whoahannahjo",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/v 4.mkv.face-meta.json"
         }
       ],
-      "video_count": 3
+      "video_count": 3,
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-16T03:23:34+00:00",
+      "audit_events": [
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:22:04+00:00",
+          "corrected_at": "2026-06-16T03:22:04+00:00",
+          "source_file": "/DATA/yes/n6utt4v0th~oBjJ4OdyPb.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Whoahannahjo",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:23:27+00:00",
+          "corrected_at": "2026-06-16T03:23:27+00:00",
+          "source_file": "/DATA/yes/v 3.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Whoahannahjo",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:23:34+00:00",
+          "corrected_at": "2026-06-16T03:23:34+00:00",
+          "source_file": "/DATA/yes/v 4.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Whoahannahjo",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        }
+      ]
     },
     "yummy-couple": {
       "name": "Yummy Couple",
@@ -4355,6 +5184,14 @@
           "confidence": 1.0,
           "evidence_role": "user_confirmed_correction",
           "sidecar_path": "/DATA/yes/484374_720p.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/556530_720p.mkv",
+          "source": "manual_correction",
+          "name": "Angela White",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/556530_720p.mkv.face-meta.json"
         }
       ],
       "web_text_evidence_summary": {
@@ -4382,7 +5219,7 @@
       },
       "video_count": 0,
       "confirmed_by": "Britton",
-      "confirmed_at": "2026-06-15T02:57:19+00:00",
+      "confirmed_at": "2026-06-16T01:58:25+00:00",
       "audit_events": [
         {
           "event": "manual_correction_confirmed",
@@ -4514,6 +5351,19 @@
           "target_name": "Angela White",
           "confirmed_by": "Britton",
           "at": "2026-06-15T02:59:09+00:00"
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T01:58:25+00:00",
+          "corrected_at": "2026-06-16T01:58:25+00:00",
+          "source_file": "/DATA/yes/556530_720p.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Angela White",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
         }
       ],
       "enrolled_face_samples": []
@@ -4548,6 +5398,22 @@
           "confidence": 1.0,
           "evidence_role": "user_confirmed_correction",
           "sidecar_path": "/DATA/yes/513329_720p.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/564677_720p.mkv",
+          "source": "manual_correction",
+          "name": "Strawberrytabby",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/564677_720p.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/564677_720p.mkv.face-meta.json",
+          "source": "manual_correction",
+          "name": "Strawberrytabby",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/564677_720p.mkv.face-meta.json"
         }
       ],
       "web_text_evidence_summary": {
@@ -4575,7 +5441,7 @@
       },
       "video_count": 0,
       "confirmed_by": "Britton",
-      "confirmed_at": "2026-06-15T03:07:16+00:00",
+      "confirmed_at": "2026-06-16T02:37:33+00:00",
       "audit_events": [
         {
           "event": "manual_correction_confirmed",
@@ -4610,6 +5476,32 @@
           "confirmed_at": "2026-06-15T03:07:16+00:00",
           "corrected_at": "2026-06-15T03:07:15+00:00",
           "source_file": "/DATA/yes/513329_720p.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Strawberrytabby",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T02:06:21+00:00",
+          "corrected_at": "2026-06-16T02:06:21+00:00",
+          "source_file": "/DATA/yes/564677_720p.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Strawberrytabby",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T02:37:33+00:00",
+          "corrected_at": "2026-06-16T02:37:33+00:00",
+          "source_file": "/DATA/yes/564677_720p.mkv.face-meta.json",
           "previous_suggestion": null,
           "new_canonical_name": "Strawberrytabby",
           "evidence_role": "user_confirmed_correction",
@@ -5284,6 +6176,2716 @@
           "limitations": "Registry/model index text identity update only; no face enrollment was performed."
         }
       ]
+    },
+    "alexa-pearl": {
+      "name": "Alexa Pearl",
+      "slug": "alexa-pearl",
+      "aliases": [],
+      "profile_handles": [],
+      "status": "user-confirmed",
+      "evidence": [
+        {
+          "video_path": "/DATA/yes/334120.mkv",
+          "source": "manual_correction",
+          "name": "Alexa Pearl",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/334120.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Alexa Pearl Mommys Full Of Milk Onlyfans Leak Video.mp4",
+          "source": "manual_correction",
+          "name": "Alexa Pearl",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Alexa Pearl Mommys Full Of Milk Onlyfans Leak Video.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Cutie Alexa Pearl Takes Hot Facial Outside.mp4",
+          "source": "manual_correction",
+          "name": "Alexa Pearl",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Cutie Alexa Pearl Takes Hot Facial Outside.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Alexa Pearl Jerks Off A Guys Cock With Her Juicy Tits.mp4",
+          "source": "manual_correction",
+          "name": "Alexa Pearl",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Alexa Pearl Jerks Off A Guys Cock With Her Juicy Tits.mp4.face-meta.json"
+        }
+      ],
+      "web_text_evidence_summary": {
+        "schema": "media-web-text-evidence/v1",
+        "count": 0,
+        "providers": [],
+        "source_trust_counts": {},
+        "review_required": false
+      },
+      "identity_trace_summary": {
+        "schema": "media-identity-trace/v1",
+        "count": 0,
+        "review_required": true
+      },
+      "assignment_decision": {
+        "schema": "media-assignment-decision/v1",
+        "suggested_slug": null,
+        "suggested_name": null,
+        "confidence": 0.0,
+        "auto_assign_allowed": false,
+        "review_required": true,
+        "why": "",
+        "blocking_reasons": [],
+        "supporting_signal_ids": []
+      },
+      "video_count": 0,
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-17T01:20:44+00:00",
+      "audit_events": [
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T01:53:32+00:00",
+          "corrected_at": "2026-06-16T01:53:32+00:00",
+          "source_file": "/DATA/yes/334120.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Alexa Pearl",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-17T01:18:20+00:00",
+          "corrected_at": "2026-06-17T01:18:20+00:00",
+          "source_file": "/DATA/yes/Alexa Pearl Mommys Full Of Milk Onlyfans Leak Video.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Alexa Pearl",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-17T01:18:23+00:00",
+          "corrected_at": "2026-06-17T01:18:23+00:00",
+          "source_file": "/DATA/yes/Cutie Alexa Pearl Takes Hot Facial Outside.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Alexa Pearl",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-17T01:20:44+00:00",
+          "corrected_at": "2026-06-17T01:20:44+00:00",
+          "source_file": "/DATA/yes/Alexa Pearl Jerks Off A Guys Cock With Her Juicy Tits.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Alexa Pearl",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        }
+      ]
+    },
+    "amburnee": {
+      "name": "Amburnee",
+      "slug": "amburnee",
+      "aliases": [
+        "amburne",
+        "Amburne",
+        "amburnee",
+        "Amburnee"
+      ],
+      "profile_handles": [],
+      "status": "user-confirmed",
+      "evidence": [
+        {
+          "video_path": "/DATA/yes/Amburnee ambernyy Exclusive Leaked Nude OnlyFans 10859483.mp4",
+          "source": "manual_correction",
+          "name": "Amburnee",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Amburnee ambernyy Exclusive Leaked Nude OnlyFans 10859483.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Amburnee ambernyy Exclusive Leaked Nude OnlyFans 11093916.mov",
+          "source": "manual_correction",
+          "name": "Amburnee",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Amburnee ambernyy Exclusive Leaked Nude OnlyFans 11093916.mov.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Amburnee ambernyy Exclusive Leaked Nude OnlyFans 12558863.mp4",
+          "source": "manual_correction",
+          "name": "Amburnee",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Amburnee ambernyy Exclusive Leaked Nude OnlyFans 12558863.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/models/amburne/141711.mp4",
+          "source": "watermark_ocr",
+          "name": "Ambune",
+          "raw": "OnlyFans.com/ambune",
+          "confidence": 0.9,
+          "frame_path": "/DATA/yes/models/amburne/.face-review/141711/frames/frame-02.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/models/amburne/141711.mp4",
+          "source": "watermark_ocr_text",
+          "name": "Only Fans.cor",
+          "raw": "OnlyFans.cor",
+          "confidence": 0.86,
+          "frame_path": "/DATA/yes/models/amburne/.face-review/141711/frames/frame-01.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/models/amburne/141711.mp4",
+          "source": "watermark_ocr_text",
+          "name": "Only Fans.con",
+          "raw": "OnlyFans.con",
+          "confidence": 0.86,
+          "frame_path": "/DATA/yes/models/amburne/.face-review/141711/frames/frame-01.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/models/amburne/141711.mp4",
+          "source": "watermark_ocr_text",
+          "name": "Amburne",
+          "raw": "amburne",
+          "confidence": 0.86,
+          "frame_path": "/DATA/yes/models/amburne/.face-review/141711/frames/frame-01.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/models/amburne/141711.mp4",
+          "source": "watermark_ocr_text",
+          "name": "Only",
+          "raw": "Only",
+          "confidence": 0.86,
+          "frame_path": "/DATA/yes/models/amburne/.face-review/141711/frames/frame-04.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/Amburnee ambernyy Exclusive Leaked Nude OnlyFans 11093916.mov",
+          "source": "manual_correction",
+          "name": "Amburnee",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Amburnee ambernyy Exclusive Leaked Nude OnlyFans 11093916.mov.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Amburnee ambernyy Exclusive Leaked Nude OnlyFans 12726049.mp4",
+          "source": "manual_correction",
+          "name": "Amburnee",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Amburnee ambernyy Exclusive Leaked Nude OnlyFans 12726049.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Amburnee ambernyy Exclusive Leaked Nude OnlyFans 12801090.mov",
+          "source": "manual_correction",
+          "name": "Amburnee",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Amburnee ambernyy Exclusive Leaked Nude OnlyFans 12801090.mov.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Amburnee.mp4",
+          "source": "manual_correction",
+          "name": "Amburnee",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Amburnee.mp4.face-meta.json"
+        }
+      ],
+      "web_text_evidence_summary": {
+        "schema": "media-web-text-evidence/v1",
+        "count": 0,
+        "providers": [],
+        "source_trust_counts": {},
+        "review_required": false
+      },
+      "identity_trace_summary": {
+        "schema": "media-identity-trace/v1",
+        "count": 0,
+        "review_required": true
+      },
+      "assignment_decision": {
+        "schema": "media-assignment-decision/v1",
+        "suggested_slug": null,
+        "suggested_name": null,
+        "confidence": 0.0,
+        "auto_assign_allowed": false,
+        "review_required": true,
+        "why": "",
+        "blocking_reasons": [],
+        "supporting_signal_ids": []
+      },
+      "video_count": 4,
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-16T02:57:18+00:00",
+      "audit_events": [
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T02:11:35+00:00",
+          "corrected_at": "2026-06-16T02:11:35+00:00",
+          "source_file": "/DATA/yes/Amburnee ambernyy Exclusive Leaked Nude OnlyFans 10859483.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Amburnee",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T02:11:42+00:00",
+          "corrected_at": "2026-06-16T02:11:42+00:00",
+          "source_file": "/DATA/yes/Amburnee ambernyy Exclusive Leaked Nude OnlyFans 11093916.mov",
+          "previous_suggestion": null,
+          "new_canonical_name": "Amburnee",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T02:11:52+00:00",
+          "corrected_at": "2026-06-16T02:11:52+00:00",
+          "source_file": "/DATA/yes/Amburnee ambernyy Exclusive Leaked Nude OnlyFans 12558863.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Amburnee",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "duplicate_creator_merged",
+          "source_name": "Amburne",
+          "target_name": "Amburnee",
+          "confirmed_by": "Britton",
+          "at": "2026-06-16T02:12:11+00:00"
+        },
+        {
+          "event": "duplicate_creator_merged",
+          "source_name": "Amburne",
+          "target_name": "Amburnee",
+          "confirmed_by": "Britton",
+          "at": "2026-06-16T02:12:12+00:00"
+        },
+        {
+          "event": "duplicate_creator_merged",
+          "source_name": "Amburne",
+          "target_name": "Amburnee",
+          "confirmed_by": "Britton",
+          "at": "2026-06-16T02:12:14+00:00"
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T02:37:49+00:00",
+          "corrected_at": "2026-06-16T02:37:49+00:00",
+          "source_file": "/DATA/yes/Amburnee ambernyy Exclusive Leaked Nude OnlyFans 11093916.mov",
+          "previous_suggestion": null,
+          "new_canonical_name": "Amburnee",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T02:55:48+00:00",
+          "corrected_at": "2026-06-16T02:55:48+00:00",
+          "source_file": "/DATA/yes/Amburnee ambernyy Exclusive Leaked Nude OnlyFans 12726049.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Amburnee",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T02:55:55+00:00",
+          "corrected_at": "2026-06-16T02:55:55+00:00",
+          "source_file": "/DATA/yes/Amburnee ambernyy Exclusive Leaked Nude OnlyFans 12801090.mov",
+          "previous_suggestion": null,
+          "new_canonical_name": "Amburnee",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T02:57:18+00:00",
+          "corrected_at": "2026-06-16T02:57:18+00:00",
+          "source_file": "/DATA/yes/Amburnee.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Amburnee",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        }
+      ],
+      "enrolled_face_samples": []
+    },
+    "allinika": {
+      "name": "Allinika",
+      "slug": "allinika",
+      "aliases": [],
+      "profile_handles": [],
+      "status": "user-confirmed",
+      "evidence": [
+        {
+          "video_path": "/DATA/yes/Allinika Girl in Leggings Selects Her Ideal Match Beeg.mp4",
+          "source": "manual_correction",
+          "name": "Allinika",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Allinika Girl in Leggings Selects Her Ideal Match Beeg.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Allinika the Girl Knows how to Distract from the Game. Beeg.mp4",
+          "source": "manual_correction",
+          "name": "Allinika",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Allinika the Girl Knows how to Distract from the Game. Beeg.mp4.face-meta.json"
+        }
+      ],
+      "web_text_evidence_summary": {
+        "schema": "media-web-text-evidence/v1",
+        "count": 0,
+        "providers": [],
+        "source_trust_counts": {},
+        "review_required": false
+      },
+      "identity_trace_summary": {
+        "schema": "media-identity-trace/v1",
+        "count": 0,
+        "review_required": true
+      },
+      "assignment_decision": {
+        "schema": "media-assignment-decision/v1",
+        "suggested_slug": null,
+        "suggested_name": null,
+        "confidence": 0.0,
+        "auto_assign_allowed": false,
+        "review_required": true,
+        "why": "",
+        "blocking_reasons": [],
+        "supporting_signal_ids": []
+      },
+      "video_count": 0,
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-16T19:17:07+00:00",
+      "audit_events": [
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T02:55:21+00:00",
+          "corrected_at": "2026-06-16T02:55:21+00:00",
+          "source_file": "/DATA/yes/Allinika Girl in Leggings Selects Her Ideal Match Beeg.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Allinika",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T19:17:07+00:00",
+          "corrected_at": "2026-06-16T19:17:06+00:00",
+          "source_file": "/DATA/yes/Allinika the Girl Knows how to Distract from the Game. Beeg.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Allinika",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        }
+      ]
+    },
+    "heyimbee": {
+      "name": "Heyimbee",
+      "slug": "heyimbee",
+      "aliases": [
+        "Risque Core Vid 96",
+        "risque-core-vid-96"
+      ],
+      "profile_handles": [],
+      "status": "user-confirmed",
+      "evidence": [
+        {
+          "video_path": "/DATA/yes/Heyimbee Leaked Video III.mkv",
+          "source": "manual_correction",
+          "name": "Heyimbee",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Heyimbee Leaked Video III.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Hey I M Bee AKA Heyimbee Playing With Herself Soft Mouth Sounds.mkv",
+          "source": "manual_correction",
+          "name": "Heyimbee",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Hey I M Bee AKA Heyimbee Playing With Herself Soft Mouth Sounds.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/HeyImBee Big Titty Maid.mp4",
+          "source": "manual_correction",
+          "name": "Heyimbee",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/HeyImBee Big Titty Maid.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/HeyImBee Leaked OF Video Teases Her Perfect Curves in Raw Uncut.mp4",
+          "source": "manual_correction",
+          "name": "Heyimbee",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/HeyImBee Leaked OF Video Teases Her Perfect Curves in Raw Uncut.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Heyimbee - Busty E-Girl Onlyfans Leaked - Fapdungeon(1).mp4",
+          "source": "manual_correction",
+          "name": "Heyimbee",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Heyimbee - Busty E-Girl Onlyfans Leaked - Fapdungeon(1).mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Heyimbee - Busty E-Girl Onlyfans Leaked - Fapdungeon(2).mp4",
+          "source": "manual_correction",
+          "name": "Heyimbee",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Heyimbee - Busty E-Girl Onlyfans Leaked - Fapdungeon(2).mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Heyimbee - Busty E-Girl Onlyfans Leaked - Fapdungeon.mp4",
+          "source": "manual_correction",
+          "name": "Heyimbee",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Heyimbee - Busty E-Girl Onlyfans Leaked - Fapdungeon.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Heyimbee 49.95 Ppv Floor Cam And Spreading Leak Video.mkv",
+          "source": "manual_correction",
+          "name": "Heyimbee",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Heyimbee 49.95 Ppv Floor Cam And Spreading Leak Video.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Heyimbee Exclusive Leaked Nude OnlyFans 1099433.mkv",
+          "source": "manual_correction",
+          "name": "Heyimbee",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Heyimbee Exclusive Leaked Nude OnlyFans 1099433.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Heyimbee Exclusive Leaked Nude OnlyFans 1101500.mkv",
+          "source": "manual_correction",
+          "name": "Heyimbee",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Heyimbee Exclusive Leaked Nude OnlyFans 1101500.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Heyimbee Exclusive Leaked Nude OnlyFans 699500.mp4",
+          "source": "manual_correction",
+          "name": "Heyimbee",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Heyimbee Exclusive Leaked Nude OnlyFans 699500.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Heyimbee New Videos 3.mkv",
+          "source": "manual_correction",
+          "name": "Heyimbee",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Heyimbee New Videos 3.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Heyimbee Teases in Intense Cowgirl Riding Action Video.mp4",
+          "source": "manual_correction",
+          "name": "Heyimbee",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Heyimbee Teases in Intense Cowgirl Riding Action Video.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Heyimbee Tease - EroThots.mkv",
+          "source": "manual_correction",
+          "name": "Heyimbee",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Heyimbee Tease - EroThots.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Heyimbee Squeezing Juicy Melons Leaked Onlyfans Video.mkv",
+          "source": "manual_correction",
+          "name": "Heyimbee",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Heyimbee Squeezing Juicy Melons Leaked Onlyfans Video.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Heyimbee Squeezing Big Boobs With Oil Leaked Onlyfans Video.mkv",
+          "source": "manual_correction",
+          "name": "Heyimbee",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Heyimbee Squeezing Big Boobs With Oil Leaked Onlyfans Video.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Heyimbee Onlyfans Leaked Video Teases a Milky Messy Shower PPV.mp4",
+          "source": "manual_correction",
+          "name": "Heyimbee",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Heyimbee Onlyfans Leaked Video Teases a Milky Messy Shower PPV.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Heyimbee Exclusive Leaked Nude OnlyFans 699500.mp4",
+          "source": "manual_correction",
+          "name": "Heyimbee",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Heyimbee Exclusive Leaked Nude OnlyFans 699500.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Heyimbee Exclusive Leaked Nude OnlyFans 1101500.mkv",
+          "source": "manual_correction",
+          "name": "Heyimbee",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Heyimbee Exclusive Leaked Nude OnlyFans 1101500.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Heyimbee Exclusive Leaked Nude OnlyFans 1099433.mkv",
+          "source": "manual_correction",
+          "name": "Heyimbee",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Heyimbee Exclusive Leaked Nude OnlyFans 1099433.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Heyimbee 49.95 Ppv Floor Cam And Spreading Leak Video.mkv",
+          "source": "manual_correction",
+          "name": "Heyimbee",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Heyimbee 49.95 Ppv Floor Cam And Spreading Leak Video.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Heyimbee ass from behind butt crack Leaked OF.mkv",
+          "source": "manual_correction",
+          "name": "Heyimbee",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Heyimbee ass from behind butt crack Leaked OF.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Heyimbee pov Dirty Tray On Video Leaked.mp4",
+          "source": "manual_correction",
+          "name": "Heyimbee",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Heyimbee pov Dirty Tray On Video Leaked.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/RisqueCore Vid 53.mp4",
+          "source": "manual_correction",
+          "name": "Heyimbee",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/RisqueCore Vid 53.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/RisqueCore Vid 10.mp4",
+          "source": "manual_correction",
+          "name": "Heyimbee",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/RisqueCore Vid 10.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/RisqueCore Vid 177.mp4",
+          "source": "manual_correction",
+          "name": "Heyimbee",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/RisqueCore Vid 177.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/RisqueCore Vid 73.mp4",
+          "source": "manual_correction",
+          "name": "Heyimbee",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/RisqueCore Vid 73.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/RisqueCore Vid 96.mp4",
+          "source": "manual_correction",
+          "name": "Heyimbee",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/RisqueCore Vid 96.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/heyimbee bee Nude Leaked Onlyfans Video 12 - Picazor EN.mp4",
+          "source": "manual_correction",
+          "name": "Heyimbee",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/heyimbee bee Nude Leaked Onlyfans Video 12 - Picazor EN.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/RisqueCore Vid 123.mp4",
+          "source": "manual_correction",
+          "name": "Heyimbee",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/RisqueCore Vid 123.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/RisqueCore Vid 96.mp4",
+          "source": "manual_correction",
+          "name": "Heyimbee",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/RisqueCore Vid 96.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/RisqueCore Vid 96.mp4",
+          "source": "manual_correction",
+          "name": "Risque Core Vid 96",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/RisqueCore Vid 96.mp4.face-meta.json"
+        }
+      ],
+      "web_text_evidence_summary": {
+        "schema": "media-web-text-evidence/v1",
+        "count": 0,
+        "providers": [],
+        "source_trust_counts": {},
+        "review_required": false
+      },
+      "identity_trace_summary": {
+        "schema": "media-identity-trace/v1",
+        "count": 0,
+        "review_required": true
+      },
+      "assignment_decision": {
+        "schema": "media-assignment-decision/v1",
+        "suggested_slug": null,
+        "suggested_name": null,
+        "confidence": 0.0,
+        "auto_assign_allowed": false,
+        "review_required": true,
+        "why": "",
+        "blocking_reasons": [],
+        "supporting_signal_ids": []
+      },
+      "video_count": 0,
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-16T19:13:13+00:00",
+      "audit_events": [
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:13:32+00:00",
+          "corrected_at": "2026-06-16T03:13:32+00:00",
+          "source_file": "/DATA/yes/Heyimbee Leaked Video III.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Heyimbee",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:15:51+00:00",
+          "corrected_at": "2026-06-16T03:15:51+00:00",
+          "source_file": "/DATA/yes/Hey I M Bee AKA Heyimbee Playing With Herself Soft Mouth Sounds.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Heyimbee",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:16:06+00:00",
+          "corrected_at": "2026-06-16T03:16:06+00:00",
+          "source_file": "/DATA/yes/HeyImBee Big Titty Maid.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Heyimbee",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:16:11+00:00",
+          "corrected_at": "2026-06-16T03:16:11+00:00",
+          "source_file": "/DATA/yes/HeyImBee Leaked OF Video Teases Her Perfect Curves in Raw Uncut.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Heyimbee",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:16:15+00:00",
+          "corrected_at": "2026-06-16T03:16:15+00:00",
+          "source_file": "/DATA/yes/Heyimbee - Busty E-Girl Onlyfans Leaked - Fapdungeon(1).mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Heyimbee",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:16:18+00:00",
+          "corrected_at": "2026-06-16T03:16:18+00:00",
+          "source_file": "/DATA/yes/Heyimbee - Busty E-Girl Onlyfans Leaked - Fapdungeon(2).mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Heyimbee",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:16:21+00:00",
+          "corrected_at": "2026-06-16T03:16:21+00:00",
+          "source_file": "/DATA/yes/Heyimbee - Busty E-Girl Onlyfans Leaked - Fapdungeon.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Heyimbee",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:16:23+00:00",
+          "corrected_at": "2026-06-16T03:16:23+00:00",
+          "source_file": "/DATA/yes/Heyimbee 49.95 Ppv Floor Cam And Spreading Leak Video.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Heyimbee",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:16:27+00:00",
+          "corrected_at": "2026-06-16T03:16:27+00:00",
+          "source_file": "/DATA/yes/Heyimbee Exclusive Leaked Nude OnlyFans 1099433.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Heyimbee",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:16:31+00:00",
+          "corrected_at": "2026-06-16T03:16:31+00:00",
+          "source_file": "/DATA/yes/Heyimbee Exclusive Leaked Nude OnlyFans 1101500.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Heyimbee",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:16:34+00:00",
+          "corrected_at": "2026-06-16T03:16:34+00:00",
+          "source_file": "/DATA/yes/Heyimbee Exclusive Leaked Nude OnlyFans 699500.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Heyimbee",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:16:37+00:00",
+          "corrected_at": "2026-06-16T03:16:37+00:00",
+          "source_file": "/DATA/yes/Heyimbee New Videos 3.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Heyimbee",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:16:43+00:00",
+          "corrected_at": "2026-06-16T03:16:43+00:00",
+          "source_file": "/DATA/yes/Heyimbee Teases in Intense Cowgirl Riding Action Video.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Heyimbee",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:16:46+00:00",
+          "corrected_at": "2026-06-16T03:16:46+00:00",
+          "source_file": "/DATA/yes/Heyimbee Tease - EroThots.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Heyimbee",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:16:49+00:00",
+          "corrected_at": "2026-06-16T03:16:49+00:00",
+          "source_file": "/DATA/yes/Heyimbee Squeezing Juicy Melons Leaked Onlyfans Video.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Heyimbee",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:16:53+00:00",
+          "corrected_at": "2026-06-16T03:16:53+00:00",
+          "source_file": "/DATA/yes/Heyimbee Squeezing Big Boobs With Oil Leaked Onlyfans Video.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Heyimbee",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:16:57+00:00",
+          "corrected_at": "2026-06-16T03:16:57+00:00",
+          "source_file": "/DATA/yes/Heyimbee Onlyfans Leaked Video Teases a Milky Messy Shower PPV.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Heyimbee",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:17:02+00:00",
+          "corrected_at": "2026-06-16T03:17:02+00:00",
+          "source_file": "/DATA/yes/Heyimbee Exclusive Leaked Nude OnlyFans 699500.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Heyimbee",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:17:06+00:00",
+          "corrected_at": "2026-06-16T03:17:06+00:00",
+          "source_file": "/DATA/yes/Heyimbee Exclusive Leaked Nude OnlyFans 1101500.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Heyimbee",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:17:11+00:00",
+          "corrected_at": "2026-06-16T03:17:11+00:00",
+          "source_file": "/DATA/yes/Heyimbee Exclusive Leaked Nude OnlyFans 1099433.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Heyimbee",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:17:15+00:00",
+          "corrected_at": "2026-06-16T03:17:15+00:00",
+          "source_file": "/DATA/yes/Heyimbee 49.95 Ppv Floor Cam And Spreading Leak Video.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Heyimbee",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:17:39+00:00",
+          "corrected_at": "2026-06-16T03:17:39+00:00",
+          "source_file": "/DATA/yes/Heyimbee ass from behind butt crack Leaked OF.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Heyimbee",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:17:41+00:00",
+          "corrected_at": "2026-06-16T03:17:41+00:00",
+          "source_file": "/DATA/yes/Heyimbee pov Dirty Tray On Video Leaked.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Heyimbee",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:18:40+00:00",
+          "corrected_at": "2026-06-16T03:18:40+00:00",
+          "source_file": "/DATA/yes/RisqueCore Vid 53.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Heyimbee",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:18:49+00:00",
+          "corrected_at": "2026-06-16T03:18:49+00:00",
+          "source_file": "/DATA/yes/RisqueCore Vid 10.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Heyimbee",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:18:55+00:00",
+          "corrected_at": "2026-06-16T03:18:55+00:00",
+          "source_file": "/DATA/yes/RisqueCore Vid 177.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Heyimbee",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:18:59+00:00",
+          "corrected_at": "2026-06-16T03:18:58+00:00",
+          "source_file": "/DATA/yes/RisqueCore Vid 73.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Heyimbee",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:21:20+00:00",
+          "corrected_at": "2026-06-16T03:21:08+00:00",
+          "source_file": "/DATA/yes/RisqueCore Vid 96.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Heyimbee",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:21:39+00:00",
+          "corrected_at": "2026-06-16T03:21:39+00:00",
+          "source_file": "/DATA/yes/heyimbee bee Nude Leaked Onlyfans Video 12 - Picazor EN.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Heyimbee",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:25:32+00:00",
+          "corrected_at": "2026-06-16T03:25:32+00:00",
+          "source_file": "/DATA/yes/RisqueCore Vid 123.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Heyimbee",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T19:13:13+00:00",
+          "corrected_at": "2026-06-16T19:13:12+00:00",
+          "source_file": "/DATA/yes/RisqueCore Vid 96.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Heyimbee",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:19:01+00:00",
+          "corrected_at": "2026-06-16T03:19:01+00:00",
+          "source_file": "/DATA/yes/RisqueCore Vid 96.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Risque Core Vid 96",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "duplicate_creator_merged",
+          "source_name": "Risque Core Vid 96",
+          "target_name": "heyimbee",
+          "confirmed_by": "Britton",
+          "at": "2026-06-17T00:55:46+00:00"
+        }
+      ],
+      "enrolled_face_samples": []
+    },
+    "katiana-kay": {
+      "name": "Katiana Kay",
+      "slug": "katiana-kay",
+      "aliases": [
+        "Katianakayfree",
+        "katianakayfree"
+      ],
+      "profile_handles": [
+        {
+          "platform": "onlyfans",
+          "handle": "katianakayfree",
+          "url": "https://onlyfans.com/katianakayfree",
+          "source": "watermark_ocr",
+          "raw": "OnlyFans.com/katianakayfree"
+        }
+      ],
+      "status": "user-confirmed",
+      "evidence": [
+        {
+          "video_path": "/DATA/yes/Katiana Kay gives a mind-blowing blowjob in POV.mp4.face-meta.json",
+          "source": "manual_correction",
+          "name": "Katiana Kay",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Katiana Kay gives a mind-blowing blowjob in POV.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Katiana Kay Fucks A Cop Video Leaked.mkv",
+          "source": "manual_correction",
+          "name": "Katiana Kay",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Katiana Kay Fucks A Cop Video Leaked.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Katiana Kay Needs To Suck A Cock.mkv",
+          "source": "manual_correction",
+          "name": "Katiana Kay",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Katiana Kay Needs To Suck A Cock.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Katiana Kay gives a mind-blowing blowjob in POV.mp4",
+          "source": "manual_correction",
+          "name": "Katiana Kay",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Katiana Kay gives a mind-blowing blowjob in POV.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/models/katianakayfree/278848_720p.mp4",
+          "source": "watermark_ocr",
+          "name": "Katianakayfm",
+          "raw": "yFans.com/katianakayfm",
+          "confidence": 0.89,
+          "frame_path": "/DATA/yes/models/katianakayfree/.face-review/278848_720p/frames/frame-01.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/models/katianakayfree/278848_720p.mp4",
+          "source": "watermark_ocr",
+          "name": "Katianakayfnu",
+          "raw": "yFans.com/katianakayfnu",
+          "confidence": 0.87,
+          "frame_path": "/DATA/yes/models/katianakayfree/.face-review/278848_720p/frames/frame-01.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/models/katianakayfree/278848_720p.mp4",
+          "source": "watermark_ocr_text",
+          "name": "Thot HO",
+          "raw": "ThotHO",
+          "confidence": 0.82,
+          "frame_path": "/DATA/yes/models/katianakayfree/.face-review/278848_720p/frames/frame-03.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/models/katianakayfree/278848_720p.mp4",
+          "source": "watermark_ocr",
+          "name": "Katianakayfn",
+          "raw": "Fans.com/katianakayfn",
+          "confidence": 0.78,
+          "frame_path": "/DATA/yes/models/katianakayfree/.face-review/278848_720p/frames/frame-01.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/models/katianakayfree/278848_720p.mp4",
+          "source": "watermark_ocr",
+          "name": "Katianakayfree",
+          "raw": "OnlyFans.com/katianakayfree",
+          "confidence": 0.78,
+          "frame_path": "/DATA/yes/models/katianakayfree/.face-review/278848_720p/frames/frame-02.jpg"
+        }
+      ],
+      "web_text_evidence_summary": {
+        "schema": "media-web-text-evidence/v1",
+        "count": 0,
+        "providers": [],
+        "source_trust_counts": {},
+        "review_required": false
+      },
+      "identity_trace_summary": {
+        "schema": "media-identity-trace/v1",
+        "count": 0,
+        "review_required": true
+      },
+      "assignment_decision": {
+        "schema": "media-assignment-decision/v1",
+        "suggested_slug": null,
+        "suggested_name": null,
+        "confidence": 0.0,
+        "auto_assign_allowed": false,
+        "review_required": true,
+        "why": "",
+        "blocking_reasons": [],
+        "supporting_signal_ids": []
+      },
+      "video_count": 1,
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-16T19:20:06+00:00",
+      "audit_events": [
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:14:23+00:00",
+          "corrected_at": "2026-06-16T03:14:23+00:00",
+          "source_file": "/DATA/yes/Katiana Kay gives a mind-blowing blowjob in POV.mp4.face-meta.json",
+          "previous_suggestion": null,
+          "new_canonical_name": "Katiana Kay",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T19:19:57+00:00",
+          "corrected_at": "2026-06-16T19:19:57+00:00",
+          "source_file": "/DATA/yes/Katiana Kay Fucks A Cop Video Leaked.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Katiana Kay",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T19:20:02+00:00",
+          "corrected_at": "2026-06-16T19:20:02+00:00",
+          "source_file": "/DATA/yes/Katiana Kay Needs To Suck A Cock.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Katiana Kay",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T19:20:06+00:00",
+          "corrected_at": "2026-06-16T19:20:06+00:00",
+          "source_file": "/DATA/yes/Katiana Kay gives a mind-blowing blowjob in POV.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Katiana Kay",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "duplicate_creator_merged",
+          "source_name": "Katianakayfree",
+          "target_name": "Katiana Kay",
+          "confirmed_by": "Britton",
+          "at": "2026-06-17T00:42:41+00:00"
+        }
+      ],
+      "enrolled_face_samples": []
+    },
+    "bonnie-blue": {
+      "name": "Bonnie Blue",
+      "slug": "bonnie-blue",
+      "aliases": [],
+      "profile_handles": [],
+      "status": "user-confirmed",
+      "evidence": [
+        {
+          "video_path": "/DATA/yes/Luke Cooper English Slut Bonnie Blue Loves Big Dick Inside Her B.mp4",
+          "source": "manual_correction",
+          "name": "Bonnie Blue",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Luke Cooper English Slut Bonnie Blue Loves Big Dick Inside Her B.mp4.face-meta.json"
+        }
+      ],
+      "web_text_evidence_summary": {
+        "schema": "media-web-text-evidence/v1",
+        "count": 0,
+        "providers": [],
+        "source_trust_counts": {},
+        "review_required": false
+      },
+      "identity_trace_summary": {
+        "schema": "media-identity-trace/v1",
+        "count": 0,
+        "review_required": true
+      },
+      "assignment_decision": {
+        "schema": "media-assignment-decision/v1",
+        "suggested_slug": null,
+        "suggested_name": null,
+        "confidence": 0.0,
+        "auto_assign_allowed": false,
+        "review_required": true,
+        "why": "",
+        "blocking_reasons": [],
+        "supporting_signal_ids": []
+      },
+      "video_count": 0,
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-16T03:14:43+00:00",
+      "audit_events": [
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:14:43+00:00",
+          "corrected_at": "2026-06-16T03:14:43+00:00",
+          "source_file": "/DATA/yes/Luke Cooper English Slut Bonnie Blue Loves Big Dick Inside Her B.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Bonnie Blue",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        }
+      ]
+    },
+    "natalie-roush": {
+      "name": "Natalie Roush",
+      "slug": "natalie-roush",
+      "aliases": [],
+      "profile_handles": [],
+      "status": "user-confirmed",
+      "evidence": [
+        {
+          "video_path": "/DATA/yes/Natalie Roush With Hayley Maxfield In White Lingerie Took Nude B.mp4",
+          "source": "manual_correction",
+          "name": "Natalie Roush",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Natalie Roush With Hayley Maxfield In White Lingerie Took Nude B.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Natalie Roush Sizzling Mesh Bodysuit Booty Tease in Leaked OnlyF.mp4",
+          "source": "manual_correction",
+          "name": "Natalie Roush",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Natalie Roush Sizzling Mesh Bodysuit Booty Tease in Leaked OnlyF.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Natalie Roush Stripteasing With Her Booty Hole Dropping Tight Th.mp4",
+          "source": "manual_correction",
+          "name": "Natalie Roush",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Natalie Roush Stripteasing With Her Booty Hole Dropping Tight Th.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Natalie Roush Teases Her Thicc Booty Twerking in Leaked Onlyfans.mp4",
+          "source": "manual_correction",
+          "name": "Natalie Roush",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Natalie Roush Teases Her Thicc Booty Twerking in Leaked Onlyfans.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Natalie Roush New Squat Ppv In Tight Thong Onlyfans Leak.mkv",
+          "source": "manual_correction",
+          "name": "Natalie Roush",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Natalie Roush New Squat Ppv In Tight Thong Onlyfans Leak.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Natalie Roush Nut For Natalie November Ppv Dropping Tight Jeans.mkv",
+          "source": "manual_correction",
+          "name": "Natalie Roush",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Natalie Roush Nut For Natalie November Ppv Dropping Tight Jeans.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Natalie Roush Uncensored Lingerie Try On PPV Booty Spread Onlyfa.mp4",
+          "source": "manual_correction",
+          "name": "Natalie Roush",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Natalie Roush Uncensored Lingerie Try On PPV Booty Spread Onlyfa.mp4.face-meta.json"
+        }
+      ],
+      "web_text_evidence_summary": {
+        "schema": "media-web-text-evidence/v1",
+        "count": 0,
+        "providers": [],
+        "source_trust_counts": {},
+        "review_required": false
+      },
+      "identity_trace_summary": {
+        "schema": "media-identity-trace/v1",
+        "count": 0,
+        "review_required": true
+      },
+      "assignment_decision": {
+        "schema": "media-assignment-decision/v1",
+        "suggested_slug": null,
+        "suggested_name": null,
+        "confidence": 0.0,
+        "auto_assign_allowed": false,
+        "review_required": true,
+        "why": "",
+        "blocking_reasons": [],
+        "supporting_signal_ids": []
+      },
+      "video_count": 0,
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-16T19:20:31+00:00",
+      "audit_events": [
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:15:01+00:00",
+          "corrected_at": "2026-06-16T03:15:01+00:00",
+          "source_file": "/DATA/yes/Natalie Roush With Hayley Maxfield In White Lingerie Took Nude B.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Natalie Roush",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:17:59+00:00",
+          "corrected_at": "2026-06-16T03:17:59+00:00",
+          "source_file": "/DATA/yes/Natalie Roush Sizzling Mesh Bodysuit Booty Tease in Leaked OnlyF.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Natalie Roush",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:18:05+00:00",
+          "corrected_at": "2026-06-16T03:18:05+00:00",
+          "source_file": "/DATA/yes/Natalie Roush Stripteasing With Her Booty Hole Dropping Tight Th.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Natalie Roush",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:18:10+00:00",
+          "corrected_at": "2026-06-16T03:18:10+00:00",
+          "source_file": "/DATA/yes/Natalie Roush Teases Her Thicc Booty Twerking in Leaked Onlyfans.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Natalie Roush",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T19:20:20+00:00",
+          "corrected_at": "2026-06-16T19:20:20+00:00",
+          "source_file": "/DATA/yes/Natalie Roush New Squat Ppv In Tight Thong Onlyfans Leak.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Natalie Roush",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T19:20:27+00:00",
+          "corrected_at": "2026-06-16T19:20:27+00:00",
+          "source_file": "/DATA/yes/Natalie Roush Nut For Natalie November Ppv Dropping Tight Jeans.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Natalie Roush",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T19:20:31+00:00",
+          "corrected_at": "2026-06-16T19:20:31+00:00",
+          "source_file": "/DATA/yes/Natalie Roush Uncensored Lingerie Try On PPV Booty Spread Onlyfa.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Natalie Roush",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        }
+      ]
+    },
+    "eve": {
+      "name": "Eve",
+      "slug": "eve",
+      "aliases": [],
+      "profile_handles": [],
+      "status": "user-confirmed",
+      "evidence": [
+        {
+          "video_path": "/DATA/yes/Eve Cums Twice in Her Tight Ass Ass to Pussy to Ass Beeg.mp4",
+          "source": "manual_correction",
+          "name": "Eve",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Eve Cums Twice in Her Tight Ass Ass to Pussy to Ass Beeg.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Eve How Did He Last so Long in This Gorgeous Ass Beeg.mp4",
+          "source": "manual_correction",
+          "name": "Eve",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Eve How Did He Last so Long in This Gorgeous Ass Beeg.mp4.face-meta.json"
+        }
+      ],
+      "web_text_evidence_summary": {
+        "schema": "media-web-text-evidence/v1",
+        "count": 0,
+        "providers": [],
+        "source_trust_counts": {},
+        "review_required": false
+      },
+      "identity_trace_summary": {
+        "schema": "media-identity-trace/v1",
+        "count": 0,
+        "review_required": true
+      },
+      "assignment_decision": {
+        "schema": "media-assignment-decision/v1",
+        "suggested_slug": null,
+        "suggested_name": null,
+        "confidence": 0.0,
+        "auto_assign_allowed": false,
+        "review_required": true,
+        "why": "",
+        "blocking_reasons": [],
+        "supporting_signal_ids": []
+      },
+      "video_count": 0,
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-16T03:17:33+00:00",
+      "audit_events": [
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:15:37+00:00",
+          "corrected_at": "2026-06-16T03:15:37+00:00",
+          "source_file": "/DATA/yes/Eve Cums Twice in Her Tight Ass Ass to Pussy to Ass Beeg.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Eve",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:17:33+00:00",
+          "corrected_at": "2026-06-16T03:17:33+00:00",
+          "source_file": "/DATA/yes/Eve How Did He Last so Long in This Gorgeous Ass Beeg.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Eve",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        }
+      ]
+    },
+    "lily-phillips": {
+      "name": "Lily Phillips",
+      "slug": "lily-phillips",
+      "aliases": [],
+      "profile_handles": [],
+      "status": "user-confirmed",
+      "evidence": [
+        {
+          "video_path": "/DATA/yes/New Lily Phillips Verbal Spat Erupts Into Hardcore Fucking Video.mp4",
+          "source": "manual_correction",
+          "name": "Lily Phillips",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/New Lily Phillips Verbal Spat Erupts Into Hardcore Fucking Video.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Sexy Lily Phillips Picked Up And Creampie In Self Driving Tesla.mp4",
+          "source": "manual_correction",
+          "name": "Lily Phillips",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Sexy Lily Phillips Picked Up And Creampie In Self Driving Tesla.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/onlyfans lily phillips jason luv 2024-02-13 interracial ir bbc b.mp4",
+          "source": "manual_correction",
+          "name": "Lily Phillips",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/onlyfans lily phillips jason luv 2024-02-13 interracial ir bbc b.mp4.face-meta.json"
+        }
+      ],
+      "web_text_evidence_summary": {
+        "schema": "media-web-text-evidence/v1",
+        "count": 0,
+        "providers": [],
+        "source_trust_counts": {},
+        "review_required": false
+      },
+      "identity_trace_summary": {
+        "schema": "media-identity-trace/v1",
+        "count": 0,
+        "review_required": true
+      },
+      "assignment_decision": {
+        "schema": "media-assignment-decision/v1",
+        "suggested_slug": null,
+        "suggested_name": null,
+        "confidence": 0.0,
+        "auto_assign_allowed": false,
+        "review_required": true,
+        "why": "",
+        "blocking_reasons": [],
+        "supporting_signal_ids": []
+      },
+      "video_count": 0,
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-16T03:22:11+00:00",
+      "audit_events": [
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:18:23+00:00",
+          "corrected_at": "2026-06-16T03:18:23+00:00",
+          "source_file": "/DATA/yes/New Lily Phillips Verbal Spat Erupts Into Hardcore Fucking Video.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Lily Phillips",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:20:42+00:00",
+          "corrected_at": "2026-06-16T03:20:42+00:00",
+          "source_file": "/DATA/yes/Sexy Lily Phillips Picked Up And Creampie In Self Driving Tesla.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Lily Phillips",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:22:11+00:00",
+          "corrected_at": "2026-06-16T03:22:11+00:00",
+          "source_file": "/DATA/yes/onlyfans lily phillips jason luv 2024-02-13 interracial ir bbc b.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Lily Phillips",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        }
+      ]
+    },
+    "kylie-island": {
+      "name": "Kylie Island",
+      "slug": "kylie-island",
+      "aliases": [],
+      "profile_handles": [],
+      "status": "user-confirmed",
+      "evidence": [
+        {
+          "video_path": "/DATA/yes/b072fcb9f821c935f46a4ed67477a041.mkv",
+          "source": "manual_correction",
+          "name": "Kylie Island",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/b072fcb9f821c935f46a4ed67477a041.mkv.face-meta.json"
+        }
+      ],
+      "web_text_evidence_summary": {
+        "schema": "media-web-text-evidence/v1",
+        "count": 0,
+        "providers": [],
+        "source_trust_counts": {},
+        "review_required": false
+      },
+      "identity_trace_summary": {
+        "schema": "media-identity-trace/v1",
+        "count": 0,
+        "review_required": true
+      },
+      "assignment_decision": {
+        "schema": "media-assignment-decision/v1",
+        "suggested_slug": null,
+        "suggested_name": null,
+        "confidence": 0.0,
+        "auto_assign_allowed": false,
+        "review_required": true,
+        "why": "",
+        "blocking_reasons": [],
+        "supporting_signal_ids": []
+      },
+      "video_count": 0,
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-16T03:21:26+00:00",
+      "audit_events": [
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:21:26+00:00",
+          "corrected_at": "2026-06-16T03:21:26+00:00",
+          "source_file": "/DATA/yes/b072fcb9f821c935f46a4ed67477a041.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Kylie Island",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        }
+      ]
+    },
+    "lena-the-plug": {
+      "name": "Lena The Plug",
+      "slug": "lena-the-plug",
+      "aliases": [],
+      "profile_handles": [],
+      "status": "user-confirmed",
+      "evidence": [
+        {
+          "video_path": "/DATA/yes/v 2.mkv",
+          "source": "manual_correction",
+          "name": "Lena The Plug",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/v 2.mkv.face-meta.json"
+        }
+      ],
+      "web_text_evidence_summary": {
+        "schema": "media-web-text-evidence/v1",
+        "count": 0,
+        "providers": [],
+        "source_trust_counts": {},
+        "review_required": false
+      },
+      "identity_trace_summary": {
+        "schema": "media-identity-trace/v1",
+        "count": 0,
+        "review_required": true
+      },
+      "assignment_decision": {
+        "schema": "media-assignment-decision/v1",
+        "suggested_slug": null,
+        "suggested_name": null,
+        "confidence": 0.0,
+        "auto_assign_allowed": false,
+        "review_required": true,
+        "why": "",
+        "blocking_reasons": [],
+        "supporting_signal_ids": []
+      },
+      "video_count": 0,
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-16T03:23:18+00:00",
+      "audit_events": [
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T03:23:18+00:00",
+          "corrected_at": "2026-06-16T03:23:18+00:00",
+          "source_file": "/DATA/yes/v 2.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Lena The Plug",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        }
+      ]
+    },
+    "allison-parker": {
+      "name": "Allison Parker",
+      "slug": "allison-parker",
+      "aliases": [],
+      "profile_handles": [],
+      "status": "user-confirmed",
+      "evidence": [
+        {
+          "video_path": "/DATA/yes/Allison Parker BBC NEW SEXTAPE ONLYFANS.mp4",
+          "source": "manual_correction",
+          "name": "Allison Parker",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Allison Parker BBC NEW SEXTAPE ONLYFANS.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Latina Allison Parker Deepthroats.mp4",
+          "source": "manual_correction",
+          "name": "Allison Parker",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Latina Allison Parker Deepthroats.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Allison Parker Twerks And Masturbates.mp4",
+          "source": "manual_correction",
+          "name": "Allison Parker",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Allison Parker Twerks And Masturbates.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Allison Parker Twerks And Masturbates.mp4",
+          "source": "manual_correction",
+          "name": "Allison Parker",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Allison Parker Twerks And Masturbates.mp4.face-meta.json"
+        }
+      ],
+      "web_text_evidence_summary": {
+        "schema": "media-web-text-evidence/v1",
+        "count": 0,
+        "providers": [],
+        "source_trust_counts": {},
+        "review_required": false
+      },
+      "identity_trace_summary": {
+        "schema": "media-identity-trace/v1",
+        "count": 0,
+        "review_required": true
+      },
+      "assignment_decision": {
+        "schema": "media-assignment-decision/v1",
+        "suggested_slug": null,
+        "suggested_name": null,
+        "confidence": 0.0,
+        "auto_assign_allowed": false,
+        "review_required": true,
+        "why": "",
+        "blocking_reasons": [],
+        "supporting_signal_ids": []
+      },
+      "video_count": 0,
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-17T01:23:06+00:00",
+      "audit_events": [
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T19:17:13+00:00",
+          "corrected_at": "2026-06-16T19:17:13+00:00",
+          "source_file": "/DATA/yes/Allison Parker BBC NEW SEXTAPE ONLYFANS.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Allison Parker",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-17T01:22:10+00:00",
+          "corrected_at": "2026-06-17T01:22:10+00:00",
+          "source_file": "/DATA/yes/Latina Allison Parker Deepthroats.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Allison Parker",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-17T01:22:51+00:00",
+          "corrected_at": "2026-06-17T01:22:51+00:00",
+          "source_file": "/DATA/yes/Allison Parker Twerks And Masturbates.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Allison Parker",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-17T01:23:06+00:00",
+          "corrected_at": "2026-06-17T01:23:06+00:00",
+          "source_file": "/DATA/yes/Allison Parker Twerks And Masturbates.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Allison Parker",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        }
+      ]
+    },
+    "ce-ce-rose": {
+      "name": "Ce Ce Rose",
+      "slug": "ce-ce-rose",
+      "aliases": [],
+      "profile_handles": [],
+      "status": "user-confirmed",
+      "evidence": [
+        {
+          "video_path": "/DATA/yes/CeCe Rose Leaked Video Teasing Her Dirty Nude OF Secret.mp4",
+          "source": "manual_correction",
+          "name": "Ce Ce Rose",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/CeCe Rose Leaked Video Teasing Her Dirty Nude OF Secret.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Cecilia Rose 89 Fuck Me Hard Please PPV Video Leaked.mkv",
+          "source": "manual_correction",
+          "name": "Ce Ce Rose",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Cecilia Rose 89 Fuck Me Hard Please PPV Video Leaked.mkv.face-meta.json"
+        }
+      ],
+      "web_text_evidence_summary": {
+        "schema": "media-web-text-evidence/v1",
+        "count": 0,
+        "providers": [],
+        "source_trust_counts": {},
+        "review_required": false
+      },
+      "identity_trace_summary": {
+        "schema": "media-identity-trace/v1",
+        "count": 0,
+        "review_required": true
+      },
+      "assignment_decision": {
+        "schema": "media-assignment-decision/v1",
+        "suggested_slug": null,
+        "suggested_name": null,
+        "confidence": 0.0,
+        "auto_assign_allowed": false,
+        "review_required": true,
+        "why": "",
+        "blocking_reasons": [],
+        "supporting_signal_ids": []
+      },
+      "video_count": 0,
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-16T19:17:33+00:00",
+      "audit_events": [
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T19:17:20+00:00",
+          "corrected_at": "2026-06-16T19:17:20+00:00",
+          "source_file": "/DATA/yes/CeCe Rose Leaked Video Teasing Her Dirty Nude OF Secret.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Ce Ce Rose",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T19:17:33+00:00",
+          "corrected_at": "2026-06-16T19:17:33+00:00",
+          "source_file": "/DATA/yes/Cecilia Rose 89 Fuck Me Hard Please PPV Video Leaked.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Ce Ce Rose",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        }
+      ]
+    },
+    "dana-de-armond": {
+      "name": "Dana De Armond",
+      "slug": "dana-de-armond",
+      "aliases": [],
+      "profile_handles": [],
+      "status": "user-confirmed",
+      "evidence": [
+        {
+          "video_path": "/DATA/yes/Dana DeArmond Stars in Steamy Tesla Fuck Video.mp4",
+          "source": "manual_correction",
+          "name": "Dana De Armond",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Dana DeArmond Stars in Steamy Tesla Fuck Video.mp4.face-meta.json"
+        }
+      ],
+      "web_text_evidence_summary": {
+        "schema": "media-web-text-evidence/v1",
+        "count": 0,
+        "providers": [],
+        "source_trust_counts": {},
+        "review_required": false
+      },
+      "identity_trace_summary": {
+        "schema": "media-identity-trace/v1",
+        "count": 0,
+        "review_required": true
+      },
+      "assignment_decision": {
+        "schema": "media-assignment-decision/v1",
+        "suggested_slug": null,
+        "suggested_name": null,
+        "confidence": 0.0,
+        "auto_assign_allowed": false,
+        "review_required": true,
+        "why": "",
+        "blocking_reasons": [],
+        "supporting_signal_ids": []
+      },
+      "video_count": 0,
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-16T19:18:09+00:00",
+      "audit_events": [
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T19:18:09+00:00",
+          "corrected_at": "2026-06-16T19:18:09+00:00",
+          "source_file": "/DATA/yes/Dana DeArmond Stars in Steamy Tesla Fuck Video.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Dana De Armond",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        }
+      ]
+    },
+    "comatozze": {
+      "name": "Comatozze",
+      "slug": "comatozze",
+      "aliases": [],
+      "profile_handles": [],
+      "status": "user-confirmed",
+      "evidence": [
+        {
+          "video_path": "/DATA/yes/Comatozze new sex on the first date.mkv",
+          "source": "manual_correction",
+          "name": "Comatozze",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Comatozze new sex on the first date.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Comatozze Sensual Encounter in Elegant Stockings Beeg.mp4",
+          "source": "manual_correction",
+          "name": "Comatozze",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Comatozze Sensual Encounter in Elegant Stockings Beeg.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Comatozze Girl Seduces Serviceman in Hotel No Chance Big Ass Tit.mp4",
+          "source": "manual_correction",
+          "name": "Comatozze",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Comatozze Girl Seduces Serviceman in Hotel No Chance Big Ass Tit.mp4.face-meta.json"
+        }
+      ],
+      "web_text_evidence_summary": {
+        "schema": "media-web-text-evidence/v1",
+        "count": 0,
+        "providers": [],
+        "source_trust_counts": {},
+        "review_required": false
+      },
+      "identity_trace_summary": {
+        "schema": "media-identity-trace/v1",
+        "count": 0,
+        "review_required": true
+      },
+      "assignment_decision": {
+        "schema": "media-assignment-decision/v1",
+        "suggested_slug": null,
+        "suggested_name": null,
+        "confidence": 0.0,
+        "auto_assign_allowed": false,
+        "review_required": true,
+        "why": "",
+        "blocking_reasons": [],
+        "supporting_signal_ids": []
+      },
+      "video_count": 0,
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-16T19:19:15+00:00",
+      "audit_events": [
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T19:19:04+00:00",
+          "corrected_at": "2026-06-16T19:19:04+00:00",
+          "source_file": "/DATA/yes/Comatozze new sex on the first date.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Comatozze",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T19:19:10+00:00",
+          "corrected_at": "2026-06-16T19:19:10+00:00",
+          "source_file": "/DATA/yes/Comatozze Sensual Encounter in Elegant Stockings Beeg.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Comatozze",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T19:19:15+00:00",
+          "corrected_at": "2026-06-16T19:19:15+00:00",
+          "source_file": "/DATA/yes/Comatozze Girl Seduces Serviceman in Hotel No Chance Big Ass Tit.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Comatozze",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        }
+      ]
+    },
+    "f1nn5ter": {
+      "name": "F1nn5ter",
+      "slug": "f1nn5ter",
+      "aliases": [],
+      "profile_handles": [],
+      "status": "user-confirmed",
+      "evidence": [
+        {
+          "video_path": "/DATA/yes/F1nn5ter Suck Big Black Dildo Onlyfans.mkv",
+          "source": "manual_correction",
+          "name": "F1nn5ter",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/F1nn5ter Suck Big Black Dildo Onlyfans.mkv.face-meta.json"
+        }
+      ],
+      "web_text_evidence_summary": {
+        "schema": "media-web-text-evidence/v1",
+        "count": 0,
+        "providers": [],
+        "source_trust_counts": {},
+        "review_required": false
+      },
+      "identity_trace_summary": {
+        "schema": "media-identity-trace/v1",
+        "count": 0,
+        "review_required": true
+      },
+      "assignment_decision": {
+        "schema": "media-assignment-decision/v1",
+        "suggested_slug": null,
+        "suggested_name": null,
+        "confidence": 0.0,
+        "auto_assign_allowed": false,
+        "review_required": true,
+        "why": "",
+        "blocking_reasons": [],
+        "supporting_signal_ids": []
+      },
+      "video_count": 0,
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-16T19:19:48+00:00",
+      "audit_events": [
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T19:19:48+00:00",
+          "corrected_at": "2026-06-16T19:19:48+00:00",
+          "source_file": "/DATA/yes/F1nn5ter Suck Big Black Dildo Onlyfans.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "F1nn5ter",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        }
+      ]
+    },
+    "lexi-marvel": {
+      "name": "Lexi Marvel",
+      "slug": "lexi-marvel",
+      "aliases": [],
+      "profile_handles": [],
+      "status": "user-confirmed",
+      "evidence": [
+        {
+          "video_path": "/DATA/yes/Lexi Marvel Grinds That Juicy Ass In Tight Yoga Pants For This S.mkv",
+          "source": "manual_correction",
+          "name": "Lexi Marvel",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Lexi Marvel Grinds That Juicy Ass In Tight Yoga Pants For This S.mkv.face-meta.json"
+        }
+      ],
+      "web_text_evidence_summary": {
+        "schema": "media-web-text-evidence/v1",
+        "count": 0,
+        "providers": [],
+        "source_trust_counts": {},
+        "review_required": false
+      },
+      "identity_trace_summary": {
+        "schema": "media-identity-trace/v1",
+        "count": 0,
+        "review_required": true
+      },
+      "assignment_decision": {
+        "schema": "media-assignment-decision/v1",
+        "suggested_slug": null,
+        "suggested_name": null,
+        "confidence": 0.0,
+        "auto_assign_allowed": false,
+        "review_required": true,
+        "why": "",
+        "blocking_reasons": [],
+        "supporting_signal_ids": []
+      },
+      "video_count": 0,
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-16T19:20:15+00:00",
+      "audit_events": [
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T19:20:15+00:00",
+          "corrected_at": "2026-06-16T19:20:15+00:00",
+          "source_file": "/DATA/yes/Lexi Marvel Grinds That Juicy Ass In Tight Yoga Pants For This S.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Lexi Marvel",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        }
+      ]
+    },
+    "sakurai-rena": {
+      "name": "Sakurai Rena",
+      "slug": "sakurai-rena",
+      "aliases": [],
+      "profile_handles": [],
+      "status": "user-confirmed",
+      "evidence": [
+        {
+          "video_path": "/DATA/yes/Sakurai Rena Strips Plays With Her Wet Asian Pussy Sakurai Rena.mp4",
+          "source": "manual_correction",
+          "name": "Sakurai Rena",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Sakurai Rena Strips Plays With Her Wet Asian Pussy Sakurai Rena.mp4.face-meta.json"
+        }
+      ],
+      "web_text_evidence_summary": {
+        "schema": "media-web-text-evidence/v1",
+        "count": 0,
+        "providers": [],
+        "source_trust_counts": {},
+        "review_required": false
+      },
+      "identity_trace_summary": {
+        "schema": "media-identity-trace/v1",
+        "count": 0,
+        "review_required": true
+      },
+      "assignment_decision": {
+        "schema": "media-assignment-decision/v1",
+        "suggested_slug": null,
+        "suggested_name": null,
+        "confidence": 0.0,
+        "auto_assign_allowed": false,
+        "review_required": true,
+        "why": "",
+        "blocking_reasons": [],
+        "supporting_signal_ids": []
+      },
+      "video_count": 0,
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-16T19:20:46+00:00",
+      "audit_events": [
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T19:20:46+00:00",
+          "corrected_at": "2026-06-16T19:20:46+00:00",
+          "source_file": "/DATA/yes/Sakurai Rena Strips Plays With Her Wet Asian Pussy Sakurai Rena.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Sakurai Rena",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        }
+      ]
+    },
+    "emilia-bunny": {
+      "name": "Emilia Bunny",
+      "slug": "emilia-bunny",
+      "aliases": [],
+      "profile_handles": [],
+      "status": "user-confirmed",
+      "evidence": [
+        {
+          "video_path": "/DATA/yes/Строгая учительница… но после уроков разрешено всё 💦 - EmiliaBunny - Pornhub.com.mkv",
+          "source": "manual_correction",
+          "name": "Emilia Bunny",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Строгая учительница… но после уроков разрешено всё 💦 - EmiliaBunny - Pornhub.com.mkv.face-meta.json"
+        }
+      ],
+      "web_text_evidence_summary": {
+        "schema": "media-web-text-evidence/v1",
+        "count": 0,
+        "providers": [],
+        "source_trust_counts": {},
+        "review_required": false
+      },
+      "identity_trace_summary": {
+        "schema": "media-identity-trace/v1",
+        "count": 0,
+        "review_required": true
+      },
+      "assignment_decision": {
+        "schema": "media-assignment-decision/v1",
+        "suggested_slug": null,
+        "suggested_name": null,
+        "confidence": 0.0,
+        "auto_assign_allowed": false,
+        "review_required": true,
+        "why": "",
+        "blocking_reasons": [],
+        "supporting_signal_ids": []
+      },
+      "video_count": 0,
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-16T19:22:01+00:00",
+      "audit_events": [
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T19:22:01+00:00",
+          "corrected_at": "2026-06-16T19:22:01+00:00",
+          "source_file": "/DATA/yes/Строгая учительница… но после уроков разрешено всё 💦 - EmiliaBunny - Pornhub.com.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Emilia Bunny",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        }
+      ]
+    },
+    "luxury-girl": {
+      "name": "Luxury Girl",
+      "slug": "luxury-girl",
+      "aliases": [],
+      "profile_handles": [],
+      "status": "user-confirmed",
+      "evidence": [
+        {
+          "video_path": "/DATA/yes/550807_720p.mkv",
+          "source": "manual_correction",
+          "name": "Luxury Girl",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/550807_720p.mkv.face-meta.json"
+        }
+      ],
+      "web_text_evidence_summary": {
+        "schema": "media-web-text-evidence/v1",
+        "count": 0,
+        "providers": [],
+        "source_trust_counts": {},
+        "review_required": false
+      },
+      "identity_trace_summary": {
+        "schema": "media-identity-trace/v1",
+        "count": 0,
+        "review_required": true
+      },
+      "assignment_decision": {
+        "schema": "media-assignment-decision/v1",
+        "suggested_slug": null,
+        "suggested_name": null,
+        "confidence": 0.0,
+        "auto_assign_allowed": false,
+        "review_required": true,
+        "why": "",
+        "blocking_reasons": [],
+        "supporting_signal_ids": []
+      },
+      "video_count": 0,
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-16T19:44:04+00:00",
+      "audit_events": [
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T19:44:04+00:00",
+          "corrected_at": "2026-06-16T19:44:04+00:00",
+          "source_file": "/DATA/yes/550807_720p.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Luxury Girl",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        }
+      ]
+    },
+    "emiliaofficial": {
+      "name": "Emiliaofficial",
+      "slug": "emiliaofficial",
+      "aliases": [],
+      "profile_handles": [],
+      "status": "user-confirmed",
+      "evidence": [
+        {
+          "video_path": "/DATA/yes/Emilla Official Takes Boyfriend Hug dick.mkv",
+          "source": "manual_correction",
+          "name": "Emiliaofficial",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Emilla Official Takes Boyfriend Hug dick.mkv.face-meta.json"
+        }
+      ],
+      "web_text_evidence_summary": {
+        "schema": "media-web-text-evidence/v1",
+        "count": 0,
+        "providers": [],
+        "source_trust_counts": {},
+        "review_required": false
+      },
+      "identity_trace_summary": {
+        "schema": "media-identity-trace/v1",
+        "count": 0,
+        "review_required": true
+      },
+      "assignment_decision": {
+        "schema": "media-assignment-decision/v1",
+        "suggested_slug": null,
+        "suggested_name": null,
+        "confidence": 0.0,
+        "auto_assign_allowed": false,
+        "review_required": true,
+        "why": "",
+        "blocking_reasons": [],
+        "supporting_signal_ids": []
+      },
+      "video_count": 0,
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-16T19:52:19+00:00",
+      "audit_events": [
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T19:52:19+00:00",
+          "corrected_at": "2026-06-16T19:52:19+00:00",
+          "source_file": "/DATA/yes/Emilla Official Takes Boyfriend Hug dick.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Emiliaofficial",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        }
+      ]
+    },
+    "tru-kait": {
+      "name": "Tru Kait",
+      "slug": "tru-kait",
+      "aliases": [],
+      "profile_handles": [],
+      "status": "user-confirmed",
+      "evidence": [
+        {
+          "video_path": "/DATA/yes/Tommy Wood Nurse Role-Play with POV Doggy and Cumshot Beeg.mp4",
+          "source": "manual_correction",
+          "name": "Tru Kait",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Tommy Wood Nurse Role-Play with POV Doggy and Cumshot Beeg.mp4.face-meta.json"
+        }
+      ],
+      "web_text_evidence_summary": {
+        "schema": "media-web-text-evidence/v1",
+        "count": 0,
+        "providers": [],
+        "source_trust_counts": {},
+        "review_required": false
+      },
+      "identity_trace_summary": {
+        "schema": "media-identity-trace/v1",
+        "count": 0,
+        "review_required": true
+      },
+      "assignment_decision": {
+        "schema": "media-assignment-decision/v1",
+        "suggested_slug": null,
+        "suggested_name": null,
+        "confidence": 0.0,
+        "auto_assign_allowed": false,
+        "review_required": true,
+        "why": "",
+        "blocking_reasons": [],
+        "supporting_signal_ids": []
+      },
+      "video_count": 0,
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-16T19:57:55+00:00",
+      "audit_events": [
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T19:57:55+00:00",
+          "corrected_at": "2026-06-16T19:57:55+00:00",
+          "source_file": "/DATA/yes/Tommy Wood Nurse Role-Play with POV Doggy and Cumshot Beeg.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Tru Kait",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        }
+      ]
+    },
+    "urfavbella": {
+      "name": "Urfavbella",
+      "slug": "urfavbella",
+      "aliases": [],
+      "profile_handles": [],
+      "status": "user-confirmed",
+      "evidence": [
+        {
+          "video_path": "/DATA/yes/NotYourHoneyBB Missionary Sex.mp4",
+          "source": "manual_correction",
+          "name": "Urfavbella",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/NotYourHoneyBB Missionary Sex.mp4.face-meta.json"
+        }
+      ],
+      "web_text_evidence_summary": {
+        "schema": "media-web-text-evidence/v1",
+        "count": 0,
+        "providers": [],
+        "source_trust_counts": {},
+        "review_required": false
+      },
+      "identity_trace_summary": {
+        "schema": "media-identity-trace/v1",
+        "count": 0,
+        "review_required": true
+      },
+      "assignment_decision": {
+        "schema": "media-assignment-decision/v1",
+        "suggested_slug": null,
+        "suggested_name": null,
+        "confidence": 0.0,
+        "auto_assign_allowed": false,
+        "review_required": true,
+        "why": "",
+        "blocking_reasons": [],
+        "supporting_signal_ids": []
+      },
+      "video_count": 0,
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-17T01:22:33+00:00",
+      "audit_events": [
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-17T01:22:33+00:00",
+          "corrected_at": "2026-06-17T01:22:33+00:00",
+          "source_file": "/DATA/yes/NotYourHoneyBB Missionary Sex.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Urfavbella",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        }
+      ]
     }
   },
   "aliases": {
@@ -5345,7 +8947,36 @@
     "angelawhite": "Angela White",
     "strawberrytabby": "Strawberrytabby",
     "yummycouple": "Yummy Couple",
-    "devorahroloff": "Devorah Roloff"
+    "devorahroloff": "Devorah Roloff",
+    "sienna": "Sienna Ababi",
+    "alexapearl": "Alexa Pearl",
+    "amburnee": "Amburnee",
+    "amburne": "Amburnee",
+    "allinika": "Allinika",
+    "heyimbee": "Heyimbee",
+    "katianakay": "Katiana Kay",
+    "bonnieblue": "Bonnie Blue",
+    "natalieroush": "Natalie Roush",
+    "eve": "Eve",
+    "lilyphillips": "Lily Phillips",
+    "risquecorevid96": "heyimbee",
+    "kylieisland": "Kylie Island",
+    "lenatheplug": "Lena The Plug",
+    "chloelamb": "Chloe Lamb",
+    "allisonparker": "Allison Parker",
+    "cecerose": "Ce Ce Rose",
+    "danadearmond": "Dana De Armond",
+    "comatozze": "Comatozze",
+    "f1nn5ter": "F1nn5ter",
+    "leximarvel": "Lexi Marvel",
+    "sakurairena": "Sakurai Rena",
+    "katievaynes": "Katievaynes",
+    "emiliabunny": "Emilia Bunny",
+    "luxurygirl": "Luxury Girl",
+    "emiliaofficial": "Emiliaofficial",
+    "trukait": "Tru Kait",
+    "katianakayfree": "Katiana Kay",
+    "urfavbella": "Urfavbella"
   },
   "rules": {
     "verified_identity_sources": [

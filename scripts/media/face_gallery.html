@@ -22,6 +22,11 @@
     .enroll-head { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; }
     .enroll-head p { margin: 0 0 .25rem; color: #a7f3d0; font-size: .75rem; text-transform: uppercase; }
     .enroll-head h2 { margin: 0; overflow-wrap: anywhere; letter-spacing: 0; }
+    .model-title { display: flex; align-items: center; gap: .85rem; min-width: 0; }
+    .model-title > div { min-width: 0; }
+    .model-avatar { flex: 0 0 4.5rem; width: 4.5rem; height: 5.8rem; display: block; overflow: hidden; border-radius: .35rem; background: rgba(0,0,0,.35); outline: 1px solid rgba(255,255,255,.12); }
+    .model-avatar img { width: 100%; height: 100%; display: block; object-fit: cover; }
+    .model-avatar-empty { background: linear-gradient(135deg, rgba(20,184,166,.16), rgba(59,130,246,.12)); }
     .mini-metrics, .presence, .button-row { display: flex; flex-wrap: wrap; gap: .45rem; }
     .presence { margin-top: .8rem; }
     .blocked { border-radius: .25rem; background: rgba(251,191,36,.12); color: #fef3c7; padding: .55rem; }
@@ -103,6 +108,8 @@
     .video-match-row span { color: #a7f3d0; font-weight: 700; }
     .match-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: .35rem; justify-content: flex-start; }
     @media (max-width: 520px) {
+      .enroll-head { flex-direction: column; }
+      .model-avatar { flex-basis: 4rem; width: 4rem; height: 5.1rem; }
       .gallery-upload-form { grid-template-columns: 1fr; }
       .video-match-row { grid-template-columns: 1fr; }
       .match-previews { max-width: 12rem; }
@@ -113,9 +120,9 @@
   <header>
     <p class="muted">Media Face Organizer v1</p>
     <h1>Gallery Upload</h1>
-    <p class="muted">Generated 2026-06-15T04:26:54+00:00 for enrolled models. Uploaded pictures appear in SpiritFlix Library / Gallery.</p>
+    <p class="muted">Generated 2026-06-17T01:54:22+00:00 for enrolled models. Uploaded pictures appear in SpiritFlix Library / Gallery.</p>
     <nav class="report-nav"><a class="" href="face_verification_report.html">Verification Queue</a><a class="" href="face_enrollment_queue.html">Face Enrollment Queue</a><a class="" href="face_enrolled_performers.html">Enrolled</a><a class="active" href="face_gallery.html">Gallery Upload</a><a class="" href="known_db_audit.html">Known DB Audit</a><a class="" href="face_verification_full_audit.html">Report All / Full Audit</a></nav>
-    <div class="summary"><span>enrolled models: 33</span><span>models with gallery: 1</span><span>gallery items: 923</span></div>
+    <div class="summary"><span>enrolled models: 30</span><span>models with gallery: 1</span><span>gallery items: 923</span></div>
   </header>
   <main class="grid">
             <article class="enroll-card gallery-upload-card" data-performer="Aaliyah Yasan">
@@ -154,6 +161,94 @@
       <form class="gallery-upload-form" enctype="multipart/form-data" data-performer="Alannasworldx">
         <input type="hidden" name="performer_name" value="Alannasworldx">
         <input type="hidden" name="model_slug" value="alannasworldx">
+        <label>Collection name<input name="collection" value="" placeholder="optional set name"></label>
+        <label>Gallery pictures<input name="images" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple></label>
+        <div class="button-row"><button type="button" data-action="gallery-upload">Upload pictures</button></div>
+      </form>
+
+              <div class="gallery-grid"><div class="empty-crop">No gallery pictures uploaded yet.</div></div>
+            </article>
+
+            <article class="enroll-card gallery-upload-card" data-performer="Alexa Pearl">
+              <div class="enroll-head">
+                <div>
+                  <p>GALLERY UPLOAD</p>
+                  <h2>Alexa Pearl</h2>
+                  <small>alexa-pearl</small>
+                </div>
+                <div class="mini-metrics"><span>0 picture(s)</span></div>
+              </div>
+              <div class="action-status" aria-live="polite"></div>
+
+      <form class="gallery-upload-form" enctype="multipart/form-data" data-performer="Alexa Pearl">
+        <input type="hidden" name="performer_name" value="Alexa Pearl">
+        <input type="hidden" name="model_slug" value="alexa-pearl">
+        <label>Collection name<input name="collection" value="" placeholder="optional set name"></label>
+        <label>Gallery pictures<input name="images" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple></label>
+        <div class="button-row"><button type="button" data-action="gallery-upload">Upload pictures</button></div>
+      </form>
+
+              <div class="gallery-grid"><div class="empty-crop">No gallery pictures uploaded yet.</div></div>
+            </article>
+
+            <article class="enroll-card gallery-upload-card" data-performer="Allinika">
+              <div class="enroll-head">
+                <div>
+                  <p>GALLERY UPLOAD</p>
+                  <h2>Allinika</h2>
+                  <small>allinika</small>
+                </div>
+                <div class="mini-metrics"><span>0 picture(s)</span></div>
+              </div>
+              <div class="action-status" aria-live="polite"></div>
+
+      <form class="gallery-upload-form" enctype="multipart/form-data" data-performer="Allinika">
+        <input type="hidden" name="performer_name" value="Allinika">
+        <input type="hidden" name="model_slug" value="allinika">
+        <label>Collection name<input name="collection" value="" placeholder="optional set name"></label>
+        <label>Gallery pictures<input name="images" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple></label>
+        <div class="button-row"><button type="button" data-action="gallery-upload">Upload pictures</button></div>
+      </form>
+
+              <div class="gallery-grid"><div class="empty-crop">No gallery pictures uploaded yet.</div></div>
+            </article>
+
+            <article class="enroll-card gallery-upload-card" data-performer="Allison Parker">
+              <div class="enroll-head">
+                <div>
+                  <p>GALLERY UPLOAD</p>
+                  <h2>Allison Parker</h2>
+                  <small>allison-parker</small>
+                </div>
+                <div class="mini-metrics"><span>0 picture(s)</span></div>
+              </div>
+              <div class="action-status" aria-live="polite"></div>
+
+      <form class="gallery-upload-form" enctype="multipart/form-data" data-performer="Allison Parker">
+        <input type="hidden" name="performer_name" value="Allison Parker">
+        <input type="hidden" name="model_slug" value="allison-parker">
+        <label>Collection name<input name="collection" value="" placeholder="optional set name"></label>
+        <label>Gallery pictures<input name="images" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple></label>
+        <div class="button-row"><button type="button" data-action="gallery-upload">Upload pictures</button></div>
+      </form>
+
+              <div class="gallery-grid"><div class="empty-crop">No gallery pictures uploaded yet.</div></div>
+            </article>
+
+            <article class="enroll-card gallery-upload-card" data-performer="Amburnee">
+              <div class="enroll-head">
+                <div>
+                  <p>GALLERY UPLOAD</p>
+                  <h2>Amburnee</h2>
+                  <small>amburnee</small>
+                </div>
+                <div class="mini-metrics"><span>0 picture(s)</span></div>
+              </div>
+              <div class="action-status" aria-live="polite"></div>
+
+      <form class="gallery-upload-form" enctype="multipart/form-data" data-performer="Amburnee">
+        <input type="hidden" name="performer_name" value="Amburnee">
+        <input type="hidden" name="model_slug" value="amburnee">
         <label>Collection name<input name="collection" value="" placeholder="optional set name"></label>
         <label>Gallery pictures<input name="images" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple></label>
         <div class="button-row"><button type="button" data-action="gallery-upload">Upload pictures</button></div>
@@ -264,6 +359,28 @@
       <form class="gallery-upload-form" enctype="multipart/form-data" data-performer="Chloe Lamb">
         <input type="hidden" name="performer_name" value="Chloe Lamb">
         <input type="hidden" name="model_slug" value="chloe-lamb">
+        <label>Collection name<input name="collection" value="" placeholder="optional set name"></label>
+        <label>Gallery pictures<input name="images" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple></label>
+        <div class="button-row"><button type="button" data-action="gallery-upload">Upload pictures</button></div>
+      </form>
+
+              <div class="gallery-grid"><div class="empty-crop">No gallery pictures uploaded yet.</div></div>
+            </article>
+
+            <article class="enroll-card gallery-upload-card" data-performer="Comatozze">
+              <div class="enroll-head">
+                <div>
+                  <p>GALLERY UPLOAD</p>
+                  <h2>Comatozze</h2>
+                  <small>comatozze</small>
+                </div>
+                <div class="mini-metrics"><span>0 picture(s)</span></div>
+              </div>
+              <div class="action-status" aria-live="polite"></div>
+
+      <form class="gallery-upload-form" enctype="multipart/form-data" data-performer="Comatozze">
+        <input type="hidden" name="performer_name" value="Comatozze">
+        <input type="hidden" name="model_slug" value="comatozze">
         <label>Collection name<input name="collection" value="" placeholder="optional set name"></label>
         <label>Gallery pictures<input name="images" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple></label>
         <div class="button-row"><button type="button" data-action="gallery-upload">Upload pictures</button></div>
@@ -4953,20 +5070,20 @@
               <div class="gallery-grid"><div class="empty-crop">No gallery pictures uploaded yet.</div></div>
             </article>
 
-            <article class="enroll-card gallery-upload-card" data-performer="Isabelle Eleanore">
+            <article class="enroll-card gallery-upload-card" data-performer="Heyimbee">
               <div class="enroll-head">
                 <div>
                   <p>GALLERY UPLOAD</p>
-                  <h2>Isabelle Eleanore</h2>
-                  <small>isabelle-eleanore</small>
+                  <h2>Heyimbee</h2>
+                  <small>heyimbee</small>
                 </div>
                 <div class="mini-metrics"><span>0 picture(s)</span></div>
               </div>
               <div class="action-status" aria-live="polite"></div>
 
-      <form class="gallery-upload-form" enctype="multipart/form-data" data-performer="Isabelle Eleanore">
-        <input type="hidden" name="performer_name" value="Isabelle Eleanore">
-        <input type="hidden" name="model_slug" value="isabelle-eleanore">
+      <form class="gallery-upload-form" enctype="multipart/form-data" data-performer="Heyimbee">
+        <input type="hidden" name="performer_name" value="Heyimbee">
+        <input type="hidden" name="model_slug" value="heyimbee">
         <label>Collection name<input name="collection" value="" placeholder="optional set name"></label>
         <label>Gallery pictures<input name="images" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple></label>
         <div class="button-row"><button type="button" data-action="gallery-upload">Upload pictures</button></div>
@@ -5041,20 +5158,20 @@
               <div class="gallery-grid"><div class="empty-crop">No gallery pictures uploaded yet.</div></div>
             </article>
 
-            <article class="enroll-card gallery-upload-card" data-performer="Katianakayfree">
+            <article class="enroll-card gallery-upload-card" data-performer="Kylie Island">
               <div class="enroll-head">
                 <div>
                   <p>GALLERY UPLOAD</p>
-                  <h2>Katianakayfree</h2>
-                  <small>katianakayfree</small>
+                  <h2>Kylie Island</h2>
+                  <small>kylie-island</small>
                 </div>
                 <div class="mini-metrics"><span>0 picture(s)</span></div>
               </div>
               <div class="action-status" aria-live="polite"></div>
 
-      <form class="gallery-upload-form" enctype="multipart/form-data" data-performer="Katianakayfree">
-        <input type="hidden" name="performer_name" value="Katianakayfree">
-        <input type="hidden" name="model_slug" value="katianakayfree">
+      <form class="gallery-upload-form" enctype="multipart/form-data" data-performer="Kylie Island">
+        <input type="hidden" name="performer_name" value="Kylie Island">
+        <input type="hidden" name="model_slug" value="kylie-island">
         <label>Collection name<input name="collection" value="" placeholder="optional set name"></label>
         <label>Gallery pictures<input name="images" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple></label>
         <div class="button-row"><button type="button" data-action="gallery-upload">Upload pictures</button></div>
@@ -5063,42 +5180,20 @@
               <div class="gallery-grid"><div class="empty-crop">No gallery pictures uploaded yet.</div></div>
             </article>
 
-            <article class="enroll-card gallery-upload-card" data-performer="Leighbunbun">
+            <article class="enroll-card gallery-upload-card" data-performer="Lily Phillips">
               <div class="enroll-head">
                 <div>
                   <p>GALLERY UPLOAD</p>
-                  <h2>Leighbunbun</h2>
-                  <small>leighbunbun</small>
+                  <h2>Lily Phillips</h2>
+                  <small>lily-phillips</small>
                 </div>
                 <div class="mini-metrics"><span>0 picture(s)</span></div>
               </div>
               <div class="action-status" aria-live="polite"></div>
 
-      <form class="gallery-upload-form" enctype="multipart/form-data" data-performer="Leighbunbun">
-        <input type="hidden" name="performer_name" value="Leighbunbun">
-        <input type="hidden" name="model_slug" value="leighbunbun">
-        <label>Collection name<input name="collection" value="" placeholder="optional set name"></label>
-        <label>Gallery pictures<input name="images" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple></label>
-        <div class="button-row"><button type="button" data-action="gallery-upload">Upload pictures</button></div>
-      </form>
-
-              <div class="gallery-grid"><div class="empty-crop">No gallery pictures uploaded yet.</div></div>
-            </article>
-
-            <article class="enroll-card gallery-upload-card" data-performer="Mackzjones">
-              <div class="enroll-head">
-                <div>
-                  <p>GALLERY UPLOAD</p>
-                  <h2>Mackzjones</h2>
-                  <small>mackzjones</small>
-                </div>
-                <div class="mini-metrics"><span>0 picture(s)</span></div>
-              </div>
-              <div class="action-status" aria-live="polite"></div>
-
-      <form class="gallery-upload-form" enctype="multipart/form-data" data-performer="Mackzjones">
-        <input type="hidden" name="performer_name" value="Mackzjones">
-        <input type="hidden" name="model_slug" value="mackzjones">
+      <form class="gallery-upload-form" enctype="multipart/form-data" data-performer="Lily Phillips">
+        <input type="hidden" name="performer_name" value="Lily Phillips">
+        <input type="hidden" name="model_slug" value="lily-phillips">
         <label>Collection name<input name="collection" value="" placeholder="optional set name"></label>
         <label>Gallery pictures<input name="images" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple></label>
         <div class="button-row"><button type="button" data-action="gallery-upload">Upload pictures</button></div>
@@ -5129,28 +5224,6 @@
               <div class="gallery-grid"><div class="empty-crop">No gallery pictures uploaded yet.</div></div>
             </article>
 
-            <article class="enroll-card gallery-upload-card" data-performer="Melissa Debling">
-              <div class="enroll-head">
-                <div>
-                  <p>GALLERY UPLOAD</p>
-                  <h2>Melissa Debling</h2>
-                  <small>melissa-debling</small>
-                </div>
-                <div class="mini-metrics"><span>0 picture(s)</span></div>
-              </div>
-              <div class="action-status" aria-live="polite"></div>
-
-      <form class="gallery-upload-form" enctype="multipart/form-data" data-performer="Melissa Debling">
-        <input type="hidden" name="performer_name" value="Melissa Debling">
-        <input type="hidden" name="model_slug" value="melissa-debling">
-        <label>Collection name<input name="collection" value="" placeholder="optional set name"></label>
-        <label>Gallery pictures<input name="images" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple></label>
-        <div class="button-row"><button type="button" data-action="gallery-upload">Upload pictures</button></div>
-      </form>
-
-              <div class="gallery-grid"><div class="empty-crop">No gallery pictures uploaded yet.</div></div>
-            </article>
-
             <article class="enroll-card gallery-upload-card" data-performer="Miss LiLu">
               <div class="enroll-head">
                 <div>
@@ -5165,28 +5238,6 @@
       <form class="gallery-upload-form" enctype="multipart/form-data" data-performer="Miss LiLu">
         <input type="hidden" name="performer_name" value="Miss LiLu">
         <input type="hidden" name="model_slug" value="miss-lilu">
-        <label>Collection name<input name="collection" value="" placeholder="optional set name"></label>
-        <label>Gallery pictures<input name="images" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple></label>
-        <div class="button-row"><button type="button" data-action="gallery-upload">Upload pictures</button></div>
-      </form>
-
-              <div class="gallery-grid"><div class="empty-crop">No gallery pictures uploaded yet.</div></div>
-            </article>
-
-            <article class="enroll-card gallery-upload-card" data-performer="Mulai">
-              <div class="enroll-head">
-                <div>
-                  <p>GALLERY UPLOAD</p>
-                  <h2>Mulai</h2>
-                  <small>mulai</small>
-                </div>
-                <div class="mini-metrics"><span>0 picture(s)</span></div>
-              </div>
-              <div class="action-status" aria-live="polite"></div>
-
-      <form class="gallery-upload-form" enctype="multipart/form-data" data-performer="Mulai">
-        <input type="hidden" name="performer_name" value="Mulai">
-        <input type="hidden" name="model_slug" value="mulai">
         <label>Collection name<input name="collection" value="" placeholder="optional set name"></label>
         <label>Gallery pictures<input name="images" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple></label>
         <div class="button-row"><button type="button" data-action="gallery-upload">Upload pictures</button></div>
@@ -5283,28 +5334,6 @@
               <div class="gallery-grid"><div class="empty-crop">No gallery pictures uploaded yet.</div></div>
             </article>
 
-            <article class="enroll-card gallery-upload-card" data-performer="Sakhovanski">
-              <div class="enroll-head">
-                <div>
-                  <p>GALLERY UPLOAD</p>
-                  <h2>Sakhovanski</h2>
-                  <small>sakhovanski</small>
-                </div>
-                <div class="mini-metrics"><span>0 picture(s)</span></div>
-              </div>
-              <div class="action-status" aria-live="polite"></div>
-
-      <form class="gallery-upload-form" enctype="multipart/form-data" data-performer="Sakhovanski">
-        <input type="hidden" name="performer_name" value="Sakhovanski">
-        <input type="hidden" name="model_slug" value="sakhovanski">
-        <label>Collection name<input name="collection" value="" placeholder="optional set name"></label>
-        <label>Gallery pictures<input name="images" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple></label>
-        <div class="button-row"><button type="button" data-action="gallery-upload">Upload pictures</button></div>
-      </form>
-
-              <div class="gallery-grid"><div class="empty-crop">No gallery pictures uploaded yet.</div></div>
-            </article>
-
             <article class="enroll-card gallery-upload-card" data-performer="Sava Schultz">
               <div class="enroll-head">
                 <div>
@@ -5319,72 +5348,6 @@
       <form class="gallery-upload-form" enctype="multipart/form-data" data-performer="Sava Schultz">
         <input type="hidden" name="performer_name" value="Sava Schultz">
         <input type="hidden" name="model_slug" value="sava-schultz">
-        <label>Collection name<input name="collection" value="" placeholder="optional set name"></label>
-        <label>Gallery pictures<input name="images" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple></label>
-        <div class="button-row"><button type="button" data-action="gallery-upload">Upload pictures</button></div>
-      </form>
-
-              <div class="gallery-grid"><div class="empty-crop">No gallery pictures uploaded yet.</div></div>
-            </article>
-
-            <article class="enroll-card gallery-upload-card" data-performer="Sendnudesx">
-              <div class="enroll-head">
-                <div>
-                  <p>GALLERY UPLOAD</p>
-                  <h2>Sendnudesx</h2>
-                  <small>sendnudesx</small>
-                </div>
-                <div class="mini-metrics"><span>0 picture(s)</span></div>
-              </div>
-              <div class="action-status" aria-live="polite"></div>
-
-      <form class="gallery-upload-form" enctype="multipart/form-data" data-performer="Sendnudesx">
-        <input type="hidden" name="performer_name" value="Sendnudesx">
-        <input type="hidden" name="model_slug" value="sendnudesx">
-        <label>Collection name<input name="collection" value="" placeholder="optional set name"></label>
-        <label>Gallery pictures<input name="images" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple></label>
-        <div class="button-row"><button type="button" data-action="gallery-upload">Upload pictures</button></div>
-      </form>
-
-              <div class="gallery-grid"><div class="empty-crop">No gallery pictures uploaded yet.</div></div>
-            </article>
-
-            <article class="enroll-card gallery-upload-card" data-performer="Sienna">
-              <div class="enroll-head">
-                <div>
-                  <p>GALLERY UPLOAD</p>
-                  <h2>Sienna</h2>
-                  <small>sienna</small>
-                </div>
-                <div class="mini-metrics"><span>0 picture(s)</span></div>
-              </div>
-              <div class="action-status" aria-live="polite"></div>
-
-      <form class="gallery-upload-form" enctype="multipart/form-data" data-performer="Sienna">
-        <input type="hidden" name="performer_name" value="Sienna">
-        <input type="hidden" name="model_slug" value="sienna">
-        <label>Collection name<input name="collection" value="" placeholder="optional set name"></label>
-        <label>Gallery pictures<input name="images" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple></label>
-        <div class="button-row"><button type="button" data-action="gallery-upload">Upload pictures</button></div>
-      </form>
-
-              <div class="gallery-grid"><div class="empty-crop">No gallery pictures uploaded yet.</div></div>
-            </article>
-
-            <article class="enroll-card gallery-upload-card" data-performer="Sienna Ababi">
-              <div class="enroll-head">
-                <div>
-                  <p>GALLERY UPLOAD</p>
-                  <h2>Sienna Ababi</h2>
-                  <small>sienna-ababi</small>
-                </div>
-                <div class="mini-metrics"><span>0 picture(s)</span></div>
-              </div>
-              <div class="action-status" aria-live="polite"></div>
-
-      <form class="gallery-upload-form" enctype="multipart/form-data" data-performer="Sienna Ababi">
-        <input type="hidden" name="performer_name" value="Sienna Ababi">
-        <input type="hidden" name="model_slug" value="sienna-ababi">
         <label>Collection name<input name="collection" value="" placeholder="optional set name"></label>
         <label>Gallery pictures<input name="images" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple></label>
         <div class="button-row"><button type="button" data-action="gallery-upload">Upload pictures</button></div>
@@ -5436,33 +5399,17 @@
 
               <div class="gallery-grid"><div class="empty-crop">No gallery pictures uploaded yet.</div></div>
             </article>
-
-            <article class="enroll-card gallery-upload-card" data-performer="Zoey Uso">
-              <div class="enroll-head">
-                <div>
-                  <p>GALLERY UPLOAD</p>
-                  <h2>Zoey Uso</h2>
-                  <small>zoey-uso</small>
-                </div>
-                <div class="mini-metrics"><span>0 picture(s)</span></div>
-              </div>
-              <div class="action-status" aria-live="polite"></div>
-
-      <form class="gallery-upload-form" enctype="multipart/form-data" data-performer="Zoey Uso">
-        <input type="hidden" name="performer_name" value="Zoey Uso">
-        <input type="hidden" name="model_slug" value="zoey-uso">
-        <label>Collection name<input name="collection" value="" placeholder="optional set name"></label>
-        <label>Gallery pictures<input name="images" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple></label>
-        <div class="button-row"><button type="button" data-action="gallery-upload">Upload pictures</button></div>
-      </form>
-
-              <div class="gallery-grid"><div class="empty-crop">No gallery pictures uploaded yet.</div></div>
-            </article>
             </main>
   <script>
     async function postJson(url, payload) {
       const response = await fetch(url, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)});
-      const data = await response.json();
+      const text = await response.text();
+      let data = {};
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch (error) {
+        throw new Error(text || response.statusText || error.message);
+      }
       if (!response.ok) throw new Error(data.error || response.statusText);
       return data;
     }
@@ -5488,6 +5435,10 @@
       if (button.dataset.originalText) button.textContent = button.dataset.originalText;
       buttons.forEach(item => item.disabled = false);
     }
+    function reloadAfterRefresh(result, delayMs = 2500) {
+      const delay = result?.refresh_deferred ? Math.max(delayMs, 12000) : delayMs;
+      setTimeout(() => location.reload(), delay);
+    }
     function persistCardStatus(card, message, kind = 'ok') {
       const performer = card?.dataset.performer || card?.querySelector('[name=performer_name]')?.value || '';
       if (!performer) return;
@@ -5512,9 +5463,41 @@
       input.checked = !input.checked;
       input.dispatchEvent(new Event('change', {bubbles: true}));
     });
+    document.querySelectorAll('button[data-action="merge-creator"]').forEach((button) => {
+      button.addEventListener('click', async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const form = button.closest('form');
+        const card = button.closest('.enroll-card');
+        const buttons = [...(card?.querySelectorAll('button[data-action]') || [])];
+        try {
+          if (!form || !card) throw new Error('Merge form not found on this card');
+          const payload = {
+            source_name: form.querySelector('[name=merge_source]')?.value?.trim() || '',
+            target_name: form.querySelector('[name=merge_target]')?.value?.trim() || '',
+            confirmation: form.querySelector('[name=merge_confirmation]')?.value?.trim() || '',
+            confirmed_by: 'Britton'
+          };
+          if (!payload.source_name || !payload.target_name || !payload.confirmation) {
+            throw new Error('Fill duplicate/source, correct creator, and confirmation before merging.');
+          }
+          setCardStatus(card, 'Merging ' + payload.source_name + ' into ' + payload.target_name + '...', 'warn');
+          setBusy(button, buttons, 'Merging...');
+          const result = await postJson('/api/enrollment/merge-creator', payload);
+          setCardStatus(card, 'Merged ' + payload.source_name + ' into ' + payload.target_name + '. Refreshing the queue...', 'ok');
+          card.style.opacity = '0.55';
+          card.style.pointerEvents = 'none';
+          reloadAfterRefresh(result, 700);
+        } catch (error) {
+          clearBusy(button, buttons);
+          setCardStatus(card, 'NEEDS_FIX: ' + error.message, 'err');
+        }
+      });
+    });
     document.addEventListener('click', async (event) => {
       const button = event.target.closest('button[data-action]');
       if (!button) return;
+      if (button.dataset.action === 'merge-creator') return;
       const form = button.closest('form');
       const card = button.closest('.enroll-card');
       const performer = form?.querySelector('[name=performer_name]')?.value || button.dataset.performer || card?.dataset.performer || '';
@@ -5577,7 +5560,7 @@
               cropCard.style.pointerEvents = 'none';
             }
           });
-          setTimeout(() => location.reload(), 1700);
+          reloadAfterRefresh(result, 1700);
         } else if (button.dataset.action === 'remove-accepted') {
           const samples = [...card.querySelectorAll('input[name=accepted_sample]:checked')].map(input => input.value);
           if (!samples.length) {
@@ -5621,7 +5604,8 @@
           const result = await postJson('/api/enrollment/smart-accept', {
             performer_name: performer,
             confirmation,
-            confirmed_by: 'Britton'
+            confirmed_by: 'Britton',
+            target_count: 5
           });
           const added = (result.enrollment || {}).embedding_row_indexes_added?.length || 0;
           const picked = (result.selected_crops || []).length || 0;
@@ -5629,7 +5613,7 @@
           const message = 'Smart accept picked ' + picked + ' screen(s), enrolled ' + added + ', skipped ' + skipped + ', removed ' + ((result.enrollment || {}).removed_recommendations || 0) + ' stale recommendation(s). Refreshing...';
           setCardStatus(card, message, skipped ? 'warn' : 'ok');
           persistCardStatus(card, message, skipped ? 'warn' : 'ok');
-          setTimeout(() => location.reload(), 2500);
+          reloadAfterRefresh(result, 2500);
         } else if (button.dataset.action === 'scan-library-matches') {
           setCardStatus(card, 'Running face-rec scan on linked videos for ' + performer + '. This can take a few minutes...', 'warn');
           setBusy(button, buttons, 'Scanning...');
@@ -5694,17 +5678,23 @@
           if (button.dataset.timestamp) params.set('timestamp', button.dataset.timestamp);
           window.open('manual_crop.html?' + params.toString(), '_blank', 'noopener');
         } else if (button.dataset.action === 'merge-creator') {
+          if (!form || !card) throw new Error('Merge form not found on this card');
           const payload = {
-            source_name: form.querySelector('[name=merge_source]').value,
-            target_name: form.querySelector('[name=merge_target]').value,
-            confirmation: form.querySelector('[name=merge_confirmation]').value,
+            source_name: form.querySelector('[name=merge_source]')?.value?.trim() || '',
+            target_name: form.querySelector('[name=merge_target]')?.value?.trim() || '',
+            confirmation: form.querySelector('[name=merge_confirmation]')?.value?.trim() || '',
             confirmed_by: 'Britton'
           };
+          if (!payload.source_name || !payload.target_name || !payload.confirmation) {
+            throw new Error('Fill duplicate/source, correct creator, and confirmation before merging.');
+          }
+          setCardStatus(card, 'Merging ' + payload.source_name + ' into ' + payload.target_name + '...', 'warn');
+          setBusy(button, buttons, 'Merging...');
           const result = await postJson('/api/enrollment/merge-creator', payload);
           setCardStatus(card, 'Merged ' + payload.source_name + ' into ' + payload.target_name + '. Refreshing the queue...', 'ok');
           card.style.opacity = '0.55';
           card.style.pointerEvents = 'none';
-          setTimeout(() => location.reload(), 700);
+          reloadAfterRefresh(result, 700);
         } else if (button.dataset.action === 'faceless') {
           const confirmation = form.querySelector('[name=confirmation]')?.value || performer;
           setCardStatus(card, 'Marking ' + performer + ' as faceless...', 'warn');
@@ -5717,7 +5707,7 @@
           setCardStatus(card, 'Marked ' + result.performer_name + ' as faceless. Refreshing the queue...', 'ok');
           card.style.opacity = '0.55';
           card.style.pointerEvents = 'none';
-          setTimeout(() => location.reload(), 800);
+          reloadAfterRefresh(result, 800);
         } else {
           alert(button.textContent + ' recorded for review.');
         }

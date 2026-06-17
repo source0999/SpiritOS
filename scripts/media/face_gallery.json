@@ -1,9 +1,9 @@
 {
   "schema": "spiritflix-model-gallery/v1",
-  "generated_at": "2026-06-15T04:26:54+00:00",
+  "generated_at": "2026-06-17T01:54:22+00:00",
   "gallery_root": "scripts/media/model_gallery",
   "summary": {
-    "enrolled_models": 33,
+    "enrolled_models": 30,
     "models_with_gallery": 1,
     "gallery_items": 923
   },
@@ -20,7 +20,39 @@
       "name": "Alannasworldx",
       "model_key": "alannasworldx",
       "model_slug": "alannasworldx",
-      "known_performer_id": "",
+      "known_performer_id": "alannasworldx",
+      "item_count": 0,
+      "items": []
+    },
+    {
+      "name": "Alexa Pearl",
+      "model_key": "alexapearl",
+      "model_slug": "alexa-pearl",
+      "known_performer_id": "alexa-pearl",
+      "item_count": 0,
+      "items": []
+    },
+    {
+      "name": "Allinika",
+      "model_key": "allinika",
+      "model_slug": "allinika",
+      "known_performer_id": "allinika",
+      "item_count": 0,
+      "items": []
+    },
+    {
+      "name": "Allison Parker",
+      "model_key": "allisonparker",
+      "model_slug": "allison-parker",
+      "known_performer_id": "allison-parker",
+      "item_count": 0,
+      "items": []
+    },
+    {
+      "name": "Amburnee",
+      "model_key": "amburnee",
+      "model_slug": "amburnee",
+      "known_performer_id": "amburnee",
       "item_count": 0,
       "items": []
     },
@@ -28,7 +60,7 @@
       "name": "Angela White",
       "model_key": "angelawhite",
       "model_slug": "angela-white",
-      "known_performer_id": "",
+      "known_performer_id": "angela-white",
       "item_count": 0,
       "items": []
     },
@@ -36,7 +68,7 @@
       "name": "Azilia Hadid",
       "model_key": "aziliahadid",
       "model_slug": "azilia-hadid",
-      "known_performer_id": "",
+      "known_performer_id": "azilia-hadid",
       "item_count": 0,
       "items": []
     },
@@ -44,7 +76,7 @@
       "name": "Bearuby",
       "model_key": "bearuby",
       "model_slug": "bearuby",
-      "known_performer_id": "",
+      "known_performer_id": "bearuby",
       "item_count": 0,
       "items": []
     },
@@ -52,7 +84,7 @@
       "name": "Brenda Trindade",
       "model_key": "brendatrindade",
       "model_slug": "brenda-trindade",
-      "known_performer_id": "",
+      "known_performer_id": "brenda-trindade",
       "item_count": 0,
       "items": []
     },
@@ -60,7 +92,15 @@
       "name": "Chloe Lamb",
       "model_key": "chloelamb",
       "model_slug": "chloe-lamb",
-      "known_performer_id": "",
+      "known_performer_id": "chloe-lamb",
+      "item_count": 0,
+      "items": []
+    },
+    {
+      "name": "Comatozze",
+      "model_key": "comatozze",
+      "model_slug": "comatozze",
+      "known_performer_id": "comatozze",
       "item_count": 0,
       "items": []
     },
@@ -12076,7 +12116,7 @@
       "name": "Gem The Jewels",
       "model_key": "gemthejewels",
       "model_slug": "gem-the-jewels",
-      "known_performer_id": "",
+      "known_performer_id": "gem-the-jewels",
       "item_count": 0,
       "items": []
     },
@@ -12084,15 +12124,15 @@
       "name": "Haylee Love",
       "model_key": "hayleelove",
       "model_slug": "haylee-love",
-      "known_performer_id": "",
+      "known_performer_id": "haylee-love",
       "item_count": 0,
       "items": []
     },
     {
-      "name": "Isabelle Eleanore",
-      "model_key": "isabelleeleanore",
-      "model_slug": "isabelle-eleanore",
-      "known_performer_id": "",
+      "name": "Heyimbee",
+      "model_key": "heyimbee",
+      "model_slug": "heyimbee",
+      "known_performer_id": "heyimbee",
       "item_count": 0,
       "items": []
     },
@@ -12100,7 +12140,7 @@
       "name": "Izzy Green",
       "model_key": "izzygreen",
       "model_slug": "izzy-green",
-      "known_performer_id": "",
+      "known_performer_id": "izzy-green",
       "item_count": 0,
       "items": []
     },
@@ -12116,31 +12156,23 @@
       "name": "Jazmen Jafar",
       "model_key": "jazmenjafar",
       "model_slug": "jazmen-jafar",
-      "known_performer_id": "",
+      "known_performer_id": "jazmen-jafar",
       "item_count": 0,
       "items": []
     },
     {
-      "name": "Katianakayfree",
-      "model_key": "katianakayfree",
-      "model_slug": "katianakayfree",
-      "known_performer_id": "",
+      "name": "Kylie Island",
+      "model_key": "kylieisland",
+      "model_slug": "kylie-island",
+      "known_performer_id": "kylie-island",
       "item_count": 0,
       "items": []
     },
     {
-      "name": "Leighbunbun",
-      "model_key": "leighbunbun",
-      "model_slug": "leighbunbun",
-      "known_performer_id": "",
-      "item_count": 0,
-      "items": []
-    },
-    {
-      "name": "Mackzjones",
-      "model_key": "mackzjones",
-      "model_slug": "mackzjones",
-      "known_performer_id": "",
+      "name": "Lily Phillips",
+      "model_key": "lilyphillips",
+      "model_slug": "lily-phillips",
+      "known_performer_id": "lily-phillips",
       "item_count": 0,
       "items": []
     },
@@ -12148,15 +12180,7 @@
       "name": "Maditay",
       "model_key": "maditay",
       "model_slug": "maditay",
-      "known_performer_id": "",
-      "item_count": 0,
-      "items": []
-    },
-    {
-      "name": "Melissa Debling",
-      "model_key": "melissadebling",
-      "model_slug": "melissa-debling",
-      "known_performer_id": "",
+      "known_performer_id": "maditay",
       "item_count": 0,
       "items": []
     },
@@ -12164,15 +12188,7 @@
       "name": "Miss LiLu",
       "model_key": "misslilu",
       "model_slug": "miss-lilu",
-      "known_performer_id": "",
-      "item_count": 0,
-      "items": []
-    },
-    {
-      "name": "Mulai",
-      "model_key": "mulai",
-      "model_slug": "mulai",
-      "known_performer_id": "",
+      "known_performer_id": "miss-lilu",
       "item_count": 0,
       "items": []
     },
@@ -12180,7 +12196,7 @@
       "name": "Pinkychu",
       "model_key": "pinkychu",
       "model_slug": "pinkychu",
-      "known_performer_id": "",
+      "known_performer_id": "pinkychu",
       "item_count": 0,
       "items": []
     },
@@ -12188,7 +12204,7 @@
       "name": "Puffy Pink",
       "model_key": "puffypink",
       "model_slug": "puffy-pink",
-      "known_performer_id": "",
+      "known_performer_id": "puffy-pink",
       "item_count": 0,
       "items": []
     },
@@ -12196,7 +12212,7 @@
       "name": "Realtoxxxmaria",
       "model_key": "realtoxxxmaria",
       "model_slug": "realtoxxxmaria",
-      "known_performer_id": "",
+      "known_performer_id": "realtoxxxmaria",
       "item_count": 0,
       "items": []
     },
@@ -12204,15 +12220,7 @@
       "name": "Ruth Lee",
       "model_key": "ruthlee",
       "model_slug": "ruth-lee",
-      "known_performer_id": "",
-      "item_count": 0,
-      "items": []
-    },
-    {
-      "name": "Sakhovanski",
-      "model_key": "sakhovanski",
-      "model_slug": "sakhovanski",
-      "known_performer_id": "",
+      "known_performer_id": "ruth-lee",
       "item_count": 0,
       "items": []
     },
@@ -12225,34 +12233,10 @@
       "items": []
     },
     {
-      "name": "Sendnudesx",
-      "model_key": "sendnudesx",
-      "model_slug": "sendnudesx",
-      "known_performer_id": "",
-      "item_count": 0,
-      "items": []
-    },
-    {
-      "name": "Sienna",
-      "model_key": "sienna",
-      "model_slug": "sienna",
-      "known_performer_id": "",
-      "item_count": 0,
-      "items": []
-    },
-    {
-      "name": "Sienna Ababi",
-      "model_key": "siennaababi",
-      "model_slug": "sienna-ababi",
-      "known_performer_id": "",
-      "item_count": 0,
-      "items": []
-    },
-    {
       "name": "Strawberrytabby",
       "model_key": "strawberrytabby",
       "model_slug": "strawberrytabby",
-      "known_performer_id": "",
+      "known_performer_id": "strawberrytabby",
       "item_count": 0,
       "items": []
     },
@@ -12260,15 +12244,7 @@
       "name": "Whoahannahjo",
       "model_key": "whoahannahjo",
       "model_slug": "whoahannahjo",
-      "known_performer_id": "",
-      "item_count": 0,
-      "items": []
-    },
-    {
-      "name": "Zoey Uso",
-      "model_key": "zoeyuso",
-      "model_slug": "zoey-uso",
-      "known_performer_id": "",
+      "known_performer_id": "whoahannahjo",
       "item_count": 0,
       "items": []
     }

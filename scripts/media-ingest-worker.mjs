@@ -32,6 +32,8 @@ const MAC_PROFILE = process.env.MEDIA_INGEST_MAC_PROFILE || "main10";
 const DELETE_LIBRARY_ORIGINALS = process.env.MEDIA_INGEST_DELETE_LIBRARY_ORIGINALS === "1";
 const STOP_AFTER_DONE = Number(process.env.MEDIA_INGEST_STOP_AFTER_DONE || 0);
 const MAX_QUEUED = Number(process.env.MEDIA_INGEST_MAX_QUEUED || 0);
+const INCLUDE_REGEX = process.env.MEDIA_INGEST_INCLUDE_REGEX ? new RegExp(process.env.MEDIA_INGEST_INCLUDE_REGEX) : null;
+const SORT_BY_SIZE = process.env.MEDIA_INGEST_SORT_BY_SIZE === "1";
 const FACE_SCAN_ON_INGEST = process.env.MEDIA_INGEST_FACE_SCAN_ON_INGEST !== "0";
 const FACE_ORGANIZER_PYTHON = process.env.MEDIA_INGEST_FACE_ORGANIZER_PYTHON || ".venv-face-organizer/bin/python";
 const FACE_ORGANIZER_SCRIPT = process.env.MEDIA_INGEST_FACE_ORGANIZER_SCRIPT || "scripts/media/face_organizer.py";
@@ -44,6 +46,13 @@ const state = {
   queueState: "running",
   jobs: [],
 };
+
+class NotWorthConvertingError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "NotWorthConvertingError";
+  }
+}
 
 function now() {
   return new Date().toISOString();
@@ -172,11 +181,21 @@ async function walk(dir) {
       files.push(full);
     }
   }
+  if (SORT_BY_SIZE) {
+    const withSizes = await Promise.all(
+      files.map(async (file) => ({ file, size: (await fs.stat(file)).size })),
+    );
+    return withSizes.sort((a, b) => a.size - b.size || a.file.localeCompare(b.file)).map((entry) => entry.file);
+  }
   return files.sort();
 }
 
 function receiptPathFor(file) {
   return `${file}.media-ingest.json`;
+}
+
+function skipReceiptPathFor(file) {
+  return `${file}.media-ingest-skip.json`;
 }
 
 async function exists(file) {
@@ -196,7 +215,7 @@ async function movePath(source, target) {
 }
 
 async function hasIngestReceipt(file) {
-  return exists(receiptPathFor(file));
+  return (await exists(receiptPathFor(file))) || (await exists(skipReceiptPathFor(file)));
 }
 
 async function chooseFinalPath(relativeOutput, activePath) {
@@ -290,6 +309,9 @@ function makeJob({ file, category, relativeInCategory, sourceKind, deleteOrigina
 
 async function enqueueStableCandidates(files, makeCandidateJob) {
   for (const file of files) {
+    if (INCLUDE_REGEX && !INCLUDE_REGEX.test(file)) {
+      continue;
+    }
     if (state.jobs.some((job) => job.sourcePath === file && job.status !== "failed")) {
       await log(`Skipped duplicate: ${file}`);
       continue;
@@ -434,7 +456,22 @@ async function processJob(job) {
   const outputSize = (await fs.stat(tempOutputPath)).size;
   const savings = job.originalSize ? (1 - outputSize / job.originalSize) * 100 : 0;
   if (savings < 5) {
-    throw new Error(`Converted output was not meaningfully smaller. Savings: ${savings.toFixed(2)}%.`);
+    job.notWorthConverting = true;
+    job.skipReceiptPath = skipReceiptPathFor(job.sourcePath);
+    job.skipReceipt = {
+      at: now(),
+      jobId: job.id,
+      sourceKind: job.sourceKind,
+      sourcePath: job.sourcePath,
+      originalSize: job.originalSize,
+      outputSize,
+      savingsPercent: Number(savings.toFixed(2)),
+      profile: job.profile,
+      encoder: ENCODER,
+      skipped: true,
+      reason: "Converted output was not meaningfully smaller.",
+    };
+    throw new NotWorthConvertingError(`Converted output was not meaningfully smaller. Savings: ${savings.toFixed(2)}%.`);
   }
   await jobLog(job, `Accepted output. Savings: ${savings.toFixed(2)}%.`);
 
@@ -488,6 +525,17 @@ async function failJob(job, error) {
   job.status = "failed";
   job.failedAt = now();
   job.error = error instanceof Error ? error.message : String(error);
+  if (job.notWorthConverting && job.skipReceiptPath && job.skipReceipt) {
+    await fs.mkdir(path.dirname(job.sourcePath), { recursive: true });
+    if (job.activePath && !(await exists(job.sourcePath))) {
+      await movePath(job.activePath, job.sourcePath);
+    }
+    await fs.writeFile(job.skipReceiptPath, `${JSON.stringify(job.skipReceipt, null, 2)}\n`);
+    job.status = "skipped";
+    await fs.rm(path.dirname(job.activePath), { recursive: true, force: true }).catch(() => {});
+    await jobLog(job, `SKIPPED: ${job.error}. Original restored: ${job.sourcePath}`);
+    return;
+  }
   if (job.activePath) {
     const failedDir = path.join(FAILED_ROOT, job.id);
     await fs.mkdir(failedDir, { recursive: true });

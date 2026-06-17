@@ -1,6 +1,6 @@
 {
   "schema": "spiritflix-model-index/v1",
-  "generated_at": "2026-06-15T04:22:28+00:00",
+  "generated_at": "2026-06-17T01:23:06+00:00",
   "source_dir": "/DATA/yes",
   "models": [
     {
@@ -30,15 +30,59 @@
       "why": ""
     },
     {
-      "name": "Amburne",
-      "slug": "amburne",
+      "name": "Alexa Pearl",
+      "slug": "alexa-pearl",
       "aliases": [],
-      "status": "local-auto",
-      "video_count": 1,
+      "status": "user-confirmed",
+      "video_count": 0,
       "profile_handles": [],
-      "assignment_status": "local-auto",
+      "assignment_status": "user-confirmed",
       "identity_confidence": 0.0,
-      "primary_evidence_role": "local-auto",
+      "primary_evidence_role": "user-confirmed",
+      "review_required": true,
+      "why": ""
+    },
+    {
+      "name": "Allinika",
+      "slug": "allinika",
+      "aliases": [],
+      "status": "user-confirmed",
+      "video_count": 0,
+      "profile_handles": [],
+      "assignment_status": "user-confirmed",
+      "identity_confidence": 0.0,
+      "primary_evidence_role": "user-confirmed",
+      "review_required": true,
+      "why": ""
+    },
+    {
+      "name": "Allison Parker",
+      "slug": "allison-parker",
+      "aliases": [],
+      "status": "user-confirmed",
+      "video_count": 0,
+      "profile_handles": [],
+      "assignment_status": "user-confirmed",
+      "identity_confidence": 0.0,
+      "primary_evidence_role": "user-confirmed",
+      "review_required": true,
+      "why": ""
+    },
+    {
+      "name": "Amburnee",
+      "slug": "amburnee",
+      "aliases": [
+        "amburne",
+        "Amburne",
+        "amburnee",
+        "Amburnee"
+      ],
+      "status": "user-confirmed",
+      "video_count": 4,
+      "profile_handles": [],
+      "assignment_status": "user-confirmed",
+      "identity_confidence": 0.0,
+      "primary_evidence_role": "user-confirmed",
       "review_required": true,
       "why": ""
     },
@@ -98,6 +142,19 @@
       "why": ""
     },
     {
+      "name": "Bonnie Blue",
+      "slug": "bonnie-blue",
+      "aliases": [],
+      "status": "user-confirmed",
+      "video_count": 0,
+      "profile_handles": [],
+      "assignment_status": "user-confirmed",
+      "identity_confidence": 0.0,
+      "primary_evidence_role": "user-confirmed",
+      "review_required": true,
+      "why": ""
+    },
+    {
       "name": "Brenda Trindade",
       "slug": "brenda-trindade",
       "aliases": [],
@@ -111,10 +168,23 @@
       "why": ""
     },
     {
+      "name": "Ce Ce Rose",
+      "slug": "ce-ce-rose",
+      "aliases": [],
+      "status": "user-confirmed",
+      "video_count": 0,
+      "profile_handles": [],
+      "assignment_status": "user-confirmed",
+      "identity_confidence": 0.0,
+      "primary_evidence_role": "user-confirmed",
+      "review_required": true,
+      "why": ""
+    },
+    {
       "name": "Chloe Lamb",
       "slug": "chloe-lamb",
       "aliases": [],
-      "status": "profile-url",
+      "status": "user-confirmed",
       "video_count": 3,
       "profile_handles": [
         {
@@ -125,9 +195,22 @@
           "raw": "OnlyFans.com/chloelamb"
         }
       ],
-      "assignment_status": "profile-url",
+      "assignment_status": "user-confirmed",
       "identity_confidence": 0.0,
-      "primary_evidence_role": "profile-url",
+      "primary_evidence_role": "user-confirmed",
+      "review_required": true,
+      "why": ""
+    },
+    {
+      "name": "Comatozze",
+      "slug": "comatozze",
+      "aliases": [],
+      "status": "user-confirmed",
+      "video_count": 0,
+      "profile_handles": [],
+      "assignment_status": "user-confirmed",
+      "identity_confidence": 0.0,
+      "primary_evidence_role": "user-confirmed",
       "review_required": true,
       "why": ""
     },
@@ -178,8 +261,73 @@
       "why": ""
     },
     {
+      "name": "Dana De Armond",
+      "slug": "dana-de-armond",
+      "aliases": [],
+      "status": "user-confirmed",
+      "video_count": 0,
+      "profile_handles": [],
+      "assignment_status": "user-confirmed",
+      "identity_confidence": 0.0,
+      "primary_evidence_role": "user-confirmed",
+      "review_required": true,
+      "why": ""
+    },
+    {
       "name": "Devorah Roloff",
       "slug": "devorah-roloff",
+      "aliases": [],
+      "status": "user-confirmed",
+      "video_count": 0,
+      "profile_handles": [],
+      "assignment_status": "user-confirmed",
+      "identity_confidence": 0.0,
+      "primary_evidence_role": "user-confirmed",
+      "review_required": true,
+      "why": ""
+    },
+    {
+      "name": "Emilia Bunny",
+      "slug": "emilia-bunny",
+      "aliases": [],
+      "status": "user-confirmed",
+      "video_count": 0,
+      "profile_handles": [],
+      "assignment_status": "user-confirmed",
+      "identity_confidence": 0.0,
+      "primary_evidence_role": "user-confirmed",
+      "review_required": true,
+      "why": ""
+    },
+    {
+      "name": "Emiliaofficial",
+      "slug": "emiliaofficial",
+      "aliases": [],
+      "status": "user-confirmed",
+      "video_count": 0,
+      "profile_handles": [],
+      "assignment_status": "user-confirmed",
+      "identity_confidence": 0.0,
+      "primary_evidence_role": "user-confirmed",
+      "review_required": true,
+      "why": ""
+    },
+    {
+      "name": "Eve",
+      "slug": "eve",
+      "aliases": [],
+      "status": "user-confirmed",
+      "video_count": 0,
+      "profile_handles": [],
+      "assignment_status": "user-confirmed",
+      "identity_confidence": 0.0,
+      "primary_evidence_role": "user-confirmed",
+      "review_required": true,
+      "why": ""
+    },
+    {
+      "name": "F1nn5ter",
+      "slug": "f1nn5ter",
       "aliases": [],
       "status": "user-confirmed",
       "video_count": 0,
@@ -224,6 +372,22 @@
       "assignment_status": "local-auto",
       "identity_confidence": 0.0,
       "primary_evidence_role": "local-auto",
+      "review_required": true,
+      "why": ""
+    },
+    {
+      "name": "Heyimbee",
+      "slug": "heyimbee",
+      "aliases": [
+        "Risque Core Vid 96",
+        "risque-core-vid-96"
+      ],
+      "status": "user-confirmed",
+      "video_count": 0,
+      "profile_handles": [],
+      "assignment_status": "user-confirmed",
+      "identity_confidence": 0.0,
+      "primary_evidence_role": "user-confirmed",
       "review_required": true,
       "why": ""
     },
@@ -286,7 +450,7 @@
       "name": "Jazmen Jafar",
       "slug": "jazmen-jafar",
       "aliases": [],
-      "status": "profile-url",
+      "status": "user-confirmed",
       "video_count": 4,
       "profile_handles": [
         {
@@ -297,17 +461,20 @@
           "raw": "fansly.com/jazmenjafar"
         }
       ],
-      "assignment_status": "profile-url",
+      "assignment_status": "user-confirmed",
       "identity_confidence": 0.0,
-      "primary_evidence_role": "profile-url",
+      "primary_evidence_role": "user-confirmed",
       "review_required": true,
       "why": ""
     },
     {
-      "name": "Katianakayfree",
-      "slug": "katianakayfree",
-      "aliases": [],
-      "status": "profile-url",
+      "name": "Katiana Kay",
+      "slug": "katiana-kay",
+      "aliases": [
+        "Katianakayfree",
+        "katianakayfree"
+      ],
+      "status": "user-confirmed",
       "video_count": 1,
       "profile_handles": [
         {
@@ -318,9 +485,9 @@
           "raw": "OnlyFans.com/katianakayfree"
         }
       ],
-      "assignment_status": "profile-url",
+      "assignment_status": "user-confirmed",
       "identity_confidence": 0.0,
-      "primary_evidence_role": "profile-url",
+      "primary_evidence_role": "user-confirmed",
       "review_required": true,
       "why": ""
     },
@@ -328,7 +495,7 @@
       "name": "Katievaynes",
       "slug": "katievaynes",
       "aliases": [],
-      "status": "profile-url",
+      "status": "user-confirmed",
       "video_count": 1,
       "profile_handles": [
         {
@@ -339,9 +506,9 @@
           "raw": "OnlyFans.com/katievaynes"
         }
       ],
-      "assignment_status": "profile-url",
+      "assignment_status": "user-confirmed",
       "identity_confidence": 0.0,
-      "primary_evidence_role": "profile-url",
+      "primary_evidence_role": "user-confirmed",
       "review_required": true,
       "why": ""
     },
@@ -367,6 +534,19 @@
       "why": ""
     },
     {
+      "name": "Kylie Island",
+      "slug": "kylie-island",
+      "aliases": [],
+      "status": "user-confirmed",
+      "video_count": 0,
+      "profile_handles": [],
+      "assignment_status": "user-confirmed",
+      "identity_confidence": 0.0,
+      "primary_evidence_role": "user-confirmed",
+      "review_required": true,
+      "why": ""
+    },
+    {
       "name": "Leighbunbun",
       "slug": "leighbunbun",
       "aliases": [],
@@ -380,6 +560,45 @@
       "why": ""
     },
     {
+      "name": "Lena The Plug",
+      "slug": "lena-the-plug",
+      "aliases": [],
+      "status": "user-confirmed",
+      "video_count": 0,
+      "profile_handles": [],
+      "assignment_status": "user-confirmed",
+      "identity_confidence": 0.0,
+      "primary_evidence_role": "user-confirmed",
+      "review_required": true,
+      "why": ""
+    },
+    {
+      "name": "Lexi Marvel",
+      "slug": "lexi-marvel",
+      "aliases": [],
+      "status": "user-confirmed",
+      "video_count": 0,
+      "profile_handles": [],
+      "assignment_status": "user-confirmed",
+      "identity_confidence": 0.0,
+      "primary_evidence_role": "user-confirmed",
+      "review_required": true,
+      "why": ""
+    },
+    {
+      "name": "Lily Phillips",
+      "slug": "lily-phillips",
+      "aliases": [],
+      "status": "user-confirmed",
+      "video_count": 0,
+      "profile_handles": [],
+      "assignment_status": "user-confirmed",
+      "identity_confidence": 0.0,
+      "primary_evidence_role": "user-confirmed",
+      "review_required": true,
+      "why": ""
+    },
+    {
       "name": "Lustcnotal",
       "slug": "lustcnotal",
       "aliases": [],
@@ -389,6 +608,19 @@
       "assignment_status": "local-auto",
       "identity_confidence": 0.0,
       "primary_evidence_role": "local-auto",
+      "review_required": true,
+      "why": ""
+    },
+    {
+      "name": "Luxury Girl",
+      "slug": "luxury-girl",
+      "aliases": [],
+      "status": "user-confirmed",
+      "video_count": 0,
+      "profile_handles": [],
+      "assignment_status": "user-confirmed",
+      "identity_confidence": 0.0,
+      "primary_evidence_role": "user-confirmed",
       "review_required": true,
       "why": ""
     },
@@ -479,6 +711,19 @@
       "why": ""
     },
     {
+      "name": "Natalie Roush",
+      "slug": "natalie-roush",
+      "aliases": [],
+      "status": "user-confirmed",
+      "video_count": 0,
+      "profile_handles": [],
+      "assignment_status": "user-confirmed",
+      "identity_confidence": 0.0,
+      "primary_evidence_role": "user-confirmed",
+      "review_required": true,
+      "why": ""
+    },
+    {
       "name": "Pinkychu",
       "slug": "pinkychu",
       "aliases": [],
@@ -521,7 +766,7 @@
       "name": "Ruth Lee",
       "slug": "ruth-lee",
       "aliases": [],
-      "status": "profile-url",
+      "status": "user-confirmed",
       "video_count": 1,
       "profile_handles": [
         {
@@ -532,9 +777,9 @@
           "raw": "OnlyFans.com/ruth_lee"
         }
       ],
-      "assignment_status": "profile-url",
+      "assignment_status": "user-confirmed",
       "identity_confidence": 0.0,
-      "primary_evidence_role": "profile-url",
+      "primary_evidence_role": "user-confirmed",
       "review_required": true,
       "why": ""
     },
@@ -548,6 +793,19 @@
       "assignment_status": "local-auto",
       "identity_confidence": 0.0,
       "primary_evidence_role": "local-auto",
+      "review_required": true,
+      "why": ""
+    },
+    {
+      "name": "Sakurai Rena",
+      "slug": "sakurai-rena",
+      "aliases": [],
+      "status": "user-confirmed",
+      "video_count": 0,
+      "profile_handles": [],
+      "assignment_status": "user-confirmed",
+      "identity_confidence": 0.0,
+      "primary_evidence_role": "user-confirmed",
       "review_required": true,
       "why": ""
     },
@@ -604,12 +862,24 @@
       "why": ""
     },
     {
-      "name": "Sienna",
-      "slug": "sienna",
-      "aliases": [],
-      "status": "profile-url",
-      "video_count": 1,
+      "name": "Sienna Ababi",
+      "slug": "sienna-ababi",
+      "aliases": [
+        "sienna",
+        "Sienna",
+        "Sienna Ababi",
+        "sienna-ababi"
+      ],
+      "status": "user-confirmed",
+      "video_count": 12,
       "profile_handles": [
+        {
+          "platform": "onlyfans",
+          "handle": "siennaababi",
+          "url": "https://onlyfans.com/siennaababi",
+          "source": "watermark_ocr",
+          "raw": "OnlyFans.com/siennaababi"
+        },
         {
           "platform": "onlyfans",
           "handle": "sienna",
@@ -618,30 +888,9 @@
           "raw": "OnlyFans.com/sienna"
         }
       ],
-      "assignment_status": "profile-url",
+      "assignment_status": "user-confirmed",
       "identity_confidence": 0.0,
-      "primary_evidence_role": "profile-url",
-      "review_required": true,
-      "why": ""
-    },
-    {
-      "name": "Sienna Ababi",
-      "slug": "sienna-ababi",
-      "aliases": [],
-      "status": "profile-url",
-      "video_count": 5,
-      "profile_handles": [
-        {
-          "platform": "onlyfans",
-          "handle": "siennaababi",
-          "url": "https://onlyfans.com/siennaababi",
-          "source": "watermark_ocr",
-          "raw": "OnlyFans.com/siennaababi"
-        }
-      ],
-      "assignment_status": "profile-url",
-      "identity_confidence": 0.0,
-      "primary_evidence_role": "profile-url",
+      "primary_evidence_role": "user-confirmed",
       "review_required": true,
       "why": ""
     },
@@ -659,10 +908,36 @@
       "why": ""
     },
     {
+      "name": "Tru Kait",
+      "slug": "tru-kait",
+      "aliases": [],
+      "status": "user-confirmed",
+      "video_count": 0,
+      "profile_handles": [],
+      "assignment_status": "user-confirmed",
+      "identity_confidence": 0.0,
+      "primary_evidence_role": "user-confirmed",
+      "review_required": true,
+      "why": ""
+    },
+    {
+      "name": "Urfavbella",
+      "slug": "urfavbella",
+      "aliases": [],
+      "status": "user-confirmed",
+      "video_count": 0,
+      "profile_handles": [],
+      "assignment_status": "user-confirmed",
+      "identity_confidence": 0.0,
+      "primary_evidence_role": "user-confirmed",
+      "review_required": true,
+      "why": ""
+    },
+    {
       "name": "Whoahannahjo",
       "slug": "whoahannahjo",
       "aliases": [],
-      "status": "profile-url",
+      "status": "user-confirmed",
       "video_count": 3,
       "profile_handles": [
         {
@@ -673,9 +948,9 @@
           "raw": "OnlyFans.com/whoahannahjo"
         }
       ],
-      "assignment_status": "profile-url",
+      "assignment_status": "user-confirmed",
       "identity_confidence": 0.0,
-      "primary_evidence_role": "profile-url",
+      "primary_evidence_role": "user-confirmed",
       "review_required": true,
       "why": ""
     },
