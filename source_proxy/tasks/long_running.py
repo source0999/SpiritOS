@@ -2974,27 +2974,31 @@ def _json_value(raw_value: str | None, default: Any) -> Any:
 
 
 def _ensure_fresh_repomix(root: Path) -> None:
-    """Regenerate repomix bundle before the coder LLM runs (best-effort).
+    """Regenerate compressed context before the coder LLM runs (best-effort).
 
-    Stale bundles are how you get ``patch does not apply`` theatre. If npx or
-    repomix is missing, we log and carry on with whatever XML is already on disk.
+    Stale bundles are how you get ``patch does not apply`` theatre. If npm,
+    repomix, or Headroom is missing/offline, we log and carry on with whatever
+    XML is already on disk.
     """
     try:
-        print(f"[coder] Refreshing repomix bundle at {root} ...")
+        print(f"[coder] Refreshing compressed context bundle at {root} ...")
         result = subprocess.run(
-            ["npx", "repomix", "--config", "repomix.config.json"],
+            ["npm", "run", "context:compress"],
             cwd=root,
             capture_output=True,
             text=True,
-            timeout=15,
+            timeout=45,
             check=False,
         )
         if result.returncode == 0:
-            print(f"[coder] repomix refreshed successfully ({len(result.stdout)} chars)")
+            print(
+                f"[coder] compressed context refreshed successfully "
+                f"({len(result.stdout)} chars)"
+            )
         else:
-            print(f"[coder] repomix warning (non-zero exit): {result.stderr.strip()}")
+            print(f"[coder] context refresh warning (non-zero exit): {result.stderr.strip()}")
     except Exception as exc:  # noqa: BLE001 — never fail the swarm on repomix
-        print(f"[coder] repomix refresh failed (non-fatal): {exc}")
+        print(f"[coder] context refresh failed (non-fatal): {exc}")
 
 
 def _normalize_replacement_target(workspace_root: Path, target_path: str) -> str:

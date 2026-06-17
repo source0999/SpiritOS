@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import asyncio
 import json
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -21,8 +22,12 @@ from source_proxy.api.decision import (
     _fip4_call_qwen,
     _fip4_qwen_max_attempts,
     _fip5_call_hermes_verifier,
+    _fip5_browser_probe,
+    _fip5_browser_verifier,
+    _fip5_functional_verifier,
     _fip5_normalize_hermes_verifier_output,
     _json_hash,
+    _bounded_coder_diff_or_stub,
     _run_fip4_qwen_coder,
     _run_fip5_verifier_and_repair,
     router as decision_router,
@@ -353,8 +358,10 @@ class PromptPacketContextMetadataTests(unittest.TestCase):
         latest_payload = latest.json()
         self.assertEqual(latest_payload["run_id"], run_id)
         self.assertEqual(latest_payload["receipt"]["run_id"], run_id)
+        self.assertNotIn("raw_prompt", latest_payload["receipt"])
         self.assertTrue(latest_payload["final_packet_hash"])
         self.assertIn("coder_received_packet_hash", latest_payload)
+        self.assertFalse(latest_payload["public_redaction_summary"]["private_access"])
 
         by_run = client.get(f"/v1/decisions/fip0-receipts/{run_id}")
         self.assertEqual(by_run.status_code, 200)
@@ -364,6 +371,38 @@ class PromptPacketContextMetadataTests(unittest.TestCase):
 
         bad = client.get("/v1/decisions/fip0-receipts/fip0-nothex")
         self.assertEqual(bad.status_code, 400)
+
+    def test_fip0_receipt_private_fields_require_local_dev_token(self) -> None:
+        client = self._client()
+        receipt = {
+            "run_id": "fip0-4444444444444444",
+            "timestamp": "2026-06-16T12:00:00+00:00",
+            "raw_prompt": "Target file: docs/private.txt\n\nDo private work.",
+            "final_verdict": "NO-GO: proof",
+            "fip4_qwen_coder_result": {"raw_output_excerpt": "model raw output"},
+        }
+        self._write_fip0_receipt(receipt)
+
+        public = client.get("/v1/decisions/fip0-receipts/fip0-4444444444444444")
+        self.assertEqual(public.status_code, 200, public.text)
+        public_body = public.json()
+        self.assertNotIn("raw_prompt", public_body["receipt"])
+        self.assertNotIn("raw_output_excerpt", json.dumps(public_body))
+        self.assertFalse(public_body["public_redaction_summary"]["private_access"])
+
+        with patch.dict(os.environ, {"SOURCE_PROXY_LOCAL_DEV_TOKEN": "local-proof"}, clear=False):
+            private = client.get(
+                "/v1/decisions/fip0-receipts/fip0-4444444444444444",
+                headers={"x-source-proxy-dev-token": "local-proof"},
+            )
+        self.assertEqual(private.status_code, 200, private.text)
+        private_body = private.json()
+        self.assertEqual(private_body["receipt"]["raw_prompt"], receipt["raw_prompt"])
+        self.assertEqual(
+            private_body["receipt"]["fip4_qwen_coder_result"]["raw_output_excerpt"],
+            "model raw output",
+        )
+        self.assertTrue(private_body["public_redaction_summary"]["private_access"])
 
     def test_fip2_search_needed_receipt_uses_live_searxng_provider_call(self) -> None:
         client = self._client()
@@ -1423,6 +1462,451 @@ class PromptPacketContextMetadataTests(unittest.TestCase):
         self.assertTrue(receipt["cannot_turn_unverified_into_pass"])
         self.assertTrue(receipt["cannot_override_browser_behavior"])
         self.assertEqual(receipt["repair_loop_status"]["status"], "skipped")
+        self.assertFalse(receipt["productive"])
+        self.assertEqual(receipt["coder_path"], "fip4_real")
+        self.assertEqual(
+            receipt["verification_real"],
+            {
+                "deterministic": True,
+                "browser": False,
+                "functional": False,
+                "behavior": False,
+                "hermes": True,
+            },
+        )
+        self.assertEqual(
+            receipt["verification_real_reasons"]["functional"],
+            "functional_verifier_skipped_unsupported_extension",
+        )
+        self.assertEqual(receipt["degraded_lanes"], [])
+
+    def test_html_receipt_is_unproductive_without_real_browser_verification(self) -> None:
+        target = "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set1/page.html"
+        fip4_result = {
+            "status": "used",
+            "reason": "fip4_qwen_action_output_parsed_and_diff_generated",
+            "final_coder_packet_hash": "packet-hash",
+            "coder_received_packet_hash": "packet-hash",
+            "parser": {"parsed_output_mode": "json_replace_file", "parse_error": ""},
+            "allowed_files": [target],
+            "forbidden_files": [".env"],
+            "changed_files": [target],
+            "proposed_diff": "--- a/page.html\n+++ b/page.html\n@@\n-old\n+<main>proof</main>\n",
+            "qwen": {"qwen_output_hash": "qwen-output"},
+            "final_coder_packet": {"target_file": target},
+        }
+        fip5 = {
+            "final_verdict": "NO-GO: fip5_browser_behavior_authority_blocks_pass",
+            "deterministic": {
+                "status": "used",
+                "reason": "deterministic_passed",
+                "passed": True,
+                "checks_run": ["content_exact_match"],
+                "failures": [],
+            },
+            "browser": {
+                "status": "skipped",
+                "reason": "browser_verifier_not_enabled_phase_a",
+                "passed": False,
+                "authoritative": True,
+            },
+            "hermes": {
+                "status": "used",
+                "reason": "schema_valid",
+                "schema_valid": True,
+                "verdict": "PASS",
+            },
+            "repair_loop_status": {"status": "skipped", "reason": "browser_required"},
+            "repair_attempt_count": 0,
+            "repair_max_attempts": 0,
+        }
+        payload = _attach_fip0_truth_receipt(
+            {"fip5": "html-proof"},
+            request=PromptPacketRequest(task="HTML proof"),
+            route_payload={"recommended_route": "local_route"},
+            intake_payload={"allowed_files": [target], "forbidden_files": [".env"]},
+            decision=SimpleNamespace(research_sources=[]),
+            explicit_target=target,
+            route_reasons=[],
+            fip4_coder_result=fip4_result,
+            fip5_verifier_result=fip5,
+        )
+        receipt = payload["fip0_truth_receipt"]
+        self.assertFalse(receipt["productive"])
+        self.assertEqual(receipt["coder_path"], "fip4_real")
+        self.assertFalse(receipt["verification_real"]["browser"])
+        self.assertTrue(receipt["verification_real"]["deterministic"])
+        self.assertFalse(receipt["verification_real"]["functional"])
+        self.assertFalse(receipt["verification_real"]["behavior"])
+        self.assertEqual(receipt["browser_verifier_status"]["status"], "skipped")
+        self.assertEqual(
+            receipt["verification_real_reasons"]["functional"],
+            "functional_verifier_skipped_no_supported_contract",
+        )
+
+    def test_functional_verification_is_false_when_lane_missing(self) -> None:
+        target = "source_proxy/tests/fip5-target-proof.txt"
+        fip4_result = {
+            "status": "used",
+            "reason": "fip4_qwen_action_output_parsed_and_diff_generated",
+            "final_coder_packet_hash": "packet-hash",
+            "coder_received_packet_hash": "packet-hash",
+            "parser": {"parsed_output_mode": "json_content_lines", "parse_error": ""},
+            "allowed_files": [target],
+            "forbidden_files": [".env"],
+            "changed_files": [target],
+            "proposed_diff": "--- a/x\n+++ b/x\n@@\n-old\n+new\n",
+            "qwen": {"qwen_output_hash": "qwen-output"},
+            "final_coder_packet": {"target_file": target},
+        }
+        payload = _attach_fip0_truth_receipt(
+            {"fip4": "functional-missing-proof"},
+            request=PromptPacketRequest(task="Functional truth proof"),
+            route_payload={"recommended_route": "local_route"},
+            intake_payload={"allowed_files": [target], "forbidden_files": [".env"]},
+            decision=SimpleNamespace(research_sources=[]),
+            explicit_target=target,
+            route_reasons=[],
+            fip4_coder_result=fip4_result,
+        )
+        receipt = payload["fip0_truth_receipt"]
+        self.assertFalse(receipt["verification_real"]["functional"])
+        self.assertEqual(
+            receipt["verification_real_reasons"]["functional"],
+            "functional_verifier_not_implemented",
+        )
+        self.assertFalse(receipt["productive"])
+
+    def test_functional_verification_is_false_when_verifier_skips(self) -> None:
+        target = "source_proxy/tests/fip5-target-proof.txt"
+        fip4_result = {
+            "status": "used",
+            "reason": "fip4_qwen_action_output_parsed_and_diff_generated",
+            "final_coder_packet_hash": "packet-hash",
+            "coder_received_packet_hash": "packet-hash",
+            "parser": {"parsed_output_mode": "json_content_lines", "parse_error": ""},
+            "allowed_files": [target],
+            "forbidden_files": [".env"],
+            "changed_files": [target],
+            "action": {"target": target, "content": "plain text, not executable"},
+            "proposed_diff": "--- a/x\n+++ b/x\n@@\n-old\n+plain text\n",
+            "qwen": {"qwen_output_hash": "qwen-output"},
+            "final_coder_packet": {"target_file": target},
+        }
+        skipped = _fip5_functional_verifier(
+            request=PromptPacketRequest(task=f"Target file: {target}\n\nWrite plain text."),
+            explicit_target=target,
+            fip4_result=fip4_result,
+        )
+        self.assertEqual(skipped["status"], "skipped")
+        self.assertFalse(skipped["passed"])
+        self.assertEqual(skipped["reason"], "functional_verifier_skipped_unsupported_extension")
+
+    def test_functional_verification_true_only_when_lane_used_and_passed(self) -> None:
+        target = "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/unit/add.js"
+        content = "export function add(a, b) { return Number(a) + Number(b); }\n"
+        fip4_result = {
+            "status": "used",
+            "reason": "fip4_qwen_action_output_parsed_and_diff_generated",
+            "final_coder_packet_hash": "packet-hash",
+            "coder_received_packet_hash": "packet-hash",
+            "parser": {"parsed_output_mode": "json_replace_file", "parse_error": ""},
+            "allowed_files": [target],
+            "forbidden_files": [".env"],
+            "changed_files": [target],
+            "action": {"target": target, "content": content},
+            "proposed_diff": "--- a/add.js\n+++ b/add.js\n@@\n-old\n+export function add(a, b) { return Number(a) + Number(b); }\n",
+            "qwen": {"qwen_output_hash": "qwen-output"},
+            "final_coder_packet": {"target_file": target},
+        }
+        functional = _fip5_functional_verifier(
+            request=PromptPacketRequest(task=f"Target file: {target}\n\nMake a calculator helper function."),
+            explicit_target=target,
+            fip4_result=fip4_result,
+        )
+        self.assertEqual(functional["status"], "used")
+        self.assertTrue(functional["passed"])
+        fip5 = {
+            "final_verdict": "GO: fip5_required_verifier_and_repair_complete",
+            "deterministic": {"status": "used", "reason": "passed", "passed": True},
+            "browser": {"status": "skipped", "reason": "not_html", "passed": True},
+            "functional": functional,
+            "hermes": {"status": "used", "reason": "schema_valid", "verdict": "PASS"},
+            "repair_loop_status": {"status": "skipped", "reason": "not_needed"},
+        }
+        payload = _attach_fip0_truth_receipt(
+            {"fip5": "functional-proof"},
+            request=PromptPacketRequest(task="Functional truth proof"),
+            route_payload={"recommended_route": "local_route"},
+            intake_payload={"allowed_files": [target], "forbidden_files": [".env"]},
+            decision=SimpleNamespace(research_sources=[]),
+            explicit_target=target,
+            route_reasons=[],
+            fip4_coder_result=fip4_result,
+            fip5_verifier_result=fip5,
+        )
+        receipt = payload["fip0_truth_receipt"]
+        self.assertTrue(receipt["verification_real"]["functional"])
+        self.assertTrue(receipt["verification_real"]["behavior"])
+        self.assertEqual(receipt["functional_verifier_status"]["status"], "used")
+        self.assertTrue(receipt["functional_verifier_status"]["passed"])
+        self.assertTrue(receipt["productive"])
+
+    def test_browser_verification_true_only_when_lane_used_and_passed(self) -> None:
+        target = "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/unit/page.html"
+        fip4_result = {
+            "status": "used",
+            "reason": "fip4_qwen_action_output_parsed_and_diff_generated",
+            "final_coder_packet_hash": "packet-hash",
+            "coder_received_packet_hash": "packet-hash",
+            "parser": {"parsed_output_mode": "json_replace_file", "parse_error": ""},
+            "allowed_files": [target],
+            "forbidden_files": [".env"],
+            "changed_files": [target],
+            "action": {"target": target, "content": "<main><h1>Browser proof</h1></main>"},
+            "proposed_diff": "diff",
+            "qwen": {"qwen_output_hash": "qwen-output"},
+            "final_coder_packet": {"target_file": target},
+        }
+        fip5 = {
+            "final_verdict": "GO: fip5_required_verifier_and_repair_complete",
+            "deterministic": {"status": "used", "reason": "passed", "passed": True},
+            "browser": {
+                "status": "used",
+                "reason": "browser_verifier_headless_page_passed",
+                "passed": True,
+                "checks": [{"name": "headless_browser_load", "passed": True}],
+                "target_path": target,
+                "timeout_ms": 10000,
+                "verifier_version": "browser-verifier-v0",
+                "browser_engine": "chromium",
+            },
+            "functional": {
+                "status": "skipped",
+                "reason": "functional_verifier_skipped_browser_or_ui_target",
+                "passed": False,
+            },
+            "hermes": {"status": "used", "reason": "schema_valid", "verdict": "PASS"},
+            "repair_loop_status": {"status": "skipped", "reason": "not_needed"},
+        }
+        payload = _attach_fip0_truth_receipt(
+            {"fip5": "browser-proof"},
+            request=PromptPacketRequest(task="Browser truth proof"),
+            route_payload={"recommended_route": "local_route"},
+            intake_payload={"allowed_files": [target], "forbidden_files": [".env"]},
+            decision=SimpleNamespace(research_sources=[]),
+            explicit_target=target,
+            route_reasons=[],
+            fip4_coder_result=fip4_result,
+            fip5_verifier_result=fip5,
+        )
+        receipt = payload["fip0_truth_receipt"]
+        self.assertTrue(receipt["verification_real"]["browser"])
+        self.assertFalse(receipt["verification_real"]["functional"])
+        self.assertTrue(receipt["verification_real"]["behavior"])
+        self.assertTrue(receipt["productive"])
+        self.assertEqual(receipt["browser_verifier_status"]["status"], "used")
+        self.assertEqual(receipt["browser_verifier_target_path"], target)
+
+    def test_static_html_without_browser_pass_is_not_productive(self) -> None:
+        target = "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/unit/page.html"
+        fip4_result = {
+            "status": "used",
+            "reason": "fip4_qwen_action_output_parsed_and_diff_generated",
+            "final_coder_packet_hash": "packet-hash",
+            "coder_received_packet_hash": "packet-hash",
+            "parser": {"parsed_output_mode": "json_replace_file", "parse_error": ""},
+            "allowed_files": [target],
+            "forbidden_files": [".env"],
+            "changed_files": [target],
+            "action": {"target": target, "content": "<main>Static only</main>"},
+            "proposed_diff": "diff",
+            "qwen": {"qwen_output_hash": "qwen-output"},
+            "final_coder_packet": {"target_file": target},
+        }
+        fip5 = {
+            "final_verdict": "GO: fip5_required_verifier_and_repair_complete",
+            "deterministic": {"status": "used", "reason": "passed", "passed": True},
+            "browser": {
+                "status": "skipped",
+                "reason": "browser_verifier_skipped_unsupported_browser_target",
+                "passed": False,
+            },
+            "functional": {
+                "status": "skipped",
+                "reason": "functional_verifier_skipped_browser_or_ui_target",
+                "passed": False,
+            },
+            "hermes": {"status": "used", "reason": "schema_valid", "verdict": "PASS"},
+            "repair_loop_status": {"status": "skipped", "reason": "not_needed"},
+        }
+        payload = _attach_fip0_truth_receipt(
+            {"fip5": "static-html-proof"},
+            request=PromptPacketRequest(task="Static-only HTML proof"),
+            route_payload={"recommended_route": "local_route"},
+            intake_payload={"allowed_files": [target], "forbidden_files": [".env"]},
+            decision=SimpleNamespace(research_sources=[]),
+            explicit_target=target,
+            route_reasons=[],
+            fip4_coder_result=fip4_result,
+            fip5_verifier_result=fip5,
+        )
+        receipt = payload["fip0_truth_receipt"]
+        self.assertFalse(receipt["verification_real"]["browser"])
+        self.assertFalse(receipt["verification_real"]["behavior"])
+        self.assertFalse(receipt["productive"])
+
+    def test_synthetic_browser_pass_is_rejected_by_default(self) -> None:
+        target = "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/unit/page.html"
+        fip4_result = {
+            "changed_files": [target],
+            "allowed_files": [target],
+        }
+        with patch.dict(os.environ, {"SOURCE_PROXY_TRIAL_HARNESS_ONLY": "0"}, clear=False):
+            browser = _fip5_browser_probe(
+                request=PromptPacketRequest(
+                    task=f"Target file: {target}\n\nMake a page.",
+                    expected_result_state="browser_pass_expected",
+                ),
+                explicit_target=target,
+                fip4_result=fip4_result,
+            )
+        self.assertEqual(browser["status"], "failed")
+        self.assertFalse(browser["passed"])
+        self.assertEqual(browser["reason"], "browser_behavior_synthetic_pass_rejected_default")
+
+    def test_browser_verifier_skips_non_browser_targets_without_claiming_browser_truth(self) -> None:
+        target = "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/unit/add.js"
+        fip4_result = {
+            "status": "used",
+            "allowed_files": [target],
+            "changed_files": [target],
+            "action": {"target": target, "content": "export function add(a,b){return a+b;}"},
+        }
+        browser = _fip5_browser_verifier(
+            request=PromptPacketRequest(task=f"Target file: {target}\n\nMake add helper."),
+            explicit_target=target,
+            fip4_result=fip4_result,
+        )
+        self.assertEqual(browser["status"], "skipped")
+        self.assertEqual(browser["reason"], "browser_verifier_skipped_non_browser_target")
+        self.assertTrue(browser["passed"])
+
+    def test_browser_verifier_loads_generated_html_with_headless_browser(self) -> None:
+        playwright_check = subprocess.run(
+            ["node", "-e", "require.resolve('playwright');"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False,
+        )
+        if playwright_check.returncode != 0:
+            self.skipTest("playwright unavailable")
+        target = "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/unit/browser-pass.html"
+        fip4_result = {
+            "status": "used",
+            "allowed_files": [target],
+            "changed_files": [target],
+            "action": {
+                "target": target,
+                "content": "<!doctype html><html><body><main><h1>Headless proof</h1></main></body></html>",
+            },
+        }
+        browser = _fip5_browser_verifier(
+            request=PromptPacketRequest(task=f"Target file: {target}\n\nMake a visible page."),
+            explicit_target=target,
+            fip4_result=fip4_result,
+        )
+        self.assertEqual(browser["status"], "used")
+        self.assertTrue(browser["passed"])
+        self.assertEqual(browser["browser_engine"], "chromium")
+
+    def test_functional_verifier_skips_browser_ui_tasks(self) -> None:
+        target = "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/unit/page.html"
+        fip4_result = {
+            "status": "used",
+            "reason": "fip4_qwen_action_output_parsed_and_diff_generated",
+            "final_coder_packet_hash": "packet-hash",
+            "coder_received_packet_hash": "packet-hash",
+            "parser": {"parsed_output_mode": "json_replace_file", "parse_error": ""},
+            "allowed_files": [target],
+            "forbidden_files": [".env"],
+            "changed_files": [target],
+            "action": {"target": target, "content": "<button>Click</button>"},
+            "proposed_diff": "--- a/page.html\n+++ b/page.html\n@@\n-old\n+<button>Click</button>\n",
+            "qwen": {"qwen_output_hash": "qwen-output"},
+            "final_coder_packet": {"target_file": target},
+        }
+        functional = _fip5_functional_verifier(
+            request=PromptPacketRequest(task=f"Target file: {target}\n\nMake a signup page."),
+            explicit_target=target,
+            fip4_result=fip4_result,
+        )
+        self.assertEqual(functional["status"], "skipped")
+        self.assertEqual(functional["reason"], "functional_verifier_skipped_browser_or_ui_target")
+        self.assertFalse(functional["passed"])
+
+    def test_required_lane_timeout_downgrades_go_verdict(self) -> None:
+        target = "docs/fip5-target-proof.txt"
+        fip4_result = {
+            "status": "used",
+            "reason": "fip4_qwen_action_output_parsed_and_diff_generated",
+            "final_coder_packet_hash": "packet-hash",
+            "coder_received_packet_hash": "packet-hash",
+            "parser": {"parsed_output_mode": "json_content_lines", "parse_error": ""},
+            "allowed_files": [target],
+            "forbidden_files": [".env"],
+            "changed_files": [target],
+            "proposed_diff": "--- a/x\n+++ b/x\n@@\n-old\n+new\n",
+            "qwen": {"qwen_output_hash": "qwen-output"},
+            "final_coder_packet": {"target_file": target},
+        }
+        fip5 = {
+            "final_verdict": "GO: fip5_required_verifier_and_repair_complete",
+            "deterministic": {"status": "used", "reason": "passed", "passed": True},
+            "browser": {"status": "skipped", "reason": "not_html", "passed": None},
+            "hermes": {
+                "status": "failed",
+                "reason": "hermes_required_lane_timeout",
+                "verdict": "UNVERIFIED",
+            },
+            "repair_loop_status": {"status": "skipped", "reason": "not_needed"},
+        }
+        payload = _attach_fip0_truth_receipt(
+            {"fip5": "degraded-proof"},
+            request=PromptPacketRequest(task="Forced Hermes timeout proof"),
+            route_payload={"recommended_route": "local_route"},
+            intake_payload={"allowed_files": [target], "forbidden_files": [".env"]},
+            decision=SimpleNamespace(research_sources=[]),
+            explicit_target=target,
+            route_reasons=[],
+            fip4_coder_result=fip4_result,
+            fip5_verifier_result=fip5,
+        )
+        receipt = payload["fip0_truth_receipt"]
+        self.assertEqual(receipt["final_verdict"], "NO-GO: expected_degraded_lane")
+        self.assertFalse(receipt["productive"])
+        self.assertEqual(receipt["degraded_lanes"][0]["lane"], "hermes_verifier")
+        self.assertEqual(receipt["degraded_lanes"][0]["reason"], "hermes_required_lane_timeout")
+
+    def test_trial_scaffold_paths_are_unreachable_without_harness_flag(self) -> None:
+        async def run_case() -> dict[str, object]:
+            with patch.dict(os.environ, {"SOURCE_PROXY_TRIAL_HARNESS_ONLY": ""}, clear=False):
+                with patch(
+                    "source_proxy.api.decision._deterministic_architect_plan_for_prompt_packet",
+                    return_value={"target_file": "src/app/page.tsx"},
+                ):
+                    with patch(
+                        "source_proxy.api.decision._propose_coder_via_executor",
+                        new=AsyncMock(return_value={"reason_code": "real_executor_path"}),
+                    ):
+                        return await _bounded_coder_diff_or_stub(
+                            "Target file: src/app/page.tsx\n\ninit a repo and make a homepage for my app",
+                            force_live_model=True,
+                        )
+
+        result = asyncio.run(run_case())
+        self.assertEqual(result["reason_code"], "real_executor_path")
 
     def test_fip5_hermes_verifier_accepts_valid_noop_pass_schema(self) -> None:
         normalized, errors = _fip5_normalize_hermes_verifier_output(
@@ -1866,6 +2350,7 @@ class PromptPacketContextMetadataTests(unittest.TestCase):
             "fip4_qwen_coder_result": {
                 "parser": {"parsed_output_mode": "json_replace_file"},
                 "changed_files": ["docs/fip6.txt"],
+                "raw_output_excerpt": "PRIVATE MODEL OUTPUT SHOULD NOT LEAK",
             },
             "fip4_final_coder_packet": {
                 "target_file": "docs/fip6.txt",
@@ -1905,15 +2390,33 @@ class PromptPacketContextMetadataTests(unittest.TestCase):
         trace = body["operator_trace"]
         self.assertEqual(body["receipt_path"], str(receipt_path))
         self.assertEqual(trace["run_metadata"]["run_id"], receipt["run_id"])
-        self.assertEqual(trace["run_metadata"]["raw_prompt"], receipt["raw_prompt"])
+        self.assertNotIn("raw_prompt", trace["run_metadata"])
+        self.assertEqual(trace["run_metadata"]["prompt_hash"], _json_hash(receipt["raw_prompt"]))
         self.assertEqual(trace["coder_trace"]["final_coder_packet_hash"], "packet-hash")
         self.assertEqual(trace["coder_trace"]["coder_received_packet_hash"], "packet-hash")
         self.assertTrue(trace["coder_trace"]["packet_hash_match_status"]["match"])
         self.assertEqual(trace["verdict_trace"]["final_verdict"], receipt["final_verdict"])
         self.assertEqual(body["receipt"]["final_verdict"], trace["verdict_trace"]["final_verdict"])
-        self.assertTrue(trace["no_hidden_thinking_displayed"])
-        self.assertNotIn("chain_of_thought", json.dumps(trace).lower())
-        self.assertNotIn("hidden_reasoning", json.dumps(trace).lower())
+        self.assertEqual(trace["trace_hygiene_check"]["status"], "used")
+        self.assertNotIn("no_hidden_thinking_displayed", trace)
+        serialized = json.dumps(body).lower()
+        self.assertNotIn("private model output should not leak".lower(), serialized)
+        self.assertNotIn("raw_output_excerpt", serialized)
+        self.assertNotIn("chain_of_thought", serialized)
+        self.assertNotIn("hidden_reasoning", serialized)
+
+    def test_fip6_trace_hygiene_scanner_fails_on_private_shape(self) -> None:
+        from source_proxy.api.decision import _trace_hygiene_scan
+
+        scan = _trace_hygiene_scan(
+            {
+                "safe": {"status": "used"},
+                "unsafe": {"raw_output_excerpt": "chain_of_thought: hidden"},
+            }
+        )
+        self.assertEqual(scan["status"], "failed")
+        self.assertFalse(scan["passed"])
+        self.assertGreaterEqual(scan["leak_count"], 1)
 
     def test_fip6_trace_displays_skipped_failed_and_missing_lanes(self) -> None:
         client = self._client()

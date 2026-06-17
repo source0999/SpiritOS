@@ -5,6 +5,12 @@ ROOT="${SPIRITOS_ROOT:-$HOME/SpiritOS}"
 
 cd "$ROOT"
 
+printf 'Restarting SpiritOS HTTPS LAN app on :3000 only. Source proxy :8787 and SpiritFlix sidecar :3001 are left untouched.\n'
+
+# shellcheck source=runtime-port-guard.sh
+source "$ROOT/scripts/runtime-port-guard.sh"
+cleanup_orphan_next_smoke_ports
+
 tmux kill-session -t spiritos-lan 2>/dev/null || true
 pkill -f "npm run dev:https:lan:watch" 2>/dev/null || true
 pkill -f "scripts/spiritos-lan-watchdog.sh" 2>/dev/null || true

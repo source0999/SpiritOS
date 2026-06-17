@@ -2,14 +2,21 @@
 set -uo pipefail
 
 ROOT="${SPIRITOS_ROOT:-$HOME/SpiritOS}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=runtime-port-guard.sh
+source "$SCRIPT_DIR/runtime-port-guard.sh"
 LOG="${SPIRITOS_LAN_WATCHDOG_LOG:-$HOME/spiritos-dev-lan-watchdog.log}"
 DEV_LOG="${SPIRITOS_LAN_DEV_LOG:-$HOME/spiritos-dev-lan.log}"
-RESTART_DELAY="${SPIRITOS_LAN_RESTART_DELAY:-5}"
-HEALTH_URL="${SPIRITOS_LAN_HEALTH_URL:-https://127.0.0.1:3000/coding}"
+RESTART_DELAY="${SPIRITOS_LAN_RESTART_DELAY:-8}"
+HEALTH_URL="${SPIRITOS_LAN_HEALTH_URL:-https://127.0.0.1:3000/}"
 FRONTEND_SCRIPT="${SPIRITOS_LAN_FRONTEND_SCRIPT:-dev:https:lan}"
-HEALTH_INTERVAL="${SPIRITOS_LAN_HEALTH_INTERVAL:-15}"
-HEALTH_STARTUP_GRACE="${SPIRITOS_LAN_HEALTH_STARTUP_GRACE:-75}"
-HEALTH_FAILURE_LIMIT="${SPIRITOS_LAN_HEALTH_FAILURE_LIMIT:-3}"
+HEALTH_INTERVAL="${SPIRITOS_LAN_HEALTH_INTERVAL:-20}"
+HEALTH_STARTUP_GRACE="${SPIRITOS_LAN_HEALTH_STARTUP_GRACE:-180}"
+HEALTH_FAILURE_LIMIT="${SPIRITOS_LAN_HEALTH_FAILURE_LIMIT:-5}"
+HEALTH_CURL_TIMEOUT="${SPIRITOS_LAN_HEALTH_CURL_TIMEOUT:-15}"
+CACHE_CLEAR_EVERY="${SPIRITOS_LAN_CACHE_CLEAR_EVERY:-3}"
+
+export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=1536}"
 
 log() {
   printf '[%s] %s\n' "$(date -Is)" "$*" | tee -a "$LOG"
@@ -21,7 +28,7 @@ snapshot() {
     echo "-- tmux --"
     tmux ls 2>&1 || true
     echo "-- ports --"
-    ss -ltnp 2>/dev/null | grep -E ':3000|:8787|:22|:11434' || true
+    ss -ltnp 2>/dev/null | grep -E ':3000|:8787|:3001|:22|:11434' || true
     echo "-- node/next processes --"
     ps -eo pid,ppid,stat,pcpu,pmem,rss,etime,cmd --sort=-rss 2>/dev/null | grep -E 'next|node|npm run dev:https:lan' | grep -v grep || true
     echo "-- memory --"
@@ -36,46 +43,42 @@ snapshot() {
 clean_next_dev_cache() {
   log "clearing Next dev cache before frontend start"
   rm -rf .next/dev/cache .next/cache
+  rm -f .next/dev/lock 2>/dev/null || true
 }
 
 stop_frontend_processes() {
   local pid="${1:-}"
-  local port_pids
   if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null; then
     log "terminating frontend pid $pid"
     kill -TERM "$pid" 2>/dev/null || true
   fi
-  port_pids="$(lsof -ti tcp:3000 2>/dev/null || true)"
-  if [[ -n "$port_pids" ]]; then
-    log "terminating stale port 3000 pid(s): ${port_pids//$'\n'/ }"
-    printf '%s\n' "$port_pids" | xargs -r kill -TERM
-  fi
-  for _ in 1 2 3 4 5; do
-    if [[ -z "$(lsof -ti tcp:3000 2>/dev/null || true)" ]]; then
-      break
-    fi
-    sleep 1
-  done
+  kill_spiritos_lan_listeners
+  wait_for_port_free 3000 8 || true
   if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null; then
     log "killing frontend pid $pid"
     kill -KILL "$pid" 2>/dev/null || true
   fi
-  port_pids="$(lsof -ti tcp:3000 2>/dev/null || true)"
-  if [[ -n "$port_pids" ]]; then
-    log "killing stale port 3000 pid(s): ${port_pids//$'\n'/ }"
-    printf '%s\n' "$port_pids" | xargs -r kill -KILL
+  force_kill_spiritos_lan_listeners
+  wait_for_port_free 3000 5 || true
+  local foreign_pids foreign_pid
+  foreign_pids="$(listener_pids_on_port 3000)"
+  if [[ -n "$foreign_pids" ]]; then
+    while IFS= read -r foreign_pid; do
+      [[ -z "$foreign_pid" ]] && continue
+      log "warning: foreign listener still on :3000 pid=$foreign_pid (watchdog will not kill it)"
+    done <<< "$foreign_pids"
+    return 1
   fi
-  for _ in 1 2 3 4 5; do
-    if [[ -z "$(lsof -ti tcp:3000 2>/dev/null || true)" ]]; then
-      return 0
-    fi
-    sleep 1
-  done
-  log "warning: port 3000 still occupied after cleanup"
 }
 
 health_check() {
-  curl -k -fsS -I --max-time 8 "$HEALTH_URL" >/dev/null 2>&1
+  local headers code
+  headers="$(curl -k -sS -I --max-time "$HEALTH_CURL_TIMEOUT" "$HEALTH_URL" 2>/dev/null || true)"
+  if printf '%s' "$headers" | grep -qi 'x-powered-by: next.js'; then
+    return 0
+  fi
+  code="$(curl -k -sS -o /dev/null -w '%{http_code}' --max-time "$HEALTH_CURL_TIMEOUT" "$HEALTH_URL" 2>/dev/null || echo 000)"
+  [[ "$code" =~ ^[23] ]]
 }
 
 cd "$ROOT" || {
@@ -83,12 +86,19 @@ cd "$ROOT" || {
   exit 1
 }
 
-log "watchdog starting in $ROOT"
+log "watchdog starting in $ROOT (health=$HEALTH_URL grace=${HEALTH_STARTUP_GRACE}s)"
+cleanup_orphan_next_smoke_ports
 snapshot
+
+restart_count=0
 
 while true; do
   stop_frontend_processes ""
-  clean_next_dev_cache
+  if (( restart_count % CACHE_CLEAR_EVERY == 0 )); then
+    clean_next_dev_cache
+  else
+    rm -f .next/dev/lock 2>/dev/null || true
+  fi
   log "starting frontend: npm run $FRONTEND_SCRIPT"
   npm run "$FRONTEND_SCRIPT" >> "$DEV_LOG" 2>&1 &
   app_pid=$!
@@ -129,9 +139,11 @@ while true; do
     snapshot
   fi
 
+  restart_count=$((restart_count + 1))
+
   if [[ "${SPIRITOS_LAN_WATCHDOG_ONCE:-}" == "1" ]]; then
     exit "$status"
   fi
-  log "restarting frontend in ${RESTART_DELAY}s"
+  log "restarting frontend in ${RESTART_DELAY}s (restart_count=$restart_count)"
   sleep "$RESTART_DELAY"
 done

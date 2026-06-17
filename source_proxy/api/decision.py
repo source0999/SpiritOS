@@ -5,7 +5,9 @@ import hashlib
 import functools
 import json
 import os
+import re
 import subprocess
+import tempfile
 import time
 import urllib.error
 import urllib.request
@@ -41,7 +43,7 @@ def _agent_debug_log(
         pass
     # #endregion
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Header, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from source_proxy.decision.prompt_packet import (
@@ -137,6 +139,8 @@ FIP0_LANE_STATUS_FIELDS = (
     "hermes_verifier_lane_status",
     "repair_loop_status",
     "browser_behavior_status",
+    "browser_verifier_status",
+    "functional_verifier_status",
     "deterministic_check_status",
     "output_contract_status",
     "anti_tailoring_status",
@@ -302,7 +306,7 @@ def _lane_status(status: str, reason: str, **extra: Any) -> dict[str, Any]:
 
 
 def _valid_lane_status_value(value: str) -> bool:
-    return value in {"used", "skipped", "blocked", "failed"}
+    return value in {"used", "skipped", "blocked", "failed", "timed_out", "config_blocked"}
 
 
 def _packet_lane_status(packet: dict[str, Any], *, fallback_reason: str) -> dict[str, Any]:
@@ -614,22 +618,124 @@ def _load_fip0_receipt(path: Path) -> dict[str, Any]:
     return payload
 
 
-def _fip0_receipt_response(path: Path) -> dict[str, Any]:
-    receipt = _load_fip0_receipt(path)
+PRIVATE_TRACE_KEY_NAMES = {
+    "raw_prompt",
+    "raw_output_excerpt",
+}
+
+PRIVATE_TRACE_PATTERN_MARKERS = (
+    "chain_of_thought",
+    "hidden_reasoning",
+    "private_reasoning",
+    "raw_output_excerpt",
+)
+
+
+def _local_receipt_debug_token_configured() -> str:
+    return (
+        os.environ.get("SOURCE_PROXY_LOCAL_DEV_TOKEN", "")
+        or os.environ.get("SOURCE_PROXY_FIP6_DEV_TOKEN", "")
+    ).strip()
+
+
+def _local_receipt_debug_authorized(
+    *,
+    dev_token_header: str | None = None,
+    dev_token_query: str | None = None,
+) -> bool:
+    configured = _local_receipt_debug_token_configured()
+    if not configured:
+        return False
+    supplied = (dev_token_header or dev_token_query or "").strip()
+    return bool(supplied) and supplied == configured
+
+
+def _sanitize_public_receipt(value: Any) -> Any:
+    if isinstance(value, dict):
+        sanitized: dict[str, Any] = {}
+        for key, item in value.items():
+            if str(key) in PRIVATE_TRACE_KEY_NAMES:
+                continue
+            sanitized[str(key)] = _sanitize_public_receipt(item)
+        return sanitized
+    if isinstance(value, list):
+        return [_sanitize_public_receipt(item) for item in value]
+    return value
+
+
+def _bounded_trace_value(value: Any, *, max_string: int = 500, max_items: int = 25) -> Any:
+    sanitized = _sanitize_public_receipt(value)
+    if isinstance(sanitized, dict):
+        return {
+            str(key): _bounded_trace_value(item, max_string=max_string, max_items=max_items)
+            for key, item in list(sanitized.items())[:max_items]
+        }
+    if isinstance(sanitized, list):
+        return [
+            _bounded_trace_value(item, max_string=max_string, max_items=max_items)
+            for item in sanitized[:max_items]
+        ]
+    if isinstance(sanitized, str) and len(sanitized) > max_string:
+        return f"{sanitized[:max_string]}...[truncated:{len(sanitized) - max_string}]"
+    return sanitized
+
+
+def _trace_hygiene_scan(value: Any) -> dict[str, Any]:
+    leaks: list[dict[str, str]] = []
+
+    def walk(node: Any, path: str) -> None:
+        if isinstance(node, dict):
+            for key, item in node.items():
+                key_text = str(key)
+                if key_text in PRIVATE_TRACE_KEY_NAMES:
+                    leaks.append({"path": f"{path}.{key_text}".strip("."), "reason": "private_key_exposed"})
+                walk(item, f"{path}.{key_text}".strip("."))
+            return
+        if isinstance(node, list):
+            for idx, item in enumerate(node):
+                walk(item, f"{path}[{idx}]")
+            return
+        if isinstance(node, str):
+            lowered = node.lower()
+            for marker in PRIVATE_TRACE_PATTERN_MARKERS:
+                if marker in lowered:
+                    leaks.append({"path": path, "reason": f"private_pattern:{marker}"})
+
+    walk(value, "")
     return {
-        "receipt": receipt,
+        "status": "failed" if leaks else "used",
+        "passed": not leaks,
+        "leak_count": len(leaks),
+        "leaks": leaks[:20],
+        "scanner": "fip6_trace_hygiene_v1",
+    }
+
+
+def _fip0_receipt_response(path: Path, *, include_private: bool = False) -> dict[str, Any]:
+    receipt = _load_fip0_receipt(path)
+    public_receipt = receipt if include_private else _sanitize_public_receipt(receipt)
+    return {
+        "receipt": public_receipt,
         "receipt_path": str(path),
         "run_id": receipt.get("run_id"),
         "final_verdict": receipt.get("final_verdict"),
+        "productive": receipt.get("productive"),
+        "coder_path": receipt.get("coder_path"),
+        "verification_real": receipt.get("verification_real", {}),
+        "verification_real_reasons": receipt.get("verification_real_reasons", {}),
+        "degraded_lanes": receipt.get("degraded_lanes", []),
         "final_packet_hash": receipt.get("final_packet_hash"),
         "coder_received_packet_hash": receipt.get("coder_received_packet_hash"),
+        "public_redaction_summary": {
+            "private_fields_removed": 0 if include_private else len(PRIVATE_TRACE_KEY_NAMES),
+            "private_access": bool(include_private),
+        },
     }
 
 
 FIP6_TRACE_RECEIPT_FIELDS = (
     "run_id",
     "timestamp",
-    "raw_prompt",
     "normalized_task",
     "route_type",
     "workspace_mode",
@@ -672,6 +778,8 @@ FIP6_TRACE_RECEIPT_FIELDS = (
     "checks_run",
     "deterministic_verifier_status",
     "browser_behavior_status",
+    "browser_verifier_status",
+    "functional_verifier_status",
     "hermes_verifier_status",
     "hermes_verifier_model",
     "hermes_verifier_role",
@@ -715,7 +823,7 @@ def _trace_model_summary(receipt: dict[str, Any], prefix: str) -> dict[str, Any]
         "model": receipt.get(f"{prefix}_model" if prefix == "gemma" else "hermes_critic_model", ""),
         "prompt_hash": receipt.get(f"{prefix}_prompt_hash" if prefix == "gemma" else "hermes_critic_prompt_hash", ""),
         "output_hash": receipt.get(f"{prefix}_output_hash" if prefix == "gemma" else "hermes_critic_output_hash", ""),
-        "summary": summary_fields,
+        "summary": _bounded_trace_value(summary_fields),
     }
 
 
@@ -769,12 +877,12 @@ def _fip6_operator_trace_from_receipt(
     return {
         "trace_version": "fip6.operator_trace.v1",
         "trace_authority": (
-            "operational_receipt_projection_no_private_reasoning"
+            "operational_receipt_projection_sanitized"
         ),
         "run_metadata": {
             "run_id": receipt.get("run_id"),
             "timestamp": receipt.get("timestamp"),
-            "raw_prompt": receipt.get("raw_prompt", ""),
+            "prompt_hash": _json_hash(receipt.get("raw_prompt", "")),
             "normalized_task": receipt.get("normalized_task", ""),
             "route_type": receipt.get("route_type", ""),
             "workspace_mode": receipt.get("workspace_mode", ""),
@@ -784,15 +892,15 @@ def _fip6_operator_trace_from_receipt(
             "context_router_status": _trace_lane(receipt, "context_router_status"),
             "obsidian": {
                 "status": _trace_lane(receipt, "obsidian_status"),
-                "summary": context_packet.get("obsidian_summary", ""),
+                "summary": _bounded_trace_value(context_packet.get("obsidian_summary", "")),
             },
             "cartographer": {
                 "status": _trace_lane(receipt, "cartographer_status"),
-                "summary": context_packet.get("cartographer_summary", ""),
+                "summary": _bounded_trace_value(context_packet.get("cartographer_summary", "")),
             },
             "design": {
                 "status": _trace_lane(receipt, "design_status"),
-                "summary": context_packet.get("design_summary", ""),
+                "summary": _bounded_trace_value(context_packet.get("design_summary", "")),
             },
             "mac_worker_advisory_status": _trace_lane(receipt, "mac_worker_status"),
             "source_readiness_status": _trace_lane(receipt, "source_readiness_status"),
@@ -804,14 +912,14 @@ def _fip6_operator_trace_from_receipt(
             "repo_research_status": _trace_lane(receipt, "repo_research_status"),
             "scout": {
                 "status": _trace_lane(receipt, "scout_status"),
-                "sources": receipt.get("scout_sources", []),
-                "summary": fip2_packet.get("scout_summary", ""),
+                "sources": _bounded_trace_value(receipt.get("scout_sources", [])),
+                "summary": _bounded_trace_value(fip2_packet.get("scout_summary", "")),
             },
             "searxng": {
                 "status": _trace_lane(receipt, "searxng_status"),
                 "url": receipt.get("searxng_url", ""),
                 "result_count": receipt.get("searxng_result_count", 0),
-                "sources": receipt.get("searxng_sources", []),
+                "sources": _bounded_trace_value(receipt.get("searxng_sources", [])),
             },
             "tinyfish_deferred_status": _trace_lane(receipt, "tinyfish_status"),
             "xersearch_missing_alias_status": _trace_lane(receipt, "xersearch_status"),
@@ -828,7 +936,7 @@ def _fip6_operator_trace_from_receipt(
                 "status": _trace_lane(receipt, "qwen_coder_status"),
                 "model": receipt.get("qwen_coder_model", ""),
                 "output_hash": receipt.get("qwen_coder_output_hash", ""),
-                "parser_result": fip4_result.get("parser", {}),
+                "parser_result": _bounded_trace_value(fip4_result.get("parser", {})),
                 "changed_files": fip4_result.get(
                     "changed_files",
                     receipt.get("diff_summary", {}).get("changed_files", [])
@@ -857,6 +965,21 @@ def _fip6_operator_trace_from_receipt(
                 "checks_run": receipt.get("deterministic_checks_run", []),
                 "failures": receipt.get("deterministic_failures", []),
             },
+            "functional": {
+                "status": _trace_lane(receipt, "functional_verifier_status"),
+                "checks": _bounded_trace_value(receipt.get("functional_verifier_checks", [])),
+                "target_path": receipt.get("functional_verifier_target_path", ""),
+                "timeout_ms": receipt.get("functional_verifier_timeout_ms"),
+                "verifier_version": receipt.get("functional_verifier_version", ""),
+            },
+            "browser_verifier": {
+                "status": _trace_lane(receipt, "browser_verifier_status"),
+                "checks": _bounded_trace_value(receipt.get("browser_verifier_checks", [])),
+                "target_path": receipt.get("browser_verifier_target_path", ""),
+                "timeout_ms": receipt.get("browser_verifier_timeout_ms"),
+                "verifier_version": receipt.get("browser_verifier_version", ""),
+                "browser_engine": receipt.get("browser_verifier_browser_engine", ""),
+            },
             "browser_behavior": {
                 "status": _trace_lane(receipt, "browser_behavior_status"),
                 "summary": receipt.get("browser_probe_summary", {}),
@@ -879,12 +1002,17 @@ def _fip6_operator_trace_from_receipt(
             "repair_loop_status": _trace_lane(receipt, "repair_loop_status"),
             "repair_attempt_count": receipt.get("repair_attempt_count", 0),
             "repair_max_attempts": receipt.get("repair_max_attempts", 0),
-            "repair_packets": receipt.get("repair_packets", []),
-            "qwen_repair_outputs": receipt.get("qwen_repair_outputs", []),
-            "verifier_result": fip5_result.get("final_verifier_result", {}),
+            "repair_packets": _bounded_trace_value(receipt.get("repair_packets", [])),
+            "qwen_repair_outputs": _bounded_trace_value(receipt.get("qwen_repair_outputs", [])),
+            "verifier_result": _bounded_trace_value(fip5_result.get("final_verifier_result", {})),
         },
         "verdict_trace": {
             "final_verdict": receipt.get("final_verdict"),
+            "productive": receipt.get("productive"),
+            "coder_path": receipt.get("coder_path"),
+            "verification_real": receipt.get("verification_real", {}),
+            "verification_real_reasons": receipt.get("verification_real_reasons", {}),
+            "degraded_lanes": receipt.get("degraded_lanes", []),
             "receipt_path": str(receipt_path),
             "used_sources": receipt.get("used_sources", []),
             "skipped_reasons": receipt.get("skipped_reasons", []),
@@ -892,22 +1020,32 @@ def _fip6_operator_trace_from_receipt(
             "failed_reasons": receipt.get("failed_reasons", []),
         },
         "missing_fields": missing_fields,
-        "no_hidden_thinking_displayed": True,
         "source_receipt_hash": _json_hash(receipt),
     }
 
 
-def _fip6_trace_response(path: Path) -> dict[str, Any]:
+def _fip6_trace_response(path: Path, *, include_private: bool = False) -> dict[str, Any]:
     receipt = _load_fip0_receipt(path)
+    trace = _fip6_operator_trace_from_receipt(
+        receipt,
+        receipt_path=path,
+    )
+    trace["trace_hygiene_check"] = _trace_hygiene_scan(trace)
     return {
-        "operator_trace": _fip6_operator_trace_from_receipt(
-            receipt,
-            receipt_path=path,
-        ),
-        "receipt": receipt,
+        "operator_trace": trace,
+        "receipt": receipt if include_private else _sanitize_public_receipt(receipt),
         "receipt_path": str(path),
         "run_id": receipt.get("run_id"),
         "final_verdict": receipt.get("final_verdict"),
+        "productive": receipt.get("productive"),
+        "coder_path": receipt.get("coder_path"),
+        "verification_real": receipt.get("verification_real", {}),
+        "verification_real_reasons": receipt.get("verification_real_reasons", {}),
+        "degraded_lanes": receipt.get("degraded_lanes", []),
+        "public_redaction_summary": {
+            "private_fields_removed": 0 if include_private else len(PRIVATE_TRACE_KEY_NAMES),
+            "private_access": bool(include_private),
+        },
     }
 
 
@@ -962,6 +1100,137 @@ def _protected_path_check(
         "status": "used",
         "reason": "protected_path_guard_evaluated",
         "forbidden_file_count": len(forbidden_files),
+    }
+
+
+def _trial_harness_only_enabled() -> bool:
+    return os.environ.get("SOURCE_PROXY_TRIAL_HARNESS_ONLY", "0").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+
+
+def _lane_degradation_for_receipt(receipt: dict[str, Any]) -> list[dict[str, Any]]:
+    degraded = []
+    for field in ("gemma_status", "hermes_critic_status", "hermes_verifier_status"):
+        status = receipt.get(field)
+        if not isinstance(status, dict):
+            continue
+        value = str(status.get("status") or "")
+        reason = str(status.get("reason") or "")
+        if value in {"blocked", "failed"} and (
+            "timeout" in reason.lower()
+            or "timed_out" in reason.lower()
+            or "unavailable" in reason.lower()
+        ):
+            degraded.append(
+                {
+                    "lane": field.removesuffix("_status"),
+                    "status": value,
+                    "reason": reason,
+                    "required": True,
+                }
+            )
+    return degraded
+
+
+def _structured_verdict_fields(receipt: dict[str, Any]) -> dict[str, Any]:
+    final_verdict = str(receipt.get("final_verdict") or "")
+    qwen_status = receipt.get("qwen_coder_status")
+    qwen_used = isinstance(qwen_status, dict) and qwen_status.get("status") == "used"
+    fip4_result = receipt.get("fip4_qwen_coder_result")
+    has_fip4 = isinstance(fip4_result, dict) and bool(fip4_result)
+    final_hash = str(receipt.get("final_coder_packet_hash") or "")
+    received_hash = str(receipt.get("coder_received_packet_hash") or "")
+    diff_summary = receipt.get("diff_summary")
+    changed_files = (
+        diff_summary.get("changed_files")
+        if isinstance(diff_summary, dict) and isinstance(diff_summary.get("changed_files"), list)
+        else []
+    )
+    protected = receipt.get("protected_path_check")
+    protected_blocked = isinstance(protected, dict) and protected.get("status") == "blocked"
+    coder_path = "legacy_stub"
+    if qwen_used and has_fip4 and final_hash and final_hash == received_hash:
+        coder_path = "fip4_real"
+    elif _trial_harness_only_enabled() and (
+        str(receipt.get("final_verdict") or "").find("trial") >= 0
+        or any("trial" in str(note).lower() for note in receipt.get("coder_notes", []))
+    ):
+        coder_path = "trial"
+    deterministic = receipt.get("deterministic_verifier_status")
+    browser = receipt.get("browser_verifier_status")
+    browser_present = isinstance(browser, dict)
+    browser_behavior = receipt.get("browser_behavior_status")
+    if not browser_present:
+        browser = browser_behavior
+        browser_present = isinstance(browser, dict)
+    hermes = receipt.get("hermes_verifier_status")
+    functional = receipt.get("functional_verifier_status")
+    functional_used = isinstance(functional, dict) and functional.get("status") == "used"
+    functional_passed = bool(functional_used and functional.get("passed") is True)
+    functional_present = isinstance(functional, dict)
+    browser_used = isinstance(browser, dict) and browser.get("status") == "used"
+    browser_passed = bool(browser_used and browser.get("passed") is True)
+    verification_real = {
+        "deterministic": bool(
+            isinstance(deterministic, dict)
+            and deterministic.get("status") == "used"
+            and deterministic.get("passed") is True
+        ),
+        "browser": browser_passed,
+        "functional": functional_passed,
+        "behavior": bool(browser_passed or functional_passed),
+        "hermes": bool(
+            isinstance(hermes, dict)
+            and hermes.get("status") == "used"
+            and str(hermes.get("verdict") or receipt.get("hermes_verifier_verdict") or "").upper() == "PASS"
+        ),
+    }
+    verification_real_reasons = {
+        "browser": (
+            str(browser.get("reason") or "browser_verifier_headless_page_passed")
+            if browser_passed
+            else str(browser.get("reason") or "browser_verifier_not_implemented")
+            if browser_present
+            else "browser_verifier_not_implemented"
+        ),
+        "functional": (
+            str(functional.get("reason") or "functional_verifier_passed")
+            if functional_passed
+            else str(functional.get("reason") or "functional_verifier_not_implemented")
+            if functional_present
+            else "functional_verifier_not_implemented"
+        ),
+        "behavior": (
+            str(functional.get("reason") or "functional_verifier_passed")
+            if functional_passed
+            else str(browser.get("reason") or "browser_verifier_headless_page_passed")
+            if browser_passed
+            else str(browser.get("reason") or "")
+            if browser_present
+            else str(functional.get("reason") or "")
+            if functional_present
+            else "behavior_verifier_not_implemented"
+        ),
+    }
+    degraded_lanes = _lane_degradation_for_receipt(receipt)
+    productive = bool(
+        final_verdict.startswith("GO:")
+        and coder_path == "fip4_real"
+        and verification_real["deterministic"]
+        and verification_real["behavior"]
+        and not protected_blocked
+        and not degraded_lanes
+    )
+    return {
+        "productive": productive,
+        "coder_path": coder_path,
+        "verification_real": verification_real,
+        "verification_real_reasons": verification_real_reasons,
+        "degraded_lanes": degraded_lanes,
     }
 
 
@@ -1147,16 +1416,28 @@ def _fip5_browser_probe(
             "passed": True,
         }
     if request.expected_result_state == "browser_pass_expected":
+        if _trial_harness_only_enabled():
+            return {
+                "status": "used",
+                "reason": "browser_behavior_probe_supplied_by_fip5_runtime_proof",
+                "summary": {
+                    "behavior_required": True,
+                    "probes_run": ["fip5_runtime_browser_relevance_probe"],
+                    "passed": True,
+                },
+                "authoritative": True,
+                "passed": True,
+            }
         return {
-            "status": "used",
-            "reason": "browser_behavior_probe_supplied_by_fip5_runtime_proof",
+            "status": "failed",
+            "reason": "browser_behavior_synthetic_pass_rejected_default",
             "summary": {
                 "behavior_required": True,
-                "probes_run": ["fip5_runtime_browser_relevance_probe"],
-                "passed": True,
+                "probes_run": [],
+                "missing": ["real_browser_verifier_evidence"],
             },
             "authoritative": True,
-            "passed": True,
+            "passed": False,
         }
     return {
         "status": "failed",
@@ -1168,6 +1449,528 @@ def _fip5_browser_probe(
         },
         "authoritative": True,
         "passed": False,
+    }
+
+
+def _browser_verifier_timeout_ms() -> int:
+    raw = os.environ.get("SOURCE_PROXY_BROWSER_VERIFIER_TIMEOUT_MS", "").strip()
+    if not raw:
+        return 60000
+    try:
+        value = int(raw)
+    except ValueError:
+        return 60000
+    return max(1000, min(value, 60000))
+
+
+def _browser_verifier_supported_target(path: str) -> bool:
+    return path.replace("\\", "/").lower().endswith(".html")
+
+
+def _browser_verifier_harness() -> str:
+    return r"""
+const { chromium } = require("playwright");
+const targetPath = process.argv[1];
+const timeoutMs = Number(process.argv[2] || "10000");
+(async () => {
+  const browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage();
+  const consoleErrors = [];
+  const pageErrors = [];
+  page.on("console", (msg) => {
+    if (["error"].includes(msg.type())) consoleErrors.push(msg.text().slice(0, 300));
+  });
+  page.on("pageerror", (err) => pageErrors.push(String(err && err.message || err).slice(0, 300)));
+  await page.route("**/*", async (route) => {
+    const url = route.request().url();
+    if (url.startsWith("file://") || url.startsWith("data:") || url === "about:blank") {
+      await route.continue();
+      return;
+    }
+    await route.abort("blockedbyclient");
+  });
+  const response = await page.goto("file://" + targetPath, {
+    waitUntil: "domcontentloaded",
+    timeout: timeoutMs,
+  });
+  await page.waitForLoadState("load", { timeout: timeoutMs }).catch(() => {});
+  const visibleText = (await page.evaluate(() => {
+    const body = document.body;
+    if (!body) return "";
+    return (body.innerText || body.textContent || "").trim();
+  }).catch(() => ""));
+  const title = await page.title().catch(() => "");
+  await browser.close();
+  process.stdout.write(JSON.stringify({
+    loaded: true,
+    status: response ? response.status() : null,
+    visibleTextLength: visibleText.length,
+    visibleTextExcerpt: visibleText.slice(0, 200),
+    title: title.slice(0, 120),
+    consoleErrorCount: consoleErrors.length,
+    pageErrorCount: pageErrors.length,
+    consoleErrors: consoleErrors.slice(0, 5),
+    pageErrors: pageErrors.slice(0, 5),
+    browserEngine: "chromium"
+  }));
+})().catch((err) => {
+  process.stdout.write(JSON.stringify({
+    loaded: false,
+    reason: String(err && err.message || err).slice(0, 300),
+    browserEngine: "chromium"
+  }));
+  process.exit(2);
+});
+"""
+
+
+def _fip5_browser_verifier(
+    *,
+    request: PromptPacketRequest,
+    explicit_target: str,
+    fip4_result: dict[str, Any],
+) -> dict[str, Any]:
+    timeout_ms = _browser_verifier_timeout_ms()
+    verifier_version = "browser-verifier-v0"
+    changed_files = [str(item).replace("\\", "/") for item in fip4_result.get("changed_files", [])]
+    allowed_files = [str(item).replace("\\", "/") for item in fip4_result.get("allowed_files", [])]
+    target = (changed_files[0] if len(changed_files) == 1 else explicit_target).replace("\\", "/")
+    base = {
+        "passed": False,
+        "authoritative": True,
+        "checks": [],
+        "target_path": target,
+        "timeout_ms": timeout_ms,
+        "verifier_version": verifier_version,
+    }
+    relevant = _fip5_browser_relevant(changed_files, explicit_target)
+    if not relevant:
+        return {
+            **base,
+            "passed": True,
+            "status": "skipped",
+            "reason": "browser_verifier_skipped_non_browser_target",
+            "checks": [{"name": "browser_relevance", "passed": False, "browser_relevant": False}],
+        }
+    if fip4_result.get("status") != "used":
+        return {
+            **base,
+            "status": "skipped",
+            "reason": "browser_verifier_skipped_coder_not_used",
+        }
+    if len(changed_files) != 1:
+        return {
+            **base,
+            "status": "blocked",
+            "reason": "browser_verifier_blocked_requires_single_changed_file",
+            "checks": [{"name": "single_changed_file", "passed": False, "count": len(changed_files)}],
+        }
+    if target not in allowed_files:
+        return {
+            **base,
+            "status": "blocked",
+            "reason": "browser_verifier_blocked_target_not_allowed",
+            "checks": [{"name": "target_in_allowed_files", "passed": False}],
+        }
+    if not _browser_verifier_supported_target(target):
+        return {
+            **base,
+            "status": "skipped",
+            "reason": "browser_verifier_skipped_unsupported_browser_target",
+            "checks": [{"name": "supported_browser_target", "passed": False}],
+        }
+    action = fip4_result.get("action") if isinstance(fip4_result.get("action"), dict) else {}
+    content = str(action.get("content") or "")
+    if not content:
+        return {
+            **base,
+            "status": "skipped",
+            "reason": "browser_verifier_skipped_no_generated_content",
+        }
+    try:
+        playwright_check = subprocess.run(
+            ["node", "-e", "require.resolve('playwright');"],
+            cwd=str(_workspace_root()),
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+    except Exception:
+        playwright_check = None
+    if playwright_check is None or playwright_check.returncode != 0:
+        return {
+            **base,
+            "status": "config_blocked",
+            "reason": "browser_verifier_config_blocked_playwright_unavailable",
+            "checks": [{"name": "playwright_available", "passed": False}],
+        }
+    try:
+        with tempfile.TemporaryDirectory(prefix="source-proxy-browser-v0-") as tmp:
+            tmp_path = Path(tmp)
+            page_path = tmp_path / "generated-under-test.html"
+            page_path.write_text(content, encoding="utf-8")
+            result = subprocess.run(
+                ["node", "-e", _browser_verifier_harness(), str(page_path), str(timeout_ms)],
+                cwd=str(_workspace_root()),
+                capture_output=True,
+                text=True,
+                timeout=(timeout_ms / 1000) + 3,
+                check=False,
+            )
+    except subprocess.TimeoutExpired:
+        return {
+            **base,
+            "status": "timed_out",
+            "reason": "browser_verifier_timed_out",
+            "checks": [{"name": "headless_browser_load", "passed": False}],
+        }
+    except Exception as error:
+        return {
+            **base,
+            "status": "failed",
+            "reason": "browser_verifier_runtime_error",
+            "checks": [{"name": "headless_browser_load", "passed": False, "error_type": type(error).__name__}],
+        }
+    stdout = (result.stdout or "").strip()
+    summary: dict[str, Any] = {}
+    if stdout:
+        try:
+            summary = json.loads(stdout)
+        except json.JSONDecodeError:
+            summary = {}
+    loaded = result.returncode == 0 and summary.get("loaded") is True
+    visible = int(summary.get("visibleTextLength") or 0) > 0
+    no_page_errors = int(summary.get("pageErrorCount") or 0) == 0
+    passed = bool(loaded and visible and no_page_errors)
+    checks = [
+        {"name": "playwright_available", "passed": True},
+        {"name": "browser_relevance", "passed": True, "browser_relevant": True},
+        {"name": "supported_browser_target", "passed": True},
+        {
+            "name": "headless_browser_load",
+            "passed": loaded,
+            "returncode": result.returncode,
+            "browser_engine": summary.get("browserEngine", "chromium"),
+        },
+        {
+            "name": "visible_body_text",
+            "passed": visible,
+            "visible_text_length": summary.get("visibleTextLength", 0),
+            "visible_text_excerpt": summary.get("visibleTextExcerpt", ""),
+            "title": summary.get("title", ""),
+        },
+        {
+            "name": "page_errors",
+            "passed": no_page_errors,
+            "page_error_count": summary.get("pageErrorCount", 0),
+            "console_error_count": summary.get("consoleErrorCount", 0),
+            "page_errors": summary.get("pageErrors", []),
+            "console_errors": summary.get("consoleErrors", []),
+        },
+    ]
+    return {
+        **base,
+        "status": "used" if passed else "failed",
+        "passed": passed,
+        "reason": "browser_verifier_headless_page_passed"
+        if passed
+        else str(summary.get("reason") or "browser_verifier_headless_page_failed"),
+        "checks": checks,
+        "browser_engine": summary.get("browserEngine", "chromium"),
+    }
+
+
+def _functional_verifier_timeout_ms() -> int:
+    raw = os.environ.get("SOURCE_PROXY_FUNCTIONAL_VERIFIER_TIMEOUT_MS", "").strip()
+    if not raw:
+        return 5000
+    try:
+        value = int(raw)
+    except ValueError:
+        return 5000
+    return max(250, min(value, 5000))
+
+
+def _functional_verifier_supported_target(path: str) -> bool:
+    normalized = path.replace("\\", "/")
+    if normalized.endswith((".tsx", ".jsx", ".html", ".css")):
+        return False
+    return normalized.endswith((".js", ".ts", ".mjs", ".cjs"))
+
+
+def _functional_verifier_extract_function_names(content: str) -> list[str]:
+    names: list[str] = []
+    patterns = [
+        r"\bexport\s+function\s+([A-Za-z_$][\w$]*)\s*\(",
+        r"\bfunction\s+([A-Za-z_$][\w$]*)\s*\(",
+        r"\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?\([^)]*\)\s*=>",
+        r"\bexports\.([A-Za-z_$][\w$]*)\s*=",
+        r"\bmodule\.exports\.([A-Za-z_$][\w$]*)\s*=",
+    ]
+    for pattern in patterns:
+        for match in re.finditer(pattern, content):
+            name = match.group(1)
+            if name not in names:
+                names.append(name)
+    return names[:20]
+
+
+def _functional_verifier_contract(
+    *,
+    request: PromptPacketRequest,
+    explicit_target: str,
+    content: str,
+) -> dict[str, Any]:
+    lowered = request.task.lower()
+    target = explicit_target.replace("\\", "/").lower()
+    function_names = _functional_verifier_extract_function_names(content)
+    if _fip5_browser_relevant([explicit_target], explicit_target):
+        return {
+            "supported": False,
+            "reason": "functional_verifier_skipped_browser_or_ui_target",
+            "function_names": function_names,
+        }
+    if not _functional_verifier_supported_target(target):
+        return {
+            "supported": False,
+            "reason": "functional_verifier_skipped_unsupported_extension",
+            "function_names": function_names,
+        }
+    if any(
+        marker in lowered
+        for marker in (
+            "calculator",
+            "calculate",
+            "tip",
+            "budget",
+            "split",
+            "splitter",
+            "counter",
+            "timer",
+            "health",
+            "status",
+            "alive",
+            "helper",
+            "function",
+        )
+    ):
+        return {
+            "supported": True,
+            "reason": "functional_verifier_supported_safe_js_ts_helper",
+            "function_names": function_names,
+        }
+    return {
+        "supported": False,
+        "reason": "functional_verifier_skipped_no_supported_contract",
+        "function_names": function_names,
+    }
+
+
+def _functional_verifier_unsafe_markers(content: str) -> list[str]:
+    markers = []
+    lowered = content.lower()
+    for marker in (
+        "require(",
+        "import ",
+        "from ",
+        "fetch(",
+        "xmlhttprequest",
+        "websocket",
+        "child_process",
+        "node:child_process",
+        "node:fs",
+        "fs.",
+        "process.",
+        "eval(",
+        "new function",
+        "while (true)",
+        "while(true)",
+    ):
+        if marker in lowered:
+            markers.append(marker.strip())
+    return markers
+
+
+def _functional_verifier_sandbox_harness() -> str:
+    return r"""
+const fs = require("fs");
+const vm = require("vm");
+const sourcePath = process.argv[1];
+const source = fs.readFileSync(sourcePath, "utf8");
+const transformed = source
+  .replace(/\bexport\s+default\s+/g, "const __default__ = ")
+  .replace(/\bexport\s+function\s+([A-Za-z_$][\w$]*)\s*\(/g, "function $1(")
+  .replace(/\bexport\s+(const|let|var)\s+/g, "$1 ");
+const sandbox = {
+  console: { log() {}, error() {}, warn() {} },
+  module: { exports: {} },
+  exports: {},
+  setTimeout() { throw new Error("timer APIs disabled"); },
+  setInterval() { throw new Error("timer APIs disabled"); },
+};
+vm.createContext(sandbox, {
+  codeGeneration: { strings: false, wasm: false },
+});
+new vm.Script(transformed, { filename: "generated-under-test.js" }).runInContext(
+  sandbox,
+  { timeout: 500 }
+);
+const builtins = new Set(["setTimeout", "setInterval"]);
+const functionNames = Object.keys(sandbox)
+  .filter((key) => !builtins.has(key) && typeof sandbox[key] === "function")
+  .concat(Object.keys(sandbox.module.exports || {}).filter((key) => typeof sandbox.module.exports[key] === "function"))
+  .concat(Object.keys(sandbox.exports || {}).filter((key) => typeof sandbox.exports[key] === "function"));
+process.stdout.write(JSON.stringify({
+  moduleLoaded: true,
+  exportedFunctionCount: [...new Set(functionNames)].length,
+  exportedFunctions: [...new Set(functionNames)].slice(0, 20),
+}));
+"""
+
+
+def _fip5_functional_verifier(
+    *,
+    request: PromptPacketRequest,
+    explicit_target: str,
+    fip4_result: dict[str, Any],
+) -> dict[str, Any]:
+    timeout_ms = _functional_verifier_timeout_ms()
+    verifier_version = "functional-verifier-v0"
+    changed_files = [str(item).replace("\\", "/") for item in fip4_result.get("changed_files", [])]
+    allowed_files = [str(item).replace("\\", "/") for item in fip4_result.get("allowed_files", [])]
+    target = (changed_files[0] if len(changed_files) == 1 else explicit_target).replace("\\", "/")
+    base = {
+        "passed": False,
+        "checks": [],
+        "target_path": target,
+        "timeout_ms": timeout_ms,
+        "verifier_version": verifier_version,
+    }
+    if fip4_result.get("status") != "used":
+        return {
+            **base,
+            "status": "skipped",
+            "reason": "functional_verifier_skipped_coder_not_used",
+        }
+    if len(changed_files) != 1:
+        return {
+            **base,
+            "status": "skipped",
+            "reason": "functional_verifier_skipped_requires_single_changed_file",
+            "checks": [{"name": "single_changed_file", "passed": False, "count": len(changed_files)}],
+        }
+    if target not in allowed_files:
+        return {
+            **base,
+            "status": "blocked",
+            "reason": "functional_verifier_blocked_target_not_allowed",
+            "checks": [{"name": "target_in_allowed_files", "passed": False}],
+        }
+    action = fip4_result.get("action") if isinstance(fip4_result.get("action"), dict) else {}
+    content = str(action.get("content") or "")
+    if not content:
+        return {
+            **base,
+            "status": "skipped",
+            "reason": "functional_verifier_skipped_no_generated_content",
+        }
+    contract = _functional_verifier_contract(
+        request=request,
+        explicit_target=target,
+        content=content,
+    )
+    if not contract.get("supported"):
+        return {
+            **base,
+            "status": "skipped",
+            "reason": str(contract.get("reason") or "functional_verifier_skipped_no_supported_contract"),
+            "checks": [
+                {
+                    "name": "supported_contract",
+                    "passed": False,
+                    "function_names": contract.get("function_names", []),
+                }
+            ],
+        }
+    unsafe = _functional_verifier_unsafe_markers(content)
+    if unsafe:
+        return {
+            **base,
+            "status": "blocked",
+            "reason": "functional_verifier_blocked_unsafe_generated_content",
+            "checks": [{"name": "unsafe_marker_scan", "passed": False, "markers": unsafe}],
+        }
+    try:
+        with tempfile.TemporaryDirectory(prefix="source-proxy-functional-v0-") as tmp:
+            tmp_path = Path(tmp)
+            suffix = ".mjs" if target.endswith((".js", ".mjs", ".ts")) else ".cjs"
+            source_path = tmp_path / f"generated-under-test{suffix}"
+            source_path.write_text(content, encoding="utf-8")
+            result = subprocess.run(
+                ["node", "-e", _functional_verifier_sandbox_harness(), str(source_path)],
+                cwd=str(tmp_path),
+                capture_output=True,
+                text=True,
+                timeout=timeout_ms / 1000,
+                check=False,
+            )
+    except subprocess.TimeoutExpired:
+        return {
+            **base,
+            "status": "timed_out",
+            "reason": "functional_verifier_timed_out",
+            "checks": [{"name": "sandbox_module_load", "passed": False}],
+        }
+    except Exception as error:
+        return {
+            **base,
+            "status": "failed",
+            "reason": "functional_verifier_runtime_error",
+            "checks": [
+                {
+                    "name": "sandbox_module_load",
+                    "passed": False,
+                    "error_type": type(error).__name__,
+                }
+            ],
+        }
+    stdout = (result.stdout or "").strip()
+    sandbox_summary: dict[str, Any] = {}
+    if stdout:
+        try:
+            sandbox_summary = json.loads(stdout)
+        except json.JSONDecodeError:
+            sandbox_summary = {}
+    passed = result.returncode == 0 and bool(sandbox_summary.get("moduleLoaded"))
+    return {
+        **base,
+        "status": "used" if passed else "failed",
+        "passed": passed,
+        "reason": "functional_verifier_sandbox_module_load_passed"
+        if passed
+        else "functional_verifier_sandbox_module_load_failed",
+        "checks": [
+            {
+                "name": "supported_contract",
+                "passed": True,
+                "contract": contract.get("reason"),
+                "function_names": contract.get("function_names", []),
+            },
+            {
+                "name": "unsafe_marker_scan",
+                "passed": True,
+                "markers": [],
+            },
+            {
+                "name": "sandbox_module_load",
+                "passed": passed,
+                "returncode": result.returncode,
+                "exported_function_count": sandbox_summary.get("exportedFunctionCount", 0),
+                "exported_functions": sandbox_summary.get("exportedFunctions", []),
+                "stderr_excerpt": (result.stderr or "")[:300],
+            },
+        ],
     }
 
 
@@ -2253,7 +3056,12 @@ def _run_fip5_verifier_and_repair(
         fip4_result=current,
         repair_attempt=0,
     )
-    browser = _fip5_browser_probe(
+    browser = _fip5_browser_verifier(
+        request=request,
+        explicit_target=explicit_target,
+        fip4_result=current,
+    )
+    functional = _fip5_functional_verifier(
         request=request,
         explicit_target=explicit_target,
         fip4_result=current,
@@ -2303,7 +3111,12 @@ def _run_fip5_verifier_and_repair(
             fip4_result=current,
             repair_attempt=attempt,
         )
-        browser = _fip5_browser_probe(
+        browser = _fip5_browser_verifier(
+            request=request,
+            explicit_target=explicit_target,
+            fip4_result=current,
+        )
+        functional = _fip5_functional_verifier(
             request=request,
             explicit_target=explicit_target,
             fip4_result=current,
@@ -2323,7 +3136,11 @@ def _run_fip5_verifier_and_repair(
         if repair_packets
         else "skipped"
     )
-    if browser.get("passed") is False:
+    browser_blocks_pass = bool(
+        browser.get("passed") is False
+        and browser.get("status") in {"used", "failed", "blocked", "timed_out", "config_blocked", "skipped"}
+    )
+    if browser_blocks_pass:
         final_verdict = "NO-GO: fip5_browser_behavior_authority_blocks_pass"
     elif deterministic.get("passed") and hermes.get("status") == "used" and hermes.get("verdict") == "PASS":
         final_verdict = "GO: fip5_required_verifier_and_repair_complete"
@@ -2338,6 +3155,7 @@ def _run_fip5_verifier_and_repair(
         "reason": final_verdict,
         "deterministic": deterministic,
         "browser": browser,
+        "functional": functional,
         "hermes": hermes,
         "repair_loop_status": {
             "status": repair_status,
@@ -3182,6 +4000,11 @@ def _attach_fip0_truth_receipt(
             if isinstance(fip5_result.get("browser"), dict)
             else {}
         )
+        functional = (
+            fip5_result.get("functional")
+            if isinstance(fip5_result.get("functional"), dict)
+            else {}
+        )
         hermes = (
             fip5_result.get("hermes")
             if isinstance(fip5_result.get("hermes"), dict)
@@ -3204,8 +4027,33 @@ def _attach_fip0_truth_receipt(
             str(browser.get("reason") or "fip5_browser_behavior_missing"),
             passed=browser.get("passed"),
         )
+        receipt["browser_verifier_status"] = _lane_status(
+            str(browser.get("status") or "failed")
+            if _valid_lane_status_value(str(browser.get("status") or ""))
+            else "failed",
+            str(browser.get("reason") or "browser_verifier_missing"),
+            passed=browser.get("passed"),
+        )
+        receipt["browser_verifier_checks"] = browser.get("checks", [])
+        receipt["browser_verifier_target_path"] = str(browser.get("target_path") or "")
+        receipt["browser_verifier_timeout_ms"] = browser.get("timeout_ms")
+        receipt["browser_verifier_version"] = str(browser.get("verifier_version") or "")
+        receipt["browser_verifier_browser_engine"] = str(browser.get("browser_engine") or "")
         receipt["browser_probe_summary"] = browser.get("summary", {})
         receipt["browser_behavior_authoritative"] = bool(browser.get("authoritative", True))
+        receipt["functional_verifier_status"] = _lane_status(
+            str(functional.get("status") or "skipped")
+            if _valid_lane_status_value(str(functional.get("status") or ""))
+            else "failed",
+            str(functional.get("reason") or "functional_verifier_skipped_no_supported_contract"),
+            passed=bool(functional.get("passed")),
+        )
+        receipt["functional_verifier_checks"] = functional.get("checks", [])
+        receipt["functional_verifier_target_path"] = str(functional.get("target_path") or "")
+        receipt["functional_verifier_timeout_ms"] = functional.get("timeout_ms")
+        receipt["functional_verifier_version"] = str(
+            functional.get("verifier_version") or ""
+        )
         receipt["hermes_verifier_status"] = _lane_status(
             str(hermes.get("status") or "failed")
             if _valid_lane_status_value(str(hermes.get("status") or ""))
@@ -3281,6 +4129,10 @@ def _attach_fip0_truth_receipt(
             or fip5_result.get("reason")
             or "NO-GO: fip5_verifier_missing_final_verdict"
         )
+    degraded_lanes = _lane_degradation_for_receipt(receipt)
+    if degraded_lanes and str(receipt.get("final_verdict") or "").startswith("GO:"):
+        receipt["final_verdict"] = "NO-GO: expected_degraded_lane"
+    receipt.update(_structured_verdict_fields(receipt))
     receipt["used_sources"] = [
         field
         for field in FIP0_LANE_STATUS_FIELDS
@@ -3332,23 +4184,28 @@ async def _bounded_coder_diff_or_stub(
     """Run blocking coder work off the event loop; never exceed gateway patience."""
     if force_live_model:
         explicit_target = _parse_explicit_target_file_line(task)
-        if explicit_target.startswith("src/"):
+        if _trial_harness_only_enabled() and explicit_target.startswith("src/"):
             product_satisfied = _product_trial_feature_already_satisfied_payload(
                 task,
                 explicit_target,
             )
             if product_satisfied is not None:
                 return product_satisfied
-        dummy_live = _dummy_reversible_live_trial_coder_diff_payload(task)
-        if dummy_live is not None:
-            return dummy_live
-        expected_no_edit = _expected_no_edit_trial_payload(task)
-        if expected_no_edit is not None:
-            return expected_no_edit
-        realistic_trial = _realistic_reversible_trial_coder_diff_payload(task)
-        if realistic_trial is not None:
-            return realistic_trial
-    dummy_preview = None if force_live_model else _dummy_trial_coder_diff_payload(task)
+        if _trial_harness_only_enabled():
+            dummy_live = _dummy_reversible_live_trial_coder_diff_payload(task)
+            if dummy_live is not None:
+                return dummy_live
+            expected_no_edit = _expected_no_edit_trial_payload(task)
+            if expected_no_edit is not None:
+                return expected_no_edit
+            realistic_trial = _realistic_reversible_trial_coder_diff_payload(task)
+            if realistic_trial is not None:
+                return realistic_trial
+    dummy_preview = (
+        None
+        if force_live_model or not _trial_harness_only_enabled()
+        else _dummy_trial_coder_diff_payload(task)
+    )
     if dummy_preview is not None:
         return dummy_preview
     if architect_plan is None:
@@ -4888,45 +5745,83 @@ async def route_decision(request: RouteDecisionRequest) -> dict[str, Any]:
 
 
 @router.get("/fip0-receipts/latest")
-async def latest_fip0_receipt() -> dict[str, Any]:
+async def latest_fip0_receipt(
+    x_source_proxy_dev_token: str | None = Header(default=None),
+    dev_token: str | None = Query(default=None),
+) -> dict[str, Any]:
     path = _latest_fip0_receipt_path()
     if path is None:
         raise HTTPException(
             status_code=404,
             detail={"reason_code": "fip0_receipt_not_found"},
         )
-    return _fip0_receipt_response(path)
+    return _fip0_receipt_response(
+        path,
+        include_private=_local_receipt_debug_authorized(
+            dev_token_header=x_source_proxy_dev_token,
+            dev_token_query=dev_token,
+        ),
+    )
 
 
 @router.get("/fip0-receipts/latest/trace")
-async def latest_fip0_receipt_trace() -> dict[str, Any]:
+async def latest_fip0_receipt_trace(
+    x_source_proxy_dev_token: str | None = Header(default=None),
+    dev_token: str | None = Query(default=None),
+) -> dict[str, Any]:
     path = _latest_fip0_receipt_path()
     if path is None:
         raise HTTPException(
             status_code=404,
             detail={"reason_code": "fip0_receipt_not_found"},
         )
-    return _fip6_trace_response(path)
+    return _fip6_trace_response(
+        path,
+        include_private=_local_receipt_debug_authorized(
+            dev_token_header=x_source_proxy_dev_token,
+            dev_token_query=dev_token,
+        ),
+    )
 
 
 @router.get("/fip0-receipts/{run_id}")
-async def fip0_receipt_by_run_id(run_id: str) -> dict[str, Any]:
+async def fip0_receipt_by_run_id(
+    run_id: str,
+    x_source_proxy_dev_token: str | None = Header(default=None),
+    dev_token: str | None = Query(default=None),
+) -> dict[str, Any]:
     if not _valid_fip0_run_id(run_id):
         raise HTTPException(
             status_code=400,
             detail={"reason_code": "invalid_fip0_run_id", "run_id": run_id},
         )
-    return _fip0_receipt_response(_fip0_receipt_root() / f"{run_id}.json")
+    return _fip0_receipt_response(
+        _fip0_receipt_root() / f"{run_id}.json",
+        include_private=_local_receipt_debug_authorized(
+            dev_token_header=x_source_proxy_dev_token,
+            dev_token_query=dev_token,
+        ),
+    )
 
 
 @router.get("/fip0-receipts/{run_id}/trace")
-async def fip0_receipt_trace_by_run_id(run_id: str) -> dict[str, Any]:
+async def fip0_receipt_trace_by_run_id(
+    run_id: str,
+    x_source_proxy_dev_token: str | None = Header(default=None),
+    dev_token: str | None = Query(default=None),
+) -> dict[str, Any]:
     if not _valid_fip0_run_id(run_id):
         raise HTTPException(
             status_code=400,
             detail={"reason_code": "invalid_fip0_run_id", "run_id": run_id},
         )
-    return _fip6_trace_response(_fip0_receipt_root() / f"{run_id}.json")
+    return _fip6_trace_response(
+        _fip0_receipt_root() / f"{run_id}.json",
+        include_private=_local_receipt_debug_authorized(
+            dev_token_header=x_source_proxy_dev_token,
+            dev_token_query=dev_token,
+        ),
+    )
 
 
 @router.post("/prompt-packet")
@@ -5120,6 +6015,22 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
                     )
                 if recovered is not None:
                     coder = recovered
+                elif reset_request.trial_mode != "live_apply":
+                    deterministic_preview = _dummy_trial_coder_diff_payload(trial_task)
+                    if deterministic_preview is not None:
+                        architect_plan = None
+                        coder = deterministic_preview
+                    else:
+                        architect_plan = _load_or_prepare_architect_plan(
+                            trial_task,
+                            reset_request.active_task_id,
+                            expected_target=explicit_target,
+                        )
+                        coder = await _bounded_coder_diff_or_stub(
+                            trial_task,
+                            architect_plan,
+                            force_live_model=False,
+                        )
                 elif _fip4_qwen_enabled() and explicit_target:
                     architect_plan = None
                     fip4_result = await asyncio.get_running_loop().run_in_executor(
