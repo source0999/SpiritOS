@@ -1,0 +1,122 @@
+{
+  "counts": {
+    "degraded": 1,
+    "functional_true": 2,
+    "leaks": 0,
+    "productive_true": 1
+  },
+  "rows": [
+    {
+      "coder_path": "fip4_real",
+      "degraded_lanes": null,
+      "final_verdict": "GO: fip5_required_verifier_and_repair_complete",
+      "functional_verifier_status": {
+        "passed": true,
+        "reason": "functional_verifier_sandbox_module_load_passed",
+        "status": "used"
+      },
+      "label": "supported-js-final-5s",
+      "leak_count": 0,
+      "productive": true,
+      "receipt_path": "/home/source/SpiritOS/docs/evidence/source-proxy-claude-3x10-audit-20260615/pr2-functional-verifier-smoke/supported-js-final-5s-receipt-fip0-7c0f9b19e28fc1f6.json",
+      "run_id": "fip0-7c0f9b19e28fc1f6",
+      "score_class": "productive_go",
+      "trace_hygiene_check": {
+        "leak_count": 0,
+        "leaks": [],
+        "passed": true,
+        "scanner": "fip6_trace_hygiene_v1",
+        "status": "used"
+      },
+      "trace_path": "/home/source/SpiritOS/docs/evidence/source-proxy-claude-3x10-audit-20260615/pr2-functional-verifier-smoke/supported-js-final-5s-trace-fip0-7c0f9b19e28fc1f6.json",
+      "verification_real": {
+        "browser": false,
+        "deterministic": true,
+        "functional": true,
+        "hermes": true
+      },
+      "verification_real_reasons": {
+        "functional": "functional_verifier_sandbox_module_load_passed"
+      }
+    },
+    {
+      "coder_path": "fip4_real",
+      "degraded_lanes": null,
+      "final_verdict": "NO-GO: fip5_browser_behavior_authority_blocks_pass",
+      "functional_verifier_status": {
+        "passed": false,
+        "reason": "functional_verifier_skipped_browser_or_ui_target",
+        "status": "skipped"
+      },
+      "label": "unsupported-html",
+      "leak_count": 0,
+      "productive": false,
+      "receipt_path": "/home/source/SpiritOS/docs/evidence/source-proxy-claude-3x10-audit-20260615/pr2-functional-verifier-smoke/unsupported-html-receipt-fip0-be4842cc82345374.json",
+      "run_id": "fip0-be4842cc82345374",
+      "score_class": "verifier_blocked_browser",
+      "trace_hygiene_check": {
+        "leak_count": 0,
+        "leaks": [],
+        "passed": true,
+        "scanner": "fip6_trace_hygiene_v1",
+        "status": "used"
+      },
+      "trace_path": "/home/source/SpiritOS/docs/evidence/source-proxy-claude-3x10-audit-20260615/pr2-functional-verifier-smoke/unsupported-html-trace-fip0-be4842cc82345374.json",
+      "verification_real": {
+        "browser": false,
+        "deterministic": true,
+        "functional": false,
+        "hermes": false
+      },
+      "verification_real_reasons": {
+        "functional": "functional_verifier_skipped_browser_or_ui_target"
+      }
+    },
+    {
+      "coder_path": "fip4_real",
+      "degraded_lanes": [
+        {
+          "lane": "gemma",
+          "reason": "ollama_inventory_unavailable",
+          "required": true,
+          "status": "blocked"
+        },
+        {
+          "lane": "hermes_critic",
+          "reason": "ollama_inventory_unavailable",
+          "required": true,
+          "status": "blocked"
+        }
+      ],
+      "final_verdict": "NO-GO: expected_degraded_lane",
+      "functional_verifier_status": {
+        "passed": true,
+        "reason": "functional_verifier_sandbox_module_load_passed",
+        "status": "used"
+      },
+      "label": "degraded-fip3-timeout",
+      "leak_count": 0,
+      "productive": false,
+      "receipt_path": "/home/source/SpiritOS/docs/evidence/source-proxy-claude-3x10-audit-20260615/pr2-functional-verifier-smoke/degraded-fip3-timeout-receipt-fip0-df3efb5ff142f271.json",
+      "run_id": "fip0-df3efb5ff142f271",
+      "score_class": "expected_degraded_lane",
+      "trace_hygiene_check": {
+        "leak_count": 0,
+        "leaks": [],
+        "passed": true,
+        "scanner": "fip6_trace_hygiene_v1",
+        "status": "used"
+      },
+      "trace_path": "/home/source/SpiritOS/docs/evidence/source-proxy-claude-3x10-audit-20260615/pr2-functional-verifier-smoke/degraded-fip3-timeout-trace-fip0-df3efb5ff142f271.json",
+      "verification_real": {
+        "browser": false,
+        "deterministic": true,
+        "functional": true,
+        "hermes": true
+      },
+      "verification_real_reasons": {
+        "functional": "functional_verifier_sandbox_module_load_passed"
+      }
+    }
+  ]
+}

@@ -1,0 +1,124 @@
+{
+  "browser_verifier_checks": [
+    {
+      "name": "playwright_available",
+      "passed": false
+    }
+  ],
+  "browser_verifier_status": {
+    "passed": false,
+    "reason": "browser_verifier_config_blocked_playwright_unavailable",
+    "status": "config_blocked"
+  },
+  "changed_files": [
+    "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/pr2-smoke/browser-home.html"
+  ],
+  "coder_path": "fip4_real",
+  "degraded_lanes": [
+    {
+      "lane": "hermes_critic",
+      "reason": "local_ollama_model_timeout",
+      "required": true,
+      "status": "failed"
+    }
+  ],
+  "deterministic_verifier_status": {
+    "passed": true,
+    "reason": "fip5_deterministic_verifier_executed",
+    "status": "used"
+  },
+  "elapsed_seconds": 294.45,
+  "final_verdict": "NO-GO: fip5_browser_behavior_authority_blocks_pass",
+  "functional_verifier_status": {
+    "passed": false,
+    "reason": "functional_verifier_skipped_browser_or_ui_target",
+    "status": "skipped"
+  },
+  "hermes_verifier_status": {
+    "reason": "hermes_verifier_schema_valid",
+    "status": "used",
+    "verdict": "NEEDS_FIX"
+  },
+  "http_status": 200,
+  "label": "01-supported-html-fip5-domtext",
+  "productive": false,
+  "qwen_coder_status": {
+    "coder_packet_hash_present": true,
+    "final_coder_packet_hash": "b2242d2a6c8df20dd1d89d7e815130aa1308112889f1f589687ba496fe7b7ff1",
+    "provider_model_truth": {
+      "apiBaseHost": "127.0.0.1:11434",
+      "attemptCount": 1,
+      "authority": {
+        "canApply": false,
+        "canCommit": false,
+        "canDraft": true,
+        "canPreview": true,
+        "canPush": false,
+        "canVerify": false
+      },
+      "blockedReason": "Local/Ollama lane is configured, but the selected model is not Hermes.",
+      "configured": true,
+      "configuredModelIsHermes": false,
+      "configuredOllamaModel": "hermes4:latest",
+      "externalCallAvailable": false,
+      "family": "local/ollama/hermes",
+      "hermesLaneAvailable": false,
+      "hermesUsedForThisRun": false,
+      "latencyMs": 65135,
+      "modelId": "qwen2.5-coder:7b",
+      "modelLabel": "qwen2.5-coder:7b",
+      "previewAvailable": true,
+      "probeOk": true,
+      "providerCallAuthorized": true,
+      "providerCallMade": true,
+      "providerId": "ollama",
+      "providerLabel": "Local / Ollama",
+      "retryAttempted": false,
+      "selectedVia": "probe:OLLAMA_BASE_URL+available_hermes",
+      "source": "fip4_qwen_coder",
+      "status": "used",
+      "timeoutSeconds": 300.0
+    },
+    "qwen_attempt_count": 1,
+    "qwen_attempts": [
+      {
+        "attempt": 1,
+        "coder_received_packet_hash": "b2242d2a6c8df20dd1d89d7e815130aa1308112889f1f589687ba496fe7b7ff1",
+        "final_coder_packet_hash": "b2242d2a6c8df20dd1d89d7e815130aa1308112889f1f589687ba496fe7b7ff1",
+        "latency_ms": 65135,
+        "provider_errors": [],
+        "qwen_output_hash": "1e183683618816b5bce6374c74d9eb6f47d7ab186a5b0051f7cc8af2587c661e",
+        "raw_output_length": 1266,
+        "reason": "qwen_received_final_coder_packet_and_returned_output",
+        "status": "used",
+        "timeout_seconds": 300.0
+      }
+    ],
+    "qwen_model_latency_ms": 65135,
+    "qwen_retry_attempted": false,
+    "qwen_retry_reason": "",
+    "qwen_timeout_seconds": 300.0,
+    "reason": "fip4_qwen_action_output_parsed_and_diff_generated",
+    "status": "used"
+  },
+  "run_id": "fip0-6a0c8a33f5b72857",
+  "trace_hygiene_check": {
+    "leak_count": 0,
+    "leaks": [],
+    "passed": true,
+    "scanner": "fip6_trace_hygiene_v1",
+    "status": "used"
+  },
+  "verification_real": {
+    "behavior": false,
+    "browser": false,
+    "deterministic": true,
+    "functional": false,
+    "hermes": false
+  },
+  "verification_real_reasons": {
+    "behavior": "browser_verifier_config_blocked_playwright_unavailable",
+    "browser": "browser_verifier_config_blocked_playwright_unavailable",
+    "functional": "functional_verifier_skipped_browser_or_ui_target"
+  }
+}

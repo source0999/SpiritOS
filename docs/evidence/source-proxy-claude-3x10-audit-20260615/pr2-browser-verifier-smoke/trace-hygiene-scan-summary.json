@@ -1,0 +1,703 @@
+[
+  {
+    "file_count": 55,
+    "leak_file_count": 13,
+    "leak_files": [
+      {
+        "hits": [
+          {
+            "count": 2,
+            "pattern": "raw_prompt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/pr2-browser-verifier-smoke/03-synthetic-browser-cheat-response.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 2,
+            "pattern": "raw_prompt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/pr2-browser-verifier-smoke/01-supported-html-response.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 20,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 40,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/pr2-browser-verifier-smoke/02-unsupported-js-helper-fip5-response.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 20,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 40,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/pr2-browser-verifier-smoke/01-supported-html-fip5-60s-response.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 20,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 40,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/pr2-browser-verifier-smoke/03-synthetic-browser-cheat-fip5-response.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 20,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 40,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/pr2-browser-verifier-smoke/01-supported-html-fip5-30s-response.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 20,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 40,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/pr2-browser-verifier-smoke/04-forced-degraded-lane-fip5-response.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 6,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 6,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/pr2-browser-verifier-smoke/03-synthetic-browser-cheat-rerun-response.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 20,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 40,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/pr2-browser-verifier-smoke/01-supported-html-fip5-response.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 6,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 6,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/pr2-browser-verifier-smoke/01-supported-html-rerun-response.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 20,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 40,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/pr2-browser-verifier-smoke/01-supported-html-fip5-domtext-response.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 6,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 6,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/pr2-browser-verifier-smoke/02-unsupported-js-helper-rerun-response.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 2,
+            "pattern": "raw_prompt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/pr2-browser-verifier-smoke/02-unsupported-js-helper-response.json"
+      }
+    ],
+    "root": "docs/evidence/source-proxy-claude-3x10-audit-20260615/pr2-browser-verifier-smoke",
+    "total_hits": 462
+  },
+  {
+    "file_count": 70,
+    "leak_file_count": 68,
+    "leak_files": [
+      {
+        "hits": [
+          {
+            "count": 1,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 1,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/traces/s1-07-expense-fip0-8a05962edf1828e2.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 1,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 1,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/traces/s3-01-shell-fip0-066ce708618daf5a.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 1,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 1,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/traces/s1-02-calculator-fip0-d2f56ab63e705e4a.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 1,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 1,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/traces/s2-06-sticky-fip0-558d7808698713bd.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 1,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 1,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/traces/s1-01-homepage-fip0-915f78621156e0c8.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 1,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 1,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/traces/s2-04-checklist-fip0-354ebaebce45fe93.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 1,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 1,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/traces/s3-05-countdown-fip0-b5bd920a839de50c.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 1,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 1,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/traces/s3-08-progress-fip0-05099eeabba5a4b3.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 1,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 1,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/traces/s3-05-countdown-fip0-ac44ac7fa5eb9aaf.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 1,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 1,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/traces/s1-05-timer-fip0-1a62da032a749280.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 1,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 1,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/traces/s1-03-weather-fip0-9f5ee5235bc151f5.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 1,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 1,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/traces/s2-10-health-fip0-a8f965eecd5b94f8.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 1,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 1,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/traces/s1-04-todo-fip0-3196e1a27c9d8a92.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 1,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 1,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/traces/s2-06-sticky-fip0-e7322753784ccc94.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 1,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 1,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/traces/s2-01-dashboard-fip0-d20a38f8f393b7d5.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 1,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 1,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/traces/s1-02-calculator-fip0-eac2265c372e1abf.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 1,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 1,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/traces/s1-04-todo-fip0-426dfd3fe6af2a72.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 1,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 1,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/traces/s2-09-waitlist-fip0-bf6a4086da1c1151.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 1,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 1,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/traces/s3-03-forecast-fip0-27117aaf7de08e03.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 1,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 1,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/traces/s2-05-stopwatch-fip0-1f18517e2913bfbe.json"
+      }
+    ],
+    "root": "docs/evidence/source-proxy-claude-3x10-audit-20260615/traces",
+    "total_hits": 136
+  },
+  {
+    "file_count": 70,
+    "leak_file_count": 68,
+    "leak_files": [
+      {
+        "hits": [
+          {
+            "count": 6,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 12,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/receipts/s1-07-expense-fip0-8a05962edf1828e2.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 6,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 12,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/receipts/s3-01-shell-fip0-066ce708618daf5a.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 6,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 12,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/receipts/s1-02-calculator-fip0-d2f56ab63e705e4a.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 6,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 12,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/receipts/s2-06-sticky-fip0-558d7808698713bd.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 6,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 12,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/receipts/s1-01-homepage-fip0-915f78621156e0c8.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 6,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 12,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/receipts/s2-04-checklist-fip0-354ebaebce45fe93.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 6,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 12,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/receipts/s3-05-countdown-fip0-b5bd920a839de50c.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 6,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 12,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/receipts/s3-08-progress-fip0-05099eeabba5a4b3.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 6,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 12,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/receipts/s3-05-countdown-fip0-ac44ac7fa5eb9aaf.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 6,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 12,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/receipts/s1-05-timer-fip0-1a62da032a749280.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 6,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 12,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/receipts/s1-03-weather-fip0-9f5ee5235bc151f5.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 6,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 12,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/receipts/s2-10-health-fip0-a8f965eecd5b94f8.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 6,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 12,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/receipts/s1-04-todo-fip0-3196e1a27c9d8a92.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 6,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 12,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/receipts/s2-06-sticky-fip0-e7322753784ccc94.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 6,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 12,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/receipts/s2-01-dashboard-fip0-d20a38f8f393b7d5.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 6,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 12,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/receipts/s1-02-calculator-fip0-eac2265c372e1abf.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 6,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 12,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/receipts/s1-04-todo-fip0-426dfd3fe6af2a72.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 6,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 12,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/receipts/s2-09-waitlist-fip0-bf6a4086da1c1151.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 6,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 12,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/receipts/s3-03-forecast-fip0-27117aaf7de08e03.json"
+      },
+      {
+        "hits": [
+          {
+            "count": 6,
+            "pattern": "raw_prompt"
+          },
+          {
+            "count": 12,
+            "pattern": "raw_output_excerpt"
+          }
+        ],
+        "path": "docs/evidence/source-proxy-claude-3x10-audit-20260615/receipts/s2-05-stopwatch-fip0-1f18517e2913bfbe.json"
+      }
+    ],
+    "root": "docs/evidence/source-proxy-claude-3x10-audit-20260615/receipts",
+    "total_hits": 1221
+  }
+]

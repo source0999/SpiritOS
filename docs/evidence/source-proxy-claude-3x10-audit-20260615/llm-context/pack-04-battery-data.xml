@@ -1,0 +1,1338 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<spiritos_source_proxy_pack
+  generated_at="2026-06-16T01:38:49+00:00"
+  generated_for="LLM elevated context — Claude 3x10 audit"
+  audit_id="claude-3x10-audit-20260615"
+  accepted_baseline="Integrated Level 5R2 GO (pre-audit)"
+  audit_verdict="C (high confidence)"
+>
+  <title>Battery machine data</title>
+  <description>matrix JSON + results JSON (structured)</description>
+  <file path="docs/evidence/source-proxy-claude-3x10-audit-20260615/battery-matrix.json" bytes="26761" sha256="c87b2d9b33c812d18cc88a84c1fa157591743efc6c5dbd1d974156e6fa232d09">
+    <content><![CDATA[
+{
+  "generated_at": "2026-06-16T00:45:26.178267+00:00",
+  "rows": [
+    {
+      "allowed_target_root": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/",
+      "category": "scaffold/home",
+      "expected_browser_relevant": true,
+      "expected_repair_range": [
+        0,
+        2
+      ],
+      "expected_research_need": false,
+      "expected_score_class": "verifier_blocked",
+      "ext": "html",
+      "forbidden_paths": [
+        ".env",
+        ".env.local",
+        "certificates",
+        "source_proxy/data",
+        "backend/volumes",
+        "backend/searxng_data",
+        ".spirit-backups",
+        "src/app",
+        "src/components",
+        "src/lib",
+        "package.json",
+        "scripts/media"
+      ],
+      "prompt_id": "s1-01-homepage",
+      "raw_prompt": "init a repo and make a homepage for my app",
+      "set_id": 1,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set1/s1-01-homepage/index.html"
+    },
+    {
+      "allowed_target_root": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/",
+      "category": "calc/logic",
+      "expected_browser_relevant": false,
+      "expected_repair_range": [
+        0,
+        2
+      ],
+      "expected_research_need": false,
+      "expected_score_class": "productive_go",
+      "ext": "js",
+      "forbidden_paths": [
+        ".env",
+        ".env.local",
+        "certificates",
+        "source_proxy/data",
+        "backend/volumes",
+        "backend/searxng_data",
+        ".spirit-backups",
+        "src/app",
+        "src/components",
+        "src/lib",
+        "package.json",
+        "scripts/media"
+      ],
+      "prompt_id": "s1-02-calculator",
+      "raw_prompt": "make calculator app",
+      "set_id": 1,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set1/s1-02-calculator/calculator.js"
+    },
+    {
+      "allowed_target_root": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/",
+      "category": "data/ui",
+      "expected_browser_relevant": false,
+      "expected_repair_range": [
+        0,
+        2
+      ],
+      "expected_research_need": false,
+      "expected_score_class": "productive_go",
+      "ext": "js",
+      "forbidden_paths": [
+        ".env",
+        ".env.local",
+        "certificates",
+        "source_proxy/data",
+        "backend/volumes",
+        "backend/searxng_data",
+        ".spirit-backups",
+        "src/app",
+        "src/components",
+        "src/lib",
+        "package.json",
+        "scripts/media"
+      ],
+      "prompt_id": "s1-03-weather",
+      "raw_prompt": "make weather app",
+      "set_id": 1,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set1/s1-03-weather/weather.js"
+    },
+    {
+      "allowed_target_root": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/",
+      "category": "state/crud",
+      "expected_browser_relevant": false,
+      "expected_repair_range": [
+        0,
+        2
+      ],
+      "expected_research_need": false,
+      "expected_score_class": "productive_go",
+      "ext": "js",
+      "forbidden_paths": [
+        ".env",
+        ".env.local",
+        "certificates",
+        "source_proxy/data",
+        "backend/volumes",
+        "backend/searxng_data",
+        ".spirit-backups",
+        "src/app",
+        "src/components",
+        "src/lib",
+        "package.json",
+        "scripts/media"
+      ],
+      "prompt_id": "s1-04-todo",
+      "raw_prompt": "make a todo list thing",
+      "set_id": 1,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set1/s1-04-todo/todo.js"
+    },
+    {
+      "allowed_target_root": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/",
+      "category": "timer",
+      "expected_browser_relevant": false,
+      "expected_repair_range": [
+        0,
+        2
+      ],
+      "expected_research_need": false,
+      "expected_score_class": "productive_go",
+      "ext": "js",
+      "forbidden_paths": [
+        ".env",
+        ".env.local",
+        "certificates",
+        "source_proxy/data",
+        "backend/volumes",
+        "backend/searxng_data",
+        ".spirit-backups",
+        "src/app",
+        "src/components",
+        "src/lib",
+        "package.json",
+        "scripts/media"
+      ],
+      "prompt_id": "s1-05-timer",
+      "raw_prompt": "make a little timer",
+      "set_id": 1,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set1/s1-05-timer/timer.js"
+    },
+    {
+      "allowed_target_root": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/",
+      "category": "crud",
+      "expected_browser_relevant": false,
+      "expected_repair_range": [
+        0,
+        2
+      ],
+      "expected_research_need": false,
+      "expected_score_class": "productive_go",
+      "ext": "js",
+      "forbidden_paths": [
+        ".env",
+        ".env.local",
+        "certificates",
+        "source_proxy/data",
+        "backend/volumes",
+        "backend/searxng_data",
+        ".spirit-backups",
+        "src/app",
+        "src/components",
+        "src/lib",
+        "package.json",
+        "scripts/media"
+      ],
+      "prompt_id": "s1-06-notes",
+      "raw_prompt": "make a notes app",
+      "set_id": 1,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set1/s1-06-notes/notes.js"
+    },
+    {
+      "allowed_target_root": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/",
+      "category": "calc",
+      "expected_browser_relevant": false,
+      "expected_repair_range": [
+        0,
+        2
+      ],
+      "expected_research_need": false,
+      "expected_score_class": "productive_go",
+      "ext": "js",
+      "forbidden_paths": [
+        ".env",
+        ".env.local",
+        "certificates",
+        "source_proxy/data",
+        "backend/volumes",
+        "backend/searxng_data",
+        ".spirit-backups",
+        "src/app",
+        "src/components",
+        "src/lib",
+        "package.json",
+        "scripts/media"
+      ],
+      "prompt_id": "s1-07-expense",
+      "raw_prompt": "make a expense splitter",
+      "set_id": 1,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set1/s1-07-expense/split.js"
+    },
+    {
+      "allowed_target_root": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/",
+      "category": "ui",
+      "expected_browser_relevant": true,
+      "expected_repair_range": [
+        0,
+        2
+      ],
+      "expected_research_need": false,
+      "expected_score_class": "verifier_blocked",
+      "ext": "html",
+      "forbidden_paths": [
+        ".env",
+        ".env.local",
+        "certificates",
+        "source_proxy/data",
+        "backend/volumes",
+        "backend/searxng_data",
+        ".spirit-backups",
+        "src/app",
+        "src/components",
+        "src/lib",
+        "package.json",
+        "scripts/media"
+      ],
+      "prompt_id": "s1-08-chart",
+      "raw_prompt": "make a simple chart page",
+      "set_id": 1,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set1/s1-08-chart/chart.html"
+    },
+    {
+      "allowed_target_root": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/",
+      "category": "ui",
+      "expected_browser_relevant": true,
+      "expected_repair_range": [
+        0,
+        2
+      ],
+      "expected_research_need": false,
+      "expected_score_class": "verifier_blocked",
+      "ext": "html",
+      "forbidden_paths": [
+        ".env",
+        ".env.local",
+        "certificates",
+        "source_proxy/data",
+        "backend/volumes",
+        "backend/searxng_data",
+        ".spirit-backups",
+        "src/app",
+        "src/components",
+        "src/lib",
+        "package.json",
+        "scripts/media"
+      ],
+      "prompt_id": "s1-09-signup",
+      "raw_prompt": "make a signup landing page",
+      "set_id": 1,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set1/s1-09-signup/signup.html"
+    },
+    {
+      "allowed_target_root": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/",
+      "category": "api",
+      "expected_browser_relevant": false,
+      "expected_repair_range": [
+        0,
+        2
+      ],
+      "expected_research_need": false,
+      "expected_score_class": "productive_go",
+      "ext": "ts",
+      "forbidden_paths": [
+        ".env",
+        ".env.local",
+        "certificates",
+        "source_proxy/data",
+        "backend/volumes",
+        "backend/searxng_data",
+        ".spirit-backups",
+        "src/app",
+        "src/components",
+        "src/lib",
+        "package.json",
+        "scripts/media"
+      ],
+      "prompt_id": "s1-10-status",
+      "raw_prompt": "make a tiny api route that returns status",
+      "set_id": 1,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set1/s1-10-status/status.ts"
+    },
+    {
+      "allowed_target_root": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/",
+      "category": "scaffold/home",
+      "expected_browser_relevant": true,
+      "expected_repair_range": [
+        0,
+        2
+      ],
+      "expected_research_need": false,
+      "expected_score_class": "verifier_blocked",
+      "ext": "html",
+      "forbidden_paths": [
+        ".env",
+        ".env.local",
+        "certificates",
+        "source_proxy/data",
+        "backend/volumes",
+        "backend/searxng_data",
+        ".spirit-backups",
+        "src/app",
+        "src/components",
+        "src/lib",
+        "package.json",
+        "scripts/media"
+      ],
+      "prompt_id": "s2-01-dashboard",
+      "raw_prompt": "lets start a repo and make a dashboard for my app",
+      "set_id": 2,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set2/s2-01-dashboard/dashboard.html"
+    },
+    {
+      "allowed_target_root": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/",
+      "category": "timer",
+      "expected_browser_relevant": false,
+      "expected_repair_range": [
+        0,
+        2
+      ],
+      "expected_research_need": false,
+      "expected_score_class": "productive_go",
+      "ext": "js",
+      "forbidden_paths": [
+        ".env",
+        ".env.local",
+        "certificates",
+        "source_proxy/data",
+        "backend/volumes",
+        "backend/searxng_data",
+        ".spirit-backups",
+        "src/app",
+        "src/components",
+        "src/lib",
+        "package.json",
+        "scripts/media"
+      ],
+      "prompt_id": "s2-02-counter",
+      "raw_prompt": "make a time counter app",
+      "set_id": 2,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set2/s2-02-counter/counter.js"
+    },
+    {
+      "allowed_target_root": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/",
+      "category": "data/ui",
+      "expected_browser_relevant": false,
+      "expected_repair_range": [
+        0,
+        2
+      ],
+      "expected_research_need": false,
+      "expected_score_class": "productive_go",
+      "ext": "js",
+      "forbidden_paths": [
+        ".env",
+        ".env.local",
+        "certificates",
+        "source_proxy/data",
+        "backend/volumes",
+        "backend/searxng_data",
+        ".spirit-backups",
+        "src/app",
+        "src/components",
+        "src/lib",
+        "package.json",
+        "scripts/media"
+      ],
+      "prompt_id": "s2-03-moon",
+      "raw_prompt": "make a moon phase app",
+      "set_id": 2,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set2/s2-03-moon/moon.js"
+    },
+    {
+      "allowed_target_root": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/",
+      "category": "state/crud",
+      "expected_browser_relevant": false,
+      "expected_repair_range": [
+        0,
+        2
+      ],
+      "expected_research_need": false,
+      "expected_score_class": "productive_go",
+      "ext": "js",
+      "forbidden_paths": [
+        ".env",
+        ".env.local",
+        "certificates",
+        "source_proxy/data",
+        "backend/volumes",
+        "backend/searxng_data",
+        ".spirit-backups",
+        "src/app",
+        "src/components",
+        "src/lib",
+        "package.json",
+        "scripts/media"
+      ],
+      "prompt_id": "s2-04-checklist",
+      "raw_prompt": "make checklist thing i can add and clear",
+      "set_id": 2,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set2/s2-04-checklist/checklist.js"
+    },
+    {
+      "allowed_target_root": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/",
+      "category": "timer",
+      "expected_browser_relevant": false,
+      "expected_repair_range": [
+        0,
+        2
+      ],
+      "expected_research_need": false,
+      "expected_score_class": "productive_go",
+      "ext": "js",
+      "forbidden_paths": [
+        ".env",
+        ".env.local",
+        "certificates",
+        "source_proxy/data",
+        "backend/volumes",
+        "backend/searxng_data",
+        ".spirit-backups",
+        "src/app",
+        "src/components",
+        "src/lib",
+        "package.json",
+        "scripts/media"
+      ],
+      "prompt_id": "s2-05-stopwatch",
+      "raw_prompt": "make stopwatch card with start pause reset",
+      "set_id": 2,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set2/s2-05-stopwatch/stopwatch.js"
+    },
+    {
+      "allowed_target_root": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/",
+      "category": "crud",
+      "expected_browser_relevant": false,
+      "expected_repair_range": [
+        0,
+        2
+      ],
+      "expected_research_need": false,
+      "expected_score_class": "productive_go",
+      "ext": "js",
+      "forbidden_paths": [
+        ".env",
+        ".env.local",
+        "certificates",
+        "source_proxy/data",
+        "backend/volumes",
+        "backend/searxng_data",
+        ".spirit-backups",
+        "src/app",
+        "src/components",
+        "src/lib",
+        "package.json",
+        "scripts/media"
+      ],
+      "prompt_id": "s2-06-sticky",
+      "raw_prompt": "make a quick sticky notes board",
+      "set_id": 2,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set2/s2-06-sticky/sticky.js"
+    },
+    {
+      "allowed_target_root": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/",
+      "category": "calc",
+      "expected_browser_relevant": false,
+      "expected_repair_range": [
+        0,
+        2
+      ],
+      "expected_research_need": false,
+      "expected_score_class": "productive_go",
+      "ext": "js",
+      "forbidden_paths": [
+        ".env",
+        ".env.local",
+        "certificates",
+        "source_proxy/data",
+        "backend/volumes",
+        "backend/searxng_data",
+        ".spirit-backups",
+        "src/app",
+        "src/components",
+        "src/lib",
+        "package.json",
+        "scripts/media"
+      ],
+      "prompt_id": "s2-07-tip",
+      "raw_prompt": "make a tip calculator",
+      "set_id": 2,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set2/s2-07-tip/tip.js"
+    },
+    {
+      "allowed_target_root": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/",
+      "category": "data/ui",
+      "expected_browser_relevant": false,
+      "expected_repair_range": [
+        0,
+        2
+      ],
+      "expected_research_need": false,
+      "expected_score_class": "productive_go",
+      "ext": "js",
+      "forbidden_paths": [
+        ".env",
+        ".env.local",
+        "certificates",
+        "source_proxy/data",
+        "backend/volumes",
+        "backend/searxng_data",
+        ".spirit-backups",
+        "src/app",
+        "src/components",
+        "src/lib",
+        "package.json",
+        "scripts/media"
+      ],
+      "prompt_id": "s2-08-stats",
+      "raw_prompt": "make a small stats widget",
+      "set_id": 2,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set2/s2-08-stats/stats.js"
+    },
+    {
+      "allowed_target_root": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/",
+      "category": "ui",
+      "expected_browser_relevant": true,
+      "expected_repair_range": [
+        0,
+        2
+      ],
+      "expected_research_need": false,
+      "expected_score_class": "verifier_blocked",
+      "ext": "html",
+      "forbidden_paths": [
+        ".env",
+        ".env.local",
+        "certificates",
+        "source_proxy/data",
+        "backend/volumes",
+        "backend/searxng_data",
+        ".spirit-backups",
+        "src/app",
+        "src/components",
+        "src/lib",
+        "package.json",
+        "scripts/media"
+      ],
+      "prompt_id": "s2-09-waitlist",
+      "raw_prompt": "make a product waitlist page",
+      "set_id": 2,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set2/s2-09-waitlist/waitlist.html"
+    },
+    {
+      "allowed_target_root": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/",
+      "category": "api",
+      "expected_browser_relevant": false,
+      "expected_repair_range": [
+        0,
+        2
+      ],
+      "expected_research_need": false,
+      "expected_score_class": "productive_go",
+      "ext": "ts",
+      "forbidden_paths": [
+        ".env",
+        ".env.local",
+        "certificates",
+        "source_proxy/data",
+        "backend/volumes",
+        "backend/searxng_data",
+        ".spirit-backups",
+        "src/app",
+        "src/components",
+        "src/lib",
+        "package.json",
+        "scripts/media"
+      ],
+      "prompt_id": "s2-10-health",
+      "raw_prompt": "make a health check endpoint",
+      "set_id": 2,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set2/s2-10-health/health.ts"
+    },
+    {
+      "allowed_target_root": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/",
+      "category": "scaffold/home",
+      "expected_browser_relevant": true,
+      "expected_repair_range": [
+        0,
+        2
+      ],
+      "expected_research_need": false,
+      "expected_score_class": "verifier_blocked",
+      "ext": "html",
+      "forbidden_paths": [
+        ".env",
+        ".env.local",
+        "certificates",
+        "source_proxy/data",
+        "backend/volumes",
+        "backend/searxng_data",
+        ".spirit-backups",
+        "src/app",
+        "src/components",
+        "src/lib",
+        "package.json",
+        "scripts/media"
+      ],
+      "prompt_id": "s3-01-shell",
+      "raw_prompt": "spin up a tiny app shell with a home screen",
+      "set_id": 3,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set3/s3-01-shell/shell.html"
+    },
+    {
+      "allowed_target_root": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/",
+      "category": "calc/logic",
+      "expected_browser_relevant": false,
+      "expected_repair_range": [
+        0,
+        2
+      ],
+      "expected_research_need": false,
+      "expected_score_class": "productive_go",
+      "ext": "js",
+      "forbidden_paths": [
+        ".env",
+        ".env.local",
+        "certificates",
+        "source_proxy/data",
+        "backend/volumes",
+        "backend/searxng_data",
+        ".spirit-backups",
+        "src/app",
+        "src/components",
+        "src/lib",
+        "package.json",
+        "scripts/media"
+      ],
+      "prompt_id": "s3-02-cruncher",
+      "raw_prompt": "build a basic number cruncher",
+      "set_id": 3,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set3/s3-02-cruncher/cruncher.js"
+    },
+    {
+      "allowed_target_root": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/",
+      "category": "data/ui",
+      "expected_browser_relevant": false,
+      "expected_repair_range": [
+        0,
+        2
+      ],
+      "expected_research_need": false,
+      "expected_score_class": "productive_go",
+      "ext": "js",
+      "forbidden_paths": [
+        ".env",
+        ".env.local",
+        "certificates",
+        "source_proxy/data",
+        "backend/volumes",
+        "backend/searxng_data",
+        ".spirit-backups",
+        "src/app",
+        "src/components",
+        "src/lib",
+        "package.json",
+        "scripts/media"
+      ],
+      "prompt_id": "s3-03-forecast",
+      "raw_prompt": "make a simple forecast-ish demo with fake data if needed",
+      "set_id": 3,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set3/s3-03-forecast/forecast.js"
+    },
+    {
+      "allowed_target_root": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/",
+      "category": "state/crud",
+      "expected_browser_relevant": false,
+      "expected_repair_range": [
+        0,
+        2
+      ],
+      "expected_research_need": false,
+      "expected_score_class": "productive_go",
+      "ext": "js",
+      "forbidden_paths": [
+        ".env",
+        ".env.local",
+        "certificates",
+        "source_proxy/data",
+        "backend/volumes",
+        "backend/searxng_data",
+        ".spirit-backups",
+        "src/app",
+        "src/components",
+        "src/lib",
+        "package.json",
+        "scripts/media"
+      ],
+      "prompt_id": "s3-04-tasks",
+      "raw_prompt": "make a task tracker",
+      "set_id": 3,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set3/s3-04-tasks/tasks.js"
+    },
+    {
+      "allowed_target_root": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/",
+      "category": "timer",
+      "expected_browser_relevant": false,
+      "expected_repair_range": [
+        0,
+        2
+      ],
+      "expected_research_need": false,
+      "expected_score_class": "productive_go",
+      "ext": "js",
+      "forbidden_paths": [
+        ".env",
+        ".env.local",
+        "certificates",
+        "source_proxy/data",
+        "backend/volumes",
+        "backend/searxng_data",
+        ".spirit-backups",
+        "src/app",
+        "src/components",
+        "src/lib",
+        "package.json",
+        "scripts/media"
+      ],
+      "prompt_id": "s3-05-countdown",
+      "raw_prompt": "make a countdown thing",
+      "set_id": 3,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set3/s3-05-countdown/countdown.js"
+    },
+    {
+      "allowed_target_root": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/",
+      "category": "crud",
+      "expected_browser_relevant": false,
+      "expected_repair_range": [
+        0,
+        2
+      ],
+      "expected_research_need": false,
+      "expected_score_class": "productive_go",
+      "ext": "js",
+      "forbidden_paths": [
+        ".env",
+        ".env.local",
+        "certificates",
+        "source_proxy/data",
+        "backend/volumes",
+        "backend/searxng_data",
+        ".spirit-backups",
+        "src/app",
+        "src/components",
+        "src/lib",
+        "package.json",
+        "scripts/media"
+      ],
+      "prompt_id": "s3-06-journal",
+      "raw_prompt": "make a mini journal page",
+      "set_id": 3,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set3/s3-06-journal/journal.js"
+    },
+    {
+      "allowed_target_root": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/",
+      "category": "calc",
+      "expected_browser_relevant": false,
+      "expected_repair_range": [
+        0,
+        2
+      ],
+      "expected_research_need": false,
+      "expected_score_class": "productive_go",
+      "ext": "js",
+      "forbidden_paths": [
+        ".env",
+        ".env.local",
+        "certificates",
+        "source_proxy/data",
+        "backend/volumes",
+        "backend/searxng_data",
+        ".spirit-backups",
+        "src/app",
+        "src/components",
+        "src/lib",
+        "package.json",
+        "scripts/media"
+      ],
+      "prompt_id": "s3-07-budget",
+      "raw_prompt": "make a budget split helper",
+      "set_id": 3,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set3/s3-07-budget/budget.js"
+    },
+    {
+      "allowed_target_root": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/",
+      "category": "ui",
+      "expected_browser_relevant": true,
+      "expected_repair_range": [
+        0,
+        2
+      ],
+      "expected_research_need": false,
+      "expected_score_class": "verifier_blocked",
+      "ext": "html",
+      "forbidden_paths": [
+        ".env",
+        ".env.local",
+        "certificates",
+        "source_proxy/data",
+        "backend/volumes",
+        "backend/searxng_data",
+        ".spirit-backups",
+        "src/app",
+        "src/components",
+        "src/lib",
+        "package.json",
+        "scripts/media"
+      ],
+      "prompt_id": "s3-08-progress",
+      "raw_prompt": "make a simple progress graph",
+      "set_id": 3,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set3/s3-08-progress/progress.html"
+    },
+    {
+      "allowed_target_root": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/",
+      "category": "ui",
+      "expected_browser_relevant": true,
+      "expected_repair_range": [
+        0,
+        2
+      ],
+      "expected_research_need": false,
+      "expected_score_class": "verifier_blocked",
+      "ext": "html",
+      "forbidden_paths": [
+        ".env",
+        ".env.local",
+        "certificates",
+        "source_proxy/data",
+        "backend/volumes",
+        "backend/searxng_data",
+        ".spirit-backups",
+        "src/app",
+        "src/components",
+        "src/lib",
+        "package.json",
+        "scripts/media"
+      ],
+      "prompt_id": "s3-09-coming-soon",
+      "raw_prompt": "make a coming soon page",
+      "set_id": 3,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set3/s3-09-coming-soon/coming-soon.html"
+    },
+    {
+      "allowed_target_root": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/",
+      "category": "api",
+      "expected_browser_relevant": false,
+      "expected_repair_range": [
+        0,
+        2
+      ],
+      "expected_research_need": false,
+      "expected_score_class": "productive_go",
+      "ext": "ts",
+      "forbidden_paths": [
+        ".env",
+        ".env.local",
+        "certificates",
+        "source_proxy/data",
+        "backend/volumes",
+        "backend/searxng_data",
+        ".spirit-backups",
+        "src/app",
+        "src/components",
+        "src/lib",
+        "package.json",
+        "scripts/media"
+      ],
+      "prompt_id": "s3-10-alive",
+      "raw_prompt": "make an endpoint that says the service is alive",
+      "set_id": 3,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set3/s3-10-alive/alive.ts"
+    }
+  ]
+}
+]]></content>
+  </file>
+  <file path="docs/evidence/source-proxy-claude-3x10-audit-20260615/battery-results.json" bytes="16359" sha256="fe59a975a5d1e381a7f481d1b3a24d059505c16250e63274ed07ec74b8dee658">
+    <content><![CDATA[
+{
+  "by_score_class": {
+    "productive_go": 22,
+    "verifier_blocked_browser": 8
+  },
+  "coding_failure": 0,
+  "config_blocked": 0,
+  "expected_safety_block": 0,
+  "generated_at": "2026-06-16T01:25:19.106956+00:00",
+  "hard_fail_rows": [],
+  "hardcoded_used": 0,
+  "lane_truth_warning": 0,
+  "matrix": [
+    {
+      "category": "scaffold/home",
+      "durable_verdict": "NO-GO: fip5_browser_behavior_authority_blocks_pass",
+      "elapsed_s": 359.4,
+      "expected_score_class": "verifier_blocked",
+      "prompt_id": "s1-01-homepage",
+      "raw_prompt": "init a repo and make a homepage for my app",
+      "run_id": "fip0-1eec7a9947f1adc7",
+      "score_class": "verifier_blocked_browser",
+      "set_id": 1,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set1/s1-01-homepage/index.html",
+      "trace_matches_receipt": true
+    },
+    {
+      "category": "calc/logic",
+      "durable_verdict": "GO: fip5_required_verifier_and_repair_complete",
+      "elapsed_s": 305.1,
+      "expected_score_class": "productive_go",
+      "prompt_id": "s1-02-calculator",
+      "raw_prompt": "make calculator app",
+      "run_id": "fip0-eac2265c372e1abf",
+      "score_class": "productive_go",
+      "set_id": 1,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set1/s1-02-calculator/calculator.js",
+      "trace_matches_receipt": true
+    },
+    {
+      "category": "data/ui",
+      "durable_verdict": "GO: fip5_required_verifier_and_repair_complete",
+      "elapsed_s": 190.4,
+      "expected_score_class": "productive_go",
+      "prompt_id": "s1-03-weather",
+      "raw_prompt": "make weather app",
+      "run_id": "fip0-06c467768241e206",
+      "score_class": "productive_go",
+      "set_id": 1,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set1/s1-03-weather/weather.js",
+      "trace_matches_receipt": true
+    },
+    {
+      "category": "state/crud",
+      "durable_verdict": "GO: fip5_required_verifier_and_repair_complete",
+      "elapsed_s": 236.2,
+      "expected_score_class": "productive_go",
+      "prompt_id": "s1-04-todo",
+      "raw_prompt": "make a todo list thing",
+      "run_id": "fip0-355a38f1e76f19c1",
+      "score_class": "productive_go",
+      "set_id": 1,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set1/s1-04-todo/todo.js",
+      "trace_matches_receipt": true
+    },
+    {
+      "category": "timer",
+      "durable_verdict": "GO: fip5_required_verifier_and_repair_complete",
+      "elapsed_s": 223.9,
+      "expected_score_class": "productive_go",
+      "prompt_id": "s1-05-timer",
+      "raw_prompt": "make a little timer",
+      "run_id": "fip0-1a62da032a749280",
+      "score_class": "productive_go",
+      "set_id": 1,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set1/s1-05-timer/timer.js",
+      "trace_matches_receipt": true
+    },
+    {
+      "category": "crud",
+      "durable_verdict": "GO: fip5_required_verifier_and_repair_complete",
+      "elapsed_s": 208.0,
+      "expected_score_class": "productive_go",
+      "prompt_id": "s1-06-notes",
+      "raw_prompt": "make a notes app",
+      "run_id": "fip0-74dad2831a84988b",
+      "score_class": "productive_go",
+      "set_id": 1,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set1/s1-06-notes/notes.js",
+      "trace_matches_receipt": true
+    },
+    {
+      "category": "calc",
+      "durable_verdict": "GO: fip5_required_verifier_and_repair_complete",
+      "elapsed_s": 261.8,
+      "expected_score_class": "productive_go",
+      "prompt_id": "s1-07-expense",
+      "raw_prompt": "make a expense splitter",
+      "run_id": "fip0-654d4decd915a0ed",
+      "score_class": "productive_go",
+      "set_id": 1,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set1/s1-07-expense/split.js",
+      "trace_matches_receipt": true
+    },
+    {
+      "category": "ui",
+      "durable_verdict": "NO-GO: fip5_browser_behavior_authority_blocks_pass",
+      "elapsed_s": 350.5,
+      "expected_score_class": "verifier_blocked",
+      "prompt_id": "s1-08-chart",
+      "raw_prompt": "make a simple chart page",
+      "run_id": "fip0-51b5015873158f25",
+      "score_class": "verifier_blocked_browser",
+      "set_id": 1,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set1/s1-08-chart/chart.html",
+      "trace_matches_receipt": true
+    },
+    {
+      "category": "ui",
+      "durable_verdict": "NO-GO: fip5_browser_behavior_authority_blocks_pass",
+      "elapsed_s": 283.8,
+      "expected_score_class": "verifier_blocked",
+      "prompt_id": "s1-09-signup",
+      "raw_prompt": "make a signup landing page",
+      "run_id": "fip0-d98ee0e0c4bb9321",
+      "score_class": "verifier_blocked_browser",
+      "set_id": 1,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set1/s1-09-signup/signup.html",
+      "trace_matches_receipt": true
+    },
+    {
+      "category": "api",
+      "durable_verdict": "GO: fip5_required_verifier_and_repair_complete",
+      "elapsed_s": 254.1,
+      "expected_score_class": "productive_go",
+      "prompt_id": "s1-10-status",
+      "raw_prompt": "make a tiny api route that returns status",
+      "run_id": "fip0-71f6e247806fd990",
+      "score_class": "productive_go",
+      "set_id": 1,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set1/s1-10-status/status.ts",
+      "trace_matches_receipt": true
+    },
+    {
+      "category": "scaffold/home",
+      "durable_verdict": "NO-GO: fip5_browser_behavior_authority_blocks_pass",
+      "elapsed_s": 290.7,
+      "expected_score_class": "verifier_blocked",
+      "prompt_id": "s2-01-dashboard",
+      "raw_prompt": "lets start a repo and make a dashboard for my app",
+      "run_id": "fip0-ea3e7880a26ac314",
+      "score_class": "verifier_blocked_browser",
+      "set_id": 2,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set2/s2-01-dashboard/dashboard.html",
+      "trace_matches_receipt": true
+    },
+    {
+      "category": "timer",
+      "durable_verdict": "GO: fip5_required_verifier_and_repair_complete",
+      "elapsed_s": 268.9,
+      "expected_score_class": "productive_go",
+      "prompt_id": "s2-02-counter",
+      "raw_prompt": "make a time counter app",
+      "run_id": "fip0-a6143b17b984d2d8",
+      "score_class": "productive_go",
+      "set_id": 2,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set2/s2-02-counter/counter.js",
+      "trace_matches_receipt": true
+    },
+    {
+      "category": "data/ui",
+      "durable_verdict": "GO: fip5_required_verifier_and_repair_complete",
+      "elapsed_s": 274.3,
+      "expected_score_class": "productive_go",
+      "prompt_id": "s2-03-moon",
+      "raw_prompt": "make a moon phase app",
+      "run_id": "fip0-e34a3d0a8062d303",
+      "score_class": "productive_go",
+      "set_id": 2,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set2/s2-03-moon/moon.js",
+      "trace_matches_receipt": true
+    },
+    {
+      "category": "state/crud",
+      "durable_verdict": "GO: fip5_required_verifier_and_repair_complete",
+      "elapsed_s": 282.8,
+      "expected_score_class": "productive_go",
+      "prompt_id": "s2-04-checklist",
+      "raw_prompt": "make checklist thing i can add and clear",
+      "run_id": "fip0-354ebaebce45fe93",
+      "score_class": "productive_go",
+      "set_id": 2,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set2/s2-04-checklist/checklist.js",
+      "trace_matches_receipt": true
+    },
+    {
+      "category": "timer",
+      "durable_verdict": "GO: fip5_required_verifier_and_repair_complete",
+      "elapsed_s": 287.1,
+      "expected_score_class": "productive_go",
+      "prompt_id": "s2-05-stopwatch",
+      "raw_prompt": "make stopwatch card with start pause reset",
+      "run_id": "fip0-1f18517e2913bfbe",
+      "score_class": "productive_go",
+      "set_id": 2,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set2/s2-05-stopwatch/stopwatch.js",
+      "trace_matches_receipt": true
+    },
+    {
+      "category": "crud",
+      "durable_verdict": "GO: fip5_required_verifier_and_repair_complete",
+      "elapsed_s": 276.3,
+      "expected_score_class": "productive_go",
+      "prompt_id": "s2-06-sticky",
+      "raw_prompt": "make a quick sticky notes board",
+      "run_id": "fip0-e7322753784ccc94",
+      "score_class": "productive_go",
+      "set_id": 2,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set2/s2-06-sticky/sticky.js",
+      "trace_matches_receipt": true
+    },
+    {
+      "category": "calc",
+      "durable_verdict": "GO: fip5_required_verifier_and_repair_complete",
+      "elapsed_s": 264.4,
+      "expected_score_class": "productive_go",
+      "prompt_id": "s2-07-tip",
+      "raw_prompt": "make a tip calculator",
+      "run_id": "fip0-5a587d92043eac9a",
+      "score_class": "productive_go",
+      "set_id": 2,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set2/s2-07-tip/tip.js",
+      "trace_matches_receipt": true
+    },
+    {
+      "category": "data/ui",
+      "durable_verdict": "GO: fip5_required_verifier_and_repair_complete",
+      "elapsed_s": 280.9,
+      "expected_score_class": "productive_go",
+      "prompt_id": "s2-08-stats",
+      "raw_prompt": "make a small stats widget",
+      "run_id": "fip0-014219a32a991956",
+      "score_class": "productive_go",
+      "set_id": 2,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set2/s2-08-stats/stats.js",
+      "trace_matches_receipt": true
+    },
+    {
+      "category": "ui",
+      "durable_verdict": "NO-GO: fip5_browser_behavior_authority_blocks_pass",
+      "elapsed_s": 303.7,
+      "expected_score_class": "verifier_blocked",
+      "prompt_id": "s2-09-waitlist",
+      "raw_prompt": "make a product waitlist page",
+      "run_id": "fip0-72703023e1baf325",
+      "score_class": "verifier_blocked_browser",
+      "set_id": 2,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set2/s2-09-waitlist/waitlist.html",
+      "trace_matches_receipt": true
+    },
+    {
+      "category": "api",
+      "durable_verdict": "GO: fip5_required_verifier_and_repair_complete",
+      "elapsed_s": 308.2,
+      "expected_score_class": "productive_go",
+      "prompt_id": "s2-10-health",
+      "raw_prompt": "make a health check endpoint",
+      "run_id": "fip0-a68f4bd6733e9802",
+      "score_class": "productive_go",
+      "set_id": 2,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set2/s2-10-health/health.ts",
+      "trace_matches_receipt": true
+    },
+    {
+      "category": "scaffold/home",
+      "durable_verdict": "NO-GO: fip5_browser_behavior_authority_blocks_pass",
+      "elapsed_s": 278.1,
+      "expected_score_class": "verifier_blocked",
+      "prompt_id": "s3-01-shell",
+      "raw_prompt": "spin up a tiny app shell with a home screen",
+      "run_id": "fip0-066ce708618daf5a",
+      "score_class": "verifier_blocked_browser",
+      "set_id": 3,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set3/s3-01-shell/shell.html",
+      "trace_matches_receipt": true
+    },
+    {
+      "category": "calc/logic",
+      "durable_verdict": "GO: fip5_required_verifier_and_repair_complete",
+      "elapsed_s": 233.9,
+      "expected_score_class": "productive_go",
+      "prompt_id": "s3-02-cruncher",
+      "raw_prompt": "build a basic number cruncher",
+      "run_id": "fip0-a565105403c15af6",
+      "score_class": "productive_go",
+      "set_id": 3,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set3/s3-02-cruncher/cruncher.js",
+      "trace_matches_receipt": true
+    },
+    {
+      "category": "data/ui",
+      "durable_verdict": "GO: fip5_required_verifier_and_repair_complete",
+      "elapsed_s": 237.6,
+      "expected_score_class": "productive_go",
+      "prompt_id": "s3-03-forecast",
+      "raw_prompt": "make a simple forecast-ish demo with fake data if needed",
+      "run_id": "fip0-27117aaf7de08e03",
+      "score_class": "productive_go",
+      "set_id": 3,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set3/s3-03-forecast/forecast.js",
+      "trace_matches_receipt": true
+    },
+    {
+      "category": "state/crud",
+      "durable_verdict": "GO: fip5_required_verifier_and_repair_complete",
+      "elapsed_s": 268.8,
+      "expected_score_class": "productive_go",
+      "prompt_id": "s3-04-tasks",
+      "raw_prompt": "make a task tracker",
+      "run_id": "fip0-4646b80acc215bf9",
+      "score_class": "productive_go",
+      "set_id": 3,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set3/s3-04-tasks/tasks.js",
+      "trace_matches_receipt": true
+    },
+    {
+      "category": "timer",
+      "durable_verdict": "GO: fip5_required_verifier_and_repair_complete",
+      "elapsed_s": 235.2,
+      "expected_score_class": "productive_go",
+      "prompt_id": "s3-05-countdown",
+      "raw_prompt": "make a countdown thing",
+      "run_id": "fip0-b5bd920a839de50c",
+      "score_class": "productive_go",
+      "set_id": 3,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set3/s3-05-countdown/countdown.js",
+      "trace_matches_receipt": true
+    },
+    {
+      "category": "crud",
+      "durable_verdict": "GO: fip5_required_verifier_and_repair_complete",
+      "elapsed_s": 219.4,
+      "expected_score_class": "productive_go",
+      "prompt_id": "s3-06-journal",
+      "raw_prompt": "make a mini journal page",
+      "run_id": "fip0-310f30b2f8eaf283",
+      "score_class": "productive_go",
+      "set_id": 3,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set3/s3-06-journal/journal.js",
+      "trace_matches_receipt": true
+    },
+    {
+      "category": "calc",
+      "durable_verdict": "GO: fip5_required_verifier_and_repair_complete",
+      "elapsed_s": 222.9,
+      "expected_score_class": "productive_go",
+      "prompt_id": "s3-07-budget",
+      "raw_prompt": "make a budget split helper",
+      "run_id": "fip0-2270b890036bdaa2",
+      "score_class": "productive_go",
+      "set_id": 3,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set3/s3-07-budget/budget.js",
+      "trace_matches_receipt": true
+    },
+    {
+      "category": "ui",
+      "durable_verdict": "NO-GO: fip5_browser_behavior_authority_blocks_pass",
+      "elapsed_s": 230.1,
+      "expected_score_class": "verifier_blocked",
+      "prompt_id": "s3-08-progress",
+      "raw_prompt": "make a simple progress graph",
+      "run_id": "fip0-05099eeabba5a4b3",
+      "score_class": "verifier_blocked_browser",
+      "set_id": 3,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set3/s3-08-progress/progress.html",
+      "trace_matches_receipt": true
+    },
+    {
+      "category": "ui",
+      "durable_verdict": "NO-GO: fip5_browser_behavior_authority_blocks_pass",
+      "elapsed_s": 218.7,
+      "expected_score_class": "verifier_blocked",
+      "prompt_id": "s3-09-coming-soon",
+      "raw_prompt": "make a coming soon page",
+      "run_id": "fip0-f77106706ee79edd",
+      "score_class": "verifier_blocked_browser",
+      "set_id": 3,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set3/s3-09-coming-soon/coming-soon.html",
+      "trace_matches_receipt": true
+    },
+    {
+      "category": "api",
+      "durable_verdict": "GO: fip5_required_verifier_and_repair_complete",
+      "elapsed_s": 242.0,
+      "expected_score_class": "productive_go",
+      "prompt_id": "s3-10-alive",
+      "raw_prompt": "make an endpoint that says the service is alive",
+      "run_id": "fip0-732c7633e8591c87",
+      "score_class": "productive_go",
+      "set_id": 3,
+      "target": "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set3/s3-10-alive/alive.ts",
+      "trace_matches_receipt": true
+    }
+  ],
+  "preview_only_go": 0,
+  "productive_go": 22,
+  "productive_go_integrity_fail": 0,
+  "repair_failure": 0,
+  "total": 30,
+  "trace_mismatch": 0,
+  "unexpected_no_go": 0,
+  "verifier_blocked": 0,
+  "verifier_blocked_browser": 8
+}
+]]></content>
+  </file>
+</spiritos_source_proxy_pack>

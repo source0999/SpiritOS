@@ -6,6 +6,10 @@ Current accepted state: Integrated Level 5R2 GO.
 
 No post-Level-5 expansion has started.
 
+Integrated Level 6 stress/soak planning has been written, but Level 6 implementation and matrix execution have not started:
+
+- `docs/evidence/source-proxy-integrated-level-6-stress-soak-plan-20260615/`
+
 ## Accepted Timeline
 
 - FIP-0 GO
@@ -26,6 +30,7 @@ Current authority:
 
 - `docs/evidence/source-proxy-full-integration-pivot/integrated-level-5R2-closeout.md`
 - `docs/evidence/source-proxy-full-integration-pivot/post-level-5-stabilization-closeout.md`
+- `docs/evidence/source-proxy-integrated-level-6-stress-soak-plan-20260615/index.md`
 
 ## Runtime Runbook
 

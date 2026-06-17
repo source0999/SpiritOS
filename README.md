@@ -164,7 +164,14 @@ curl -k -I --max-time 10 https://localhost:3000/coding || true
 
 Clean restart kills tmux sessions and any orphan processes on ports `3000` and `8787` before starting fresh tmux sessions. Plain `tmux kill-session` is not always enough because the frontend can leave orphan Next processes on port `3000`.
 
-Restart frontend only:
+Restart frontend only (leaves Source Proxy `:8787` and SpiritFlix `:3001` untouched):
+
+```bash
+cd ~/SpiritOS
+npm run lan:restart
+```
+
+Manual equivalent:
 
 ```bash
 cd ~/SpiritOS
@@ -293,8 +300,40 @@ Expected good output:
 - `tmux` shows `spiritos-lan` and `source-proxy-lan`.
 - `ss` shows `0.0.0.0:3000` for the frontend.
 - `ss` shows `0.0.0.0:8787` for the proxy.
+- `curl` to `https://localhost:3000/` returns `HTTP/1.1 200 OK` (watchdog health probe).
 - `curl` to `https://localhost:3000/coding` returns `HTTP/1.1 200 OK`.
 - The browser opens `https://10.0.0.186:3000/coding` after a hard refresh if needed.
+
+### Runtime lane audit (when :3000 / :8787 / :3001 feel down or slow)
+
+Quick audit on the Dell:
+
+```bash
+cd ~/SpiritOS
+npm run lanes:audit
+```
+
+Common causes seen on the headless box:
+
+- **Watchdog restart churn** on `:3000` when Next is still compiling or swap is full. The LAN watchdog now probes `https://127.0.0.1:3000/` (not `/coding`), waits longer before health checks, and only clears `.next` cache every 3rd restart instead of every loop.
+- **Orphan `next-server` processes** on smoke ports `3020/3030` or stray dev ports like `3027` eating RAM. Smoke/admin dev must stay on `npm run spiritflix:admin:dev` and be stopped with `npm run spiritflix:admin:dev:stop`.
+- **Swap exhaustion** (4G swap full) makes all three lanes feel hung. Check `free -h`; pause heavy ffmpeg/media-ingest work if lanes need to stay responsive.
+
+Per-lane restarts (safe, tmux-managed):
+
+```bash
+npm run lan:restart                 # SpiritOS HTTPS UI :3000 only
+npm run proxy:lan:restart           # Source Proxy :8787 only (now watchdog-wrapped)
+npm run spiritflix:stable:restart   # SpiritFlix stable sidecar :3001 only
+```
+
+Watchdog logs:
+
+```text
+~/spiritos-dev-lan-watchdog.log
+~/source-proxy-lan-watchdog.log
+~/spiritflix-stable-3001-watchdog.log
+```
 
 **Brain vs TTS (do not conflate them):** `/api/spirit` uses `OLLAMA_MODEL` for `/chat` text generation. `/oracle` can use `ORACLE_OLLAMA_MODEL` when set. Voice is synthesized via same-origin **`/api/tts`** (`TTS_PROVIDER=piper` or `elevenlabs`); the browser never sees `ELEVENLABS_API_KEY`. Optional `ELEVENLABS_VOICE_SPEED` (default 1.12, clamped 0.7–1.2) sets ElevenLabs cadence; Voice settings can send a per-request `speed` override. **`GET /api/tts/voices`** feeds the Voice picker. **`ELEVENLABS_VOICE_ALLOWLIST`** supports **`Clarice:voice_id`** (recommended, no catalog read) or comma-separated **names only** (needs catalog + `voices_read`; if the catalog fails, switch to `Name:voice_id`). When any allowlist is set, the API returns **only** those voices - never the full catalog. Defaults prefer **`ELEVENLABS_DEFAULT_VOICE_ID`**, then **Clarice** by name, then **`ELEVENLABS_VOICE_ID`**. Response **`X-Spirit-TTS-Voice-Name-Encoded`** keeps display names ASCII-safe for Tailscale.
 
@@ -641,17 +680,29 @@ npm run context:pack
 npx repomix --config repomix.config.json
 ```
 
-Generate the Tree-sitter compressed bundle for large-context model routing:
+Generate the Tree-sitter + Headroom compressed bundle for large-context model routing:
 
 ```bash
 npm run context:compress
 ```
 
-The compressed command writes `repomix-output.ast.xml` with a strict XML envelope:
+The compressed command writes `repomix-output.ast.xml` with a strict XML envelope.
+It also writes `repomix-output.headroom.xml` as a Headroom-specific review copy.
+If a local Headroom proxy is available at `HEADROOM_BASE_URL` (default `http://localhost:8787`),
+Headroom runs after Repomix and records savings in the `<headroom />` element.
+If the proxy is not running, the script falls back to the Repomix Tree-sitter payload.
 
 ```xml
 <system_directive>...</system_directive>
+<headroom compressed="true" tokens_saved="..." />
 <repository_context format="repomix-xml">...</repository_context>
+```
+
+Use `HEADROOM_CONTEXT_TOKEN_BUDGET` to tune the target context size, or rerun only
+the Headroom pass against the current AST bundle:
+
+```bash
+npm run context:headroom
 ```
 
 ### Next MCP WebSocket diagnostics
@@ -685,8 +736,8 @@ Next blocks cross-origin dev assets unless the browser `Origin` hostname is allo
 Browsers treat plain **`http://` to a LAN or Tailscale IP** as a **non-secure context** and **hide `navigator.mediaDevices`** - Oracle cannot capture mic there until you use **HTTPS**.
 
 - **`npm run dev:https`** - same `-H 0.0.0.0` bind as `npm run dev`, plus Next **`--experimental-https`** (self-signed cert). Fine for **this machine** via `https://localhost:3000`.
-- **`npm run dev:https:lan`** - HTTPS dev using certs that include **your LAN / Tailscale hosts** in the SAN. Generate once:  
-  `SPIRIT_TLS_EXTRA_HOSTS=10.0.0.186,100.111.32.31 bash scripts/gen-dev-cert.sh`  
+- **`npm run dev:https:lan`** - HTTPS dev using certs that include **your LAN / Tailscale hosts** in the SAN. Generate once:
+  `SPIRIT_TLS_EXTRA_HOSTS=10.0.0.186,100.111.32.31 bash scripts/gen-dev-cert.sh`
   then **`npm run dev:https:lan`** or **`npm run dev:all:https:lan`**. Then open **`https://10.0.0.186:3000/oracle`** from another device.
 - **`npm run dev:all:https`** - Docker backends + **`npm run dev:https`** (quick localhost HTTPS).
 - **`npm run dev:all:https:lan`** - Docker backends + **`npm run dev:https:lan`** (run **`scripts/gen-dev-cert.sh`** first).

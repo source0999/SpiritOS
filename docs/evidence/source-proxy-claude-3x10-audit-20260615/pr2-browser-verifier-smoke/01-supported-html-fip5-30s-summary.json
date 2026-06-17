@@ -1,0 +1,160 @@
+{
+  "browser_verifier_checks": [
+    {
+      "name": "playwright_available",
+      "passed": true
+    },
+    {
+      "browser_relevant": true,
+      "name": "browser_relevance",
+      "passed": true
+    },
+    {
+      "name": "supported_browser_target",
+      "passed": true
+    },
+    {
+      "browser_engine": "chromium",
+      "name": "headless_browser_load",
+      "passed": true,
+      "returncode": 0
+    },
+    {
+      "name": "visible_body_text",
+      "passed": false,
+      "title": "Launch Status Dashboard",
+      "visible_text_excerpt": "",
+      "visible_text_length": 0
+    },
+    {
+      "console_error_count": 0,
+      "console_errors": [],
+      "name": "page_errors",
+      "page_error_count": 0,
+      "page_errors": [],
+      "passed": true
+    }
+  ],
+  "browser_verifier_status": {
+    "passed": false,
+    "reason": "browser_verifier_headless_page_failed",
+    "status": "failed"
+  },
+  "changed_files": [
+    "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/pr2-smoke/browser-home.html"
+  ],
+  "coder_path": "fip4_real",
+  "degraded_lanes": [
+    {
+      "lane": "gemma",
+      "reason": "local_ollama_model_timeout",
+      "required": true,
+      "status": "failed"
+    },
+    {
+      "lane": "hermes_critic",
+      "reason": "local_ollama_model_timeout",
+      "required": true,
+      "status": "failed"
+    }
+  ],
+  "deterministic_verifier_status": {
+    "passed": true,
+    "reason": "fip5_deterministic_verifier_executed",
+    "status": "used"
+  },
+  "elapsed_seconds": 366.55,
+  "final_verdict": "NO-GO: fip5_browser_behavior_authority_blocks_pass",
+  "functional_verifier_status": {
+    "passed": false,
+    "reason": "functional_verifier_skipped_browser_or_ui_target",
+    "status": "skipped"
+  },
+  "hermes_verifier_status": {
+    "reason": "hermes_verifier_schema_valid",
+    "status": "used",
+    "verdict": "NEEDS_FIX"
+  },
+  "http_status": 200,
+  "label": "01-supported-html-fip5-30s",
+  "productive": false,
+  "qwen_coder_status": {
+    "coder_packet_hash_present": true,
+    "final_coder_packet_hash": "ea778fa7dd095524a9bfe8ac442494eb0452a5a660ad4491833c9e10c1e7e972",
+    "provider_model_truth": {
+      "apiBaseHost": "127.0.0.1:11434",
+      "attemptCount": 1,
+      "authority": {
+        "canApply": false,
+        "canCommit": false,
+        "canDraft": true,
+        "canPreview": true,
+        "canPush": false,
+        "canVerify": false
+      },
+      "blockedReason": "Local/Ollama lane is configured, but the selected model is not Hermes.",
+      "configured": true,
+      "configuredModelIsHermes": false,
+      "configuredOllamaModel": "hermes4:latest",
+      "externalCallAvailable": false,
+      "family": "local/ollama/hermes",
+      "hermesLaneAvailable": false,
+      "hermesUsedForThisRun": false,
+      "latencyMs": 78209,
+      "modelId": "qwen2.5-coder:7b",
+      "modelLabel": "qwen2.5-coder:7b",
+      "previewAvailable": true,
+      "probeOk": true,
+      "providerCallAuthorized": true,
+      "providerCallMade": true,
+      "providerId": "ollama",
+      "providerLabel": "Local / Ollama",
+      "retryAttempted": false,
+      "selectedVia": "probe:OLLAMA_BASE_URL+available_hermes",
+      "source": "fip4_qwen_coder",
+      "status": "used",
+      "timeoutSeconds": 300.0
+    },
+    "qwen_attempt_count": 1,
+    "qwen_attempts": [
+      {
+        "attempt": 1,
+        "coder_received_packet_hash": "ea778fa7dd095524a9bfe8ac442494eb0452a5a660ad4491833c9e10c1e7e972",
+        "final_coder_packet_hash": "ea778fa7dd095524a9bfe8ac442494eb0452a5a660ad4491833c9e10c1e7e972",
+        "latency_ms": 78209,
+        "provider_errors": [],
+        "qwen_output_hash": "46015278b6cf9229ebfba0494aa54a6ddaba33b82a1056616d24142319c9f469",
+        "raw_output_length": 1502,
+        "reason": "qwen_received_final_coder_packet_and_returned_output",
+        "status": "used",
+        "timeout_seconds": 300.0
+      }
+    ],
+    "qwen_model_latency_ms": 78209,
+    "qwen_retry_attempted": false,
+    "qwen_retry_reason": "",
+    "qwen_timeout_seconds": 300.0,
+    "reason": "fip4_qwen_action_output_parsed_and_diff_generated",
+    "status": "used"
+  },
+  "run_id": "fip0-e4b1b675a3316831",
+  "trace_hygiene_check": {
+    "leak_count": 0,
+    "leaks": [],
+    "passed": true,
+    "scanner": "fip6_trace_hygiene_v1",
+    "status": "used"
+  },
+  "verification_real": {
+    "behavior": false,
+    "browser": false,
+    "deterministic": true,
+    "functional": false,
+    "hermes": false
+  },
+  "verification_real_reasons": {
+    "behavior": "browser_verifier_headless_page_failed",
+    "browser": "browser_verifier_headless_page_failed",
+    "functional": "functional_verifier_skipped_browser_or_ui_target"
+  }
+}
