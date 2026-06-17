@@ -52,6 +52,9 @@ function mockAdminFetch() {
       if (url.startsWith("/api/spiritflix/admin/fs")) {
         return Response.json(yesFolderPayload());
       }
+      if (url.startsWith("/api/spiritflix/admin/smart/analysis")) {
+        return Response.json({ analysis: null, sidecarPath: null });
+      }
       return Response.json({ items: [] });
     }),
   );
@@ -183,5 +186,37 @@ describe("SpiritFlix admin Level 2R interactions", () => {
     await openYesFolder();
     fireEvent.click(screen.getByRole("button", { name: "Manage" }));
     expect(screen.getByRole("dialog", { name: "SpiritFlix admin actions" })).toBeInTheDocument();
+  });
+
+  it("shows Smart tags in the video 3-dot menu and right-click menu", async () => {
+    await openYesFolder();
+    fireEvent.click(screen.getByRole("button", { name: "Actions for Beta Clip.mp4" }));
+    expect(screen.getByRole("menuitem", { name: "Smart tags" })).toBeInTheDocument();
+
+    const card = screen.getAllByTestId("admin-item-card").find((entry) => entry.textContent?.includes("Beta Clip.mp4"));
+    fireEvent.contextMenu(card as HTMLElement);
+    expect(screen.getByRole("menuitem", { name: "Smart tags" })).toBeInTheDocument();
+  });
+
+  it("opens smart review panel without removing the grid", async () => {
+    await openYesFolder();
+    fireEvent.click(screen.getByRole("button", { name: "Actions for Beta Clip.mp4" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Smart tags" }));
+    expect(screen.getByRole("dialog", { name: "Smart tag review" })).toBeInTheDocument();
+    expect(screen.getAllByTestId("admin-item-card").length).toBe(2);
+    expect(screen.queryByRole("button", { name: /apply rename/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /apply move/i })).not.toBeInTheDocument();
+  });
+
+  it("does not auto-analyze when opening smart review", async () => {
+    await openYesFolder();
+    const fetchMock = vi.mocked(fetch);
+    const callsBefore = fetchMock.mock.calls.length;
+    fireEvent.click(screen.getByRole("button", { name: "Actions for Alpha Clip.mkv" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Smart tags" }));
+    await screen.findByRole("dialog", { name: "Smart tag review" });
+    const smartCalls = fetchMock.mock.calls.slice(callsBefore).filter(([input]) => String(input).includes("/smart/analysis"));
+    expect(smartCalls.some(([, init]) => init?.method === "POST")).toBe(false);
+    expect(smartCalls.some(([input]) => String(input).includes("path="))).toBe(true);
   });
 });
