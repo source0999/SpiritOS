@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
 import type { JellyfinClient } from "@/lib/spiritflix-jellyfin-client";
 import type { JellyfinItem } from "@/lib/spiritflix-types";
 
@@ -12,6 +13,8 @@ interface SpiritFlixImageProps {
   width?: number;
   alt?: string;
   className?: string;
+  fallback?: ReactNode;
+  onLoad?: () => void;
 }
 
 function imageFallbackOrder(type: "Primary" | "Backdrop" | "Thumb"): Array<"Primary" | "Backdrop" | "Thumb"> {
@@ -27,6 +30,8 @@ export function SpiritFlixImage({
   width = 500,
   alt = "",
   className,
+  fallback,
+  onLoad,
 }: SpiritFlixImageProps) {
   const [src, setSrc] = useState("");
   const [failed, setFailed] = useState(false);
@@ -66,6 +71,7 @@ export function SpiritFlixImage({
   }, [client, item, type, width]);
 
   if (failed || !src) {
+    if (fallback) return fallback;
     return (
       <span className={`spiritflix-image-fallback ${className ?? ""}`} aria-label={alt || item.Name}>
         <span>{item.Name.slice(0, 1).toUpperCase()}</span>
@@ -82,6 +88,7 @@ export function SpiritFlixImage({
       width={width}
       height={Math.round(width * 1.5)}
       unoptimized
+      onLoad={onLoad}
     />
   );
 }

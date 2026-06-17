@@ -298,12 +298,16 @@ export class JellyfinClient {
   }
 
   getStreamUrl(itemId: string): string {
+    const directServerUrl =
+      typeof window !== "undefined" && window.location.hostname && !["localhost", "127.0.0.1"].includes(window.location.hostname)
+        ? `http://${window.location.hostname}:8096`
+        : this.serverUrl;
     const query = toQuery({
-      serverUrl: this.serverUrl,
-      itemId,
-      token: this.token,
+      Static: "true",
+      api_key: this.token,
+      PlaySessionId: `spiritflix-${itemId}`,
     });
-    return `/api/spiritflix/stream?${query}`;
+    return `${directServerUrl}/Videos/${encodeURIComponent(itemId)}/Stream?${query}`;
   }
 
   getHlsUrl(itemId: string): string {
