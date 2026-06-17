@@ -3596,3 +3596,221 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ── SpiritFlix Smart Review (S4) ─────────────────────────────────── */
+.spiritflix-smart-review {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  display: grid;
+  justify-content: end;
+  pointer-events: none;
+}
+
+.spiritflix-smart-review__backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgb(2 6 23 / 58%);
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.spiritflix-smart-review__panel {
+  position: relative;
+  z-index: 1;
+  width: min(28rem, calc(100vw - 1rem));
+  max-height: calc(100dvh - 1rem);
+  margin: 0.5rem;
+  padding: 1rem;
+  overflow: auto;
+  border: 1px solid rgb(148 163 184 / 22%);
+  border-radius: 0.75rem;
+  background: #0b1220;
+  color: #e2e8f0;
+  box-shadow: 0 20px 56px rgba(0, 0, 0, 0.5);
+  pointer-events: auto;
+}
+
+.spiritflix-smart-review__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.spiritflix-smart-review__header h2 {
+  margin: 0.2rem 0 0;
+  font-size: 1.05rem;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.spiritflix-smart-review__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  color: #a5f3fc;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.spiritflix-smart-review__close {
+  border: 0;
+  border-radius: 0.4rem;
+  background: rgb(148 163 184 / 12%);
+  color: #e2e8f0;
+  padding: 0.35rem;
+  cursor: pointer;
+}
+
+.spiritflix-smart-review__path {
+  margin: 0.55rem 0 0.75rem;
+  color: #94a3b8;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  word-break: break-all;
+}
+
+.spiritflix-smart-review__status {
+  margin: 0.5rem 0;
+  color: #a5f3fc;
+}
+
+.spiritflix-smart-review__error {
+  margin: 0.5rem 0;
+  padding: 0.55rem 0.65rem;
+  border-radius: 0.45rem;
+  background: rgb(127 29 29 / 35%);
+  color: #fecaca;
+}
+
+.spiritflix-smart-review__section {
+  margin-top: 0.85rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgb(148 163 184 / 14%);
+}
+
+.spiritflix-smart-review__section h3 {
+  margin: 0 0 0.45rem;
+  font-size: 0.86rem;
+  color: #cbd5e1;
+}
+
+.spiritflix-smart-review__grid {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+}
+
+.spiritflix-smart-review__grid div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.spiritflix-smart-review__grid dt {
+  color: #94a3b8;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.spiritflix-smart-review__grid dd {
+  margin: 0;
+  color: #f8fafc;
+  font-size: 0.86rem;
+  word-break: break-word;
+}
+
+.spiritflix-smart-review__grid dd.is-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.78rem;
+}
+
+.spiritflix-smart-review__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.spiritflix-smart-review__notes {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.spiritflix-smart-review__footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgb(148 163 184 / 14%);
+}
+
+.spiritflix-smart-review__primary,
+.spiritflix-smart-review__secondary {
+  border: 1px solid rgb(148 163 184 / 22%);
+  border-radius: 0.45rem;
+  padding: 0.45rem 0.7rem;
+  font-size: 0.84rem;
+  cursor: pointer;
+}
+
+.spiritflix-smart-review__primary {
+  background: linear-gradient(180deg, #0ea5e9, #0284c7);
+  border-color: rgb(14 165 233 / 45%);
+  color: #f8fafc;
+}
+
+.spiritflix-smart-review__primary:disabled,
+.spiritflix-smart-review__secondary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.spiritflix-smart-review__secondary {
+  background: rgb(15 23 42 / 70%);
+  color: #e2e8f0;
+}
+
+.spiritflix-smart-tag-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.45rem;
+  border: 1px solid rgb(148 163 184 / 22%);
+  border-radius: 999px;
+  background: rgb(30 41 59 / 70%);
+  color: #e2e8f0;
+  font-size: 0.76rem;
+}
+
+.spiritflix-smart-tag-pill.is-review-required {
+  border-color: rgb(251 191 36 / 45%);
+}
+
+.spiritflix-smart-tag-pill__label {
+  font-weight: 650;
+}
+
+.spiritflix-smart-tag-pill__meta {
+  color: #94a3b8;
+}
+
+.spiritflix-smart-tag-pill__flag {
+  color: #fcd34d;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.spiritflix-admin-context-menu button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

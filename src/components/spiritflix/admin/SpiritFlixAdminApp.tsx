@@ -20,6 +20,7 @@ import { SpiritFlixAdminToolbar, type SpiritFlixAdminViewMode } from "./SpiritFl
 import { SpiritFlixAdminExplorer } from "./SpiritFlixAdminExplorer";
 import { SpiritFlixAdminDetailsPanel } from "./SpiritFlixAdminDetailsPanel";
 import { SpiritFlixAdminActionDialog } from "./SpiritFlixAdminActionDialog";
+import { SpiritFlixSmartReviewPanel } from "./SpiritFlixSmartReviewPanel";
 import { buildAdminBreadcrumbSegments } from "./SpiritFlixAdminBreadcrumbs";
 import { menuActionToDialogAction, type SpiritFlixAdminMenuActionId } from "./item-menu";
 import { useAdminScrollRestore } from "./useAdminScrollRestore";
@@ -50,6 +51,7 @@ export function SpiritFlixAdminApp() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [actionToast, setActionToast] = useState<string | null>(null);
+  const [smartReviewItem, setSmartReviewItem] = useState<SpiritFlixAdminItem | null>(null);
 
   useEffect(() => {
     setSession(getStoredSession());
@@ -256,6 +258,19 @@ export function SpiritFlixAdminApp() {
     requestRestore();
   }, [requestRestore]);
 
+  const openSmartReview = useCallback(
+    (item: SpiritFlixAdminItem) => {
+      saveScroll();
+      setSmartReviewItem(item);
+    },
+    [saveScroll],
+  );
+
+  const closeSmartReview = useCallback(() => {
+    setSmartReviewItem(null);
+    requestRestore();
+  }, [requestRestore]);
+
   const handleMenuAction = useCallback(
     (actionId: SpiritFlixAdminMenuActionId, item: SpiritFlixAdminItem | null) => {
       if (item) setSelectedItem(item);
@@ -271,6 +286,9 @@ export function SpiritFlixAdminApp() {
           break;
         case "info":
           if (item) openDetails(item);
+          break;
+        case "smartTags":
+          if (item) openSmartReview(item);
           break;
         case "copyPath":
           copyText(item?.path);
@@ -308,7 +326,7 @@ export function SpiritFlixAdminApp() {
         }
       }
     },
-    [copyText, navigateFilesystem, openActionDialog, openDetails, refresh, requestRestore, saveScroll],
+    [copyText, navigateFilesystem, openActionDialog, openDetails, openSmartReview, refresh, requestRestore, saveScroll],
   );
 
   const handleActionComplete = useCallback((message: string) => {
@@ -429,6 +447,10 @@ export function SpiritFlixAdminApp() {
           onClose={closeActionDialog}
           onComplete={handleActionComplete}
         />
+      ) : null}
+
+      {smartReviewItem ? (
+        <SpiritFlixSmartReviewPanel item={smartReviewItem} open onClose={closeSmartReview} />
       ) : null}
     </main>
   );

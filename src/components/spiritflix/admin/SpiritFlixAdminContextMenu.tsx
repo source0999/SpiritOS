@@ -79,13 +79,17 @@ export function SpiritFlixAdminContextMenu({ items, position, onSelect, onClose 
           className={item.destructive ? "is-destructive" : ""}
           role="menuitem"
           type="button"
+          disabled={item.disabled}
+          aria-disabled={item.disabled || undefined}
           onMouseDown={(event) => {
+            if (item.disabled) return;
             event.preventDefault();
             event.stopPropagation();
             if (event.button !== 0) return;
             activateItem(item.id);
           }}
           onClick={(event) => {
+            if (item.disabled) return;
             event.preventDefault();
             event.stopPropagation();
             activateItem(item.id);

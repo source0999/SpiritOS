@@ -82,6 +82,13 @@ export {
 } from "./suggestions";
 
 export {
+  SPIRITFLIX_SMART_ANALYZER_VERSION_S4,
+  markSpiritFlixSmartAnalysisReviewed,
+  runSpiritFlixSmartReviewPipeline,
+  type SpiritFlixSmartReviewOptions,
+} from "./review";
+
+export {
   SMART_ANALYSIS_LIMITS,
   parseSpiritFlixSmartAnalysisJson,
   validateSpiritFlixSmartAnalysis,

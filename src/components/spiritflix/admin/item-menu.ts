@@ -5,6 +5,7 @@ export type SpiritFlixAdminMenuActionId =
   | "openViewer"
   | "openFolder"
   | "info"
+  | "smartTags"
   | "rename"
   | "move"
   | "softDelete"
@@ -20,6 +21,15 @@ export interface SpiritFlixAdminMenuItemDef {
   id: SpiritFlixAdminMenuActionId;
   label: string;
   destructive?: boolean;
+  disabled?: boolean;
+}
+
+const VIDEO_EXTENSIONS = new Set([".avi", ".m4v", ".mkv", ".mov", ".mp4", ".mpeg", ".mpg", ".webm", ".wmv"]);
+
+export function isSpiritFlixAdminVideoItem(item: SpiritFlixAdminItem): boolean {
+  if (item.type !== "file") return false;
+  const extension = item.extension?.toLowerCase() ?? "";
+  return Boolean(item.playable || VIDEO_EXTENSIONS.has(extension));
 }
 
 export function menuActionToDialogAction(id: SpiritFlixAdminMenuActionId): SpiritFlixAdminActionName | null {
@@ -69,6 +79,7 @@ export function buildItemMenuItems(
     return [
       { id: "openFolder", label: "Open folder" },
       { id: "info", label: "Info" },
+      { id: "smartTags", label: "Smart tags are available for videos only.", disabled: true },
       { id: "rename", label: "Rename" },
       { id: "move", label: "Move" },
       { id: "softDelete", label: "Soft delete", destructive: true },
@@ -82,6 +93,11 @@ export function buildItemMenuItems(
   if (hasViewer) fileItems.push({ id: "openViewer", label: "Open viewer" });
   fileItems.push(
     { id: "info", label: "Info" },
+  );
+  if (isSpiritFlixAdminVideoItem(item)) {
+    fileItems.push({ id: "smartTags", label: "Smart tags" });
+  }
+  fileItems.push(
     { id: "rename", label: "Rename" },
     { id: "move", label: "Move" },
     { id: "softDelete", label: "Soft delete", destructive: true },
