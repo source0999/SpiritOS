@@ -1,0 +1,5 @@
+$ ls -ld /mnt/spirit-8tb /mnt/spirit-8tb/spiritos-health 2>&1 || true
+ls: cannot access '/mnt/spirit-8tb/spiritos-health': No such file or directory
+drwxr-xr-x 16 root root 4096 Jun  3 22:14 /mnt/spirit-8tb
+
+[exit 0]

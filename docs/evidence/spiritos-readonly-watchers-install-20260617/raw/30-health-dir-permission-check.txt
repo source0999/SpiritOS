@@ -1,0 +1,9 @@
+$ ls -ld /mnt/spirit-8tb /mnt/spirit-8tb/spiritos-health 2>&1 || true; mkdir -p /mnt/spirit-8tb/spiritos-health 2>&1
+exit=1
+
+STDOUT:
+ls: cannot access '/mnt/spirit-8tb/spiritos-health': No such file or directory
+drwxr-xr-x 16 root root 4096 Jun  3 22:14 /mnt/spirit-8tb
+mkdir: cannot create directory ‘/mnt/spirit-8tb/spiritos-health’: Permission denied
+
+STDERR:

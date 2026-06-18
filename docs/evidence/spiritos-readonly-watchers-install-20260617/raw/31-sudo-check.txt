@@ -1,0 +1,7 @@
+$ sudo -n true 2>&1
+exit=1
+
+STDOUT:
+sudo: a password is required
+
+STDERR:

@@ -1,0 +1,64 @@
+{
+  "watcher_install_verdict": "GO",
+  "manual_watchers": "GO",
+  "systemd_health_snapshot_timer": "GO",
+  "boot_postmortem_service": "GO",
+  "automatic_outage_snapshots": "enabled",
+  "manual_sudo_resolution": true,
+  "installed_script_paths": [
+    "scripts/spiritos-health/spiritos-host-health-snapshot.sh",
+    "scripts/spiritos-health/spiritos-service-health-snapshot.sh",
+    "scripts/spiritos-health/spiritos-boot-postmortem.sh",
+    "scripts/spiritos-health/spiritos-model-storage-guard.sh",
+    "scripts/spiritos-health/spiritos-repo-bloat-report.sh",
+    "scripts/spiritos-health/spiritos-health-lib.sh"
+  ],
+  "installed_unit_timer_names": [
+    "spiritos-health-snapshot.service",
+    "spiritos-health-snapshot.timer",
+    "spiritos-boot-postmortem.service"
+  ],
+  "health_output_path": "/mnt/spirit-8tb/spiritos-health/",
+  "manual_run_result": "GO: five watcher scripts exited 0 and wrote health logs",
+  "systemd_run_result": "GO: Britton manually completed interactive sudo/systemd install and provided terminal proof",
+  "current_source_proxy_status": "UP in watcher log and probe: :8787 listener; /docs HTTP 200; /openapi.json HTTP 200",
+  "current_next_status": "UP in watcher log and probe: :3000 listener; HTTPS /spiritflix/admin HTTP 200",
+  "current_ollama_status": "UP in watcher log and probe: 127.0.0.1:11434; /api/tags HTTP 200; /api/ps returned empty loaded models",
+  "manual_systemd_proof": {
+    "spiritos_health_snapshot_timer": "loaded, enabled, active waiting",
+    "spiritos_health_snapshot_service": "inactive dead after successful oneshot run",
+    "health_snapshot_execstart_results": [
+      "spiritos-host-health-snapshot.sh exited 0/SUCCESS",
+      "spiritos-service-health-snapshot.sh exited 0/SUCCESS",
+      "spiritos-model-storage-guard.sh exited 0/SUCCESS",
+      "spiritos-repo-bloat-report.sh exited 0/SUCCESS"
+    ],
+    "spiritos_boot_postmortem_service": "loaded, enabled, manually started, exited 0/SUCCESS",
+    "boot_postmortem_log": "/mnt/spirit-8tb/spiritos-health/spiritos-boot-postmortem.sh.2026-06-18T19-45-46-04-00.log"
+  },
+  "remaining_failed_unit": "mnt-spirit\\x2dprojects.mount",
+  "known_unresolved_issues_recorded_not_fixed": [
+    "mnt-spirit\\x2dprojects.mount remains failed",
+    "CasaOS crash/restart from prior logs remains unresolved",
+    "spirit-whisper unhealthy remains unresolved",
+    "Docker healthcheck missing curl remains unresolved"
+  ],
+  "manual_logs": [
+    "/mnt/spirit-8tb/spiritos-health/spiritos-host-health-snapshot.sh.2026-06-18T19-39-22-04-00.log",
+    "/mnt/spirit-8tb/spiritos-health/spiritos-service-health-snapshot.sh.2026-06-18T19-39-37-04-00.log",
+    "/mnt/spirit-8tb/spiritos-health/spiritos-boot-postmortem.sh.2026-06-18T19-39-39-04-00.log",
+    "/mnt/spirit-8tb/spiritos-health/spiritos-model-storage-guard.sh.2026-06-18T19-40-14-04-00.log",
+    "/mnt/spirit-8tb/spiritos-health/spiritos-repo-bloat-report.sh.2026-06-18T19-40-15-04-00.log"
+  ],
+  "safety_confirmation": {
+    "no_cleanup": true,
+    "no_app_source_patch": true,
+    "no_process_kill": true,
+    "no_service_restart_except_approved_watcher_service_starts": true,
+    "no_docker_mutation": true,
+    "no_media_mutation": true,
+    "no_jellyfin_mutation": true,
+    "no_git_stage_commit_push_reset_checkout_clean_stash": true
+  },
+  "recommended_next_step": "A. S6-only staging/commit"
+}

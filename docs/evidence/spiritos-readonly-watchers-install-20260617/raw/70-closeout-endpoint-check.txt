@@ -1,0 +1,11 @@
+$ endpoint closeout probe
+Source Proxy docs
+HTTP=200 time_total=0.004025
+Source Proxy openapi
+HTTP=200 time_total=0.005662
+Next HTTPS
+HTTP=200 time_total=0.045830
+Ollama tags
+HTTP=200 time_total=0.001858
+
+[exit 0]

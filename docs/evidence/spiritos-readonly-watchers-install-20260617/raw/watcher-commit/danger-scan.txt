@@ -1,0 +1,89 @@
+scripts/spiritos-health/spiritos-model-storage-guard.sh:14:  echo "OLLAMA model storage evidence only; no environment dump."
+docs/evidence/spiritos-readonly-watchers-install-20260617/summary.json:56:    "no_process_kill": true,
+docs/evidence/spiritos-readonly-watchers-install-20260617/summary.json:60:    "no_jellyfin_mutation": true,
+docs/evidence/spiritos-readonly-watchers-install-20260617/operator-summary.md:15:Safety: no cleanup, no app/source patch, no process kill, no service recovery beyond approved watcher starts, no Docker/media/Jellyfin mutation, and no git operation.
+docs/evidence/spiritos-readonly-watchers-install-20260617/final-verdict.md:77:- no process kill
+docs/evidence/spiritos-readonly-watchers-install-20260617/40-manual-run-results.md:19:- no process kill
+docs/evidence/spiritos-readonly-watchers-install-20260617/watcher-commit-preflight.md:35: M src/lib/spiritflix-jellyfin-client.ts
+docs/evidence/spiritos-readonly-watchers-install-20260617/watcher-commit-preflight.md:38: M src/lib/spiritflix/jellyfin-client.ts
+docs/evidence/spiritos-readonly-watchers-install-20260617/watcher-commit-preflight.md:56:?? src/lib/spiritflix-jellyfin-client.test.ts
+docs/evidence/spiritos-readonly-watchers-install-20260617/watcher-commit-preflight.md:91: src/lib/spiritflix-jellyfin-client.ts              |    40 +-
+docs/evidence/spiritos-readonly-watchers-install-20260617/watcher-commit-preflight.md:94: src/lib/spiritflix/jellyfin-client.ts              |    40 +-
+docs/evidence/spiritos-readonly-watchers-install-20260617/watcher-commit-preflight.md:125:M	src/lib/spiritflix-jellyfin-client.ts
+docs/evidence/spiritos-readonly-watchers-install-20260617/watcher-commit-preflight.md:128:M	src/lib/spiritflix/jellyfin-client.ts
+docs/evidence/spiritos-readonly-watchers-install-20260617/systemd-manual-success-update.md:51:- no process kill
+docs/evidence/spiritos-readonly-watchers-install-20260617/20-danger-scan.md:13:- Draft README contains safety prose saying watchers do not restart/kill/dump env.
+docs/evidence/spiritos-readonly-watchers-install-20260617/20-danger-scan.md:14:- Draft shebang lines matched `env`; this is interpreter selection, not environment dumping.
+docs/evidence/spiritos-readonly-watchers-install-20260617/20-danger-scan.md:15:- Draft boot postmortem reads historical `last -x reboot shutdown`; this is log inspection, not reboot/shutdown execution.
+docs/evidence/spiritos-readonly-watchers-install-20260617/20-danger-scan.md:16:- Draft model guard included `systemctl show ollama -p Environment`; this was not used for the installed script because the task forbids env dumps.
+docs/evidence/spiritos-readonly-watchers-install-20260617/20-danger-scan.md:17:- Installed model guard contains only the phrase `no environment dump`; no environment command is run.
+docs/evidence/spiritos-readonly-watchers-install-20260617/20-danger-scan.md:22:docs/evidence/repo-cleanup-manifest-watchers-20260617/drafts/README.md:3:These files are drafts only. They are not installed, not executable by chmod from this phase, and not copied into `scripts/`. If approved later, install outside the repo and write logs under `/mnt/spirit-8tb/spiritos-health/`. They do not restart services, kill processes, mutate media, or dump environment variables.
+docs/evidence/spiritos-readonly-watchers-install-20260617/20-danger-scan.md:23:docs/evidence/repo-cleanup-manifest-watchers-20260617/drafts/spiritos-boot-postmortem.sh:1:#!/usr/bin/env bash
+docs/evidence/spiritos-readonly-watchers-install-20260617/20-danger-scan.md:24:docs/evidence/repo-cleanup-manifest-watchers-20260617/drafts/spiritos-boot-postmortem.sh:18:run last -x reboot shutdown
+docs/evidence/spiritos-readonly-watchers-install-20260617/20-danger-scan.md:25:docs/evidence/repo-cleanup-manifest-watchers-20260617/drafts/spiritos-host-health-snapshot.sh:1:#!/usr/bin/env bash
+docs/evidence/spiritos-readonly-watchers-install-20260617/20-danger-scan.md:26:docs/evidence/repo-cleanup-manifest-watchers-20260617/drafts/spiritos-model-storage-guard.sh:1:#!/usr/bin/env bash
+docs/evidence/spiritos-readonly-watchers-install-20260617/20-danger-scan.md:27:docs/evidence/repo-cleanup-manifest-watchers-20260617/drafts/spiritos-model-storage-guard.sh:15:echo "OLLAMA_MODELS path evidence only; no env dump."
+docs/evidence/spiritos-readonly-watchers-install-20260617/20-danger-scan.md:29:docs/evidence/repo-cleanup-manifest-watchers-20260617/drafts/spiritos-repo-bloat-report.sh:1:#!/usr/bin/env bash
+docs/evidence/spiritos-readonly-watchers-install-20260617/20-danger-scan.md:30:docs/evidence/repo-cleanup-manifest-watchers-20260617/drafts/spiritos-service-health-snapshot.sh:1:#!/usr/bin/env bash
+docs/evidence/spiritos-readonly-watchers-install-20260617/20-danger-scan.md:31:scripts/spiritos-health/spiritos-model-storage-guard.sh:14:  echo "OLLAMA model storage evidence only; no environment dump."
+docs/evidence/spiritos-readonly-watchers-install-20260617/60-removal-rollback.md:9:sudo rm -f /etc/systemd/system/spiritos-health-snapshot.service
+docs/evidence/spiritos-readonly-watchers-install-20260617/60-removal-rollback.md:10:sudo rm -f /etc/systemd/system/spiritos-health-snapshot.timer
+docs/evidence/spiritos-readonly-watchers-install-20260617/60-removal-rollback.md:11:sudo rm -f /etc/systemd/system/spiritos-boot-postmortem.service
+docs/evidence/spiritos-readonly-watchers-install-20260617/60-removal-rollback.md:20:rm -rf scripts/spiritos-health
+docs/evidence/spiritos-readonly-watchers-install-20260617/70-removal-rollback.md:10:sudo rm -f /etc/systemd/system/spiritos-health-snapshot.service
+docs/evidence/spiritos-readonly-watchers-install-20260617/70-removal-rollback.md:11:sudo rm -f /etc/systemd/system/spiritos-health-snapshot.timer
+docs/evidence/spiritos-readonly-watchers-install-20260617/70-removal-rollback.md:12:sudo rm -f /etc/systemd/system/spiritos-boot-postmortem.service
+docs/evidence/spiritos-readonly-watchers-install-20260617/70-removal-rollback.md:19:rm -rf scripts/spiritos-health
+docs/evidence/spiritos-readonly-watchers-install-20260617/00-preflight.md:45: M src/lib/spiritflix-jellyfin-client.ts
+docs/evidence/spiritos-readonly-watchers-install-20260617/00-preflight.md:49: M src/lib/spiritflix/jellyfin-client.ts
+docs/evidence/spiritos-readonly-watchers-install-20260617/00-preflight.md:68:?? src/lib/spiritflix-jellyfin-client.test.ts
+docs/evidence/spiritos-readonly-watchers-install-20260617/00-git-status.txt:33: M src/lib/spiritflix-jellyfin-client.ts
+docs/evidence/spiritos-readonly-watchers-install-20260617/00-git-status.txt:37: M src/lib/spiritflix/jellyfin-client.ts
+docs/evidence/spiritos-readonly-watchers-install-20260617/00-git-status.txt:56:?? src/lib/spiritflix-jellyfin-client.test.ts
+docs/evidence/spiritos-readonly-watchers-install-20260617/10-draft-review.md:13:- no kill command in installed watcher scripts
+docs/evidence/spiritos-readonly-watchers-install-20260617/10-draft-review.md:17:- no env/printenv dump in installed watcher scripts; model guard explicitly avoids dumping environment
+docs/evidence/spiritos-readonly-watchers-install-20260617/10-draft-review.md:36:The original draft `spiritos-model-storage-guard.sh` included `systemctl show ollama -p Environment`; the installed script does not include that environment dump and is therefore safer for this approved install.
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-safety-scan.json:7:      "pattern": "kill",
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-safety-scan.json:8:      "text": "These files are drafts only. They are not installed, not executable by chmod from this phase, and not copied into `scripts/`. If approved later, install outside the repo and write logs under `/mnt/spirit-8tb/spiritos-health/`. They do not restart services, kill processes, mutate media, or dump environment variables."
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-safety-scan.json:13:      "pattern": "\\benv\\b",
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-safety-scan.json:14:      "text": "#!/usr/bin/env bash"
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-safety-scan.json:19:      "pattern": "reboot",
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-safety-scan.json:20:      "text": "run last -x reboot shutdown"
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-safety-scan.json:25:      "pattern": "shutdown",
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-safety-scan.json:26:      "text": "run last -x reboot shutdown"
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-safety-scan.json:31:      "pattern": "\\benv\\b",
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-safety-scan.json:32:      "text": "#!/usr/bin/env bash"
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-safety-scan.json:37:      "pattern": "\\benv\\b",
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-safety-scan.json:38:      "text": "#!/usr/bin/env bash"
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-safety-scan.json:43:      "pattern": "\\benv\\b",
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-safety-scan.json:44:      "text": "echo \"OLLAMA_MODELS path evidence only; no env dump.\""
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-safety-scan.json:49:      "pattern": "\\benv\\b",
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-safety-scan.json:50:      "text": "#!/usr/bin/env bash"
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-safety-scan.json:55:      "pattern": "\\benv\\b",
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-safety-scan.json:56:      "text": "#!/usr/bin/env bash"
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-safety-scan.json:61:      "pattern": "kill",
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-safety-scan.json:62:      "text": "under `/mnt/spirit-8tb/spiritos-health/`, use lock files, do not restart or kill"
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-safety-scan.json:69:      "pattern": "kill",
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-safety-scan.json:70:      "text": "under `/mnt/spirit-8tb/spiritos-health/`, use lock files, do not restart or kill"
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-safety-scan.json:77:      "pattern": "kill",
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-safety-scan.json:78:      "text": "under `/mnt/spirit-8tb/spiritos-health/`, use lock files, do not restart or kill"
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-danger-scan.txt:1:docs/evidence/repo-cleanup-manifest-watchers-20260617/drafts/README.md:3:These files are drafts only. They are not installed, not executable by chmod from this phase, and not copied into `scripts/`. If approved later, install outside the repo and write logs under `/mnt/spirit-8tb/spiritos-health/`. They do not restart services, kill processes, mutate media, or dump environment variables.
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-danger-scan.txt:2:docs/evidence/repo-cleanup-manifest-watchers-20260617/drafts/spiritos-boot-postmortem.sh:1:#!/usr/bin/env bash
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-danger-scan.txt:3:docs/evidence/repo-cleanup-manifest-watchers-20260617/drafts/spiritos-boot-postmortem.sh:18:run last -x reboot shutdown
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-danger-scan.txt:4:docs/evidence/repo-cleanup-manifest-watchers-20260617/drafts/spiritos-host-health-snapshot.sh:1:#!/usr/bin/env bash
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-danger-scan.txt:5:docs/evidence/repo-cleanup-manifest-watchers-20260617/drafts/spiritos-model-storage-guard.sh:1:#!/usr/bin/env bash
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-danger-scan.txt:6:docs/evidence/repo-cleanup-manifest-watchers-20260617/drafts/spiritos-model-storage-guard.sh:15:echo "OLLAMA_MODELS path evidence only; no env dump."
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-danger-scan.txt:8:docs/evidence/repo-cleanup-manifest-watchers-20260617/drafts/spiritos-repo-bloat-report.sh:1:#!/usr/bin/env bash
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-danger-scan.txt:9:docs/evidence/repo-cleanup-manifest-watchers-20260617/drafts/spiritos-service-health-snapshot.sh:1:#!/usr/bin/env bash
+grep: docs/evidence/spiritos-readonly-watchers-install-20260617/raw/watcher-commit/danger-scan.txt: input file is also the output
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-danger-scan-installed-and-drafts.txt:1:docs/evidence/repo-cleanup-manifest-watchers-20260617/drafts/README.md:3:These files are drafts only. They are not installed, not executable by chmod from this phase, and not copied into `scripts/`. If approved later, install outside the repo and write logs under `/mnt/spirit-8tb/spiritos-health/`. They do not restart services, kill processes, mutate media, or dump environment variables.
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-danger-scan-installed-and-drafts.txt:2:docs/evidence/repo-cleanup-manifest-watchers-20260617/drafts/spiritos-boot-postmortem.sh:1:#!/usr/bin/env bash
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-danger-scan-installed-and-drafts.txt:3:docs/evidence/repo-cleanup-manifest-watchers-20260617/drafts/spiritos-boot-postmortem.sh:18:run last -x reboot shutdown
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-danger-scan-installed-and-drafts.txt:4:docs/evidence/repo-cleanup-manifest-watchers-20260617/drafts/spiritos-host-health-snapshot.sh:1:#!/usr/bin/env bash
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-danger-scan-installed-and-drafts.txt:5:docs/evidence/repo-cleanup-manifest-watchers-20260617/drafts/spiritos-model-storage-guard.sh:1:#!/usr/bin/env bash
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-danger-scan-installed-and-drafts.txt:6:docs/evidence/repo-cleanup-manifest-watchers-20260617/drafts/spiritos-model-storage-guard.sh:15:echo "OLLAMA_MODELS path evidence only; no env dump."
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-danger-scan-installed-and-drafts.txt:8:docs/evidence/repo-cleanup-manifest-watchers-20260617/drafts/spiritos-repo-bloat-report.sh:1:#!/usr/bin/env bash
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-danger-scan-installed-and-drafts.txt:9:docs/evidence/repo-cleanup-manifest-watchers-20260617/drafts/spiritos-service-health-snapshot.sh:1:#!/usr/bin/env bash
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-danger-scan-installed-and-drafts.txt:10:scripts/spiritos-health/spiritos-model-storage-guard.sh:14:  echo "OLLAMA model storage evidence only; no environment dump."
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/90-final-git-status.txt:32: M src/lib/spiritflix-jellyfin-client.ts
+docs/evidence/spiritos-readonly-watchers-install-20260617/raw/90-final-git-status.txt:36: M src/lib/spiritflix/jellyfin-client.ts

@@ -1,0 +1,5 @@
+$ sudo -n true && echo sudo_ok || echo sudo_not_available
+sudo: a password is required
+sudo_not_available
+
+[exit 0]
