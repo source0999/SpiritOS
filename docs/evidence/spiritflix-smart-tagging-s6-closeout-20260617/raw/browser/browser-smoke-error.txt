@@ -1,0 +1,8 @@
+locator.waitFor: Error: strict mode violation: getByText('Suggested filename') resolved to 2 elements:
+    1) <dt>Suggested filename</dt> aka getByText('Suggested filename').first()
+    2) <dt>Suggested filename</dt> aka getByText('Suggested filename').nth(1)
+
+Call log:
+  - waiting for getByText('Suggested filename') to be visible
+
+    at /home/source/SpiritOS/docs/evidence/spiritflix-smart-tagging-s6-closeout-20260617/raw/browser/s6-smoke.cjs:105:46

@@ -1,0 +1,18 @@
+
+> spirit-os@0.1.0 dev
+> next dev -H 0.0.0.0 --webpack -H 127.0.0.1 -p 3002
+
+▲ Next.js 16.2.4 (webpack)
+- Local:         http://127.0.0.1:3002
+- Network:       http://127.0.0.1:3002
+- Environments: .env.local
+✓ Ready in 342ms
+⨯ Another next dev server is already running.
+
+- Local:        http://localhost:3000
+- PID:          36213
+- Dir:          /home/source/SpiritOS
+- Log:          .next/dev/logs/next-development.log
+
+Run kill 36213 to stop it.
+[?25h

@@ -3810,6 +3810,105 @@
   letter-spacing: 0.03em;
 }
 
+.spiritflix-smart-review__boundary {
+  margin: 0 0 0.75rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 0.45rem;
+  background: rgb(14 116 144 / 18%);
+  color: #bae6fd;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.spiritflix-smart-review__field {
+  display: grid;
+  gap: 0.3rem;
+  margin-bottom: 0.65rem;
+}
+
+.spiritflix-smart-review__field span {
+  color: #cbd5e1;
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.spiritflix-smart-review__field input,
+.spiritflix-smart-review__field textarea {
+  width: 100%;
+  border: 1px solid rgb(148 163 184 / 22%);
+  border-radius: 0.4rem;
+  background: rgb(15 23 42 / 75%);
+  color: #f8fafc;
+  padding: 0.45rem 0.55rem;
+  font: inherit;
+}
+
+.spiritflix-smart-review__field small {
+  color: #fbbf24;
+  font-size: 0.72rem;
+}
+
+/* ── S6 approved metadata + rename preview ──────────────────────────── */
+.spiritflix-smart-review__section--approved {
+  border-color: #22c55e;
+}
+
+.spiritflix-smart-review__section--export-result {
+  border-color: #3b82f6;
+}
+
+.spiritflix-smart-review__section--rename-preview {
+  border-color: #a855f7;
+}
+
+.spiritflix-smart-review__section--actions .spiritflix-smart-review__action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.spiritflix-smart-review__warning {
+  color: #fbbf24;
+  font-size: 0.72rem;
+  margin: 0;
+}
+
+.spiritflix-smart-tag-pill-wrap {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.spiritflix-smart-tag-pill-wrap.is-approved .spiritflix-smart-tag-pill {
+  border-color: rgb(74 222 128 / 45%);
+  background: rgb(20 83 45 / 35%);
+}
+
+.spiritflix-smart-tag-pill-wrap.is-rejected .spiritflix-smart-tag-pill {
+  opacity: 0.55;
+  border-color: rgb(148 163 184 / 18%);
+}
+
+.spiritflix-smart-tag-pill-wrap.is-pending .spiritflix-smart-tag-pill {
+  border-color: rgb(251 191 36 / 35%);
+}
+
+.spiritflix-smart-tag-pill__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.spiritflix-smart-tag-pill__actions button {
+  border: 1px solid rgb(148 163 184 / 20%);
+  border-radius: 0.35rem;
+  background: rgb(15 23 42 / 70%);
+  color: #e2e8f0;
+  font-size: 0.68rem;
+  padding: 0.15rem 0.35rem;
+  cursor: pointer;
+}
+
 .spiritflix-admin-context-menu button:disabled {
   opacity: 0.45;
   cursor: not-allowed;

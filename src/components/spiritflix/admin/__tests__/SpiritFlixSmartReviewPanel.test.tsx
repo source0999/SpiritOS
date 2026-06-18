@@ -23,7 +23,7 @@ const analysisPayload = {
     mtimeMs: 1,
     analyzedAt: "2026-06-16T00:00:00.000Z",
     analyzerVersion: "spiritflix-smart/s3",
-    status: "needs_review",
+    status: "suggested",
     safety: { safeToSuggest: false, reasons: ["review"], requiresHumanReview: true },
     media: { durationSeconds: 120, width: 1920, height: 1080 },
     samples: [{ timestampSeconds: 10, timestampLabel: "10s", observations: ["sampled frame"], tags: [], confidence: 0 }],
@@ -33,6 +33,14 @@ const analysisPayload = {
     suggestedCategory: "yes",
     confidence: 0.8,
     notes: "heuristics only",
+    reviewedMetadata: {
+      reviewedAt: "2026-06-16T01:00:00.000Z",
+      reviewedBy: "spiritflix-admin" as const,
+      reviewStatus: "reviewed" as const,
+      approvedTagIds: ["full-hd"],
+      rejectedTagIds: [],
+      editedDisplayTitle: "Beta Clip",
+    },
   },
   sidecarPath: "/mnt/spirit-8tb/media/.spiritflix-admin/analysis/abc.json",
 };
@@ -47,6 +55,10 @@ describe("SpiritFlixSmartReviewPanel", () => {
           return Response.json({ analysis: null, sidecarPath: null });
         }
         if (url.includes("/api/spiritflix/admin/smart/analysis") && init?.method === "POST") {
+          const body = JSON.parse(String(init.body));
+          if (body.action === "saveReview") {
+            return Response.json(analysisPayload);
+          }
           return Response.json(analysisPayload);
         }
         return Response.json({});
@@ -67,30 +79,75 @@ describe("SpiritFlixSmartReviewPanel", () => {
     expect(vi.mocked(fetch)).toHaveBeenCalledWith(expect.stringContaining("path="), expect.objectContaining({ method: "GET" }));
   });
 
-  it("displays existing analysis suggestions", async () => {
+  it("renders approve/reject controls and metadata-only warning", async () => {
     vi.mocked(fetch).mockResolvedValueOnce(Response.json(analysisPayload));
     render(<SpiritFlixSmartReviewPanel item={video} open onClose={() => undefined} />);
-    await screen.findByText("Beta Clip");
-    expect(screen.getByText("Beta Clip - full HD.mp4")).toBeInTheDocument();
-    expect(screen.getByText("full HD")).toBeInTheDocument();
-    expect(screen.getAllByText("80%")).toHaveLength(2);
+    await screen.findByText(/S6 prepares metadata and rename preview only/i);
+    expect(screen.getByRole("button", { name: /Approve full HD/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Reject full HD/i })).toBeInTheDocument();
+    expect(screen.getByText(/does not rename the file yet/i)).toBeInTheDocument();
   });
 
-  it("calls smart analysis API only when Analyze is clicked", async () => {
+  it("approve tag updates local state", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(Response.json(analysisPayload));
     render(<SpiritFlixSmartReviewPanel item={video} open onClose={() => undefined} />);
-    await screen.findByRole("button", { name: "Analyze this video" });
-    fireEvent.click(screen.getByRole("button", { name: "Analyze this video" }));
+    await screen.findByRole("button", { name: /Reset full HD/i });
+    fireEvent.click(screen.getByRole("button", { name: /Approve full HD/i }));
+    expect(screen.getByText(/1 approved · 0 rejected · 0 pending/)).toBeInTheDocument();
+  });
+
+  it("reject tag updates local state", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      Response.json({
+        ...analysisPayload,
+        analysis: {
+          ...analysisPayload.analysis,
+          reviewedMetadata: undefined,
+          suggestedTags: [
+            { id: "hd", label: "HD", group: "quality", confidence: 0.7, evidenceTimestamps: [], reviewRequired: false },
+          ],
+        },
+      }),
+    );
+    render(<SpiritFlixSmartReviewPanel item={video} open onClose={() => undefined} />);
+    await screen.findByRole("button", { name: /Reject HD/i });
+    fireEvent.click(screen.getByRole("button", { name: /Reject HD/i }));
+    expect(screen.getByText(/0 approved · 1 rejected · 0 pending/)).toBeInTheDocument();
+  });
+
+  it("edited title input works", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(Response.json(analysisPayload));
+    render(<SpiritFlixSmartReviewPanel item={video} open onClose={() => undefined} />);
+    const input = await screen.findByDisplayValue("Beta Clip");
+    fireEvent.change(input, { target: { value: "Edited Beta" } });
+    expect(screen.getByDisplayValue("Edited Beta")).toBeInTheDocument();
+  });
+
+  it("Save review calls saveReview API", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(Response.json(analysisPayload));
+    render(<SpiritFlixSmartReviewPanel item={video} open onClose={() => undefined} />);
+    await screen.findByRole("button", { name: "Save review" });
+    fireEvent.click(screen.getByRole("button", { name: "Save review" }));
     await waitFor(() => expect(vi.mocked(fetch)).toHaveBeenCalledTimes(2));
     expect(vi.mocked(fetch)).toHaveBeenLastCalledWith(
       "/api/spiritflix/admin/smart/analysis",
-      expect.objectContaining({ method: "POST" }),
+      expect.objectContaining({
+        method: "POST",
+        body: expect.stringContaining('"action":"saveReview"'),
+      }),
     );
+  });
+
+  it("reviewed status displays after save response", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(Response.json(analysisPayload));
+    render(<SpiritFlixSmartReviewPanel item={video} open onClose={() => undefined} />);
+    await screen.findByText("Reviewed");
   });
 
   it("does not expose apply rename/move actions", async () => {
     vi.mocked(fetch).mockResolvedValueOnce(Response.json(analysisPayload));
     render(<SpiritFlixSmartReviewPanel item={video} open onClose={() => undefined} />);
-    await screen.findByText("Beta Clip");
+    await screen.findByRole("button", { name: /Prepare rename preview/i });
     expect(screen.queryByRole("button", { name: /apply rename/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /apply move/i })).not.toBeInTheDocument();
   });

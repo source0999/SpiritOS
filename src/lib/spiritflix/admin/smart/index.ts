@@ -85,17 +85,33 @@ export {
   SPIRITFLIX_SMART_ANALYZER_VERSION_S4,
   markSpiritFlixSmartAnalysisReviewed,
   runSpiritFlixSmartReviewPipeline,
+  saveSpiritFlixSmartAnalysisReview,
   type SpiritFlixSmartReviewOptions,
 } from "./review";
+
+export {
+  SPIRITFLIX_SMART_ANALYZER_VERSION_S5,
+  applySmartReviewToAnalysis,
+  assertSpiritFlixSmartReviewPayload,
+  buildEmptyReviewDraft,
+  countReviewTagStates,
+  sanitizeEditedFilenameSuggestion,
+  tagReviewState,
+  validateSpiritFlixSmartReviewInput,
+} from "./review-metadata";
 
 export {
   SMART_ANALYSIS_LIMITS,
   parseSpiritFlixSmartAnalysisJson,
   validateSpiritFlixSmartAnalysis,
+  validateSpiritFlixSmartReviewedMetadata,
   validateSpiritFlixSmartSample,
   validateSpiritFlixSmartTag,
   type SpiritFlixSmartAnalysis,
   type SpiritFlixSmartConfidenceBand,
+  type SpiritFlixSmartReviewInput,
+  type SpiritFlixSmartReviewStatus,
+  type SpiritFlixSmartReviewedMetadata,
   type SpiritFlixSmartSample,
   type SpiritFlixSmartStatus,
   type SpiritFlixSmartTag,
@@ -111,3 +127,16 @@ export {
   tagDefinitionRequiresReviewByPolicy,
   type SpiritFlixSmartTagDefinition,
 } from "./vocabulary";
+
+export {
+  metadataSidecarPath,
+  projectApprovedSmartMetadata,
+  writeApprovedSmartMetadataSidecar,
+  type SpiritFlixApprovedMetadataProjection,
+} from "./metadata-bridge";
+
+export {
+  buildSmartRenamePreviewDraft,
+  type SpiritFlixSmartRenamePreviewDraft,
+  type SpiritFlixSmartRenamePreviewInput,
+} from "./rename-preview";

@@ -5,12 +5,23 @@ import { SPIRITFLIX_MEDIA_ROOT } from "@/lib/spiritflix/admin/constants";
 import { getSpiritFlixAdminAllowedRoots, isSpiritFlixAdminPathError, resolveSpiritFlixAdminPath } from "@/lib/spiritflix/admin/paths";
 import {
   assertSmartVideoPathCandidate,
+  buildSmartRenamePreviewDraft,
   getSmartAnalysisPath,
   isSpiritFlixSmartVideoExtension,
+  projectApprovedSmartMetadata,
   readSmartAnalysis,
   type SpiritFlixSmartAnalysis,
+  writeApprovedSmartMetadataSidecar,
 } from "@/lib/spiritflix/admin/smart";
-import { markSpiritFlixSmartAnalysisReviewed, runSpiritFlixSmartReviewPipeline } from "@/lib/spiritflix/admin/smart/review";
+import { markSpiritFlixSmartAnalysisReviewed, runSpiritFlixSmartReviewPipeline, saveSpiritFlixSmartAnalysisReview } from "@/lib/spiritflix/admin/smart/review";
+import { assertSpiritFlixSmartReviewPayload } from "@/lib/spiritflix/admin/smart/review-metadata";
+
+const FORBIDDEN_EXECUTE_ACTIONS = new Set([
+  "applyRename",
+  "applyMove",
+  "executeRename",
+  "executeMove",
+]);
 
 export const runtime = "nodejs";
 
@@ -65,7 +76,9 @@ function jsonError(error: unknown, fallbackStatus = 500) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Invalid path." }, { status: 400 });
   }
   const message = error instanceof Error ? error.message : "Smart analysis request failed.";
-  const status = /only available|folder|video files/i.test(message) ? 400 : fallbackStatus;
+  const status = /only available|folder|video files|unknown field|known tag|review|overlap|must be|not in suggestedTags|too large/i.test(message)
+    ? 400
+    : fallbackStatus;
   return NextResponse.json({ error: message }, { status });
 }
 
@@ -86,9 +99,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  let body: { path?: string; action?: string };
+  let body: { path?: string; action?: string; review?: unknown };
   try {
-    body = (await request.json()) as { path?: string; action?: string };
+    body = (await request.json()) as { path?: string; action?: string; review?: unknown };
   } catch {
     return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
   }
@@ -116,11 +129,62 @@ export async function POST(request: NextRequest) {
 
     assertSmartVideoPathCandidate(realPath, { mediaRoot });
 
+    // S6: reject all execute actions outright
+    if (FORBIDDEN_EXECUTE_ACTIONS.has(action)) {
+      return NextResponse.json(
+        { error: `${action} is not available in smart tagging. File mutations require Level 2 preview → confirm.` },
+        { status: 400 },
+      );
+    }
+
     let analysis: SpiritFlixSmartAnalysis;
     if (action === "markReviewed") {
       analysis = await markSpiritFlixSmartAnalysisReviewed(realPath, { mediaRoot });
+    } else if (action === "saveReview") {
+      const review = assertSpiritFlixSmartReviewPayload(
+        body.review ?? { approvedTagIds: [], rejectedTagIds: [] },
+      );
+      analysis = await saveSpiritFlixSmartAnalysisReview(realPath, review, { mediaRoot });
     } else if (action === "analyze") {
       analysis = await runSpiritFlixSmartReviewPipeline(realPath, { mediaRoot });
+    } else if (action === "exportMetadata") {
+      // S6: export approved metadata to admin metadata sidecar only
+      const pathInput = { videoPath: realPath, fileSizeBytes: stat.size, mtimeMs: stat.mtimeMs };
+      const loaded = await readSmartAnalysis(pathInput, { mediaRoot });
+      if (!loaded) {
+        return NextResponse.json({ error: "No smart analysis found for this video. Run analyze first." }, { status: 400 });
+      }
+      if (!loaded.reviewedMetadata || loaded.reviewedMetadata.reviewStatus === "unreviewed") {
+        return NextResponse.json({ error: "Analysis must be reviewed before exporting metadata." }, { status: 400 });
+      }
+      const result = await writeApprovedSmartMetadataSidecar(loaded, { mediaRoot });
+      const projection = projectApprovedSmartMetadata(loaded);
+      return NextResponse.json({
+        metadataPath: result.path,
+        metadata: projection,
+      }, { headers: { "Cache-Control": "no-store" } });
+    } else if (action === "prepareRenamePreview") {
+      // S6: build rename preview draft — no execute, no Level 2 call
+      const pathInput = { videoPath: realPath, fileSizeBytes: stat.size, mtimeMs: stat.mtimeMs };
+      const loaded = await readSmartAnalysis(pathInput, { mediaRoot });
+      if (!loaded) {
+        return NextResponse.json({ error: "No smart analysis found for this video. Run analyze first." }, { status: 400 });
+      }
+      if (!loaded.reviewedMetadata || loaded.reviewedMetadata.reviewStatus === "unreviewed") {
+        return NextResponse.json({ error: "Analysis must be reviewed before preparing rename preview." }, { status: 400 });
+      }
+      const projection = projectApprovedSmartMetadata(loaded);
+      const filenameSuggestion = projection.filenameSuggestion;
+      if (!filenameSuggestion) {
+        return NextResponse.json({ error: "No filename suggestion available from reviewed metadata." }, { status: 400 });
+      }
+      const draft = buildSmartRenamePreviewDraft({
+        sourcePath: realPath,
+        filenameSuggestion,
+      });
+      return NextResponse.json({
+        renamePreview: draft,
+      }, { headers: { "Cache-Control": "no-store" } });
     } else {
       return NextResponse.json({ error: "Unsupported smart analysis action." }, { status: 400 });
     }

@@ -925,6 +925,20 @@ src/components/spiritflix/admin/SpiritFlixSmartTagPill.tsx
 
 Video card/context menus expose **Smart tags**. Panel reads sidecars via GET; explicit **Analyze / Refresh** triggers S2+S3 pipeline via POST. **Mark reviewed** updates sidecar status only. No Level 2 action imports.
 
+### S5 implementation note (2026-06-16)
+
+S5 adds metadata-only approve/edit/reject inside the Smart tags panel:
+
+```text
+src/lib/spiritflix/admin/smart/review-metadata.ts
+src/lib/spiritflix/admin/smart/types.ts              — reviewedMetadata on analysis sidecar
+src/app/api/spiritflix/admin/smart/analysis/route.ts — action: saveReview
+src/components/spiritflix/admin/SpiritFlixSmartReviewPanel.tsx
+src/components/spiritflix/admin/SpiritFlixSmartTagPill.tsx
+```
+
+`saveReview` stores `reviewedMetadata` (approved/rejected tag ids, edited title/filename/category/collections, notes) in analysis sidecars only. No apply rename/move. No Level 2 calls.
+
 ## Environment notes
 
 Observed on Dell/Linux source-server (2026-06-16):
