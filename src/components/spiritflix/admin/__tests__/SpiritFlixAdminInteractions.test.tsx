@@ -55,6 +55,39 @@ function mockAdminFetch() {
       if (url.startsWith("/api/spiritflix/admin/smart/analysis")) {
         return Response.json({ analysis: null, sidecarPath: null });
       }
+      if (url.startsWith("/api/spiritflix/admin/smart/batch")) {
+        return Response.json({
+          schema: "spiritflix-smart-batch/v1",
+          generatedAt: "2026-06-18T12:00:00.000Z",
+          mode: "preview",
+          rootPath: `${SPIRITFLIX_MEDIA_ROOT}/yes`,
+          recursive: false,
+          maxItems: 12,
+          counts: {
+            candidates: 2,
+            analyzed: 0,
+            skipped: 0,
+            already_current: 0,
+            failed: 0,
+            needs_review: 0,
+            rename_preview_available: 0,
+          },
+          items: [
+            {
+              path: "/mnt/spirit-8tb/media/yes/Beta Clip.mp4",
+              name: "Beta Clip.mp4",
+              parentPath: "/mnt/spirit-8tb/media/yes",
+              extension: ".mp4",
+              status: "candidate",
+              sidecarCurrent: false,
+              needsReview: false,
+              suggestedTagCount: 0,
+              renamePreviewAvailable: false,
+              reviewStatus: "unreviewed",
+            },
+          ],
+        });
+      }
       return Response.json({ items: [] });
     }),
   );
@@ -218,5 +251,17 @@ describe("SpiritFlix admin Level 2R interactions", () => {
     const smartCalls = fetchMock.mock.calls.slice(callsBefore).filter(([input]) => String(input).includes("/smart/analysis"));
     expect(smartCalls.some(([, init]) => init?.method === "POST")).toBe(false);
     expect(smartCalls.some(([input]) => String(input).includes("path="))).toBe(true);
+  });
+
+  it("opens batch smart analysis panel and previews the current folder", async () => {
+    await openYesFolder();
+    fireEvent.click(screen.getByRole("button", { name: "Batch smart analyze" }));
+    expect(screen.getByRole("dialog", { name: "Smart batch analysis" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Preview folder" }));
+    await waitFor(() => {
+      expect(screen.getAllByText("Beta Clip.mp4").length).toBeGreaterThan(1);
+      expect(screen.getByText("Candidates")).toBeInTheDocument();
+    });
+    expect(screen.queryByRole("button", { name: /apply rename/i })).not.toBeInTheDocument();
   });
 });

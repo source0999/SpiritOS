@@ -140,3 +140,13 @@ export {
   type SpiritFlixSmartRenamePreviewDraft,
   type SpiritFlixSmartRenamePreviewInput,
 } from "./rename-preview";
+
+export {
+  previewSpiritFlixSmartBatch,
+  runSpiritFlixSmartBatch,
+  type SpiritFlixSmartBatchCounts,
+  type SpiritFlixSmartBatchItem,
+  type SpiritFlixSmartBatchItemStatus,
+  type SpiritFlixSmartBatchOptions,
+  type SpiritFlixSmartBatchPreview,
+} from "./batch";

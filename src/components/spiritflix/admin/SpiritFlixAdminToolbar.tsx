@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowDownAZ, ArrowUpAZ, FileJson, Grid2X2, List, RefreshCw, Search, Upload } from "lucide-react";
+import { ArrowDownAZ, ArrowUpAZ, FileJson, Grid2X2, List, RefreshCw, Search, Sparkles, Upload } from "lucide-react";
 import { SPIRITFLIX_ADMIN_LEVEL2_GATE_MESSAGE, SPIRITFLIX_ADMIN_LEVEL2_GATED } from "@/lib/spiritflix/admin/constants";
 import type { SpiritFlixAdminSortBy, SpiritFlixAdminSortOrder } from "@/lib/spiritflix/admin/types";
 
@@ -14,6 +14,7 @@ interface SpiritFlixAdminToolbarProps {
   sortOrder: SpiritFlixAdminSortOrder;
   viewMode: SpiritFlixAdminViewMode;
   onIncludeMetadataFilesChange: (value: boolean) => void;
+  onBatchSmartAnalyze: () => void;
   onManage: () => void;
   onRefresh: () => void;
   onSearchTermChange: (value: string) => void;
@@ -39,6 +40,7 @@ export function SpiritFlixAdminToolbar({
   sortOrder,
   viewMode,
   onIncludeMetadataFilesChange,
+  onBatchSmartAnalyze,
   onManage,
   onRefresh,
   onSearchTermChange,
@@ -89,6 +91,15 @@ export function SpiritFlixAdminToolbar({
         <FileJson size={17} aria-hidden="true" />
         Show metadata
       </label>
+      <button
+        className="spiritflix-admin-manage-action"
+        type="button"
+        aria-label="Batch smart analyze"
+        onClick={onBatchSmartAnalyze}
+      >
+        <Sparkles size={17} aria-hidden="true" />
+        Batch smart
+      </button>
       <button
         className="spiritflix-admin-manage-action"
         type="button"

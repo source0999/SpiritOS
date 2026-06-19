@@ -21,6 +21,7 @@ import { SpiritFlixAdminExplorer } from "./SpiritFlixAdminExplorer";
 import { SpiritFlixAdminDetailsPanel } from "./SpiritFlixAdminDetailsPanel";
 import { SpiritFlixAdminActionDialog } from "./SpiritFlixAdminActionDialog";
 import { SpiritFlixSmartReviewPanel } from "./SpiritFlixSmartReviewPanel";
+import { SpiritFlixSmartBatchPanel } from "./SpiritFlixSmartBatchPanel";
 import { buildAdminBreadcrumbSegments } from "./SpiritFlixAdminBreadcrumbs";
 import { menuActionToDialogAction, type SpiritFlixAdminMenuActionId } from "./item-menu";
 import { useAdminScrollRestore } from "./useAdminScrollRestore";
@@ -52,6 +53,7 @@ export function SpiritFlixAdminApp() {
   const [loading, setLoading] = useState(false);
   const [actionToast, setActionToast] = useState<string | null>(null);
   const [smartReviewItem, setSmartReviewItem] = useState<SpiritFlixAdminItem | null>(null);
+  const [smartBatchOpen, setSmartBatchOpen] = useState(false);
 
   useEffect(() => {
     setSession(getStoredSession());
@@ -271,6 +273,16 @@ export function SpiritFlixAdminApp() {
     requestRestore();
   }, [requestRestore]);
 
+  const openSmartBatch = useCallback(() => {
+    saveScroll();
+    setSmartBatchOpen(true);
+  }, [saveScroll]);
+
+  const closeSmartBatch = useCallback(() => {
+    setSmartBatchOpen(false);
+    requestRestore();
+  }, [requestRestore]);
+
   const handleMenuAction = useCallback(
     (actionId: SpiritFlixAdminMenuActionId, item: SpiritFlixAdminItem | null) => {
       if (item) setSelectedItem(item);
@@ -390,6 +402,7 @@ export function SpiritFlixAdminApp() {
           sortBy={sortBy}
           sortOrder={sortOrder}
           viewMode={viewMode}
+          onBatchSmartAnalyze={openSmartBatch}
           onIncludeMetadataFilesChange={setIncludeMetadataFiles}
           onManage={openManageDialog}
           onRefresh={refresh}
@@ -451,6 +464,10 @@ export function SpiritFlixAdminApp() {
 
       {smartReviewItem ? (
         <SpiritFlixSmartReviewPanel item={smartReviewItem} open onClose={closeSmartReview} />
+      ) : null}
+
+      {smartBatchOpen ? (
+        <SpiritFlixSmartBatchPanel currentPath={currentPath} open onClose={closeSmartBatch} />
       ) : null}
     </main>
   );

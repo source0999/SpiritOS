@@ -1,0 +1,69 @@
+{
+  "schema": "spiritflix-smart-tagging-s7-closeout/v1",
+  "generatedAt": "2026-06-18T21:44:38-04:00",
+  "verdict": "GO",
+  "scope": "SpiritFlix Smart Tagging S7 batch folder analysis, preview/review only",
+  "changedFiles": [
+    "src/lib/spiritflix/admin/smart/batch.ts",
+    "src/lib/spiritflix/admin/smart/index.ts",
+    "src/app/api/spiritflix/admin/smart/batch/route.ts",
+    "src/lib/spiritflix/admin/smart/__tests__/batch.test.ts",
+    "src/app/api/spiritflix/admin/__tests__/smart-batch-route.test.ts",
+    "src/components/spiritflix/admin/SpiritFlixSmartBatchPanel.tsx",
+    "src/components/spiritflix/admin/SpiritFlixAdminToolbar.tsx",
+    "src/components/spiritflix/admin/SpiritFlixAdminApp.tsx",
+    "src/components/spiritflix/admin/__tests__/SpiritFlixAdminInteractions.test.tsx",
+    "src/styles/spiritflix.css",
+    "docs/evidence/spiritflix-smart-tagging-s7-batch-20260618-214438/"
+  ],
+  "safety": {
+    "renamedMedia": false,
+    "movedMedia": false,
+    "mutatedJellyfin": false,
+    "restartedJellyfin": false,
+    "ranOcrOrVisionModel": false,
+    "autoApprovedTags": false,
+    "touchedSourceProxy": false,
+    "stagedOrCommitted": false
+  },
+  "verification": {
+    "typecheck": {
+      "command": "npm run typecheck",
+      "result": "PASS",
+      "raw": "raw/typecheck.txt"
+    },
+    "adminSmartApiVitest": {
+      "command": "npx vitest run src/lib/spiritflix/admin/smart src/components/spiritflix/admin src/app/api/spiritflix/admin",
+      "result": "PASS",
+      "summary": "24 test files passed, 164 tests passed",
+      "raw": "raw/admin-smart-api-vitest.txt"
+    },
+    "homePlayerVitest": {
+      "command": "npx vitest run src/components/spiritflix/__tests__/SpiritFlixHome.test.tsx src/components/spiritflix/__tests__/SpiritFlixPlayer.test.tsx",
+      "result": "PASS",
+      "summary": "4 test files passed, 10 tests passed",
+      "raw": "raw/home-player-vitest.txt"
+    },
+    "gitDiffCheck": {
+      "command": "git diff --check",
+      "result": "FAIL_UNRELATED_DIRTY_TREE",
+      "note": "Repository-wide check reports pre-existing generated face-organizer HTML trailing whitespace outside S7 scope.",
+      "raw": "raw/git-diff-check.txt"
+    },
+    "gitDiffCheckS7Scope": {
+      "command": "git diff --check -- <S7 touched files>",
+      "result": "PASS",
+      "raw": "raw/git-diff-check-s7-scope.txt"
+    },
+    "secretScan": {
+      "command": "rg value-bearing secret patterns over S7 touched files and raw outputs",
+      "result": "PASS",
+      "raw": "raw/secret-scan.txt"
+    }
+  },
+  "remainingWork": [
+    "S8 smart categories/folders remain metadata-first future work.",
+    "S9 Level 2 preview-to-confirm integration remains future work.",
+    "Batch progress is request/response bounded; pause/cancel/job persistence is still future worker-lane work."
+  ]
+}
