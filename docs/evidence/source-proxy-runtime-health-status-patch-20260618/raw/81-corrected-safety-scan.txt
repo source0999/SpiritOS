@@ -1,0 +1,30 @@
+=== corrected rg safety scan ===
+bash: line 1: os.environ: command not found
+bash: line 1: token: command not found
+bash: line 1: secret: command not found
+bash: line 1: password: command not found
+rm: kill: usage: kill [-s sigspec | -n signum | -sigspec] pid | jobspec ... or kill -l [sigspec]
+missing operand
+Try 'rm --help' for more information.
+pkill: no matching criteria specified
+Try `pkill --help' for more information.
+bash: line 1: /mnt/spirit-8tb/media: Is a directory
+bash: line 1: jellyfin: command not found
+bash: line 1: sqlite: command not found
+fatal: clean.requireForce defaults to true and neither -i, -n, nor -f given; refusing to clean
+fatal: you must specify path(s) to restore
+Too few arguments.
+fatal: Unable to create '/home/source/SpiritOS/.git/index.lock': File exists.
+
+Another git process seems to be running in this repository, e.g.
+an editor opened by 'git commit'. Please make sure all processes
+are terminated then try again. If it still fails, a git process
+may have crashed in this repository earlier:
+remove the file manually to continue.
+Call to Reboot failed: Interactive authentication required.
+Failed to schedule shutdown: Interactive authentication required.
+docker: 'docker restart' requires at least 1 argument
+
+Usage:  docker restart [OPTIONS] CONTAINER [CONTAINER...]
+
+See 'docker restart --help' for more information

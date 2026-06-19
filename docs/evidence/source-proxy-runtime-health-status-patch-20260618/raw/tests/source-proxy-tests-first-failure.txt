@@ -1,0 +1,127 @@
+........................................................................ [  4%]
+........................................................................ [  9%]
+........................................................................ [ 14%]
+.........F
+=================================== FAILURES ===================================
+_ CartographerApiTests.test_apply_approved_doc_proposal_applies_and_verifies_blueprint_only_diff _
+
+self = <source_proxy.tests.test_cartographer_api.CartographerApiTests testMethod=test_apply_approved_doc_proposal_applies_and_verifies_blueprint_only_diff>
+
+    def test_apply_approved_doc_proposal_applies_and_verifies_blueprint_only_diff(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            _write_minimal_blueprints(root)
+            _write_minimal_blueprint_validator(root)
+            _git(root, "init")
+            _git(root, "config", "user.email", "cartographer@example.test")
+            _git(root, "config", "user.name", "Cartographer Test")
+            _git(root, "add", ".")
+            _git(root, "commit", "-m", "initial commit")
+            diff = "\n".join(
+                [
+                    "diff --git a/_blueprints/current/dashboard_state.md b/_blueprints/current/dashboard_state.md",
+                    "--- a/_blueprints/current/dashboard_state.md",
+                    "+++ b/_blueprints/current/dashboard_state.md",
+                    "@@ -17,3 +17,5 @@ last_verified: 2026-05-15",
+                    " ---",
+                    " # Dashboard State",
+                    "+",
+                    "+Cartographer approved doc apply note.",
+                    "",
+                ]
+            )
+            _write_proposal(
+                root,
+                "approved",
+                "bp-20260515-apply",
+                {
+                    "status": "approved",
+                    "type": "blueprint_update",
+                    "component": "dashboard",
+                    "affected_blueprints": ["dashboard-state"],
+                    "changed_files": ["src/components/dashboard/HomelabBlueprintReviewWidget.tsx"],
+                    "proposed_files": ["_blueprints/current/dashboard_state.md"],
+                    "approved_diff": diff,
+                    "transitions": [
+                        {
+                            "status": "approved",
+                            "timestamp": "2026-05-15T10:06:00Z",
+                            "actor": "Britton",
+                        }
+                    ],
+                },
+            )
+
+            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
+>               payload = apply_approved_doc_proposal(
+                    proposal_id="bp-20260515-apply",
+                    approved=True,
+                    approved_by="test",
+                )
+
+source_proxy/tests/test_cartographer_api.py:10908:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+source_proxy/cartographer/apply.py:35: in apply_approved_doc_proposal
+    central_gate_check("apply", run_id=f"cartographer_apply_approved_doc_proposal:{proposal_id}")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+action = 'apply', increment_id = None
+run_id = 'cartographer_apply_approved_doc_proposal:bp-20260515-apply'
+
+    def central_gate_check(
+        action: str,
+        increment_id: str | None = None,
+        run_id: str | None = None,
+    ) -> ExternalGateReceipt:
+        """Single required guard for Source Proxy model-call and apply paths."""
+        clean_action = _clean_required(action, "action")
+        clean_increment = _clean_required(
+            increment_id or os.getenv(DEFAULT_INCREMENT_ENV, "1.3"),
+            "increment_id",
+        )
+        clean_run_id = _clean_optional(run_id) or f"{clean_increment}:{clean_action}"
+        state = _read_gate_state()
+
+        status = str(state.get("status") or "")
+        approved_increment = state.get("approved_increment")
+        approval_token = state.get("approval_token")
+
+        if status not in VALID_GATE_STATES:
+            raise _gate_error("Gate status is invalid.", "gate_malformed", state)
+        if status == "BLOCKED":
+            raise _gate_error("Gate is blocked.", "gate_blocked", state)
+        if status not in {"APPROVED_INCREMENT", "RUNNING_INCREMENT"}:
+            raise _gate_error("Gate is closed.", "gate_closed", state)
+        if approved_increment != clean_increment:
+>           raise _gate_error(
+                f"Approved increment {approved_increment!r} does not match {clean_increment!r}.",
+                "increment_mismatch",
+                state,
+            )
+E           source_proxy.approval.external_gate.ExternalGateError: Approved increment 'evaluation-round' does not match '1.3'.
+
+source_proxy/approval/external_gate.py:78: ExternalGateError
+=============================== warnings summary ===============================
+source_proxy/main.py:53
+  /home/source/SpiritOS/source_proxy/main.py:53: DeprecationWarning:
+          on_event is deprecated, use lifespan event handlers instead.
+
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+
+    @app.on_event("startup")
+
+.venv-source-proxy/lib/python3.12/site-packages/fastapi/applications.py:4598
+  /home/source/SpiritOS/.venv-source-proxy/lib/python3.12/site-packages/fastapi/applications.py:4598: DeprecationWarning:
+          on_event is deprecated, use lifespan event handlers instead.
+
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+
+    return self.router.on_event(event_type)  # ty: ignore[deprecated]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED source_proxy/tests/test_cartographer_api.py::CartographerApiTests::test_apply_approved_doc_proposal_applies_and_verifies_blueprint_only_diff
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 225 passed, 2 warnings in 6.99s

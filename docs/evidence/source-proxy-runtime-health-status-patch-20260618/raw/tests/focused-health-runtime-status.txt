@@ -1,0 +1,24 @@
+..................................... [ 20%]
+.................................................... [ 50%]
+.........................................................................................  [100%]
+=============================== warnings summary ===============================
+source_proxy/main.py:53
+  /home/source/SpiritOS/source_proxy/main.py:53: DeprecationWarning:
+          on_event is deprecated, use lifespan event handlers instead.
+
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+
+    @app.on_event("startup")
+
+.venv-source-proxy/lib/python3.12/site-packages/fastapi/applications.py:4598
+  /home/source/SpiritOS/.venv-source-proxy/lib/python3.12/site-packages/fastapi/applications.py:4598: DeprecationWarning:
+          on_event is deprecated, use lifespan event handlers instead.
+
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+
+    return self.router.on_event(event_type)  # ty: ignore[deprecated]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+178 passed, 1342 deselected, 2 warnings, 325 subtests passed in 36.70s
