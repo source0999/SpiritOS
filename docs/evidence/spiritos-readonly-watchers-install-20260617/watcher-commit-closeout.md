@@ -1,0 +1,113 @@
+# Watcher Post-Commit Verification
+
+## git status
+## master
+ M README.md
+ M package-lock.json
+ M package.json
+ M repomix.config.json
+ M scripts/media-ingest-worker.mjs
+ M scripts/media/face_enrolled_performers.html
+ M scripts/media/face_enrolled_performers.json
+ M scripts/media/face_enrollment_queue.html
+ M scripts/media/face_enrollment_queue.json
+ M scripts/media/face_gallery.html
+ M scripts/media/face_gallery.json
+ M scripts/media/face_organizer.py
+ M scripts/media/face_verification_full_audit.html
+ M scripts/media/known_db_audit.html
+ M scripts/media/known_db_audit.json
+ M scripts/media/manual_crop.html
+ M scripts/media/model_index.json
+ M scripts/media/performer_verification.json
+ M scripts/media/test_face_organizer_schema.py
+ M scripts/runtime-port-guard.sh
+ M scripts/source-context-compress.mjs
+ M scripts/spiritos-lan-watchdog.sh
+ M src/app/api/spiritflix/admin/__tests__/smart-analysis-route.test.ts
+ M src/app/layout.tsx
+ M src/components/spiritflix/SpiritFlixPlayer.tsx
+ M src/components/spiritflix/admin/SpiritFlixSmartTagPill.tsx
+ M src/components/spiritflix/admin/__tests__/SpiritFlixSmartTagPill.test.tsx
+ M src/lib/spiritflix-jellyfin-client.ts
+ M src/lib/spiritflix/admin/smart/review.ts
+ M src/lib/spiritflix/admin/smart/types.ts
+ M src/lib/spiritflix/jellyfin-client.ts
+?? docs/evidence/live-hiccup-triage-20260617/
+?? docs/evidence/repo-cleanup-manifest-watchers-20260617/
+?? docs/evidence/repo-host-cleanup-stability-audit-20260617/
+?? docs/evidence/source-proxy-full-integration-pivot/fip-0-receipts/fip0-54c0f44cc0a7a4a9.json
+?? docs/evidence/source-proxy-full-integration-pivot/fip-0-receipts/fip0-701f9c2e9284296f.json
+?? docs/evidence/source-proxy-full-integration-pivot/fip-0-receipts/fip0-7a529ebb43342143.json
+?? docs/evidence/source-proxy-full-integration-pivot/fip-0-receipts/fip0-7e95ea289935d428.json
+?? docs/evidence/source-proxy-full-integration-pivot/fip-0-receipts/fip0-c19c477cba35858e.json
+?? docs/evidence/source-proxy-glm-3x10-audit-20260617/
+?? docs/evidence/spiritflix-smart-tagging-s6-closeout-20260617/s6-commit-closeout.md
+?? docs/evidence/spiritos-readonly-watchers-install-20260617/watcher-commit-closeout.md
+?? scripts/headroom-proxy-dev.sh
+?? scripts/media/face_verification_report.json
+?? scripts/postinstall-repomix-shim.mjs
+?? scripts/repomix-llm.mjs
+?? scripts/spiritos-health/README.md
+?? src/app/api/spiritflix/hls/
+?? src/lib/spiritflix-jellyfin-client.test.ts
+?? src/lib/spiritflix/admin/smart/__tests__/review-metadata.test.ts
+?? src/lib/spiritflix/admin/smart/review-metadata.ts
+
+## git log -1 --oneline
+372e6c1e Add SpiritOS read-only health watchers
+
+## git show --stat --oneline --name-status HEAD
+372e6c1e Add SpiritOS read-only health watchers
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/00-git-status.txt
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/00-preflight.md
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/10-draft-review.md
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/20-danger-scan.md
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/20-installed-scripts.md
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/30-installed-scripts.md
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/30-manual-run-results.md
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/40-manual-run-results.md
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/40-systemd-install-results.md
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/50-post-install-verification.md
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/50-systemd-install-results.md
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/60-post-install-verification.md
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/60-removal-rollback.md
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/70-removal-rollback.md
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/final-verdict.md
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/index.md
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/operator-summary.md
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-danger-scan-installed-and-drafts.txt
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-danger-scan.txt
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/raw/20-safety-scan.json
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/raw/21-installed-safety-scan.json
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/raw/30-health-dir-permission-check.txt
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/raw/30-permission-blocker.txt
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/raw/31-health-dir-status.txt
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/raw/31-sudo-check.txt
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/raw/32-script-dir-check.txt
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/raw/50-systemd-permission-check.txt
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/raw/70-closeout-endpoint-check.txt
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/raw/80-current-runtime-probes.txt
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/raw/90-final-git-status.txt
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/raw/manual-runs/.out
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/raw/manual-runs/spiritos-boot-postmortem.sh.out
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/raw/manual-runs/spiritos-host-health-snapshot.sh.out
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/raw/manual-runs/spiritos-model-storage-guard.sh.out
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/raw/manual-runs/spiritos-repo-bloat-report.sh.out
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/raw/manual-runs/spiritos-service-health-snapshot.sh.out
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/raw/watcher-commit/bash-n.txt
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/raw/watcher-commit/danger-scan-literal.txt
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/raw/watcher-commit/danger-scan.txt
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/raw/watcher-commit/systemd-status.txt
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/summary.json
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/systemd-manual-success-update.md
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/watcher-commit-file-list.md
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/watcher-commit-preflight.md
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/watcher-commit-verification.md
+A	docs/evidence/spiritos-readonly-watchers-install-20260617/watcher-staged-files.md
+A	scripts/spiritos-health/spiritos-boot-postmortem.sh
+A	scripts/spiritos-health/spiritos-health-lib.sh
+A	scripts/spiritos-health/spiritos-host-health-snapshot.sh
+A	scripts/spiritos-health/spiritos-model-storage-guard.sh
+A	scripts/spiritos-health/spiritos-repo-bloat-report.sh
+A	scripts/spiritos-health/spiritos-service-health-snapshot.sh
