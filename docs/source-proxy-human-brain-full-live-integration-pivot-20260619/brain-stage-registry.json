@@ -1,0 +1,278 @@
+[
+  {
+    "brain_stage": 0,
+    "brain_region": "Brainstem / Autonomic Substrate",
+    "system_role": "see human-brain-architecture-contract.md",
+    "input_contract": "real upstream state, not fixtures",
+    "output_contract": "typed output with event id and hash",
+    "authority_contract": "least authority, explicit approval for mutation",
+    "failure_contract": "failure changes route or final verdict",
+    "evidence_required": "invocation event plus consumer event",
+    "runtime_owner": "Plan 0 to confirm",
+    "required_task_classes": [
+      "coding",
+      "research",
+      "memory",
+      "worker",
+      "verification"
+    ],
+    "downstream_consumers": [
+      "canonical task state",
+      "CodingCockpitShell",
+      "receipts/traces"
+    ]
+  },
+  {
+    "brain_stage": 1,
+    "brain_region": "Sensory Input",
+    "system_role": "see human-brain-architecture-contract.md",
+    "input_contract": "real upstream state, not fixtures",
+    "output_contract": "typed output with event id and hash",
+    "authority_contract": "least authority, explicit approval for mutation",
+    "failure_contract": "failure changes route or final verdict",
+    "evidence_required": "invocation event plus consumer event",
+    "runtime_owner": "Plan 0 to confirm",
+    "required_task_classes": [
+      "coding",
+      "research",
+      "memory",
+      "worker",
+      "verification"
+    ],
+    "downstream_consumers": [
+      "canonical task state",
+      "CodingCockpitShell",
+      "receipts/traces"
+    ]
+  },
+  {
+    "brain_stage": 2,
+    "brain_region": "Thalamic Attention / Routing",
+    "system_role": "see human-brain-architecture-contract.md",
+    "input_contract": "real upstream state, not fixtures",
+    "output_contract": "typed output with event id and hash",
+    "authority_contract": "least authority, explicit approval for mutation",
+    "failure_contract": "failure changes route or final verdict",
+    "evidence_required": "invocation event plus consumer event",
+    "runtime_owner": "Plan 0 to confirm",
+    "required_task_classes": [
+      "coding",
+      "research",
+      "memory",
+      "worker",
+      "verification"
+    ],
+    "downstream_consumers": [
+      "canonical task state",
+      "CodingCockpitShell",
+      "receipts/traces"
+    ]
+  },
+  {
+    "brain_stage": 3,
+    "brain_region": "Salience / Risk",
+    "system_role": "see human-brain-architecture-contract.md",
+    "input_contract": "real upstream state, not fixtures",
+    "output_contract": "typed output with event id and hash",
+    "authority_contract": "least authority, explicit approval for mutation",
+    "failure_contract": "failure changes route or final verdict",
+    "evidence_required": "invocation event plus consumer event",
+    "runtime_owner": "Plan 0 to confirm",
+    "required_task_classes": [
+      "coding",
+      "research",
+      "memory",
+      "worker",
+      "verification"
+    ],
+    "downstream_consumers": [
+      "canonical task state",
+      "CodingCockpitShell",
+      "receipts/traces"
+    ]
+  },
+  {
+    "brain_stage": 4,
+    "brain_region": "Global Workspace",
+    "system_role": "see human-brain-architecture-contract.md",
+    "input_contract": "real upstream state, not fixtures",
+    "output_contract": "typed output with event id and hash",
+    "authority_contract": "least authority, explicit approval for mutation",
+    "failure_contract": "failure changes route or final verdict",
+    "evidence_required": "invocation event plus consumer event",
+    "runtime_owner": "Plan 0 to confirm",
+    "required_task_classes": [
+      "coding",
+      "research",
+      "memory",
+      "worker",
+      "verification"
+    ],
+    "downstream_consumers": [
+      "canonical task state",
+      "CodingCockpitShell",
+      "receipts/traces"
+    ]
+  },
+  {
+    "brain_stage": 5,
+    "brain_region": "Hippocampal And Semantic Memory",
+    "system_role": "see human-brain-architecture-contract.md",
+    "input_contract": "real upstream state, not fixtures",
+    "output_contract": "typed output with event id and hash",
+    "authority_contract": "least authority, explicit approval for mutation",
+    "failure_contract": "failure changes route or final verdict",
+    "evidence_required": "invocation event plus consumer event",
+    "runtime_owner": "Plan 0 to confirm",
+    "required_task_classes": [
+      "coding",
+      "research",
+      "memory",
+      "worker",
+      "verification"
+    ],
+    "downstream_consumers": [
+      "canonical task state",
+      "CodingCockpitShell",
+      "receipts/traces"
+    ]
+  },
+  {
+    "brain_stage": 6,
+    "brain_region": "Prefrontal Executive",
+    "system_role": "see human-brain-architecture-contract.md",
+    "input_contract": "real upstream state, not fixtures",
+    "output_contract": "typed output with event id and hash",
+    "authority_contract": "least authority, explicit approval for mutation",
+    "failure_contract": "failure changes route or final verdict",
+    "evidence_required": "invocation event plus consumer event",
+    "runtime_owner": "Plan 0 to confirm",
+    "required_task_classes": [
+      "coding",
+      "research",
+      "memory",
+      "worker",
+      "verification"
+    ],
+    "downstream_consumers": [
+      "canonical task state",
+      "CodingCockpitShell",
+      "receipts/traces"
+    ]
+  },
+  {
+    "brain_stage": 7,
+    "brain_region": "Association-Cortex Specialists",
+    "system_role": "see human-brain-architecture-contract.md",
+    "input_contract": "real upstream state, not fixtures",
+    "output_contract": "typed output with event id and hash",
+    "authority_contract": "least authority, explicit approval for mutation",
+    "failure_contract": "failure changes route or final verdict",
+    "evidence_required": "invocation event plus consumer event",
+    "runtime_owner": "Plan 0 to confirm",
+    "required_task_classes": [
+      "coding",
+      "research",
+      "memory",
+      "worker",
+      "verification"
+    ],
+    "downstream_consumers": [
+      "canonical task state",
+      "CodingCockpitShell",
+      "receipts/traces"
+    ]
+  },
+  {
+    "brain_stage": 8,
+    "brain_region": "Basal-Ganglia Policy / Action Selection",
+    "system_role": "see human-brain-architecture-contract.md",
+    "input_contract": "real upstream state, not fixtures",
+    "output_contract": "typed output with event id and hash",
+    "authority_contract": "least authority, explicit approval for mutation",
+    "failure_contract": "failure changes route or final verdict",
+    "evidence_required": "invocation event plus consumer event",
+    "runtime_owner": "Plan 0 to confirm",
+    "required_task_classes": [
+      "coding",
+      "research",
+      "memory",
+      "worker",
+      "verification"
+    ],
+    "downstream_consumers": [
+      "canonical task state",
+      "CodingCockpitShell",
+      "receipts/traces"
+    ]
+  },
+  {
+    "brain_stage": 9,
+    "brain_region": "Motor Effectors",
+    "system_role": "see human-brain-architecture-contract.md",
+    "input_contract": "real upstream state, not fixtures",
+    "output_contract": "typed output with event id and hash",
+    "authority_contract": "least authority, explicit approval for mutation",
+    "failure_contract": "failure changes route or final verdict",
+    "evidence_required": "invocation event plus consumer event",
+    "runtime_owner": "Plan 0 to confirm",
+    "required_task_classes": [
+      "coding",
+      "research",
+      "memory",
+      "worker",
+      "verification"
+    ],
+    "downstream_consumers": [
+      "canonical task state",
+      "CodingCockpitShell",
+      "receipts/traces"
+    ]
+  },
+  {
+    "brain_stage": 10,
+    "brain_region": "Cerebellar Verification And Repair",
+    "system_role": "see human-brain-architecture-contract.md",
+    "input_contract": "real upstream state, not fixtures",
+    "output_contract": "typed output with event id and hash",
+    "authority_contract": "least authority, explicit approval for mutation",
+    "failure_contract": "failure changes route or final verdict",
+    "evidence_required": "invocation event plus consumer event",
+    "runtime_owner": "Plan 0 to confirm",
+    "required_task_classes": [
+      "coding",
+      "research",
+      "memory",
+      "worker",
+      "verification"
+    ],
+    "downstream_consumers": [
+      "canonical task state",
+      "CodingCockpitShell",
+      "receipts/traces"
+    ]
+  },
+  {
+    "brain_stage": 11,
+    "brain_region": "Reward And Consolidation",
+    "system_role": "see human-brain-architecture-contract.md",
+    "input_contract": "real upstream state, not fixtures",
+    "output_contract": "typed output with event id and hash",
+    "authority_contract": "least authority, explicit approval for mutation",
+    "failure_contract": "failure changes route or final verdict",
+    "evidence_required": "invocation event plus consumer event",
+    "runtime_owner": "Plan 0 to confirm",
+    "required_task_classes": [
+      "coding",
+      "research",
+      "memory",
+      "worker",
+      "verification"
+    ],
+    "downstream_consumers": [
+      "canonical task state",
+      "CodingCockpitShell",
+      "receipts/traces"
+    ]
+  }
+]

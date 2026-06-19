@@ -1,0 +1,11 @@
+{
+  "status": "PLAN_WRITTEN_NOT_STARTED",
+  "planning_packet_created": true,
+  "implementation_performed": false,
+  "plan_0_started": false,
+  "plan_0_status": "ELIGIBLE_FOR_FUTURE_APPROVAL",
+  "plans_1_6_status": "BLOCKED_PENDING_PLAN_0_COMPRESSION_DECISION",
+  "glm_future_owner": true,
+  "codex_future_checker": true,
+  "no_plan_progression_authorized": true
+}

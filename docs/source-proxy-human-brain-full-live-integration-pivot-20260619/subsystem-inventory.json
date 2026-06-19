@@ -1,0 +1,184 @@
+[
+  {
+    "subsystem": "active /coding route",
+    "files": [
+      "src/app/coding/page.tsx",
+      "src/components/coding/CodingCockpitShell.tsx"
+    ],
+    "symbol": "CodingPage, CodingCockpitShell",
+    "current_runtime_path": "/coding",
+    "current_consumer": "browser user and v1 coding routes",
+    "current_test": "src/app/coding/__tests__/page.test.tsx, src/components/coding/__tests__/coding-cockpit-shell.test.tsx",
+    "current_authority": "UI plus approved Source Proxy calls",
+    "current_live_proof": "not run in this planning task",
+    "brain_stage": 1,
+    "status": "CANONICAL_ACTIVE_CONFIRMED"
+  },
+  {
+    "subsystem": "Source Proxy decision route",
+    "files": [
+      "src/app/v1/decisions/route/route.ts",
+      "source_proxy/api/decision.py"
+    ],
+    "symbol": "POST, router=/v1/decisions",
+    "current_runtime_path": "/v1/decisions/route",
+    "current_consumer": "CodingCockpitShell preview/apply flow",
+    "current_test": "decision route and Source Proxy tests",
+    "current_authority": "route decision and packet construction",
+    "current_live_proof": "not run in this planning task",
+    "brain_stage": 2,
+    "status": "REUSE_WITH_TRACE_GAPS"
+  },
+  {
+    "subsystem": "central gate",
+    "files": [
+      "source_proxy/approval/external_gate.py",
+      "source_proxy/approval/gate.py"
+    ],
+    "symbol": "central_gate_check, execute_approved_action",
+    "current_runtime_path": "Source Proxy apply/model-call paths",
+    "current_consumer": "long-running execute-approved and scripts",
+    "current_test": "source_proxy/tests/test_external_gate.py",
+    "current_authority": "simple external gate",
+    "current_live_proof": "not run in this planning task",
+    "brain_stage": 8,
+    "status": "ADAPT_TO_STRUCTURED_POLICY"
+  },
+  {
+    "subsystem": "Cartographer",
+    "files": [
+      "source_proxy/cartographer/workflow_state.py",
+      "source_proxy/cartographer/workflow_runner.py",
+      "source_proxy/cartographer/workflow_event_ledger.py",
+      "source_proxy/api/cartographer.py",
+      "src/app/v1/coding/cartographer/preview/route.ts"
+    ],
+    "symbol": "workflow state, runner, event ledger, preview route",
+    "current_runtime_path": "/v1/cartographer/* and /v1/coding/cartographer/preview",
+    "current_consumer": "Cartographer UI/routes, not proven canonical /coding controller",
+    "current_test": "cartographer workflow tests",
+    "current_authority": "preview/control and selected approved applies",
+    "current_live_proof": "not run in this planning task",
+    "brain_stage": 6,
+    "status": "REUSABLE_WITH_MAJOR_ADAPTATION"
+  },
+  {
+    "subsystem": "Obsidian/context memory",
+    "files": [
+      "source_proxy/context/obsidian.py",
+      "source_proxy/api/obsidian_context.py",
+      "config/source-proxy.example.env"
+    ],
+    "symbol": "query_obsidian_context, diagnostics",
+    "current_runtime_path": "/v1/context/obsidian/query",
+    "current_consumer": "decision/context packets",
+    "current_test": "source_proxy/tests/test_obsidian_context.py",
+    "current_authority": "read-only retrieval",
+    "current_live_proof": "not run in this planning task",
+    "brain_stage": 5,
+    "status": "READ_ONLY_NEEDS_APPROVED_WRITEBACK"
+  },
+  {
+    "subsystem": "Scout research",
+    "files": [
+      "source_proxy/decision/scout_research.py",
+      "source_proxy/api/scout_intake.py",
+      "scout/src/scout/api/packets.py"
+    ],
+    "symbol": "run_scout_research_diagnostics",
+    "current_runtime_path": "SOURCE_PROXY_SCOUT_RESEARCH_URL /v1/scout/packets/search",
+    "current_consumer": "decision research sources",
+    "current_test": "source_proxy/tests/test_scout_research_bridge.py",
+    "current_authority": "evidence-only",
+    "current_live_proof": "not run in this planning task",
+    "brain_stage": 7,
+    "status": "DEDICATED_HANDLER_ENV_GATED"
+  },
+  {
+    "subsystem": "SearXNG/web research",
+    "files": [
+      "backend/docker-compose.yml",
+      "source_proxy/decision/research.py",
+      "src/lib/server/web-search/searxng-provider.ts",
+      "src/app/api/research/web-search/route.ts"
+    ],
+    "symbol": "searxng provider and diagnostics",
+    "current_runtime_path": "spirit-searxng search API",
+    "current_consumer": "research preview/diagnostics",
+    "current_test": "research preview and web-search tests",
+    "current_authority": "observational",
+    "current_live_proof": "not run in this planning task",
+    "brain_stage": 7,
+    "status": "REQUIRES_LIVE_CONSUMPTION_PROOF"
+  },
+  {
+    "subsystem": "Mac worker",
+    "files": [
+      "src/app/api/coding/mac-worker/route.ts",
+      "src/lib/mac-worker/types.ts",
+      "src/lib/mac-worker/client.ts",
+      "scripts/mac-worker/spirit_mac_worker.py",
+      "src/app/v1/coding/mac-advisory/route.ts"
+    ],
+    "symbol": "runMacWorkerJob, macWorkerJobTypes",
+    "current_runtime_path": "/api/coding/mac-worker and SSH spirit-mac-mini",
+    "current_consumer": "UI trial/advisory flows",
+    "current_test": "mac-worker route and contract tests",
+    "current_authority": "typed worker exists; advisory route is advisory-only",
+    "current_live_proof": "not run in this planning task",
+    "brain_stage": 9,
+    "status": "REAL_WORKER_NOT_CANONICAL_CONSUMED"
+  },
+  {
+    "subsystem": "Model lanes",
+    "files": [
+      "source_proxy/decision/model_lanes.py",
+      "source_proxy/routing/ollama_route.py",
+      "source_proxy/routing/litellm_router.py",
+      "source_proxy/agents/registry.py",
+      "src/lib/spirit/model-profiles.ts"
+    ],
+    "symbol": "build_model_lanes_preview, AGENT_REGISTRY",
+    "current_runtime_path": "Ollama/LiteLLM routed lanes",
+    "current_consumer": "prompt packets and model previews",
+    "current_test": "model lane tests",
+    "current_authority": "model output only, no direct mutation",
+    "current_live_proof": "not run in this planning task",
+    "brain_stage": 7,
+    "status": "VERIFY_GEMMA_HERMES_QWEN_LIVE_USE"
+  },
+  {
+    "subsystem": "Dell execution",
+    "files": [
+      "src/app/v1/actions/execute-approved/route.ts",
+      "source_proxy/api/long_running_tasks.py",
+      "source_proxy/approval/gate.py",
+      "source_proxy/tasks/long_running.py"
+    ],
+    "symbol": "execute_approved_action",
+    "current_runtime_path": "/v1/actions/execute-approved -> /v1/tasks/long-running/{taskId}/execute-approved",
+    "current_consumer": "approved coding UI apply flow",
+    "current_test": "execute-approved and long-running tests",
+    "current_authority": "approved isolated writes; commit/push false",
+    "current_live_proof": "not run in this planning task",
+    "brain_stage": 9,
+    "status": "REUSE_WITH_ISOLATION_PROOF_REQUIRED"
+  },
+  {
+    "subsystem": "Verifier and repair",
+    "files": [
+      "source_proxy/decision/verifier_lane.py",
+      "source_proxy/decision/artifact_repair_loop.py",
+      "source_proxy/decision/artifact_repair_contract.py",
+      "source_proxy/cartographer/verification_runner.py"
+    ],
+    "symbol": "verifier_lane_preview, repair loop",
+    "current_runtime_path": "decision/cartographer verification routes",
+    "current_consumer": "productive truth and closeout",
+    "current_test": "verifier and repair tests",
+    "current_authority": "verification observational, repair requires approval",
+    "current_live_proof": "not run in this planning task",
+    "brain_stage": 10,
+    "status": "REUSE_WITH_CAUSAL_REPAIR_PROOF_REQUIRED"
+  }
+]

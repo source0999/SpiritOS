@@ -1,0 +1,23 @@
+{
+  "plan": 4,
+  "required_verdict": "GO",
+  "required_fields": [
+    "task_id",
+    "trace_id",
+    "invocation_event_id",
+    "consumer_event_id",
+    "consumer_subsystem",
+    "state_fields_changed",
+    "focused_checks",
+    "git_status",
+    "evidence_budget_status"
+  ],
+  "forbidden_states": [
+    "preview_only_completion",
+    "advisory_only_completion",
+    "read_only_completion_for_action_capable_system",
+    "skipped_required_lane",
+    "unconsumed_output",
+    "fake_productive_go"
+  ]
+}

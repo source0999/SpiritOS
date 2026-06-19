@@ -1,0 +1,28 @@
+{
+  "policy_status": "DESIGNED_NOT_IMPLEMENTED",
+  "raw_output_in_git_default": "FORBIDDEN",
+  "external_raw_evidence_root": "/mnt/spirit-8tb/spiritos-evidence/",
+  "proposed_future_files": [
+    "scripts/source-proxy-brain/evidence_budget.py",
+    "config/source-proxy-evidence-budget.json"
+  ],
+  "phase_limits": {
+    "max_committed_evidence_files": 12,
+    "max_committed_evidence_bytes": 200000
+  },
+  "automatic_state": "EVIDENCE_BUDGET_EXCEEDED",
+  "fail_conditions": [
+    "conflicting current verdicts",
+    "duplicate current status documents",
+    "CR/LF or malformed filenames",
+    "evidence-only commits outnumber implementation commits",
+    "raw screenshots or traces committed without approval"
+  ],
+  "external_reference_required_fields": [
+    "path",
+    "hash",
+    "timestamp",
+    "command",
+    "exit_code"
+  ]
+}

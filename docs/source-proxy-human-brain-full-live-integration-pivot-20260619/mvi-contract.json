@@ -1,0 +1,36 @@
+{
+  "status": "DEFINED_NOT_STARTED",
+  "task": "One bounded visible or behavioral source change inside a disposable worktree through canonical /coding.",
+  "must_prove": [
+    "runtime admission",
+    "active /coding route",
+    "repo/context selection",
+    "Obsidian retrieval",
+    "Cartographer live plan",
+    "Gemma structured specification",
+    "Hermes critique or acceptance",
+    "Qwen minimal valid change",
+    "central gate authorizing isolated action",
+    "Dell isolated write",
+    "deterministic and behavior verification",
+    "productive_go",
+    "approved Obsidian outcome writeback",
+    "causal trace with downstream consumption"
+  ],
+  "prohibited": [
+    "stub model response",
+    "mock transcript presented as live",
+    "backend-generated replacement for missing model output",
+    "preview packet",
+    "advisory packet with no consumer",
+    "skipped required lane",
+    "file-exists-only success"
+  ],
+  "feasibility_table": [
+    "Obsidian retrieval read-only exists but writeback missing",
+    "Cartographer machinery exists but canonical control unproven",
+    "Gemma/Hermes/Qwen live status unverified",
+    "Dell execute-approved path exists but isolation proof required",
+    "productive truth must block fake GO"
+  ]
+}

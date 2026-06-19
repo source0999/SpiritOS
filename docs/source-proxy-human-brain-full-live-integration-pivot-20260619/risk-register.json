@@ -1,0 +1,82 @@
+[
+  {
+    "id": "RISK-001",
+    "name": "ceremony fatigue",
+    "trigger": "Plan 0 defines concrete trigger",
+    "owner": "GLM/Codex",
+    "mitigation": "compression review, evidence budget, hard stops, and current-source-first review",
+    "compression_response": "COMPRESS_CURRENT_PHASE"
+  },
+  {
+    "id": "RISK-002",
+    "name": "human latency",
+    "trigger": "Plan 0 defines concrete trigger",
+    "owner": "Britton",
+    "mitigation": "compression review, evidence budget, hard stops, and current-source-first review",
+    "compression_response": "MERGE_INCREMENTS"
+  },
+  {
+    "id": "RISK-003",
+    "name": "duplicate orchestration",
+    "trigger": "Plan 0 defines concrete trigger",
+    "owner": "GLM/Codex",
+    "mitigation": "compression review, evidence budget, hard stops, and current-source-first review",
+    "compression_response": "RETIRE_DUPLICATE_PATH"
+  },
+  {
+    "id": "RISK-004",
+    "name": "no delivered value",
+    "trigger": "Plan 0 defines concrete trigger",
+    "owner": "Britton",
+    "mitigation": "compression review, evidence budget, hard stops, and current-source-first review",
+    "compression_response": "RETURN_TO_PLAN_0_5"
+  },
+  {
+    "id": "RISK-005",
+    "name": "evidence explosion",
+    "trigger": "Plan 0 defines concrete trigger",
+    "owner": "GLM/Codex",
+    "mitigation": "compression review, evidence budget, hard stops, and current-source-first review",
+    "compression_response": "STOP_FOR_BRITTON"
+  },
+  {
+    "id": "RISK-006",
+    "name": "live mutation risk",
+    "trigger": "Plan 0 defines concrete trigger",
+    "owner": "Britton",
+    "mitigation": "compression review, evidence budget, hard stops, and current-source-first review",
+    "compression_response": "COMPRESS_CURRENT_PHASE"
+  },
+  {
+    "id": "RISK-007",
+    "name": "route drift",
+    "trigger": "Plan 0 defines concrete trigger",
+    "owner": "GLM/Codex",
+    "mitigation": "compression review, evidence budget, hard stops, and current-source-first review",
+    "compression_response": "MERGE_INCREMENTS"
+  },
+  {
+    "id": "RISK-008",
+    "name": "source-of-truth drift",
+    "trigger": "Plan 0 defines concrete trigger",
+    "owner": "Britton",
+    "mitigation": "compression review, evidence budget, hard stops, and current-source-first review",
+    "compression_response": "RETIRE_DUPLICATE_PATH"
+  },
+  {
+    "id": "RISK-009",
+    "name": "framework reimplementation",
+    "trigger": "Plan 0 defines concrete trigger",
+    "owner": "GLM/Codex",
+    "mitigation": "compression review, evidence budget, hard stops, and current-source-first review",
+    "compression_response": "RETURN_TO_PLAN_0_5"
+  },
+  {
+    "id": "RISK-010",
+    "name": "runtime instability",
+    "trigger": "Plan 0 defines concrete trigger",
+    "owner": "Britton",
+    "mitigation": "compression review, evidence budget, hard stops, and current-source-first review",
+    "compression_response": "STOP_FOR_BRITTON"
+  }
+]
