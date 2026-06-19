@@ -281,7 +281,7 @@ export async function buildSpiritFlixSmartRenamePlan(
     recursive: Boolean(options.recursive),
     maxItems,
     applyEnabled: false,
-    applyGate: "Preview/export only. Real rename or move must use a future explicit Level 2 apply task.",
+    applyGate: "Real rename/move apply is disabled until Britton explicitly approves a future apply task.",
     items,
     counts: summarize(items),
   };

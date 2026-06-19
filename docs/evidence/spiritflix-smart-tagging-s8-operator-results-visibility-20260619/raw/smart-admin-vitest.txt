@@ -1,0 +1,146 @@
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.5 [39m[90m/home/source/SpiritOS[39m
+
+ [32m✓[39m src/app/api/spiritflix/admin/__tests__/thumbnail-route.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 78[2mms[22m[39m
+ [32m✓[39m src/components/spiritflix/admin/__tests__/SpiritFlixSmartTagPill.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 451[2mms[22m[39m
+     [33m[2m✓[22m[39m renders approve/reject controls when interactive [33m 342[2mms[22m[39m
+ [32m✓[39m src/lib/spiritflix/admin/smart/__tests__/batch.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 201[2mms[22m[39m
+ [32m✓[39m src/components/spiritflix/admin/__tests__/SpiritFlixAdminActionDialog.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 1034[2mms[22m[39m
+     [33m[2m✓[22m[39m requires preview before execute for new folder [33m 644[2mms[22m[39m
+ [32m✓[39m src/components/spiritflix/admin/__tests__/SpiritFlixSmartReviewPanel.test.tsx [2m([22m[2m8 tests[22m[2m)[22m[33m 1342[2mms[22m[39m
+     [33m[2m✓[22m[39m shows Analyze button when no analysis exists and does not auto-analyze on open [33m 345[2mms[22m[39m
+ [32m✓[39m src/lib/spiritflix/admin/smart/__tests__/scanner.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 98[2mms[22m[39m
+ [32m✓[39m src/app/api/spiritflix/admin/__tests__/smart-batch-route.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 79[2mms[22m[39m
+ [32m✓[39m src/app/api/spiritflix/admin/__tests__/smart-analysis-route.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 114[2mms[22m[39m
+ [32m✓[39m src/lib/spiritflix/admin/smart/__tests__/sampler.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 136[2mms[22m[39m
+ [32m✓[39m src/lib/spiritflix/admin/smart/__tests__/suggestions.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 274[2mms[22m[39m
+ [32m✓[39m src/lib/spiritflix/admin/smart/__tests__/rename-plan.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 131[2mms[22m[39m
+ [32m✓[39m src/components/spiritflix/admin/__tests__/SpiritFlixAdminApp.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[33m 2889[2mms[22m[39m
+     [33m[2m✓[22m[39m opens unified file-manager mode at the media root by default [33m 626[2mms[22m[39m
+     [33m[2m✓[22m[39m enables Level 2 manage actions after activation [33m 543[2mms[22m[39m
+     [33m[2m✓[22m[39m filters metadata, updates controls, and opens details from Info action [33m 1084[2mms[22m[39m
+     [33m[2m✓[22m[39m matches Jellyfin posters via path aliases and uses local thumbnails as fallback [33m 346[2mms[22m[39m
+[90mstderr[2m | src/components/spiritflix/admin/__tests__/SpiritFlixAdminInteractions.test.tsx[2m > [22m[2mSpiritFlix admin Level 2R interactions[2m > [22m[2mopens rename action dialog from card menu
+[22m[39mAn update to SpiritFlixAdminActionDialog inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to SpiritFlixAdminActionDialog inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to SpiritFlixAdminActionDialog inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to SpiritFlixAdminActionDialog inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ [32m✓[39m src/app/api/spiritflix/admin/__tests__/fs-route.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 94[2mms[22m[39m
+ [32m✓[39m src/app/api/spiritflix/admin/__tests__/actions-route.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m src/lib/spiritflix/admin/smart/__tests__/analysis-paths.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 54[2mms[22m[39m
+ [32m✓[39m src/lib/spiritflix/admin/smart/__tests__/heuristics.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 102[2mms[22m[39m
+ [32m✓[39m src/lib/spiritflix/admin/smart/__tests__/metadata-bridge.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 27[2mms[22m[39m
+ [32m✓[39m src/app/api/spiritflix/admin/__tests__/library-route.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m src/lib/spiritflix/admin/smart/__tests__/probe.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 25[2mms[22m[39m
+ [32m✓[39m src/lib/spiritflix/admin/smart/__tests__/analysis-store.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 96[2mms[22m[39m
+[90mstderr[2m | src/components/spiritflix/admin/__tests__/SpiritFlixAdminInteractions.test.tsx[2m > [22m[2mSpiritFlix admin Level 2R interactions[2m > [22m[2mopens smart review panel without removing the grid
+[22m[39mAn update to SpiritFlixSmartReviewPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to SpiritFlixSmartReviewPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to SpiritFlixSmartReviewPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to SpiritFlixSmartReviewPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to SpiritFlixSmartReviewPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ [32m✓[39m src/lib/spiritflix/admin/smart/__tests__/vocabulary.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m src/lib/spiritflix/admin/smart/__tests__/rename-preview.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m src/lib/spiritflix/admin/smart/__tests__/review-metadata.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m✓[39m src/components/spiritflix/admin/__tests__/item-menu.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m src/components/spiritflix/admin/__tests__/SpiritFlixAdminInteractions.test.tsx [2m([22m[2m14 tests[22m[2m)[22m[33m 6951[2mms[22m[39m
+     [33m[2m✓[22m[39m renders a 3-dot menu button on video cards [33m 732[2mms[22m[39m
+     [33m[2m✓[22m[39m selects a card on single click without opening details [33m 535[2mms[22m[39m
+     [33m[2m✓[22m[39m opens the 3-dot menu with CRUD actions for a video [33m 659[2mms[22m[39m
+     [33m[2m✓[22m[39m opens context menu on right-click and prevents default [33m 323[2mms[22m[39m
+     [33m[2m✓[22m[39m opens details only from Info menu action [33m 583[2mms[22m[39m
+     [33m[2m✓[22m[39m opens rename action dialog from card menu [33m 615[2mms[22m[39m
+     [33m[2m✓[22m[39m opens soft delete action dialog from card menu with auto-preview [33m 711[2mms[22m[39m
+     [33m[2m✓[22m[39m shows Smart tags in the video 3-dot menu and right-click menu [33m 485[2mms[22m[39m
+     [33m[2m✓[22m[39m opens smart review panel without removing the grid [33m 720[2mms[22m[39m
+     [33m[2m✓[22m[39m does not auto-analyze when opening smart review [33m 372[2mms[22m[39m
+     [33m[2m✓[22m[39m opens batch smart analysis panel and previews the current folder [33m 494[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m25 passed[39m[22m[90m (25)[39m
+[2m      Tests [22m [1m[32m179 passed[39m[22m[90m (179)[39m
+[2m   Start at [22m 04:52:35
+[2m   Duration [22m 11.03s[2m (transform 5.24s, setup 3.90s, import 10.86s, tests 14.28s, environment 30.56s)[22m
+

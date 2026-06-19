@@ -84,6 +84,34 @@ describe("SpiritFlix smart batch analysis", () => {
     expect(analyzeVideo).not.toHaveBeenCalled();
   });
 
+  it("returns operator visibility fields when current items still need review", async () => {
+    const videoPath = await writeVideo("yes/current-needs-review.mp4");
+    await currentAnalysis(videoPath, {
+      status: "needs_review",
+      suggestedTags: [
+        { id: "hd", label: "HD", group: "quality", confidence: 0.9, evidenceTimestamps: [], reviewRequired: false },
+        { id: "watermark", label: "Watermark", group: "watermark", confidence: 0.55, evidenceTimestamps: [], reviewRequired: true },
+      ],
+    });
+
+    const result = await previewSpiritFlixSmartBatch({ path: path.join(tempRoot, "yes") });
+
+    expect(result.counts.rename_preview_available).toBe(0);
+    expect(result.items[0]).toMatchObject({
+      reviewStatus: "unreviewed",
+      renamePreviewStatus: "provisional",
+      proposedFilename: "Clip Better.mp4",
+      renameBlocker: "Review or approve tags/metadata to unlock rename preview.",
+      sidecarCurrent: true,
+      approvedTagCount: 0,
+      rejectedTagCount: 0,
+      pendingTagCount: 2,
+    });
+    expect(result.items[0].tags.map((tag) => tag.label)).toEqual(["HD", "Watermark"]);
+    expect(result.items[0].renameWarnings).toContain("Provisional preview, not eligible for apply until reviewed.");
+    expect(result.items[0].sidecarRef).toMatch(/^analysis\/[a-f0-9]{12}\.json$/);
+  });
+
   it("runs analysis and preserves existing reviewed metadata on refresh", async () => {
     const videoPath = await writeVideo("yes/reviewed.mp4");
     const reviewedMetadata = {
@@ -111,7 +139,53 @@ describe("SpiritFlix smart batch analysis", () => {
     expect(result.counts.analyzed).toBe(1);
     expect(result.counts.rename_preview_available).toBe(1);
     expect(result.items[0].reviewStatus).toBe("reviewed");
+    expect(result.items[0].renamePreviewStatus).toBe("ready");
+    expect(result.items[0].proposedFilename).toBe("Reviewed Name.mp4");
     expect(analyzeVideo).toHaveBeenCalledWith(videoPath, expect.objectContaining({ mediaRoot: tempRoot }));
+  });
+
+  it("shows target conflict and duplicate target warnings in batch item details", async () => {
+    const first = await writeVideo("yes/first.mp4");
+    const second = await writeVideo("yes/second.mp4");
+    const third = await writeVideo("yes/third.mp4");
+    await writeVideo("yes/Existing.mp4");
+    await currentAnalysis(first, {
+      reviewedMetadata: {
+        reviewedAt: "2026-06-18T00:00:00.000Z",
+        reviewedBy: "spiritflix-admin",
+        reviewStatus: "reviewed",
+        approvedTagIds: ["hd"],
+        rejectedTagIds: [],
+        editedFilenameSuggestion: "Same Name.mp4",
+      },
+    });
+    await currentAnalysis(second, {
+      reviewedMetadata: {
+        reviewedAt: "2026-06-18T00:00:00.000Z",
+        reviewedBy: "spiritflix-admin",
+        reviewStatus: "reviewed",
+        approvedTagIds: ["hd"],
+        rejectedTagIds: [],
+        editedFilenameSuggestion: "Existing.mp4",
+      },
+    });
+    await currentAnalysis(third, {
+      reviewedMetadata: {
+        reviewedAt: "2026-06-18T00:00:00.000Z",
+        reviewedBy: "spiritflix-admin",
+        reviewStatus: "reviewed",
+        approvedTagIds: ["hd"],
+        rejectedTagIds: [],
+        editedFilenameSuggestion: "Same Name.mp4",
+      },
+    });
+
+    const result = await previewSpiritFlixSmartBatch({ path: path.join(tempRoot, "yes") });
+
+    expect(result.items.find((item) => item.name === "second.mp4")?.renameWarnings).toContain("Target path already exists.");
+    expect(result.items.find((item) => item.name === "second.mp4")?.renamePreviewStatus).toBe("blocked");
+    expect(result.items.find((item) => item.name === "first.mp4")?.renameWarnings).toContain("Duplicate target path in this batch.");
+    expect(result.items.find((item) => item.name === "third.mp4")?.renameWarnings).toContain("Duplicate target path in this batch.");
   });
 
   it("reports per-item failures without throwing the whole batch", async () => {

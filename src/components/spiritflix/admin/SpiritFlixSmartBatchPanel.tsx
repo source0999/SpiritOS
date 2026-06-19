@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { createPortal } from "react-dom";
 import { CheckCircle2, Download, FolderSearch, ShieldAlert, X } from "lucide-react";
 import type {
+  SpiritFlixSmartBatchItem,
   SpiritFlixSmartBatchPreview,
   SpiritFlixSmartBatchReviewMode,
   SpiritFlixSmartRenamePlan,
@@ -26,6 +27,19 @@ interface RenamePlanResponse extends SpiritFlixSmartRenamePlan {
 function statusLabel(status: string): string {
   if (status === "already_current") return "current";
   return status.replace(/_/g, " ");
+}
+
+function formatConfidence(value: number): string {
+  return `${Math.round(value * 100)}%`;
+}
+
+function renameStatusLabel(item: SpiritFlixSmartBatchItem): string {
+  if (item.renamePreviewStatus === "ready") return "Rename preview ready";
+  if (item.renamePreviewStatus === "provisional") return "Provisional preview";
+  if (item.renamePreviewStatus === "needs_review") return "Needs review first";
+  if (item.renamePreviewStatus === "missing_suggestion") return "No approved filename";
+  if (item.renamePreviewStatus === "blocked") return "Rename preview blocked";
+  return "Rename preview unavailable";
 }
 
 export function SpiritFlixSmartBatchPanel({ currentPath, open, onClose }: SpiritFlixSmartBatchPanelProps) {
@@ -53,20 +67,39 @@ export function SpiritFlixSmartBatchPanel({ currentPath, open, onClose }: Spirit
     }
   }, [currentPath]);
 
-  const callReview = useCallback(async (reviewMode: SpiritFlixSmartBatchReviewMode) => {
+  const callReview = useCallback(async (reviewMode: SpiritFlixSmartBatchReviewMode, paths?: string[]) => {
     setRunning(true);
     setError("");
     try {
       const response = await fetch("/api/spiritflix/admin/smart/batch", {
         method: "POST",
         headers: { Accept: "application/json", "Content-Type": "application/json" },
-        body: JSON.stringify({ path: currentPath, action: "review", reviewMode, maxItems: 50 }),
+        body: JSON.stringify({ path: currentPath, paths, action: "review", reviewMode, maxItems: 50 }),
       });
       const payload = (await response.json()) as BatchResponse;
       if (!response.ok) throw new Error(payload.error ?? "Smart batch review failed.");
       setResult(payload);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Smart batch review failed.");
+    } finally {
+      setRunning(false);
+    }
+  }, [currentPath]);
+
+  const refreshItem = useCallback(async (path: string) => {
+    setRunning(true);
+    setError("");
+    try {
+      const response = await fetch("/api/spiritflix/admin/smart/batch", {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify({ path: currentPath, paths: [path], action: "run", force: true, maxItems: 1 }),
+      });
+      const payload = (await response.json()) as BatchResponse;
+      if (!response.ok) throw new Error(payload.error ?? "Smart item refresh failed.");
+      setResult(payload);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Smart item refresh failed.");
     } finally {
       setRunning(false);
     }
@@ -112,7 +145,7 @@ export function SpiritFlixSmartBatchPanel({ currentPath, open, onClose }: Spirit
 
         <p className="spiritflix-smart-review__path">{currentPath}</p>
         <p className="spiritflix-smart-review__boundary">
-          S8 writes analysis/review sidecars and exports rename plans only. Real rename or move is disabled here.
+          S8.1 writes analysis/review sidecars and exports rename plans only. Real rename/move apply is disabled until Britton explicitly approves a future apply task.
         </p>
         {error ? <p className="spiritflix-smart-review__error">{error}</p> : null}
 
@@ -177,6 +210,9 @@ export function SpiritFlixSmartBatchPanel({ currentPath, open, onClose }: Spirit
                   <dd>{result.counts.failed}</dd>
                 </div>
               </dl>
+              <p className="spiritflix-smart-review__boundary">
+                Rename previews appear after tags/metadata are reviewed or approved. Items may also be blocked by unsafe names, duplicate targets, or existing target conflicts.
+              </p>
             </section>
 
             <section className="spiritflix-smart-review__section">
@@ -187,13 +223,64 @@ export function SpiritFlixSmartBatchPanel({ currentPath, open, onClose }: Spirit
                     <div>
                       <p className="spiritflix-smart-batch__name">{item.name}</p>
                       <p className="spiritflix-smart-batch__meta">
-                        {statusLabel(item.status)} · {item.reviewStatus ?? "unreviewed"} · {item.suggestedTagCount} tags
+                        {statusLabel(item.status)} - {item.analysisStatus ?? "not analyzed"} - {item.reviewStatus ?? "unreviewed"} - {item.suggestedTagCount} tags
+                      </p>
+                      <p className="spiritflix-smart-batch__meta">
+                        {item.approvedTagCount} approved - {item.rejectedTagCount} rejected - {item.pendingTagCount} pending
+                        {item.sidecarRef ? ` - ${item.sidecarRef}` : ""}
                       </p>
                     </div>
                     <span className={item.renamePreviewAvailable ? "is-ready" : ""}>
-                      {item.renamePreviewAvailable ? "rename preview" : item.needsReview ? "review" : "pending"}
+                      {renameStatusLabel(item)}
                     </span>
+                    {item.tags.length ? (
+                      <div className="spiritflix-smart-review__tags">
+                        {item.tags.map((tag) => (
+                          <span
+                            className={`spiritflix-smart-tag-pill is-group-${tag.group}${tag.reviewRequired ? " is-review-required" : ""}`}
+                            key={tag.id}
+                            title={`${tag.group} - ${formatConfidence(tag.confidence)} confidence${tag.reviewRequired ? " - review required" : ""}`}
+                          >
+                            <span className="spiritflix-smart-tag-pill__label">{tag.label}</span>
+                            <span className="spiritflix-smart-tag-pill__meta">{formatConfidence(tag.confidence)}</span>
+                            <span className="spiritflix-smart-tag-pill__flag">{tag.reviewState}</span>
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="spiritflix-smart-batch__reason">No tags visible yet. Run analysis to populate suggestions.</p>
+                    )}
+                    <dl className="spiritflix-smart-review__grid">
+                      <div>
+                        <dt>Proposed filename</dt>
+                        <dd className="is-mono">{item.proposedFilename ?? "Not available"}</dd>
+                      </div>
+                      <div>
+                        <dt>Rename status</dt>
+                        <dd>{renameStatusLabel(item)}</dd>
+                      </div>
+                      <div>
+                        <dt>Why review is needed</dt>
+                        <dd>{item.needsReview ? "Human review required by analysis policy or confidence." : "No review blocker reported."}</dd>
+                      </div>
+                    </dl>
+                    {item.renameBlocker ? <p className="spiritflix-smart-batch__reason">{item.renameBlocker}</p> : null}
+                    {item.renameWarnings.length ? <p className="spiritflix-smart-batch__reason">{item.renameWarnings.join(" ")}</p> : null}
                     {item.reason ? <p className="spiritflix-smart-batch__reason">{item.reason}</p> : null}
+                    <div className="spiritflix-smart-review__action-buttons">
+                      <button className="spiritflix-smart-review__secondary" type="button" disabled={running} onClick={() => void callReview("approve_all_tags", [item.path])}>
+                        Approve this item
+                      </button>
+                      <button className="spiritflix-smart-review__secondary" type="button" disabled={running} onClick={() => void callReview("reject_all_tags", [item.path])}>
+                        Reject this item
+                      </button>
+                      <button className="spiritflix-smart-review__secondary" type="button" disabled={running} onClick={() => void callReview("mark_reviewed", [item.path])}>
+                        Mark this reviewed
+                      </button>
+                      <button className="spiritflix-smart-review__secondary" type="button" disabled={running} onClick={() => void refreshItem(item.path)}>
+                        Refresh this item
+                      </button>
+                    </div>
                   </article>
                 ))}
               </div>

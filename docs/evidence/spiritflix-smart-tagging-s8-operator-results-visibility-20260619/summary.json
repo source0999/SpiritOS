@@ -1,0 +1,98 @@
+{
+  "task": "spiritflix-smart-tagging-s8-operator-results-visibility",
+  "verdict": "GO",
+  "rename_preview_zero_explained": true,
+  "item_tags_visible": true,
+  "review_actions_visible": true,
+  "rename_blockers_visible": true,
+  "real_apply_disabled": true,
+  "real_media_renamed": false,
+  "real_media_moved": false,
+  "jellyfin_mutated": false,
+  "source_proxy_touched": false,
+  "model_calls_run": false,
+  "ocr_or_vlm_added": false,
+  "commit_created": "feat: improve SpiritFlix smart tagging batch result visibility",
+  "git_push_performed": false,
+  "tests": [
+    {
+      "name": "typecheck",
+      "command": "npm run typecheck",
+      "result": "PASS",
+      "evidence": "raw/typecheck.txt"
+    },
+    {
+      "name": "smart-admin-vitest",
+      "command": "npx vitest run src/lib/spiritflix/admin/smart src/components/spiritflix/admin src/app/api/spiritflix/admin",
+      "result": "PASS",
+      "evidence": "raw/smart-admin-vitest.txt"
+    },
+    {
+      "name": "home-player-vitest",
+      "command": "npx vitest run src/components/spiritflix/__tests__/SpiritFlixHome.test.tsx src/components/spiritflix/__tests__/SpiritFlixPlayer.test.tsx",
+      "result": "PASS",
+      "evidence": "raw/home-player-vitest.txt"
+    },
+    {
+      "name": "scoped-diff-check",
+      "command": "git diff --check -- scoped SpiritFlix smart-tagging paths",
+      "result": "PASS",
+      "evidence": "raw/scoped-diff-check.txt"
+    },
+    {
+      "name": "secret-scan-touched-files",
+      "command": "grep secret patterns over scoped touched files/evidence",
+      "result": "PASS",
+      "evidence": "raw/secret-scan-touched-files.txt"
+    }
+  ],
+  "files_changed": [
+    "src/lib/spiritflix/admin/smart/batch.ts",
+    "src/lib/spiritflix/admin/smart/rename-plan.ts",
+    "src/lib/spiritflix/admin/smart/__tests__/batch.test.ts",
+    "src/app/api/spiritflix/admin/__tests__/smart-batch-route.test.ts",
+    "src/components/spiritflix/admin/SpiritFlixSmartBatchPanel.tsx",
+    "src/components/spiritflix/admin/__tests__/SpiritFlixAdminInteractions.test.tsx",
+    "docs/evidence/spiritflix-smart-tagging-s8-operator-results-visibility-20260619/00-baseline.md",
+    "docs/evidence/spiritflix-smart-tagging-s8-operator-results-visibility-20260619/10-rename-preview-zero-audit.md",
+    "docs/evidence/spiritflix-smart-tagging-s8-operator-results-visibility-20260619/index.md",
+    "docs/evidence/spiritflix-smart-tagging-s8-operator-results-visibility-20260619/final-verdict.md",
+    "docs/evidence/spiritflix-smart-tagging-s8-operator-results-visibility-20260619/operator-summary.md",
+    "docs/evidence/spiritflix-smart-tagging-s8-operator-results-visibility-20260619/summary.json"
+  ],
+  "unrelated_dirty_files_left_untouched": [
+    "README.md",
+    "package.json",
+    "package-lock.json",
+    "scripts/media-ingest-worker.mjs",
+    "scripts/media/face organizer generated files",
+    "scripts/runtime-port-guard.sh",
+    "scripts/source-context-compress.mjs",
+    "scripts/spiritos-lan-watchdog.sh",
+    "docs/evidence/source-proxy-*",
+    "docs/evidence/live-hiccup-triage-20260617/",
+    "docs/evidence/repo-cleanup-manifest-watchers-20260617/",
+    "docs/evidence/repo-host-cleanup-stability-audit-20260617/",
+    "src/app/api/spiritflix/jellyfin-image/route.ts",
+    "src/app/api/spiritflix/stream/route.ts",
+    "src/app/api/spiritflix/hls/",
+    "src/app/layout.tsx",
+    "src/components/spiritflix/SpiritFlixPlayer.tsx",
+    "src/components/spiritflix/__tests__/SpiritFlixPlayer.test.tsx",
+    "src/lib/spiritflix-jellyfin-client.ts",
+    "src/lib/spiritflix-jellyfin-client.test.ts",
+    "src/lib/spiritflix/jellyfin-client.ts",
+    "src/styles/spiritflix.css"
+  ],
+  "evidence_files": [
+    "docs/evidence/spiritflix-smart-tagging-s8-operator-results-visibility-20260619/index.md",
+    "docs/evidence/spiritflix-smart-tagging-s8-operator-results-visibility-20260619/final-verdict.md",
+    "docs/evidence/spiritflix-smart-tagging-s8-operator-results-visibility-20260619/operator-summary.md",
+    "docs/evidence/spiritflix-smart-tagging-s8-operator-results-visibility-20260619/summary.json",
+    "docs/evidence/spiritflix-smart-tagging-s8-operator-results-visibility-20260619/raw/typecheck.txt",
+    "docs/evidence/spiritflix-smart-tagging-s8-operator-results-visibility-20260619/raw/smart-admin-vitest.txt",
+    "docs/evidence/spiritflix-smart-tagging-s8-operator-results-visibility-20260619/raw/home-player-vitest.txt",
+    "docs/evidence/spiritflix-smart-tagging-s8-operator-results-visibility-20260619/raw/scoped-diff-check.txt",
+    "docs/evidence/spiritflix-smart-tagging-s8-operator-results-visibility-20260619/raw/secret-scan-touched-files.txt"
+  ]
+}

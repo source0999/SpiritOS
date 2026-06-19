@@ -1,0 +1,17 @@
+docs/evidence/spiritflix-smart-tagging-s8-operator-results-visibility-20260619/00-baseline.md
+docs/evidence/spiritflix-smart-tagging-s8-operator-results-visibility-20260619/10-rename-preview-zero-audit.md
+docs/evidence/spiritflix-smart-tagging-s8-operator-results-visibility-20260619/raw/00-baseline.txt
+docs/evidence/spiritflix-smart-tagging-s8-operator-results-visibility-20260619/raw/git-status-final.txt
+docs/evidence/spiritflix-smart-tagging-s8-operator-results-visibility-20260619/raw/home-player-vitest.txt
+docs/evidence/spiritflix-smart-tagging-s8-operator-results-visibility-20260619/raw/scoped-diff-check.txt
+docs/evidence/spiritflix-smart-tagging-s8-operator-results-visibility-20260619/raw/smart-admin-vitest-first.txt
+docs/evidence/spiritflix-smart-tagging-s8-operator-results-visibility-20260619/raw/smart-admin-vitest.txt
+docs/evidence/spiritflix-smart-tagging-s8-operator-results-visibility-20260619/raw/touched-files.txt
+docs/evidence/spiritflix-smart-tagging-s8-operator-results-visibility-20260619/raw/typecheck-first.txt
+docs/evidence/spiritflix-smart-tagging-s8-operator-results-visibility-20260619/raw/typecheck.txt
+src/app/api/spiritflix/admin/__tests__/smart-batch-route.test.ts
+src/components/spiritflix/admin/SpiritFlixSmartBatchPanel.tsx
+src/components/spiritflix/admin/__tests__/SpiritFlixAdminInteractions.test.tsx
+src/lib/spiritflix/admin/smart/batch.ts
+src/lib/spiritflix/admin/smart/rename-plan.ts
+src/lib/spiritflix/admin/smart/__tests__/batch.test.ts

@@ -35,8 +35,35 @@ export interface SpiritFlixSmartBatchItem {
   sidecarCurrent: boolean;
   needsReview: boolean;
   suggestedTagCount: number;
+  tags: SpiritFlixSmartBatchTagSummary[];
+  approvedTagCount: number;
+  rejectedTagCount: number;
+  pendingTagCount: number;
   renamePreviewAvailable: boolean;
+  renamePreviewStatus: SpiritFlixSmartBatchRenamePreviewStatus;
+  proposedFilename?: string;
+  proposedTargetPath?: string;
+  renameBlocker?: string;
+  renameWarnings: string[];
+  sidecarRef?: string;
   analyzedAt?: string;
+}
+
+export type SpiritFlixSmartBatchRenamePreviewStatus =
+  | "ready"
+  | "provisional"
+  | "needs_review"
+  | "missing_suggestion"
+  | "blocked"
+  | "unavailable";
+
+export interface SpiritFlixSmartBatchTagSummary {
+  id: string;
+  label: string;
+  group: string;
+  confidence: number;
+  reviewRequired: boolean;
+  reviewState: "approved" | "rejected" | "pending";
 }
 
 export interface SpiritFlixSmartBatchCounts {
@@ -129,6 +156,25 @@ function safeMessage(error: unknown): string {
   return error.message.split(/\n\s+at\s+/)[0].slice(0, 500);
 }
 
+function reviewStateForTag(
+  tagId: string,
+  reviewed: SpiritFlixSmartAnalysis["reviewedMetadata"],
+): SpiritFlixSmartBatchTagSummary["reviewState"] {
+  if (reviewed?.approvedTagIds.includes(tagId)) return "approved";
+  if (reviewed?.rejectedTagIds.includes(tagId)) return "rejected";
+  return "pending";
+}
+
+async function targetExists(targetPath: string, sourcePath: string): Promise<boolean> {
+  if (path.resolve(targetPath) === path.resolve(sourcePath)) return false;
+  try {
+    await fs.access(targetPath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function isHiddenPathPart(name: string): boolean {
   return name.startsWith(".");
 }
@@ -194,14 +240,59 @@ async function resolveBatchTargets(options: SpiritFlixSmartBatchOptions): Promis
 async function itemFromAnalysis(videoPath: string, analysis: SpiritFlixSmartAnalysis | null, status: SpiritFlixSmartBatchItemStatus, reason?: string): Promise<SpiritFlixSmartBatchItem> {
   const stat = await fs.stat(videoPath);
   const reviewed = analysis?.reviewedMetadata;
+  const tags = (analysis?.suggestedTags ?? []).map((tag) => ({
+    id: tag.id,
+    label: tag.label,
+    group: tag.group,
+    confidence: tag.confidence,
+    reviewRequired: tag.reviewRequired,
+    reviewState: reviewStateForTag(tag.id, reviewed),
+  }));
+  const approvedTagCount = tags.filter((tag) => tag.reviewState === "approved").length;
+  const rejectedTagCount = tags.filter((tag) => tag.reviewState === "rejected").length;
+  const pendingTagCount = tags.filter((tag) => tag.reviewState === "pending").length;
   let renamePreviewAvailable = false;
-  if (analysis && reviewed && reviewed.reviewStatus !== "unreviewed") {
+  let renamePreviewStatus: SpiritFlixSmartBatchRenamePreviewStatus = analysis ? "missing_suggestion" : "unavailable";
+  let proposedFilename: string | undefined;
+  let proposedTargetPath: string | undefined;
+  let renameBlocker: string | undefined;
+  let renameWarnings: string[] = [];
+
+  if (!analysis) {
+    renameBlocker = "Run analysis before rename preview is available.";
+  } else if (!reviewed || reviewed.reviewStatus === "unreviewed") {
+    const provisionalSuggestion = analysis.suggestedFilename ?? analysis.suggestedDisplayTitle;
+    if (provisionalSuggestion) {
+      const draft = buildSmartRenamePreviewDraft({ sourcePath: videoPath, filenameSuggestion: provisionalSuggestion });
+      proposedFilename = draft.suggestedName || undefined;
+      proposedTargetPath = draft.targetPath;
+      renameWarnings = [...draft.warnings, "Provisional preview, not eligible for apply until reviewed."];
+      renamePreviewStatus = "provisional";
+      renameBlocker = "Review or approve tags/metadata to unlock rename preview.";
+    } else {
+      renamePreviewStatus = "needs_review";
+      renameBlocker = "Review required, and no filename suggestion exists yet.";
+    }
+  } else {
     const projection = projectApprovedSmartMetadata(analysis);
-    if (projection.filenameSuggestion) {
-      renamePreviewAvailable = buildSmartRenamePreviewDraft({
+    const filenameSuggestion = projection.filenameSuggestion;
+    if (!filenameSuggestion || projection.reviewStatus === "rejected") {
+      renamePreviewStatus = "missing_suggestion";
+      renameBlocker = "Reviewed metadata does not contain an approved filename proposal.";
+    } else {
+      const draft = buildSmartRenamePreviewDraft({
         sourcePath: videoPath,
-        filenameSuggestion: projection.filenameSuggestion,
-      }).readyForLevel2Preview;
+        filenameSuggestion,
+      });
+      proposedFilename = draft.suggestedName || undefined;
+      proposedTargetPath = draft.targetPath;
+      renameWarnings = [...draft.warnings];
+      if (await targetExists(draft.targetPath, videoPath)) {
+        renameWarnings.push("Target path already exists.");
+      }
+      renamePreviewAvailable = draft.readyForLevel2Preview && renameWarnings.length === 0;
+      renamePreviewStatus = renamePreviewAvailable ? "ready" : "blocked";
+      renameBlocker = renamePreviewAvailable ? undefined : renameWarnings.join(" ") || "Rename preview is blocked.";
     }
   }
 
@@ -217,9 +308,42 @@ async function itemFromAnalysis(videoPath: string, analysis: SpiritFlixSmartAnal
     sidecarCurrent: Boolean(analysis),
     needsReview: Boolean(analysis?.safety.requiresHumanReview || analysis?.status === "needs_review"),
     suggestedTagCount: analysis?.suggestedTags.length ?? 0,
+    tags,
+    approvedTagCount,
+    rejectedTagCount,
+    pendingTagCount,
     renamePreviewAvailable,
+    renamePreviewStatus,
+    proposedFilename,
+    proposedTargetPath,
+    renameBlocker,
+    renameWarnings,
+    sidecarRef: analysis?.pathKey ? `analysis/${analysis.pathKey.slice(0, 12)}.json` : undefined,
     analyzedAt: analysis?.analyzedAt,
   };
+}
+
+function addDuplicateTargetWarnings(items: SpiritFlixSmartBatchItem[]): SpiritFlixSmartBatchItem[] {
+  const targetGroups = new Map<string, SpiritFlixSmartBatchItem[]>();
+  for (const item of items) {
+    if (!item.proposedTargetPath) continue;
+    const key = item.proposedTargetPath.toLowerCase();
+    targetGroups.set(key, [...(targetGroups.get(key) ?? []), item]);
+  }
+
+  for (const group of targetGroups.values()) {
+    if (group.length < 2) continue;
+    for (const item of group) {
+      item.renameWarnings = [...new Set([...item.renameWarnings, "Duplicate target path in this batch."])];
+      item.renameBlocker = item.renameWarnings.join(" ");
+      if (item.renamePreviewStatus !== "provisional") {
+        item.renamePreviewStatus = "blocked";
+      }
+      item.renamePreviewAvailable = false;
+    }
+  }
+
+  return items;
 }
 
 async function loadCurrentAnalysis(videoPath: string, mediaRoot?: string): Promise<SpiritFlixSmartAnalysis | null> {
@@ -254,7 +378,14 @@ export async function previewSpiritFlixSmartBatch(options: SpiritFlixSmartBatchO
         sidecarCurrent: false,
         needsReview: false,
         suggestedTagCount: 0,
+        tags: [],
+        approvedTagCount: 0,
+        rejectedTagCount: 0,
+        pendingTagCount: 0,
         renamePreviewAvailable: false,
+        renamePreviewStatus: "unavailable",
+        renameBlocker: "Batch item failed before rename preview could be prepared.",
+        renameWarnings: [],
       });
     }
   }
@@ -267,7 +398,7 @@ export async function previewSpiritFlixSmartBatch(options: SpiritFlixSmartBatchO
     recursive: Boolean(options.recursive),
     maxItems,
     items,
-    counts: summarize(items),
+    counts: summarize(addDuplicateTargetWarnings(items)),
   };
 }
 
@@ -308,7 +439,14 @@ export async function runSpiritFlixSmartBatch(options: InternalBatchOptions = {}
         sidecarCurrent: false,
         needsReview: false,
         suggestedTagCount: 0,
+        tags: [],
+        approvedTagCount: 0,
+        rejectedTagCount: 0,
+        pendingTagCount: 0,
         renamePreviewAvailable: false,
+        renamePreviewStatus: "unavailable",
+        renameBlocker: "Batch item failed before rename preview could be prepared.",
+        renameWarnings: [],
       });
     }
   }
@@ -321,7 +459,7 @@ export async function runSpiritFlixSmartBatch(options: InternalBatchOptions = {}
     recursive: Boolean(options.recursive),
     maxItems,
     items,
-    counts: summarize(items),
+    counts: summarize(addDuplicateTargetWarnings(items)),
   };
 }
 
@@ -388,7 +526,14 @@ export async function reviewSpiritFlixSmartBatch(
         sidecarCurrent: false,
         needsReview: false,
         suggestedTagCount: 0,
+        tags: [],
+        approvedTagCount: 0,
+        rejectedTagCount: 0,
+        pendingTagCount: 0,
         renamePreviewAvailable: false,
+        renamePreviewStatus: "unavailable",
+        renameBlocker: "Batch item failed before rename preview could be prepared.",
+        renameWarnings: [],
       });
     }
   }
@@ -401,6 +546,6 @@ export async function reviewSpiritFlixSmartBatch(
     recursive: Boolean(options.recursive),
     maxItems,
     items,
-    counts: summarize(items),
+    counts: summarize(addDuplicateTargetWarnings(items)),
   };
 }

@@ -65,7 +65,7 @@ function mockAdminFetch() {
             recursive: false,
             maxItems: 50,
             applyEnabled: false,
-            applyGate: "Preview/export only. Real rename or move must use a future explicit Level 2 apply task.",
+            applyGate: "Real rename/move apply is disabled until Britton explicitly approves a future apply task.",
             counts: {
               candidates: 1,
               ready: 1,
@@ -119,6 +119,20 @@ function mockAdminFetch() {
               suggestedTagCount: 0,
               renamePreviewAvailable: false,
               reviewStatus: "unreviewed",
+              analysisStatus: "needs_review",
+              tags: [
+                { id: "hd", label: "HD", group: "quality", confidence: 0.92, reviewRequired: false, reviewState: "pending" },
+                { id: "watermark", label: "Watermark", group: "watermark", confidence: 0.68, reviewRequired: true, reviewState: "pending" },
+              ],
+              approvedTagCount: 0,
+              rejectedTagCount: 0,
+              pendingTagCount: 2,
+              renamePreviewStatus: "provisional",
+              proposedFilename: "Beta Clip HD.mp4",
+              proposedTargetPath: "/mnt/spirit-8tb/media/yes/Beta Clip HD.mp4",
+              renameBlocker: "Review or approve tags/metadata to unlock rename preview.",
+              renameWarnings: ["Provisional preview, not eligible for apply until reviewed."],
+              sidecarRef: "analysis/abc123def456.json",
             },
           ],
         });
@@ -296,6 +310,13 @@ describe("SpiritFlix admin Level 2R interactions", () => {
     await waitFor(() => {
       expect(screen.getAllByText("Beta Clip.mp4").length).toBeGreaterThan(1);
       expect(screen.getByText("Candidates")).toBeInTheDocument();
+      expect(screen.getByText("HD")).toBeInTheDocument();
+      expect(screen.getByText("Watermark")).toBeInTheDocument();
+      expect(screen.getByText("Review or approve tags/metadata to unlock rename preview.")).toBeInTheDocument();
+      expect(screen.getByText("Provisional preview, not eligible for apply until reviewed.")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Approve this item" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Reject this item" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Mark this reviewed" })).toBeInTheDocument();
     });
     expect(screen.queryByRole("button", { name: /apply rename/i })).not.toBeInTheDocument();
   });
@@ -305,7 +326,7 @@ describe("SpiritFlix admin Level 2R interactions", () => {
     fireEvent.click(screen.getByRole("button", { name: "Batch smart analyze" }));
     fireEvent.click(screen.getByRole("button", { name: "Rename plan" }));
     await waitFor(() => {
-      expect(screen.getByText("Preview/export only. Real rename or move must use a future explicit Level 2 apply task.")).toBeInTheDocument();
+      expect(screen.getByText("Real rename/move apply is disabled until Britton explicitly approves a future apply task.")).toBeInTheDocument();
       expect(screen.getByText("Beta Clip HD.mp4 - reviewed - ready")).toBeInTheDocument();
     });
     expect(screen.getByText("Apply enabled")).toBeInTheDocument();
