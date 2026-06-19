@@ -312,12 +312,16 @@ describe("SpiritFlix admin Level 2R interactions", () => {
       expect(screen.getByText("Candidates")).toBeInTheDocument();
       expect(screen.getByText("HD")).toBeInTheDocument();
       expect(screen.getByText("Watermark")).toBeInTheDocument();
-      expect(screen.getByText("Review or approve tags/metadata to unlock rename preview.")).toBeInTheDocument();
-      expect(screen.getByText("Provisional preview, not eligible for apply until reviewed.")).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "Approve this item" })).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "Reject this item" })).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "Mark this reviewed" })).toBeInTheDocument();
+      expect(screen.getByText("Provisional recommended name, not apply-ready")).toBeInTheDocument();
+      expect(screen.getAllByRole("button", { name: "Approve tags" }).length).toBeGreaterThan(1);
+      expect(screen.getAllByRole("button", { name: "Reject tags" }).length).toBeGreaterThan(1);
+      expect(screen.getAllByRole("button", { name: "Mark reviewed" }).length).toBeGreaterThan(1);
     });
+    const details = document.querySelector(".spiritflix-smart-batch__advanced");
+    expect(details).not.toHaveAttribute("open");
+    fireEvent.click(screen.getByText("Advanced details"));
+    expect(details).toHaveAttribute("open");
+    expect(screen.getByText("Review or approve tags/metadata to unlock rename preview.")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /apply rename/i })).not.toBeInTheDocument();
   });
 
@@ -327,7 +331,7 @@ describe("SpiritFlix admin Level 2R interactions", () => {
     fireEvent.click(screen.getByRole("button", { name: "Rename plan" }));
     await waitFor(() => {
       expect(screen.getByText("Real rename/move apply is disabled until Britton explicitly approves a future apply task.")).toBeInTheDocument();
-      expect(screen.getByText("Beta Clip HD.mp4 - reviewed - ready")).toBeInTheDocument();
+      expect(screen.getByText("Beta Clip HD.mp4 - ready recommended name")).toBeInTheDocument();
     });
     expect(screen.getByText("Apply enabled")).toBeInTheDocument();
     expect(screen.getByText("No")).toBeInTheDocument();
