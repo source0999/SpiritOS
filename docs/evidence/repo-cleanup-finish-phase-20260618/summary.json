@@ -1,0 +1,20 @@
+{
+  "generated_at": "2026-06-18T20:11:33.871140-04:00",
+  "commits_created": [
+    "e2e2af4f Add post-commit closeout evidence",
+    "43e20706 Tighten repomix cleanup ignores"
+  ],
+  "remaining_dirty_untracked_count": 249,
+  "repo_cleanup_finish": "PARTIAL-GO",
+  "dirty_tree_understood": "GO",
+  "repomix_cleanup": "GO",
+  "archive_move_readiness": "NEEDS_APPROVAL",
+  "delete_readiness": "NONE",
+  "watcher_state": "GO",
+  "proxy_return_readiness": "GO",
+  "notes": [
+    "git diff --check fails on generated media report HTML trailing whitespace left untouched",
+    "npm run typecheck passed",
+    "failed mnt-spirit-projects mount remains out of scope"
+  ]
+}
