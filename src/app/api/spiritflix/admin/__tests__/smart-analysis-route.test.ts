@@ -2,12 +2,19 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { writeSmartAnalysis } from "@/lib/spiritflix/admin/smart";
+import { createSmartAnalysisPathKey } from "@/lib/spiritflix/admin/smart/analysis-paths";
+import { validateSpiritFlixSmartAnalysis } from "@/lib/spiritflix/admin/smart/types";
 import { GET, POST } from "../smart/analysis/route";
 
-vi.mock("@/lib/spiritflix/admin/smart/review", () => ({
-  runSpiritFlixSmartReviewPipeline: vi.fn(),
-  markSpiritFlixSmartAnalysisReviewed: vi.fn(),
-}));
+vi.mock("@/lib/spiritflix/admin/smart/review", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/spiritflix/admin/smart/review")>();
+  return {
+    ...actual,
+    runSpiritFlixSmartReviewPipeline: vi.fn(),
+    markSpiritFlixSmartAnalysisReviewed: vi.fn(),
+  };
+});
 
 import { markSpiritFlixSmartAnalysisReviewed, runSpiritFlixSmartReviewPipeline } from "@/lib/spiritflix/admin/smart/review";
 
@@ -46,6 +53,20 @@ const sampleAnalysis = {
   confidence: 0.8,
   notes: "test",
 };
+
+async function seedAnalysis(mediaRoot: string) {
+  const stat = await fs.stat(videoPath);
+  const pathKey = createSmartAnalysisPathKey({ videoPath, fileSizeBytes: stat.size, mtimeMs: stat.mtimeMs });
+  const analysis = validateSpiritFlixSmartAnalysis({
+    ...sampleAnalysis,
+    videoPath,
+    fileSizeBytes: stat.size,
+    mtimeMs: stat.mtimeMs,
+    pathKey,
+  });
+  await writeSmartAnalysis(analysis, { mediaRoot });
+  return analysis;
+}
 
 describe("SpiritFlix smart analysis API", () => {
   beforeEach(async () => {
@@ -106,5 +127,64 @@ describe("SpiritFlix smart analysis API", () => {
     vi.mocked(runSpiritFlixSmartReviewPipeline).mockResolvedValue({ ...sampleAnalysis, videoPath });
     await POST(postRequest({ path: videoPath }));
     expect(runSpiritFlixSmartReviewPipeline).toHaveBeenCalledTimes(1);
+  });
+
+  it("saveReview rejects unknown fields", async () => {
+    await seedAnalysis(tempRoot);
+    const response = await POST(
+      postRequest({
+        path: videoPath,
+        action: "saveReview",
+        review: { approvedTagIds: ["hd"], rejectedTagIds: [], evilField: true },
+      }),
+    );
+    const body = await response.json();
+    expect(response.status).toBe(400);
+    expect(body.error).toMatch(/unknown field/i);
+  });
+
+  it("saveReview rejects unknown tag ids", async () => {
+    await seedAnalysis(tempRoot);
+    const response = await POST(
+      postRequest({
+        path: videoPath,
+        action: "saveReview",
+        review: { approvedTagIds: ["not-real"], rejectedTagIds: [] },
+      }),
+    );
+    const body = await response.json();
+    expect(response.status).toBe(400);
+    expect(body.error).toMatch(/known tag id/i);
+  });
+
+  it("saveReview writes only analysis sidecar and preserves samples", async () => {
+    await seedAnalysis(tempRoot);
+    const response = await POST(
+      postRequest({
+        path: videoPath,
+        action: "saveReview",
+        review: {
+          approvedTagIds: ["hd"],
+          rejectedTagIds: [],
+          editedDisplayTitle: "Reviewed Clip",
+          editedFilenameSuggestion: "Reviewed Clip.mp4",
+        },
+      }),
+    );
+    const body = await response.json();
+    expect(response.status).toBe(200);
+    expect(body.analysis.reviewedMetadata.approvedTagIds).toEqual(["hd"]);
+    expect(body.analysis.samples).toHaveLength(1);
+    expect(body.analysis.suggestedDisplayTitle).toBe("Clip");
+    expect(body.sidecarPath).toContain(".spiritflix-admin/analysis");
+    expect(body.sidecarPath).not.toContain(path.dirname(videoPath));
+    await expect(fs.stat(body.sidecarPath)).resolves.toBeDefined();
+  });
+
+  it("rejects applyRename and applyMove actions", async () => {
+    const rename = await POST(postRequest({ path: videoPath, action: "applyRename" }));
+    expect(rename.status).toBe(400);
+    const move = await POST(postRequest({ path: videoPath, action: "applyMove" }));
+    expect(move.status).toBe(400);
   });
 });

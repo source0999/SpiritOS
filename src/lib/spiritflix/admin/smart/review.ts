@@ -4,11 +4,13 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { readSmartAnalysis, writeSmartAnalysis } from "./analysis-store";
+import { applySmartReviewToAnalysis } from "./review-metadata";
 import { scanOneSpiritFlixVideoEvidence } from "./scanner";
 import { updateSmartAnalysisWithHeuristicSuggestions } from "./suggestions";
-import { validateSpiritFlixSmartAnalysis, type SpiritFlixSmartAnalysis } from "./types";
+import { validateSpiritFlixSmartAnalysis, type SpiritFlixSmartAnalysis, type SpiritFlixSmartReviewInput } from "./types";
 
 export const SPIRITFLIX_SMART_ANALYZER_VERSION_S4 = "spiritflix-smart/s4";
+export { SPIRITFLIX_SMART_ANALYZER_VERSION_S5 } from "./review-metadata";
 
 export interface SpiritFlixSmartReviewOptions {
   mediaRoot?: string;
@@ -73,9 +75,39 @@ export async function markSpiritFlixSmartAnalysisReviewed(
       safeToSuggest: false,
       reasons: [...new Set([...existing.safety.reasons, "Marked reviewed in admin UI — apply actions still gated."])],
     },
+    reviewedMetadata: {
+      reviewedAt: new Date().toISOString(),
+      reviewedBy: "spiritflix-admin",
+      reviewStatus: "reviewed",
+      approvedTagIds: existing.reviewedMetadata?.approvedTagIds ?? [],
+      rejectedTagIds: existing.reviewedMetadata?.rejectedTagIds ?? [],
+      editedDisplayTitle: existing.reviewedMetadata?.editedDisplayTitle,
+      editedFilenameSuggestion: existing.reviewedMetadata?.editedFilenameSuggestion,
+      editedCategory: existing.reviewedMetadata?.editedCategory,
+      editedCollections: existing.reviewedMetadata?.editedCollections,
+      notes: mergeNotes(existing.reviewedMetadata?.notes, "marked reviewed without tag edits"),
+    },
     notes: mergeNotes(existing.notes, "marked reviewed in SpiritFlix admin (S4 UI only, no rename/move applied)"),
   });
 
+  const { analysis } = await writeSmartAnalysis(updated, pathOpts);
+  return analysis;
+}
+
+export async function saveSpiritFlixSmartAnalysisReview(
+  videoPath: string,
+  review: SpiritFlixSmartReviewInput,
+  options?: { mediaRoot?: string },
+): Promise<SpiritFlixSmartAnalysis> {
+  const pathOpts = pathOptions(options?.mediaRoot);
+  const stat = await fs.stat(videoPath);
+  const pathInput = { videoPath, fileSizeBytes: stat.size, mtimeMs: stat.mtimeMs };
+  const existing = await readSmartAnalysis(pathInput, pathOpts);
+  if (!existing) {
+    throw new Error("No smart analysis sidecar exists to save review metadata.");
+  }
+
+  const updated = applySmartReviewToAnalysis(existing, review);
   const { analysis } = await writeSmartAnalysis(updated, pathOpts);
   return analysis;
 }

@@ -25,6 +25,31 @@ export type SpiritFlixSmartTagGroup =
 
 export type SpiritFlixSmartConfidenceBand = "high" | "medium" | "weak" | "ignore";
 
+export type SpiritFlixSmartReviewStatus = "unreviewed" | "partially_reviewed" | "reviewed" | "rejected";
+
+export interface SpiritFlixSmartReviewedMetadata {
+  reviewedAt: string;
+  reviewedBy: "spiritflix-admin";
+  reviewStatus: SpiritFlixSmartReviewStatus;
+  approvedTagIds: string[];
+  rejectedTagIds: string[];
+  editedDisplayTitle?: string;
+  editedFilenameSuggestion?: string;
+  editedCategory?: string;
+  editedCollections?: string[];
+  notes?: string;
+}
+
+export interface SpiritFlixSmartReviewInput {
+  approvedTagIds: string[];
+  rejectedTagIds: string[];
+  editedDisplayTitle?: string;
+  editedFilenameSuggestion?: string;
+  editedCategory?: string;
+  editedCollections?: string[];
+  notes?: string;
+}
+
 export interface SpiritFlixSmartTag {
   id: string;
   label: string;
@@ -74,7 +99,15 @@ export interface SpiritFlixSmartAnalysis {
   suggestedTargetFolder?: string;
   confidence: number;
   notes?: string;
+  reviewedMetadata?: SpiritFlixSmartReviewedMetadata;
 }
+
+const SMART_REVIEW_STATUSES = new Set<SpiritFlixSmartReviewStatus>([
+  "unreviewed",
+  "partially_reviewed",
+  "reviewed",
+  "rejected",
+]);
 
 const SMART_STATUSES = new Set<SpiritFlixSmartStatus>([
   "not_analyzed",
@@ -220,6 +253,68 @@ export function validateSpiritFlixSmartSample(value: unknown): SpiritFlixSmartSa
   return { timestampSeconds, timestampLabel, cacheKey, observations, tags, confidence };
 }
 
+export function validateSpiritFlixSmartReviewedMetadata(value: unknown): SpiritFlixSmartReviewedMetadata {
+  if (!isPlainObject(value)) throw new Error("reviewedMetadata must be an object.");
+  assertNoPollutionKeys(value, "reviewedMetadata");
+
+  const reviewedAt = assertNonEmptyString(value.reviewedAt, "reviewedMetadata.reviewedAt", 64);
+  if (value.reviewedBy !== "spiritflix-admin") {
+    throw new Error("reviewedMetadata.reviewedBy must be spiritflix-admin.");
+  }
+  const reviewStatus = value.reviewStatus;
+  if (typeof reviewStatus !== "string" || !SMART_REVIEW_STATUSES.has(reviewStatus as SpiritFlixSmartReviewStatus)) {
+    throw new Error("reviewedMetadata.reviewStatus is invalid.");
+  }
+
+  if (!Array.isArray(value.approvedTagIds)) throw new Error("reviewedMetadata.approvedTagIds must be an array.");
+  if (!Array.isArray(value.rejectedTagIds)) throw new Error("reviewedMetadata.rejectedTagIds must be an array.");
+  if (value.approvedTagIds.length > SMART_ANALYSIS_LIMITS.maxTagsPerList) {
+    throw new Error("reviewedMetadata.approvedTagIds is too large.");
+  }
+  if (value.rejectedTagIds.length > SMART_ANALYSIS_LIMITS.maxTagsPerList) {
+    throw new Error("reviewedMetadata.rejectedTagIds is too large.");
+  }
+
+  const approvedTagIds = value.approvedTagIds.map((entry, index) =>
+    assertNonEmptyString(entry, `reviewedMetadata.approvedTagIds[${index}]`, SMART_ANALYSIS_LIMITS.maxIdLength),
+  );
+  const rejectedTagIds = value.rejectedTagIds.map((entry, index) =>
+    assertNonEmptyString(entry, `reviewedMetadata.rejectedTagIds[${index}]`, SMART_ANALYSIS_LIMITS.maxIdLength),
+  );
+  const overlap = approvedTagIds.find((id) => rejectedTagIds.includes(id));
+  if (overlap) throw new Error("reviewedMetadata approved/rejected tag ids must not overlap.");
+
+  const editedDisplayTitle = assertOptionalString(value.editedDisplayTitle, "reviewedMetadata.editedDisplayTitle", 512);
+  const editedFilenameSuggestion = assertOptionalString(value.editedFilenameSuggestion, "reviewedMetadata.editedFilenameSuggestion", 512);
+  const editedCategory = assertOptionalString(value.editedCategory, "reviewedMetadata.editedCategory", 256);
+
+  let editedCollections: string[] | undefined;
+  if (value.editedCollections !== undefined) {
+    if (!Array.isArray(value.editedCollections)) throw new Error("reviewedMetadata.editedCollections must be an array.");
+    if (value.editedCollections.length > SMART_ANALYSIS_LIMITS.maxCollections) {
+      throw new Error("reviewedMetadata.editedCollections is too large.");
+    }
+    editedCollections = value.editedCollections.map((entry, index) =>
+      assertNonEmptyString(entry, `reviewedMetadata.editedCollections[${index}]`, SMART_ANALYSIS_LIMITS.maxLabelLength),
+    );
+  }
+
+  const notes = value.notes === undefined ? undefined : assertNonEmptyString(value.notes, "reviewedMetadata.notes", SMART_ANALYSIS_LIMITS.maxNotesLength);
+
+  return {
+    reviewedAt,
+    reviewedBy: "spiritflix-admin",
+    reviewStatus: reviewStatus as SpiritFlixSmartReviewStatus,
+    approvedTagIds,
+    rejectedTagIds,
+    editedDisplayTitle,
+    editedFilenameSuggestion,
+    editedCategory,
+    editedCollections,
+    notes,
+  };
+}
+
 export function validateSpiritFlixSmartAnalysis(value: unknown): SpiritFlixSmartAnalysis {
   if (!isPlainObject(value)) throw new Error("Analysis must be an object.");
   assertNoPollutionKeys(value, "analysis");
@@ -319,6 +414,9 @@ export function validateSpiritFlixSmartAnalysis(value: unknown): SpiritFlixSmart
     notes = assertNonEmptyString(value.notes, "notes", SMART_ANALYSIS_LIMITS.maxNotesLength);
   }
 
+  const reviewedMetadata =
+    value.reviewedMetadata === undefined ? undefined : validateSpiritFlixSmartReviewedMetadata(value.reviewedMetadata);
+
   const serialized = JSON.stringify({
     version: 1,
     videoPath,
@@ -327,6 +425,7 @@ export function validateSpiritFlixSmartAnalysis(value: unknown): SpiritFlixSmart
     samples,
     suggestedTags,
     notes,
+    reviewedMetadata,
   });
   if (serialized.length > SMART_ANALYSIS_LIMITS.maxPayloadBytes) {
     throw new Error("Analysis payload is too large.");
@@ -357,6 +456,7 @@ export function validateSpiritFlixSmartAnalysis(value: unknown): SpiritFlixSmart
     suggestedTargetFolder,
     confidence,
     notes,
+    reviewedMetadata,
   };
 }
 
