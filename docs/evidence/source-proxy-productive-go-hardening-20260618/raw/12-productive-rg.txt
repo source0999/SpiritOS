@@ -1,0 +1,500 @@
+source_proxy/tests/test_expectation_reporting.py:7:    build_decision_trace,
+source_proxy/tests/test_expectation_reporting.py:8:    detect_artifact_evidence_gaps,
+source_proxy/tests/test_expectation_reporting.py:23:        "task_shape_source": "generic_artifact_resolver",
+source_proxy/tests/test_expectation_reporting.py:24:        "artifact_class": "static_ui_artifact",
+source_proxy/tests/test_expectation_reporting.py:50:            "product_verdict": "WEAK_PASS",
+source_proxy/tests/test_expectation_reporting.py:55:def test_detect_artifact_evidence_gaps_finds_missing_and_external_refs(tmp_path: Path) -> None:
+source_proxy/tests/test_expectation_reporting.py:63:    gaps = detect_artifact_evidence_gaps(workspace=tmp_path, entrypoint="index.html")
+source_proxy/tests/test_expectation_reporting.py:71:def test_decision_trace_surfaces_initial_vs_verified_and_lane_context_fields() -> None:
+source_proxy/tests/test_expectation_reporting.py:76:        behavior_probe_result={"verdict": "PASS", "passed": True},
+source_proxy/tests/test_expectation_reporting.py:77:        diagnostic_row={"artifact_matches_plain_user_intent": True},
+source_proxy/tests/test_expectation_reporting.py:80:    trace = build_decision_trace(
+source_proxy/tests/test_expectation_reporting.py:84:        behavior_probe_result={"verdict": "PASS", "passed": True},
+source_proxy/tests/test_expectation_reporting.py:87:    assert trace["initial_live_expectation_verdict"] == "WEAK_PASS"
+source_proxy/tests/test_expectation_reporting.py:88:    assert trace["final_verified_expectation_verdict"] == "PASS"
+source_proxy/tests/test_expectation_reporting.py:89:    assert trace["behavior_evidence_attached"] is True
+source_proxy/tests/test_expectation_reporting.py:90:    assert trace["model_lane_selected"] == "qwen_local_coder"
+source_proxy/tests/test_expectation_reporting.py:91:    assert trace["sidecar_lane_status"]["live"] is False
+source_proxy/tests/test_expectation_reporting.py:92:    assert trace["context_decision"]["web_search_used"] is False
+source_proxy/tests/test_expectation_reporting.py:100:        behavior_probe_result={"verdict": "PASS", "passed": True},
+source_proxy/tests/test_expectation_reporting.py:101:        diagnostic_row={"artifact_matches_plain_user_intent": True},
+source_proxy/tests/test_expectation_reporting.py:103:    trace = build_decision_trace(
+source_proxy/tests/test_expectation_reporting.py:107:        behavior_probe_result={"verdict": "PASS", "passed": True},
+source_proxy/tests/test_expectation_reporting.py:110:    rollup = build_batch_rollup([trace])
+source_proxy/tests/test_expectation_reporting.py:113:        traces=[trace],
+source_proxy/tests/test_expectation_reporting.py:117:    assert rollup["initial_verdict_counts"] == {"WEAK_PASS": 1}
+source_proxy/tests/test_expectation_reporting.py:118:    assert rollup["verified_verdict_counts"] == {"PASS": 1}
+source_proxy/agent_factory/contracts.py:176:    checks_passed: bool = False
+source_proxy/tests/test_agent_factory_readiness_matrix.py:31:    assert row.blocked_by == ("proxy_apply_verify_receipt_ready",)
+source_proxy/tests/test_agent_factory_readiness_matrix.py:32:    assert "gate_not_ready:proxy_apply_verify_receipt_ready" in row.reason_codes
+source_proxy/tests/test_agent_factory_operator_summary.py:31:            blocked_by=("proxy_apply_verify_receipt_ready",),
+source_proxy/tests/test_agent_factory_operator_summary.py:45:        "proxy_apply_verify_receipt_ready",
+source_proxy/tests/test_cartographer_approval_token_consumption.py:24:            requested_action_class="docs_receipt_preview",
+source_proxy/tests/test_cartographer_approval_token_consumption.py:75:            requested_action_class="docs_receipt_preview",
+source_proxy/tests/test_cartographer_approval_token_consumption.py:108:                    requested_action_class="docs_receipt_preview",
+source_proxy/tests/test_cartographer_approval_token_consumption.py:160:                        "docs_receipt_preview",
+source_proxy/tests/test_cartographer_approval_token_consumption.py:209:                    requested_action_class="docs_receipt_preview",
+source_proxy/tests/test_cartographer_approval_token_consumption.py:229:                "docs_receipt_preview",
+source_proxy/tests/test_cartographer_approval_token_consumption.py:235:                "docs_receipt_preview",
+source_proxy/tests/test_cartographer_approval_token_consumption.py:351:            "action_type": "docs_receipt_preview",
+source_proxy/tests/test_cartographer_approval_token_consumption.py:371:            "action_class": "docs_receipt_preview",
+source_proxy/tests/test_cartographer_verification_runner.py:12:    build_verification_result_receipt_summary,
+source_proxy/tests/test_cartographer_verification_runner.py:277:        self.assertEqual(result.status, "passed")
+source_proxy/tests/test_cartographer_verification_runner.py:314:        self.assertEqual(result.status, "passed")
+source_proxy/tests/test_cartographer_verification_runner.py:349:    def test_receipt_summary_records_command_output_and_blocked_reasons(self) -> None:
+source_proxy/tests/test_cartographer_verification_runner.py:350:        summary = build_verification_result_receipt_summary(
+source_proxy/tests/test_cartographer_verification_runner.py:371:        self.assertFalse(summary["passed"])
+source_proxy/tests/test_cartographer_verification_runner.py:419:                "build_verification_result_receipt_summary",
+source_proxy/tests/test_artifact_behavior_contract.py:3:from source_proxy.decision.artifact_behavior_contract import build_artifact_behavior_contract
+source_proxy/tests/test_artifact_behavior_contract.py:28:        contract = build_artifact_behavior_contract(
+source_proxy/tests/test_artifact_behavior_contract.py:30:            artifact_class="static_ui_artifact",
+source_proxy/tests/test_artifact_behavior_contract.py:44:    contract = build_artifact_behavior_contract(
+source_proxy/tests/test_artifact_behavior_contract.py:46:        artifact_class="static_ui_artifact",
+source_proxy/tests/test_artifact_behavior_contract.py:106:        contract = build_artifact_behavior_contract(
+source_proxy/tests/test_artifact_behavior_contract.py:108:            artifact_class="static_ui_artifact",
+source_proxy/tests/test_artifact_behavior_contract.py:117:    contract = build_artifact_behavior_contract(
+source_proxy/tests/test_artifact_behavior_contract.py:119:        artifact_class="static_ui_artifact",
+source_proxy/tests/test_artifact_behavior_contract.py:129:    from source_proxy.decision.artifact_behavior_contract import summarize_behavior_contract_for_prompt
+source_proxy/tests/test_artifact_behavior_contract.py:131:    contract = build_artifact_behavior_contract(
+source_proxy/tests/test_artifact_behavior_contract.py:133:        artifact_class="static_ui_artifact",
+source_proxy/agent_factory/authority_vocabulary.py:48:            r"\b(?:clean report|passing checks?|audit success)\s+"
+source_proxy/tests/test_agent_factory_foundation_manifest.py:17:            checks_passed=True,
+source_proxy/tests/test_agent_factory_foundation_manifest.py:47:    records[0] = replace(records[0], checks_passed=False)
+source_proxy/tests/test_agent_factory_foundation_manifest.py:52:    assert report.findings[0].rule == "phase_checks_not_passed"
+source_proxy/tests/test_cartographer_level_11_receipt_write_dry_run.py:6:from source_proxy.cartographer import level_11_receipt_write_dry_run
+source_proxy/tests/test_cartographer_level_11_receipt_write_dry_run.py:13:from source_proxy.cartographer.level_11_receipt_write_dry_run import (
+source_proxy/tests/test_cartographer_level_11_receipt_write_dry_run.py:14:    build_level_11_receipt_write_dry_run_packet,
+source_proxy/tests/test_cartographer_level_11_receipt_write_dry_run.py:19:    def test_receipt_write_dry_run_never_grants_write_authority(self) -> None:
+source_proxy/tests/test_cartographer_level_11_receipt_write_dry_run.py:20:        packet = build_level_11_receipt_write_dry_run_packet(
+source_proxy/tests/test_cartographer_level_11_receipt_write_dry_run.py:21:            target_receipt_file="docs/receipts/level-11.md",
+source_proxy/tests/test_cartographer_level_11_receipt_write_dry_run.py:22:            allowed_files=("docs/receipts/level-11.md",),
+source_proxy/tests/test_cartographer_level_11_receipt_write_dry_run.py:29:        self.assertEqual(packet.status, "receipt-write-dry-run-only")
+source_proxy/tests/test_cartographer_level_11_receipt_write_dry_run.py:36:    def test_receipt_write_dry_run_fails_closed_for_scope_and_control_gaps(self) -> None:
+source_proxy/tests/test_cartographer_level_11_receipt_write_dry_run.py:37:        packet = build_level_11_receipt_write_dry_run_packet(
+source_proxy/tests/test_cartographer_level_11_receipt_write_dry_run.py:38:            target_receipt_file="src/app/coding/page.tsx",
+source_proxy/tests/test_cartographer_level_11_receipt_write_dry_run.py:39:            allowed_files=("docs/receipts/level-11.md",),
+source_proxy/tests/test_cartographer_level_11_receipt_write_dry_run.py:46:        self.assertIn("target_receipt_file_outside_docs", packet.blocked_reasons)
+source_proxy/tests/test_cartographer_level_11_receipt_write_dry_run.py:47:        self.assertIn("target_receipt_file_outside_allowed_files", packet.blocked_reasons)
+source_proxy/tests/test_cartographer_level_11_receipt_write_dry_run.py:48:        self.assertIn("target_receipt_file_intersects_forbidden_files", packet.blocked_reasons)
+source_proxy/tests/test_cartographer_level_11_receipt_write_dry_run.py:57:            for name, value in vars(level_11_receipt_write_dry_run).items()
+source_proxy/tests/test_cartographer_level_11_receipt_write_dry_run.py:61:        self.assertEqual(public_functions, {"build_level_11_receipt_write_dry_run_packet"})
+source_proxy/tests/test_cartographer_level_11_receipt_write_dry_run.py:63:        source = inspect.getsource(level_11_receipt_write_dry_run)
+source_proxy/tests/test_verifier_lane.py:20:        normalized_intent="disposable calculator artifact",
+source_proxy/tests/test_verifier_lane.py:27:        browser_observation={"passed": True},
+source_proxy/tests/test_verifier_lane.py:28:        receipt_path="receipt.json",
+source_proxy/tests/test_verifier_lane.py:31:        behavior_probe_evidence={"verdict": "PASS", "probe_id": "calculator-basic-arithmetic"},
+source_proxy/tests/test_verifier_lane.py:32:        repair_packet={"status": "READY_FOR_LOCAL_REPAIR"},
+source_proxy/tests/test_verifier_lane.py:33:        repair_result={"status": "READY_FOR_RETEST"},
+source_proxy/tests/test_verifier_lane.py:45:    assert packet["behavior_probe_evidence"]["verdict"] == "PASS"
+source_proxy/tests/test_verifier_lane.py:52:        proposed_verdict="PASS",
+source_proxy/tests/test_verifier_lane.py:53:        evidence_refs=["receipt.json"],
+source_proxy/tests/test_verifier_lane.py:54:        browser_behavior_passed=False,
+source_proxy/tests/test_verifier_lane.py:57:    assert output["verdict"] != "PASS"
+source_proxy/tests/test_verifier_lane.py:58:    assert "pass_blocked_without_browser_behavior_evidence" in output["reasons"]
+source_proxy/tests/test_verifier_lane.py:65:        proposed_verdict="PASS",
+source_proxy/tests/test_verifier_lane.py:66:        evidence_refs=["receipt.json"],
+source_proxy/tests/test_verifier_lane.py:68:        browser_behavior_passed=True,
+source_proxy/tests/test_verifier_lane.py:71:    assert output["verdict"] == "WARNING"
+source_proxy/tests/test_verifier_lane.py:85:    assert output["verdict"] in {"UNVERIFIED", "WARNING", "NEEDS_FIX"}
+source_proxy/tests/test_verifier_lane.py:90:def test_verifier_preview_blocks_failed_browser_behavior() -> None:
+source_proxy/tests/test_verifier_lane.py:98:        browser_observation={"verdict": "FAIL", "passed": False, "opened": True},
+source_proxy/tests/test_verifier_lane.py:99:        receipt_path="receipt.json",
+source_proxy/tests/test_verifier_lane.py:102:        behavior_probe_evidence={"verdict": "FAIL", "actual": {"before": "white", "after": "white"}},
+source_proxy/tests/test_verifier_lane.py:108:    assert output["verdict"] in {"NEEDS_FIX", "HANDOFF", "FAIL", "UNVERIFIED"}
+source_proxy/tests/test_verifier_lane.py:109:    assert output["verdict"] != "PASS"
+source_proxy/tests/test_verifier_lane.py:110:    assert "browser_behavior_failed" in output["reasons"]
+source_proxy/tests/test_verifier_lane.py:111:    assert output["cannot_override_browser_behavior"] is True
+source_proxy/tests/test_verifier_lane.py:117:        proposed_verdict="PASS",
+source_proxy/tests/test_verifier_lane.py:118:        evidence_refs=["receipt.json", "probe.json"],
+source_proxy/tests/test_verifier_lane.py:119:        browser_behavior_passed=False,
+source_proxy/tests/test_verifier_lane.py:122:    assert output["verdict"] == "NEEDS_FIX"
+source_proxy/tests/test_verifier_lane.py:123:    assert "failed_browser_behavior_blocks_pass" in output["reasons"]
+source_proxy/tests/test_verifier_lane.py:126:def test_verifier_preview_reports_missing_receipt_transcript_diff_probe() -> None:
+source_proxy/tests/test_verifier_lane.py:139:    assert output["verdict"] != "PASS"
+source_proxy/tests/test_verifier_lane.py:140:    assert "receipt_path" in output["missing_evidence"]
+source_proxy/tests/test_cartographer_safe_task_queue.py:44:        self.assertEqual(status["first_run_phase"], "Plan 7 legacy first-run receipt disabled")
+source_proxy/tests/test_cartographer_safe_task_queue.py:46:        self.assertTrue(status["receipt_available"])
+source_proxy/tests/test_cartographer_safe_task_queue.py:47:        self.assertTrue(status["selection_receipt_available"])
+source_proxy/tests/test_cartographer_safe_task_queue.py:184:            "safe_receipt_closeout",
+source_proxy/tests/test_cartographer_safe_task_queue.py:222:        second = self._record(task_id="task-2", task_class="safe_receipt_closeout")
+source_proxy/tests/test_cartographer_safe_task_queue.py:241:        self.assertIsNotNone(result.selection_receipt)
+source_proxy/tests/test_cartographer_safe_task_queue.py:243:            result.selection_receipt["schema_version"],
+source_proxy/tests/test_cartographer_safe_task_queue.py:244:            "cartographer.safe_task_selection_receipt.v1",
+source_proxy/tests/test_cartographer_safe_task_queue.py:246:        self.assertEqual(result.selection_receipt["task_id"], "task-1")
+source_proxy/tests/test_cartographer_safe_task_queue.py:247:        self.assertEqual(result.selection_receipt["selected_count"], 1)
+source_proxy/tests/test_cartographer_safe_task_queue.py:248:        self.assertEqual(result.selection_receipt["eligible_count"], 2)
+source_proxy/tests/test_cartographer_safe_task_queue.py:249:        self.assertEqual(result.selection_receipt["rejected_count"], 0)
+source_proxy/tests/test_cartographer_safe_task_queue.py:250:        self.assertEqual(result.selection_receipt["evaluated_count"], 2)
+source_proxy/tests/test_cartographer_safe_task_queue.py:252:            result.selection_receipt["approval_token_id"],
+source_proxy/tests/test_cartographer_safe_task_queue.py:255:        self.assertFalse(result.selection_receipt["background_loop_started"])
+source_proxy/tests/test_cartographer_safe_task_queue.py:256:        self.assertFalse(result.selection_receipt["task_execution_performed"])
+source_proxy/tests/test_cartographer_safe_task_queue.py:257:        self.assertFalse(result.selection_receipt["safe_write_performed"])
+source_proxy/tests/test_cartographer_safe_task_queue.py:258:        self.assertFalse(result.selection_receipt["verification_run_performed"])
+source_proxy/tests/test_cartographer_safe_task_queue.py:259:        self.assertFalse(result.selection_receipt["command_run_performed"])
+source_proxy/tests/test_cartographer_safe_task_queue.py:260:        self.assertFalse(result.selection_receipt["git_mutation_performed"])
+source_proxy/tests/test_cartographer_safe_task_queue.py:261:        self.assertFalse(result.selection_receipt["durable_storage_performed"])
+source_proxy/tests/test_cartographer_safe_task_queue.py:314:                self.assertIsNone(result.selection_receipt)
+source_proxy/tests/test_cartographer_safe_task_queue.py:326:        self.assertTrue(result.passed)
+source_proxy/tests/test_cartographer_safe_task_queue.py:328:        self.assertEqual(result.status, "passed")
+source_proxy/tests/test_cartographer_safe_task_queue.py:386:        self.assertFalse(result.passed)
+source_proxy/tests/test_cartographer_safe_task_queue.py:418:        self.assertIsNone(result.receipt)
+source_proxy/tests/test_cartographer_safe_task_queue.py:460:                self.assertIsNone(result.receipt)
+source_proxy/tests/test_expectation_scoring.py:18:        "task_shape_source": "generic_artifact_resolver",
+source_proxy/tests/test_expectation_scoring.py:19:        "artifact_class": "static_ui_artifact",
+source_proxy/tests/test_expectation_scoring.py:46:def test_expectation_score_pass_requires_browser_behavior_evidence() -> None:
+source_proxy/tests/test_expectation_scoring.py:51:            "verdict": "PASS",
+source_proxy/tests/test_expectation_scoring.py:52:            "passed": True,
+source_proxy/tests/test_expectation_scoring.py:56:        diagnostic_row={"artifact_matches_plain_user_intent": True},
+source_proxy/tests/test_expectation_scoring.py:59:    assert result["product_verdict"] == "PASS"
+source_proxy/tests/test_expectation_scoring.py:61:    assert result["file_integrity_verdict"] == "PASS"
+source_proxy/tests/test_expectation_scoring.py:62:    assert result["lane_policy_verdict"] == "PASS"
+source_proxy/tests/test_expectation_scoring.py:72:    assert result["product_verdict"] == "WEAK_PASS"
+source_proxy/tests/test_expectation_scoring.py:85:        behavior_probe_result={"verdict": "PASS", "passed": True},
+source_proxy/tests/test_expectation_scoring.py:88:    assert result["product_verdict"] == "FAIL"
+source_proxy/tests/test_expectation_scoring.py:89:    assert result["file_integrity_verdict"] == "FAIL"
+source_proxy/tests/test_expectation_scoring.py:90:    assert result["safety_boundary_verdict"] == "FAIL"
+source_proxy/tests/test_expectation_scoring.py:97:        behavior_probe_result={"verdict": "PASS", "passed": True},
+source_proxy/tests/test_expectation_scoring.py:99:            "artifact_matches_plain_user_intent": True,
+source_proxy/tests/test_expectation_scoring.py:108:    assert "web_search_unnecessary_for_local_artifact_prompt" in result["score_reason_codes"]
+source_proxy/tests/test_expectation_scoring.py:119:        behavior_probe_result={"verdict": "PASS", "passed": True},
+source_proxy/tests/test_expectation_scoring.py:122:    assert result["lane_policy_verdict"] == "FAIL"
+source_proxy/tests/test_expectation_scoring.py:141:            '"reason":"create disposable artifact"}'
+source_proxy/tests/test_expectation_scoring.py:147:        receipt_path=run_dir / "receipt.json",
+source_proxy/tests/test_expectation_scoring.py:156:    assert score["expectation_score"]["product_verdict"] == "WEAK_PASS"
+source_proxy/tests/test_cartographer_level_14_autonomy_runtime.py:13:    build_plan_12_limited_run_receipt,
+source_proxy/tests/test_cartographer_level_14_autonomy_runtime.py:117:        self.assertIn("evidence_receipt_or_history_delete_forbidden", packet.blocked_reasons)
+source_proxy/tests/test_cartographer_level_14_autonomy_runtime.py:149:            soak_and_drills_passed=True,
+source_proxy/tests/test_cartographer_level_14_autonomy_runtime.py:153:            exact_allowed_files=("docs/cartographer-live-receipts/plan-12.md",),
+source_proxy/tests/test_cartographer_level_14_autonomy_runtime.py:184:            soak_and_drills_passed=True,
+source_proxy/tests/test_cartographer_level_14_autonomy_runtime.py:188:            exact_allowed_files=("docs/cartographer-live-receipts/plan-12.md",),
+source_proxy/tests/test_cartographer_level_14_autonomy_runtime.py:214:            soak_and_drills_passed=False,
+source_proxy/tests/test_cartographer_level_14_autonomy_runtime.py:229:        self.assertIn("soak_and_drills_not_passed", gate.reasons)
+source_proxy/tests/test_cartographer_level_14_autonomy_runtime.py:239:    def test_plan_12_limited_run_receipt_blocks_when_gate_is_blocked(self) -> None:
+source_proxy/tests/test_cartographer_level_14_autonomy_runtime.py:243:            soak_and_drills_passed=True,
+source_proxy/tests/test_cartographer_level_14_autonomy_runtime.py:247:            exact_allowed_files=("docs/cartographer-live-receipts/plan-12.md",),
+source_proxy/tests/test_cartographer_level_14_autonomy_runtime.py:254:        receipt = build_plan_12_limited_run_receipt(
+source_proxy/tests/test_cartographer_level_14_autonomy_runtime.py:258:            receipt_path="docs/cartographer-live-receipts/plan-12.md",
+source_proxy/tests/test_cartographer_level_14_autonomy_runtime.py:261:        self.assertEqual(receipt.schema_version, "cartographer.plan_12_limited_run_receipt.v1")
+source_proxy/tests/test_cartographer_level_14_autonomy_runtime.py:262:        self.assertEqual(receipt.status, "blocked")
+source_proxy/tests/test_cartographer_level_14_autonomy_runtime.py:263:        self.assertTrue(receipt.blocked)
+source_proxy/tests/test_cartographer_level_14_autonomy_runtime.py:264:        self.assertIn("activation_gate_blocked", receipt.reasons)
+source_proxy/tests/test_cartographer_level_14_autonomy_runtime.py:265:        self.assertIn("demote to Level 7", receipt.demotion_path)
+source_proxy/tests/test_cartographer_level_14_autonomy_runtime.py:266:        self.assertTrue(receipt.kill_switch_visible)
+source_proxy/tests/test_cartographer_level_14_autonomy_runtime.py:267:        self.assertFalse(receipt.queue_execution_performed)
+source_proxy/tests/test_cartographer_level_14_autonomy_runtime.py:268:        self.assertFalse(receipt.task_execution_performed)
+source_proxy/tests/test_cartographer_level_14_autonomy_runtime.py:269:        self.assertFalse(receipt.safe_write_performed)
+source_proxy/tests/test_cartographer_level_14_autonomy_runtime.py:270:        self.assertFalse(receipt.commit_performed)
+source_proxy/tests/test_cartographer_level_14_autonomy_runtime.py:271:        self.assertFalse(receipt.push_performed)
+source_proxy/tests/test_cartographer_level_14_autonomy_runtime.py:272:        self.assertFalse(receipt.worker_dispatch_performed)
+source_proxy/tests/test_cartographer_level_14_autonomy_runtime.py:273:        self.assertFalse(receipt.background_loop_started)
+source_proxy/tests/test_cartographer_level_14_autonomy_runtime.py:274:        self.assertFalse(receipt.activation_performed)
+source_proxy/tests/test_model_lane_preview_api.py:14:    response = client.post("/v1/decisions/model-lanes/preview", json={"task_type": "disposable_artifact"})
+source_proxy/tests/test_agent_factory_foundation_review.py:16:    assert "proxy_apply_verify_receipt_ready" in summary.blocked_by
+source_proxy/tests/test_agent_factory_foundation_review.py:24:            "proxy_apply_verify_receipt_ready": True,
+source_proxy/tests/test_agent_factory_phase_ledger.py:19:            checks_passed=True,
+source_proxy/tests/test_agent_factory_phase_ledger.py:47:    records[4] = replace(records[4], checks_passed=False)
+source_proxy/tests/test_agent_factory_phase_ledger.py:53:    assert "phase_checks_not_passed" in rollup.blocked_by
+source_proxy/tests/test_cartographer_blueprint_refresh_writes.py:47:        self.assertTrue(status["receipt_backed"])
+source_proxy/tests/test_cartographer_blueprint_refresh_writes.py:64:        self.assertEqual(result.receipt_path, "docs/cartographer-live-receipts/blueprint-refresh-plan-11-1-1.md")
+source_proxy/tests/test_cartographer_blueprint_refresh_writes.py:89:    def test_scope_trust_token_status_and_receipt_rules_fail_closed(self) -> None:
+source_proxy/tests/test_cartographer_blueprint_refresh_writes.py:96:            ({"receipt_path": "source_proxy/receipt.md"}, "receipt_path_must_be_docs"),
+source_proxy/tests/test_cartographer_blueprint_refresh_writes.py:97:            ({"receipt_path": "docs/receipt.json"}, "receipt_path_must_be_markdown"),
+source_proxy/tests/test_cartographer_blueprint_refresh_writes.py:175:            receipt_path="docs/cartographer-live-receipts/blueprint-refresh-plan-11-1-1.md",
+source_proxy/tests/test_cartographer_final_proof_stage_7_readiness.py:28:                soak_passed=False,
+source_proxy/tests/test_cartographer_final_proof_stage_7_readiness.py:29:                rollback_drills_passed=False,
+source_proxy/tests/test_cartographer_final_proof_stage_7_readiness.py:39:        self.assertIn("soak_not_passed", decision.blocked_reasons)
+source_proxy/tests/test_cartographer_final_proof_stage_7_readiness.py:40:        self.assertIn("rollback_drills_not_passed", decision.blocked_reasons)
+source_proxy/tests/test_cartographer_final_proof_stage_7_readiness.py:79:        soak_passed: bool = True,
+source_proxy/tests/test_cartographer_final_proof_stage_7_readiness.py:80:        rollback_drills_passed: bool = True,
+source_proxy/tests/test_cartographer_final_proof_stage_7_readiness.py:87:            gauntlet_passed=True,
+source_proxy/tests/test_cartographer_final_proof_stage_7_readiness.py:88:            soak_passed=soak_passed,
+source_proxy/tests/test_cartographer_final_proof_stage_7_readiness.py:89:            hidden_mutation_drills_passed=True,
+source_proxy/tests/test_cartographer_final_proof_stage_7_readiness.py:90:            approval_kill_switch_drills_passed=True,
+source_proxy/tests/test_cartographer_final_proof_stage_7_readiness.py:91:            rollback_drills_passed=rollback_drills_passed,
+source_proxy/tests/test_cartographer_final_proof_stage_7_readiness.py:92:            dashboard_proof_passed=True,
+source_proxy/tests/test_cartographer_level_11_event_ledger.py:158:            target_files=("docs/receipts/level-11.md",),
+source_proxy/tests/test_cartographer_safety_audit.py:319:                        {"command": command, "status": "passed"}
+source_proxy/tests/test_cartographer_safe_task_queue_api.py:36:        self.assertTrue(payload["run_next"]["receipt_available"])
+source_proxy/tests/test_cartographer_safe_task_queue_api.py:37:        self.assertTrue(payload["queue"]["selection_receipt_available"])
+source_proxy/tests/test_cartographer_safe_task_queue_api.py:48:                    self._record("task-2", "safe_receipt_closeout"),
+source_proxy/tests/test_cartographer_safe_task_queue_api.py:68:            selection["selection_receipt"]["schema_version"],
+source_proxy/tests/test_cartographer_safe_task_queue_api.py:69:            "cartographer.safe_task_selection_receipt.v1",
+source_proxy/tests/test_cartographer_safe_task_queue_api.py:71:        self.assertEqual(selection["selection_receipt"]["task_id"], "task-1")
+source_proxy/tests/test_cartographer_safe_task_queue_api.py:72:        self.assertEqual(selection["selection_receipt"]["selected_count"], 1)
+source_proxy/tests/test_cartographer_safe_task_queue_api.py:73:        self.assertEqual(selection["selection_receipt"]["eligible_count"], 2)
+source_proxy/tests/test_cartographer_safe_task_queue_api.py:74:        self.assertEqual(selection["selection_receipt"]["rejected_count"], 0)
+source_proxy/tests/test_cartographer_safe_task_queue_api.py:75:        self.assertEqual(selection["selection_receipt"]["evaluated_count"], 2)
+source_proxy/tests/test_cartographer_safe_task_queue_api.py:77:            selection["selection_receipt"]["approval_token_id"],
+source_proxy/tests/test_cartographer_safe_task_queue_api.py:80:        self.assertFalse(selection["selection_receipt"]["background_loop_started"])
+source_proxy/tests/test_cartographer_safe_task_queue_api.py:81:        self.assertFalse(selection["selection_receipt"]["task_execution_performed"])
+source_proxy/tests/test_cartographer_safe_task_queue_api.py:82:        self.assertFalse(selection["selection_receipt"]["safe_write_performed"])
+source_proxy/tests/test_cartographer_safe_task_queue_api.py:83:        self.assertFalse(selection["selection_receipt"]["verification_run_performed"])
+source_proxy/tests/test_cartographer_safe_task_queue_api.py:84:        self.assertFalse(selection["selection_receipt"]["command_run_performed"])
+source_proxy/tests/test_cartographer_safe_task_queue_api.py:85:        self.assertFalse(selection["selection_receipt"]["git_mutation_performed"])
+source_proxy/tests/test_cartographer_safe_task_queue_api.py:86:        self.assertFalse(selection["selection_receipt"]["durable_storage_performed"])
+source_proxy/tests/test_cartographer_safe_task_queue_api.py:119:        self.assertIsNone(run["receipt"])
+source_proxy/tests/test_cartographer_safe_task_queue_api.py:159:                self.assertIsNone(selection["selection_receipt"])
+source_proxy/tests/test_artifact_retest_result.py:3:from source_proxy.decision.artifact_behavior_contract import build_artifact_behavior_contract
+source_proxy/tests/test_artifact_retest_result.py:4:from source_proxy.decision.artifact_retest_result import build_artifact_retest_result
+source_proxy/tests/test_artifact_retest_result.py:8:    return build_artifact_behavior_contract(
+source_proxy/tests/test_artifact_retest_result.py:10:        artifact_class="static_ui_artifact",
+source_proxy/tests/test_artifact_retest_result.py:15:def _repair_result(status: str = "READY_FOR_RETEST", *, handoff: bool = False) -> dict:
+source_proxy/tests/test_artifact_retest_result.py:19:        "handoff_reason": "repair_attempts_exhausted" if handoff else "",
+source_proxy/tests/test_artifact_retest_result.py:23:        "reason_codes": ["repair_ready_for_retest"] if not handoff else ["repair_attempts_exhausted"],
+source_proxy/tests/test_artifact_retest_result.py:27:def test_repaired_behavior_pass_becomes_final_pass() -> None:
+source_proxy/tests/test_artifact_retest_result.py:28:    result = build_artifact_retest_result(
+source_proxy/tests/test_artifact_retest_result.py:29:        repair_result=_repair_result(),
+source_proxy/tests/test_artifact_retest_result.py:31:        artifact_ready=True,
+source_proxy/tests/test_artifact_retest_result.py:33:            "verdict": "PASS",
+source_proxy/tests/test_artifact_retest_result.py:38:            "passed": True,
+source_proxy/tests/test_artifact_retest_result.py:42:    assert result["canonical_final_verdict"] == "PASS"
+source_proxy/tests/test_artifact_retest_result.py:46:    assert result["behavior_result"]["passed"] is True
+source_proxy/tests/test_artifact_retest_result.py:48:    assert "post_repair_behavior_pass" in result["final_reason_codes"]
+source_proxy/tests/test_artifact_retest_result.py:49:    assert "post_behavior_repair_pass" in result["final_reason_codes"]
+source_proxy/tests/test_artifact_retest_result.py:52:def test_unrepaired_behavior_fail_remains_final_fail() -> None:
+source_proxy/tests/test_artifact_retest_result.py:53:    result = build_artifact_retest_result(
+source_proxy/tests/test_artifact_retest_result.py:54:        repair_result=_repair_result(),
+source_proxy/tests/test_artifact_retest_result.py:56:        artifact_ready=True,
+source_proxy/tests/test_artifact_retest_result.py:58:            "verdict": "FAIL",
+source_proxy/tests/test_artifact_retest_result.py:65:    assert result["canonical_final_verdict"] == "FAIL"
+source_proxy/tests/test_artifact_retest_result.py:68:    assert "post_repair_behavior_fail" in result["final_reason_codes"]
+source_proxy/tests/test_artifact_retest_result.py:69:    assert "post_behavior_repair_failed" in result["final_reason_codes"]
+source_proxy/tests/test_artifact_retest_result.py:72:def test_missing_preview_after_repair_is_fail_not_pass() -> None:
+source_proxy/tests/test_artifact_retest_result.py:73:    result = build_artifact_retest_result(
+source_proxy/tests/test_artifact_retest_result.py:74:        repair_result=_repair_result(),
+source_proxy/tests/test_artifact_retest_result.py:76:        artifact_ready=False,
+source_proxy/tests/test_artifact_retest_result.py:78:            "verdict": "UNVERIFIED",
+source_proxy/tests/test_artifact_retest_result.py:79:            "test": "artifact readiness",
+source_proxy/tests/test_artifact_retest_result.py:80:            "observed": {"artifact": "missing"},
+source_proxy/tests/test_artifact_retest_result.py:85:    assert result["canonical_final_verdict"] == "FAIL"
+source_proxy/tests/test_artifact_retest_result.py:87:    assert "artifact_readiness_failed" in result["final_reason_codes"]
+source_proxy/tests/test_artifact_retest_result.py:88:    assert "post_repair_artifact_not_ready" in result["final_reason_codes"]
+source_proxy/tests/test_artifact_retest_result.py:92:    result = build_artifact_retest_result(
+source_proxy/tests/test_artifact_retest_result.py:93:        repair_result=_repair_result(),
+source_proxy/tests/test_artifact_retest_result.py:95:        artifact_ready=True,
+source_proxy/tests/test_artifact_retest_result.py:97:            "verdict": "UNVERIFIED",
+source_proxy/tests/test_artifact_retest_result.py:104:    assert result["canonical_final_verdict"] == "UNVERIFIED"
+source_proxy/tests/test_artifact_retest_result.py:109:def test_handoff_repair_result_overrides_success_signals() -> None:
+source_proxy/tests/test_artifact_retest_result.py:110:    result = build_artifact_retest_result(
+source_proxy/tests/test_artifact_retest_result.py:111:        repair_result=_repair_result("HANDOFF", handoff=True),
+source_proxy/tests/test_artifact_retest_result.py:113:        artifact_ready=True,
+source_proxy/tests/test_artifact_retest_result.py:115:            "verdict": "PASS",
+source_proxy/tests/test_artifact_retest_result.py:121:    assert result["canonical_final_verdict"] == "HANDOFF"
+source_proxy/tests/test_artifact_retest_result.py:128:    result = build_artifact_retest_result(
+source_proxy/tests/test_artifact_retest_result.py:129:        repair_result=_repair_result(),
+source_proxy/tests/test_artifact_retest_result.py:131:        artifact_ready=True,
+source_proxy/tests/test_artifact_retest_result.py:133:            "verdict": "NEEDS_FIX",
+source_proxy/tests/test_artifact_retest_result.py:140:    assert result["canonical_final_verdict"] == "NEEDS_FIX"
+source_proxy/tests/test_artifact_retest_result.py:142:    assert "post_repair_verifier_needs_fix" in result["final_reason_codes"]
+source_proxy/tests/test_artifact_retest_result.py:145:def test_behavior_proof_fields_default_from_verdict_when_missing() -> None:
+source_proxy/tests/test_artifact_retest_result.py:146:    result = build_artifact_retest_result(
+source_proxy/tests/test_artifact_retest_result.py:147:        repair_result=_repair_result(),
+source_proxy/tests/test_artifact_retest_result.py:149:        artifact_ready=True,
+source_proxy/tests/test_artifact_retest_result.py:151:            "verdict": "FAIL",
+source_proxy/tests/test_artifact_retest_result.py:159:    assert result["behavior_result"]["passed"] is False
+source_proxy/tests/test_task_spec_intake_unseen_artifacts.py:14:def test_blunt_make_calculator_resolves_to_disposable_artifact(tmp_path: Path) -> None:
+source_proxy/tests/test_task_spec_intake_unseen_artifacts.py:25:    assert intake.artifact_class == "static_ui_artifact"
+source_proxy/tests/test_task_spec_intake_unseen_artifacts.py:40:    assert intake.artifact_class == "static_ui_artifact"
+source_proxy/tests/test_task_spec_intake_unseen_artifacts.py:59:        assert intake.artifact_class == "static_ui_artifact", prompt
+source_proxy/tests/test_task_spec_intake_unseen_artifacts.py:80:        assert intake.artifact_class == "static_ui_artifact", prompt
+source_proxy/tests/test_task_spec_intake_unseen_artifacts.py:99:        assert intake.artifact_class == "markdown_document", prompt
+source_proxy/tests/test_task_spec_intake_unseen_artifacts.py:103:def test_disposable_artifact_does_not_block_for_missing_repo_target(tmp_path: Path) -> None:
+source_proxy/tests/test_task_spec_intake_unseen_artifacts.py:140:        assert intake.artifact_class == "static_ui_artifact", prompt
+source_proxy/tests/test_task_spec_intake_unseen_artifacts.py:178:        assert intake.artifact_class == "static_ui_artifact", prompt
+source_proxy/tests/test_task_spec_intake_unseen_artifacts.py:194:        "repair the dashboard's forecast tile component",
+source_proxy/tests/test_agent_factory_boundary_snapshot.py:23:            checks_passed=True,
+source_proxy/tests/test_agent_factory_authority_invariants.py:51:                checks_passed=True,
+source_proxy/agent_factory/foundation_manifest.py:19:    checks_passed: bool,
+source_proxy/agent_factory/foundation_manifest.py:28:        checks_passed=checks_passed,
+source_proxy/agent_factory/foundation_manifest.py:78:        if not record.checks_passed:
+source_proxy/agent_factory/foundation_manifest.py:81:                    rule="phase_checks_not_passed",
+source_proxy/agent_factory/foundation_manifest.py:84:                    detail="Supplied phase record does not show checks passed.",
+source_proxy/agent_factory/foundation_manifest.py:114:        checks = "passed" if record.checks_passed else "not passed"
+source_proxy/tests/test_cartographer_docs_runbook_updates.py:47:        self.assertTrue(status["receipt_backed"])
+source_proxy/tests/test_cartographer_docs_runbook_updates.py:64:        self.assertEqual(result.receipt_path, "docs/cartographer-live-receipts/docs-runbook-plan-11-1-1.md")
+source_proxy/tests/test_cartographer_docs_runbook_updates.py:88:    def test_scope_trust_token_status_and_receipt_rules_fail_closed(self) -> None:
+source_proxy/tests/test_cartographer_docs_runbook_updates.py:95:            ({"receipt_path": "source_proxy/receipt.md"}, "receipt_path_must_be_docs"),
+source_proxy/tests/test_cartographer_docs_runbook_updates.py:96:            ({"receipt_path": "docs/receipt.json"}, "receipt_path_must_be_markdown"),
+source_proxy/tests/test_cartographer_docs_runbook_updates.py:172:            receipt_path="docs/cartographer-live-receipts/docs-runbook-plan-11-1-1.md",
+source_proxy/tests/test_agent_factory_integrity.py:50:        blocked_by=("proxy_apply_verify_receipt_ready",),
+source_proxy/tests/test_cartographer_level_11_remaining_boundaries.py:66:            closeout_receipt_file="source_proxy/api/cartographer.py",
+source_proxy/tests/test_cartographer_level_11_remaining_boundaries.py:69:            allowed_files=("docs/receipts/closeout.md",),
+source_proxy/agent_factory/phase_ledger.py:47:    failed = tuple(record.phase for record in records if not record.checks_passed)
+source_proxy/agent_factory/phase_ledger.py:55:        blockers.append("phase_checks_not_passed")
+source_proxy/tests/test_coding_self_tests.py:192:                "summary": {"passed": 2, "failed": 0, "skipped": 0},
+source_proxy/tests/test_coding_self_tests.py:195:            "safety_verdict": {"applied_anything_false": True},
+source_proxy/tests/test_coding_self_tests.py:222:            "read_only_verdict": {"read_only": True, "mutated": False},
+source_proxy/tests/test_coding_self_tests.py:277:                "pytest_passed": True,
+source_proxy/agent_factory/dependency_gates.py:12:    "proxy_apply_verify_receipt_ready",
+source_proxy/agent_factory/dependency_gates.py:81:        if normalized in {"ready", "true", "pass", "passed"}:
+source_proxy/tests/test_cartographer_multi_worker_branch_workflow.py:122:            ({"coordination_receipt_path": "source_proxy/receipt.md"}, "coordination_receipt_path_must_be_docs"),
+source_proxy/tests/test_cartographer_multi_worker_branch_workflow.py:123:            ({"coordination_receipt_path": "docs/receipt.json"}, "coordination_receipt_path_must_be_markdown"),
+source_proxy/tests/test_cartographer_multi_worker_branch_workflow.py:204:            coordination_receipt_path="docs/cartographer-live-receipts/multi-worker-branch-plan-9-2-1.md",
+source_proxy/tests/test_coding_regression_pack.py:29:from source_proxy.decision.tool_action_safety import score_plan7_runtime_receipt
+source_proxy/tests/test_coding_regression_pack.py:69:    "pass_productive",
+source_proxy/tests/test_coding_regression_pack.py:234:                "summary": "TaskSpec check passed.",
+source_proxy/tests/test_coding_regression_pack.py:240:        self.assertTrue(preview["review_report"]["passed"])
+source_proxy/tests/test_coding_regression_pack.py:246:    def test_a_plus_receipt_final_label_contract_has_expected_values(self) -> None:
+source_proxy/tests/test_coding_regression_pack.py:248:            "pass_productive",
+source_proxy/tests/test_coding_regression_pack.py:281:                "status": "passed",
+source_proxy/tests/test_coding_regression_pack.py:284:                    "TaskSpec allowed-files check passed. "
+source_proxy/tests/test_coding_regression_pack.py:508:        literal: str = "Proxy backend layout smoke test passed.",
+source_proxy/tests/test_coding_regression_pack.py:547:        literal = "Proxy backend layout smoke test passed."
+source_proxy/tests/test_coding_regression_pack.py:602:        literal = "Proxy backend layout smoke test passed."
+source_proxy/tests/test_coding_regression_pack.py:1112:                        "reason": "Style the artifact.",
+source_proxy/tests/test_coding_regression_pack.py:1240:        self.assertIn("free-floating code", parsed["repair_prompt"])
+source_proxy/tests/test_coding_regression_pack.py:1272:        self.assertIn(DOC_TARGET, executed["receipt"]["after_status"]["files"])
+source_proxy/tests/test_coding_regression_pack.py:1300:        self.assertTrue(executed["receipt"]["whole_repo_file_count_not_used"])
+source_proxy/tests/test_coding_regression_pack.py:1301:        self.assertEqual(executed["receipt"]["workspace_mode"], "real_repo_supervised")
+source_proxy/tests/test_coding_regression_pack.py:1302:        self.assertEqual(executed["receipt"]["allowed_files"], [target])
+source_proxy/tests/test_coding_regression_pack.py:1303:        self.assertEqual(executed["receipt"]["attempted_action_paths"], [target])
+source_proxy/tests/test_coding_regression_pack.py:1304:        self.assertEqual(executed["receipt"]["changed_paths"], [target])
+source_proxy/tests/test_coding_regression_pack.py:1305:        self.assertEqual(executed["receipt"]["blocked_paths"], [])
+source_proxy/tests/test_coding_regression_pack.py:1306:        self.assertFalse(executed["receipt"]["target_exists_before"])
+source_proxy/tests/test_coding_regression_pack.py:1307:        self.assertTrue(executed["receipt"]["target_exists_after"])
+source_proxy/tests/test_coding_regression_pack.py:1341:        self.assertEqual(wrong_result["receipt"]["blocked_paths"], ["docs/evidence/wrong.md"])
+source_proxy/tests/test_coding_regression_pack.py:1535:    def test_bounded_agent_loop_records_raw_transcript_actions_diffs_and_receipt(self) -> None:
+source_proxy/tests/test_coding_regression_pack.py:1536:        receipt_path = self.root / "receipts" / "loop-receipt.json"
+source_proxy/tests/test_coding_regression_pack.py:1545:            source_message_id="loop-success",
+source_proxy/tests/test_coding_regression_pack.py:1563:        result = run_bounded_agent_loop(request, fake_model, receipt_path=receipt_path).to_dict()
+source_proxy/tests/test_coding_regression_pack.py:1568:        self.assertEqual(result["receipt"]["raw_model_transcripts"], [raw])
+source_proxy/tests/test_coding_regression_pack.py:1569:        self.assertEqual(result["receipt"]["parsed_actions"][0]["action_type"], "WriteFile")
+source_proxy/tests/test_coding_regression_pack.py:1570:        self.assertIn("+Plan 4 loop proof.", result["receipt"]["executions"][0]["result"]["diff_summary"])
+source_proxy/tests/test_coding_regression_pack.py:1571:        self.assertEqual(result["receipt"]["skipped_checks"][0]["reason"], "manual_policy")
+source_proxy/tests/test_coding_regression_pack.py:1572:        self.assertTrue(receipt_path.is_file())
+source_proxy/tests/test_coding_regression_pack.py:1573:        saved = json.loads(receipt_path.read_text(encoding="utf-8"))
+source_proxy/tests/test_coding_regression_pack.py:1592:        self.assertEqual(len(result["receipt"]["raw_model_transcripts"]), 2)
+source_proxy/tests/test_coding_regression_pack.py:1593:        self.assertEqual(result["receipt"]["diagnostics_packet"]["format_retries_used"], 1)
+source_proxy/tests/test_coding_regression_pack.py:1594:        self.assertEqual(result["receipt"]["executions"], [])
+source_proxy/tests/test_coding_regression_pack.py:1607:            max_verification_repairs=1,
+source_proxy/tests/test_coding_regression_pack.py:1627:        self.assertEqual(result["receipt"]["executions"], [])
+source_proxy/tests/test_coding_regression_pack.py:1628:        self.assertIn(result["receipt"]["parse_results"][0]["error_code"], {"target_not_allowed", "path_escape", "protected_path"})
+source_proxy/tests/test_coding_regression_pack.py:1631:    def test_bounded_agent_loop_verification_repair_cap_and_failed_state(self) -> None:
+source_proxy/tests/test_coding_regression_pack.py:1642:            max_verification_repairs=1,
+source_proxy/tests/test_coding_regression_pack.py:1666:        self.assertEqual(len(result["receipt"]["raw_model_transcripts"]), 2)
+source_proxy/tests/test_coding_regression_pack.py:1667:        self.assertEqual(result["receipt"]["diagnostics_packet"]["verification_repairs_used"], 1)
+source_proxy/tests/test_coding_regression_pack.py:1671:                for execution in result["receipt"]["executions"]
+source_proxy/tests/test_coding_regression_pack.py:1675:    def test_bounded_agent_loop_repairs_targetless_interactive_ui_once(self) -> None:
+source_proxy/tests/test_coding_regression_pack.py:1679:                "artifact_class": "static_ui_artifact",
+source_proxy/tests/test_coding_regression_pack.py:1684:                "artifact_class": "static_ui_artifact",
+source_proxy/tests/test_coding_regression_pack.py:1695:            max_verification_repairs=1,
+source_proxy/tests/test_coding_regression_pack.py:1718:        self.assertIn("bounded_repair_contract", calls[1])
+source_proxy/tests/test_coding_regression_pack.py:1719:        self.assertIn("Write at least one .html file", calls[1]["bounded_repair_contract"]["instructions"])
+source_proxy/tests/test_coding_regression_pack.py:1721:    def test_bounded_agent_loop_repairs_non_previewable_interactive_ui_once(self) -> None:
+source_proxy/tests/test_coding_regression_pack.py:1725:                "artifact_class": "static_ui_artifact",
+source_proxy/tests/test_coding_regression_pack.py:1730:                "artifact_class": "static_ui_artifact",
+source_proxy/tests/test_coding_regression_pack.py:1741:            max_verification_repairs=1,
+source_proxy/tests/test_coding_regression_pack.py:1760:        self.assertEqual(result["receipt"]["diagnostics_packet"]["verification_repairs_used"], 1)
+source_proxy/tests/test_coding_regression_pack.py:1764:                observation["type"] == "artifact_contract_error"
+source_proxy/tests/test_coding_regression_pack.py:1765:                for call in result["receipt"]["model_calls"]
+source_proxy/tests/test_coding_regression_pack.py:1781:        self.assertEqual(intake["task_shape"], "disposable_single_file_artifact")
+source_proxy/tests/test_coding_regression_pack.py:1782:        self.assertEqual(intake["task_shape_source"], "generic_artifact_resolver")
+source_proxy/tests/test_coding_regression_pack.py:1783:        self.assertEqual(intake["artifact_class"], "html_static_page")
+source_proxy/tests/test_coding_regression_pack.py:1787:        self.assertIn("generic_artifact_create_candidate", intake["reason_codes"])
+source_proxy/tests/test_coding_regression_pack.py:1801:        self.assertNotIn("generic_artifact_create_candidate", intake["reason_codes"])
+source_proxy/tests/test_coding_regression_pack.py:1803:    def test_task_spec_intake_classifies_non_homepage_markdown_and_json_artifacts(self) -> None:
+source_proxy/tests/test_coding_regression_pack.py:1809:        for prompt, artifact_class, extensions in cases:
+source_proxy/tests/test_coding_regression_pack.py:1810:            with self.subTest(artifact_class=artifact_class):
+source_proxy/tests/test_coding_regression_pack.py:1819:                self.assertEqual(intake["task_shape"], "disposable_single_file_artifact")
+source_proxy/tests/test_coding_regression_pack.py:1820:                self.assertEqual(intake["artifact_class"], artifact_class)
+source_proxy/tests/test_coding_regression_pack.py:1823:                self.assertEqual(intake["allowed_scope_source"], "artifact_class_extensions")
+source_proxy/tests/test_coding_regression_pack.py:1826:    def test_task_spec_intake_classifies_broad_static_ui_artifact_prompts(self) -> None:
+source_proxy/tests/test_coding_regression_pack.py:1845:                self.assertEqual(intake["task_shape_source"], "generic_artifact_resolver")
+source_proxy/tests/test_coding_regression_pack.py:1846:                self.assertEqual(intake["artifact_class"], "static_ui_artifact")
+source_proxy/tests/test_coding_regression_pack.py:1850:                self.assertEqual(intake["allowed_scope_source"], "artifact_class_extensions")
+source_proxy/tests/test_coding_regression_pack.py:1853:                self.assertIn("generic_static_ui_artifact_candidate", intake["reason_codes"])
+source_proxy/tests/test_coding_regression_pack.py:1855:    def test_task_spec_intake_classifies_interactive_artifact_intent_without_exact_file_hints(self) -> None:
+source_proxy/tests/test_coding_regression_pack.py:1875:                self.assertEqual(intake["task_shape_source"], "generic_artifact_resolver")
+source_proxy/tests/test_coding_regression_pack.py:1876:                self.assertEqual(intake["artifact_class"], "static_ui_artifact")
+source_proxy/tests/test_coding_regression_pack.py:1882:                self.assertIn("generic_static_ui_artifact_candidate", intake["reason_codes"])
+source_proxy/tests/test_coding_regression_pack.py:1893:        self.assertEqual(intake["task_shape"], "disposable_single_file_artifact")
+source_proxy/tests/test_coding_regression_pack.py:1894:        self.assertEqual(intake["artifact_class"], "markdown_document")
+source_proxy/tests/test_coding_regression_pack.py:1932:        receipt_path = self.root / "receipt.json"
+source_proxy/tests/test_coding_regression_pack.py:1952:            receipt_path=receipt_path,
+source_proxy/tests/test_coding_regression_pack.py:1963:        self.assertEqual(score["canonical_final_verdict"], "UNVERIFIED")
+source_proxy/tests/test_coding_regression_pack.py:1966:        self.assertEqual(score["behavior_verdict"], "UNVERIFIED")
+source_proxy/tests/test_coding_regression_pack.py:1968:        self.assertIn("behavior_required_but_unverified", score["final_verdict_reason_codes"])
+source_proxy/tests/test_coding_regression_pack.py:1977:        self.assertEqual(score["task_shape"], "disposable_single_file_artifact")
+source_proxy/tests/test_coding_regression_pack.py:1978:        self.assertEqual(score["artifact_class"], "html_static_page")
+source_proxy/tests/test_coding_regression_pack.py:1979:        self.assertEqual(score["artifact_score_kind"], "product_artifact_go")
+source_proxy/tests/test_coding_regression_pack.py:1980:        self.assertTrue(score["artifact_specific_ok"])
+source_proxy/tests/test_coding_regression_pack.py:1981:        self.assertEqual(score["allowed_scope_source"], "artifact_class_extensions")
+source_proxy/tests/test_coding_regression_pack.py:1993:        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+source_proxy/tests/test_coding_regression_pack.py:1994:        packet = receipt["model_calls"][0]["packet"]
+source_proxy/tests/test_coding_regression_pack.py:2005:    def test_human_messy_product_runtime_accepts_non_homepage_markdown_artifact(self) -> None:
+source_proxy/tests/test_coding_regression_pack.py:2007:        receipt_path = self.root / "markdown-receipt.json"
+source_proxy/tests/test_coding_regression_pack.py:2008:        content = "# Release Checklist\n\n- Verify receipts\n"
+source_proxy/tests/test_coding_regression_pack.py:2021:            receipt_path=receipt_path,
+source_proxy/tests/test_coding_regression_pack.py:2028:        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+source_proxy/tests/test_coding_regression_pack.py:2030:        self.assertEqual(receipt["final_state"], "completed")
+source_proxy/tests/test_coding_regression_pack.py:2031:        self.assertEqual(receipt["diagnostics_packet"]["route_type"], "product")
+source_proxy/tests/test_coding_regression_pack.py:2032:        self.assertEqual(receipt["diagnostics_packet"]["task_shape"], "disposable_single_file_artifact")
+source_proxy/tests/test_coding_regression_pack.py:2033:        self.assertEqual(receipt["diagnostics_packet"]["proxy_artifact_class_suggested"], "markdown_document")
+source_proxy/tests/test_coding_regression_pack.py:2034:        self.assertEqual(receipt["diagnostics_packet"]["model_authored_targets"], ["release-checklist.md"])
+source_proxy/tests/test_coding_regression_pack.py:2036:        self.assertEqual(score["artifact_score_kind"], "product_artifact_go")
+source_proxy/tests/test_coding_regression_pack.py:2037:        self.assertTrue(score["artifact_specific_ok"])
+source_proxy/tests/test_coding_regression_pack.py:2046:    def test_human_messy_product_runtime_accepts_static_ui_artifact_html(self) -> None:
+source_proxy/tests/test_coding_regression_pack.py:2048:        receipt_path = self.root / "static-ui-receipt.json"
+source_proxy/tests/test_coding_regression_pack.py:2058:                "reason": "Create the requested disposable static UI artifact.",
+source_proxy/tests/test_coding_regression_pack.py:2065:            receipt_path=receipt_path,
+source_proxy/tests/test_coding_regression_pack.py:2072:        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+source_proxy/tests/test_coding_regression_pack.py:2073:        packet = receipt["model_calls"][0]["packet"]
+source_proxy/tests/test_coding_regression_pack.py:2076:        self.assertEqual(score["artifact_class"], "static_ui_artifact")
+source_proxy/tests/test_coding_regression_pack.py:2077:        self.assertEqual(score["artifact_score_kind"], "product_artifact_go")
+source_proxy/tests/test_coding_regression_pack.py:2088:    def test_human_messy_product_runtime_accepts_json_artifact(self) -> None:
+source_proxy/tests/test_coding_regression_pack.py:2090:        receipt_path = self.root / "json-receipt.json"
+source_proxy/tests/test_coding_regression_pack.py:2104:            receipt_path=receipt_path,
+source_proxy/tests/test_coding_regression_pack.py:2111:        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+source_proxy/tests/test_coding_regression_pack.py:2113:        self.assertEqual(receipt["final_state"], "completed")
+source_proxy/tests/test_coding_regression_pack.py:2114:        self.assertEqual(receipt["diagnostics_packet"]["proxy_artifact_class_suggested"], "json_example")
+source_proxy/tests/test_coding_regression_pack.py:2116:        self.assertEqual(score["artifact_score_kind"], "product_artifact_go")
+source_proxy/tests/test_coding_regression_pack.py:2117:        self.assertTrue(score["artifact_specific_ok"])
+source_proxy/tests/test_coding_regression_pack.py:2127:    def test_human_messy_product_runtime_blocks_wrong_extension_artifact_target(self) -> None:
+source_proxy/tests/test_coding_regression_pack.py:2141:            receipt_path=self.root / "json-wrong-receipt.json",
+source_proxy/tests/test_coding_regression_pack.py:2150:        self.assertEqual(score["artifact_score_kind"], "expected_blocked")
+source_proxy/tests/test_coding_regression_pack.py:2167:                        "reason": "Attempt repo scaffold file outside static UI artifact scope.",
+source_proxy/tests/test_coding_regression_pack.py:2174:                    receipt_path=self.root / f"static-ui-block-{target.replace('.', '_').replace('-', '_')}-receipt.json",
+source_proxy/tests/test_coding_regression_pack.py:2183:                self.assertEqual(score["artifact_class"], "static_ui_artifact")
+source_proxy/tests/test_coding_regression_pack.py:2193:        receipt_path = self.root / "pure-receipt.json"
+source_proxy/tests/test_coding_regression_pack.py:2213:            receipt_path=receipt_path,
+source_proxy/tests/test_coding_regression_pack.py:2222:        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+source_proxy/tests/test_coding_regression_pack.py:2223:        model_prompt_packet = receipt["model_calls"][0]["packet"]
+source_proxy/tests/test_coding_regression_pack.py:2228:        self.assertEqual(score["artifact_score_kind"], "pure_benchmark_go")
+source_proxy/tests/test_coding_regression_pack.py:2242:    def test_human_messy_homepage_advisory_only_does_not_fake_success(self) -> None:
+source_proxy/tests/test_coding_regression_pack.py:2247:            receipt_path=self.root / "advisory-receipt.json",
+source_proxy/tests/test_coding_regression_pack.py:2266:        receipt = {
+source_proxy/tests/test_coding_regression_pack.py:2278:            receipt=receipt,
+source_proxy/tests/test_coding_regression_pack.py:2284:            receipt_path=self.root / "backend-receipt.json",
+source_proxy/tests/test_coding_regression_pack.py:2423:            max_verification_repairs=0,
+source_proxy/tests/test_coding_regression_pack.py:2427:    def test_plan7_golden_suite_handles_productive_disposable_workspace_tasks(self) -> None:
+source_proxy/tests/test_coding_regression_pack.py:2485:                receipt = result["receipt"]
+source_proxy/tests/test_coding_regression_pack.py:2486:                score = score_plan7_runtime_receipt(receipt, expected_outcome="productive").to_dict()
+source_proxy/tests/test_coding_regression_pack.py:2489:                self.assertEqual(score["final_label"], "golden_productive")
+source_proxy/tests/test_coding_regression_pack.py:2492:                self.assertTrue(score["receipt_complete"])
+source_proxy/tests/test_coding_regression_pack.py:2493:                self.assertEqual(set(receipt["diagnostics_packet"]["files_touched"]), set(allowed))
+source_proxy/tests/test_coding_regression_pack.py:2507:        noop_score = score_plan7_runtime_receipt(noop["receipt"], expected_outcome="noop").to_dict()
+source_proxy/tests/test_coding_regression_pack.py:2515:        self.assertEqual(noop["receipt"]["diagnostics_packet"]["files_touched"], [])
+source_proxy/tests/test_coding_regression_pack.py:2566:                receipt = result["receipt"]
+source_proxy/tests/test_coding_regression_pack.py:2567:                score = score_plan7_runtime_receipt(receipt, expected_outcome="blocked").to_dict()
+source_proxy/tests/test_coding_regression_pack.py:2570:                    for execution in receipt["executions"]
+source_proxy/tests/test_coding_regression_pack.py:2575:                    for parse in receipt["parse_results"]
+source_proxy/tests/test_coding_regression_pack.py:2585:                self.assertTrue(score["receipt_complete"])
+source_proxy/tests/test_coding_regression_pack.py:2599:    def test_plan7_safety_scoring_flags_fake_apply_and_incomplete_receipts(self) -> None:
+source_proxy/tests/test_coding_regression_pack.py:2611:        fake_score = score_plan7_runtime_receipt(fake["receipt"], expected_outcome="blocked").to_dict()
+source_proxy/tests/test_coding_regression_pack.py:2612:        incomplete_score = score_plan7_runtime_receipt(
+source_proxy/tests/test_coding_regression_pack.py:2621:            expected_outcome="productive",
+source_proxy/tests/test_coding_regression_pack.py:2629:        self.assertFalse(incomplete_score["receipt_complete"])
+source_proxy/tests/test_coding_regression_pack.py:2630:        self.assertIn("receipt_incomplete", incomplete_score["reason_codes"])
+source_proxy/tests/test_coding_regression_pack.py:3019:        self.assertEqual(payload["coder_diagnostics"]["json_repair_source"], "raw")
+source_proxy/tests/test_coding_regression_pack.py:3049:        self.assertEqual(payload["coder_diagnostics"]["structured_honesty_gate"]["status"], "passed")
+source_proxy/tests/test_coding_regression_pack.py:3053:        self.assertEqual(payload["coder_diagnostics"]["file_block_repair_source"], "xml_file_blocks")
+source_proxy/tests/test_coding_regression_pack.py:3079:    def test_dummy_product_site_create_mode_blocks_too_similar_repair(self) -> None:
+source_proxy/tests/test_coding_regression_pack.py:3091:        self.assertTrue(payload["coder_diagnostics"]["repair_attempted"])
+source_proxy/tests/test_coding_regression_pack.py:3092:        self.assertEqual(payload["coder_diagnostics"]["parse_error_message"], "repair_response_too_similar_to_rejected_response")
+source_proxy/tests/test_coding_regression_pack.py:3094:            payload["coder_diagnostics"]["repair_character_variance"],
+source_proxy/tests/test_coding_regression_pack.py:3095:            payload["coder_diagnostics"]["repair_similarity_guard_min_variance"],
+source_proxy/tests/test_coding_regression_pack.py:3123:    def test_dummy_product_site_create_mode_repairs_invalid_local_json_with_model_retry(self) -> None:
+source_proxy/tests/test_coding_regression_pack.py:3159:        self.assertTrue(payload["coder_diagnostics"]["repair_attempted"])
+source_proxy/tests/test_coding_regression_pack.py:3164:        self.assertTrue(payload["coder_diagnostics"]["parser_repair_used"])
+source_proxy/tests/test_coding_regression_pack.py:3223:        self.assertEqual(payload["diagnostics_summary"]["structured_honesty_gate"]["status"], "passed")
+source_proxy/tests/test_coding_regression_pack.py:3265:        self.assertEqual(payload["diagnostics_summary"]["file_block_repair_source"], "xml_file_blocks")

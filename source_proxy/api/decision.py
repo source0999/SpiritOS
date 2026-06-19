@@ -1231,16 +1231,99 @@ def _structured_verdict_fields(receipt: dict[str, Any]) -> dict[str, Any]:
         ),
     }
     degraded_lanes = _lane_degradation_for_receipt(receipt)
-    productive = bool(
-        final_verdict.startswith("GO:")
+    final_verdict_go = final_verdict.startswith("GO:")
+    productive_go = bool(
+        final_verdict_go
         and coder_path == "fip4_real"
         and verification_real["deterministic"]
         and verification_real["behavior"]
         and not protected_blocked
         and not degraded_lanes
     )
+    action_output = fip4_result.get("action") if isinstance(fip4_result, dict) else None
+    productive_evidence = {
+        "file_written": bool(changed_files),
+        "action_applied": bool(coder_path == "fip4_real" and changed_files and action_output),
+        "browser_behavior_verified": browser_passed,
+        "real_browser_used": bool(browser_truth.get("real_browser_used") is True),
+        "interactive_behavior_checked": bool(
+            isinstance(browser_truth.get("checks"), dict)
+            and browser_truth["checks"].get("interactive_behavior_checked") is True
+        ),
+        "functional_behavior_verified": functional_passed,
+        "deterministic_verified": verification_real["deterministic"],
+        "verification_real": verification_real["behavior"],
+        "protected_path_clear": not protected_blocked,
+        "degraded_lanes_clear": not bool(degraded_lanes),
+    }
+    productive_reasons = []
+    productive_blockers = []
+    if final_verdict_go:
+        productive_reasons.append("final_verdict_go")
+    else:
+        productive_blockers.append("final_verdict_not_go")
+    if coder_path == "fip4_real":
+        productive_reasons.append("coder_path_fip4_real")
+    else:
+        productive_blockers.append("coder_path_not_real")
+    if productive_evidence["file_written"]:
+        productive_reasons.append("file_output_present")
+    else:
+        productive_blockers.append("file_output_missing")
+    if productive_evidence["action_applied"]:
+        productive_reasons.append("accepted_action_output_present")
+    else:
+        productive_blockers.append("accepted_action_output_missing")
+    if verification_real["deterministic"]:
+        productive_reasons.append("deterministic_verifier_real")
+    else:
+        productive_blockers.append("deterministic_verifier_not_real")
+    if verification_real["behavior"]:
+        productive_reasons.append("real_behavior_verified")
+    else:
+        productive_blockers.append("behavior_not_verified")
+    if browser_passed:
+        productive_reasons.append("browser_behavior_verified")
+    if functional_passed:
+        productive_reasons.append("functional_behavior_verified")
+    if protected_blocked:
+        productive_blockers.append("protected_path_blocked")
+    if degraded_lanes:
+        productive_blockers.append("degraded_required_lane")
+    browser_lane_status = str(browser.get("status") or "").upper() if isinstance(browser, dict) else ""
+    browser_truth_status = str(browser_truth.get("status") or browser_lane_status or "").upper()
+    if browser_truth_status and not browser_passed:
+        if browser_truth_status == "PARTIAL_GO":
+            productive_blockers.append("browser_verifier_partial_go")
+        elif browser_truth_status in {"NO_GO", "BLOCKED", "SKIPPED", "UNSUPPORTED"}:
+            productive_blockers.append(f"browser_verifier_{browser_truth_status.lower()}")
+        else:
+            productive_blockers.append("browser_verifier_not_productive")
+    if bool(changed_files or action_output or final_verdict_go) and not verification_real["behavior"]:
+        productive_reasons.append("structural_output_present_behavior_missing")
+    if productive_go:
+        productive_status = "GO"
+    elif protected_blocked or browser_truth_status == "NO_GO" or (
+        final_verdict and not final_verdict_go and "BLOCKED" not in final_verdict.upper()
+    ):
+        productive_status = "NO_GO"
+    elif degraded_lanes or browser_truth_status == "BLOCKED" or "BLOCKED" in final_verdict.upper():
+        productive_status = "BLOCKED"
+    elif browser_truth_status == "UNSUPPORTED" and not functional_passed:
+        productive_status = "UNSUPPORTED"
+    elif browser_truth_status == "SKIPPED" and not functional_passed:
+        productive_status = "SKIPPED"
+    elif bool(changed_files or action_output or final_verdict_go or verification_real["deterministic"]):
+        productive_status = "PARTIAL_GO"
+    else:
+        productive_status = "NO_GO"
     return {
-        "productive": productive,
+        "productive": productive_go,
+        "productive_status": productive_status,
+        "productive_go": productive_go,
+        "productive_reasons": productive_reasons,
+        "productive_blockers": productive_blockers,
+        "productive_evidence": productive_evidence,
         "coder_path": coder_path,
         "verification_real": verification_real,
         "verification_real_reasons": verification_real_reasons,

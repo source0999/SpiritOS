@@ -8,6 +8,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Any
 from unittest.mock import AsyncMock, patch
 
 from fastapi import FastAPI
@@ -1479,6 +1480,10 @@ class PromptPacketContextMetadataTests(unittest.TestCase):
             "functional_verifier_skipped_unsupported_extension",
         )
         self.assertEqual(receipt["degraded_lanes"], [])
+        self.assertFalse(receipt["productive_go"])
+        self.assertEqual(receipt["productive_status"], "SKIPPED")
+        self.assertIn("behavior_not_verified", receipt["productive_blockers"])
+        self.assertFalse(receipt["productive_evidence"]["verification_real"])
 
     def test_html_receipt_is_unproductive_without_real_browser_verification(self) -> None:
         target = "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/set1/page.html"
@@ -1543,6 +1548,12 @@ class PromptPacketContextMetadataTests(unittest.TestCase):
             receipt["verification_real_reasons"]["functional"],
             "functional_verifier_skipped_no_supported_contract",
         )
+        self.assertFalse(receipt["productive_go"])
+        self.assertEqual(receipt["productive_status"], "NO_GO")
+        self.assertIn("final_verdict_not_go", receipt["productive_blockers"])
+        self.assertIn("behavior_not_verified", receipt["productive_blockers"])
+        self.assertTrue(receipt["productive_evidence"]["file_written"])
+        self.assertFalse(receipt["productive_evidence"]["verification_real"])
 
     def test_functional_verification_is_false_when_lane_missing(self) -> None:
         target = "source_proxy/tests/fip5-target-proof.txt"
@@ -1576,6 +1587,10 @@ class PromptPacketContextMetadataTests(unittest.TestCase):
             "functional_verifier_not_implemented",
         )
         self.assertFalse(receipt["productive"])
+        self.assertFalse(receipt["productive_go"])
+        self.assertEqual(receipt["productive_status"], "NO_GO")
+        self.assertIn("final_verdict_not_go", receipt["productive_blockers"])
+        self.assertIn("behavior_not_verified", receipt["productive_blockers"])
 
     def test_functional_verification_is_false_when_verifier_skips(self) -> None:
         target = "source_proxy/tests/fip5-target-proof.txt"
@@ -1651,6 +1666,11 @@ class PromptPacketContextMetadataTests(unittest.TestCase):
         self.assertEqual(receipt["functional_verifier_status"]["status"], "used")
         self.assertTrue(receipt["functional_verifier_status"]["passed"])
         self.assertTrue(receipt["productive"])
+        self.assertTrue(receipt["productive_go"])
+        self.assertEqual(receipt["productive_status"], "GO")
+        self.assertIn("functional_behavior_verified", receipt["productive_reasons"])
+        self.assertTrue(receipt["productive_evidence"]["functional_behavior_verified"])
+        self.assertTrue(receipt["productive_evidence"]["verification_real"])
 
     def test_browser_verification_true_only_when_lane_used_and_passed(self) -> None:
         target = "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/unit/page.html"
@@ -1729,6 +1749,13 @@ class PromptPacketContextMetadataTests(unittest.TestCase):
         self.assertFalse(receipt["verification_real"]["functional"])
         self.assertTrue(receipt["verification_real"]["behavior"])
         self.assertTrue(receipt["productive"])
+        self.assertTrue(receipt["productive_go"])
+        self.assertEqual(receipt["productive_status"], "GO")
+        self.assertIn("browser_behavior_verified", receipt["productive_reasons"])
+        self.assertTrue(receipt["productive_evidence"]["browser_behavior_verified"])
+        self.assertTrue(receipt["productive_evidence"]["real_browser_used"])
+        self.assertTrue(receipt["productive_evidence"]["interactive_behavior_checked"])
+        self.assertTrue(receipt["productive_evidence"]["verification_real"])
         self.assertEqual(receipt["browser_verifier_status"]["status"], "used")
         self.assertEqual(receipt["browser_verifier_target_path"], target)
         self.assertEqual(receipt["browser_verifier"]["status"], "GO")
@@ -1782,6 +1809,10 @@ class PromptPacketContextMetadataTests(unittest.TestCase):
         self.assertFalse(receipt["verification_real"]["browser"])
         self.assertFalse(receipt["verification_real"]["behavior"])
         self.assertFalse(receipt["productive"])
+        self.assertFalse(receipt["productive_go"])
+        self.assertEqual(receipt["productive_status"], "PARTIAL_GO")
+        self.assertIn("browser_verifier_not_productive", receipt["productive_blockers"])
+        self.assertFalse(receipt["productive_evidence"]["real_browser_used"])
 
     def test_static_html_without_browser_pass_is_not_productive(self) -> None:
         target = "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/unit/page.html"
@@ -1830,6 +1861,98 @@ class PromptPacketContextMetadataTests(unittest.TestCase):
         self.assertFalse(receipt["verification_real"]["browser"])
         self.assertFalse(receipt["verification_real"]["behavior"])
         self.assertFalse(receipt["productive"])
+        self.assertFalse(receipt["productive_go"])
+        self.assertEqual(receipt["productive_status"], "SKIPPED")
+        self.assertIn("browser_verifier_skipped", receipt["productive_blockers"])
+
+    def test_productive_status_consumes_browser_truth_taxonomy(self) -> None:
+        target = "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/unit/page.html"
+        fip4_result = {
+            "status": "used",
+            "reason": "fip4_qwen_action_output_parsed_and_diff_generated",
+            "final_coder_packet_hash": "packet-hash",
+            "coder_received_packet_hash": "packet-hash",
+            "parser": {"parsed_output_mode": "json_replace_file", "parse_error": ""},
+            "allowed_files": [target],
+            "forbidden_files": [".env"],
+            "changed_files": [target],
+            "action": {"target": target, "content": "<main><button>Run</button></main>"},
+            "proposed_diff": "diff",
+            "qwen": {"qwen_output_hash": "qwen-output"},
+            "final_coder_packet": {"target_file": target},
+        }
+
+        def receipt_for(browser_truth_status: str, lane_status: str = "used") -> dict[str, Any]:
+            fip5 = {
+                "final_verdict": "GO: fip5_required_verifier_and_repair_complete",
+                "deterministic": {"status": "used", "reason": "passed", "passed": True},
+                "browser": {
+                    "status": lane_status,
+                    "reason": f"browser_verifier_{browser_truth_status.lower()}",
+                    "passed": False,
+                    "browser_verifier": {
+                        "status": browser_truth_status,
+                        "attempted": browser_truth_status != "UNSUPPORTED",
+                        "real_browser_used": browser_truth_status == "PARTIAL_GO",
+                        "tool": "playwright",
+                        "target_url": f"file://{target}",
+                        "artifact_kind": "html",
+                        "checks": {
+                            "page_loaded": browser_truth_status == "PARTIAL_GO",
+                            "dom_ready": browser_truth_status == "PARTIAL_GO",
+                            "required_text_present": browser_truth_status == "PARTIAL_GO",
+                            "interactive_behavior_checked": False,
+                            "console_errors": [],
+                            "network_errors": [],
+                            "screenshot_captured": browser_truth_status == "PARTIAL_GO",
+                        },
+                        "evidence": {"summary": "not behavior proof"},
+                        "degraded_reason": browser_truth_status.lower(),
+                        "notes": [],
+                    },
+                },
+                "functional": {
+                    "status": "skipped",
+                    "reason": "functional_verifier_skipped_browser_or_ui_target",
+                    "passed": False,
+                },
+                "hermes": {"status": "used", "reason": "schema_valid", "verdict": "PASS"},
+                "repair_loop_status": {"status": "skipped", "reason": "not_needed"},
+            }
+            payload = _attach_fip0_truth_receipt(
+                {"fip5": browser_truth_status},
+                request=PromptPacketRequest(task="Browser taxonomy proof"),
+                route_payload={"recommended_route": "local_route"},
+                intake_payload={"allowed_files": [target], "forbidden_files": [".env"]},
+                decision=SimpleNamespace(research_sources=[]),
+                explicit_target=target,
+                route_reasons=[],
+                fip4_coder_result=fip4_result,
+                fip5_verifier_result=fip5,
+            )
+            return payload["fip0_truth_receipt"]
+
+        partial = receipt_for("PARTIAL_GO")
+        self.assertFalse(partial["productive_go"])
+        self.assertEqual(partial["productive_status"], "PARTIAL_GO")
+        self.assertIn("browser_verifier_partial_go", partial["productive_blockers"])
+        self.assertTrue(partial["productive_evidence"]["real_browser_used"])
+        self.assertFalse(partial["productive_evidence"]["interactive_behavior_checked"])
+
+        blocked = receipt_for("BLOCKED", lane_status="blocked")
+        self.assertFalse(blocked["productive_go"])
+        self.assertEqual(blocked["productive_status"], "BLOCKED")
+        self.assertIn("browser_verifier_blocked", blocked["productive_blockers"])
+
+        unsupported = receipt_for("UNSUPPORTED", lane_status="skipped")
+        self.assertFalse(unsupported["productive_go"])
+        self.assertEqual(unsupported["productive_status"], "UNSUPPORTED")
+        self.assertIn("browser_verifier_unsupported", unsupported["productive_blockers"])
+
+        no_go = receipt_for("NO_GO", lane_status="failed")
+        self.assertFalse(no_go["productive_go"])
+        self.assertEqual(no_go["productive_status"], "NO_GO")
+        self.assertIn("browser_verifier_no_go", no_go["productive_blockers"])
 
     def test_synthetic_browser_pass_is_rejected_by_default(self) -> None:
         target = "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/unit/page.html"

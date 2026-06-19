@@ -1,0 +1,327 @@
+===== docs/evidence/source-proxy-return-checkpoint-20260618/final-verdict.md =====
+# Final Verdict
+
+| Category | Verdict |
+| --- | --- |
+| Repo readiness for proxy | `PARTIAL-GO` |
+| Watcher/runtime observability | `GO` |
+| Source Proxy liveness | `GO` |
+| Next/dev liveness | `GO` |
+| Ollama/model readiness | `PARTIAL-GO` |
+| Source-of-truth reconciliation | `PARTIAL-GO` |
+| Safe to implement next proxy patch | `PARTIAL-GO` |
+
+## Basis
+
+- Source Proxy is reachable on `:8787`; `/docs`, `/openapi.json`, `/healthcheck`, `/v1/self/status`, `/v1/models`, and Cartographer status returned HTTP `200`.
+- Next HTTPS is reachable on `:3000`; `/spiritflix/admin` returned HTTP `200`.
+- Ollama is reachable on `:11434`; `/api/tags` returned HTTP `200`.
+- `/health` and `/v1/health` returned HTTP `404` and are not valid health endpoints.
+- Watcher timer is active, the last health snapshot succeeded, boot postmortem succeeded, and fresh logs are being written.
+- No fresh OOM kill was found in the last-four-hours journal grep.
+- The known failed mount, Docker missing-curl healthcheck noise, CasaOS history, and spirit-whisper issue remain out of scope and unfixed.
+- Staged files: `0`.
+- Dirty `source_proxy/` files: `0`.
+- Dirty tree remains broad, and package/config files are dirty; live Cartographer status reports that as a blocker for authority gates.
+
+## Source-of-truth read
+
+The latest truth is mixed but usable for choosing the next patch:
+
+- Runtime is up now.
+- Watchers are GO now.
+- Cleanup reduced context/repomix bloat and classified dirty state.
+- Claude 3x10 says the integrated path is real and honest but `productive_go` is structural only.
+- Claude audit says browser verification was not real for UI rows; Level 5R2 later claims browser evidence passed, so browser truth needs reconciliation.
+- Model inventory supports local Qwen/Hermes, but classifier is missing and no model was loaded at capture time.
+
+## Next patch
+
+Recommended next proxy patch: `Runtime health/status/liveness truth`.
+
+Exact approval request: **A. approve runtime health/status patch**.
+
+Do not start broad gauntlets, 3x10, model intelligence work, browser verifier work, repair-loop work, cleanup, mount repair, service restarts, or git operations without separate approval.
+===== docs/evidence/source-proxy-return-checkpoint-20260618/operator-summary.md =====
+# Operator Summary
+
+Source Proxy return checkpoint is complete.
+
+Evidence folder:
+
+`docs/evidence/source-proxy-return-checkpoint-20260618/`
+
+Runtime status:
+
+- Source Proxy: `GO`, HTTPS `:8787` up.
+- Next: `GO`, HTTPS `:3000/spiritflix/admin` up.
+- Ollama: `GO` for tags/status, no loaded models.
+- Watchers: `GO`, timer active and latest snapshot successful.
+- Fresh OOM/crash signs: no fresh OOM kill found; Docker/CasaOS/failed-mount noise remains.
+
+Repo contamination:
+
+- Staged files: `0`.
+- Dirty `source_proxy/` files: `0`.
+- Tree is still dirty outside Source Proxy, including package/config/runtime helper paths, so implementation authority is `PARTIAL-GO`, not a clean GO.
+
+Most important truth-table findings:
+
+- `productive_go` is still structural, not proof that apps work.
+- Browser verifier truth is contradictory across old and newer evidence and should not be overclaimed.
+- Cartographer is read-only/preview, not write authority.
+- Qwen/Hermes local routes are available; classifier lane is missing `phi4-mini`.
+- Runtime liveness/status truth is the cleanest first patch.
+
+Recommended next proxy patch:
+
+`Runtime health/status/liveness truth`.
+
+Exact approval request:
+
+**A. approve runtime health/status patch**.
+===== docs/evidence/source-proxy-return-checkpoint-20260618/50-source-proxy-truth-table.md =====
+# Source Proxy Truth Table
+
+Generated from `raw/50-evidence-index.txt`, `raw/50-source-proxy-evidence-extracts.txt`, and current liveness probes.
+
+| Area | Current status | Evidence | Confidence | Notes |
+| --- | --- | --- | --- | --- |
+| FIP-0 baseline/runtime | `PARTIAL-GO` | FIP-0 closeout existed; runtime currently up on `:8787`; post-Level-5 closeout names source-proxy-lan as runtime. | Medium | Current process is alive, but no fresh FIP run was allowed. |
+| FIP-1 context packet | `PARTIAL-GO` | Claude 3x10 says real FIP-1..5 path was enabled. | Medium | Old GO, no fresh packet generation here. |
+| FIP-2 research lanes | `PARTIAL-GO` | Claude audit says Scout/SearXNG honestly skipped when no current-info prompts; Level 5R2 says SearXNG was honestly used/blocked depending on results. | Medium | No fresh search calls. |
+| FIP-3 Gemma/Hermes lanes | `PARTIAL-GO` | Claude model-lane audit: role separation correct; Gemma ~6 timeouts and Hermes critic one failure were non-gating. | High | Lane degradation should not vanish behind GO. |
+| FIP-4 Qwen coding lane | `PARTIAL-GO` | Qwen used 30/30 in Claude battery; `/v1/models` coder alias is enabled now. | High | Coder quality still weak; no fresh coding call. |
+| FIP-5 model inventory | `PARTIAL-GO` | Ollama has qwen/gemma/hermes models; `/v1/models` local/coder enabled, classifier missing. | High | No loaded models at capture time. |
+| FIP-6 trace/receipt UI | `PARTIAL-GO` | Claude battery: 30/30 durable receipts/traces and trace match. Receipt trace audit flagged raw output excerpts. | High | Trace hygiene remains a concern. |
+| FIP-7 integrated gauntlet status | `PARTIAL-GO` | Post-Level-5 stabilization says FIP-7R GO and Level 5R2 GO. | Medium | No broad gauntlet run allowed. |
+| Claude 3x10 audit findings | `C / PARTIAL-GO` | 22 productive_go, 8 verifier_blocked_browser, 0 hard-fails; productive_go is structural only. | High | Most important caveat: not proof apps work. |
+| GLM/ZCode audit findings | `PARTIAL-GO` | Exact GLM closeout exists; extraction was limited to available summaries. | Medium | Treat as newer audit evidence but not a runtime GO by itself. |
+| Browser verifier | `PARTIAL-GO` | Claude audit says no real browser verifier and UI rows blocked; Level 5R2 says browser evidence passed in its matrix. | Medium | Contradiction needs reconciliation before browser-heavy claims. |
+| Functional verifier | `NO-GO/PARTIAL` | Claude audit says deterministic verifier is structural only and does not prove behavior. | High | This is the main truth gap behind productive_go. |
+| Repair loop | `UNKNOWN/PARTIAL` | Claude battery had 0 repair attempts; Level 5R2 says bounded repair loop visible, no recurrence. | Medium | Not proven organically under honest prompts. |
+| productive_go definition | `NO-GO for behavior` | Claude audit: productive_go means structurally valid file, not working app. | High | Must be hardened before intelligence claims. |
+| Trace hygiene/redaction | `PARTIAL-GO` | Claude audit flags raw Qwen output excerpt in traces. | High | Needs regression guard. |
+| web/search/SearXNG/TinyFish/xersearch | `PARTIAL` | SearXNG can be honest used/blocked; TinyFish deferred; xersearch missing alias. | Medium | Do not claim full research stack ready. |
+| Obsidian/context status | `PARTIAL` | `/v1/self/status` says configured not scanned; prior evidence says advisory/read-only. | High | Read-only advisory, not acceptance authority. |
+| Cartographer routing | `PREVIEW` | `/v1/cartographer/status`: observing, write actions disabled, approval token missing, dirty package/config blocker. | High | Not a route owner for writes. |
+| Mac advisory/design/source readiness | `UNKNOWN/PARTIAL` | Claude audit says Mac worker skipped stub; design context read-only. | Medium | Cosmetic/advisory only. |
+| Source Proxy runtime process supervision | `PARTIAL-GO` | tmux session and listener exist; watchers active; no service manager for proxy itself proven. | High | Runtime health/status patch should come before more model work. |
+
+## Reconciliation
+
+The most current live runtime is up, but the authoritative source-of-truth is not a clean GO for implementation authority. Cleanup says proxy return readiness was GO; live Cartographer status now says the repo truth packet is blocked because package/config files are dirty. Both can be true: return-to-analysis is fine, but mutation authority should be explicitly approved and scoped.
+===== docs/evidence/source-proxy-return-checkpoint-20260618/70-next-patch-ranking.md =====
+# Next Patch Ranking
+
+No patch was implemented.
+
+## Ranking
+
+| Rank | Candidate | Problem solved | Evidence needed | Risk | Likely files | Tests required | Before model intelligence work? |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | Runtime health/status/liveness truth | Replaces invalid `/health` expectations and makes live readiness explicit. | `/health` and `/v1/health` are 404; valid proof is scattered across `/docs`, `/openapi.json`, `/healthcheck`, `/v1/self/status`, `/v1/models`, watchers. | Low/medium | `source_proxy/main.py`, status route modules, docs/runbook, tests. | API route tests, status JSON schema tests, no-mutation status smoke. | Yes. Runtime truth should precede model claims. |
+| 2 | Process supervision/runbook integration | Makes proxy/Next/Ollama process ownership and restart boundaries explicit. | Runtime is in tmux, not proven as supervised service; prior OOM killed uvicorn before reboot. | Medium | runbook docs, watcher scripts, maybe non-mutating status integration. | Read-only watcher tests, docs validation, liveness smoke. | Yes, after health/status truth. |
+| 3 | Browser verifier hardening | Reconciles Claude "no real browser" with Level 5R2 browser-pass claims. | Claude audit blocked 8 UI rows; Level 5R2 later claims browser evidence passed. | Medium/high | verifier lane modules, browser verifier code/tests, evidence docs. | Browser verifier unit tests plus one approved browser smoke. | Yes, before UI/productive claims. |
+| 4 | Repair loop actually firing | Proves repair works under organic failures, not just visible bounded metadata. | Claude battery had 0 attempts; Level 5R2 says bounded loop visible. | Medium | decision/verifier/repair modules, tests. | Targeted repair-loop tests, no broad gauntlet unless approved. | After runtime truth and verifier reconciliation. |
+| 5 | Qwen coder timeout/empty-output handling | Improves local coder failure classification and avoids generic no-diff masking. | Prior no-diff diagnostics identify parser/output classification loss; Qwen quality remains weak. | Medium | `source_proxy/tasks/long_running.py`, `source_proxy/api/decision.py`, coding UI tests. | Backend parser tests, workflow regression pack, UI result rendering tests. | After status truth unless coding lane is the immediate approved focus. |
+
+## Other candidates
+
+- `productive_go` definition hardening: important, but depends on verifier/functional evidence.
+- Gemma/Hermes timeout/degraded lane handling: important after runtime/model contention is characterized.
+- Search/web/Obsidian/research proof: should wait behind runtime health and verifier truth.
+- Trace hygiene regression guard: high value and low risk; could be paired with status work if scope stays tight.
+- Integrated gauntlet harness: not next; broad/noisy and explicitly not approved.
+
+## Recommendation
+
+Recommended next proxy patch: `Runtime health/status/liveness truth`.
+
+Reason: current work can return to Source Proxy analysis, but implementation should start by making the live source of truth explicit and non-ambiguous. That patch is smaller and safer than jumping back into browser/model intelligence while the repo is dirty and runtime authority is split across old evidence, live endpoints, tmux, and watcher logs.
+===== docs/evidence/source-proxy-browser-verifier-hardening-20260618/final-verdict.md =====
+# Final Verdict
+
+| Category | Verdict |
+| --- | --- |
+| Patch implementation | GO |
+| Browser verifier truthfulness | GO |
+| Tests | PARTIAL-GO |
+| No-mutation smoke | GO |
+| Safe for productive_go hardening next | GO |
+
+## Summary
+
+The patch hardens the existing Source Proxy FIP5 browser verifier instead of adding a parallel verifier.
+
+New browser verifier truth fields are emitted under `browser_verifier` with:
+
+- `status`
+- `attempted`
+- `real_browser_used`
+- `tool`
+- `target_url`
+- `artifact_kind`
+- `checks.page_loaded`
+- `checks.dom_ready`
+- `checks.required_text_present`
+- `checks.interactive_behavior_checked`
+- bounded `console_errors` and `network_errors`
+- `screenshot_captured`
+- evidence summary and optional paths
+- `degraded_reason`
+- `notes`
+
+`verification_real.browser` now requires the structured truth object to prove real browser use and interactive behavior. Legacy `status=used` plus `passed=true` is not enough.
+
+Static DOM/text-only browser loads now become `PARTIAL_GO`, not behavior proof. Unsupported artifacts become `UNSUPPORTED`. Missing Playwright and timeout cases become `BLOCKED`. Synthetic browser pass remains rejected by default.
+
+Focused browser/verifier tests passed. The requested broader `-k` selection is PARTIAL-GO because of the known unrelated external gate mismatch in a long-running apply-path test.
+
+No services were restarted. No processes were killed. No Docker/media/Jellyfin mutation occurred. No benchmark batteries, model calls, Source Proxy coding tasks, or push occurred.
+===== docs/evidence/source-proxy-browser-verifier-hardening-20260618/operator-summary.md =====
+# Operator Summary
+
+Browser verifier truth hardening is implemented.
+
+What changed:
+
+- Real browser proof now has a nested structured `browser_verifier` truth object.
+- The Playwright harness captures DOM readiness, visible text, console/page/network errors, and a lightweight interactive state-change probe.
+- DOM/text-only proof is `PARTIAL_GO`, not behavior proof.
+- Unsupported artifacts are `UNSUPPORTED`, not successful behavior proof.
+- Missing browser/tooling and timeout cases are `BLOCKED`, not `GO`.
+- Synthetic browser evidence is rejected unless explicitly in trial harness mode, and still does not count as real browser truth for receipts.
+- Receipt `verification_real.browser` now consumes structured browser truth instead of trusting legacy `status/passed` alone.
+
+Tests:
+
+- Focused changed/neighbor tests: GO, 33 passed.
+- Requested broader selection: PARTIAL-GO, one known unrelated external gate mismatch remains.
+
+No-mutation result: GO. No live task, model call, benchmark battery, process kill, service restart, Docker mutation, media mutation, Jellyfin mutation, or push.
+
+Recommended next proxy patch: `productive_go` hardening.
+===== docs/evidence/source-proxy-browser-verifier-hardening-20260618/20-design.md =====
+# Design
+
+## Existing Entry Point
+
+The existing browser verifier entry point is `_fip5_browser_verifier` in `source_proxy/api/decision.py`. The receipt truth gate is `_structured_verdict_fields`, also in `source_proxy/api/decision.py`.
+
+## Updated Truth Schema
+
+Each browser verifier result will include a nested `browser_verifier` object:
+
+```json
+{
+  "status": "GO|PARTIAL_GO|NO_GO|BLOCKED|UNKNOWN|SKIPPED|UNSUPPORTED",
+  "attempted": false,
+  "real_browser_used": false,
+  "tool": "playwright|chromium|unknown",
+  "target_url": "",
+  "artifact_kind": "html|react|next|unknown",
+  "checks": {
+    "page_loaded": false,
+    "dom_ready": false,
+    "required_text_present": false,
+    "interactive_behavior_checked": false,
+    "console_errors": [],
+    "network_errors": [],
+    "screenshot_captured": false
+  },
+  "evidence": {
+    "summary": "",
+    "screenshot_path": null,
+    "trace_path": null
+  },
+  "degraded_reason": null,
+  "notes": []
+}
+```
+
+Legacy fields remain for compatibility, but receipt `verification_real.browser` should require this structured object to say a real browser was used, a page loaded, DOM was ready, and interactive behavior was checked.
+
+## Real Browser Proof
+
+Real browser proof requires:
+
+- Playwright is available.
+- Chromium is launched by the harness.
+- The generated artifact is loaded through `page.goto`.
+- `document.readyState` and visible DOM text are observed from the page.
+- No page errors are captured.
+- The verifier explicitly marks `interactive_behavior_checked=true`.
+
+For this patch, the existing lightweight HTML harness remains the implementation. It does not run benchmark batteries or app coding tasks.
+
+## Unsupported Cases
+
+Unsupported/non-browser targets return `UNSUPPORTED` in `browser_verifier.status`, with `attempted=false`, `real_browser_used=false`, and a clear note. Legacy status remains `skipped` for compatibility.
+
+## Degraded Or Missing Browser
+
+Missing Playwright or runtime browser exceptions return `BLOCKED` or `NO_GO`, never `GO`. The structured object includes `degraded_reason`.
+
+## Console And Page Errors
+
+Console/page errors are summarized as bounded arrays from the harness. Full logs, raw HTML, env vars, process args with tokens, and secrets are not emitted.
+
+## Fake Or Synthetic Evidence Rejection
+
+Synthetic `_fip5_browser_probe` success remains rejected by default. Its result will include a structured browser verifier object with `status=NO_GO`, `real_browser_used=false`, and `degraded_reason=synthetic_browser_evidence_rejected`.
+
+## Later productive_go Feed
+
+`_structured_verdict_fields` will prefer the structured `browser_verifier` object when deciding `verification_real.browser`. That makes later `productive_go` hardening consume explicit truth fields instead of legacy `status/passed`.
+
+## Scope Avoidance
+
+This patch does not run model calls, 3x10, benchmark gauntlets, Source Proxy coding tasks, apply/execute actions, service restarts, process kills, Docker mutations, or media mutations.
+
+## Test Plan
+
+Focused tests will cover:
+
+- Real browser pass includes `attempted=true`, `real_browser_used=true`, and behavior truth fields.
+- Missing browser/tool returns `BLOCKED`, not `GO`.
+- Unsupported artifact returns `UNSUPPORTED`, not `GO`.
+- DOM-only/text-only proof does not equal behavior proof.
+- Screenshot-only proof does not equal behavior proof.
+- Console/page errors are summarized without full log dumps.
+- Timeout/runtime failure returns non-GO without throwing.
+- Synthetic/fallback evidence is rejected.
+- Receipt includes browser verifier truth fields.
+- Productive remains false without real browser behavior proof.
+- Secret-shaped strings are not exposed.
+===== docs/evidence/source-proxy-runtime-health-status-live-proof-20260618/final-verdict.md =====
+# Final Verdict
+
+| Category | Verdict |
+| --- | --- |
+| Source Proxy reload | `GO` |
+| Live route proof | `GO` |
+| Runtime status truth | `GO` |
+| Safe for next proxy patch | `PARTIAL-GO` |
+
+## Result
+
+Source Proxy was reloaded through the dedicated `source-proxy-lan` watchdog path. The exact uvicorn listener on `:8787` changed from PID `1404461` to PID `1440463`.
+
+The required routes are live:
+
+- `/health`: HTTP 200
+- `/v1/health`: HTTP 200
+- `/v1/runtime/status`: HTTP 200
+
+OpenAPI lists `/health`, `/v1/health`, and `/v1/runtime/status`.
+
+## Runtime Interpretation
+
+The route proof is GO. The runtime payload is also truthful: it reports top-level `NO_GO` because dirty authority/recent crash-signal checks are not green. That does not invalidate the live route proof; it means the next proxy patch should proceed with this caveat visible.
+
+## Safety
+
+No code was patched. No git stage, commit, or push was performed. No model calls, benchmark batteries, Source Proxy coding tasks, media mutation, Jellyfin mutation/restart, Docker restart, Next restart, Ollama restart, SearXNG restart, CasaOS restart, or spirit-whisper restart was performed.
+
+Recommended next proxy patch: browser verifier hardening.

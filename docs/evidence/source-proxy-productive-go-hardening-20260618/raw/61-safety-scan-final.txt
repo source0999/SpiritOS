@@ -1,0 +1,312 @@
+=== corrected rg safety scan final ===
+source_proxy/tests/test_prompt_packet_context_metadata.py:67:            "tasks.sqlite3",
+source_proxy/tests/test_prompt_packet_context_metadata.py:151:    def test_prompt_packet_marks_path_listing_only_and_omits_secret_paths(self) -> None:
+source_proxy/tests/test_prompt_packet_context_metadata.py:178:                context_tokens=12000,
+source_proxy/tests/test_prompt_packet_context_metadata.py:186:        self.assertGreater(metadata["estimated_context_tokens"], 0)
+source_proxy/tests/test_prompt_packet_context_metadata.py:376:    def test_fip0_receipt_private_fields_require_local_dev_token(self) -> None:
+source_proxy/tests/test_prompt_packet_context_metadata.py:397:                headers={"x-source-proxy-dev-token": "local-proof"},
+source_proxy/tests/test_prompt_packet_context_metadata.py:2154:                    "consoleErrors": ["password=super-secret-token token=abc123"],
+source_proxy/tests/test_prompt_packet_context_metadata.py:2170:        self.assertEqual(errors, ["password=[REDACTED] token=[REDACTED]"])
+source_proxy/tests/test_prompt_packet_context_metadata.py:2171:        self.assertNotIn("super-secret-token", json.dumps(browser))
+source_proxy/api/decision.py:192:    context_tokens: int | None = Field(default=None, ge=0)
+source_proxy/api/decision.py:220:    max_completion_tokens: int = Field(default=1024, ge=0)
+source_proxy/api/decision.py:634:def _local_receipt_debug_token_configured() -> str:
+source_proxy/api/decision.py:643:    dev_token_header: str | None = None,
+source_proxy/api/decision.py:644:    dev_token_query: str | None = None,
+source_proxy/api/decision.py:646:    configured = _local_receipt_debug_token_configured()
+source_proxy/api/decision.py:649:    supplied = (dev_token_header or dev_token_query or "").strip()
+source_proxy/api/decision.py:1669:        r"(?i)\b(token|secret|password|api[_-]?key)\b\s*[:=]\s*['\"]?[^'\"\s]+",
+source_proxy/api/decision.py:5181:    raw_aliases = os.getenv("SOURCE_PROXY_TRIAL_PROOF_MODEL_ALIASES", "").strip()
+source_proxy/api/decision.py:5224:        "keep_alive": os.getenv("SOURCE_PROXY_TRIAL_MODEL_KEEP_ALIVE", "10m"),
+source_proxy/api/decision.py:5226:            "num_predict": int(os.getenv("SOURCE_PROXY_TRIAL_MODEL_NUM_PREDICT", "1")),
+source_proxy/api/decision.py:5228:            "num_ctx": int(os.getenv("SOURCE_PROXY_TRIAL_MODEL_NUM_CTX", "128")),
+source_proxy/api/decision.py:5258:    budget_seconds = float(os.getenv("SOURCE_PROXY_TRIAL_MODEL_TIMEOUT_SECONDS", "90"))
+source_proxy/api/decision.py:5266:            float(os.getenv("SOURCE_PROXY_TRIAL_QUICK_PROOF_TIMEOUT_SECONDS", "90")),
+source_proxy/api/decision.py:5290:                    os.getenv("SOURCE_PROXY_TRIAL_DIRECT_OLLAMA_PROOF", "1").strip().lower()
+source_proxy/api/decision.py:5400:    tokens = (
+source_proxy/api/decision.py:5412:    return any(token in lowered for token in tokens)
+source_proxy/api/decision.py:5416:    tokens = (
+source_proxy/api/decision.py:5427:    return any(token in lowered for token in tokens)
+source_proxy/api/decision.py:5439:    tokens = (
+source_proxy/api/decision.py:5451:    return any(token in lowered for token in tokens)
+source_proxy/api/decision.py:5743:    elif "block the request" in lowered or "protected paths or secrets" in lowered:
+source_proxy/api/decision.py:5746:        needed_context = "Keep protected paths and secrets untouched."
+source_proxy/api/decision.py:5787:            "Keep protected paths and secrets untouched.",
+source_proxy/api/decision.py:6147:    x_source_proxy_dev_token: str | None = Header(default=None),
+source_proxy/api/decision.py:6148:    dev_token: str | None = Query(default=None),
+source_proxy/api/decision.py:6159:            dev_token_header=x_source_proxy_dev_token,
+source_proxy/api/decision.py:6160:            dev_token_query=dev_token,
+source_proxy/api/decision.py:6167:    x_source_proxy_dev_token: str | None = Header(default=None),
+source_proxy/api/decision.py:6168:    dev_token: str | None = Query(default=None),
+source_proxy/api/decision.py:6179:            dev_token_header=x_source_proxy_dev_token,
+source_proxy/api/decision.py:6180:            dev_token_query=dev_token,
+source_proxy/api/decision.py:6188:    x_source_proxy_dev_token: str | None = Header(default=None),
+source_proxy/api/decision.py:6189:    dev_token: str | None = Query(default=None),
+source_proxy/api/decision.py:6199:            dev_token_header=x_source_proxy_dev_token,
+source_proxy/api/decision.py:6200:            dev_token_query=dev_token,
+source_proxy/api/decision.py:6208:    x_source_proxy_dev_token: str | None = Header(default=None),
+source_proxy/api/decision.py:6209:    dev_token: str | None = Query(default=None),
+source_proxy/api/decision.py:6219:            dev_token_header=x_source_proxy_dev_token,
+source_proxy/api/decision.py:6220:            dev_token_query=dev_token,
+source_proxy/api/decision.py:6728:                "estimated_context_tokens": 0,
+source_proxy/api/decision.py:6930:            context_tokens=reset_request.context_tokens,
+source_proxy/api/decision.py:7500:    for reason in ("protected_path", "secret_path", "path_escape", "outside_workspace"):
+source_proxy/api/decision.py:7508:    if reason_code in {"protected_path", "secret_path"}:
+source_proxy/api/decision.py:7509:        return f"Blocked protected/secret path{target_suffix}"
+source_proxy/api/decision.py:7516:    if reason_code in {"protected_path", "secret_path"}:
+source_proxy/api/decision.py:7517:        return "Choose a non-secret repo file. Protected and secret-shaped paths cannot be edited through the approval flow."
+source_proxy/api/decision.py:7524:    if reason_code in {"protected_path", "secret_path"}:
+source_proxy/api/decision.py:7525:        return "Coder Agent mode: blocked before Coder because the requested target is a protected/secret path."
+source_proxy/api/decision.py:7532:    if reason_code in {"protected_path", "secret_path"}:
+source_proxy/api/decision.py:7533:        return "No unified diff was produced because the requested target is a protected/secret path."
+source_proxy/api/decision.py:7540:    if reason_code in {"protected_path", "secret_path"}:
+source_proxy/api/decision.py:7541:        return "Use a non-secret repo-relative target file; do not approve or paste a diff for protected paths."
+source_proxy/api/decision.py:7689:        context_tokens=request.context_tokens,
+source_proxy/api/decision.py:7707:            context_tokens=reset_request.context_tokens,
+source_proxy/api/decision.py:7725:            max_completion_tokens=reset_request.max_completion_tokens,
+source_proxy/api/decision.py:7727:            context_tokens=reset_request.context_tokens,
+source_proxy/api/decision.py:7751:        update["context_tokens"] = None
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/10-evidence-read.txt:21:- No fresh OOM kill was found in the last-four-hours journal grep.
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/10-evidence-read.txt:60:- Fresh OOM/crash signs: no fresh OOM kill found; Docker/CasaOS/failed-mount noise remains.
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/10-evidence-read.txt:107:| Cartographer routing | `PREVIEW` | `/v1/cartographer/status`: observing, write actions disabled, approval token missing, dirty package/config blocker. | High | Not a route owner for writes. |
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/10-evidence-read.txt:124:| 2 | Process supervision/runbook integration | Makes proxy/Next/Ollama process ownership and restart boundaries explicit. | Runtime is in tmux, not proven as supervised service; prior OOM killed uvicorn before reboot. | Medium | runbook docs, watcher scripts, maybe non-mutating status integration. | Read-only watcher tests, docs validation, liveness smoke. | Yes, after health/status truth. |
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/10-evidence-read.txt:181:No services were restarted. No processes were killed. No Docker/media/Jellyfin mutation occurred. No benchmark batteries, model calls, Source Proxy coding tasks, or push occurred.
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/10-evidence-read.txt:202:No-mutation result: GO. No live task, model call, benchmark battery, process kill, service restart, Docker mutation, media mutation, Jellyfin mutation, or push.
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/10-evidence-read.txt:268:Console/page errors are summarized as bounded arrays from the harness. Full logs, raw HTML, env vars, process args with tokens, and secrets are not emitted.
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/10-evidence-read.txt:280:This patch does not run model calls, 3x10, benchmark gauntlets, Source Proxy coding tasks, apply/execute actions, service restarts, process kills, Docker mutations, or media mutations.
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/80-final-status-diff-before-stage.txt:26: M src/app/api/spiritflix/jellyfin-image/route.ts
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/80-final-status-diff-before-stage.txt:34: M src/lib/spiritflix-jellyfin-client.ts
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/80-final-status-diff-before-stage.txt:36: M src/lib/spiritflix/jellyfin-client.ts
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/80-final-status-diff-before-stage.txt:60:?? src/lib/spiritflix-jellyfin-client.test.ts
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/80-final-status-diff-before-stage.txt:87:M	src/app/api/spiritflix/jellyfin-image/route.ts
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/80-final-status-diff-before-stage.txt:95:M	src/lib/spiritflix-jellyfin-client.ts
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/80-final-status-diff-before-stage.txt:97:M	src/lib/spiritflix/jellyfin-client.ts
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/80-final-status-diff-before-stage.txt:123: src/app/api/spiritflix/jellyfin-image/route.ts     |     1 +
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/80-final-status-diff-before-stage.txt:131: src/lib/spiritflix-jellyfin-client.ts              |    84 +-
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/80-final-status-diff-before-stage.txt:133: src/lib/spiritflix/jellyfin-client.ts              |    40 +-
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/12-productive-rg.txt:32:source_proxy/tests/test_cartographer_approval_token_consumption.py:24:            requested_action_class="docs_receipt_preview",
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/12-productive-rg.txt:33:source_proxy/tests/test_cartographer_approval_token_consumption.py:75:            requested_action_class="docs_receipt_preview",
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/12-productive-rg.txt:34:source_proxy/tests/test_cartographer_approval_token_consumption.py:108:                    requested_action_class="docs_receipt_preview",
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/12-productive-rg.txt:35:source_proxy/tests/test_cartographer_approval_token_consumption.py:160:                        "docs_receipt_preview",
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/12-productive-rg.txt:36:source_proxy/tests/test_cartographer_approval_token_consumption.py:209:                    requested_action_class="docs_receipt_preview",
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/12-productive-rg.txt:37:source_proxy/tests/test_cartographer_approval_token_consumption.py:229:                "docs_receipt_preview",
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/12-productive-rg.txt:38:source_proxy/tests/test_cartographer_approval_token_consumption.py:235:                "docs_receipt_preview",
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/12-productive-rg.txt:39:source_proxy/tests/test_cartographer_approval_token_consumption.py:351:            "action_type": "docs_receipt_preview",
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/12-productive-rg.txt:40:source_proxy/tests/test_cartographer_approval_token_consumption.py:371:            "action_class": "docs_receipt_preview",
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/12-productive-rg.txt:128:source_proxy/tests/test_cartographer_safe_task_queue.py:252:            result.selection_receipt["approval_token_id"],
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/12-productive-rg.txt:182:source_proxy/tests/test_cartographer_level_14_autonomy_runtime.py:266:        self.assertTrue(receipt.kill_switch_visible)
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/12-productive-rg.txt:199:source_proxy/tests/test_cartographer_blueprint_refresh_writes.py:89:    def test_scope_trust_token_status_and_receipt_rules_fail_closed(self) -> None:
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/12-productive-rg.txt:212:source_proxy/tests/test_cartographer_final_proof_stage_7_readiness.py:90:            approval_kill_switch_drills_passed=True,
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/12-productive-rg.txt:227:source_proxy/tests/test_cartographer_safe_task_queue_api.py:77:            selection["selection_receipt"]["approval_token_id"],
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/12-productive-rg.txt:315:source_proxy/tests/test_cartographer_docs_runbook_updates.py:88:    def test_scope_trust_token_status_and_receipt_rules_fail_closed(self) -> None:
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:2:source_proxy/tests/test_prompt_packet_context_metadata.py:67:            "tasks.sqlite3",
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:3:source_proxy/tests/test_prompt_packet_context_metadata.py:151:    def test_prompt_packet_marks_path_listing_only_and_omits_secret_paths(self) -> None:
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:4:source_proxy/tests/test_prompt_packet_context_metadata.py:178:                context_tokens=12000,
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:5:source_proxy/tests/test_prompt_packet_context_metadata.py:186:        self.assertGreater(metadata["estimated_context_tokens"], 0)
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:6:source_proxy/tests/test_prompt_packet_context_metadata.py:376:    def test_fip0_receipt_private_fields_require_local_dev_token(self) -> None:
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:7:source_proxy/tests/test_prompt_packet_context_metadata.py:397:                headers={"x-source-proxy-dev-token": "local-proof"},
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:8:source_proxy/tests/test_prompt_packet_context_metadata.py:2154:                    "consoleErrors": ["password=super-secret-token token=abc123"],
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:9:source_proxy/tests/test_prompt_packet_context_metadata.py:2170:        self.assertEqual(errors, ["password=[REDACTED] token=[REDACTED]"])
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:10:source_proxy/tests/test_prompt_packet_context_metadata.py:2171:        self.assertNotIn("super-secret-token", json.dumps(browser))
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:11:source_proxy/api/decision.py:192:    context_tokens: int | None = Field(default=None, ge=0)
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:12:source_proxy/api/decision.py:220:    max_completion_tokens: int = Field(default=1024, ge=0)
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:13:source_proxy/api/decision.py:634:def _local_receipt_debug_token_configured() -> str:
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:14:source_proxy/api/decision.py:643:    dev_token_header: str | None = None,
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:15:source_proxy/api/decision.py:644:    dev_token_query: str | None = None,
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:16:source_proxy/api/decision.py:646:    configured = _local_receipt_debug_token_configured()
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:17:source_proxy/api/decision.py:649:    supplied = (dev_token_header or dev_token_query or "").strip()
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:18:source_proxy/api/decision.py:1669:        r"(?i)\b(token|secret|password|api[_-]?key)\b\s*[:=]\s*['\"]?[^'\"\s]+",
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:19:source_proxy/api/decision.py:5181:    raw_aliases = os.getenv("SOURCE_PROXY_TRIAL_PROOF_MODEL_ALIASES", "").strip()
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:20:source_proxy/api/decision.py:5224:        "keep_alive": os.getenv("SOURCE_PROXY_TRIAL_MODEL_KEEP_ALIVE", "10m"),
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:21:source_proxy/api/decision.py:5226:            "num_predict": int(os.getenv("SOURCE_PROXY_TRIAL_MODEL_NUM_PREDICT", "1")),
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:22:source_proxy/api/decision.py:5228:            "num_ctx": int(os.getenv("SOURCE_PROXY_TRIAL_MODEL_NUM_CTX", "128")),
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:23:source_proxy/api/decision.py:5258:    budget_seconds = float(os.getenv("SOURCE_PROXY_TRIAL_MODEL_TIMEOUT_SECONDS", "90"))
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:24:source_proxy/api/decision.py:5266:            float(os.getenv("SOURCE_PROXY_TRIAL_QUICK_PROOF_TIMEOUT_SECONDS", "90")),
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:25:source_proxy/api/decision.py:5290:                    os.getenv("SOURCE_PROXY_TRIAL_DIRECT_OLLAMA_PROOF", "1").strip().lower()
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:26:source_proxy/api/decision.py:5400:    tokens = (
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:27:source_proxy/api/decision.py:5412:    return any(token in lowered for token in tokens)
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:28:source_proxy/api/decision.py:5416:    tokens = (
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:29:source_proxy/api/decision.py:5427:    return any(token in lowered for token in tokens)
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:30:source_proxy/api/decision.py:5439:    tokens = (
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:31:source_proxy/api/decision.py:5451:    return any(token in lowered for token in tokens)
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:32:source_proxy/api/decision.py:5743:    elif "block the request" in lowered or "protected paths or secrets" in lowered:
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:33:source_proxy/api/decision.py:5746:        needed_context = "Keep protected paths and secrets untouched."
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:34:source_proxy/api/decision.py:5787:            "Keep protected paths and secrets untouched.",
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:35:source_proxy/api/decision.py:6147:    x_source_proxy_dev_token: str | None = Header(default=None),
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:36:source_proxy/api/decision.py:6148:    dev_token: str | None = Query(default=None),
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:37:source_proxy/api/decision.py:6159:            dev_token_header=x_source_proxy_dev_token,
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:38:source_proxy/api/decision.py:6160:            dev_token_query=dev_token,
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:39:source_proxy/api/decision.py:6167:    x_source_proxy_dev_token: str | None = Header(default=None),
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:40:source_proxy/api/decision.py:6168:    dev_token: str | None = Query(default=None),
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:41:source_proxy/api/decision.py:6179:            dev_token_header=x_source_proxy_dev_token,
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:42:source_proxy/api/decision.py:6180:            dev_token_query=dev_token,
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:43:source_proxy/api/decision.py:6188:    x_source_proxy_dev_token: str | None = Header(default=None),
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:44:source_proxy/api/decision.py:6189:    dev_token: str | None = Query(default=None),
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:45:source_proxy/api/decision.py:6199:            dev_token_header=x_source_proxy_dev_token,
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:46:source_proxy/api/decision.py:6200:            dev_token_query=dev_token,
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:47:source_proxy/api/decision.py:6208:    x_source_proxy_dev_token: str | None = Header(default=None),
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:48:source_proxy/api/decision.py:6209:    dev_token: str | None = Query(default=None),
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:49:source_proxy/api/decision.py:6219:            dev_token_header=x_source_proxy_dev_token,
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:50:source_proxy/api/decision.py:6220:            dev_token_query=dev_token,
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:51:source_proxy/api/decision.py:6728:                "estimated_context_tokens": 0,
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:52:source_proxy/api/decision.py:6930:            context_tokens=reset_request.context_tokens,
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:53:source_proxy/api/decision.py:7500:    for reason in ("protected_path", "secret_path", "path_escape", "outside_workspace"):
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:54:source_proxy/api/decision.py:7508:    if reason_code in {"protected_path", "secret_path"}:
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:55:source_proxy/api/decision.py:7509:        return f"Blocked protected/secret path{target_suffix}"
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:56:source_proxy/api/decision.py:7516:    if reason_code in {"protected_path", "secret_path"}:
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:57:source_proxy/api/decision.py:7517:        return "Choose a non-secret repo file. Protected and secret-shaped paths cannot be edited through the approval flow."
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:58:source_proxy/api/decision.py:7524:    if reason_code in {"protected_path", "secret_path"}:
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:59:source_proxy/api/decision.py:7525:        return "Coder Agent mode: blocked before Coder because the requested target is a protected/secret path."
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:60:source_proxy/api/decision.py:7532:    if reason_code in {"protected_path", "secret_path"}:
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:61:source_proxy/api/decision.py:7533:        return "No unified diff was produced because the requested target is a protected/secret path."
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:62:source_proxy/api/decision.py:7540:    if reason_code in {"protected_path", "secret_path"}:
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:63:source_proxy/api/decision.py:7541:        return "Use a non-secret repo-relative target file; do not approve or paste a diff for protected paths."
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:64:source_proxy/api/decision.py:7689:        context_tokens=request.context_tokens,
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:65:source_proxy/api/decision.py:7707:            context_tokens=reset_request.context_tokens,
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:66:source_proxy/api/decision.py:7725:            max_completion_tokens=reset_request.max_completion_tokens,
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:67:source_proxy/api/decision.py:7727:            context_tokens=reset_request.context_tokens,
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/61-safety-scan-final.txt:68:source_proxy/api/decision.py:7751:        update["context_tokens"] = None
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/00-baseline.txt:26: M src/app/api/spiritflix/jellyfin-image/route.ts
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/00-baseline.txt:34: M src/lib/spiritflix-jellyfin-client.ts
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/00-baseline.txt:36: M src/lib/spiritflix/jellyfin-client.ts
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/00-baseline.txt:60:?? src/lib/spiritflix-jellyfin-client.test.ts
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/00-baseline.txt:95:M	src/app/api/spiritflix/jellyfin-image/route.ts
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/00-baseline.txt:103:M	src/lib/spiritflix-jellyfin-client.ts
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/00-baseline.txt:105:M	src/lib/spiritflix/jellyfin-client.ts
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/00-baseline.txt:129: src/app/api/spiritflix/jellyfin-image/route.ts     |     1 +
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/00-baseline.txt:137: src/lib/spiritflix-jellyfin-client.ts              |    84 +-
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/00-baseline.txt:139: src/lib/spiritflix/jellyfin-client.ts              |    40 +-
+docs/evidence/source-proxy-productive-go-hardening-20260618/00-baseline.md:16:This patch is bounded to productive GO truth hardening. It does not run model calls, benchmark batteries, Source Proxy coding tasks, service restarts, process kills, Docker/systemd/media/Jellyfin mutation, cleanup, push, or broad unbounded pytest.
+docs/evidence/source-proxy-productive-go-hardening-20260618/summary.json:19:    "processes_killed": false,
+docs/evidence/source-proxy-productive-go-hardening-20260618/summary.json:22:    "docker_systemd_media_jellyfin_mutation": false,
+docs/evidence/source-proxy-productive-go-hardening-20260618/operator-summary.md:20:No service restart, process kill, model call, broad unbounded pytest, cleanup, mutation outside approved files, or push occurred.
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/11-source-proxy-files.txt:179:source_proxy/cartographer/approval_token_consumption.py
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/11-source-proxy-files.txt:180:source_proxy/cartographer/approval_token_runtime.py
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/11-source-proxy-files.txt:203:source_proxy/cartographer/final_proof_stage_4_approval_kill_switch.py
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/11-source-proxy-files.txt:211:source_proxy/cartographer/level_11_approval_token.py
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/11-source-proxy-files.txt:235:source_proxy/cartographer/__pycache__/approval_token_consumption.cpython-312.pyc
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/11-source-proxy-files.txt:236:source_proxy/cartographer/__pycache__/approval_token_consumption.cpython-313.pyc
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/11-source-proxy-files.txt:237:source_proxy/cartographer/__pycache__/approval_token_runtime.cpython-312.pyc
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/11-source-proxy-files.txt:238:source_proxy/cartographer/__pycache__/approval_token_runtime.cpython-313.pyc
+docs/evidence/source-proxy-productive-go-hardening-20260618/50-no-mutation-smoke.md:7:No live Source Proxy coding task, model call, repair loop, browser verifier implementation change, service restart, process kill, Docker/systemd/media/Jellyfin mutation, cleanup, push, or broad unbounded pytest was performed.
+docs/evidence/source-proxy-productive-go-hardening-20260618/final-verdict.md:26:No services were restarted. No processes were killed. No model calls, benchmark batteries, Source Proxy coding tasks, Docker/systemd/media/Jellyfin mutation, cleanup, or push occurred.
+docs/evidence/source-proxy-productive-go-hardening-20260618/60-safety-scan.md:11:- Hits in `source_proxy/api/decision.py` are pre-existing token/dev-token handling, redaction regexes, environment-backed trial settings, and protected/secret path guard text.
+docs/evidence/source-proxy-productive-go-hardening-20260618/60-safety-scan.md:12:- Hits in `source_proxy/tests/test_prompt_packet_context_metadata.py` are existing or updated redaction assertions using fake secret-shaped strings.
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:2:docs/evidence/source-proxy-productive-go-hardening-20260618/raw/11-source-proxy-files.txt:179:source_proxy/cartographer/approval_token_consumption.py
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:3:docs/evidence/source-proxy-productive-go-hardening-20260618/raw/11-source-proxy-files.txt:180:source_proxy/cartographer/approval_token_runtime.py
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:4:docs/evidence/source-proxy-productive-go-hardening-20260618/raw/11-source-proxy-files.txt:203:source_proxy/cartographer/final_proof_stage_4_approval_kill_switch.py
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:5:docs/evidence/source-proxy-productive-go-hardening-20260618/raw/11-source-proxy-files.txt:211:source_proxy/cartographer/level_11_approval_token.py
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:6:docs/evidence/source-proxy-productive-go-hardening-20260618/raw/11-source-proxy-files.txt:235:source_proxy/cartographer/__pycache__/approval_token_consumption.cpython-312.pyc
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:7:docs/evidence/source-proxy-productive-go-hardening-20260618/raw/11-source-proxy-files.txt:236:source_proxy/cartographer/__pycache__/approval_token_consumption.cpython-313.pyc
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:8:docs/evidence/source-proxy-productive-go-hardening-20260618/raw/11-source-proxy-files.txt:237:source_proxy/cartographer/__pycache__/approval_token_runtime.cpython-312.pyc
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:9:docs/evidence/source-proxy-productive-go-hardening-20260618/raw/11-source-proxy-files.txt:238:source_proxy/cartographer/__pycache__/approval_token_runtime.cpython-313.pyc
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:10:docs/evidence/source-proxy-productive-go-hardening-20260618/raw/00-baseline.txt:26: M src/app/api/spiritflix/jellyfin-image/route.ts
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:11:docs/evidence/source-proxy-productive-go-hardening-20260618/raw/00-baseline.txt:34: M src/lib/spiritflix-jellyfin-client.ts
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:12:docs/evidence/source-proxy-productive-go-hardening-20260618/raw/00-baseline.txt:36: M src/lib/spiritflix/jellyfin-client.ts
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:13:docs/evidence/source-proxy-productive-go-hardening-20260618/raw/00-baseline.txt:60:?? src/lib/spiritflix-jellyfin-client.test.ts
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:14:docs/evidence/source-proxy-productive-go-hardening-20260618/raw/00-baseline.txt:95:M	src/app/api/spiritflix/jellyfin-image/route.ts
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:15:docs/evidence/source-proxy-productive-go-hardening-20260618/raw/00-baseline.txt:103:M	src/lib/spiritflix-jellyfin-client.ts
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:16:docs/evidence/source-proxy-productive-go-hardening-20260618/raw/00-baseline.txt:105:M	src/lib/spiritflix/jellyfin-client.ts
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:17:docs/evidence/source-proxy-productive-go-hardening-20260618/raw/00-baseline.txt:129: src/app/api/spiritflix/jellyfin-image/route.ts     |     1 +
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:18:docs/evidence/source-proxy-productive-go-hardening-20260618/raw/00-baseline.txt:137: src/lib/spiritflix-jellyfin-client.ts              |    84 +-
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:19:docs/evidence/source-proxy-productive-go-hardening-20260618/raw/00-baseline.txt:139: src/lib/spiritflix/jellyfin-client.ts              |    40 +-
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:20:source_proxy/tests/test_prompt_packet_context_metadata.py:67:            "tasks.sqlite3",
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:21:source_proxy/tests/test_prompt_packet_context_metadata.py:151:    def test_prompt_packet_marks_path_listing_only_and_omits_secret_paths(self) -> None:
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:22:source_proxy/tests/test_prompt_packet_context_metadata.py:178:                context_tokens=12000,
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:23:source_proxy/tests/test_prompt_packet_context_metadata.py:186:        self.assertGreater(metadata["estimated_context_tokens"], 0)
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:24:source_proxy/tests/test_prompt_packet_context_metadata.py:376:    def test_fip0_receipt_private_fields_require_local_dev_token(self) -> None:
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:25:source_proxy/tests/test_prompt_packet_context_metadata.py:397:                headers={"x-source-proxy-dev-token": "local-proof"},
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:26:source_proxy/tests/test_prompt_packet_context_metadata.py:2154:                    "consoleErrors": ["password=super-secret-token token=abc123"],
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:27:source_proxy/tests/test_prompt_packet_context_metadata.py:2170:        self.assertEqual(errors, ["password=[REDACTED] token=[REDACTED]"])
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:28:source_proxy/tests/test_prompt_packet_context_metadata.py:2171:        self.assertNotIn("super-secret-token", json.dumps(browser))
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:29:docs/evidence/source-proxy-productive-go-hardening-20260618/raw/12-productive-rg.txt:32:source_proxy/tests/test_cartographer_approval_token_consumption.py:24:            requested_action_class="docs_receipt_preview",
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:30:docs/evidence/source-proxy-productive-go-hardening-20260618/raw/12-productive-rg.txt:33:source_proxy/tests/test_cartographer_approval_token_consumption.py:75:            requested_action_class="docs_receipt_preview",
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:31:docs/evidence/source-proxy-productive-go-hardening-20260618/raw/12-productive-rg.txt:34:source_proxy/tests/test_cartographer_approval_token_consumption.py:108:                    requested_action_class="docs_receipt_preview",
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:32:docs/evidence/source-proxy-productive-go-hardening-20260618/raw/12-productive-rg.txt:35:source_proxy/tests/test_cartographer_approval_token_consumption.py:160:                        "docs_receipt_preview",
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:33:docs/evidence/source-proxy-productive-go-hardening-20260618/raw/12-productive-rg.txt:36:source_proxy/tests/test_cartographer_approval_token_consumption.py:209:                    requested_action_class="docs_receipt_preview",
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:34:docs/evidence/source-proxy-productive-go-hardening-20260618/raw/12-productive-rg.txt:37:source_proxy/tests/test_cartographer_approval_token_consumption.py:229:                "docs_receipt_preview",
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:35:docs/evidence/source-proxy-productive-go-hardening-20260618/raw/12-productive-rg.txt:38:source_proxy/tests/test_cartographer_approval_token_consumption.py:235:                "docs_receipt_preview",
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:36:docs/evidence/source-proxy-productive-go-hardening-20260618/raw/12-productive-rg.txt:39:source_proxy/tests/test_cartographer_approval_token_consumption.py:351:            "action_type": "docs_receipt_preview",
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:37:docs/evidence/source-proxy-productive-go-hardening-20260618/raw/12-productive-rg.txt:40:source_proxy/tests/test_cartographer_approval_token_consumption.py:371:            "action_class": "docs_receipt_preview",
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:38:docs/evidence/source-proxy-productive-go-hardening-20260618/raw/12-productive-rg.txt:128:source_proxy/tests/test_cartographer_safe_task_queue.py:252:            result.selection_receipt["approval_token_id"],
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:39:docs/evidence/source-proxy-productive-go-hardening-20260618/raw/12-productive-rg.txt:182:source_proxy/tests/test_cartographer_level_14_autonomy_runtime.py:266:        self.assertTrue(receipt.kill_switch_visible)
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:40:docs/evidence/source-proxy-productive-go-hardening-20260618/raw/12-productive-rg.txt:199:source_proxy/tests/test_cartographer_blueprint_refresh_writes.py:89:    def test_scope_trust_token_status_and_receipt_rules_fail_closed(self) -> None:
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:41:docs/evidence/source-proxy-productive-go-hardening-20260618/raw/12-productive-rg.txt:212:source_proxy/tests/test_cartographer_final_proof_stage_7_readiness.py:90:            approval_kill_switch_drills_passed=True,
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:42:docs/evidence/source-proxy-productive-go-hardening-20260618/raw/12-productive-rg.txt:227:source_proxy/tests/test_cartographer_safe_task_queue_api.py:77:            selection["selection_receipt"]["approval_token_id"],
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:43:docs/evidence/source-proxy-productive-go-hardening-20260618/raw/12-productive-rg.txt:315:source_proxy/tests/test_cartographer_docs_runbook_updates.py:88:    def test_scope_trust_token_status_and_receipt_rules_fail_closed(self) -> None:
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:44:source_proxy/api/decision.py:192:    context_tokens: int | None = Field(default=None, ge=0)
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:45:source_proxy/api/decision.py:220:    max_completion_tokens: int = Field(default=1024, ge=0)
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:46:source_proxy/api/decision.py:634:def _local_receipt_debug_token_configured() -> str:
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:47:source_proxy/api/decision.py:643:    dev_token_header: str | None = None,
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:48:source_proxy/api/decision.py:644:    dev_token_query: str | None = None,
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:49:source_proxy/api/decision.py:646:    configured = _local_receipt_debug_token_configured()
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:50:source_proxy/api/decision.py:649:    supplied = (dev_token_header or dev_token_query or "").strip()
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:51:source_proxy/api/decision.py:1669:        r"(?i)\b(token|secret|password|api[_-]?key)\b\s*[:=]\s*['\"]?[^'\"\s]+",
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:52:source_proxy/api/decision.py:5181:    raw_aliases = os.getenv("SOURCE_PROXY_TRIAL_PROOF_MODEL_ALIASES", "").strip()
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:53:source_proxy/api/decision.py:5224:        "keep_alive": os.getenv("SOURCE_PROXY_TRIAL_MODEL_KEEP_ALIVE", "10m"),
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:54:source_proxy/api/decision.py:5226:            "num_predict": int(os.getenv("SOURCE_PROXY_TRIAL_MODEL_NUM_PREDICT", "1")),
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:55:source_proxy/api/decision.py:5228:            "num_ctx": int(os.getenv("SOURCE_PROXY_TRIAL_MODEL_NUM_CTX", "128")),
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:56:source_proxy/api/decision.py:5258:    budget_seconds = float(os.getenv("SOURCE_PROXY_TRIAL_MODEL_TIMEOUT_SECONDS", "90"))
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:57:source_proxy/api/decision.py:5266:            float(os.getenv("SOURCE_PROXY_TRIAL_QUICK_PROOF_TIMEOUT_SECONDS", "90")),
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:58:source_proxy/api/decision.py:5290:                    os.getenv("SOURCE_PROXY_TRIAL_DIRECT_OLLAMA_PROOF", "1").strip().lower()
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:59:source_proxy/api/decision.py:5400:    tokens = (
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:60:source_proxy/api/decision.py:5412:    return any(token in lowered for token in tokens)
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:61:source_proxy/api/decision.py:5416:    tokens = (
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:62:source_proxy/api/decision.py:5427:    return any(token in lowered for token in tokens)
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:63:source_proxy/api/decision.py:5439:    tokens = (
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:64:source_proxy/api/decision.py:5451:    return any(token in lowered for token in tokens)
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:65:source_proxy/api/decision.py:5743:    elif "block the request" in lowered or "protected paths or secrets" in lowered:
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:66:source_proxy/api/decision.py:5746:        needed_context = "Keep protected paths and secrets untouched."
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:67:source_proxy/api/decision.py:5787:            "Keep protected paths and secrets untouched.",
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:68:source_proxy/api/decision.py:6147:    x_source_proxy_dev_token: str | None = Header(default=None),
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:69:source_proxy/api/decision.py:6148:    dev_token: str | None = Query(default=None),
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:70:source_proxy/api/decision.py:6159:            dev_token_header=x_source_proxy_dev_token,
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:71:source_proxy/api/decision.py:6160:            dev_token_query=dev_token,
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:72:source_proxy/api/decision.py:6167:    x_source_proxy_dev_token: str | None = Header(default=None),
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:73:source_proxy/api/decision.py:6168:    dev_token: str | None = Query(default=None),
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:74:source_proxy/api/decision.py:6179:            dev_token_header=x_source_proxy_dev_token,
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:75:source_proxy/api/decision.py:6180:            dev_token_query=dev_token,
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:76:source_proxy/api/decision.py:6188:    x_source_proxy_dev_token: str | None = Header(default=None),
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:77:source_proxy/api/decision.py:6189:    dev_token: str | None = Query(default=None),
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:78:source_proxy/api/decision.py:6199:            dev_token_header=x_source_proxy_dev_token,
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:79:source_proxy/api/decision.py:6200:            dev_token_query=dev_token,
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:80:source_proxy/api/decision.py:6208:    x_source_proxy_dev_token: str | None = Header(default=None),
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:81:source_proxy/api/decision.py:6209:    dev_token: str | None = Query(default=None),
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:82:source_proxy/api/decision.py:6219:            dev_token_header=x_source_proxy_dev_token,
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:83:source_proxy/api/decision.py:6220:            dev_token_query=dev_token,
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:84:source_proxy/api/decision.py:6728:                "estimated_context_tokens": 0,
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:85:source_proxy/api/decision.py:6930:            context_tokens=reset_request.context_tokens,
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:86:source_proxy/api/decision.py:7500:    for reason in ("protected_path", "secret_path", "path_escape", "outside_workspace"):
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:87:source_proxy/api/decision.py:7508:    if reason_code in {"protected_path", "secret_path"}:
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:88:source_proxy/api/decision.py:7509:        return f"Blocked protected/secret path{target_suffix}"
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:89:source_proxy/api/decision.py:7516:    if reason_code in {"protected_path", "secret_path"}:
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:90:source_proxy/api/decision.py:7517:        return "Choose a non-secret repo file. Protected and secret-shaped paths cannot be edited through the approval flow."
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:91:source_proxy/api/decision.py:7524:    if reason_code in {"protected_path", "secret_path"}:
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:92:source_proxy/api/decision.py:7525:        return "Coder Agent mode: blocked before Coder because the requested target is a protected/secret path."
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:93:source_proxy/api/decision.py:7532:    if reason_code in {"protected_path", "secret_path"}:
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:94:source_proxy/api/decision.py:7533:        return "No unified diff was produced because the requested target is a protected/secret path."
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:95:source_proxy/api/decision.py:7540:    if reason_code in {"protected_path", "secret_path"}:
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:96:source_proxy/api/decision.py:7541:        return "Use a non-secret repo-relative target file; do not approve or paste a diff for protected paths."
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:97:source_proxy/api/decision.py:7689:        context_tokens=request.context_tokens,
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:98:source_proxy/api/decision.py:7707:            context_tokens=reset_request.context_tokens,
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:99:source_proxy/api/decision.py:7725:            max_completion_tokens=reset_request.max_completion_tokens,
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:100:source_proxy/api/decision.py:7727:            context_tokens=reset_request.context_tokens,
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:101:source_proxy/api/decision.py:7751:        update["context_tokens"] = None
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:102:docs/evidence/source-proxy-productive-go-hardening-20260618/00-baseline.md:16:This patch is bounded to productive GO truth hardening. It does not run model calls, benchmark batteries, Source Proxy coding tasks, service restarts, process kills, Docker/systemd/media/Jellyfin mutation, cleanup, push, or broad unbounded pytest.
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:103:docs/evidence/source-proxy-productive-go-hardening-20260618/raw/10-evidence-read.txt:21:- No fresh OOM kill was found in the last-four-hours journal grep.
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:104:docs/evidence/source-proxy-productive-go-hardening-20260618/raw/10-evidence-read.txt:60:- Fresh OOM/crash signs: no fresh OOM kill found; Docker/CasaOS/failed-mount noise remains.
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:105:docs/evidence/source-proxy-productive-go-hardening-20260618/raw/10-evidence-read.txt:107:| Cartographer routing | `PREVIEW` | `/v1/cartographer/status`: observing, write actions disabled, approval token missing, dirty package/config blocker. | High | Not a route owner for writes. |
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:106:docs/evidence/source-proxy-productive-go-hardening-20260618/raw/10-evidence-read.txt:124:| 2 | Process supervision/runbook integration | Makes proxy/Next/Ollama process ownership and restart boundaries explicit. | Runtime is in tmux, not proven as supervised service; prior OOM killed uvicorn before reboot. | Medium | runbook docs, watcher scripts, maybe non-mutating status integration. | Read-only watcher tests, docs validation, liveness smoke. | Yes, after health/status truth. |
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:107:docs/evidence/source-proxy-productive-go-hardening-20260618/raw/10-evidence-read.txt:181:No services were restarted. No processes were killed. No Docker/media/Jellyfin mutation occurred. No benchmark batteries, model calls, Source Proxy coding tasks, or push occurred.
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:108:docs/evidence/source-proxy-productive-go-hardening-20260618/raw/10-evidence-read.txt:202:No-mutation result: GO. No live task, model call, benchmark battery, process kill, service restart, Docker mutation, media mutation, Jellyfin mutation, or push.
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:109:docs/evidence/source-proxy-productive-go-hardening-20260618/raw/10-evidence-read.txt:268:Console/page errors are summarized as bounded arrays from the harness. Full logs, raw HTML, env vars, process args with tokens, and secrets are not emitted.
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/60-safety-scan.txt:110:docs/evidence/source-proxy-productive-go-hardening-20260618/raw/10-evidence-read.txt:280:This patch does not run model calls, 3x10, benchmark gauntlets, Source Proxy coding tasks, apply/execute actions, service restarts, process kills, Docker mutations, or media mutations.
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/10-evidence-read.txt:21:- No fresh OOM kill was found in the last-four-hours journal grep.
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/10-evidence-read.txt:60:- Fresh OOM/crash signs: no fresh OOM kill found; Docker/CasaOS/failed-mount noise remains.
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/10-evidence-read.txt:107:| Cartographer routing | `PREVIEW` | `/v1/cartographer/status`: observing, write actions disabled, approval token missing, dirty package/config blocker. | High | Not a route owner for writes. |
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/10-evidence-read.txt:124:| 2 | Process supervision/runbook integration | Makes proxy/Next/Ollama process ownership and restart boundaries explicit. | Runtime is in tmux, not proven as supervised service; prior OOM killed uvicorn before reboot. | Medium | runbook docs, watcher scripts, maybe non-mutating status integration. | Read-only watcher tests, docs validation, liveness smoke. | Yes, after health/status truth. |
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/10-evidence-read.txt:181:No services were restarted. No processes were killed. No Docker/media/Jellyfin mutation occurred. No benchmark batteries, model calls, Source Proxy coding tasks, or push occurred.
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/10-evidence-read.txt:202:No-mutation result: GO. No live task, model call, benchmark battery, process kill, service restart, Docker mutation, media mutation, Jellyfin mutation, or push.
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/10-evidence-read.txt:268:Console/page errors are summarized as bounded arrays from the harness. Full logs, raw HTML, env vars, process args with tokens, and secrets are not emitted.
+docs/evidence/source-proxy-productive-go-hardening-20260618/raw/10-evidence-read.txt:280:This patch does not run model calls, 3x10, benchmark gauntlets, Source Proxy coding tasks, apply/execute actions, service restarts, process kills, Docker mutations, or media mutations.
+=== diff check ===

@@ -1,0 +1,49 @@
+...........................................F............................ [ 67%]
+..................................                                       [100%]
+=================================== FAILURES ===================================
+_ PromptPacketContextMetadataTests.test_functional_verification_is_false_when_lane_missing _
+
+self = <source_proxy.tests.test_prompt_packet_context_metadata.PromptPacketContextMetadataTests testMethod=test_functional_verification_is_false_when_lane_missing>
+
+    def test_functional_verification_is_false_when_lane_missing(self) -> None:
+        target = "source_proxy/tests/fip5-target-proof.txt"
+        fip4_result = {
+            "status": "used",
+            "reason": "fip4_qwen_action_output_parsed_and_diff_generated",
+            "final_coder_packet_hash": "packet-hash",
+            "coder_received_packet_hash": "packet-hash",
+            "parser": {"parsed_output_mode": "json_content_lines", "parse_error": ""},
+            "allowed_files": [target],
+            "forbidden_files": [".env"],
+            "changed_files": [target],
+            "proposed_diff": "--- a/x\n+++ b/x\n@@\n-old\n+new\n",
+            "qwen": {"qwen_output_hash": "qwen-output"},
+            "final_coder_packet": {"target_file": target},
+        }
+        payload = _attach_fip0_truth_receipt(
+            {"fip4": "functional-missing-proof"},
+            request=PromptPacketRequest(task="Functional truth proof"),
+            route_payload={"recommended_route": "local_route"},
+            intake_payload={"allowed_files": [target], "forbidden_files": [".env"]},
+            decision=SimpleNamespace(research_sources=[]),
+            explicit_target=target,
+            route_reasons=[],
+            fip4_coder_result=fip4_result,
+        )
+        receipt = payload["fip0_truth_receipt"]
+        self.assertFalse(receipt["verification_real"]["functional"])
+        self.assertEqual(
+            receipt["verification_real_reasons"]["functional"],
+            "functional_verifier_not_implemented",
+        )
+        self.assertFalse(receipt["productive"])
+        self.assertFalse(receipt["productive_go"])
+>       self.assertEqual(receipt["productive_status"], "PARTIAL_GO")
+E       AssertionError: 'NO_GO' != 'PARTIAL_GO'
+E       - NO_GO
+E       + PARTIAL_GO
+
+source_proxy/tests/test_prompt_packet_context_metadata.py:1591: AssertionError
+=========================== short test summary info ============================
+FAILED source_proxy/tests/test_prompt_packet_context_metadata.py::PromptPacketContextMetadataTests::test_functional_verification_is_false_when_lane_missing
+1 failed, 105 passed in 51.89s

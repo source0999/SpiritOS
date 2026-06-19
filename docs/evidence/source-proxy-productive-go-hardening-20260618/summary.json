@@ -1,0 +1,25 @@
+{
+  "patch": "source-proxy-productive-go-hardening-20260618",
+  "status": "GO",
+  "focused_tests": {
+    "status": "GO",
+    "result": "106 passed in 39.91s"
+  },
+  "broader_timeout_wrapped_tests": {
+    "status": "PARTIAL-GO",
+    "timeout_seconds": 180,
+    "summary": "Timed out before pytest summary; no lingering pytest process found afterward."
+  },
+  "safety_scan": {
+    "status": "GO with explained hits",
+    "diff_check": "GO"
+  },
+  "mutation_boundary": {
+    "services_restarted": false,
+    "processes_killed": false,
+    "model_calls": false,
+    "source_proxy_coding_tasks": false,
+    "docker_systemd_media_jellyfin_mutation": false,
+    "push": false
+  }
+}
