@@ -3,7 +3,8 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createSmartAnalysisPathKey } from "../analysis-paths";
-import { previewSpiritFlixSmartBatch, runSpiritFlixSmartBatch } from "../batch";
+import { previewSpiritFlixSmartBatch, reviewSpiritFlixSmartBatch, runSpiritFlixSmartBatch } from "../batch";
+import { readSmartAnalysis } from "../analysis-store";
 import { writeSmartAnalysis } from "../analysis-store";
 import { validateSpiritFlixSmartAnalysis, type SpiritFlixSmartAnalysis } from "../types";
 
@@ -126,5 +127,59 @@ describe("SpiritFlix smart batch analysis", () => {
 
     expect(result.counts.failed).toBe(1);
     expect(result.items[0].reason).toMatch(/ffprobe failed/i);
+  });
+
+  it("batch approves suggested tags while preserving edited review fields", async () => {
+    const videoPath = await writeVideo("yes/to-approve.mp4");
+    await currentAnalysis(videoPath, {
+      reviewedMetadata: {
+        reviewedAt: "2026-06-18T00:00:00.000Z",
+        reviewedBy: "spiritflix-admin",
+        reviewStatus: "partially_reviewed",
+        approvedTagIds: [],
+        rejectedTagIds: [],
+        editedDisplayTitle: "Keep Title",
+        editedFilenameSuggestion: "Keep Filename.mp4",
+      },
+    });
+
+    const result = await reviewSpiritFlixSmartBatch({
+      path: path.join(tempRoot, "yes"),
+      reviewMode: "approve_all_tags",
+    });
+    const stat = await fs.stat(videoPath);
+    const saved = await readSmartAnalysis({ videoPath, fileSizeBytes: stat.size, mtimeMs: stat.mtimeMs }, { mediaRoot: tempRoot });
+
+    expect(result.counts.analyzed).toBe(1);
+    expect(saved?.reviewedMetadata?.reviewStatus).toBe("reviewed");
+    expect(saved?.reviewedMetadata?.approvedTagIds).toEqual(["hd"]);
+    expect(saved?.reviewedMetadata?.editedDisplayTitle).toBe("Keep Title");
+  });
+
+  it("batch rejects suggested tags and marks the video rejected", async () => {
+    const videoPath = await writeVideo("yes/to-reject.mp4");
+    await currentAnalysis(videoPath);
+
+    await reviewSpiritFlixSmartBatch({
+      path: path.join(tempRoot, "yes"),
+      reviewMode: "reject_all_tags",
+    });
+    const stat = await fs.stat(videoPath);
+    const saved = await readSmartAnalysis({ videoPath, fileSizeBytes: stat.size, mtimeMs: stat.mtimeMs }, { mediaRoot: tempRoot });
+
+    expect(saved?.reviewedMetadata?.reviewStatus).toBe("rejected");
+    expect(saved?.reviewedMetadata?.rejectedTagIds).toEqual(["hd"]);
+  });
+
+  it("batch mark reviewed skips videos without analysis sidecars", async () => {
+    await writeVideo("yes/no-sidecar.mp4");
+
+    const result = await reviewSpiritFlixSmartBatch({
+      path: path.join(tempRoot, "yes"),
+      reviewMode: "mark_reviewed",
+    });
+
+    expect(result.counts.skipped).toBe(1);
+    expect(result.items[0].reason).toMatch(/no smart analysis/i);
   });
 });

@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isSpiritFlixAdminPathError } from "@/lib/spiritflix/admin/paths";
-import { previewSpiritFlixSmartBatch, runSpiritFlixSmartBatch } from "@/lib/spiritflix/admin/smart";
+import {
+  buildSpiritFlixSmartRenamePlan,
+  previewSpiritFlixSmartBatch,
+  reviewSpiritFlixSmartBatch,
+  runSpiritFlixSmartBatch,
+  type SpiritFlixSmartBatchReviewMode,
+} from "@/lib/spiritflix/admin/smart";
 
 export const runtime = "nodejs";
 
@@ -20,7 +26,7 @@ function jsonError(error: unknown, fallbackStatus = 500) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Invalid path." }, { status: 400 });
   }
   const message = error instanceof Error ? error.message : "Smart batch analysis failed.";
-  const status = /requires a folder|path|outside|traversal|not allowed|selection/i.test(message) ? 400 : fallbackStatus;
+  const status = /requires a folder|path|outside|traversal|not allowed|selection|unsupported/i.test(message) ? 400 : fallbackStatus;
   return NextResponse.json({ error: message.slice(0, 500) }, { status });
 }
 
@@ -43,6 +49,7 @@ export async function POST(request: NextRequest) {
     path?: string;
     paths?: string[];
     action?: string;
+    reviewMode?: string;
     recursive?: boolean;
     maxItems?: number;
     force?: boolean;
@@ -54,7 +61,7 @@ export async function POST(request: NextRequest) {
   }
 
   const action = body.action?.trim() || "run";
-  if (action !== "preview" && action !== "run") {
+  if (action !== "preview" && action !== "run" && action !== "review" && action !== "renamePlan") {
     return NextResponse.json({ error: "Unsupported smart batch action." }, { status: 400 });
   }
 
@@ -68,9 +75,23 @@ export async function POST(request: NextRequest) {
     };
     const payload = action === "preview"
       ? await previewSpiritFlixSmartBatch(options)
-      : await runSpiritFlixSmartBatch(options);
+      : action === "renamePlan"
+        ? await buildSpiritFlixSmartRenamePlan(options)
+        : action === "review"
+          ? await reviewSpiritFlixSmartBatch({
+              ...options,
+              reviewMode: assertReviewMode(body.reviewMode),
+            })
+          : await runSpiritFlixSmartBatch(options);
     return NextResponse.json(payload, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     return jsonError(error);
   }
+}
+
+function assertReviewMode(value: unknown): SpiritFlixSmartBatchReviewMode {
+  if (value === "approve_all_tags" || value === "reject_all_tags" || value === "mark_reviewed") {
+    return value;
+  }
+  throw new Error("Unsupported smart batch review mode.");
 }

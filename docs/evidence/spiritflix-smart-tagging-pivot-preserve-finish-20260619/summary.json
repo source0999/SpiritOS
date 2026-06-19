@@ -1,0 +1,126 @@
+{
+  "task": "spiritflix-smart-tagging-pivot-preserve-finish",
+  "verdict": "GO",
+  "s7_preserved": "GO",
+  "s8_review_workflow": "GO",
+  "auto_naming_preview": "GO",
+  "real_rename_apply_implemented": "NO",
+  "real_media_renamed": false,
+  "real_media_moved": false,
+  "jellyfin_mutated": false,
+  "source_proxy_touched": false,
+  "model_calls_run": false,
+  "ocr_or_vlm_added": false,
+  "commits_created": [
+    "537b1044 feat: add SpiritFlix smart tagging batch analysis",
+    "feat: finish SpiritFlix smart tagging review and rename preview workflow"
+  ],
+  "git_push_performed": false,
+  "tests": [
+    {
+      "name": "s7-preserve typecheck",
+      "command": "npm run typecheck",
+      "result": "PASS",
+      "evidence": "raw/s7-preserve-typecheck.txt"
+    },
+    {
+      "name": "s7-preserve smart/admin vitest",
+      "command": "npx vitest run src/lib/spiritflix/admin/smart src/components/spiritflix/admin src/app/api/spiritflix/admin",
+      "result": "PASS",
+      "evidence": "raw/s7-preserve-smart-vitest.txt"
+    },
+    {
+      "name": "s7-preserve home/player vitest",
+      "command": "npx vitest run src/components/spiritflix/__tests__/SpiritFlixHome.test.tsx src/components/spiritflix/__tests__/SpiritFlixPlayer.test.tsx",
+      "result": "PASS",
+      "evidence": "raw/s7-preserve-home-player-vitest.txt"
+    },
+    {
+      "name": "final typecheck",
+      "command": "npm run typecheck",
+      "result": "PASS",
+      "evidence": "raw/final-typecheck.txt"
+    },
+    {
+      "name": "final smart/admin vitest",
+      "command": "npx vitest run src/lib/spiritflix/admin/smart src/components/spiritflix/admin src/app/api/spiritflix/admin",
+      "result": "PASS",
+      "evidence": "raw/final-smart-vitest.txt"
+    },
+    {
+      "name": "final home/player vitest",
+      "command": "npx vitest run src/components/spiritflix/__tests__/SpiritFlixHome.test.tsx src/components/spiritflix/__tests__/SpiritFlixPlayer.test.tsx",
+      "result": "PASS",
+      "evidence": "raw/final-home-player-vitest.txt"
+    },
+    {
+      "name": "final scoped diff check",
+      "command": "git diff --check -- scoped SpiritFlix smart-tagging paths",
+      "result": "PASS",
+      "evidence": "raw/final-scoped-diff-check.txt"
+    },
+    {
+      "name": "narrow secret scan",
+      "command": "grep secret patterns over scoped touched files and evidence",
+      "result": "PASS",
+      "evidence": "raw/secret-scan-touched-files.txt"
+    }
+  ],
+  "files_changed": [
+    "src/lib/spiritflix/admin/smart/batch.ts",
+    "src/lib/spiritflix/admin/smart/rename-plan.ts",
+    "src/lib/spiritflix/admin/smart/index.ts",
+    "src/lib/spiritflix/admin/smart/__tests__/batch.test.ts",
+    "src/lib/spiritflix/admin/smart/__tests__/rename-plan.test.ts",
+    "src/app/api/spiritflix/admin/smart/batch/route.ts",
+    "src/app/api/spiritflix/admin/__tests__/smart-batch-route.test.ts",
+    "src/components/spiritflix/admin/SpiritFlixSmartBatchPanel.tsx",
+    "src/components/spiritflix/admin/__tests__/SpiritFlixAdminInteractions.test.tsx",
+    "docs/evidence/spiritflix-smart-tagging-pivot-preserve-finish-20260619/00-baseline.md",
+    "docs/evidence/spiritflix-smart-tagging-pivot-preserve-finish-20260619/10-dirty-tree-classification.md",
+    "docs/evidence/spiritflix-smart-tagging-pivot-preserve-finish-20260619/index.md",
+    "docs/evidence/spiritflix-smart-tagging-pivot-preserve-finish-20260619/final-verdict.md",
+    "docs/evidence/spiritflix-smart-tagging-pivot-preserve-finish-20260619/operator-summary.md",
+    "docs/evidence/spiritflix-smart-tagging-pivot-preserve-finish-20260619/summary.json"
+  ],
+  "unrelated_dirty_files_left_untouched": [
+    "README.md",
+    "package.json",
+    "package-lock.json",
+    "scripts/media-ingest-worker.mjs",
+    "scripts/media/face_organizer.py and generated face/media audit files",
+    "scripts/runtime-port-guard.sh",
+    "scripts/source-context-compress.mjs",
+    "scripts/spiritos-lan-watchdog.sh",
+    "docs/evidence/source-proxy-*",
+    "docs/evidence/live-hiccup-triage-20260617/",
+    "docs/evidence/repo-cleanup-manifest-watchers-20260617/",
+    "docs/evidence/repo-host-cleanup-stability-audit-20260617/",
+    "src/app/api/spiritflix/jellyfin-image/route.ts",
+    "src/app/api/spiritflix/stream/route.ts",
+    "src/app/api/spiritflix/hls/",
+    "src/app/layout.tsx",
+    "src/components/spiritflix/SpiritFlixPlayer.tsx",
+    "src/components/spiritflix/__tests__/SpiritFlixPlayer.test.tsx",
+    "src/lib/spiritflix-jellyfin-client.ts",
+    "src/lib/spiritflix-jellyfin-client.test.ts",
+    "src/lib/spiritflix/jellyfin-client.ts",
+    "src/styles/spiritflix.css"
+  ],
+  "remaining_action_needed_from_britton": [
+    "Review the S8 smart batch UI and rename plan behavior in SpiritFlix Admin.",
+    "Approve a separate future Level 2 apply task before any real rename or move execution is implemented.",
+    "Approve a separate future OCR, CLIP, VLM, model, or dependency-install task before those lanes are added."
+  ],
+  "evidence_files": [
+    "docs/evidence/spiritflix-smart-tagging-pivot-preserve-finish-20260619/index.md",
+    "docs/evidence/spiritflix-smart-tagging-pivot-preserve-finish-20260619/final-verdict.md",
+    "docs/evidence/spiritflix-smart-tagging-pivot-preserve-finish-20260619/operator-summary.md",
+    "docs/evidence/spiritflix-smart-tagging-pivot-preserve-finish-20260619/summary.json",
+    "docs/evidence/spiritflix-smart-tagging-pivot-preserve-finish-20260619/raw/final-typecheck.txt",
+    "docs/evidence/spiritflix-smart-tagging-pivot-preserve-finish-20260619/raw/final-smart-vitest.txt",
+    "docs/evidence/spiritflix-smart-tagging-pivot-preserve-finish-20260619/raw/final-home-player-vitest.txt",
+    "docs/evidence/spiritflix-smart-tagging-pivot-preserve-finish-20260619/raw/final-scoped-diff-check.txt",
+    "docs/evidence/spiritflix-smart-tagging-pivot-preserve-finish-20260619/raw/secret-scan-touched-files.txt"
+  ]
+}

@@ -6,10 +6,15 @@ import path from "node:path";
 import { resolveSpiritFlixAdminPath } from "../paths";
 import { readSmartAnalysis } from "./analysis-store";
 import { buildSmartRenamePreviewDraft } from "./rename-preview";
-import { runSpiritFlixSmartReviewPipeline, type SpiritFlixSmartReviewOptions } from "./review";
+import {
+  markSpiritFlixSmartAnalysisReviewed,
+  runSpiritFlixSmartReviewPipeline,
+  saveSpiritFlixSmartAnalysisReview,
+  type SpiritFlixSmartReviewOptions,
+} from "./review";
 import { isSpiritFlixSmartVideoExtension } from "./probe";
 import { projectApprovedSmartMetadata } from "./metadata-bridge";
-import type { SpiritFlixSmartAnalysis } from "./types";
+import type { SpiritFlixSmartAnalysis, SpiritFlixSmartReviewInput } from "./types";
 
 export type SpiritFlixSmartBatchItemStatus =
   | "candidate"
@@ -61,6 +66,15 @@ export interface SpiritFlixSmartBatchOptions extends SpiritFlixSmartReviewOption
   recursive?: boolean;
   maxItems?: number;
   force?: boolean;
+}
+
+export type SpiritFlixSmartBatchReviewMode =
+  | "approve_all_tags"
+  | "reject_all_tags"
+  | "mark_reviewed";
+
+export interface SpiritFlixSmartBatchReviewOptions extends SpiritFlixSmartBatchOptions {
+  reviewMode: SpiritFlixSmartBatchReviewMode;
 }
 
 type AnalyzeVideo = typeof runSpiritFlixSmartReviewPipeline;
@@ -283,6 +297,86 @@ export async function runSpiritFlixSmartBatch(options: InternalBatchOptions = {}
       const preservedReview = beforeReview && analysis.reviewedMetadata?.reviewedAt === beforeReview.reviewedAt;
       const reason = beforeReview && !preservedReview ? "Analysis refreshed; review metadata changed." : undefined;
       items.push(await itemFromAnalysis(videoPath, analysis, "analyzed", reason));
+    } catch (error) {
+      items.push({
+        path: videoPath,
+        name: path.basename(videoPath),
+        parentPath: path.dirname(videoPath),
+        extension: path.extname(videoPath).toLowerCase(),
+        status: "failed",
+        reason: safeMessage(error),
+        sidecarCurrent: false,
+        needsReview: false,
+        suggestedTagCount: 0,
+        renamePreviewAvailable: false,
+      });
+    }
+  }
+
+  return {
+    schema: "spiritflix-smart-batch/v1",
+    generatedAt: new Date().toISOString(),
+    mode: "run",
+    rootPath,
+    recursive: Boolean(options.recursive),
+    maxItems,
+    items,
+    counts: summarize(items),
+  };
+}
+
+function batchReviewInput(
+  analysis: SpiritFlixSmartAnalysis,
+  reviewMode: Exclude<SpiritFlixSmartBatchReviewMode, "mark_reviewed">,
+): SpiritFlixSmartReviewInput {
+  const reviewed = analysis.reviewedMetadata;
+  const preservedEdits = {
+    editedDisplayTitle: reviewed?.editedDisplayTitle,
+    editedFilenameSuggestion: reviewed?.editedFilenameSuggestion,
+    editedCategory: reviewed?.editedCategory,
+    editedCollections: reviewed?.editedCollections,
+    notes: reviewed?.notes,
+  };
+  const suggestedIds = analysis.suggestedTags.map((tag) => tag.id);
+  if (reviewMode === "approve_all_tags") {
+    return {
+      ...preservedEdits,
+      approvedTagIds: suggestedIds,
+      rejectedTagIds: [],
+    };
+  }
+
+  return {
+    ...preservedEdits,
+    approvedTagIds: [],
+    rejectedTagIds: suggestedIds,
+  };
+}
+
+export async function reviewSpiritFlixSmartBatch(
+  options: SpiritFlixSmartBatchReviewOptions,
+): Promise<SpiritFlixSmartBatchPreview> {
+  const maxItems = boundedLimit(options.maxItems);
+  const { rootPath, targets } = await resolveBatchTargets({ ...options, maxItems });
+  const items: SpiritFlixSmartBatchItem[] = [];
+
+  for (const { videoPath, mediaRoot } of targets) {
+    try {
+      const current = await loadCurrentAnalysis(videoPath, mediaRoot);
+      if (!current) {
+        items.push(await itemFromAnalysis(videoPath, null, "skipped", "No smart analysis sidecar exists to review."));
+        continue;
+      }
+
+      const analysis = options.reviewMode === "mark_reviewed"
+        ? await markSpiritFlixSmartAnalysisReviewed(videoPath, { mediaRoot })
+        : await saveSpiritFlixSmartAnalysisReview(
+            videoPath,
+            batchReviewInput(current, options.reviewMode),
+            { mediaRoot },
+          );
+
+      items.push(await itemFromAnalysis(videoPath, analysis, "analyzed", `Batch ${options.reviewMode.replace(/_/g, " ")} saved.`));
     } catch (error) {
       items.push({
         path: videoPath,

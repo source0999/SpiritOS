@@ -1,0 +1,17 @@
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.5 [39m[90m/home/source/SpiritOS[39m
+
+ [32m✓[39m docs/handoff/spiritflix-llm-pack/stage/src/components/spiritflix/__tests__/SpiritFlixPlayer.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 332[2mms[22m[39m
+ [32m✓[39m src/components/spiritflix/__tests__/SpiritFlixPlayer.test.tsx [2m([22m[2m10 tests[22m[2m)[22m[33m 619[2mms[22m[39m
+ [32m✓[39m src/components/spiritflix/__tests__/SpiritFlixHome.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 1242[2mms[22m[39m
+     [33m[2m✓[22m[39m shows private watch history in the library and plays from the synced resume point [33m 652[2mms[22m[39m
+     [33m[2m✓[22m[39m shows uploaded gallery pictures and opens the fullscreen gallery viewer [33m 467[2mms[22m[39m
+ [32m✓[39m docs/handoff/spiritflix-llm-pack/stage/src/components/spiritflix/__tests__/SpiritFlixHome.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 1272[2mms[22m[39m
+     [33m[2m✓[22m[39m shows private watch history in the library and plays from the synced resume point [33m 710[2mms[22m[39m
+     [33m[2m✓[22m[39m shows uploaded gallery pictures and opens the fullscreen gallery viewer [33m 458[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m4 passed[39m[22m[90m (4)[39m
+[2m      Tests [22m [1m[32m18 passed[39m[22m[90m (18)[39m
+[2m   Start at [22m 04:24:02
+[2m   Duration [22m 4.45s[2m (transform 1.31s, setup 618ms, import 5.53s, tests 3.46s, environment 3.09s)[22m
+

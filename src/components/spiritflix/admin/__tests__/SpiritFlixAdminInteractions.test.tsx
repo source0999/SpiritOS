@@ -41,7 +41,7 @@ function yesFolderPayload() {
 function mockAdminFetch() {
   vi.stubGlobal(
     "fetch",
-    vi.fn(async (input: RequestInfo | URL) => {
+    vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       if (url.startsWith("/api/spiritflix/admin/jellyfin-index")) {
         return Response.json({ items: [], source: "unconfigured" });
@@ -56,6 +56,41 @@ function mockAdminFetch() {
         return Response.json({ analysis: null, sidecarPath: null });
       }
       if (url.startsWith("/api/spiritflix/admin/smart/batch")) {
+        const body = init?.body ? JSON.parse(String(init.body)) as { action?: string } : {};
+        if (body.action === "renamePlan") {
+          return Response.json({
+            schema: "spiritflix-smart-rename-plan/v1",
+            generatedAt: "2026-06-18T12:00:00.000Z",
+            rootPath: `${SPIRITFLIX_MEDIA_ROOT}/yes`,
+            recursive: false,
+            maxItems: 50,
+            applyEnabled: false,
+            applyGate: "Preview/export only. Real rename or move must use a future explicit Level 2 apply task.",
+            counts: {
+              candidates: 1,
+              ready: 1,
+              blocked: 0,
+              needs_review: 0,
+              skipped: 0,
+              collisions: 0,
+              target_conflicts: 0,
+            },
+            items: [
+              {
+                sourcePath: "/mnt/spirit-8tb/media/yes/Beta Clip.mp4",
+                currentName: "Beta Clip.mp4",
+                suggestedName: "Beta Clip HD.mp4",
+                targetPath: "/mnt/spirit-8tb/media/yes/Beta Clip HD.mp4",
+                status: "ready",
+                reviewStatus: "reviewed",
+                approvedTags: ["HD"],
+                rejectedTagIds: [],
+                warnings: [],
+                readyForLevel2Preview: true,
+              },
+            ],
+          });
+        }
         return Response.json({
           schema: "spiritflix-smart-batch/v1",
           generatedAt: "2026-06-18T12:00:00.000Z",
@@ -262,6 +297,19 @@ describe("SpiritFlix admin Level 2R interactions", () => {
       expect(screen.getAllByText("Beta Clip.mp4").length).toBeGreaterThan(1);
       expect(screen.getByText("Candidates")).toBeInTheDocument();
     });
+    expect(screen.queryByRole("button", { name: /apply rename/i })).not.toBeInTheDocument();
+  });
+
+  it("shows a preview-only rename plan from the batch panel", async () => {
+    await openYesFolder();
+    fireEvent.click(screen.getByRole("button", { name: "Batch smart analyze" }));
+    fireEvent.click(screen.getByRole("button", { name: "Rename plan" }));
+    await waitFor(() => {
+      expect(screen.getByText("Preview/export only. Real rename or move must use a future explicit Level 2 apply task.")).toBeInTheDocument();
+      expect(screen.getByText("Beta Clip HD.mp4 - reviewed - ready")).toBeInTheDocument();
+    });
+    expect(screen.getByText("Apply enabled")).toBeInTheDocument();
+    expect(screen.getByText("No")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /apply rename/i })).not.toBeInTheDocument();
   });
 });

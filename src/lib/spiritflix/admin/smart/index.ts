@@ -143,10 +143,22 @@ export {
 
 export {
   previewSpiritFlixSmartBatch,
+  reviewSpiritFlixSmartBatch,
   runSpiritFlixSmartBatch,
   type SpiritFlixSmartBatchCounts,
   type SpiritFlixSmartBatchItem,
   type SpiritFlixSmartBatchItemStatus,
   type SpiritFlixSmartBatchOptions,
   type SpiritFlixSmartBatchPreview,
+  type SpiritFlixSmartBatchReviewMode,
+  type SpiritFlixSmartBatchReviewOptions,
 } from "./batch";
+
+export {
+  buildSpiritFlixSmartRenamePlan,
+  type SpiritFlixSmartRenamePlan,
+  type SpiritFlixSmartRenamePlanCounts,
+  type SpiritFlixSmartRenamePlanItem,
+  type SpiritFlixSmartRenamePlanItemStatus,
+  type SpiritFlixSmartRenamePlanOptions,
+} from "./rename-plan";

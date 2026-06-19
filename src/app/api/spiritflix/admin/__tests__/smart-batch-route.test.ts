@@ -36,7 +36,9 @@ async function seedCurrent(videoPath: string) {
     safety: { safeToSuggest: false, reasons: ["test"], requiresHumanReview: true },
     media: {},
     samples: [],
-    suggestedTags: [],
+    suggestedTags: [{ id: "hd", label: "HD", group: "quality", confidence: 0.8, evidenceTimestamps: [], reviewRequired: false }],
+    suggestedDisplayTitle: "Clip",
+    suggestedFilename: "Clip Better.mp4",
     confidence: 0.4,
   }), { mediaRoot: tempRoot });
 }
@@ -86,5 +88,58 @@ describe("SpiritFlix smart batch API", () => {
 
     expect(response.status).toBe(400);
     expect(body.error).toMatch(/unsupported/i);
+  });
+
+  it("batch approves tags through the review action", async () => {
+    const videoPath = path.join(tempRoot, "yes/clip.mp4");
+    await seedCurrent(videoPath);
+
+    const response = await POST(postRequest({
+      path: path.join(tempRoot, "yes"),
+      action: "review",
+      reviewMode: "approve_all_tags",
+      maxItems: 10,
+    }));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.items[0].reviewStatus).toBe("reviewed");
+    expect(body.counts.rename_preview_available).toBe(1);
+  });
+
+  it("exports a preview-only rename plan through the batch route", async () => {
+    const videoPath = path.join(tempRoot, "yes/clip.mp4");
+    await seedCurrent(videoPath);
+    await POST(postRequest({
+      path: path.join(tempRoot, "yes"),
+      action: "review",
+      reviewMode: "approve_all_tags",
+      maxItems: 10,
+    }));
+
+    const response = await POST(postRequest({
+      path: path.join(tempRoot, "yes"),
+      action: "renamePlan",
+      maxItems: 10,
+    }));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.schema).toBe("spiritflix-smart-rename-plan/v1");
+    expect(body.applyEnabled).toBe(false);
+    expect(body.items[0].suggestedName).toMatch(/HD\.mp4$/);
+  });
+
+  it("rejects unsupported review modes without stack traces", async () => {
+    const response = await POST(postRequest({
+      path: path.join(tempRoot, "yes"),
+      action: "review",
+      reviewMode: "rename_now",
+    }));
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body.error).toMatch(/unsupported/i);
+    expect(body.error).not.toMatch(/\n\s+at\s+/);
   });
 });
