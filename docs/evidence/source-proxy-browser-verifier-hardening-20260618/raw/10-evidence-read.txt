@@ -1,0 +1,202 @@
+===== docs/evidence/source-proxy-return-checkpoint-20260618/final-verdict.md =====
+# Final Verdict
+
+| Category | Verdict |
+| --- | --- |
+| Repo readiness for proxy | `PARTIAL-GO` |
+| Watcher/runtime observability | `GO` |
+| Source Proxy liveness | `GO` |
+| Next/dev liveness | `GO` |
+| Ollama/model readiness | `PARTIAL-GO` |
+| Source-of-truth reconciliation | `PARTIAL-GO` |
+| Safe to implement next proxy patch | `PARTIAL-GO` |
+
+## Basis
+
+- Source Proxy is reachable on `:8787`; `/docs`, `/openapi.json`, `/healthcheck`, `/v1/self/status`, `/v1/models`, and Cartographer status returned HTTP `200`.
+- Next HTTPS is reachable on `:3000`; `/spiritflix/admin` returned HTTP `200`.
+- Ollama is reachable on `:11434`; `/api/tags` returned HTTP `200`.
+- `/health` and `/v1/health` returned HTTP `404` and are not valid health endpoints.
+- Watcher timer is active, the last health snapshot succeeded, boot postmortem succeeded, and fresh logs are being written.
+- No fresh OOM kill was found in the last-four-hours journal grep.
+- The known failed mount, Docker missing-curl healthcheck noise, CasaOS history, and spirit-whisper issue remain out of scope and unfixed.
+- Staged files: `0`.
+- Dirty `source_proxy/` files: `0`.
+- Dirty tree remains broad, and package/config files are dirty; live Cartographer status reports that as a blocker for authority gates.
+
+## Source-of-truth read
+
+The latest truth is mixed but usable for choosing the next patch:
+
+- Runtime is up now.
+- Watchers are GO now.
+- Cleanup reduced context/repomix bloat and classified dirty state.
+- Claude 3x10 says the integrated path is real and honest but `productive_go` is structural only.
+- Claude audit says browser verification was not real for UI rows; Level 5R2 later claims browser evidence passed, so browser truth needs reconciliation.
+- Model inventory supports local Qwen/Hermes, but classifier is missing and no model was loaded at capture time.
+
+## Next patch
+
+Recommended next proxy patch: `Runtime health/status/liveness truth`.
+
+Exact approval request: **A. approve runtime health/status patch**.
+
+Do not start broad gauntlets, 3x10, model intelligence work, browser verifier work, repair-loop work, cleanup, mount repair, service restarts, or git operations without separate approval.
+===== docs/evidence/source-proxy-return-checkpoint-20260618/operator-summary.md =====
+# Operator Summary
+
+Source Proxy return checkpoint is complete.
+
+Evidence folder:
+
+`docs/evidence/source-proxy-return-checkpoint-20260618/`
+
+Runtime status:
+
+- Source Proxy: `GO`, HTTPS `:8787` up.
+- Next: `GO`, HTTPS `:3000/spiritflix/admin` up.
+- Ollama: `GO` for tags/status, no loaded models.
+- Watchers: `GO`, timer active and latest snapshot successful.
+- Fresh OOM/crash signs: no fresh OOM kill found; Docker/CasaOS/failed-mount noise remains.
+
+Repo contamination:
+
+- Staged files: `0`.
+- Dirty `source_proxy/` files: `0`.
+- Tree is still dirty outside Source Proxy, including package/config/runtime helper paths, so implementation authority is `PARTIAL-GO`, not a clean GO.
+
+Most important truth-table findings:
+
+- `productive_go` is still structural, not proof that apps work.
+- Browser verifier truth is contradictory across old and newer evidence and should not be overclaimed.
+- Cartographer is read-only/preview, not write authority.
+- Qwen/Hermes local routes are available; classifier lane is missing `phi4-mini`.
+- Runtime liveness/status truth is the cleanest first patch.
+
+Recommended next proxy patch:
+
+`Runtime health/status/liveness truth`.
+
+Exact approval request:
+
+**A. approve runtime health/status patch**.
+===== docs/evidence/source-proxy-return-checkpoint-20260618/50-source-proxy-truth-table.md =====
+# Source Proxy Truth Table
+
+Generated from `raw/50-evidence-index.txt`, `raw/50-source-proxy-evidence-extracts.txt`, and current liveness probes.
+
+| Area | Current status | Evidence | Confidence | Notes |
+| --- | --- | --- | --- | --- |
+| FIP-0 baseline/runtime | `PARTIAL-GO` | FIP-0 closeout existed; runtime currently up on `:8787`; post-Level-5 closeout names source-proxy-lan as runtime. | Medium | Current process is alive, but no fresh FIP run was allowed. |
+| FIP-1 context packet | `PARTIAL-GO` | Claude 3x10 says real FIP-1..5 path was enabled. | Medium | Old GO, no fresh packet generation here. |
+| FIP-2 research lanes | `PARTIAL-GO` | Claude audit says Scout/SearXNG honestly skipped when no current-info prompts; Level 5R2 says SearXNG was honestly used/blocked depending on results. | Medium | No fresh search calls. |
+| FIP-3 Gemma/Hermes lanes | `PARTIAL-GO` | Claude model-lane audit: role separation correct; Gemma ~6 timeouts and Hermes critic one failure were non-gating. | High | Lane degradation should not vanish behind GO. |
+| FIP-4 Qwen coding lane | `PARTIAL-GO` | Qwen used 30/30 in Claude battery; `/v1/models` coder alias is enabled now. | High | Coder quality still weak; no fresh coding call. |
+| FIP-5 model inventory | `PARTIAL-GO` | Ollama has qwen/gemma/hermes models; `/v1/models` local/coder enabled, classifier missing. | High | No loaded models at capture time. |
+| FIP-6 trace/receipt UI | `PARTIAL-GO` | Claude battery: 30/30 durable receipts/traces and trace match. Receipt trace audit flagged raw output excerpts. | High | Trace hygiene remains a concern. |
+| FIP-7 integrated gauntlet status | `PARTIAL-GO` | Post-Level-5 stabilization says FIP-7R GO and Level 5R2 GO. | Medium | No broad gauntlet run allowed. |
+| Claude 3x10 audit findings | `C / PARTIAL-GO` | 22 productive_go, 8 verifier_blocked_browser, 0 hard-fails; productive_go is structural only. | High | Most important caveat: not proof apps work. |
+| GLM/ZCode audit findings | `PARTIAL-GO` | Exact GLM closeout exists; extraction was limited to available summaries. | Medium | Treat as newer audit evidence but not a runtime GO by itself. |
+| Browser verifier | `PARTIAL-GO` | Claude audit says no real browser verifier and UI rows blocked; Level 5R2 says browser evidence passed in its matrix. | Medium | Contradiction needs reconciliation before browser-heavy claims. |
+| Functional verifier | `NO-GO/PARTIAL` | Claude audit says deterministic verifier is structural only and does not prove behavior. | High | This is the main truth gap behind productive_go. |
+| Repair loop | `UNKNOWN/PARTIAL` | Claude battery had 0 repair attempts; Level 5R2 says bounded repair loop visible, no recurrence. | Medium | Not proven organically under honest prompts. |
+| productive_go definition | `NO-GO for behavior` | Claude audit: productive_go means structurally valid file, not working app. | High | Must be hardened before intelligence claims. |
+| Trace hygiene/redaction | `PARTIAL-GO` | Claude audit flags raw Qwen output excerpt in traces. | High | Needs regression guard. |
+| web/search/SearXNG/TinyFish/xersearch | `PARTIAL` | SearXNG can be honest used/blocked; TinyFish deferred; xersearch missing alias. | Medium | Do not claim full research stack ready. |
+| Obsidian/context status | `PARTIAL` | `/v1/self/status` says configured not scanned; prior evidence says advisory/read-only. | High | Read-only advisory, not acceptance authority. |
+| Cartographer routing | `PREVIEW` | `/v1/cartographer/status`: observing, write actions disabled, approval token missing, dirty package/config blocker. | High | Not a route owner for writes. |
+| Mac advisory/design/source readiness | `UNKNOWN/PARTIAL` | Claude audit says Mac worker skipped stub; design context read-only. | Medium | Cosmetic/advisory only. |
+| Source Proxy runtime process supervision | `PARTIAL-GO` | tmux session and listener exist; watchers active; no service manager for proxy itself proven. | High | Runtime health/status patch should come before more model work. |
+
+## Reconciliation
+
+The most current live runtime is up, but the authoritative source-of-truth is not a clean GO for implementation authority. Cleanup says proxy return readiness was GO; live Cartographer status now says the repo truth packet is blocked because package/config files are dirty. Both can be true: return-to-analysis is fine, but mutation authority should be explicitly approved and scoped.
+===== docs/evidence/source-proxy-return-checkpoint-20260618/70-next-patch-ranking.md =====
+# Next Patch Ranking
+
+No patch was implemented.
+
+## Ranking
+
+| Rank | Candidate | Problem solved | Evidence needed | Risk | Likely files | Tests required | Before model intelligence work? |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | Runtime health/status/liveness truth | Replaces invalid `/health` expectations and makes live readiness explicit. | `/health` and `/v1/health` are 404; valid proof is scattered across `/docs`, `/openapi.json`, `/healthcheck`, `/v1/self/status`, `/v1/models`, watchers. | Low/medium | `source_proxy/main.py`, status route modules, docs/runbook, tests. | API route tests, status JSON schema tests, no-mutation status smoke. | Yes. Runtime truth should precede model claims. |
+| 2 | Process supervision/runbook integration | Makes proxy/Next/Ollama process ownership and restart boundaries explicit. | Runtime is in tmux, not proven as supervised service; prior OOM killed uvicorn before reboot. | Medium | runbook docs, watcher scripts, maybe non-mutating status integration. | Read-only watcher tests, docs validation, liveness smoke. | Yes, after health/status truth. |
+| 3 | Browser verifier hardening | Reconciles Claude "no real browser" with Level 5R2 browser-pass claims. | Claude audit blocked 8 UI rows; Level 5R2 later claims browser evidence passed. | Medium/high | verifier lane modules, browser verifier code/tests, evidence docs. | Browser verifier unit tests plus one approved browser smoke. | Yes, before UI/productive claims. |
+| 4 | Repair loop actually firing | Proves repair works under organic failures, not just visible bounded metadata. | Claude battery had 0 attempts; Level 5R2 says bounded loop visible. | Medium | decision/verifier/repair modules, tests. | Targeted repair-loop tests, no broad gauntlet unless approved. | After runtime truth and verifier reconciliation. |
+| 5 | Qwen coder timeout/empty-output handling | Improves local coder failure classification and avoids generic no-diff masking. | Prior no-diff diagnostics identify parser/output classification loss; Qwen quality remains weak. | Medium | `source_proxy/tasks/long_running.py`, `source_proxy/api/decision.py`, coding UI tests. | Backend parser tests, workflow regression pack, UI result rendering tests. | After status truth unless coding lane is the immediate approved focus. |
+
+## Other candidates
+
+- `productive_go` definition hardening: important, but depends on verifier/functional evidence.
+- Gemma/Hermes timeout/degraded lane handling: important after runtime/model contention is characterized.
+- Search/web/Obsidian/research proof: should wait behind runtime health and verifier truth.
+- Trace hygiene regression guard: high value and low risk; could be paired with status work if scope stays tight.
+- Integrated gauntlet harness: not next; broad/noisy and explicitly not approved.
+
+## Recommendation
+
+Recommended next proxy patch: `Runtime health/status/liveness truth`.
+
+Reason: current work can return to Source Proxy analysis, but implementation should start by making the live source of truth explicit and non-ambiguous. That patch is smaller and safer than jumping back into browser/model intelligence while the repo is dirty and runtime authority is split across old evidence, live endpoints, tmux, and watcher logs.
+===== docs/evidence/source-proxy-runtime-health-status-patch-20260618/final-verdict.md =====
+# Final Verdict
+
+| Category | Verdict |
+| --- | --- |
+| Patch implementation | `GO` |
+| Tests | `PARTIAL-GO` |
+| Live API smoke | `PARTIAL-GO` |
+| Runtime truthfulness | `GO` |
+| Safe for next proxy patch | `PARTIAL-GO` |
+
+## Summary
+
+The bounded runtime health/status implementation is present on disk and focused tests pass. It adds truthful status routes in code:
+
+- `/health`
+- `/v1/health`
+- `/v1/runtime/status`
+
+The response distinguishes API, Next, Ollama, watchers, git authority, failed units, and recent crash signals. It degrades to `PARTIAL_GO`, `NO_GO`, `BLOCKED`, or `UNKNOWN` instead of pretending everything is healthy.
+
+## Blocking conditions
+
+- The live Source Proxy service was not restarted, so live smoke still shows 404 for the new endpoints.
+- The broader `pytest -q source_proxy/tests` did not pass cleanly. Its first controlled failure was an external gate mismatch unrelated to this patch.
+- Two broad pytest processes continued running after SSH command timeouts. Britton approved narrow cleanup, and graceful termination succeeded without `kill -9`.
+
+## Safety confirmation
+
+- No service restart.
+- No unrelated process kill. Only the approved runaway pytest processes were terminated.
+- No Docker mutation.
+- No media mutation.
+- No Jellyfin SQLite/config mutation.
+- No benchmark batteries.
+- No model calls.
+- No push.
+-- No push.
+
+## Commit criteria
+
+Focused tests pass, safety scan is clean/explained, and the live smoke is correctly `PARTIAL-GO` because the running service has not reloaded. Commit is allowed only if the staged set is limited to the approved implementation/test/evidence paths.
+===== docs/evidence/source-proxy-runtime-health-status-live-proof-20260618/final-verdict.md =====
+# Final Verdict
+
+Verdict: GO for live route proof; runtime status is PARTIAL_GO.
+
+The approved Source Proxy-only reload was performed against commit `ae2afdca Add Source Proxy runtime health status`. The reloaded service now exposes the runtime health/status routes live.
+
+Key result:
+
+- Before reload, the running service was the old Source Proxy process and returned 404 for the new routes.
+- After reload, Source Proxy restarted under the documented `source-proxy-lan` watchdog.
+- The first smoke window hit transient timeout/reset/connect failures while the watchdog recycled the service.
+- The post-recovery smoke returned HTTP 200 for `/health`, `/v1/health`, `/v1/runtime/status`, and `/openapi.json`.
+- OpenAPI lists `/health`, `/v1/health`, and `/v1/runtime/status`.
+- Runtime payloads include `status` and `checks`; their top-level status is `PARTIAL_GO`.
+
+No code was patched. No unrelated services were restarted. No staging, commit, or push was performed.
+
+Next useful action is a separate approved hardening increment for the transient post-reload startup/request delay and any desired browser evidence capture.

@@ -1,0 +1,100 @@
+.............F.............................                          [100%]
+=================================== FAILURES ===================================
+_ LongRunningTaskTrackerTests.test_code_verify_keeps_route_change_pending_until_browser_review _
+
+self = <source_proxy.tests.test_long_running_tasks.LongRunningTaskTrackerTests testMethod=test_code_verify_keeps_route_change_pending_until_browser_review>
+
+    def test_code_verify_keeps_route_change_pending_until_browser_review(self) -> None:
+        previous_cwd = os.getcwd()
+        try:
+            os.chdir(self._tempdir.name)
+            os.makedirs("src/app/demo", exist_ok=True)
+            with open("src/app/demo/page.tsx", "w", encoding="utf-8") as handle:
+                handle.write("export const value = 'old';\n")
+
+            created = create_long_running_task("Apply route change requiring browser review")
+            task_id = created["task"]["id"]
+            diff = "\n".join(
+                [
+                    "diff --git a/src/app/demo/page.tsx b/src/app/demo/page.tsx",
+                    "--- a/src/app/demo/page.tsx",
+                    "+++ b/src/app/demo/page.tsx",
+                    "@@ -1 +1 @@",
+                    "-export const value = 'old';",
+                    "+export const value = 'new';",
+                    "",
+                ]
+            )
+>           applied = execute_approved_long_running_task(
+                task_id,
+                action="modify route file",
+                approval_id=_approval_id(task_id, diff, "src/app/demo/page.tsx"),
+                approved_diff=diff,
+                target="src/app/demo/page.tsx",
+            )
+
+source_proxy/tests/test_long_running_tasks.py:1369:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+source_proxy/tasks/long_running.py:858: in execute_approved_long_running_task
+    central_gate_check("apply", run_id=f"execute_approved_long_running_task:{task_id}")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+action = 'apply', increment_id = None
+run_id = 'execute_approved_long_running_task:task_42cf4639e90f'
+
+    def central_gate_check(
+        action: str,
+        increment_id: str | None = None,
+        run_id: str | None = None,
+    ) -> ExternalGateReceipt:
+        """Single required guard for Source Proxy model-call and apply paths."""
+        clean_action = _clean_required(action, "action")
+        clean_increment = _clean_required(
+            increment_id or os.getenv(DEFAULT_INCREMENT_ENV, "1.3"),
+            "increment_id",
+        )
+        clean_run_id = _clean_optional(run_id) or f"{clean_increment}:{clean_action}"
+        state = _read_gate_state()
+
+        status = str(state.get("status") or "")
+        approved_increment = state.get("approved_increment")
+        approval_token = state.get("approval_token")
+
+        if status not in VALID_GATE_STATES:
+            raise _gate_error("Gate status is invalid.", "gate_malformed", state)
+        if status == "BLOCKED":
+            raise _gate_error("Gate is blocked.", "gate_blocked", state)
+        if status not in {"APPROVED_INCREMENT", "RUNNING_INCREMENT"}:
+            raise _gate_error("Gate is closed.", "gate_closed", state)
+        if approved_increment != clean_increment:
+>           raise _gate_error(
+                f"Approved increment {approved_increment!r} does not match {clean_increment!r}.",
+                "increment_mismatch",
+                state,
+            )
+E           source_proxy.approval.external_gate.ExternalGateError: Approved increment 'evaluation-round' does not match '1.3'.
+
+source_proxy/approval/external_gate.py:78: ExternalGateError
+=============================== warnings summary ===============================
+source_proxy/main.py:53
+  /home/source/SpiritOS/source_proxy/main.py:53: DeprecationWarning:
+          on_event is deprecated, use lifespan event handlers instead.
+
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+
+    @app.on_event("startup")
+
+.venv-source-proxy/lib/python3.12/site-packages/fastapi/applications.py:4598
+  /home/source/SpiritOS/.venv-source-proxy/lib/python3.12/site-packages/fastapi/applications.py:4598: DeprecationWarning:
+          on_event is deprecated, use lifespan event handlers instead.
+
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+
+    return self.router.on_event(event_type)  # ty: ignore[deprecated]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED source_proxy/tests/test_long_running_tasks.py::LongRunningTaskTrackerTests::test_code_verify_keeps_route_change_pending_until_browser_review
+1 failed, 42 passed, 1483 deselected, 2 warnings, 4 subtests passed in 45.45s

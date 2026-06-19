@@ -1,0 +1,198 @@
+.............F.............F...............                          [100%]
+=================================== FAILURES ===================================
+_ LongRunningTaskTrackerTests.test_code_verify_keeps_route_change_pending_until_browser_review _
+
+self = <source_proxy.tests.test_long_running_tasks.LongRunningTaskTrackerTests testMethod=test_code_verify_keeps_route_change_pending_until_browser_review>
+
+    def test_code_verify_keeps_route_change_pending_until_browser_review(self) -> None:
+        previous_cwd = os.getcwd()
+        try:
+            os.chdir(self._tempdir.name)
+            os.makedirs("src/app/demo", exist_ok=True)
+            with open("src/app/demo/page.tsx", "w", encoding="utf-8") as handle:
+                handle.write("export const value = 'old';\n")
+
+            created = create_long_running_task("Apply route change requiring browser review")
+            task_id = created["task"]["id"]
+            diff = "\n".join(
+                [
+                    "diff --git a/src/app/demo/page.tsx b/src/app/demo/page.tsx",
+                    "--- a/src/app/demo/page.tsx",
+                    "+++ b/src/app/demo/page.tsx",
+                    "@@ -1 +1 @@",
+                    "-export const value = 'old';",
+                    "+export const value = 'new';",
+                    "",
+                ]
+            )
+>           applied = execute_approved_long_running_task(
+                task_id,
+                action="modify route file",
+                approval_id=_approval_id(task_id, diff, "src/app/demo/page.tsx"),
+                approved_diff=diff,
+                target="src/app/demo/page.tsx",
+            )
+
+source_proxy/tests/test_long_running_tasks.py:1369:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+source_proxy/tasks/long_running.py:858: in execute_approved_long_running_task
+    central_gate_check("apply", run_id=f"execute_approved_long_running_task:{task_id}")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+action = 'apply', increment_id = None
+run_id = 'execute_approved_long_running_task:task_1b7b75428754'
+
+    def central_gate_check(
+        action: str,
+        increment_id: str | None = None,
+        run_id: str | None = None,
+    ) -> ExternalGateReceipt:
+        """Single required guard for Source Proxy model-call and apply paths."""
+        clean_action = _clean_required(action, "action")
+        clean_increment = _clean_required(
+            increment_id or os.getenv(DEFAULT_INCREMENT_ENV, "1.3"),
+            "increment_id",
+        )
+        clean_run_id = _clean_optional(run_id) or f"{clean_increment}:{clean_action}"
+        state = _read_gate_state()
+
+        status = str(state.get("status") or "")
+        approved_increment = state.get("approved_increment")
+        approval_token = state.get("approval_token")
+
+        if status not in VALID_GATE_STATES:
+            raise _gate_error("Gate status is invalid.", "gate_malformed", state)
+        if status == "BLOCKED":
+            raise _gate_error("Gate is blocked.", "gate_blocked", state)
+        if status not in {"APPROVED_INCREMENT", "RUNNING_INCREMENT"}:
+            raise _gate_error("Gate is closed.", "gate_closed", state)
+        if approved_increment != clean_increment:
+>           raise _gate_error(
+                f"Approved increment {approved_increment!r} does not match {clean_increment!r}.",
+                "increment_mismatch",
+                state,
+            )
+E           source_proxy.approval.external_gate.ExternalGateError: Approved increment 'evaluation-round' does not match '1.3'.
+
+source_proxy/approval/external_gate.py:78: ExternalGateError
+_ PromptPacketContextMetadataTests.test_functional_verification_is_false_when_lane_missing _
+
+self = <source_proxy.tests.test_prompt_packet_context_metadata.PromptPacketContextMetadataTests testMethod=test_functional_verification_is_false_when_lane_missing>
+
+    def test_functional_verification_is_false_when_lane_missing(self) -> None:
+        target = "source_proxy/tests/fip5-target-proof.txt"
+        fip4_result = {
+            "status": "used",
+            "reason": "fip4_qwen_action_output_parsed_and_diff_generated",
+            "final_coder_packet_hash": "packet-hash",
+            "coder_received_packet_hash": "packet-hash",
+            "parser": {"parsed_output_mode": "json_content_lines", "parse_error": ""},
+            "allowed_files": [target],
+            "forbidden_files": [".env"],
+            "changed_files": [target],
+            "proposed_diff": "--- a/x\n+++ b/x\n@@\n-old\n+new\n",
+            "qwen": {"qwen_output_hash": "qwen-output"},
+            "final_coder_packet": {"target_file": target},
+        }
+>       payload = _attach_fip0_truth_receipt(
+            {"fip4": "functional-missing-proof"},
+            request=PromptPacketRequest(task="Functional truth proof"),
+            route_payload={"recommended_route": "local_route"},
+            intake_payload={"allowed_files": [target], "forbidden_files": [".env"]},
+            decision=SimpleNamespace(research_sources=[]),
+            explicit_target=target,
+            route_reasons=[],
+            fip4_coder_result=fip4_result,
+        )
+
+source_proxy/tests/test_prompt_packet_context_metadata.py:1562:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+source_proxy/api/decision.py:4449: in _attach_fip0_truth_receipt
+    receipt.update(_structured_verdict_fields(receipt))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+receipt = {'allowed_files': ['source_proxy/tests/fip5-target-proof.txt'], 'anti_tailoring_status': {'cloud_provider_used': False...r_behavior_status': {'reason': 'fip0_foundation_only_browser_behavior_not_wired_until_fip5', 'status': 'skipped'}, ...}
+
+    def _structured_verdict_fields(receipt: dict[str, Any]) -> dict[str, Any]:
+        final_verdict = str(receipt.get("final_verdict") or "")
+        qwen_status = receipt.get("qwen_coder_status")
+        qwen_used = isinstance(qwen_status, dict) and qwen_status.get("status") == "used"
+        fip4_result = receipt.get("fip4_qwen_coder_result")
+        has_fip4 = isinstance(fip4_result, dict) and bool(fip4_result)
+        final_hash = str(receipt.get("final_coder_packet_hash") or "")
+        received_hash = str(receipt.get("coder_received_packet_hash") or "")
+        diff_summary = receipt.get("diff_summary")
+        changed_files = (
+            diff_summary.get("changed_files")
+            if isinstance(diff_summary, dict) and isinstance(diff_summary.get("changed_files"), list)
+            else []
+        )
+        protected = receipt.get("protected_path_check")
+        protected_blocked = isinstance(protected, dict) and protected.get("status") == "blocked"
+        coder_path = "legacy_stub"
+        if qwen_used and has_fip4 and final_hash and final_hash == received_hash:
+            coder_path = "fip4_real"
+        elif _trial_harness_only_enabled() and (
+            str(receipt.get("final_verdict") or "").find("trial") >= 0
+            or any("trial" in str(note).lower() for note in receipt.get("coder_notes", []))
+        ):
+            coder_path = "trial"
+        deterministic = receipt.get("deterministic_verifier_status")
+        browser = receipt.get("browser_verifier_status")
+        browser_present = isinstance(browser, dict)
+        browser_behavior = receipt.get("browser_behavior_status")
+        if not browser_present:
+            browser = browser_behavior
+            browser_present = isinstance(browser, dict)
+        hermes = receipt.get("hermes_verifier_status")
+        functional = receipt.get("functional_verifier_status")
+        functional_used = isinstance(functional, dict) and functional.get("status") == "used"
+        functional_passed = bool(functional_used and functional.get("passed") is True)
+        functional_present = isinstance(functional, dict)
+        browser_truth = (
+            browser.get("browser_verifier")
+            if isinstance(browser, dict) and isinstance(browser.get("browser_verifier"), dict)
+            else {}
+        )
+        browser_passed = bool(isinstance(browser, dict) and _browser_truth_behavior_passed(browser))
+        browser_truth_evidence = (
+            browser_truth.get("evidence") if isinstance(browser_truth.get("evidence"), dict) else {}
+        )
+        browser_pass_reason = str(
+            browser_truth_evidence.get("summary") or browser.get("reason") or "browser_verifier_real_behavior_passed"
+        )
+        browser_nonpass_reason = (
+            str(browser.get("reason") or "browser_verifier_not_implemented")
+            if browser_present
+            else "browser_verifier_not_implemented"
+        )
+>       functional_pass_reason = str(functional.get("reason") or "functional_verifier_passed")
+                                     ^^^^^^^^^^^^^^
+E       AttributeError: 'NoneType' object has no attribute 'get'
+
+source_proxy/api/decision.py:1192: AttributeError
+=============================== warnings summary ===============================
+source_proxy/main.py:53
+  /home/source/SpiritOS/source_proxy/main.py:53: DeprecationWarning:
+          on_event is deprecated, use lifespan event handlers instead.
+
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+
+    @app.on_event("startup")
+
+.venv-source-proxy/lib/python3.12/site-packages/fastapi/applications.py:4598
+  /home/source/SpiritOS/.venv-source-proxy/lib/python3.12/site-packages/fastapi/applications.py:4598: DeprecationWarning:
+          on_event is deprecated, use lifespan event handlers instead.
+
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+
+    return self.router.on_event(event_type)  # ty: ignore[deprecated]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED source_proxy/tests/test_long_running_tasks.py::LongRunningTaskTrackerTests::test_code_verify_keeps_route_change_pending_until_browser_review
+FAILED source_proxy/tests/test_prompt_packet_context_metadata.py::PromptPacketContextMetadataTests::test_functional_verification_is_false_when_lane_missing
+2 failed, 41 passed, 1483 deselected, 2 warnings, 4 subtests passed in 63.04s (0:01:03)

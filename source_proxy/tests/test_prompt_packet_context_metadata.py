@@ -1678,8 +1678,32 @@ class PromptPacketContextMetadataTests(unittest.TestCase):
                 "checks": [{"name": "headless_browser_load", "passed": True}],
                 "target_path": target,
                 "timeout_ms": 10000,
-                "verifier_version": "browser-verifier-v0",
+                "verifier_version": "browser-verifier-v1",
                 "browser_engine": "chromium",
+                "browser_verifier": {
+                    "status": "GO",
+                    "attempted": True,
+                    "real_browser_used": True,
+                    "tool": "playwright",
+                    "target_url": f"file://{target}",
+                    "artifact_kind": "html",
+                    "checks": {
+                        "page_loaded": True,
+                        "dom_ready": True,
+                        "required_text_present": True,
+                        "interactive_behavior_checked": True,
+                        "console_errors": [],
+                        "network_errors": [],
+                        "screenshot_captured": False,
+                    },
+                    "evidence": {
+                        "summary": "Real Chromium browser loaded the generated HTML and verified visible interactive behavior.",
+                        "screenshot_path": None,
+                        "trace_path": None,
+                    },
+                    "degraded_reason": None,
+                    "notes": [],
+                },
             },
             "functional": {
                 "status": "skipped",
@@ -1707,6 +1731,57 @@ class PromptPacketContextMetadataTests(unittest.TestCase):
         self.assertTrue(receipt["productive"])
         self.assertEqual(receipt["browser_verifier_status"]["status"], "used")
         self.assertEqual(receipt["browser_verifier_target_path"], target)
+        self.assertEqual(receipt["browser_verifier"]["status"], "GO")
+        self.assertTrue(receipt["browser_verifier"]["real_browser_used"])
+
+    def test_legacy_browser_pass_without_truth_fields_is_not_productive(self) -> None:
+        target = "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/unit/page.html"
+        fip4_result = {
+            "status": "used",
+            "reason": "fip4_qwen_action_output_parsed_and_diff_generated",
+            "final_coder_packet_hash": "packet-hash",
+            "coder_received_packet_hash": "packet-hash",
+            "parser": {"parsed_output_mode": "json_replace_file", "parse_error": ""},
+            "allowed_files": [target],
+            "forbidden_files": [".env"],
+            "changed_files": [target],
+            "action": {"target": target, "content": "<main><h1>Legacy proof</h1></main>"},
+            "proposed_diff": "diff",
+            "qwen": {"qwen_output_hash": "qwen-output"},
+            "final_coder_packet": {"target_file": target},
+        }
+        fip5 = {
+            "final_verdict": "GO: fip5_required_verifier_and_repair_complete",
+            "deterministic": {"status": "used", "reason": "passed", "passed": True},
+            "browser": {
+                "status": "used",
+                "reason": "legacy_browser_status_only",
+                "passed": True,
+                "checks": [{"name": "headless_browser_load", "passed": True}],
+            },
+            "functional": {
+                "status": "skipped",
+                "reason": "functional_verifier_skipped_browser_or_ui_target",
+                "passed": False,
+            },
+            "hermes": {"status": "used", "reason": "schema_valid", "verdict": "PASS"},
+            "repair_loop_status": {"status": "skipped", "reason": "not_needed"},
+        }
+        payload = _attach_fip0_truth_receipt(
+            {"fip5": "legacy-browser-proof"},
+            request=PromptPacketRequest(task="Legacy browser truth proof"),
+            route_payload={"recommended_route": "local_route"},
+            intake_payload={"allowed_files": [target], "forbidden_files": [".env"]},
+            decision=SimpleNamespace(research_sources=[]),
+            explicit_target=target,
+            route_reasons=[],
+            fip4_coder_result=fip4_result,
+            fip5_verifier_result=fip5,
+        )
+        receipt = payload["fip0_truth_receipt"]
+        self.assertFalse(receipt["verification_real"]["browser"])
+        self.assertFalse(receipt["verification_real"]["behavior"])
+        self.assertFalse(receipt["productive"])
 
     def test_static_html_without_browser_pass_is_not_productive(self) -> None:
         target = "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/unit/page.html"
@@ -1774,6 +1849,12 @@ class PromptPacketContextMetadataTests(unittest.TestCase):
         self.assertEqual(browser["status"], "failed")
         self.assertFalse(browser["passed"])
         self.assertEqual(browser["reason"], "browser_behavior_synthetic_pass_rejected_default")
+        self.assertEqual(browser["browser_verifier"]["status"], "NO_GO")
+        self.assertFalse(browser["browser_verifier"]["real_browser_used"])
+        self.assertEqual(
+            browser["browser_verifier"]["degraded_reason"],
+            "synthetic_browser_evidence_rejected",
+        )
 
     def test_browser_verifier_skips_non_browser_targets_without_claiming_browser_truth(self) -> None:
         target = "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/unit/add.js"
@@ -1791,6 +1872,27 @@ class PromptPacketContextMetadataTests(unittest.TestCase):
         self.assertEqual(browser["status"], "skipped")
         self.assertEqual(browser["reason"], "browser_verifier_skipped_non_browser_target")
         self.assertTrue(browser["passed"])
+        self.assertEqual(browser["browser_verifier"]["status"], "SKIPPED")
+        self.assertFalse(browser["browser_verifier"]["real_browser_used"])
+
+    def test_browser_verifier_reports_unsupported_artifact_without_go(self) -> None:
+        target = "src/components/DemoWidget.tsx"
+        fip4_result = {
+            "status": "used",
+            "allowed_files": [target],
+            "changed_files": [target],
+            "action": {"target": target, "content": "export function DemoWidget(){return <button>Hi</button>}"},
+        }
+        browser = _fip5_browser_verifier(
+            request=PromptPacketRequest(task=f"Target file: {target}\n\nMake a widget."),
+            explicit_target=target,
+            fip4_result=fip4_result,
+        )
+        self.assertEqual(browser["status"], "skipped")
+        self.assertFalse(browser["passed"])
+        self.assertEqual(browser["browser_verifier"]["status"], "UNSUPPORTED")
+        self.assertFalse(browser["browser_verifier"]["attempted"])
+        self.assertFalse(browser["browser_verifier"]["real_browser_used"])
 
     def test_browser_verifier_loads_generated_html_with_headless_browser(self) -> None:
         playwright_check = subprocess.run(
@@ -1809,7 +1911,11 @@ class PromptPacketContextMetadataTests(unittest.TestCase):
             "changed_files": [target],
             "action": {
                 "target": target,
-                "content": "<!doctype html><html><body><main><h1>Headless proof</h1></main></body></html>",
+                "content": (
+                    "<!doctype html><html><body><main><h1>Headless proof</h1>"
+                    "<button onclick=\"document.querySelector('#result').textContent='Clicked'\">Run</button>"
+                    "<p id=\"result\">Waiting</p></main></body></html>"
+                ),
             },
         }
         browser = _fip5_browser_verifier(
@@ -1820,6 +1926,127 @@ class PromptPacketContextMetadataTests(unittest.TestCase):
         self.assertEqual(browser["status"], "used")
         self.assertTrue(browser["passed"])
         self.assertEqual(browser["browser_engine"], "chromium")
+        self.assertEqual(browser["browser_verifier"]["status"], "GO")
+        self.assertTrue(browser["browser_verifier"]["attempted"])
+        self.assertTrue(browser["browser_verifier"]["real_browser_used"])
+        self.assertTrue(browser["browser_verifier"]["checks"]["page_loaded"])
+        self.assertTrue(browser["browser_verifier"]["checks"]["dom_ready"])
+        self.assertTrue(browser["browser_verifier"]["checks"]["required_text_present"])
+        self.assertTrue(browser["browser_verifier"]["checks"]["interactive_behavior_checked"])
+
+    def test_dom_only_browser_load_is_partial_not_behavior_proof(self) -> None:
+        target = "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/unit/dom-only.html"
+        fip4_result = {
+            "status": "used",
+            "allowed_files": [target],
+            "changed_files": [target],
+            "action": {
+                "target": target,
+                "content": "<!doctype html><html><body><main><h1>Only text</h1></main></body></html>",
+            },
+        }
+        browser = _fip5_browser_verifier(
+            request=PromptPacketRequest(task=f"Target file: {target}\n\nMake a visible page."),
+            explicit_target=target,
+            fip4_result=fip4_result,
+        )
+        if browser["reason"] == "browser_verifier_config_blocked_playwright_unavailable":
+            self.skipTest("playwright unavailable")
+        self.assertEqual(browser["browser_verifier"]["status"], "PARTIAL_GO")
+        self.assertFalse(browser["passed"])
+        self.assertTrue(browser["browser_verifier"]["real_browser_used"])
+        self.assertTrue(browser["browser_verifier"]["checks"]["required_text_present"])
+        self.assertFalse(browser["browser_verifier"]["checks"]["interactive_behavior_checked"])
+
+    def test_missing_playwright_returns_blocked_truth_not_go(self) -> None:
+        target = "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/unit/page.html"
+        fip4_result = {
+            "status": "used",
+            "allowed_files": [target],
+            "changed_files": [target],
+            "action": {"target": target, "content": "<button>Hi</button>"},
+        }
+        completed = subprocess.CompletedProcess(args=["node"], returncode=1, stdout="", stderr="missing")
+        with patch("source_proxy.api.decision.subprocess.run", return_value=completed):
+            browser = _fip5_browser_verifier(
+                request=PromptPacketRequest(task=f"Target file: {target}\n\nMake a page."),
+                explicit_target=target,
+                fip4_result=fip4_result,
+            )
+        self.assertEqual(browser["status"], "config_blocked")
+        self.assertFalse(browser["passed"])
+        self.assertEqual(browser["browser_verifier"]["status"], "BLOCKED")
+        self.assertTrue(browser["browser_verifier"]["attempted"])
+        self.assertFalse(browser["browser_verifier"]["real_browser_used"])
+
+    def test_browser_timeout_returns_blocked_truth_not_exception(self) -> None:
+        target = "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/unit/page.html"
+        fip4_result = {
+            "status": "used",
+            "allowed_files": [target],
+            "changed_files": [target],
+            "action": {"target": target, "content": "<button>Hi</button>"},
+        }
+        ok = subprocess.CompletedProcess(args=["node"], returncode=0, stdout="", stderr="")
+
+        def fake_run(*args, **kwargs):
+            if args[0] == ["node", "-e", "require.resolve('playwright');"]:
+                return ok
+            raise subprocess.TimeoutExpired(cmd=args[0], timeout=1)
+
+        with patch("source_proxy.api.decision.subprocess.run", side_effect=fake_run):
+            browser = _fip5_browser_verifier(
+                request=PromptPacketRequest(task=f"Target file: {target}\n\nMake a page."),
+                explicit_target=target,
+                fip4_result=fip4_result,
+            )
+        self.assertEqual(browser["status"], "timed_out")
+        self.assertFalse(browser["passed"])
+        self.assertEqual(browser["browser_verifier"]["status"], "BLOCKED")
+        self.assertEqual(browser["browser_verifier"]["degraded_reason"], "browser_timeout")
+
+    def test_console_errors_are_redacted_in_browser_truth_summary(self) -> None:
+        target = "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/unit/page.html"
+        fip4_result = {
+            "status": "used",
+            "allowed_files": [target],
+            "changed_files": [target],
+            "action": {"target": target, "content": "<button>Hi</button>"},
+        }
+        ok = subprocess.CompletedProcess(args=["node"], returncode=0, stdout="", stderr="")
+        harness = subprocess.CompletedProcess(
+            args=["node"],
+            returncode=0,
+            stdout=json.dumps(
+                {
+                    "loaded": True,
+                    "domReady": True,
+                    "visibleTextLength": 5,
+                    "interactiveAttempted": True,
+                    "interactiveChanged": True,
+                    "interactiveReason": "visible_state_changed_after_click",
+                    "consoleErrorCount": 1,
+                    "pageErrorCount": 0,
+                    "networkErrorCount": 0,
+                    "consoleErrors": ["password=super-secret-token token=abc123"],
+                    "pageErrors": [],
+                    "networkErrors": [],
+                    "browserEngine": "chromium",
+                }
+            ),
+            stderr="",
+        )
+
+        with patch("source_proxy.api.decision.subprocess.run", side_effect=[ok, harness]):
+            browser = _fip5_browser_verifier(
+                request=PromptPacketRequest(task=f"Target file: {target}\n\nMake a page."),
+                explicit_target=target,
+                fip4_result=fip4_result,
+            )
+        errors = browser["browser_verifier"]["checks"]["console_errors"]
+        self.assertEqual(errors, ["password=[REDACTED] token=[REDACTED]"])
+        self.assertNotIn("super-secret-token", json.dumps(browser))
+        self.assertNotIn("abc123", json.dumps(browser))
 
     def test_functional_verifier_skips_browser_ui_tasks(self) -> None:
         target = "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/unit/page.html"

@@ -1172,8 +1172,30 @@ def _structured_verdict_fields(receipt: dict[str, Any]) -> dict[str, Any]:
     functional_used = isinstance(functional, dict) and functional.get("status") == "used"
     functional_passed = bool(functional_used and functional.get("passed") is True)
     functional_present = isinstance(functional, dict)
-    browser_used = isinstance(browser, dict) and browser.get("status") == "used"
-    browser_passed = bool(browser_used and browser.get("passed") is True)
+    functional_status = functional if isinstance(functional, dict) else {}
+    browser_truth = (
+        browser.get("browser_verifier")
+        if isinstance(browser, dict) and isinstance(browser.get("browser_verifier"), dict)
+        else {}
+    )
+    browser_passed = bool(isinstance(browser, dict) and _browser_truth_behavior_passed(browser))
+    browser_truth_evidence = (
+        browser_truth.get("evidence") if isinstance(browser_truth.get("evidence"), dict) else {}
+    )
+    browser_pass_reason = str(
+        browser_truth_evidence.get("summary") or browser.get("reason") or "browser_verifier_real_behavior_passed"
+    )
+    browser_nonpass_reason = (
+        str(browser.get("reason") or "browser_verifier_not_implemented")
+        if browser_present
+        else "browser_verifier_not_implemented"
+    )
+    functional_pass_reason = str(functional_status.get("reason") or "functional_verifier_passed")
+    functional_nonpass_reason = (
+        str(functional_status.get("reason") or "functional_verifier_not_implemented")
+        if functional_present
+        else "functional_verifier_not_implemented"
+    )
     verification_real = {
         "deterministic": bool(
             isinstance(deterministic, dict)
@@ -1190,28 +1212,20 @@ def _structured_verdict_fields(receipt: dict[str, Any]) -> dict[str, Any]:
         ),
     }
     verification_real_reasons = {
-        "browser": (
-            str(browser.get("reason") or "browser_verifier_headless_page_passed")
-            if browser_passed
-            else str(browser.get("reason") or "browser_verifier_not_implemented")
-            if browser_present
-            else "browser_verifier_not_implemented"
-        ),
+        "browser": browser_pass_reason if browser_passed else browser_nonpass_reason,
         "functional": (
-            str(functional.get("reason") or "functional_verifier_passed")
+            functional_pass_reason
             if functional_passed
-            else str(functional.get("reason") or "functional_verifier_not_implemented")
-            if functional_present
-            else "functional_verifier_not_implemented"
+            else functional_nonpass_reason
         ),
         "behavior": (
-            str(functional.get("reason") or "functional_verifier_passed")
+            functional_pass_reason
             if functional_passed
-            else str(browser.get("reason") or "browser_verifier_headless_page_passed")
+            else browser_pass_reason
             if browser_passed
-            else str(browser.get("reason") or "")
+            else browser_nonpass_reason
             if browser_present
-            else str(functional.get("reason") or "")
+            else functional_nonpass_reason
             if functional_present
             else "behavior_verifier_not_implemented"
         ),
@@ -1407,6 +1421,7 @@ def _fip5_browser_probe(
     fip4_result: dict[str, Any],
 ) -> dict[str, Any]:
     relevant = _fip5_browser_relevant(fip4_result.get("changed_files", []), explicit_target)
+    artifact_kind = _browser_artifact_kind(explicit_target)
     if not relevant:
         return {
             "status": "skipped",
@@ -1414,6 +1429,15 @@ def _fip5_browser_probe(
             "summary": {"behavior_required": False, "probes_run": []},
             "authoritative": True,
             "passed": True,
+            "browser_verifier": _browser_truth(
+                status="SKIPPED",
+                attempted=False,
+                real_browser_used=False,
+                target_path=explicit_target,
+                artifact_kind=artifact_kind,
+                summary="Browser behavior was not relevant for the changed files.",
+                notes=["non_browser_target"],
+            ),
         }
     if request.expected_result_state == "browser_pass_expected":
         if _trial_harness_only_enabled():
@@ -1427,6 +1451,16 @@ def _fip5_browser_probe(
                 },
                 "authoritative": True,
                 "passed": True,
+                "browser_verifier": _browser_truth(
+                    status="UNKNOWN",
+                    attempted=False,
+                    real_browser_used=False,
+                    target_path=explicit_target,
+                    artifact_kind=artifact_kind,
+                    summary="Trial harness supplied browser pass metadata; no real browser proof was attached.",
+                    degraded_reason="trial_harness_browser_metadata_only",
+                    notes=["trial_harness_only"],
+                ),
             }
         return {
             "status": "failed",
@@ -1438,6 +1472,16 @@ def _fip5_browser_probe(
             },
             "authoritative": True,
             "passed": False,
+            "browser_verifier": _browser_truth(
+                status="NO_GO",
+                attempted=False,
+                real_browser_used=False,
+                target_path=explicit_target,
+                artifact_kind=artifact_kind,
+                summary="Synthetic browser pass request was rejected because no real browser evidence was attached.",
+                degraded_reason="synthetic_browser_evidence_rejected",
+                notes=["synthetic_evidence_rejected"],
+            ),
         }
     return {
         "status": "failed",
@@ -1449,6 +1493,15 @@ def _fip5_browser_probe(
         },
         "authoritative": True,
         "passed": False,
+        "browser_verifier": _browser_truth(
+            status="NO_GO",
+            attempted=False,
+            real_browser_used=False,
+            target_path=explicit_target,
+            artifact_kind=artifact_kind,
+            summary="Browser behavior was required but no passing real browser evidence was attached.",
+            degraded_reason="browser_behavior_evidence_missing",
+        ),
     }
 
 
@@ -1467,6 +1520,95 @@ def _browser_verifier_supported_target(path: str) -> bool:
     return path.replace("\\", "/").lower().endswith(".html")
 
 
+def _browser_artifact_kind(path: str) -> str:
+    normalized = path.replace("\\", "/").lower()
+    if normalized.endswith(".html"):
+        return "html"
+    if normalized.endswith((".tsx", ".jsx")):
+        return "react"
+    if "/src/app/" in normalized or normalized.endswith(("page.tsx", "layout.tsx")):
+        return "next"
+    return "unknown"
+
+
+def _browser_truth(
+    *,
+    status: str,
+    attempted: bool,
+    real_browser_used: bool,
+    target_path: str,
+    artifact_kind: str,
+    tool: str = "unknown",
+    page_loaded: bool = False,
+    dom_ready: bool = False,
+    required_text_present: bool = False,
+    interactive_behavior_checked: bool = False,
+    console_errors: list[Any] | None = None,
+    network_errors: list[Any] | None = None,
+    screenshot_captured: bool = False,
+    summary: str = "",
+    screenshot_path: str | None = None,
+    trace_path: str | None = None,
+    degraded_reason: str | None = None,
+    notes: list[str] | None = None,
+) -> dict[str, Any]:
+    console = [_redact_browser_text(item) for item in list(console_errors or [])[:5]]
+    network = [_redact_browser_text(item) for item in list(network_errors or [])[:5]]
+    return {
+        "status": status,
+        "attempted": attempted,
+        "real_browser_used": real_browser_used,
+        "tool": tool,
+        "target_url": f"file://{target_path}" if target_path else "",
+        "artifact_kind": artifact_kind,
+        "checks": {
+            "page_loaded": page_loaded,
+            "dom_ready": dom_ready,
+            "required_text_present": required_text_present,
+            "interactive_behavior_checked": interactive_behavior_checked,
+            "console_errors": console,
+            "network_errors": network,
+            "screenshot_captured": screenshot_captured,
+        },
+        "evidence": {
+            "summary": summary[:500],
+            "screenshot_path": screenshot_path,
+            "trace_path": trace_path,
+        },
+        "degraded_reason": degraded_reason,
+        "notes": list(notes or []),
+    }
+
+
+def _redact_browser_text(value: Any) -> str:
+    text = str(value)[:300]
+    text = re.sub(
+        r"(?i)\b(token|secret|password|api[_-]?key)\b\s*[:=]\s*['\"]?[^'\"\s]+",
+        r"\1=[REDACTED]",
+        text,
+    )
+    text = re.sub(r"(?i)bearer\s+[A-Za-z0-9._~+/=-]+", "Bearer [REDACTED]", text)
+    return text
+
+
+def _browser_truth_behavior_passed(browser: dict[str, Any]) -> bool:
+    truth = browser.get("browser_verifier")
+    if not isinstance(truth, dict):
+        return False
+    checks = truth.get("checks") if isinstance(truth.get("checks"), dict) else {}
+    return bool(
+        truth.get("status") == "GO"
+        and truth.get("attempted") is True
+        and truth.get("real_browser_used") is True
+        and checks.get("page_loaded") is True
+        and checks.get("dom_ready") is True
+        and checks.get("required_text_present") is True
+        and checks.get("interactive_behavior_checked") is True
+        and not checks.get("console_errors")
+        and not checks.get("network_errors")
+    )
+
+
 def _browser_verifier_harness() -> str:
     return r"""
 const { chromium } = require("playwright");
@@ -1477,10 +1619,12 @@ const timeoutMs = Number(process.argv[2] || "10000");
   const page = await browser.newPage();
   const consoleErrors = [];
   const pageErrors = [];
+  const networkErrors = [];
   page.on("console", (msg) => {
     if (["error"].includes(msg.type())) consoleErrors.push(msg.text().slice(0, 300));
   });
   page.on("pageerror", (err) => pageErrors.push(String(err && err.message || err).slice(0, 300)));
+  page.on("requestfailed", (req) => networkErrors.push(`${req.url().slice(0, 160)} ${req.failure() && req.failure().errorText || "failed"}`.slice(0, 300)));
   await page.route("**/*", async (route) => {
     const url = route.request().url();
     if (url.startsWith("file://") || url.startsWith("data:") || url === "about:blank") {
@@ -1499,18 +1643,43 @@ const timeoutMs = Number(process.argv[2] || "10000");
     if (!body) return "";
     return (body.innerText || body.textContent || "").trim();
   }).catch(() => ""));
+  const domReady = await page.evaluate(() => ["interactive", "complete"].includes(document.readyState)).catch(() => false);
+  const interactive = await page.evaluate(async () => {
+    const target = document.querySelector("button,[role='button'],input[type='button'],input[type='submit'],input[type='checkbox'],summary");
+    if (!target) {
+      return { attempted: false, changed: false, reason: "no_interactive_control_found" };
+    }
+    const body = document.body;
+    const beforeText = body ? (body.innerText || body.textContent || "") : "";
+    const beforeChecked = "checked" in target ? Boolean(target.checked) : null;
+    target.click();
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    const afterText = body ? (body.innerText || body.textContent || "") : "";
+    const afterChecked = "checked" in target ? Boolean(target.checked) : null;
+    return {
+      attempted: true,
+      changed: beforeText !== afterText || beforeChecked !== afterChecked,
+      reason: beforeText !== afterText || beforeChecked !== afterChecked ? "visible_state_changed_after_click" : "click_did_not_change_visible_state"
+    };
+  }).catch((err) => ({ attempted: true, changed: false, reason: String(err && err.message || err).slice(0, 200) }));
   const title = await page.title().catch(() => "");
   await browser.close();
   process.stdout.write(JSON.stringify({
     loaded: true,
     status: response ? response.status() : null,
+    domReady: domReady,
     visibleTextLength: visibleText.length,
     visibleTextExcerpt: visibleText.slice(0, 200),
+    interactiveAttempted: interactive.attempted,
+    interactiveChanged: interactive.changed,
+    interactiveReason: interactive.reason,
     title: title.slice(0, 120),
     consoleErrorCount: consoleErrors.length,
     pageErrorCount: pageErrors.length,
+    networkErrorCount: networkErrors.length,
     consoleErrors: consoleErrors.slice(0, 5),
     pageErrors: pageErrors.slice(0, 5),
+    networkErrors: networkErrors.slice(0, 5),
     browserEngine: "chromium"
   }));
 })().catch((err) => {
@@ -1531,10 +1700,11 @@ def _fip5_browser_verifier(
     fip4_result: dict[str, Any],
 ) -> dict[str, Any]:
     timeout_ms = _browser_verifier_timeout_ms()
-    verifier_version = "browser-verifier-v0"
+    verifier_version = "browser-verifier-v1"
     changed_files = [str(item).replace("\\", "/") for item in fip4_result.get("changed_files", [])]
     allowed_files = [str(item).replace("\\", "/") for item in fip4_result.get("allowed_files", [])]
     target = (changed_files[0] if len(changed_files) == 1 else explicit_target).replace("\\", "/")
+    artifact_kind = _browser_artifact_kind(target)
     base = {
         "passed": False,
         "authoritative": True,
@@ -1551,12 +1721,30 @@ def _fip5_browser_verifier(
             "status": "skipped",
             "reason": "browser_verifier_skipped_non_browser_target",
             "checks": [{"name": "browser_relevance", "passed": False, "browser_relevant": False}],
+            "browser_verifier": _browser_truth(
+                status="SKIPPED",
+                attempted=False,
+                real_browser_used=False,
+                target_path=target,
+                artifact_kind=artifact_kind,
+                summary="Changed files did not require browser verification.",
+                notes=["safe_scope_skip"],
+            ),
         }
     if fip4_result.get("status") != "used":
         return {
             **base,
             "status": "skipped",
             "reason": "browser_verifier_skipped_coder_not_used",
+            "browser_verifier": _browser_truth(
+                status="SKIPPED",
+                attempted=False,
+                real_browser_used=False,
+                target_path=target,
+                artifact_kind=artifact_kind,
+                summary="Browser verifier skipped because the coder lane was not used.",
+                notes=["coder_not_used"],
+            ),
         }
     if len(changed_files) != 1:
         return {
@@ -1564,6 +1752,15 @@ def _fip5_browser_verifier(
             "status": "blocked",
             "reason": "browser_verifier_blocked_requires_single_changed_file",
             "checks": [{"name": "single_changed_file", "passed": False, "count": len(changed_files)}],
+            "browser_verifier": _browser_truth(
+                status="BLOCKED",
+                attempted=False,
+                real_browser_used=False,
+                target_path=target,
+                artifact_kind=artifact_kind,
+                summary="Browser verifier requires exactly one changed browser artifact.",
+                degraded_reason="requires_single_changed_file",
+            ),
         }
     if target not in allowed_files:
         return {
@@ -1571,6 +1768,15 @@ def _fip5_browser_verifier(
             "status": "blocked",
             "reason": "browser_verifier_blocked_target_not_allowed",
             "checks": [{"name": "target_in_allowed_files", "passed": False}],
+            "browser_verifier": _browser_truth(
+                status="BLOCKED",
+                attempted=False,
+                real_browser_used=False,
+                target_path=target,
+                artifact_kind=artifact_kind,
+                summary="Browser verifier target was not in the allowed file set.",
+                degraded_reason="target_not_allowed",
+            ),
         }
     if not _browser_verifier_supported_target(target):
         return {
@@ -1578,6 +1784,15 @@ def _fip5_browser_verifier(
             "status": "skipped",
             "reason": "browser_verifier_skipped_unsupported_browser_target",
             "checks": [{"name": "supported_browser_target", "passed": False}],
+            "browser_verifier": _browser_truth(
+                status="UNSUPPORTED",
+                attempted=False,
+                real_browser_used=False,
+                target_path=target,
+                artifact_kind=artifact_kind,
+                summary="Browser verifier does not support this artifact kind.",
+                degraded_reason="unsupported_artifact_kind",
+            ),
         }
     action = fip4_result.get("action") if isinstance(fip4_result.get("action"), dict) else {}
     content = str(action.get("content") or "")
@@ -1586,6 +1801,15 @@ def _fip5_browser_verifier(
             **base,
             "status": "skipped",
             "reason": "browser_verifier_skipped_no_generated_content",
+            "browser_verifier": _browser_truth(
+                status="SKIPPED",
+                attempted=False,
+                real_browser_used=False,
+                target_path=target,
+                artifact_kind=artifact_kind,
+                summary="Browser verifier skipped because no generated content was available.",
+                degraded_reason="missing_generated_content",
+            ),
         }
     try:
         playwright_check = subprocess.run(
@@ -1604,6 +1828,16 @@ def _fip5_browser_verifier(
             "status": "config_blocked",
             "reason": "browser_verifier_config_blocked_playwright_unavailable",
             "checks": [{"name": "playwright_available", "passed": False}],
+            "browser_verifier": _browser_truth(
+                status="BLOCKED",
+                attempted=True,
+                real_browser_used=False,
+                target_path=target,
+                artifact_kind=artifact_kind,
+                tool="playwright",
+                summary="Playwright was unavailable, so no real browser verification ran.",
+                degraded_reason="playwright_unavailable",
+            ),
         }
     try:
         with tempfile.TemporaryDirectory(prefix="source-proxy-browser-v0-") as tmp:
@@ -1624,6 +1858,16 @@ def _fip5_browser_verifier(
             "status": "timed_out",
             "reason": "browser_verifier_timed_out",
             "checks": [{"name": "headless_browser_load", "passed": False}],
+            "browser_verifier": _browser_truth(
+                status="BLOCKED",
+                attempted=True,
+                real_browser_used=False,
+                target_path=target,
+                artifact_kind=artifact_kind,
+                tool="playwright",
+                summary="Browser verifier timed out before producing real browser proof.",
+                degraded_reason="browser_timeout",
+            ),
         }
     except Exception as error:
         return {
@@ -1631,6 +1875,16 @@ def _fip5_browser_verifier(
             "status": "failed",
             "reason": "browser_verifier_runtime_error",
             "checks": [{"name": "headless_browser_load", "passed": False, "error_type": type(error).__name__}],
+            "browser_verifier": _browser_truth(
+                status="NO_GO",
+                attempted=True,
+                real_browser_used=False,
+                target_path=target,
+                artifact_kind=artifact_kind,
+                tool="playwright",
+                summary="Browser verifier raised an internal runtime error.",
+                degraded_reason="browser_runtime_error",
+            ),
         }
     stdout = (result.stdout or "").strip()
     summary: dict[str, Any] = {}
@@ -1640,9 +1894,22 @@ def _fip5_browser_verifier(
         except json.JSONDecodeError:
             summary = {}
     loaded = result.returncode == 0 and summary.get("loaded") is True
+    dom_ready = bool(summary.get("domReady"))
     visible = int(summary.get("visibleTextLength") or 0) > 0
     no_page_errors = int(summary.get("pageErrorCount") or 0) == 0
-    passed = bool(loaded and visible and no_page_errors)
+    no_network_errors = int(summary.get("networkErrorCount") or 0) == 0
+    interactive_checked = bool(summary.get("interactiveAttempted") and summary.get("interactiveChanged"))
+    page_errors = [_redact_browser_text(item) for item in summary.get("pageErrors", [])[:5]]
+    console_errors = [_redact_browser_text(item) for item in summary.get("consoleErrors", [])[:5]]
+    network_errors = [_redact_browser_text(item) for item in summary.get("networkErrors", [])[:5]]
+    truth_status = (
+        "GO"
+        if loaded and dom_ready and visible and no_page_errors and no_network_errors and interactive_checked
+        else "PARTIAL_GO"
+        if loaded and dom_ready and visible and no_page_errors and no_network_errors
+        else "NO_GO"
+    )
+    passed = truth_status == "GO"
     checks = [
         {"name": "playwright_available", "passed": True},
         {"name": "browser_relevance", "passed": True, "browser_relevant": True},
@@ -1654,6 +1921,10 @@ def _fip5_browser_verifier(
             "browser_engine": summary.get("browserEngine", "chromium"),
         },
         {
+            "name": "dom_ready",
+            "passed": dom_ready,
+        },
+        {
             "name": "visible_body_text",
             "passed": visible,
             "visible_text_length": summary.get("visibleTextLength", 0),
@@ -1661,23 +1932,64 @@ def _fip5_browser_verifier(
             "title": summary.get("title", ""),
         },
         {
+            "name": "interactive_behavior",
+            "passed": interactive_checked,
+            "attempted": bool(summary.get("interactiveAttempted")),
+            "reason": str(summary.get("interactiveReason") or ""),
+        },
+        {
             "name": "page_errors",
-            "passed": no_page_errors,
+            "passed": bool(no_page_errors and no_network_errors),
             "page_error_count": summary.get("pageErrorCount", 0),
             "console_error_count": summary.get("consoleErrorCount", 0),
-            "page_errors": summary.get("pageErrors", []),
-            "console_errors": summary.get("consoleErrors", []),
+            "network_error_count": summary.get("networkErrorCount", 0),
+            "page_errors": page_errors,
+            "console_errors": console_errors,
+            "network_errors": network_errors,
         },
     ]
     return {
         **base,
-        "status": "used" if passed else "failed",
+        "status": "used" if truth_status in {"GO", "PARTIAL_GO"} else "failed",
         "passed": passed,
         "reason": "browser_verifier_headless_page_passed"
         if passed
+        else "browser_verifier_dom_only_no_behavior_proof"
+        if truth_status == "PARTIAL_GO"
         else str(summary.get("reason") or "browser_verifier_headless_page_failed"),
         "checks": checks,
         "browser_engine": summary.get("browserEngine", "chromium"),
+        "summary": {
+            "visible_text_length": summary.get("visibleTextLength", 0),
+            "interactive_reason": str(summary.get("interactiveReason") or ""),
+        },
+        "browser_verifier": _browser_truth(
+            status=truth_status,
+            attempted=True,
+            real_browser_used=loaded,
+            target_path=target,
+            artifact_kind=artifact_kind,
+            tool="playwright",
+            page_loaded=loaded,
+            dom_ready=dom_ready,
+            required_text_present=visible,
+            interactive_behavior_checked=interactive_checked,
+            console_errors=console_errors,
+            network_errors=network_errors,
+            summary=(
+                "Real Chromium browser loaded the generated HTML and verified visible interactive behavior."
+                if truth_status == "GO"
+                else "Real Chromium browser loaded DOM/text, but no visible interactive behavior proof was captured."
+                if truth_status == "PARTIAL_GO"
+                else "Real Chromium browser did not produce acceptable page proof."
+            ),
+            degraded_reason=None
+            if truth_status == "GO"
+            else str(summary.get("interactiveReason") or "browser_behavior_not_verified")
+            if truth_status == "PARTIAL_GO"
+            else str(summary.get("reason") or "browser_page_failed"),
+            notes=[] if truth_status == "GO" else ["dom_or_text_only_is_not_behavior_proof"],
+        ),
     }
 
 
@@ -4026,6 +4338,7 @@ def _attach_fip0_truth_receipt(
             else "failed",
             str(browser.get("reason") or "fip5_browser_behavior_missing"),
             passed=browser.get("passed"),
+            browser_verifier=browser.get("browser_verifier", {}),
         )
         receipt["browser_verifier_status"] = _lane_status(
             str(browser.get("status") or "failed")
@@ -4033,8 +4346,10 @@ def _attach_fip0_truth_receipt(
             else "failed",
             str(browser.get("reason") or "browser_verifier_missing"),
             passed=browser.get("passed"),
+            browser_verifier=browser.get("browser_verifier", {}),
         )
         receipt["browser_verifier_checks"] = browser.get("checks", [])
+        receipt["browser_verifier"] = browser.get("browser_verifier", {})
         receipt["browser_verifier_target_path"] = str(browser.get("target_path") or "")
         receipt["browser_verifier_timeout_ms"] = browser.get("timeout_ms")
         receipt["browser_verifier_version"] = str(browser.get("verifier_version") or "")

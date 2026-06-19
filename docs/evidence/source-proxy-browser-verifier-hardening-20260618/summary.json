@@ -1,0 +1,65 @@
+{
+  "date": "2026-06-18",
+  "host": "source-server",
+  "repo": "/home/source/SpiritOS",
+  "base_commit": "ae2afdca12c8214275e6f7db8ec569404c76a07d",
+  "patch": "source-proxy-browser-verifier-hardening",
+  "verdicts": {
+    "patch_implementation": "GO",
+    "browser_verifier_truthfulness": "GO",
+    "tests": "PARTIAL-GO",
+    "no_mutation_smoke": "GO",
+    "safe_for_productive_go_hardening_next": "GO"
+  },
+  "changed_code_files": [
+    "source_proxy/api/decision.py",
+    "source_proxy/tests/test_prompt_packet_context_metadata.py"
+  ],
+  "truth_fields_added_or_changed": [
+    "browser_verifier.status",
+    "browser_verifier.attempted",
+    "browser_verifier.real_browser_used",
+    "browser_verifier.tool",
+    "browser_verifier.target_url",
+    "browser_verifier.artifact_kind",
+    "browser_verifier.checks.page_loaded",
+    "browser_verifier.checks.dom_ready",
+    "browser_verifier.checks.required_text_present",
+    "browser_verifier.checks.interactive_behavior_checked",
+    "browser_verifier.checks.console_errors",
+    "browser_verifier.checks.network_errors",
+    "browser_verifier.checks.screenshot_captured",
+    "browser_verifier.evidence.summary",
+    "browser_verifier.evidence.screenshot_path",
+    "browser_verifier.evidence.trace_path",
+    "browser_verifier.degraded_reason",
+    "browser_verifier.notes"
+  ],
+  "test_results": {
+    "py_compile": "GO",
+    "focused_browser_verifier_pytest": {
+      "status": "GO",
+      "passed": 33,
+      "deselected": 72
+    },
+    "requested_broader_selection": {
+      "status": "PARTIAL-GO",
+      "passed": 42,
+      "failed": 1,
+      "deselected": 1483,
+      "known_unrelated_failure": "source_proxy/tests/test_long_running_tasks.py::LongRunningTaskTrackerTests::test_code_verify_keeps_route_change_pending_until_browser_review external gate increment mismatch evaluation-round vs 1.3"
+    }
+  },
+  "safety": {
+    "service_restart": false,
+    "process_kill": false,
+    "docker_mutation": false,
+    "media_mutation": false,
+    "jellyfin_mutation": false,
+    "benchmark_batteries": false,
+    "model_calls": false,
+    "source_proxy_coding_task_execution": false,
+    "push": false
+  },
+  "recommended_next_proxy_patch": "productive_go hardening"
+}

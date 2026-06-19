@@ -1,0 +1,86 @@
+.F...............................                                        [100%]
+=================================== FAILURES ===================================
+_ PromptPacketContextMetadataTests.test_browser_verification_true_only_when_lane_used_and_passed _
+
+self = <source_proxy.tests.test_prompt_packet_context_metadata.PromptPacketContextMetadataTests testMethod=test_browser_verification_true_only_when_lane_used_and_passed>
+
+    def test_browser_verification_true_only_when_lane_used_and_passed(self) -> None:
+        target = "docs/evidence/source-proxy-claude-3x10-audit-20260615/targets/unit/page.html"
+        fip4_result = {
+            "status": "used",
+            "reason": "fip4_qwen_action_output_parsed_and_diff_generated",
+            "final_coder_packet_hash": "packet-hash",
+            "coder_received_packet_hash": "packet-hash",
+            "parser": {"parsed_output_mode": "json_replace_file", "parse_error": ""},
+            "allowed_files": [target],
+            "forbidden_files": [".env"],
+            "changed_files": [target],
+            "action": {"target": target, "content": "<main><h1>Browser proof</h1></main>"},
+            "proposed_diff": "diff",
+            "qwen": {"qwen_output_hash": "qwen-output"},
+            "final_coder_packet": {"target_file": target},
+        }
+        fip5 = {
+            "final_verdict": "GO: fip5_required_verifier_and_repair_complete",
+            "deterministic": {"status": "used", "reason": "passed", "passed": True},
+            "browser": {
+                "status": "used",
+                "reason": "browser_verifier_headless_page_passed",
+                "passed": True,
+                "checks": [{"name": "headless_browser_load", "passed": True}],
+                "target_path": target,
+                "timeout_ms": 10000,
+                "verifier_version": "browser-verifier-v1",
+                "browser_engine": "chromium",
+                "browser_verifier": {
+                    "status": "GO",
+                    "attempted": True,
+                    "real_browser_used": True,
+                    "tool": "playwright",
+                    "target_url": f"file://{target}",
+                    "artifact_kind": "html",
+                    "checks": {
+                        "page_loaded": True,
+                        "dom_ready": True,
+                        "required_text_present": True,
+                        "interactive_behavior_checked": True,
+                        "console_errors": [],
+                        "network_errors": [],
+                        "screenshot_captured": False,
+                    },
+                    "evidence": {
+                        "summary": "Real Chromium browser loaded the generated HTML and verified visible interactive behavior.",
+                        "screenshot_path": None,
+                        "trace_path": None,
+                    },
+                    "degraded_reason": None,
+                    "notes": [],
+                },
+            },
+            "functional": {
+                "status": "skipped",
+                "reason": "functional_verifier_skipped_browser_or_ui_target",
+                "passed": False,
+            },
+            "hermes": {"status": "used", "reason": "schema_valid", "verdict": "PASS"},
+            "repair_loop_status": {"status": "skipped", "reason": "not_needed"},
+        }
+        payload = _attach_fip0_truth_receipt(
+            {"fip5": "browser-proof"},
+            request=PromptPacketRequest(task="Browser truth proof"),
+            route_payload={"recommended_route": "local_route"},
+            intake_payload={"allowed_files": [target], "forbidden_files": [".env"]},
+            decision=SimpleNamespace(research_sources=[]),
+            explicit_target=target,
+            route_reasons=[],
+            fip4_coder_result=fip4_result,
+            fip5_verifier_result=fip5,
+        )
+        receipt = payload["fip0_truth_receipt"]
+>       self.assertTrue(receipt["verification_real"]["browser"])
+E       AssertionError: False is not true
+
+source_proxy/tests/test_prompt_packet_context_metadata.py:1728: AssertionError
+=========================== short test summary info ============================
+FAILED source_proxy/tests/test_prompt_packet_context_metadata.py::PromptPacketContextMetadataTests::test_browser_verification_true_only_when_lane_used_and_passed
+1 failed, 32 passed, 72 deselected in 38.91s
