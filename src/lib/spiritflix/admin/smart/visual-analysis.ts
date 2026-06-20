@@ -12,7 +12,8 @@ const MAX_VISUAL_SAMPLES = 4;
 const MIN_TAG_CONFIDENCE = 0.45;
 
 const VISUAL_TAG_IDS = getSmartTagVocabulary()
-  .filter((entry) => ["scene", "activity", "position", "style", "watermark"].includes(entry.group))
+  .filter((entry) => ["scene", "body", "appearance", "apparel", "activity", "position", "style", "watermark"].includes(entry.group))
+  .filter((entry) => !["indoor", "outdoor", "low-light"].includes(entry.id))
   .map((entry) => entry.id);
 
 export interface SpiritFlixVisualAnalysisOptions {
@@ -82,6 +83,8 @@ function promptForFrame(sample: SpiritFlixSmartSample): string {
     "Return JSON only. Do not include markdown.",
     `Frame timestamp: ${sample.timestampLabel}.`,
     `Allowed tag ids: ${VISUAL_TAG_IDS.join(", ")}.`,
+    "Prefer specific visible body/apparel/appearance/activity tags over generic scene tags.",
+    "Do not infer race, ethnicity, nationality, religion, or identity from appearance. Only tag visible clothing items such as hijab when clearly visible.",
     "Use only visible evidence. If unsure, return unclear with low confidence.",
     "Schema: {\"tags\":[{\"id\":\"tag-id\",\"confidence\":0.0,\"evidence\":\"short visible cue\"}],\"observations\":[\"short cue\"],\"confidence\":0.0}",
   ].join("\n");

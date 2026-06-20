@@ -4066,6 +4066,18 @@
   min-width: 0;
 }
 
+.spiritflix-smart-batch__thumbnail {
+  display: block;
+  width: 6.75rem;
+  aspect-ratio: 16 / 9;
+  flex: 0 0 6.75rem;
+  overflow: hidden;
+  border: 1px solid rgb(148 163 184 / 18%);
+  border-radius: 6px;
+  background: rgb(15 23 42 / 76%);
+  object-fit: cover;
+}
+
 .spiritflix-smart-batch__title-block {
   min-width: 0;
   flex: 1 1 auto;
@@ -4214,10 +4226,18 @@
 @media (max-width: 520px) {
   .spiritflix-smart-batch__item-header {
     display: grid;
+    grid-template-columns: 5.8rem minmax(0, 1fr);
   }
 
   .spiritflix-smart-batch__status {
+    grid-column: 2;
     justify-self: start;
+  }
+
+  .spiritflix-smart-batch__thumbnail {
+    width: 5.8rem;
+    flex-basis: 5.8rem;
+    grid-row: span 2;
   }
 }
 

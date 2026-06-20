@@ -37,6 +37,7 @@ export interface SpiritFlixSmartBatchItem {
   name: string;
   parentPath: string;
   extension?: string;
+  thumbnailUrl?: string;
   status: SpiritFlixSmartBatchItemStatus;
   reason?: string;
   analysisStatus?: SpiritFlixSmartAnalysis["status"];
@@ -416,6 +417,7 @@ async function itemFromAnalysis(videoPath: string, analysis: SpiritFlixSmartAnal
     name: path.basename(videoPath),
     parentPath: path.dirname(videoPath),
     extension: path.extname(videoPath).toLowerCase(),
+    thumbnailUrl: `/api/spiritflix/admin/thumbnail?path=${encodeURIComponent(videoPath)}`,
     status,
     reason,
     analysisStatus: analysis?.status,

@@ -11,6 +11,7 @@ function item(overrides: Partial<SpiritFlixSmartBatchItem>): SpiritFlixSmartBatc
     name: "Beta Clip.mp4",
     parentPath: "/mnt/spirit-8tb/media/yes",
     extension: ".mp4",
+    thumbnailUrl: "/api/spiritflix/admin/thumbnail?path=%2Fmnt%2Fspirit-8tb%2Fmedia%2Fyes%2FBeta%20Clip.mp4",
     status: "candidate",
     sidecarCurrent: false,
     needsReview: false,
@@ -168,15 +169,15 @@ describe("SpiritFlixSmartBatchPanel", () => {
     expect(screen.getByRole("button", { name: "Analyze folder first" })).toBeInTheDocument();
   });
 
-  it("shows analyzed content tags, technical badges, and provisional recommended name messaging", async () => {
+  it("shows analyzed content tags, thumbnail, and provisional recommended name messaging", async () => {
     vi.mocked(fetch).mockResolvedValueOnce(Response.json(analyzedBatch));
     render(<SpiritFlixSmartBatchPanel currentPath="/mnt/spirit-8tb/media/yes" open onClose={() => undefined} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Analyze folder" }));
 
     expect(await screen.findByText("Watermark")).toBeInTheDocument();
-    expect(screen.getAllByText("HD").length).toBeGreaterThan(0);
-    expect(screen.getByText("Quality/technical")).toBeInTheDocument();
+    expect(screen.queryByText("Quality/technical")).not.toBeInTheDocument();
+    expect(document.querySelector(".spiritflix-smart-batch__thumbnail")).toBeInTheDocument();
     expect(screen.getByDisplayValue("Aaliyah Yasan - Untitled 01")).toBeInTheDocument();
     expect(screen.getByText("Aaliyah Yasan")).toBeInTheDocument();
     expect(screen.getByText("Provisional recommended name, not apply-ready")).toBeInTheDocument();
@@ -224,7 +225,7 @@ describe("SpiritFlixSmartBatchPanel", () => {
     const smartTagHeading = await screen.findByText("Smart tags");
     const smartTagSection = smartTagHeading.closest("section") as HTMLElement;
     expect(within(smartTagSection).queryByText("HD")).not.toBeInTheDocument();
-    expect(screen.getByText("Quality/technical")).toBeInTheDocument();
+    expect(screen.queryByText("Quality/technical")).not.toBeInTheDocument();
   });
 
   it("keeps diagnostics hidden by default and expands Advanced details on demand", async () => {

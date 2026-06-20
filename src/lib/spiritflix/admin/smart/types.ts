@@ -15,6 +15,9 @@ export type SpiritFlixSmartTagGroup =
   | "source"
   | "performer"
   | "scene"
+  | "body"
+  | "appearance"
+  | "apparel"
   | "activity"
   | "position"
   | "style"
@@ -207,6 +210,9 @@ const SMART_TAG_GROUPS = new Set<SpiritFlixSmartTagGroup>([
   "source",
   "performer",
   "scene",
+  "body",
+  "appearance",
+  "apparel",
   "activity",
   "position",
   "style",

@@ -1,0 +1,9 @@
+HTTP/1.1 200 OK
+vary: rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch
+cache-control: private, max-age=86400
+content-type: image/jpeg
+x-spiritflix-thumbnail-key: 7bcf022cc31e9fba8f1ab08f5ed9723340d34187cdeba2b01d7cd8db0d79dccc
+Date: Sat, 20 Jun 2026 19:21:38 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+Transfer-Encoding: chunked

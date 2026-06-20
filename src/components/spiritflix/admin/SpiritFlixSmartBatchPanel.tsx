@@ -268,6 +268,15 @@ export function SpiritFlixSmartBatchPanel({ currentPath, open, onClose }: Spirit
                 {result.items.map((item) => (
                   <article className="spiritflix-smart-batch__item" key={item.path}>
                     <div className="spiritflix-smart-batch__item-header">
+                      {item.thumbnailUrl ? (
+                        <img
+                          className="spiritflix-smart-batch__thumbnail"
+                          src={item.thumbnailUrl}
+                          alt=""
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      ) : null}
                       <div className="spiritflix-smart-batch__title-block">
                       <p className="spiritflix-smart-batch__name">{item.name}</p>
                         <p className="spiritflix-smart-batch__meta">{item.parentPath}</p>
@@ -305,24 +314,6 @@ export function SpiritFlixSmartBatchPanel({ currentPath, open, onClose }: Spirit
                         <p className="spiritflix-smart-batch__empty">{tagEmptyMessage(result, item)}</p>
                       )}
                     </section>
-
-                    {item.qualityBadges.length ? (
-                      <section className="spiritflix-smart-batch__operator-section">
-                        <h4>Quality/technical</h4>
-                        <div className="spiritflix-smart-review__tags is-technical">
-                          {item.qualityBadges.map((tag) => (
-                            <span
-                              className={`spiritflix-smart-tag-pill is-group-${tag.group}`}
-                              key={tag.id}
-                              title={`${tag.group} - ${formatConfidence(tag.confidence)} confidence`}
-                            >
-                              <span className="spiritflix-smart-tag-pill__label">{tag.label}</span>
-                              <span className="spiritflix-smart-tag-pill__meta">{formatConfidence(tag.confidence)}</span>
-                            </span>
-                          ))}
-                        </div>
-                      </section>
-                    ) : null}
 
                     <section className="spiritflix-smart-batch__operator-section">
                       <h4>Recommended name</h4>
@@ -384,10 +375,6 @@ export function SpiritFlixSmartBatchPanel({ currentPath, open, onClose }: Spirit
                         <div>
                           <dt>Tag counts</dt>
                           <dd>{item.approvedTagCount} approved, {item.rejectedTagCount} rejected, {item.pendingTagCount} pending content tags</dd>
-                        </div>
-                        <div>
-                          <dt>Technical badges</dt>
-                          <dd>{item.qualityBadges.map((tag) => tag.label).join(", ") || "none"}</dd>
                         </div>
                         <div>
                           <dt>Visual tagging</dt>
