@@ -1,4 +1,6 @@
 export const MAC_WORKER_NODE_ID = "spirit-mac-mini";
+export const MAC_WORKER_JOB_ENVELOPE_VERSION = "source-proxy-mac-worker-job-v1";
+export const MAC_WORKER_RESULT_ENVELOPE_VERSION = "source-proxy-mac-worker-result-v1";
 
 export const macWorkerJobTypes = [
   "repo_context_search",
@@ -34,6 +36,12 @@ export type MacWorkerJob = {
   input: MacWorkerJobInput;
   node_id: string;
   created_at: string;
+  job_envelope_version?: string;
+  trace_id?: string;
+  invocation_event_id?: string;
+  consumer_event_id?: string;
+  consumer_subsystem?: string;
+  task_id?: string;
 };
 
 export type MacWorkerJobResult = {
@@ -52,6 +60,39 @@ export type MacWorkerJobResult = {
   artifacts: string[];
   candidate_files: string[];
   recommended_checks: string[];
+  result_envelope_version?: string;
+  trace_id?: string;
+  invocation_event_id?: string;
+  consumer_event_id?: string;
+  consumer_subsystem?: string;
+  task_id?: string;
+};
+
+export type MacWorkerCapabilityStatus =
+  | "AVAILABLE"
+  | "UNAVAILABLE"
+  | "BLOCKED_AUTH"
+  | "BLOCKED_HUMAN"
+  | "UNKNOWN";
+
+export type MacWorkerCapabilityDescriptor = {
+  worker: "mac";
+  status: MacWorkerCapabilityStatus;
+  capabilities: MacWorkerJobType[];
+  write_capable: true;
+  requires_human_first_write: true;
+  allowed_workspace: string;
+  job_envelope_version: string;
+  result_envelope_version: string;
+  last_health_check: string | null;
+};
+
+export type MacWorkerTraceFields = {
+  trace_id: string;
+  invocation_event_id: string;
+  consumer_event_id?: string;
+  consumer_subsystem: string;
+  task_id: string;
 };
 
 export type MacWorkerNodeStatus = {

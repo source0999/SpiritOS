@@ -1,6 +1,6 @@
 import { isMacWorkerJobType } from "@/lib/mac-worker/contract";
 import { runMacWorkerJob } from "@/lib/mac-worker/client";
-import { getMacWorkerStatus } from "@/lib/mac-worker/registry";
+import { getMacWorkerCapability, getMacWorkerStatus } from "@/lib/mac-worker/registry";
 import type { MacWorkerJobInput } from "@/lib/mac-worker/types";
 
 export const dynamic = "force-dynamic";
@@ -10,6 +10,7 @@ export async function GET() {
     {
       ok: true,
       status: getMacWorkerStatus(),
+      capability: getMacWorkerCapability(),
     },
     { headers: { "Cache-Control": "no-store" } },
   );
@@ -31,6 +32,7 @@ export async function POST(request: Request) {
       ok: result.success,
       result,
       status: getMacWorkerStatus(),
+      capability: getMacWorkerCapability(),
     },
     { status: result.success ? 200 : 502, headers: { "Cache-Control": "no-store" } },
   );

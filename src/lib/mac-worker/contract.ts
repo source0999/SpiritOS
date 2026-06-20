@@ -1,10 +1,14 @@
 import {
   MAC_WORKER_NODE_ID,
+  MAC_WORKER_JOB_ENVELOPE_VERSION,
+  MAC_WORKER_RESULT_ENVELOPE_VERSION,
   macWorkerJobTypes,
+  type MacWorkerCapabilityDescriptor,
   type MacWorkerJob,
   type MacWorkerJobResult,
   type MacWorkerJobType,
   type MacWorkerRunSummary,
+  type MacWorkerTraceFields,
 } from "./types";
 
 export function isMacWorkerJobType(value: unknown): value is MacWorkerJobType {
@@ -22,6 +26,23 @@ export function createMacWorkerJob(
     input,
     node_id: MAC_WORKER_NODE_ID,
     created_at: new Date().toISOString(),
+    job_envelope_version: MAC_WORKER_JOB_ENVELOPE_VERSION,
+  };
+}
+
+export function createTracedMacWorkerJob(
+  jobType: MacWorkerJobType,
+  input: MacWorkerJob["input"],
+  trace: MacWorkerTraceFields,
+  jobId = `${jobType}-${Date.now()}`,
+): MacWorkerJob {
+  return {
+    ...createMacWorkerJob(jobType, input, jobId),
+    trace_id: trace.trace_id,
+    invocation_event_id: trace.invocation_event_id,
+    consumer_event_id: trace.consumer_event_id,
+    consumer_subsystem: trace.consumer_subsystem,
+    task_id: trace.task_id,
   };
 }
 
@@ -67,6 +88,30 @@ export function normalizeMacWorkerResult(value: unknown, fallbackJob: MacWorkerJ
     artifacts: stringArray(record.artifacts),
     candidate_files: stringArray(record.candidate_files),
     recommended_checks: stringArray(record.recommended_checks),
+    result_envelope_version: stringValue(record.result_envelope_version) ?? MAC_WORKER_RESULT_ENVELOPE_VERSION,
+    trace_id: stringValue(record.trace_id) ?? fallbackJob.trace_id,
+    invocation_event_id: stringValue(record.invocation_event_id) ?? fallbackJob.invocation_event_id,
+    consumer_event_id: stringValue(record.consumer_event_id) ?? fallbackJob.consumer_event_id,
+    consumer_subsystem: stringValue(record.consumer_subsystem) ?? fallbackJob.consumer_subsystem,
+    task_id: stringValue(record.task_id) ?? fallbackJob.task_id,
+  };
+}
+
+export function macWorkerCapabilityDescriptor(
+  status: MacWorkerCapabilityDescriptor["status"],
+  lastHealthCheck: string | null = null,
+  allowedWorkspace = process.env.SPIRIT_MACMINI_REPO_PATH?.trim() || "$HOME/spiritos-worker/SpiritOS",
+): MacWorkerCapabilityDescriptor {
+  return {
+    worker: "mac",
+    status,
+    capabilities: [...macWorkerJobTypes],
+    write_capable: true,
+    requires_human_first_write: true,
+    allowed_workspace: allowedWorkspace,
+    job_envelope_version: MAC_WORKER_JOB_ENVELOPE_VERSION,
+    result_envelope_version: MAC_WORKER_RESULT_ENVELOPE_VERSION,
+    last_health_check: lastHealthCheck,
   };
 }
 

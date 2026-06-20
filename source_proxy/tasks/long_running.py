@@ -1947,6 +1947,131 @@ def update_long_running_task(task_id: str, **changes: Any) -> dict[str, Any]:
     return _task_envelope(task)
 
 
+def record_subsystem_integration_result(
+    task_id: str,
+    *,
+    subsystem: str,
+    consumer_subsystem: str,
+    upstream_state: dict[str, Any],
+    output: dict[str, Any],
+    status: str,
+    changed_state_fields: list[str] | None = None,
+    failure_reason: str | None = None,
+) -> dict[str, Any]:
+    """Record a Plan 2 subsystem invocation and downstream consumption on one task.
+
+    This deliberately reuses the Plan 1 long-running task causal store. It is a
+    thin recorder for integrations that already ran elsewhere; it is not an
+    executor, state engine, or approval bypass.
+    """
+    normalized_subsystem = _sanitize_causal_note(subsystem)
+    normalized_consumer = _sanitize_causal_note(consumer_subsystem)
+    if not normalized_subsystem or not normalized_consumer:
+        raise LongRunningTaskError(
+            "Subsystem and consumer_subsystem are required.",
+            "plan2_subsystem_consumer_required",
+        )
+    if not isinstance(upstream_state, dict) or not upstream_state:
+        raise LongRunningTaskError(
+            "Plan 2 subsystem integration requires real upstream state.",
+            "plan2_upstream_state_required",
+        )
+    if not isinstance(output, dict) or not output:
+        raise LongRunningTaskError(
+            "Plan 2 subsystem integration requires real output.",
+            "plan2_output_required",
+        )
+
+    task = _lookup_task(task_id)
+    status_before = task.status
+    trace_id = _ensure_causal_trace_id(task)
+    normalized_status = _sanitize_causal_note(status).upper()
+    failed = normalized_status in {
+        "FAILED",
+        "BLOCKED",
+        "BLOCKED_ENV",
+        "BLOCKED_AUTH",
+        "BLOCKED_HUMAN",
+        "DEGRADED",
+        "NEEDS_FIX",
+    }
+    invocation_event = _append_causal_event(
+        task,
+        event_type="invocation",
+        subsystem=normalized_subsystem,
+        run_id=f"plan2_subsystem:{task_id}:{normalized_subsystem}",
+        status_before=status_before,
+        status_after=task.status,
+        changed_state_fields=["ast_snapshot"],
+        notes=[
+            f"Plan 2 subsystem invoked with upstream keys: {sorted(upstream_state.keys())[:8]}",
+            f"status={normalized_status}",
+        ],
+    )
+
+    snapshot = _ensure_ast_snapshot_dict(task)
+    integrations = snapshot.get("plan_2_subsystem_integrations")
+    if not isinstance(integrations, dict):
+        integrations = {}
+    output_hash = hashlib.sha256(
+        json.dumps(output, sort_keys=True, default=str).encode("utf-8")
+    ).hexdigest()
+    integrations[normalized_subsystem] = {
+        "status": normalized_status,
+        "trace_id": trace_id,
+        "invocation_event_id": invocation_event["event_id"],
+        "consumer_subsystem": normalized_consumer,
+        "upstream_state_keys": sorted(upstream_state.keys()),
+        "output_hash": output_hash,
+        "output_summary": _sanitize_causal_note(output.get("summary") or output.get("reason") or normalized_status),
+        "failure_reason": _sanitize_causal_note(failure_reason or ""),
+    }
+    snapshot["plan_2_subsystem_integrations"] = integrations
+    snapshot["plan_2_last_subsystem_output"] = {
+        "subsystem": normalized_subsystem,
+        "status": normalized_status,
+        "output_hash": output_hash,
+        "output": output,
+    }
+    task.ast_snapshot = snapshot
+
+    fields = list(dict.fromkeys([*(changed_state_fields or []), "ast_snapshot"]))
+    if failed:
+        before_failure = task.status
+        task.status = "blocked" if normalized_status.startswith("BLOCKED") else "failed_needs_human"
+        task.architect_status = "blocked"
+        task.architect_reason = failure_reason or normalized_status.lower()
+        _append_causal_event(
+            task,
+            event_type="failure",
+            subsystem=normalized_subsystem,
+            run_id=f"plan2_subsystem:{task_id}:{normalized_subsystem}",
+            status_before=before_failure,
+            status_after=task.status,
+            changed_state_fields=["status", "architect_status", "architect_reason", *fields],
+            notes=[failure_reason or normalized_status],
+        )
+
+    consumer_event = _append_causal_event(
+        task,
+        event_type="consumer",
+        subsystem=normalized_subsystem,
+        consumer_subsystem=normalized_consumer,
+        run_id=f"plan2_subsystem:{task_id}:{normalized_subsystem}:consumer",
+        status_before=status_before,
+        status_after=task.status,
+        changed_state_fields=fields,
+        notes=[
+            f"{normalized_consumer} consumed {normalized_subsystem} output hash {output_hash[:16]}",
+        ],
+    )
+    integrations[normalized_subsystem]["consumer_event_id"] = consumer_event["event_id"]
+    task.ast_snapshot = snapshot
+    task.updated_at = _now_iso()
+    _save_task(task)
+    return _task_envelope(task)
+
+
 def _reset_task_focus(task: LongRunningTask) -> None:
     task.ast_snapshot = None
     task.open_diffs = []

@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   createMacWorkerJob,
+  createTracedMacWorkerJob,
+  macWorkerCapabilityDescriptor,
   macRunSummaryFromResult,
   normalizeMacWorkerResult,
   summarizeMacWorkerResult,
@@ -17,6 +19,45 @@ describe("Mac worker contract", () => {
       input: { prompt: "fix the coding trial" },
     });
     expect(job.created_at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    expect(job.job_envelope_version).toBe("source-proxy-mac-worker-job-v1");
+  });
+
+  it("creates a traced Mac assignment for the Plan 1 causal seam", () => {
+    const job = createTracedMacWorkerJob(
+      "system_status",
+      { cwd: "$HOME/spiritos-worker/SpiritOS" },
+      {
+        trace_id: "trace_123",
+        invocation_event_id: "invocation_123",
+        consumer_event_id: "consumer_123",
+        consumer_subsystem: "cartographer_mac_assignment_consumer",
+        task_id: "task_123",
+      },
+      "job-traced",
+    );
+
+    expect(job).toMatchObject({
+      job_id: "job-traced",
+      task_id: "task_123",
+      trace_id: "trace_123",
+      invocation_event_id: "invocation_123",
+      consumer_event_id: "consumer_123",
+      consumer_subsystem: "cartographer_mac_assignment_consumer",
+    });
+  });
+
+  it("reports Mac capability while preserving first-write human stop", () => {
+    const capability = macWorkerCapabilityDescriptor("AVAILABLE", "2026-06-20T00:00:00.000Z");
+
+    expect(capability).toMatchObject({
+      worker: "mac",
+      status: "AVAILABLE",
+      write_capable: true,
+      requires_human_first_write: true,
+      job_envelope_version: "source-proxy-mac-worker-job-v1",
+      result_envelope_version: "source-proxy-mac-worker-result-v1",
+    });
+    expect(capability.capabilities).toContain("run_safe_check");
   });
 
   it("normalizes candidate files and recommended checks from Mac JSON", () => {

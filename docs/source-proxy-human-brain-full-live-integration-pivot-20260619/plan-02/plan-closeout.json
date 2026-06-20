@@ -1,0 +1,65 @@
+{
+  "plan": "Plan 2/6",
+  "verdict": "BLOCKED_ENV",
+  "commit_message": "Complete Source Proxy Plan 2 subsystem integration",
+  "mac": {
+    "status": "BLOCKED_HUMAN",
+    "trace_id": "contract-supported-by-traced-mac-assignment",
+    "invocation_event_id": "contract-supported-by-traced-mac-assignment",
+    "consumer_event_id": "contract-supported-by-traced-mac-assignment",
+    "consumer_subsystem": "cartographer_mac_assignment_consumer",
+    "proof": "Live read-only system_status job succeeded on spirit-mac-mini; first write not attempted.",
+    "deferral_required": "Britton approval for first isolated Mac write"
+  },
+  "research": {
+    "status": "BLOCKED_ENV",
+    "provider": "Scout disabled; SearXNG URL missing",
+    "trace_id": "contract-proven-by-record_subsystem_integration_result",
+    "consumer": "cartographer_current_research_consumer",
+    "proof": "Dedicated handler implemented; no generic local-file fallback; live providers unavailable."
+  },
+  "specialists": {
+    "status": "BLOCKED_ENV",
+    "trace_id": "contract-proven-by-record_subsystem_integration_result",
+    "consumer": "cartographer_specialist_packet_consumer",
+    "gemma": "PREVIEW_ONLY registry classification; live FIP-3 call timed out",
+    "hermes": "PREVIEW_ONLY registry classification; live FIP-3 call timed out",
+    "qwen": "LIVE_INVOKABLE coder route",
+    "browser_functional_verifier": "LIVE_INVOKABLE verifier packet path",
+    "design_browser_if_applicable": "ADVISORY_ONLY; no screenshot proof currently available"
+  },
+  "acceptance_tasks": {
+    "task_a": "BLOCKED_ENV: Gemma/Hermes live proof unavailable",
+    "task_b": "BLOCKED_ENV: Scout/SearXNG unavailable to Source Proxy current-research handler",
+    "task_c": "BLOCKED_HUMAN: first Mac write requires Britton approval"
+  },
+  "tests": [
+    ".venv-source-proxy/bin/python -m pytest -q source_proxy/tests/test_plan2_subsystem_integration.py source_proxy/tests/test_research_preview.py source_proxy/tests/test_scout_research_bridge.py source_proxy/tests/test_model_lanes.py source_proxy/tests/test_verifier_lane.py source_proxy/tests/test_long_running_tasks.py -k \"plan2 or current_research or subsystem or research or scout or model_lane or verifier or causal or long_running\"",
+    "npx vitest run src/lib/mac-worker/__tests__/contract.test.ts src/app/api/coding/mac-worker/__tests__/route.test.ts",
+    "npm run typecheck"
+  ],
+  "evidence_budget": {
+    "committed_files": "bounded Plan 2 artifacts plus focused implementation/tests",
+    "external_raw_evidence": "/home/source/spiritos-evidence/plan-02/",
+    "budget_status": "OK"
+  },
+  "safety": {
+    "obsidian_write": false,
+    "mac_write": false,
+    "media_mutation": false,
+    "jellyfin_mutation": false,
+    "authority_expansion": false,
+    "route_replacement": false,
+    "new_engine_or_framework": false,
+    "cartographer_autonomous_commit_push": false,
+    "push": false,
+    "plan_3_work": false
+  },
+  "outstanding_decisions": [
+    "Approve first real Mac isolated worktree write for Plan 2.1, or explicitly defer it.",
+    "Enable/configure Scout or SearXNG for current-research live proof, or explicitly defer it.",
+    "Decide whether Gemma/Hermes preview lanes should be promoted to live Plan 2 lanes after timeout investigation."
+  ],
+  "next_plan": "Plan 3/6 - Durable Execution, Policy, Recovery, and Repair",
+  "stop": "No next-plan work was started."
+}

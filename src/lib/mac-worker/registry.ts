@@ -1,10 +1,11 @@
 import {
   MAC_WORKER_NODE_ID,
   macWorkerJobTypes,
+  type MacWorkerCapabilityDescriptor,
   type MacWorkerJobResult,
   type MacWorkerNodeStatus,
 } from "./types";
-import { summarizeMacWorkerResult } from "./contract";
+import { macWorkerCapabilityDescriptor, summarizeMacWorkerResult } from "./contract";
 
 let lastResult: MacWorkerJobResult | null = null;
 let lastError: string | null = null;
@@ -72,4 +73,13 @@ export function getMacWorkerStatus(): MacWorkerNodeStatus {
     safe_checks_blocked: safeChecksBlocked,
     last_result: lastResult ?? undefined,
   };
+}
+
+export function getMacWorkerCapability(): MacWorkerCapabilityDescriptor {
+  const status = lastResult
+    ? isTransportFailure(lastResult)
+      ? "BLOCKED_AUTH"
+      : "AVAILABLE"
+    : "UNKNOWN";
+  return macWorkerCapabilityDescriptor(status, lastResult?.completed_at ?? null);
 }

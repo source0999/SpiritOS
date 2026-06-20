@@ -21,6 +21,17 @@ vi.mock("@/lib/mac-worker/client", () => ({
 }));
 
 vi.mock("@/lib/mac-worker/registry", () => ({
+  getMacWorkerCapability: vi.fn(() => ({
+    worker: "mac",
+    status: "AVAILABLE",
+    capabilities: ["trial_context_assist", "run_safe_check", "system_status"],
+    write_capable: true,
+    requires_human_first_write: true,
+    allowed_workspace: "$HOME/spiritos-worker/SpiritOS",
+    job_envelope_version: "source-proxy-mac-worker-job-v1",
+    result_envelope_version: "source-proxy-mac-worker-result-v1",
+    last_health_check: "2026-05-28T00:00:01.000Z",
+  })),
   getMacWorkerStatus: vi.fn(() => ({
     node_id: "spirit-mac-mini",
     label: "Mac Mini",
@@ -60,6 +71,12 @@ describe("/api/coding/mac-worker", () => {
       repo_present: true,
       last_success: true,
       safe_checks_blocked: false,
+    });
+    expect(json.capability).toMatchObject({
+      worker: "mac",
+      status: "AVAILABLE",
+      write_capable: true,
+      requires_human_first_write: true,
     });
   });
 
