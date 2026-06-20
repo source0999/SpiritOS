@@ -73,7 +73,7 @@ describe("SpiritFlix smart sampler", () => {
     const framePath = getSpiritFlixFrameCachePath(analysisKey, 12_345, { mediaRoot });
     expect(framePath).toContain(path.join(".spiritflix-admin", "analysis-cache", "frames"));
     expect(path.basename(framePath)).toBe(buildSpiritFlixFrameCacheFileName(analysisKey, 12_345));
-    expect(framePath.endsWith("-v1.jpg")).toBe(true);
+    expect(framePath.endsWith("-v2.jpg")).toBe(true);
   });
 
   it("uses different paths for different timestamps", () => {

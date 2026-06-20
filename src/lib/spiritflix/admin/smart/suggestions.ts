@@ -93,9 +93,41 @@ function topContentLabels(tags: SpiritFlixSmartTag[]): string[] {
 
 function sourceSequence(input: SpiritFlixSmartHeuristicInput): string {
   if (input.modelSequenceNumber && Number.isFinite(input.modelSequenceNumber) && input.modelSequenceNumber > 0) {
-    return String(Math.floor(input.modelSequenceNumber));
+    return String(Math.floor(input.modelSequenceNumber)).padStart(2, "0");
   }
   return "01";
+}
+
+function nameDescriptorLabels(tags: SpiritFlixSmartTag[]): string[] {
+  const nameworthyIds = new Set([
+    "hotel-room",
+    "threesome",
+    "traditional-dress",
+    "dress",
+    "smoking",
+    "toy",
+    "oral",
+    "manual",
+    "intercourse",
+    "anal",
+    "lesbian",
+    "massage",
+    "riding",
+    "missionary",
+    "doggy",
+    "standing",
+    "seated",
+    "cosplay",
+    "pov",
+    "watermark",
+  ]);
+  const labels = tags
+    .filter((tag) => isPrimarySmartContentTag(tag) && nameworthyIds.has(tag.id))
+    .sort((left, right) => right.confidence - left.confidence)
+    .filter((tag, _index, sorted) => !(tag.id === "dress" && sorted.some((entry) => entry.id === "traditional-dress")))
+    .slice(0, 3)
+    .map((tag) => tag.label.toLowerCase());
+  return labels;
 }
 
 function readableTitle(input: SpiritFlixSmartHeuristicInput): string {
@@ -121,26 +153,37 @@ export function buildSuggestedFilename(
   performerIdentity: SpiritFlixSmartPerformerIdentity = modelIdentityFromPath(input) ?? unknownModelIdentity(),
 ): string {
   const modelName = sanitizeFilenameStem(performerIdentity.name || "Unknown Model");
-  const content = topContentLabels(tags).join(" ");
-  if (content) {
-    return sanitizeFilenameStem(`${modelName} - ${content} ${sourceSequence(input)}`);
-  }
-
+  const sequence = sourceSequence(input);
+  const hasKnownModel = performerIdentity.source !== "unknown";
   if (!shouldUseFallbackName(input)) {
-    return readableTitle(input);
+    return hasKnownModel
+      ? sanitizeFilenameStem(`${modelName} ${sequence} - ${readableTitle(input)}`)
+      : readableTitle(input);
   }
 
-  return sanitizeFilenameStem(`${modelName} - Untitled 01`);
+  const descriptor = nameDescriptorLabels(tags).join(" ");
+  if (descriptor) {
+    return hasKnownModel
+      ? sanitizeFilenameStem(`${modelName} ${sequence} - ${descriptor}`)
+      : sanitizeFilenameStem(`${modelName} - ${descriptor} ${sequence}`);
+  }
+
+  return hasKnownModel
+    ? sanitizeFilenameStem(`${modelName} ${sequence} - Untitled`)
+    : sanitizeFilenameStem(`${modelName} - Untitled ${sequence}`);
 }
 
 function filenameReason(input: SpiritFlixSmartHeuristicInput, tags: SpiritFlixSmartTag[], performerIdentity: SpiritFlixSmartPerformerIdentity): string {
-  if (topContentLabels(tags).length > 0) {
-    return `${performerIdentity.name} fallback uses strongest available content tags and model-folder sequence; extension is kept only for target-path preview.`;
-  }
   if (!shouldUseFallbackName(input)) {
-    return "Readable title preserved; extension is kept only for target-path preview.";
+    return "Readable source title preserved with model-folder sequence; extension is kept only for target-path preview.";
   }
-  return `${performerIdentity.name} fallback uses model identity with Untitled 01 because the filename is random or ambiguous.`;
+  if (nameDescriptorLabels(tags).length > 0) {
+    return `${performerIdentity.name} fallback uses a short visual descriptor and model-folder sequence; extension is kept only for target-path preview.`;
+  }
+  if (topContentLabels(tags).length > 0) {
+    return `${performerIdentity.name} fallback has reviewable tags but no title-worthy descriptor; extension is kept only for target-path preview.`;
+  }
+  return `${performerIdentity.name} fallback uses model identity with Untitled because the filename is random or ambiguous.`;
 }
 
 function tagsFromSamples(analysis: SpiritFlixSmartAnalysis | undefined): SpiritFlixSmartTag[] {

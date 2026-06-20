@@ -61,7 +61,7 @@ describe("SpiritFlix smart suggestions", () => {
     expect(result.confidence).toBeGreaterThan(0);
   });
 
-  it("uses visual content tags for recommended names even when the source title is readable", () => {
+  it("preserves readable source names instead of turning every tag into a title", () => {
     const readablePath = path.join(mediaRoot, "yes", "models", "aaliyah-yasan", "Readable Scene Title.mkv");
     const result = buildSpiritFlixReviewSuggestions({
       videoPath: readablePath,
@@ -96,7 +96,7 @@ describe("SpiritFlix smart suggestions", () => {
       }),
     });
 
-    expect(result.suggestedDisplayTitle).toBe("Aaliyah Yasan - brunette lingerie 01");
+    expect(result.suggestedDisplayTitle).toBe("Aaliyah Yasan 01 - Readable Scene Title");
   });
 
   it("omits file extension in suggested display filename", () => {
@@ -145,11 +145,11 @@ describe("SpiritFlix smart suggestions", () => {
     });
 
     expect(result.performerIdentity).toMatchObject({ name: "Aaliyah Yasan", source: "path" });
-    expect(result.suggestedDisplayTitle).toBe("Aaliyah Yasan - Untitled 01");
-    expect(result.suggestedFilename).toBe("Aaliyah Yasan - Untitled 01");
+    expect(result.suggestedDisplayTitle).toBe("Aaliyah Yasan 01 - Untitled");
+    expect(result.suggestedFilename).toBe("Aaliyah Yasan 01 - Untitled");
   });
 
-  it("uses model and visual tags for source-spam filenames", () => {
+  it("uses model and title-worthy visual tags for source-spam filenames", () => {
     const spamPath = path.join(mediaRoot, "yes", "models", "aaliyah-yasan", "Visit onlyshare.io for MORE 130.mkv");
     const result = buildSpiritFlixReviewSuggestions({
       videoPath: spamPath,
@@ -174,8 +174,8 @@ describe("SpiritFlix smart suggestions", () => {
           cacheKey: "frame-key",
           observations: ["vlm: visible outfit"],
           tags: [
-            { id: "brunette", label: "brunette", group: "appearance", confidence: 0.8, evidenceTimestamps: [5], reviewRequired: true },
-            { id: "lingerie", label: "lingerie", group: "apparel", confidence: 0.7, evidenceTimestamps: [5], reviewRequired: true },
+            { id: "traditional-dress", label: "traditional dress", group: "apparel", confidence: 0.8, evidenceTimestamps: [5], reviewRequired: true },
+            { id: "dress", label: "dress", group: "apparel", confidence: 0.7, evidenceTimestamps: [5], reviewRequired: true },
           ],
           confidence: 0.8,
         }],
@@ -185,7 +185,7 @@ describe("SpiritFlix smart suggestions", () => {
     });
 
     expect(result.performerIdentity).toMatchObject({ name: "Aaliyah Yasan", source: "path" });
-    expect(result.suggestedDisplayTitle).toBe("Aaliyah Yasan - brunette lingerie 01");
+    expect(result.suggestedDisplayTitle).toBe("Aaliyah Yasan 01 - traditional dress");
   });
 
   it("uses model folder sequence numbers for relevant visual tag names", () => {
@@ -214,8 +214,8 @@ describe("SpiritFlix smart suggestions", () => {
           cacheKey: "frame-key",
           observations: ["sampled frame"],
           tags: [
-            { id: "duo", label: "duo", group: "scene", confidence: 0.8, evidenceTimestamps: [5], reviewRequired: true },
-            { id: "lingerie", label: "lingerie", group: "apparel", confidence: 0.7, evidenceTimestamps: [5], reviewRequired: true },
+            { id: "hotel-room", label: "hotel room", group: "scene", confidence: 0.8, evidenceTimestamps: [5], reviewRequired: true },
+            { id: "threesome", label: "threesome", group: "activity", confidence: 0.7, evidenceTimestamps: [5], reviewRequired: true },
           ],
           confidence: 0.8,
         }],
@@ -224,7 +224,7 @@ describe("SpiritFlix smart suggestions", () => {
       }),
     });
 
-    expect(result.suggestedDisplayTitle).toBe("Aaliyah Yasan - lingerie 3");
+    expect(result.suggestedDisplayTitle).toBe("Aaliyah Yasan 03 - hotel room threesome");
   });
 
   it("uses Unknown Model fallback for numeric filenames without useful tags", () => {
@@ -257,7 +257,7 @@ describe("SpiritFlix smart suggestions", () => {
     );
 
     expect(result.performerIdentity).toMatchObject({ name: "Chloe Lamb", source: "face_rec" });
-    expect(result.suggestedDisplayTitle).toBe("Chloe Lamb - Untitled 01");
+    expect(result.suggestedDisplayTitle).toBe("Chloe Lamb 01 - Untitled");
   });
 
   it("sets needs_review or suggested, never approved", () => {

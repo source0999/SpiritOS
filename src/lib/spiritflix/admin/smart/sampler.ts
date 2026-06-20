@@ -12,8 +12,8 @@ import { isSpiritFlixSmartVideoExtension } from "./probe";
 import { spawn } from "./process";
 
 const DEFAULT_FRAME_TIMEOUT_MS = 15_000;
-const FRAME_CACHE_VERSION = "v1";
-const DEFAULT_SCALE_WIDTH = 480;
+const FRAME_CACHE_VERSION = "v2";
+const DEFAULT_SCALE_WIDTH = 768;
 
 export interface SpiritFlixSamplePlanOptions {
   maxSamples?: number;

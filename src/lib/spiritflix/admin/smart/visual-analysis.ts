@@ -35,6 +35,7 @@ interface VisualModelTag {
 interface VisualModelResponse {
   tags?: unknown;
   observations?: unknown;
+  titleDescriptor?: unknown;
   confidence?: unknown;
 }
 
@@ -77,6 +78,48 @@ function makeVisualTag(entry: VisualModelTag, timestampSeconds: number): SpiritF
   };
 }
 
+function makeTagFromObservation(id: string, timestampSeconds: number, confidence = 0.62): SpiritFlixSmartTag | null {
+  if (!VISUAL_TAG_IDS.includes(id)) return null;
+  const definition = findSmartTagDefinition(id);
+  if (!definition) return null;
+  return {
+    id: definition.id,
+    label: definition.label,
+    group: definition.group,
+    confidence,
+    evidenceTimestamps: [timestampSeconds],
+    reviewRequired: true,
+  };
+}
+
+function tagsFromObservations(observations: string[], timestampSeconds: number): SpiritFlixSmartTag[] {
+  const normalized = observations.join(" ").toLowerCase();
+  const tags: SpiritFlixSmartTag[] = [];
+  const add = (id: string, confidence?: number) => {
+    const tag = makeTagFromObservation(id, timestampSeconds, confidence);
+    if (tag) tags.push(tag);
+  };
+
+  if (/headscarf|head scarf|head covering/.test(normalized)) add("hijab", 0.68);
+  if (/traditional dress|cultural dress|traditional clothing|cultural clothing|formal traditional/.test(normalized)) add("traditional-dress", 0.72);
+  if (/\bdress\b/.test(normalized) && !/traditional dress|cultural dress/.test(normalized)) add("dress", 0.64);
+  if (/lingerie|underwear|bra\b/.test(normalized)) add("lingerie", 0.66);
+  if (/stocking|thigh-high|thigh high/.test(normalized)) add("stockings", 0.66);
+  if (/curvy|fuller figure|body shape visible/.test(normalized)) add("curvy", 0.66);
+  if (/busty|large bust/.test(normalized)) add("busty", 0.64);
+  if (/\bbbw\b|plus[-\s]?size/.test(normalized)) add("bbw", 0.64);
+  if (/petite|small frame/.test(normalized)) add("petite", 0.62);
+  if (/slim|slender/.test(normalized)) add("slim", 0.62);
+  if (/tattoo/.test(normalized)) add("tattoos", 0.7);
+  if (/glasses|eyeglasses/.test(normalized)) add("glasses", 0.7);
+  if (/hotel room|bedroom|bed room|hotel bed|bed visible/.test(normalized)) add("hotel-room", 0.68);
+  if (/three participants|three people|two men and one woman|one woman and two men|threesome/.test(normalized)) add("threesome", 0.68);
+  if (/smoking|cigarette|smoke visible/.test(normalized)) add("smoking", 0.68);
+  if (/watermark|logo overlay|site logo/.test(normalized)) add("watermark", 0.7);
+
+  return normalizeVisualTags(tags);
+}
+
 function normalizeVisualTags(tags: SpiritFlixSmartTag[]): SpiritFlixSmartTag[] {
   const byId = new Map(tags.map((tag) => [tag.id, tag]));
   byId.delete("indoor");
@@ -93,18 +136,29 @@ function normalizeVisualTags(tags: SpiritFlixSmartTag[]): SpiritFlixSmartTag[] {
 }
 
 function promptForFrame(sample: SpiritFlixSmartSample): string {
+  const bodyTags = ["curvy", "busty", "bbw", "petite", "slim"].filter((id) => VISUAL_TAG_IDS.includes(id));
+  const apparelTags = ["hijab", "dress", "traditional-dress", "lingerie", "stockings"].filter((id) => VISUAL_TAG_IDS.includes(id));
+  const appearanceTags = ["tattoos", "glasses"].filter((id) => VISUAL_TAG_IDS.includes(id));
+  const settingActivityTags = ["hotel-room", "threesome", "smoking", "toy", "oral", "manual", "intercourse", "anal", "lesbian", "massage", "riding", "missionary", "doggy", "standing", "seated", "cosplay", "pov", "watermark"].filter((id) => VISUAL_TAG_IDS.includes(id));
   return [
     "You are tagging one sampled video frame for a private local media library.",
     "Return JSON only. Do not include markdown.",
     `Frame timestamp: ${sample.timestampLabel}.`,
-    `Allowed tag ids: ${VISUAL_TAG_IDS.join(", ")}.`,
+    `Allowed body tags: ${bodyTags.join(", ")}.`,
+    `Allowed apparel tags: ${apparelTags.join(", ")}.`,
+    `Allowed appearance tags: ${appearanceTags.join(", ")}.`,
+    `Allowed setting/activity/style tags: ${settingActivityTags.join(", ")}.`,
     "Do not tag people counts or generic scene counts: never return solo, duo, or group.",
     "Do not return location-only tags such as indoor or outdoor.",
-    "Return only relevant descriptive tags about visible body type, clothing, styling, activity, pose, setting, or watermark.",
-    "Do not tag hair color. Do not use generic filler tags.",
-    "Actively check for visible supported body/apparel tags such as curvy, busty, BBW, petite, slim, hijab, lingerie, stockings, tattoos, and glasses when the frame clearly supports them.",
+    "Do not tag hair color. Do not use generic filler tags. Return an empty tags array when no allowed tag is clearly visible.",
+    "If the frame is a title card, disclaimer, logo screen, black frame, or mostly text, return no tags and say title card in observations.",
+    "Only return a tag when the image itself proves it. Do not infer from filename, performer, previous frames, or common defaults.",
+    "Body tags need visible body-shape evidence in this frame. Do not use curvy, busty, BBW, petite, or slim if body shape is hidden, cropped, or ambiguous.",
+    "Apparel tags need visible clothing evidence in this frame; do not use apparel tags for dark hair, shadows, glasses, or unclear fabric.",
+    "Setting/activity tags need visible setting or activity evidence in this frame.",
+    "Observations must describe only what is visible in the image. Do not copy tag names or phrases from these instructions unless the image clearly shows them.",
     "Do not infer race, ethnicity, nationality, religion, or identity from appearance. Only tag visible clothing items such as hijab when clearly visible.",
-    "Use only visible evidence. If unsure, return unclear with low confidence.",
+    "If unsure, return no tag rather than a weak guess.",
     "Schema: {\"tags\":[{\"id\":\"tag-id\",\"confidence\":0.0,\"evidence\":\"short visible cue\"}],\"observations\":[\"short cue\"],\"confidence\":0.0}",
   ].join("\n");
 }
@@ -140,6 +194,61 @@ async function postOllamaImage(
   } finally {
     clearTimeout(timeout);
   }
+}
+
+async function postOllamaImages(
+  framePaths: string[],
+  prompt: string,
+  options: Required<Pick<SpiritFlixVisualAnalysisOptions, "ollamaModel" | "ollamaUrl" | "timeoutMs">>,
+): Promise<VisualModelResponse> {
+  const images = await Promise.all(framePaths.map((framePath) => fs.readFile(framePath, "base64")));
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), options.timeoutMs);
+  try {
+    const response = await fetch(options.ollamaUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: options.ollamaModel,
+        prompt,
+        images,
+        stream: false,
+        options: { temperature: 0 },
+      }),
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      throw new Error(`local visual model returned HTTP ${response.status}`);
+    }
+    const payload = await response.json() as { response?: unknown };
+    const parsed = typeof payload.response === "string" ? extractJsonObject(payload.response) : null;
+    if (!parsed) throw new Error("local visual model did not return parseable JSON");
+    return parsed;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function promptForVideo(samples: SpiritFlixSmartSample[]): string {
+  const bodyTags = ["curvy", "busty", "bbw", "petite", "slim"].filter((id) => VISUAL_TAG_IDS.includes(id));
+  const apparelTags = ["hijab", "dress", "traditional-dress", "lingerie", "stockings"].filter((id) => VISUAL_TAG_IDS.includes(id));
+  const appearanceTags = ["tattoos", "glasses"].filter((id) => VISUAL_TAG_IDS.includes(id));
+  const settingActivityTags = ["hotel-room", "threesome", "smoking", "toy", "oral", "manual", "intercourse", "anal", "lesbian", "massage", "riding", "missionary", "doggy", "standing", "seated", "cosplay", "pov", "watermark"].filter((id) => VISUAL_TAG_IDS.includes(id));
+  return [
+    "You are tagging sampled frames from one private local media video. Frames are in chronological order.",
+    "Return JSON only. Do not include markdown.",
+    `Frame timestamps: ${samples.map((sample) => sample.timestampLabel).join(", ")}.`,
+    `Allowed body tags: ${bodyTags.join(", ")}.`,
+    `Allowed apparel tags: ${apparelTags.join(", ")}.`,
+    `Allowed appearance tags: ${appearanceTags.join(", ")}.`,
+    `Allowed setting/activity/style tags: ${settingActivityTags.join(", ")}.`,
+    "Use the set of frames together. Ignore title cards, disclaimer screens, logos-only screens, black frames, and mostly-text frames.",
+    "Do not return generic people-count or location-only tags: solo, duo, group, indoor, outdoor.",
+    "Do not copy instruction text into observations. Describe only repeated or strongly visible cues from the frames.",
+    "Return tags only when multiple frames or one very clear frame supports them. Return an empty tags array if evidence is weak.",
+    "titleDescriptor should be 2 to 5 words and built from returned tag labels only; omit it if there is no title-worthy tag.",
+    "Schema: {\"tags\":[{\"id\":\"tag-id\",\"confidence\":0.0,\"evidence\":\"short visible cue\"}],\"observations\":[\"short cue\"],\"titleDescriptor\":\"short phrase\",\"confidence\":0.0}",
+  ].join("\n");
 }
 
 function mergeSampleTags(sample: SpiritFlixSmartSample, tags: SpiritFlixSmartTag[]): SpiritFlixSmartSample {
@@ -189,6 +298,8 @@ export async function applyLocalVisualAnalysisToSpiritFlixAnalysis(
   const notes: string[] = [];
   const evidenceTags = new Set<string>();
   const frames: SpiritFlixSmartVisualAnalysisFrame[] = [];
+  const analyzedFramePaths: string[] = [];
+  const analyzedFrameSamples: SpiritFlixSmartSample[] = [];
   let analyzedFrames = 0;
 
   for (const sample of samplesWithFrames) {
@@ -200,13 +311,14 @@ export async function applyLocalVisualAnalysisToSpiritFlixAnalysis(
     try {
       const response = await postOllamaImage(frameCachePath, promptForFrame(sample), modelOptions);
       const modelTags = Array.isArray(response.tags) ? response.tags as VisualModelTag[] : [];
-      const tags = modelTags
-        .map((entry) => makeVisualTag(entry, sample.timestampSeconds))
-        .filter((tag): tag is SpiritFlixSmartTag => tag != null);
-      const normalizedTags = normalizeVisualTags(tags);
       const observations = Array.isArray(response.observations)
         ? response.observations.filter((entry): entry is string => typeof entry === "string" && entry.trim().length > 0).slice(0, 3)
         : [];
+      const tags = modelTags
+        .map((entry) => makeVisualTag(entry, sample.timestampSeconds))
+        .filter((tag): tag is SpiritFlixSmartTag => tag != null)
+        .concat(tagsFromObservations(observations, sample.timestampSeconds));
+      const normalizedTags = normalizeVisualTags(tags);
       const index = samples.findIndex((entry) => entry.timestampSeconds === sample.timestampSeconds && entry.cacheKey === sample.cacheKey);
       if (index >= 0) {
         samples[index] = mergeSampleTags(
@@ -226,6 +338,8 @@ export async function applyLocalVisualAnalysisToSpiritFlixAnalysis(
         tags: normalizedTags.map((tag) => tag.id),
         observations,
       });
+      analyzedFramePaths.push(frameCachePath);
+      analyzedFrameSamples.push(sample);
       analyzedFrames += 1;
     } catch (error) {
       const message = error instanceof Error ? error.message : "local visual model failed";
@@ -239,6 +353,40 @@ export async function applyLocalVisualAnalysisToSpiritFlixAnalysis(
         observations: [],
         error: message,
       });
+    }
+  }
+
+  if (analyzedFramePaths.length >= 2) {
+    try {
+      const response = await postOllamaImages(analyzedFramePaths, promptForVideo(analyzedFrameSamples), modelOptions);
+      const videoObservations = Array.isArray(response.observations)
+        ? response.observations.filter((entry): entry is string => typeof entry === "string" && entry.trim().length > 0).slice(0, 5)
+        : [];
+      if (typeof response.titleDescriptor === "string" && response.titleDescriptor.trim()) {
+        videoObservations.push(response.titleDescriptor.trim());
+      }
+      const timestampSeconds = analyzedFrameSamples[0].timestampSeconds;
+      const modelTags = Array.isArray(response.tags) ? response.tags as VisualModelTag[] : [];
+      const videoTags = normalizeVisualTags(
+        modelTags
+          .map((entry) => makeVisualTag(entry, timestampSeconds))
+          .filter((tag): tag is SpiritFlixSmartTag => tag != null),
+      );
+      const index = samples.findIndex((entry) => entry.timestampSeconds === analyzedFrameSamples[0].timestampSeconds && entry.cacheKey === analyzedFrameSamples[0].cacheKey);
+      if (index >= 0) {
+        samples[index] = mergeSampleTags(
+          {
+            ...samples[index],
+            observations: [...new Set([...samples[index].observations, ...videoObservations.map((entry) => `vlm-video: ${entry.trim()}`)])],
+          },
+          videoTags,
+        );
+      }
+      videoTags.forEach((tag) => evidenceTags.add(tag.id));
+      notes.push(`S9 video-level visual pass used ${analyzedFramePaths.length} sampled frames for cross-frame tags.`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "local visual model video pass failed";
+      notes.push(`S9 video-level visual pass failed: ${message}`);
     }
   }
 

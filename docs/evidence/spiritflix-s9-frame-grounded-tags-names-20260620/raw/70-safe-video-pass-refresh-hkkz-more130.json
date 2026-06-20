@@ -1,0 +1,147 @@
+{
+  "status": 200,
+  "ok": true,
+  "body": {
+    "schema": "spiritflix-smart-batch/v1",
+    "generatedAt": "2026-06-20T20:32:58.085Z",
+    "mode": "run",
+    "rootPath": "/mnt/spirit-8tb/media/yes/models/aaliyah-yasan",
+    "recursive": false,
+    "maxItems": 12,
+    "items": [
+      {
+        "path": "/mnt/spirit-8tb/media/yes/models/aaliyah-yasan/HkkzMtwQexuQzwkQMekM.mkv",
+        "name": "HkkzMtwQexuQzwkQMekM.mkv",
+        "parentPath": "/mnt/spirit-8tb/media/yes/models/aaliyah-yasan",
+        "extension": ".mkv",
+        "thumbnailUrl": "/api/spiritflix/admin/thumbnail?path=%2Fmnt%2Fspirit-8tb%2Fmedia%2Fyes%2Fmodels%2Faaliyah-yasan%2FHkkzMtwQexuQzwkQMekM.mkv",
+        "status": "analyzed",
+        "analysisStatus": "needs_review",
+        "reviewStatus": "unreviewed",
+        "sidecarCurrent": true,
+        "needsReview": true,
+        "suggestedTagCount": 0,
+        "tags": [],
+        "qualityBadges": [
+          {
+            "id": "hd",
+            "label": "HD",
+            "group": "quality",
+            "confidence": 0.85,
+            "reviewRequired": false,
+            "reviewState": "pending"
+          },
+          {
+            "id": "long",
+            "label": "long",
+            "group": "format",
+            "confidence": 0.8,
+            "reviewRequired": false,
+            "reviewState": "pending"
+          },
+          {
+            "id": "mkv-container",
+            "label": "mkv",
+            "group": "format",
+            "confidence": 0.7,
+            "reviewRequired": false,
+            "reviewState": "pending"
+          }
+        ],
+        "modelName": "Aaliyah Yasan",
+        "modelSource": "path",
+        "nameReason": "Aaliyah Yasan fallback uses model identity with Untitled because the filename is random or ambiguous.",
+        "visualTaggingAvailable": false,
+        "approvedTagCount": 0,
+        "rejectedTagCount": 0,
+        "pendingTagCount": 0,
+        "renamePreviewAvailable": false,
+        "renamePreviewStatus": "provisional",
+        "proposedFilename": "Aaliyah Yasan 03 - Untitled",
+        "proposedTargetPath": "/mnt/spirit-8tb/media/yes/models/aaliyah-yasan/Aaliyah Yasan 03 - Untitled.mkv",
+        "renameBlocker": "Review or approve tags/metadata to unlock rename preview.",
+        "renameWarnings": [
+          "Provisional preview, not eligible for apply until reviewed."
+        ],
+        "sidecarRef": "analysis/0ececef65cb8.json",
+        "analyzedAt": "2026-06-20T20:31:34.629Z"
+      },
+      {
+        "path": "/mnt/spirit-8tb/media/yes/models/aaliyah-yasan/Visit onlyshare.io for MORE 130.mkv",
+        "name": "Visit onlyshare.io for MORE 130.mkv",
+        "parentPath": "/mnt/spirit-8tb/media/yes/models/aaliyah-yasan",
+        "extension": ".mkv",
+        "thumbnailUrl": "/api/spiritflix/admin/thumbnail?path=%2Fmnt%2Fspirit-8tb%2Fmedia%2Fyes%2Fmodels%2Faaliyah-yasan%2FVisit%20onlyshare.io%20for%20MORE%20130.mkv",
+        "status": "analyzed",
+        "analysisStatus": "needs_review",
+        "reviewStatus": "unreviewed",
+        "sidecarCurrent": true,
+        "needsReview": true,
+        "suggestedTagCount": 0,
+        "tags": [],
+        "qualityBadges": [
+          {
+            "id": "full-hd",
+            "label": "full HD",
+            "group": "quality",
+            "confidence": 0.9,
+            "reviewRequired": false,
+            "reviewState": "pending"
+          },
+          {
+            "id": "mkv-container",
+            "label": "mkv",
+            "group": "format",
+            "confidence": 0.7,
+            "reviewRequired": false,
+            "reviewState": "pending"
+          },
+          {
+            "id": "short",
+            "label": "short",
+            "group": "format",
+            "confidence": 0.8,
+            "reviewRequired": false,
+            "reviewState": "pending"
+          },
+          {
+            "id": "vertical",
+            "label": "vertical",
+            "group": "format",
+            "confidence": 0.85,
+            "reviewRequired": false,
+            "reviewState": "pending"
+          }
+        ],
+        "modelName": "Aaliyah Yasan",
+        "modelSource": "path",
+        "nameReason": "Aaliyah Yasan fallback uses model identity with Untitled because the filename is random or ambiguous.",
+        "visualTaggingAvailable": false,
+        "approvedTagCount": 0,
+        "rejectedTagCount": 0,
+        "pendingTagCount": 0,
+        "renamePreviewAvailable": false,
+        "renamePreviewStatus": "provisional",
+        "proposedFilename": "Aaliyah Yasan 10 - Untitled",
+        "proposedTargetPath": "/mnt/spirit-8tb/media/yes/models/aaliyah-yasan/Aaliyah Yasan 10 - Untitled.mkv",
+        "renameBlocker": "Review or approve tags/metadata to unlock rename preview.",
+        "renameWarnings": [
+          "Provisional preview, not eligible for apply until reviewed."
+        ],
+        "sidecarRef": "analysis/bdeb19011bb2.json",
+        "analyzedAt": "2026-06-20T20:32:58.075Z"
+      }
+    ],
+    "counts": {
+      "candidates": 0,
+      "analyzed": 2,
+      "skipped": 0,
+      "already_current": 0,
+      "failed": 0,
+      "needs_review": 2,
+      "rename_preview_available": 0
+    },
+    "visualContentTaggingEnabled": false,
+    "visualContentTaggingMessage": "Local visual analysis ran or was skipped, but no sampled-frame content tags were produced for this batch."
+  }
+}

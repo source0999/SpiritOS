@@ -94,7 +94,7 @@ describe("SpiritFlix local visual analysis", () => {
           { id: "outdoor", confidence: 0.72 },
           { id: "curvy", confidence: 0.68 },
         ],
-        observations: ["second person visible outdoors"],
+        observations: ["woman wearing a hijab"],
         confidence: 0.76,
       }),
     })));
