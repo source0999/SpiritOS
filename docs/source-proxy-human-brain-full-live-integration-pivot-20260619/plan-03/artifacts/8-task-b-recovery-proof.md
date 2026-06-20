@@ -1,15 +1,8 @@
 # Task B Recovery Proof
 
-Result: `PASS`.
-
-- task: `task_b8e307901b22`
-- trace: `trace_10a21d27c6c14f5e`
-- task entered in-flight state: `worker_dispatched`
-- interruption simulated: persisted state reloaded/read back with recovery marker
-- recovery_marker: `recovered_from_worker_dispatched`
-- duplicate unsafe action prevented: true
-- causal recovery event exists: yes
-- final status: honest in-flight readback, `worker_dispatched`
-
-Raw evidence:
-- `/home/source/spiritos-evidence/plan-03/plan3-disposable-proof.json`
+- result: PASS for Stage 2 blocker evidence.
+- task_id: `task_72911f403160`
+- trace_id: `trace_807c08ec897e4147`
+- latest_consumer_event_id: `consumer_1fa13a7f30fc49c5`
+- consumer_event_id: `consumer_1fa13a7f30fc49c5`
+- raw evidence: `/home/source/spiritos-evidence/plan-03-3x10-dryrun/stage-2/plan3-stage2-disposable-proof.json`

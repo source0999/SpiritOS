@@ -253,9 +253,11 @@ def apply_plan3_policy(
     )
     state["policy_decision"] = decision["policy_decision"]
     state["blocked_reason"] = decision["reason"] if decision["blocked"] else ""
+    state["blocked_action"] = decision["action"] if decision["blocked"] else ""
+    state["mutation_prevented"] = bool(decision["blocked"])
     state["latest_policy_event_id"] = event["event_id"]
     _store_plan3_state(task, state)
-    return _transition_plan3_status(
+    result = _transition_plan3_status(
         task,
         state,
         status_after,
@@ -264,6 +266,13 @@ def apply_plan3_policy(
         failure_class=decision["failure_class"],
         policy_decision=decision["policy_decision"],
     )
+    if decision["blocked"]:
+        return record_plan3_consumer_evidence(
+            task.id,
+            proof_kind="policy",
+            consumer_subsystem="source_proxy_plan3_policy_acceptance_consumer",
+        )
+    return result
 
 
 def evaluate_plan3_policy(
@@ -406,7 +415,11 @@ def recover_plan3_task(task_id: str) -> dict[str, Any]:
     )
     state["latest_recovery_event_id"] = event["event_id"]
     _store_plan3_state(task, state)
-    return get_long_running_task(task.id)
+    return record_plan3_consumer_evidence(
+        task.id,
+        proof_kind="recovery",
+        consumer_subsystem="source_proxy_plan3_recovery_acceptance_consumer",
+    )
 
 
 def run_plan3_verifier_driven_repair(
@@ -431,6 +444,8 @@ def run_plan3_verifier_driven_repair(
         ) from error
     if not target.is_file():
         raise LongRunningTaskError("Repair target is missing.", "validation_failed")
+    state["max_repair_attempts"] = max(1, int(max_repair_attempts))
+    _store_plan3_state(task, state)
 
     if verifier(target):
         transition_plan3_status(
@@ -445,7 +460,7 @@ def run_plan3_verifier_driven_repair(
         task,
         state,
         "repair_needed",
-        event_type="verification",
+        event_type="failure",
         reason="verifier_failed_before_repair",
         failure_class="verifier_failed",
         verification_result="UNVERIFIED",
@@ -493,14 +508,19 @@ def run_plan3_verifier_driven_repair(
     )
     final_verified = verifier(target)
     if final_verified:
-        return transition_plan3_status(
+        transition_plan3_status(
             task.id,
             "verified",
             reason="repair_reverified",
             verification_result="VERIFIED",
             repair_result="repair_applied_and_reverified",
         )
-    return transition_plan3_status(
+        return record_plan3_consumer_evidence(
+            task.id,
+            proof_kind="repair",
+            consumer_subsystem="source_proxy_plan3_repair_acceptance_consumer",
+        )
+    transition_plan3_status(
         task.id,
         "failed_needs_human",
         reason="repair_reverification_failed",
@@ -508,6 +528,167 @@ def run_plan3_verifier_driven_repair(
         verification_result="UNVERIFIED",
         repair_result="repair_applied_but_reverification_failed",
     )
+    return record_plan3_consumer_evidence(
+        task.id,
+        proof_kind="repair",
+        consumer_subsystem="source_proxy_plan3_repair_acceptance_consumer",
+    )
+
+
+def record_plan3_consumer_evidence(
+    task_id: str,
+    *,
+    proof_kind: str,
+    consumer_subsystem: str = "source_proxy_plan3_acceptance_consumer",
+) -> dict[str, Any]:
+    task = _lookup_task(task_id)
+    state = _require_plan3_state(task)
+    kind = _normalize_proof_kind(proof_kind)
+    pre_errors = plan3_acceptance_evidence_errors(
+        state,
+        proof_kind=kind,
+        require_consumer=False,
+    )
+    if pre_errors:
+        raise LongRunningTaskError(
+            "Plan 3 proof is missing required pre-consumer evidence: "
+            + "; ".join(pre_errors),
+            f"plan3_{kind}_pre_consumer_evidence_missing",
+        )
+    event = _append_causal_event(
+        task,
+        event_type="consumer",
+        subsystem="source_proxy_plan3_durable_execution",
+        run_id=state["run_id"],
+        status_before=task.status,
+        status_after=task.status,
+        changed_state_fields=["ast_snapshot"],
+        consumer_subsystem=consumer_subsystem,
+        notes=[
+            f"proof_kind={kind}",
+            "downstream consumer evidence recorded in the same durable trace",
+        ],
+    )
+    state["latest_consumer_event_id"] = event["event_id"]
+    state["consumer_event_id"] = event["event_id"]
+    state["consumer_subsystem"] = consumer_subsystem
+    state[f"{kind}_consumer_event_id"] = event["event_id"]
+    _store_plan3_state(task, state)
+    state = _require_plan3_state(_lookup_task(task_id))
+    post_errors = plan3_acceptance_evidence_errors(
+        state,
+        proof_kind=kind,
+        require_consumer=True,
+    )
+    if post_errors:
+        raise LongRunningTaskError(
+            "Plan 3 proof is missing same-trace consumer evidence: "
+            + "; ".join(post_errors),
+            f"plan3_{kind}_consumer_evidence_missing",
+        )
+    return get_long_running_task(task.id)
+
+
+def require_plan3_acceptance_evidence(
+    task_or_state: dict[str, Any],
+    *,
+    proof_kind: str,
+) -> None:
+    state = _extract_plan3_state(task_or_state)
+    kind = _normalize_proof_kind(proof_kind)
+    errors = plan3_acceptance_evidence_errors(state, proof_kind=kind)
+    if errors:
+        raise LongRunningTaskError(
+            "Plan 3 acceptance evidence is incomplete: " + "; ".join(errors),
+            f"plan3_{kind}_acceptance_evidence_missing",
+        )
+
+
+def plan3_acceptance_evidence_errors(
+    task_or_state: dict[str, Any],
+    *,
+    proof_kind: str,
+    require_consumer: bool = True,
+) -> list[str]:
+    state = _extract_plan3_state(task_or_state)
+    kind = _normalize_proof_kind(proof_kind)
+    errors: list[str] = []
+    trace_id = str(state.get("trace_id") or "")
+    events = [
+        event
+        for event in state.get("causal_events_json", [])
+        if isinstance(event, dict)
+    ]
+    event_types = {str(event.get("event_type") or "") for event in events}
+    if not trace_id:
+        errors.append("trace_id missing")
+    if kind == "policy":
+        if "policy" not in event_types:
+            errors.append("policy event missing")
+        if str(state.get("policy_decision") or "") not in {"policy_blocked", "blocked_human"}:
+            errors.append("policy_decision is not blocked")
+        if str(state.get("current_status") or "") not in {"policy_blocked", "blocked_human"}:
+            errors.append("policy status is not blocked")
+        if state.get("mutation_prevented") is not True:
+            errors.append("mutation_prevented is not true")
+        if not state.get("blocked_action"):
+            errors.append("blocked_action missing")
+    elif kind == "recovery":
+        if "recovery" not in event_types:
+            errors.append("recovery event missing")
+        if state.get("duplicate_action_prevented") is not True:
+            errors.append("duplicate_action_prevented missing")
+        if not state.get("latest_recovery_event_id"):
+            errors.append("latest_recovery_event_id missing")
+    elif kind == "repair":
+        if "failure" not in event_types:
+            errors.append("explicit verifier failure event missing")
+        if "repair" not in event_types:
+            errors.append("repair event missing")
+        if "verification" not in event_types:
+            errors.append("reverify event missing")
+        if not state.get("latest_repair_failure_event_id"):
+            errors.append("latest_repair_failure_event_id missing")
+        if not state.get("latest_repair_event_id"):
+            errors.append("latest_repair_event_id missing")
+        if not state.get("latest_reverify_event_id"):
+            errors.append("latest_reverify_event_id missing")
+        repair_attempts = int(state.get("repair_attempt_count") or 0)
+        max_attempts = int(state.get("max_repair_attempts") or 0)
+        if repair_attempts < 1:
+            errors.append("repair_attempt_count missing")
+        if max_attempts < 1 or repair_attempts > max_attempts:
+            errors.append("repair_attempt_count unbounded")
+        if str(state.get("current_status") or "") not in {"verified", "failed_needs_human"}:
+            errors.append("repair final status missing")
+        if not state.get("repair_result"):
+            errors.append("repair_result missing")
+    if require_consumer:
+        latest_consumer_event_id = str(state.get("latest_consumer_event_id") or "")
+        consumer_event_id = str(state.get("consumer_event_id") or "")
+        consumer_subsystem = str(state.get("consumer_subsystem") or "")
+        if not latest_consumer_event_id:
+            errors.append("latest_consumer_event_id missing")
+        if not consumer_event_id:
+            errors.append("consumer_event_id missing")
+        if latest_consumer_event_id and consumer_event_id and latest_consumer_event_id != consumer_event_id:
+            errors.append("latest_consumer_event_id does not match consumer_event_id")
+        if not consumer_subsystem:
+            errors.append("consumer_subsystem missing")
+        consumer_event = next(
+            (
+                event
+                for event in events
+                if event.get("event_id") == latest_consumer_event_id
+                and event.get("event_type") == "consumer"
+            ),
+            None,
+        )
+        if consumer_event is None:
+            errors.append("consumer event missing")
+        elif consumer_event.get("trace_id") != trace_id:
+            errors.append("consumer event not in same trace")
+    return errors
 
 
 def plan3_final_go_allowed(
@@ -600,8 +781,20 @@ def _transition_plan3_status(
     )
     if event_type == "consumer":
         state["latest_consumer_event_id"] = event["event_id"]
+        state["consumer_event_id"] = event["event_id"]
+        state["consumer_subsystem"] = event.get("consumer_subsystem") or ""
     elif event_type == "invocation":
         state["latest_invocation_event_id"] = event["event_id"]
+    elif event_type == "failure":
+        state["latest_failure_event_id"] = event["event_id"]
+        if failure_class == "verifier_failed":
+            state["latest_repair_failure_event_id"] = event["event_id"]
+    elif event_type == "repair":
+        state["latest_repair_event_id"] = event["event_id"]
+    elif event_type == "verification":
+        state["latest_verification_event_id"] = event["event_id"]
+        if "reverification" in reason or current_status.startswith("repair_"):
+            state["latest_reverify_event_id"] = event["event_id"]
     _store_plan3_state(task, state)
     return get_long_running_task(task.id)
 
@@ -644,3 +837,22 @@ def _policy_decision(
 
 def _normalize_action(action: str) -> str:
     return "_".join(str(action or "").strip().lower().replace("/", " ").split())
+
+
+def _normalize_proof_kind(proof_kind: str) -> str:
+    normalized = str(proof_kind or "").strip().lower()
+    if normalized not in {"policy", "recovery", "repair"}:
+        raise LongRunningTaskError("Unsupported Plan 3 proof kind.", "invalid_plan3_proof_kind")
+    return normalized
+
+
+def _extract_plan3_state(task_or_state: dict[str, Any]) -> dict[str, Any]:
+    if "plan_3_durable_state" in task_or_state and isinstance(
+        task_or_state["plan_3_durable_state"],
+        dict,
+    ):
+        return dict(task_or_state["plan_3_durable_state"])
+    task = task_or_state.get("task")
+    if isinstance(task, dict) and isinstance(task.get("plan_3_durable_state"), dict):
+        return dict(task["plan_3_durable_state"])
+    return dict(task_or_state)

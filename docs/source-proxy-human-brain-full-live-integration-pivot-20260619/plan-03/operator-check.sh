@@ -5,7 +5,7 @@ cd /home/source/SpiritOS
 ROOT="docs/source-proxy-human-brain-full-live-integration-pivot-20260619"
 PLAN_DIR="$ROOT/plan-03"
 ART="$PLAN_DIR/artifacts"
-RAW="/home/source/spiritos-evidence/plan-03/plan3-disposable-proof.json"
+RAW="/home/source/spiritos-evidence/plan-03-3x10-dryrun/stage-2/plan3-stage2-disposable-proof.json"
 
 echo "Plan 3/6 operator check"
 
@@ -62,7 +62,7 @@ summary = json.loads(Path("docs/source-proxy-human-brain-full-live-integration-p
 raw = json.loads(Path("/home/source/spiritos-evidence/plan-03/plan3-disposable-proof.json").read_text())
 
 required_closeout = {
-    "verdict": "GO",
+    "verdict": "PLAN_3_STAGE_2_NEEDS_FIX_PATCH_COMPLETE_PENDING_HUMAN_REVIEW",
     "plan_2_carryforward": "PASS",
     "durable_state": "INTEGRATED_LIVE",
     "policy_gates": "INTEGRATED_LIVE",
@@ -79,6 +79,13 @@ for key, expected in required_closeout.items():
     actual = closeout.get(key)
     if actual != expected:
         raise SystemExit(f"FAIL closeout {key}={actual!r}, expected {expected!r}")
+
+if closeout.get("stage_2_completed") is not True:
+    raise SystemExit("FAIL Stage 2 completion not recorded")
+if closeout.get("stage_3_started") is not False:
+    raise SystemExit("FAIL Stage 3 start must be false")
+if closeout.get("battery_3x10_run") is not False:
+    raise SystemExit("FAIL 3x10 battery must not be run")
 
 fake_flags = [
     "preview_go_detected",
@@ -113,17 +120,79 @@ for key, expected_status in expect.items():
     if state.get("trace_id") not in traces:
         raise SystemExit(f"FAIL {key} trace_id is not present in causal events")
 
-event_sets = {key: {event.get("event_type") for event in raw[key].get("causal_events_json", [])} for key in expect}
-if "policy" not in event_sets["policy_task"]:
-    raise SystemExit("FAIL policy proof has no policy event")
-if "recovery" not in event_sets["recovery_task"]:
-    raise SystemExit("FAIL recovery proof has no recovery event")
-if not ({"retry", "failure"} <= event_sets["retry_task"]):
-    raise SystemExit("FAIL retry proof lacks retry/failure events")
-if not ({"repair", "verification"} <= event_sets["repair_task"]):
-    raise SystemExit("FAIL repair proof lacks repair/verification events")
+def event_types(state):
+    return {event.get("event_type") for event in state.get("causal_events_json", [])}
 
-if summary.get("raw_evidence") != "/home/source/spiritos-evidence/plan-03/plan3-disposable-proof.json":
+def require_consumer(state, label):
+    latest = state.get("latest_consumer_event_id")
+    consumer = state.get("consumer_event_id")
+    if not latest:
+        raise SystemExit(f"FAIL {label} proof missing latest_consumer_event_id")
+    if not consumer:
+        raise SystemExit(f"FAIL {label} proof missing consumer_event_id")
+    if latest != consumer:
+        raise SystemExit(f"FAIL {label} consumer_event_id does not match latest_consumer_event_id")
+    if not state.get("consumer_subsystem"):
+        raise SystemExit(f"FAIL {label} proof missing consumer_subsystem")
+    match = None
+    for event in state.get("causal_events_json", []):
+        if event.get("event_id") == latest and event.get("event_type") == "consumer":
+            match = event
+            break
+    if match is None:
+        raise SystemExit(f"FAIL {label} consumer event missing")
+    if match.get("trace_id") != state.get("trace_id"):
+        raise SystemExit(f"FAIL {label} consumer event not in same trace")
+
+policy = raw["policy_task"]
+policy_events = event_types(policy)
+if "policy" not in policy_events:
+    raise SystemExit("FAIL policy proof has no policy event")
+if policy.get("policy_decision") not in {"policy_blocked", "blocked_human"}:
+    raise SystemExit("FAIL policy proof missing blocked policy decision")
+if policy.get("mutation_prevented") is not True:
+    raise SystemExit("FAIL policy proof missing mutation_prevented=true")
+if not policy.get("blocked_action"):
+    raise SystemExit("FAIL policy proof missing blocked action")
+require_consumer(policy, "policy")
+
+recovery = raw["recovery_task"]
+recovery_events = event_types(recovery)
+if "recovery" not in recovery_events:
+    raise SystemExit("FAIL recovery proof has no recovery event")
+if recovery.get("duplicate_action_prevented") is not True:
+    raise SystemExit("FAIL recovery duplicate action prevention missing")
+require_consumer(recovery, "recovery")
+
+retry_events = event_types(raw["retry_task"])
+if not ({"retry", "failure"} <= retry_events):
+    raise SystemExit("FAIL retry proof lacks retry/failure events")
+
+repair = raw["repair_task"]
+repair_events = event_types(repair)
+if "failure" not in repair_events:
+    raise SystemExit("FAIL repair proof missing explicit verifier failure event")
+if "repair" not in repair_events:
+    raise SystemExit("FAIL repair proof missing repair event")
+if "verification" not in repair_events:
+    raise SystemExit("FAIL repair proof missing reverify event")
+if not repair.get("latest_repair_failure_event_id"):
+    raise SystemExit("FAIL repair proof missing latest_repair_failure_event_id")
+if not repair.get("latest_repair_event_id"):
+    raise SystemExit("FAIL repair proof missing latest_repair_event_id")
+if not repair.get("latest_reverify_event_id"):
+    raise SystemExit("FAIL repair proof missing latest_reverify_event_id")
+repair_attempt_count = int(repair.get("repair_attempt_count") or 0)
+max_repair_attempts = int(repair.get("max_repair_attempts") or 0)
+if repair_attempt_count < 1:
+    raise SystemExit("FAIL repair attempt count missing")
+if max_repair_attempts < 1 or repair_attempt_count > max_repair_attempts:
+    raise SystemExit("FAIL repair attempt count missing or unbounded")
+if repair.get("current_status") not in {"verified", "failed_needs_human"}:
+    raise SystemExit("FAIL repair final result missing")
+require_consumer(repair, "repair")
+
+if summary.get("raw_evidence") != "/home/source/spiritos-evidence/plan-03-3x10-dryrun/stage-2/plan3-stage2-disposable-proof.json":
     raise SystemExit("FAIL summary raw evidence path mismatch")
 PY
 
@@ -132,8 +201,11 @@ if find "$PLAN_DIR/../plan-04" -path "*/artifacts/*" -print | grep .; then
   exit 1
 fi
 
-if grep -R -E '"(preview_go_detected|advisory_go_detected|status_only_go_detected|repair_suggestion_only_go_detected|recovery_not_tested_go_detected|policy_doc_only_go_detected|unconsumed_output_go_detected|plan_4_started)"[[:space:]]*:[[:space:]]*true' "$PLAN_DIR" >/dev/null 2>&1; then
-  echo "FAIL forbidden fake-GO true flag found in Plan 3 closeout"
+if grep -E '"(preview_go_detected|advisory_go_detected|status_only_go_detected|repair_suggestion_only_go_detected|recovery_not_tested_go_detected|policy_doc_only_go_detected|unconsumed_output_go_detected|plan_4_started)"[[:space:]]*:[[:space:]]*true' \
+  "$PLAN_DIR/status.json" \
+  "$PLAN_DIR/plan-closeout.json" \
+  "$ART/plan3-proof-summary.json" >/dev/null 2>&1; then
+  echo "FAIL forbidden fake-GO true flag found in current Plan 3 closeout"
   exit 1
 fi
 

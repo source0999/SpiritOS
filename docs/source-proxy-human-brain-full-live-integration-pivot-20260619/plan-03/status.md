@@ -1,14 +1,9 @@
-# Plan 3/6 Status
+# Plan 3 Status
 
-Status: `GO`.
-Plan gate: `PLAN_3_COMPLETE_PENDING_INDEPENDENT_ACCEPTANCE_REVIEW`.
+Status: `PLAN_3_STAGE_2_NEEDS_FIX_PATCH_COMPLETE_PENDING_HUMAN_REVIEW`
 
-Plan 3 implemented durable execution state, fail-closed policy decisions, bounded retry/failure handling, recovery readback, and a verifier-driven repair loop using the existing long-running task store. No Plan 4 work was started.
-
-Latest proof:
-- raw evidence: `/home/source/spiritos-evidence/plan-03/plan3-disposable-proof.json`
-- policy task: `task_6ecf07847f44`
-- recovery task: `task_b8e307901b22`
-- retry task: `task_d8d08a4b6385`
-- repair task: `task_938dad74a7d9`
-- commit: recorded in git log after closeout
+- Stage 2 completed: yes
+- Stage 3 started: no
+- 3x10 battery run: no
+- Plan 4 started: no
+- raw evidence: `/home/source/spiritos-evidence/plan-03-3x10-dryrun/stage-2/plan3-stage2-disposable-proof.json`

@@ -1,35 +1,13 @@
-# Stage 3 Policy Gates
+# Policy Gates
 
-Result: `INTEGRATED_LIVE`.
+Stage 2 refreshed proof records policy blocking plus same-trace downstream consumer evidence.
 
-Implementation:
-- `evaluate_plan3_policy`
-- `apply_plan3_policy`
-
-Covered actions:
-- Mac write
-- Mac unsafe path
-- Obsidian write
-- Cartographer git mutation
-- source patch
-- external web research
-- model lane execution
-- browser/functional verification
-- repair apply
-- push
-- media/Jellyfin mutation
-- Docker/systemd mutation
-
-Fail-closed proof:
-- task: `task_6ecf07847f44`
-- trace: `trace_6d3256350cd748f2`
-- blocked action: `mac_write`
-- target: `../unsafe`
+- task_id: `task_c0089e405af0`
+- trace_id: `trace_459ec8c678824df1`
 - status: `policy_blocked`
 - policy_decision: `policy_blocked`
-- failure class: `unsafe_path_rejected`
-- causal event type: `policy`
-- mutation prevented: yes
-
-Raw evidence:
-- `/home/source/spiritos-evidence/plan-03/plan3-disposable-proof.json`
+- blocked_action: `mac_write`
+- mutation_prevented: `True`
+- latest_consumer_event_id: `consumer_0217fda8812e4762`
+- consumer_subsystem: `source_proxy_plan3_policy_acceptance_consumer`
+- raw evidence: `/home/source/spiritos-evidence/plan-03-3x10-dryrun/stage-2/plan3-stage2-disposable-proof.json`

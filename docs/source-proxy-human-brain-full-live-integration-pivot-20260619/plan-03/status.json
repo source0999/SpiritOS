@@ -1,12 +1,11 @@
 {
-  "plan": 3,
-  "title": "Durable Execution, Policy, Recovery, and Repair",
-  "status": "GO",
-  "gate_status": "PLAN_3_COMPLETE_PENDING_INDEPENDENT_ACCEPTANCE_REVIEW",
-  "implementation_performed": true,
-  "next_plan_authorized": false,
+  "battery_3x10_run": false,
   "plan_4_started": false,
-  "raw_evidence": "/home/source/spiritos-evidence/plan-03/plan3-disposable-proof.json",
-  "commit": "recorded_in_git_log_after_closeout",
-  "commit_pending": false
+  "policy_task_id": "task_c0089e405af0",
+  "raw_evidence": "/home/source/spiritos-evidence/plan-03-3x10-dryrun/stage-2/plan3-stage2-disposable-proof.json",
+  "recovery_task_id": "task_72911f403160",
+  "repair_task_id": "task_46dfb756f7c7",
+  "stage_2_completed": true,
+  "stage_3_started": false,
+  "status": "PLAN_3_STAGE_2_NEEDS_FIX_PATCH_COMPLETE_PENDING_HUMAN_REVIEW"
 }

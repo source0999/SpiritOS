@@ -9,6 +9,7 @@ from source_proxy.tasks.durable_execution import (
     apply_plan3_policy,
     create_plan3_durable_task,
     plan3_final_go_allowed,
+    require_plan3_acceptance_evidence,
     recover_plan3_task,
     record_plan3_failure_attempt,
     run_plan3_verifier_driven_repair,
@@ -98,6 +99,7 @@ class Plan3DurableExecutionTests(unittest.TestCase):
         self.assertTrue(
             any(event["event_type"] == "policy" for event in state["causal_events_json"])
         )
+        require_plan3_acceptance_evidence(state, proof_kind="policy")
         self.assertFalse(
             plan3_final_go_allowed(
                 plan_2_carryforward="PASS",
@@ -161,6 +163,7 @@ class Plan3DurableExecutionTests(unittest.TestCase):
         self.assertTrue(
             any(event["event_type"] == "recovery" for event in state["causal_events_json"])
         )
+        require_plan3_acceptance_evidence(state, proof_kind="recovery")
 
     def test_verifier_failure_triggers_actual_bounded_repair_and_reverify(self) -> None:
         created = create_plan3_durable_task("Plan 3 repair proof")
@@ -189,8 +192,146 @@ class Plan3DurableExecutionTests(unittest.TestCase):
         self.assertEqual(state["verification_result"], "VERIFIED")
         self.assertEqual(state["repair_result"], "repair_applied_and_reverified")
         event_types = {event["event_type"] for event in state["causal_events_json"]}
+        self.assertIn("failure", event_types)
         self.assertIn("repair", event_types)
         self.assertIn("verification", event_types)
+        require_plan3_acceptance_evidence(state, proof_kind="repair")
+
+    def test_policy_proof_requires_same_trace_consumer_evidence(self) -> None:
+        created = create_plan3_durable_task("Plan 3 policy consumer proof")
+        task_id = created["task"]["id"]
+        blocked = apply_plan3_policy(
+            task_id,
+            action="mac_write",
+            target_path="../unsafe",
+        )
+        state = blocked["task"]["plan_3_durable_state"]
+        require_plan3_acceptance_evidence(state, proof_kind="policy")
+
+        missing_latest = dict(state)
+        missing_latest["latest_consumer_event_id"] = ""
+        with self.assertRaises(LongRunningTaskError) as latest_error:
+            require_plan3_acceptance_evidence(missing_latest, proof_kind="policy")
+        self.assertEqual(
+            latest_error.exception.reason_code,
+            "plan3_policy_acceptance_evidence_missing",
+        )
+
+        wrong_trace = dict(state)
+        wrong_events = [dict(event) for event in state["causal_events_json"]]
+        for event in wrong_events:
+            if event.get("event_id") == state["latest_consumer_event_id"]:
+                event["trace_id"] = "trace_different"
+        wrong_trace["causal_events_json"] = wrong_events
+        with self.assertRaises(LongRunningTaskError):
+            require_plan3_acceptance_evidence(wrong_trace, proof_kind="policy")
+
+    def test_recovery_proof_requires_consumer_and_duplicate_prevention(self) -> None:
+        created = create_plan3_durable_task("Plan 3 recovery consumer proof")
+        task_id = created["task"]["id"]
+        transition_plan3_status(task_id, "policy_checking", reason="policy")
+        transition_plan3_status(task_id, "executing", reason="allowed")
+        transition_plan3_status(task_id, "worker_dispatched", reason="worker sent")
+        recovered = recover_plan3_task(task_id)
+        state = recovered["task"]["plan_3_durable_state"]
+        require_plan3_acceptance_evidence(state, proof_kind="recovery")
+
+        missing_latest = dict(state)
+        missing_latest["latest_consumer_event_id"] = ""
+        with self.assertRaises(LongRunningTaskError):
+            require_plan3_acceptance_evidence(missing_latest, proof_kind="recovery")
+
+        missing_duplicate_prevention = dict(state)
+        missing_duplicate_prevention["duplicate_action_prevented"] = False
+        with self.assertRaises(LongRunningTaskError):
+            require_plan3_acceptance_evidence(
+                missing_duplicate_prevention,
+                proof_kind="recovery",
+            )
+
+    def test_repair_proof_requires_failure_reverify_and_same_trace_consumer(self) -> None:
+        state = self._repair_proof_state()
+        require_plan3_acceptance_evidence(state, proof_kind="repair")
+
+        missing_failure = dict(state)
+        missing_failure["latest_repair_failure_event_id"] = ""
+        missing_failure["causal_events_json"] = [
+            event
+            for event in state["causal_events_json"]
+            if event.get("event_type") != "failure"
+        ]
+        with self.assertRaises(LongRunningTaskError):
+            require_plan3_acceptance_evidence(missing_failure, proof_kind="repair")
+
+        missing_consumer = dict(state)
+        missing_consumer["latest_consumer_event_id"] = ""
+        with self.assertRaises(LongRunningTaskError):
+            require_plan3_acceptance_evidence(missing_consumer, proof_kind="repair")
+
+        wrong_trace = dict(state)
+        wrong_events = [dict(event) for event in state["causal_events_json"]]
+        for event in wrong_events:
+            if event.get("event_id") == state["latest_consumer_event_id"]:
+                event["trace_id"] = "trace_different"
+        wrong_trace["causal_events_json"] = wrong_events
+        with self.assertRaises(LongRunningTaskError):
+            require_plan3_acceptance_evidence(wrong_trace, proof_kind="repair")
+
+    def test_operator_helper_rejects_missing_required_evidence_by_kind(self) -> None:
+        policy = apply_plan3_policy(
+            create_plan3_durable_task("Policy helper proof")["task"]["id"],
+            action="mac_write",
+            target_path="../unsafe",
+        )["task"]["plan_3_durable_state"]
+        policy_without_consumer = dict(policy)
+        policy_without_consumer["consumer_event_id"] = ""
+        with self.assertRaises(LongRunningTaskError):
+            require_plan3_acceptance_evidence(policy_without_consumer, proof_kind="policy")
+
+        recovery_created = create_plan3_durable_task("Recovery helper proof")
+        recovery_task_id = recovery_created["task"]["id"]
+        transition_plan3_status(recovery_task_id, "policy_checking", reason="policy")
+        transition_plan3_status(recovery_task_id, "executing", reason="allowed")
+        transition_plan3_status(recovery_task_id, "worker_dispatched", reason="worker sent")
+        recovery = recover_plan3_task(recovery_task_id)["task"]["plan_3_durable_state"]
+        recovery_without_consumer = dict(recovery)
+        recovery_without_consumer["consumer_event_id"] = ""
+        with self.assertRaises(LongRunningTaskError):
+            require_plan3_acceptance_evidence(
+                recovery_without_consumer,
+                proof_kind="recovery",
+            )
+
+        repair = self._repair_proof_state()
+        repair_without_failure = dict(repair)
+        repair_without_failure["latest_repair_failure_event_id"] = ""
+        with self.assertRaises(LongRunningTaskError):
+            require_plan3_acceptance_evidence(repair_without_failure, proof_kind="repair")
+        repair_without_consumer = dict(repair)
+        repair_without_consumer["consumer_event_id"] = ""
+        with self.assertRaises(LongRunningTaskError):
+            require_plan3_acceptance_evidence(repair_without_consumer, proof_kind="repair")
+
+    def _repair_proof_state(self) -> dict[str, object]:
+        created = create_plan3_durable_task("Plan 3 repair proof helper")
+        task_id = created["task"]["id"]
+        transition_plan3_status(task_id, "policy_checking", reason="policy")
+        transition_plan3_status(task_id, "executing", reason="allowed")
+        transition_plan3_status(task_id, "worker_returned", reason="worker output")
+        workspace = Path(self._tempdir.name) / f"disposable-{task_id}"
+        workspace.mkdir()
+        target = workspace / "proof.html"
+        target.write_text("<main>broken</main>\n", encoding="utf-8")
+
+        result = run_plan3_verifier_driven_repair(
+            task_id,
+            workspace=workspace,
+            relative_file="proof.html",
+            repair_content="<main>fixed</main>\n",
+            verifier=lambda path: "fixed" in path.read_text(encoding="utf-8"),
+            max_repair_attempts=2,
+        )
+        return result["task"]["plan_3_durable_state"]
 
 
 if __name__ == "__main__":

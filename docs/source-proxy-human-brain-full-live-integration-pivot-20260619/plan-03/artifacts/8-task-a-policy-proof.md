@@ -1,16 +1,8 @@
-# Task A Policy Fail-Closed Proof
+# Task A Policy Proof
 
-Result: `PASS`.
-
-- task: `task_6ecf07847f44`
-- trace: `trace_6d3256350cd748f2`
-- attempted unauthorized action: `mac_write`
-- unsafe target: `../unsafe`
-- status: `policy_blocked`
-- policy_decision: `policy_blocked`
-- causal policy event exists: yes
-- downstream readback sees blocked outcome: yes
-- mutation occurs: no
-
-Raw evidence:
-- `/home/source/spiritos-evidence/plan-03/plan3-disposable-proof.json`
+- result: PASS for Stage 2 blocker evidence.
+- task_id: `task_c0089e405af0`
+- trace_id: `trace_459ec8c678824df1`
+- latest_consumer_event_id: `consumer_0217fda8812e4762`
+- consumer_event_id: `consumer_0217fda8812e4762`
+- raw evidence: `/home/source/spiritos-evidence/plan-03-3x10-dryrun/stage-2/plan3-stage2-disposable-proof.json`

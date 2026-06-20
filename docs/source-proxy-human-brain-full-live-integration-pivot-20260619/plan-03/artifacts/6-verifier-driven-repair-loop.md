@@ -1,24 +1,14 @@
-# Stage 6 Verifier-Driven Repair Loop
+# Verifier Driven Repair Loop
 
-Result: `INTEGRATED_LIVE`.
+Stage 2 refreshed proof records explicit verifier failure, bounded repair, reverify, final verified status, and same-trace downstream consumer evidence.
 
-Implementation:
-- `run_plan3_verifier_driven_repair`
-- repair writes only inside a provided disposable workspace
-- repair is triggered by verifier failure
-- final result requires re-verification
-
-Proof:
-- task: `task_938dad74a7d9`
-- trace: `trace_31500112a69a42bf`
-- failing verifier: file contained `<main>broken</main>`
-- repair action: wrote `<main>fixed</main>` to disposable `proof.html`
-- repair_attempt_count: 1
-- re-verification: passed
-- final status: `verified`
-- verification_result: `VERIFIED`
-- repair_result: `repair_applied_and_reverified`
-- causal events include: `verification`, `repair`
-
-Raw evidence:
-- `/home/source/spiritos-evidence/plan-03/plan3-disposable-proof.json`
+- task_id: `task_46dfb756f7c7`
+- trace_id: `trace_f0f9155f5a144dab`
+- failure_event_id: `failure_87f1b1445d824673`
+- repair_event_id: `repair_b1b318f9923c4f99`
+- reverify_event_id: `verification_039f94b216aa408f`
+- latest_consumer_event_id: `consumer_3107679d73da4932`
+- status: `verified`
+- repair_attempt_count: `1`
+- max_repair_attempts: `2`
+- raw evidence: `/home/source/spiritos-evidence/plan-03-3x10-dryrun/stage-2/plan3-stage2-disposable-proof.json`
