@@ -81,4 +81,57 @@ describe("SpiritFlix local visual analysis", () => {
     });
     expect(updated.notes).toContain("test-vision");
   });
+
+  it("drops stale generic solo and indoor visual tags while preserving outdoor and content tags", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => Response.json({
+      response: JSON.stringify({
+        tags: [
+          { id: "solo", confidence: 0.9 },
+          { id: "indoor", confidence: 0.8 },
+          { id: "brunette", confidence: 0.78 },
+          { id: "duo", confidence: 0.76 },
+          { id: "outdoor", confidence: 0.72 },
+          { id: "curvy", confidence: 0.68 },
+        ],
+        observations: ["second person visible outdoors"],
+        confidence: 0.76,
+      }),
+    })));
+
+    const analysis = validateSpiritFlixSmartAnalysis({
+      version: 1,
+      videoPath,
+      pathKey: "abc",
+      fileName: "clip.mp4",
+      fileSizeBytes: 10,
+      mtimeMs: 1,
+      analyzedAt: "2026-06-20T00:00:00.000Z",
+      analyzerVersion: "spiritflix-smart/s2",
+      status: "needs_review",
+      safety: { safeToSuggest: false, reasons: ["scanner"], requiresHumanReview: true },
+      media: { durationSeconds: 60 },
+      samples: [{
+        timestampSeconds: 5,
+        timestampLabel: "5s",
+        cacheKey: "frame-key",
+        observations: ["sampled frame"],
+        tags: [],
+        confidence: 0,
+      }],
+      suggestedTags: [],
+      confidence: 0,
+    });
+
+    const updated = await applyLocalVisualAnalysisToSpiritFlixAnalysis(analysis, {
+      mediaRoot,
+      ollamaModel: "test-vision",
+      timeoutMs: 1_000,
+    });
+
+    const ids = updated.samples[0].tags.map((tag) => tag.id);
+    expect(ids).toEqual(["duo", "outdoor", "curvy"]);
+    expect(ids).not.toContain("solo");
+    expect(ids).not.toContain("indoor");
+    expect(ids).not.toContain("brunette");
+  });
 });

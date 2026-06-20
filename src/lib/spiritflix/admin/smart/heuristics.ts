@@ -94,6 +94,8 @@ const COMPILATION_DURATION_SECONDS = 3_600;
 const COMPILATION_TOKENS = new Set(["compilation", "comp", "pmv", "mix", "montage", "best-of", "bestof"]);
 const PRIMARY_CONTENT_GROUPS = new Set(["scene", "body", "appearance", "apparel", "activity", "position", "style", "watermark"]);
 const TECHNICAL_OR_STATUS_TAG_IDS = new Set([
+  "solo",
+  "indoor",
   "mp4-container",
   "mkv-container",
   "webm-container",

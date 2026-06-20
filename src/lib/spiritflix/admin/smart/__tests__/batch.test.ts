@@ -105,12 +105,12 @@ describe("SpiritFlix smart batch analysis", () => {
         analyzedAt: "2026-06-20T00:00:00.000Z",
         sampledFrameCount: 1,
         analyzedFrameCount: 1,
-        tags: ["solo"],
+        tags: ["duo"],
         frames: [{
           timestampSeconds: 5,
           timestampLabel: "5s",
           status: "complete",
-          tags: ["solo"],
+          tags: ["duo"],
           observations: [],
         }],
       },
@@ -119,20 +119,20 @@ describe("SpiritFlix smart batch analysis", () => {
         timestampLabel: "5s",
         cacheKey: "frame-key",
         observations: ["sampled frame"],
-        tags: [{ id: "solo", label: "solo", group: "scene", confidence: 0.8, evidenceTimestamps: [5], reviewRequired: true }],
+        tags: [{ id: "duo", label: "duo", group: "scene", confidence: 0.8, evidenceTimestamps: [5], reviewRequired: true }],
         confidence: 0.8,
       }],
       contentTagEvidence: [{
         source: "vlm",
-        tags: ["solo"],
+        tags: ["duo"],
         confidence: 0.8,
         evidenceRef: "test-vision",
         requiresReview: true,
       }],
-      suggestedTags: [{ id: "solo", label: "solo", group: "scene", confidence: 0.8, evidenceTimestamps: [5], reviewRequired: true }],
-      pendingSmartTags: [{ id: "solo", label: "solo", group: "scene", confidence: 0.8, evidenceTimestamps: [5], reviewRequired: true }],
-      suggestedFilename: "Model - solo 01",
-      pendingDisplayName: "Model - solo 01",
+      suggestedTags: [{ id: "duo", label: "duo", group: "scene", confidence: 0.8, evidenceTimestamps: [5], reviewRequired: true }],
+      pendingSmartTags: [{ id: "duo", label: "duo", group: "scene", confidence: 0.8, evidenceTimestamps: [5], reviewRequired: true }],
+      suggestedFilename: "Model - duo 01",
+      pendingDisplayName: "Model - duo 01",
     }));
 
     const result = await runSpiritFlixSmartBatch({
@@ -206,6 +206,46 @@ describe("SpiritFlix smart batch analysis", () => {
     expect(result.items[0].renamePreviewStatus).toBe("ready");
     expect(result.items[0].proposedFilename).toBe("Reviewed Name");
     expect(analyzeVideo).toHaveBeenCalledWith(videoPath, expect.objectContaining({ mediaRoot: tempRoot }));
+  });
+
+  it("clears stale solo indoor reviewed metadata on forced visual retag", async () => {
+    const videoPath = await writeVideo("yes/stale-reviewed.mp4");
+    const reviewedMetadata = {
+      reviewedAt: "2026-06-18T00:00:00.000Z",
+      reviewedBy: "spiritflix-admin" as const,
+      reviewStatus: "reviewed" as const,
+      approvedTagIds: ["solo", "indoor"],
+      rejectedTagIds: [],
+      editedDisplayTitle: "Model - solo indoor 01",
+      editedFilenameSuggestion: "Model - solo indoor 01.mp4",
+    };
+    const existing = await currentAnalysis(videoPath, { reviewedMetadata });
+    const analyzeVideo = vi.fn(async () => validateSpiritFlixSmartAnalysis({
+      ...existing,
+      analyzerVersion: "spiritflix-smart/s9",
+      status: "needs_review",
+      suggestedTags: [{ id: "duo", label: "duo", group: "scene", confidence: 0.8, evidenceTimestamps: [5], reviewRequired: true }],
+      pendingSmartTags: [{ id: "duo", label: "duo", group: "scene", confidence: 0.8, evidenceTimestamps: [5], reviewRequired: true }],
+      suggestedFilename: "Model - duo 01.mp4",
+      suggestedDisplayTitle: "Model - duo 01",
+      pendingDisplayName: "Model - duo 01",
+      reviewedMetadata,
+    }));
+
+    const result = await runSpiritFlixSmartBatch({
+      path: path.join(tempRoot, "yes"),
+      force: true,
+      analyzeVideo,
+    } as Parameters<typeof runSpiritFlixSmartBatch>[0]);
+    const stat = await fs.stat(videoPath);
+    const saved = await readSmartAnalysis({ videoPath, fileSizeBytes: stat.size, mtimeMs: stat.mtimeMs }, { mediaRoot: tempRoot });
+
+    expect(result.counts.analyzed).toBe(1);
+    expect(result.items[0].reviewStatus).toBe("unreviewed");
+    expect(result.items[0].renamePreviewStatus).toBe("provisional");
+    expect(result.items[0].proposedFilename).toBe("Model - duo 01");
+    expect(result.items[0].reason).toMatch(/stale solo\/indoor/i);
+    expect(saved?.reviewedMetadata).toBeUndefined();
   });
 
   it("shows target conflict and duplicate target warnings in batch item details", async () => {

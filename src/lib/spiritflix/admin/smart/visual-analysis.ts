@@ -8,12 +8,12 @@ export const SPIRITFLIX_SMART_ANALYZER_VERSION_S9 = "spiritflix-smart/s9";
 const DEFAULT_OLLAMA_MODEL = "gemma3n:e4b";
 const DEFAULT_OLLAMA_URL = "http://127.0.0.1:11434/api/generate";
 const DEFAULT_TIMEOUT_MS = 90_000;
-const MAX_VISUAL_SAMPLES = 4;
+const MAX_VISUAL_SAMPLES = 8;
 const MIN_TAG_CONFIDENCE = 0.45;
 
 const VISUAL_TAG_IDS = getSmartTagVocabulary()
   .filter((entry) => ["scene", "body", "appearance", "apparel", "activity", "position", "style", "watermark"].includes(entry.group))
-  .filter((entry) => !["indoor", "outdoor", "low-light"].includes(entry.id))
+  .filter((entry) => !["solo", "indoor", "low-light", "brunette", "black-hair", "blonde", "redhead"].includes(entry.id))
   .map((entry) => entry.id);
 
 export interface SpiritFlixVisualAnalysisOptions {
@@ -77,13 +77,29 @@ function makeVisualTag(entry: VisualModelTag, timestampSeconds: number): SpiritF
   };
 }
 
+function normalizeVisualTags(tags: SpiritFlixSmartTag[]): SpiritFlixSmartTag[] {
+  const byId = new Map(tags.map((tag) => [tag.id, tag]));
+  byId.delete("indoor");
+  byId.delete("low-light");
+  byId.delete("solo");
+  byId.delete("brunette");
+  byId.delete("black-hair");
+  byId.delete("blonde");
+  byId.delete("redhead");
+  if (byId.has("group")) byId.delete("duo");
+  return [...byId.values()].sort((left, right) => right.confidence - left.confidence);
+}
+
 function promptForFrame(sample: SpiritFlixSmartSample): string {
   return [
     "You are tagging one sampled video frame for a private local media library.",
     "Return JSON only. Do not include markdown.",
     `Frame timestamp: ${sample.timestampLabel}.`,
     `Allowed tag ids: ${VISUAL_TAG_IDS.join(", ")}.`,
-    "Prefer specific visible body/apparel/appearance/activity tags over generic scene tags.",
+    "Do not tag solo. If two visible people or another person's visible hands/body parts are present, use duo. If three or more people are visible, use group.",
+    "Use outdoor only when the visible setting is clearly outside. Never use indoor.",
+    "Do not tag hair color. Prefer specific visible body/apparel/activity tags over generic scene tags.",
+    "Actively check for visible supported body/apparel tags such as curvy, busty, BBW, petite, slim, hijab, lingerie, stockings, tattoos, and glasses when the frame clearly supports them.",
     "Do not infer race, ethnicity, nationality, religion, or identity from appearance. Only tag visible clothing items such as hijab when clearly visible.",
     "Use only visible evidence. If unsure, return unclear with low confidence.",
     "Schema: {\"tags\":[{\"id\":\"tag-id\",\"confidence\":0.0,\"evidence\":\"short visible cue\"}],\"observations\":[\"short cue\"],\"confidence\":0.0}",
@@ -184,6 +200,7 @@ export async function applyLocalVisualAnalysisToSpiritFlixAnalysis(
       const tags = modelTags
         .map((entry) => makeVisualTag(entry, sample.timestampSeconds))
         .filter((tag): tag is SpiritFlixSmartTag => tag != null);
+      const normalizedTags = normalizeVisualTags(tags);
       const observations = Array.isArray(response.observations)
         ? response.observations.filter((entry): entry is string => typeof entry === "string" && entry.trim().length > 0).slice(0, 3)
         : [];
@@ -194,16 +211,16 @@ export async function applyLocalVisualAnalysisToSpiritFlixAnalysis(
             ...samples[index],
             observations: [...new Set([...samples[index].observations, ...observations.map((entry) => `vlm: ${entry.trim()}`)])],
           },
-          tags,
+          normalizedTags,
         );
       }
-      tags.forEach((tag) => evidenceTags.add(tag.id));
+      normalizedTags.forEach((tag) => evidenceTags.add(tag.id));
       frames.push({
         timestampSeconds: sample.timestampSeconds,
         timestampLabel: sample.timestampLabel,
         cacheKey: sample.cacheKey,
         status: "complete",
-        tags: tags.map((tag) => tag.id),
+        tags: normalizedTags.map((tag) => tag.id),
         observations,
       });
       analyzedFrames += 1;

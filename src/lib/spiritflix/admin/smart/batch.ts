@@ -136,9 +136,39 @@ interface BatchTarget {
 
 const DEFAULT_BATCH_LIMIT = 12;
 const MAX_BATCH_LIMIT = 50;
+const SUPPRESSED_VISUAL_REVIEW_TAG_IDS = new Set(["solo", "indoor"]);
 
 function isLegacyVisualSidecar(analysis: SpiritFlixSmartAnalysis | null): boolean {
   return Boolean(analysis && analysis.visualAnalysis === undefined);
+}
+
+function hasSuppressedReviewedMetadata(analysis: SpiritFlixSmartAnalysis): boolean {
+  const reviewed = analysis.reviewedMetadata;
+  if (!reviewed) return false;
+  const reviewedIds = [...reviewed.approvedTagIds, ...reviewed.rejectedTagIds];
+  if (reviewedIds.some((id) => SUPPRESSED_VISUAL_REVIEW_TAG_IDS.has(id))) return true;
+  const editedName = `${reviewed.editedDisplayTitle ?? ""} ${reviewed.editedFilenameSuggestion ?? ""}`.toLowerCase();
+  return /\bsolo\b|\bindoor\b/.test(editedName);
+}
+
+async function clearSuppressedReviewedMetadata(
+  analysis: SpiritFlixSmartAnalysis,
+  mediaRoot?: string,
+): Promise<SpiritFlixSmartAnalysis> {
+  return (await writeSmartAnalysis(
+    {
+      ...analysis,
+      status: "needs_review",
+      reviewedMetadata: undefined,
+      safety: {
+        ...analysis.safety,
+        safeToSuggest: false,
+        requiresHumanReview: true,
+        reasons: [...new Set([...analysis.safety.reasons, "Suppressed stale solo/indoor review metadata after visual retag; operator review required."])],
+      },
+    },
+    mediaRoot ? { mediaRoot } : undefined,
+  )).analysis;
 }
 
 function boundedLimit(value: number | undefined): number {
@@ -558,7 +588,10 @@ export async function runSpiritFlixSmartBatch(options: InternalBatchOptions = {}
         visualModel: options.visualModel,
         visualModelTimeoutMs: options.visualModelTimeoutMs,
       });
-      const finalAnalysis = legacyVisualSidecar && analysis.visualAnalysis?.tags.length
+      const shouldClearSuppressedReview = Boolean(options.force && hasSuppressedReviewedMetadata(analysis));
+      const finalAnalysis = shouldClearSuppressedReview
+        ? await clearSuppressedReviewedMetadata(analysis, mediaRoot)
+        : legacyVisualSidecar && analysis.visualAnalysis?.tags.length
         ? (await writeSmartAnalysis(
             {
               ...analysis,
@@ -575,7 +608,9 @@ export async function runSpiritFlixSmartBatch(options: InternalBatchOptions = {}
           )).analysis
         : analysis;
       const preservedReview = beforeReview && analysis.reviewedMetadata?.reviewedAt === beforeReview.reviewedAt;
-      const reason = beforeReview && !preservedReview ? "Analysis refreshed; review metadata changed." : undefined;
+      const reason = shouldClearSuppressedReview
+        ? "Stale solo/indoor reviewed metadata cleared after visual retag."
+        : beforeReview && !preservedReview ? "Analysis refreshed; review metadata changed." : undefined;
       items.push(await itemFromAnalysis(videoPath, finalAnalysis, "analyzed", legacyVisualSidecar ? "Legacy sidecar refreshed with S9 visual tags." : reason));
     } catch (error) {
       items.push({

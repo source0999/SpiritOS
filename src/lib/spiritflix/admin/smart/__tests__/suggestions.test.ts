@@ -86,8 +86,8 @@ describe("SpiritFlix smart suggestions", () => {
           cacheKey: "frame-key",
           observations: ["vlm"],
           tags: [
-            { id: "solo", label: "solo", group: "scene", confidence: 0.8, evidenceTimestamps: [5], reviewRequired: true },
-            { id: "indoor", label: "indoor", group: "scene", confidence: 0.7, evidenceTimestamps: [5], reviewRequired: true },
+            { id: "brunette", label: "brunette", group: "appearance", confidence: 0.8, evidenceTimestamps: [5], reviewRequired: true },
+            { id: "lingerie", label: "lingerie", group: "apparel", confidence: 0.7, evidenceTimestamps: [5], reviewRequired: true },
           ],
           confidence: 0.8,
         }],
@@ -96,7 +96,7 @@ describe("SpiritFlix smart suggestions", () => {
       }),
     });
 
-    expect(result.suggestedDisplayTitle).toBe("Aaliyah Yasan - solo indoor 01");
+    expect(result.suggestedDisplayTitle).toBe("Aaliyah Yasan - brunette lingerie 01");
   });
 
   it("omits file extension in suggested display filename", () => {
@@ -172,10 +172,10 @@ describe("SpiritFlix smart suggestions", () => {
           timestampSeconds: 5,
           timestampLabel: "5s",
           cacheKey: "frame-key",
-          observations: ["vlm: indoor scene"],
+          observations: ["vlm: visible outfit"],
           tags: [
-            { id: "solo", label: "solo", group: "scene", confidence: 0.8, evidenceTimestamps: [5], reviewRequired: true },
-            { id: "indoor", label: "indoor", group: "scene", confidence: 0.7, evidenceTimestamps: [5], reviewRequired: true },
+            { id: "brunette", label: "brunette", group: "appearance", confidence: 0.8, evidenceTimestamps: [5], reviewRequired: true },
+            { id: "lingerie", label: "lingerie", group: "apparel", confidence: 0.7, evidenceTimestamps: [5], reviewRequired: true },
           ],
           confidence: 0.8,
         }],
@@ -185,7 +185,7 @@ describe("SpiritFlix smart suggestions", () => {
     });
 
     expect(result.performerIdentity).toMatchObject({ name: "Aaliyah Yasan", source: "path" });
-    expect(result.suggestedDisplayTitle).toBe("Aaliyah Yasan - solo indoor 01");
+    expect(result.suggestedDisplayTitle).toBe("Aaliyah Yasan - brunette lingerie 01");
   });
 
   it("uses model folder sequence numbers for visual tag names", () => {
@@ -214,8 +214,8 @@ describe("SpiritFlix smart suggestions", () => {
           cacheKey: "frame-key",
           observations: ["sampled frame"],
           tags: [
-            { id: "solo", label: "solo", group: "scene", confidence: 0.8, evidenceTimestamps: [5], reviewRequired: true },
-            { id: "indoor", label: "indoor", group: "scene", confidence: 0.7, evidenceTimestamps: [5], reviewRequired: true },
+            { id: "duo", label: "duo", group: "scene", confidence: 0.8, evidenceTimestamps: [5], reviewRequired: true },
+            { id: "lingerie", label: "lingerie", group: "apparel", confidence: 0.7, evidenceTimestamps: [5], reviewRequired: true },
           ],
           confidence: 0.8,
         }],
@@ -224,7 +224,7 @@ describe("SpiritFlix smart suggestions", () => {
       }),
     });
 
-    expect(result.suggestedDisplayTitle).toBe("Aaliyah Yasan - solo indoor 3");
+    expect(result.suggestedDisplayTitle).toBe("Aaliyah Yasan - duo lingerie 3");
   });
 
   it("uses Unknown Model fallback for numeric filenames without useful tags", () => {
