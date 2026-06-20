@@ -9,6 +9,7 @@ export interface SpiritFlixSmartHeuristicInput {
   videoPath: string;
   fileName: string;
   parentPath?: string;
+  modelSequenceNumber?: number;
   fileSizeBytes?: number;
   mtimeMs?: number;
   media?: {

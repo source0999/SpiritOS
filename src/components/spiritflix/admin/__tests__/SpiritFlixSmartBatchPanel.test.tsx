@@ -177,7 +177,7 @@ describe("SpiritFlixSmartBatchPanel", () => {
     expect(await screen.findByText("Watermark")).toBeInTheDocument();
     expect(screen.getAllByText("HD").length).toBeGreaterThan(0);
     expect(screen.getByText("Quality/technical")).toBeInTheDocument();
-    expect(screen.getByText("Aaliyah Yasan - Untitled 01")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Aaliyah Yasan - Untitled 01")).toBeInTheDocument();
     expect(screen.getByText("Aaliyah Yasan")).toBeInTheDocument();
     expect(screen.getByText("Provisional recommended name, not apply-ready")).toBeInTheDocument();
     expect(screen.getByText(/Why this name:/)).toBeInTheDocument();
@@ -191,9 +191,28 @@ describe("SpiritFlixSmartBatchPanel", () => {
     fireEvent.click(screen.getByRole("button", { name: "Analyze folder" }));
 
     await waitFor(() => expect(screen.getAllByText("reviewed").length).toBeGreaterThan(0));
-    expect(screen.getByText("Beta Clip HD")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Beta Clip HD")).toBeInTheDocument();
     expect(screen.getByText("Ready recommended name")).toBeInTheDocument();
     expect(screen.getByText("Ready names")).toBeInTheDocument();
+  });
+
+  it("lets the operator edit and approve only the recommended name", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(Response.json(analyzedBatch)).mockResolvedValueOnce(Response.json(reviewedBatch));
+    render(<SpiritFlixSmartBatchPanel currentPath="/mnt/spirit-8tb/media/yes" open onClose={() => undefined} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Analyze folder" }));
+
+    const input = await screen.findByLabelText("Recommended name for Beta Clip.mp4");
+    fireEvent.change(input, { target: { value: "Aaliyah Yasan - solo indoor 1" } });
+    fireEvent.click(screen.getByRole("button", { name: "Approve name" }));
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
+    expect(JSON.parse(String(vi.mocked(fetch).mock.calls[1][1]?.body))).toMatchObject({
+      action: "review",
+      reviewMode: "approve_name",
+      editedFilenameSuggestion: "Aaliyah Yasan - solo indoor 1",
+      paths: ["/mnt/spirit-8tb/media/yes/Beta Clip.mp4"],
+    });
   });
 
   it("does not show technical metadata as primary Smart Tags", async () => {

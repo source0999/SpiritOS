@@ -185,15 +185,16 @@ describe("SpiritFlix smart suggestions", () => {
     });
 
     expect(result.performerIdentity).toMatchObject({ name: "Aaliyah Yasan", source: "path" });
-    expect(result.suggestedDisplayTitle).toBe("Aaliyah Yasan - solo indoor 130");
+    expect(result.suggestedDisplayTitle).toBe("Aaliyah Yasan - solo indoor 01");
   });
 
-  it("uses useful numeric source ids before quality tokens for visual tag names", () => {
+  it("uses model folder sequence numbers for visual tag names", () => {
     const numericPath = path.join(mediaRoot, "yes", "models", "aaliyah-yasan", "540598_720p.mkv");
     const result = buildSpiritFlixReviewSuggestions({
       videoPath: numericPath,
       fileName: "540598_720p.mkv",
       parentPath: path.dirname(numericPath),
+      modelSequenceNumber: 3,
     }, {
       analysis: validateSpiritFlixSmartAnalysis({
         version: 1,
@@ -223,7 +224,7 @@ describe("SpiritFlix smart suggestions", () => {
       }),
     });
 
-    expect(result.suggestedDisplayTitle).toBe("Aaliyah Yasan - solo indoor 540598");
+    expect(result.suggestedDisplayTitle).toBe("Aaliyah Yasan - solo indoor 3");
   });
 
   it("uses Unknown Model fallback for numeric filenames without useful tags", () => {

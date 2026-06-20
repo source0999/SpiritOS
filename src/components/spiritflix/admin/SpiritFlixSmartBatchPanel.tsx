@@ -95,6 +95,7 @@ export function SpiritFlixSmartBatchPanel({ currentPath, open, onClose }: Spirit
   const [renamePlan, setRenamePlan] = useState<SpiritFlixSmartRenamePlan | null>(null);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState("");
+  const [editedNames, setEditedNames] = useState<Record<string, string>>({});
 
   const callBatch = useCallback(async (action: "preview" | "run") => {
     setRunning(true);
@@ -115,14 +116,18 @@ export function SpiritFlixSmartBatchPanel({ currentPath, open, onClose }: Spirit
     }
   }, [currentPath]);
 
-  const callReview = useCallback(async (reviewMode: SpiritFlixSmartBatchReviewMode, paths?: string[]) => {
+  const editableNameFor = useCallback((item: SpiritFlixSmartBatchItem) => (
+    editedNames[item.path] ?? item.proposedFilename ?? item.name.replace(/\.[^/.]+$/, "")
+  ), [editedNames]);
+
+  const callReview = useCallback(async (reviewMode: SpiritFlixSmartBatchReviewMode, paths?: string[], editedFilenameSuggestion?: string) => {
     setRunning(true);
     setError("");
     try {
       const response = await fetch("/api/spiritflix/admin/smart/batch", {
         method: "POST",
         headers: { Accept: "application/json", "Content-Type": "application/json" },
-        body: JSON.stringify({ path: currentPath, paths, action: "review", reviewMode, maxItems: 50 }),
+        body: JSON.stringify({ path: currentPath, paths, action: "review", reviewMode, editedFilenameSuggestion, maxItems: 50 }),
       });
       const payload = (await response.json()) as BatchResponse;
       if (!response.ok) throw new Error(payload.error ?? "Smart batch review failed.");
@@ -325,8 +330,17 @@ export function SpiritFlixSmartBatchPanel({ currentPath, open, onClose }: Spirit
                         const message = recommendedNameMessage(item);
                         return (
                           <>
-                            <p className={message.blocked ? "spiritflix-smart-batch__blocker" : "spiritflix-smart-batch__recommended-name"}>{message.title}</p>
+                            <input
+                              className="spiritflix-smart-batch__name-input"
+                              type="text"
+                              value={editableNameFor(item)}
+                              aria-label={`Recommended name for ${item.name}`}
+                              disabled={running || (!item.proposedFilename && !item.sidecarCurrent)}
+                              onChange={(event) => setEditedNames((current) => ({ ...current, [item.path]: event.target.value }))}
+                            />
                             {message.detail ? <p className="spiritflix-smart-batch__meta">{message.detail}</p> : null}
+                            {!item.proposedFilename ? <p className="spiritflix-smart-batch__meta">{message.title}</p> : null}
+                            {message.blocked ? <p className="spiritflix-smart-batch__blocker">{message.title}</p> : null}
                           </>
                         );
                       })()}
@@ -340,6 +354,9 @@ export function SpiritFlixSmartBatchPanel({ currentPath, open, onClose }: Spirit
                       </button>
                       <button className="spiritflix-smart-review__secondary" type="button" disabled={running} onClick={() => void callReview("approve_all_tags", [item.path])}>
                         Approve tags
+                      </button>
+                      <button className="spiritflix-smart-review__secondary" type="button" disabled={running || !editableNameFor(item).trim()} onClick={() => void callReview("approve_name", [item.path], editableNameFor(item))}>
+                        Approve name
                       </button>
                       <button className="spiritflix-smart-review__secondary" type="button" disabled={running} onClick={() => void callReview("reject_all_tags", [item.path])}>
                         Reject tags

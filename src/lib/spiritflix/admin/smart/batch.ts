@@ -12,6 +12,7 @@ import {
   saveSpiritFlixSmartAnalysisReview,
   type SpiritFlixSmartReviewOptions,
 } from "./review";
+import { buildSuggestedFilename } from "./suggestions";
 import { isSpiritFlixSmartVideoExtension } from "./probe";
 import { projectApprovedSmartMetadata } from "./metadata-bridge";
 import {
@@ -112,11 +113,13 @@ export interface SpiritFlixSmartBatchOptions extends SpiritFlixSmartReviewOption
 
 export type SpiritFlixSmartBatchReviewMode =
   | "approve_all_tags"
+  | "approve_name"
   | "reject_all_tags"
   | "mark_reviewed";
 
 export interface SpiritFlixSmartBatchReviewOptions extends SpiritFlixSmartBatchOptions {
   reviewMode: SpiritFlixSmartBatchReviewMode;
+  editedFilenameSuggestion?: string;
 }
 
 type AnalyzeVideo = typeof runSpiritFlixSmartReviewPipeline;
@@ -252,6 +255,9 @@ function modelIdentityForItem(videoPath: string, analysis: SpiritFlixSmartAnalys
 function nameReasonForItem(analysis: SpiritFlixSmartAnalysis | null, identityName: string): string | undefined {
   if (!analysis) return undefined;
   const notes = analysis.notes?.split("|").map((entry) => entry.trim()).filter(Boolean) ?? [];
+  if (notes.some((note) => /strongest available content tags/i.test(note))) {
+    return `${identityName} fallback uses strongest available content tags and model-folder sequence; extension is kept only for target-path preview.`;
+  }
   return notes.find((note) => /extension is kept|fallback uses|Readable title preserved/i.test(note)) ??
     `Recommended name uses ${identityName} identity/title hints; extension is kept only for target-path preview.`;
 }
@@ -264,6 +270,17 @@ async function targetExists(targetPath: string, sourcePath: string): Promise<boo
   } catch {
     return false;
   }
+}
+
+async function modelFolderSequenceNumber(videoPath: string): Promise<number> {
+  const parentPath = path.dirname(videoPath);
+  const entries = await fs.readdir(parentPath, { withFileTypes: true });
+  const videos = entries
+    .filter((entry) => entry.isFile() && isSpiritFlixSmartVideoExtension(path.extname(entry.name).toLowerCase()))
+    .map((entry) => path.join(parentPath, entry.name))
+    .sort((left, right) => path.basename(left).localeCompare(path.basename(right), undefined, { numeric: true, sensitivity: "base" }));
+  const index = videos.findIndex((entry) => path.resolve(entry) === path.resolve(videoPath));
+  return index >= 0 ? index + 1 : 1;
 }
 
 function isHiddenPathPart(name: string): boolean {
@@ -347,7 +364,19 @@ async function itemFromAnalysis(videoPath: string, analysis: SpiritFlixSmartAnal
   if (!analysis) {
     renameBlocker = "Run analysis before rename preview is available.";
   } else if (!reviewed || reviewed.reviewStatus === "unreviewed") {
-    const provisionalSuggestion = analysis.suggestedFilename ?? analysis.suggestedDisplayTitle;
+    const provisionalSuggestion = analysisVisualTagsAvailable(analysis)
+      ? buildSuggestedFilename(
+          {
+            videoPath,
+            fileName: path.basename(videoPath),
+            parentPath: path.dirname(videoPath),
+            modelSequenceNumber: await modelFolderSequenceNumber(videoPath),
+            media: analysis.media,
+          },
+          analysis.suggestedTags,
+          modelIdentity,
+        )
+      : analysis.suggestedFilename ?? analysis.suggestedDisplayTitle;
     if (provisionalSuggestion) {
       const draft = buildSmartRenamePreviewDraft({ sourcePath: videoPath, filenameSuggestion: provisionalSuggestion });
       proposedFilename = draft.suggestedName ? stripExtensionForDisplay(draft.suggestedName, videoPath) : undefined;
@@ -517,6 +546,7 @@ export async function runSpiritFlixSmartBatch(options: InternalBatchOptions = {}
       const beforeReview = current?.reviewedMetadata;
       const analysis = await analyzeVideo(videoPath, {
         mediaRoot,
+        modelSequenceNumber: await modelFolderSequenceNumber(videoPath),
         ffprobePath: options.ffprobePath,
         ffmpegPath: options.ffmpegPath,
         maxSamples: options.maxSamples,
@@ -590,8 +620,9 @@ export async function runSpiritFlixSmartBatch(options: InternalBatchOptions = {}
 
 function batchReviewInput(
   analysis: SpiritFlixSmartAnalysis,
-  reviewMode: Exclude<SpiritFlixSmartBatchReviewMode, "mark_reviewed">,
+  options: SpiritFlixSmartBatchReviewOptions,
 ): SpiritFlixSmartReviewInput {
+  const reviewMode = options.reviewMode;
   const reviewed = analysis.reviewedMetadata;
   const preservedEdits = {
     editedDisplayTitle: reviewed?.editedDisplayTitle,
@@ -606,6 +637,17 @@ function batchReviewInput(
       ...preservedEdits,
       approvedTagIds: suggestedIds,
       rejectedTagIds: [],
+    };
+  }
+
+  if (reviewMode === "approve_name") {
+    const editedName = options.editedFilenameSuggestion?.trim() || reviewed?.editedFilenameSuggestion || analysis.pendingDisplayName || analysis.suggestedFilename || analysis.suggestedDisplayTitle;
+    return {
+      ...preservedEdits,
+      editedDisplayTitle: editedName,
+      editedFilenameSuggestion: editedName,
+      approvedTagIds: reviewed?.approvedTagIds ?? [],
+      rejectedTagIds: reviewed?.rejectedTagIds ?? [],
     };
   }
 
@@ -635,7 +677,7 @@ export async function reviewSpiritFlixSmartBatch(
         ? await markSpiritFlixSmartAnalysisReviewed(videoPath, { mediaRoot })
         : await saveSpiritFlixSmartAnalysisReview(
             videoPath,
-            batchReviewInput(current, options.reviewMode),
+            batchReviewInput(current, options),
             { mediaRoot },
           );
 

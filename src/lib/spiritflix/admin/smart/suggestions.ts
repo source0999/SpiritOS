@@ -92,10 +92,10 @@ function topContentLabels(tags: SpiritFlixSmartTag[]): string[] {
 }
 
 function sourceSequence(input: SpiritFlixSmartHeuristicInput): string {
-  const stem = stripVideoExtension(input.fileName);
-  const numericTokens = stem.match(/(?<!\d)\d{2,6}(?!\d)/g) ?? [];
-  const useful = numericTokens.find((token) => !["360", "480", "720", "1080", "2160"].includes(token));
-  return useful ?? "01";
+  if (input.modelSequenceNumber && Number.isFinite(input.modelSequenceNumber) && input.modelSequenceNumber > 0) {
+    return String(Math.floor(input.modelSequenceNumber));
+  }
+  return "01";
 }
 
 function readableTitle(input: SpiritFlixSmartHeuristicInput): string {
@@ -135,7 +135,7 @@ export function buildSuggestedFilename(
 
 function filenameReason(input: SpiritFlixSmartHeuristicInput, tags: SpiritFlixSmartTag[], performerIdentity: SpiritFlixSmartPerformerIdentity): string {
   if (topContentLabels(tags).length > 0) {
-    return `${performerIdentity.name} fallback uses strongest available content tags; extension is kept only for target-path preview.`;
+    return `${performerIdentity.name} fallback uses strongest available content tags and model-folder sequence; extension is kept only for target-path preview.`;
   }
   if (!shouldUseFallbackName(input)) {
     return "Readable title preserved; extension is kept only for target-path preview.";

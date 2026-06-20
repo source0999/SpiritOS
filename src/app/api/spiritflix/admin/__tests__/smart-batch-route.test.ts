@@ -121,6 +121,26 @@ describe("SpiritFlix smart batch API", () => {
     expect(body.items[0].qualityBadges[0]).toMatchObject({ label: "HD", reviewState: "approved" });
   });
 
+  it("batch approves an edited name through the review action", async () => {
+    const videoPath = path.join(tempRoot, "yes/clip.mp4");
+    await seedCurrent(videoPath);
+
+    const response = await POST(postRequest({
+      path: path.join(tempRoot, "yes"),
+      paths: [videoPath],
+      action: "review",
+      reviewMode: "approve_name",
+      editedFilenameSuggestion: "Manual Clip",
+      maxItems: 10,
+    }));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.items[0].reviewStatus).toBe("partially_reviewed");
+    expect(body.items[0].proposedFilename).toBe("Manual Clip");
+    expect(body.items[0].qualityBadges[0]).toMatchObject({ label: "HD", reviewState: "pending" });
+  });
+
   it("exports a preview-only rename plan through the batch route", async () => {
     const videoPath = path.join(tempRoot, "yes/clip.mp4");
     await seedCurrent(videoPath);

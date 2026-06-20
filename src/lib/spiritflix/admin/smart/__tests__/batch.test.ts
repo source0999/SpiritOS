@@ -294,6 +294,28 @@ describe("SpiritFlix smart batch analysis", () => {
     expect(saved?.reviewedMetadata?.editedDisplayTitle).toBe("Keep Title");
   });
 
+  it("approves an edited name without approving pending tags", async () => {
+    const videoPath = await writeVideo("yes/name-only.mp4");
+    await currentAnalysis(videoPath, {
+      suggestedDisplayTitle: "Auto Name",
+      suggestedFilename: "Auto Name.mp4",
+    });
+
+    const result = await reviewSpiritFlixSmartBatch({
+      path: path.join(tempRoot, "yes"),
+      paths: [videoPath],
+      reviewMode: "approve_name",
+      editedFilenameSuggestion: "Manual Name",
+    });
+    const stat = await fs.stat(videoPath);
+    const saved = await readSmartAnalysis({ videoPath, fileSizeBytes: stat.size, mtimeMs: stat.mtimeMs }, { mediaRoot: tempRoot });
+
+    expect(result.items[0].proposedFilename).toBe("Manual Name");
+    expect(saved?.reviewedMetadata?.reviewStatus).toBe("partially_reviewed");
+    expect(saved?.reviewedMetadata?.editedFilenameSuggestion).toBe("Manual Name.mp4");
+    expect(saved?.reviewedMetadata?.approvedTagIds).toEqual([]);
+  });
+
   it("batch rejects suggested tags and marks the video rejected", async () => {
     const videoPath = await writeVideo("yes/to-reject.mp4");
     await currentAnalysis(videoPath);

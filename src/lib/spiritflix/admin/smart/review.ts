@@ -15,6 +15,7 @@ export { SPIRITFLIX_SMART_ANALYZER_VERSION_S5 } from "./review-metadata";
 
 export interface SpiritFlixSmartReviewOptions {
   mediaRoot?: string;
+  modelSequenceNumber?: number;
   ffprobePath?: string;
   ffmpegPath?: string;
   maxSamples?: number;
@@ -55,6 +56,7 @@ export async function runSpiritFlixSmartReviewPipeline(
       videoPath,
       fileName: path.basename(videoPath),
       parentPath: path.dirname(videoPath),
+      modelSequenceNumber: options?.modelSequenceNumber,
       fileSizeBytes: stat.size,
       mtimeMs: stat.mtimeMs,
       media: scanned.media,

@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
     paths?: string[];
     action?: string;
     reviewMode?: string;
+    editedFilenameSuggestion?: string;
     recursive?: boolean;
     maxItems?: number;
     force?: boolean;
@@ -81,6 +82,7 @@ export async function POST(request: NextRequest) {
           ? await reviewSpiritFlixSmartBatch({
               ...options,
               reviewMode: assertReviewMode(body.reviewMode),
+              editedFilenameSuggestion: typeof body.editedFilenameSuggestion === "string" ? body.editedFilenameSuggestion : undefined,
             })
           : await runSpiritFlixSmartBatch(options);
     return NextResponse.json(payload, { headers: { "Cache-Control": "no-store" } });
@@ -90,7 +92,7 @@ export async function POST(request: NextRequest) {
 }
 
 function assertReviewMode(value: unknown): SpiritFlixSmartBatchReviewMode {
-  if (value === "approve_all_tags" || value === "reject_all_tags" || value === "mark_reviewed") {
+  if (value === "approve_all_tags" || value === "approve_name" || value === "reject_all_tags" || value === "mark_reviewed") {
     return value;
   }
   throw new Error("Unsupported smart batch review mode.");
