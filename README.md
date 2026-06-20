@@ -673,36 +673,76 @@ The common mix-up: `npm run proxy:https:lan` starts only the API on **8787**. It
 
 ### Repository context bundles
 
-Generate the full repository context bundle:
+**Do not upload** raw `repomix-output*.xml` from the repo root unless a reviewer explicitly asks for full context. The default export is a tight Source Proxy profile, not the whole tree.
+
+Generate the **LLM handoff** bundle (Repomix Tree-sitter + optional Headroom pass):
 
 ```bash
-npm run context:pack
-npx repomix --config repomix.config.json
+npm run context:source-proxy-min
 ```
 
-Generate the Tree-sitter + Headroom compressed bundle for large-context model routing:
+Equivalent:
 
 ```bash
-npm run context:compress
+npx repomix --profile source-proxy-min .
 ```
 
-The compressed command writes `repomix-output.ast.xml` with a strict XML envelope.
-It also writes `repomix-output.headroom.xml` as a Headroom-specific review copy.
-If a local Headroom proxy is available at `HEADROOM_BASE_URL` (default `http://localhost:8787`),
-Headroom runs after Repomix and records savings in the `<headroom />` element.
-If the proxy is not running, the script falls back to the Repomix Tree-sitter payload.
+**Includes:** `source_proxy/`, coding lane (`src/app/coding`, `src/components/coding`, `src/lib/coding`, `src/lib/mac-worker`), Source Proxy bootstrap scripts, `scripts/mac-worker/`, pivot plan index/closeout docs (not evidence artifacts), and repomix/headroom config.
+
+**Excludes:** `docs/evidence/`, `scripts/media/`, SpiritFlix generated output, `node_modules/`, `.next/`, build/cache dirs, prior `repomix-output*`, lockfiles, logs, sqlite/db, pivot `artifacts/` and review folders.
+
+**Output:** `repomix-output.source-proxy-min.xml` — drop this into any model. Mirrors: `repomix-output.source-proxy-min.ast.xml`, `repomix-output.source-proxy-min.headroom.xml`.
+
+Verify size and bloat exclusions:
+
+```bash
+npm run context:verify
+```
+
+Shows output path, byte size, approximate file count, largest included paths, and whether Headroom actually compressed.
+
+**Larger repo map** (layout + pivot docs, minimal code) only when needed:
+
+```bash
+npm run context:repo-map
+npm run context:verify:repo-map
+```
+
+SpiritOS overrides the local `repomix` bin so `npx repomix` defaults to `source-proxy-min`, not an uncompressed megafile.
+
+**Headroom** (extra token savings) needs the Python proxy on **8797** — not Source Proxy on 8787:
+
+```bash
+npm run context:headroom:check    # is the proxy up?
+pip install "headroom-ai[proxy]"
+npm run headroom:proxy            # terminal 1 — http://127.0.0.1:8797
+npm run context:source-proxy-min  # terminal 2
+```
+
+Or set `HEADROOM_API_KEY` for Headroom Cloud. Without a proxy, you still get the tight Tree-sitter profile; the `<headroom compressed="false" />` element records that Headroom did not run.
 
 ```xml
 <system_directive>...</system_directive>
-<headroom compressed="true" tokens_saved="..." />
+<headroom compressed="true" tokens_saved="..." proxy="http://127.0.0.1:8797" />
 <repository_context format="repomix-xml">...</repository_context>
 ```
 
-Use `HEADROOM_CONTEXT_TOKEN_BUDGET` to tune the target context size, or rerun only
-the Headroom pass against the current AST bundle:
+Tune target size (default `80000` tokens):
+
+```bash
+HEADROOM_CONTEXT_TOKEN_BUDGET=60000 npm run context:source-proxy-min
+```
+
+Re-run only the Headroom pass against the current AST bundle:
 
 ```bash
 npm run context:headroom
+```
+
+Raw full-tree dump (legacy / debugging only):
+
+```bash
+npm run context:pack:full
 ```
 
 ### Next MCP WebSocket diagnostics

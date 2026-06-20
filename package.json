@@ -2,6 +2,9 @@
   "name": "spirit-os",
   "version": "0.1.0",
   "private": true,
+  "bin": {
+    "repomix": "./scripts/repomix-llm.mjs"
+  },
   "scripts": {
     "dev": "next dev -H 0.0.0.0 --webpack",
     "dev:https": "next dev -H 0.0.0.0 --webpack --experimental-https -p 3000",
@@ -29,9 +32,16 @@
     "proxy:dev": "node ./scripts/source-proxy-dev.mjs",
     "proxy:https": "node ./scripts/source-proxy-dev.mjs --https",
     "proxy:https:lan": "node ./scripts/source-proxy-dev.mjs --https --lan",
-    "context:pack": "repomix --config repomix.config.json .",
-    "context:compress": "node ./scripts/source-context-compress.mjs",
-    "context:headroom": "node ./scripts/source-context-compress.mjs --headroom-only",
+    "context:source-proxy-min": "node ./scripts/repomix-llm.mjs --profile source-proxy-min .",
+    "context:repo-map": "node ./scripts/repomix-llm.mjs --profile repo-map .",
+    "context:pack": "node ./scripts/repomix-llm.mjs --profile source-proxy-min .",
+    "context:pack:full": "node ./scripts/repomix-llm.mjs --profile default --full .",
+    "context:compress": "node ./scripts/repomix-llm.mjs --profile source-proxy-min .",
+    "context:headroom": "node ./scripts/repomix-llm.mjs --profile source-proxy-min --headroom-only .",
+    "context:verify": "bash ./scripts/context/verify-repomix-context.sh source-proxy-min",
+    "context:verify:repo-map": "bash ./scripts/context/verify-repomix-context.sh repo-map",
+    "context:headroom:check": "bash ./scripts/context/headroom-check.sh",
+    "headroom:proxy": "bash ./scripts/headroom-proxy-dev.sh",
     "validate:blueprints": "node ./scripts/validate-blueprints.mjs",
     "next:mcp:ws": "node ./scripts/next-mcp-ws-bridge.mjs",
     "next:mcp:ws:probe": "node ./scripts/next-mcp-ws-probe.mjs",
@@ -46,7 +56,8 @@
     "test:coding-frontend-regression": "vitest run src/app/coding/__tests__/page.test.tsx src/components/coding/__tests__/coding-command-center-shell.test.tsx src/lib/coding/__tests__/model-provider-status.test.ts src/lib/coding/__tests__/unified-diff-paths.test.ts src/components/coding/__tests__/approval-gate-binding.test.ts src/lib/coding/__tests__/proxy-route-payload.test.ts src/app/v1/actions/execute-approved/__tests__/route.test.ts src/components/coding/__tests__/coding-workflow-step.test.ts src/components/coding/__tests__/client-fallback.test.ts src/components/coding/__tests__/proxy-safety-smoke.test.ts src/app/v1/coding/self-tests/run/__tests__/route.test.ts",
     "test:ui": "vitest --ui",
     "ytmclone:stats:smoke": "node ./scripts/ytmclone-stats-smoke.mjs",
-    "ytmclone:android:build": "cd apps/ytmclone-android && ./gradlew assembleDebug"
+    "ytmclone:android:build": "cd apps/ytmclone-android && ./gradlew assembleDebug",
+    "postinstall": "node ./scripts/postinstall-repomix-shim.mjs"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.58",

@@ -2,106 +2,261 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync, rmSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { compress } from "headroom-ai";
 
 const repoRoot = resolve(import.meta.dirname, "..");
-const innerOutput = resolve(repoRoot, "repomix-output.ast-inner.xml");
-const finalOutput = resolve(repoRoot, "repomix-output.ast.xml");
-const headroomOutput = resolve(repoRoot, "repomix-output.headroom.xml");
+const DEFAULT_HEADROOM_PORT = 8797;
+const DEFAULT_HEADROOM_BASE_URL = `http://127.0.0.1:${DEFAULT_HEADROOM_PORT}`;
+const DEFAULT_TOKEN_BUDGET = 80_000;
 
-const repomixCli = resolve(repoRoot, "node_modules", "repomix", "bin", "repomix.cjs");
-const headroomOnly = process.argv.includes("--headroom-only");
+const PROFILE_CONFIGS = {
+  "source-proxy-min": "repomix.source-proxy-min.config.json",
+  "repo-map": "repomix.repo-map.config.json",
+  default: "repomix.config.json",
+};
 
-if (!headroomOnly) {
-  execFileSync(
-    process.execPath,
-    [
-      repomixCli,
-      "--config",
-      "repomix.config.json",
-      "--compress",
-      "--output",
-      innerOutput,
-      ".",
-    ],
-    {
-      cwd: repoRoot,
-      stdio: "inherit",
-    },
-  );
+export function resolveContextProfile(options = {}) {
+  const profile = options.profile || "source-proxy-min";
+  const configPath =
+    options.configPath || PROFILE_CONFIGS[profile] || PROFILE_CONFIGS.default;
+  const slug = profile === "default" ? "" : `.${profile}`;
+  return {
+    profile,
+    configPath,
+    slug,
+    llmOutput: resolve(repoRoot, `repomix-output${slug}.xml`),
+    astOutput: resolve(repoRoot, `repomix-output${slug}.ast.xml`),
+    headroomOutput: resolve(repoRoot, `repomix-output${slug}.headroom.xml`),
+    innerOutput: resolve(repoRoot, `repomix-output${slug}.ast-inner.xml`),
+    fullOutput: resolve(repoRoot, `repomix-output${slug}.full.xml`),
+  };
 }
 
-const repomixSource = headroomOnly ? finalOutput : innerOutput;
+export async function buildRepositoryContextBundle(options = {}) {
+  const {
+    targetPath = ".",
+    headroomOnly = false,
+    fullOnly = false,
+  } = options;
 
-const compressedRepomixXml = readFileSync(repomixSource, "utf8")
-  .replace(/^\uFEFF/, "")
-  .replace(/^<\?xml[^>]*>\s*/u, "")
-  .trim();
-const repositoryContextXml = extractRepositoryContextXml(compressedRepomixXml);
+  const profilePaths = resolveContextProfile(options);
+  const {
+    profile,
+    configPath,
+    innerOutput,
+    llmOutput,
+    astOutput,
+    headroomOutput,
+    fullOutput,
+  } = profilePaths;
 
-const systemDirective = [
-  "This is a compressed repository context generated for Source proxy planning.",
-  "The repository_context payload was produced by Repomix Tree-sitter compression and may include an additional Headroom pass.",
-  "Use file paths and structural signatures as read-only context.",
-  "When implementation detail is absent, request or inspect the original file before editing.",
-].join(" ");
+  const repomixCli = resolve(repoRoot, "node_modules", "repomix", "bin", "repomix.cjs");
+  const headroomBaseUrl = (process.env.HEADROOM_BASE_URL || DEFAULT_HEADROOM_BASE_URL).replace(/\/$/, "");
 
-const headroomResult = await compress(
-  [
+  if (fullOnly) {
+    execFileSync(
+      process.execPath,
+      [repomixCli, "--config", configPath, "--output", fullOutput, targetPath],
+      { cwd: repoRoot, stdio: "inherit" },
+    );
+    console.log(`Full (uncompressed) context written to ${fullOutput}`);
+    return {
+      profile,
+      configPath,
+      llmOutput: fullOutput,
+      compression: "none",
+      headroomActuallyCompressed: false,
+      headroomProxyReachable: false,
+    };
+  }
+
+  if (!headroomOnly) {
+    execFileSync(
+      process.execPath,
+      [
+        repomixCli,
+        "--config",
+        configPath,
+        "--compress",
+        "--output",
+        innerOutput,
+        targetPath,
+      ],
+      { cwd: repoRoot, stdio: "inherit" },
+    );
+  }
+
+  const repomixSource = headroomOnly ? astOutput : innerOutput;
+  const compressedRepomixXml = readFileSync(repomixSource, "utf8")
+    .replace(/^\uFEFF/, "")
+    .replace(/^<\?xml[^>]*>\s*/u, "")
+    .trim();
+  const repositoryContextXml = extractRepositoryContextXml(compressedRepomixXml);
+
+  const systemDirective = [
+    "This is a compressed repository context generated for Source proxy planning.",
+    "The repository_context payload was produced by Repomix Tree-sitter compression and may include an additional Headroom pass.",
+    "Use file paths and structural signatures as read-only context.",
+    "When implementation detail is absent, request or inspect the original file before editing.",
+  ].join(" ");
+
+  const proxyReachable = await probeHeadroomProxy(headroomBaseUrl);
+  if (!proxyReachable) {
+    console.warn(
+      [
+        `Headroom proxy not reachable at ${headroomBaseUrl}.`,
+        `Tree-sitter Repomix output will be used without further Headroom compression.`,
+        `Start the proxy: npm run headroom:proxy`,
+        `Or set HEADROOM_API_KEY for Headroom Cloud.`,
+      ].join(" "),
+    );
+  }
+
+  const headroomResult = await compress(
+    [{ role: "user", content: repositoryContextXml }],
     {
-      role: "user",
-      content: repositoryContextXml,
+      model: process.env.HEADROOM_CONTEXT_MODEL || "gpt-4o",
+      baseUrl: headroomBaseUrl,
+      apiKey: process.env.HEADROOM_API_KEY,
+      fallback: true,
+      retries: proxyReachable ? 1 : 0,
+      stack: "spiritos-repomix-context",
+      tokenBudget: Number(process.env.HEADROOM_CONTEXT_TOKEN_BUDGET || DEFAULT_TOKEN_BUDGET),
     },
-  ],
-  {
-    model: process.env.HEADROOM_CONTEXT_MODEL || "gpt-4o",
-    baseUrl: process.env.HEADROOM_BASE_URL || "http://localhost:8787",
-    fallback: true,
-    retries: 0,
-    stack: "spiritos-repomix-context",
-    tokenBudget: Number(process.env.HEADROOM_CONTEXT_TOKEN_BUDGET || 120000),
-  },
-);
+  );
 
-const headroomContent = String(headroomResult.messages?.[0]?.content || repositoryContextXml);
-const headroomActuallyCompressed = Boolean(headroomResult.compressed && headroomContent !== repositoryContextXml);
+  const headroomContent = String(headroomResult.messages?.[0]?.content || repositoryContextXml);
+  const headroomActuallyCompressed = Boolean(
+    headroomResult.compressed && headroomContent !== repositoryContextXml,
+  );
 
-const wrappedXml = wrapContextXml({
-  compression: headroomActuallyCompressed ? "tree-sitter+headroom" : "tree-sitter",
-  generator: headroomActuallyCompressed ? "repomix,headroom-ai" : "repomix",
-  systemDirective,
-  contextXml: headroomActuallyCompressed ? headroomContent : repositoryContextXml,
-  headroomResult,
-});
-
-writeFileSync(finalOutput, wrappedXml, "utf8");
-writeFileSync(
-  headroomOutput,
-  wrapContextXml({
-    compression: "tree-sitter+headroom",
-    generator: "repomix,headroom-ai",
+  const wrappedXml = wrapContextXml({
+    compression: headroomActuallyCompressed ? "tree-sitter+headroom" : "tree-sitter",
+    generator: headroomActuallyCompressed ? "repomix,headroom-ai" : "repomix",
     systemDirective,
-    contextXml: headroomContent,
+    contextXml: headroomActuallyCompressed ? headroomContent : repositoryContextXml,
     headroomResult,
-  }),
-  "utf8",
-);
-rmSync(innerOutput, { force: true });
+    headroomBaseUrl,
+  });
 
-console.log(`Compressed context written to ${finalOutput}`);
-console.log(
-  headroomActuallyCompressed
-    ? `Headroom context written to ${headroomOutput} (${headroomResult.tokensSaved} tokens saved)`
-    : `Headroom context written to ${headroomOutput} (proxy unavailable or no savings; fallback content used)`,
-);
+  writeFileSync(llmOutput, wrappedXml, "utf8");
+  writeFileSync(astOutput, wrappedXml, "utf8");
+  writeFileSync(
+    headroomOutput,
+    wrapContextXml({
+      compression: headroomActuallyCompressed ? "tree-sitter+headroom" : "tree-sitter",
+      generator: headroomActuallyCompressed ? "repomix,headroom-ai" : "repomix",
+      systemDirective,
+      contextXml: headroomContent,
+      headroomResult,
+      headroomBaseUrl,
+    }),
+    "utf8",
+  );
+  rmSync(innerOutput, { force: true });
 
-function wrapContextXml({ compression, generator, systemDirective, contextXml, headroomResult }) {
+  const llmBytes = readFileSync(llmOutput).byteLength;
+  console.log(`Profile: ${profile} (config: ${configPath})`);
+  console.log(`LLM context written to ${llmOutput} (${formatBytes(llmBytes)})`);
+  console.log(`AST mirror written to ${astOutput}`);
+  console.log(
+    headroomActuallyCompressed
+      ? `Headroom pass saved ${headroomResult.tokensSaved} tokens (${headroomResult.compressionRatio}x) via ${headroomBaseUrl}`
+      : `Headroom pass skipped or had no savings — Tree-sitter payload only (${headroomBaseUrl})`,
+  );
+
+  return {
+    profile,
+    configPath,
+    llmOutput,
+    astOutput,
+    headroomOutput,
+    headroomActuallyCompressed,
+    headroomProxyReachable: proxyReachable,
+    headroomResult,
+  };
+}
+
+function parseCliArgs(argv) {
+  const args = argv.slice(2);
+  let configPath;
+  let profile = "source-proxy-min";
+  let targetPath = ".";
+  const flags = new Set();
+
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
+    if (arg === "--config" && args[index + 1]) {
+      configPath = args[index + 1];
+      index += 1;
+      continue;
+    }
+    if (arg === "--profile" && args[index + 1]) {
+      profile = args[index + 1];
+      index += 1;
+      continue;
+    }
+    if (arg === "--output" && args[index + 1]) {
+      index += 1;
+      continue;
+    }
+    if (arg.startsWith("--")) {
+      flags.add(arg);
+      continue;
+    }
+    targetPath = arg;
+  }
+
+  return {
+    profile,
+    configPath,
+    targetPath,
+    headroomOnly: flags.has("--headroom-only"),
+    fullOnly: flags.has("--full"),
+  };
+}
+
+async function main() {
+  const cli = parseCliArgs(process.argv);
+  await buildRepositoryContextBundle(cli);
+}
+
+const isDirectRun =
+  process.argv[1] &&
+  resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url));
+
+if (isDirectRun) {
+  await main();
+}
+
+async function probeHeadroomProxy(baseUrl) {
+  try {
+    const response = await fetch(`${baseUrl}/health`, {
+      method: "GET",
+      signal: AbortSignal.timeout(2500),
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+function wrapContextXml({
+  compression,
+  generator,
+  systemDirective,
+  contextXml,
+  headroomResult,
+  headroomBaseUrl,
+}) {
   const metrics = [
     `compressed="${headroomResult.compressed ? "true" : "false"}"`,
     `tokens_before="${headroomResult.tokensBefore || 0}"`,
     `tokens_after="${headroomResult.tokensAfter || 0}"`,
     `tokens_saved="${headroomResult.tokensSaved || 0}"`,
     `compression_ratio="${headroomResult.compressionRatio || 1}"`,
+    `proxy="${escapeXml(headroomBaseUrl)}"`,
   ].join(" ");
 
   return [
@@ -139,4 +294,10 @@ function indentXml(value, spaces) {
     .split(/\r?\n/u)
     .map((line) => `${prefix}${line}`)
     .join("\n");
+}
+
+function formatBytes(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }

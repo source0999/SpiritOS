@@ -1,0 +1,73 @@
+{
+  "$schema": "https://repomix.com/schemas/latest/schema.json",
+  "input": {
+    "maxFileSize": 200000
+  },
+  "output": {
+    "filePath": "repomix-output.repo-map.ast-inner.xml",
+    "style": "xml",
+    "parsableStyle": true,
+    "compress": true,
+    "fileSummary": true,
+    "directoryStructure": true,
+    "files": true,
+    "truncateBase64": true,
+    "topFilesLength": 15,
+    "includeFullDirectoryStructure": true,
+    "headerText": "SpiritOS repo-map profile — high-level layout, configs, and pivot docs. Use source-proxy-min for implementation work.",
+    "git": {
+      "sortByChanges": false,
+      "includeDiffs": false,
+      "includeLogs": false
+    }
+  },
+  "include": [
+    "README.md",
+    "package.json",
+    "repomix*.config.json",
+    ".repomixignore",
+    "scripts/repomix-llm.mjs",
+    "scripts/source-context-compress.mjs",
+    "scripts/context/**",
+    "source_proxy/main.py",
+    "source_proxy/api/**",
+    "source_proxy/decision/**",
+    "source_proxy/planning/**",
+    "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/master-plan.md",
+    "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/execution-handoff.md",
+    "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/canonical-state-and-event-contract.md",
+    "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/mvi-contract.json",
+    "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-*/status.md",
+    "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-*/plan.md"
+  ],
+  "ignore": {
+    "useGitignore": true,
+    "useDotIgnore": true,
+    "useDefaultPatterns": true,
+    "customPatterns": [
+      "repomix-output*",
+      "docs/evidence/**",
+      "docs/handoff/**",
+      "scripts/media/**",
+      "**/__tests__/**",
+      "**/*.test.*",
+      "**/*.spec.*",
+      "source_proxy/tests/**",
+      "src/**",
+      "node_modules",
+      ".next",
+      "dist",
+      ".git",
+      "package-lock.json",
+      "**/.venv/**",
+      "**/venv/**",
+      "**/__pycache__/**"
+    ]
+  },
+  "security": {
+    "enableSecurityCheck": true
+  },
+  "tokenCount": {
+    "encoding": "o200k_base"
+  }
+}
