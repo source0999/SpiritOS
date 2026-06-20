@@ -14,6 +14,7 @@ from source_proxy.tasks.long_running import record_subsystem_integration_result
 
 
 SPECIALIST_INTEGRATION_VERSION = "source-proxy-plan2-specialists-v1"
+MODEL_LANE_FAILURE_STATUSES = {"blocked", "failed", "timeout", "error"}
 
 
 def _json_hash(value: Any) -> str:
@@ -89,8 +90,8 @@ async def run_specialists_for_task(
     }
     gemma_status = str((model_packet.get("gemma") or {}).get("status") or "")
     hermes_status = str((model_packet.get("hermes_critic") or {}).get("status") or "")
-    status = "INTEGRATED" if verifier_output.get("verdict") and inventory["qwen"] == "LIVE_INVOKABLE" else "NEEDS_FIX"
-    if gemma_status == "blocked" or hermes_status == "blocked":
+    status = "INTEGRATED_LIVE" if verifier_output.get("verdict") and inventory["qwen"] == "LIVE_INVOKABLE" else "NEEDS_FIX"
+    if gemma_status in MODEL_LANE_FAILURE_STATUSES or hermes_status in MODEL_LANE_FAILURE_STATUSES:
         status = "BLOCKED_ENV"
     packet["status"] = status
     packet["specialist_packet_hash"] = _json_hash(packet)
@@ -106,7 +107,7 @@ async def run_specialists_for_task(
         output=packet,
         status=status,
         changed_state_fields=["ast_snapshot.plan_2_specialists"],
-        failure_reason=None if status == "INTEGRATED" else "required_live_model_lane_unavailable_or_blocked",
+        failure_reason=None if status == "INTEGRATED_LIVE" else "required_live_model_lane_unavailable_or_blocked",
     )
     return {
         "status": status,

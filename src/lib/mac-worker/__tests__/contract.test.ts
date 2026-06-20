@@ -58,6 +58,7 @@ describe("Mac worker contract", () => {
       result_envelope_version: "source-proxy-mac-worker-result-v1",
     });
     expect(capability.capabilities).toContain("run_safe_check");
+    expect(capability.capabilities).toContain("mac_isolated_write_proof");
   });
 
   it("normalizes candidate files and recommended checks from Mac JSON", () => {

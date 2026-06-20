@@ -2,21 +2,21 @@
 
 Verdict: BLOCKED_ENV
 
-Plan 2 implemented the complete-subsystem integration seams without claiming preview/advisory/status-only behavior as GO.
+Plan 2 continuation implemented the hardline integration patch and did not claim GO.
 
 Delivered:
 
-- Mac worker capability descriptor and traced assignment/result fields.
-- Plan 2 subsystem causal recorder using the existing Plan 1 long-running task store.
-- Dedicated current-research handler that does not fall through to generic local-file fallback.
-- Specialist/model integration wrapper that classifies actual lanes and consumes verifier/model packet output.
-- Focused tests for Mac, research, specialists, and causal consumption.
+- Hardline classifier that rejects preview-only, advisory-only, status-only, read-only-for-action, mock-only, fixture-only, unconsumed, blocked, and failed-output GO labels.
+- Source Proxy Mac worker task integration for a traced `mac_isolated_write_proof` job with downstream consumption.
+- Dedicated live SearXNG current-research proof with no generic local-file fallback.
+- Specialist classifier correction so failed/timeout/error sidecar model lanes cannot be labeled `INTEGRATED_LIVE`.
+- `/coding` surface support for `Plan 2 subsystem truth` from `ast_snapshot.plan_2_subsystem_integrations`.
 
-Blocked:
+Live proof:
 
-- Mac first write requires explicit Britton approval.
-- Scout is disabled and `SEARXNG_URL` is missing.
-- Gemma/Hermes live bounded proof timed out and registry still marks them preview-only.
+- Current research: `INTEGRATED_LIVE`, task `task_4103f08d8b32`, provider `http://127.0.0.1:8080`, source count `3`, consumer `cartographer_current_research_consumer`.
+- Mac isolated write: `NEEDS_FIX`, task `task_f93d68480448`, consumer `cartographer_mac_assignment_consumer`, blocked because the live Mac checkout returned `Unsupported job_type: mac_isolated_write_proof`; no Mac write occurred.
+- Specialists: `BLOCKED_ENV`, task `task_b054178d05c6`, consumer `cartographer_specialist_packet_consumer`, Gemma and Hermes statuses were `failed`.
 
 Safety:
 

@@ -8,6 +8,7 @@ export const macWorkerJobTypes = [
   "trial_context_assist",
   "scout_research_packet",
   "browser_design_check",
+  "mac_isolated_write_proof",
   "run_safe_check",
   "system_status",
 ] as const;
@@ -28,6 +29,8 @@ export type MacWorkerJobInput = {
   mode?: string;
   provider?: string;
   provider_url?: string;
+  contents?: string;
+  proof_dir?: string;
 };
 
 export type MacWorkerJob = {

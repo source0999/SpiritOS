@@ -65,7 +65,7 @@ async def run_current_research_for_task(
         "searxng_reason": searxng.get("reason"),
     }
     if sources:
-        status = "INTEGRATED"
+        status = "INTEGRATED_LIVE"
         reason = "current_research_sources_consumed"
         downstream_decision = "research_sources_available"
     else:
@@ -80,11 +80,15 @@ async def run_current_research_for_task(
         "status": status,
         "reason": reason,
         "providers": provider_status,
+        "provider_url_used": searxng.get("provider_url_used") or "",
         "sources": sources,
         "source_count": len(sources),
+        "retrieved_at": searxng.get("retrieved_at") or "",
         "untrusted_content_marked": all(item.get("untrusted") is not None for item in sources),
         "provenance_required": True,
         "generic_local_file_fallback_used": False,
+        "local_fallback_used": False,
+        "downstream_state_changed": bool(sources),
         "downstream_decision": downstream_decision,
     }
     packet["research_packet_hash"] = _json_hash(packet)

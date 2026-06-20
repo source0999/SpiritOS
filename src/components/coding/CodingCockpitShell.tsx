@@ -157,6 +157,7 @@ type PreviewState = {
   providerModelSelectedVia?: string | null;
   providerModelSource?: string;
   providerModelStatus?: string;
+  plan2SubsystemIntegrations?: Plan2SubsystemIntegration[];
   configuredModelIsHermes?: boolean | null;
   hermesLaneAvailable?: boolean;
   hermesUsedForThisRun?: boolean | null;
@@ -176,6 +177,16 @@ type PreviewState = {
   consumerSubsystem?: string | null;
   verifierSummary: string;
   technicalDetail?: string | null;
+};
+
+type Plan2SubsystemIntegration = {
+  subsystem: string;
+  status: string;
+  outputHash: string | null;
+  traceId: string | null;
+  invocationEventId: string | null;
+  consumerEventId: string | null;
+  consumedBy: string | null;
 };
 
 type TrialRunState = "idle" | "running" | "complete";
@@ -2189,6 +2200,7 @@ function idlePreviewState(): PreviewState {
     invocationEventId: null,
     consumerEventId: null,
     consumerSubsystem: null,
+    plan2SubsystemIntegrations: [],
     verifierSummary: "Waiting for preview.",
     technicalDetail: null,
   };
@@ -4236,6 +4248,7 @@ export function CodingCockpitShell() {
         ["status_after", previewState.causalStatusAfter],
       ]
     : [];
+  const plan2SubsystemRows = previewState.plan2SubsystemIntegrations ?? [];
   const currentDesignTaskKind = designTaskKind(task);
   const showDesignerResult = Boolean(currentDesignTaskKind && draftReady && previewState.status === "idle");
   const showCombinedFlow = Boolean(isCombinedTask(task) && draftReady && previewState.status === "idle");
@@ -8463,6 +8476,7 @@ export function CodingCockpitShell() {
         throw new Error(messageFromPayload(proposalPayload, proposalResponse.status));
       }
       const proposalProviderTruth = providerModelTruthFromPayload(proposalPayload, selectedTruth);
+      const proposalPlan2SubsystemIntegrations = plan2SubsystemIntegrationsFromPayload(proposalPayload);
       const modelCalledForGeneration = proposalProviderTruth.modelCalledForGeneration ?? "none";
       const proposedDiff = diffFromPayload(proposalPayload);
       const alreadySatisfied = isCoderAlreadySatisfied(proposalPayload);
@@ -8490,6 +8504,7 @@ export function CodingCockpitShell() {
           isApplying: false,
           isLoading: false,
           ...providerTruthPatch(proposalProviderTruth),
+          plan2SubsystemIntegrations: proposalPlan2SubsystemIntegrations,
           previewStatus: "already satisfied",
           requirementSummary:
             "The task appears already done. No approval or apply is available because there is no diff.",
@@ -8827,6 +8842,10 @@ export function CodingCockpitShell() {
           isApplying: false,
           isLoading: false,
           ...providerTruthPatch(proposalProviderTruth),
+          plan2SubsystemIntegrations:
+            plan2SubsystemIntegrationsFromPayload(applyPayload).length > 0
+              ? plan2SubsystemIntegrationsFromPayload(applyPayload)
+              : proposalPlan2SubsystemIntegrations,
           previewStatus: "live apply complete",
           requirementSummary: gate.requirementSummary,
           reasonCode: null,
@@ -8871,6 +8890,10 @@ export function CodingCockpitShell() {
         isApplying: false,
         isLoading: false,
         ...providerTruthPatch(proposalProviderTruth),
+        plan2SubsystemIntegrations:
+          plan2SubsystemIntegrationsFromPayload(diffPayload).length > 0
+            ? plan2SubsystemIntegrationsFromPayload(diffPayload)
+            : proposalPlan2SubsystemIntegrations,
         previewStatus: effectivelyBlocked ? "blocked" : "preview ready",
         requirementSummary: previewOnlyApplyBlocked
           ? `${gate.requirementSummary} Apply is disabled by the preview-only prompt.`
@@ -9067,6 +9090,10 @@ export function CodingCockpitShell() {
         reasonCode: null,
         status: "applied",
         taskId,
+        plan2SubsystemIntegrations:
+          plan2SubsystemIntegrationsFromPayload(applyPayload).length > 0
+            ? plan2SubsystemIntegrationsFromPayload(applyPayload)
+            : current.plan2SubsystemIntegrations,
         traceId: causalTrace.traceId,
         invocationEventId: causalTrace.invocationEventId,
         consumerEventId: causalTrace.consumerEventId,
@@ -10383,6 +10410,37 @@ export function CodingCockpitShell() {
                       </div>
                     ))}
                   </dl>
+                </div>
+              ) : null}
+              {plan2SubsystemRows.length > 0 ? (
+                <div className={`${commandInsetClass} mt-4 p-3`}>
+                  <p className={commandLabelClass}>Plan 2 subsystem truth</p>
+                  <ul className="mt-3 space-y-3 text-xs">
+                    {plan2SubsystemRows.map((row) => (
+                      <li className="rounded-md border border-[var(--ddv4-surface-border-soft)] p-3" key={row.subsystem}>
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <p className={`font-semibold ${commandTextClass}`}>{row.subsystem}</p>
+                          <p className="font-mono uppercase text-[var(--ddv4-fg-faint)]">{row.status || "NOT_INTEGRATED"}</p>
+                        </div>
+                        <dl className="mt-3 grid gap-2">
+                          {[
+                            ["trace_id", row.traceId],
+                            ["invocation_event_id", row.invocationEventId],
+                            ["consumer_event_id", row.consumerEventId],
+                            ["consumed_by", row.consumedBy],
+                            ["output_hash", row.outputHash],
+                          ].map(([label, value]) => (
+                            <div className="grid grid-cols-[9.75rem_minmax(0,1fr)] gap-2" key={label}>
+                              <dt className="font-semibold uppercase tracking-[0.12em] text-[var(--ddv4-fg-faint)]">
+                                {label}
+                              </dt>
+                              <dd className={`break-all font-mono ${commandTextClass}`}>{formatNullable(value)}</dd>
+                            </div>
+                          ))}
+                        </dl>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               ) : null}
               {verificationTargets.length > 0 &&
@@ -12149,6 +12207,49 @@ export function causalTraceFromPayload(payload: unknown): CausalTraceFields {
     consumerSubsystem: stringValue(trace.consumer_subsystem) ?? null,
     causalStatusAfter: stringValue(trace.status_after) ?? null,
   };
+}
+
+export function plan2SubsystemIntegrationsFromPayload(payload: unknown): Plan2SubsystemIntegration[] {
+  const record = asRecord(payload);
+  const task = asRecord(record.task);
+  const dataTask = asRecord(asRecord(record.data).task);
+  const directSnapshot = asRecord(record.ast_snapshot);
+  const taskSnapshot = asRecord(task.ast_snapshot);
+  const dataTaskSnapshot = asRecord(dataTask.ast_snapshot);
+  const snapshot =
+    Object.keys(taskSnapshot).length > 0
+      ? taskSnapshot
+      : Object.keys(dataTaskSnapshot).length > 0
+        ? dataTaskSnapshot
+        : directSnapshot;
+  const integrations = asRecord(snapshot.plan_2_subsystem_integrations);
+  return Object.entries(integrations)
+    .map(([subsystem, value]) => {
+      const item = asRecord(value);
+      const trace = asRecord(item.causal_trace);
+      return {
+        subsystem,
+        status: stringValue(item.status) ?? "NOT_INTEGRATED",
+        outputHash: stringValue(item.output_hash) ?? stringValue(item.outputHash) ?? null,
+        traceId: stringValue(item.trace_id) ?? stringValue(trace.trace_id) ?? null,
+        invocationEventId:
+          stringValue(item.invocation_event_id) ??
+          stringValue(item.invocationEventId) ??
+          stringValue(trace.invocation_event_id) ??
+          null,
+        consumerEventId:
+          stringValue(item.consumer_event_id) ??
+          stringValue(item.consumerEventId) ??
+          stringValue(trace.consumer_event_id) ??
+          null,
+        consumedBy:
+          stringValue(item.consumed_by) ??
+          stringValue(item.consumedBy) ??
+          stringValue(trace.consumer_subsystem) ??
+          null,
+      };
+    })
+    .sort((left, right) => left.subsystem.localeCompare(right.subsystem));
 }
 
 export function changedFilesFromPayload(payload: unknown): string[] {

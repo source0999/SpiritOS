@@ -6,6 +6,7 @@ import unittest
 from unittest.mock import AsyncMock, patch
 
 from source_proxy.decision.current_research import run_current_research_for_task
+from source_proxy.decision.mac_integration import run_mac_worker_for_task
 from source_proxy.decision.specialist_integration import run_specialists_for_task
 from source_proxy.tasks.long_running import (
     create_long_running_task,
@@ -96,7 +97,7 @@ class Plan2SubsystemIntegrationTests(unittest.IsolatedAsyncioTestCase):
             )
 
         packet = result["research_packet"]
-        self.assertEqual(result["status"], "INTEGRATED")
+        self.assertEqual(result["status"], "INTEGRATED_LIVE")
         self.assertFalse(packet["generic_local_file_fallback_used"])
         self.assertTrue(packet["sources"][0]["untrusted"])
         self.assertEqual(packet["downstream_decision"], "research_sources_available")
@@ -135,12 +136,82 @@ class Plan2SubsystemIntegrationTests(unittest.IsolatedAsyncioTestCase):
                 research_packet={"research_packet_hash": "research-hash"},
             )
 
-        self.assertEqual(result["status"], "INTEGRATED")
+        self.assertEqual(result["status"], "INTEGRATED_LIVE")
         self.assertEqual(
             result["task"]["causal_trace"]["consumer_subsystem"],
             "cartographer_specialist_packet_consumer",
         )
         self.assertIn("browser_functional_verifier", result["specialist_packet"])
+
+    async def test_specialist_packet_blocks_when_model_lanes_fail(self) -> None:
+        task_id = create_long_running_task("Specialists failed")["task"]["id"]
+        fake_model_packet = {
+            "gemma": {"status": "failed", "intent": ""},
+            "hermes_critic": {"status": "timeout", "risks": []},
+            "hermes_verifier": {"status": "skipped"},
+            "fip3_model_packet_hash": "model-hash",
+        }
+        with patch(
+            "source_proxy.decision.specialist_integration.build_fip3_model_lane_packet",
+            AsyncMock(return_value=fake_model_packet),
+        ):
+            result = await run_specialists_for_task(
+                task_id,
+                task="Plan 2 specialist failure test",
+                upstream_state={"task_id": task_id, "route": "/coding"},
+                research_packet={"research_packet_hash": "research-hash"},
+            )
+
+        self.assertEqual(result["status"], "BLOCKED_ENV")
+        self.assertEqual(
+            result["task"]["ast_snapshot"]["plan_2_subsystem_integrations"]["specialist_model_lanes"]["status"],
+            "BLOCKED_ENV",
+        )
+
+    def test_mac_worker_write_proof_sends_trace_fields_and_consumes_result(self) -> None:
+        task_id = create_long_running_task("Mac write proof")["task"]["id"]
+        fake_completed = type(
+            "Completed",
+            (),
+            {
+                "returncode": 0,
+                "stdout": '{"job_id":"mac-job","job_type":"mac_isolated_write_proof","success":true,"result":{"summary":"ok","mac_write_performed":true,"mac_write_path":"/tmp/spiritos-plan2-mac-worker-proof/plan2-mac-write-proof.txt","rollback_status":"deleted"},"error":null}',
+                "stderr": "",
+            },
+        )()
+
+        captured: dict[str, object] = {}
+
+        def fake_run(command, input, **kwargs):  # type: ignore[no-untyped-def]
+            captured["command"] = command
+            captured["input"] = input
+            return fake_completed
+
+        with patch("source_proxy.decision.mac_integration.subprocess.run", fake_run):
+            result = run_mac_worker_for_task(
+                task_id,
+                mode="mac_isolated_write_proof",
+                input_data={"contents": "proof"},
+            )
+
+        job = __import__("json").loads(str(captured["input"]))
+        self.assertEqual(result["status"], "INTEGRATED_LIVE")
+        self.assertEqual(job["worker"], "mac")
+        self.assertEqual(job["task_id"], task_id)
+        self.assertTrue(job["trace_id"].startswith("trace_"))
+        self.assertTrue(job["invocation_event_id"].startswith("invocation_"))
+        self.assertEqual(result["task"]["causal_trace"]["consumer_subsystem"], "cartographer_mac_assignment_consumer")
+
+    def test_mac_worker_unavailable_changes_outcome_without_dell_fallback(self) -> None:
+        task_id = create_long_running_task("Mac unavailable")["task"]["id"]
+        fake_completed = type("Completed", (), {"returncode": 255, "stdout": "", "stderr": "ssh: connect failed"})()
+
+        with patch("source_proxy.decision.mac_integration.subprocess.run", return_value=fake_completed):
+            result = run_mac_worker_for_task(task_id, mode="mac_system_status", input_data={})
+
+        self.assertEqual(result["status"], "BLOCKED_ENV")
+        self.assertEqual(result["task"]["status"], "blocked")
+        self.assertIn("ssh", result["task"]["architect_reason"])
 
 
 if __name__ == "__main__":

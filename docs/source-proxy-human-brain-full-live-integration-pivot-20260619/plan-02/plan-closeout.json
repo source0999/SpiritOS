@@ -1,47 +1,74 @@
 {
   "plan": "Plan 2/6",
+  "continuation": "hardline-live-integration-patch",
   "verdict": "BLOCKED_ENV",
-  "commit_message": "Complete Source Proxy Plan 2 subsystem integration",
+  "commit_message": "Complete Source Proxy Plan 2 hardline continuation",
+  "hardline_summary": {
+    "fake_go_prevented": true,
+    "go_allowed": false,
+    "reason": "Current research is live-integrated, but Mac isolated write proof is not supported by the live Mac worker checkout and specialist sidecar model lanes failed.",
+    "hard_stop": "No Plan 3 work was started."
+  },
   "mac": {
-    "status": "BLOCKED_HUMAN",
-    "trace_id": "contract-supported-by-traced-mac-assignment",
-    "invocation_event_id": "contract-supported-by-traced-mac-assignment",
-    "consumer_event_id": "contract-supported-by-traced-mac-assignment",
+    "status": "NEEDS_FIX",
+    "task_id": "task_f93d68480448",
+    "job_type": "mac_isolated_write_proof",
+    "trace_id": "trace_8c97a5966259400a",
+    "invocation_event_id": "invocation_2cf49139173c4b37",
+    "consumer_event_id": "consumer_01e25f2ab43548e5",
     "consumer_subsystem": "cartographer_mac_assignment_consumer",
-    "proof": "Live read-only system_status job succeeded on spirit-mac-mini; first write not attempted.",
-    "deferral_required": "Britton approval for first isolated Mac write"
+    "proof": "Source Proxy sent the traced mac_isolated_write_proof job through the Mac worker workflow and consumed the result downstream.",
+    "blocked_reason": "The live spirit-mac-mini checkout returned Unsupported job_type: mac_isolated_write_proof, so no Mac write was performed.",
+    "mac_write_performed": false,
+    "rollback_status": "not_applicable_no_write"
   },
   "research": {
-    "status": "BLOCKED_ENV",
-    "provider": "Scout disabled; SearXNG URL missing",
-    "trace_id": "contract-proven-by-record_subsystem_integration_result",
+    "status": "INTEGRATED_LIVE",
+    "task_id": "task_4103f08d8b32",
+    "provider_url_used": "http://127.0.0.1:8080",
+    "source_count": 3,
+    "local_fallback_used": false,
+    "downstream_state_changed": true,
+    "trace_id": "trace_e88546e1e1854eb6",
+    "invocation_event_id": "invocation_3ca28c12fa014bed",
+    "consumer_event_id": "consumer_53d9f4374dfc4b7a",
     "consumer": "cartographer_current_research_consumer",
-    "proof": "Dedicated handler implemented; no generic local-file fallback; live providers unavailable."
+    "proof": "SearXNG returned JSON results from the Source Proxy runtime, and the current-research handler stored consumed output under plan_2_subsystem_integrations."
   },
   "specialists": {
     "status": "BLOCKED_ENV",
-    "trace_id": "contract-proven-by-record_subsystem_integration_result",
+    "task_id": "task_b054178d05c6",
+    "trace_id": "trace_cc1d0298dbc944f0",
+    "invocation_event_id": "invocation_8e7dc19a56974a02",
+    "consumer_event_id": "consumer_506061dd2bb94ca1",
     "consumer": "cartographer_specialist_packet_consumer",
-    "gemma": "PREVIEW_ONLY registry classification; live FIP-3 call timed out",
-    "hermes": "PREVIEW_ONLY registry classification; live FIP-3 call timed out",
-    "qwen": "LIVE_INVOKABLE coder route",
-    "browser_functional_verifier": "LIVE_INVOKABLE verifier packet path",
-    "design_browser_if_applicable": "ADVISORY_ONLY; no screenshot proof currently available"
+    "gemma": "failed",
+    "hermes": "failed",
+    "verifier_verdict": "UNVERIFIED",
+    "proof": "The specialist wrapper consumed the packet, but failed/timeout/error statuses are now classified as BLOCKED_ENV instead of INTEGRATED_LIVE."
+  },
+  "coding_shell": {
+    "status": "IMPLEMENTED",
+    "surface": "/coding",
+    "proof": "CodingCockpitShell parses ast_snapshot.plan_2_subsystem_integrations and renders Plan 2 subsystem truth without Plan 2 GO/PASS labels."
   },
   "acceptance_tasks": {
-    "task_a": "BLOCKED_ENV: Gemma/Hermes live proof unavailable",
-    "task_b": "BLOCKED_ENV: Scout/SearXNG unavailable to Source Proxy current-research handler",
-    "task_c": "BLOCKED_HUMAN: first Mac write requires Britton approval"
+    "task_a": "BLOCKED_ENV: specialist sidecar model lanes returned failed statuses.",
+    "task_b": "INTEGRATED_LIVE: SearXNG current-research proof returned 3 JSON sources and was consumed downstream.",
+    "task_c": "NEEDS_FIX: Mac isolated write proof job reached spirit-mac-mini but the live Mac worker checkout does not support the job type."
   },
   "tests": [
-    ".venv-source-proxy/bin/python -m pytest -q source_proxy/tests/test_plan2_subsystem_integration.py source_proxy/tests/test_research_preview.py source_proxy/tests/test_scout_research_bridge.py source_proxy/tests/test_model_lanes.py source_proxy/tests/test_verifier_lane.py source_proxy/tests/test_long_running_tasks.py -k \"plan2 or current_research or subsystem or research or scout or model_lane or verifier or causal or long_running\"",
-    "npx vitest run src/lib/mac-worker/__tests__/contract.test.ts src/app/api/coding/mac-worker/__tests__/route.test.ts",
+    ".venv-source-proxy/bin/python -m pytest source_proxy/tests/test_hardline_integration.py source_proxy/tests/test_plan2_subsystem_integration.py -q",
+    "npx vitest run src/components/coding/__tests__/coding-cockpit-shell.test.tsx -t 'reads Plan 2 subsystem integration truth without a GO label'",
+    "npx vitest run src/lib/mac-worker/__tests__/contract.test.ts",
     "npm run typecheck"
   ],
-  "evidence_budget": {
-    "committed_files": "bounded Plan 2 artifacts plus focused implementation/tests",
-    "external_raw_evidence": "/home/source/spiritos-evidence/plan-02/",
-    "budget_status": "OK"
+  "test_results": {
+    "focused_python": "PASS: 14 passed",
+    "focused_vitest_plan2_shell": "PASS: 1 passed, 33 skipped",
+    "mac_worker_contract": "PASS: 10 passed",
+    "typecheck": "PASS",
+    "full_coding_shell_vitest": "FAIL: unrelated existing UI tests expect the Run messy Coder benchmark control that is not present on the current shell screen."
   },
   "safety": {
     "obsidian_write": false,
@@ -56,9 +83,8 @@
     "plan_3_work": false
   },
   "outstanding_decisions": [
-    "Approve first real Mac isolated worktree write for Plan 2.1, or explicitly defer it.",
-    "Enable/configure Scout or SearXNG for current-research live proof, or explicitly defer it.",
-    "Decide whether Gemma/Hermes preview lanes should be promoted to live Plan 2 lanes after timeout investigation."
+    "Deploy or otherwise update the live spirit-mac-mini Mac worker checkout with the approved mac_isolated_write_proof job before claiming Mac write integration.",
+    "Investigate why Gemma/Hermes FIP-3 sidecar calls returned failed statuses under the bounded timeout."
   ],
   "next_plan": "Plan 3/6 - Durable Execution, Policy, Recovery, and Repair",
   "stop": "No next-plan work was started."

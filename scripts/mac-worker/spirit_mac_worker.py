@@ -4,6 +4,7 @@ import os
 import platform
 import subprocess
 import sys
+import tempfile
 import time
 from urllib.parse import urlencode, urlparse, urlunparse
 from urllib.request import Request, urlopen
@@ -15,6 +16,7 @@ SUPPORTED_JOB_TYPES = [
     "trial_context_assist",
     "scout_research_packet",
     "browser_design_check",
+    "mac_isolated_write_proof",
     "run_safe_check",
     "system_status",
 ]
@@ -490,6 +492,64 @@ def browser_design_check(job):
     }
 
 
+def mac_isolated_write_proof(job):
+    input_data = job.get("input") or {}
+    proof_root = Path(input_data.get("proof_dir") or tempfile.gettempdir()) / "spiritos-plan2-mac-write-proof"
+    root = proof_root.expanduser().resolve()
+    temp_root = Path(tempfile.gettempdir()).resolve()
+    try:
+        root.relative_to(temp_root)
+    except ValueError:
+        return {
+            "success": False,
+            "result": {
+                "summary": "Mac isolated write proof refused unsafe proof_dir.",
+                "reason_code": "mac_write_proof_path_not_in_temp_root",
+                "requested_path": str(root),
+                "allowed_temp_root": str(temp_root),
+                "mac_write_performed": False,
+            },
+            "error": "mac_write_proof_path_not_in_temp_root",
+            "candidate_files": [],
+            "recommended_checks": ["Use a dedicated disposable directory under the Mac temp root."],
+        }
+
+    proof_file = root / "plan2-mac-write-proof.txt"
+    contents = str(input_data.get("contents") or "SpiritOS Plan 2 Mac isolated write proof\n")
+    root.mkdir(parents=True, exist_ok=True)
+    proof_file.write_text(contents, encoding="utf-8")
+    readback = proof_file.read_text(encoding="utf-8")
+    verified = readback == contents
+    rollback_status = "not_attempted"
+    try:
+        proof_file.unlink()
+        rollback_status = "deleted"
+        try:
+            root.rmdir()
+        except OSError:
+            pass
+    except OSError as error:
+        rollback_status = f"cleanup_failed:{type(error).__name__}"
+
+    return {
+        "success": verified and rollback_status == "deleted",
+        "result": {
+            "summary": "Mac isolated write proof completed and rolled back.",
+            "mac_write_performed": True,
+            "mac_write_path": str(proof_file),
+            "readback_verified": verified,
+            "rollback_status": rollback_status,
+            "proof_dir": str(root),
+            "reason_code": "mac_isolated_write_proof_passed"
+            if verified and rollback_status == "deleted"
+            else "mac_isolated_write_proof_failed",
+        },
+        "artifacts": [str(proof_file)],
+        "candidate_files": [],
+        "recommended_checks": ["Verify proof file was removed after rollback."],
+    }
+
+
 def handle(job):
     job_type = job.get("job_type")
     if job_type not in SUPPORTED_JOB_TYPES:
@@ -502,6 +562,8 @@ def handle(job):
         return scout_research_packet(job)
     if job_type == "browser_design_check":
         return browser_design_check(job)
+    if job_type == "mac_isolated_write_proof":
+        return mac_isolated_write_proof(job)
     return context_search(job)
 
 
@@ -528,6 +590,12 @@ try:
         "artifacts": output.get("artifacts", []),
         "candidate_files": output.get("candidate_files", []),
         "recommended_checks": output.get("recommended_checks", []),
+        "trace_id": job.get("trace_id"),
+        "invocation_event_id": job.get("invocation_event_id"),
+        "consumer_event_id": job.get("consumer_event_id"),
+        "consumer_subsystem": job.get("consumer_subsystem"),
+        "task_id": job.get("task_id"),
+        "result_envelope_version": "source-proxy-mac-worker-result-v1",
     }
 except Exception as error:
     blocked = isinstance(error, BlockedSafeCheck)
@@ -551,6 +619,12 @@ except Exception as error:
         "artifacts": [],
         "candidate_files": [],
         "recommended_checks": RECOMMENDED_SAFE_CHECKS if blocked else [],
+        "trace_id": job.get("trace_id"),
+        "invocation_event_id": job.get("invocation_event_id"),
+        "consumer_event_id": job.get("consumer_event_id"),
+        "consumer_subsystem": job.get("consumer_subsystem"),
+        "task_id": job.get("task_id"),
+        "result_envelope_version": "source-proxy-mac-worker-result-v1",
     }
     sys.exit_code = 1
 

@@ -7,6 +7,7 @@ import CodingCockpitShell, {
   changedFilesFromPayload,
   changedFileSnapshotsFromPayload,
   executeReadyReverseDiff,
+  plan2SubsystemIntegrationsFromPayload,
   reverseUnifiedDiff,
   snapshotRestored,
   reversibleSuiteExceptionLabel,
@@ -1081,6 +1082,55 @@ describe("CodingCockpitShell", () => {
       invocationEventId: "invocation_123",
       traceId: "trace_123",
     });
+  });
+
+  it("reads Plan 2 subsystem integration truth without a GO label", () => {
+    const payload = {
+      task: {
+        ast_snapshot: {
+          plan_2_subsystem_integrations: {
+            cartographer_mac_assignment_consumer: {
+              consumed_by: "cartographer_mac_assignment_consumer",
+              consumer_event_id: "consumer_mac_123",
+              invocation_event_id: "invocation_mac_123",
+              output_hash: "sha256:mac",
+              status: "INTEGRATED_LIVE",
+              trace_id: "trace_mac_123",
+            },
+            specialist_synthesis_consumer: {
+              status: "NOT_INTEGRATED_UNCONSUMED_OUTPUT",
+            },
+          },
+        },
+      },
+    };
+
+    expect(plan2SubsystemIntegrationsFromPayload(payload)).toEqual([
+      {
+        consumedBy: "cartographer_mac_assignment_consumer",
+        consumerEventId: "consumer_mac_123",
+        invocationEventId: "invocation_mac_123",
+        outputHash: "sha256:mac",
+        status: "INTEGRATED_LIVE",
+        subsystem: "cartographer_mac_assignment_consumer",
+        traceId: "trace_mac_123",
+      },
+      {
+        consumedBy: null,
+        consumerEventId: null,
+        invocationEventId: null,
+        outputHash: null,
+        status: "NOT_INTEGRATED_UNCONSUMED_OUTPUT",
+        subsystem: "specialist_synthesis_consumer",
+        traceId: null,
+      },
+    ]);
+
+    const shellSrc = readFileSync("src/components/coding/CodingCockpitShell.tsx", "utf8");
+    expect(shellSrc).toContain("Plan 2 subsystem truth");
+    expect(shellSrc).toContain("plan2SubsystemIntegrationsFromPayload");
+    expect(shellSrc).not.toContain("Plan 2 GO");
+    expect(shellSrc).not.toContain("Plan 2 PASS");
   });
 
   it("rehydrates a durable active Coder run on a second mount", async () => {
