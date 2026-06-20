@@ -72,6 +72,13 @@ describe("SpiritFlix local visual analysis", () => {
       evidenceRef: "test-vision",
       requiresReview: true,
     });
+    expect(updated.visualAnalysis).toMatchObject({
+      status: "complete",
+      modelName: "test-vision",
+      sampledFrameCount: 1,
+      analyzedFrameCount: 1,
+      tags: ["watermark"],
+    });
     expect(updated.notes).toContain("test-vision");
   });
 });

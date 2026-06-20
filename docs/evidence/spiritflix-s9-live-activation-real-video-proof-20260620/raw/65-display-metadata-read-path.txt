@@ -1,0 +1,161 @@
+=== metadata/display read path references ===
+src/app/api/spiritflix/face-metadata/route.ts:182:    // Keep face metadata usable even if the organizer model index has not been generated.
+src/app/api/spiritflix/face-metadata/route.ts:281:    return NextResponse.json({ error: "Invalid face metadata request." }, { status: 400 });
+src/components/spiritflix/SpiritFlixHome.tsx:89:const FACE_METADATA_CACHE_KEY = "spiritflix_face_metadata_v5";
+src/components/spiritflix/SpiritFlixHome.tsx:750:      .then((metadata) => {
+src/components/spiritflix/SpiritFlixHome.tsx:752:        setFaceMetadata(metadata);
+src/components/spiritflix/SpiritFlixHome.tsx:754:        window.localStorage.setItem(cacheKey, JSON.stringify(metadata));
+src/components/spiritflix/SpiritFlixHome.tsx:757:        if (!isCancelled) setFaceMetadataError("Face Organizer metadata is unavailable; using Jellyfin model hints.");
+src/lib/spiritflix/admin/__tests__/format.test.ts:28:  it("hides metadata sidecars by default", () => {
+src/lib/spiritflix/admin/__tests__/actions.test.ts:209:  it("writeMetadata rejects unknown fields and writes only under metadata root", async () => {
+src/lib/spiritflix/admin/__tests__/actions.test.ts:217:      metadata: { displayTitle: "ok", evilField: "nope" } as never,
+src/lib/spiritflix/admin/__tests__/actions.test.ts:225:      metadata: { displayTitle: "Smoke title", notes: "disposable" },
+src/lib/spiritflix/admin/__tests__/actions.test.ts:228:    expect(preview.preview?.targetPath).toContain(`${path.sep}.spiritflix-admin${path.sep}metadata${path.sep}`);
+src/lib/spiritflix/admin/__tests__/actions.test.ts:235:      metadata: { displayTitle: "Smoke title", notes: "disposable" },
+src/components/spiritflix/SpiritFlixPlayer.tsx:1134:          preload="metadata"
+src/lib/spiritflix/admin/actions.ts:23:const METADATA_ROOT = path.join(SPIRITFLIX_MEDIA_ROOT, ".spiritflix-admin", "metadata");
+src/lib/spiritflix/admin/actions.ts:30:  "displayTitle",
+src/lib/spiritflix/admin/actions.ts:31:  "customTags",
+src/lib/spiritflix/admin/actions.ts:160:      throw new Error(`Unknown metadata field: ${key}`);
+src/lib/spiritflix/admin/actions.ts:448:  validateMetadata(request.metadata ?? {});
+src/lib/spiritflix/admin/actions.ts:454:    rollbackHint: "Edit or delete the metadata sidecar.",
+src/lib/spiritflix/admin/actions.ts:458:  return response("writeMetadata", "preview", previewId, true, "Write SpiritFlix metadata sidecar", {
+src/lib/spiritflix/admin/actions.ts:464:      warnings: ["Does not edit Jellyfin database rows.", "Metadata is stored under .spiritflix-admin/metadata only."],
+src/lib/spiritflix/admin/actions.ts:644:        const metadata = validateMetadata(request.metadata ?? {});
+src/lib/spiritflix/admin/actions.ts:648:        await atomicWriteFile(targetPath, JSON.stringify({ sourcePath, ...metadata }, null, 2));
+src/components/spiritflix/admin/SpiritFlixSmartBatchPanel.tsx:255:                Preview folder only lists candidates. Analyze folder reads metadata and creates smart tags. Recommended names become final after review/approval.
+src/components/spiritflix/admin/__tests__/SpiritFlixAdminInteractions.test.tsx:137:              renameBlocker: "Review or approve tags/metadata to unlock rename preview.",
+src/components/spiritflix/admin/__tests__/SpiritFlixAdminInteractions.test.tsx:190:    expect(screen.getByRole("menuitem", { name: "Edit metadata" })).toBeInTheDocument();
+src/components/spiritflix/admin/__tests__/SpiritFlixAdminInteractions.test.tsx:328:    expect(screen.getByText("Review or approve tags/metadata to unlock rename preview.")).toBeInTheDocument();
+src/components/spiritflix/admin/item-menu.ts:104:    { id: "editMetadata", label: "Edit metadata" },
+src/components/spiritflix/admin/__tests__/SpiritFlixAdminApp.test.tsx:195:  it("filters metadata, updates controls, and opens details from Info action", async () => {
+src/components/spiritflix/admin/__tests__/SpiritFlixAdminApp.test.tsx:220:    fireEvent.click(screen.getByLabelText("Show metadata"));
+src/components/spiritflix/admin/__tests__/item-menu.test.ts:27:    expect(labels).toEqual(expect.arrayContaining(["Rename", "Move", "Soft delete", "Edit metadata", "Info", "Open viewer"]));
+src/components/spiritflix/admin/SpiritFlixAdminToolbar.tsx:92:        Show metadata
+src/lib/spiritflix/admin/smart/rename-plan.ts:10:import { projectApprovedSmartMetadata } from "./metadata-bridge";
+src/lib/spiritflix/admin/smart/rename-plan.ts:11:import type { SpiritFlixApprovedMetadataProjection } from "./metadata-bridge";
+src/lib/spiritflix/admin/smart/rename-plan.ts:225:      warnings: ["Reviewed metadata does not contain an approved filename proposal."],
+src/components/spiritflix/admin/SpiritFlixSmartReviewPanel.tsx:7:import { buildEmptyReviewDraft, countReviewTagStates, tagReviewState } from "@/lib/spiritflix/admin/smart/review-metadata";
+src/components/spiritflix/admin/SpiritFlixSmartReviewPanel.tsx:23:  metadataPath?: string;
+src/components/spiritflix/admin/SpiritFlixSmartReviewPanel.tsx:24:  metadata?: {
+src/components/spiritflix/admin/SpiritFlixSmartReviewPanel.tsx:26:    displayTitle?: string;
+src/components/spiritflix/admin/SpiritFlixSmartReviewPanel.tsx:95:  const [exportResult, setExportResult] = useState<ExportMetadataResponse["metadata"] | null>(null);
+src/components/spiritflix/admin/SpiritFlixSmartReviewPanel.tsx:217:  // S9: confirm approved metadata to admin metadata sidecar
+src/components/spiritflix/admin/SpiritFlixSmartReviewPanel.tsx:230:      if (!response.ok) throw new Error(payload.error ?? "Failed to confirm metadata.");
+src/components/spiritflix/admin/SpiritFlixSmartReviewPanel.tsx:231:      setExportResult(payload.metadata ?? null);
+src/components/spiritflix/admin/SpiritFlixSmartReviewPanel.tsx:233:      setError(caught instanceof Error ? caught.message : "Failed to confirm metadata.");
+src/components/spiritflix/admin/SpiritFlixSmartReviewPanel.tsx:299:          S9 analyzes sampled frames, lets you review/edit tags and names, then confirms only metadata sidecars. It does not rename or move files.
+src/components/spiritflix/admin/SpiritFlixSmartReviewPanel.tsx:308:            <p>Run a one-video scan to collect metadata, sample frames, local visual tags, and name suggestions. Nothing is renamed or moved.</p>
+src/components/spiritflix/admin/SpiritFlixSmartReviewPanel.tsx:343:              <h3>Review metadata</h3>
+src/components/spiritflix/admin/SpiritFlixSmartReviewPanel.tsx:446:            {/* ── S6: Approved metadata section ─────────────────────── */}
+src/components/spiritflix/admin/SpiritFlixSmartReviewPanel.tsx:450:                  <h3>Approved metadata</h3>
+src/components/spiritflix/admin/SpiritFlixSmartReviewPanel.tsx:488:                  <h3>Confirm approved metadata</h3>
+src/components/spiritflix/admin/SpiritFlixSmartReviewPanel.tsx:489:                  <p className="spiritflix-smart-review__boundary">Confirm writes approved tags and display-name overrides to SpiritFlix metadata sidecars only.</p>
+src/components/spiritflix/admin/SpiritFlixSmartReviewPanel.tsx:517:                        <dd>{exportResult.displayTitle ?? "—"}</dd>
+src/lib/spiritflix/admin/smart/batch.ts:16:import { projectApprovedSmartMetadata } from "./metadata-bridge";
+src/lib/spiritflix/admin/smart/batch.ts:353:      renameBlocker = "Review or approve tags/metadata to unlock rename preview.";
+src/lib/spiritflix/admin/smart/batch.ts:363:      renameBlocker = "Reviewed metadata does not contain an approved filename proposal.";
+src/lib/spiritflix/admin/smart/batch.ts:525:      const reason = beforeReview && !preservedReview ? "Analysis refreshed; review metadata changed." : undefined;
+src/app/api/spiritflix/admin/__tests__/smart-batch-route.test.ts:86:      renameBlocker: "Review or approve tags/metadata to unlock rename preview.",
+src/components/spiritflix/admin/SpiritFlixAdminApp.tsx:49:  const [thumbnailStatus, setThumbnailStatus] = useState("Loading Jellyfin metadata index");
+src/components/spiritflix/admin/SpiritFlixAdminApp.tsx:77:          setThumbnailStatus(`${serverPayload.items.length} Jellyfin metadata matches available`);
+src/components/spiritflix/admin/SpiritFlixAdminApp.tsx:89:      setThumbnailStatus("Jellyfin metadata unavailable; local video previews enabled");
+src/components/spiritflix/admin/SpiritFlixAdminApp.tsx:113:      if (!response.ok) throw new Error("Jellyfin metadata index unavailable.");
+src/components/spiritflix/admin/SpiritFlixAdminApp.tsx:117:      setThumbnailStatus(indexedItems.length ? `${indexedItems.length} Jellyfin metadata matches` : "No Jellyfin metadata matches; local previews enabled");
+src/components/spiritflix/admin/SpiritFlixAdminApp.tsx:120:      setThumbnailStatus("Jellyfin metadata unavailable; local video previews enabled");
+src/components/spiritflix/admin/SpiritFlixAdminApp.tsx:391:            Jellyfin metadata
+src/components/spiritflix/admin/__tests__/SpiritFlixSmartBatchPanel.test.tsx:84:      renameBlocker: "Review or approve tags/metadata to unlock rename preview.",
+src/components/spiritflix/admin/__tests__/SpiritFlixSmartBatchPanel.test.tsx:199:  it("does not show technical metadata as primary Smart Tags", async () => {
+src/components/spiritflix/admin/__tests__/SpiritFlixSmartReviewPanel.test.tsx:82:  it("renders approve/reject controls and metadata-only warning", async () => {
+src/components/spiritflix/admin/__tests__/SpiritFlixSmartReviewPanel.test.tsx:85:    await screen.findByText(/confirms only metadata sidecars/i);
+src/components/spiritflix/admin/__tests__/SpiritFlixSmartReviewPanel.test.tsx:141:  it("confirm approved metadata calls confirmMetadata API", async () => {
+src/components/spiritflix/admin/SpiritFlixAdminActionDialog.tsx:65:  const [displayTitle, setDisplayTitle] = useState("");
+src/components/spiritflix/admin/SpiritFlixAdminActionDialog.tsx:83:    ? `${focusedAction === "writeMetadata" ? "Edit metadata" : focusedAction === "createFolder" ? "New folder" : focusedAction === "softDelete" ? "Soft delete" : focusedAction.charAt(0).toUpperCase() + focusedAction.slice(1)}: ${contextLabel}`
+src/components/spiritflix/admin/SpiritFlixAdminActionDialog.tsx:121:            label: "Edit metadata",
+src/components/spiritflix/admin/SpiritFlixAdminActionDialog.tsx:125:              metadata: {
+src/components/spiritflix/admin/SpiritFlixAdminActionDialog.tsx:126:                ...(displayTitle ? { displayTitle } : {}),
+src/components/spiritflix/admin/SpiritFlixAdminActionDialog.tsx:142:    [displayTitle, folderName, item?.path, newName, notes, parentPath, targetFolder],
+src/components/spiritflix/admin/SpiritFlixAdminActionDialog.tsx:209:  const metadataPayload: SpiritFlixAdminMetadataSidecar = {
+src/components/spiritflix/admin/SpiritFlixAdminActionDialog.tsx:210:    ...(displayTitle ? { displayTitle } : {}),
+src/components/spiritflix/admin/SpiritFlixAdminActionDialog.tsx:311:                Display title (metadata)
+src/components/spiritflix/admin/SpiritFlixAdminActionDialog.tsx:312:                <input value={displayTitle} onChange={(event) => setDisplayTitle(event.target.value)} placeholder="Optional sidecar title" />
+src/components/spiritflix/admin/SpiritFlixAdminActionDialog.tsx:315:                Notes (metadata)
+src/components/spiritflix/admin/SpiritFlixAdminActionDialog.tsx:392:                    label: "Edit metadata",
+src/components/spiritflix/admin/SpiritFlixAdminActionDialog.tsx:393:                    buildRequest: () => ({ action: "writeMetadata", sourcePath: item.path, metadata: metadataPayload }),
+src/components/spiritflix/admin/SpiritFlixAdminActionDialog.tsx:397:                Preview metadata
+src/lib/spiritflix/admin/smart/index.ts:107:} from "./review-metadata";
+src/lib/spiritflix/admin/smart/index.ts:142:  metadataSidecarPath,
+src/lib/spiritflix/admin/smart/index.ts:146:} from "./metadata-bridge";
+src/lib/spiritflix/admin/smart/suggestions.ts:166:      source: "metadata",
+src/lib/spiritflix/admin/smart/suggestions.ts:283:    notes.push("No sampled-frame content tags were produced; recommendations fall back to title, path, metadata, and face-rec evidence.");
+src/lib/spiritflix/admin/smart/suggestions.ts:286:    notes.push(`technical metadata kept out of primary smart tags: ${technicalTags.map((tag) => tag.label).join(", ")}`);
+src/lib/spiritflix/admin/smart/types.ts:33:  | "metadata"
+src/lib/spiritflix/admin/smart/types.ts:174:  "metadata",
+src/lib/spiritflix/admin/smart/review-metadata.ts:1:// ── SpiritFlix S5 reviewed metadata (analysis sidecar only) ─────────
+src/lib/spiritflix/admin/smart/review-metadata.ts:158:          "S5 metadata review saved — file rename/move not executed.",
+src/lib/spiritflix/admin/smart/heuristics.ts:1:// ── SpiritFlix S3 filename/path/metadata heuristics ────────────────
+src/lib/spiritflix/admin/smart/heuristics.ts:400:  const notes: string[] = ["S3 heuristics used filename, path, and technical metadata only."];
+src/lib/spiritflix/admin/smart/review.ts:7:import { applySmartReviewToAnalysis } from "./review-metadata";
+src/lib/spiritflix/admin/smart/review.ts:14:export { SPIRITFLIX_SMART_ANALYZER_VERSION_S5 } from "./review-metadata";
+src/lib/spiritflix/admin/smart/review.ts:118:    throw new Error("No smart analysis sidecar exists to save review metadata.");
+src/lib/spiritflix/admin/smart/probe.ts:77:    throw new SpiritFlixSmartProbeError("ffprobe did not return usable video metadata.");
+src/lib/spiritflix/admin/smart/scanner.ts:117:  const notesParts: string[] = ["technical metadata collected"];
+src/lib/spiritflix/admin/smart/__tests__/metadata-bridge.test.ts:2:import { projectApprovedSmartMetadata, metadataSidecarPath } from "../metadata-bridge";
+src/lib/spiritflix/admin/smart/__tests__/metadata-bridge.test.ts:64:describe("SpiritFlix smart metadata bridge", () => {
+src/lib/spiritflix/admin/smart/__tests__/metadata-bridge.test.ts:67:    expect(projection.displayTitle).toBe("Edited Title");
+src/lib/spiritflix/admin/smart/__tests__/metadata-bridge.test.ts:76:    expect(projection.displayTitle).toBe("Auto Title");
+src/lib/spiritflix/admin/smart/__tests__/metadata-bridge.test.ts:112:  it("metadata sidecar path stays under .spiritflix-admin/metadata", () => {
+src/lib/spiritflix/admin/smart/__tests__/metadata-bridge.test.ts:113:    const sidecarPath = metadataSidecarPath("/mnt/spirit-8tb/media/yes/clip.mp4");
+src/lib/spiritflix/admin/smart/__tests__/metadata-bridge.test.ts:114:    expect(sidecarPath).toContain(".spiritflix-admin/metadata");
+src/lib/spiritflix/admin/smart/__tests__/metadata-bridge.test.ts:119:  it("metadata sidecar path uses sha256 of normalized path", () => {
+src/lib/spiritflix/admin/smart/__tests__/metadata-bridge.test.ts:120:    const path1 = metadataSidecarPath("/mnt/spirit-8tb/media/yes/clip.mp4");
+src/lib/spiritflix/admin/smart/__tests__/metadata-bridge.test.ts:121:    const path2 = metadataSidecarPath("C:\\mnt\\spirit-8tb\\media\\yes\\clip.mp4"); // windows-ish
+src/lib/spiritflix/admin/smart/__tests__/metadata-bridge.test.ts:122:    const path3 = metadataSidecarPath("/mnt/spirit-8tb/media/yes/clip.mp4");
+src/lib/spiritflix/admin/smart/__tests__/metadata-bridge.test.ts:129:  it("metadata sidecar path supports custom mediaRoot", () => {
+src/lib/spiritflix/admin/smart/__tests__/metadata-bridge.test.ts:130:    const sidecarPath = metadataSidecarPath("/media/test.mp4", "/media");
+src/lib/spiritflix/admin/smart/__tests__/metadata-bridge.test.ts:131:    expect(sidecarPath).toContain("/media/.spiritflix-admin/metadata");
+src/lib/spiritflix/admin/smart/__tests__/metadata-bridge.test.ts:134:  it("filename suggestion is metadata-only (not mutating real files)", () => {
+src/lib/spiritflix/admin/smart/__tests__/analysis-paths.test.ts:72:    const adminPath = path.join(mediaRoot, ".spiritflix-admin", "metadata", "abc.json");
+src/lib/spiritflix/admin/smart/__tests__/rename-plan.test.ts:68:  it("builds a preview-only plan from reviewed approved metadata", async () => {
+src/lib/spiritflix/admin/smart/metadata-bridge.ts:2:// Projects approved smart metadata into admin metadata sidecars.
+src/lib/spiritflix/admin/smart/metadata-bridge.ts:3:// Writes under .spiritflix-admin/metadata/ only — never beside video.
+src/lib/spiritflix/admin/smart/metadata-bridge.ts:21:  displayTitle?: string;
+src/lib/spiritflix/admin/smart/metadata-bridge.ts:41:export function metadataSidecarPath(
+src/lib/spiritflix/admin/smart/metadata-bridge.ts:54:  return path.join(root, ".spiritflix-admin", "metadata", `${hash}.json`);
+src/lib/spiritflix/admin/smart/metadata-bridge.ts:79:  const displayTitle = reviewed?.editedDisplayTitle ?? analysis.suggestedDisplayTitle;
+src/lib/spiritflix/admin/smart/metadata-bridge.ts:87:    displayTitle,
+src/lib/spiritflix/admin/smart/metadata-bridge.ts:99:// ── Write admin metadata sidecar ───────────────────────────────────────
+src/lib/spiritflix/admin/smart/metadata-bridge.ts:100:// Writes to the same Level 2 metadata sidecar store:
+src/lib/spiritflix/admin/smart/metadata-bridge.ts:101://   .spiritflix-admin/metadata/<sha256>.json
+src/lib/spiritflix/admin/smart/metadata-bridge.ts:103:// Stores the full smart projection under `smartApproved` key.
+src/lib/spiritflix/admin/smart/metadata-bridge.ts:108:): Promise<{ path: string; metadata: SpiritFlixApprovedMetadataProjection }> {
+src/lib/spiritflix/admin/smart/metadata-bridge.ts:110:  const targetPath = metadataSidecarPath(projection.sourcePath, options?.mediaRoot);
+src/lib/spiritflix/admin/smart/metadata-bridge.ts:128:    displayTitle: projection.displayTitle,
+src/lib/spiritflix/admin/smart/metadata-bridge.ts:129:    displayNameOverride: projection.displayTitle,
+src/lib/spiritflix/admin/smart/metadata-bridge.ts:130:    smartDisplayName: projection.displayTitle,
+src/lib/spiritflix/admin/smart/metadata-bridge.ts:131:    customTags: projection.approvedTags.map((tag) => tag.label),
+src/lib/spiritflix/admin/smart/metadata-bridge.ts:135:    smartApproved: projection,
+src/lib/spiritflix/admin/smart/metadata-bridge.ts:144:  return { path: targetPath, metadata: projection };
+src/lib/spiritflix/admin/smart/__tests__/review-metadata.test.ts:6:} from "../review-metadata";
+src/lib/spiritflix/admin/smart/__tests__/review-metadata.test.ts:39:  notes: "technical metadata collected | S3 heuristics used filename, path, and technical metadata only.",
+src/lib/spiritflix/admin/smart/__tests__/review-metadata.test.ts:42:describe("SpiritFlix smart review metadata", () => {
+src/lib/spiritflix/admin/smart/__tests__/review-metadata.test.ts:43:  it("applies valid review metadata to analysis", () => {
+src/lib/spiritflix/admin/smart/__tests__/review-metadata.test.ts:58:    expect(updated.notes).toContain("technical metadata collected");
+src/lib/spiritflix/admin/smart/__tests__/suggestions.test.ts:47:  it("preserves readable titles while excluding technical metadata from primary tags", () => {
+src/lib/spiritflix/admin/smart/__tests__/suggestions.test.ts:59:    expect(result.contentTagEvidence.find((entry) => entry.source === "metadata")?.tags).toContain("full-hd");
+src/lib/spiritflix/admin/smart/__tests__/suggestions.test.ts:98:    expect(result.contentTagEvidence.find((entry) => entry.source === "metadata")?.tags).toContain("site-token");
+src/lib/spiritflix/admin/smart/__tests__/suggestions.test.ts:210:  it("preserves S2 media metadata and samples when applying suggestions", () => {
+src/lib/spiritflix/admin/smart/__tests__/suggestions.test.ts:235:      notes: "technical metadata collected",
+src/lib/spiritflix/admin/smart/__tests__/suggestions.test.ts:247:    expect(updated.notes).toContain("technical metadata collected");
+src/lib/spiritflix/admin/smart/__tests__/suggestions.test.ts:249:    expect(updated.contentTagEvidence?.find((entry) => entry.source === "metadata")?.tags).toContain("hd");
+src/lib/spiritflix/admin/smart/__tests__/suggestions.test.ts:316:      notes: "technical metadata collected",
+src/lib/spiritflix/admin/smart/__tests__/suggestions.test.ts:335:    expect(updated.notes).toContain("technical metadata collected");
+src/lib/spiritflix/admin/smart/__tests__/suggestions.test.ts:336:    expect(updated.contentTagEvidence?.find((entry) => entry.source === "metadata")?.tags).toContain("full-hd");
+src/lib/spiritflix/admin/smart/__tests__/scanner.test.ts:65:  it("updates media metadata and writes sidecar under temp media root", async () => {
+src/lib/spiritflix/admin/smart/__tests__/scanner.test.ts:129:  it("handles partial sample failure while keeping metadata sidecar", async () => {
+src/lib/spiritflix/admin/types.ts:141:  displayTitle?: string;
+src/lib/spiritflix/admin/types.ts:142:  customTags?: string[];
+src/lib/spiritflix/admin/types.ts:166:  metadata?: SpiritFlixAdminMetadataSidecar;
+src/app/api/spiritflix/admin/smart/analysis/route.ts:17:import { assertSpiritFlixSmartReviewPayload } from "@/lib/spiritflix/admin/smart/review-metadata";
+src/app/api/spiritflix/admin/smart/analysis/route.ts:151:      // S9: confirm approved metadata to admin metadata sidecar only
+src/app/api/spiritflix/admin/smart/analysis/route.ts:158:        return NextResponse.json({ error: "Analysis must be reviewed before exporting metadata." }, { status: 400 });

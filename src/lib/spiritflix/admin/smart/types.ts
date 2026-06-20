@@ -99,6 +99,29 @@ export interface SpiritFlixSmartSample {
   confidence: number;
 }
 
+export type SpiritFlixSmartVisualAnalysisStatus = "not_run" | "complete" | "partial" | "failed";
+
+export interface SpiritFlixSmartVisualAnalysisFrame {
+  timestampSeconds: number;
+  timestampLabel: string;
+  cacheKey?: string;
+  status: "complete" | "failed";
+  tags: string[];
+  observations: string[];
+  error?: string;
+}
+
+export interface SpiritFlixSmartVisualAnalysis {
+  status: SpiritFlixSmartVisualAnalysisStatus;
+  modelName: string;
+  analyzedAt: string;
+  sampledFrameCount: number;
+  analyzedFrameCount: number;
+  tags: string[];
+  frames: SpiritFlixSmartVisualAnalysisFrame[];
+  error?: string;
+}
+
 export interface SpiritFlixSmartAnalysis {
   version: 1;
   videoPath: string;
@@ -122,13 +145,16 @@ export interface SpiritFlixSmartAnalysis {
     container?: string;
   };
   samples: SpiritFlixSmartSample[];
+  visualAnalysis?: SpiritFlixSmartVisualAnalysis;
   contentTagEvidence?: SpiritFlixSmartContentTagEvidence[];
   performerIdentity?: SpiritFlixSmartPerformerIdentity;
   suggestedTags: SpiritFlixSmartTag[];
+  pendingSmartTags?: SpiritFlixSmartTag[];
   suggestedCategory?: string;
   suggestedCollections?: string[];
   suggestedDisplayTitle?: string;
   suggestedFilename?: string;
+  pendingDisplayName?: string;
   suggestedTargetFolder?: string;
   confidence: number;
   notes?: string;
@@ -150,6 +176,13 @@ const SMART_CONTENT_EVIDENCE_SOURCES = new Set<SpiritFlixSmartContentEvidenceSou
   "frame_sample",
   "ocr",
   "vlm",
+]);
+
+const SMART_VISUAL_ANALYSIS_STATUSES = new Set<SpiritFlixSmartVisualAnalysisStatus>([
+  "not_run",
+  "complete",
+  "partial",
+  "failed",
 ]);
 
 const SMART_PERFORMER_IDENTITY_SOURCES = new Set<SpiritFlixSmartPerformerIdentitySource>([
@@ -337,6 +370,80 @@ export function validateSpiritFlixSmartContentTagEvidence(value: unknown): Spiri
   };
 }
 
+function validateSpiritFlixSmartVisualAnalysisFrame(value: unknown): SpiritFlixSmartVisualAnalysisFrame {
+  if (!isPlainObject(value)) throw new Error("visualAnalysis.frame must be an object.");
+  assertNoPollutionKeys(value, "visualAnalysis.frame");
+  const timestampSeconds =
+    typeof value.timestampSeconds === "number" && Number.isFinite(value.timestampSeconds) && value.timestampSeconds >= 0
+      ? value.timestampSeconds
+      : (() => {
+          throw new Error("visualAnalysis.frame.timestampSeconds must be a non-negative number.");
+        })();
+  const timestampLabel = assertNonEmptyString(value.timestampLabel, "visualAnalysis.frame.timestampLabel", 64);
+  const cacheKey = value.cacheKey === undefined ? undefined : assertNonEmptyString(value.cacheKey, "visualAnalysis.frame.cacheKey", 128);
+  if (value.status !== "complete" && value.status !== "failed") {
+    throw new Error("visualAnalysis.frame.status is invalid.");
+  }
+  if (!Array.isArray(value.tags)) throw new Error("visualAnalysis.frame.tags must be an array.");
+  const tags = value.tags.map((entry, index) =>
+    assertNonEmptyString(entry, `visualAnalysis.frame.tags[${index}]`, SMART_ANALYSIS_LIMITS.maxIdLength),
+  );
+  if (!Array.isArray(value.observations)) throw new Error("visualAnalysis.frame.observations must be an array.");
+  const observations = value.observations.map((entry, index) =>
+    assertNonEmptyString(entry, `visualAnalysis.frame.observations[${index}]`, SMART_ANALYSIS_LIMITS.maxLabelLength),
+  );
+  const error = value.error === undefined ? undefined : assertNonEmptyString(value.error, "visualAnalysis.frame.error", 512);
+  return {
+    timestampSeconds,
+    timestampLabel,
+    cacheKey,
+    status: value.status,
+    tags,
+    observations,
+    error,
+  };
+}
+
+export function validateSpiritFlixSmartVisualAnalysis(value: unknown): SpiritFlixSmartVisualAnalysis {
+  if (!isPlainObject(value)) throw new Error("visualAnalysis must be an object.");
+  assertNoPollutionKeys(value, "visualAnalysis");
+  const status = value.status;
+  if (typeof status !== "string" || !SMART_VISUAL_ANALYSIS_STATUSES.has(status as SpiritFlixSmartVisualAnalysisStatus)) {
+    throw new Error("visualAnalysis.status is invalid.");
+  }
+  const modelName = assertNonEmptyString(value.modelName, "visualAnalysis.modelName", 128);
+  const analyzedAt = assertNonEmptyString(value.analyzedAt, "visualAnalysis.analyzedAt", 64);
+  const sampledFrameCount =
+    typeof value.sampledFrameCount === "number" && Number.isFinite(value.sampledFrameCount) && value.sampledFrameCount >= 0
+      ? Math.floor(value.sampledFrameCount)
+      : (() => {
+          throw new Error("visualAnalysis.sampledFrameCount must be a non-negative number.");
+        })();
+  const analyzedFrameCount =
+    typeof value.analyzedFrameCount === "number" && Number.isFinite(value.analyzedFrameCount) && value.analyzedFrameCount >= 0
+      ? Math.floor(value.analyzedFrameCount)
+      : (() => {
+          throw new Error("visualAnalysis.analyzedFrameCount must be a non-negative number.");
+        })();
+  if (!Array.isArray(value.tags)) throw new Error("visualAnalysis.tags must be an array.");
+  const tags = value.tags.map((entry, index) =>
+    assertNonEmptyString(entry, `visualAnalysis.tags[${index}]`, SMART_ANALYSIS_LIMITS.maxIdLength),
+  );
+  if (!Array.isArray(value.frames)) throw new Error("visualAnalysis.frames must be an array.");
+  const frames = value.frames.map((entry) => validateSpiritFlixSmartVisualAnalysisFrame(entry));
+  const error = value.error === undefined ? undefined : assertNonEmptyString(value.error, "visualAnalysis.error", 512);
+  return {
+    status: status as SpiritFlixSmartVisualAnalysisStatus,
+    modelName,
+    analyzedAt,
+    sampledFrameCount,
+    analyzedFrameCount,
+    tags,
+    frames,
+    error,
+  };
+}
+
 export function validateSpiritFlixSmartPerformerIdentity(value: unknown): SpiritFlixSmartPerformerIdentity {
   if (!isPlainObject(value)) throw new Error("performerIdentity must be an object.");
   assertNoPollutionKeys(value, "performerIdentity");
@@ -494,6 +601,9 @@ export function validateSpiritFlixSmartAnalysis(value: unknown): SpiritFlixSmart
   if (value.samples.length > SMART_ANALYSIS_LIMITS.maxSamples) throw new Error("samples is too large.");
   const samples = value.samples.map((entry) => validateSpiritFlixSmartSample(entry));
 
+  const visualAnalysis =
+    value.visualAnalysis === undefined ? undefined : validateSpiritFlixSmartVisualAnalysis(value.visualAnalysis);
+
   let contentTagEvidence: SpiritFlixSmartContentTagEvidence[] | undefined;
   if (value.contentTagEvidence !== undefined) {
     if (!Array.isArray(value.contentTagEvidence)) throw new Error("contentTagEvidence must be an array.");
@@ -509,6 +619,12 @@ export function validateSpiritFlixSmartAnalysis(value: unknown): SpiritFlixSmart
   if (!Array.isArray(value.suggestedTags)) throw new Error("suggestedTags must be an array.");
   if (value.suggestedTags.length > SMART_ANALYSIS_LIMITS.maxTagsPerList) throw new Error("suggestedTags is too large.");
   const suggestedTags = value.suggestedTags.map((entry) => validateSpiritFlixSmartTag(entry));
+  let pendingSmartTags: SpiritFlixSmartTag[] | undefined;
+  if (value.pendingSmartTags !== undefined) {
+    if (!Array.isArray(value.pendingSmartTags)) throw new Error("pendingSmartTags must be an array.");
+    if (value.pendingSmartTags.length > SMART_ANALYSIS_LIMITS.maxTagsPerList) throw new Error("pendingSmartTags is too large.");
+    pendingSmartTags = value.pendingSmartTags.map((entry) => validateSpiritFlixSmartTag(entry));
+  }
 
   const suggestedCategory = assertOptionalString(value.suggestedCategory, "suggestedCategory");
   let suggestedCollections: string[] | undefined;
@@ -524,6 +640,7 @@ export function validateSpiritFlixSmartAnalysis(value: unknown): SpiritFlixSmart
 
   const suggestedDisplayTitle = assertOptionalString(value.suggestedDisplayTitle, "suggestedDisplayTitle", 512);
   const suggestedFilename = assertOptionalString(value.suggestedFilename, "suggestedFilename", 512);
+  const pendingDisplayName = assertOptionalString(value.pendingDisplayName, "pendingDisplayName", 512);
   const suggestedTargetFolder =
     value.suggestedTargetFolder === undefined ? undefined : assertSafePathString(value.suggestedTargetFolder, "suggestedTargetFolder");
 
@@ -543,9 +660,12 @@ export function validateSpiritFlixSmartAnalysis(value: unknown): SpiritFlixSmart
     pathKey,
     fileName,
     samples,
+    visualAnalysis,
     contentTagEvidence,
     performerIdentity,
     suggestedTags,
+    pendingSmartTags,
+    pendingDisplayName,
     notes,
     reviewedMetadata,
   });
@@ -570,13 +690,16 @@ export function validateSpiritFlixSmartAnalysis(value: unknown): SpiritFlixSmart
     },
     media,
     samples,
+    visualAnalysis,
     contentTagEvidence,
     performerIdentity,
     suggestedTags,
+    pendingSmartTags,
     suggestedCategory,
     suggestedCollections,
     suggestedDisplayTitle,
     suggestedFilename,
+    pendingDisplayName,
     suggestedTargetFolder,
     confidence,
     notes,

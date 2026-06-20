@@ -111,6 +111,45 @@ describe("SpiritFlix smart suggestions", () => {
     expect(result.suggestedFilename).toBe("Aaliyah Yasan - Untitled 01");
   });
 
+  it("uses model and visual tags for source-spam filenames", () => {
+    const spamPath = path.join(mediaRoot, "yes", "models", "aaliyah-yasan", "Visit onlyshare.io for MORE 130.mkv");
+    const result = buildSpiritFlixReviewSuggestions({
+      videoPath: spamPath,
+      fileName: "Visit onlyshare.io for MORE 130.mkv",
+      parentPath: path.dirname(spamPath),
+    }, {
+      analysis: validateSpiritFlixSmartAnalysis({
+        version: 1,
+        videoPath: spamPath,
+        pathKey: "abc",
+        fileName: "Visit onlyshare.io for MORE 130.mkv",
+        fileSizeBytes: 10,
+        mtimeMs: 1,
+        analyzedAt: "2026-06-20T00:00:00.000Z",
+        analyzerVersion: "spiritflix-smart/s9",
+        status: "needs_review",
+        safety: { safeToSuggest: false, reasons: ["visual"], requiresHumanReview: true },
+        media: {},
+        samples: [{
+          timestampSeconds: 5,
+          timestampLabel: "5s",
+          cacheKey: "frame-key",
+          observations: ["vlm: indoor scene"],
+          tags: [
+            { id: "solo", label: "solo", group: "scene", confidence: 0.8, evidenceTimestamps: [5], reviewRequired: true },
+            { id: "indoor", label: "indoor", group: "scene", confidence: 0.7, evidenceTimestamps: [5], reviewRequired: true },
+          ],
+          confidence: 0.8,
+        }],
+        suggestedTags: [],
+        confidence: 0,
+      }),
+    });
+
+    expect(result.performerIdentity).toMatchObject({ name: "Aaliyah Yasan", source: "path" });
+    expect(result.suggestedDisplayTitle).toBe("Aaliyah Yasan - solo indoor 01");
+  });
+
   it("uses Unknown Model fallback for numeric filenames without useful tags", () => {
     const result = buildSpiritFlixReviewSuggestions({
       videoPath: path.join(mediaRoot, "yes", "442642.mkv"),

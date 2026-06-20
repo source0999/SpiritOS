@@ -1,0 +1,30 @@
+=== ports after probe ===
+LISTEN 0      2048                       0.0.0.0:8787       0.0.0.0:*    users:(("python",pid=1440463,fd=14))         
+LISTEN 0      511                        0.0.0.0:3000       0.0.0.0:*    users:(("next-server (v1",pid=2648623,fd=19))
+LISTEN 0      4096                     127.0.0.1:11434      0.0.0.0:*                                                 
+=== next processes ===
+    936       1  2-05:00:09 /bin/bash /usr/bin/devmon --mount-options nosuid,nodev,noatime --ignore-label EFI
+   4189       1  2-04:57:53 /home/source/.cursor-server/bin/linux-x64/5702c9cfca656d8710fad58402fe37f14345e3a0/node /home/source/.cursor-server/bin/multiplex-server/123cc5ffb7498a31f4e8e7bd38493b242868aa65b5035edad965fd5c419c5c96.js b75301ab-8c9d-41c4-b4ff-91034184d839 0
+  37800       1  2-04:08:26 node /home/source/.local/bin/codex app-server --listen unix://
+  37816   37800  2-04:08:26 /usr/lib/node_modules/@openai/codex/node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/bin/codex app-server --listen unix://
+  47018   46881  2-04:04:56 node /home/source/.local/bin/codex app-server proxy
+  47029   47018  2-04:04:56 /usr/lib/node_modules/@openai/codex/node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/bin/codex app-server proxy
+ 969393  969380  1-06:52:54 /home/source/.cursor-server/bin/linux-x64/e56ad3440df06d22ca7501e65fd518e905486ef0/node /home/source/.cursor-server/bin/linux-x64/e56ad3440df06d22ca7501e65fd518e905486ef0/out/server-main.js --start-server --host 127.0.0.1 --port 0 --connection-token-file /run/user/1000/cursor-remote-code.token.19454fe0852788c8224fe18079719738 --telemetry-level off --enable-remote-auto-shutdown --accept-server-license-terms
+ 969431  969393  1-06:52:53 /home/source/.cursor-server/bin/linux-x64/e56ad3440df06d22ca7501e65fd518e905486ef0/node /home/source/.cursor-server/bin/linux-x64/e56ad3440df06d22ca7501e65fd518e905486ef0/out/bootstrap-fork --type=ptyHost --logsPath /home/source/.cursor-server/data/logs/20260618T191502
+ 969442  969393  1-06:52:53 /home/source/.cursor-server/bin/linux-x64/e56ad3440df06d22ca7501e65fd518e905486ef0/node /home/source/.cursor-server/bin/linux-x64/e56ad3440df06d22ca7501e65fd518e905486ef0/out/bootstrap-fork --type=fileWatcher
+ 969489  969393  1-06:52:52 /home/source/.cursor-server/bin/linux-x64/e56ad3440df06d22ca7501e65fd518e905486ef0/node --dns-result-order=ipv4first --inspect-port=0 --experimental-network-inspection /home/source/.cursor-server/bin/linux-x64/e56ad3440df06d22ca7501e65fd518e905486ef0/out/bootstrap-fork --type=extensionHost --transformURIs --useHostProxy=false
+ 969553  969489  1-06:52:49 /home/source/.cursor-server/bin/linux-x64/e56ad3440df06d22ca7501e65fd518e905486ef0/node /home/source/.cursor-server/bin/linux-x64/e56ad3440df06d22ca7501e65fd518e905486ef0/extensions/css-language-features/server/dist/node/cssServerMain --node-ipc --clientProcessId=969489
+ 969560  969489  1-06:52:49 /home/source/.cursor-server/bin/linux-x64/e56ad3440df06d22ca7501e65fd518e905486ef0/node /home/source/.cursor-server/bin/linux-x64/e56ad3440df06d22ca7501e65fd518e905486ef0/extensions/markdown-language-features/dist/serverWorkerMain --node-ipc --clientProcessId=969489
+ 969567  969489  1-06:52:49 /home/source/.cursor-server/bin/linux-x64/e56ad3440df06d22ca7501e65fd518e905486ef0/node /home/source/.cursor-server/bin/linux-x64/e56ad3440df06d22ca7501e65fd518e905486ef0/extensions/json-language-features/server/dist/node/jsonServerMain --node-ipc --clientProcessId=969489
+1034310 1034262  1-05:35:57 bash -c cd ~/SpiritOS && ~/.local/bin/rg -n FastAPI|APIRouter|@.*get|health|status|runtime|openapi|docs|decision|model-lanes|productive|Cartographer|dirty|watcher|ollama|Next|next source_proxy source_proxy/tests || true
+1440451 1440432  1-03:56:33 sh -c node ./scripts/source-proxy-dev.mjs --https --lan
+1440452 1440451  1-03:56:33 node ./scripts/source-proxy-dev.mjs --https --lan
+1528501 1528487  1-02:47:40 sh -c next dev -H 0.0.0.0 --webpack -p 3000 --experimental-https --experimental-https-key ./certificates/spirit-dev-key.pem --experimental-https-cert ./certificates/spirit-dev.pem
+1528502 1528501  1-02:47:40 node /home/source/SpiritOS/node_modules/.bin/../next/dist/bin/next dev -H 0.0.0.0 --webpack -p 3000 --experimental-https --experimental-https-key ./certificates/spirit-dev-key.pem --experimental-https-cert ./certificates/spirit-dev.pem
+1856187       1    19:55:17 node scripts/media-ingest-worker.mjs
+2539231 2539180    02:21:36 /bin/sh -c ZCODE_SERVICE_AUTHORITY_MODE="desktop-attached-remote" ZCODE_SERVER_RUNTIME_ROOT="$HOME/.zcode/server" ZCODE_ENV='production' ZCODE_BASE_URL='https://zcode.z.ai' ZAI_OAUTH_ORIGIN='https://chat.z.ai' ZAI_BUSINESS_BASE_URL='https://api.z.ai' ZAI_OAUTH_CLIENT_ID='client_P8X5CMWmlaRO9gyO-KSqtg' ZCODE_APP_VERSION='3.1.2' ~/.zcode/server/node ~/.zcode/server/zcode-server.cjs
+2539232 2539231    02:21:36 /home/source/.zcode/server/node /home/source/.zcode/server/zcode-server.cjs
+2648623 1528502       28:27 next-server (v16.2.4)
+=== curl root ===
+=== curl package probe ===
+

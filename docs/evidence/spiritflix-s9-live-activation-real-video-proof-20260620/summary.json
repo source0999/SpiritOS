@@ -1,0 +1,50 @@
+{
+  "task": "spiritflix-s9-live-activation-real-video-proof",
+  "verdict": "GO",
+  "real_media_smoke_run": true,
+  "videos_analyzed": [
+    "/mnt/spirit-8tb/media/yes/models/aaliyah-yasan/Visit onlyshare.io for MORE 130.mkv"
+  ],
+  "frame_samples_created": true,
+  "local_visual_model_used": "YES",
+  "visual_model_name": "gemma3n:e4b",
+  "pending_content_tags_created": true,
+  "pending_display_names_created": true,
+  "ui_shows_content_tags": true,
+  "confirm_metadata_sidecar_proved": true,
+  "physical_file_rename_enabled": false,
+  "real_media_renamed": false,
+  "real_media_moved": false,
+  "real_media_deleted": false,
+  "jellyfin_mutated": false,
+  "source_proxy_touched": false,
+  "cloud_or_paid_api_used": false,
+  "commit_created": "",
+  "git_push_performed": false,
+  "tests": [
+    "npm run typecheck: pass",
+    "npx vitest run src/lib/spiritflix/admin/smart src/components/spiritflix/admin src/app/api/spiritflix/admin: pass, 27 files / 194 tests",
+    "npx vitest run src/components/spiritflix/__tests__/SpiritFlixHome.test.tsx src/components/spiritflix/__tests__/SpiritFlixPlayer.test.tsx: pass, 4 files / 23 tests",
+    "git diff --check scoped: pass",
+    "focused secret scan: pass"
+  ],
+  "files_changed": [
+    "src/lib/spiritflix/admin/smart/types.ts",
+    "src/lib/spiritflix/admin/smart/visual-analysis.ts",
+    "src/lib/spiritflix/admin/smart/suggestions.ts",
+    "src/lib/spiritflix/admin/smart/index.ts",
+    "src/lib/spiritflix/admin/smart/__tests__/suggestions.test.ts",
+    "src/lib/spiritflix/admin/smart/__tests__/visual-analysis.test.ts",
+    "docs/evidence/spiritflix-s9-live-activation-real-video-proof-20260620"
+  ],
+  "remaining_action_needed_from_britton": [],
+  "evidence_files": [
+    "docs/evidence/spiritflix-s9-live-activation-real-video-proof-20260620/index.md",
+    "docs/evidence/spiritflix-s9-live-activation-real-video-proof-20260620/final-verdict.md",
+    "docs/evidence/spiritflix-s9-live-activation-real-video-proof-20260620/operator-summary.md",
+    "docs/evidence/spiritflix-s9-live-activation-real-video-proof-20260620/raw/30-real-analysis-run-after-patch.txt",
+    "docs/evidence/spiritflix-s9-live-activation-real-video-proof-20260620/raw/40-sidecar-api-proof.txt",
+    "docs/evidence/spiritflix-s9-live-activation-real-video-proof-20260620/raw/50-ui-proof.txt",
+    "docs/evidence/spiritflix-s9-live-activation-real-video-proof-20260620/raw/60-confirm-proof.txt"
+  ]
+}

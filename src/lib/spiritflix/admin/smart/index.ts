@@ -113,6 +113,7 @@ export {
   validateSpiritFlixSmartReviewedMetadata,
   validateSpiritFlixSmartSample,
   validateSpiritFlixSmartTag,
+  validateSpiritFlixSmartVisualAnalysis,
   type SpiritFlixSmartAnalysis,
   type SpiritFlixSmartConfidenceBand,
   type SpiritFlixSmartReviewInput,
@@ -122,6 +123,9 @@ export {
   type SpiritFlixSmartStatus,
   type SpiritFlixSmartTag,
   type SpiritFlixSmartTagGroup,
+  type SpiritFlixSmartVisualAnalysis,
+  type SpiritFlixSmartVisualAnalysisFrame,
+  type SpiritFlixSmartVisualAnalysisStatus,
 } from "./types";
 
 export {

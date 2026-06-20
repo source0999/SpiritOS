@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { findSmartTagDefinition, getSmartTagVocabulary, normalizeSmartTagId } from "./vocabulary";
-import type { SpiritFlixSmartAnalysis, SpiritFlixSmartSample, SpiritFlixSmartTag } from "./types";
+import type { SpiritFlixSmartAnalysis, SpiritFlixSmartSample, SpiritFlixSmartTag, SpiritFlixSmartVisualAnalysisFrame } from "./types";
 
 export const SPIRITFLIX_SMART_ANALYZER_VERSION_S9 = "spiritflix-smart/s9";
 
@@ -143,6 +143,16 @@ export async function applyLocalVisualAnalysisToSpiritFlixAnalysis(
   if (samplesWithFrames.length === 0) {
     return {
       ...analysis,
+      visualAnalysis: {
+        status: "not_run",
+        modelName: options.ollamaModel ?? process.env.SPIRITFLIX_SMART_VISION_MODEL ?? DEFAULT_OLLAMA_MODEL,
+        analyzedAt: new Date().toISOString(),
+        sampledFrameCount: 0,
+        analyzedFrameCount: 0,
+        tags: [],
+        frames: [],
+        error: "No sampled frames were available.",
+      },
       notes: [analysis.notes, "S9 local visual analysis skipped: no sampled frames were available."].filter(Boolean).join(" | "),
     };
   }
@@ -156,6 +166,7 @@ export async function applyLocalVisualAnalysisToSpiritFlixAnalysis(
   const samples = [...analysis.samples];
   const notes: string[] = [];
   const evidenceTags = new Set<string>();
+  const frames: SpiritFlixSmartVisualAnalysisFrame[] = [];
   let analyzedFrames = 0;
 
   for (const sample of samplesWithFrames) {
@@ -184,10 +195,27 @@ export async function applyLocalVisualAnalysisToSpiritFlixAnalysis(
         );
       }
       tags.forEach((tag) => evidenceTags.add(tag.id));
+      frames.push({
+        timestampSeconds: sample.timestampSeconds,
+        timestampLabel: sample.timestampLabel,
+        cacheKey: sample.cacheKey,
+        status: "complete",
+        tags: tags.map((tag) => tag.id),
+        observations,
+      });
       analyzedFrames += 1;
     } catch (error) {
       const message = error instanceof Error ? error.message : "local visual model failed";
       notes.push(`S9 local visual analysis failed ${sample.timestampLabel}: ${message}`);
+      frames.push({
+        timestampSeconds: sample.timestampSeconds,
+        timestampLabel: sample.timestampLabel,
+        cacheKey: sample.cacheKey,
+        status: "failed",
+        tags: [],
+        observations: [],
+        error: message,
+      });
     }
   }
 
@@ -208,6 +236,16 @@ export async function applyLocalVisualAnalysisToSpiritFlixAnalysis(
     ...analysis,
     analyzerVersion: SPIRITFLIX_SMART_ANALYZER_VERSION_S9,
     samples,
+    visualAnalysis: {
+      status: evidenceTags.size > 0 ? "complete" : analyzedFrames > 0 ? "partial" : "failed",
+      modelName: modelOptions.ollamaModel,
+      analyzedAt: new Date().toISOString(),
+      sampledFrameCount: samplesWithFrames.length,
+      analyzedFrameCount: analyzedFrames,
+      tags: [...evidenceTags],
+      frames,
+      error: evidenceTags.size > 0 ? undefined : notes.find((note) => /failed/i.test(note)),
+    },
     contentTagEvidence,
     notes: [analysis.notes, ...notes].filter(Boolean).join(" | ").slice(0, 8_000),
   };

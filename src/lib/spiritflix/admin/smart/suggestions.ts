@@ -99,6 +99,9 @@ function readableTitle(input: SpiritFlixSmartHeuristicInput): string {
 function shouldUseFallbackName(input: SpiritFlixSmartHeuristicInput): boolean {
   const title = readableTitle(input);
   const compact = title.replace(/[^a-z0-9]/gi, "");
+  const normalized = title.toLowerCase();
+  if (/\bvisit\b.*\bmore\b/.test(normalized)) return true;
+  if (/\bonlyshare\b|\bonlyfans\b|\bfansly\b/.test(normalized)) return true;
   if (isRandomOrHashSpiritFlixFilename(input)) return true;
   if (!compact || compact.length < 3) return true;
   if (/^\d+$/.test(compact)) return true;
@@ -337,10 +340,12 @@ export function applySpiritFlixReviewSuggestionsToAnalysis(
     contentTagEvidence: suggestions.contentTagEvidence,
     performerIdentity: suggestions.performerIdentity,
     suggestedTags: suggestions.suggestedTags,
+    pendingSmartTags: suggestions.suggestedTags,
     suggestedCategory: suggestions.suggestedCategory,
     suggestedCollections: suggestions.suggestedCollections.length > 0 ? suggestions.suggestedCollections : undefined,
     suggestedDisplayTitle: suggestions.suggestedDisplayTitle,
     suggestedFilename: suggestions.suggestedFilename,
+    pendingDisplayName: suggestions.suggestedDisplayTitle,
     confidence: suggestions.confidence,
     notes: mergeNotes(analysis.notes, suggestions.notes),
   });
