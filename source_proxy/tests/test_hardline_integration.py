@@ -48,6 +48,13 @@ def test_model_timeout_mock_and_fixture_only_cannot_go() -> None:
     assert classify_hardline_integration(_complete(fixture_only=True)) == "NOT_INTEGRATED_FIXTURE_ONLY"
 
 
+def test_unsupported_mac_job_and_model_failure_cannot_go() -> None:
+    assert classify_hardline_integration(_complete(needs_fix=True)) == "NEEDS_FIX"
+    assert classify_hardline_integration(_complete(blocked_env=True)) == "BLOCKED_ENV"
+    assert reject_go_like_label("NEEDS_FIX", "GO") is True
+    assert reject_go_like_label("BLOCKED_ENV", "GO") is True
+
+
 def test_plan2_final_go_requires_every_hardline_gate() -> None:
     kwargs = {
         "mac_write_integration": "INTEGRATED_LIVE",

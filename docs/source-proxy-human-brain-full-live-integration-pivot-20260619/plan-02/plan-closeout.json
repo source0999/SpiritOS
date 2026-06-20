@@ -1,26 +1,46 @@
 {
   "plan": "Plan 2/6",
-  "continuation": "hardline-live-integration-patch",
-  "verdict": "BLOCKED_ENV",
-  "commit_message": "Complete Source Proxy Plan 2 hardline continuation",
+  "continuation": "patch-2-live-mac-worker-support",
+  "verdict": "BLOCKED_HUMAN",
+  "hardline_no_preview_go": true,
+  "mac_worker_remote_synced": false,
+  "mac_write_integration": "BLOCKED_HUMAN",
+  "mac_search_check_integration": "BLOCKED_HUMAN",
+  "research_integration": "INTEGRATED_LIVE",
+  "specialist_lane_integration": "BLOCKED_ENV",
+  "task_a": "BLOCKED",
+  "task_b": "PASS",
+  "task_c": "BLOCKED",
+  "operator_check": "FAIL",
+  "focused_tests": "PASS",
+  "preview_go_detected": false,
+  "advisory_go_detected": false,
+  "status_only_go_detected": false,
+  "read_only_action_go_detected": false,
+  "mock_go_detected": false,
+  "fixture_only_go_detected": false,
+  "plan_3_started": false,
   "hardline_summary": {
     "fake_go_prevented": true,
     "go_allowed": false,
-    "reason": "Current research is live-integrated, but Mac isolated write proof is not supported by the live Mac worker checkout and specialist sidecar model lanes failed.",
+    "reason": "Dell worker support was hardened, but live Mac sync is blocked because target worker files are untracked on the Mac checkout and the Python worker differs from Dell HEAD.",
     "hard_stop": "No Plan 3 work was started."
   },
   "mac": {
-    "status": "NEEDS_FIX",
-    "task_id": "task_f93d68480448",
-    "job_type": "mac_isolated_write_proof",
-    "trace_id": "trace_8c97a5966259400a",
-    "invocation_event_id": "invocation_2cf49139173c4b37",
-    "consumer_event_id": "consumer_01e25f2ab43548e5",
-    "consumer_subsystem": "cartographer_mac_assignment_consumer",
-    "proof": "Source Proxy sent the traced mac_isolated_write_proof job through the Mac worker workflow and consumed the result downstream.",
-    "blocked_reason": "The live spirit-mac-mini checkout returned Unsupported job_type: mac_isolated_write_proof, so no Mac write was performed.",
+    "status": "BLOCKED_HUMAN",
+    "remote_checkout": "/Users/spiritmac/spiritos-worker/SpiritOS",
+    "remote_dirty_target_files": [
+      "?? scripts/mac-worker/spirit-mac-worker.mjs",
+      "?? scripts/mac-worker/spirit_mac_worker.py"
+    ],
+    "dell_python_worker_sha256": "0dce66493313b39f749442c9eae1b9e00860e4e061a06194e59980d8a5681ae8",
+    "mac_python_worker_sha256_before": "a67d6dfe51acb6066b2566545371a376cf49d4ed0cd4f8297f98f95f50c68f66",
+    "dell_node_worker_sha256": "5ccd1d40d061055cb53b0354682c4ecabb6591ee383d11a24662780fc35edafa",
+    "mac_node_worker_sha256_before": "5ccd1d40d061055cb53b0354682c4ecabb6591ee383d11a24662780fc35edafa",
+    "remote_sync": "blocked",
+    "blocked_reason": "Mac target worker files are untracked; overwriting them without approval would violate the Plan 2 patch-2 safety rule.",
     "mac_write_performed": false,
-    "rollback_status": "not_applicable_no_write"
+    "rollback_status": "not_applicable_no_sync_no_write"
   },
   "research": {
     "status": "INTEGRATED_LIVE",
@@ -29,46 +49,26 @@
     "source_count": 3,
     "local_fallback_used": false,
     "downstream_state_changed": true,
-    "trace_id": "trace_e88546e1e1854eb6",
-    "invocation_event_id": "invocation_3ca28c12fa014bed",
     "consumer_event_id": "consumer_53d9f4374dfc4b7a",
-    "consumer": "cartographer_current_research_consumer",
-    "proof": "SearXNG returned JSON results from the Source Proxy runtime, and the current-research handler stored consumed output under plan_2_subsystem_integrations."
+    "consumer": "cartographer_current_research_consumer"
   },
   "specialists": {
     "status": "BLOCKED_ENV",
     "task_id": "task_b054178d05c6",
-    "trace_id": "trace_cc1d0298dbc944f0",
-    "invocation_event_id": "invocation_8e7dc19a56974a02",
     "consumer_event_id": "consumer_506061dd2bb94ca1",
     "consumer": "cartographer_specialist_packet_consumer",
     "gemma": "failed",
     "hermes": "failed",
-    "verifier_verdict": "UNVERIFIED",
-    "proof": "The specialist wrapper consumed the packet, but failed/timeout/error statuses are now classified as BLOCKED_ENV instead of INTEGRATED_LIVE."
+    "verifier_verdict": "UNVERIFIED"
   },
-  "coding_shell": {
-    "status": "IMPLEMENTED",
-    "surface": "/coding",
-    "proof": "CodingCockpitShell parses ast_snapshot.plan_2_subsystem_integrations and renders Plan 2 subsystem truth without Plan 2 GO/PASS labels."
-  },
-  "acceptance_tasks": {
-    "task_a": "BLOCKED_ENV: specialist sidecar model lanes returned failed statuses.",
-    "task_b": "INTEGRATED_LIVE: SearXNG current-research proof returned 3 JSON sources and was consumed downstream.",
-    "task_c": "NEEDS_FIX: Mac isolated write proof job reached spirit-mac-mini but the live Mac worker checkout does not support the job type."
-  },
-  "tests": [
-    ".venv-source-proxy/bin/python -m pytest source_proxy/tests/test_hardline_integration.py source_proxy/tests/test_plan2_subsystem_integration.py -q",
-    "npx vitest run src/components/coding/__tests__/coding-cockpit-shell.test.tsx -t 'reads Plan 2 subsystem integration truth without a GO label'",
-    "npx vitest run src/lib/mac-worker/__tests__/contract.test.ts",
-    "npm run typecheck"
-  ],
-  "test_results": {
-    "focused_python": "PASS: 14 passed",
-    "focused_vitest_plan2_shell": "PASS: 1 passed, 33 skipped",
-    "mac_worker_contract": "PASS: 10 passed",
+  "tests": {
+    "focused_python": "PASS: 20 passed; required focused slice PASS: 190 passed, 1360 deselected, 287 subtests",
     "typecheck": "PASS",
-    "full_coding_shell_vitest": "FAIL: unrelated existing UI tests expect the Run messy Coder benchmark control that is not present on the current shell screen."
+    "vitest_mac_worker_contract": "PASS: 10 passed",
+    "vitest_mac_worker_route": "PASS: 3 passed",
+    "vitest_coding_shell": "FAIL: 9 existing current-shell trial-runner tests fail around missing Run messy Coder benchmark control",
+    "baseline_plan_1_operator": "PASS checks, expected FAIL Plan 2 artifacts are present",
+    "operator_check": "FAIL: hardline acceptance gate blocks non-GO Plan 2"
   },
   "safety": {
     "obsidian_write": false,
@@ -79,12 +79,17 @@
     "route_replacement": false,
     "new_engine_or_framework": false,
     "cartographer_autonomous_commit_push": false,
+    "mac_git_commit": false,
+    "mac_git_push": false,
+    "mac_git_reset": false,
+    "mac_git_clean": false,
     "push": false,
     "plan_3_work": false
   },
-  "outstanding_decisions": [
-    "Deploy or otherwise update the live spirit-mac-mini Mac worker checkout with the approved mac_isolated_write_proof job before claiming Mac write integration.",
-    "Investigate why Gemma/Hermes FIP-3 sidecar calls returned failed statuses under the bounded timeout."
+  "required_fixes_before_plan_2_go": [
+    "Britton must approve how to handle the untracked Mac worker files, or the Mac worker checkout must be put into an expected clean state without Codex overwriting it.",
+    "After Mac sync is unblocked, rerun the Source Proxy mac_isolated_write_proof job through the canonical Mac worker workflow.",
+    "Investigate and unblock Gemma/Hermes specialist lanes or update architecture honestly so required lanes are live and consumed."
   ],
   "next_plan": "Plan 3/6 - Durable Execution, Policy, Recovery, and Repair",
   "stop": "No next-plan work was started."

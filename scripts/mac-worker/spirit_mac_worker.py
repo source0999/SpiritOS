@@ -2,6 +2,7 @@
 import json
 import os
 import platform
+import hashlib
 import subprocess
 import sys
 import tempfile
@@ -493,37 +494,101 @@ def browser_design_check(job):
 
 
 def mac_isolated_write_proof(job):
+    missing_fields = [
+        field
+        for field in ("trace_id", "invocation_event_id", "task_id", "consumer_subsystem")
+        if not str(job.get(field) or "").strip()
+    ]
+    if missing_fields:
+        return {
+            "success": False,
+            "result": {
+                "success": False,
+                "job_type": "mac_isolated_write_proof",
+                "worker": "mac",
+                "trace_id": job.get("trace_id"),
+                "task_id": job.get("task_id"),
+                "write_performed": False,
+                "error": "missing_trace",
+                "missing_fields": missing_fields,
+                "reason_code": "missing_trace_fields",
+            },
+            "error": "missing_trace",
+            "candidate_files": [],
+            "recommended_checks": ["Send trace_id, invocation_event_id, task_id, and consumer_subsystem."],
+        }
+
     input_data = job.get("input") or {}
-    proof_root = Path(input_data.get("proof_dir") or tempfile.gettempdir()) / "spiritos-plan2-mac-write-proof"
+    temp_root = Path(tempfile.gettempdir()).expanduser().resolve()
+    requested_root = Path(input_data.get("proof_dir") or temp_root)
+    proof_root = requested_root / "spiritos-plan2-mac-write-proof"
     root = proof_root.expanduser().resolve()
-    temp_root = Path(tempfile.gettempdir()).resolve()
     try:
         root.relative_to(temp_root)
     except ValueError:
         return {
             "success": False,
             "result": {
+                "success": False,
+                "job_type": "mac_isolated_write_proof",
+                "worker": "mac",
+                "trace_id": job.get("trace_id"),
+                "task_id": job.get("task_id"),
                 "summary": "Mac isolated write proof refused unsafe proof_dir.",
-                "reason_code": "mac_write_proof_path_not_in_temp_root",
+                "reason_code": "safe_path_rejected",
                 "requested_path": str(root),
                 "allowed_temp_root": str(temp_root),
+                "write_performed": False,
                 "mac_write_performed": False,
+                "error": "safe_path_rejected",
             },
-            "error": "mac_write_proof_path_not_in_temp_root",
+            "error": "safe_path_rejected",
             "candidate_files": [],
             "recommended_checks": ["Use a dedicated disposable directory under the Mac temp root."],
         }
 
     proof_file = root / "plan2-mac-write-proof.txt"
+    requested_proof_path = str(input_data.get("proof_path") or "").strip()
+    if requested_proof_path:
+        candidate_proof_path = Path(requested_proof_path).expanduser().resolve()
+        try:
+            candidate_proof_path.relative_to(root)
+        except ValueError:
+            return {
+                "success": False,
+                "result": {
+                    "success": False,
+                    "job_type": "mac_isolated_write_proof",
+                    "worker": "mac",
+                    "trace_id": job.get("trace_id"),
+                    "task_id": job.get("task_id"),
+                    "summary": "Mac isolated write proof refused unsafe proof_path.",
+                    "reason_code": "safe_path_rejected",
+                    "requested_path": str(candidate_proof_path),
+                    "proof_dir": str(root),
+                    "write_performed": False,
+                    "mac_write_performed": False,
+                    "error": "safe_path_rejected",
+                },
+                "error": "safe_path_rejected",
+                "candidate_files": [],
+                "recommended_checks": ["Use a proof_path inside the disposable proof directory."],
+            }
+        proof_file = candidate_proof_path
+
     contents = str(input_data.get("contents") or "SpiritOS Plan 2 Mac isolated write proof\n")
+    marker = hashlib.sha256(contents.encode("utf-8")).hexdigest()
     root.mkdir(parents=True, exist_ok=True)
     proof_file.write_text(contents, encoding="utf-8")
     readback = proof_file.read_text(encoding="utf-8")
     verified = readback == contents
+    checksum = hashlib.sha256(readback.encode("utf-8")).hexdigest()
     rollback_status = "not_attempted"
+    rollback_performed = False
     try:
         proof_file.unlink()
-        rollback_status = "deleted"
+        rollback_performed = True
+        rollback_status = "cleaned"
         try:
             root.rmdir()
         except OSError:
@@ -531,22 +596,39 @@ def mac_isolated_write_proof(job):
     except OSError as error:
         rollback_status = f"cleanup_failed:{type(error).__name__}"
 
+    passed = verified and checksum == marker and rollback_status == "cleaned"
     return {
-        "success": verified and rollback_status == "deleted",
+        "success": passed,
         "result": {
+            "success": passed,
+            "job_type": "mac_isolated_write_proof",
+            "worker": "mac",
+            "trace_id": job.get("trace_id"),
+            "invocation_event_id": job.get("invocation_event_id"),
+            "consumer_subsystem": job.get("consumer_subsystem"),
+            "task_id": job.get("task_id"),
             "summary": "Mac isolated write proof completed and rolled back.",
+            "proof_path": str(proof_file),
+            "write_performed": True,
             "mac_write_performed": True,
             "mac_write_path": str(proof_file),
+            "verified": verified,
             "readback_verified": verified,
+            "checksum": checksum,
+            "content_marker": marker,
+            "rollback_performed": rollback_performed,
             "rollback_status": rollback_status,
             "proof_dir": str(root),
             "reason_code": "mac_isolated_write_proof_passed"
-            if verified and rollback_status == "deleted"
+            if passed
             else "mac_isolated_write_proof_failed",
+            "platform": platform.system().lower(),
+            "notes": [],
         },
         "artifacts": [str(proof_file)],
         "candidate_files": [],
         "recommended_checks": ["Verify proof file was removed after rollback."],
+        "error": None if passed else "verify_failed" if not verified else "rollback_failed",
     }
 
 

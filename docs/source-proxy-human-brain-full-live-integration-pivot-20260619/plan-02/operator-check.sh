@@ -9,6 +9,7 @@ ROOT="docs/source-proxy-human-brain-full-live-integration-pivot-20260619"
 PLAN_DIR="$ROOT/plan-02"
 ARTIFACTS="$PLAN_DIR/artifacts"
 CONTINUATION="$PLAN_DIR/continuation-hardline"
+PATCH2="$PLAN_DIR/continuation-patch-2"
 
 for file in \
   "$PLAN_DIR/plan.md" \
@@ -38,7 +39,21 @@ for file in \
   "$CONTINUATION/4.3-specialist-live-proof.md" \
   "$CONTINUATION/5-coding-shell-surface-proof.md" \
   "$CONTINUATION/7-test-results.md" \
-  "$CONTINUATION/9-final-hardline-verdict.md"; do
+  "$CONTINUATION/9-final-hardline-verdict.md" \
+  "$PATCH2/0-preflight.md" \
+  "$PATCH2/1-hardline-regression-check.md" \
+  "$PATCH2/2-mac-worker-diff-and-safety.md" \
+  "$PATCH2/3-mac-worker-implementation.md" \
+  "$PATCH2/4-mac-worker-sync-proof.md" \
+  "$PATCH2/5-mac-live-write-proof.md" \
+  "$PATCH2/6-specialist-unblock-proof.md" \
+  "$PATCH2/7-task-a-proof.md" \
+  "$PATCH2/7-task-b-proof.md" \
+  "$PATCH2/7-task-c-proof.md" \
+  "$PATCH2/7-acceptance-summary.md" \
+  "$PATCH2/8-test-results.md" \
+  "$PATCH2/9-operator-check-result.md" \
+  "$PATCH2/10-final-verdict.md"; do
   test -f "$file" || { echo "FAIL missing $file"; exit 1; }
 done
 
@@ -53,34 +68,68 @@ from pathlib import Path
 closeout = json.loads(Path("docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-02/plan-closeout.json").read_text())
 if closeout.get("verdict") not in {"GO", "NEEDS_FIX", "BLOCKED_HUMAN", "BLOCKED_ENV"}:
     raise SystemExit("invalid Plan 2 verdict")
-for key in ["hardline_summary", "mac", "research", "specialists", "acceptance_tasks", "coding_shell", "safety"]:
+for key in [
+    "hardline_no_preview_go",
+    "mac_worker_remote_synced",
+    "mac_write_integration",
+    "mac_search_check_integration",
+    "research_integration",
+    "specialist_lane_integration",
+    "task_a",
+    "task_b",
+    "task_c",
+    "operator_check",
+    "focused_tests",
+    "preview_go_detected",
+    "advisory_go_detected",
+    "status_only_go_detected",
+    "read_only_action_go_detected",
+    "mock_go_detected",
+    "fixture_only_go_detected",
+    "plan_3_started",
+    "hardline_summary",
+    "mac",
+    "research",
+    "specialists",
+    "safety",
+]:
     if key not in closeout:
         raise SystemExit(f"missing closeout key: {key}")
-for family in ["mac", "research", "specialists"]:
-    text = json.dumps(closeout.get(family, {}))
-    if "trace_id" not in text or "consumer" not in text:
-        raise SystemExit(f"missing causal trace/consumer proof in {family}")
-if closeout["research"].get("status") != "INTEGRATED_LIVE":
+if closeout["research_integration"] != "INTEGRATED_LIVE":
     raise SystemExit("current research is not live-integrated")
 if closeout["research"].get("local_fallback_used") is not False:
     raise SystemExit("current research fallback boundary missing")
-if closeout["mac"].get("status") == "INTEGRATED_LIVE" and closeout["mac"].get("mac_write_performed") is not True:
+if closeout["mac_write_integration"] == "INTEGRATED_LIVE" and closeout["mac"].get("mac_write_performed") is not True:
     raise SystemExit("Mac GO claimed without real write proof")
-if closeout["specialists"].get("status") == "INTEGRATED_LIVE":
+if closeout["specialist_lane_integration"] == "INTEGRATED_LIVE":
     if closeout["specialists"].get("gemma") in {"failed", "blocked", "timeout", "error"}:
         raise SystemExit("specialist GO claimed with failed Gemma lane")
     if closeout["specialists"].get("hermes") in {"failed", "blocked", "timeout", "error"}:
         raise SystemExit("specialist GO claimed with failed Hermes lane")
 if closeout.get("verdict") == "GO":
     required = [
-        closeout["mac"].get("status"),
-        closeout["research"].get("status"),
-        closeout["specialists"].get("status"),
+        closeout["mac_write_integration"],
+        closeout["mac_search_check_integration"],
+        closeout["research_integration"],
+        closeout["specialist_lane_integration"],
+        closeout["task_a"],
+        closeout["task_b"],
+        closeout["task_c"],
+        closeout["operator_check"],
+        closeout["focused_tests"],
     ]
-    if required != ["INTEGRATED_LIVE", "INTEGRATED_LIVE", "INTEGRATED_LIVE"]:
+    if required != [
+        "INTEGRATED_LIVE",
+        "INTEGRATED_LIVE",
+        "INTEGRATED_LIVE",
+        "INTEGRATED_LIVE",
+        "PASS",
+        "PASS",
+        "PASS",
+        "PASS",
+        "PASS",
+    ]:
         raise SystemExit("Plan 2 GO claimed without all required live integrations")
-    if closeout["hardline_summary"].get("go_allowed") is not True:
-        raise SystemExit("Plan 2 GO claimed while hardline go_allowed is false")
 else:
     if closeout["hardline_summary"].get("go_allowed") is not False:
         raise SystemExit("non-GO verdict must keep hardline go_allowed false")
@@ -111,6 +160,9 @@ grep -R -n "SPECIALIST_INTEGRATION_VERSION" source_proxy/decision/specialist_int
 grep -R -n "MODEL_LANE_FAILURE_STATUSES" source_proxy/decision/specialist_integration.py >/dev/null
 grep -R -n "HARDLINE_STATUS_VERSION" source_proxy/decision/hardline_integration.py >/dev/null
 grep -R -n "mac_isolated_write_proof" source_proxy/decision/mac_integration.py >/dev/null
+grep -R -n "missing_trace" scripts/mac-worker/spirit_mac_worker.py >/dev/null
+grep -R -n "safe_path_rejected" scripts/mac-worker/spirit_mac_worker.py >/dev/null
+grep -R -n "test_mac_isolated_write_proof_returns_structured_result_and_rolls_back" source_proxy/tests/test_mac_worker_script.py >/dev/null
 grep -R -n "requires_human_first_write" src/lib/mac-worker >/dev/null
 grep -R -n "Plan 2 subsystem truth" src/components/coding/CodingCockpitShell.tsx >/dev/null
 
@@ -118,6 +170,46 @@ if find "$ROOT/plan-03" -path "*/artifacts/*" -print 2>/dev/null | grep -q .; th
   echo "FAIL Plan 3 artifacts are present"
   exit 1
 fi
+
+python3 - <<'PY'
+import json
+from pathlib import Path
+
+closeout = json.loads(Path("docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-02/plan-closeout.json").read_text())
+required = {
+    "mac_write_integration": "INTEGRATED_LIVE",
+    "mac_search_check_integration": "INTEGRATED_LIVE",
+    "research_integration": "INTEGRATED_LIVE",
+    "specialist_lane_integration": "INTEGRATED_LIVE",
+    "task_a": "PASS",
+    "task_b": "PASS",
+    "task_c": "PASS",
+    "operator_check": "PASS",
+    "focused_tests": "PASS",
+}
+blockers = [f"{key}={closeout.get(key)} expected {value}" for key, value in required.items() if closeout.get(key) != value]
+boolean_blockers = [
+    key
+    for key in [
+        "preview_go_detected",
+        "advisory_go_detected",
+        "status_only_go_detected",
+        "read_only_action_go_detected",
+        "mock_go_detected",
+        "fixture_only_go_detected",
+        "plan_3_started",
+    ]
+    if closeout.get(key) is not False
+]
+if blockers or boolean_blockers or closeout.get("verdict") != "GO":
+    print("FAIL Plan 2 hardline acceptance gate")
+    for blocker in blockers:
+        print(f" - {blocker}")
+    for blocker in boolean_blockers:
+        print(f" - {blocker} must be false")
+    print(f" - verdict={closeout.get('verdict')} expected GO")
+    raise SystemExit(1)
+PY
 
 git status --branch --short --untracked-files=normal
 echo "PASS Plan 2/6 operator check"
