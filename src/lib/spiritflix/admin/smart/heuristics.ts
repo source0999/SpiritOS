@@ -3,7 +3,7 @@
 
 import path from "node:path";
 import { findSmartTagDefinition } from "./vocabulary";
-import type { SpiritFlixSmartTag } from "./types";
+import type { SpiritFlixSmartPerformerIdentity, SpiritFlixSmartTag } from "./types";
 
 export interface SpiritFlixSmartHeuristicInput {
   videoPath: string;
@@ -91,6 +91,26 @@ const LONG_DURATION_SECONDS = 1_800;
 const COMPILATION_DURATION_SECONDS = 3_600;
 
 const COMPILATION_TOKENS = new Set(["compilation", "comp", "pmv", "mix", "montage", "best-of", "bestof"]);
+const PRIMARY_CONTENT_GROUPS = new Set(["scene", "activity", "position", "style", "watermark"]);
+const TECHNICAL_OR_STATUS_TAG_IDS = new Set([
+  "mp4-container",
+  "mkv-container",
+  "webm-container",
+  "short",
+  "long",
+  "converted",
+  "hd",
+  "full-hd",
+  "uhd",
+  "unknown-performer",
+  "known-performer",
+  "needs-title-cleanup",
+  "needs-review",
+  "source-unknown",
+  "site-token",
+]);
+const MODEL_FOLDER_MARKERS = new Set(["model", "models", "performer", "performers"]);
+const GENERIC_FOLDER_NAMES = new Set(["yes", "media", "data", "movies", "movie", "tv", "anime", "music", "other", "unknown"]);
 
 function normalizeToken(value: string): string {
   return value.trim().toLowerCase();
@@ -141,6 +161,76 @@ export function normalizeSpiritFlixTitle(value: string): string {
     .join(" ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+export function stripVideoExtension(value: string): string {
+  return path.basename(value, path.extname(value)).trim();
+}
+
+export function titleCaseSlug(value: string): string {
+  return value
+    .replace(/[_+]+/g, "-")
+    .split(/[-\s]+/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(" ");
+}
+
+export function modelIdentityFromPath(input: SpiritFlixSmartHeuristicInput): SpiritFlixSmartPerformerIdentity | undefined {
+  const normalized = (input.parentPath ?? path.dirname(input.videoPath)).replace(/\\/g, "/");
+  const segments = normalized.split("/").filter(Boolean);
+  for (let index = segments.length - 1; index >= 0; index -= 1) {
+    const segment = segments[index]?.toLowerCase();
+    if (!segment || !MODEL_FOLDER_MARKERS.has(segment)) continue;
+    const candidate = segments[index + 1];
+    if (!candidate) continue;
+    const name = titleCaseSlug(candidate);
+    if (!name || GENERIC_FOLDER_NAMES.has(name.toLowerCase())) continue;
+    return {
+      name,
+      source: "path",
+      confidence: 0.72,
+      evidenceRef: normalized,
+      requiresReview: true,
+    };
+  }
+  return undefined;
+}
+
+export function unknownModelIdentity(): SpiritFlixSmartPerformerIdentity {
+  return {
+    name: "Unknown Model",
+    source: "unknown",
+    confidence: 0.2,
+    requiresReview: true,
+  };
+}
+
+export function isPrimarySmartContentTag(tag: Pick<SpiritFlixSmartTag, "id" | "group">): boolean {
+  return PRIMARY_CONTENT_GROUPS.has(tag.group) && !TECHNICAL_OR_STATUS_TAG_IDS.has(tag.id);
+}
+
+export function isTechnicalOrStatusTag(tag: Pick<SpiritFlixSmartTag, "id" | "group">): boolean {
+  return TECHNICAL_OR_STATUS_TAG_IDS.has(tag.id) || tag.group === "quality" || tag.group === "format" || tag.group === "safety" || tag.group === "performer";
+}
+
+export function isRandomOrHashSpiritFlixFilename(input: SpiritFlixSmartHeuristicInput): boolean {
+  const stem = stripVideoExtension(input.fileName).trim();
+  const normalizedStem = stem.replace(/\s+/g, " ");
+  const compact = normalizedStem.replace(/[^a-z0-9]/gi, "");
+  if (!compact) return true;
+  if (/^\d+$/.test(compact) && compact.length >= 4) return true;
+  if (/^[a-f0-9]{12,}$/i.test(compact)) return true;
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(normalizedStem)) return true;
+  if (/^[a-z0-9]{16,}$/i.test(compact) && !/[\s._@-]/.test(normalizedStem)) {
+    const vowels = compact.match(/[aeiou]/gi)?.length ?? 0;
+    const digitCount = compact.match(/\d/g)?.length ?? 0;
+    const hasMixedCase = /[a-z]/.test(stem) && /[A-Z]/.test(stem);
+    const vowelRatio = vowels / compact.length;
+    if (hasMixedCase || digitCount >= 4 || vowelRatio < 0.28 || vowelRatio > 0.62) return true;
+  }
+  return false;
 }
 
 function makeTag(id: string, confidence: number, reviewOverride?: boolean): SpiritFlixSmartTag | null {

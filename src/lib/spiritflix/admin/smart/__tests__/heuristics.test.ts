@@ -4,7 +4,10 @@ import {
   inferFormatTags,
   inferQualityTags,
   inferSourceTokens,
+  isPrimarySmartContentTag,
+  isRandomOrHashSpiritFlixFilename,
   normalizeSpiritFlixTitle,
+  modelIdentityFromPath,
   stripKnownNoiseTokens,
   tokenizeSpiritFlixName,
   type SpiritFlixSmartHeuristicInput,
@@ -87,5 +90,28 @@ describe("SpiritFlix smart heuristics", () => {
   it("handles short names like 360 1.mp4", () => {
     expect(normalizeSpiritFlixTitle("360 1.mp4")).toBe("360 1");
     expect(stripKnownNoiseTokens("360 1.mp4")).toBe("360 1");
+  });
+
+  it("classifies technical/status tags as non-primary smart content", () => {
+    const tags = [
+      ...inferQualityTags(input({ fileName: "clip.1080p.mp4", media: { width: 1920, height: 1080, durationSeconds: 3600 } })),
+      ...inferFormatTags(input({ fileName: "clip.mkv", media: { container: "matroska,webm", durationSeconds: 3600 } })),
+      { id: "unknown-performer", label: "unknown performer", group: "performer" as const, confidence: 0.6, evidenceTimestamps: [], reviewRequired: false },
+      { id: "needs-title-cleanup", label: "needs title cleanup", group: "safety" as const, confidence: 0.8, evidenceTimestamps: [], reviewRequired: true },
+    ];
+    const labels = tags.map((tag) => tag.label);
+    expect(labels).toEqual(expect.arrayContaining(["full HD", "mkv", "long", "unknown performer", "needs title cleanup"]));
+    expect(tags.every((tag) => !isPrimarySmartContentTag(tag))).toBe(true);
+  });
+
+  it("detects random/hash filenames and model folder identity", () => {
+    expect(isRandomOrHashSpiritFlixFilename(input({ fileName: "HkkzMtwQexuQzwkQMekM.mkv" }))).toBe(true);
+    expect(isRandomOrHashSpiritFlixFilename(input({ fileName: "442642.mkv" }))).toBe(true);
+    expect(isRandomOrHashSpiritFlixFilename(input({ fileName: "Readable Human Title.mkv" }))).toBe(false);
+    expect(modelIdentityFromPath(input({
+      fileName: "clip.mkv",
+      videoPath: "/mnt/spirit-8tb/media/yes/models/chloe-lamb/clip.mkv",
+      parentPath: "/mnt/spirit-8tb/media/yes/models/chloe-lamb",
+    }))).toMatchObject({ name: "Chloe Lamb", source: "path" });
   });
 });

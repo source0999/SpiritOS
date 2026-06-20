@@ -16,6 +16,10 @@ function item(overrides: Partial<SpiritFlixSmartBatchItem>): SpiritFlixSmartBatc
     needsReview: false,
     suggestedTagCount: 0,
     tags: [],
+    qualityBadges: [],
+    modelName: "Unknown Model",
+    modelSource: "unknown",
+    visualTaggingAvailable: false,
     approvedTagCount: 0,
     rejectedTagCount: 0,
     pendingTagCount: 0,
@@ -45,6 +49,8 @@ function batch(overrides: Partial<SpiritFlixSmartBatchPreview>): SpiritFlixSmart
       needs_review: items.filter((entry) => entry.needsReview).length,
       rename_preview_available: items.filter((entry) => entry.renamePreviewAvailable).length,
     },
+    visualContentTaggingEnabled: false,
+    visualContentTaggingMessage: "Visual content tagging is not enabled yet. Current suggestions use title, path, metadata, and any existing face-rec evidence.",
     items,
     ...overrides,
   };
@@ -65,12 +71,15 @@ const analyzedBatch = batch({
       analysisStatus: "needs_review",
       suggestedTagCount: 2,
       tags: [
-        { id: "hd", label: "HD", group: "quality", confidence: 0.92, reviewRequired: false, reviewState: "pending" },
         { id: "watermark", label: "Watermark", group: "watermark", confidence: 0.68, reviewRequired: true, reviewState: "pending" },
       ],
-      pendingTagCount: 2,
+      qualityBadges: [{ id: "hd", label: "HD", group: "quality", confidence: 0.92, reviewRequired: false, reviewState: "pending" }],
+      modelName: "Aaliyah Yasan",
+      modelSource: "path",
+      nameReason: "Aaliyah Yasan fallback uses model identity with Untitled 01 because the filename is random or ambiguous.",
+      pendingTagCount: 1,
       renamePreviewStatus: "provisional",
-      proposedFilename: "Beta Clip HD.mp4",
+      proposedFilename: "Aaliyah Yasan - Untitled 01",
       proposedTargetPath: "/mnt/spirit-8tb/media/yes/Beta Clip HD.mp4",
       renameBlocker: "Review or approve tags/metadata to unlock rename preview.",
       renameWarnings: ["Provisional preview, not eligible for apply until reviewed."],
@@ -88,11 +97,15 @@ const reviewedBatch = batch({
       needsReview: false,
       reviewStatus: "reviewed",
       analysisStatus: "approved",
-      tags: [{ id: "hd", label: "HD", group: "quality", confidence: 0.92, reviewRequired: false, reviewState: "approved" }],
-      approvedTagCount: 1,
+      tags: [],
+      qualityBadges: [{ id: "hd", label: "HD", group: "quality", confidence: 0.92, reviewRequired: false, reviewState: "approved" }],
+      modelName: "Aaliyah Yasan",
+      modelSource: "path",
+      nameReason: "Readable title preserved; extension is kept only for target-path preview.",
+      approvedTagCount: 0,
       renamePreviewAvailable: true,
       renamePreviewStatus: "ready",
-      proposedFilename: "Beta Clip HD.mp4",
+      proposedFilename: "Beta Clip HD",
       proposedTargetPath: "/mnt/spirit-8tb/media/yes/Beta Clip HD.mp4",
     }),
   ],
@@ -151,19 +164,23 @@ describe("SpiritFlixSmartBatchPanel", () => {
     expect(screen.getAllByText("candidate").length).toBeGreaterThan(0);
     expect(screen.getByText("No tags yet - run Analyze folder")).toBeInTheDocument();
     expect(screen.getByText("Run Analyze folder first")).toBeInTheDocument();
+    expect(screen.getByText(/Visual content tagging is not enabled yet/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Analyze folder first" })).toBeInTheDocument();
   });
 
-  it("shows analyzed smart tag chips and provisional recommended name messaging", async () => {
+  it("shows analyzed content tags, technical badges, and provisional recommended name messaging", async () => {
     vi.mocked(fetch).mockResolvedValueOnce(Response.json(analyzedBatch));
     render(<SpiritFlixSmartBatchPanel currentPath="/mnt/spirit-8tb/media/yes" open onClose={() => undefined} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Analyze folder" }));
 
-    expect(await screen.findByText("HD")).toBeInTheDocument();
-    expect(screen.getByText("Watermark")).toBeInTheDocument();
-    expect(screen.getByText("Beta Clip HD.mp4")).toBeInTheDocument();
+    expect(await screen.findByText("Watermark")).toBeInTheDocument();
+    expect(screen.getAllByText("HD").length).toBeGreaterThan(0);
+    expect(screen.getByText("Quality/technical")).toBeInTheDocument();
+    expect(screen.getByText("Aaliyah Yasan - Untitled 01")).toBeInTheDocument();
+    expect(screen.getByText("Aaliyah Yasan")).toBeInTheDocument();
     expect(screen.getByText("Provisional recommended name, not apply-ready")).toBeInTheDocument();
+    expect(screen.getByText(/Why this name:/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Review/approve items to create final rename plan" })).toBeInTheDocument();
   });
 
@@ -174,9 +191,21 @@ describe("SpiritFlixSmartBatchPanel", () => {
     fireEvent.click(screen.getByRole("button", { name: "Analyze folder" }));
 
     await waitFor(() => expect(screen.getAllByText("reviewed").length).toBeGreaterThan(0));
-    expect(screen.getByText("Beta Clip HD.mp4")).toBeInTheDocument();
+    expect(screen.getByText("Beta Clip HD")).toBeInTheDocument();
     expect(screen.getByText("Ready recommended name")).toBeInTheDocument();
     expect(screen.getByText("Ready names")).toBeInTheDocument();
+  });
+
+  it("does not show technical metadata as primary Smart Tags", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(Response.json(reviewedBatch));
+    render(<SpiritFlixSmartBatchPanel currentPath="/mnt/spirit-8tb/media/yes" open onClose={() => undefined} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Analyze folder" }));
+
+    const smartTagHeading = await screen.findByText("Smart tags");
+    const smartTagSection = smartTagHeading.closest("section") as HTMLElement;
+    expect(within(smartTagSection).queryByText("HD")).not.toBeInTheDocument();
+    expect(screen.getByText("Quality/technical")).toBeInTheDocument();
   });
 
   it("keeps diagnostics hidden by default and expands Advanced details on demand", async () => {

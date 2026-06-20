@@ -107,6 +107,8 @@ function mockAdminFetch() {
             needs_review: 0,
             rename_preview_available: 0,
           },
+          visualContentTaggingEnabled: false,
+          visualContentTaggingMessage: "Visual content tagging is not enabled yet. Current suggestions use title, path, metadata, and any existing face-rec evidence.",
           items: [
             {
               path: "/mnt/spirit-8tb/media/yes/Beta Clip.mp4",
@@ -120,15 +122,17 @@ function mockAdminFetch() {
               renamePreviewAvailable: false,
               reviewStatus: "unreviewed",
               analysisStatus: "needs_review",
-              tags: [
-                { id: "hd", label: "HD", group: "quality", confidence: 0.92, reviewRequired: false, reviewState: "pending" },
-                { id: "watermark", label: "Watermark", group: "watermark", confidence: 0.68, reviewRequired: true, reviewState: "pending" },
-              ],
+              tags: [{ id: "watermark", label: "Watermark", group: "watermark", confidence: 0.68, reviewRequired: true, reviewState: "pending" }],
+              qualityBadges: [{ id: "hd", label: "HD", group: "quality", confidence: 0.92, reviewRequired: false, reviewState: "pending" }],
+              modelName: "Unknown Model",
+              modelSource: "unknown",
+              nameReason: "Readable title preserved; extension is kept only for target-path preview.",
+              visualTaggingAvailable: false,
               approvedTagCount: 0,
               rejectedTagCount: 0,
-              pendingTagCount: 2,
+              pendingTagCount: 1,
               renamePreviewStatus: "provisional",
-              proposedFilename: "Beta Clip HD.mp4",
+              proposedFilename: "Beta Clip HD",
               proposedTargetPath: "/mnt/spirit-8tb/media/yes/Beta Clip HD.mp4",
               renameBlocker: "Review or approve tags/metadata to unlock rename preview.",
               renameWarnings: ["Provisional preview, not eligible for apply until reviewed."],
@@ -310,7 +314,7 @@ describe("SpiritFlix admin Level 2R interactions", () => {
     await waitFor(() => {
       expect(screen.getAllByText("Beta Clip.mp4").length).toBeGreaterThan(1);
       expect(screen.getByText("Candidates")).toBeInTheDocument();
-      expect(screen.getByText("HD")).toBeInTheDocument();
+      expect(screen.getAllByText("HD").length).toBeGreaterThan(0);
       expect(screen.getByText("Watermark")).toBeInTheDocument();
       expect(screen.getByText("Provisional recommended name, not apply-ready")).toBeInTheDocument();
       expect(screen.getAllByRole("button", { name: "Approve tags" }).length).toBeGreaterThan(1);

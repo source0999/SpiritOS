@@ -82,13 +82,14 @@ describe("SpiritFlix smart batch API", () => {
     expect(body.items[0].status).toBe("already_current");
     expect(body.items[0]).toMatchObject({
       renamePreviewStatus: "provisional",
-      proposedFilename: "Clip Better.mp4",
+      proposedFilename: "Clip Better",
       renameBlocker: "Review or approve tags/metadata to unlock rename preview.",
       approvedTagCount: 0,
       rejectedTagCount: 0,
-      pendingTagCount: 1,
+      pendingTagCount: 0,
     });
-    expect(body.items[0].tags[0]).toMatchObject({ label: "HD", confidence: 0.8, reviewState: "pending" });
+    expect(body.items[0].tags).toEqual([]);
+    expect(body.items[0].qualityBadges[0]).toMatchObject({ label: "HD", confidence: 0.8, reviewState: "pending" });
     expect(body.items[0].renameWarnings).toContain("Provisional preview, not eligible for apply until reviewed.");
   });
 
@@ -116,7 +117,8 @@ describe("SpiritFlix smart batch API", () => {
     expect(body.items[0].reviewStatus).toBe("reviewed");
     expect(body.counts.rename_preview_available).toBe(1);
     expect(body.items[0].renamePreviewStatus).toBe("ready");
-    expect(body.items[0].tags[0]).toMatchObject({ label: "HD", reviewState: "approved" });
+    expect(body.items[0].tags).toEqual([]);
+    expect(body.items[0].qualityBadges[0]).toMatchObject({ label: "HD", reviewState: "approved" });
   });
 
   it("exports a preview-only rename plan through the batch route", async () => {

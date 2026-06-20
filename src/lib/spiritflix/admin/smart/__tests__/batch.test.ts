@@ -100,16 +100,18 @@ describe("SpiritFlix smart batch analysis", () => {
     expect(result.items[0]).toMatchObject({
       reviewStatus: "unreviewed",
       renamePreviewStatus: "provisional",
-      proposedFilename: "Clip Better.mp4",
+      proposedFilename: "Clip Better",
       renameBlocker: "Review or approve tags/metadata to unlock rename preview.",
       sidecarCurrent: true,
       approvedTagCount: 0,
       rejectedTagCount: 0,
-      pendingTagCount: 2,
+      pendingTagCount: 1,
     });
-    expect(result.items[0].tags.map((tag) => tag.label)).toEqual(["HD", "Watermark"]);
+    expect(result.items[0].tags.map((tag) => tag.label)).toEqual(["Watermark"]);
+    expect(result.items[0].qualityBadges.map((tag) => tag.label)).toContain("HD");
     expect(result.items[0].renameWarnings).toContain("Provisional preview, not eligible for apply until reviewed.");
     expect(result.items[0].sidecarRef).toMatch(/^analysis\/[a-f0-9]{12}\.json$/);
+    expect(result.visualContentTaggingMessage).toMatch(/Visual content tagging is not enabled yet/);
   });
 
   it("runs analysis and preserves existing reviewed metadata on refresh", async () => {
@@ -140,7 +142,7 @@ describe("SpiritFlix smart batch analysis", () => {
     expect(result.counts.rename_preview_available).toBe(1);
     expect(result.items[0].reviewStatus).toBe("reviewed");
     expect(result.items[0].renamePreviewStatus).toBe("ready");
-    expect(result.items[0].proposedFilename).toBe("Reviewed Name.mp4");
+    expect(result.items[0].proposedFilename).toBe("Reviewed Name");
     expect(analyzeVideo).toHaveBeenCalledWith(videoPath, expect.objectContaining({ mediaRoot: tempRoot }));
   });
 

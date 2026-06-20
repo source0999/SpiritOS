@@ -35,14 +35,16 @@ describe("SpiritFlix smart suggestions", () => {
       parentPath: path.dirname(videoPath),
     });
 
-    expect(result.suggestedDisplayTitle).toBe("360 1");
-    expect(result.suggestedFilename).toBe("360 1.mp4");
+    expect(result.suggestedDisplayTitle).toBe("Unknown Model - Untitled 01");
+    expect(result.suggestedFilename).toBe("Unknown Model - Untitled 01");
     expect(result.notes.some((note) => /insufficient filename context/i.test(note))).toBe(true);
-    expect(result.suggestedTags.some((tag) => tag.id === "needs-title-cleanup")).toBe(true);
-    expect(result.suggestedTags.some((tag) => tag.id === "unknown-performer")).toBe(true);
+    expect(result.notes.some((note) => /needs title cleanup status/i.test(note))).toBe(true);
+    expect(result.suggestedTags.some((tag) => tag.id === "needs-title-cleanup")).toBe(false);
+    expect(result.suggestedTags.some((tag) => tag.id === "unknown-performer")).toBe(false);
+    expect(result.performerIdentity.name).toBe("Unknown Model");
   });
 
-  it("builds richer suggestions for site/quality filenames", () => {
+  it("preserves readable titles while excluding technical metadata from primary tags", () => {
     const messyPath = path.join(mediaRoot, "yes", "Example.Site.Name.1080p.x264.mp4");
     const result = buildSpiritFlixReviewSuggestions({
       videoPath: messyPath,
@@ -52,19 +54,20 @@ describe("SpiritFlix smart suggestions", () => {
     });
 
     expect(result.suggestedDisplayTitle).toBe("Example Site Name");
-    expect(result.suggestedFilename).toMatch(/Example Site Name.*\.mp4$/);
-    expect(result.suggestedTags.some((tag) => tag.id === "full-hd")).toBe(true);
+    expect(result.suggestedFilename).toBe("Example Site Name");
+    expect(result.suggestedTags.some((tag) => tag.id === "full-hd")).toBe(false);
+    expect(result.contentTagEvidence.find((entry) => entry.source === "metadata")?.tags).toContain("full-hd");
     expect(result.suggestedCategory).toBe("yes");
     expect(result.confidence).toBeGreaterThan(0);
   });
 
-  it("preserves file extension in suggested filename", () => {
+  it("omits file extension in suggested display filename", () => {
     const mkvPath = path.join(mediaRoot, "movies", "title.mkv");
     const filename = buildSuggestedFilename(
       { videoPath: mkvPath, fileName: "title.mkv" },
       [],
     );
-    expect(filename.endsWith(".mkv")).toBe(true);
+    expect(filename).toBe("title");
   });
 
   it("sanitizes suggested filename", () => {
@@ -73,7 +76,7 @@ describe("SpiritFlix smart suggestions", () => {
       [],
     );
     expect(filename).not.toMatch(/[:?]/);
-    expect(filename.endsWith(".mp4")).toBe(true);
+    expect(filename).not.toMatch(/\.mp4$/);
   });
 
   it("keeps suggested filename concise", () => {
@@ -82,7 +85,7 @@ describe("SpiritFlix smart suggestions", () => {
       { videoPath, fileName: `${longStem}.mp4` },
       [],
     );
-    expect(path.basename(filename, ".mp4").length).toBeLessThanOrEqual(120);
+    expect(filename.length).toBeLessThanOrEqual(120);
   });
 
   it("sets reviewRequired on uncertain source tags", () => {
@@ -91,8 +94,54 @@ describe("SpiritFlix smart suggestions", () => {
       fileName: "onlyfans.clip.mp4",
       parentPath: path.join(mediaRoot, "yes"),
     });
-    const siteTag = result.suggestedTags.find((tag) => tag.id === "site-token");
-    expect(siteTag?.reviewRequired).toBe(true);
+    expect(result.suggestedTags.find((tag) => tag.id === "site-token")).toBeUndefined();
+    expect(result.contentTagEvidence.find((entry) => entry.source === "metadata")?.tags).toContain("site-token");
+  });
+
+  it("uses model folder identity for random/hash filenames", () => {
+    const randomPath = path.join(mediaRoot, "yes", "models", "aaliyah-yasan", "HkkzMtwQexuQzwkQMekM.mkv");
+    const result = buildSpiritFlixReviewSuggestions({
+      videoPath: randomPath,
+      fileName: "HkkzMtwQexuQzwkQMekM.mkv",
+      parentPath: path.dirname(randomPath),
+    });
+
+    expect(result.performerIdentity).toMatchObject({ name: "Aaliyah Yasan", source: "path" });
+    expect(result.suggestedDisplayTitle).toBe("Aaliyah Yasan - Untitled 01");
+    expect(result.suggestedFilename).toBe("Aaliyah Yasan - Untitled 01");
+  });
+
+  it("uses Unknown Model fallback for numeric filenames without useful tags", () => {
+    const result = buildSpiritFlixReviewSuggestions({
+      videoPath: path.join(mediaRoot, "yes", "442642.mkv"),
+      fileName: "442642.mkv",
+      parentPath: path.join(mediaRoot, "yes"),
+    });
+
+    expect(result.performerIdentity).toMatchObject({ name: "Unknown Model", source: "unknown" });
+    expect(result.suggestedDisplayTitle).toBe("Unknown Model - Untitled 01");
+  });
+
+  it("uses read-only face identity when supplied by safe evidence lookup", () => {
+    const result = buildSpiritFlixReviewSuggestions(
+      {
+        videoPath: path.join(mediaRoot, "yes", "HkkzMtwQexuQzwkQMekM.mkv"),
+        fileName: "HkkzMtwQexuQzwkQMekM.mkv",
+        parentPath: path.join(mediaRoot, "yes"),
+      },
+      {
+        performerIdentity: {
+          name: "Chloe Lamb",
+          source: "face_rec",
+          confidence: 1,
+          evidenceRef: "scripts/media/performer_verification.json",
+          requiresReview: false,
+        },
+      },
+    );
+
+    expect(result.performerIdentity).toMatchObject({ name: "Chloe Lamb", source: "face_rec" });
+    expect(result.suggestedDisplayTitle).toBe("Chloe Lamb - Untitled 01");
   });
 
   it("sets needs_review or suggested, never approved", () => {
@@ -157,7 +206,9 @@ describe("SpiritFlix smart suggestions", () => {
     expect(updated.media).toEqual(base.media);
     expect(updated.samples).toEqual(base.samples);
     expect(updated.notes).toContain("technical metadata collected");
-    expect(updated.suggestedTags.length).toBeGreaterThan(0);
+    expect(updated.suggestedTags.some((tag) => tag.id === "hd")).toBe(false);
+    expect(updated.contentTagEvidence?.find((entry) => entry.source === "metadata")?.tags).toContain("hd");
+    expect(updated.performerIdentity?.name).toBe("Unknown Model");
   });
 
   it("writes sidecar only under analysis root", async () => {
@@ -243,6 +294,7 @@ describe("SpiritFlix smart suggestions", () => {
     expect(updated.samples[0]?.cacheKey).toBe("cached-frame");
     expect(updated.media.durationSeconds).toBe(45);
     expect(updated.notes).toContain("technical metadata collected");
-    expect(updated.suggestedTags.length).toBeGreaterThan(0);
+    expect(updated.contentTagEvidence?.find((entry) => entry.source === "metadata")?.tags).toContain("full-hd");
+    expect(updated.suggestedTags.some((tag) => tag.id === "hd")).toBe(false);
   });
 });

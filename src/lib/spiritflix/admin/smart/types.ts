@@ -27,6 +27,37 @@ export type SpiritFlixSmartConfidenceBand = "high" | "medium" | "weak" | "ignore
 
 export type SpiritFlixSmartReviewStatus = "unreviewed" | "partially_reviewed" | "reviewed" | "rejected";
 
+export type SpiritFlixSmartContentEvidenceSource =
+  | "filename"
+  | "path"
+  | "metadata"
+  | "face_rec"
+  | "frame_sample"
+  | "ocr"
+  | "vlm";
+
+export interface SpiritFlixSmartContentTagEvidence {
+  source: SpiritFlixSmartContentEvidenceSource;
+  tags: string[];
+  confidence: number;
+  evidenceRef: string | null;
+  requiresReview: boolean;
+}
+
+export type SpiritFlixSmartPerformerIdentitySource =
+  | "reviewed"
+  | "face_rec"
+  | "path"
+  | "unknown";
+
+export interface SpiritFlixSmartPerformerIdentity {
+  name: string;
+  source: SpiritFlixSmartPerformerIdentitySource;
+  confidence: number;
+  evidenceRef?: string;
+  requiresReview: boolean;
+}
+
 export interface SpiritFlixSmartReviewedMetadata {
   reviewedAt: string;
   reviewedBy: "spiritflix-admin";
@@ -91,6 +122,8 @@ export interface SpiritFlixSmartAnalysis {
     container?: string;
   };
   samples: SpiritFlixSmartSample[];
+  contentTagEvidence?: SpiritFlixSmartContentTagEvidence[];
+  performerIdentity?: SpiritFlixSmartPerformerIdentity;
   suggestedTags: SpiritFlixSmartTag[];
   suggestedCategory?: string;
   suggestedCollections?: string[];
@@ -107,6 +140,23 @@ const SMART_REVIEW_STATUSES = new Set<SpiritFlixSmartReviewStatus>([
   "partially_reviewed",
   "reviewed",
   "rejected",
+]);
+
+const SMART_CONTENT_EVIDENCE_SOURCES = new Set<SpiritFlixSmartContentEvidenceSource>([
+  "filename",
+  "path",
+  "metadata",
+  "face_rec",
+  "frame_sample",
+  "ocr",
+  "vlm",
+]);
+
+const SMART_PERFORMER_IDENTITY_SOURCES = new Set<SpiritFlixSmartPerformerIdentitySource>([
+  "reviewed",
+  "face_rec",
+  "path",
+  "unknown",
 ]);
 
 const SMART_STATUSES = new Set<SpiritFlixSmartStatus>([
@@ -253,6 +303,64 @@ export function validateSpiritFlixSmartSample(value: unknown): SpiritFlixSmartSa
   return { timestampSeconds, timestampLabel, cacheKey, observations, tags, confidence };
 }
 
+export function validateSpiritFlixSmartContentTagEvidence(value: unknown): SpiritFlixSmartContentTagEvidence {
+  if (!isPlainObject(value)) throw new Error("contentTagEvidence entry must be an object.");
+  assertNoPollutionKeys(value, "contentTagEvidence");
+
+  const source = value.source;
+  if (typeof source !== "string" || !SMART_CONTENT_EVIDENCE_SOURCES.has(source as SpiritFlixSmartContentEvidenceSource)) {
+    throw new Error("contentTagEvidence.source is invalid.");
+  }
+
+  if (!Array.isArray(value.tags)) throw new Error("contentTagEvidence.tags must be an array.");
+  if (value.tags.length > SMART_ANALYSIS_LIMITS.maxTagsPerList) {
+    throw new Error("contentTagEvidence.tags is too large.");
+  }
+  const tags = value.tags.map((entry, index) =>
+    assertNonEmptyString(entry, `contentTagEvidence.tags[${index}]`, SMART_ANALYSIS_LIMITS.maxIdLength),
+  );
+  const confidence = assertConfidence(value.confidence, "contentTagEvidence.confidence");
+  const evidenceRef =
+    value.evidenceRef === null || value.evidenceRef === undefined
+      ? null
+      : assertNonEmptyString(value.evidenceRef, "contentTagEvidence.evidenceRef", 512);
+  if (typeof value.requiresReview !== "boolean") {
+    throw new Error("contentTagEvidence.requiresReview must be a boolean.");
+  }
+
+  return {
+    source: source as SpiritFlixSmartContentEvidenceSource,
+    tags,
+    confidence,
+    evidenceRef,
+    requiresReview: value.requiresReview,
+  };
+}
+
+export function validateSpiritFlixSmartPerformerIdentity(value: unknown): SpiritFlixSmartPerformerIdentity {
+  if (!isPlainObject(value)) throw new Error("performerIdentity must be an object.");
+  assertNoPollutionKeys(value, "performerIdentity");
+
+  const name = assertNonEmptyString(value.name, "performerIdentity.name", 256);
+  const source = value.source;
+  if (typeof source !== "string" || !SMART_PERFORMER_IDENTITY_SOURCES.has(source as SpiritFlixSmartPerformerIdentitySource)) {
+    throw new Error("performerIdentity.source is invalid.");
+  }
+  const confidence = assertConfidence(value.confidence, "performerIdentity.confidence");
+  const evidenceRef = assertOptionalString(value.evidenceRef, "performerIdentity.evidenceRef", 512);
+  if (typeof value.requiresReview !== "boolean") {
+    throw new Error("performerIdentity.requiresReview must be a boolean.");
+  }
+
+  return {
+    name,
+    source: source as SpiritFlixSmartPerformerIdentitySource,
+    confidence,
+    evidenceRef,
+    requiresReview: value.requiresReview,
+  };
+}
+
 export function validateSpiritFlixSmartReviewedMetadata(value: unknown): SpiritFlixSmartReviewedMetadata {
   if (!isPlainObject(value)) throw new Error("reviewedMetadata must be an object.");
   assertNoPollutionKeys(value, "reviewedMetadata");
@@ -386,6 +494,18 @@ export function validateSpiritFlixSmartAnalysis(value: unknown): SpiritFlixSmart
   if (value.samples.length > SMART_ANALYSIS_LIMITS.maxSamples) throw new Error("samples is too large.");
   const samples = value.samples.map((entry) => validateSpiritFlixSmartSample(entry));
 
+  let contentTagEvidence: SpiritFlixSmartContentTagEvidence[] | undefined;
+  if (value.contentTagEvidence !== undefined) {
+    if (!Array.isArray(value.contentTagEvidence)) throw new Error("contentTagEvidence must be an array.");
+    if (value.contentTagEvidence.length > SMART_ANALYSIS_LIMITS.maxTagsPerList) {
+      throw new Error("contentTagEvidence is too large.");
+    }
+    contentTagEvidence = value.contentTagEvidence.map((entry) => validateSpiritFlixSmartContentTagEvidence(entry));
+  }
+
+  const performerIdentity =
+    value.performerIdentity === undefined ? undefined : validateSpiritFlixSmartPerformerIdentity(value.performerIdentity);
+
   if (!Array.isArray(value.suggestedTags)) throw new Error("suggestedTags must be an array.");
   if (value.suggestedTags.length > SMART_ANALYSIS_LIMITS.maxTagsPerList) throw new Error("suggestedTags is too large.");
   const suggestedTags = value.suggestedTags.map((entry) => validateSpiritFlixSmartTag(entry));
@@ -423,6 +543,8 @@ export function validateSpiritFlixSmartAnalysis(value: unknown): SpiritFlixSmart
     pathKey,
     fileName,
     samples,
+    contentTagEvidence,
+    performerIdentity,
     suggestedTags,
     notes,
     reviewedMetadata,
@@ -448,6 +570,8 @@ export function validateSpiritFlixSmartAnalysis(value: unknown): SpiritFlixSmart
     },
     media,
     samples,
+    contentTagEvidence,
+    performerIdentity,
     suggestedTags,
     suggestedCategory,
     suggestedCollections,

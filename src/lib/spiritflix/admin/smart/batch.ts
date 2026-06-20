@@ -14,7 +14,15 @@ import {
 } from "./review";
 import { isSpiritFlixSmartVideoExtension } from "./probe";
 import { projectApprovedSmartMetadata } from "./metadata-bridge";
-import type { SpiritFlixSmartAnalysis, SpiritFlixSmartReviewInput } from "./types";
+import {
+  inferFormatTags,
+  inferQualityTags,
+  isPrimarySmartContentTag,
+  isTechnicalOrStatusTag,
+  modelIdentityFromPath,
+  unknownModelIdentity,
+} from "./heuristics";
+import type { SpiritFlixSmartAnalysis, SpiritFlixSmartReviewInput, SpiritFlixSmartTag } from "./types";
 
 export type SpiritFlixSmartBatchItemStatus =
   | "candidate"
@@ -36,6 +44,11 @@ export interface SpiritFlixSmartBatchItem {
   needsReview: boolean;
   suggestedTagCount: number;
   tags: SpiritFlixSmartBatchTagSummary[];
+  qualityBadges: SpiritFlixSmartBatchTagSummary[];
+  modelName: string;
+  modelSource: string;
+  nameReason?: string;
+  visualTaggingAvailable: boolean;
   approvedTagCount: number;
   rejectedTagCount: number;
   pendingTagCount: number;
@@ -85,6 +98,8 @@ export interface SpiritFlixSmartBatchPreview {
   maxItems: number;
   items: SpiritFlixSmartBatchItem[];
   counts: SpiritFlixSmartBatchCounts;
+  visualContentTaggingEnabled: boolean;
+  visualContentTaggingMessage: string;
 }
 
 export interface SpiritFlixSmartBatchOptions extends SpiritFlixSmartReviewOptions {
@@ -165,6 +180,78 @@ function reviewStateForTag(
   return "pending";
 }
 
+function summarizeTag(
+  tag: SpiritFlixSmartTag,
+  reviewed: SpiritFlixSmartAnalysis["reviewedMetadata"],
+): SpiritFlixSmartBatchTagSummary {
+  return {
+    id: tag.id,
+    label: tag.label,
+    group: tag.group,
+    confidence: tag.confidence,
+    reviewRequired: tag.reviewRequired,
+    reviewState: reviewStateForTag(tag.id, reviewed),
+  };
+}
+
+function dedupeBatchTags(tags: SpiritFlixSmartBatchTagSummary[]): SpiritFlixSmartBatchTagSummary[] {
+  const byId = new Map<string, SpiritFlixSmartBatchTagSummary>();
+  for (const tag of tags) {
+    const existing = byId.get(tag.id);
+    if (!existing || tag.confidence > existing.confidence) byId.set(tag.id, tag);
+  }
+  return [...byId.values()].sort((left, right) => left.label.localeCompare(right.label));
+}
+
+function stripExtensionForDisplay(value: string, sourcePath: string): string {
+  const sourceExtension = path.extname(sourcePath).toLowerCase();
+  const suggestedExtension = path.extname(value).toLowerCase();
+  if (sourceExtension && suggestedExtension === sourceExtension) {
+    return value.slice(0, -suggestedExtension.length).trim();
+  }
+  return value.trim();
+}
+
+function analysisVisualTagsAvailable(analysis: SpiritFlixSmartAnalysis | null): boolean {
+  return Boolean(
+    analysis?.contentTagEvidence?.some(
+      (entry) => ["face_rec", "frame_sample", "ocr", "vlm"].includes(entry.source) && entry.tags.length > 0,
+    ),
+  );
+}
+
+function summarizeTechnicalBadges(
+  videoPath: string,
+  analysis: SpiritFlixSmartAnalysis | null,
+): SpiritFlixSmartBatchTagSummary[] {
+  const reviewed = analysis?.reviewedMetadata;
+  const input = {
+    videoPath,
+    fileName: path.basename(videoPath),
+    parentPath: path.dirname(videoPath),
+    media: analysis?.media,
+  };
+  const derived = [...inferQualityTags(input), ...inferFormatTags(input)];
+  const stored = (analysis?.suggestedTags ?? []).filter(isTechnicalOrStatusTag);
+  return dedupeBatchTags([...stored, ...derived].map((tag) => summarizeTag(tag, reviewed)));
+}
+
+function modelIdentityForItem(videoPath: string, analysis: SpiritFlixSmartAnalysis | null) {
+  return analysis?.performerIdentity ?? modelIdentityFromPath({
+    videoPath,
+    fileName: path.basename(videoPath),
+    parentPath: path.dirname(videoPath),
+    media: analysis?.media,
+  }) ?? unknownModelIdentity();
+}
+
+function nameReasonForItem(analysis: SpiritFlixSmartAnalysis | null, identityName: string): string | undefined {
+  if (!analysis) return undefined;
+  const notes = analysis.notes?.split("|").map((entry) => entry.trim()).filter(Boolean) ?? [];
+  return notes.find((note) => /extension is kept|fallback uses|Readable title preserved/i.test(note)) ??
+    `Recommended name uses ${identityName} identity/title hints; extension is kept only for target-path preview.`;
+}
+
 async function targetExists(targetPath: string, sourcePath: string): Promise<boolean> {
   if (path.resolve(targetPath) === path.resolve(sourcePath)) return false;
   try {
@@ -240,14 +327,9 @@ async function resolveBatchTargets(options: SpiritFlixSmartBatchOptions): Promis
 async function itemFromAnalysis(videoPath: string, analysis: SpiritFlixSmartAnalysis | null, status: SpiritFlixSmartBatchItemStatus, reason?: string): Promise<SpiritFlixSmartBatchItem> {
   const stat = await fs.stat(videoPath);
   const reviewed = analysis?.reviewedMetadata;
-  const tags = (analysis?.suggestedTags ?? []).map((tag) => ({
-    id: tag.id,
-    label: tag.label,
-    group: tag.group,
-    confidence: tag.confidence,
-    reviewRequired: tag.reviewRequired,
-    reviewState: reviewStateForTag(tag.id, reviewed),
-  }));
+  const tags = (analysis?.suggestedTags ?? []).filter(isPrimarySmartContentTag).map((tag) => summarizeTag(tag, reviewed));
+  const qualityBadges = summarizeTechnicalBadges(videoPath, analysis);
+  const modelIdentity = modelIdentityForItem(videoPath, analysis);
   const approvedTagCount = tags.filter((tag) => tag.reviewState === "approved").length;
   const rejectedTagCount = tags.filter((tag) => tag.reviewState === "rejected").length;
   const pendingTagCount = tags.filter((tag) => tag.reviewState === "pending").length;
@@ -264,7 +346,7 @@ async function itemFromAnalysis(videoPath: string, analysis: SpiritFlixSmartAnal
     const provisionalSuggestion = analysis.suggestedFilename ?? analysis.suggestedDisplayTitle;
     if (provisionalSuggestion) {
       const draft = buildSmartRenamePreviewDraft({ sourcePath: videoPath, filenameSuggestion: provisionalSuggestion });
-      proposedFilename = draft.suggestedName || undefined;
+      proposedFilename = draft.suggestedName ? stripExtensionForDisplay(draft.suggestedName, videoPath) : undefined;
       proposedTargetPath = draft.targetPath;
       renameWarnings = [...draft.warnings, "Provisional preview, not eligible for apply until reviewed."];
       renamePreviewStatus = "provisional";
@@ -284,7 +366,7 @@ async function itemFromAnalysis(videoPath: string, analysis: SpiritFlixSmartAnal
         sourcePath: videoPath,
         filenameSuggestion,
       });
-      proposedFilename = draft.suggestedName || undefined;
+      proposedFilename = draft.suggestedName ? stripExtensionForDisplay(draft.suggestedName, videoPath) : undefined;
       proposedTargetPath = draft.targetPath;
       renameWarnings = [...draft.warnings];
       if (await targetExists(draft.targetPath, videoPath)) {
@@ -309,6 +391,11 @@ async function itemFromAnalysis(videoPath: string, analysis: SpiritFlixSmartAnal
     needsReview: Boolean(analysis?.safety.requiresHumanReview || analysis?.status === "needs_review"),
     suggestedTagCount: analysis?.suggestedTags.length ?? 0,
     tags,
+    qualityBadges,
+    modelName: modelIdentity.name,
+    modelSource: modelIdentity.source,
+    nameReason: nameReasonForItem(analysis, modelIdentity.name),
+    visualTaggingAvailable: analysisVisualTagsAvailable(analysis),
     approvedTagCount,
     rejectedTagCount,
     pendingTagCount,
@@ -379,6 +466,10 @@ export async function previewSpiritFlixSmartBatch(options: SpiritFlixSmartBatchO
         needsReview: false,
         suggestedTagCount: 0,
         tags: [],
+        qualityBadges: [],
+        modelName: "Unknown Model",
+        modelSource: "unknown",
+        visualTaggingAvailable: false,
         approvedTagCount: 0,
         rejectedTagCount: 0,
         pendingTagCount: 0,
@@ -399,6 +490,8 @@ export async function previewSpiritFlixSmartBatch(options: SpiritFlixSmartBatchO
     maxItems,
     items,
     counts: summarize(addDuplicateTargetWarnings(items)),
+    visualContentTaggingEnabled: items.some((item) => item.visualTaggingAvailable),
+    visualContentTaggingMessage: "Visual content tagging is not enabled yet. Current suggestions use title, path, metadata, and any existing face-rec evidence.",
   };
 }
 
@@ -440,6 +533,10 @@ export async function runSpiritFlixSmartBatch(options: InternalBatchOptions = {}
         needsReview: false,
         suggestedTagCount: 0,
         tags: [],
+        qualityBadges: [],
+        modelName: "Unknown Model",
+        modelSource: "unknown",
+        visualTaggingAvailable: false,
         approvedTagCount: 0,
         rejectedTagCount: 0,
         pendingTagCount: 0,
@@ -460,6 +557,10 @@ export async function runSpiritFlixSmartBatch(options: InternalBatchOptions = {}
     maxItems,
     items,
     counts: summarize(addDuplicateTargetWarnings(items)),
+    visualContentTaggingEnabled: items.some((item) => item.visualTaggingAvailable),
+    visualContentTaggingMessage: items.some((item) => item.visualTaggingAvailable)
+      ? "Visual content tags are present from existing local evidence."
+      : "Visual content tagging is not enabled yet. Current suggestions use title, path, metadata, and any existing face-rec evidence.",
   };
 }
 
@@ -527,6 +628,10 @@ export async function reviewSpiritFlixSmartBatch(
         needsReview: false,
         suggestedTagCount: 0,
         tags: [],
+        qualityBadges: [],
+        modelName: "Unknown Model",
+        modelSource: "unknown",
+        visualTaggingAvailable: false,
         approvedTagCount: 0,
         rejectedTagCount: 0,
         pendingTagCount: 0,
@@ -547,5 +652,9 @@ export async function reviewSpiritFlixSmartBatch(
     maxItems,
     items,
     counts: summarize(addDuplicateTargetWarnings(items)),
+    visualContentTaggingEnabled: items.some((item) => item.visualTaggingAvailable),
+    visualContentTaggingMessage: items.some((item) => item.visualTaggingAvailable)
+      ? "Visual content tags are present from existing local evidence."
+      : "Visual content tagging is not enabled yet. Current suggestions use title, path, metadata, and any existing face-rec evidence.",
   };
 }

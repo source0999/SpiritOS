@@ -1,0 +1,85 @@
+{
+  "task": "spiritflix-smart-tagging-s8-real-content-tags-clean-names",
+  "verdict": "GO",
+  "technical_metadata_removed_from_smart_tags": true,
+  "clean_recommended_names_without_extensions": true,
+  "readable_titles_preserved": true,
+  "random_hash_filename_fallback": true,
+  "model_identity_fallback": true,
+  "visual_content_tagging_enabled": false,
+  "visual_content_tagging_contract_added": true,
+  "face_rec_readonly_identity_used_if_available": "YES",
+  "real_apply_disabled": true,
+  "real_media_renamed": false,
+  "real_media_moved": false,
+  "jellyfin_mutated": false,
+  "source_proxy_touched": false,
+  "model_calls_run": false,
+  "ocr_or_vlm_added": false,
+  "commit_created": "",
+  "git_push_performed": false,
+  "tests": [
+    {
+      "command": "npm run typecheck",
+      "result": "PASS",
+      "evidence": "raw/typecheck.txt"
+    },
+    {
+      "command": "npx vitest run src/lib/spiritflix/admin/smart src/components/spiritflix/admin src/app/api/spiritflix/admin",
+      "result": "PASS",
+      "evidence": "raw/smart-admin-vitest.txt"
+    },
+    {
+      "command": "npx vitest run src/components/spiritflix/__tests__/SpiritFlixHome.test.tsx src/components/spiritflix/__tests__/SpiritFlixPlayer.test.tsx",
+      "result": "PASS",
+      "evidence": "raw/home-player-vitest.txt"
+    },
+    {
+      "command": "git diff --check -- src/lib/spiritflix/admin/smart src/app/api/spiritflix/admin src/components/spiritflix/admin docs/evidence/spiritflix-smart-tagging-s8-real-content-tags-clean-names-20260620",
+      "result": "PASS",
+      "evidence": "raw/scoped-diff-check.txt"
+    },
+    {
+      "command": "narrow secret-pattern scan over touched smart-tagging files and evidence folder",
+      "result": "PASS_WITH_FALSE_POSITIVES",
+      "evidence": "raw/secret-scan-touched-files.txt"
+    }
+  ],
+  "files_changed": [
+    "src/lib/spiritflix/admin/smart/types.ts",
+    "src/lib/spiritflix/admin/smart/heuristics.ts",
+    "src/lib/spiritflix/admin/smart/suggestions.ts",
+    "src/lib/spiritflix/admin/smart/batch.ts",
+    "src/lib/spiritflix/admin/smart/__tests__/heuristics.test.ts",
+    "src/lib/spiritflix/admin/smart/__tests__/suggestions.test.ts",
+    "src/lib/spiritflix/admin/smart/__tests__/batch.test.ts",
+    "src/app/api/spiritflix/admin/__tests__/smart-batch-route.test.ts",
+    "src/components/spiritflix/admin/SpiritFlixSmartBatchPanel.tsx",
+    "src/components/spiritflix/admin/__tests__/SpiritFlixSmartBatchPanel.test.tsx",
+    "src/components/spiritflix/admin/__tests__/SpiritFlixAdminInteractions.test.tsx",
+    "docs/evidence/spiritflix-smart-tagging-s8-real-content-tags-clean-names-20260620/00-baseline.md",
+    "docs/evidence/spiritflix-smart-tagging-s8-real-content-tags-clean-names-20260620/10-current-tag-name-audit.md",
+    "docs/evidence/spiritflix-smart-tagging-s8-real-content-tags-clean-names-20260620/index.md",
+    "docs/evidence/spiritflix-smart-tagging-s8-real-content-tags-clean-names-20260620/final-verdict.md",
+    "docs/evidence/spiritflix-smart-tagging-s8-real-content-tags-clean-names-20260620/operator-summary.md",
+    "docs/evidence/spiritflix-smart-tagging-s8-real-content-tags-clean-names-20260620/summary.json"
+  ],
+  "remaining_action_needed_from_britton": [
+    "Approve a future local visual classifier/OCR/VLM task if real scene/body/action tags should be derived from frames instead of only title/path/metadata/face evidence."
+  ],
+  "evidence_files": [
+    "docs/evidence/spiritflix-smart-tagging-s8-real-content-tags-clean-names-20260620/00-baseline.md",
+    "docs/evidence/spiritflix-smart-tagging-s8-real-content-tags-clean-names-20260620/10-current-tag-name-audit.md",
+    "docs/evidence/spiritflix-smart-tagging-s8-real-content-tags-clean-names-20260620/index.md",
+    "docs/evidence/spiritflix-smart-tagging-s8-real-content-tags-clean-names-20260620/final-verdict.md",
+    "docs/evidence/spiritflix-smart-tagging-s8-real-content-tags-clean-names-20260620/operator-summary.md",
+    "docs/evidence/spiritflix-smart-tagging-s8-real-content-tags-clean-names-20260620/summary.json",
+    "docs/evidence/spiritflix-smart-tagging-s8-real-content-tags-clean-names-20260620/raw/00-baseline.txt",
+    "docs/evidence/spiritflix-smart-tagging-s8-real-content-tags-clean-names-20260620/raw/typecheck.txt",
+    "docs/evidence/spiritflix-smart-tagging-s8-real-content-tags-clean-names-20260620/raw/smart-admin-vitest.txt",
+    "docs/evidence/spiritflix-smart-tagging-s8-real-content-tags-clean-names-20260620/raw/home-player-vitest.txt",
+    "docs/evidence/spiritflix-smart-tagging-s8-real-content-tags-clean-names-20260620/raw/scoped-diff-check.txt",
+    "docs/evidence/spiritflix-smart-tagging-s8-real-content-tags-clean-names-20260620/raw/git-status-final.txt",
+    "docs/evidence/spiritflix-smart-tagging-s8-real-content-tags-clean-names-20260620/raw/secret-scan-touched-files.txt"
+  ]
+}

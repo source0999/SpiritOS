@@ -53,7 +53,8 @@ function operatorStatus(item: SpiritFlixSmartBatchItem): string {
 function tagEmptyMessage(result: SpiritFlixSmartBatchPreview, item: SpiritFlixSmartBatchItem): string {
   if (result.mode === "preview" && item.status === "candidate") return "No tags yet - run Analyze folder";
   if (!item.sidecarCurrent && !item.analysisStatus) return "No tags yet - run Analyze folder";
-  return "No tags found";
+  if (!item.visualTaggingAvailable) return "No content tags yet";
+  return "No content tags found";
 }
 
 function recommendedNameMessage(item: SpiritFlixSmartBatchItem): { title: string; detail?: string; blocked?: boolean } {
@@ -253,6 +254,7 @@ export function SpiritFlixSmartBatchPanel({ currentPath, open, onClose }: Spirit
               <p className="spiritflix-smart-review__boundary">
                 Preview folder only lists candidates. Analyze folder reads metadata and creates smart tags. Recommended names become final after review/approval.
               </p>
+              <p className="spiritflix-smart-batch__hint">{result.visualContentTaggingMessage}</p>
             </section>
 
             <section className="spiritflix-smart-review__section">
@@ -269,6 +271,14 @@ export function SpiritFlixSmartBatchPanel({ currentPath, open, onClose }: Spirit
                         {operatorStatus(item)}
                       </span>
                     </div>
+
+                    <section className="spiritflix-smart-batch__operator-section">
+                      <h4>Model/performer</h4>
+                      <p className="spiritflix-smart-batch__recommended-name">{item.modelName}</p>
+                      <p className="spiritflix-smart-batch__meta">
+                        {item.modelSource === "face_rec" ? "Read-only face-rec evidence" : item.modelSource === "path" ? "Model folder fallback" : "Unknown model fallback"}
+                      </p>
+                    </section>
 
                     <section className="spiritflix-smart-batch__operator-section">
                       <h4>Smart tags</h4>
@@ -291,6 +301,24 @@ export function SpiritFlixSmartBatchPanel({ currentPath, open, onClose }: Spirit
                       )}
                     </section>
 
+                    {item.qualityBadges.length ? (
+                      <section className="spiritflix-smart-batch__operator-section">
+                        <h4>Quality/technical</h4>
+                        <div className="spiritflix-smart-review__tags is-technical">
+                          {item.qualityBadges.map((tag) => (
+                            <span
+                              className={`spiritflix-smart-tag-pill is-group-${tag.group}`}
+                              key={tag.id}
+                              title={`${tag.group} - ${formatConfidence(tag.confidence)} confidence`}
+                            >
+                              <span className="spiritflix-smart-tag-pill__label">{tag.label}</span>
+                              <span className="spiritflix-smart-tag-pill__meta">{formatConfidence(tag.confidence)}</span>
+                            </span>
+                          ))}
+                        </div>
+                      </section>
+                    ) : null}
+
                     <section className="spiritflix-smart-batch__operator-section">
                       <h4>Recommended name</h4>
                       {(() => {
@@ -302,6 +330,7 @@ export function SpiritFlixSmartBatchPanel({ currentPath, open, onClose }: Spirit
                           </>
                         );
                       })()}
+                      {item.nameReason ? <p className="spiritflix-smart-batch__meta">Why this name: {item.nameReason}</p> : null}
                     </section>
 
                     <div className="spiritflix-smart-batch__actions">
@@ -337,7 +366,15 @@ export function SpiritFlixSmartBatchPanel({ currentPath, open, onClose }: Spirit
                         </div>
                         <div>
                           <dt>Tag counts</dt>
-                          <dd>{item.approvedTagCount} approved, {item.rejectedTagCount} rejected, {item.pendingTagCount} pending</dd>
+                          <dd>{item.approvedTagCount} approved, {item.rejectedTagCount} rejected, {item.pendingTagCount} pending content tags</dd>
+                        </div>
+                        <div>
+                          <dt>Technical badges</dt>
+                          <dd>{item.qualityBadges.map((tag) => tag.label).join(", ") || "none"}</dd>
+                        </div>
+                        <div>
+                          <dt>Visual tagging</dt>
+                          <dd>{item.visualTaggingAvailable ? "local evidence tags available" : "not enabled"}</dd>
                         </div>
                         <div>
                           <dt>Rename status</dt>
