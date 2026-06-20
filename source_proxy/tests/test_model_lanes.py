@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+import asyncio
+
+from source_proxy.decision import model_lanes
 from source_proxy.decision.model_lanes import (
+    _call_json_lane,
     active_primary_coder_lane,
     build_model_lanes_preview,
     get_model_lane,
@@ -54,3 +58,43 @@ def test_model_lanes_preview_is_inspectable_without_execution() -> None:
     assert preview["active_primary_lane"] == "qwen_local_coder"
     assert "hermes_sidecar_verifier_preview" in preview["future_sidecar_lanes"]
     assert preview["verifier_requirement"] is True
+
+
+def test_json_lane_accepts_ollama_thinking_when_response_is_empty(monkeypatch) -> None:
+    class FakeResponse:
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> dict[str, object]:
+            return {
+                "response": "",
+                "thinking": '{"ambiguities":[],"risks":[],"requirement_conflicts":[],"pre_coder_notes":["ready"]}',
+            }
+
+    class FakeAsyncClient:
+        def __init__(self, *args: object, **kwargs: object) -> None:
+            return None
+
+        async def __aenter__(self) -> "FakeAsyncClient":
+            return self
+
+        async def __aexit__(self, *args: object) -> None:
+            return None
+
+        async def post(self, *args: object, **kwargs: object) -> FakeResponse:
+            return FakeResponse()
+
+    monkeypatch.setattr(model_lanes.httpx, "AsyncClient", FakeAsyncClient)
+
+    result = asyncio.run(
+        _call_json_lane(
+            base_url="http://127.0.0.1:11434",
+            model="hermes4:latest",
+            prompt="Return JSON.",
+            schema_validator=model_lanes._normalize_hermes_output,
+        )
+    )
+
+    assert result["status"] == "used"
+    assert result["reason"] == "local_ollama_model_json_schema_valid"
+    assert result["pre_coder_notes"] == ["ready"]

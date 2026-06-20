@@ -222,8 +222,11 @@ async def run_searxng_research_diagnostics(
 
 
 def _searxng_provider_candidates(provider_url: str | None = None) -> list[str]:
+    explicit_provider = str(provider_url or "").strip()
+    if explicit_provider:
+        return [explicit_provider.rstrip("/")]
+
     candidates = [
-        str(provider_url or "").strip(),
         os.environ.get("SEARXNG_URL", "").strip(),
         "http://127.0.0.1:8080",
         "http://localhost:8080",

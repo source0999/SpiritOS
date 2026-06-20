@@ -10,6 +10,7 @@ PLAN_DIR="$ROOT/plan-02"
 ARTIFACTS="$PLAN_DIR/artifacts"
 CONTINUATION="$PLAN_DIR/continuation-hardline"
 PATCH2="$PLAN_DIR/continuation-patch-2"
+PATCH3="$PLAN_DIR/continuation-patch-3"
 
 for file in \
   "$PLAN_DIR/plan.md" \
@@ -53,7 +54,19 @@ for file in \
   "$PATCH2/7-acceptance-summary.md" \
   "$PATCH2/8-test-results.md" \
   "$PATCH2/9-operator-check-result.md" \
-  "$PATCH2/10-final-verdict.md"; do
+  "$PATCH2/10-final-verdict.md" \
+  "$PATCH3/0-preflight.md" \
+  "$PATCH3/1-remote-mac-worker-reconciliation.md" \
+  "$PATCH3/2-mac-worker-sync-proof.md" \
+  "$PATCH3/3-mac-worker-direct-sanity.md" \
+  "$PATCH3/4-canonical-mac-write-proof.md" \
+  "$PATCH3/5-mac-search-check-regression.md" \
+  "$PATCH3/6-current-research-regression.md" \
+  "$PATCH3/7-specialist-model-lane-proof.md" \
+  "$PATCH3/8-task-abc-proof.md" \
+  "$PATCH3/9-test-results.md" \
+  "$PATCH3/10-operator-check-result.md" \
+  "$PATCH3/11-final-verdict.md"; do
   test -f "$file" || { echo "FAIL missing $file"; exit 1; }
 done
 

@@ -377,7 +377,7 @@ async def _call_json_lane(
         "keep_alive": os.environ.get("SOURCE_PROXY_FIP3_MODEL_KEEP_ALIVE", "10m"),
         "options": {
             "temperature": 0,
-            "num_predict": int(os.environ.get("SOURCE_PROXY_FIP3_MODEL_NUM_PREDICT", "128")),
+            "num_predict": int(os.environ.get("SOURCE_PROXY_FIP3_MODEL_NUM_PREDICT", "512")),
             "num_ctx": int(os.environ.get("SOURCE_PROXY_FIP3_MODEL_NUM_CTX", "8192")),
         },
     }
@@ -408,7 +408,7 @@ async def _call_json_lane(
             latency_ms=int((time.perf_counter() - started) * 1000),
             provider_errors=[f"{type(error).__name__}: {error}"],
         )
-    raw = str(payload.get("response") or "") if isinstance(payload, dict) else ""
+    raw = str(payload.get("response") or payload.get("thinking") or "") if isinstance(payload, dict) else ""
     output_hash = _json_hash(raw) if raw else ""
     try:
         parsed = json.loads(raw)
@@ -623,7 +623,7 @@ def _ollama_base_url() -> str:
 
 
 def _timeout_seconds() -> float:
-    return float(os.environ.get("SOURCE_PROXY_FIP3_MODEL_TIMEOUT_SECONDS", "45"))
+    return float(os.environ.get("SOURCE_PROXY_FIP3_MODEL_TIMEOUT_SECONDS", "180"))
 
 
 def _compact_json(value: Any) -> Any:

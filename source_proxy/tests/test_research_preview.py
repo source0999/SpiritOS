@@ -51,6 +51,34 @@ class _FakeAsyncClient:
 
 
 class ResearchPreviewTests(unittest.IsolatedAsyncioTestCase):
+    async def test_searxng_diagnostics_explicit_provider_does_not_fallback(self) -> None:
+        class FailingAsyncClient:
+            def __init__(self, *args: object, **kwargs: object) -> None:
+                return None
+
+            async def __aenter__(self) -> "FailingAsyncClient":
+                return self
+
+            async def __aexit__(self, *args: object) -> None:
+                return None
+
+            async def get(self, *args: object, **kwargs: object) -> object:
+                raise research.httpx.ConnectError("connection refused")
+
+        with (
+            patch.dict(os.environ, {"SEARXNG_URL": "http://127.0.0.1:8080"}, clear=False),
+            patch.object(research.httpx, "AsyncClient", FailingAsyncClient),
+        ):
+            diagnostics = await research.run_searxng_research_diagnostics(
+                "latest Vite 6",
+                provider_url="http://127.0.0.1:1",
+            )
+
+        self.assertEqual(diagnostics["status"], "blocked")
+        self.assertEqual(diagnostics["reason"], "searxng_unreachable")
+        self.assertEqual(diagnostics["provider_candidates"], ["http://127.0.0.1:1"])
+        self.assertEqual(diagnostics["provider_url_used"], "")
+
     async def test_run_local_research_preview_returns_clean_verified_sources(self) -> None:
         with (
             patch.dict(os.environ, {"SEARXNG_URL": "http://127.0.0.1:8080"}, clear=False),

@@ -1,17 +1,17 @@
 {
   "plan": "Plan 2/6",
-  "continuation": "patch-2-live-mac-worker-support",
-  "verdict": "BLOCKED_HUMAN",
+  "continuation": "patch-3-live-reconciliation-and-specialist-unblock",
+  "verdict": "GO",
   "hardline_no_preview_go": true,
-  "mac_worker_remote_synced": false,
-  "mac_write_integration": "BLOCKED_HUMAN",
-  "mac_search_check_integration": "BLOCKED_HUMAN",
+  "mac_worker_remote_synced": true,
+  "mac_write_integration": "INTEGRATED_LIVE",
+  "mac_search_check_integration": "INTEGRATED_LIVE",
   "research_integration": "INTEGRATED_LIVE",
-  "specialist_lane_integration": "BLOCKED_ENV",
-  "task_a": "BLOCKED",
+  "specialist_lane_integration": "INTEGRATED_LIVE",
+  "task_a": "PASS",
   "task_b": "PASS",
-  "task_c": "BLOCKED",
-  "operator_check": "FAIL",
+  "task_c": "PASS",
+  "operator_check": "PASS",
   "focused_tests": "PASS",
   "preview_go_detected": false,
   "advisory_go_detected": false,
@@ -22,47 +22,76 @@
   "plan_3_started": false,
   "hardline_summary": {
     "fake_go_prevented": true,
-    "go_allowed": false,
-    "reason": "Dell worker support was hardened, but live Mac sync is blocked because target worker files are untracked on the Mac checkout and the Python worker differs from Dell HEAD.",
+    "go_allowed": true,
+    "reason": "Patch 3 reconciled the Mac worker with a timestamped backup, proved live Mac write/search/check, proved live SearXNG research, and proved local Gemma/Hermes specialist consumption.",
     "hard_stop": "No Plan 3 work was started."
   },
   "mac": {
-    "status": "BLOCKED_HUMAN",
+    "status": "INTEGRATED_LIVE",
     "remote_checkout": "/Users/spiritmac/spiritos-worker/SpiritOS",
     "remote_dirty_target_files": [
+      "?? .spiritos-backups/",
       "?? scripts/mac-worker/spirit-mac-worker.mjs",
       "?? scripts/mac-worker/spirit_mac_worker.py"
     ],
-    "dell_python_worker_sha256": "0dce66493313b39f749442c9eae1b9e00860e4e061a06194e59980d8a5681ae8",
+    "backup_path": ".spiritos-backups/plan2-patch3/scripts_mac-worker_spirit_mac_worker.py.20260620T015800.bak",
+    "dell_python_worker_sha256": "90a40d6f33e73963a15977bf347516703f6f1a1e2be784fa4398978449d5e473",
     "mac_python_worker_sha256_before": "a67d6dfe51acb6066b2566545371a376cf49d4ed0cd4f8297f98f95f50c68f66",
+    "mac_python_worker_sha256_after": "90a40d6f33e73963a15977bf347516703f6f1a1e2be784fa4398978449d5e473",
     "dell_node_worker_sha256": "5ccd1d40d061055cb53b0354682c4ecabb6591ee383d11a24662780fc35edafa",
     "mac_node_worker_sha256_before": "5ccd1d40d061055cb53b0354682c4ecabb6591ee383d11a24662780fc35edafa",
-    "remote_sync": "blocked",
-    "blocked_reason": "Mac target worker files are untracked; overwriting them without approval would violate the Plan 2 patch-2 safety rule.",
-    "mac_write_performed": false,
-    "rollback_status": "not_applicable_no_sync_no_write"
+    "remote_sync": "performed_exact_file_after_backup",
+    "canonical_write_task_id": "task_1eabe04a1e1c",
+    "canonical_write_job_id": "mac-mac_isolated_write_proof-c4e0123b2c13",
+    "canonical_write_trace_id": "trace_8aa6ed97183047b2",
+    "unsafe_path_task_id": "task_4e443dda3b2b",
+    "unsafe_path_status": "NEEDS_FIX",
+    "unsafe_path_reason_code": "safe_path_rejected",
+    "mac_write_performed": true,
+    "verified": true,
+    "readback_verified": true,
+    "rollback_performed": true,
+    "rollback_status": "cleaned",
+    "mac_write_path": "/private/var/folders/py/2tb50by14n94wl7b0n_txzsm0000gn/T/spiritos-plan2-mac-write-proof/plan2-mac-write-proof.txt",
+    "search_check_status": "INTEGRATED_LIVE",
+    "search_task_id": "task_6d683bab6fb2",
+    "safe_check_task_ids": [
+      "task_818a84eeaf9b",
+      "task_32a3f034e8e8"
+    ]
   },
   "research": {
     "status": "INTEGRATED_LIVE",
-    "task_id": "task_4103f08d8b32",
+    "task_id": "task_8e88f3a54bc2",
     "provider_url_used": "http://127.0.0.1:8080",
-    "source_count": 3,
+    "source_count": 4,
     "local_fallback_used": false,
     "downstream_state_changed": true,
-    "consumer_event_id": "consumer_53d9f4374dfc4b7a",
-    "consumer": "cartographer_current_research_consumer"
+    "consumer_event_id": "consumer_3a8289e42ec6494a",
+    "consumer": "cartographer_current_research_consumer",
+    "explicit_bad_provider_status": "blocked",
+    "explicit_bad_provider_candidates": [
+      "http://127.0.0.1:1"
+    ]
   },
   "specialists": {
-    "status": "BLOCKED_ENV",
-    "task_id": "task_b054178d05c6",
-    "consumer_event_id": "consumer_506061dd2bb94ca1",
+    "status": "INTEGRATED_LIVE",
+    "task_id": "task_1efd570e1a6e",
+    "consumer_event_id": "consumer_896ce3ad294b44f3",
     "consumer": "cartographer_specialist_packet_consumer",
-    "gemma": "failed",
-    "hermes": "failed",
-    "verifier_verdict": "UNVERIFIED"
+    "gemma": "used",
+    "gemma_model": "gemma3n:e4b",
+    "gemma_reason": "local_ollama_model_json_schema_valid",
+    "hermes": "used",
+    "hermes_model": "hermes4:latest",
+    "hermes_reason": "local_ollama_model_json_schema_valid",
+    "verifier_verdict": "UNVERIFIED",
+    "qwen_pre_coder_reasoning_used": false,
+    "fallback_to_qwen_attempted": false,
+    "cloud_provider_used": false
   },
   "tests": {
-    "focused_python": "PASS: 20 passed; required focused slice PASS: 190 passed, 1360 deselected, 287 subtests",
+    "focused_python": "PASS: 34 passed; required focused slice PASS: 192 passed, 1360 deselected, 287 subtests",
     "typecheck": "PASS",
     "vitest_mac_worker_contract": "PASS: 10 passed",
     "vitest_mac_worker_route": "PASS: 3 passed",
@@ -72,7 +101,7 @@
   },
   "safety": {
     "obsidian_write": false,
-    "mac_write": false,
+    "mac_write": true,
     "media_mutation": false,
     "jellyfin_mutation": false,
     "authority_expansion": false,
@@ -86,11 +115,7 @@
     "push": false,
     "plan_3_work": false
   },
-  "required_fixes_before_plan_2_go": [
-    "Britton must approve how to handle the untracked Mac worker files, or the Mac worker checkout must be put into an expected clean state without Codex overwriting it.",
-    "After Mac sync is unblocked, rerun the Source Proxy mac_isolated_write_proof job through the canonical Mac worker workflow.",
-    "Investigate and unblock Gemma/Hermes specialist lanes or update architecture honestly so required lanes are live and consumed."
-  ],
+  "required_fixes_before_plan_2_go": [],
   "next_plan": "Plan 3/6 - Durable Execution, Policy, Recovery, and Repair",
   "stop": "No next-plan work was started."
 }

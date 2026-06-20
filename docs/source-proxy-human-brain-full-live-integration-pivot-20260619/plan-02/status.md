@@ -1,5 +1,5 @@
 # Plan 2/6 Status
 
-Status: `PLAN_WRITTEN_NOT_STARTED`.
-Plan gate: `BLOCKED_PENDING_PLAN_0_COMPRESSION_DECISION`.
-No implementation has been performed. No next-plan work is authorized.
+Status: `GO`.
+Plan gate: `PLAN_2_COMPLETE`.
+Patch 3 completed the approved Plan 2 scope. No next-plan work is authorized here.
