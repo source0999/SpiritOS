@@ -1,0 +1,39 @@
+{
+  "verdict": "GO",
+  "plan": "Plan 1/6",
+  "task_id": "task_4a0815afebd5",
+  "approval_id": "approval-b58ce2a5f296fb97",
+  "run_id": "execute_approved_long_running_task:task_4a0815afebd5",
+  "trace_id": "trace_e7fe171a814143ce",
+  "invocation_event_id": "invocation_0e2beba826444584",
+  "consumer_event_id": "consumer_70853e8c04314135",
+  "consumer_subsystem": "long_running_status_observer",
+  "status_before": "queued",
+  "status_after": "applied_needs_verification",
+  "failure_proof": {
+    "task_id": "task_6bf52d9516c7",
+    "approval_id": "approval-43b364d3613cd6dc",
+    "run_id": "execute_approved_long_running_task:task_6bf52d9516c7",
+    "trace_id": "trace_12991e9d6e4c402c",
+    "invocation_event_id": "invocation_1f965cde5a924b5d",
+    "consumer_event_id": "consumer_320587cccb9643aa",
+    "consumer_subsystem": "long_running_status_observer",
+    "status_after": "failed_needs_human",
+    "blocked_target_created": false
+  },
+  "tests": {
+    "pytest": "passed: .venv-source-proxy/bin/python -m pytest -q source_proxy/tests -k \"causal or long_running or consumer\"",
+    "typecheck": "passed: npm run typecheck",
+    "vitest": "passed: npx vitest run src/components/coding/__tests__/coding-cockpit-shell.test.tsx -t \"reads long-running causal trace proof\""
+  },
+  "external_raw_evidence": "/home/source/spiritos-evidence/plan-01",
+  "safety": {
+    "obsidian_write": false,
+    "mac_write": false,
+    "authority_expansion": false,
+    "route_replacement": false,
+    "new_engine_or_framework": false,
+    "push": false,
+    "plan_2_work": false
+  }
+}

@@ -603,6 +603,11 @@ DEFAULT_STEPS = [
     "Prepare verification plan.",
     "Wait for explicit execution path.",
 ]
+CAUSAL_EVENT_TYPES = {"invocation", "consumer", "failure", "status_transition"}
+CAUSAL_EVENT_SECRET_PATTERNS = (
+    re.compile(r"sk-[A-Za-z0-9_-]{20,}"),
+    re.compile(r"(?i)(api[_-]?key|token|secret)\s*[:=]\s*['\"]?[A-Za-z0-9_.-]{12,}"),
+)
 
 
 class LongRunningTaskError(ValueError):
@@ -632,6 +637,7 @@ class LongRunningTask:
     cycle_count: int = 0
     architect_status: str = "idle"
     architect_reason: str = ""
+    causal_events: list[dict[str, Any]] = field(default_factory=list)
 
     def to_payload(self) -> dict[str, Any]:
         return {
@@ -656,6 +662,8 @@ class LongRunningTask:
             "cycle_count": self.cycle_count,
             "architect_status": self.architect_status,
             "architect_reason": self.architect_reason,
+            "causal_events": list(self.causal_events[-50:]),
+            "causal_trace": _causal_trace_summary(self.causal_events),
             "would_execute": _has_approved_execution(self.open_diffs),
             "writes_allowed": _has_approved_execution(self.open_diffs),
             "worker_lanes": _worker_lanes_for_task(self),
@@ -855,14 +863,56 @@ def execute_approved_long_running_task(
     explicit approval intent, and this function still fails closed on blocked
     paths before any workspace write occurs.
     """
-    central_gate_check("apply", run_id=f"execute_approved_long_running_task:{task_id}")
     task = _lookup_task(task_id)
+    status_before = task.status
+    trace_id = _ensure_causal_trace_id(task)
+    run_id = f"execute_approved_long_running_task:{task_id}"
+    invocation_event = _append_causal_event(
+        task,
+        event_type="invocation",
+        subsystem="source_proxy_long_running",
+        approval_id=approval_id,
+        run_id=run_id,
+        status_before=status_before,
+        changed_state_fields=[],
+        notes=["execute-approved apply path entered"],
+    )
+    _save_task(task)
+    try:
+        central_gate_check("apply", run_id=run_id)
+    except Exception:
+        task.status = "failed_needs_human"
+        _append_causal_event(
+            task,
+            event_type="failure",
+            subsystem="source_proxy_long_running",
+            approval_id=approval_id,
+            run_id=run_id,
+            status_before=status_before,
+            status_after=task.status,
+            changed_state_fields=["status"],
+            notes=["central gate blocked apply"],
+        )
+        _save_task(task)
+        raise
     expected_approval_id = approval_id_for_approved_diff(
         task_id=task_id,
         approved_diff=approved_diff,
         target=target,
     )
     if approval_id != expected_approval_id:
+        _append_causal_event(
+            task,
+            event_type="failure",
+            subsystem="source_proxy_long_running",
+            approval_id=approval_id,
+            run_id=run_id,
+            status_before=status_before,
+            status_after=task.status,
+            changed_state_fields=[],
+            notes=["approval_id_mismatch"],
+        )
+        _save_task(task)
         raise LongRunningTaskError(
             "Approved diff approval_id does not match the task, target, and diff.",
             "approval_id_mismatch",
@@ -894,12 +944,36 @@ def execute_approved_long_running_task(
         task_spec=trial_task_spec,
     )
     if verification["status"] == "blocked":
+        _append_causal_event(
+            task,
+            event_type="failure",
+            subsystem="source_proxy_long_running",
+            approval_id=approval_id,
+            run_id=run_id,
+            status_before=status_before,
+            status_after=task.status,
+            changed_state_fields=[],
+            notes=["approved_diff_blocked"],
+        )
+        _save_task(task)
         raise LongRunningTaskError(
             "Approved diff was blocked by safety verification.",
             "approved_diff_blocked",
         )
 
+    before_executing = task.status
     task.status = "executing"
+    _append_causal_event(
+        task,
+        event_type="status_transition",
+        subsystem="source_proxy_long_running",
+        approval_id=approval_id,
+        run_id=run_id,
+        status_before=before_executing,
+        status_after=task.status,
+        changed_state_fields=["status"],
+        notes=["approved diff entered execution"],
+    )
     _set_task_role(task, "debugger", reason="human_approved_execution")
     task.poll_count = max(task.poll_count, 3)
     task.steps = _append_unique_steps(
@@ -926,7 +1000,19 @@ def execute_approved_long_running_task(
     try:
         apply_result = _apply_verified_diff(approved_diff, verification)
     except LongRunningTaskError:
+        before_failure = task.status
         task.status = "failed_needs_human"
+        _append_causal_event(
+            task,
+            event_type="failure",
+            subsystem="source_proxy_long_running",
+            approval_id=approval_id,
+            run_id=run_id,
+            status_before=before_failure,
+            status_after=task.status,
+            changed_state_fields=["status"],
+            notes=["workspace application failed"],
+        )
         task.truncated_test_results = "Approved diff failed during workspace application."
         task.updated_at = _now_iso()
         _save_task(task)
@@ -962,7 +1048,19 @@ def execute_approved_long_running_task(
         audit_record=audit_record,
     )
 
+    before_applied = task.status
     task.status = "applied_needs_verification"
+    _append_causal_event(
+        task,
+        event_type="status_transition",
+        subsystem="source_proxy_long_running",
+        approval_id=approval_id,
+        run_id=run_id,
+        status_before=before_applied,
+        status_after=task.status,
+        changed_state_fields=["status"],
+        notes=["approved diff applied"],
+    )
     _set_task_role(task, "debugger", reason="approved_diff_applied")
     post_apply_verification = _initial_post_apply_verification(verification)
     for diff in task.open_diffs:
@@ -1005,6 +1103,10 @@ def execute_approved_long_running_task(
         "backup_root": apply_result["backup_root"],
         "changed_file_snapshots": apply_result["changed_file_snapshots"],
         "changed_files": verification["changed_files"],
+        "trace_id": trace_id,
+        "invocation_event_id": invocation_event["event_id"],
+        "causal_events": list(task.causal_events[-50:]),
+        "causal_trace": _causal_trace_summary(task.causal_events),
         "message": "Approved diff applied after safety verification; post-apply verification is required before completion.",
         "post_apply_verification": post_apply_verification,
         "risk": verification["risk"],
@@ -1438,6 +1540,123 @@ def _record_approved_execution_evidence(
     task.ast_snapshot = snapshot
 
 
+def _sanitize_causal_note(value: Any) -> str:
+    text = str(value or "").strip()
+    for pattern in CAUSAL_EVENT_SECRET_PATTERNS:
+        text = pattern.sub("[REDACTED]", text)
+    return text[:240]
+
+
+def _causal_event_has_secret(event: dict[str, Any]) -> bool:
+    raw = json.dumps(event, sort_keys=True)
+    return any(pattern.search(raw) for pattern in CAUSAL_EVENT_SECRET_PATTERNS)
+
+
+def _new_causal_event_id(event_type: str) -> str:
+    normalized = event_type if event_type in CAUSAL_EVENT_TYPES else "status_transition"
+    return f"{normalized}_{uuid4().hex[:16]}"
+
+
+def _ensure_causal_trace_id(task: LongRunningTask) -> str:
+    for event in task.causal_events:
+        trace_id = str(event.get("trace_id") or "").strip()
+        if trace_id:
+            return trace_id
+    trace_id = f"trace_{uuid4().hex[:16]}"
+    snapshot = _ensure_ast_snapshot_dict(task)
+    snapshot["causal_trace_id"] = trace_id
+    task.ast_snapshot = snapshot
+    return trace_id
+
+
+def _append_causal_event(
+    task: LongRunningTask,
+    *,
+    event_type: Literal["invocation", "consumer", "failure", "status_transition"],
+    subsystem: str,
+    approval_id: str | None = None,
+    run_id: str | None = None,
+    status_before: str | None = None,
+    status_after: str | None = None,
+    changed_state_fields: list[str] | None = None,
+    consumer_subsystem: str | None = None,
+    notes: list[Any] | None = None,
+) -> dict[str, Any]:
+    event = {
+        "event_id": _new_causal_event_id(event_type),
+        "trace_id": _ensure_causal_trace_id(task),
+        "task_id": task.id,
+        "event_type": event_type,
+        "subsystem": subsystem,
+        "consumer_subsystem": consumer_subsystem,
+        "run_id": run_id,
+        "approval_id": approval_id,
+        "status_before": status_before,
+        "status_after": status_after,
+        "changed_state_fields": list(dict.fromkeys(changed_state_fields or [])),
+        "created_at": _now_iso(),
+        "notes": [_sanitize_causal_note(note) for note in (notes or [])],
+    }
+    if _causal_event_has_secret(event):
+        raise LongRunningTaskError(
+            "Causal event contains a secret-shaped string.",
+            "causal_event_secret_detected",
+        )
+    task.causal_events = [*task.causal_events, event][-100:]
+    return event
+
+
+def _causal_trace_summary(events: list[dict[str, Any]]) -> dict[str, Any]:
+    invocation = next(
+        (event for event in reversed(events) if event.get("event_type") == "invocation"),
+        {},
+    )
+    consumer = next(
+        (event for event in reversed(events) if event.get("event_type") == "consumer"),
+        {},
+    )
+    latest = events[-1] if events else {}
+    return {
+        "trace_id": str((latest or invocation or consumer).get("trace_id") or ""),
+        "invocation_event_id": invocation.get("event_id"),
+        "consumer_event_id": consumer.get("event_id"),
+        "consumer_subsystem": consumer.get("consumer_subsystem"),
+        "status_after": latest.get("status_after"),
+    }
+
+
+def _record_long_running_status_observer_consumer(task: LongRunningTask) -> bool:
+    if not task.causal_events:
+        return False
+    if not any(event.get("event_type") == "invocation" for event in task.causal_events):
+        return False
+    status = task.status
+    if status not in {
+        "applied_needs_verification",
+        "failed_needs_human",
+        "verification_failed",
+        "applied_verification_failed",
+    }:
+        return False
+    if any(
+        event.get("event_type") == "consumer"
+        and event.get("consumer_subsystem") == "long_running_status_observer"
+        and event.get("status_after") == status
+        for event in task.causal_events
+    ):
+        return False
+    _append_causal_event(
+        task,
+        event_type="consumer",
+        subsystem="source_proxy_long_running",
+        consumer_subsystem="long_running_status_observer",
+        status_after=status,
+        changed_state_fields=["status"],
+        notes=["task status consumed by readback"],
+    )
+    return True
+
+
 def _post_apply_has_backup_audit(task: LongRunningTask) -> bool:
     snapshot = task.ast_snapshot if isinstance(task.ast_snapshot, dict) else {}
     backup_audit = snapshot.get("post_apply_backup_audit")
@@ -1749,6 +1968,9 @@ def _lookup_task(task_id: str) -> LongRunningTask:
 
 
 def _task_envelope(task: LongRunningTask) -> dict[str, Any]:
+    if _record_long_running_status_observer_consumer(task):
+        task.updated_at = _now_iso()
+        _save_task(task)
     payload = task.to_payload()
     payload["post_apply_verification"] = _current_post_apply_verification(task)
     payload["scope_key"] = _task_scope_key(task)
@@ -2227,9 +2449,10 @@ def _save_task(task: LongRunningTask) -> None:
                 current_agent_role,
                 cycle_count,
                 architect_status,
-                architect_reason
+                architect_reason,
+                causal_events_json
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
                 description = excluded.description,
                 status = excluded.status,
@@ -2243,7 +2466,8 @@ def _save_task(task: LongRunningTask) -> None:
                 current_agent_role = excluded.current_agent_role,
                 cycle_count = excluded.cycle_count,
                 architect_status = excluded.architect_status,
-                architect_reason = excluded.architect_reason
+                architect_reason = excluded.architect_reason,
+                causal_events_json = excluded.causal_events_json
             """,
             (
                 task.id,
@@ -2261,6 +2485,7 @@ def _save_task(task: LongRunningTask) -> None:
                 task.cycle_count,
                 task.architect_status,
                 task.architect_reason,
+                json.dumps(task.causal_events[-100:]),
             ),
         )
         connection.commit()
@@ -2286,7 +2511,8 @@ def _load_task(task_id: str) -> LongRunningTask | None:
                 current_agent_role,
                 cycle_count,
                 architect_status,
-                architect_reason
+                architect_reason,
+                causal_events_json
             FROM long_running_tasks
             WHERE id = ?
             """,
@@ -2311,6 +2537,7 @@ def _load_task(task_id: str) -> LongRunningTask | None:
         cycle_count=row["cycle_count"],
         architect_status=row["architect_status"] or "idle",
         architect_reason=row["architect_reason"] or "",
+        causal_events=_json_value(row["causal_events_json"], []),
     )
 
 
@@ -2334,7 +2561,8 @@ def _load_recent_tasks(*, limit: int) -> list[LongRunningTask]:
                 current_agent_role,
                 cycle_count,
                 architect_status,
-                architect_reason
+                architect_reason,
+                causal_events_json
             FROM long_running_tasks
             ORDER BY updated_at DESC, created_at DESC
             LIMIT ?
@@ -2361,6 +2589,7 @@ def _task_from_row(row: sqlite3.Row) -> LongRunningTask:
         cycle_count=row["cycle_count"],
         architect_status=row["architect_status"] or "idle",
         architect_reason=row["architect_reason"] or "",
+        causal_events=_json_value(row["causal_events_json"], []),
     )
 
 
@@ -2912,7 +3141,8 @@ def _initialize_store(connection: sqlite3.Connection) -> None:
             cycle_count INTEGER NOT NULL DEFAULT 0,
             architect_plan_json TEXT,
             architect_status TEXT NOT NULL DEFAULT 'idle',
-            architect_reason TEXT NOT NULL DEFAULT ''
+            architect_reason TEXT NOT NULL DEFAULT '',
+            causal_events_json TEXT NOT NULL DEFAULT '[]'
         )
         """
     )
@@ -2939,6 +3169,11 @@ def _initialize_store(connection: sqlite3.Connection) -> None:
         connection,
         "architect_reason",
         "TEXT NOT NULL DEFAULT ''",
+    )
+    _ensure_column(
+        connection,
+        "causal_events_json",
+        "TEXT NOT NULL DEFAULT '[]'",
     )
 
 

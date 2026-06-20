@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import CodingCockpitShell, {
+  causalTraceFromPayload,
   changedFilesFromPayload,
   changedFileSnapshotsFromPayload,
   executeReadyReverseDiff,
@@ -1053,6 +1054,33 @@ describe("CodingCockpitShell", () => {
         sha256Before: null,
       },
     ]);
+  });
+
+  it("reads long-running causal trace proof from execute-approved payloads", () => {
+    const payload = {
+      execution: {
+        trace_id: "trace_123",
+        invocation_event_id: "invocation_123",
+        causal_trace: {
+          consumer_event_id: "consumer_123",
+          consumer_subsystem: "long_running_status_observer",
+          status_after: "applied_needs_verification",
+        },
+      },
+      task: {
+        causal_trace: {
+          trace_id: "trace_123",
+        },
+      },
+    };
+
+    expect(causalTraceFromPayload(payload)).toEqual({
+      causalStatusAfter: "applied_needs_verification",
+      consumerEventId: "consumer_123",
+      consumerSubsystem: "long_running_status_observer",
+      invocationEventId: "invocation_123",
+      traceId: "trace_123",
+    });
   });
 
   it("rehydrates a durable active Coder run on a second mount", async () => {

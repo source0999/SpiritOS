@@ -138,6 +138,7 @@ type PreviewState = {
   blocker: string | null;
   changedFiles: string[];
   checks: string[];
+  causalStatusAfter?: string | null;
   currentPhase: string;
   diff: string;
   error: string | null;
@@ -169,6 +170,10 @@ type PreviewState = {
   targetMatch: boolean;
   taskId: string;
   taskSpecAllowed: boolean;
+  traceId?: string | null;
+  invocationEventId?: string | null;
+  consumerEventId?: string | null;
+  consumerSubsystem?: string | null;
   verifierSummary: string;
   technicalDetail?: string | null;
 };
@@ -2148,6 +2153,7 @@ function idlePreviewState(): PreviewState {
     blocker: null,
     changedFiles: [],
     checks: ["git diff --check"],
+    causalStatusAfter: null,
     currentPhase: "waiting for prompt",
     diff: "",
     error: null,
@@ -2179,6 +2185,10 @@ function idlePreviewState(): PreviewState {
     targetMatch: false,
     taskId: "",
     taskSpecAllowed: false,
+    traceId: null,
+    invocationEventId: null,
+    consumerEventId: null,
+    consumerSubsystem: null,
     verifierSummary: "Waiting for preview.",
     technicalDetail: null,
   };
@@ -4217,6 +4227,15 @@ export function CodingCockpitShell() {
   const currentTaskTarget =
     (previewState.selectedTarget ?? normalizeRepoPath(targetFile)) || "Discovering after start";
   const currentTaskState = readableTaskState(previewState, draftReady);
+  const causalTraceRows = previewState.traceId
+    ? [
+        ["trace_id", previewState.traceId],
+        ["invocation_event_id", previewState.invocationEventId],
+        ["consumer_event_id", previewState.consumerEventId],
+        ["consumer_subsystem", previewState.consumerSubsystem],
+        ["status_after", previewState.causalStatusAfter],
+      ]
+    : [];
   const currentDesignTaskKind = designTaskKind(task);
   const showDesignerResult = Boolean(currentDesignTaskKind && draftReady && previewState.status === "idle");
   const showCombinedFlow = Boolean(isCombinedTask(task) && draftReady && previewState.status === "idle");
@@ -8760,6 +8779,7 @@ export function CodingCockpitShell() {
           throw new Error(messageFromPayload(applyPayload, applyResponse.status));
         }
         const appliedFiles = changedFilesFromApplyPayloadOrDiff(applyPayload, proposedDiff);
+        const causalTrace = causalTraceFromPayload(applyPayload);
         const appliedAt = new Date().toISOString();
         const diskChangedFiles = appliedFiles.length > 0 ? appliedFiles : changedFiles;
         if (diskChangedFiles.length === 0) {
@@ -8795,6 +8815,7 @@ export function CodingCockpitShell() {
           blocker: null,
           changedFiles: diskChangedFiles,
           checks: packet.checks,
+          causalStatusAfter: causalTrace.causalStatusAfter,
           currentPhase: manualTaskPhaseLabels.done,
           diff: proposedDiff,
           error: null,
@@ -8817,6 +8838,10 @@ export function CodingCockpitShell() {
           targetMatch: gate.targetMatch,
           taskId,
           taskSpecAllowed: gate.taskSpecAllowed,
+          traceId: causalTrace.traceId,
+          invocationEventId: causalTrace.invocationEventId,
+          consumerEventId: causalTrace.consumerEventId,
+          consumerSubsystem: causalTrace.consumerSubsystem,
           verifierSummary: `Checks recorded: ${packet.checks.join(", ")}`,
           technicalDetail: null,
         });
@@ -9006,6 +9031,7 @@ export function CodingCockpitShell() {
         throw new Error(messageFromPayload(applyPayload, applyResponse.status));
       }
       const appliedFiles = changedFilesFromApplyPayloadOrDiff(applyPayload, previewState.diff);
+      const causalTrace = causalTraceFromPayload(applyPayload);
       const appliedAt = new Date().toISOString();
       const changedFiles = appliedFiles.length > 0 ? appliedFiles : previewState.changedFiles;
       const receipt: AppliedRunReceipt = {
@@ -9034,12 +9060,17 @@ export function CodingCockpitShell() {
         appliedAt,
         applySummary: messageFromPayload(applyPayload, applyResponse.status),
         allowedFiles: applyScopePreflight.allowedFiles,
+        causalStatusAfter: causalTrace.causalStatusAfter,
         changedFiles: changedFiles.length > 0 ? changedFiles : current.changedFiles,
         error: null,
         isApplying: false,
         reasonCode: null,
         status: "applied",
         taskId,
+        traceId: causalTrace.traceId,
+        invocationEventId: causalTrace.invocationEventId,
+        consumerEventId: causalTrace.consumerEventId,
+        consumerSubsystem: causalTrace.consumerSubsystem,
       }));
     } catch (error) {
       setPreviewState((current) => ({
@@ -10339,6 +10370,21 @@ export function CodingCockpitShell() {
                   </dd>
                 </div>
               </dl>
+              {causalTraceRows.length > 0 ? (
+                <div className={`${commandInsetClass} mt-4 p-3`}>
+                  <p className={commandLabelClass}>Causal trace</p>
+                  <dl className="mt-3 grid gap-2 text-xs">
+                    {causalTraceRows.map(([label, value]) => (
+                      <div className="grid grid-cols-[9.75rem_minmax(0,1fr)] gap-2" key={label}>
+                        <dt className="font-semibold uppercase tracking-[0.12em] text-[var(--ddv4-fg-faint)]">
+                          {label}
+                        </dt>
+                        <dd className={`break-all font-mono ${commandTextClass}`}>{formatNullable(value)}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              ) : null}
               {verificationTargets.length > 0 &&
               (previewState.status === "satisfied" ||
                 previewState.status === "ready" ||
@@ -12076,6 +12122,33 @@ function coderSummaryFromPayload(payload: unknown, fallback: string): string {
 
 function nestedRecord(record: Record<string, unknown>, keys: string[]): Record<string, unknown> {
   return keys.reduce<Record<string, unknown>>((current, key) => asRecord(current[key]), record);
+}
+
+type CausalTraceFields = {
+  traceId: string | null;
+  invocationEventId: string | null;
+  consumerEventId: string | null;
+  consumerSubsystem: string | null;
+  causalStatusAfter: string | null;
+};
+
+export function causalTraceFromPayload(payload: unknown): CausalTraceFields {
+  const record = asRecord(payload);
+  const task = asRecord(record.task);
+  const execution = asRecord(record.execution);
+  const taskTrace = asRecord(task.causal_trace);
+  const executionTrace = asRecord(execution.causal_trace);
+  const trace = Object.keys(executionTrace).length > 0 ? executionTrace : taskTrace;
+  return {
+    traceId: stringValue(execution.trace_id) ?? stringValue(trace.trace_id) ?? null,
+    invocationEventId:
+      stringValue(execution.invocation_event_id) ??
+      stringValue(trace.invocation_event_id) ??
+      null,
+    consumerEventId: stringValue(trace.consumer_event_id) ?? null,
+    consumerSubsystem: stringValue(trace.consumer_subsystem) ?? null,
+    causalStatusAfter: stringValue(trace.status_after) ?? null,
+  };
 }
 
 export function changedFilesFromPayload(payload: unknown): string[] {

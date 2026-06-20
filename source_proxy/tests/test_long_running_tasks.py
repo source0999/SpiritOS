@@ -96,6 +96,9 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
         )
         self._previous_spirit_project_path = os.environ.get("SPIRIT_PROJECT_PATH")
         self._previous_audit_path = os.environ.get("SOURCE_PROXY_APPROVED_ACTION_AUDIT_LOG")
+        self._previous_gate_state_path = os.environ.get("SOURCE_PROXY_GATE_STATE_PATH")
+        self._previous_gate_increment = os.environ.get("SOURCE_PROXY_GATE_INCREMENT")
+        self._previous_gate_allowed_actions = os.environ.get("SOURCE_PROXY_GATE_ALLOWED_ACTIONS")
         self._tempdir = tempfile.TemporaryDirectory()
         os.environ["SOURCE_PROXY_LONG_RUNNING_TASKS_DB"] = os.path.join(
             self._tempdir.name,
@@ -105,6 +108,19 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
             self._tempdir.name,
             "approved_actions.audit.jsonl",
         )
+        gate_state_path = os.path.join(self._tempdir.name, "gate-state.json")
+        os.environ["SOURCE_PROXY_GATE_STATE_PATH"] = gate_state_path
+        os.environ["SOURCE_PROXY_GATE_INCREMENT"] = "1.3"
+        os.environ["SOURCE_PROXY_GATE_ALLOWED_ACTIONS"] = "apply,gate_implementation,model_call"
+        with open(gate_state_path, "w", encoding="utf-8") as handle:
+            json.dump(
+                {
+                    "status": "APPROVED_INCREMENT",
+                    "approved_increment": "1.3",
+                    "approval_token": "test-token",
+                },
+                handle,
+            )
         os.environ["SPIRIT_PROJECT_PATH"] = self._tempdir.name
         os.makedirs(os.path.join(self._tempdir.name, "source_proxy"), exist_ok=True)
         with open(
@@ -133,6 +149,18 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
             os.environ["SOURCE_PROXY_APPROVED_ACTION_AUDIT_LOG"] = (
                 self._previous_audit_path
             )
+        if self._previous_gate_state_path is None:
+            os.environ.pop("SOURCE_PROXY_GATE_STATE_PATH", None)
+        else:
+            os.environ["SOURCE_PROXY_GATE_STATE_PATH"] = self._previous_gate_state_path
+        if self._previous_gate_increment is None:
+            os.environ.pop("SOURCE_PROXY_GATE_INCREMENT", None)
+        else:
+            os.environ["SOURCE_PROXY_GATE_INCREMENT"] = self._previous_gate_increment
+        if self._previous_gate_allowed_actions is None:
+            os.environ.pop("SOURCE_PROXY_GATE_ALLOWED_ACTIONS", None)
+        else:
+            os.environ["SOURCE_PROXY_GATE_ALLOWED_ACTIONS"] = self._previous_gate_allowed_actions
         self._tempdir.cleanup()
 
     def test_create_and_poll_task_without_execution(self) -> None:
@@ -710,14 +738,15 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                 ]
             )
 
-            payload = execute_approved_long_running_task(
-                task_id,
-                action="implement proposed file change",
-                approval_id=_approval_id(task_id, diff, "src/app/demo/page.tsx"),
-                approved_by="test",
-                approved_diff=diff,
-                target="src/app/demo/page.tsx",
-            )
+            with mock.patch("source_proxy.tasks.long_running.central_gate_check"):
+                payload = execute_approved_long_running_task(
+                    task_id,
+                    action="implement proposed file change",
+                    approval_id=_approval_id(task_id, diff, "src/app/demo/page.tsx"),
+                    approved_by="test",
+                    approved_diff=diff,
+                    target="src/app/demo/page.tsx",
+                )
 
             with open("src/app/demo/page.tsx", encoding="utf-8") as handle:
                 content = handle.read()
@@ -734,14 +763,153 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
             )
             self.assertTrue(payload["task"]["writes_allowed"])
             self.assertIn("src/app/demo/page.tsx", audit_line)
+            events = payload["task"]["causal_events"]
+            self.assertGreaterEqual(len(events), 3)
+            event_ids = [event["event_id"] for event in events]
+            self.assertEqual(len(event_ids), len(set(event_ids)))
+            trace_ids = {event["trace_id"] for event in events}
+            self.assertEqual(len(trace_ids), 1)
+            invocation = next(
+                event for event in events if event["event_type"] == "invocation"
+            )
+            consumer = next(
+                event for event in events if event["event_type"] == "consumer"
+            )
+            self.assertEqual(invocation["task_id"], task_id)
+            self.assertEqual(invocation["approval_id"], _approval_id(task_id, diff, "src/app/demo/page.tsx"))
+            self.assertEqual(invocation["run_id"], f"execute_approved_long_running_task:{task_id}")
+            self.assertEqual(invocation["subsystem"], "source_proxy_long_running")
+            self.assertEqual(consumer["consumer_subsystem"], "long_running_status_observer")
+            self.assertEqual(consumer["trace_id"], invocation["trace_id"])
+            self.assertEqual(
+                payload["task"]["causal_trace"]["consumer_event_id"],
+                consumer["event_id"],
+            )
+            self.assertEqual(
+                payload["execution"]["invocation_event_id"],
+                invocation["event_id"],
+            )
         finally:
             os.chdir(previous_cwd)
             if previous_audit_path is None:
                 os.environ.pop("SOURCE_PROXY_APPROVED_ACTION_AUDIT_LOG", None)
             else:
                 os.environ["SOURCE_PROXY_APPROVED_ACTION_AUDIT_LOG"] = (
-                    previous_audit_path
-                )
+                previous_audit_path
+            )
+
+    def test_causal_events_persist_with_task_record(self) -> None:
+        previous_cwd = os.getcwd()
+        try:
+            os.chdir(self._tempdir.name)
+            os.makedirs("docs", exist_ok=True)
+            with open("docs/causal.md", "w", encoding="utf-8") as handle:
+                handle.write("# Causal\n\nBefore.\n")
+
+            created = create_long_running_task("Append causal note")
+            task_id = created["task"]["id"]
+            diff = "\n".join(
+                [
+                    "diff --git a/docs/causal.md b/docs/causal.md",
+                    "--- a/docs/causal.md",
+                    "+++ b/docs/causal.md",
+                    "@@ -1,3 +1,4 @@",
+                    " # Causal",
+                    " ",
+                    " Before.",
+                    "+After.",
+                    "",
+                ]
+            )
+            with mock.patch("source_proxy.tasks.long_running.central_gate_check"):
+                payload = execute_approved_long_running_task(
+                    task_id,
+                    action="append docs note",
+                    approval_id=_approval_id(task_id, diff, "docs/causal.md"),
+                    approved_diff=diff,
+                    target="docs/causal.md",
+            )
+            trace_id = payload["task"]["causal_trace"]["trace_id"]
+            from source_proxy.tasks import long_running
+
+            long_running._tasks.clear()
+
+            reloaded = get_long_running_task_snapshot(task_id)
+
+            self.assertEqual(reloaded["task"]["causal_trace"]["trace_id"], trace_id)
+            self.assertTrue(reloaded["task"]["causal_events"])
+            self.assertEqual(
+                len({event["trace_id"] for event in reloaded["task"]["causal_events"]}),
+                1,
+            )
+        finally:
+            os.chdir(previous_cwd)
+
+    def test_causal_event_notes_do_not_emit_secret_shaped_strings(self) -> None:
+        created = create_long_running_task("Secret-shaped event guard")
+        task_id = created["task"]["id"]
+
+        from source_proxy.tasks import long_running
+
+        task = long_running._lookup_task(task_id)
+        event = long_running._append_causal_event(
+            task,
+            event_type="status_transition",
+            subsystem="source_proxy_long_running",
+            notes=["token=abcd1234abcd1234abcd1234"],
+        )
+
+        self.assertNotIn("abcd1234abcd1234abcd1234", json.dumps(event))
+        self.assertIn("[REDACTED]", event["notes"][0])
+
+    def test_central_gate_failure_creates_failure_event_without_status_advance(self) -> None:
+        previous_cwd = os.getcwd()
+        try:
+            os.chdir(self._tempdir.name)
+            os.makedirs("docs", exist_ok=True)
+            with open("docs/gate.md", "w", encoding="utf-8") as handle:
+                handle.write("# Gate\n\nBefore.\n")
+
+            created = create_long_running_task("Append gate note")
+            task_id = created["task"]["id"]
+            diff = "\n".join(
+                [
+                    "diff --git a/docs/gate.md b/docs/gate.md",
+                    "--- a/docs/gate.md",
+                    "+++ b/docs/gate.md",
+                    "@@ -1,3 +1,4 @@",
+                    " # Gate",
+                    " ",
+                    " Before.",
+                    "+After.",
+                    "",
+                ]
+            )
+
+            with mock.patch(
+                "source_proxy.tasks.long_running.central_gate_check",
+                side_effect=RuntimeError("central gate blocked"),
+            ):
+                with self.assertRaises(RuntimeError):
+                    execute_approved_long_running_task(
+                        task_id,
+                        action="append docs note",
+                        approval_id=_approval_id(task_id, diff, "docs/gate.md"),
+                        approved_diff=diff,
+                        target="docs/gate.md",
+                    )
+
+            readback = get_long_running_task_snapshot(task_id)
+            self.assertEqual(readback["task"]["status"], "failed_needs_human")
+            events = readback["task"]["causal_events"]
+            self.assertEqual(events[0]["event_type"], "invocation")
+            self.assertEqual(events[1]["event_type"], "failure")
+            self.assertEqual(events[2]["event_type"], "consumer")
+            self.assertEqual(events[0]["trace_id"], events[1]["trace_id"])
+            self.assertEqual(events[1]["status_after"], "failed_needs_human")
+            self.assertEqual(events[2]["status_after"], "failed_needs_human")
+        finally:
+            os.chdir(previous_cwd)
 
     def test_router_executes_approved_diff(self) -> None:
         previous_cwd = os.getcwd()
