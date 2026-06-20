@@ -1,0 +1,36 @@
+{
+  "raw_evidence": "/home/source/spiritos-evidence/plan-03/plan3-disposable-proof.json",
+  "policy_task": {
+    "task_id": "task_6ecf07847f44",
+    "trace_id": "trace_6d3256350cd748f2",
+    "status": "policy_blocked",
+    "policy_decision": "policy_blocked",
+    "blocked_action": "mac_write",
+    "mutation_prevented": true
+  },
+  "recovery_task": {
+    "task_id": "task_b8e307901b22",
+    "trace_id": "trace_10a21d27c6c14f5e",
+    "status": "worker_dispatched",
+    "recovery_marker": "recovered_from_worker_dispatched",
+    "duplicate_action_prevented": true
+  },
+  "retry_task": {
+    "task_id": "task_d8d08a4b6385",
+    "trace_id": "trace_393ed0cf0d1140de",
+    "status": "failed_needs_human",
+    "failure_class": "model_timeout",
+    "attempt_count": 2,
+    "max_attempts": 2
+  },
+  "repair_task": {
+    "task_id": "task_938dad74a7d9",
+    "trace_id": "trace_31500112a69a42bf",
+    "status": "verified",
+    "verification_result": "VERIFIED",
+    "repair_result": "repair_applied_and_reverified",
+    "repair_attempt_count": 1,
+    "actual_change_applied": true
+  },
+  "production_mutation": false
+}

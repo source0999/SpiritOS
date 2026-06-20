@@ -1,8 +1,12 @@
 {
   "plan": 3,
   "title": "Durable Execution, Policy, Recovery, and Repair",
-  "status": "PLAN_WRITTEN_NOT_STARTED",
-  "gate_status": "BLOCKED_PENDING_PLAN_0_COMPRESSION_DECISION",
-  "implementation_performed": false,
-  "next_plan_authorized": false
+  "status": "GO",
+  "gate_status": "PLAN_3_COMPLETE_PENDING_INDEPENDENT_ACCEPTANCE_REVIEW",
+  "implementation_performed": true,
+  "next_plan_authorized": false,
+  "plan_4_started": false,
+  "raw_evidence": "/home/source/spiritos-evidence/plan-03/plan3-disposable-proof.json",
+  "commit": "recorded_in_git_log_after_closeout",
+  "commit_pending": false
 }

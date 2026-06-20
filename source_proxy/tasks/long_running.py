@@ -603,7 +603,17 @@ DEFAULT_STEPS = [
     "Prepare verification plan.",
     "Wait for explicit execution path.",
 ]
-CAUSAL_EVENT_TYPES = {"invocation", "consumer", "failure", "status_transition"}
+CAUSAL_EVENT_TYPES = {
+    "invocation",
+    "consumer",
+    "failure",
+    "status_transition",
+    "policy",
+    "retry",
+    "recovery",
+    "repair",
+    "verification",
+}
 CAUSAL_EVENT_SECRET_PATTERNS = (
     re.compile(r"sk-[A-Za-z0-9_-]{20,}"),
     re.compile(r"(?i)(api[_-]?key|token|secret)\s*[:=]\s*['\"]?[A-Za-z0-9_.-]{12,}"),
@@ -664,6 +674,7 @@ class LongRunningTask:
             "architect_reason": self.architect_reason,
             "causal_events": list(self.causal_events[-50:]),
             "causal_trace": _causal_trace_summary(self.causal_events),
+            "plan_3_durable_state": _plan3_readback_state(self),
             "would_execute": _has_approved_execution(self.open_diffs),
             "writes_allowed": _has_approved_execution(self.open_diffs),
             "worker_lanes": _worker_lanes_for_task(self),
@@ -781,7 +792,11 @@ def _normalize_task_description(description: str) -> str:
 
 def get_long_running_task(task_id: str) -> dict[str, Any]:
     task = _lookup_task(task_id)
-    if task.status not in _terminal_or_waiting_statuses():
+    if _task_has_plan3_durable_state(task):
+        task.poll_count += 1
+        task.updated_at = _now_iso()
+        _save_task(task)
+    elif task.status not in _terminal_or_waiting_statuses():
         task.poll_count += 1
         task.status = (
             "running"
@@ -1562,6 +1577,10 @@ def _ensure_causal_trace_id(task: LongRunningTask) -> str:
         trace_id = str(event.get("trace_id") or "").strip()
         if trace_id:
             return trace_id
+    snapshot = task.ast_snapshot if isinstance(task.ast_snapshot, dict) else {}
+    existing_trace_id = str(snapshot.get("causal_trace_id") or "").strip()
+    if existing_trace_id:
+        return existing_trace_id
     trace_id = f"trace_{uuid4().hex[:16]}"
     snapshot = _ensure_ast_snapshot_dict(task)
     snapshot["causal_trace_id"] = trace_id
@@ -1572,7 +1591,17 @@ def _ensure_causal_trace_id(task: LongRunningTask) -> str:
 def _append_causal_event(
     task: LongRunningTask,
     *,
-    event_type: Literal["invocation", "consumer", "failure", "status_transition"],
+    event_type: Literal[
+        "invocation",
+        "consumer",
+        "failure",
+        "status_transition",
+        "policy",
+        "retry",
+        "recovery",
+        "repair",
+        "verification",
+    ],
     subsystem: str,
     approval_id: str | None = None,
     run_id: str | None = None,
@@ -1622,6 +1651,13 @@ def _causal_trace_summary(events: list[dict[str, Any]]) -> dict[str, Any]:
         "consumer_event_id": consumer.get("event_id"),
         "consumer_subsystem": consumer.get("consumer_subsystem"),
         "status_after": latest.get("status_after"),
+        "event_types": sorted(
+            {
+                str(event.get("event_type") or "")
+                for event in events
+                if str(event.get("event_type") or "")
+            }
+        ),
     }
 
 
@@ -2258,6 +2294,7 @@ def _task_envelope(task: LongRunningTask) -> dict[str, Any]:
         _save_task(task)
     payload = task.to_payload()
     payload["post_apply_verification"] = _current_post_apply_verification(task)
+    payload["plan_3_durable_state"] = _plan3_readback_state(task)
     payload["scope_key"] = _task_scope_key(task)
     payload["write_capable"] = _task_is_write_capable(task)
     return {
@@ -2279,6 +2316,35 @@ def _ensure_ast_snapshot_dict(task: LongRunningTask) -> dict[str, Any]:
         return task.ast_snapshot
     task.ast_snapshot = {}
     return task.ast_snapshot
+
+
+def _task_has_plan3_durable_state(task: LongRunningTask) -> bool:
+    snapshot = task.ast_snapshot if isinstance(task.ast_snapshot, dict) else {}
+    return isinstance(snapshot.get("plan_3_durable_state"), dict)
+
+
+def _plan3_readback_state(task: LongRunningTask) -> dict[str, Any] | None:
+    snapshot = task.ast_snapshot if isinstance(task.ast_snapshot, dict) else {}
+    state = snapshot.get("plan_3_durable_state")
+    if not isinstance(state, dict):
+        return None
+    trace = _causal_trace_summary(task.causal_events)
+    latest_invocation = trace.get("invocation_event_id")
+    latest_consumer = trace.get("consumer_event_id")
+    payload = dict(state)
+    payload.update(
+        {
+            "task_id": task.id,
+            "current_status": task.status,
+            "trace_id": state.get("trace_id") or trace.get("trace_id"),
+            "latest_invocation_event_id": state.get("latest_invocation_event_id")
+            or latest_invocation,
+            "latest_consumer_event_id": state.get("latest_consumer_event_id")
+            or latest_consumer,
+            "causal_events_json": list(task.causal_events[-50:]),
+        }
+    )
+    return payload
 
 
 def _role_transitions_for_task(task: LongRunningTask) -> list[dict[str, Any]]:
