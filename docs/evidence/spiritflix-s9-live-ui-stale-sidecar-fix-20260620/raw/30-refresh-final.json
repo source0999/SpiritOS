@@ -1,0 +1,159 @@
+{
+  "schema": "spiritflix-smart-batch/v1",
+  "generatedAt": "2026-06-20T06:57:26.862Z",
+  "mode": "run",
+  "rootPath": "/mnt/spirit-8tb/media/yes/models/aaliyah-yasan",
+  "recursive": false,
+  "maxItems": 2,
+  "items": [
+    {
+      "path": "/mnt/spirit-8tb/media/yes/models/aaliyah-yasan/540598_720p.mkv",
+      "name": "540598_720p.mkv",
+      "parentPath": "/mnt/spirit-8tb/media/yes/models/aaliyah-yasan",
+      "extension": ".mkv",
+      "status": "analyzed",
+      "analysisStatus": "needs_review",
+      "reviewStatus": "unreviewed",
+      "sidecarCurrent": true,
+      "needsReview": true,
+      "suggestedTagCount": 2,
+      "tags": [
+        {
+          "id": "solo",
+          "label": "solo",
+          "group": "scene",
+          "confidence": 0.8,
+          "reviewRequired": true,
+          "reviewState": "pending"
+        },
+        {
+          "id": "indoor",
+          "label": "indoor",
+          "group": "scene",
+          "confidence": 0.7,
+          "reviewRequired": true,
+          "reviewState": "pending"
+        }
+      ],
+      "qualityBadges": [
+        {
+          "id": "hd",
+          "label": "HD",
+          "group": "quality",
+          "confidence": 0.85,
+          "reviewRequired": false,
+          "reviewState": "pending"
+        },
+        {
+          "id": "mkv-container",
+          "label": "mkv",
+          "group": "format",
+          "confidence": 0.7,
+          "reviewRequired": false,
+          "reviewState": "pending"
+        }
+      ],
+      "modelName": "Aaliyah Yasan",
+      "modelSource": "path",
+      "nameReason": "Aaliyah Yasan fallback uses strongest available content tags; extension is kept only for target-path preview.",
+      "visualTaggingAvailable": true,
+      "approvedTagCount": 0,
+      "rejectedTagCount": 0,
+      "pendingTagCount": 2,
+      "renamePreviewAvailable": false,
+      "renamePreviewStatus": "provisional",
+      "proposedFilename": "Aaliyah Yasan - solo indoor 540598",
+      "proposedTargetPath": "/mnt/spirit-8tb/media/yes/models/aaliyah-yasan/Aaliyah Yasan - solo indoor 540598.mkv",
+      "renameBlocker": "Review or approve tags/metadata to unlock rename preview.",
+      "renameWarnings": [
+        "Provisional preview, not eligible for apply until reviewed."
+      ],
+      "sidecarRef": "analysis/7bcf022cc31e.json",
+      "analyzedAt": "2026-06-20T06:57:20.978Z"
+    },
+    {
+      "path": "/mnt/spirit-8tb/media/yes/models/aaliyah-yasan/Aaliyah Yasin Has Unprotected Sex With A Stranger.mkv",
+      "name": "Aaliyah Yasin Has Unprotected Sex With A Stranger.mkv",
+      "parentPath": "/mnt/spirit-8tb/media/yes/models/aaliyah-yasan",
+      "extension": ".mkv",
+      "status": "analyzed",
+      "analysisStatus": "needs_review",
+      "reviewStatus": "unreviewed",
+      "sidecarCurrent": true,
+      "needsReview": true,
+      "suggestedTagCount": 2,
+      "tags": [
+        {
+          "id": "solo",
+          "label": "solo",
+          "group": "scene",
+          "confidence": 0.8,
+          "reviewRequired": true,
+          "reviewState": "pending"
+        },
+        {
+          "id": "indoor",
+          "label": "indoor",
+          "group": "scene",
+          "confidence": 0.7,
+          "reviewRequired": true,
+          "reviewState": "pending"
+        }
+      ],
+      "qualityBadges": [
+        {
+          "id": "hd",
+          "label": "HD",
+          "group": "quality",
+          "confidence": 0.85,
+          "reviewRequired": false,
+          "reviewState": "pending"
+        },
+        {
+          "id": "long",
+          "label": "long",
+          "group": "format",
+          "confidence": 0.8,
+          "reviewRequired": false,
+          "reviewState": "pending"
+        },
+        {
+          "id": "mkv-container",
+          "label": "mkv",
+          "group": "format",
+          "confidence": 0.7,
+          "reviewRequired": false,
+          "reviewState": "pending"
+        }
+      ],
+      "modelName": "Aaliyah Yasan",
+      "modelSource": "path",
+      "nameReason": "Aaliyah Yasan fallback uses strongest available content tags; extension is kept only for target-path preview.",
+      "visualTaggingAvailable": true,
+      "approvedTagCount": 0,
+      "rejectedTagCount": 0,
+      "pendingTagCount": 2,
+      "renamePreviewAvailable": false,
+      "renamePreviewStatus": "provisional",
+      "proposedFilename": "Aaliyah Yasan - solo indoor 01",
+      "proposedTargetPath": "/mnt/spirit-8tb/media/yes/models/aaliyah-yasan/Aaliyah Yasan - solo indoor 01.mkv",
+      "renameBlocker": "Review or approve tags/metadata to unlock rename preview.",
+      "renameWarnings": [
+        "Provisional preview, not eligible for apply until reviewed."
+      ],
+      "sidecarRef": "analysis/8fe3980cb136.json",
+      "analyzedAt": "2026-06-20T06:57:26.720Z"
+    }
+  ],
+  "counts": {
+    "candidates": 0,
+    "analyzed": 2,
+    "skipped": 0,
+    "already_current": 0,
+    "failed": 0,
+    "needs_review": 2,
+    "rename_preview_available": 0
+  },
+  "visualContentTaggingEnabled": true,
+  "visualContentTaggingMessage": "Local sampled-frame content tags are present and waiting for operator review."
+}

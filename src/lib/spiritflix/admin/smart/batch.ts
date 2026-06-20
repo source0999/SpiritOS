@@ -4,7 +4,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { resolveSpiritFlixAdminPath } from "../paths";
-import { readSmartAnalysis } from "./analysis-store";
+import { readSmartAnalysis, writeSmartAnalysis } from "./analysis-store";
 import { buildSmartRenamePreviewDraft } from "./rename-preview";
 import {
   markSpiritFlixSmartAnalysisReviewed,
@@ -132,6 +132,10 @@ interface BatchTarget {
 
 const DEFAULT_BATCH_LIMIT = 12;
 const MAX_BATCH_LIMIT = 50;
+
+function isLegacyVisualSidecar(analysis: SpiritFlixSmartAnalysis | null): boolean {
+  return Boolean(analysis && analysis.visualAnalysis === undefined);
+}
 
 function boundedLimit(value: number | undefined): number {
   if (!Number.isFinite(value ?? NaN)) return DEFAULT_BATCH_LIMIT;
@@ -504,7 +508,8 @@ export async function runSpiritFlixSmartBatch(options: InternalBatchOptions = {}
   for (const { videoPath, mediaRoot } of targets) {
     try {
       const current = await loadCurrentAnalysis(videoPath, mediaRoot);
-      if (current && !options.force) {
+      const legacyVisualSidecar = isLegacyVisualSidecar(current);
+      if (current && !options.force && !legacyVisualSidecar) {
         items.push(await itemFromAnalysis(videoPath, current, "already_current", "Current analysis sidecar already exists."));
         continue;
       }
@@ -521,9 +526,25 @@ export async function runSpiritFlixSmartBatch(options: InternalBatchOptions = {}
         visualModel: options.visualModel,
         visualModelTimeoutMs: options.visualModelTimeoutMs,
       });
+      const finalAnalysis = legacyVisualSidecar && analysis.visualAnalysis?.tags.length
+        ? (await writeSmartAnalysis(
+            {
+              ...analysis,
+              status: "needs_review",
+              reviewedMetadata: undefined,
+              safety: {
+                ...analysis.safety,
+                safeToSuggest: false,
+                requiresHumanReview: true,
+                reasons: [...new Set([...analysis.safety.reasons, "Legacy smart sidecar refreshed with visual tags; operator review required."])],
+              },
+            },
+            mediaRoot ? { mediaRoot } : undefined,
+          )).analysis
+        : analysis;
       const preservedReview = beforeReview && analysis.reviewedMetadata?.reviewedAt === beforeReview.reviewedAt;
       const reason = beforeReview && !preservedReview ? "Analysis refreshed; review metadata changed." : undefined;
-      items.push(await itemFromAnalysis(videoPath, analysis, "analyzed", reason));
+      items.push(await itemFromAnalysis(videoPath, finalAnalysis, "analyzed", legacyVisualSidecar ? "Legacy sidecar refreshed with S9 visual tags." : reason));
     } catch (error) {
       items.push({
         path: videoPath,

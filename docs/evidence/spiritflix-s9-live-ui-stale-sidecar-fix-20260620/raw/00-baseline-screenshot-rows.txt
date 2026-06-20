@@ -1,0 +1,100 @@
+2026-06-20T02:43:12-04:00
+1b27661d Finish Plan 2 live Mac and specialist integration
+d8e902d8 fix: prove SpiritFlix visual smart tags on real media
+7e90ef5f feat: add SpiritFlix real video smart tagging review workflow
+c6d3e9de Complete Plan 2 Mac worker live proof hardening
+0af65220 Complete Source Proxy Plan 2 hardline continuation
+?? docs/evidence/spiritflix-s9-live-ui-stale-sidecar-fix-20260620/
+=== screenshot rows API state ===
+--- /mnt/spirit-8tb/media/yes/models/aaliyah-yasan/540598_720p.mkv
+{
+  "name": "540598_720p.mkv",
+  "analysisStatus": "approved",
+  "reviewStatus": "reviewed",
+  "visualTaggingAvailable": false,
+  "tags": [],
+  "qualityBadges": [
+    {
+      "id": "hd",
+      "label": "HD",
+      "group": "quality",
+      "confidence": 0.85,
+      "reviewRequired": false,
+      "reviewState": "approved"
+    },
+    {
+      "id": "mkv-container",
+      "label": "mkv",
+      "group": "format",
+      "confidence": 0.7,
+      "reviewRequired": false,
+      "reviewState": "approved"
+    },
+    {
+      "id": "needs-title-cleanup",
+      "label": "needs title cleanup",
+      "group": "safety",
+      "confidence": 0.85,
+      "reviewRequired": true,
+      "reviewState": "approved"
+    },
+    {
+      "id": "unknown-performer",
+      "label": "unknown performer",
+      "group": "performer",
+      "confidence": 0.6,
+      "reviewRequired": false,
+      "reviewState": "approved"
+    }
+  ],
+  "proposedFilename": "540598 - HD",
+  "nameReason": "Recommended name uses Aaliyah Yasan identity/title hints; extension is kept only for target-path preview.",
+  "sidecarRef": "analysis/7bcf022cc31e.json",
+  "analyzedAt": "2026-06-20T06:41:14.589Z"
+}
+--- /mnt/spirit-8tb/media/yes/models/aaliyah-yasan/Aaliyah Yasin Has Unprotected Sex With A Stranger.mkv
+{
+  "name": "Aaliyah Yasin Has Unprotected Sex With A Stranger.mkv",
+  "analysisStatus": "approved",
+  "reviewStatus": "reviewed",
+  "visualTaggingAvailable": false,
+  "tags": [],
+  "qualityBadges": [
+    {
+      "id": "hd",
+      "label": "HD",
+      "group": "quality",
+      "confidence": 0.85,
+      "reviewRequired": false,
+      "reviewState": "approved"
+    },
+    {
+      "id": "long",
+      "label": "long",
+      "group": "format",
+      "confidence": 0.8,
+      "reviewRequired": false,
+      "reviewState": "approved"
+    },
+    {
+      "id": "mkv-container",
+      "label": "mkv",
+      "group": "format",
+      "confidence": 0.7,
+      "reviewRequired": false,
+      "reviewState": "approved"
+    },
+    {
+      "id": "unknown-performer",
+      "label": "unknown performer",
+      "group": "performer",
+      "confidence": 0.6,
+      "reviewRequired": false,
+      "reviewState": "approved"
+    }
+  ],
+  "proposedFilename": "Aaliyah Yasin Has Unprotected Sex With A Stranger - HD",
+  "nameReason": "Recommended name uses Aaliyah Yasan identity/title hints; extension is kept only for target-path preview.",
+  "sidecarRef": "analysis/8fe3980cb136.json",
+  "analyzedAt": "2026-06-20T06:41:14.849Z"
+}

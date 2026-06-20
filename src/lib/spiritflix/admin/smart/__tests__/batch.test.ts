@@ -32,6 +32,15 @@ async function currentAnalysis(videoPath: string, overrides: Partial<SpiritFlixS
     status: "suggested",
     safety: { safeToSuggest: false, reasons: ["test"], requiresHumanReview: true },
     media: { durationSeconds: 60 },
+    visualAnalysis: {
+      status: "complete",
+      modelName: "test-vision",
+      analyzedAt: "2026-06-18T00:00:00.000Z",
+      sampledFrameCount: 1,
+      analyzedFrameCount: 1,
+      tags: [],
+      frames: [],
+    },
     samples: [],
     suggestedTags: [{ id: "hd", label: "HD", group: "quality", confidence: 0.8, evidenceTimestamps: [], reviewRequired: false }],
     suggestedDisplayTitle: "Clip",
@@ -82,6 +91,59 @@ describe("SpiritFlix smart batch analysis", () => {
 
     expect(result.counts.already_current).toBe(1);
     expect(analyzeVideo).not.toHaveBeenCalled();
+  });
+
+  it("refreshes legacy sidecars that do not have S9 visual analysis", async () => {
+    const videoPath = await writeVideo("yes/legacy.mp4");
+    const existing = await currentAnalysis(videoPath, { visualAnalysis: undefined });
+    const analyzeVideo = vi.fn(async () => validateSpiritFlixSmartAnalysis({
+      ...existing,
+      analyzerVersion: "spiritflix-smart/s9",
+      visualAnalysis: {
+        status: "complete",
+        modelName: "test-vision",
+        analyzedAt: "2026-06-20T00:00:00.000Z",
+        sampledFrameCount: 1,
+        analyzedFrameCount: 1,
+        tags: ["solo"],
+        frames: [{
+          timestampSeconds: 5,
+          timestampLabel: "5s",
+          status: "complete",
+          tags: ["solo"],
+          observations: [],
+        }],
+      },
+      samples: [{
+        timestampSeconds: 5,
+        timestampLabel: "5s",
+        cacheKey: "frame-key",
+        observations: ["sampled frame"],
+        tags: [{ id: "solo", label: "solo", group: "scene", confidence: 0.8, evidenceTimestamps: [5], reviewRequired: true }],
+        confidence: 0.8,
+      }],
+      contentTagEvidence: [{
+        source: "vlm",
+        tags: ["solo"],
+        confidence: 0.8,
+        evidenceRef: "test-vision",
+        requiresReview: true,
+      }],
+      suggestedTags: [{ id: "solo", label: "solo", group: "scene", confidence: 0.8, evidenceTimestamps: [5], reviewRequired: true }],
+      pendingSmartTags: [{ id: "solo", label: "solo", group: "scene", confidence: 0.8, evidenceTimestamps: [5], reviewRequired: true }],
+      suggestedFilename: "Model - solo 01",
+      pendingDisplayName: "Model - solo 01",
+    }));
+
+    const result = await runSpiritFlixSmartBatch({
+      path: path.join(tempRoot, "yes"),
+      analyzeVideo,
+    } as Parameters<typeof runSpiritFlixSmartBatch>[0]);
+
+    expect(result.counts.analyzed).toBe(1);
+    expect(result.items[0].reason).toMatch(/Legacy sidecar refreshed/i);
+    expect(result.items[0].visualTaggingAvailable).toBe(true);
+    expect(analyzeVideo).toHaveBeenCalledTimes(1);
   });
 
   it("returns operator visibility fields when current items still need review", async () => {

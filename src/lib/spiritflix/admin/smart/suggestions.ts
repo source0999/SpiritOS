@@ -91,6 +91,13 @@ function topContentLabels(tags: SpiritFlixSmartTag[]): string[] {
     .map((tag) => tag.label.toLowerCase());
 }
 
+function sourceSequence(input: SpiritFlixSmartHeuristicInput): string {
+  const stem = stripVideoExtension(input.fileName);
+  const numericTokens = stem.match(/(?<!\d)\d{2,6}(?!\d)/g) ?? [];
+  const useful = numericTokens.find((token) => !["360", "480", "720", "1080", "2160"].includes(token));
+  return useful ?? "01";
+}
+
 function readableTitle(input: SpiritFlixSmartHeuristicInput): string {
   const title = normalizeSpiritFlixTitle(input.fileName) || stripVideoExtension(input.fileName);
   return sanitizeFilenameStem(title);
@@ -113,22 +120,25 @@ export function buildSuggestedFilename(
   tags: SpiritFlixSmartTag[],
   performerIdentity: SpiritFlixSmartPerformerIdentity = modelIdentityFromPath(input) ?? unknownModelIdentity(),
 ): string {
+  const modelName = sanitizeFilenameStem(performerIdentity.name || "Unknown Model");
+  const content = topContentLabels(tags).join(" ");
+  if (content) {
+    return sanitizeFilenameStem(`${modelName} - ${content} ${sourceSequence(input)}`);
+  }
+
   if (!shouldUseFallbackName(input)) {
     return readableTitle(input);
   }
 
-  const modelName = sanitizeFilenameStem(performerIdentity.name || "Unknown Model");
-  const content = topContentLabels(tags).join(" ");
-  const fallbackTitle = content ? `${modelName} - ${content} 01` : `${modelName} - Untitled 01`;
-  return sanitizeFilenameStem(fallbackTitle);
+  return sanitizeFilenameStem(`${modelName} - Untitled 01`);
 }
 
 function filenameReason(input: SpiritFlixSmartHeuristicInput, tags: SpiritFlixSmartTag[], performerIdentity: SpiritFlixSmartPerformerIdentity): string {
-  if (!shouldUseFallbackName(input)) {
-    return "Readable title preserved; extension is kept only for target-path preview.";
-  }
   if (topContentLabels(tags).length > 0) {
     return `${performerIdentity.name} fallback uses strongest available content tags; extension is kept only for target-path preview.`;
+  }
+  if (!shouldUseFallbackName(input)) {
+    return "Readable title preserved; extension is kept only for target-path preview.";
   }
   return `${performerIdentity.name} fallback uses model identity with Untitled 01 because the filename is random or ambiguous.`;
 }

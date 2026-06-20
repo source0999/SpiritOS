@@ -61,6 +61,44 @@ describe("SpiritFlix smart suggestions", () => {
     expect(result.confidence).toBeGreaterThan(0);
   });
 
+  it("uses visual content tags for recommended names even when the source title is readable", () => {
+    const readablePath = path.join(mediaRoot, "yes", "models", "aaliyah-yasan", "Readable Scene Title.mkv");
+    const result = buildSpiritFlixReviewSuggestions({
+      videoPath: readablePath,
+      fileName: "Readable Scene Title.mkv",
+      parentPath: path.dirname(readablePath),
+    }, {
+      analysis: validateSpiritFlixSmartAnalysis({
+        version: 1,
+        videoPath: readablePath,
+        pathKey: "readable",
+        fileName: "Readable Scene Title.mkv",
+        fileSizeBytes: 10,
+        mtimeMs: 1,
+        analyzedAt: "2026-06-20T00:00:00.000Z",
+        analyzerVersion: "spiritflix-smart/s9",
+        status: "needs_review",
+        safety: { safeToSuggest: false, reasons: ["visual"], requiresHumanReview: true },
+        media: {},
+        samples: [{
+          timestampSeconds: 5,
+          timestampLabel: "5s",
+          cacheKey: "frame-key",
+          observations: ["vlm"],
+          tags: [
+            { id: "solo", label: "solo", group: "scene", confidence: 0.8, evidenceTimestamps: [5], reviewRequired: true },
+            { id: "indoor", label: "indoor", group: "scene", confidence: 0.7, evidenceTimestamps: [5], reviewRequired: true },
+          ],
+          confidence: 0.8,
+        }],
+        suggestedTags: [],
+        confidence: 0,
+      }),
+    });
+
+    expect(result.suggestedDisplayTitle).toBe("Aaliyah Yasan - solo indoor 01");
+  });
+
   it("omits file extension in suggested display filename", () => {
     const mkvPath = path.join(mediaRoot, "movies", "title.mkv");
     const filename = buildSuggestedFilename(
@@ -147,7 +185,45 @@ describe("SpiritFlix smart suggestions", () => {
     });
 
     expect(result.performerIdentity).toMatchObject({ name: "Aaliyah Yasan", source: "path" });
-    expect(result.suggestedDisplayTitle).toBe("Aaliyah Yasan - solo indoor 01");
+    expect(result.suggestedDisplayTitle).toBe("Aaliyah Yasan - solo indoor 130");
+  });
+
+  it("uses useful numeric source ids before quality tokens for visual tag names", () => {
+    const numericPath = path.join(mediaRoot, "yes", "models", "aaliyah-yasan", "540598_720p.mkv");
+    const result = buildSpiritFlixReviewSuggestions({
+      videoPath: numericPath,
+      fileName: "540598_720p.mkv",
+      parentPath: path.dirname(numericPath),
+    }, {
+      analysis: validateSpiritFlixSmartAnalysis({
+        version: 1,
+        videoPath: numericPath,
+        pathKey: "numeric",
+        fileName: "540598_720p.mkv",
+        fileSizeBytes: 10,
+        mtimeMs: 1,
+        analyzedAt: "2026-06-20T00:00:00.000Z",
+        analyzerVersion: "spiritflix-smart/s9",
+        status: "needs_review",
+        safety: { safeToSuggest: false, reasons: ["visual"], requiresHumanReview: true },
+        media: {},
+        samples: [{
+          timestampSeconds: 5,
+          timestampLabel: "5s",
+          cacheKey: "frame-key",
+          observations: ["sampled frame"],
+          tags: [
+            { id: "solo", label: "solo", group: "scene", confidence: 0.8, evidenceTimestamps: [5], reviewRequired: true },
+            { id: "indoor", label: "indoor", group: "scene", confidence: 0.7, evidenceTimestamps: [5], reviewRequired: true },
+          ],
+          confidence: 0.8,
+        }],
+        suggestedTags: [],
+        confidence: 0,
+      }),
+    });
+
+    expect(result.suggestedDisplayTitle).toBe("Aaliyah Yasan - solo indoor 540598");
   });
 
   it("uses Unknown Model fallback for numeric filenames without useful tags", () => {
