@@ -111,7 +111,7 @@ describe("SpiritFlix smart batch analysis", () => {
     expect(result.items[0].qualityBadges.map((tag) => tag.label)).toContain("HD");
     expect(result.items[0].renameWarnings).toContain("Provisional preview, not eligible for apply until reviewed.");
     expect(result.items[0].sidecarRef).toMatch(/^analysis\/[a-f0-9]{12}\.json$/);
-    expect(result.visualContentTaggingMessage).toMatch(/Visual content tagging is not enabled yet/);
+    expect(result.visualContentTaggingMessage).toMatch(/local visual model/i);
   });
 
   it("runs analysis and preserves existing reviewed metadata on refresh", async () => {

@@ -82,7 +82,7 @@ describe("SpiritFlixSmartReviewPanel", () => {
   it("renders approve/reject controls and metadata-only warning", async () => {
     vi.mocked(fetch).mockResolvedValueOnce(Response.json(analysisPayload));
     render(<SpiritFlixSmartReviewPanel item={video} open onClose={() => undefined} />);
-    await screen.findByText(/S6 prepares metadata and rename preview only/i);
+    await screen.findByText(/confirms only metadata sidecars/i);
     expect(screen.getByRole("button", { name: /Approve full HD/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Reject full HD/i })).toBeInTheDocument();
     expect(screen.getByText(/does not rename the file yet/i)).toBeInTheDocument();
@@ -134,6 +134,21 @@ describe("SpiritFlixSmartReviewPanel", () => {
       expect.objectContaining({
         method: "POST",
         body: expect.stringContaining('"action":"saveReview"'),
+      }),
+    );
+  });
+
+  it("confirm approved metadata calls confirmMetadata API", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(Response.json(analysisPayload));
+    render(<SpiritFlixSmartReviewPanel item={video} open onClose={() => undefined} />);
+    await screen.findByRole("button", { name: "Confirm approved tags and name" });
+    fireEvent.click(screen.getByRole("button", { name: "Confirm approved tags and name" }));
+    await waitFor(() => expect(vi.mocked(fetch)).toHaveBeenCalledTimes(2));
+    expect(vi.mocked(fetch)).toHaveBeenLastCalledWith(
+      "/api/spiritflix/admin/smart/analysis",
+      expect.objectContaining({
+        method: "POST",
+        body: expect.stringContaining('"action":"confirmMetadata"'),
       }),
     );
   });

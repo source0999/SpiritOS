@@ -7,6 +7,7 @@ import { readSmartAnalysis, writeSmartAnalysis } from "./analysis-store";
 import { applySmartReviewToAnalysis } from "./review-metadata";
 import { scanOneSpiritFlixVideoEvidence } from "./scanner";
 import { updateSmartAnalysisWithHeuristicSuggestions } from "./suggestions";
+import { applyLocalVisualAnalysisToSpiritFlixAnalysis } from "./visual-analysis";
 import { validateSpiritFlixSmartAnalysis, type SpiritFlixSmartAnalysis, type SpiritFlixSmartReviewInput } from "./types";
 
 export const SPIRITFLIX_SMART_ANALYZER_VERSION_S4 = "spiritflix-smart/s4";
@@ -19,6 +20,9 @@ export interface SpiritFlixSmartReviewOptions {
   maxSamples?: number;
   probeTimeoutMs?: number;
   frameTimeoutMs?: number;
+  visualAnalysis?: boolean;
+  visualModel?: string;
+  visualModelTimeoutMs?: number;
 }
 
 function pathOptions(mediaRoot?: string) {
@@ -38,6 +42,13 @@ export async function runSpiritFlixSmartReviewPipeline(
 ): Promise<SpiritFlixSmartAnalysis> {
   const scanned = await scanOneSpiritFlixVideoEvidence(videoPath, options);
   const stat = await fs.stat(videoPath);
+  const visual = await applyLocalVisualAnalysisToSpiritFlixAnalysis(scanned, {
+    enabled: options?.visualAnalysis ?? true,
+    mediaRoot: options?.mediaRoot,
+    ollamaModel: options?.visualModel,
+    timeoutMs: options?.visualModelTimeoutMs,
+  });
+  await writeSmartAnalysis(visual, pathOptions(options?.mediaRoot));
 
   return updateSmartAnalysisWithHeuristicSuggestions(
     {

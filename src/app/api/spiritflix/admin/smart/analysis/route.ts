@@ -147,8 +147,8 @@ export async function POST(request: NextRequest) {
       analysis = await saveSpiritFlixSmartAnalysisReview(realPath, review, { mediaRoot });
     } else if (action === "analyze") {
       analysis = await runSpiritFlixSmartReviewPipeline(realPath, { mediaRoot });
-    } else if (action === "exportMetadata") {
-      // S6: export approved metadata to admin metadata sidecar only
+    } else if (action === "exportMetadata" || action === "confirmMetadata") {
+      // S9: confirm approved metadata to admin metadata sidecar only
       const pathInput = { videoPath: realPath, fileSizeBytes: stat.size, mtimeMs: stat.mtimeMs };
       const loaded = await readSmartAnalysis(pathInput, { mediaRoot });
       if (!loaded) {
@@ -162,6 +162,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         metadataPath: result.path,
         metadata: projection,
+        confirmed: true,
       }, { headers: { "Cache-Control": "no-store" } });
     } else if (action === "prepareRenamePreview") {
       // S6: build rename preview draft — no execute, no Level 2 call

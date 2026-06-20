@@ -491,7 +491,7 @@ export async function previewSpiritFlixSmartBatch(options: SpiritFlixSmartBatchO
     items,
     counts: summarize(addDuplicateTargetWarnings(items)),
     visualContentTaggingEnabled: items.some((item) => item.visualTaggingAvailable),
-    visualContentTaggingMessage: "Visual content tagging is not enabled yet. Current suggestions use title, path, metadata, and any existing face-rec evidence.",
+    visualContentTaggingMessage: "Analyze folder samples frames and asks the local visual model for review-required content tags. No tags or names are applied until confirm.",
   };
 }
 
@@ -517,6 +517,9 @@ export async function runSpiritFlixSmartBatch(options: InternalBatchOptions = {}
         maxSamples: options.maxSamples,
         probeTimeoutMs: options.probeTimeoutMs,
         frameTimeoutMs: options.frameTimeoutMs,
+        visualAnalysis: options.visualAnalysis,
+        visualModel: options.visualModel,
+        visualModelTimeoutMs: options.visualModelTimeoutMs,
       });
       const preservedReview = beforeReview && analysis.reviewedMetadata?.reviewedAt === beforeReview.reviewedAt;
       const reason = beforeReview && !preservedReview ? "Analysis refreshed; review metadata changed." : undefined;
@@ -559,8 +562,8 @@ export async function runSpiritFlixSmartBatch(options: InternalBatchOptions = {}
     counts: summarize(addDuplicateTargetWarnings(items)),
     visualContentTaggingEnabled: items.some((item) => item.visualTaggingAvailable),
     visualContentTaggingMessage: items.some((item) => item.visualTaggingAvailable)
-      ? "Visual content tags are present from existing local evidence."
-      : "Visual content tagging is not enabled yet. Current suggestions use title, path, metadata, and any existing face-rec evidence.",
+      ? "Local sampled-frame content tags are present and waiting for operator review."
+      : "Local visual analysis ran or was skipped, but no sampled-frame content tags were produced for this batch.",
   };
 }
 
@@ -654,7 +657,7 @@ export async function reviewSpiritFlixSmartBatch(
     counts: summarize(addDuplicateTargetWarnings(items)),
     visualContentTaggingEnabled: items.some((item) => item.visualTaggingAvailable),
     visualContentTaggingMessage: items.some((item) => item.visualTaggingAvailable)
-      ? "Visual content tags are present from existing local evidence."
-      : "Visual content tagging is not enabled yet. Current suggestions use title, path, metadata, and any existing face-rec evidence.",
+      ? "Local sampled-frame content tags are present and waiting for operator review."
+      : "No local sampled-frame content tags are currently active in this reviewed batch.",
   };
 }

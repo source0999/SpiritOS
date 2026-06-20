@@ -143,6 +143,7 @@ function contentEvidenceFor(
 ): SpiritFlixSmartContentTagEvidence[] {
   const frameEvidenceTags = tagsFromSamples(analysis).map((tag) => tag.id);
   const firstFrameRef = analysis?.samples.find((sample) => sample.cacheKey)?.cacheKey ?? null;
+  const existingVisualEvidence = (analysis?.contentTagEvidence ?? []).filter((entry) => entry.source === "vlm" || entry.source === "ocr");
   return [
     {
       source: "filename",
@@ -172,6 +173,7 @@ function contentEvidenceFor(
       evidenceRef: firstFrameRef,
       requiresReview: true,
     },
+    ...existingVisualEvidence,
   ];
 }
 
@@ -272,7 +274,11 @@ export function buildSpiritFlixReviewSuggestions(
   const notes = buildHeuristicNotes(input);
   const suggestedFilenameReason = filenameReason(input, suggestedTags, performerIdentity);
   notes.push(suggestedFilenameReason);
-  notes.push("Visual content tagging not enabled yet; sampled frames are evidence refs only unless a local classifier later writes frame tags.");
+  if (suggestedTags.length > 0) {
+    notes.push("Visual content tags came from sampled-frame evidence and require operator review before confirm.");
+  } else {
+    notes.push("No sampled-frame content tags were produced; recommendations fall back to title, path, metadata, and face-rec evidence.");
+  }
   if (technicalTags.length > 0) {
     notes.push(`technical metadata kept out of primary smart tags: ${technicalTags.map((tag) => tag.label).join(", ")}`);
   }

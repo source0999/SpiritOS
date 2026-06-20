@@ -108,7 +108,7 @@ function mockAdminFetch() {
             rename_preview_available: 0,
           },
           visualContentTaggingEnabled: false,
-          visualContentTaggingMessage: "Visual content tagging is not enabled yet. Current suggestions use title, path, metadata, and any existing face-rec evidence.",
+          visualContentTaggingMessage: "Analyze folder samples frames and asks the local visual model for review-required content tags. No tags or names are applied until confirm.",
           items: [
             {
               path: "/mnt/spirit-8tb/media/yes/Beta Clip.mp4",

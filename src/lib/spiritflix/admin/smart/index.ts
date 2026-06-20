@@ -90,6 +90,12 @@ export {
 } from "./review";
 
 export {
+  SPIRITFLIX_SMART_ANALYZER_VERSION_S9,
+  applyLocalVisualAnalysisToSpiritFlixAnalysis,
+  type SpiritFlixVisualAnalysisOptions,
+} from "./visual-analysis";
+
+export {
   SPIRITFLIX_SMART_ANALYZER_VERSION_S5,
   applySmartReviewToAnalysis,
   assertSpiritFlixSmartReviewPayload,

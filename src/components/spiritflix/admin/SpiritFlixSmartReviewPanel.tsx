@@ -214,7 +214,7 @@ export function SpiritFlixSmartReviewPanel({ item, open, onClose }: SpiritFlixSm
     }
   }, [analysis, collectionsInput, draft, item.path, syncDraftFromAnalysis]);
 
-  // S6: export approved metadata to admin metadata sidecar
+  // S9: confirm approved metadata to admin metadata sidecar
   const runExportMetadata = useCallback(async () => {
     if (!item.path || !analysis) return;
     setExporting(true);
@@ -224,13 +224,13 @@ export function SpiritFlixSmartReviewPanel({ item, open, onClose }: SpiritFlixSm
       const response = await fetch("/api/spiritflix/admin/smart/analysis", {
         method: "POST",
         headers: { Accept: "application/json", "Content-Type": "application/json" },
-        body: JSON.stringify({ path: item.path, action: "exportMetadata" }),
+        body: JSON.stringify({ path: item.path, action: "confirmMetadata" }),
       });
       const payload = (await response.json()) as ExportMetadataResponse;
-      if (!response.ok) throw new Error(payload.error ?? "Failed to export metadata.");
+      if (!response.ok) throw new Error(payload.error ?? "Failed to confirm metadata.");
       setExportResult(payload.metadata ?? null);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Failed to export metadata.");
+      setError(caught instanceof Error ? caught.message : "Failed to confirm metadata.");
     } finally {
       setExporting(false);
     }
@@ -296,7 +296,7 @@ export function SpiritFlixSmartReviewPanel({ item, open, onClose }: SpiritFlixSm
 
         <p className="spiritflix-smart-review__path">{item.path}</p>
         <p className="spiritflix-smart-review__boundary">
-          S6 prepares metadata and rename preview only. It does not rename or move files.
+          S9 analyzes sampled frames, lets you review/edit tags and names, then confirms only metadata sidecars. It does not rename or move files.
         </p>
 
         {loading ? <p className="spiritflix-smart-review__status">Loading smart analysis…</p> : null}
@@ -305,7 +305,7 @@ export function SpiritFlixSmartReviewPanel({ item, open, onClose }: SpiritFlixSm
         {!loading && !analysis ? (
           <section className="spiritflix-smart-review__section">
             <h3>No smart analysis yet</h3>
-            <p>Run a one-video scan to collect metadata, sample frames, and heuristic suggestions. Nothing is renamed or moved.</p>
+            <p>Run a one-video scan to collect metadata, sample frames, local visual tags, and name suggestions. Nothing is renamed or moved.</p>
           </section>
         ) : null}
 
@@ -485,8 +485,8 @@ export function SpiritFlixSmartReviewPanel({ item, open, onClose }: SpiritFlixSm
                 </section>
 
                 <section className="spiritflix-smart-review__section spiritflix-smart-review__section--actions">
-                  <h3>S6 metadata actions</h3>
-                  <p className="spiritflix-smart-review__boundary">S6 prepares metadata and rename preview only. It does not rename or move files.</p>
+                  <h3>Confirm approved metadata</h3>
+                  <p className="spiritflix-smart-review__boundary">Confirm writes approved tags and display-name overrides to SpiritFlix metadata sidecars only.</p>
                   <div className="spiritflix-smart-review__action-buttons">
                     <button
                       className="spiritflix-smart-review__primary"
@@ -494,7 +494,7 @@ export function SpiritFlixSmartReviewPanel({ item, open, onClose }: SpiritFlixSm
                       disabled={exporting}
                       onClick={() => void runExportMetadata()}
                     >
-                      {exporting ? "Exporting…" : "Export approved metadata"}
+                      {exporting ? "Confirming…" : "Confirm approved tags and name"}
                     </button>
                     <button
                       className="spiritflix-smart-review__secondary"
@@ -510,7 +510,7 @@ export function SpiritFlixSmartReviewPanel({ item, open, onClose }: SpiritFlixSm
                 {/* Export result */}
                 {exportResult ? (
                   <section className="spiritflix-smart-review__section spiritflix-smart-review__section--export-result">
-                    <h3>Metadata exported</h3>
+                    <h3>Metadata confirmed</h3>
                     <dl className="spiritflix-smart-review__grid">
                       <div>
                         <dt>Title</dt>

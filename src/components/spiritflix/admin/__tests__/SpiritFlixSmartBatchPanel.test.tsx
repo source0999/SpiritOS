@@ -50,7 +50,7 @@ function batch(overrides: Partial<SpiritFlixSmartBatchPreview>): SpiritFlixSmart
       rename_preview_available: items.filter((entry) => entry.renamePreviewAvailable).length,
     },
     visualContentTaggingEnabled: false,
-    visualContentTaggingMessage: "Visual content tagging is not enabled yet. Current suggestions use title, path, metadata, and any existing face-rec evidence.",
+    visualContentTaggingMessage: "Analyze folder samples frames and asks the local visual model for review-required content tags. No tags or names are applied until confirm.",
     items,
     ...overrides,
   };
@@ -164,7 +164,7 @@ describe("SpiritFlixSmartBatchPanel", () => {
     expect(screen.getAllByText("candidate").length).toBeGreaterThan(0);
     expect(screen.getByText("No tags yet - run Analyze folder")).toBeInTheDocument();
     expect(screen.getByText("Run Analyze folder first")).toBeInTheDocument();
-    expect(screen.getByText(/Visual content tagging is not enabled yet/)).toBeInTheDocument();
+    expect(screen.getByText(/local visual model/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Analyze folder first" })).toBeInTheDocument();
   });
 
