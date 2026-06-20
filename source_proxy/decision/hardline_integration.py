@@ -12,6 +12,9 @@ HardlineIntegrationStatus = Literal[
     "NOT_INTEGRATED_ADVISORY_ONLY",
     "NOT_INTEGRATED_STATUS_ONLY",
     "NOT_INTEGRATED_READ_ONLY_FOR_ACTION",
+    "NOT_INTEGRATED_METADATA_ONLY",
+    "NOT_INTEGRATED_NON_ACTIVATED",
+    "NOT_INTEGRATED_UNVERIFIED",
     "NOT_INTEGRATED_UNCONSUMED_OUTPUT",
     "NOT_INTEGRATED_MOCK_ONLY",
     "NOT_INTEGRATED_FIXTURE_ONLY",
@@ -25,6 +28,9 @@ NON_GO_STATUSES = {
     "NOT_INTEGRATED_ADVISORY_ONLY",
     "NOT_INTEGRATED_STATUS_ONLY",
     "NOT_INTEGRATED_READ_ONLY_FOR_ACTION",
+    "NOT_INTEGRATED_METADATA_ONLY",
+    "NOT_INTEGRATED_NON_ACTIVATED",
+    "NOT_INTEGRATED_UNVERIFIED",
     "NOT_INTEGRATED_UNCONSUMED_OUTPUT",
     "NOT_INTEGRATED_MOCK_ONLY",
     "NOT_INTEGRATED_FIXTURE_ONLY",
@@ -53,6 +59,9 @@ class HardlineProofInput:
     read_only_for_action_subsystem: bool = False
     mock_only: bool = False
     fixture_only: bool = False
+    metadata_only: bool = False
+    non_activated_lane: bool = False
+    unverified: bool = False
     blocked_env: bool = False
     blocked_human: bool = False
     needs_fix: bool = False
@@ -73,6 +82,12 @@ def classify_hardline_integration(proof: HardlineProofInput) -> HardlineIntegrat
         return "NOT_INTEGRATED_STATUS_ONLY"
     if proof.read_only_for_action_subsystem:
         return "NOT_INTEGRATED_READ_ONLY_FOR_ACTION"
+    if proof.metadata_only:
+        return "NOT_INTEGRATED_METADATA_ONLY"
+    if proof.non_activated_lane:
+        return "NOT_INTEGRATED_NON_ACTIVATED"
+    if proof.unverified:
+        return "NOT_INTEGRATED_UNVERIFIED"
     if proof.mock_only:
         return "NOT_INTEGRATED_MOCK_ONLY"
     if proof.fixture_only:
@@ -103,6 +118,75 @@ def reject_go_like_label(status: str, proposed_label: str) -> bool:
     return status in NON_GO_STATUSES and proposed_label in GO_LIKE_WORDS
 
 
+def qwen_coder_lane_allows_go(lane: dict[str, object] | None) -> bool:
+    if not isinstance(lane, dict):
+        return False
+    return (
+        lane.get("required") is True
+        and lane.get("status") == "INTEGRATED_LIVE"
+        and lane.get("activated") is True
+        and lane.get("live_invocation") is True
+        and lane.get("real_output") is True
+        and lane.get("downstream_consumed") is True
+        and lane.get("metadata_only") is False
+        and _non_empty(lane.get("trace_id"))
+        and _non_empty(lane.get("invocation_event_id"))
+        and _non_empty(lane.get("consumer_event_id"))
+        and _non_empty(lane.get("consumer_subsystem"))
+        and lane.get("failure_changes_outcome") is True
+    )
+
+
+def browser_functional_verifier_lane_allows_go(lane: dict[str, object] | None) -> bool:
+    if not isinstance(lane, dict):
+        return False
+    return (
+        lane.get("required") is True
+        and lane.get("status") == "INTEGRATED_LIVE"
+        and lane.get("live_invocation") is True
+        and lane.get("verification_result") == "VERIFIED"
+        and lane.get("advisory_only") is False
+        and lane.get("preview_only") is False
+        and lane.get("unverified") is False
+        and lane.get("downstream_consumed") is True
+        and _non_empty(lane.get("trace_id"))
+        and _non_empty(lane.get("invocation_event_id"))
+        and _non_empty(lane.get("consumer_event_id"))
+        and _non_empty(lane.get("consumer_subsystem"))
+        and lane.get("failure_changes_outcome") is True
+    )
+
+
+def model_sidecar_lane_allows_go(lane: dict[str, object] | None) -> bool:
+    if not isinstance(lane, dict):
+        return False
+    if lane.get("required") is False and lane.get("status") == "NOT_REQUIRED":
+        return True
+    return (
+        lane.get("required") is True
+        and lane.get("status") == "INTEGRATED_LIVE"
+        and lane.get("live_invocation") is True
+        and lane.get("real_output") is True
+        and lane.get("downstream_consumed") is True
+        and _non_empty(lane.get("trace_id"))
+        and _non_empty(lane.get("invocation_event_id"))
+        and _non_empty(lane.get("consumer_event_id"))
+        and _non_empty(lane.get("consumer_subsystem"))
+        and lane.get("failure_changes_outcome") is True
+    )
+
+
+def specialist_lanes_allow_go(lanes: dict[str, object] | None) -> bool:
+    if not isinstance(lanes, dict):
+        return False
+    return (
+        model_sidecar_lane_allows_go(_dict_value(lanes, "gemma_intent_spec"))
+        and model_sidecar_lane_allows_go(_dict_value(lanes, "hermes_critique_risk"))
+        and qwen_coder_lane_allows_go(_dict_value(lanes, "qwen_coder"))
+        and browser_functional_verifier_lane_allows_go(_dict_value(lanes, "browser_functional_verifier"))
+    )
+
+
 def plan2_final_go_allowed(
     *,
     mac_write_integration: str,
@@ -120,7 +204,12 @@ def plan2_final_go_allowed(
     read_only_action_go_detected: bool,
     mock_go_detected: bool,
     fixture_only_go_detected: bool,
-    plan_3_started: bool,
+    metadata_only_go_detected: bool = False,
+    non_activated_lane_go_detected: bool = False,
+    unverified_verifier_go_detected: bool = False,
+    unconsumed_output_go_detected: bool = False,
+    plan_3_started: bool = False,
+    specialist_lanes: dict[str, object] | None = None,
 ) -> bool:
     return (
         mac_write_integration == "INTEGRATED_LIVE"
@@ -138,5 +227,19 @@ def plan2_final_go_allowed(
         and not read_only_action_go_detected
         and not mock_go_detected
         and not fixture_only_go_detected
+        and not metadata_only_go_detected
+        and not non_activated_lane_go_detected
+        and not unverified_verifier_go_detected
+        and not unconsumed_output_go_detected
         and not plan_3_started
+        and (specialist_lanes is None or specialist_lanes_allow_go(specialist_lanes))
     )
+
+
+def _dict_value(value: dict[str, object], key: str) -> dict[str, object] | None:
+    item = value.get(key)
+    return item if isinstance(item, dict) else None
+
+
+def _non_empty(value: object) -> bool:
+    return isinstance(value, str) and bool(value.strip())

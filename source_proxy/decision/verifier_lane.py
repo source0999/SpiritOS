@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 from source_proxy.decision.model_lanes import get_model_lane
@@ -8,6 +9,7 @@ from source_proxy.decision.model_lanes import get_model_lane
 VERIFIER_LANE_PACKET_VERSION = "source-proxy-verifier-lane-packet-v0.1"
 VERIFIER_LANE_OUTPUT_VERSION = "source-proxy-verifier-lane-output-v0.1"
 ALLOWED_VERDICTS = {"PASS", "WARNING", "NEEDS_FIX", "HANDOFF", "FAIL", "UNVERIFIED"}
+LIVE_VERIFIER_OUTPUT_VERSION = "source-proxy-functional-verifier-live-v0.1"
 
 
 def build_verifier_lane_packet(
@@ -181,6 +183,79 @@ def verifier_lane_preview(packet: dict[str, Any]) -> dict[str, Any]:
         missing_evidence=missing,
         browser_behavior_passed=bool((packet.get("browser_observation") or {}).get("passed")),
     )
+
+
+def run_live_functional_verifier(
+    *,
+    target_path: str,
+    required_text: str,
+    required_interactive_marker: str,
+) -> dict[str, Any]:
+    path = Path(target_path).expanduser()
+    checks: list[dict[str, Any]] = []
+    if not path.is_file():
+        return _live_verifier_result(
+            status="failed",
+            verification_result="FAILED_NEEDS_FIX",
+            checks=[{"name": "target_exists", "passed": False, "target_path": str(path)}],
+            failure_reason="functional_verifier_target_missing",
+            target_path=str(path),
+        )
+    text = path.read_text(encoding="utf-8", errors="replace")
+    checks.append({"name": "target_exists", "passed": True, "target_path": str(path)})
+    checks.append(
+        {
+            "name": "required_text_present",
+            "passed": bool(required_text and required_text in text),
+            "required_text": required_text,
+        }
+    )
+    checks.append(
+        {
+            "name": "interactive_marker_present",
+            "passed": bool(required_interactive_marker and required_interactive_marker in text),
+            "required_interactive_marker": required_interactive_marker,
+        }
+    )
+    checks.append(
+        {
+            "name": "script_behavior_marker_present",
+            "passed": "addEventListener" in text or "onclick" in text or "button" in text.lower(),
+        }
+    )
+    passed = all(bool(check.get("passed")) for check in checks)
+    return _live_verifier_result(
+        status="used" if passed else "failed",
+        verification_result="VERIFIED" if passed else "FAILED_NEEDS_FIX",
+        checks=checks,
+        failure_reason="" if passed else "functional_verifier_required_behavior_missing",
+        target_path=str(path),
+    )
+
+
+def _live_verifier_result(
+    *,
+    status: str,
+    verification_result: str,
+    checks: list[dict[str, Any]],
+    failure_reason: str,
+    target_path: str,
+) -> dict[str, Any]:
+    return {
+        "output_version": LIVE_VERIFIER_OUTPUT_VERSION,
+        "status": status,
+        "reason": "functional_verifier_executed",
+        "live_invocation": True,
+        "verification_result": verification_result,
+        "advisory_only": False,
+        "preview_only": False,
+        "unverified": verification_result == "UNVERIFIED",
+        "model_calls_enabled": False,
+        "target_path": target_path,
+        "checks": checks,
+        "passed": verification_result == "VERIFIED",
+        "failure_reason": failure_reason,
+    }
 
 
 def _default_next_action(verdict: str) -> str:

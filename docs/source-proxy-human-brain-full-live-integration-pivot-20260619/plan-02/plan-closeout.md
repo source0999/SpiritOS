@@ -2,36 +2,36 @@
 
 Verdict: GO
 
-Plan 2 patch 3 reconciled the live Mac worker and unblocked the remaining live specialist lane without starting Plan 3.
+Plan 2 Patch 4 fixes the independent acceptance review blocker: specialist GO now requires lane-level live proof for Qwen coder activation and a non-advisory browser/functional verifier result.
 
 Delivered:
 
-- Mac worker backup created at `.spiritos-backups/plan2-patch3/scripts_mac-worker_spirit_mac_worker.py.20260620T015800.bak`.
-- Exact-file Mac sync performed for `scripts/mac-worker/spirit_mac_worker.py`; Dell and Mac SHA-256 both `90a40d6f33e73963a15977bf347516703f6f1a1e2be784fa4398978449d5e473`.
-- Canonical Source Proxy Mac isolated write proof returned `INTEGRATED_LIVE`, with write, readback, checksum, and rollback cleanup.
-- Canonical Mac unsafe path proof returned `NEEDS_FIX` / `safe_path_rejected` with no write.
-- Mac system status, repository search, and allowlisted safe checks returned `INTEGRATED_LIVE`.
-- Current research returned `INTEGRATED_LIVE` through local SearXNG at `http://127.0.0.1:8080`, source count `4`, no local fallback.
-- Explicit bad SearXNG provider diagnostic now probes only the explicit URL and returns `blocked` instead of silently falling back.
-- Specialist lanes returned `INTEGRATED_LIVE`; Gemma `gemma3n:e4b` and Hermes `hermes4:latest` both produced schema-valid local JSON with no cloud route and no Qwen fallback.
+- Mac write/action remains `INTEGRATED_LIVE` from Patch 3 carryforward proof.
+- Mac search/check remains `INTEGRATED_LIVE` from Patch 3 carryforward proof.
+- Current research remains `INTEGRATED_LIVE` through local SearXNG with no local fallback.
+- Gemma intent/spec is live, consumed, and causally recorded.
+- Hermes critique/risk is live, consumed, and causally recorded.
+- Qwen coder is activated by the canonical specialist workflow, produces parsed real output, and is causally consumed.
+- Browser/functional verifier runs against a disposable Patch 4 target, returns `VERIFIED`, and is causally consumed.
+- The hardline gate and operator now inspect lane-level proof instead of trusting top-level GO fields.
 
-Live proof:
+Live Patch 4 specialist proof:
 
-- Mac write task: `task_1eabe04a1e1c`, job `mac-mac_isolated_write_proof-c4e0123b2c13`, trace `trace_8aa6ed97183047b2`.
-- Research task: `task_8e88f3a54bc2`, consumer `consumer_3a8289e42ec6494a`.
-- Specialist task: `task_1efd570e1a6e`, consumer `consumer_896ce3ad294b44f3`.
-- Focused Python: `34 passed`; required broader slice: `192 passed, 1360 deselected, 287 subtests`.
-- Typecheck: PASS.
-- Mac worker Vitest contracts/routes: PASS.
-- Existing current-shell Trial Runner Vitest remains `9 failed`; this is carried as a known unrelated current-shell failure and is not used as Plan 2 GO proof.
+- Task: `task_9b6323805e3e`.
+- Gemma consumer: `consumer_81bdb29517334132`.
+- Hermes consumer: `consumer_886cee7579d848b0`.
+- Qwen model: `qwen2.5-coder:7b`.
+- Qwen output hash: `a0a0aefafdcdf88ea7ad34b3b737c3279b9decd2889ad2fa94dc3d8b6c9d3fee`.
+- Qwen consumer: `consumer_d50417e473824c54`.
+- Verifier result: `VERIFIED`.
+- Verifier consumer: `consumer_07ebf8bfe29b46fe`.
 
 Safety:
 
-- No Obsidian write.
-- Mac write was a disposable temp proof only and rollback cleaned it.
-- No Mac git commit/push/reset/clean.
 - No media/Jellyfin mutation.
-- No authority expansion.
+- No Mac sync or new Mac write proof in Patch 4.
+- No Mac git commit/push/reset/clean.
+- No Docker/systemd mutation.
 - No route replacement.
 - No new event/state engine.
 - No autonomous Cartographer commit/push.

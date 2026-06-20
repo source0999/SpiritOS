@@ -15,6 +15,7 @@ FIP3_MODEL_PACKET_VERSION = "source-proxy-fip3-local-model-lanes-v0.1"
 DEFAULT_OLLAMA_BASE_URL = "http://127.0.0.1:11434"
 DEFAULT_GEMMA_MODEL = "gemma3n:e4b"
 DEFAULT_HERMES_MODEL = "hermes4:latest"
+DEFAULT_QWEN_CODER_MODEL = "qwen2.5-coder:7b"
 
 
 @dataclass(frozen=True)
@@ -156,6 +157,12 @@ def configured_fip3_models() -> dict[str, str]:
             or os.environ.get("OLLAMA_MODEL", "").strip()
             or DEFAULT_HERMES_MODEL
         ),
+        "qwen_coder": (
+            os.environ.get("SOURCE_PROXY_FIP3_QWEN_CODER_MODEL", "").strip()
+            or os.environ.get("SOURCE_PROXY_CODER_OLLAMA_MODEL", "").strip()
+            or os.environ.get("SOURCE_PROXY_FIP4_QWEN_MODEL", "").strip()
+            or DEFAULT_QWEN_CODER_MODEL
+        ),
     }
 
 
@@ -241,6 +248,65 @@ async def build_fip3_model_lane_packet(
     packet["hermes_critic"]["research_packet_hash_received"] = research_packet_hash
     packet["fip3_model_packet_hash"] = _json_hash(packet)
     return packet
+
+
+async def run_qwen_coder_lane(
+    *,
+    task: str,
+    route_payload: dict[str, Any],
+    gemma_packet: dict[str, Any],
+    hermes_packet: dict[str, Any],
+    fip1_context_packet: dict[str, Any] | None = None,
+    fip2_research_packet: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    models = configured_fip3_models()
+    base_url = _ollama_base_url()
+    inventory = await _ollama_inventory(base_url)
+    model = models["qwen_coder"]
+    if inventory.get("status") != "used":
+        return _model_lane_status(
+            "blocked",
+            "ollama_inventory_unavailable_for_qwen_coder",
+            model=model,
+            activated=False,
+            live_invocation=False,
+            real_output=False,
+            provider_errors=inventory.get("provider_errors", []),
+        )
+    names = set(inventory.get("model_names", []))
+    missing = _missing_model_status(model, names, lane="qwen")
+    if missing:
+        return {
+            **missing,
+            "activated": False,
+            "live_invocation": False,
+            "real_output": False,
+        }
+    prompt = _qwen_coder_prompt(
+        task=task,
+        route_payload=route_payload,
+        gemma_packet=gemma_packet,
+        hermes_packet=hermes_packet,
+        fip1_context_packet=fip1_context_packet or {},
+        fip2_research_packet=fip2_research_packet or {},
+    )
+    result = await _call_json_lane(
+        base_url=base_url,
+        model=model,
+        prompt=prompt,
+        schema_validator=_normalize_qwen_coder_output,
+    )
+    return {
+        **result,
+        "activated": True,
+        "live_invocation": result.get("status") == "used",
+        "real_output": result.get("status") == "used" and bool(result.get("output_hash")),
+        "upstream_received": {
+            "gemma_output_hash": gemma_packet.get("output_hash", ""),
+            "hermes_output_hash": hermes_packet.get("output_hash", ""),
+            "research_packet_hash": (fip2_research_packet or {}).get("research_packet_hash", ""),
+        },
+    }
 
 
 def fip3_lane_packet_has_qwen_fallback(packet: dict[str, Any]) -> bool:
@@ -479,6 +545,17 @@ def _normalize_hermes_output(parsed: Any) -> tuple[dict[str, Any], list[str]]:
     }, errors
 
 
+def _normalize_qwen_coder_output(parsed: Any) -> tuple[dict[str, Any], list[str]]:
+    data = parsed if isinstance(parsed, dict) else {}
+    errors: list[str] = []
+    return {
+        "implementation_summary": _string_field(data, "implementation_summary", errors),
+        "proposed_action": _string_field(data, "proposed_action", errors),
+        "acceptance_notes": _string_list_field(data, "acceptance_notes", errors),
+        "risk_notes": _string_list_field(data, "risk_notes", errors),
+    }, errors
+
+
 def _gemma_acceptance_criteria(data: dict[str, Any], errors: list[str]) -> list[str]:
     value = data.get("acceptance_criteria")
     if value is None:
@@ -529,7 +606,7 @@ def _string_list_field(data: dict[str, Any], key: str, errors: list[str]) -> lis
 def _missing_model_status(model: str, inventory_names: set[str], *, lane: str) -> dict[str, Any] | None:
     if model in inventory_names:
         return None
-    family = "Gemma" if lane == "gemma" else "Hermes"
+    family = {"gemma": "Gemma", "hermes": "Hermes", "qwen": "Qwen"}.get(lane, lane.title())
     return _model_lane_status(
         "blocked",
         f"{lane}_model_missing_from_local_ollama_inventory",
@@ -594,6 +671,45 @@ def _hermes_prompt(
         "You are the FIP-3 Hermes local critic lane. Critique the pre-coder packet for ambiguity, risk, and conflicts. "
         "Do not verify final code. Do not write code. Return only JSON with keys: ambiguities array of strings, risks "
         "array of strings, requirement_conflicts array of strings, pre_coder_notes array of strings.\n\n"
+        f"Input:\n{json.dumps(compact, sort_keys=True)}"
+    )
+
+
+def _qwen_coder_prompt(
+    *,
+    task: str,
+    route_payload: dict[str, Any],
+    gemma_packet: dict[str, Any],
+    hermes_packet: dict[str, Any],
+    fip1_context_packet: dict[str, Any],
+    fip2_research_packet: dict[str, Any],
+) -> str:
+    compact = {
+        "task": task,
+        "route": _compact_json(route_payload),
+        "gemma": {
+            "status": gemma_packet.get("status"),
+            "intent": gemma_packet.get("intent", ""),
+            "normalized_spec": gemma_packet.get("normalized_spec", ""),
+            "acceptance_criteria": gemma_packet.get("acceptance_criteria", []),
+        },
+        "hermes": {
+            "status": hermes_packet.get("status"),
+            "risks": hermes_packet.get("risks", []),
+            "pre_coder_notes": hermes_packet.get("pre_coder_notes", []),
+        },
+        "fip1_context_status": _compact_json(fip1_context_packet.get("source_status", {})),
+        "fip2_research": {
+            "search_needed": bool(fip2_research_packet.get("search_needed")),
+            "research_packet_hash": fip2_research_packet.get("research_packet_hash", ""),
+            "research_sources_count": len(fip2_research_packet.get("research_sources", []) or []),
+        },
+    }
+    return (
+        "You are the Plan 2 Qwen local coder lane. This bounded proof must not edit files or call tools. "
+        "Use the upstream Gemma/Hermes/research state and return only JSON with keys: implementation_summary "
+        "string, proposed_action string, acceptance_notes array of strings, risk_notes array of strings. "
+        "The proposed_action should describe the next safe coding action, not perform it.\n\n"
         f"Input:\n{json.dumps(compact, sort_keys=True)}"
     )
 

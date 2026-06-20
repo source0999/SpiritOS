@@ -2,4 +2,4 @@
 
 Status: `GO`.
 Plan gate: `PLAN_2_COMPLETE`.
-Patch 3 completed the approved Plan 2 scope. No next-plan work is authorized here.
+Patch 4 completed the specialist/Qwen/verifier live-integration gate. No next-plan work is authorized here.

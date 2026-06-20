@@ -120,14 +120,53 @@ class Plan2SubsystemIntegrationTests(unittest.IsolatedAsyncioTestCase):
     async def test_specialist_packet_consumes_model_and_verifier_outputs(self) -> None:
         task_id = create_long_running_task("Specialists")["task"]["id"]
         fake_model_packet = {
-            "gemma": {"status": "used", "intent": "test intent"},
-            "hermes_critic": {"status": "used", "risks": []},
+            "gemma": {
+                "status": "used",
+                "intent": "test intent",
+                "output_schema_valid": True,
+                "output_hash": "gemma-output",
+            },
+            "hermes_critic": {
+                "status": "used",
+                "risks": [],
+                "output_schema_valid": True,
+                "output_hash": "hermes-output",
+            },
             "hermes_verifier": {"status": "skipped"},
             "fip3_model_packet_hash": "model-hash",
         }
-        with patch(
-            "source_proxy.decision.specialist_integration.build_fip3_model_lane_packet",
-            AsyncMock(return_value=fake_model_packet),
+        fake_qwen = {
+            "status": "used",
+            "reason": "local_ollama_model_json_schema_valid",
+            "model": "qwen2.5-coder:7b",
+            "activated": True,
+            "live_invocation": True,
+            "real_output": True,
+            "output_schema_valid": True,
+            "output_hash": "qwen-output",
+        }
+        fake_verifier = {
+            "status": "used",
+            "live_invocation": True,
+            "verification_result": "VERIFIED",
+            "advisory_only": False,
+            "preview_only": False,
+            "unverified": False,
+            "target_path": "/tmp/verifier.html",
+        }
+        with (
+            patch(
+                "source_proxy.decision.specialist_integration.build_fip3_model_lane_packet",
+                AsyncMock(return_value=fake_model_packet),
+            ),
+            patch(
+                "source_proxy.decision.specialist_integration.run_qwen_coder_lane",
+                AsyncMock(return_value=fake_qwen),
+            ),
+            patch(
+                "source_proxy.decision.specialist_integration.run_live_functional_verifier",
+                return_value=fake_verifier,
+            ),
         ):
             result = await run_specialists_for_task(
                 task_id,
@@ -142,6 +181,71 @@ class Plan2SubsystemIntegrationTests(unittest.IsolatedAsyncioTestCase):
             "cartographer_specialist_packet_consumer",
         )
         self.assertIn("browser_functional_verifier", result["specialist_packet"])
+        lanes = result["specialist_packet"]["specialist_lanes"]
+        self.assertEqual(lanes["qwen_coder"]["status"], "INTEGRATED_LIVE")
+        self.assertTrue(lanes["qwen_coder"]["activated"])
+        self.assertTrue(lanes["qwen_coder"]["consumer_event_id"].startswith("consumer_"))
+        self.assertEqual(lanes["browser_functional_verifier"]["verification_result"], "VERIFIED")
+        self.assertTrue(lanes["browser_functional_verifier"]["consumer_event_id"].startswith("consumer_"))
+
+    async def test_specialist_packet_rejects_non_activated_qwen_and_unverified_verifier(self) -> None:
+        task_id = create_long_running_task("Specialists fake go")["task"]["id"]
+        fake_model_packet = {
+            "gemma": {
+                "status": "used",
+                "intent": "test intent",
+                "output_schema_valid": True,
+                "output_hash": "gemma-output",
+            },
+            "hermes_critic": {
+                "status": "used",
+                "risks": [],
+                "output_schema_valid": True,
+                "output_hash": "hermes-output",
+            },
+            "fip3_model_packet_hash": "model-hash",
+        }
+        fake_qwen = {
+            "status": "used",
+            "activated": False,
+            "live_invocation": False,
+            "real_output": False,
+            "output_schema_valid": True,
+            "output_hash": "metadata-only",
+        }
+        fake_verifier = {
+            "status": "used",
+            "live_invocation": False,
+            "verification_result": "UNVERIFIED",
+            "advisory_only": True,
+            "preview_only": True,
+            "unverified": True,
+        }
+        with (
+            patch(
+                "source_proxy.decision.specialist_integration.build_fip3_model_lane_packet",
+                AsyncMock(return_value=fake_model_packet),
+            ),
+            patch(
+                "source_proxy.decision.specialist_integration.run_qwen_coder_lane",
+                AsyncMock(return_value=fake_qwen),
+            ),
+            patch(
+                "source_proxy.decision.specialist_integration.run_live_functional_verifier",
+                return_value=fake_verifier,
+            ),
+        ):
+            result = await run_specialists_for_task(
+                task_id,
+                task="Plan 2 specialist fake GO test",
+                upstream_state={"task_id": task_id, "route": "/coding"},
+                research_packet={"research_packet_hash": "research-hash"},
+            )
+
+        self.assertEqual(result["status"], "NEEDS_FIX")
+        lanes = result["specialist_packet"]["specialist_lanes"]
+        self.assertFalse(lanes["qwen_coder"]["activated"])
+        self.assertEqual(lanes["browser_functional_verifier"]["verification_result"], "UNVERIFIED")
 
     async def test_specialist_packet_blocks_when_model_lanes_fail(self) -> None:
         task_id = create_long_running_task("Specialists failed")["task"]["id"]

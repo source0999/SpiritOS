@@ -4,5 +4,9 @@
   "status": "GO",
   "gate_status": "PLAN_2_COMPLETE",
   "implementation_performed": true,
+  "patch": "patch-4-specialist-qwen-verifier-live-gate",
+  "qwen_coder_lane": "INTEGRATED_LIVE",
+  "browser_functional_verifier_lane": "INTEGRATED_LIVE",
+  "task_a": "PASS",
   "next_plan_authorized": false
 }

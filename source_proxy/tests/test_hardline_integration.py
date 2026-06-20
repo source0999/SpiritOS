@@ -2,9 +2,12 @@ from __future__ import annotations
 
 from source_proxy.decision.hardline_integration import (
     HardlineProofInput,
+    browser_functional_verifier_lane_allows_go,
     classify_hardline_integration,
     plan2_final_go_allowed,
+    qwen_coder_lane_allows_go,
     reject_go_like_label,
+    specialist_lanes_allow_go,
 )
 
 
@@ -77,3 +80,116 @@ def test_plan2_final_go_requires_every_hardline_gate() -> None:
     assert plan2_final_go_allowed(**kwargs) is True
     assert plan2_final_go_allowed(**{**kwargs, "mac_write_integration": "BLOCKED_HUMAN"}) is False
     assert plan2_final_go_allowed(**{**kwargs, "preview_go_detected": True}) is False
+
+
+def _qwen_lane(**overrides: object) -> dict[str, object]:
+    data: dict[str, object] = {
+        "required": True,
+        "status": "INTEGRATED_LIVE",
+        "activated": True,
+        "live_invocation": True,
+        "real_output": True,
+        "downstream_consumed": True,
+        "metadata_only": False,
+        "trace_id": "trace_qwen",
+        "invocation_event_id": "invocation_qwen",
+        "consumer_event_id": "consumer_qwen",
+        "consumer_subsystem": "cartographer_specialist_packet_consumer",
+        "failure_changes_outcome": True,
+    }
+    data.update(overrides)
+    return data
+
+
+def _verifier_lane(**overrides: object) -> dict[str, object]:
+    data: dict[str, object] = {
+        "required": True,
+        "status": "INTEGRATED_LIVE",
+        "live_invocation": True,
+        "verification_result": "VERIFIED",
+        "advisory_only": False,
+        "preview_only": False,
+        "unverified": False,
+        "downstream_consumed": True,
+        "trace_id": "trace_verifier",
+        "invocation_event_id": "invocation_verifier",
+        "consumer_event_id": "consumer_verifier",
+        "consumer_subsystem": "cartographer_specialist_packet_consumer",
+        "failure_changes_outcome": True,
+    }
+    data.update(overrides)
+    return data
+
+
+def _sidecar_lane(**overrides: object) -> dict[str, object]:
+    data: dict[str, object] = {
+        "required": True,
+        "status": "INTEGRATED_LIVE",
+        "live_invocation": True,
+        "real_output": True,
+        "downstream_consumed": True,
+        "trace_id": "trace_sidecar",
+        "invocation_event_id": "invocation_sidecar",
+        "consumer_event_id": "consumer_sidecar",
+        "consumer_subsystem": "cartographer_specialist_packet_consumer",
+        "failure_changes_outcome": True,
+    }
+    data.update(overrides)
+    return data
+
+
+def test_metadata_only_and_non_activated_qwen_cannot_be_go() -> None:
+    assert qwen_coder_lane_allows_go(_qwen_lane()) is True
+    assert qwen_coder_lane_allows_go(_qwen_lane(metadata_only=True)) is False
+    assert qwen_coder_lane_allows_go(_qwen_lane(activated=False)) is False
+    assert qwen_coder_lane_allows_go(_qwen_lane(live_invocation=False)) is False
+    assert qwen_coder_lane_allows_go(_qwen_lane(downstream_consumed=False)) is False
+    assert qwen_coder_lane_allows_go(_qwen_lane(consumer_event_id="")) is False
+
+
+def test_advisory_preview_and_unverified_verifier_cannot_be_go() -> None:
+    assert browser_functional_verifier_lane_allows_go(_verifier_lane()) is True
+    assert browser_functional_verifier_lane_allows_go(_verifier_lane(advisory_only=True)) is False
+    assert browser_functional_verifier_lane_allows_go(_verifier_lane(preview_only=True)) is False
+    assert browser_functional_verifier_lane_allows_go(_verifier_lane(unverified=True)) is False
+    assert browser_functional_verifier_lane_allows_go(_verifier_lane(verification_result="UNVERIFIED")) is False
+    assert browser_functional_verifier_lane_allows_go(_verifier_lane(downstream_consumed=False)) is False
+    assert browser_functional_verifier_lane_allows_go(_verifier_lane(consumer_event_id="")) is False
+
+
+def test_plan2_final_gate_checks_specialist_lane_level_proof() -> None:
+    lanes = {
+        "gemma_intent_spec": _sidecar_lane(),
+        "hermes_critique_risk": _sidecar_lane(),
+        "qwen_coder": _qwen_lane(),
+        "browser_functional_verifier": _verifier_lane(),
+    }
+    kwargs = {
+        "mac_write_integration": "INTEGRATED_LIVE",
+        "mac_search_check_integration": "INTEGRATED_LIVE",
+        "research_integration": "INTEGRATED_LIVE",
+        "specialist_lane_integration": "INTEGRATED_LIVE",
+        "task_a": "PASS",
+        "task_b": "PASS",
+        "task_c": "PASS",
+        "operator_check": "PASS",
+        "focused_tests": "PASS",
+        "preview_go_detected": False,
+        "advisory_go_detected": False,
+        "status_only_go_detected": False,
+        "read_only_action_go_detected": False,
+        "mock_go_detected": False,
+        "fixture_only_go_detected": False,
+        "metadata_only_go_detected": False,
+        "non_activated_lane_go_detected": False,
+        "unverified_verifier_go_detected": False,
+        "unconsumed_output_go_detected": False,
+        "plan_3_started": False,
+        "specialist_lanes": lanes,
+    }
+    assert specialist_lanes_allow_go(lanes) is True
+    assert plan2_final_go_allowed(**kwargs) is True
+    bad_lanes = {**lanes, "qwen_coder": _qwen_lane(activated=False)}
+    assert specialist_lanes_allow_go(bad_lanes) is False
+    assert plan2_final_go_allowed(**{**kwargs, "specialist_lanes": bad_lanes}) is False
+    assert plan2_final_go_allowed(**{**kwargs, "metadata_only_go_detected": True}) is False
