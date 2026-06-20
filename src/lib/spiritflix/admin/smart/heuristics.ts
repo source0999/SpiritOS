@@ -95,7 +95,9 @@ const COMPILATION_TOKENS = new Set(["compilation", "comp", "pmv", "mix", "montag
 const PRIMARY_CONTENT_GROUPS = new Set(["scene", "body", "appearance", "apparel", "activity", "position", "style", "watermark"]);
 const TECHNICAL_OR_STATUS_TAG_IDS = new Set([
   "solo",
+  "duo",
   "indoor",
+  "outdoor",
   "mp4-container",
   "mkv-container",
   "webm-container",

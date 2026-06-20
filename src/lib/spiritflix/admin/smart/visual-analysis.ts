@@ -13,7 +13,7 @@ const MIN_TAG_CONFIDENCE = 0.45;
 
 const VISUAL_TAG_IDS = getSmartTagVocabulary()
   .filter((entry) => ["scene", "body", "appearance", "apparel", "activity", "position", "style", "watermark"].includes(entry.group))
-  .filter((entry) => !["solo", "indoor", "low-light", "brunette", "black-hair", "blonde", "redhead"].includes(entry.id))
+  .filter((entry) => !["solo", "duo", "group", "indoor", "outdoor", "low-light", "brunette", "black-hair", "blonde", "redhead"].includes(entry.id))
   .map((entry) => entry.id);
 
 export interface SpiritFlixVisualAnalysisOptions {
@@ -82,11 +82,13 @@ function normalizeVisualTags(tags: SpiritFlixSmartTag[]): SpiritFlixSmartTag[] {
   byId.delete("indoor");
   byId.delete("low-light");
   byId.delete("solo");
+  byId.delete("duo");
+  byId.delete("group");
+  byId.delete("outdoor");
   byId.delete("brunette");
   byId.delete("black-hair");
   byId.delete("blonde");
   byId.delete("redhead");
-  if (byId.has("group")) byId.delete("duo");
   return [...byId.values()].sort((left, right) => right.confidence - left.confidence);
 }
 
@@ -96,9 +98,10 @@ function promptForFrame(sample: SpiritFlixSmartSample): string {
     "Return JSON only. Do not include markdown.",
     `Frame timestamp: ${sample.timestampLabel}.`,
     `Allowed tag ids: ${VISUAL_TAG_IDS.join(", ")}.`,
-    "Do not tag solo. If two visible people or another person's visible hands/body parts are present, use duo. If three or more people are visible, use group.",
-    "Use outdoor only when the visible setting is clearly outside. Never use indoor.",
-    "Do not tag hair color. Prefer specific visible body/apparel/activity tags over generic scene tags.",
+    "Do not tag people counts or generic scene counts: never return solo, duo, or group.",
+    "Do not return location-only tags such as indoor or outdoor.",
+    "Return only relevant descriptive tags about visible body type, clothing, styling, activity, pose, setting, or watermark.",
+    "Do not tag hair color. Do not use generic filler tags.",
     "Actively check for visible supported body/apparel tags such as curvy, busty, BBW, petite, slim, hijab, lingerie, stockings, tattoos, and glasses when the frame clearly supports them.",
     "Do not infer race, ethnicity, nationality, religion, or identity from appearance. Only tag visible clothing items such as hijab when clearly visible.",
     "Use only visible evidence. If unsure, return unclear with low confidence.",

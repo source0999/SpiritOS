@@ -188,7 +188,7 @@ describe("SpiritFlix smart suggestions", () => {
     expect(result.suggestedDisplayTitle).toBe("Aaliyah Yasan - brunette lingerie 01");
   });
 
-  it("uses model folder sequence numbers for visual tag names", () => {
+  it("uses model folder sequence numbers for relevant visual tag names", () => {
     const numericPath = path.join(mediaRoot, "yes", "models", "aaliyah-yasan", "540598_720p.mkv");
     const result = buildSpiritFlixReviewSuggestions({
       videoPath: numericPath,
@@ -224,7 +224,7 @@ describe("SpiritFlix smart suggestions", () => {
       }),
     });
 
-    expect(result.suggestedDisplayTitle).toBe("Aaliyah Yasan - duo lingerie 3");
+    expect(result.suggestedDisplayTitle).toBe("Aaliyah Yasan - lingerie 3");
   });
 
   it("uses Unknown Model fallback for numeric filenames without useful tags", () => {

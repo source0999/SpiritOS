@@ -136,7 +136,7 @@ interface BatchTarget {
 
 const DEFAULT_BATCH_LIMIT = 12;
 const MAX_BATCH_LIMIT = 50;
-const SUPPRESSED_VISUAL_REVIEW_TAG_IDS = new Set(["solo", "indoor"]);
+const SUPPRESSED_VISUAL_REVIEW_TAG_IDS = new Set(["solo", "duo", "indoor", "outdoor"]);
 
 function isLegacyVisualSidecar(analysis: SpiritFlixSmartAnalysis | null): boolean {
   return Boolean(analysis && analysis.visualAnalysis === undefined);
@@ -148,7 +148,7 @@ function hasSuppressedReviewedMetadata(analysis: SpiritFlixSmartAnalysis): boole
   const reviewedIds = [...reviewed.approvedTagIds, ...reviewed.rejectedTagIds];
   if (reviewedIds.some((id) => SUPPRESSED_VISUAL_REVIEW_TAG_IDS.has(id))) return true;
   const editedName = `${reviewed.editedDisplayTitle ?? ""} ${reviewed.editedFilenameSuggestion ?? ""}`.toLowerCase();
-  return /\bsolo\b|\bindoor\b/.test(editedName);
+  return /\bsolo\b|\bduo\b|\bindoor\b|\boutdoor\b/.test(editedName);
 }
 
 async function clearSuppressedReviewedMetadata(
@@ -164,7 +164,7 @@ async function clearSuppressedReviewedMetadata(
         ...analysis.safety,
         safeToSuggest: false,
         requiresHumanReview: true,
-        reasons: [...new Set([...analysis.safety.reasons, "Suppressed stale solo/indoor review metadata after visual retag; operator review required."])],
+        reasons: [...new Set([...analysis.safety.reasons, "Suppressed stale generic scene review metadata after visual retag; operator review required."])],
       },
     },
     mediaRoot ? { mediaRoot } : undefined,
@@ -609,7 +609,7 @@ export async function runSpiritFlixSmartBatch(options: InternalBatchOptions = {}
         : analysis;
       const preservedReview = beforeReview && analysis.reviewedMetadata?.reviewedAt === beforeReview.reviewedAt;
       const reason = shouldClearSuppressedReview
-        ? "Stale solo/indoor reviewed metadata cleared after visual retag."
+        ? "Stale generic scene reviewed metadata cleared after visual retag."
         : beforeReview && !preservedReview ? "Analysis refreshed; review metadata changed." : undefined;
       items.push(await itemFromAnalysis(videoPath, finalAnalysis, "analyzed", legacyVisualSidecar ? "Legacy sidecar refreshed with S9 visual tags." : reason));
     } catch (error) {

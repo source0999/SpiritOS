@@ -82,7 +82,7 @@ describe("SpiritFlix local visual analysis", () => {
     expect(updated.notes).toContain("test-vision");
   });
 
-  it("drops stale generic solo and indoor visual tags while preserving outdoor and content tags", async () => {
+  it("drops generic scene visual tags while preserving relevant content tags", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => Response.json({
       response: JSON.stringify({
         tags: [
@@ -90,6 +90,7 @@ describe("SpiritFlix local visual analysis", () => {
           { id: "indoor", confidence: 0.8 },
           { id: "brunette", confidence: 0.78 },
           { id: "duo", confidence: 0.76 },
+          { id: "group", confidence: 0.74 },
           { id: "outdoor", confidence: 0.72 },
           { id: "curvy", confidence: 0.68 },
         ],
@@ -129,9 +130,12 @@ describe("SpiritFlix local visual analysis", () => {
     });
 
     const ids = updated.samples[0].tags.map((tag) => tag.id);
-    expect(ids).toEqual(["duo", "outdoor", "curvy"]);
+    expect(ids).toEqual(["curvy"]);
     expect(ids).not.toContain("solo");
+    expect(ids).not.toContain("duo");
+    expect(ids).not.toContain("group");
     expect(ids).not.toContain("indoor");
+    expect(ids).not.toContain("outdoor");
     expect(ids).not.toContain("brunette");
   });
 });

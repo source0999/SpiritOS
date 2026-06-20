@@ -105,12 +105,12 @@ describe("SpiritFlix smart batch analysis", () => {
         analyzedAt: "2026-06-20T00:00:00.000Z",
         sampledFrameCount: 1,
         analyzedFrameCount: 1,
-        tags: ["duo"],
+        tags: ["lingerie"],
         frames: [{
           timestampSeconds: 5,
           timestampLabel: "5s",
           status: "complete",
-          tags: ["duo"],
+          tags: ["lingerie"],
           observations: [],
         }],
       },
@@ -119,20 +119,20 @@ describe("SpiritFlix smart batch analysis", () => {
         timestampLabel: "5s",
         cacheKey: "frame-key",
         observations: ["sampled frame"],
-        tags: [{ id: "duo", label: "duo", group: "scene", confidence: 0.8, evidenceTimestamps: [5], reviewRequired: true }],
+        tags: [{ id: "lingerie", label: "lingerie", group: "apparel", confidence: 0.8, evidenceTimestamps: [5], reviewRequired: true }],
         confidence: 0.8,
       }],
       contentTagEvidence: [{
         source: "vlm",
-        tags: ["duo"],
+        tags: ["lingerie"],
         confidence: 0.8,
         evidenceRef: "test-vision",
         requiresReview: true,
       }],
-      suggestedTags: [{ id: "duo", label: "duo", group: "scene", confidence: 0.8, evidenceTimestamps: [5], reviewRequired: true }],
-      pendingSmartTags: [{ id: "duo", label: "duo", group: "scene", confidence: 0.8, evidenceTimestamps: [5], reviewRequired: true }],
-      suggestedFilename: "Model - duo 01",
-      pendingDisplayName: "Model - duo 01",
+      suggestedTags: [{ id: "lingerie", label: "lingerie", group: "apparel", confidence: 0.8, evidenceTimestamps: [5], reviewRequired: true }],
+      pendingSmartTags: [{ id: "lingerie", label: "lingerie", group: "apparel", confidence: 0.8, evidenceTimestamps: [5], reviewRequired: true }],
+      suggestedFilename: "Model - lingerie 01",
+      pendingDisplayName: "Model - lingerie 01",
     }));
 
     const result = await runSpiritFlixSmartBatch({
@@ -208,27 +208,27 @@ describe("SpiritFlix smart batch analysis", () => {
     expect(analyzeVideo).toHaveBeenCalledWith(videoPath, expect.objectContaining({ mediaRoot: tempRoot }));
   });
 
-  it("clears stale solo indoor reviewed metadata on forced visual retag", async () => {
+  it("clears stale generic scene reviewed metadata on forced visual retag", async () => {
     const videoPath = await writeVideo("yes/stale-reviewed.mp4");
     const reviewedMetadata = {
       reviewedAt: "2026-06-18T00:00:00.000Z",
       reviewedBy: "spiritflix-admin" as const,
       reviewStatus: "reviewed" as const,
-      approvedTagIds: ["solo", "indoor"],
+      approvedTagIds: ["solo", "duo", "indoor", "outdoor"],
       rejectedTagIds: [],
-      editedDisplayTitle: "Model - solo indoor 01",
-      editedFilenameSuggestion: "Model - solo indoor 01.mp4",
+      editedDisplayTitle: "Model - solo duo indoor outdoor 01",
+      editedFilenameSuggestion: "Model - solo duo indoor outdoor 01.mp4",
     };
     const existing = await currentAnalysis(videoPath, { reviewedMetadata });
     const analyzeVideo = vi.fn(async () => validateSpiritFlixSmartAnalysis({
       ...existing,
       analyzerVersion: "spiritflix-smart/s9",
       status: "needs_review",
-      suggestedTags: [{ id: "duo", label: "duo", group: "scene", confidence: 0.8, evidenceTimestamps: [5], reviewRequired: true }],
-      pendingSmartTags: [{ id: "duo", label: "duo", group: "scene", confidence: 0.8, evidenceTimestamps: [5], reviewRequired: true }],
-      suggestedFilename: "Model - duo 01.mp4",
-      suggestedDisplayTitle: "Model - duo 01",
-      pendingDisplayName: "Model - duo 01",
+      suggestedTags: [{ id: "curvy", label: "curvy", group: "body", confidence: 0.8, evidenceTimestamps: [5], reviewRequired: true }],
+      pendingSmartTags: [{ id: "curvy", label: "curvy", group: "body", confidence: 0.8, evidenceTimestamps: [5], reviewRequired: true }],
+      suggestedFilename: "Model - curvy 01.mp4",
+      suggestedDisplayTitle: "Model - curvy 01",
+      pendingDisplayName: "Model - curvy 01",
       reviewedMetadata,
     }));
 
@@ -243,8 +243,8 @@ describe("SpiritFlix smart batch analysis", () => {
     expect(result.counts.analyzed).toBe(1);
     expect(result.items[0].reviewStatus).toBe("unreviewed");
     expect(result.items[0].renamePreviewStatus).toBe("provisional");
-    expect(result.items[0].proposedFilename).toBe("Model - duo 01");
-    expect(result.items[0].reason).toMatch(/stale solo\/indoor/i);
+    expect(result.items[0].proposedFilename).toBe("Model - curvy 01");
+    expect(result.items[0].reason).toMatch(/stale generic scene/i);
     expect(saved?.reviewedMetadata).toBeUndefined();
   });
 
