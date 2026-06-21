@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { Calendar, Clock, Heart, Play, RotateCcw, X } from "lucide-react";
 import { formatRuntime, isPlayableItem, type JellyfinClient } from "@/lib/spiritflix-jellyfin-client";
 import { getResumeSlotLabel, hasResumeProgress } from "@/lib/spiritflix-resume";
@@ -17,6 +18,17 @@ export function SpiritFlixDetailsModal({ client, item, onClose, onPlay }: Spirit
   const progress = item.UserData?.PlayedPercentage ?? 0;
   const hasProgress = hasResumeProgress(item);
   const canPlay = isPlayableItem(item);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
 
   return (
     <div className="spiritflix-modal" role="dialog" aria-modal="true" aria-label={`${item.Name} details`}>

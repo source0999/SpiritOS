@@ -799,6 +799,59 @@
   color: #e0f2fe;
 }
 
+.spiritflix-manual-tags-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  overflow-x: auto;
+  padding: 0.15rem 0 0.25rem;
+  scrollbar-width: none;
+}
+
+.spiritflix-manual-tags-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.spiritflix-manual-tags-bar > div,
+.spiritflix-manual-tags-bar button {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2.45rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.spiritflix-manual-tags-bar > div {
+  color: rgba(203, 213, 225, 0.78);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.spiritflix-manual-tags-bar button {
+  padding: 0 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+
+.spiritflix-manual-tags-bar button span {
+  color: rgba(226, 232, 240, 0.7);
+  font-size: 0.72rem;
+}
+
+.spiritflix-manual-tags-bar button.is-active {
+  border-color: rgba(52, 211, 153, 0.5);
+  background: rgba(16, 185, 129, 0.15);
+  color: #dcfce7;
+}
+
+.spiritflix-manual-tags-bar__clear {
+  border-color: rgba(251, 113, 133, 0.38) !important;
+  color: #fecdd3 !important;
+}
+
 .spiritflix-filter-trigger {
   max-width: 100%;
 }
@@ -841,12 +894,46 @@
   display: grid;
   gap: 0.9rem;
   width: min(100%, 36rem);
+  max-height: min(34rem, 72dvh);
+  overflow: auto;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 0.8rem;
   padding: 0.85rem;
   background: rgba(9, 9, 18, 0.94);
   box-shadow: 0 1.2rem 3rem rgba(0, 0, 0, 0.38), 0 0 2rem rgba(34, 211, 238, 0.08);
   backdrop-filter: blur(22px);
+}
+
+.spiritflix-filter-popout__header {
+  position: sticky;
+  top: -0.85rem;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: -0.85rem -0.85rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.72rem 0.85rem;
+  background: rgba(9, 9, 18, 0.96);
+  backdrop-filter: blur(18px);
+}
+
+.spiritflix-filter-popout__header strong {
+  color: #fff;
+  font-size: 0.92rem;
+}
+
+.spiritflix-filter-popout__header button {
+  min-width: 0;
+  min-height: 2.2rem;
+  border: 1px solid rgba(34, 211, 238, 0.42);
+  border-radius: 999px;
+  padding: 0 0.78rem;
+  background: rgba(34, 211, 238, 0.14);
+  color: #e0f2fe;
+  font-size: 0.78rem;
+  font-weight: 950;
 }
 
 .spiritflix-filter-popout__section {
@@ -871,6 +958,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 0.38rem;
   min-width: 0;
   min-height: 3rem;
   border: 1px solid rgba(255, 255, 255, 0.11);
@@ -884,11 +972,27 @@
   text-align: center;
 }
 
+.spiritflix-filter-options button span {
+  color: rgba(226, 232, 240, 0.68);
+  font-size: 0.72rem;
+}
+
 .spiritflix-filter-options button.is-active {
   border-color: rgba(34, 211, 238, 0.5);
   background: rgba(34, 211, 238, 0.16);
   color: #e0f2fe;
   box-shadow: 0 0 1.2rem rgba(34, 211, 238, 0.12);
+}
+
+.spiritflix-filter-options button.is-excluded {
+  border-color: rgba(251, 113, 133, 0.5);
+  background: rgba(127, 29, 29, 0.32);
+  color: #fecdd3;
+}
+
+.spiritflix-filter-options button:disabled {
+  cursor: default;
+  opacity: 0.45;
 }
 
 .spiritflix-face-note {
@@ -1177,6 +1281,25 @@
   display: none;
 }
 
+.spiritflix-model-directory {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(13.5rem, 1fr));
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.spiritflix-model-directory .spiritflix-model-card {
+  width: 100%;
+  min-width: 0;
+  min-height: 5rem;
+}
+
+.spiritflix-model-card--all {
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 5rem;
+  padding: 0.8rem;
+}
+
 .spiritflix-model-pill,
 .spiritflix-model-card {
   flex: 0 0 min(12.75rem, 62vw);
@@ -1236,11 +1359,48 @@
   font-weight: 750;
 }
 
+.spiritflix-model-directory .spiritflix-model-card {
+  flex: 1 1 auto;
+}
+
 .spiritflix-library-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   align-items: start;
   gap: 0.9rem;
+}
+
+.spiritflix-library-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  margin: 1.2rem 0 0;
+}
+
+.spiritflix-library-pager button {
+  display: inline-grid;
+  place-items: center;
+  width: 2.55rem;
+  height: 2.55rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 0.7rem;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.94);
+  font-weight: 850;
+}
+
+.spiritflix-library-pager button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+.spiritflix-library-pager span {
+  color: rgba(226, 232, 240, 0.74);
+  font-size: 0.82rem;
+  font-weight: 750;
+  text-align: center;
 }
 
 .spiritflix-gallery-grid {
@@ -1374,6 +1534,37 @@
   transition: opacity 160ms ease;
 }
 
+.spiritflix-feed-card__tags {
+  position: absolute;
+  left: 0.55rem;
+  right: 0.55rem;
+  bottom: 0.55rem;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  pointer-events: none;
+}
+
+.spiritflix-feed-card__tags span,
+.spiritflix-library-row__tags em {
+  border: 1px solid rgba(52, 211, 153, 0.34);
+  border-radius: 999px;
+  background: rgba(4, 120, 87, 0.32);
+  color: #dcfce7;
+  font-size: 0.7rem;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.spiritflix-feed-card__tags span {
+  padding: 0.16rem 0.45rem;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .spiritflix-feed-card:hover .spiritflix-feed-card__shade,
 .spiritflix-feed-card:focus-within .spiritflix-feed-card__shade {
   opacity: 1;
@@ -1457,6 +1648,17 @@
   display: grid;
   min-width: 0;
   gap: 0.12rem;
+}
+
+.spiritflix-library-row__tags {
+  display: flex !important;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.spiritflix-library-row__tags em {
+  display: inline-flex;
+  padding: 0.12rem 0.42rem;
 }
 
 .spiritflix-library-row__copy strong,
@@ -1698,6 +1900,16 @@
   z-index: 50;
 }
 
+.spiritflix-modal {
+  display: grid;
+  place-items: center;
+  padding:
+    max(0.75rem, env(safe-area-inset-top))
+    max(0.75rem, env(safe-area-inset-right))
+    max(0.75rem, env(safe-area-inset-bottom))
+    max(0.75rem, env(safe-area-inset-left));
+}
+
 .spiritflix-modal__scrim {
   position: absolute;
   inset: 0;
@@ -1706,13 +1918,11 @@
 }
 
 .spiritflix-modal__panel {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: min(94vw, 62rem);
-  max-height: 88dvh;
+  position: relative;
+  width: min(100%, 62rem);
+  max-height: calc(100dvh - 1.5rem - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   overflow: hidden auto;
-  transform: translate(-50%, -50%);
+  overscroll-behavior: contain;
   border: 1px solid var(--sf-border);
   border-radius: 0.85rem;
   background: rgba(7, 7, 14, 0.96);
@@ -1855,10 +2065,10 @@
 }
 
 .spiritflix-modal__close {
-  position: absolute;
-  z-index: 2;
-  right: 0.85rem;
-  top: 0.85rem;
+  position: fixed;
+  z-index: 60;
+  right: max(0.85rem, env(safe-area-inset-right));
+  top: max(0.85rem, env(safe-area-inset-top));
   border-radius: 999px;
 }
 
@@ -1875,6 +2085,78 @@
     #000;
   touch-action: none;
   user-select: none;
+}
+
+.spiritflix-player.is-app-mini {
+  inset: auto max(0.75rem, env(safe-area-inset-right)) max(0.75rem, env(safe-area-inset-bottom)) auto;
+  width: min(18rem, calc(100vw - 1.5rem));
+  min-height: 0;
+  aspect-ratio: 16 / 9;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 0.85rem;
+  background: #000;
+  box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.55);
+  touch-action: manipulation;
+}
+
+.spiritflix-player.is-app-mini .spiritflix-player__stage {
+  border-radius: inherit;
+}
+
+.spiritflix-player.is-app-mini video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: none;
+}
+
+.spiritflix-player.is-app-mini .spiritflix-player__top,
+.spiritflix-player.is-app-mini .spiritflix-player__controls,
+.spiritflix-player.is-app-mini .spiritflix-player__diagnostics,
+.spiritflix-player.is-app-mini .spiritflix-player__loading,
+.spiritflix-player.is-app-mini .spiritflix-player__tap-feedback,
+.spiritflix-player.is-app-mini .spiritflix-player__queue,
+.spiritflix-player.is-app-mini .spiritflix-delete-editor,
+.spiritflix-player.is-app-mini .spiritflix-model-editor,
+.spiritflix-player.is-app-mini .spiritflix-tag-editor {
+  display: none;
+}
+
+.spiritflix-player__mini-actions {
+  position: absolute;
+  left: 0.45rem;
+  right: 0.45rem;
+  top: 0.45rem;
+  z-index: 4;
+  display: flex;
+  justify-content: flex-end;
+  pointer-events: none;
+}
+
+.spiritflix-player__mini-back {
+  display: grid;
+  grid-template-columns: auto minmax(0, auto);
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  min-height: 2.2rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  padding: 0 0.68rem;
+  background: rgba(3, 7, 18, 0.72);
+  color: #fff;
+  font-size: 0.76rem;
+  font-weight: 900;
+  box-shadow: 0 0.65rem 1.4rem rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(14px);
+  pointer-events: auto;
+}
+
+.spiritflix-player__mini-back span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .spiritflix-player__stage {
@@ -1926,8 +2208,10 @@
 
 .spiritflix-player.is-awake .spiritflix-player__top,
 .spiritflix-player.is-awake .spiritflix-player__controls,
+.spiritflix-player.is-awake .spiritflix-player__diagnostics,
 .spiritflix-player:focus-within .spiritflix-player__top,
-.spiritflix-player:focus-within .spiritflix-player__controls {
+.spiritflix-player:focus-within .spiritflix-player__controls,
+.spiritflix-player:focus-within .spiritflix-player__diagnostics {
   opacity: 1;
   pointer-events: auto;
 }
@@ -1977,23 +2261,31 @@
 
 .spiritflix-player.is-controls-hidden .spiritflix-player__top,
 .spiritflix-player.is-controls-hidden .spiritflix-player__controls,
+.spiritflix-player.is-controls-hidden .spiritflix-player__diagnostics,
 .spiritflix-player.is-controls-hidden:focus-within .spiritflix-player__top,
-.spiritflix-player.is-controls-hidden:focus-within .spiritflix-player__controls {
+.spiritflix-player.is-controls-hidden:focus-within .spiritflix-player__controls,
+.spiritflix-player.is-controls-hidden:focus-within .spiritflix-player__diagnostics {
   opacity: 0;
   pointer-events: none;
 }
 
 .spiritflix-player.is-controls-hidden .spiritflix-player__controls,
-.spiritflix-player.is-controls-hidden:focus-within .spiritflix-player__controls {
+.spiritflix-player.is-controls-hidden:focus-within .spiritflix-player__controls,
+.spiritflix-player.is-controls-hidden .spiritflix-delete-editor,
+.spiritflix-player.is-controls-hidden .spiritflix-model-editor,
+.spiritflix-player.is-controls-hidden .spiritflix-tag-editor {
   transform: translateY(0.5rem);
 }
 
 .spiritflix-player__diagnostics {
   position: absolute;
   z-index: 3;
-  right: max(0.9rem, env(safe-area-inset-right));
+  left: max(0.9rem, env(safe-area-inset-left));
   bottom: calc(max(0.95rem, env(safe-area-inset-bottom)) + 7.5rem);
   width: min(22rem, calc(100vw - 1.8rem));
+  max-height: calc(100dvh - max(0.9rem, env(safe-area-inset-top)) - max(0.95rem, env(safe-area-inset-bottom)) - 8.4rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 0.7rem;
   padding: 0.75rem;
@@ -2001,13 +2293,25 @@
   color: rgba(248, 250, 252, 0.92);
   box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.44);
   backdrop-filter: blur(14px);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
 }
 
 .spiritflix-player__diagnostics > div:first-child {
+  position: sticky;
+  top: -0.75rem;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
+  margin: -0.75rem -0.75rem 0;
+  padding: 0.75rem;
+  background: rgba(3, 7, 18, 0.94);
+  backdrop-filter: blur(14px);
 }
 
 .spiritflix-player__diagnostics strong {
@@ -2098,10 +2402,19 @@
 .spiritflix-player__tools {
   flex: 1 1 auto;
   justify-content: flex-end;
+  position: relative;
 }
 
 .spiritflix-player__button-row button {
   flex: 0 0 auto;
+}
+
+.spiritflix-player__tools-toggle {
+  display: none;
+}
+
+.spiritflix-player__tools-overflow {
+  display: contents;
 }
 
 .spiritflix-player button.is-active {
@@ -2109,6 +2422,57 @@
   background: rgba(139, 92, 246, 0.28);
   color: #fff;
   box-shadow: 0 0 1.2rem rgba(139, 92, 246, 0.22);
+}
+
+.spiritflix-player__shuffle-picker {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 0.7rem);
+  z-index: 14;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  width: min(21rem, calc(100vw - 1.8rem));
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 0.85rem;
+  padding: 0.7rem;
+  background: rgba(5, 8, 16, 0.96);
+  box-shadow: 0 1.1rem 3rem rgba(0, 0, 0, 0.62), 0 0 0 1px rgba(124, 58, 237, 0.18) inset;
+  backdrop-filter: blur(20px);
+}
+
+.spiritflix-player__shuffle-picker button {
+  display: inline-flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 3.35rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.7rem;
+  background: rgba(255, 255, 255, 0.11);
+  color: #f8fafc;
+  font-size: 0.92rem;
+  font-weight: 900;
+  box-shadow: 0 0.55rem 1.3rem rgba(0, 0, 0, 0.28);
+}
+
+.spiritflix-player__shuffle-picker-label,
+.spiritflix-player__shuffle-picker-count {
+  line-height: 1;
+}
+
+.spiritflix-player__shuffle-picker-count {
+  color: rgba(226, 232, 240, 0.8);
+  font-size: 0.76rem;
+}
+
+.spiritflix-player__shuffle-picker button:disabled {
+  cursor: default;
+  opacity: 0.5;
+  background: rgba(148, 163, 184, 0.08);
+  color: rgba(226, 232, 240, 0.72);
 }
 
 .spiritflix-player__play {
@@ -2171,6 +2535,324 @@
   white-space: nowrap;
 }
 
+.spiritflix-delete-editor,
+.spiritflix-model-editor,
+.spiritflix-tag-editor {
+  position: absolute;
+  right: max(0.75rem, env(safe-area-inset-right));
+  bottom: calc(max(0.75rem, env(safe-area-inset-bottom)) + 6.2rem);
+  z-index: 12;
+  display: grid;
+  gap: 0.75rem;
+  width: min(27rem, calc(100% - 1.5rem));
+  max-height: min(34rem, calc(100% - 8rem));
+  overflow: auto;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 0.75rem;
+  padding: 0.85rem;
+  background: rgba(9, 9, 18, 0.96);
+  box-shadow: 0 1.2rem 3.5rem rgba(0, 0, 0, 0.48), 0 0 2rem rgba(16, 185, 129, 0.12);
+  backdrop-filter: blur(22px);
+}
+
+.spiritflix-delete-editor {
+  box-shadow: 0 1.2rem 3.5rem rgba(0, 0, 0, 0.48), 0 0 2rem rgba(244, 63, 94, 0.14);
+}
+
+.spiritflix-model-editor {
+  box-shadow: 0 1.2rem 3.5rem rgba(0, 0, 0, 0.48), 0 0 2rem rgba(34, 211, 238, 0.12);
+}
+
+.spiritflix-delete-editor__body {
+  display: grid;
+  gap: 0.35rem;
+  border: 1px solid rgba(244, 63, 94, 0.26);
+  border-radius: 0.65rem;
+  padding: 0.75rem;
+  background: rgba(127, 29, 29, 0.2);
+}
+
+.spiritflix-delete-editor__body strong {
+  color: #fecdd3;
+  font-size: 0.95rem;
+  font-weight: 900;
+}
+
+.spiritflix-delete-editor__body span {
+  overflow-wrap: anywhere;
+  color: rgba(254, 226, 226, 0.78);
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+
+.spiritflix-tag-editor__actions .spiritflix-delete-editor__confirm {
+  border-color: rgba(244, 63, 94, 0.58);
+  background: rgba(190, 18, 60, 0.26);
+  color: #ffe4e6;
+}
+
+.spiritflix-tag-editor__actions .spiritflix-delete-editor__confirm:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.spiritflix-model-editor__current {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+  border: 1px solid rgba(34, 211, 238, 0.22);
+  border-radius: 0.65rem;
+  padding: 0.7rem;
+  background: rgba(14, 116, 144, 0.12);
+}
+
+.spiritflix-model-editor__current > div {
+  display: grid;
+  min-width: 0;
+  gap: 0.18rem;
+}
+
+.spiritflix-model-editor__current span {
+  color: rgba(203, 213, 225, 0.74);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.spiritflix-model-editor__current strong {
+  color: #e0f2fe;
+  font-size: 0.96rem;
+  font-weight: 900;
+}
+
+.spiritflix-model-editor__current em {
+  flex: 0 0 auto;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 999px;
+  padding: 0.32rem 0.55rem;
+  color: rgba(226, 232, 240, 0.78);
+  font-size: 0.68rem;
+  font-style: normal;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.spiritflix-model-editor__current em.is-saved {
+  border-color: rgba(52, 211, 153, 0.36);
+  background: rgba(16, 185, 129, 0.14);
+  color: #bbf7d0;
+}
+
+.spiritflix-model-editor__current em.is-unsaved {
+  border-color: rgba(250, 204, 21, 0.36);
+  background: rgba(250, 204, 21, 0.1);
+  color: #fef08a;
+}
+
+.spiritflix-model-editor__face-hint {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+  border: 1px solid rgba(250, 204, 21, 0.32);
+  border-radius: 0.65rem;
+  padding: 0.7rem;
+  background: rgba(113, 63, 18, 0.22);
+}
+
+.spiritflix-model-editor__face-hint.is-confirmed {
+  border-color: rgba(52, 211, 153, 0.34);
+  background: rgba(6, 95, 70, 0.18);
+}
+
+.spiritflix-model-editor__face-hint > div {
+  display: grid;
+  min-width: 0;
+  gap: 0.14rem;
+}
+
+.spiritflix-model-editor__face-hint span {
+  color: rgba(254, 240, 138, 0.86);
+  font-size: 0.7rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.spiritflix-model-editor__face-hint strong {
+  overflow-wrap: anywhere;
+  color: #fef9c3;
+  font-size: 0.95rem;
+  font-weight: 900;
+}
+
+.spiritflix-model-editor__face-hint em,
+.spiritflix-model-editor__learning {
+  color: rgba(226, 232, 240, 0.76);
+  font-size: 0.75rem;
+  font-style: normal;
+  line-height: 1.3;
+}
+
+.spiritflix-model-editor__face-hint button {
+  min-height: 2.1rem;
+  border: 1px solid rgba(250, 204, 21, 0.42);
+  border-radius: 0.55rem;
+  padding: 0 0.75rem;
+  background: rgba(250, 204, 21, 0.14);
+  color: #fef9c3;
+  font-weight: 900;
+}
+
+.spiritflix-model-editor__face-hint button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.spiritflix-model-editor__section {
+  display: grid;
+  gap: 0.48rem;
+  min-width: 0;
+}
+
+.spiritflix-model-editor__section--assign {
+  gap: 0.58rem;
+}
+
+.spiritflix-model-editor__section-label {
+  color: rgba(203, 213, 225, 0.72);
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.spiritflix-tag-editor__header,
+.spiritflix-tag-editor__actions,
+.spiritflix-tag-editor__add {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.spiritflix-tag-editor__header {
+  justify-content: space-between;
+}
+
+.spiritflix-tag-editor__header > div {
+  display: grid;
+  min-width: 0;
+  gap: 0.15rem;
+}
+
+.spiritflix-tag-editor__header span {
+  color: rgba(203, 213, 225, 0.78);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.spiritflix-tag-editor__header strong {
+  min-width: 0;
+  overflow: hidden;
+  color: #fff;
+  font-size: 0.94rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spiritflix-tag-editor__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  max-height: min(13rem, 34vh);
+  overflow-y: auto;
+  padding-right: 0.2rem;
+  scrollbar-color: rgba(52, 211, 153, 0.42) rgba(255, 255, 255, 0.06);
+}
+
+.spiritflix-tag-editor__section-label {
+  flex: 1 0 100%;
+  color: rgba(226, 232, 240, 0.62);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.spiritflix-tag-editor__chips button {
+  min-height: 2.25rem;
+  border-radius: 999px;
+  padding: 0 0.75rem;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.spiritflix-tag-editor__chips button.is-selected {
+  border-color: rgba(52, 211, 153, 0.56);
+  background: rgba(16, 185, 129, 0.2);
+  color: #dcfce7;
+}
+
+.spiritflix-tag-editor__chips button.is-selected.is-video-scope {
+  border-color: rgba(125, 211, 252, 0.56);
+  background: rgba(14, 165, 233, 0.18);
+  color: #e0f2fe;
+}
+
+.spiritflix-tag-editor__add input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 2.55rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 0.65rem;
+  padding: 0 0.75rem;
+  background: rgba(15, 23, 42, 0.84);
+  color: #fff;
+  font-size: 0.92rem;
+}
+
+.spiritflix-tag-editor__add button,
+.spiritflix-tag-editor__actions button {
+  min-height: 2.55rem;
+  padding: 0 0.85rem;
+  font-size: 0.86rem;
+  font-weight: 900;
+}
+
+.spiritflix-tag-editor__actions {
+  min-width: 0;
+  justify-content: flex-end;
+}
+
+.spiritflix-tag-editor__actions span {
+  margin-right: auto;
+  color: rgba(203, 213, 225, 0.78);
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+
+.spiritflix-tag-editor__actions button:last-child {
+  border-color: rgba(52, 211, 153, 0.48);
+  background: rgba(16, 185, 129, 0.18);
+  color: #dcfce7;
+}
+
+.spiritflix-tag-editor__note,
+.spiritflix-tag-editor__error {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.spiritflix-tag-editor__note {
+  color: rgba(203, 213, 225, 0.78);
+}
+
+.spiritflix-tag-editor__error {
+  color: #fecdd3;
+}
+
 .spiritflix-player__queue {
   position: absolute;
   top: max(0.75rem, env(safe-area-inset-top));
@@ -2228,41 +2910,123 @@
 .spiritflix-player__queue-list {
   display: grid;
   align-content: start;
-  gap: 0.35rem;
+  gap: 0.55rem;
+  min-width: 0;
   overflow-y: auto;
-  padding: 0.6rem;
+  padding: 0.7rem;
 }
 
-.spiritflix-player__queue-list button {
+.spiritflix-player__queue-item {
   display: grid;
-  grid-template-columns: 2.2rem minmax(0, 1fr);
+  grid-template-columns: 2rem minmax(0, 1fr);
   align-items: center;
-  gap: 0.55rem;
-  width: 100%;
-  min-height: 3.1rem;
+  gap: 0.25rem;
+  min-width: 0;
+  min-height: 3.45rem;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 0.5rem;
-  background: rgba(255, 255, 255, 0.055);
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045);
+}
+
+.spiritflix-player__queue-item.is-current {
+  border-color: rgba(34, 211, 238, 0.55);
+  background: rgba(34, 211, 238, 0.16);
+  box-shadow: 0 0 1.1rem rgba(34, 211, 238, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.spiritflix-player .spiritflix-player__queue-drag,
+.spiritflix-player .spiritflix-player__queue-select {
+  min-width: 0;
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  transform: none;
+}
+
+.spiritflix-player .spiritflix-player__queue-drag:hover,
+.spiritflix-player .spiritflix-player__queue-select:hover {
+  transform: none;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+.spiritflix-player__queue-drag {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  min-height: 3.45rem;
+  padding: 0;
+  color: rgba(226, 232, 240, 0.46);
+  cursor: grab;
+  touch-action: none;
+}
+
+.spiritflix-player__queue-drag:active {
+  cursor: grabbing;
+}
+
+.spiritflix-player__queue-select {
+  display: grid;
+  grid-template-columns: 1.9rem 3.35rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.65rem;
+  justify-items: stretch;
+  width: 100%;
+  min-height: 3.45rem;
+  overflow: hidden;
+  padding: 0.35rem 0.75rem 0.35rem 0;
   text-align: left;
 }
 
-.spiritflix-player__queue-list button.is-current {
-  border-color: rgba(34, 211, 238, 0.55);
-  background: rgba(34, 211, 238, 0.16);
-  box-shadow: 0 0 1.4rem rgba(34, 211, 238, 0.14);
-}
-
-.spiritflix-player__queue-list span {
+.spiritflix-player__queue-index {
   color: rgba(226, 232, 240, 0.54);
   font-size: 0.74rem;
   font-weight: 900;
   text-align: center;
 }
 
-.spiritflix-player__queue-list strong {
+.spiritflix-player__queue-thumb {
+  display: block;
+  width: 3.35rem;
+  height: 2.1rem;
+  min-width: 3.35rem;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.32rem;
+  background: rgba(15, 23, 42, 0.72);
+}
+
+.spiritflix-player__queue-thumb img,
+.spiritflix-player__queue-thumb .spiritflix-image-fallback,
+.spiritflix-player__queue-thumb-fallback {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.spiritflix-player__queue-thumb-fallback {
+  background:
+    linear-gradient(135deg, rgba(34, 211, 238, 0.22), rgba(139, 92, 246, 0.22)),
+    rgba(15, 23, 42, 0.72);
+}
+
+.spiritflix-player__queue-select strong {
+  display: block;
+  width: 100%;
+  max-width: 100%;
   min-width: 0;
   overflow: hidden;
   color: #fff;
-  font-size: 0.86rem;
+  font-size: 0.84rem;
+  line-height: 1.18;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -2509,7 +3273,33 @@
   }
 
   .spiritflix-filter-popout {
-    width: 100%;
+    position: fixed;
+    left: max(0.75rem, env(safe-area-inset-left));
+    right: max(0.75rem, env(safe-area-inset-right));
+    bottom: calc(max(0.75rem, env(safe-area-inset-bottom)) + 5.1rem);
+    z-index: 30;
+    width: auto;
+    max-height: min(28rem, 62dvh);
+    overflow-y: auto;
+    border-radius: 0.95rem;
+    padding: 0.72rem;
+  }
+
+  .spiritflix-filter-popout__header {
+    top: -0.72rem;
+    margin: -0.72rem -0.72rem 0;
+    padding: 0.6rem 0.72rem;
+  }
+
+  .spiritflix-filter-options {
+    gap: 0.38rem;
+  }
+
+  .spiritflix-filter-options button {
+    min-height: 2.52rem;
+    border-radius: 0.58rem;
+    padding: 0 0.55rem;
+    font-size: 0.76rem;
   }
 
   .spiritflix-library-v2__header {
@@ -2594,11 +3384,9 @@
   }
 
   .spiritflix-modal__panel {
-    top: auto;
-    bottom: 0;
-    width: 100vw;
-    max-height: 92dvh;
-    transform: translateX(-50%);
+    align-self: end;
+    width: 100%;
+    max-height: calc(100dvh - 0.75rem - env(safe-area-inset-top) - env(safe-area-inset-bottom));
     border-radius: 1rem 1rem 0 0;
   }
 
@@ -2627,10 +3415,10 @@
     left: 0;
     right: 0;
     bottom: 0;
-    gap: 0.48rem;
+    gap: 0.46rem;
     border: 0;
     border-radius: 0;
-    padding: 3.15rem max(0.65rem, env(safe-area-inset-right)) max(0.6rem, env(safe-area-inset-bottom)) max(0.65rem, env(safe-area-inset-left));
+    padding: 2.65rem max(1rem, env(safe-area-inset-right)) max(0.55rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
     background: linear-gradient(0deg, rgba(0, 0, 0, 0.92), rgba(0, 0, 0, 0.58) 56%, rgba(0, 0, 0, 0));
     box-shadow: none;
     backdrop-filter: none;
@@ -2647,75 +3435,243 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0.45rem;
+    gap: 0.35rem;
+    width: 100%;
+    max-width: 100%;
     min-width: 0;
-    border-radius: 999px;
+    padding: 0 0.2rem;
   }
 
-  .spiritflix-player__transport,
-  .spiritflix-player__tools {
+  .spiritflix-player__transport {
     display: flex;
     align-items: center;
-    gap: 0.42rem;
+    gap: 0.3rem;
     min-width: 0;
   }
 
   .spiritflix-player__transport {
-    flex: 1 1 auto;
-    justify-content: flex-start;
+    flex: 0 0 auto;
+    justify-content: center;
   }
 
   .spiritflix-player__tools {
-    flex: 0 0 auto;
+    position: static;
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
     justify-content: flex-end;
+    gap: 0.34rem;
+    min-width: 0;
+  }
+
+  .spiritflix-player__tools-toggle {
+    display: flex;
+  }
+
+  .spiritflix-player__tool--more {
+    position: absolute;
+    right: max(0.72rem, env(safe-area-inset-right));
+    bottom: calc(max(0.8rem, env(safe-area-inset-bottom)) + 11.4rem);
+    z-index: 13;
+    order: 20;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 999px !important;
+    background: rgba(7, 9, 15, 0.74) !important;
+    box-shadow: 0 0.8rem 1.8rem rgba(0, 0, 0, 0.36) !important;
+    backdrop-filter: blur(16px);
+  }
+
+  .spiritflix-player__tool--repeat {
+    order: 1;
+  }
+
+  .spiritflix-player__tool--shuffle {
+    order: 2;
+  }
+
+  .spiritflix-player__tool--favorite {
+    order: 3;
+  }
+
+  .spiritflix-player__tool--volume {
+    order: 4;
+  }
+
+  .spiritflix-player__tool--mini {
+    order: 5;
+  }
+
+  .spiritflix-player__tool--fullscreen {
+    order: 6;
+  }
+
+  .spiritflix-player__tool--model-mix {
+    order: 1;
+  }
+
+  .spiritflix-player__tools-overflow {
+    position: absolute;
+    right: max(0.72rem, env(safe-area-inset-right));
+    bottom: calc(max(0.8rem, env(safe-area-inset-bottom)) + 14.1rem);
+    z-index: 13;
+    display: grid;
+    grid-template-columns: 2.2rem;
+    gap: 0.3rem;
+    border: 1px solid rgba(255, 255, 255, 0.11);
+    border-radius: 1rem;
+    padding: 0.34rem;
+    background: rgba(6, 8, 14, 0.72);
+    box-shadow: 0 0.9rem 2rem rgba(0, 0, 0, 0.38);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(0.45rem) scale(0.98);
+    transition:
+      opacity 150ms ease,
+      transform 150ms ease;
+    backdrop-filter: blur(18px);
+  }
+
+  .spiritflix-player__tools.is-open .spiritflix-player__tools-overflow {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(0) scale(1);
+  }
+
+  .spiritflix-player__shuffle-picker {
+    position: fixed;
+    right: max(0.72rem, env(safe-area-inset-right));
+    bottom: calc(max(0.8rem, env(safe-area-inset-bottom)) + 10.2rem);
+    left: max(0.72rem, env(safe-area-inset-left));
+    z-index: 24;
+    width: auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.7rem;
+    padding: 0.72rem;
   }
 
   .spiritflix-player__button-row button,
   .spiritflix-player__tools button,
   .spiritflix-player__transport button {
-    width: 2.75rem;
-    min-width: 2.75rem;
-    height: 2.75rem;
-    min-height: 2.75rem;
-    border-color: rgba(255, 255, 255, 0.1);
-    background: rgba(8, 10, 18, 0.48);
-    box-shadow: 0 0.55rem 1.4rem rgba(0, 0, 0, 0.22);
+    width: 2.35rem;
+    min-width: 2.35rem;
+    height: 2.35rem;
+    min-height: 2.35rem;
+    border-color: transparent;
+    border-radius: 999px;
+    background: transparent;
+    box-shadow: none;
+    color: rgba(248, 250, 252, 0.9);
     padding: 0;
   }
 
+  .spiritflix-player__tools .spiritflix-player__shuffle-picker button {
+    width: auto;
+    min-width: 0;
+    height: auto;
+    min-height: 3.75rem;
+    padding: 0.46rem 0.55rem;
+    background: rgba(255, 255, 255, 0.13);
+  }
+
+  .spiritflix-player .spiritflix-player__button-row button.is-active,
+  .spiritflix-player .spiritflix-player__tools button.is-active {
+    border-color: transparent;
+    background: transparent;
+    color: #c4b5fd;
+    box-shadow: none;
+  }
+
+  .spiritflix-player__button-row button svg {
+    width: 1rem;
+    height: 1rem;
+  }
+
   .spiritflix-player__play {
-    width: 3rem !important;
-    min-width: 3rem !important;
-    height: 3rem !important;
-    min-height: 3rem !important;
+    width: 2.1rem !important;
+    min-width: 2.1rem !important;
+    height: 2.1rem !important;
+    min-height: 2.1rem !important;
+    border-radius: 999px !important;
+    background: transparent !important;
+    color: #fff !important;
+    box-shadow: none !important;
+  }
+
+  .spiritflix-player__play svg {
+    width: 1.28rem !important;
+    height: 1.28rem !important;
   }
 
   .spiritflix-player__volume {
+    display: flex;
     min-width: 0;
     margin-left: 0;
-    justify-content: end;
+    justify-content: center;
+    position: relative;
   }
 
   .spiritflix-player__volume input {
+    position: absolute;
+    right: calc(max(0.72rem, env(safe-area-inset-right)) + 0.18rem);
+    bottom: calc(max(0.8rem, env(safe-area-inset-bottom)) + 5.35rem);
     width: 0;
     min-width: 0;
     max-width: 0;
     opacity: 0;
     pointer-events: none;
-    transition: max-width 160ms ease, opacity 160ms ease;
+    transform: rotate(-90deg);
+    transform-origin: right center;
+    touch-action: pan-y;
+    transition: width 160ms ease, opacity 160ms ease;
   }
 
   .spiritflix-player__volume.is-expanded {
-    min-width: 7.25rem;
+    min-width: 0;
   }
 
   .spiritflix-player__volume.is-expanded input,
   .spiritflix-player__volume:focus-within input {
-    width: 4.4rem;
-    min-width: 4.4rem;
-    max-width: 4.4rem;
+    width: min(8.2rem, 38dvh);
+    min-width: min(8.2rem, 38dvh);
+    max-width: min(8.2rem, 38dvh);
     opacity: 1;
     pointer-events: auto;
+  }
+
+  .spiritflix-player__diagnostics {
+    left: max(0.65rem, env(safe-area-inset-left));
+    bottom: calc(max(0.65rem, env(safe-area-inset-bottom)) + 5.7rem);
+    width: min(14.2rem, calc(100vw - 1.3rem));
+    max-height: calc(100dvh - max(0.65rem, env(safe-area-inset-top)) - max(0.65rem, env(safe-area-inset-bottom)) - 6.35rem);
+    padding: 0.45rem;
+    border-radius: 999px;
+    background: rgba(8, 10, 18, 0.7);
+  }
+
+  .spiritflix-player__diagnostics > div:first-child {
+    top: -0.45rem;
+    margin: -0.45rem -0.45rem 0;
+    padding: 0.45rem;
+    background: rgba(8, 10, 18, 0.9);
+  }
+
+  .spiritflix-player__diagnostics strong {
+    font-size: 0.78rem;
+  }
+
+  .spiritflix-player__diagnostics > div:first-child button {
+    min-height: 1.85rem;
+    padding: 0 0.55rem;
+    font-size: 0.7rem;
+  }
+
+  .spiritflix-player__diagnostics dl {
+    grid-template-columns: 1fr;
+  }
+
+  .spiritflix-player__diagnostics.is-open {
+    border-radius: 0.65rem;
+    width: min(20rem, calc(100vw - 1.3rem));
   }
 
   .spiritflix-player__button-row button span {
@@ -2729,6 +3685,53 @@
 
   .spiritflix-player__up-next {
     display: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .spiritflix-player__queue {
+    top: max(0.45rem, env(safe-area-inset-top));
+    right: max(0.45rem, env(safe-area-inset-right));
+    bottom: max(0.45rem, env(safe-area-inset-bottom));
+    left: max(0.45rem, env(safe-area-inset-left));
+    width: auto;
+    border-radius: 0.6rem;
+  }
+
+  .spiritflix-player__queue-header {
+    padding: 0.7rem;
+  }
+
+  .spiritflix-player__queue-list {
+    gap: 0.48rem;
+    padding: 0.55rem;
+  }
+
+  .spiritflix-player__queue-item {
+    grid-template-columns: 1.9rem minmax(0, 1fr);
+    gap: 0.2rem;
+    min-height: 3.35rem;
+  }
+
+  .spiritflix-player__queue-drag {
+    min-height: 3.35rem;
+  }
+
+  .spiritflix-player__queue-select {
+    grid-template-columns: 1.6rem 3rem minmax(0, 1fr);
+    gap: 0.52rem;
+    min-height: 3.35rem;
+    padding: 0.3rem 0.6rem 0.3rem 0;
+  }
+
+  .spiritflix-player__queue-thumb {
+    width: 3rem;
+    min-width: 3rem;
+    height: 1.9rem;
+  }
+
+  .spiritflix-player__queue-select strong {
+    font-size: 0.82rem;
   }
 }
 
@@ -2752,17 +3755,6 @@
 
   .spiritflix-view-toggle span {
     display: none;
-  }
-
-  .spiritflix-filter-popout {
-    position: fixed;
-    left: max(0.7rem, env(safe-area-inset-left));
-    right: max(0.7rem, env(safe-area-inset-right));
-    bottom: calc(max(0.7rem, env(safe-area-inset-bottom)) + 4.8rem);
-    width: auto;
-    max-height: min(70dvh, 28rem);
-    overflow-y: auto;
-    border-radius: 0.95rem;
   }
 
   .spiritflix-filter-options {
@@ -2853,36 +3845,75 @@
   }
 
   .spiritflix-player__button-row {
-    gap: 0.34rem;
+    gap: 0.24rem;
   }
 
   .spiritflix-player__transport {
-    gap: 0.32rem;
+    gap: 0.18rem;
   }
 
   .spiritflix-player__tools {
-    gap: 0.32rem;
+    gap: 0.18rem;
   }
 
   .spiritflix-player__button-row button,
   .spiritflix-player__tools button,
   .spiritflix-player__transport button {
-    width: 2.45rem;
-    min-width: 2.45rem;
-    height: 2.45rem;
-    min-height: 2.45rem;
+    width: 2.16rem;
+    min-width: 2.16rem;
+    height: 2.16rem;
+    min-height: 2.16rem;
   }
 
   .spiritflix-player__play {
-    width: 2.85rem !important;
-    min-width: 2.85rem !important;
-    height: 2.85rem !important;
-    min-height: 2.85rem !important;
+    width: 2.28rem !important;
+    min-width: 2.28rem !important;
+    height: 2.28rem !important;
+    min-height: 2.28rem !important;
   }
 
   .spiritflix-player__time {
     min-width: 2.7rem;
     font-size: 0.76rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .spiritflix-player__tool--repeat {
+    display: none;
+  }
+
+  .spiritflix-player__button-row {
+    gap: 0.18rem;
+    padding: 0;
+  }
+
+  .spiritflix-player__transport,
+  .spiritflix-player__tools {
+    gap: 0.12rem;
+  }
+
+  .spiritflix-player__button-row button,
+  .spiritflix-player__tools button,
+  .spiritflix-player__transport button {
+    width: 2rem;
+    min-width: 2rem;
+    height: 2rem;
+    min-height: 2rem;
+  }
+
+  .spiritflix-player__tools .spiritflix-player__shuffle-picker button {
+    width: auto;
+    min-width: 0;
+    height: auto;
+    min-height: 3.55rem;
+  }
+
+  .spiritflix-player__play {
+    width: 2.12rem !important;
+    min-width: 2.12rem !important;
+    height: 2.12rem !important;
+    min-height: 2.12rem !important;
   }
 }
 
@@ -2898,6 +3929,258 @@
 
   .spiritflix-player__up-next {
     display: none;
+  }
+}
+
+@media (orientation: landscape) and (any-pointer: coarse) {
+  .spiritflix-player__top {
+    gap: 0.55rem;
+    padding: max(0.55rem, env(safe-area-inset-top)) max(0.7rem, env(safe-area-inset-right)) 2.5rem max(0.7rem, env(safe-area-inset-left));
+  }
+
+  .spiritflix-player__title strong {
+    font-size: 0.98rem;
+  }
+
+  .spiritflix-player__title span {
+    font-size: 0.72rem;
+  }
+
+  .spiritflix-player__controls {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    gap: 0.4rem;
+    border: 0;
+    border-radius: 0;
+    padding: 2.25rem max(1.05rem, env(safe-area-inset-right)) max(0.55rem, env(safe-area-inset-bottom)) max(1.05rem, env(safe-area-inset-left));
+    background: linear-gradient(0deg, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.52) 58%, rgba(0, 0, 0, 0));
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+
+  .spiritflix-player__scrub-row {
+    display: grid;
+    grid-template-columns: 2.6rem minmax(0, 1fr) 2.6rem;
+    gap: 0.45rem;
+    align-items: center;
+  }
+
+  .spiritflix-player__button-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.35rem;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding: 0 0.2rem;
+  }
+
+  .spiritflix-player__transport {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    gap: 0.28rem;
+    min-width: 0;
+  }
+
+  .spiritflix-player__tools {
+    position: static;
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.34rem;
+    min-width: 0;
+  }
+
+  .spiritflix-player__tools-toggle {
+    display: flex;
+  }
+
+  .spiritflix-player__tool--more {
+    position: absolute;
+    top: 50%;
+    right: max(0.72rem, env(safe-area-inset-right));
+    bottom: auto;
+    z-index: 13;
+    order: 20;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 999px !important;
+    background: rgba(7, 9, 15, 0.74) !important;
+    box-shadow: 0 0.8rem 1.8rem rgba(0, 0, 0, 0.36) !important;
+    transform: translateY(-50%);
+    backdrop-filter: blur(16px);
+  }
+
+  .spiritflix-player__tool--repeat {
+    order: 1;
+  }
+
+  .spiritflix-player__tool--shuffle {
+    order: 2;
+  }
+
+  .spiritflix-player__tool--favorite {
+    order: 3;
+  }
+
+  .spiritflix-player__tool--volume {
+    order: 4;
+  }
+
+  .spiritflix-player__tool--mini {
+    order: 5;
+  }
+
+  .spiritflix-player__tool--fullscreen {
+    order: 6;
+  }
+
+  .spiritflix-player__tool--model-mix {
+    order: 1;
+  }
+
+  .spiritflix-player__tools-overflow {
+    position: absolute;
+    top: calc(50% + 2.55rem);
+    right: max(0.72rem, env(safe-area-inset-right));
+    bottom: auto;
+    z-index: 13;
+    display: grid;
+    grid-template-columns: 2.2rem;
+    gap: 0.3rem;
+    border: 1px solid rgba(255, 255, 255, 0.11);
+    border-radius: 1rem;
+    padding: 0.34rem;
+    background: rgba(6, 8, 14, 0.72);
+    box-shadow: 0 0.9rem 2rem rgba(0, 0, 0, 0.38);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(0.45rem) scale(0.98);
+    transition:
+      opacity 150ms ease,
+      transform 150ms ease;
+    backdrop-filter: blur(18px);
+  }
+
+  .spiritflix-player__tools.is-open .spiritflix-player__tools-overflow {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(0) scale(1);
+  }
+
+  .spiritflix-player__shuffle-picker {
+    position: fixed;
+    right: max(0.72rem, env(safe-area-inset-right));
+    bottom: calc(max(0.8rem, env(safe-area-inset-bottom)) + 5.9rem);
+    left: max(0.72rem, env(safe-area-inset-left));
+    z-index: 24;
+    width: auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.7rem;
+    padding: 0.72rem;
+  }
+
+  .spiritflix-player__button-row button,
+  .spiritflix-player__tools button,
+  .spiritflix-player__transport button {
+    width: 2.25rem;
+    min-width: 2.25rem;
+    height: 2.25rem;
+    min-height: 2.25rem;
+    border-color: transparent;
+    border-radius: 999px;
+    background: transparent;
+    box-shadow: none;
+    color: rgba(248, 250, 252, 0.9);
+    padding: 0;
+  }
+
+  .spiritflix-player__tools .spiritflix-player__shuffle-picker button {
+    width: auto;
+    min-width: 0;
+    height: auto;
+    min-height: 3.5rem;
+    padding: 0.46rem 0.55rem;
+    background: rgba(255, 255, 255, 0.13);
+  }
+
+  .spiritflix-player .spiritflix-player__button-row button.is-active,
+  .spiritflix-player .spiritflix-player__tools button.is-active {
+    border-color: transparent;
+    background: transparent;
+    color: #c4b5fd;
+    box-shadow: none;
+  }
+
+  .spiritflix-player__button-row button svg {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .spiritflix-player__play {
+    width: 2.1rem !important;
+    min-width: 2.1rem !important;
+    height: 2.1rem !important;
+    min-height: 2.1rem !important;
+    border-radius: 999px !important;
+    background: transparent !important;
+    color: #fff !important;
+    box-shadow: none !important;
+  }
+
+  .spiritflix-player__play svg {
+    width: 1.28rem !important;
+    height: 1.28rem !important;
+  }
+
+  .spiritflix-player__volume {
+    display: flex;
+    min-width: 0;
+    margin-left: 0;
+    justify-content: center;
+    position: relative;
+  }
+
+  .spiritflix-player__volume input {
+    position: absolute;
+    right: calc(max(0.72rem, env(safe-area-inset-right)) + 0.18rem);
+    bottom: calc(max(0.8rem, env(safe-area-inset-bottom)) + 5.2rem);
+    width: 0;
+    min-width: 0;
+    max-width: 0;
+    opacity: 0;
+    pointer-events: none;
+    transform: rotate(-90deg);
+    transform-origin: right center;
+    touch-action: pan-y;
+    transition: width 160ms ease, opacity 160ms ease;
+  }
+
+  .spiritflix-player__volume.is-expanded {
+    min-width: 0;
+  }
+
+  .spiritflix-player__volume.is-expanded input,
+  .spiritflix-player__volume:focus-within input {
+    width: min(8.2rem, 38dvh);
+    min-width: min(8.2rem, 38dvh);
+    max-width: min(8.2rem, 38dvh);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .spiritflix-player__button-row button span,
+  .spiritflix-player__up-next {
+    display: none;
+  }
+
+  .spiritflix-player__time {
+    min-width: 2.6rem;
+    font-size: 0.74rem;
   }
 }
 

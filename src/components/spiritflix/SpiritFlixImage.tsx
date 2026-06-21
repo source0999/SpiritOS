@@ -17,6 +17,23 @@ interface SpiritFlixImageProps {
   onLoad?: () => void;
 }
 
+const MAX_IMAGE_REQUESTS = 6;
+let activeImageRequests = 0;
+const imageQueue: Array<() => void> = [];
+
+async function withImageRequestLimit<T>(task: () => Promise<T>): Promise<T> {
+  if (activeImageRequests >= MAX_IMAGE_REQUESTS) {
+    await new Promise<void>((resolve) => imageQueue.push(resolve));
+  }
+  activeImageRequests += 1;
+  try {
+    return await task();
+  } finally {
+    activeImageRequests = Math.max(0, activeImageRequests - 1);
+    imageQueue.shift()?.();
+  }
+}
+
 function imageFallbackOrder(type: "Primary" | "Backdrop" | "Thumb"): Array<"Primary" | "Backdrop" | "Thumb"> {
   if (type === "Thumb") return ["Thumb", "Primary", "Backdrop"];
   if (type === "Backdrop") return ["Backdrop", "Thumb", "Primary"];
@@ -46,7 +63,7 @@ export function SpiritFlixImage({
 
       for (const imageType of imageFallbackOrder(type)) {
         try {
-          const nextSrc = await client.getImageObjectUrl(item, imageType, width);
+          const nextSrc = await withImageRequestLimit(() => client.getImageObjectUrl(item, imageType, width));
           if (alive) {
             objectUrl = nextSrc;
             setSrc(nextSrc);

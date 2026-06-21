@@ -35,6 +35,7 @@ export interface JellyfinItem {
   IndexNumber?: number;
   ParentIndexNumber?: number;
   RunTimeTicks?: number;
+  PrimaryImageAspectRatio?: number;
   Genres?: string[];
   People?: {
     Id?: string;
@@ -62,6 +63,62 @@ export interface JellyfinItem {
     RunTimeTicks?: number;
     Size?: number;
   }[];
+  MediaStreams?: {
+    Type?: string;
+    Codec?: string;
+    DisplayTitle?: string;
+    Width?: number;
+    Height?: number;
+    BitRate?: number;
+    Channels?: number;
+    SampleRate?: number;
+  }[];
+  ManualTags?: string[];
+  ManualModelName?: string;
+}
+
+export interface SpiritFlixManualTagSummary {
+  tag: string;
+  label: string;
+  count: number;
+}
+
+export interface SpiritFlixManualTagRecord {
+  schema: "spiritflix-manual-tags/v1";
+  itemId: string;
+  filePath?: string;
+  manualTags: string[];
+  updatedAt: string;
+  source: "manual";
+  createdBy?: "local-user";
+}
+
+export interface SpiritFlixManualTagIndex {
+  schema: "spiritflix-manual-tag-index/v1";
+  updatedAt: string;
+  tags: SpiritFlixManualTagSummary[];
+  modelAttributes?: SpiritFlixManualTagSummary[];
+}
+
+export interface SpiritFlixManualModelSummary {
+  modelName: string;
+  count: number;
+}
+
+export interface SpiritFlixManualModelRecord {
+  schema: "spiritflix-manual-model/v1";
+  itemId: string;
+  filePath?: string;
+  modelName: string;
+  updatedAt: string;
+  source: "manual";
+  createdBy?: "local-user";
+}
+
+export interface SpiritFlixManualModelIndex {
+  schema: "spiritflix-manual-model-index/v1";
+  updatedAt: string;
+  models: SpiritFlixManualModelSummary[];
 }
 
 export type FaceOrganizerStatus = "confirmed" | "needs_review" | "unknown" | "unscanned";
@@ -109,6 +166,24 @@ export interface FaceOrganizerMetadataResponse {
   videos: Record<string, FaceOrganizerVideoMatch>;
   scannedCount: number;
   generatedAt: string;
+}
+
+export interface SpiritFlixFaceLearningRecord {
+  schema: "spiritflix-face-learning-request/v1";
+  itemId: string;
+  filePath?: string;
+  modelName: string;
+  sidecarPath?: string;
+  faceGuess?: FaceOrganizerPerformer;
+  relatedItems: Array<{ itemId: string; filePath?: string }>;
+  requestedAt: string;
+  status: "queued";
+  actions: {
+    pendingCorrectionWritten: boolean;
+    scanCurrentVideoRequested: boolean;
+    scanLibraryMatchesRequested: boolean;
+  };
+  source: "player-model-widget";
 }
 
 export interface SpiritFlixGalleryItem {

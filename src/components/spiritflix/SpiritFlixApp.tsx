@@ -6,6 +6,7 @@ import {
   getStoredSession,
   JellyfinClient,
   isPlayableItem,
+  isVisibleSpiritFlixItem,
   normalizeJellyfinServerUrl,
   SPIRITFLIX_DEFAULT_SERVER,
   storeSession,
@@ -13,10 +14,12 @@ import {
 import type {
   JellyfinItem,
   SpiritFlixHomeData,
+  SpiritFlixManualModelRecord,
   SpiritFlixServerInfo,
   SpiritFlixSession,
 } from "@/lib/spiritflix-types";
 import { hasResumeProgress } from "@/lib/spiritflix-resume";
+import { filterItemsByVideoOrientation, getOrientationFilterLabel, type SpiritFlixVideoOrientation } from "@/lib/spiritflix-orientation";
 import { SpiritFlixHome } from "./SpiritFlixHome";
 import { SpiritFlixLogin } from "./SpiritFlixLogin";
 import { SpiritFlixDetailsModal } from "./SpiritFlixDetailsModal";
@@ -24,9 +27,11 @@ import { SpiritFlixPlayer } from "./SpiritFlixPlayer";
 
 export interface SpiritFlixPlaybackQueue {
   items: JellyfinItem[];
+  originalItems?: JellyfinItem[];
   currentIndex: number;
   sourceTitle: string;
   startPositionTicks?: number;
+  isShuffled?: boolean;
 }
 
 export interface SpiritFlixPlaybackProgress {
@@ -70,6 +75,67 @@ function uniqueItems(items: JellyfinItem[]): JellyfinItem[] {
     seen.add(item.Id);
     return true;
   });
+}
+
+function shuffleItems(items: JellyfinItem[]): JellyfinItem[] {
+  return items
+    .map((item) => ({ item, sort: Math.random() }))
+    .sort((left, right) => left.sort - right.sort)
+    .map(({ item }) => item);
+}
+
+function shuffleQueueAfterCurrent(items: JellyfinItem[], currentItemId: string): JellyfinItem[] {
+  const currentItem = items.find((item) => item.Id === currentItemId);
+  const remainingItems = items.filter((item) => item.Id !== currentItemId);
+  return currentItem ? [currentItem, ...shuffleItems(remainingItems)] : shuffleItems(items);
+}
+
+export function reorderQueueItems(items: JellyfinItem[], activeItemId: string, overItemId: string): JellyfinItem[] {
+  const activeIndex = items.findIndex((item) => item.Id === activeItemId);
+  const overIndex = items.findIndex((item) => item.Id === overItemId);
+  if (activeIndex < 0 || overIndex < 0 || activeIndex === overIndex) return items;
+  const nextItems = [...items];
+  const [activeItem] = nextItems.splice(activeIndex, 1);
+  if (!activeItem) return items;
+  nextItems.splice(overIndex, 0, activeItem);
+  return nextItems;
+}
+
+export function removeDeletedItemFromHomeData(homeData: SpiritFlixHomeData, itemId: string): SpiritFlixHomeData {
+  const withoutDeleted = (items: JellyfinItem[]) => items.filter((candidate) => candidate.Id !== itemId && isVisibleSpiritFlixItem(candidate));
+  return {
+    ...homeData,
+    featuredItems: withoutDeleted(homeData.featuredItems),
+    libraryItems: withoutDeleted(homeData.libraryItems),
+    continueWatching: withoutDeleted(homeData.continueWatching),
+    watchHistory: withoutDeleted(homeData.watchHistory),
+    latestAdded: withoutDeleted(homeData.latestAdded),
+    favorites: withoutDeleted(homeData.favorites),
+  };
+}
+
+export function removeDeletedItemFromQueue(
+  queue: SpiritFlixPlaybackQueue,
+  itemId: string,
+  requestedNextItem?: JellyfinItem | null,
+): { queue: SpiritFlixPlaybackQueue | null; nextItem: JellyfinItem | null } {
+  const items = queue.items.filter((queueItem) => queueItem.Id !== itemId && isVisibleSpiritFlixItem(queueItem));
+  const originalItems = (queue.originalItems ?? queue.items).filter((queueItem) => queueItem.Id !== itemId && isVisibleSpiritFlixItem(queueItem));
+  if (!items.length) return { queue: null, nextItem: null };
+  const nextItem =
+    (requestedNextItem ? items.find((queueItem) => queueItem.Id === requestedNextItem.Id) : null) ??
+    items[Math.min(queue.currentIndex, Math.max(0, items.length - 1))] ??
+    null;
+  if (!nextItem) return { queue: null, nextItem: null };
+  return {
+    nextItem,
+    queue: {
+      ...queue,
+      items,
+      originalItems,
+      currentIndex: Math.max(0, items.findIndex((queueItem) => queueItem.Id === nextItem.Id)),
+    },
+  };
 }
 
 function getLastPlayedMs(item: JellyfinItem): number {
@@ -156,6 +222,135 @@ function upsertFavoriteItem(items: JellyfinItem[], item: JellyfinItem): Jellyfin
   return [item, ...nextItems].sort((left, right) => left.Name.localeCompare(right.Name));
 }
 
+export function inferPlaybackQueueForItem(
+  item: JellyfinItem,
+  homeData: SpiritFlixHomeData,
+): { items: JellyfinItem[]; sourceTitle: string } | null {
+  const sources: Array<{ items: JellyfinItem[]; sourceTitle: string }> = [
+    { items: homeData.continueWatching, sourceTitle: "Continue Watching" },
+    { items: homeData.latestAdded, sourceTitle: "Latest Added" },
+    { items: homeData.featuredItems, sourceTitle: "Featured Anime" },
+    { items: homeData.favorites, sourceTitle: "Favorites" },
+    { items: homeData.watchHistory, sourceTitle: "Watch History" },
+    { items: homeData.libraryItems, sourceTitle: "Library" },
+  ];
+
+  return sources.find((source) => source.items.some((sourceItem) => sourceItem.Id === item.Id)) ?? null;
+}
+
+interface SpiritFlixBrowseRoute {
+  libraryId: string | null;
+  modelName: string | null;
+  tag?: string | null;
+}
+
+const LIBRARY_UI_STATE_KEY = "spiritflix_library_ui_state";
+const MANUAL_MODEL_CHANGED_EVENT = "spiritflix:manual-models-changed";
+
+function applyManualModelRecordsToItems(
+  items: JellyfinItem[],
+  manualModelRecords: SpiritFlixManualModelRecord[],
+): JellyfinItem[] {
+  const modelByItemId = new Map<string, string>();
+  manualModelRecords.forEach((record) => {
+    if (record.itemId && record.modelName) modelByItemId.set(record.itemId, record.modelName);
+  });
+  return items.map((item) => {
+    const manualModelName = modelByItemId.get(item.Id);
+    return manualModelName ? { ...item, ManualModelName: manualModelName } : item;
+  });
+}
+
+export function applyManualModelNameToItem(item: JellyfinItem, itemId: string, modelName: string): JellyfinItem {
+  return item.Id === itemId ? { ...item, ManualModelName: modelName } : item;
+}
+
+export function applyManualModelNameToHomeData(
+  homeData: SpiritFlixHomeData,
+  itemId: string,
+  modelName: string,
+): SpiritFlixHomeData {
+  return {
+    ...homeData,
+    libraryItems: homeData.libraryItems.map((item) => applyManualModelNameToItem(item, itemId, modelName)),
+    featuredItems: homeData.featuredItems.map((item) => applyManualModelNameToItem(item, itemId, modelName)),
+    continueWatching: homeData.continueWatching.map((item) => applyManualModelNameToItem(item, itemId, modelName)),
+    watchHistory: homeData.watchHistory.map((item) => applyManualModelNameToItem(item, itemId, modelName)),
+    latestAdded: homeData.latestAdded.map((item) => applyManualModelNameToItem(item, itemId, modelName)),
+    favorites: homeData.favorites.map((item) => applyManualModelNameToItem(item, itemId, modelName)),
+  };
+}
+
+export function applyManualModelNameToQueue(
+  queue: SpiritFlixPlaybackQueue | null,
+  itemId: string,
+  modelName: string,
+): SpiritFlixPlaybackQueue | null {
+  if (!queue) return queue;
+  return {
+    ...queue,
+    items: queue.items.map((item) => applyManualModelNameToItem(item, itemId, modelName)),
+    originalItems: queue.originalItems?.map((item) => applyManualModelNameToItem(item, itemId, modelName)),
+  };
+}
+
+function getStoredSpiritFlixBrowseRoute(): SpiritFlixBrowseRoute | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(LIBRARY_UI_STATE_KEY) ?? "{}") as {
+      selectedLibraryId?: unknown;
+      selectedModel?: unknown;
+      selectedManualTag?: unknown;
+    };
+    const libraryId = typeof parsed.selectedLibraryId === "string" ? parsed.selectedLibraryId : null;
+    return {
+      libraryId,
+      modelName: typeof parsed.selectedModel === "string" ? parsed.selectedModel : null,
+      tag: typeof parsed.selectedManualTag === "string" ? parsed.selectedManualTag : null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function getSpiritFlixBrowseRoute(): SpiritFlixBrowseRoute {
+  if (typeof window === "undefined") {
+    return { libraryId: null, modelName: null, tag: null };
+  }
+  const query = new URLSearchParams(window.location.search);
+  if (!query.has("library") && !query.has("model") && !query.has("tag")) {
+    return getStoredSpiritFlixBrowseRoute() ?? { libraryId: null, modelName: null, tag: null };
+  }
+  return {
+    libraryId: query.get("library"),
+    modelName: query.get("model"),
+    tag: query.get("tag"),
+  };
+}
+
+export function buildSpiritFlixBrowsePath({ libraryId, modelName, tag }: SpiritFlixBrowseRoute): string {
+  const query = new URLSearchParams();
+  if (libraryId) query.set("library", libraryId);
+  if (libraryId && modelName) query.set("model", modelName);
+  if (libraryId && tag) query.set("tag", tag);
+  const queryText = query.toString();
+  return queryText ? `/spiritflix?${queryText}` : "/spiritflix";
+}
+
+function setSpiritFlixBrowseRoute(
+  { libraryId, modelName, tag }: SpiritFlixBrowseRoute,
+  mode: "push" | "replace" = "push",
+) {
+  if (typeof window === "undefined") return;
+  const nextPath = buildSpiritFlixBrowsePath({ libraryId, modelName, tag });
+  if (`${window.location.pathname}${window.location.search}` === nextPath) return;
+  if (mode === "replace") {
+    window.history.replaceState(window.history.state, "", nextPath);
+    return;
+  }
+  window.history.pushState(window.history.state, "", nextPath);
+}
+
 export function SpiritFlixApp() {
   const [session, setSession] = useState<SpiritFlixSession | null>(null);
   const [isRestoringSession, setIsRestoringSession] = useState(true);
@@ -169,12 +364,41 @@ export function SpiritFlixApp() {
   const [searchTerm, setSearchTerm] = useState("");
   const [loadingHome, setLoadingHome] = useState(false);
   const [homeError, setHomeError] = useState("");
+  const [initialModelName, setInitialModelName] = useState<string | null>(null);
+  const [initialManualTag, setInitialManualTag] = useState<string | null>(null);
+  const [manualModelRecords, setManualModelRecords] = useState<SpiritFlixManualModelRecord[]>([]);
   const loadedSessionKeyRef = useRef<string | null>(null);
+  const initialBrowseRouteRef = useRef<SpiritFlixBrowseRoute | null>(null);
+  const deletedItemIdsRef = useRef<Set<string>>(new Set());
 
   const client = useMemo(
     () => new JellyfinClient(session?.serverUrl ?? serverUrl, session?.accessToken, session?.userId),
     [serverUrl, session],
   );
+  const modelAwareLibraryItems = useMemo(
+    () => applyManualModelRecordsToItems(homeData.libraryItems, manualModelRecords),
+    [homeData.libraryItems, manualModelRecords],
+  );
+
+  const modelAwareHomeData = useMemo(
+    () => ({
+      ...homeData,
+      libraryItems: modelAwareLibraryItems,
+    }),
+    [homeData, modelAwareLibraryItems],
+  );
+
+  const loadManualModels = useCallback(async () => {
+    if (!session) return;
+    try {
+      const response = await fetch("/api/spiritflix/model-index?includeItems=1", { cache: "no-store" });
+      if (!response.ok) throw new Error("Manual models unavailable.");
+      const body = (await response.json()) as { items?: SpiritFlixManualModelRecord[] };
+      setManualModelRecords(body.items ?? []);
+    } catch {
+      setManualModelRecords([]);
+    }
+  }, [session]);
 
   const checkServer = useCallback(
     async (target = serverUrl) => {
@@ -218,11 +442,12 @@ export function SpiritFlixApp() {
           selectedLibraryId ? client.getLibraryItems(selectedLibraryId, "", 18) : client.getLatestAdded(),
           selectedLibraryId ? client.getLibraryFavoriteItems(selectedLibraryId) : client.getFavorites(),
         ]);
-        const libraryItemsUnique = uniqueItems(libraryItems);
-        const watchHistoryItems = sortByLastPlayed(uniqueItems(watchHistory.filter(hasWatchActivity)));
+        const isNotDeleted = (item: JellyfinItem) => !deletedItemIdsRef.current.has(item.Id) && isVisibleSpiritFlixItem(item);
+        const libraryItemsUnique = uniqueItems(libraryItems.filter(isNotDeleted));
+        const watchHistoryItems = sortByLastPlayed(uniqueItems(watchHistory.filter(isNotDeleted).filter(hasWatchActivity)));
         const continueWatchingItems = sortByLastPlayed(
           uniqueItems([
-            ...continueWatching,
+            ...continueWatching.filter(isNotDeleted),
             ...watchHistoryItems.filter(hasResumeProgress),
             ...libraryItemsUnique.filter(hasResumeProgress),
           ]),
@@ -231,12 +456,12 @@ export function SpiritFlixApp() {
           libraries,
           playlists: [],
           selectedLibraryId,
-          featuredItems: uniqueItems(featuredItems),
+          featuredItems: uniqueItems(featuredItems.filter(isNotDeleted)),
           libraryItems: libraryItemsUnique,
           continueWatching: continueWatchingItems,
           watchHistory: watchHistoryItems,
-          latestAdded: uniqueItems(latestAdded),
-          favorites: uniqueItems(favorites),
+          latestAdded: uniqueItems(latestAdded.filter(isNotDeleted)),
+          favorites: uniqueItems(favorites.filter(isNotDeleted)),
         });
       } catch {
         setHomeError("Could not load your Jellyfin library. Log out and back in if the token expired.");
@@ -249,6 +474,13 @@ export function SpiritFlixApp() {
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
+      const initialRoute = getSpiritFlixBrowseRoute();
+      initialBrowseRouteRef.current = initialRoute;
+      setInitialModelName(initialRoute.modelName);
+      setInitialManualTag(initialRoute.tag ?? null);
+      if (window.location.pathname.startsWith("/spiritflix/watch/")) {
+        setSpiritFlixBrowseRoute(initialRoute, "replace");
+      }
       const stored = getStoredSession();
       if (stored) {
         setSession(stored);
@@ -276,10 +508,39 @@ export function SpiritFlixApp() {
     if (loadedSessionKeyRef.current === sessionKey) return undefined;
     loadedSessionKeyRef.current = sessionKey;
     const timer = window.setTimeout(() => {
-      void loadHome(null);
+      void loadHome(initialBrowseRouteRef.current?.libraryId ?? null);
+      void loadManualModels();
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [loadHome, session]);
+  }, [loadHome, loadManualModels, session]);
+
+  useEffect(() => {
+    if (!session) return undefined;
+    const handleManualModelsChanged = (event: Event) => {
+      const detail = (event as CustomEvent<{ itemId?: unknown; modelName?: unknown }>).detail;
+      if (typeof detail?.itemId === "string" && typeof detail.modelName === "string") {
+        const itemId = detail.itemId;
+        const modelName = detail.modelName;
+        setSelectedItem((current) => (current ? applyManualModelNameToItem(current, itemId, modelName) : current));
+        setPlayingItem((current) => (current ? applyManualModelNameToItem(current, itemId, modelName) : current));
+        setPlayingQueue((current) => applyManualModelNameToQueue(current, itemId, modelName));
+        setHomeData((current) => applyManualModelNameToHomeData(current, itemId, modelName));
+        setManualModelRecords((current) => {
+          const nextRecord: SpiritFlixManualModelRecord = {
+            schema: "spiritflix-manual-model/v1",
+            itemId,
+            modelName,
+            updatedAt: new Date().toISOString(),
+            source: "manual",
+          };
+          return [nextRecord, ...current.filter((record) => record.itemId !== itemId)];
+        });
+      }
+      void loadManualModels();
+    };
+    window.addEventListener(MANUAL_MODEL_CHANGED_EVENT, handleManualModelsChanged);
+    return () => window.removeEventListener(MANUAL_MODEL_CHANGED_EVENT, handleManualModelsChanged);
+  }, [loadManualModels, session]);
 
   useEffect(() => {
     if (!session) return undefined;
@@ -309,6 +570,7 @@ export function SpiritFlixApp() {
   };
 
   const handleLogout = () => {
+    setSpiritFlixBrowseRoute({ libraryId: null, modelName: null, tag: null }, "replace");
     clearStoredSession();
     loadedSessionKeyRef.current = null;
     setSession(null);
@@ -328,9 +590,11 @@ export function SpiritFlixApp() {
     const queueItems = playableItems.some((queueItem) => queueItem.Id === item.Id) ? playableItems : [item, ...playableItems];
     return {
       items: queueItems,
+      originalItems: queueItems,
       currentIndex: Math.max(0, queueItems.findIndex((queueItem) => queueItem.Id === item.Id)),
       sourceTitle,
       startPositionTicks,
+      isShuffled: false,
     };
   };
 
@@ -340,6 +604,22 @@ export function SpiritFlixApp() {
       setPlayingQueue(buildQueue(item, queueItems, sourceTitle, startPositionTicks));
     }
   };
+
+  const handlePlayModelShuffle = useCallback((currentItem: JellyfinItem, modelName: string, modelItems: JellyfinItem[]) => {
+    const playableModelItems = uniqueItems(modelItems.filter(isPlayableItem));
+    if (!playableModelItems.length) return;
+    const anchorItem = playableModelItems.find((candidate) => candidate.Id === currentItem.Id) ?? playableModelItems[0];
+    if (!anchorItem) return;
+    const shuffledItems = shuffleQueueAfterCurrent(playableModelItems, anchorItem.Id);
+    setPlayingItem(anchorItem);
+    setPlayingQueue({
+      items: shuffledItems,
+      originalItems: playableModelItems,
+      currentIndex: Math.max(0, shuffledItems.findIndex((candidate) => candidate.Id === anchorItem.Id)),
+      sourceTitle: `${modelName} Shuffle`,
+      isShuffled: true,
+    });
+  }, []);
 
   const handleQueueSelect = (item: JellyfinItem) => {
     setPlayingItem(item);
@@ -352,6 +632,64 @@ export function SpiritFlixApp() {
       };
     });
   };
+
+  const handleShuffleQueue = useCallback((currentItemId: string, orientation?: SpiritFlixVideoOrientation) => {
+    setPlayingQueue((current) => {
+      if (!current) return current;
+      const originalItems = current.originalItems?.length ? current.originalItems : current.items;
+      const shuffleSource = orientation ? filterItemsByVideoOrientation(originalItems, orientation) : originalItems;
+      if (shuffleSource.length < 2) return current;
+      const anchorItem = shuffleSource.find((queueItem) => queueItem.Id === currentItemId) ?? shuffleSource[0];
+      if (!anchorItem) return current;
+      const items = orientation
+        ? shuffleQueueAfterCurrent(shuffleSource, anchorItem.Id)
+        : current.isShuffled
+          ? originalItems
+          : shuffleQueueAfterCurrent(originalItems, currentItemId);
+      if (orientation && anchorItem.Id !== currentItemId) {
+        setPlayingItem(anchorItem);
+      }
+      return {
+        ...current,
+        originalItems,
+        items,
+        currentIndex: Math.max(0, items.findIndex((queueItem) => queueItem.Id === anchorItem.Id)),
+        sourceTitle: orientation ? `${current.sourceTitle} / ${getOrientationFilterLabel(orientation)}` : current.sourceTitle,
+        isShuffled: orientation ? true : !current.isShuffled,
+      };
+    });
+  }, []);
+
+  const handleReorderQueue = useCallback((activeItemId: string, overItemId: string) => {
+    setPlayingQueue((current) => {
+      if (!current || current.items.length < 2) return current;
+      const items = reorderQueueItems(current.items, activeItemId, overItemId);
+      if (items === current.items) return current;
+      return {
+        ...current,
+        items,
+        originalItems: items,
+        currentIndex: Math.max(0, items.findIndex((queueItem) => queueItem.Id === playingItem?.Id)),
+        isShuffled: false,
+      };
+    });
+  }, [playingItem?.Id]);
+
+  const handlePlayerDelete = useCallback(
+    (deletedItem: JellyfinItem, requestedNextItem: JellyfinItem | null) => {
+      deletedItemIdsRef.current.add(deletedItem.Id);
+      setSelectedItem((current) => (current?.Id === deletedItem.Id ? null : current));
+      setHomeData((current) => removeDeletedItemFromHomeData(current, deletedItem.Id));
+      const nextQueueState = playingQueue
+        ? removeDeletedItemFromQueue(playingQueue, deletedItem.Id, requestedNextItem)
+        : { queue: null, nextItem: null };
+      const nextItem = nextQueueState.nextItem;
+      setPlayingItem(nextItem);
+      setPlayingQueue(nextQueueState.queue);
+      void loadHome(homeData.selectedLibraryId, searchTerm, { silent: true });
+    },
+    [homeData.selectedLibraryId, loadHome, playingQueue, searchTerm],
+  );
 
   const handlePlaybackProgress = useCallback(
     (progress: SpiritFlixPlaybackProgress) => {
@@ -436,9 +774,45 @@ export function SpiritFlixApp() {
     setSelectedItem(item);
   };
 
+  const handleDetailsPlay = (item: JellyfinItem) => {
+    const inferredQueue = inferPlaybackQueueForItem(item, homeData);
+    setSelectedItem(null);
+    handlePlay(
+      item,
+      inferredQueue?.items,
+      inferredQueue?.sourceTitle,
+      item.UserData?.PlaybackPositionTicks,
+    );
+  };
+
   const handleSearch = (term: string) => {
     setSearchTerm(term);
     void loadHome(homeData.selectedLibraryId, term);
+  };
+
+  const handleSelectHome = () => {
+    initialBrowseRouteRef.current = { libraryId: null, modelName: null, tag: null };
+    setInitialModelName(null);
+    setInitialManualTag(null);
+    setSpiritFlixBrowseRoute({ libraryId: null, modelName: null, tag: null });
+    void loadHome(null);
+  };
+
+  const handleSelectLibrary = (libraryId: string) => {
+    initialBrowseRouteRef.current = { libraryId, modelName: null, tag: null };
+    setInitialModelName(null);
+    setInitialManualTag(null);
+    setSpiritFlixBrowseRoute({ libraryId, modelName: null, tag: null });
+    void loadHome(libraryId);
+  };
+
+  const handleSelectModel = (modelName: string | null) => {
+    const libraryId = homeData.selectedLibraryId;
+    if (!libraryId) return;
+    initialBrowseRouteRef.current = { libraryId, modelName, tag: null };
+    setInitialModelName(modelName);
+    setInitialManualTag(null);
+    setSpiritFlixBrowseRoute({ libraryId, modelName, tag: null });
   };
 
   return (
@@ -462,7 +836,7 @@ export function SpiritFlixApp() {
       ) : (
         <SpiritFlixHome
           client={client}
-          data={homeData}
+          data={modelAwareHomeData}
           loading={loadingHome}
           error={homeError}
           session={session}
@@ -471,8 +845,11 @@ export function SpiritFlixApp() {
           onLogout={handleLogout}
           onRefresh={() => loadHome(homeData.selectedLibraryId)}
           onSearch={handleSearch}
-          onSelectHome={() => loadHome(null)}
-          onSelectLibrary={(libraryId) => loadHome(libraryId)}
+          onSelectHome={handleSelectHome}
+          onSelectLibrary={handleSelectLibrary}
+          initialModelName={initialModelName}
+          initialManualTag={initialManualTag}
+          onSelectModel={handleSelectModel}
           onOpenDetails={handleOpenDetails}
           onPlay={handlePlay}
         />
@@ -483,10 +860,7 @@ export function SpiritFlixApp() {
           client={client}
           item={selectedItem}
           onClose={() => setSelectedItem(null)}
-          onPlay={(item) => {
-            setSelectedItem(null);
-            handlePlay(item, undefined, undefined, item.UserData?.PlaybackPositionTicks);
-          }}
+          onPlay={handleDetailsPlay}
         />
       ) : null}
 
@@ -495,10 +869,15 @@ export function SpiritFlixApp() {
           client={client}
           item={playingItem}
           queue={playingQueue}
+          libraryItems={modelAwareLibraryItems}
           startPositionTicks={playingQueue?.startPositionTicks}
           onPlaybackProgress={handlePlaybackProgress}
           onToggleFavorite={handleToggleFavorite}
           onSelectItem={handleQueueSelect}
+          onShuffleQueue={handleShuffleQueue}
+          onPlayModelShuffle={handlePlayModelShuffle}
+          onReorderQueue={handleReorderQueue}
+          onDeleteItem={handlePlayerDelete}
           onClose={() => {
             setPlayingItem(null);
             setPlayingQueue(null);

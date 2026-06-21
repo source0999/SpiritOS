@@ -84,6 +84,16 @@ function toQuery(params: Record<string, string | number | boolean | undefined>):
   return query.toString();
 }
 
+function isHttpsPage(): boolean {
+  return typeof window !== "undefined" && window.location.protocol === "https:";
+}
+
+function getDirectServerUrl(serverUrl: string): string {
+  return typeof window !== "undefined" && window.location.hostname && !["localhost", "127.0.0.1"].includes(window.location.hostname)
+    ? `http://${window.location.hostname}:8096`
+    : serverUrl;
+}
+
 export class JellyfinClient {
   readonly serverUrl: string;
   readonly token?: string;
@@ -298,19 +308,24 @@ export class JellyfinClient {
   }
 
   getStreamUrl(itemId: string): string {
-    const directServerUrl =
-      typeof window !== "undefined" && window.location.hostname && !["localhost", "127.0.0.1"].includes(window.location.hostname)
-        ? `http://${window.location.hostname}:8096`
-        : this.serverUrl;
+    const directServerUrl = getDirectServerUrl(this.serverUrl);
     const query = toQuery({
+      serverUrl: directServerUrl,
+      itemId,
+      token: this.token,
+    });
+    if (isHttpsPage()) return `/api/spiritflix/stream?${query}`;
+
+    const directQuery = toQuery({
       Static: "true",
       api_key: this.token,
       PlaySessionId: `spiritflix-${itemId}`,
     });
-    return `${directServerUrl}/Videos/${encodeURIComponent(itemId)}/Stream?${query}`;
+    return `${directServerUrl}/Videos/${encodeURIComponent(itemId)}/Stream?${directQuery}`;
   }
 
   getHlsUrl(itemId: string): string {
+    const directServerUrl = getDirectServerUrl(this.serverUrl);
     const query = toQuery({
       api_key: this.token,
       PlaySessionId: `spiritflix-${itemId}`,
@@ -319,8 +334,21 @@ export class JellyfinClient {
       AudioCodec: "aac,mp3,ac3",
       SegmentContainer: "ts",
       MinSegments: 1,
+      VideoBitrate: 4000000,
+      AudioBitrate: 192000,
+      MaxWidth: 1280,
+      MaxHeight: 720,
     });
-    return `${this.serverUrl}/Videos/${itemId}/master.m3u8?${query}`;
+    const path = `/Videos/${encodeURIComponent(itemId)}/master.m3u8?${query}`;
+    if (isHttpsPage()) {
+      const proxyQuery = toQuery({
+        serverUrl: directServerUrl,
+        token: this.token,
+        path,
+      });
+      return `/api/spiritflix/hls?${proxyQuery}`;
+    }
+    return `${directServerUrl}${path}`;
   }
 
   async reportPlayback(itemId: string, event: "Start" | "Progress" | "Stopped", positionTicks: number, isPaused = false): Promise<void> {

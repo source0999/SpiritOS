@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { normalizeJellyfinServerUrl } from "@/lib/spiritflix-jellyfin-client";
 
 const allowedHosts = new Set([
+  "10.0.0.186:8096",
   "spirit.tailb69ea6.ts.net:8096",
   "100.111.32.31:8096",
   "127.0.0.1:8096",

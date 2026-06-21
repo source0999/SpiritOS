@@ -25,10 +25,12 @@ import {
   SlidersHorizontal,
   Shuffle,
   Sparkles,
+  Tag,
   Timer,
   X,
 } from "lucide-react";
 import { formatRuntime, isPlayableItem, type JellyfinClient } from "@/lib/spiritflix-jellyfin-client";
+import { getSpiritFlixManualTagScope } from "@/lib/spiritflix/manual-tag-scope";
 import {
   getResumePositionTicks,
   getResumeProgressPercent,
@@ -36,6 +38,13 @@ import {
   getTimeLeftLabel,
   hasResumeProgress,
 } from "@/lib/spiritflix-resume";
+import {
+  countItemsByVideoOrientation,
+  filterItemsByVideoOrientation,
+  getOrientationFilterLabel,
+  itemMatchesVideoOrientation,
+  type SpiritFlixOrientationFilter,
+} from "@/lib/spiritflix-orientation";
 import type {
   FaceOrganizerMetadataResponse,
   FaceOrganizerStatus,
@@ -44,6 +53,9 @@ import type {
   SpiritFlixGalleryItem,
   SpiritFlixGalleryResponse,
   SpiritFlixHomeData,
+  SpiritFlixManualModelRecord,
+  SpiritFlixManualTagIndex,
+  SpiritFlixManualTagRecord,
   SpiritFlixServerInfo,
   SpiritFlixSession,
 } from "@/lib/spiritflix-types";
@@ -63,11 +75,14 @@ interface SpiritFlixHomeProps {
   onSearch: (term: string) => void;
   onSelectHome: () => void;
   onSelectLibrary: (libraryId: string) => void;
+  initialModelName?: string | null;
+  initialManualTag?: string | null;
+  onSelectModel: (modelName: string | null) => void;
   onOpenDetails: (item: JellyfinItem) => void;
   onPlay: (item: JellyfinItem, queueItems?: JellyfinItem[], sourceTitle?: string, startPositionTicks?: number) => void;
 }
 
-type LibraryViewMode = "grid" | "list" | "history" | "gallery";
+type LibraryViewMode = "grid" | "list" | "history" | "gallery" | "models";
 type LibrarySortMode = "model" | "title" | "dateAdded" | "duration";
 type LibrarySortDirection = "asc" | "desc";
 
@@ -86,9 +101,13 @@ interface ModelGroup {
 const LIBRARY_VIEW_MODE_KEY = "spiritflix_library_view_mode";
 const LIBRARY_SORT_MODE_KEY = "spiritflix_library_sort_mode";
 const LIBRARY_SORT_DIRECTION_KEY = "spiritflix_library_sort_direction";
+const LIBRARY_ORIENTATION_FILTER_KEY = "spiritflix_library_orientation_filter";
+const LIBRARY_UI_STATE_KEY = "spiritflix_library_ui_state";
 const FACE_METADATA_CACHE_KEY = "spiritflix_face_metadata_v5";
 const GALLERY_INTERVAL_KEY = "spiritflix_gallery_interval_seconds";
+const LIBRARY_PAGE_SIZE = 20;
 const TEMP_LIBRARY_NAME = "Home Videos and Photos";
+const TWITTER_SOURCE_MODEL_NAME = "Twitter";
 const MODEL_NAME_ALIASES: Record<string, string> = {
   aaliyahyasan: "Aaliyah Yasan",
   alannasworlx: "Alannasworldx",
@@ -123,6 +142,51 @@ const MODEL_NAME_ALIASES: Record<string, string> = {
   sendnudesxx: "Sendnudesx",
   whoahannahjo: "Whoahannahjo",
 };
+
+interface StoredLibraryUiState {
+  selectedLibraryId: string | null;
+  selectedModel: string | null;
+  selectedManualTag: string | null;
+  excludedCategories: string[];
+  viewMode: LibraryViewMode;
+  sortMode: LibrarySortMode;
+  sortDirection: LibrarySortDirection;
+  orientationFilter: SpiritFlixOrientationFilter;
+  filtersOpen: boolean;
+  pageIndex: number;
+}
+
+function getStoredLibraryUiState(): Partial<StoredLibraryUiState> {
+  if (typeof window === "undefined") return {};
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(LIBRARY_UI_STATE_KEY) ?? "{}") as Partial<StoredLibraryUiState>;
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function isLibraryViewMode(value: unknown): value is LibraryViewMode {
+  return value === "grid" || value === "list" || value === "history" || value === "gallery" || value === "models";
+}
+
+function isLibrarySortMode(value: unknown): value is LibrarySortMode {
+  return value === "model" || value === "title" || value === "dateAdded" || value === "duration";
+}
+
+function isLibrarySortDirection(value: unknown): value is LibrarySortDirection {
+  return value === "asc" || value === "desc";
+}
+
+function isOrientationFilter(value: unknown): value is SpiritFlixOrientationFilter {
+  return value === "all" || value === "portrait" || value === "landscape";
+}
+
+function getStoredExcludedCategories(state: Partial<StoredLibraryUiState>): string[] {
+  return Array.isArray(state.excludedCategories)
+    ? state.excludedCategories.filter((category): category is string => typeof category === "string")
+    : [];
+}
 const NON_MODEL_FOLDER_NAMES = new Set(["yes", "other"]);
 
 function displayLibraryName(name?: string): string {
@@ -177,6 +241,7 @@ function hasIdentifiedFace(match?: FaceOrganizerVideoMatch): boolean {
 }
 
 function getDisplayModelName(item: JellyfinItem, faceMetadata: FaceOrganizerMetadataResponse | null): string {
+  if (item.ManualModelName) return getCanonicalModelName(item.ManualModelName, faceMetadata);
   const faceMatch = getFaceMatch(item, faceMetadata);
   if (hasIdentifiedFace(faceMatch)) return getCanonicalModelName(faceMatch?.primaryPerformer?.name ?? "Unknown", faceMetadata);
   return getCanonicalModelName(getModelName(item), faceMetadata);
@@ -189,6 +254,31 @@ function getStatusRank(status?: FaceOrganizerStatus): number {
   return 3;
 }
 
+function isTwitterSourceItem(item: JellyfinItem): boolean {
+  const sourceText = [
+    item.Name,
+    item.SeriesName,
+    item.Overview,
+    item.Path,
+    ...(item.ManualTags ?? []),
+    ...(item.MediaSources?.map((source) => source.Path) ?? []),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  return /\btwitter\b|twitter\.com|\bx\.com\b|twimg|\btweet\b|\btweets\b|\bvideos from x\b|\bfrom x\b/.test(sourceText);
+}
+
+function isTwitterSourceGroupName(name: string): boolean {
+  const normalized = getModelAliasKey(name);
+  return normalized === "twitter" || normalized === "videosfromx" || normalized === "fromx";
+}
+
+function getItemCategoryKeys(item: JellyfinItem): string[] {
+  return isTwitterSourceItem(item) ? ["twitter"] : [];
+}
+
 function buildModelGroups(items: JellyfinItem[], faceMetadata: FaceOrganizerMetadataResponse | null): ModelGroup[] {
   const groups = new Map<string, JellyfinItem[]>();
   const metaByName = new Map<string, { source: ModelGroup["source"]; status: FaceOrganizerStatus; confidence?: number }>();
@@ -196,7 +286,7 @@ function buildModelGroups(items: JellyfinItem[], faceMetadata: FaceOrganizerMeta
   items.filter(isPlayableItem).forEach((item) => {
     const faceMatch = getFaceMatch(item, faceMetadata);
     const isFaceIdentified = hasIdentifiedFace(faceMatch);
-    const rawModelName = isFaceIdentified ? faceMatch?.primaryPerformer?.name ?? getModelName(item) : getModelName(item);
+    const rawModelName = item.ManualModelName ?? (isFaceIdentified ? faceMatch?.primaryPerformer?.name ?? getModelName(item) : getModelName(item));
     const modelName = getCanonicalModelName(rawModelName, faceMetadata);
     groups.set(modelName, [...(groups.get(modelName) ?? []), item]);
     const current = metaByName.get(modelName);
@@ -210,7 +300,7 @@ function buildModelGroups(items: JellyfinItem[], faceMetadata: FaceOrganizerMeta
     }
   });
 
-  return Array.from(groups.entries())
+  const regularGroups = Array.from(groups.entries())
     .map(([name, modelItems]) => {
       const indexedCount = modelItems.length;
       const liveSourceCount = getLiveSourceCount(name, faceMetadata);
@@ -228,11 +318,28 @@ function buildModelGroups(items: JellyfinItem[], faceMetadata: FaceOrganizerMeta
     })
     .sort(
       (left, right) =>
+        right.indexedCount - left.indexedCount ||
+        (right.liveSourceCount ?? 0) - (left.liveSourceCount ?? 0) ||
         getStatusRank(left.status) - getStatusRank(right.status) ||
         Number(right.source === "face-organizer") - Number(left.source === "face-organizer") ||
-        right.indexedCount - left.indexedCount ||
         left.name.localeCompare(right.name),
     );
+
+  const twitterItems = items.filter((item) => isPlayableItem(item) && isTwitterSourceItem(item));
+  if (!twitterItems.length) return regularGroups;
+
+  return [
+    {
+      name: TWITTER_SOURCE_MODEL_NAME,
+      count: twitterItems.length,
+      indexedCount: twitterItems.length,
+      items: twitterItems,
+      representative: twitterItems.find((item) => item.ImageTags?.Primary || item.ImageTags?.Thumb) ?? twitterItems[0],
+      source: "jellyfin",
+      status: "unscanned",
+    },
+    ...regularGroups.filter((group) => !isTwitterSourceGroupName(group.name)),
+  ];
 }
 
 function shuffleItems(items: JellyfinItem[]): JellyfinItem[] {
@@ -327,16 +434,18 @@ function getSortDirectionLabel(sortDirection: LibrarySortDirection): string {
 interface LibraryFeedCardProps {
   client: JellyfinClient;
   item: JellyfinItem;
+  manualTags?: string[];
   playOnPrimaryTap: boolean;
   onOpenDetails: (item: JellyfinItem) => void;
   onPlay: (item: JellyfinItem, startPositionTicks?: number) => void;
 }
 
-function LibraryFeedCard({ client, item, playOnPrimaryTap, onOpenDetails, onPlay }: LibraryFeedCardProps) {
+function LibraryFeedCard({ client, item, manualTags = [], playOnPrimaryTap, onOpenDetails, onPlay }: LibraryFeedCardProps) {
   const hasProgress = hasResumeProgress(item);
   const progress = getResumeProgressPercent(item);
   const resumeTicks = item.UserData?.PlaybackPositionTicks;
   const canPlay = isPlayableItem(item);
+  const actionTags = manualTags.filter((tag) => getSpiritFlixManualTagScope(tag) === "video");
 
   return (
     <motion.article
@@ -357,6 +466,13 @@ function LibraryFeedCard({ client, item, playOnPrimaryTap, onOpenDetails, onPlay
       >
         <SpiritFlixImage client={client} item={item} type="Primary" width={620} alt={item.Name} />
         <span className="spiritflix-feed-card__shade" aria-hidden="true" />
+        {actionTags.length ? (
+          <span className="spiritflix-feed-card__tags" aria-label="Manual tags">
+            {actionTags.slice(0, 3).map((tag) => (
+              <span key={tag}>{tag}</span>
+            ))}
+          </span>
+        ) : null}
         {progress > 0 ? (
           <span className="spiritflix-feed-card__progress" aria-hidden="true">
             <span style={{ width: `${Math.min(100, progress)}%` }} />
@@ -530,20 +646,36 @@ export function SpiritFlixHome({
   onSearch,
   onSelectHome,
   onSelectLibrary,
+  initialModelName = null,
+  initialManualTag = null,
+  onSelectModel,
   onOpenDetails,
   onPlay,
 }: SpiritFlixHomeProps) {
-  const [viewMode, setViewMode] = useState<LibraryViewMode>("grid");
-  const [sortMode, setSortMode] = useState<LibrarySortMode>("model");
-  const [sortDirection, setSortDirection] = useState<LibrarySortDirection>("desc");
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  const [selectedModel, setSelectedModel] = useState<string | null>(null);
+  const [storedLibraryUiState] = useState(() => getStoredLibraryUiState());
+  const [viewMode, setViewMode] = useState<LibraryViewMode>(() => isLibraryViewMode(storedLibraryUiState.viewMode) ? storedLibraryUiState.viewMode : "grid");
+  const [sortMode, setSortMode] = useState<LibrarySortMode>(() => isLibrarySortMode(storedLibraryUiState.sortMode) ? storedLibraryUiState.sortMode : "model");
+  const [sortDirection, setSortDirection] = useState<LibrarySortDirection>(() => isLibrarySortDirection(storedLibraryUiState.sortDirection) ? storedLibraryUiState.sortDirection : "desc");
+  const [orientationFilter, setOrientationFilter] = useState<SpiritFlixOrientationFilter>(() => isOrientationFilter(storedLibraryUiState.orientationFilter) ? storedLibraryUiState.orientationFilter : "all");
+  const [filtersOpen, setFiltersOpen] = useState(() => storedLibraryUiState.filtersOpen === true);
+  const [selectedModel, setSelectedModel] = useState<string | null>(() => initialModelName ?? storedLibraryUiState.selectedModel ?? null);
+  const [selectedManualTag, setSelectedManualTag] = useState<string | null>(() => initialManualTag ?? storedLibraryUiState.selectedManualTag ?? null);
+  const [excludedCategories, setExcludedCategories] = useState<string[]>(() => getStoredExcludedCategories(storedLibraryUiState));
   const [faceMetadata, setFaceMetadata] = useState<FaceOrganizerMetadataResponse | null>(null);
+  const [manualTagIndex, setManualTagIndex] = useState<SpiritFlixManualTagIndex | null>(null);
+  const [manualTagRecords, setManualTagRecords] = useState<SpiritFlixManualTagRecord[]>([]);
+  const [manualTagsError, setManualTagsError] = useState("");
+  const [manualModelRecords, setManualModelRecords] = useState<SpiritFlixManualModelRecord[]>([]);
   const [faceMetadataError, setFaceMetadataError] = useState("");
   const [galleryData, setGalleryData] = useState<SpiritFlixGalleryResponse | null>(null);
   const [galleryError, setGalleryError] = useState("");
   const [galleryLightbox, setGalleryLightbox] = useState<{ items: SpiritFlixGalleryItem[]; index: number } | null>(null);
   const [playPrimaryTapOnMobile, setPlayPrimaryTapOnMobile] = useState(false);
+  const [libraryPageIndex, setLibraryPageIndex] = useState(() => {
+    const storedPageIndex = Number(storedLibraryUiState.pageIndex);
+    return Number.isInteger(storedPageIndex) && storedPageIndex >= 0 ? storedPageIndex : 0;
+  });
+  const didRunPageResetRef = useRef(false);
   const longPressTimerRef = useRef<number | null>(null);
   const didLongPressShuffleRef = useRef(false);
   const resumeTrackRef = useRef<HTMLDivElement | null>(null);
@@ -554,20 +686,83 @@ export function SpiritFlixHome({
     : data.libraryItems[0] ?? data.latestAdded[0] ?? data.continueWatching[0] ?? null;
   const selectedLibrary = data.libraries.find((library) => library.Id === data.selectedLibraryId);
   const libraryTitle = isHomeView ? "Home" : displayLibraryName(selectedLibrary?.Name);
-  const modelGroups = useMemo(() => buildModelGroups(data.libraryItems, faceMetadata), [data.libraryItems, faceMetadata]);
+  const manualModelMap = useMemo(() => {
+    const map = new Map<string, string>();
+    manualModelRecords.forEach((record) => {
+      if (record.modelName) map.set(record.itemId, record.modelName);
+    });
+    return map;
+  }, [manualModelRecords]);
+  const modelAwareLibraryItems = useMemo(
+    () =>
+      data.libraryItems.map((item) => {
+        const manualModelName = manualModelMap.get(item.Id);
+        return manualModelName ? { ...item, ManualModelName: manualModelName } : item;
+      }),
+    [data.libraryItems, manualModelMap],
+  );
+  const modelGroups = useMemo(() => buildModelGroups(modelAwareLibraryItems, faceMetadata), [modelAwareLibraryItems, faceMetadata]);
   const selectedModelGroup = selectedModel ? modelGroups.find((model) => model.name === selectedModel) : null;
-  const playableLibraryItems = useMemo(() => data.libraryItems.filter(isPlayableItem), [data.libraryItems]);
+  const playableLibraryItems = useMemo(() => modelAwareLibraryItems.filter(isPlayableItem), [modelAwareLibraryItems]);
+  const orientationCounts = useMemo(() => countItemsByVideoOrientation(playableLibraryItems), [playableLibraryItems]);
+  const categoryFilters = useMemo(
+    () => [
+      {
+        key: "twitter",
+        label: "Twitter / X",
+        count: playableLibraryItems.filter((item) => getItemCategoryKeys(item).includes("twitter")).length,
+      },
+    ],
+    [playableLibraryItems],
+  );
+  const excludedCategorySet = useMemo(() => new Set(excludedCategories), [excludedCategories]);
+  const manualTagMap = useMemo(() => {
+    const map = new Map<string, string[]>();
+    manualTagRecords.forEach((record) => map.set(record.itemId, record.manualTags));
+    return map;
+  }, [manualTagRecords]);
+  const manualTagItemIds = useMemo(() => {
+    if (!selectedManualTag) return null;
+    return new Set(
+      manualTagRecords
+        .filter((record) => record.manualTags.includes(selectedManualTag))
+        .map((record) => record.itemId),
+    );
+  }, [manualTagRecords, selectedManualTag]);
   const galleryItems = useMemo(() => galleryData?.items ?? [], [galleryData]);
   const selectedModelGalleryItems = useMemo(
     () => (selectedModelGroup ? galleryItems.filter((item) => galleryItemMatchesModel(item, selectedModelGroup.name)) : []),
     [galleryItems, selectedModelGroup],
   );
   const visibleGalleryItems = selectedModelGroup ? selectedModelGalleryItems : galleryItems;
-  const visibleLibraryItems = useMemo(() => {
-    const sourceItems = selectedModelGroup?.items ?? playableLibraryItems;
+  const scopedLibraryItems = useMemo(
+    () => filterItemsByVideoOrientation(selectedModelGroup?.items ?? playableLibraryItems, orientationFilter),
+    [orientationFilter, playableLibraryItems, selectedModelGroup],
+  );
+  const filteredLibraryItems = useMemo(
+    () =>
+      scopedLibraryItems
+        .filter((item) => getItemCategoryKeys(item).every((category) => !excludedCategorySet.has(category)))
+        .filter((item) => (manualTagItemIds ? manualTagItemIds.has(item.Id) : true)),
+    [excludedCategorySet, manualTagItemIds, scopedLibraryItems],
+  );
+  const filteredLibraryItemIds = useMemo(
+    () => new Set(filteredLibraryItems.map((item) => item.Id)),
+    [filteredLibraryItems],
+  );
+  const itemMatchesActiveVideoFilters = useCallback(
+    (item: JellyfinItem) => {
+      if (selectedModelGroup && !filteredLibraryItemIds.has(item.Id)) return false;
+      if (manualTagItemIds && !manualTagItemIds.has(item.Id)) return false;
+      if (getItemCategoryKeys(item).some((category) => excludedCategorySet.has(category))) return false;
+      return itemMatchesVideoOrientation(item, orientationFilter);
+    },
+    [excludedCategorySet, filteredLibraryItemIds, manualTagItemIds, orientationFilter, selectedModelGroup],
+  );
+  const sortedLibraryItems = useMemo(() => {
     const direction = sortDirection === "asc" ? 1 : -1;
 
-    return [...sourceItems].sort((left, right) => {
+    return [...filteredLibraryItems].sort((left, right) => {
       if (sortMode === "title") {
         return direction * left.Name.localeCompare(right.Name);
       }
@@ -586,14 +781,20 @@ export function SpiritFlixHome({
       const rightMatch = getFaceMatch(right, faceMetadata);
       return getStatusRank(leftMatch?.status) - getStatusRank(rightMatch?.status) || left.Name.localeCompare(right.Name);
     });
-  }, [faceMetadata, playableLibraryItems, selectedModelGroup, sortDirection, sortMode]);
+  }, [faceMetadata, filteredLibraryItems, sortDirection, sortMode]);
+  const libraryPageCount = Math.max(1, Math.ceil(sortedLibraryItems.length / LIBRARY_PAGE_SIZE));
+  const clampedLibraryPageIndex = Math.min(libraryPageIndex, libraryPageCount - 1);
+  const visibleLibraryItems = useMemo(() => {
+    const start = clampedLibraryPageIndex * LIBRARY_PAGE_SIZE;
+    return sortedLibraryItems.slice(start, start + LIBRARY_PAGE_SIZE);
+  }, [clampedLibraryPageIndex, sortedLibraryItems]);
+  const libraryPageStart = sortedLibraryItems.length ? clampedLibraryPageIndex * LIBRARY_PAGE_SIZE + 1 : 0;
+  const libraryPageEnd = Math.min(sortedLibraryItems.length, (clampedLibraryPageIndex + 1) * LIBRARY_PAGE_SIZE);
   const continueWatchingItems = useMemo(() => {
-    const sourceItems = selectedModelGroup?.items ?? playableLibraryItems;
-    const allowedIds = selectedModelGroup ? new Set(sourceItems.map((item) => item.Id)) : null;
     const seen = new Set<string>();
-    return [...data.continueWatching, ...data.watchHistory, ...sourceItems]
+    return [...data.continueWatching, ...data.watchHistory, ...filteredLibraryItems]
       .filter((item) => {
-        if (allowedIds && !allowedIds.has(item.Id)) return false;
+        if (!itemMatchesActiveVideoFilters(item)) return false;
         if (seen.has(item.Id)) return false;
         seen.add(item.Id);
         return true;
@@ -605,28 +806,24 @@ export function SpiritFlixHome({
         return rightDate - leftDate;
       })
       .slice(0, 14);
-  }, [data.continueWatching, data.watchHistory, playableLibraryItems, selectedModelGroup]);
+  }, [data.continueWatching, data.watchHistory, filteredLibraryItems, itemMatchesActiveVideoFilters]);
   const favoriteItems = useMemo(() => {
-    const sourceItems = selectedModelGroup?.items ?? playableLibraryItems;
-    const allowedIds = selectedModelGroup ? new Set(sourceItems.map((item) => item.Id)) : null;
     const seen = new Set<string>();
     return data.favorites
       .filter((item) => isPlayableItem(item) && item.UserData?.IsFavorite)
       .filter((item) => {
-        if (allowedIds && !allowedIds.has(item.Id)) return false;
+        if (!itemMatchesActiveVideoFilters(item)) return false;
         if (seen.has(item.Id)) return false;
         seen.add(item.Id);
         return true;
       })
       .sort((left, right) => left.Name.localeCompare(right.Name));
-  }, [data.favorites, playableLibraryItems, selectedModelGroup]);
+  }, [data.favorites, itemMatchesActiveVideoFilters]);
   const historyItems = useMemo(() => {
-    const sourceItems = selectedModelGroup?.items ?? playableLibraryItems;
-    const allowedIds = selectedModelGroup ? new Set(sourceItems.map((item) => item.Id)) : null;
     const seen = new Set<string>();
-    return [...data.continueWatching, ...data.watchHistory, ...sourceItems]
+    return [...data.continueWatching, ...data.watchHistory, ...filteredLibraryItems]
       .filter((item) => {
-        if (allowedIds && !allowedIds.has(item.Id)) return false;
+        if (!itemMatchesActiveVideoFilters(item)) return false;
         if (seen.has(item.Id)) return false;
         seen.add(item.Id);
         return Boolean(
@@ -638,11 +835,14 @@ export function SpiritFlixHome({
       })
       .sort((left, right) => getLastPlayedMs(right) - getLastPlayedMs(left) || left.Name.localeCompare(right.Name))
       .slice(0, 80);
-  }, [data.continueWatching, data.watchHistory, playableLibraryItems, selectedModelGroup]);
+  }, [data.continueWatching, data.watchHistory, filteredLibraryItems, itemMatchesActiveVideoFilters]);
   const libraryStats = [
     { label: "Videos", value: playableLibraryItems.length },
     { label: "Models", value: modelGroups.length },
-    { label: "Selected", value: selectedModelGroup?.count ?? playableLibraryItems.length },
+    { label: "Selected", value: sortedLibraryItems.length },
+    { label: "Filtered out", value: scopedLibraryItems.length - filteredLibraryItems.length },
+    { label: "Portrait", value: orientationCounts.portrait },
+    { label: "Landscape", value: orientationCounts.landscape },
     { label: "Pics", value: visibleGalleryItems.length },
     { label: "Identified", value: playableLibraryItems.filter((item) => hasIdentifiedFace(getFaceMatch(item, faceMetadata))).length },
     { label: "Review", value: playableLibraryItems.filter((item) => getFaceMatch(item, faceMetadata)?.status === "needs_review").length },
@@ -681,23 +881,68 @@ export function SpiritFlixHome({
     }
   }, [client]);
 
+  const loadManualTags = useCallback(async () => {
+    try {
+      const response = await fetch("/api/spiritflix/tags?includeItems=1", { cache: "no-store" });
+      if (!response.ok) throw new Error("Manual tags unavailable.");
+      const body = (await response.json()) as SpiritFlixManualTagIndex & { items?: SpiritFlixManualTagRecord[] };
+      setManualTagIndex(body);
+      setManualTagRecords(body.items ?? []);
+      setManualTagsError("");
+    } catch {
+      setManualTagIndex(null);
+      setManualTagRecords([]);
+      setManualTagsError("Manual tags are unavailable right now.");
+    }
+  }, []);
+
+  const loadManualModels = useCallback(async () => {
+    try {
+      const response = await fetch("/api/spiritflix/model-index?includeItems=1", { cache: "no-store" });
+      if (!response.ok) throw new Error("Manual models unavailable.");
+      const body = (await response.json()) as { items?: SpiritFlixManualModelRecord[] };
+      setManualModelRecords(body.items ?? []);
+    } catch {
+      setManualModelRecords([]);
+    }
+  }, []);
+
   const handleRefresh = () => {
     onRefresh();
     void loadGallery();
+    void loadManualTags();
+    void loadManualModels();
   };
 
-  useEffect(() => {
-    const stored = window.localStorage.getItem(LIBRARY_VIEW_MODE_KEY);
-    if (stored === "grid" || stored === "list" || stored === "history" || stored === "gallery") setViewMode(stored);
-    const storedSort = window.localStorage.getItem(LIBRARY_SORT_MODE_KEY);
-    if (storedSort === "model" || storedSort === "title" || storedSort === "dateAdded" || storedSort === "duration") setSortMode(storedSort);
-    const storedDirection = window.localStorage.getItem(LIBRARY_SORT_DIRECTION_KEY);
-    if (storedDirection === "asc" || storedDirection === "desc") setSortDirection(storedDirection);
-  }, []);
+  const closeFiltersOnCoarsePointer = () => {
+    if (typeof window.matchMedia === "function" && window.matchMedia("(max-width: 760px), (pointer: coarse)").matches) {
+      setFiltersOpen(false);
+    }
+  };
 
   useEffect(() => {
     void loadGallery();
   }, [loadGallery]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void loadManualTags();
+      void loadManualModels();
+    }, 0);
+    const handleManualTagsChanged = () => {
+      void loadManualTags();
+    };
+    const handleManualModelsChanged = () => {
+      void loadManualModels();
+    };
+    window.addEventListener("spiritflix:manual-tags-changed", handleManualTagsChanged);
+    window.addEventListener("spiritflix:manual-models-changed", handleManualModelsChanged);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("spiritflix:manual-tags-changed", handleManualTagsChanged);
+      window.removeEventListener("spiritflix:manual-models-changed", handleManualModelsChanged);
+    };
+  }, [loadManualModels, loadManualTags]);
 
   useEffect(() => {
     const queries = [
@@ -724,8 +969,111 @@ export function SpiritFlixHome({
   }, [sortDirection]);
 
   useEffect(() => {
+    window.localStorage.setItem(LIBRARY_ORIENTATION_FILTER_KEY, orientationFilter);
+  }, [orientationFilter]);
+
+  useEffect(() => {
+    if (!data.libraries.length) return;
+    window.localStorage.setItem(
+      LIBRARY_UI_STATE_KEY,
+      JSON.stringify({
+        selectedLibraryId: data.selectedLibraryId,
+        selectedModel,
+        selectedManualTag,
+        excludedCategories,
+        viewMode,
+        sortMode,
+        sortDirection,
+        orientationFilter,
+        filtersOpen,
+        pageIndex: clampedLibraryPageIndex,
+      } satisfies StoredLibraryUiState),
+    );
+  }, [
+    clampedLibraryPageIndex,
+    data.libraries.length,
+    data.selectedLibraryId,
+    excludedCategories,
+    filtersOpen,
+    orientationFilter,
+    selectedManualTag,
+    selectedModel,
+    sortDirection,
+    sortMode,
+    viewMode,
+  ]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      if (initialModelName) {
+        setSelectedModel(initialModelName);
+        return;
+      }
+      if (storedLibraryUiState.selectedLibraryId === data.selectedLibraryId) {
+        setSelectedModel(storedLibraryUiState.selectedModel ?? null);
+        return;
+      }
+      setSelectedModel(null);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [data.selectedLibraryId, initialModelName, storedLibraryUiState]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      if (initialManualTag) {
+        setSelectedManualTag(initialManualTag);
+        return;
+      }
+      if (storedLibraryUiState.selectedLibraryId === data.selectedLibraryId) {
+        setSelectedManualTag(storedLibraryUiState.selectedManualTag ?? null);
+        return;
+      }
+      setSelectedManualTag(null);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [data.selectedLibraryId, initialManualTag, storedLibraryUiState.selectedLibraryId, storedLibraryUiState.selectedManualTag]);
+
+  useEffect(() => {
+    if (!didRunPageResetRef.current) {
+      didRunPageResetRef.current = true;
+      return;
+    }
+    setLibraryPageIndex(0);
+  }, [data.selectedLibraryId, excludedCategories, orientationFilter, selectedManualTag, selectedModel, sortDirection, sortMode, viewMode, searchTerm]);
+
+  useEffect(() => {
+    if (libraryPageIndex !== clampedLibraryPageIndex) setLibraryPageIndex(clampedLibraryPageIndex);
+  }, [clampedLibraryPageIndex, libraryPageIndex]);
+
+  useEffect(() => {
+    if (!selectedModel || !modelGroups.length) return;
+    if (modelGroups.some((model) => model.name === selectedModel)) return;
     setSelectedModel(null);
-  }, [data.selectedLibraryId, searchTerm]);
+    onSelectModel(null);
+  }, [modelGroups, onSelectModel, selectedModel]);
+
+  const selectModel = (modelName: string | null) => {
+    setSelectedModel(modelName);
+    onSelectModel(modelName);
+  };
+
+  const selectManualTag = (tag: string | null) => {
+    setSelectedManualTag(tag);
+    if (!data.selectedLibraryId) return;
+    const query = new URLSearchParams();
+    query.set("library", data.selectedLibraryId);
+    if (selectedModel) query.set("model", selectedModel);
+    if (tag) query.set("tag", tag);
+    window.history.pushState(window.history.state, "", `/spiritflix?${query.toString()}`);
+  };
+
+  const toggleExcludedCategory = (category: string) => {
+    setExcludedCategories((current) =>
+      current.includes(category)
+        ? current.filter((candidate) => candidate !== category)
+        : [...current, category],
+    );
+  };
 
   useEffect(() => {
     if (isHomeView || !playableLibraryItems.length) {
@@ -763,11 +1111,19 @@ export function SpiritFlixHome({
   }, [client, data.selectedLibraryId, isHomeView, playableLibraryItems]);
 
   const playShuffle = (scope: "library" | "model") => {
-    const sourceItems = scope === "model" && selectedModelGroup ? selectedModelGroup.items : playableLibraryItems;
+    const sourceItems =
+      scope === "model" && selectedModelGroup
+        ? filterItemsByVideoOrientation(selectedModelGroup.items, orientationFilter).filter((item) =>
+            getItemCategoryKeys(item).every((category) => !excludedCategorySet.has(category)) &&
+            (manualTagItemIds ? manualTagItemIds.has(item.Id) : true),
+          )
+        : filteredLibraryItems;
     const shuffled = shuffleItems(sourceItems);
     const firstItem = shuffled[0];
     if (firstItem) {
-      onPlay(firstItem, shuffled, scope === "model" && selectedModelGroup ? `${selectedModelGroup.name} Shuffle` : `${libraryTitle} Shuffle`);
+      const sourceTitle = scope === "model" && selectedModelGroup ? selectedModelGroup.name : libraryTitle;
+      const orientationLabel = orientationFilter === "all" ? "" : ` / ${getOrientationFilterLabel(orientationFilter)}`;
+      onPlay(firstItem, shuffled, `${sourceTitle}${orientationLabel} Shuffle`);
     }
   };
 
@@ -907,7 +1263,15 @@ export function SpiritFlixHome({
                   <Sparkles size={14} aria-hidden="true" />
                   {libraryTitle}
                 </span>
-                <h2>{viewMode === "gallery" ? (selectedModelGroup ? `${selectedModelGroup.name} Pics` : "Gallery") : selectedModelGroup?.name ?? "All Models"}</h2>
+                <h2>
+                  {viewMode === "models"
+                    ? "Models"
+                    : viewMode === "gallery"
+                      ? selectedModelGroup
+                        ? `${selectedModelGroup.name} Pics`
+                        : "Gallery"
+                      : selectedModelGroup?.name ?? "All Models"}
+                </h2>
               </div>
               <div className="spiritflix-view-toggle" aria-label="Library view">
                 <button
@@ -946,6 +1310,15 @@ export function SpiritFlixHome({
                   <Images size={18} aria-hidden="true" />
                   <span>Gallery</span>
                 </button>
+                <button
+                  type="button"
+                  className={viewMode === "models" ? "is-active" : undefined}
+                  aria-pressed={viewMode === "models"}
+                  onClick={() => setViewMode("models")}
+                >
+                  <Sparkles size={18} aria-hidden="true" />
+                  <span>Models</span>
+                </button>
               </div>
             </div>
 
@@ -978,7 +1351,10 @@ export function SpiritFlixHome({
                 onClick={() => setFiltersOpen((current) => !current)}
               >
                 <SlidersHorizontal size={18} aria-hidden="true" />
-                <span>{getSortModeLabel(sortMode)} / {getSortDirectionLabel(sortDirection)}</span>
+                <span>
+                  {getOrientationFilterLabel(orientationFilter)} / {getSortModeLabel(sortMode)}
+                  {excludedCategories.length ? ` / ${excludedCategories.length} off` : ""}
+                </span>
               </button>
             </div>
 
@@ -991,6 +1367,54 @@ export function SpiritFlixHome({
                   exit={{ opacity: 0, y: -8, scale: 0.98 }}
                   transition={{ duration: 0.16 }}
                 >
+                  <div className="spiritflix-filter-popout__header">
+                    <strong>Filters</strong>
+                    <button type="button" onClick={() => setFiltersOpen(false)} aria-label="Close filters">
+                      Done
+                    </button>
+                  </div>
+                  <div className="spiritflix-filter-popout__section">
+                    <span>Video shape</span>
+                    <div className="spiritflix-filter-options spiritflix-filter-options--three">
+                      {([
+                        ["all", "All", playableLibraryItems.length],
+                        ["portrait", "Portrait", orientationCounts.portrait],
+                        ["landscape", "Landscape", orientationCounts.landscape],
+                      ] as const).map(([value, label, count]) => (
+                        <button
+                          key={value}
+                          type="button"
+                          className={orientationFilter === value ? "is-active" : undefined}
+                          aria-pressed={orientationFilter === value}
+                          onClick={() => {
+                            setOrientationFilter(value);
+                            closeFiltersOnCoarsePointer();
+                          }}
+                        >
+                          {label}
+                          <span>{count}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="spiritflix-filter-popout__section">
+                    <span>Exclude categories</span>
+                    <div className="spiritflix-filter-options spiritflix-filter-options--two">
+                      {categoryFilters.map((category) => (
+                        <button
+                          key={category.key}
+                          type="button"
+                          className={excludedCategorySet.has(category.key) ? "is-excluded" : undefined}
+                          aria-pressed={excludedCategorySet.has(category.key)}
+                          disabled={category.count === 0}
+                          onClick={() => toggleExcludedCategory(category.key)}
+                        >
+                          {excludedCategorySet.has(category.key) ? "Show" : "Hide"} {category.label}
+                          <span>{category.count}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                   <div className="spiritflix-filter-popout__section">
                     <span>Sort</span>
                     <div className="spiritflix-filter-options">
@@ -1005,7 +1429,10 @@ export function SpiritFlixHome({
                           type="button"
                           className={sortMode === value ? "is-active" : undefined}
                           aria-pressed={sortMode === value}
-                          onClick={() => setSortMode(value as LibrarySortMode)}
+                          onClick={() => {
+                            setSortMode(value as LibrarySortMode);
+                            closeFiltersOnCoarsePointer();
+                          }}
                         >
                           {label}
                         </button>
@@ -1019,7 +1446,10 @@ export function SpiritFlixHome({
                         type="button"
                         className={sortDirection === "desc" ? "is-active" : undefined}
                         aria-pressed={sortDirection === "desc"}
-                        onClick={() => setSortDirection("desc")}
+                        onClick={() => {
+                          setSortDirection("desc");
+                          closeFiltersOnCoarsePointer();
+                        }}
                       >
                         Descending
                       </button>
@@ -1027,7 +1457,10 @@ export function SpiritFlixHome({
                         type="button"
                         className={sortDirection === "asc" ? "is-active" : undefined}
                         aria-pressed={sortDirection === "asc"}
-                        onClick={() => setSortDirection("asc")}
+                        onClick={() => {
+                          setSortDirection("asc");
+                          closeFiltersOnCoarsePointer();
+                        }}
                       >
                         Ascending
                       </button>
@@ -1045,10 +1478,45 @@ export function SpiritFlixHome({
                 </div>
               ))}
             </div>
+            {manualTagIndex?.tags.length ? (
+              <section className="spiritflix-manual-tags-bar" aria-label="Manual tag filters">
+                <div>
+                  <Tag size={15} aria-hidden="true" />
+                  <span>Manual tags</span>
+                </div>
+                <button
+                  type="button"
+                  className={!selectedManualTag ? "is-active" : undefined}
+                  aria-pressed={!selectedManualTag}
+                  onClick={() => selectManualTag(null)}
+                >
+                  All
+                </button>
+                {manualTagIndex.tags.map((tag) => (
+                  <button
+                    key={tag.tag}
+                    type="button"
+                    className={selectedManualTag === tag.tag ? "is-active" : undefined}
+                    aria-pressed={selectedManualTag === tag.tag}
+                    onClick={() => selectManualTag(tag.tag)}
+                  >
+                    {tag.label}
+                    <span>{tag.count}</span>
+                  </button>
+                ))}
+                {selectedManualTag ? (
+                  <button type="button" className="spiritflix-manual-tags-bar__clear" onClick={() => selectManualTag(null)}>
+                    <X size={14} aria-hidden="true" />
+                    Clear
+                  </button>
+                ) : null}
+              </section>
+            ) : null}
             {faceMetadataError ? <p className="spiritflix-face-note">{faceMetadataError}</p> : null}
             {galleryError ? <p className="spiritflix-face-note">{galleryError}</p> : null}
+            {manualTagsError ? <p className="spiritflix-face-note">{manualTagsError}</p> : null}
 
-            {viewMode !== "gallery" && continueWatchingItems.length ? (
+            {viewMode !== "gallery" && viewMode !== "models" && continueWatchingItems.length ? (
               <section className="spiritflix-resume-section" aria-label="Continue Watching">
                 <div className="spiritflix-resume-section__header">
                   <div>
@@ -1074,7 +1542,7 @@ export function SpiritFlixHome({
                         key={item.Id}
                         type="button"
                         className="spiritflix-resume-card"
-                        onClick={() => onPlay(item, visibleLibraryItems, "Continue Watching", resumeTicks)}
+                        onClick={() => onPlay(item, continueWatchingItems, "Continue Watching", resumeTicks)}
                         whileTap={{ scale: 0.985 }}
                         aria-label={`Resume ${item.Name} at ${getResumeSlotLabel(item)}`}
                       >
@@ -1097,7 +1565,7 @@ export function SpiritFlixHome({
               </section>
             ) : null}
 
-            {viewMode !== "gallery" ? (
+            {viewMode !== "gallery" && viewMode !== "models" ? (
               <SpiritFlixRail
                 title="Favorites"
                 variant="poster"
@@ -1126,7 +1594,7 @@ export function SpiritFlixHome({
                 <button
                   type="button"
                   className={`spiritflix-model-pill ${selectedModel === null ? "is-active" : ""}`}
-                  onClick={() => setSelectedModel(null)}
+                  onClick={() => selectModel(null)}
                 >
                   All Models
                 </button>
@@ -1138,7 +1606,7 @@ export function SpiritFlixHome({
                       key={model.name}
                       type="button"
                       className={`spiritflix-model-card ${selectedModel === model.name ? "is-active" : ""}`}
-                      onClick={() => setSelectedModel(model.name)}
+                      onClick={() => selectModel(model.name)}
                       whileTap={{ scale: 0.98 }}
                     >
                       <SpiritFlixImage client={client} item={model.representative} type="Primary" width={260} alt="" />
@@ -1153,7 +1621,52 @@ export function SpiritFlixHome({
             </section>
 
             <AnimatePresence mode="wait">
-              {viewMode === "gallery" ? (
+              {viewMode === "models" ? (
+                <motion.div
+                  key="models"
+                  className="spiritflix-model-directory"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.18 }}
+                >
+                  <button
+                    type="button"
+                    className={`spiritflix-model-card spiritflix-model-card--all ${selectedModel === null ? "is-active" : ""}`}
+                    onClick={() => {
+                      selectModel(null);
+                      setViewMode("grid");
+                    }}
+                  >
+                    <span>
+                      <strong>All Models</strong>
+                      <small>{playableLibraryItems.length} videos / {modelGroups.length} models</small>
+                    </span>
+                  </button>
+                  {modelGroups.map((model) => {
+                    const galleryCount = galleryItems.filter((item) => galleryItemMatchesModel(item, model.name)).length;
+                    return (
+                      <motion.button
+                        layout
+                        key={model.name}
+                        type="button"
+                        className={`spiritflix-model-card ${selectedModel === model.name ? "is-active" : ""}`}
+                        onClick={() => {
+                          selectModel(model.name);
+                          setViewMode("grid");
+                        }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <SpiritFlixImage client={client} item={model.representative} type="Primary" width={320} alt="" />
+                        <span>
+                          <strong>{model.name}</strong>
+                          <small>{model.indexedCount} videos{galleryCount ? ` / ${galleryCount} pics` : ""}</small>
+                        </span>
+                      </motion.button>
+                    );
+                  })}
+                </motion.div>
+              ) : viewMode === "gallery" ? (
                 <motion.div
                   key="gallery"
                   className="spiritflix-gallery-grid"
@@ -1184,6 +1697,7 @@ export function SpiritFlixHome({
                       key={item.Id}
                       client={client}
                       item={item}
+                      manualTags={manualTagMap.get(item.Id)}
                       playOnPrimaryTap={playPrimaryTapOnMobile}
                       onOpenDetails={onOpenDetails}
                       onPlay={(selectedItem, startPositionTicks) =>
@@ -1225,6 +1739,13 @@ export function SpiritFlixHome({
                       <span className="spiritflix-library-row__copy">
                         <strong>{item.Name}</strong>
                         <small>{getDisplayModelName(item, faceMetadata)}</small>
+                        {manualTagMap.get(item.Id)?.filter((tag) => getSpiritFlixManualTagScope(tag) === "video").length ? (
+                          <span className="spiritflix-library-row__tags">
+                            {manualTagMap.get(item.Id)?.filter((tag) => getSpiritFlixManualTagScope(tag) === "video").slice(0, 5).map((tag) => (
+                              <em key={tag}>{tag}</em>
+                            ))}
+                          </span>
+                        ) : null}
                         <em className={`spiritflix-face-badge is-${getFaceMatch(item, faceMetadata)?.status ?? "unscanned"}`}>
                           {getFaceMatch(item, faceMetadata)?.label ?? "Unscanned"}
                         </em>
@@ -1312,7 +1833,33 @@ export function SpiritFlixHome({
               )}
             </AnimatePresence>
 
-            {viewMode === "gallery" && !visibleGalleryItems.length ? (
+            {viewMode !== "gallery" && viewMode !== "history" && viewMode !== "models" && sortedLibraryItems.length > LIBRARY_PAGE_SIZE ? (
+              <div className="spiritflix-library-pager" aria-label="Library video pages">
+                <button
+                  type="button"
+                  onClick={() => setLibraryPageIndex((page) => Math.max(0, page - 1))}
+                  disabled={clampedLibraryPageIndex === 0}
+                  aria-label="Previous video page"
+                >
+                  <ChevronLeft size={20} aria-hidden="true" />
+                </button>
+                <span>
+                  Page {clampedLibraryPageIndex + 1} of {libraryPageCount} / {libraryPageStart}-{libraryPageEnd} of {sortedLibraryItems.length}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setLibraryPageIndex((page) => Math.min(libraryPageCount - 1, page + 1))}
+                  disabled={clampedLibraryPageIndex >= libraryPageCount - 1}
+                  aria-label="Next video page"
+                >
+                  <ChevronRight size={20} aria-hidden="true" />
+                </button>
+              </div>
+            ) : null}
+
+            {viewMode === "models" && !modelGroups.length ? (
+              <p className="spiritflix-empty">No model groups found in {libraryTitle} yet.</p>
+            ) : viewMode === "gallery" && !visibleGalleryItems.length ? (
               <p className="spiritflix-empty">No gallery pictures found for {selectedModelGroup?.name ?? "any model"} yet.</p>
             ) : viewMode === "history" && !historyItems.length ? (
               <p className="spiritflix-empty">No private watch history has synced for {selectedModelGroup?.name ?? libraryTitle} yet.</p>
@@ -1320,7 +1867,7 @@ export function SpiritFlixHome({
               <p className="spiritflix-empty">{libraryTitle} has no indexed videos yet.</p>
             ) : null}
 
-            {viewMode !== "gallery" ? (
+            {viewMode !== "gallery" && viewMode !== "models" ? (
               <motion.button
                 type="button"
                 className="spiritflix-shuffle-fab"
@@ -1332,18 +1879,18 @@ export function SpiritFlixHome({
                   event.preventDefault();
                   if (selectedModelGroup) playShuffle("model");
                 }}
-                disabled={!playableLibraryItems.length}
+                disabled={!filteredLibraryItems.length}
                 whileTap={{ scale: 0.97 }}
                 aria-label={
                   selectedModelGroup
-                    ? `Shuffle ${libraryTitle}; long press to shuffle ${selectedModelGroup.name}`
-                    : `Shuffle ${libraryTitle}`
+                    ? `Shuffle ${libraryTitle} ${getOrientationFilterLabel(orientationFilter)} videos; long press to shuffle ${selectedModelGroup.name}`
+                    : `Shuffle ${libraryTitle} ${getOrientationFilterLabel(orientationFilter)} videos`
                 }
               >
                 <Shuffle size={21} aria-hidden="true" />
                 <span>
                   <strong>Shuffle Gooner Mix</strong>
-                  <small>{selectedModelGroup ? `Hold: ${selectedModelGroup.name}` : "Whole library"}</small>
+                  <small>{selectedModelGroup ? `Hold: ${selectedModelGroup.name}` : getOrientationFilterLabel(orientationFilter)}</small>
                 </span>
               </motion.button>
             ) : null}

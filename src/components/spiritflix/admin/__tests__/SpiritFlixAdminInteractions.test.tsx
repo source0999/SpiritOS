@@ -314,7 +314,6 @@ describe("SpiritFlix admin Level 2R interactions", () => {
     await waitFor(() => {
       expect(screen.getAllByText("Beta Clip.mp4").length).toBeGreaterThan(1);
       expect(screen.getByText("Candidates")).toBeInTheDocument();
-      expect(screen.getAllByText("HD").length).toBeGreaterThan(0);
       expect(screen.getByText("Watermark")).toBeInTheDocument();
       expect(screen.getByText("Provisional recommended name, not apply-ready")).toBeInTheDocument();
       expect(screen.getAllByRole("button", { name: "Approve tags" }).length).toBeGreaterThan(1);

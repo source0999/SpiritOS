@@ -20,6 +20,47 @@ const SESSION_KEY = "spiritflix_private_gooner_session";
 const GOONER_ITEM_FIELDS =
   "Path,SeriesName,DateCreated,IndexNumber,ParentIndexNumber,Overview,ProductionYear,RunTimeTicks,Genres,People,UserData,PrimaryImageAspectRatio,MediaStreams,MediaSources,ChildCount";
 
+export interface HlsPlaybackProfile {
+  maxWidth: number;
+  maxHeight: number;
+  videoBitrate: number;
+  audioBitrate: number;
+}
+
+export interface MobileOptimizedSource {
+  available: boolean;
+  mode?: "mobile optimized";
+  url?: string;
+  key?: string;
+  receipt?: {
+    itemId?: string;
+    sourcePathSha256?: string;
+      encoder?: string;
+      profile?: string;
+      workerHost?: string;
+      outputSize?: number;
+      percentSaved?: number;
+      ffprobe?: {
+      container?: string;
+      videoCodec?: string;
+      audioCodec?: string;
+      width?: number;
+      height?: number;
+      duration?: number;
+    };
+  };
+}
+
+export interface SpiritFlixSystemDiagnostics {
+  dellFfmpegActive: boolean;
+  dellFfmpegProcesses: Array<{
+    pid: number;
+    command: string;
+    pathClass: "media_processing" | "jellyfin_transcode" | "other";
+  }>;
+  checkedAt: string;
+}
+
 export function getStoredSession(): SpiritFlixSession | null {
   if (typeof window === "undefined") return null;
   const raw = window.localStorage.getItem(SESSION_KEY);
@@ -84,6 +125,81 @@ function toQuery(params: Record<string, string | number | boolean | undefined>):
     if (value !== undefined && value !== "") query.set(key, String(value));
   });
   return query.toString();
+}
+
+function isHttpsPage(): boolean {
+  return typeof window !== "undefined" && window.location.protocol === "https:";
+}
+
+async function sha256Hex(value: string): Promise<string> {
+  const subtle = globalThis.crypto?.subtle;
+  if (!subtle) return "";
+  const encoded = new TextEncoder().encode(value);
+  const digest = await subtle.digest("SHA-256", encoded);
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function getDirectServerUrl(serverUrl: string): string {
+  return typeof window !== "undefined" && window.location.hostname && !["localhost", "127.0.0.1"].includes(window.location.hostname)
+    ? `http://${window.location.hostname}:8096`
+    : serverUrl;
+}
+
+function itemPathValues(item: JellyfinItem): string[] {
+  return [
+    item.Path,
+    ...(item.MediaSources ?? []).map((source) => source.Path),
+  ].filter((value): value is string => Boolean(value));
+}
+
+export function isSpiritFlixTrashPath(value?: string): boolean {
+  if (!value) return false;
+  const normalized = value.replaceAll("\\", "/").toLowerCase();
+  return normalized.includes("/.trash/");
+}
+
+export function isVisibleSpiritFlixItem(item: JellyfinItem): boolean {
+  return !itemPathValues(item).some(isSpiritFlixTrashPath);
+}
+
+function visibleItems(items?: JellyfinItem[]): JellyfinItem[] {
+  return (items ?? []).filter(isVisibleSpiritFlixItem);
+}
+
+export function getHlsPlaybackProfile(): HlsPlaybackProfile {
+  const baseProfile: HlsPlaybackProfile = {
+    maxWidth: 1280,
+    maxHeight: 720,
+    videoBitrate: 4000000,
+    audioBitrate: 192000,
+  };
+  if (typeof window === "undefined") return baseProfile;
+
+  const dpr = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+  const cssLongEdge = Math.max(window.innerWidth || 0, window.innerHeight || 0);
+  const cssShortEdge = Math.min(window.innerWidth || 0, window.innerHeight || 0);
+  const longEdge = cssLongEdge * dpr;
+  const shortEdge = cssShortEdge * dpr;
+
+  if (cssShortEdge >= 720 && longEdge >= 1800 && shortEdge >= 900) {
+    return {
+      maxWidth: 1920,
+      maxHeight: 1080,
+      videoBitrate: 10000000,
+      audioBitrate: 256000,
+    };
+  }
+
+  if (cssShortEdge >= 600 && longEdge >= 1400 && shortEdge >= 760) {
+    return {
+      maxWidth: 1600,
+      maxHeight: 900,
+      videoBitrate: 6500000,
+      audioBitrate: 224000,
+    };
+  }
+
+  return baseProfile;
 }
 
 export class JellyfinClient {
@@ -179,7 +295,7 @@ export class JellyfinClient {
     const data = await this.request<JellyfinItemsResponse<JellyfinItem>>(
       `/Users/${this.userId}/Items?${query}`,
     );
-    if (data.Items?.length || searchTerm) return data.Items ?? [];
+    if (data.Items?.length || searchTerm) return visibleItems(data.Items);
 
     const fallbackQuery = toQuery({
       ParentId: parentId,
@@ -194,7 +310,20 @@ export class JellyfinClient {
     const fallbackData = await this.request<JellyfinItemsResponse<JellyfinItem>>(
       `/Users/${this.userId}/Items?${fallbackQuery}`,
     );
-    return fallbackData.Items ?? [];
+    return visibleItems(fallbackData.Items);
+  }
+
+  async getItem(itemId: string): Promise<JellyfinItem | null> {
+    if (!this.userId || !itemId) return null;
+    const query = toQuery({
+      Fields: GOONER_ITEM_FIELDS,
+      ImageTypeLimit: 3,
+      EnableImageTypes: "Primary,Backdrop,Thumb,Logo",
+    });
+    const item = await this.request<JellyfinItem>(
+      `/Users/${this.userId}/Items/${encodeURIComponent(itemId)}?${query}`,
+    );
+    return isVisibleSpiritFlixItem(item) ? item : null;
   }
 
   async getPlaylistItems(playlistId: string): Promise<JellyfinItem[]> {
@@ -208,7 +337,7 @@ export class JellyfinClient {
     const data = await this.request<JellyfinItemsResponse<JellyfinItem>>(
       `/Playlists/${playlistId}/Items?${query}`,
     );
-    return data.Items ?? [];
+    return visibleItems(data.Items);
   }
 
   async getPlaylists(): Promise<JellyfinItem[]> {
@@ -226,7 +355,7 @@ export class JellyfinClient {
     const data = await this.request<JellyfinItemsResponse<JellyfinItem>>(
       `/Users/${this.userId}/Items?${query}`,
     );
-    return data.Items ?? [];
+    return visibleItems(data.Items);
   }
 
   async getContinueWatching(parentId?: string): Promise<JellyfinItem[]> {
@@ -242,7 +371,7 @@ export class JellyfinClient {
     const data = await this.request<JellyfinItemsResponse<JellyfinItem>>(
       `/Users/${this.userId}/Items/Resume?${query}`,
     );
-    return data.Items ?? [];
+    return visibleItems(data.Items);
   }
 
   async getLibraryResumeItems(parentId: string): Promise<JellyfinItem[]> {
@@ -262,7 +391,7 @@ export class JellyfinClient {
     const data = await this.request<JellyfinItemsResponse<JellyfinItem>>(
       `/Users/${this.userId}/Items?${query}`,
     );
-    return data.Items ?? [];
+    return visibleItems(data.Items);
   }
 
   async getWatchHistory(parentId?: string): Promise<JellyfinItem[]> {
@@ -282,7 +411,7 @@ export class JellyfinClient {
     const data = await this.request<JellyfinItemsResponse<JellyfinItem>>(
       `/Users/${this.userId}/Items?${query}`,
     );
-    return data.Items ?? [];
+    return visibleItems(data.Items);
   }
 
   async getLatestAdded(): Promise<JellyfinItem[]> {
@@ -310,7 +439,7 @@ export class JellyfinClient {
     const data = await this.request<JellyfinItemsResponse<JellyfinItem>>(
       `/Users/${this.userId}/Items?${query}`,
     );
-    return data.Items ?? [];
+    return visibleItems(data.Items);
   }
 
   async setFavorite(itemId: string, isFavorite: boolean): Promise<void> {
@@ -385,7 +514,7 @@ export class JellyfinClient {
     const data = await this.request<JellyfinItemsResponse<JellyfinItem>>(
       `/Users/${this.userId}/Items?${query}`,
     );
-    return data.Items ?? [];
+    return visibleItems(data.Items);
   }
 
   getImageUrl(item: JellyfinItem, type: "Primary" | "Backdrop" | "Thumb" = "Primary", width = 500): string {
@@ -419,19 +548,25 @@ export class JellyfinClient {
   }
 
   getStreamUrl(itemId: string): string {
-    const directServerUrl =
-      typeof window !== "undefined" && window.location.hostname && !["localhost", "127.0.0.1"].includes(window.location.hostname)
-        ? `http://${window.location.hostname}:8096`
-        : this.serverUrl;
+    const directServerUrl = getDirectServerUrl(this.serverUrl);
     const query = toQuery({
+      serverUrl: directServerUrl,
+      itemId,
+      token: this.token,
+    });
+    if (isHttpsPage()) return `/api/spiritflix/stream?${query}`;
+
+    const directQuery = toQuery({
       Static: "true",
       api_key: this.token,
       PlaySessionId: `spiritflix-${itemId}`,
     });
-    return `${directServerUrl}/Videos/${encodeURIComponent(itemId)}/Stream?${query}`;
+    return `${directServerUrl}/Videos/${encodeURIComponent(itemId)}/Stream?${directQuery}`;
   }
 
   getHlsUrl(itemId: string): string {
+    const directServerUrl = getDirectServerUrl(this.serverUrl);
+    const playbackProfile = getHlsPlaybackProfile();
     const query = toQuery({
       api_key: this.token,
       PlaySessionId: `spiritflix-${itemId}`,
@@ -440,8 +575,55 @@ export class JellyfinClient {
       AudioCodec: "aac,mp3,ac3",
       SegmentContainer: "ts",
       MinSegments: 1,
+      VideoBitrate: playbackProfile.videoBitrate,
+      AudioBitrate: playbackProfile.audioBitrate,
+      MaxWidth: playbackProfile.maxWidth,
+      MaxHeight: playbackProfile.maxHeight,
     });
-    return `${this.serverUrl}/Videos/${itemId}/master.m3u8?${query}`;
+    const path = `/Videos/${encodeURIComponent(itemId)}/master.m3u8?${query}`;
+    if (isHttpsPage()) {
+      const proxyQuery = toQuery({
+        serverUrl: directServerUrl,
+        token: this.token,
+        path,
+      });
+      return `/api/spiritflix/hls?${proxyQuery}`;
+    }
+    return `${directServerUrl}${path}`;
+  }
+
+  async getMobileOptimizedSource(item: JellyfinItem): Promise<MobileOptimizedSource> {
+    const sourcePath = item.MediaSources?.[0]?.Path ?? item.Path ?? "";
+    const sourcePathSha256 = sourcePath ? await sha256Hex(sourcePath) : "";
+    const query = toQuery({
+      itemId: item.Id,
+      sourcePathSha256,
+      sourcePath,
+    });
+    const response = await fetch(`/api/spiritflix/mobile-optimized?${query}`, {
+      method: "GET",
+      cache: "no-store",
+      headers: {
+        Accept: "application/json",
+        "Cache-Control": "no-cache",
+      },
+    });
+    if (response.status === 404) return { available: false };
+    if (!response.ok) throw new Error(`Mobile optimized lookup failed with status ${response.status}.`);
+    return (await response.json()) as MobileOptimizedSource;
+  }
+
+  async getSystemDiagnostics(): Promise<SpiritFlixSystemDiagnostics> {
+    const response = await fetch("/api/spiritflix/system-diagnostics", {
+      method: "GET",
+      cache: "no-store",
+      headers: {
+        Accept: "application/json",
+        "Cache-Control": "no-cache",
+      },
+    });
+    if (!response.ok) throw new Error(`System diagnostics failed with status ${response.status}.`);
+    return (await response.json()) as SpiritFlixSystemDiagnostics;
   }
 
   async reportPlayback(
@@ -477,7 +659,7 @@ export class JellyfinClient {
 }
 
 export function isPlayableItem(item: JellyfinItem): boolean {
-  return item.MediaType === "Video" || ["Movie", "Episode", "Video"].includes(item.Type);
+  return isVisibleSpiritFlixItem(item) && (item.MediaType === "Video" || ["Movie", "Episode", "Video"].includes(item.Type));
 }
 
 export function isPlaylistItem(item: JellyfinItem): boolean {
