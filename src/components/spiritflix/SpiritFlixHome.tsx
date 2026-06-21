@@ -411,6 +411,52 @@ function getDurationTicks(item: JellyfinItem): number {
   return sourceTicks;
 }
 
+function getItemSourcePath(item: JellyfinItem): string {
+  return item.MediaSources?.[0]?.Path ?? item.Path ?? "";
+}
+
+function getAnimeSeriesName(item: JellyfinItem): string {
+  if (item.SeriesName?.trim()) return item.SeriesName.trim();
+  const parts = getItemSourcePath(item).replace(/\\/g, "/").split("/").filter(Boolean);
+  const seasonIndex = parts.findIndex((part) => /^season\s+\d+/i.test(part));
+  if (seasonIndex > 0) return parts[seasonIndex - 1] ?? "Anime";
+  const animeIndex = parts.findIndex((part) => part.toLowerCase() === "anime");
+  return animeIndex >= 0 ? parts[animeIndex + 1] ?? "Anime" : "Anime";
+}
+
+function getAnimeSeasonNumber(item: JellyfinItem): number {
+  if (typeof item.ParentIndexNumber === "number" && item.ParentIndexNumber > 0) return item.ParentIndexNumber;
+  const pathMatch = getItemSourcePath(item).match(/season\s+(\d+)/i);
+  if (pathMatch?.[1]) return Number(pathMatch[1]);
+  const titleMatch = item.Name.match(/\bS(\d{1,2})E\d{1,3}\b/i);
+  if (titleMatch?.[1]) return Number(titleMatch[1]);
+  return 1;
+}
+
+function getAnimeEpisodeNumber(item: JellyfinItem): number {
+  if (typeof item.IndexNumber === "number" && item.IndexNumber > 0) return item.IndexNumber;
+  const titleMatch = item.Name.match(/\bS\d{1,2}E(\d{1,3})\b/i);
+  if (titleMatch?.[1]) return Number(titleMatch[1]);
+  const pathMatch = getItemSourcePath(item).match(/\bS\d{1,2}E(\d{1,3})\b/i);
+  if (pathMatch?.[1]) return Number(pathMatch[1]);
+  const leadingMatch = item.Name.match(/(?:^|\s-\s)(\d{1,3})(?:\s-\s|$)/);
+  if (leadingMatch?.[1]) return Number(leadingMatch[1]);
+  return 0;
+}
+
+function compareAnimeEpisodes(left: JellyfinItem, right: JellyfinItem): number {
+  return (
+    getAnimeSeasonNumber(left) - getAnimeSeasonNumber(right) ||
+    getAnimeEpisodeNumber(left) - getAnimeEpisodeNumber(right) ||
+    left.Name.localeCompare(right.Name)
+  );
+}
+
+function formatAnimeEpisodeLabel(item: JellyfinItem): string {
+  const episodeNumber = getAnimeEpisodeNumber(item);
+  return episodeNumber > 0 ? `Episode ${episodeNumber}` : "Episode";
+}
+
 function compareOptionalNumber(left: number, right: number, direction: LibrarySortDirection): number {
   const leftHasValue = left > 0;
   const rightHasValue = right > 0;
@@ -681,11 +727,15 @@ export function SpiritFlixHome({
   const resumeTrackRef = useRef<HTMLDivElement | null>(null);
   const modelStripRef = useRef<HTMLDivElement | null>(null);
   const isHomeView = data.selectedLibraryId === null;
-  const hero = isHomeView
-    ? data.featuredItems[0] ?? data.continueWatching[0] ?? data.latestAdded[0] ?? data.libraryItems[0] ?? null
-    : data.libraryItems[0] ?? data.latestAdded[0] ?? data.continueWatching[0] ?? null;
   const selectedLibrary = data.libraries.find((library) => library.Id === data.selectedLibraryId);
   const libraryTitle = isHomeView ? "Home" : displayLibraryName(selectedLibrary?.Name);
+  const isAnimeView = !isHomeView && selectedLibrary?.Name.toLowerCase() === "anime";
+  const isLibraryDashboardView = !isHomeView && !isAnimeView;
+  const hero = isAnimeView
+    ? null
+    : isHomeView
+    ? data.featuredItems[0] ?? data.continueWatching[0] ?? data.latestAdded[0] ?? data.libraryItems[0] ?? null
+    : data.libraryItems[0] ?? data.latestAdded[0] ?? data.continueWatching[0] ?? null;
   const manualModelMap = useMemo(() => {
     const map = new Map<string, string>();
     manualModelRecords.forEach((record) => {
@@ -701,6 +751,27 @@ export function SpiritFlixHome({
       }),
     [data.libraryItems, manualModelMap],
   );
+  const animeSeriesGroups = useMemo(() => {
+    const seriesMap = new Map<string, Map<number, JellyfinItem[]>>();
+    modelAwareLibraryItems.filter(isPlayableItem).forEach((item) => {
+      const seriesName = getAnimeSeriesName(item);
+      const seasonNumber = getAnimeSeasonNumber(item);
+      const seasons = seriesMap.get(seriesName) ?? new Map<number, JellyfinItem[]>();
+      seasons.set(seasonNumber, [...(seasons.get(seasonNumber) ?? []), item]);
+      seriesMap.set(seriesName, seasons);
+    });
+    return Array.from(seriesMap.entries())
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([seriesName, seasons]) => ({
+        seriesName,
+        seasons: Array.from(seasons.entries())
+          .sort(([left], [right]) => left - right)
+          .map(([seasonNumber, items]) => ({
+            seasonNumber,
+            items: [...items].sort(compareAnimeEpisodes),
+          })),
+      }));
+  }, [modelAwareLibraryItems]);
   const modelGroups = useMemo(() => buildModelGroups(modelAwareLibraryItems, faceMetadata), [modelAwareLibraryItems, faceMetadata]);
   const selectedModelGroup = selectedModel ? modelGroups.find((model) => model.name === selectedModel) : null;
   const playableLibraryItems = useMemo(() => modelAwareLibraryItems.filter(isPlayableItem), [modelAwareLibraryItems]);
@@ -909,9 +980,11 @@ export function SpiritFlixHome({
 
   const handleRefresh = () => {
     onRefresh();
-    void loadGallery();
-    void loadManualTags();
-    void loadManualModels();
+    if (isLibraryDashboardView) {
+      void loadGallery();
+      void loadManualTags();
+      void loadManualModels();
+    }
   };
 
   const closeFiltersOnCoarsePointer = () => {
@@ -921,10 +994,15 @@ export function SpiritFlixHome({
   };
 
   useEffect(() => {
-    void loadGallery();
-  }, [loadGallery]);
+    if (!isLibraryDashboardView) return undefined;
+    const timer = window.setTimeout(() => {
+      void loadGallery();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [isLibraryDashboardView, loadGallery]);
 
   useEffect(() => {
+    if (!isLibraryDashboardView) return undefined;
     const timer = window.setTimeout(() => {
       void loadManualTags();
       void loadManualModels();
@@ -942,7 +1020,7 @@ export function SpiritFlixHome({
       window.removeEventListener("spiritflix:manual-tags-changed", handleManualTagsChanged);
       window.removeEventListener("spiritflix:manual-models-changed", handleManualModelsChanged);
     };
-  }, [loadManualModels, loadManualTags]);
+  }, [isLibraryDashboardView, loadManualModels, loadManualTags]);
 
   useEffect(() => {
     const queries = [
@@ -973,7 +1051,7 @@ export function SpiritFlixHome({
   }, [orientationFilter]);
 
   useEffect(() => {
-    if (!data.libraries.length) return;
+    if (!data.libraries.length || !isLibraryDashboardView) return;
     window.localStorage.setItem(
       LIBRARY_UI_STATE_KEY,
       JSON.stringify({
@@ -995,6 +1073,7 @@ export function SpiritFlixHome({
     data.selectedLibraryId,
     excludedCategories,
     filtersOpen,
+    isLibraryDashboardView,
     orientationFilter,
     selectedManualTag,
     selectedModel,
@@ -1209,6 +1288,7 @@ export function SpiritFlixHome({
         </div>
       </header>
 
+      {!isAnimeView ? (
       <section className={`spiritflix-hero ${hero ? "" : "spiritflix-hero--empty"}`}>
         {hero ? (
           <>
@@ -1250,12 +1330,13 @@ export function SpiritFlixHome({
           </div>
         </div>
       </section>
+      ) : null}
 
       {error ? <p className="spiritflix-error spiritflix-error--home">{error}</p> : null}
       {loading ? <div className="spiritflix-loading">Loading Jellyfin rows...</div> : null}
 
       <div className="spiritflix-rows">
-        {!isHomeView ? (
+        {isLibraryDashboardView ? (
           <section className="spiritflix-library-v2" aria-label={`${libraryTitle} model library`}>
             <div className="spiritflix-library-v2__header">
               <div>
@@ -1894,6 +1975,70 @@ export function SpiritFlixHome({
                 </span>
               </motion.button>
             ) : null}
+          </section>
+        ) : null}
+        {isAnimeView ? (
+          <section className="spiritflix-anime-view" aria-label="Anime seasons and episodes">
+            <div className="spiritflix-anime-view__header">
+              <span className="spiritflix-kicker">
+                <Sparkles size={14} aria-hidden="true" />
+                {serverInfo?.ServerName ? `${serverInfo.ServerName} / Anime` : "Anime"}
+              </span>
+              <h1>Anime</h1>
+              <p>Seasons and episodes from your Anime library.</p>
+            </div>
+            {animeSeriesGroups.length ? (
+              animeSeriesGroups.map((series) => (
+                <section key={series.seriesName} className="spiritflix-anime-series" aria-label={series.seriesName}>
+                  <div className="spiritflix-anime-series__header">
+                    <h2>{series.seriesName}</h2>
+                    <span>{series.seasons.reduce((total, season) => total + season.items.length, 0)} episodes</span>
+                  </div>
+                  <div className="spiritflix-anime-seasons">
+                    {series.seasons.map((season) => (
+                      <section key={`${series.seriesName}-${season.seasonNumber}`} className="spiritflix-anime-season" aria-label={`${series.seriesName} Season ${season.seasonNumber}`}>
+                        <div className="spiritflix-anime-season__header">
+                          <h3>Season {season.seasonNumber}</h3>
+                          <span>{season.items.length} episodes</span>
+                        </div>
+                        <div className="spiritflix-anime-episodes">
+                          {season.items.map((episode) => (
+                            <button
+                              key={episode.Id}
+                              type="button"
+                              className="spiritflix-anime-episode"
+                              onClick={() =>
+                                onPlay(
+                                  episode,
+                                  season.items,
+                                  `${series.seriesName} / Season ${season.seasonNumber}`,
+                                  hasResumeProgress(episode) ? getResumePositionTicks(episode) : undefined,
+                                )
+                              }
+                            >
+                              <span className="spiritflix-anime-episode__number">{formatAnimeEpisodeLabel(episode)}</span>
+                              <span className="spiritflix-anime-episode__copy">
+                                <strong>{episode.Name}</strong>
+                                <small>
+                                  {hasResumeProgress(episode)
+                                    ? `Resume from ${getResumeSlotLabel(episode).split(" / ")[0]}`
+                                    : formatRuntime(getDurationTicks(episode))}
+                                </small>
+                              </span>
+                              <span className="spiritflix-anime-episode__play">
+                                <Play size={18} fill="currentColor" aria-hidden="true" />
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </section>
+                    ))}
+                  </div>
+                </section>
+              ))
+            ) : (
+              <p className="spiritflix-empty">No anime episodes are indexed yet.</p>
+            )}
           </section>
         ) : null}
         {isHomeView ? (

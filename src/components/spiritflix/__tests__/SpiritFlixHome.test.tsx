@@ -181,6 +181,73 @@ describe("SpiritFlixHome watch history", () => {
     });
   });
 
+  it("renders Anime as seasons and episodes without library dashboard controls", async () => {
+    const onPlay = vi.fn();
+    const animeEpisode: JellyfinItem = {
+      Id: "kenshin-1",
+      Name: "The Handsome Swordsman of Legend",
+      Type: "Video",
+      MediaType: "Video",
+      SeriesName: "Rurouni Kenshin (1996)",
+      Path: "/mnt/spirit-8tb/media/anime/Rurouni Kenshin (1996)/Season 01/Rurouni Kenshin (1996) - S01E01.mp4",
+      ParentIndexNumber: 1,
+      IndexNumber: 1,
+      RunTimeTicks: 15000000000,
+      MediaStreams: [{ Type: "Video", Width: 720, Height: 540 }],
+    };
+
+    render(
+      <SpiritFlixHome
+        client={createClient()}
+        data={createData({
+          libraries: [{ Id: "anime-library", Name: "Anime" }],
+          selectedLibraryId: "anime-library",
+          libraryItems: [animeEpisode],
+          continueWatching: [],
+          watchHistory: [],
+        })}
+        loading={false}
+        error=""
+        session={{
+          serverUrl: "https://jellyfin.local",
+          accessToken: "token",
+          userId: "user-1",
+          username: "private-user",
+        }}
+        searchTerm=""
+        serverInfo={{ ServerName: "Jellyfin" }}
+        onLogout={vi.fn()}
+        onRefresh={vi.fn()}
+        onSearch={vi.fn()}
+        onSelectHome={vi.fn()}
+        onSelectLibrary={vi.fn()}
+        onSelectModel={vi.fn()}
+        onOpenDetails={vi.fn()}
+        onPlay={onPlay}
+      />,
+    );
+
+    expect(screen.getByRole("heading", { name: "Anime" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Rurouni Kenshin (1996)" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Season 1" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Episode 1 The Handsome Swordsman of Legend/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /History/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Gallery/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Models/i })).not.toBeInTheDocument();
+    expect(screen.queryByText("All Models")).not.toBeInTheDocument();
+    expect(screen.queryByText("Manual tags")).not.toBeInTheDocument();
+    expect(screen.queryByText("Shuffle Gooner Mix")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Episode 1 The Handsome Swordsman of Legend/i }));
+
+    expect(onPlay).toHaveBeenCalledWith(
+      animeEpisode,
+      [animeEpisode],
+      "Rurouni Kenshin (1996) / Season 1",
+      undefined,
+    );
+  });
+
   it("shows resumable watch history in Continue Watching when Jellyfin misses the resume lane", async () => {
     render(
       <SpiritFlixHome

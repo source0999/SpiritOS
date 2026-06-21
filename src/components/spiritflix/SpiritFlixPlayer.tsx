@@ -21,6 +21,7 @@ import {
   ChevronsDown,
   GripVertical,
   Heart,
+  Languages,
   ListMusic,
   Maximize,
   Minimize,
@@ -101,6 +102,7 @@ interface SpiritFlixDeletePreview {
 
 type FitMode = "fit" | "fill";
 type RepeatMode = "off" | "queue" | "one";
+type SeriesAudioPreference = "sub" | "dub";
 type PlaybackSourceMode = "direct stream" | "proxied stream" | "HLS" | "mobile optimized";
 type PlaybackSourceClass =
   | "mac_optimized_mp4"
@@ -111,6 +113,7 @@ type PlaybackSourceClass =
 
 const FIT_STORAGE_KEY = "spiritflix_player_fit_mode";
 const REPEAT_STORAGE_KEY = "spiritflix_player_repeat_mode";
+const SERIES_AUDIO_PREFS_STORAGE_KEY = "spiritflix_series_audio_preferences";
 const VOLUME_STORAGE_KEY = "spiritflix_player_volume";
 const MUTED_STORAGE_KEY = "spiritflix_player_muted";
 const TAP_MAX_MOVEMENT = 26;
@@ -149,6 +152,22 @@ type MiniPlayerVideo = HTMLVideoElement & {
   webkitPresentationMode?: "inline" | "picture-in-picture" | "fullscreen";
   webkitSetPresentationMode?: (mode: "inline" | "picture-in-picture") => void;
   webkitSupportsPresentationMode?: (mode: "picture-in-picture") => boolean;
+};
+
+interface SpiritFlixAudioTrack {
+  id?: string;
+  label?: string;
+  language?: string;
+  enabled: boolean;
+}
+
+interface SpiritFlixAudioTrackList {
+  length: number;
+  [index: number]: SpiritFlixAudioTrack | undefined;
+}
+
+type AudioTrackVideo = HTMLVideoElement & {
+  audioTracks?: SpiritFlixAudioTrackList;
 };
 const TOUCH_MOUSE_REVEAL_SUPPRESS_MS = 1200;
 const UI_TIME_UPDATE_MS = 500;
@@ -300,6 +319,92 @@ function normalizeSpiritFlixMediaPath(sourcePath: string): string {
 function isYesFolderVideoPath(sourcePath: string): boolean {
   const normalized = normalizeSpiritFlixMediaPath(sourcePath).toLowerCase();
   return normalized.startsWith("/mnt/spirit-8tb/media/yes/") && !normalized.includes("/.trash/");
+}
+
+function isAnimePath(sourcePath: string): boolean {
+  const normalized = sourcePath.replace(/\\/g, "/").toLowerCase();
+  return normalized.includes("/media/anime/") || normalized.includes("/anime/");
+}
+
+function isSeriesPlaybackItem(item: JellyfinItem): boolean {
+  return item.Type?.toLowerCase() === "episode" || isAnimePath(getItemSourcePath(item)) || item.MediaSources?.some((source) => isAnimePath(source.Path ?? "")) === true;
+}
+
+function getSeriesPlaybackKey(item: JellyfinItem): string {
+  if (!isSeriesPlaybackItem(item)) return "";
+  if (item.SeriesName?.trim()) return item.SeriesName.trim().toLowerCase();
+  const parts = getItemSourcePath(item).replace(/\\/g, "/").split("/").filter(Boolean);
+  const seasonIndex = parts.findIndex((part) => /^season\s+\d+/i.test(part));
+  if (seasonIndex > 0) return parts[seasonIndex - 1]?.toLowerCase() ?? "";
+  const animeIndex = parts.findIndex((part) => part.toLowerCase() === "anime");
+  return animeIndex >= 0 ? parts[animeIndex + 1]?.toLowerCase() ?? "" : "";
+}
+
+function getSeriesPlaybackQueue(item: JellyfinItem, candidates: JellyfinItem[]): JellyfinItem[] {
+  const seriesKey = getSeriesPlaybackKey(item);
+  if (!seriesKey) return [];
+  const byId = new Map<string, JellyfinItem>();
+  [item, ...candidates].forEach((candidate) => {
+    if (candidate?.Id && isPlayableItem(candidate) && getSeriesPlaybackKey(candidate) === seriesKey && !byId.has(candidate.Id)) {
+      byId.set(candidate.Id, candidate);
+    }
+  });
+  return Array.from(byId.values()).sort(
+    (left, right) =>
+      (left.ParentIndexNumber ?? 0) - (right.ParentIndexNumber ?? 0) ||
+      (left.IndexNumber ?? 0) - (right.IndexNumber ?? 0) ||
+      left.Name.localeCompare(right.Name),
+  );
+}
+
+function getStoredSeriesAudioPreference(seriesKey: string): SeriesAudioPreference {
+  if (typeof window === "undefined" || !seriesKey) return "sub";
+  try {
+    const stored = JSON.parse(window.localStorage.getItem(SERIES_AUDIO_PREFS_STORAGE_KEY) ?? "{}") as Record<string, SeriesAudioPreference>;
+    return stored[seriesKey] === "dub" || stored[seriesKey] === "sub" ? stored[seriesKey] : "sub";
+  } catch {
+    return "sub";
+  }
+}
+
+function storeSeriesAudioPreference(seriesKey: string, preference: SeriesAudioPreference): void {
+  if (typeof window === "undefined" || !seriesKey) return;
+  try {
+    const stored = JSON.parse(window.localStorage.getItem(SERIES_AUDIO_PREFS_STORAGE_KEY) ?? "{}") as Record<string, SeriesAudioPreference>;
+    window.localStorage.setItem(SERIES_AUDIO_PREFS_STORAGE_KEY, JSON.stringify({ ...stored, [seriesKey]: preference }));
+  } catch {
+    window.localStorage.setItem(SERIES_AUDIO_PREFS_STORAGE_KEY, JSON.stringify({ [seriesKey]: preference }));
+  }
+}
+
+function getAudioMatchText(value: { language?: string; label?: string; DisplayTitle?: string; Title?: string; Codec?: string }): string {
+  return [value.language, value.label, value.DisplayTitle, value.Title, value.Codec].filter(Boolean).join(" ").toLowerCase();
+}
+
+function matchesAudioPreference(value: { language?: string; label?: string; DisplayTitle?: string; Title?: string; Codec?: string }, preference: SeriesAudioPreference): boolean {
+  const text = getAudioMatchText(value);
+  if (preference === "dub") {
+    return /\b(en|eng|english)\b/.test(text) || text.includes("dub");
+  }
+  return /\b(ja|jpn|japanese)\b/.test(text) || text.includes("sub");
+}
+
+function getVideoAudioTracks(video: HTMLVideoElement | null): SpiritFlixAudioTrack[] {
+  const tracks = (video as AudioTrackVideo | null)?.audioTracks;
+  if (!tracks?.length) return [];
+  return Array.from({ length: tracks.length }, (_, index) => tracks[index]).filter((track): track is SpiritFlixAudioTrack => Boolean(track));
+}
+
+function applyAudioPreferenceToVideo(video: HTMLVideoElement | null, preference: SeriesAudioPreference): boolean {
+  const tracks = getVideoAudioTracks(video);
+  if (tracks.length < 2) return false;
+  const matchedIndex = tracks.findIndex((track) => matchesAudioPreference(track, preference));
+  const fallbackIndex = preference === "dub" ? Math.min(1, tracks.length - 1) : 0;
+  const selectedIndex = matchedIndex >= 0 ? matchedIndex : fallbackIndex;
+  tracks.forEach((track, index) => {
+    track.enabled = index === selectedIndex;
+  });
+  return true;
 }
 
 function renderPlaybackFeedback(feedback: PlaybackFeedback) {
@@ -656,7 +761,23 @@ export function SpiritFlixPlayer({
   const [deleteExecuting, setDeleteExecuting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
 
-  const queueItems = useMemo(() => queue?.items ?? [item], [item, queue?.items]);
+  const isSeriesPlayback = isSeriesPlaybackItem(item);
+  const seriesKey = getSeriesPlaybackKey(item);
+  const [seriesAudioState, setSeriesAudioState] = useState<{ seriesKey: string; preference: SeriesAudioPreference }>(() => {
+    const initialSeriesKey = getSeriesPlaybackKey(item);
+    return { seriesKey: initialSeriesKey, preference: getStoredSeriesAudioPreference(initialSeriesKey) };
+  });
+  const [audioTrackSwitchAvailable, setAudioTrackSwitchAvailable] = useState(false);
+  const seriesAudioPreference =
+    seriesAudioState.seriesKey === seriesKey ? seriesAudioState.preference : getStoredSeriesAudioPreference(seriesKey);
+  const seriesQueueItems = useMemo(
+    () => getSeriesPlaybackQueue(item, [...(queue?.items ?? []), ...libraryItems]),
+    [item, libraryItems, queue?.items],
+  );
+  const queueItems = useMemo(
+    () => (isSeriesPlayback && seriesQueueItems.length ? seriesQueueItems : queue?.items ?? [item]),
+    [isSeriesPlayback, item, queue?.items, seriesQueueItems],
+  );
   const originalQueueItems = useMemo(
     () => (queue?.originalItems?.length ? queue.originalItems : queueItems),
     [queue, queueItems],
@@ -667,6 +788,15 @@ export function SpiritFlixPlayer({
   const previousItem = currentIndex > 0 ? queueItems[currentIndex - 1] : null;
   const nextItem = currentIndex < queueItems.length - 1 ? queueItems[currentIndex + 1] : null;
   const upNextTitle = nextItem?.Name ?? null;
+  const audioStreams = useMemo(() => item.MediaStreams?.filter((stream) => stream.Type?.toLowerCase() === "audio") ?? [], [item.MediaStreams]);
+  const hasSeriesAudioChoices =
+    isSeriesPlayback && (audioStreams.length >= 2 || (seriesAudioState.seriesKey === seriesKey && audioTrackSwitchAvailable));
+  const nextSeriesAudioPreference: SeriesAudioPreference = seriesAudioPreference === "dub" ? "sub" : "dub";
+  const previousLabel = isSeriesPlayback ? "Previous episode" : "Previous video";
+  const nextLabel = isSeriesPlayback ? "Next episode" : "Next video";
+  const showLibraryPlayerTools = !isSeriesPlayback;
+  const showQueueTool = queueItems.length >= 2;
+  const showToolOverflow = showLibraryPlayerTools || showQueueTool;
   const isFavorite = Boolean(item.UserData?.IsFavorite);
   const repeatLabel =
     repeatMode === "one" ? "Repeat current video" : repeatMode === "queue" ? "Repeat queue" : "Repeat off";
@@ -914,7 +1044,7 @@ export function SpiritFlixPlayer({
     setIsTagEditorOpen(false);
     setIsModelEditorOpen(false);
     setIsDeleteEditorOpen(false);
-  }, []);
+  }, [setIsDeleteEditorOpen, setIsModelEditorOpen, setIsTagEditorOpen]);
 
   const appWidgetContainsFocus = useCallback(() => {
     const activeElement = document.activeElement;
@@ -1146,7 +1276,19 @@ export function SpiritFlixPlayer({
     void toggle().catch(() => {
       enterAppMiniPlayer();
     });
-  }, [hideControls, isAppMiniPlayer, revealControls]);
+  }, [
+    hideControls,
+    isAppMiniPlayer,
+    revealControls,
+    setIsAppMiniPlayer,
+    setIsDeleteEditorOpen,
+    setIsModelEditorOpen,
+    setIsNativeMiniPlayer,
+    setIsQueueOpen,
+    setIsShufflePickerOpen,
+    setIsTagEditorOpen,
+    setIsToolDrawerOpen,
+  ]);
 
   const selectQueueItem = useCallback(
     (target: JellyfinItem | null) => {
@@ -1220,6 +1362,14 @@ export function SpiritFlixPlayer({
     revealControls();
   };
 
+  const toggleSeriesAudioPreference = () => {
+    const nextPreference = nextSeriesAudioPreference;
+    setSeriesAudioState({ seriesKey, preference: nextPreference });
+    storeSeriesAudioPreference(seriesKey, nextPreference);
+    setAudioTrackSwitchAvailable(applyAudioPreferenceToVideo(videoRef.current, nextPreference));
+    revealControls();
+  };
+
   const toggleToolDrawer = () => {
     setIsToolDrawerOpen((open) => !open);
     revealControls();
@@ -1227,7 +1377,7 @@ export function SpiritFlixPlayer({
 
   const canonicalizeManualTag = (value: string) => value.trim().replace(/\s+/g, " ").toLowerCase();
 
-  const loadManualTags = useCallback(async () => {
+  const loadManualTags = async () => {
     setManualTagsLoading(true);
     setManualTagsError("");
     try {
@@ -1252,7 +1402,7 @@ export function SpiritFlixPlayer({
     } finally {
       setManualTagsLoading(false);
     }
-  }, [item]);
+  };
 
   const openTagEditor = () => {
     setIsTagEditorOpen(true);
@@ -2349,6 +2499,7 @@ export function SpiritFlixPlayer({
           onLoadedMetadata={(event) => {
             const video = event.currentTarget;
             setDuration(Number.isFinite(video.duration) ? video.duration : ticksToSeconds(item.RunTimeTicks));
+            setAudioTrackSwitchAvailable(applyAudioPreferenceToVideo(video, seriesAudioPreference));
             if (video.videoWidth > 0 && video.videoHeight > 0) {
               setVideoAspectRatio(video.videoWidth / video.videoHeight);
             }
@@ -2527,61 +2678,67 @@ export function SpiritFlixPlayer({
 
         <div className="spiritflix-player__button-row">
           <div className="spiritflix-player__transport">
-            <button type="button" onClick={() => selectQueueItem(previousItem)} disabled={!previousItem} aria-label="Previous video" title="Previous">
+            <button type="button" onClick={() => selectQueueItem(previousItem)} disabled={!previousItem} aria-label={previousLabel} title={previousLabel}>
               <SkipBack size={20} aria-hidden="true" />
             </button>
             <button className="spiritflix-player__play" type="button" onClick={togglePlay} aria-label={isPlaying ? "Pause" : "Play"} title={isPlaying ? "Pause" : "Play"}>
               {isPlaying ? <Pause size={30} aria-hidden="true" /> : <Play size={30} fill="currentColor" aria-hidden="true" />}
             </button>
-            <button type="button" onClick={selectNextItem} disabled={!nextItem && repeatMode !== "queue"} aria-label="Next video" title="Next">
+            <button type="button" onClick={selectNextItem} disabled={!nextItem && repeatMode !== "queue"} aria-label={nextLabel} title={nextLabel}>
               <SkipForward size={20} aria-hidden="true" />
             </button>
           </div>
 
           <div className={`spiritflix-player__tools ${isToolDrawerOpen ? "is-open" : ""}`}>
-            <button
-              className="spiritflix-player__tools-toggle spiritflix-player__tool spiritflix-player__tool--more"
-              type="button"
-              onClick={toggleToolDrawer}
-              aria-label={isToolDrawerOpen ? "Hide player tools" : "More player controls"}
-              aria-expanded={isToolDrawerOpen}
-              title={isToolDrawerOpen ? "Hide tools" : "More controls"}
-            >
-              <SlidersHorizontal size={20} aria-hidden="true" />
-            </button>
-            <button
-              className={`spiritflix-player__tool spiritflix-player__tool--repeat ${repeatMode !== "off" ? "is-active" : ""}`}
-              type="button"
-              onClick={cycleRepeatMode}
-              aria-label={repeatLabel}
-              aria-pressed={repeatMode !== "off"}
-              title={repeatLabel}
-            >
-              {repeatMode === "one" ? <Repeat1 size={20} aria-hidden="true" /> : <Repeat size={20} aria-hidden="true" />}
-            </button>
-            <button
-              className={`spiritflix-player__tool spiritflix-player__tool--shuffle ${isShuffled ? "is-active" : ""}`}
-              type="button"
-              onClick={handleShuffleButtonClick}
-              onPointerDown={startShuffleHold}
-              onPointerUp={clearShuffleHoldTimer}
-              onPointerCancel={clearShuffleHoldTimer}
-              onPointerLeave={clearShuffleHoldTimer}
-              onContextMenu={(event) => {
-                event.preventDefault();
-                if (queueItems.length >= 2) {
-                  setIsShufflePickerOpen(true);
-                  revealControls(true);
-                }
-              }}
-              disabled={queueItems.length < 2}
-              aria-label={shuffleLabel}
-              aria-pressed={isShuffled}
-              title={shuffleLabel}
-            >
-              <Shuffle size={20} aria-hidden="true" />
-            </button>
-            {isShufflePickerOpen ? (
+            {showToolOverflow ? (
+              <button
+                className="spiritflix-player__tools-toggle spiritflix-player__tool spiritflix-player__tool--more"
+                type="button"
+                onClick={toggleToolDrawer}
+                aria-label={isToolDrawerOpen ? "Hide player tools" : "More player controls"}
+                aria-expanded={isToolDrawerOpen}
+                title={isToolDrawerOpen ? "Hide tools" : "More controls"}
+              >
+                <SlidersHorizontal size={20} aria-hidden="true" />
+              </button>
+            ) : null}
+            {showLibraryPlayerTools ? (
+              <button
+                className={`spiritflix-player__tool spiritflix-player__tool--repeat ${repeatMode !== "off" ? "is-active" : ""}`}
+                type="button"
+                onClick={cycleRepeatMode}
+                aria-label={repeatLabel}
+                aria-pressed={repeatMode !== "off"}
+                title={repeatLabel}
+              >
+                {repeatMode === "one" ? <Repeat1 size={20} aria-hidden="true" /> : <Repeat size={20} aria-hidden="true" />}
+              </button>
+            ) : null}
+            {showLibraryPlayerTools ? (
+              <button
+                className={`spiritflix-player__tool spiritflix-player__tool--shuffle ${isShuffled ? "is-active" : ""}`}
+                type="button"
+                onClick={handleShuffleButtonClick}
+                onPointerDown={startShuffleHold}
+                onPointerUp={clearShuffleHoldTimer}
+                onPointerCancel={clearShuffleHoldTimer}
+                onPointerLeave={clearShuffleHoldTimer}
+                onContextMenu={(event) => {
+                  event.preventDefault();
+                  if (queueItems.length >= 2) {
+                    setIsShufflePickerOpen(true);
+                    revealControls(true);
+                  }
+                }}
+                disabled={queueItems.length < 2}
+                aria-label={shuffleLabel}
+                aria-pressed={isShuffled}
+                title={shuffleLabel}
+              >
+                <Shuffle size={20} aria-hidden="true" />
+              </button>
+            ) : null}
+            {showLibraryPlayerTools && isShufflePickerOpen ? (
               <div className="spiritflix-player__shuffle-picker" role="menu" aria-label="Shuffle by video orientation">
                 {(["portrait", "landscape"] as const).map((orientation) => (
                   <button
@@ -2597,19 +2754,34 @@ export function SpiritFlixPlayer({
                 ))}
               </div>
             ) : null}
-            <button
-              className={`spiritflix-player__tool spiritflix-player__tool--favorite ${isFavorite ? "is-active" : ""}`}
-              type="button"
-              onClick={() => {
-                onToggleFavorite(item, !isFavorite);
-                revealControls();
-              }}
-              aria-label={isFavorite ? "Remove favorite" : "Add favorite"}
-              aria-pressed={isFavorite}
-              title={isFavorite ? "Remove favorite" : "Add favorite"}
-            >
-              <Heart size={20} fill={isFavorite ? "currentColor" : "none"} aria-hidden="true" />
-            </button>
+            {showLibraryPlayerTools ? (
+              <button
+                className={`spiritflix-player__tool spiritflix-player__tool--favorite ${isFavorite ? "is-active" : ""}`}
+                type="button"
+                onClick={() => {
+                  onToggleFavorite(item, !isFavorite);
+                  revealControls();
+                }}
+                aria-label={isFavorite ? "Remove favorite" : "Add favorite"}
+                aria-pressed={isFavorite}
+                title={isFavorite ? "Remove favorite" : "Add favorite"}
+              >
+                <Heart size={20} fill={isFavorite ? "currentColor" : "none"} aria-hidden="true" />
+              </button>
+            ) : null}
+            {hasSeriesAudioChoices ? (
+              <button
+                className="spiritflix-player__tool spiritflix-player__tool--audio"
+                type="button"
+                onClick={toggleSeriesAudioPreference}
+                aria-label={`Switch audio to ${nextSeriesAudioPreference === "dub" ? "English dub" : "Japanese sub"}`}
+                aria-pressed={seriesAudioPreference === "dub"}
+                title={`Audio: ${seriesAudioPreference === "dub" ? "Dub" : "Sub"}`}
+              >
+                <Languages size={20} aria-hidden="true" />
+                <span>{seriesAudioPreference === "dub" ? "Dub" : "Sub"}</span>
+              </button>
+            ) : null}
             <div className={`spiritflix-player__volume spiritflix-player__tool spiritflix-player__tool--volume ${isVolumeOpen ? "is-expanded" : ""}`}>
               <button
                 type="button"
@@ -2660,56 +2832,65 @@ export function SpiritFlixPlayer({
               {isFullscreen ? <Minimize size={20} aria-hidden="true" /> : <Maximize size={20} aria-hidden="true" />}
             </button>
 
-            <div className="spiritflix-player__tools-overflow" aria-label="Secondary player controls">
-              <button
-                className={`spiritflix-player__tool spiritflix-player__tool--model-mix ${knownCurrentModelName && modelShuffleItems.length ? "is-active" : ""}`}
-                type="button"
-                onClick={playKnownModelShuffle}
-                disabled={!knownCurrentModelName || !modelShuffleItems.length}
-                aria-label={
-                  knownCurrentModelName
-                    ? `Shuffle ${canonicalizeManualModelName(knownCurrentModelName)} model mix`
-                    : "Shuffle model mix unavailable"
-                }
-                title={
-                  knownCurrentModelName && modelShuffleItems.length
-                    ? `Shuffle ${canonicalizeManualModelName(knownCurrentModelName)} (${modelShuffleItems.length})`
-                    : "No saved model mix"
-                }
-              >
-                <Shuffle size={20} aria-hidden="true" />
-              </button>
-              <button
-                className={`spiritflix-player__tool spiritflix-player__tool--model ${manualModelRecord?.modelName ? "is-active" : ""}`}
-                type="button"
-                onClick={openModelEditor}
-                aria-label="Edit model name"
-                aria-expanded={isModelEditorOpen}
-                title="Edit model"
-              >
-                <UserRound size={20} aria-hidden="true" />
-              </button>
-              <button
-                className={`spiritflix-player__tool spiritflix-player__tool--tags ${manualTagRecord?.manualTags?.length ? "is-active" : ""}`}
-                type="button"
-                onClick={openTagEditor}
-                aria-label="Edit manual tags"
-                aria-expanded={isTagEditorOpen}
-                title="Edit tags"
-              >
-                <Tag size={20} aria-hidden="true" />
-              </button>
-              <button
-                className={`spiritflix-player__tool spiritflix-player__tool--delete ${isDeleteEditorOpen ? "is-active" : ""}`}
-                type="button"
-                onClick={openDeleteEditor}
-                disabled={!canDeleteFromYes}
-                aria-label="Delete video"
-                aria-expanded={isDeleteEditorOpen}
-                title={canDeleteFromYes ? "Delete video" : "Delete is only available for yes folder videos"}
-              >
-                <Trash2 size={20} aria-hidden="true" />
-              </button>
+            {showToolOverflow ? (
+              <div className="spiritflix-player__tools-overflow" aria-label="Secondary player controls">
+                {showLibraryPlayerTools ? (
+                  <button
+                    className={`spiritflix-player__tool spiritflix-player__tool--model-mix ${knownCurrentModelName && modelShuffleItems.length ? "is-active" : ""}`}
+                    type="button"
+                    onClick={playKnownModelShuffle}
+                    disabled={!knownCurrentModelName || !modelShuffleItems.length}
+                    aria-label={
+                      knownCurrentModelName
+                        ? `Shuffle ${canonicalizeManualModelName(knownCurrentModelName)} model mix`
+                        : "Shuffle model mix unavailable"
+                    }
+                    title={
+                      knownCurrentModelName && modelShuffleItems.length
+                        ? `Shuffle ${canonicalizeManualModelName(knownCurrentModelName)} (${modelShuffleItems.length})`
+                        : "No saved model mix"
+                    }
+                  >
+                    <Shuffle size={20} aria-hidden="true" />
+                  </button>
+                ) : null}
+                {showLibraryPlayerTools ? (
+                  <button
+                    className={`spiritflix-player__tool spiritflix-player__tool--model ${manualModelRecord?.modelName ? "is-active" : ""}`}
+                    type="button"
+                    onClick={openModelEditor}
+                    aria-label="Edit model name"
+                    aria-expanded={isModelEditorOpen}
+                    title="Edit model"
+                  >
+                    <UserRound size={20} aria-hidden="true" />
+                  </button>
+                ) : null}
+                {showLibraryPlayerTools ? (
+                  <button
+                    className={`spiritflix-player__tool spiritflix-player__tool--tags ${manualTagRecord?.manualTags?.length ? "is-active" : ""}`}
+                    type="button"
+                    onClick={openTagEditor}
+                    aria-label="Edit manual tags"
+                    aria-expanded={isTagEditorOpen}
+                    title="Edit tags"
+                  >
+                    <Tag size={20} aria-hidden="true" />
+                  </button>
+                ) : null}
+                {showLibraryPlayerTools ? (
+                  <button
+                    className={`spiritflix-player__tool spiritflix-player__tool--delete ${isDeleteEditorOpen ? "is-active" : ""}`}
+                    type="button"
+                    onClick={openDeleteEditor}
+                    disabled={!canDeleteFromYes}
+                    aria-label="Delete video"
+                    aria-expanded={isDeleteEditorOpen}
+                    title={canDeleteFromYes ? "Delete video" : "Delete is only available for yes folder videos"}
+                  >
+                    <Trash2 size={20} aria-hidden="true" />
+                  </button>
+                ) : null}
               <button
                 className={`spiritflix-player__tool spiritflix-player__tool--queue ${isQueueOpen ? "is-active" : ""}`}
                 type="button"
@@ -2722,13 +2903,14 @@ export function SpiritFlixPlayer({
               >
                 <ListMusic size={20} aria-hidden="true" />
               </button>
-            </div>
+              </div>
+            ) : null}
           </div>
         </div>
 
         {upNextTitle ? (
           <div className="spiritflix-player__up-next">
-            <span>Up next</span>
+            <span>{isSeriesPlayback ? "Next episode" : "Up next"}</span>
             <strong>{upNextTitle}</strong>
           </div>
         ) : null}

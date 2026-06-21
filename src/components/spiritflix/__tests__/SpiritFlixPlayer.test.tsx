@@ -303,6 +303,81 @@ describe("SpiritFlixPlayer mobile controls", () => {
     expect(screen.getByRole("button", { name: "Close volume" })).toHaveAttribute("aria-expanded", "true");
   });
 
+  it("uses episode controls and hides library tools for anime series playback", async () => {
+    const episodeOne: JellyfinItem = {
+      ...item,
+      Id: "kenshin-1",
+      Name: "The Handsome Swordsman of Legend",
+      Type: "Video",
+      SeriesName: "Rurouni Kenshin (1996)",
+      Path: "/mnt/spirit-8tb/media/anime/Rurouni Kenshin (1996)/Season 01/Rurouni Kenshin (1996) - S01E01.mp4",
+      ParentIndexNumber: 1,
+      IndexNumber: 1,
+      MediaStreams: [
+        { Type: "Video", Width: 720, Height: 540 },
+        { Type: "Audio", Language: "jpn", DisplayTitle: "Japanese AAC" },
+        { Type: "Audio", Language: "eng", DisplayTitle: "English AAC" },
+      ],
+    };
+    const episodeTwo: JellyfinItem = {
+      ...episodeOne,
+      Id: "kenshin-2",
+      Name: "Kid Samurai",
+      Path: "/mnt/spirit-8tb/media/anime/Rurouni Kenshin (1996)/Season 01/Rurouni Kenshin (1996) - S01E02.mp4",
+      IndexNumber: 2,
+    };
+
+    renderPlayer({ itemOverride: episodeOne, queueItems: [episodeOne], libraryItems: [episodeTwo] });
+
+    expect(screen.getByRole("button", { name: "Previous episode" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Next episode" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Switch audio to English dub" })).toBeInTheDocument();
+    expect(screen.getByText("Kid Samurai")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /favorite/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /shuffle/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /repeat/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Edit model name" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Edit manual tags" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Delete video" })).not.toBeInTheDocument();
+  });
+
+  it("persists and applies the selected series audio preference", async () => {
+    const animeItem: JellyfinItem = {
+      ...item,
+      Id: "kenshin-1",
+      Name: "The Handsome Swordsman of Legend",
+      Type: "Video",
+      SeriesName: "Rurouni Kenshin (1996)",
+      Path: "/mnt/spirit-8tb/media/anime/Rurouni Kenshin (1996)/Season 01/Rurouni Kenshin (1996) - S01E01.mp4",
+      MediaStreams: [
+        { Type: "Video", Width: 720, Height: 540 },
+        { Type: "Audio", Language: "jpn", DisplayTitle: "Japanese AAC" },
+        { Type: "Audio", Language: "eng", DisplayTitle: "English AAC" },
+      ],
+    };
+    const tracks = [
+      { language: "jpn", label: "Japanese", enabled: true },
+      { language: "eng", label: "English", enabled: false },
+    ];
+
+    renderPlayer({ itemOverride: animeItem });
+    const video = document.querySelector("video");
+    Object.defineProperty(video as HTMLVideoElement, "audioTracks", {
+      configurable: true,
+      value: tracks,
+    });
+    fireEvent.loadedMetadata(video as HTMLVideoElement);
+
+    fireEvent.click(screen.getByRole("button", { name: "Switch audio to English dub" }));
+
+    expect(tracks[0].enabled).toBe(false);
+    expect(tracks[1].enabled).toBe(true);
+    expect(screen.getByRole("button", { name: "Switch audio to Japanese sub" })).toHaveAttribute("aria-pressed", "true");
+    expect(JSON.parse(window.localStorage.getItem("spiritflix_series_audio_preferences") ?? "{}")).toEqual({
+      "rurouni kenshin (1996)": "dub",
+    });
+  });
+
   it("renders selected manual tags highlighted and auto-saves a toggled tag", async () => {
     const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
       if (init?.method === "PUT") {

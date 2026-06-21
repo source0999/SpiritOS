@@ -106,6 +106,63 @@ python3 scripts/media/spiritflix_anime_import.py \
 The script is safe to re-run. Existing target files are skipped unless `--force` is provided.
 By default, filenames match the existing SpiritFlix convention and do not include a quality tag. Add `--include-detected-quality` or `--quality 1080p` only when you intentionally want names like `[1080p]`.
 
+## Dual-Audio HLS Via Mac Optimization
+
+Use `scripts/media/spiritflix_dual_audio_anime_import.py` when episode input is split across two authorized HLS streams: one sub/Japanese stream with video and native audio, plus one dub/English stream with the dub audio. Run it from the Dell host. It SSHes to the Mac, downloads both HLS URLs with `yt-dlp`, remuxes Japanese + English audio, encodes the video with `hevc_videotoolbox`, writes a cloud copy under `~/yes/anime`, then copies the verified MP4 into the Jellyfin anime library.
+
+One-episode test:
+
+```bash
+cd /home/source/SpiritOS
+python3 scripts/media/spiritflix_dual_audio_anime_import.py \
+  --series "Example Anime (2026)" \
+  --season 1 \
+  --episode 1 \
+  --sub-url "https://example.com/authorized-sub-episode-1.m3u8" \
+  --dub-url "https://example.com/authorized-dub-episode-1.m3u8" \
+  --affirm-authorized \
+  --authorization-note "Authorized dual-audio Episode 1 import."
+```
+
+The default final SpiritFlix path is:
+
+```text
+/mnt/spirit-8tb/media/anime/<Series Name>/Season NN/<Series Name> - SNNENN [1080p].mp4
+```
+
+The Mac cloud-monitored copy is:
+
+```text
+~/yes/anime/<Series Name>/Season NN/<Series Name> - SNNENN [1080p].mp4
+```
+
+For a full series, use a manifest:
+
+```csv
+series,season,episode,episode_title,sub_m3u8_url,dub_m3u8_url
+Example Anime (2026),1,1,,https://example.com/authorized-sub-episode-1.m3u8,https://example.com/authorized-dub-episode-1.m3u8
+Example Anime (2026),1,2,,https://example.com/authorized-sub-episode-2.m3u8,https://example.com/authorized-dub-episode-2.m3u8
+```
+
+Run only Episode 1 from a manifest:
+
+```bash
+cd /home/source/SpiritOS
+python3 scripts/media/spiritflix_dual_audio_anime_import.py \
+  --manifest /mnt/spirit-8tb/media-processing/dual-audio-anime.csv \
+  --stop-after 1 \
+  --affirm-authorized \
+  --authorization-note "Authorized dual-audio manifest smoke test."
+```
+
+Useful knobs:
+
+- `--mac-host spirit-mac-mini`: SSH target used from the Dell host.
+- `--mac-cloud-root ~/yes/anime`: cloud-monitored output root on the Mac.
+- `--video-bitrate 900k --maxrate 1600k --bufsize 3200k`: default mobile-friendly HEVC settings.
+- `--force`: replace an existing target episode.
+- `--dry-run`: write a receipt and show the planned target path without downloading.
+
 ## Send Downloads Through The Converter
 
 Use `--send-to-converter` when the source file still needs SpiritOS conversion. This writes to the watched inbox:

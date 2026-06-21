@@ -157,16 +157,44 @@ function hasWatchActivity(item: JellyfinItem): boolean {
   );
 }
 
-function isKenshinItem(item: JellyfinItem): boolean {
-  return [item.Name, item.SeriesName, item.Path].some((value) => value?.toLowerCase().includes("kenshin"));
-}
-
 function byEpisodeOrder(left: JellyfinItem, right: JellyfinItem): number {
   return (
     (left.ParentIndexNumber ?? 0) - (right.ParentIndexNumber ?? 0) ||
     (left.IndexNumber ?? 0) - (right.IndexNumber ?? 0) ||
     left.Name.localeCompare(right.Name)
   );
+}
+
+function normalizeSpiritFlixPath(value?: string): string {
+  return (value ?? "").replace(/\\/g, "/");
+}
+
+function isAnimePath(value?: string): boolean {
+  const normalized = normalizeSpiritFlixPath(value).toLowerCase();
+  return normalized.includes("/media/anime/") || normalized.includes("/anime/");
+}
+
+function isSeriesPlaybackItem(item: JellyfinItem): boolean {
+  return item.Type?.toLowerCase() === "episode" || isAnimePath(item.Path) || item.MediaSources?.some((source) => isAnimePath(source.Path)) === true;
+}
+
+function getSeriesPlaybackKey(item: JellyfinItem): string {
+  if (!isSeriesPlaybackItem(item)) return "";
+  if (item.SeriesName?.trim()) return item.SeriesName.trim().toLowerCase();
+  const sourcePath = normalizeSpiritFlixPath(item.MediaSources?.[0]?.Path ?? item.Path);
+  const parts = sourcePath.split("/").filter(Boolean);
+  const seasonIndex = parts.findIndex((part) => /^season\s+\d+/i.test(part));
+  if (seasonIndex > 0) return parts[seasonIndex - 1]?.toLowerCase() ?? "";
+  const animeIndex = parts.findIndex((part) => part.toLowerCase() === "anime");
+  return animeIndex >= 0 ? parts[animeIndex + 1]?.toLowerCase() ?? "" : "";
+}
+
+function getSeriesPlaybackQueue(item: JellyfinItem, candidates: JellyfinItem[]): JellyfinItem[] {
+  const seriesKey = getSeriesPlaybackKey(item);
+  if (!seriesKey) return [];
+  return uniqueItems([item, ...candidates])
+    .filter((candidate) => isPlayableItem(candidate) && getSeriesPlaybackKey(candidate) === seriesKey)
+    .sort(byEpisodeOrder);
 }
 
 function applyPlaybackProgress(item: JellyfinItem, progress: SpiritFlixPlaybackProgress): JellyfinItem {
@@ -435,7 +463,7 @@ export function SpiritFlixApp() {
           !selectedLibraryId && animeLibrary
             ? client
                 .getLibraryItems(animeLibrary.Id)
-                .then((items) => items.filter((item) => isPlayableItem(item) && isKenshinItem(item)).sort(byEpisodeOrder))
+                .then((items) => items.filter((item) => isPlayableItem(item) && isSeriesPlaybackItem(item)).sort(byEpisodeOrder))
             : Promise.resolve([]),
           selectedLibraryId ? client.getLibraryResumeItems(selectedLibraryId) : client.getContinueWatching(),
           client.getWatchHistory(selectedLibraryId ?? undefined),
@@ -600,8 +628,18 @@ export function SpiritFlixApp() {
 
   const handlePlay = (item: JellyfinItem, queueItems?: JellyfinItem[], sourceTitle?: string, startPositionTicks?: number) => {
     if (isPlayableItem(item)) {
+      const seriesQueue = getSeriesPlaybackQueue(item, [
+        ...(queueItems ?? []),
+        ...homeData.libraryItems,
+        ...homeData.featuredItems,
+        ...homeData.latestAdded,
+        ...homeData.continueWatching,
+        ...homeData.watchHistory,
+      ]);
+      const resolvedQueueItems = seriesQueue.length ? seriesQueue : queueItems;
+      const resolvedSourceTitle = seriesQueue.length ? item.SeriesName ?? sourceTitle ?? "Series" : sourceTitle;
       setPlayingItem(item);
-      setPlayingQueue(buildQueue(item, queueItems, sourceTitle, startPositionTicks));
+      setPlayingQueue(buildQueue(item, resolvedQueueItems, resolvedSourceTitle, startPositionTicks));
     }
   };
 

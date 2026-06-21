@@ -64,8 +64,11 @@ export interface JellyfinItem {
     Size?: number;
   }[];
   MediaStreams?: {
+    Index?: number;
     Type?: string;
     Codec?: string;
+    Language?: string;
+    Title?: string;
     DisplayTitle?: string;
     Width?: number;
     Height?: number;

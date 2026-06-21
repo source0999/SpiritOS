@@ -707,6 +707,155 @@
   padding-bottom: 5.7rem;
 }
 
+.spiritflix-anime-view {
+  display: grid;
+  gap: 1.1rem;
+  min-width: 0;
+  padding: 1rem 0 5rem;
+}
+
+.spiritflix-anime-view__header {
+  display: grid;
+  gap: 0.45rem;
+  max-width: 54rem;
+}
+
+.spiritflix-anime-view__header h1 {
+  margin: 0;
+  color: #fff;
+  font-size: clamp(2.1rem, 5vw, 4rem);
+  font-weight: 950;
+  line-height: 0.95;
+}
+
+.spiritflix-anime-view__header p {
+  margin: 0;
+  color: rgba(226, 232, 240, 0.78);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.spiritflix-anime-series,
+.spiritflix-anime-seasons,
+.spiritflix-anime-season,
+.spiritflix-anime-episodes {
+  display: grid;
+  min-width: 0;
+}
+
+.spiritflix-anime-series {
+  gap: 0.8rem;
+}
+
+.spiritflix-anime-seasons {
+  gap: 1rem;
+}
+
+.spiritflix-anime-season,
+.spiritflix-anime-episodes {
+  gap: 0.65rem;
+}
+
+.spiritflix-anime-series__header,
+.spiritflix-anime-season__header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 0.9rem;
+  min-width: 0;
+}
+
+.spiritflix-anime-series__header h2,
+.spiritflix-anime-season__header h3 {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: #fff;
+  line-height: 1.05;
+}
+
+.spiritflix-anime-series__header h2 {
+  font-size: clamp(1.45rem, 3vw, 2.2rem);
+}
+
+.spiritflix-anime-season__header h3 {
+  font-size: clamp(1.05rem, 2vw, 1.35rem);
+}
+
+.spiritflix-anime-series__header span,
+.spiritflix-anime-season__header span {
+  flex: 0 0 auto;
+  color: rgba(226, 232, 240, 0.64);
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.spiritflix-anime-episode {
+  display: grid;
+  grid-template-columns: minmax(5.6rem, 7rem) minmax(0, 1fr) 2.4rem;
+  align-items: center;
+  gap: 0.8rem;
+  min-width: 0;
+  min-height: 4.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  padding: 0.62rem 0.72rem;
+  background: rgba(255, 255, 255, 0.055);
+  color: #fff;
+  cursor: pointer;
+  text-align: left;
+}
+
+.spiritflix-anime-episode:hover,
+.spiritflix-anime-episode:focus-visible {
+  border-color: rgba(34, 211, 238, 0.38);
+  background: rgba(34, 211, 238, 0.1);
+}
+
+.spiritflix-anime-episode__number {
+  color: rgba(226, 232, 240, 0.74);
+  font-size: 0.82rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.spiritflix-anime-episode__copy {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.spiritflix-anime-episode__copy strong,
+.spiritflix-anime-episode__copy small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spiritflix-anime-episode__copy strong {
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.spiritflix-anime-episode__copy small {
+  color: rgba(203, 213, 225, 0.72);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.spiritflix-anime-episode__play {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  background: rgba(34, 211, 238, 0.14);
+  color: #e0f2fe;
+}
+
 .spiritflix-library-v2__header {
   display: flex;
   align-items: end;
@@ -2417,6 +2566,18 @@
   display: contents;
 }
 
+.spiritflix-player__tool--audio {
+  gap: 0.35rem;
+  min-width: 4.6rem;
+  padding-inline: 0.72rem;
+}
+
+.spiritflix-player__tool--audio span {
+  line-height: 1;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
 .spiritflix-player button.is-active {
   border-color: rgba(167, 139, 250, 0.62);
   background: rgba(139, 92, 246, 0.28);
@@ -3493,6 +3654,13 @@
     order: 3;
   }
 
+  .spiritflix-player__tool--audio {
+    order: 3;
+    width: auto !important;
+    min-width: 4.35rem !important;
+    padding-inline: 0.55rem !important;
+  }
+
   .spiritflix-player__tool--volume {
     order: 4;
   }
@@ -4025,6 +4193,13 @@
 
   .spiritflix-player__tool--favorite {
     order: 3;
+  }
+
+  .spiritflix-player__tool--audio {
+    order: 3;
+    width: auto !important;
+    min-width: 4.35rem !important;
+    padding-inline: 0.55rem !important;
   }
 
   .spiritflix-player__tool--volume {

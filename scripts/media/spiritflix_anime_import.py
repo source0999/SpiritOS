@@ -31,6 +31,7 @@ DEFAULT_ANIME_INBOX_ROOT = Path(
 DEFAULT_RECEIPT_DIR = ".spiritos-import-receipts"
 BLOCKED_SOURCE_HOSTS = {
     "hianime.ad",
+    "hianime.ms",
     "hianime.to",
     "aniwatch.to",
     "zoro.to",
