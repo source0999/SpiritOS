@@ -1,0 +1,21 @@
+{
+  "stage": "F04",
+  "title": "Generic local packet decomposition",
+  "status": "NOT_STARTED",
+  "verdict": null,
+  "acceptance_contract_frozen": true,
+  "holdout_manifest_frozen": true,
+  "acceptance_contract_sha256": null,
+  "holdout_manifest_sha256": null,
+  "baseline_head": null,
+  "baseline_captured": false,
+  "dependencies_satisfied": {"F03": false},
+  "increments": [
+    {"id": "4.1", "title": "packet_templates generic decomposer (comparison shape first) + sub-packet validator + unseen tests", "status": "NOT_STARTED", "files_touched": []},
+    {"id": "4.2", "title": "remaining shapes + prompt_packet wiring + regression references (test-only)", "status": "NOT_STARTED", "files_touched": []}
+  ],
+  "commit": null,
+  "gate_results": {},
+  "caveats": [],
+  "next_stage_handoff_updated": false
+}

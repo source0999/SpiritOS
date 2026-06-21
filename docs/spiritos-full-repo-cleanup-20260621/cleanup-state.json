@@ -1,0 +1,107 @@
+{
+  "cleanup_id": "full-repo-20260621",
+  "packet_version": "1",
+  "last_updated": "2026-06-21",
+  "last_updated_by": "Codex takeover",
+  "operator_role": "cleanup_planning_and_implementation_owner_NOT_acceptance_authority",
+
+  "planning_packet": "GO",
+  "implementation_started": false,
+  "current_stage": "F01",
+  "current_stage_status": "NOT_STARTED",
+  "ready_for_secondary_review": false,
+  "secondary_review_completed": false,
+  "old_plan_resumed": false,
+
+  "completed_stages": [],
+  "stage_verdicts": {
+    "F01": "NOT_STARTED",
+    "F02": "NOT_STARTED",
+    "F03": "NOT_STARTED",
+    "F04": "NOT_STARTED",
+    "F05": "NOT_STARTED",
+    "F06": "NOT_STARTED",
+    "F07": "NOT_STARTED",
+    "F08": "NOT_STARTED",
+    "F09": "NOT_STARTED",
+    "F10": "NOT_STARTED"
+  },
+
+  "isolation": {
+    "primary_repo": "Z:\\ (//10.0.0.186/SpiritOS)",
+    "cleanup_worktree": "../SpiritOS-cleanup-20260621",
+    "cleanup_branch": "cleanup/full-repo-20260621",
+    "starting_breakpoint_head": "927055e489eb1dc9a263bf3a80cde53869e274ce",
+    "planning_commit": null,
+    "cleanup_starting_head": null,
+    "current_cleanup_head": null,
+    "primary_worktree_touched": false,
+    "note": "Branch/worktree are created AFTER P2 commits the planning packet. Fields null until then."
+  },
+
+  "evidence_root": {
+    "preferred": "/home/source/spiritos-evidence/full-repo-cleanup-20260621/",
+    "fallback": "/tmp/spiritos-full-repo-cleanup-20260621/",
+    "chosen": null,
+    "note": "Selected at first stage generating raw logs; recorded here and in baseline-manifest.json. P0 used in-tree evidence only."
+  },
+
+  "p0_verdict": "GO",
+  "codex_takeover": {
+    "takeover_reason": "GLM/ZCode provider rate limit during P1; retryable=false; not a cleanup failure",
+    "takeover_trace_id": "613dfb80-af99-430a-81eb-2068c7790f25",
+    "takeover_verified_from_scratch": true,
+    "glm_stop_point": "P1 incomplete; F10 and Codex takeover files missing; P2 not yet validated; planning packet not committed",
+    "codex_completed_missing_packet_files": [
+      "codex-takeover-readback.md",
+      "codex-takeover-baseline.json",
+      "F10/status.md",
+      "F10/increment-manifest.md",
+      "F10/operator-check.sh",
+      "F10/evidence-summary.md",
+      "F10/codex-review-report.md",
+      "F10/next-stage-handoff.md"
+    ],
+    "source_implementation_started_before_p2": false,
+    "source_files_changed_during_planning": false,
+    "protected_paths_changed_during_planning": false,
+    "p2_validation": "GO"
+  },
+  "p0_blocker_history": [
+    {
+      "resolved": true,
+      "blocker": "full-repo audit shard checksum mismatch (3 XML shards)",
+      "resolved_by": "Britton reconciliation commit a01abb13 (records updated to canonical bytes; XML content unchanged)",
+      "verification": "sha256sum -c ... 8/8 OK, exit 0"
+    }
+  ],
+
+  "integrity_caveats": [
+    {
+      "id": "CAVEAT-PRIOR-AUDIT-XML",
+      "severity": "minor (integrity item, not a P0 gate; pre-existing, off cleanup path)",
+      "description": "docs/source-proxy-system-freeze-audit-20260621/glm-source-proxy-freeze-20260621.xml checksum FAILS (recorded a4693675..., actual e69c504e...). Conclusions markdown + metadata verify.",
+      "owner": "Britton",
+      "next_action": "Reconcile the prior-audit XML checksum the same way as the full-repo shards. Does not gate F1-F10.",
+      "affects_cleanup_contracts": false
+    }
+  ],
+
+  "minor_caveats_at_completion": [],
+  "terminal_state_achieved": null,
+  "forbidden_terminal_states": ["FULLY_ACCEPTED", "DAILY_DRIVER_READY", "PLAN_3_COMPLETE", "SET_A_ACCEPTED", "CLEANUP_MERGED"],
+  "only_permitted_terminal_state": "READY_FOR_SECONDARY_REVIEW",
+
+  "stage_commit_chain": [],
+
+  "safety_guards_active": {
+    "no_set_a_b_c": true,
+    "no_plan_4": true,
+    "no_media_jellyfin_mutation": true,
+    "no_unapproved_api": true,
+    "no_primary_worktree_mutation": true,
+    "no_push": true,
+    "no_merge": true,
+    "no_old_plan_resume": true
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "stage": "F05",
+  "title": "Split decision transport from domain lanes",
+  "frozen_at": "P1",
+  "acceptance_contract_frozen": true,
+  "dependencies": ["F01"],
+
+  "anti_cheat_invariants_owned": ["H_no_moving_goalposts", "compatibility_contract_fidelity"],
+
+  "target_modules": ["decision/lanes/receipts.py", "decision/lanes/context.py", "decision/lanes/research.py", "decision/lanes/coder.py", "decision/lanes/verifier.py", "decision/lanes/trace.py"],
+
+  "required_deliverables": [
+    "decision/lanes/* cohesive modules (one responsibility each)",
+    "api/decision.py slimmed to a thin router (by cohesion, not line count)",
+    "per-increment parity proof (copy -> import -> proof -> switch -> exact retire)",
+    "lane-isolation tests"
+  ],
+
+  "required_gates": [
+    {"gate": "FIP0 receipt parity (existing fields byte-for-byte / normalized-JSON)", "command": "pytest receipt parity: fixed corpus through old+new paths", "must": "existing fields identical"},
+    {"gate": "FIP1-FIP6 semantics behavior-identical", "command": "pytest FIP behavior tests (test_proxy_runner, test_prompt_packet_context_metadata)", "must": "no behavior change vs baseline"},
+    {"gate": "route paths unchanged", "command": "git diff shows no route path rename/removal", "must": "routes unchanged"},
+    {"gate": "trace_id / consumer_event_id semantics preserved", "command": "pytest trace+consumer tests", "must": "pass, no semantic drift"},
+    {"gate": "fake_go_detected untouched", "command": "git diff on fake_go_detected logic = none", "must": "no change"},
+    {"gate": "no hidden consumer of retired code", "command": "grep callers of old inline symbols", "must": "zero callers after retirement"},
+    {"gate": "no new parallel engine", "command": "code audit: one decision path", "must": "single canonical path"}
+  ],
+
+  "baseline_commands": ["git rev-parse HEAD", "python -m pytest -q source_proxy/tests/test_proxy_runner.py source_proxy/tests/test_prompt_packet_context_metadata.py (baseline)", "wc -l source_proxy/api/decision.py (baseline 7971)"],
+
+  "compatibility_contracts_preserved": ["public_route_paths", "request_response_fields", "FIP0_receipt_shape", "FIP1_FIP6_semantics", "trace_id_semantics", "consumer_event_id_semantics", "policy_behavior", "fake_go_detected", "verifier_grader_shape", "approval_boundaries", "apply_behavior", "operator_check_behavior"],
+
+  "forbidden": ["receipt shape change", "FIP semantic drift", "new parallel engine", "line-count-only split", "retiring code before parity proof"],
+
+  "stop_conditions": ["receipt JSON shape changes", "any FIP drift", "parity fails after <=3 repairs", "protected path touched"],
+
+  "rollback": "move functions back into decision.py / re-point imports; each increment independently reversible"
+}

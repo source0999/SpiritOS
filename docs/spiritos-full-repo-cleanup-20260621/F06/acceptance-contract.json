@@ -1,0 +1,38 @@
+{
+  "stage": "F06",
+  "title": "Split long-running responsibilities",
+  "frozen_at": "P1",
+  "acceptance_contract_frozen": true,
+  "dependencies": ["F01", "F05 (preferred)"],
+
+  "anti_cheat_invariants_owned": ["H_no_moving_goalposts", "compatibility_contract_fidelity"],
+
+  "responsibilities_frozen": ["engine (state transitions/lifecycle)", "apply/ (git-apply + next-router)", "trace/ (causal events)", "recovery/ (idempotence + duplicate-action protection)", "regression/ (guards)"],
+
+  "required_deliverables": [
+    "tasks/{engine,apply,trace,recovery,regression} cohesive modules",
+    "long_running.py slimmed (engine core)",
+    "per-increment parity proof",
+    "no state-machine rewrite"
+  ],
+
+  "required_gates": [
+    {"gate": "apply behavior identical", "command": "pytest test_long_running_tasks + test_diff_verification", "must": "no behavior change vs baseline"},
+    {"gate": "recovery idempotence preserved", "command": "pytest recovery idempotence: same action applied twice == single effect", "must": "pass"},
+    {"gate": "duplicate-action protection preserved", "command": "pytest duplicate-action guard", "must": "pass"},
+    {"gate": "causal ordering preserved", "command": "pytest trace ordering on multi-step task", "must": "ordering identical"},
+    {"gate": "consumer semantics preserved", "command": "pytest consumer_event_id semantics", "must": "pass"},
+    {"gate": "operator readback unchanged", "command": "pytest operator readback shape", "must": "pass"},
+    {"gate": "no state-machine transition added/removed/renamed", "command": "diff transition set old vs new", "must": "identical transition set"}
+  ],
+
+  "baseline_commands": ["git rev-parse HEAD", "python -m pytest -q source_proxy/tests/test_long_running_tasks.py source_proxy/tests/test_diff_verification.py (baseline)", "wc -l source_proxy/tasks/long_running.py (baseline 6513)"],
+
+  "compatibility_contracts_preserved": ["apply_behavior", "recovery_behavior", "trace_consumer_semantics", "approval_boundaries", "operator_check_behavior"],
+
+  "forbidden": ["state-machine rewrite", "apply behavior change", "recovery idempotence regression", "line-count-only split", "retire before parity"],
+
+  "stop_conditions": ["apply behavior changes", "recovery/duplicate-action regression", "parity fails after <=3 repairs", "protected path touched"],
+
+  "rollback": "re-import from long_running.py / re-point; each increment independently reversible"
+}

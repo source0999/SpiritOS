@@ -1,0 +1,115 @@
+{
+  "baseline_version": "1",
+  "created_at": "2026-06-21T16:38:07-04:00",
+  "operator": "Codex",
+  "takeover_reason": {
+    "provider": "builtin:zai-coding-plan",
+    "provider_code": 1308,
+    "model": "GLM-5.2",
+    "reason": "rate_limited",
+    "retryable": false,
+    "trace_id": "613dfb80-af99-430a-81eb-2068c7790f25",
+    "reset": "2026-06-22 06:36:42",
+    "classification": "environment_provider_stop_not_cleanup_failure"
+  },
+  "repo": {
+    "windows_path": "Z:\\",
+    "host_path": "/home/source/SpiritOS",
+    "host": "source-server",
+    "branch": "master",
+    "head": "a01abb1365d1b236a1ad77e6cb8b8f7d153ac8e8",
+    "head_subject": "docs: reconcile full-repo audit shard checksums",
+    "evidence_bearing_repo": true
+  },
+  "lineage": {
+    "breakpoint_head": "927055e489eb1dc9a263bf3a80cde53869e274ce",
+    "reconciliation_commit": "a01abb1365d1b236a1ad77e6cb8b8f7d153ac8e8",
+    "reconciliation_commit_present": true,
+    "recent_required_history_present": [
+      "a01abb13 docs: reconcile full-repo audit shard checksums",
+      "728a7c82 docs: preserve proxy freeze and cleanup breakpoints",
+      "927055e4 docs: normalize Windows-safe evidence filenames"
+    ]
+  },
+  "p0_integrity": {
+    "required_files_present": true,
+    "breakpoint_json_parses": true,
+    "full_repo_metadata_json_parses": true,
+    "full_repo_checksum_command": "sha256sum -c docs/full-repo-system-architecture-audit-20260621/glm-full-repo-checksums.sha256",
+    "full_repo_checksum_exit_code": 0,
+    "full_repo_checksum_result": "PASS_8_OF_8",
+    "verified_shards": {
+      "glm-full-repo-freeze-20260621-shard-001.xml": "d1e6f74e2059aaafbee537be5348c92082d1547fd0e7edd0145c41dae8f143fd",
+      "glm-full-repo-freeze-20260621-shard-002.xml": "bff9c938755a69ec3f7290f1c506ef9854a08089bc98a5f73eadc12286b57d19",
+      "glm-full-repo-freeze-20260621-shard-003.xml": "04c831ce91e7959a9cb62b54665d9e59ad2cce8bb8b67eb910119626cecc6130"
+    }
+  },
+  "prior_source_proxy_audit_caveat": {
+    "status": "known_preexisting_prior_audit_xml_integrity_caveat",
+    "checksum_command": "sha256sum -c docs/source-proxy-system-freeze-audit-20260621/glm-checksums.sha256",
+    "checksum_exit_code": 1,
+    "failed": [
+      "docs/source-proxy-system-freeze-audit-20260621/glm-source-proxy-freeze-20260621.xml"
+    ],
+    "verified_ok": [
+      "docs/source-proxy-system-freeze-audit-20260621/glm-source-proxy-audit-20260621.md",
+      "docs/source-proxy-system-freeze-audit-20260621/glm-mobile-download-index.md",
+      "docs/source-proxy-system-freeze-audit-20260621/glm-freeze-metadata.json"
+    ],
+    "used_as_cleanup_ground_truth": false,
+    "blocks_p1_p2": false
+  },
+  "glm_stop_point": {
+    "classification": "stopped_during_P1_before_P2_validation",
+    "p0_passed_after_a01abb13": true,
+    "top_level_packet_mostly_written": true,
+    "f01_through_f09_written": true,
+    "f10_incomplete": true,
+    "p2_validated_before_codex": false,
+    "planning_packet_committed_before_codex": false,
+    "f_stage_source_implementation_started": false
+  },
+  "packet_files_before_codex_touch": {
+    "modified_tracked": [
+      "docs/spiritos-full-repo-cleanup-20260621/baseline-manifest.json",
+      "docs/spiritos-full-repo-cleanup-20260621/breakpoint-readback.md"
+    ],
+    "untracked_packet_dirs": [
+      "docs/spiritos-full-repo-cleanup-20260621/F01/",
+      "docs/spiritos-full-repo-cleanup-20260621/F02/",
+      "docs/spiritos-full-repo-cleanup-20260621/F03/",
+      "docs/spiritos-full-repo-cleanup-20260621/F04/",
+      "docs/spiritos-full-repo-cleanup-20260621/F05/",
+      "docs/spiritos-full-repo-cleanup-20260621/F06/",
+      "docs/spiritos-full-repo-cleanup-20260621/F07/",
+      "docs/spiritos-full-repo-cleanup-20260621/F08/",
+      "docs/spiritos-full-repo-cleanup-20260621/F09/",
+      "docs/spiritos-full-repo-cleanup-20260621/F10/"
+    ],
+    "missing_before_codex": [
+      "docs/spiritos-full-repo-cleanup-20260621/codex-takeover-readback.md",
+      "docs/spiritos-full-repo-cleanup-20260621/codex-takeover-baseline.json",
+      "docs/spiritos-full-repo-cleanup-20260621/F10/status.md",
+      "docs/spiritos-full-repo-cleanup-20260621/F10/increment-manifest.md",
+      "docs/spiritos-full-repo-cleanup-20260621/F10/operator-check.sh",
+      "docs/spiritos-full-repo-cleanup-20260621/F10/evidence-summary.md",
+      "docs/spiritos-full-repo-cleanup-20260621/F10/codex-review-report.md",
+      "docs/spiritos-full-repo-cleanup-20260621/F10/next-stage-handoff.md"
+    ]
+  },
+  "planning_safety": {
+    "source_files_modified_before_p2": false,
+    "protected_paths_modified_before_p2": false,
+    "source_diff_command": "git diff --name-status -- source_proxy src scripts _blueprints services",
+    "source_diff_result": "empty",
+    "allowed_p1_p2_path": "docs/spiritos-full-repo-cleanup-20260621/",
+    "set_a_run": false,
+    "set_b_run": false,
+    "set_c_run": false,
+    "plan_4_started": false,
+    "media_jellyfin_mutated": false,
+    "unapproved_api_used": false,
+    "merge": false,
+    "push": false
+  }
+}

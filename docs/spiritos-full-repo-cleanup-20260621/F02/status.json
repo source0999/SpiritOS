@@ -1,0 +1,20 @@
+{
+  "stage": "F02",
+  "title": "Independent anti-cheat registry",
+  "status": "NOT_STARTED",
+  "verdict": null,
+  "acceptance_contract_frozen": true,
+  "holdout_manifest_frozen": true,
+  "acceptance_contract_sha256": null,
+  "holdout_manifest_sha256": null,
+  "baseline_head": null,
+  "baseline_captured": false,
+  "increments": [
+    {"id": "2.1", "title": "create anticheat package, copy detectors, parity harness", "status": "NOT_STARTED", "files_touched": []},
+    {"id": "2.2", "title": "new negative-corpus detectors + Set A runner import", "status": "NOT_STARTED", "files_touched": []}
+  ],
+  "commit": null,
+  "gate_results": {},
+  "caveats": [],
+  "next_stage_handoff_updated": false
+}

@@ -1,0 +1,19 @@
+{
+  "stage": "F09",
+  "purpose": "Generic adapter behavior checks: timeouts, failures, malformed output, and safe success — proving adapters behave correctly on inputs not seen in fixtures.",
+  "frozen_at": "P1",
+  "holdout_manifest_frozen": true,
+
+  "generic_checks": [
+    {"id": "HOLD-F9-TIMEOUT", "shape": "adapter call that exceeds its timeout on an unseen target", "assertion": "aborts at timeout; classified TOOL_FAILURE/ENVIRONMENT_FAILURE per F1; no hang", "anti_cheat_link": "F"},
+    {"id": "HOLD-F9-FAILURE-CLASS", "shape": "adapter call whose target returns an error on an unseen input", "assertion": "classified with correct F1 code; evidence reference recorded", "anti_cheat_link": "F"},
+    {"id": "HOLD-F9-MALFORMED", "shape": "adapter receives malformed output from an unseen target", "assertion": "handled, classified, not silently passed", "anti_cheat_link": "F"},
+    {"id": "HOLD-F9-SAFE-SUCCESS", "shape": "adapter call that succeeds on an unseen input", "assertion": "typed result returned; timing within tolerance; no secret logged", "anti_cheat_link": "compatibility"},
+    {"id": "HOLD-F9-ATTEMPT-COUNT", "shape": "adapter configured with attempt_count=N on a flaky unseen target", "assertion": "retries exactly N times; final result/failure recorded", "anti_cheat_link": "F"},
+    {"id": "HOLD-F9-REDACTION", "shape": "adapter called with a secret-bearing input", "assertion": "logs redacted; no secret reaches evidence store", "anti_cheat_link": "safety"},
+    {"id": "HOLD-F9-NO-DIRECT", "shape": "static check: decision.py no longer calls subprocess/urllib directly for wrapped targets", "assertion": "all routed through lane adapters", "anti_cheat_link": "inventory-ability"}
+  ],
+
+  "generation_rule": "adapter targets/inputs are freshly chosen; the invariants are timeout enforcement, F1 classification, redaction, attempt-count adherence, and lane routing",
+  "frozen_before_source_edits": true
+}

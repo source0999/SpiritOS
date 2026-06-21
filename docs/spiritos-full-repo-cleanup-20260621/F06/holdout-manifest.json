@@ -1,0 +1,18 @@
+{
+  "stage": "F06",
+  "purpose": "Generic apply/recovery/trace behavior checks on multi-step unseen tasks, proving the split is behavior-preserving for state-machine invariants.",
+  "frozen_at": "P1",
+  "holdout_manifest_frozen": true,
+
+  "generic_checks": [
+    {"id": "HOLD-F6-APPLY-UNSEEN", "shape": "an unseen multi-hunk diff applied through the new apply/ path", "assertion": "result identical to old path (byte-for-byte tree state)", "anti_cheat_link": "compatibility"},
+    {"id": "HOLD-F6-IDEMPOTENCE", "shape": "the same recovery action driven twice on an unseen task", "assertion": "single observable effect; no double-apply", "anti_cheat_link": "compatibility"},
+    {"id": "HOLD-F6-DUPLICATE-GUARD", "shape": "a duplicate action with a reused consumer_event_id on an unseen task", "assertion": "rejected/deduped, not re-applied", "anti_cheat_link": "compatibility"},
+    {"id": "HOLD-F6-CAUSAL-ORDER", "shape": "an unseen task producing N trace events", "assertion": "causal ordering identical old vs new; consumer correlation intact", "anti_cheat_link": "compatibility"},
+    {"id": "HOLD-F6-TRANSITION-SET", "shape": "enumerate all state-machine transitions exercised by an unseen flow", "assertion": "transition set identical old vs new (no add/remove/rename)", "anti_cheat_link": "no rewrite"},
+    {"id": "HOLD-F6-APPLY-FAILURE", "shape": "an apply that should fail (conflicting hunk) on an unseen input", "assertion": "fails identically old vs new; failure reported with F1 class", "anti_cheat_link": "compatibility + F1"}
+  ],
+
+  "generation_rule": "unseen multi-step tasks and diffs generated fresh; the invariant is identical old-vs-new behavior on state, ordering, idempotence, and duplicate protection",
+  "frozen_before_source_edits": true
+}

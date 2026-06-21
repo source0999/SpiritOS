@@ -1,0 +1,37 @@
+{
+  "stage": "F02",
+  "title": "Independent anti-cheat registry",
+  "frozen_at": "P1",
+  "acceptance_contract_frozen": true,
+
+  "anti_cheat_invariants_owned": ["B_no_canned_substance", "C_no_stamped_success", "E_no_scaffolding_credit", "F_no_silent_fallback"],
+
+  "required_deliverables": [
+    "source_proxy/verification/anticheat/ package (new, copy-not-move)",
+    "legacy detectors remain callable and unchanged",
+    "parity harness: legacy == new on shared corpus",
+    "new detectors for every negative-corpus class",
+    "Set A runner imports the package additively (legacy still used)"
+  ],
+
+  "required_gates": [
+    {"gate": "package imports independently", "command": "python -c 'import source_proxy.verification.anticheat'", "must": "exit 0"},
+    {"gate": "parity holds on shared corpus", "command": "python -m pytest -q <anticheat parity test>", "must": "exit 0"},
+    {"gate": "each negative-corpus detector catches its target", "command": "python -m pytest -q <anticheat negative tests>", "must": "exit 0"},
+    {"gate": "legacy detectors unchanged", "command": "git diff shows no modification to existing verification/*.py detection logic", "must": "no detection-logic change"},
+    {"gate": "fake_go_detected never hardcoded false in new package", "command": "ripgrep new package for fake_go_detected assignments", "must": "no hardcoded false assignment"}
+  ],
+
+  "baseline_commands": [
+    "git rev-parse HEAD",
+    "python -m pytest -q source_proxy/tests/test_verification_contracts.py (baseline)"
+  ],
+
+  "compatibility_contracts_preserved": ["fake_go_detected_read_not_redefined", "legacy_detectors_callable", "verifier_grader_shape_unchanged"],
+
+  "forbidden": ["moving (not copying) legacy selftests", "retiring legacy in first increment", "hardcoding fake_go_detected", "in-process-only checks presented as independent"],
+
+  "stop_conditions": ["parity fails unexplained after <=3 repairs", "any protected path touched", "legacy detection logic modified"],
+
+  "rollback": "delete verification/anticheat/ package; legacy untouched"
+}

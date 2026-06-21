@@ -1,0 +1,37 @@
+{
+  "stage": "F03",
+  "title": "Brain-switch verdict contract",
+  "frozen_at": "P1",
+  "acceptance_contract_frozen": true,
+  "dependencies": ["F01"],
+
+  "anti_cheat_invariants_owned": ["A_no_benchmark_tailoring", "D_no_handholding", "F_no_silent_fallback"],
+
+  "verdicts_frozen": ["LOCAL_RETRY_RECOMMENDED", "LOCAL_DECOMPOSITION_RECOMMENDED", "LOCAL_MODEL_INSUFFICIENT", "API_ESCALATION_RECOMMENDED", "HUMAN_DECISION_REQUIRED"],
+
+  "required_deliverables": [
+    "source_proxy/decision/escalation_contract.py with verdict enum + recommend() (no provider call)",
+    "recommend() records: task shape, local attempts, formatting failures, validation failures, capability evidence, configured/unconfigured lanes, privacy class, cost class, authority required, evidence IDs",
+    "model_lanes.py + litellm_router.py consult the contract read-only (advisory)",
+    "tests proving the 5 properties"
+  ],
+
+  "required_gates": [
+    {"gate": "formatting failure does not auto-recommend escalation", "command": "pytest escalation test: evidence with only MODEL_FORMATTING_FAILURE -> not API_ESCALATION_RECOMMENDED", "must": "pass"},
+    {"gate": "retryable local failure does not auto-recommend API", "command": "pytest: retryable failure within retry budget -> LOCAL_RETRY_RECOMMENDED", "must": "pass"},
+    {"gate": "bounded repeated validated capability failure can recommend escalation", "command": "pytest: N validated LOCAL_MODEL_INSUFFICIENT beyond threshold -> API_ESCALATION_RECOMMENDED", "must": "pass"},
+    {"gate": "unavailable provider never reported available", "command": "pytest: unconfigured/unavailable lane -> never success", "must": "pass"},
+    {"gate": "no provider call occurs", "command": "test asserts no socket/subprocess/urllib provider contact during recommend(); network monkeypatched to fail-loud", "must": "pass"},
+    {"gate": "no task-label escalation / no A2-A5-A9 branch", "command": "ripgrep touched files for benchmark tokens in conditional context", "must": "no production branch"}
+  ],
+
+  "baseline_commands": ["git rev-parse HEAD", "python -m pytest -q source_proxy/tests/test_model_lanes.py (baseline)"],
+
+  "compatibility_contracts_preserved": ["no_real_api_call_introduced", "provider_policy_unchanged_advisory_only", "fake_go_detected_untouched"],
+
+  "forbidden": ["any real API/cloud call", "escalation by task label or benchmark ID", "reporting unavailable provider as available", "hardcoding a recommendation by prompt content"],
+
+  "stop_conditions": ["any unapproved API attempt", "any task-label branch", "protected path touched"],
+
+  "rollback": "disable contract (recommend returns prior default); revert model_lanes/litellm_router consultation"
+}

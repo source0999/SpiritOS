@@ -1,0 +1,38 @@
+{
+  "stage": "F08",
+  "title": "Context / memory / Headroom / repomix consistency",
+  "frozen_at": "P1",
+  "acceptance_contract_frozen": true,
+  "dependencies": [],
+
+  "anti_cheat_invariants_owned": ["F_no_silent_fallback"],
+
+  "headroom_active_requires_all_three": ["health_success", "compressed=true", "tokens_saved>0"],
+
+  "required_deliverables": [
+    "HEADROOM_PORT consistent across headroom-check.sh, headroom-proxy-dev.sh, repomix LLM config",
+    "Cursor/8797 collision documented in comments + runbook",
+    "honest headroom_status probe (BLOCKED_ENV when any of the three proofs fail)",
+    "context pack shape unchanged",
+    "no Cursor kill / no venv rebuild / no pip install"
+  ],
+
+  "required_gates": [
+    {"gate": "port references consistent", "command": "grep HEADROOM_PORT / port across the 3 files", "must": "consistent value or documented override"},
+    {"gate": "Headroom not falsely active", "command": "pytest/test: probe returns BLOCKED_ENV when health fails or compressed!=true or tokens_saved<=0", "must": "pass"},
+    {"gate": "context pack shape unchanged", "command": "verify-repomix-context.sh parity vs baseline", "must": "shape identical"},
+    {"gate": "no Cursor kill / no pip install introduced", "command": "git diff grep for kill/pip/venv-rebuild on Cursor", "must": "none introduced"}
+  ],
+
+  "baseline_commands": ["git rev-parse HEAD", "bash scripts/context/headroom-check.sh (baseline, expect BLOCKED_ENV)", "bash scripts/context/verify-repomix-context.sh (baseline)"],
+
+  "compatibility_contracts_preserved": ["context_pack_shape", "no_unapproved_process_or_install"],
+
+  "forbidden": ["reporting Headroom active without all three proofs", "killing Cursor", "rebuilding venv / pip install", "changing context pack shape"],
+
+  "stop_conditions": ["context pack shape changes", "Headroom falsely reported active", "any process kill / package install introduced"],
+
+  "allowed_minor_caveat": "Headroom runtime remains BLOCKED_ENV while config/docs consistent and tree-sitter honestly labeled — owner Britton, next action real Headroom enablement (separate decision)",
+
+  "rollback": "revert port/env references + probe; docs may remain"
+}

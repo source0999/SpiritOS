@@ -1,0 +1,19 @@
+{
+  "stage": "F03",
+  "purpose": "Generic unseen escalation-shape cases. Same verdict logic, different task wording/domain — proves the contract is shape-based, not benchmark-keyed.",
+  "frozen_at": "P1",
+  "holdout_manifest_frozen": true,
+
+  "generic_checks": [
+    {"id": "HOLD-BS-FORMATTING-RETRY", "shape": "unseen task: model output correct in substance, malformed in structure, within retry budget", "assertion": "LOCAL_RETRY_RECOMMENDED, not escalation", "anti_cheat_link": "D"},
+    {"id": "HOLD-BS-CAPABILITY-CAPPED", "shape": "unseen task: repeated validated substantive failures past threshold, local lane configured", "assertion": "can recommend API_ESCALATION_RECOMMENDED, with full evidence + authority=Britton", "anti_cheat_link": "F"},
+    {"id": "HOLD-BS-DECOMPOSE", "shape": "unseen multi-part task too large for one local pass but locally tractable in parts", "assertion": "LOCAL_DECOMPOSITION_RECOMMENDED", "anti_cheat_link": "feeds F4"},
+    {"id": "HOLD-BS-UNAVAILABLE-LANE", "shape": "the only configured lane is unavailable/offline", "assertion": "never success; recommend HUMAN_DECISION_REQUIRED or report unavailability honestly", "anti_cheat_link": "F"},
+    {"id": "HOLD-BS-NO-CALL", "shape": "recommend() invoked on any holdout case with network monkeypatched to raise", "assertion": "no provider contact attempted; verdict still produced", "anti_cheat_link": "no unapproved API"},
+    {"id": "HOLD-BS-NO-LABEL", "shape": "two tasks identical in shape but one labeled like a benchmark case, one not", "assertion": "identical recommendation (label must not change verdict)", "anti_cheat_link": "A"},
+    {"id": "HOLD-BS-PRIVACY-COST", "shape": "task with high privacy class / high cost class", "assertion": "recorded; authority required surfaced; does not silently pick API", "anti_cheat_link": "F"}
+  ],
+
+  "generation_rule": "holdout tasks are freshly worded (different domain nouns than any known benchmark) but match the abstract shapes: formatting-only failure, capped capability, decomposable, unavailable lane, label-invariance, privacy/cost class",
+  "frozen_before_source_edits": true
+}

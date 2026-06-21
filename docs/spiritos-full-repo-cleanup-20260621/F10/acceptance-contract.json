@@ -1,0 +1,58 @@
+{
+  "stage": "F10",
+  "title": "Full cleanup requalification",
+  "frozen_at": "P1",
+  "acceptance_contract_frozen": true,
+  "dependencies": ["F01", "F02", "F03", "F04", "F05", "F06", "F07", "F08", "F09"],
+
+  "anti_cheat_invariants_owned": ["A_no_benchmark_tailoring", "C_no_stamped_success", "F_no_silent_fallback", "G_no_self_acceptance", "I_no_skipped_test", "J_no_evidence_fabrication"],
+
+  "battery": [
+    {"id": "B-TAX", "group": "backend", "item": "all taxonomy tests (F1)", "command": "python -m pytest -q source_proxy/tests/test_status_codes.py"},
+    {"id": "B-FAILCLASS", "group": "backend", "item": "all failure-class tests (F1)", "command": "python -m pytest -q <F1 failure-class tests>"},
+    {"id": "B-AC-NEG", "group": "backend", "item": "anti-cheat negative corpus (F2)", "command": "python -m pytest -q source_proxy/verification/anticheat/"},
+    {"id": "B-PARITY", "group": "backend", "item": "legacy/new parity where applicable (F2/F5/F6/F9)", "command": "parity suites from F2/F5/F6/F9"},
+    {"id": "B-BS-DRY", "group": "backend", "item": "brain-switch dry-run tests (F3)", "command": "python -m pytest -q <F3 escalation tests>"},
+    {"id": "B-NO-API", "group": "backend", "item": "proof no unapproved provider call occurred", "command": "whole-cleanup no-API audit + F3 no-call proof"},
+    {"id": "B-PD-HOLD", "group": "backend", "item": "generic packet decomposition holdouts (F4)", "command": "python -m pytest -q <F4 holdouts>"},
+    {"id": "B-RECEIPT", "group": "backend", "item": "receipt compatibility (F1/F5)", "command": "receipt parity suite"},
+    {"id": "B-TRACE", "group": "backend", "item": "trace/consumer compatibility (F5/F6)", "command": "trace+consumer parity suite"},
+    {"id": "B-APPLY-RECOV", "group": "backend", "item": "apply/recovery tests (F6)", "command": "python -m pytest -q source_proxy/tests/test_long_running_tasks.py source_proxy/tests/test_diff_verification.py"},
+    {"id": "B-PY-FOCUSED", "group": "backend", "item": "focused Python tests", "command": "python -m pytest -q <focused subset touching changed paths>"},
+    {"id": "B-PY-BROADER", "group": "backend", "item": "bounded broader Python tests", "command": "python -m pytest -q source_proxy/tests/ (bounded, not unbounded)"},
+    {"id": "B-LINT", "group": "frontend/operator", "item": "lint", "command": "npm run lint"},
+    {"id": "B-TC", "group": "frontend/operator", "item": "typecheck", "command": "npm run typecheck"},
+    {"id": "B-BUILD", "group": "frontend/operator", "item": "build", "command": "npm run build"},
+    {"id": "B-CODING", "group": "frontend/operator", "item": "canonical /coding tests (F7)", "command": "npm run test:coding-frontend-regression"},
+    {"id": "B-SMOKE", "group": "frontend/operator", "item": "bounded non-battery browser smoke if available", "command": "<bounded smoke if a browser is available>"},
+    {"id": "B-PLAN2-OP", "group": "operator", "item": "Plan 2 operator", "command": "bash docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-02/operator-check.sh (if present)"},
+    {"id": "B-PLAN3-OP", "group": "operator", "item": "Plan 3 operator", "command": "bash docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/operator-check.sh"},
+    {"id": "B-HEADROOM", "group": "operator", "item": "Headroom/fallback contract checks (F8)", "command": "bash scripts/context/headroom-check.sh + F8 honest-fallback holdouts"},
+    {"id": "B-PROTECTED", "group": "scope", "item": "protected-path checks (no protected path edited)", "command": "git diff --name-only <breakpoint_head>..HEAD vs protected path list"},
+    {"id": "B-DIRTY", "group": "scope", "item": "dirty-tree checks", "command": "git status --porcelain (must be clean after commit)"},
+    {"id": "B-DIFFCHECK", "group": "scope", "item": "git diff --check", "command": "git diff --check"},
+    {"id": "B-TAILOR", "group": "anti-cheat", "item": "benchmark-tailoring scan over runtime paths", "command": "ripgrep source_proxy/ src/ scripts/ for A1-A10/Set A/4R tokens in conditional production context"}
+  ],
+
+  "required_gates": [
+    {"gate": "every battery item ran with exit code recorded", "command": "f10-battery-manifest.json", "must": "every item present with exit+raw+sha256+conclusion"},
+    {"gate": "no battery item skipped/timeout reported as PASS", "command": "manifest honesty check", "must": "any non-pass honestly reported PARTIAL/BLOCKED_ENV/NEEDS_FIX"},
+    {"gate": "tailoring scan finds no benchmark-specific production branch", "command": "B-TAILOR", "must": "none"},
+    {"gate": "no unapproved API call", "command": "B-NO-API", "must": "none"},
+    {"gate": "no protected path edited", "command": "B-PROTECTED", "must": "none"},
+    {"gate": "dirty tree clean after final commit", "command": "B-DIRTY", "must": "clean"},
+    {"gate": "all frozen stage contracts still match their freeze hashes", "command": "re-hash every Fxx acceptance-contract + holdout-manifest, compare to status.json freeze hash", "must": "all match (no contract weakened)"}
+  ],
+
+  "baseline_commands": ["git rev-parse HEAD (cleanup HEAD at F10 start)", "record breakpoint HEAD + every stage commit SHA"],
+
+  "compatibility_contracts_preserved": ["all 12 from compatibility-and-rollback-contract.md"],
+
+  "forbidden": ["running Set A/B/C", "using known battery prompts for acceptance", "reporting a skipped test as PASS", "weakening any frozen contract", "self-acceptance"],
+
+  "stop_conditions": ["any battery item red after <=3 repairs", "tailoring scan finds a benchmark branch", "unapproved API call", "protected path edited", "contract hash mismatch"],
+
+  "terminal_action_on_GO": "write secondary-review-handoff.md (replace DRAFT); set cleanup-state.json ready_for_secondary_review=true, current_stage=SECONDARY_REVIEW; STOP for independent Codex review",
+
+  "rollback": "per-stage (each Fxx has its own rollback); F10 itself adds no capability"
+}

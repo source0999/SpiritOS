@@ -1,0 +1,21 @@
+{
+  "stage": "F07",
+  "title": "Coding UI shell cleanup",
+  "status": "NOT_STARTED",
+  "verdict": null,
+  "acceptance_contract_frozen": true,
+  "holdout_manifest_frozen": true,
+  "acceptance_contract_sha256": null,
+  "holdout_manifest_sha256": null,
+  "baseline_head": null,
+  "baseline_captured": false,
+  "dependencies_satisfied": {"shared_contracts_stable": false},
+  "increments": [
+    {"id": "7.1", "title": "classify shells + reversible feature metadata + shared types", "status": "NOT_STARTED", "files_touched": []},
+    {"id": "7.2", "title": "extract shared timeline/receipt/debug components", "status": "NOT_STARTED", "files_touched": []}
+  ],
+  "commit": null,
+  "gate_results": {},
+  "caveats": [],
+  "next_stage_handoff_updated": false
+}

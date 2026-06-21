@@ -1,0 +1,19 @@
+{
+  "stage": "F10",
+  "purpose": "Terminal cross-cutting holdouts that re-prove anti-cheat and compatibility hold across the WHOLE cleanup, using freshly generated cases that span multiple stages.",
+  "frozen_at": "P1",
+  "holdout_manifest_frozen": true,
+
+  "generic_checks": [
+    {"id": "HOLD-F10-TAILOR-WHOLE", "shape": "scan every runtime path touched by F1-F9 for benchmark tokens in conditional context", "assertion": "zero benchmark-specific production branches", "anti_cheat_link": "A"},
+    {"id": "HOLD-F10-NOAPI-WHOLE", "shape": "audit whole cleanup diff for any provider/API call introduced", "assertion": "zero unapproved API calls", "anti_cheat_link": "F + safety"},
+    {"id": "HOLD-F10-RECEIPT-E2E", "shape": "an end-to-end decision on an unseen input producing a FIP0 receipt", "assertion": "existing fields match baseline; failure_classification additive; fake_go_detected derived not hardcoded", "anti_cheat_link": "C + compatibility"},
+    {"id": "HOLD-F10-CONTRACT-HASH", "shape": "re-hash every Fxx acceptance-contract + holdout-manifest", "assertion": "all match the freeze hashes in status.json (no goalpost moved)", "anti_cheat_link": "H"},
+    {"id": "HOLD-F10-PROTECTED-WHOLE", "shape": "git diff breakpoint_head..cleanup_head against protected path list", "assertion": "no protected path edited", "anti_cheat_link": "scope"},
+    {"id": "HOLD-F10-CROSS-STAGE-FALLBACK", "shape": "a flow exercising Headroom (BLOCKED_ENV) + tree-sitter fallback + a lane failure", "assertion": "every fallback records its 6 fields; no fallback counted as primary success", "anti_cheat_link": "F"},
+    {"id": "HOLD-F10-NO-STAMPED-PASS", "shape": "scan cleanup-introduced verdict logic for default-PASS / hardcoded-false / summary-only-GO patterns", "assertion": "none", "anti_cheat_link": "C"}
+  ],
+
+  "generation_rule": "F10 holdouts are cross-stage: they combine elements from multiple F-stages on fresh inputs to prove the cleanup holds as a whole, not per-stage",
+  "frozen_before_source_edits": true
+}

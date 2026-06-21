@@ -1,0 +1,18 @@
+{
+  "stage": "F08",
+  "purpose": "Generic honest-fallback checks proving Headroom is never falsely reported active and tree-sitter fallback is correctly labeled.",
+  "frozen_at": "P1",
+  "holdout_manifest_frozen": true,
+
+  "generic_checks": [
+    {"id": "HOLD-F8-NO-FALSE-ACTIVE-HEALTH", "shape": "headroom probe with health endpoint failing", "assertion": "reports BLOCKED_ENV, never active", "anti_cheat_link": "F"},
+    {"id": "HOLD-F8-NO-FALSE-ACTIVE-COMPRESSED", "shape": "probe with health ok but compressed!=true", "assertion": "reports BLOCKED_ENV", "anti_cheat_link": "F"},
+    {"id": "HOLD-F8-NO-FALSE-ACTIVE-TOKENS", "shape": "probe with health ok + compressed=true but tokens_saved<=0", "assertion": "reports BLOCKED_ENV", "anti_cheat_link": "F"},
+    {"id": "HOLD-F8-TREESITTER-LABELED", "shape": "context generated via tree-sitter fallback", "assertion": "fallback_used=true recorded; not counted as Headroom active", "anti_cheat_link": "F"},
+    {"id": "HOLD-F8-CONTEXT-SHAPE", "shape": "context pack emitted on an unseen repo subset", "assertion": "pack shape identical to baseline", "anti_cheat_link": "compatibility"},
+    {"id": "HOLD-F8-NO-CURSOR-KILL", "shape": "static check of F8 diff for any Cursor/process kill", "assertion": "none introduced", "anti_cheat_link": "safety"}
+  ],
+
+  "generation_rule": "probe outcomes are varied across the three proof dimensions independently; the invariant is honest BLOCKED_ENV reporting whenever any proof is absent",
+  "frozen_before_source_edits": true
+}

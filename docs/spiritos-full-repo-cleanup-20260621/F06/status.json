@@ -1,0 +1,23 @@
+{
+  "stage": "F06",
+  "title": "Split long-running responsibilities",
+  "status": "NOT_STARTED",
+  "verdict": null,
+  "acceptance_contract_frozen": true,
+  "holdout_manifest_frozen": true,
+  "acceptance_contract_sha256": null,
+  "holdout_manifest_sha256": null,
+  "baseline_head": null,
+  "baseline_long_running_py_lines": 6513,
+  "baseline_captured": false,
+  "dependencies_satisfied": {"F01": false, "F05": false},
+  "increments": [
+    {"id": "6.1", "title": "extract apply/ (git-apply + next-router) + parity", "status": "NOT_STARTED", "files_touched": []},
+    {"id": "6.2", "title": "extract trace/ + recovery/ (idempotence + dup protection)", "status": "NOT_STARTED", "files_touched": []},
+    {"id": "6.3", "title": "extract regression/ + slim engine", "status": "NOT_STARTED", "files_touched": []}
+  ],
+  "commit": null,
+  "gate_results": {},
+  "caveats": [],
+  "next_stage_handoff_updated": false
+}

@@ -1,0 +1,36 @@
+{
+  "stage": "F09",
+  "title": "Worker / tool contract cleanup",
+  "frozen_at": "P1",
+  "acceptance_contract_frozen": true,
+  "dependencies": ["F01", "F05"],
+
+  "anti_cheat_invariants_owned": ["F_no_silent_fallback", "compatibility_contract_fidelity"],
+
+  "adapter_contract_fields": ["typed_request_result", "timeout", "attempt_count", "failure_classification_F1", "evidence_reference", "redacted_logs", "ownership_metadata"],
+
+  "required_deliverables": [
+    "typed lane adapters wrapping qwen/browser/ollama subprocess+urllib calls",
+    "decision.py calls lane adapters (no direct subprocess/urllib for these)",
+    "mac-worker contract cleanup (scripts/mac-worker, src/lib/mac-worker)",
+    "per-adapter F1 failure classification + redaction + ownership"
+  ],
+
+  "required_gates": [
+    {"gate": "qwen adapter parity (output + timing)", "command": "pytest test_coder_agent_repomix_diff + test_ollama_route", "must": "no behavior/timing regression beyond tolerance"},
+    {"gate": "every adapter has the 7 contract fields", "command": "static check of adapter modules", "must": "all 7 present per adapter"},
+    {"gate": "no direct subprocess/urllib for wrapped calls in decision.py", "command": "grep decision.py for subprocess/urllib on wrapped targets", "must": "routed through lane"},
+    {"gate": "no unredacted secret in adapter logs", "command": "pytest redaction: secret input -> redacted in log", "must": "pass"},
+    {"gate": "no new engine", "command": "code audit: adapters wrap, not replace runtime", "must": "single runtime"}
+  ],
+
+  "baseline_commands": ["git rev-parse HEAD", "python -m pytest -q source_proxy/tests/test_coder_agent_repomix_diff.py source_proxy/tests/test_ollama_route.py (baseline)"],
+
+  "compatibility_contracts_preserved": ["tool_output_timing_contracts", "no_new_engine", "fake_go_detected_untouched"],
+
+  "forbidden": ["material timing regression", "output contract drift", "unredacted secrets", "new engine", "retire direct path before parity"],
+
+  "stop_conditions": ["lane timing changes materially", "output drift", "unredacted secret", "parity fails after <=3 repairs"],
+
+  "rollback": "inline the call again; adapter removed; each independently removable"
+}

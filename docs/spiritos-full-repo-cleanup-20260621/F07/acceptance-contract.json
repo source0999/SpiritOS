@@ -1,0 +1,39 @@
+{
+  "stage": "F07",
+  "title": "Coding UI shell cleanup",
+  "frozen_at": "P1",
+  "acceptance_contract_frozen": true,
+  "dependencies": ["shared_contracts_stable (F01+F05+F06)"],
+
+  "anti_cheat_invariants_owned": ["H_no_moving_goalposts", "UI_behavior_preserved"],
+
+  "canonical_route_frozen": {"route": "/coding", "canonical_shell": "CodingCockpitShell", "source_of_truth": "src/app/coding/page.tsx import"},
+  "shells_present": ["CodingAgentInterface.tsx", "CodingCockpitShell.tsx", "CodingCommandCenterShell.tsx"],
+
+  "required_deliverables": [
+    "shell classification (active/legacy/experimental) documented",
+    "reversible feature-flag metadata (default = current behavior)",
+    "shared types extracted",
+    "shared timeline/receipt/debug components extracted (additive)",
+    "no shell deleted; /coding unchanged"
+  ],
+
+  "required_gates": [
+    {"gate": "/coding still renders CodingCockpitShell", "command": "grep import in src/app/coding/page.tsx", "must": "CodingCockpitShell"},
+    {"gate": "no shell file deleted", "command": "git diff --name-status (D) on src/components/coding/*", "must": "no deletions"},
+    {"gate": "frontend tests green", "command": "npm run test:coding-frontend-regression", "must": "exit 0"},
+    {"gate": "typecheck", "command": "npm run typecheck", "must": "exit 0"},
+    {"gate": "build", "command": "npm run build", "must": "exit 0"},
+    {"gate": "feature flags default to current behavior", "command": "test asserts default flag values == current", "must": "pass"}
+  ],
+
+  "baseline_commands": ["git rev-parse HEAD", "npm run test:coding-frontend-regression (baseline)", "npm run typecheck (baseline)"],
+
+  "compatibility_contracts_preserved": ["UI_behavior", "/coding route + canonical shell", "no shell deletion"],
+
+  "forbidden": ["deleting any shell", "replacing /coding", "choosing canonical shell (Britton's decision)", "irreversible flag defaults"],
+
+  "stop_conditions": ["/coding regresses", "forced product-behavior choice -> BLOCKED_HUMAN", "frontend/typecheck/build red after <=3 repairs"],
+
+  "rollback": "flip flags to defaults; restore inline types/components"
+}

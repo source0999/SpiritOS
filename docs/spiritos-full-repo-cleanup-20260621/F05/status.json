@@ -1,0 +1,23 @@
+{
+  "stage": "F05",
+  "title": "Split decision transport from domain lanes",
+  "status": "NOT_STARTED",
+  "verdict": null,
+  "acceptance_contract_frozen": true,
+  "holdout_manifest_frozen": true,
+  "acceptance_contract_sha256": null,
+  "holdout_manifest_sha256": null,
+  "baseline_head": null,
+  "baseline_decision_py_lines": 7971,
+  "baseline_captured": false,
+  "dependencies_satisfied": {"F01": false},
+  "increments": [
+    {"id": "5.1", "title": "lanes/receipts.py (FIP0 serialize) extract + parity + switch + retire", "status": "NOT_STARTED", "files_touched": []},
+    {"id": "5.2", "title": "lanes/context.py + lanes/research.py", "status": "NOT_STARTED", "files_touched": []},
+    {"id": "5.3", "title": "lanes/coder.py + lanes/verifier.py + lanes/trace.py + slim router", "status": "NOT_STARTED", "files_touched": []}
+  ],
+  "commit": null,
+  "gate_results": {},
+  "caveats": [],
+  "next_stage_handoff_updated": false
+}

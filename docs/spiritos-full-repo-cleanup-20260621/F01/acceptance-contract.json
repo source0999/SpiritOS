@@ -1,0 +1,62 @@
+{
+  "stage": "F01",
+  "title": "Failure taxonomy + debug receipts",
+  "frozen_at": "P1 (before any source edit)",
+  "acceptance_contract_frozen": true,
+  "freeze_hash_will_be_recorded_in": "status.json",
+
+  "anti_cheat_invariants_owned": ["A_no_benchmark_tailoring", "C_no_stamped_success", "H_no_moving_goalposts", "I_no_skipped_test"],
+
+  "failure_classes_frozen": [
+    "TECHNICAL_FAILURE",
+    "ENVIRONMENT_FAILURE",
+    "SERVICE_UNAVAILABLE",
+    "BRIDGE_INTEGRATION_FAILURE",
+    "ROUTING_FAILURE",
+    "TOOL_FAILURE",
+    "SEARCH_PROVIDER_EMPTY",
+    "SEARCH_PROVIDER_FAILURE",
+    "MODEL_CAPABILITY_LIMIT",
+    "MODEL_FORMATTING_FAILURE",
+    "LOCAL_MODEL_INSUFFICIENT",
+    "API_ESCALATION_RECOMMENDED",
+    "POLICY_BLOCKED",
+    "HUMAN_APPROVAL_REQUIRED",
+    "EVIDENCE_MISSING",
+    "VALIDATOR_FAILURE",
+    "PROMPT_AMBIGUITY",
+    "RESOURCE_PRESSURE",
+    "UNKNOWN_NEEDS_INVESTIGATION"
+  ],
+
+  "required_deliverables": [
+    "source_proxy/diagnostics/status_codes.py with 19-code enum + classify_failure() + legacy_compat_string",
+    "qwen lane in decision/model_lanes.py emits reason_code on failure",
+    "FIP0 receipt gains additive top-level failure_classification (existing fields untouched)",
+    "failure event in causal traces (additive)",
+    "source_proxy/tests/test_status_codes.py covering every class + legacy compat"
+  ],
+
+  "required_gates": [
+    {"gate": "every failure class constructible and classifiable", "command": "python -m pytest -q source_proxy/tests/test_status_codes.py", "must": "exit 0"},
+    {"gate": "legacy free-string behavior preserved", "command": "test asserts legacy_compat_string equals prior value for representative shapes", "must": "pass"},
+    {"gate": "no existing test newly red for non-additive reasons", "command": "python -m pytest -q source_proxy/tests/ (focused subset touching receipt/lanes)", "must": "no new failures vs baseline"},
+    {"gate": "receipt change is additive only", "command": "normalized-JSON diff of serialized receipt existing-fields before/after", "must": "empty diff on existing fields"},
+    {"gate": "no benchmark-ID branch introduced", "command": "ripgrep status_codes.py + touched files for A1-A10/Set A/4R tokens in conditional context", "must": "no production branch"},
+    {"gate": "UNKNOWN_NEEDS_INVESTIGATION does not absorb a known class", "command": "test asserts classify(known_shape) != UNKNOWN for each known class", "must": "pass"}
+  ],
+
+  "baseline_commands": [
+    "git rev-parse HEAD (record baseline HEAD)",
+    "python -m pytest -q source_proxy/tests/test_prompt_packet_context_metadata.py (baseline green set)",
+    "python -m pytest -q source_proxy/tests/test_model_lanes.py (baseline)"
+  ],
+
+  "compatibility_contracts_preserved": ["FIP0_receipt_shape_additive_only", "final_status_vocabulary_unchanged", "fake_go_detected_untouched", "trace_existing_fields_unchanged"],
+
+  "forbidden": ["renaming any existing receipt field", "changing final-status values", "hardcoding fake_go_detected", "any A2/A5/A9 production branch"],
+
+  "stop_conditions": ["existing tests red for non-new-field reasons after <=3 repairs", "any compatibility field changed", "UNKNOWN absorbing a known class"],
+
+  "rollback": "revert status_codes.py; remove additive failure_classification field; old free strings drive behavior"
+}

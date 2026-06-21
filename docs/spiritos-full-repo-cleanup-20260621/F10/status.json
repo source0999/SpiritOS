@@ -1,0 +1,23 @@
+{
+  "stage": "F10",
+  "title": "Full cleanup requalification",
+  "status": "NOT_STARTED",
+  "verdict": null,
+  "acceptance_contract_frozen": true,
+  "holdout_manifest_frozen": true,
+  "acceptance_contract_sha256": null,
+  "holdout_manifest_sha256": null,
+  "baseline_head": null,
+  "baseline_captured": false,
+  "dependencies_satisfied": {"F01": false, "F02": false, "F03": false, "F04": false, "F05": false, "F06": false, "F07": false, "F08": false, "F09": false},
+  "increments": [
+    {"id": "10.1", "title": "backend battery harness + run", "status": "NOT_STARTED", "files_touched": []},
+    {"id": "10.2", "title": "frontend/operator/scope/anti-cheat battery + run", "status": "NOT_STARTED", "files_touched": []},
+    {"id": "10.3", "title": "write secondary-review-handoff.md + set cleanup-state + STOP", "status": "NOT_STARTED", "files_touched": []}
+  ],
+  "commit": null,
+  "gate_results": {},
+  "caveats": [],
+  "next_stage_handoff_updated": false,
+  "terminal_state_on_GO": "READY_FOR_SECONDARY_REVIEW (then STOP for independent Codex review)"
+}

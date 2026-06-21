@@ -1,0 +1,19 @@
+{
+  "stage": "F04",
+  "purpose": "Generic unseen task prompts with the frozen shapes but fresh wording/domains. Proves decomposition is shape-based and improves packets.",
+  "frozen_at": "P1",
+  "holdout_manifest_frozen": true,
+
+  "generic_checks": [
+    {"id": "HOLD-PD-COMPARE-SHAPE", "shape": "a current-tool comparison prompt comparing two tools not in any known fixture, fresh domain", "assertion": "decomposed into per-tool sub-packets; each validates; monolithic is worse or fails", "anti_cheat_link": "A"},
+    {"id": "HOLD-PD-MULTINODE-SHAPE", "shape": "a multi-node resource planning prompt with fresh node names", "assertion": "decomposed per-node; sub-packets carry evidence IDs, not inlined substance", "anti_cheat_link": "B"},
+    {"id": "HOLD-PD-ARCH-SHAPE", "shape": "an architecture-planning prompt with fresh constraints", "assertion": "decomposed into coherent planning sub-packets; independent validation", "anti_cheat_link": "B"},
+    {"id": "HOLD-PD-HANDOFF-SHAPE", "shape": "an implementation-handoff prompt", "assertion": "decomposed into handoff sub-packets with explicit evidence references", "anti_cheat_link": "D"},
+    {"id": "HOLD-PD-RESEARCH-SHAPE", "shape": "a research-backed-recommendation prompt", "assertion": "decomposed without script-supplied conclusions; sub-packets reference evidence IDs", "anti_cheat_link": "B"},
+    {"id": "HOLD-PD-NO-KEY", "shape": "the same shape instantiated with a benchmark-like label vs a neutral label", "assertion": "identical decomposition (label must not change behavior)", "anti_cheat_link": "A"},
+    {"id": "HOLD-PD-LOCAL-ONLY", "shape": "decomposition run with network disabled", "assertion": "succeeds locally; no API/cloud contact", "anti_cheat_link": "no unapproved API"}
+  ],
+
+  "generation_rule": "prompts are freshly authored for each shape using domain nouns absent from known fixtures and benchmark wording; decomposition quality is compared against monolithic on the same unseen prompts",
+  "frozen_before_source_edits": true
+}

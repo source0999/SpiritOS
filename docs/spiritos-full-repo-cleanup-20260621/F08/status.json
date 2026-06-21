@@ -1,0 +1,21 @@
+{
+  "stage": "F08",
+  "title": "Context / memory / Headroom / repomix consistency",
+  "status": "NOT_STARTED",
+  "verdict": null,
+  "acceptance_contract_frozen": true,
+  "holdout_manifest_frozen": true,
+  "acceptance_contract_sha256": null,
+  "holdout_manifest_sha256": null,
+  "baseline_head": null,
+  "baseline_captured": false,
+  "dependencies_satisfied": {},
+  "increments": [
+    {"id": "8.1", "title": "HEADROOM_PORT consistency + Cursor/8797 documentation", "status": "NOT_STARTED", "files_touched": []},
+    {"id": "8.2", "title": "context/memory digest consistency + honest headroom_status probe", "status": "NOT_STARTED", "files_touched": []}
+  ],
+  "commit": null,
+  "gate_results": {},
+  "caveats": [],
+  "next_stage_handoff_updated": false
+}

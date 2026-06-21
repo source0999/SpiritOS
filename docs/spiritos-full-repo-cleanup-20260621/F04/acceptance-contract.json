@@ -1,0 +1,36 @@
+{
+  "stage": "F04",
+  "title": "Generic local packet decomposition",
+  "frozen_at": "P1",
+  "acceptance_contract_frozen": true,
+  "dependencies": ["F03"],
+
+  "anti_cheat_invariants_owned": ["A_no_benchmark_tailoring", "B_no_canned_substance", "D_no_handholding"],
+
+  "task_shapes_frozen": ["multi-node resource planning", "current-tool comparison", "architecture planning", "implementation handoff", "research-backed recommendation"],
+
+  "required_deliverables": [
+    "source_proxy/decision/packet_templates/ generic decomposer keyed on task shape",
+    "sub-packet validator (independent validation, evidence IDs, F1 failure class exposure)",
+    "prompt_packet.py uses decomposer when F3 recommends decomposition",
+    "tests on UNSEEN same-shape prompts"
+  ],
+
+  "required_gates": [
+    {"gate": "decomposition improves packets on unseen same-shape prompts", "command": "pytest decompose holdouts vs monolithic", "must": "decomposed validates where monolithic fails or improves quality"},
+    {"gate": "no benchmark keying", "command": "ripgrep packet_templates for A1-A10/Set A/4R tokens in conditional context", "must": "no production branch"},
+    {"gate": "sub-packets validate independently", "command": "pytest: each sub-packet passes/fails on its own", "must": "pass"},
+    {"gate": "no cloud/API model invoked", "command": "pytest: network monkeypatched; decomposition is local-only", "must": "pass"},
+    {"gate": "regression references are test-only", "command": "A2/A5/A9 appear only in test/doc context, not production branches", "must": "pass"}
+  ],
+
+  "baseline_commands": ["git rev-parse HEAD", "python -m pytest -q source_proxy/tests/test_prompt_packet_context_metadata.py (baseline)"],
+
+  "compatibility_contracts_preserved": ["prompt_packet_public_shape_unchanged_or_additive", "no_api_introduced", "fake_go_detected_untouched"],
+
+  "forbidden": ["benchmark-keyed decomposition", "script-supplied substance in sub-packets", "cloud/API models", "hardcoded success on known prompts"],
+
+  "stop_conditions": ["decomposition worsens packets on holdouts", "any benchmark branch", "protected path touched"],
+
+  "rollback": "monolithic path; prompt_packet.py reverts to single-packet"
+}
